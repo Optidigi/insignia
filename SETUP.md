@@ -125,3 +125,60 @@ This project is configured for Claude Code:
 - `docs/superpowers/plans/` — Implementation plans for pending features
 
 Open the project in Claude Code (`claude`) and it will load all context automatically.
+
+---
+
+## Storage (Cloudflare R2)
+
+The app uses Cloudflare R2 (S3-compatible) for logo assets and view images.
+
+| Variable | Value |
+|----------|-------|
+| `R2_ACCOUNT_ID` | Your Cloudflare account ID (found in R2 dashboard URL) |
+| `R2_ACCESS_KEY_ID` | R2 API token access key |
+| `R2_SECRET_ACCESS_KEY` | R2 API token secret key |
+| `R2_BUCKET_NAME` | Your R2 bucket name (e.g. `insignia-assets`) |
+| `R2_PUBLIC_URL` | Optional: public URL for your bucket (e.g. `https://assets.yourdomain.com`) |
+
+The R2 endpoint is automatically constructed as `https://<R2_ACCOUNT_ID>.r2.cloudflarestorage.com`.
+
+**CORS not required**: The app uses server-side uploads — the Node server receives files from the browser and uploads to R2 directly. No CORS configuration is needed on the R2 bucket for the storefront upload flow.
+
+---
+
+## Production Deployment
+
+The app is deployed as a Docker container behind a reverse proxy.
+
+### Environment
+
+- `SHOPIFY_APP_URL` must be set to your public HTTPS domain (e.g. `https://insignia.yourdomain.com`)
+- This URL must also be configured in the Shopify Partner Dashboard:
+  - **App URL**: `https://insignia.yourdomain.com`
+  - **Allowed redirection URLs**: `https://insignia.yourdomain.com/auth/callback`, `https://insignia.yourdomain.com/auth/shopify/callback`, `https://insignia.yourdomain.com/api/auth/callback`
+
+### Docker deployment
+
+```bash
+# Build and start all services (app + PostgreSQL)
+docker compose up -d
+
+# Run database migrations
+docker compose exec app npx prisma migrate deploy
+```
+
+The `app` service in `docker-compose.yml` reads all environment variables from `.env` via `env_file`. Never commit `.env` to source control.
+
+### Reverse proxy (nginx or Caddy)
+
+The app runs on port 3000 internally. Configure your reverse proxy to:
+- Terminate TLS on port 443
+- Forward to `localhost:3000`
+- Pass `X-Forwarded-Proto: https` header (required by Shopify's OAuth flow)
+
+Example Caddyfile:
+```
+insignia.yourdomain.com {
+  reverse_proxy localhost:3000
+}
+```

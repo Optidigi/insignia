@@ -20,7 +20,7 @@ Note: App proxies do not forward cookies; Shopify strips the `Cookie` header fro
 Pattern A (canonical):
 
 1. `GET /apps/insignia/config` (load config + placeholder logo; response contract: `../storefront-config.md`)
-2. Upload logo (optional): `POST /apps/insignia/uploads` → direct PUT → `POST /apps/insignia/uploads/:id/complete`
+2. Upload logo (optional): `POST /apps/insignia/uploads` (multipart/form-data) → `{ logoAsset }`
 3. `POST /apps/insignia/customizations` (persist draft)
 4. `POST /apps/insignia/price` (authoritative unit price + breakdown for review tab)
 5. `POST /apps/insignia/prepare` (reserve variant-pool slot + set slot price)
@@ -31,38 +31,25 @@ Pattern A (canonical):
 
 ### POST /apps/insignia/uploads
 
-Create a direct-upload session for buyer artwork.
+Upload buyer artwork server-side. The modal POSTs a `multipart/form-data` request; the Node server receives the file, uploads it to R2, and returns the created logo asset directly.
 
-**Request body**
-```json
-{
-  "fileName": "logo.svg",
-  "contentType": "image/svg+xml",
-  "sizeBytes": 123456
-}
+> **Note**: Server-side upload eliminates the need for R2 CORS configuration on the storefront domain. The `createStorefrontUpload` / `completeStorefrontUpload` two-step flow (presigned PUT) exists in the service layer but is not used by the storefront.
+
+**Request**
+```
+Content-Type: multipart/form-data
+
+Field: file  (the logo file; max 5MB; allowed types: image/svg+xml, image/png, image/jpeg, image/webp)
 ```
 
-**Response body**
-```json
-{
-  "uploadId": "uuid",
-  "putUrl": "https://storage.example.com/signed-put-url",
-  "expiresAt": "2026-01-31T00:45:00Z"
-}
-```
-
-### POST /apps/insignia/uploads/:id/complete
-
-Finalize an upload and return the created logo asset.
-
-**Response body**
+**Response 200**
 ```json
 {
   "logoAsset": {
-    "id": "uuid",
+    "id": "<uuid>",
     "kind": "buyer_upload",
-    "previewPngUrl": "https://<signed-url-to-logo-preview-png>?expires=2026-01-31T00:45:00Z",
-    "sanitizedSvgUrl": "https://<signed-url-to-sanitized-svg>?expires=2026-01-31T00:45:00Z"
+    "previewPngUrl": "<presigned-get-url>",
+    "sanitizedSvgUrl": "<presigned-get-url> | null"
   }
 }
 ```
