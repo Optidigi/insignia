@@ -10,10 +10,12 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import { getPresignedGetUrl } from "../lib/storage.server";
 import { AppError, ErrorCodes } from "../lib/errors.server";
+import { checkRateLimit } from "../lib/storefront/rate-limit.server";
 
-function jsonResponse(data: unknown, status = 200, origin?: string): Response {
+function jsonResponse(data: unknown, status = 200, origin?: string, extra?: Record<string, string>): Response {
   const headers: HeadersInit = { "Content-Type": "application/json" };
   if (origin) headers["Access-Control-Allow-Origin"] = origin;
+  if (extra) Object.assign(headers, extra);
   return new Response(JSON.stringify(data), { status, headers });
 }
 
@@ -54,15 +56,25 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
   const origin = `https://${shopDomain}`;
 
-  try {
-    const shop = await db.shop.findUnique({
-      where: { shopifyDomain: shopDomain },
-      select: { id: true },
-    });
-    if (!shop) {
-      return jsonResponse({ error: { code: "NOT_FOUND", message: "Shop not found" } }, 404, origin);
-    }
+  const shop = await db.shop.findUnique({
+    where: { shopifyDomain: shopDomain },
+    select: { id: true },
+  });
+  if (!shop) {
+    return jsonResponse({ error: { code: "NOT_FOUND", message: "Shop not found" } }, 404, origin);
+  }
 
+  const rateLimit = checkRateLimit(shop.id);
+  if (!rateLimit.allowed) {
+    return jsonResponse(
+      { error: { code: "RATE_LIMITED", message: "Too many requests. Please slow down." } },
+      429,
+      origin,
+      { "Retry-After": String(rateLimit.retryAfter) }
+    );
+  }
+
+  try {
     // Find the logo asset and verify shop ownership
     const asset = await db.logoAsset.findFirst({
       where: { id: assetId, shopId: shop.id },

@@ -10,10 +10,12 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import { completeStorefrontUpload } from "../lib/services/storefront-uploads.server";
 import { AppError, ErrorCodes } from "../lib/errors.server";
+import { checkRateLimit } from "../lib/storefront/rate-limit.server";
 
-function jsonResponse(data: unknown, status = 200, origin?: string): Response {
+function jsonResponse(data: unknown, status = 200, origin?: string, extra?: Record<string, string>): Response {
   const headers: HeadersInit = { "Content-Type": "application/json" };
   if (origin) headers["Access-Control-Allow-Origin"] = origin;
+  if (extra) Object.assign(headers, extra);
   return new Response(JSON.stringify(data), { status, headers });
 }
 
@@ -49,6 +51,18 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     return jsonResponse({ error: { code: "NOT_FOUND", message: "Shop not found" } }, 404);
   }
 
+  const origin = `https://${shopDomain}`;
+
+  const rateLimit = checkRateLimit(shop.id);
+  if (!rateLimit.allowed) {
+    return jsonResponse(
+      { error: { code: "RATE_LIMITED", message: "Too many requests. Please slow down." } },
+      429,
+      origin,
+      { "Retry-After": String(rateLimit.retryAfter) }
+    );
+  }
+
   const uploadId = params.id;
   if (!uploadId) {
     return jsonResponse(
@@ -56,8 +70,6 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       400
     );
   }
-
-  const origin = `https://${shopDomain}`;
   try {
     const result = await completeStorefrontUpload(shop.id, uploadId);
     return jsonResponse(result, 200, origin);
