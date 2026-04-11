@@ -1,3 +1,27 @@
+# Dev secrets — NEVER include in image
+.env
+.env.*
+
+# Build artifacts / node_modules (rebuilt in image)
+node_modules
 .cache
 build
-node_modules
+
+# Shopify/React Router generated dirs
+.react-router
+.shopify
+
+# Claude Code
+.claude
+
+# Logs
+*.log
+npm-debug.log*
+
+# Git
+.git
+.github
+
+# OS
+.DS_Store
+Thumbs.db
