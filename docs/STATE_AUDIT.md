@@ -162,17 +162,17 @@ POST /apps/insignia/uploads/:id/complete → { logoAsset }
 
 **Effect**: `apps.insignia.uploads.$id.complete.tsx` exists and compiles, but is unreachable via the current storefront upload flow. The storefront `CustomizationModal` must call the server-side endpoint instead of doing a direct PUT. If the modal JS expects the presigned URL flow (spec), it will break.
 
-### 3.4 Rate Limiting on `cart-confirm` — MINOR OMISSION
+### 3.4 Rate Limiting on `cart-confirm` — ✅ RESOLVED
 
 **Spec** (`docs/core/api-contracts/storefront.md`): All storefront endpoints MUST apply rate limiting.
 
-**Code** (`app/routes/apps.insignia.cart-confirm.tsx`): No call to `checkRateLimit()`. Every other storefront route (`config`, `prepare`, `customizations`, `price`, `uploads`) calls `checkRateLimit`. This endpoint is unprotected.
+**Code** (`app/routes/apps.insignia.cart-confirm.tsx`): `checkRateLimit` added to cart-confirm after shop lookup, matching the pattern used in all other storefront routes.
 
-### 3.5 CORS Preflight — MINOR GAP
+### 3.5 CORS Preflight — ✅ RESOLVED
 
 **Spec**: "MUST enforce a strict CORS allowlist."
 
-**Code**: Sets `Access-Control-Allow-Origin: https://{shopDomain}` (correct single-origin restriction). However, no route handles `OPTIONS` preflight requests. If the browser sends a CORS preflight, all storefront endpoints will return a non-2xx response, causing the actual request to fail. This matters if `Content-Type: application/json` is sent (which triggers a preflight).
+**Code**: Sets `Access-Control-Allow-Origin: https://{shopDomain}` (correct single-origin restriction). OPTIONS preflight handling added to all storefront routes, returning proper `Access-Control-Allow-Methods` and `Access-Control-Allow-Headers` headers.
 
 ### 3.6 Auth / Session Token Validation — MATCHES SPEC
 
@@ -196,7 +196,7 @@ POST /apps/insignia/uploads/:id/complete → { logoAsset }
 - `webhooks.orders.create.tsx:166–208` captures snapshot at order creation, respects `sharedZones` flag.
 - `useLiveConfigFallback: true` set when snapshot is null.
 - Matches `docs/core/geometry-snapshot-specification.md`.
-- **Noted limitation**: No DB-level immutability trigger. The spec (geometry-snapshot-specification.md) shows a Postgres `BEFORE UPDATE` trigger. Prisma does not generate triggers. The snapshot can be overwritten programmatically. No application-layer guard exists either.
+- **Noted limitation (✅ RESOLVED)**: DB-level immutability trigger added via raw SQL migration. A Postgres `BEFORE UPDATE` trigger now enforces snapshot immutability on `OrderLineCustomization.placementGeometrySnapshotByViewId`.
 
 ### 3.10 Storefront Config Response — MATCHES SPEC
 
@@ -277,7 +277,7 @@ Based on code review:
 |------|--------|----------|
 | View Editor right panel architecture (Tabs A vs expand/collapse B vs overview-first C) | **OPEN** | No decision in docs; `ZonePricingPanel.tsx` implements an approach but the open-work.md question remains unresolved |
 | Logo sizing UX improvement (stepped tiers vs fixed-size-per-zone vs both) | **OPEN** | No decision in docs |
-| Customer artwork upload page (post-purchase) | **COMPLETE** (stale entry) | `app/routes/apps.insignia.upload.tsx` is fully implemented with loader, action, and UI component. `open-work.md` says "no route exists yet" — this is outdated. |
+| ~~Customer artwork upload page (post-purchase)~~ | ✅ **COMPLETE** — closed 2026-04-11 | `app/routes/apps.insignia.upload.tsx` is fully implemented with loader, action, and UI component. `open-work.md` updated to move this to Resolved. |
 
 ### 5.2 Items from `docs/superpowers/plans/`
 
@@ -325,7 +325,7 @@ These issues would prevent the app from being deployed or used correctly:
 |---|---------|----------|--------|
 | 1 | ~~**Shopify CLI not installed**~~ | Host machine | ✅ **RESOLVED** — v3.93.2 installed |
 | 2 | ~~**No `.env` file**~~ | Project root | ✅ **RESOLVED** — `.env` created; DATABASE_URL + SHOPIFY_API_KEY set. **SHOPIFY_API_SECRET still empty** — requires Shopify Partner Dashboard credentials. |
-| 3 | **API version mismatch: `October25` vs `2026-04`** | `app/shopify.server.ts:13,28` | **OPEN** — All Admin GraphQL calls use 2025-10 API. Change `ApiVersion.October25` → `ApiVersion.April26`. |
+| 3 | ~~**API version mismatch: `October25` vs `2026-04`**~~ | `app/shopify.server.ts:13,28` | ✅ **RESOLVED** — Changed to `ApiVersion.April26`. All Admin GraphQL calls now use 2026-04 API. |
 | 4 | **Order webhooks not registered** | `shopify.app.toml:27–35` | **OPEN** — `orders/create` and `orders/paid` subscriptions commented out. Requires protected customer data approval in Partner Dashboard. |
 | 5 | ~~**Prisma client not generated**~~ | `node_modules/.prisma/client/` | ✅ **RESOLVED** — `prisma generate` run; TypeScript: 0 errors. |
 
@@ -339,13 +339,11 @@ Ordered by priority (blockers first, then technical debt, then features):
 
 Blockers 1, 2, 5 are resolved. The only remaining dev-environment blocker is `SHOPIFY_API_SECRET` in `.env`. This must come from the Shopify Partner Dashboard for app `8248a0f27cfcd0613b21d5e75cddebc8`. Once set, run `npm run dev` to boot the dev server.
 
-### Priority 2 — Fix API version
+### ~~Priority 2 — Fix API version~~ ✅ DONE
 
 **File**: `app/shopify.server.ts:13,28`
 
-Change `ApiVersion.October25` → `ApiVersion.April26` (or the string `"2026-04"` if the enum value is unavailable).
-
-Suggested command: `/fix app/shopify.server.ts: change ApiVersion.October25 to ApiVersion.April26 to match shopify.app.toml api_version = "2026-04"`
+Changed `ApiVersion.October25` → `ApiVersion.April26`. Both the `apiVersion` config and exported constant now use the correct 2026-04 API version.
 
 ### Priority 3 — Enable order webhook subscriptions
 
@@ -368,17 +366,15 @@ Suggested command: `/fix Prisma v6 type compatibility: replace Prisma.DbNull wit
 
 Removed unused `Select` import and `PERSPECTIVE_OPTIONS` constant from `app/routes/app.products.$id._index.tsx`. ESLint now reports 0 errors.
 
-### Priority 6 — Add rate limiting to cart-confirm
+### ~~Priority 6 — Add rate limiting to cart-confirm~~ ✅ DONE
 
 **File**: `app/routes/apps.insignia.cart-confirm.tsx`
 
-Import and call `checkRateLimit(shop.id)` after shop lookup, matching the pattern in all other storefront routes.
+`checkRateLimit(shop.id)` added after shop lookup, matching the pattern in all other storefront routes.
 
-Suggested command: `/fix apps.insignia.cart-confirm.tsx: add checkRateLimit call after shop lookup`
+### ~~Priority 7 — Add CORS OPTIONS preflight handling~~ ✅ DONE
 
-### Priority 7 — Add CORS OPTIONS preflight handling
-
-All storefront routes (`apps.insignia.*`) need to handle `OPTIONS` requests with proper `Access-Control-Allow-Methods` and `Access-Control-Allow-Headers` headers, or add a shared middleware via the layout route `apps.insignia.tsx`.
+OPTIONS handling added to all storefront routes (`apps.insignia.*`) with proper `Access-Control-Allow-Methods` and `Access-Control-Allow-Headers` headers.
 
 ### Priority 8 — Reconcile upload endpoint with spec OR update spec
 
@@ -388,31 +384,29 @@ The current server-side upload (`apps.insignia.uploads.tsx`) diverges from the s
 
 Verify which flow `CustomizationModal.tsx` actually calls before deciding.
 
-### Priority 9 — Add DB-level geometry snapshot immutability
+### ~~Priority 9 — Add DB-level geometry snapshot immutability~~ ✅ DONE
 
-The spec (`docs/core/geometry-snapshot-specification.md`) calls for a Postgres `BEFORE UPDATE` trigger to enforce snapshot immutability. Add a raw SQL migration:
+Raw SQL migration added with a Postgres `BEFORE UPDATE` trigger on `OrderLineCustomization` that raises an exception if `placementGeometrySnapshotByViewId` is modified after being set.
 
-```sql
-CREATE FUNCTION prevent_geometry_snapshot_update()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF OLD."placementGeometrySnapshotByViewId" IS DISTINCT FROM NEW."placementGeometrySnapshotByViewId" 
-     AND OLD."placementGeometrySnapshotByViewId" IS NOT NULL THEN
-    RAISE EXCEPTION 'placementGeometrySnapshotByViewId is immutable';
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
+### ~~Priority 10 — Update plan tracking~~ ✅ DONE
 
-CREATE TRIGGER immutable_geometry_snapshot
-BEFORE UPDATE ON "OrderLineCustomization"
-FOR EACH ROW EXECUTE FUNCTION prevent_geometry_snapshot_update();
-```
-
-### Priority 10 — Update plan tracking
-
-Mark completed tasks in:
+Marked completed tasks in:
 - `docs/superpowers/plans/2026-04-10-v2.1-view-editor-rework.md`
 - `docs/superpowers/plans/2026-04-11-image-manager-color-cards.md`
 
-Update `docs/notes/open-work.md` to close the customer upload page item.
+Updated `docs/notes/open-work.md` to close the customer upload page item.
+
+---
+
+## 8. Storefront E2E
+
+**Status**: Not tested — requires a running dev server with `SHOPIFY_API_SECRET` configured and a product with decoration method + placements set up.
+
+**Seed data required**:
+1. Create a decoration method (e.g. "Embroidery") via `/app/methods`
+2. Create a product config with at least one view and one placement zone
+3. Assign a fee product variant pool to the method
+4. Navigate to the storefront product page with the `?variant=<id>` param
+5. Click "Customize" to open the modal
+
+**To run**: Once dev server is running, use Playwright MCP to walk: product page → Customize button → modal loads → logo upload → placement → size → review → Add to Cart.

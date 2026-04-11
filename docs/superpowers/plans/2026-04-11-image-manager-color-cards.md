@@ -1,6 +1,6 @@
 # Image Manager — Color Cards Redesign Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Replace the tab-per-view image manager UI with a color-card layout where each color group shows all its view thumbnails inline, eliminating horizontal scroll for N views and matching the merchant's color-first mental model.
 
@@ -57,7 +57,7 @@ Key changes:
 **Files:**
 - Modify: `app/routes/app.products.$id.images.tsx:206-316`
 
-- [ ] **Step 1: Update Polaris imports — remove Tabs, add Divider**
+- [x] **Step 1: Update Polaris imports — remove Tabs, add Divider**
 
 In the imports block (lines 206-230), make these changes:
 
@@ -89,7 +89,7 @@ import type { ImageCell } from "../lib/services/image-manager.server";
 import { ImageTray, type TrayImage } from "../components/ImageTray";
 ```
 
-- [ ] **Step 2: Remove tab-related state and computed values**
+- [x] **Step 2: Remove tab-related state and computed values**
 
 In the component function (starting line 258), make these changes:
 
@@ -116,13 +116,13 @@ In the component function (starting line 258), make these changes:
 // DELETE: const tabItems = views.map(...)
 ```
 
-- [ ] **Step 3: Run typecheck to confirm tab references break**
+- [x] **Step 3: Run typecheck to confirm tab references break**
 
 Run: `npm run typecheck`
 
 Expected: TypeScript errors pointing to remaining references to `activeTabIndex`, `setActiveTabIndex`, `tabItems`, `activeCells` in the render JSX. These will be fixed in Task 2.
 
-- [ ] **Step 4: Commit state changes**
+- [x] **Step 4: Commit state changes**
 
 ```bash
 git add app/routes/app.products.\$id.images.tsx
@@ -138,7 +138,7 @@ git commit -m "refactor(image-manager): remove tab state, prepare for color card
 
 This is the main change. Replace the entire render return (from `return (` at line 646 to the closing `}` of the component) with the new color-card layout. The handler functions above line 646 are **completely unchanged**.
 
-- [ ] **Step 1: Replace the render return with color card layout**
+- [x] **Step 1: Replace the render return with color card layout**
 
 Replace everything from `return (` (line 646) through the end of the component (line 982) with the following. This is the complete new render section:
 
@@ -633,7 +633,7 @@ Replace everything from `return (` (line 646) through the end of the component (
 - The `handleCellDrop` function is unchanged — it still uses `draggedTrayImage` from state.
 - All file input refs, upload handlers, and batched save logic work identically.
 
-- [ ] **Step 2: Fix the handleApplyToAllEmpty reference**
+- [x] **Step 2: Fix the handleApplyToAllEmpty reference**
 
 The existing `handleApplyToAllEmpty` handler on line ~463 filters `activeCells` which no longer exists. Update it to accept cells as a parameter or filter from `cells` directly.
 
@@ -659,13 +659,13 @@ Also update the dependency array at the end of this useCallback — change `acti
   }, [cells, config.id, revalidator]);
 ```
 
-- [ ] **Step 3: Run typecheck**
+- [x] **Step 3: Run typecheck**
 
 Run: `npm run typecheck`
 
 Expected: PASS (no errors). If there are remaining references to removed variables (`activeTabIndex`, `tabItems`, `activeCells`, `activeViewId`), find and remove them.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add app/routes/app.products.\$id.images.tsx
@@ -685,7 +685,7 @@ drag-drop, and copy handlers preserved unchanged."
 
 The tray becomes a compact single-row inline strip instead of a collapsible paginated section.
 
-- [ ] **Step 1: Rewrite ImageTray component**
+- [x] **Step 1: Rewrite ImageTray component**
 
 Replace the entire content of `app/components/ImageTray.tsx` with:
 
@@ -802,13 +802,13 @@ export function ImageTray({
 }
 ```
 
-- [ ] **Step 2: Run typecheck**
+- [x] **Step 2: Run typecheck**
 
 Run: `npm run typecheck`
 
 Expected: PASS. The `TrayImage` type and `ImageTray` export names are unchanged, so all existing imports work.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add app/components/ImageTray.tsx
@@ -825,7 +825,7 @@ in a single row with drag-to-assign and tap-to-select."
 **Files:**
 - Possibly modify: `app/routes/app.products.$id.images.tsx` (cleanup)
 
-- [ ] **Step 1: Run full typecheck**
+- [x] **Step 1: Run full typecheck**
 
 Run: `npm run typecheck`
 
@@ -834,7 +834,7 @@ Expected: PASS. If there are errors, fix them. Common issues:
 - Missing Polaris component imports (check `Divider` is imported but used, or remove if unused)
 - Type mismatches in the new JSX
 
-- [ ] **Step 2: Run lint**
+- [x] **Step 2: Run lint**
 
 Run: `npm run lint`
 
@@ -843,7 +843,7 @@ Expected: PASS or only pre-existing warnings. Fix any new errors. Common issues:
 - `@typescript-eslint/no-explicit-any` on `window.shopify`
 - React hook dependency warnings
 
-- [ ] **Step 3: Commit fixes if any**
+- [x] **Step 3: Commit fixes if any**
 
 ```bash
 git add -A
@@ -858,13 +858,13 @@ git commit -m "fix(image-manager): resolve typecheck and lint issues"
 
 **Prerequisites:** The Shopify dev server must be running (`npm run dev`). A product setup with views and linked Shopify product must exist.
 
-- [ ] **Step 1: Navigate to Image Manager page**
+- [x] **Step 1: Navigate to Image Manager page**
 
 1. Open the Shopify admin in the browser
 2. Navigate to an existing product setup (e.g., via the app dashboard → Products → click a product)
 3. Click "Manage Images" button in the sidebar
 
-- [ ] **Step 2: Verify the color card layout**
+- [x] **Step 2: Verify the color card layout**
 
 Check these elements are present and correct:
 - **Progress card** at the top with "X of Y images assigned", progress bar, and per-view badges (e.g., "Front 5/5", "Back 2/5")
@@ -876,7 +876,7 @@ Check these elements are present and correct:
 - **"Import from Shopify"** button in the page header
 - **Empty states** for no views / no linked product work correctly
 
-- [ ] **Step 3: Verify interactions**
+- [x] **Step 3: Verify interactions**
 
 Test each interaction:
 1. **Click an empty cell** → file picker opens
@@ -888,7 +888,7 @@ Test each interaction:
 7. **Drag from tray to cell** → image assigns to that cell
 8. **Tap tray image then click cell** → same as drag (tap-to-select flow)
 
-- [ ] **Step 4: Take screenshots for the record**
+- [x] **Step 4: Take screenshots for the record**
 
 Take a screenshot (JPG format) of:
 1. The partially-filled state showing multiple color cards
@@ -896,7 +896,7 @@ Take a screenshot (JPG format) of:
 
 Save to project root or verify visually.
 
-- [ ] **Step 5: Final commit if any visual fixes needed**
+- [x] **Step 5: Final commit if any visual fixes needed**
 
 If visual issues were found and fixed in previous steps:
 ```bash

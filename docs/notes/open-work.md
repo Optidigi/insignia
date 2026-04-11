@@ -22,13 +22,9 @@ Rules:
 - **Decision needed**: Keep stepped tiers with better cards, add fixed-size-per-zone mode, or both?
 - See: memory file `project_v21_view_editor_notes.md`
 
-### Customer artwork upload page (post-purchase)
-- **Decision needed**: Build a dedicated route for customers to upload logos after purchase?
-- Designed in `storefront-modal-v2.pen` but no route exists yet.
-- Tracked in: `docs/superpowers/specs/2026-04-10-v3-future-features.md` (item 5)
-
 ## Resolved (kept for history)
 
 - ~~SVG allow-list strictness~~ — Implemented in `docs/core/svg-upload-safety.md` with DOMPurify.
 - ~~End-to-end MVP flow~~ — Implemented: dashboard saves geometry, storefront calls /prepare, backend enforces configHash/pricingVersion.
 - ~~Artwork intake channel~~ — Customer upload is deferred to V3 (item 5 in v3-future-features.md).
+- ~~Customer artwork upload page~~ — Route `app/routes/apps.insignia.upload.tsx` is fully implemented (post-purchase artwork upload with loader, action, and UI). Closed 2026-04-11.
