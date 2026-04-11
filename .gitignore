@@ -15,6 +15,7 @@ database.sqlite
 
 .env
 .env.*
+!deploy/.env.example
 
 package-lock.json
 yarn.lock
