@@ -9,11 +9,13 @@ import type { ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import { cartConfirm } from "../lib/services/storefront-cart-confirm.server";
+import { checkRateLimit } from "../lib/storefront/rate-limit.server";
 import { AppError, ErrorCodes } from "../lib/errors.server";
 
-function jsonResponse(data: unknown, status = 200, origin?: string): Response {
-  const headers: HeadersInit = { "Content-Type": "application/json" };
+function jsonResponse(data: unknown, status = 200, origin?: string, extra?: Record<string, string>): Response {
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (origin) headers["Access-Control-Allow-Origin"] = origin;
+  if (extra) Object.assign(headers, extra);
   return new Response(JSON.stringify(data), { status, headers });
 }
 
@@ -40,6 +42,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   });
   if (!shop) {
     return jsonResponse({ error: { code: "NOT_FOUND", message: "Shop not found" } }, 404, origin);
+  }
+
+  const rateLimit = checkRateLimit(shop.id);
+  if (!rateLimit.allowed) {
+    return jsonResponse(
+      { error: { code: "RATE_LIMITED", message: "Too many requests. Please slow down." } },
+      429,
+      origin,
+      { "Retry-After": String(rateLimit.retryAfter) }
+    );
   }
 
   let body: { customizationId?: string };
