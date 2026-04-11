@@ -33,7 +33,6 @@ import {
   Box,
   ResourceList,
   ResourceItem,
-  Select,
   Icon,
 } from "@shopify/polaris";
 import { AlertCircleIcon, CalculatorIcon, CheckCircleIcon, ImageIcon, ChevronRightIcon } from "@shopify/polaris-icons";
@@ -53,14 +52,6 @@ import { createView, deleteView, CreateViewSchema } from "../lib/services/views.
 import { createPlacement, deletePlacement, CreatePlacementSchema } from "../lib/services/placements.server";
 import { handleError, validateOrThrow, AppError } from "../lib/errors.server";
 
-const PERSPECTIVE_OPTIONS = [
-  { label: "Front", value: "front" },
-  { label: "Back", value: "back" },
-  { label: "Left", value: "left" },
-  { label: "Right", value: "right" },
-  { label: "Side", value: "side" },
-  { label: "Custom", value: "custom" },
-];
 
 // ============================================================================
 // Loader
