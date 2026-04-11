@@ -1,8 +1,10 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
+# TODO: Run `npx shopify app config link` after creating the production app
+# in Shopify Partner Dashboard to update client_id to the production app's ID.
 client_id = "8248a0f27cfcd0613b21d5e75cddebc8"
 name = "Insignia Print-on-Demand App"
-application_url = "https://shopify.dev/apps/default-app-home"
+application_url = "https://insignia.optidigi.nl"
 embedded = true
 
 [build]
@@ -24,16 +26,6 @@ api_version = "2026-04"
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
-  # NOTE: Order webhooks require "protected customer data" approval
-  # Uncomment after approval in Partner Dashboard:
-  # https://shopify.dev/docs/apps/launch/protected-customer-data
-  # [[webhooks.subscriptions]]
-  # topics = [ "orders/create" ]
-  # uri = "/webhooks/orders/create"
-
-  # [[webhooks.subscriptions]]
-  # topics = [ "orders/paid" ]
-  # uri = "/webhooks/orders/paid"
 
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
@@ -41,9 +33,9 @@ api_version = "2026-04"
 scopes = "write_products,read_products,read_orders,write_orders,write_app_proxy,write_publications,write_inventory"
 
 [auth]
-redirect_urls = [ "https://shopify.dev/apps/default-app-home/api/auth" ]
+redirect_urls = ["https://insignia.optidigi.nl/api/auth"]
 
 [app_proxy]
-url = "/apps/insignia"
+url = "https://insignia.optidigi.nl"
 subpath = "insignia"
 prefix = "apps"
