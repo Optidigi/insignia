@@ -1,0 +1,482 @@
+// Prisma schema for Insignia Shopify App
+// Uses PostgreSQL with JSONB for complex geometry storage
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// Shopify Session (from template - required for auth)
+// ============================================================================
+
+model Session {
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+
+  @@index([shop])
+}
+
+// ============================================================================
+// Shop (Store installation record)
+// ============================================================================
+
+model Shop {
+  id                String   @id @default(uuid())
+  shopifyDomain     String   @unique // e.g., "store.myshopify.com"
+  accessToken       String   // Encrypted at rest
+  currencyCode      String   @default("USD") // ISO 4217 currency code from Shopify
+  installedAt       DateTime @default(now())
+  uninstalledAt     DateTime?
+  
+  // Relations
+  decorationMethods      DecorationMethod[]
+  productConfigs         ProductConfig[]
+  merchantSettings       MerchantSettings?
+  variantSlots           VariantSlot[]
+  customizationConfigs   CustomizationConfig[]
+  webhookEvents          WebhookEvent[]
+  logoAssets             LogoAsset[]
+  uploadSessions         StorefrontUploadSession[]
+  customizationDrafts    CustomizationDraft[]
+  storefrontTranslations StorefrontTranslation[]
+
+  @@index([shopifyDomain])
+}
+
+// ============================================================================
+// CustomizationDraft (storefront draft before prepare)
+// ============================================================================
+
+enum ArtworkStatusDraft {
+  PROVIDED
+  PENDING_CUSTOMER
+}
+
+model CustomizationDraft {
+  id                        String              @id @default(uuid())
+  shopId                    String
+  productId                 String              // Shopify product GID
+  variantId                 String              // Shopify variant GID
+  productConfigId           String
+  methodId                  String
+  placements                Json                // [{ placementId, stepIndex }]
+  logoAssetIdsByPlacementId Json                // { [placementId]: logoAssetId | null }
+  artworkStatus             ArtworkStatusDraft  @default(PROVIDED)
+  unitPriceCents            Int?                // set after price call (base + fee)
+  feeCents                  Int?                // placement/customization fee only
+  configHash                String?             // for variant pool aggregation
+  pricingVersion            String?
+  createdAt                 DateTime            @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// StorefrontUploadSession (temporary; for POST /apps/insignia/uploads)
+// ============================================================================
+
+model StorefrontUploadSession {
+  id           String   @id @default(uuid())
+  shopId       String
+  storageKey   String   // R2 key where client PUTs the file
+  contentType  String
+  fileName     String?
+  sizeBytes    Int?
+  createdAt    DateTime @default(now())
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+  @@index([createdAt])
+}
+
+// ============================================================================
+// DecorationMethod
+// ============================================================================
+
+model DecorationMethod {
+  id                  String   @id @default(uuid())
+  shopId              String
+  name                String
+  basePriceCents      Int      @default(0)
+  description         String?              // NEW: merchant-facing notes
+  customerName        String?              // NEW: storefront display name
+  customerDescription String?              // NEW: storefront method selector text
+  artworkConstraints  Json?               // NEW: { fileTypes: string[], maxColors: number, minDpi: number }
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  // Relations
+  shop              Shop                  @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  productConfigs    ProductConfigMethod[]
+  variantSlots      VariantSlot[]
+  customizationConfigs CustomizationConfig[]
+
+  @@unique([shopId, name])
+  @@index([shopId])
+}
+
+// ============================================================================
+// ProductConfig
+// ============================================================================
+
+model ProductConfig {
+  id               String   @id @default(uuid())
+  shopId           String
+  name             String
+  linkedProductIds String[] // Shopify product GIDs
+  presetKey        String?  // NEW: "t-shirt", "hoodie", "polo", "cap", or null if no preset was applied
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  shop                    Shop                      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  allowedMethods          ProductConfigMethod[]
+  views                   ProductView[]
+  placements              PlacementDefinition[]
+  variantViewConfigurations VariantViewConfiguration[]
+  orderLineCustomizations OrderLineCustomization[]
+
+  @@index([shopId])
+}
+
+// Many-to-many: ProductConfig <-> DecorationMethod
+model ProductConfigMethod {
+  productConfigId    String
+  decorationMethodId String
+
+  productConfig    ProductConfig    @relation(fields: [productConfigId], references: [id], onDelete: Cascade)
+  decorationMethod DecorationMethod @relation(fields: [decorationMethodId], references: [id], onDelete: Cascade)
+
+  @@id([productConfigId, decorationMethodId])
+}
+
+// ============================================================================
+// ProductView
+// ============================================================================
+
+enum ViewPerspective {
+  front
+  back
+  left
+  right
+  side
+  custom
+}
+
+model ProductView {
+  id              String          @id @default(uuid())
+  productConfigId String
+  perspective     ViewPerspective
+  name            String?
+  displayOrder    Int             @default(0)
+  defaultImageKey String?         // NEW: R2 key for view-level default image
+  placementGeometry Json?         // NEW: shared zone geometry, overridable per-variant
+  sharedZones     Boolean         @default(true)  // geometry shared across variants by default
+  calibrationPxPerCm  Float?   // pixels-per-cm from ruler tool; null = not calibrated
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relations
+  productConfig             ProductConfig              @relation(fields: [productConfigId], references: [id], onDelete: Cascade)
+  variantViewConfigurations VariantViewConfiguration[]
+
+  @@index([productConfigId])
+}
+
+// ============================================================================
+// VariantViewConfiguration
+// ============================================================================
+
+model VariantViewConfiguration {
+  id              String  @id @default(uuid())
+  productConfigId String
+  variantId       String  // Shopify variant GID
+  viewId          String
+  imageUrl        String? // R2 URL
+  
+  // JSONB: { [placementId: string]: PlacementGeometry | null }
+  // PlacementGeometry = { centerXPercent, centerYPercent, maxWidthPercent }
+  placementGeometry Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  productConfig ProductConfig @relation(fields: [productConfigId], references: [id], onDelete: Cascade)
+  productView   ProductView   @relation(fields: [viewId], references: [id], onDelete: Cascade)
+
+  @@unique([productConfigId, variantId, viewId])
+  @@index([productConfigId])
+  @@index([variantId])
+  @@index([productConfigId, viewId])  // NEW: efficient batch view queries
+}
+
+// ============================================================================
+// PlacementDefinition
+// ============================================================================
+
+model PlacementDefinition {
+  id                      String  @id @default(uuid())
+  productConfigId         String
+  name                    String
+  basePriceAdjustmentCents Int     @default(0)
+  hidePriceWhenZero       Boolean @default(false)
+  defaultStepIndex        Int     @default(0)
+  displayOrder            Int     @default(0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  // Relations
+  productConfig ProductConfig   @relation(fields: [productConfigId], references: [id], onDelete: Cascade)
+  steps         PlacementStep[]
+
+  @@index([productConfigId])
+}
+
+// ============================================================================
+// PlacementStep
+// ============================================================================
+
+model PlacementStep {
+  id                   String @id @default(uuid())
+  placementDefinitionId String
+  label                String
+  priceAdjustmentCents Int    @default(0)
+  scaleFactor          Float  @default(1.0)
+  displayOrder         Int    @default(0)
+
+  // Relations
+  placementDefinition PlacementDefinition @relation(fields: [placementDefinitionId], references: [id], onDelete: Cascade)
+
+  @@index([placementDefinitionId])
+}
+
+// ============================================================================
+// MerchantSettings
+// ============================================================================
+
+model MerchantSettings {
+  id                      String    @id @default(uuid())
+  shopId                  String    @unique
+  placeholderLogoImageUrl String?
+  setupGuideDismissedAt   DateTime? // NEW
+  emailReminderTemplate   String?   // Custom email template for artwork reminders
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  // Relations
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+}
+
+// ============================================================================
+// LogoAsset
+// ============================================================================
+
+enum LogoAssetKind {
+  buyer_upload
+  merchant_placeholder
+}
+
+model LogoAsset {
+  id              String        @id @default(uuid())
+  shopId          String
+  kind            LogoAssetKind
+  sanitizedSvgUrl String?
+  previewPngUrl   String        // Always present for rendering
+  originalFileName String?
+  fileSizeBytes   Int?
+  createdAt       DateTime      @default(now())
+
+  // Relations
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId])
+}
+
+// ============================================================================
+// VariantSlot (for non-Plus pricing)
+// ============================================================================
+
+enum VariantSlotState {
+  FREE
+  RESERVED
+  IN_CART
+}
+
+model VariantSlot {
+  id               String           @id @default(uuid())
+  shopId           String
+  methodId         String
+  shopifyProductId String           // Shopify product GID (the slot product)
+  shopifyVariantId String           // Shopify variant GID
+  state            VariantSlotState @default(FREE)
+  reservedAt       DateTime?
+  reservedUntil    DateTime?
+  inCartUntil      DateTime?
+  currentConfigId  String?          @unique
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  // Relations
+  shop              Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  decorationMethod  DecorationMethod     @relation(fields: [methodId], references: [id], onDelete: Cascade)
+  currentConfig     CustomizationConfig? @relation("SlotToConfig")
+
+  @@unique([shopId, shopifyVariantId])
+  @@index([shopId, methodId, state])
+  @@index([state, reservedUntil])
+  @@index([state, inCartUntil])
+}
+
+// ============================================================================
+// CustomizationConfig (priced configuration for variant pool)
+// ============================================================================
+
+enum CustomizationConfigState {
+  RESERVED
+  IN_CART
+  ORDERED
+  PURCHASED
+  EXPIRED
+}
+
+model CustomizationConfig {
+  id                    String                   @id @default(uuid())
+  shopId                String
+  methodId              String
+  configHash            String                   // Hash of configuration for aggregation
+  pricingVersion        String                   // Version of pricing rules used
+  unitPriceCents        Int
+  feeCents              Int                      @default(0)
+  state                 CustomizationConfigState @default(RESERVED)
+  customizationDraftId  String?                  // Draft id from POST customizations (for cart-confirm lookup)
+  
+  // Timestamps
+  reservedAt     DateTime                 @default(now())
+  inCartAt       DateTime?
+  orderedAt      DateTime?
+  purchasedAt    DateTime?
+  expiredAt      DateTime?
+  
+  // Relations
+  shop              Shop                     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  decorationMethod  DecorationMethod         @relation(fields: [methodId], references: [id], onDelete: Cascade)
+  variantSlot       VariantSlot?             @relation("SlotToConfig", fields: [variantSlotId], references: [id])
+  variantSlotId     String?                  @unique
+  orderLineCustomizations OrderLineCustomization[]
+
+  @@index([shopId, configHash])
+  @@index([state])
+  @@index([customizationDraftId])
+}
+
+// ============================================================================
+// OrderLineCustomization
+// ============================================================================
+
+enum ArtworkStatus {
+  PROVIDED
+  PENDING_CUSTOMER
+}
+
+enum ProductionStatus {
+  ARTWORK_PENDING
+  ARTWORK_PROVIDED
+  IN_PRODUCTION
+  QUALITY_CHECK
+  SHIPPED
+}
+
+model OrderLineCustomization {
+  id                              String        @id @default(uuid())
+  shopifyOrderId                  String        // Shopify Order GID
+  shopifyLineId                   String        // Shopify Line Item GID
+  productConfigId                 String
+  variantId                       String        // Shopify variant GID
+  customizationConfigId           String?
+  artworkStatus                   ArtworkStatus    @default(PROVIDED)
+  productionStatus                ProductionStatus @default(ARTWORK_PENDING)
+
+  // JSONB: { [placementId: string]: string | null } - maps placement to logo asset ID
+  logoAssetIdsByPlacementId       Json?
+  
+  // JSONB: Immutable snapshot of placement geometry at order creation
+  // { [viewId: string]: { [placementId: string]: PlacementGeometry | null } | null }
+  placementGeometrySnapshotByViewId Json?
+  
+  // Flag to indicate if we should fall back to live config (for legacy orders)
+  useLiveConfigFallback           Boolean       @default(false)
+
+  orderStatusUrl                  String?       // NEW: Shopify customer-facing order status page URL
+
+  createdAt                       DateTime      @default(now())
+  updatedAt                       DateTime      @updatedAt
+
+  // Relations
+  productConfig       ProductConfig        @relation(fields: [productConfigId], references: [id])
+  customizationConfig CustomizationConfig? @relation(fields: [customizationConfigId], references: [id])
+
+  @@unique([shopifyOrderId, shopifyLineId])
+  @@index([shopifyOrderId])
+  @@index([productConfigId])
+}
+
+// ============================================================================
+// WebhookEvent (for idempotency)
+// ============================================================================
+
+model WebhookEvent {
+  id         String    @id @default(uuid())
+  shopId     String
+  eventId    String    // X-Shopify-Event-Id
+  topic      String    // X-Shopify-Topic
+  receivedAt DateTime  @default(now())
+  processedAt DateTime?
+
+  // Relations
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId])
+  @@index([shopId, topic])
+}
+
+// ============================================================================
+// StorefrontTranslation (merchant overrides for storefront modal UI strings)
+// ============================================================================
+
+model StorefrontTranslation {
+  id       String @id @default(uuid())
+  shopId   String
+  locale   String // BCP-47 language code, e.g. "nl", "de", "fr"
+  key      String // Translation key, e.g. "upload.title"
+  value    String // The translated/overridden text
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopId, locale, key])
+  @@index([shopId, locale])
+}

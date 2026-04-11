@@ -1,0 +1,8 @@
+{
+  "name": "Insignia Customize",
+  "settings": {
+    "button_label": {
+      "label": "Button label"
+    }
+  }
+}

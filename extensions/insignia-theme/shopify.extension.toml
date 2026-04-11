@@ -1,0 +1,11 @@
+# Theme app extension for Insignia — Customize button on product page
+# https://shopify.dev/docs/apps/build/online-store/theme-app-extensions/configuration
+
+api_version = "2024-01"
+
+[[extensions]]
+uid = "efb3382c-5990-9a99-ec18-cece87843d6cd2ff4f5d"
+type = "theme"
+name = "Insignia Customize"
+handle = "insignia-customize"
+description = "Add a Customize button to product pages so customers can open the logo placement flow."

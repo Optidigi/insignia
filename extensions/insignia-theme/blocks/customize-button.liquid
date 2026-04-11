@@ -1,0 +1,196 @@
+{% comment %}
+  Insignia Customize — app block for product page.
+  Add this block to the main product section in the theme editor.
+  Opens the customization modal at /apps/insignia/modal (App Proxy).
+
+  The button inherits the theme's button styling via the standard Shopify
+  button class, so it matches Add to Cart and other theme buttons.
+{% endcomment %}
+
+{% if product and product.selected_or_first_available_variant %}
+  {% assign product_gid = 'gid://shopify/Product/' | append: product.id %}
+  {% assign variant_gid = 'gid://shopify/ProductVariant/' | append: product.selected_or_first_available_variant.id %}
+  {% assign modal_url = '/apps/insignia/modal?productId=' | append: product_gid | append: '&variantId=' | append: variant_gid %}
+
+  <div class="insignia-customize-block" {{ block.shopify_attributes }}>
+    <a
+      href="{{ modal_url }}"
+      class="insignia-customize-button {% if block.settings.use_theme_style %}button btn{% endif %} {{ block.settings.custom_class }}"
+      data-insignia-modal
+      data-product-id="{{ product_gid }}"
+      data-variant-id="{{ variant_gid }}"
+      {% if block.settings.custom_id != blank %}id="{{ block.settings.custom_id }}"{% endif %}
+    >
+      {{ block.settings.button_label }}
+    </a>
+  </div>
+
+  <style>
+    .insignia-customize-block {
+      margin: {{ block.settings.margin_top }}px 0 {{ block.settings.margin_bottom }}px;
+    }
+
+    {% if block.settings.use_theme_style %}
+      /* Inherit theme button styles — matches Add to Cart */
+      .insignia-customize-button.button {
+        display: inline-block;
+        text-decoration: none;
+        text-align: center;
+        cursor: pointer;
+        width: {% if block.settings.full_width %}100%{% else %}auto{% endif %};
+      }
+    {% else %}
+      /* Custom Insignia styling */
+      .insignia-customize-button {
+        display: inline-block;
+        padding: {{ block.settings.padding_y }}px {{ block.settings.padding_x }}px;
+        background: {{ block.settings.background_color }};
+        color: {{ block.settings.text_color }};
+        text-decoration: none;
+        border-radius: {{ block.settings.border_radius }}px;
+        font-weight: 600;
+        font-size: {{ block.settings.font_size }}px;
+        border: none;
+        cursor: pointer;
+        transition: opacity 150ms ease;
+        width: {% if block.settings.full_width %}100%{% else %}auto{% endif %};
+        text-align: center;
+      }
+      .insignia-customize-button:hover {
+        opacity: 0.85;
+        color: {{ block.settings.text_color }};
+      }
+    {% endif %}
+  </style>
+{% endif %}
+
+{% schema %}
+{
+  "name": "Insignia Customize",
+  "target": "section",
+  "enabled_on": {
+    "templates": ["product"]
+  },
+  "settings": [
+    {
+      "type": "text",
+      "id": "button_label",
+      "label": "Button label",
+      "default": "Customize"
+    },
+    {
+      "type": "checkbox",
+      "id": "use_theme_style",
+      "label": "Use theme button style",
+      "default": true,
+      "info": "When enabled, the button inherits your theme's button styling to match Add to Cart and other buttons."
+    },
+    {
+      "type": "checkbox",
+      "id": "full_width",
+      "label": "Full width",
+      "default": true
+    },
+    {
+      "type": "header",
+      "content": "Spacing"
+    },
+    {
+      "type": "range",
+      "id": "margin_top",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "label": "Top margin",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "margin_bottom",
+      "min": 0,
+      "max": 40,
+      "step": 4,
+      "unit": "px",
+      "label": "Bottom margin",
+      "default": 8
+    },
+    {
+      "type": "header",
+      "content": "Custom style"
+    },
+    {
+      "type": "paragraph",
+      "content": "These settings only apply when 'Use theme button style' is disabled."
+    },
+    {
+      "type": "color",
+      "id": "background_color",
+      "label": "Background color",
+      "default": "#2c6ecb"
+    },
+    {
+      "type": "color",
+      "id": "text_color",
+      "label": "Text color",
+      "default": "#ffffff"
+    },
+    {
+      "type": "range",
+      "id": "border_radius",
+      "min": 0,
+      "max": 40,
+      "step": 2,
+      "unit": "px",
+      "label": "Border radius",
+      "default": 8
+    },
+    {
+      "type": "range",
+      "id": "font_size",
+      "min": 12,
+      "max": 24,
+      "step": 1,
+      "unit": "px",
+      "label": "Font size",
+      "default": 16
+    },
+    {
+      "type": "range",
+      "id": "padding_y",
+      "min": 4,
+      "max": 24,
+      "step": 2,
+      "unit": "px",
+      "label": "Vertical padding",
+      "default": 12
+    },
+    {
+      "type": "range",
+      "id": "padding_x",
+      "min": 8,
+      "max": 48,
+      "step": 4,
+      "unit": "px",
+      "label": "Horizontal padding",
+      "default": 24
+    },
+    {
+      "type": "header",
+      "content": "Advanced"
+    },
+    {
+      "type": "text",
+      "id": "custom_id",
+      "label": "Custom HTML ID",
+      "info": "Optional ID attribute for CSS targeting"
+    },
+    {
+      "type": "text",
+      "id": "custom_class",
+      "label": "Custom CSS class",
+      "info": "Optional additional CSS class"
+    }
+  ]
+}
+{% endschema %}

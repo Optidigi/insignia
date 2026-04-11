@@ -1,0 +1,34 @@
+{% comment %}
+  Insignia Fee Product Redirect — app embed block (safety net).
+  Fee products use UNLISTED status so they're automatically hidden from
+  collections, search, and recommendations on all themes. This block is
+  an extra safeguard: if someone navigates directly to a fee product URL,
+  redirect them to the homepage.
+{% endcomment %}
+
+{% if template.name == 'product' and product.tags contains 'insignia-fee' %}
+  <script>
+    window.location.replace('/');
+  </script>
+  <noscript>
+    <meta http-equiv="refresh" content="0;url=/" />
+  </noscript>
+{% endif %}
+
+<script>
+  (function() {
+    // JS fallback: redirect from any fee product URL even if Liquid tag context
+    // isn't available (e.g. custom templates that don't expose product tags).
+    if (/\/products\/(insignia-fee|customization-)/i.test(window.location.pathname)) {
+      window.location.replace('/');
+    }
+  })();
+</script>
+
+{% schema %}
+{
+  "name": "Insignia Fee Redirect",
+  "target": "head",
+  "settings": []
+}
+{% endschema %}
