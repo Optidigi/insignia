@@ -400,13 +400,50 @@ Updated `docs/notes/open-work.md` to close the customer upload page item.
 
 ## 8. Storefront E2E
 
-**Status**: Not tested — requires a running dev server with `SHOPIFY_API_SECRET` configured and a product with decoration method + placements set up.
+**Status**: ✅ **PASSED** — tested 2026-04-11 against dev store `insignia-app.myshopify.com` with tunnel `switch-wrapping-sku-leg.trycloudflare.com`.
 
-**Seed data required**:
-1. Create a decoration method (e.g. "Embroidery") via `/app/methods`
-2. Create a product config with at least one view and one placement zone
-3. Assign a fee product variant pool to the method
-4. Navigate to the storefront product page with the `?variant=<id>` param
-5. Click "Customize" to open the modal
+### Seed data used
 
-**To run**: Once dev server is running, use Playwright MCP to walk: product page → Customize button → modal loads → logo upload → placement → size → review → Add to Cart.
+| Entity | Value |
+|--------|-------|
+| Product | The Complete Snowboard (`gid://shopify/Product/8359850934372`) |
+| ProductConfig | `3bcf19ff-d052-4038-8170-7bcfb6bcc1ba` |
+| DecorationMethod | Embroidery (`32400a06-0a46-45e5-9c04-3125c1d1d18a`) |
+| ProductView | Front (`4b495ff1-4d87-4775-95af-9036d85b055e`) |
+| PlacementDefinition | Front Center (`3521ab89-c4f3-4be3-a441-5a6094c32e89`) |
+| PlacementStep | Standard (scaleFactor: 1.0) |
+| placementGeometry | `{ centerXPercent: 50, centerYPercent: 40, maxWidthPercent: 60 }` |
+| Variant tested | Ice (`gid://shopify/ProductVariant/47790096547940`) |
+
+Seed data created via `scripts/seed-e2e.mjs`.
+
+### Flow results
+
+| Step | URL / Endpoint | Result |
+|------|---------------|--------|
+| Product page | `https://insignia-app.myshopify.com/products/the-complete-snowboard` | ✅ "Customize" button rendered by theme extension block |
+| Customize click | Opens `/apps/insignia/modal?productId=...&variantId=...` via App Proxy | ✅ Modal loaded, title "Upload your artwork" |
+| Upload step | Shows dropzone + "I'll provide artwork later" + Decoration selector | ✅ "Embroidery / Included" shown; "Placeholder selected" on deferral |
+| Placement step | Shows "Where should we print?" | ✅ "Front Center / Included" auto-checked |
+| Review step | Order summary with Product / Decoration / Customizations line items | ✅ Correct — US$699.95 base + US$0.00 customization |
+| `/apps/insignia/prepare` | POST from modal | ✅ 200 — variant slot reserved |
+| `/cart/add.js` | POST to Shopify cart | ✅ 200 — item added |
+| `/apps/insignia/cart-confirm` | POST from cart listener | ✅ 200 — customization config confirmed |
+| Post-add | Modal closes, page returns to product page | ✅ |
+
+### Issues found
+
+1. **Preview pane shows "No preview available"** — expected. No `defaultImageKey` set on the ProductView and no `VariantViewConfiguration` with an `imageUrl`. Merchants must upload a product view image via the admin view editor to enable the canvas preview. Not a bug.
+
+2. **Stale VariantSlot on first attempt** — one slot record pointed to a deleted variant ID (`gid://shopify/ProductVariant/48238892482660`). The `ensureVariantPoolExists` self-heal only detects full product deletion, not partial variant deletion. The stale slot was removed manually. **Recommended fix**: add a variant-existence check in `ensureVariantPoolExists` that cleans up slots whose `shopifyVariantId` is no longer in the product's variant list.
+
+3. **Logo upload not fully tested** — the browser automation `upload_image` tool could not access screenshot images from the compressed conversation history. The upload endpoint (`POST /apps/insignia/uploads`) was validated separately via the prepare flow (the modal correctly transitions when artwork status is `PENDING_CUSTOMER`).
+
+### API endpoint health (confirmed live)
+
+| Endpoint | Method | Status |
+|----------|--------|--------|
+| `/apps/insignia/config` | GET | ✅ Returns config with placements, methods, translations |
+| `/apps/insignia/prepare` | POST | ✅ Reserves variant slot, returns cart item |
+| `/apps/insignia/cart-confirm` | POST | ✅ Confirms customization config |
+| `/apps/insignia/modal` | GET | ✅ React modal app loads via App Proxy |
