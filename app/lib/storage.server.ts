@@ -240,6 +240,18 @@ export const StorageKeys = {
     const ext = fileName.includes(".") ? fileName.split(".").pop()! : "bin";
     return `shops/${shopId}/uploads/${uploadId}/raw.${ext}`;
   },
+
+  /**
+   * Staging tray image (not yet assigned to a cell)
+   * Format: shops/{shopId}/tray/{trayId}.{ext}
+   */
+  trayImage(shopId: string, trayId: string, fileName: string): string {
+    // Sanitise extension: only allow alphanumeric chars (max 10) to prevent
+    // path injection via crafted filenames like "foo.jpg/../../bar".
+    const rawExt = fileName.includes(".") ? fileName.split(".").pop()! : "";
+    const ext = /^[a-z0-9]{1,10}$/i.test(rawExt) ? rawExt.toLowerCase() : "jpg";
+    return `shops/${shopId}/tray/${trayId}.${ext}`;
+  },
 };
 
 /**

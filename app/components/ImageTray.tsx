@@ -23,7 +23,7 @@ export type TrayImage = {
 
 type Props = {
   images: TrayImage[];
-  onBulkUpload: (files: FileList) => void;
+  onBulkUpload: (files: FileList) => void | Promise<void>;
   onDragStart: (image: TrayImage) => void;
   onSelect?: (image: TrayImage | null) => void;
   selectedImageId?: string | null;
@@ -38,8 +38,6 @@ export function ImageTray({
 }: Props) {
   const fileRef = useRef<HTMLInputElement | null>(null);
 
-  if (images.length === 0) return null;
-
   return (
     <Card>
       <InlineStack gap="300" blockAlign="center" wrap>
@@ -47,8 +45,16 @@ export function ImageTray({
           <Text variant="bodySm" fontWeight="semibold" as="span">
             Staging Tray
           </Text>
-          <Badge size="small">{`${images.length}`}</Badge>
+          {images.length > 0 && (
+            <Badge size="small">{`${images.length}`}</Badge>
+          )}
         </InlineStack>
+
+        {images.length === 0 && (
+          <Text variant="bodySm" tone="subdued" as="span">
+            Upload images here, then drag them to the color cards below.
+          </Text>
+        )}
 
         {images.map((img) => (
           <button
@@ -89,28 +95,30 @@ export function ImageTray({
           />
         ))}
 
-        <Text variant="bodySm" tone="subdued" as="span">
-          Drag to cards below
-        </Text>
+        {images.length > 0 && (
+          <Text variant="bodySm" tone="subdued" as="span">
+            Drag to cards below
+          </Text>
+        )}
 
-        <input
-          ref={fileRef}
-          type="file"
-          multiple
-          accept="image/jpeg,image/png,image/webp,image/gif"
-          style={{ display: "none" }}
-          onChange={(e) => {
-            if (e.target.files?.length) onBulkUpload(e.target.files);
-            e.target.value = "";
-          }}
-        />
-        <Button
-          size="slim"
-          icon={PlusIcon}
-          onClick={() => fileRef.current?.click()}
-        >
-          Upload
-        </Button>
+        {/* Use <label> instead of programmatic .click() — browsers block
+            programmatic file-input activation inside Shopify's embedded iframe. */}
+        <label style={{ cursor: "pointer", display: "inline-flex" }}>
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            accept="image/jpeg,image/png,image/webp,image/gif"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              if (e.target.files?.length) onBulkUpload(e.target.files);
+              e.target.value = "";
+            }}
+          />
+          <Button size="slim" icon={PlusIcon}>
+            Upload
+          </Button>
+        </label>
       </InlineStack>
     </Card>
   );

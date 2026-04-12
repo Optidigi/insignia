@@ -68,6 +68,17 @@ export default async function handleRequest(
           responseHeaders.set("Content-Type", "text/html");
           addDocumentResponseHeaders(request, responseHeaders);
 
+          // Shopify's addDocumentResponseHeaders only sets frame-ancestors CSP when
+          // ?shop is present in the request URL. For requests without ?shop (e.g.
+          // in-app navigations, OAuth callbacks), set a permissive fallback so the
+          // Shopify admin iframe is never blocked by the browser.
+          if (!responseHeaders.has('Content-Security-Policy')) {
+            responseHeaders.set(
+              'Content-Security-Policy',
+              'frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev;',
+            );
+          }
+
           resolve(
             new Response(stream, {
               headers: responseHeaders,

@@ -220,7 +220,6 @@ import {
   SkeletonPage,
   SkeletonBodyText,
 } from "@shopify/polaris";
-import { PlusIcon } from "@shopify/polaris-icons";
 import type { ImageCell } from "../lib/services/image-manager.server";
 
 // Maps common color names (lowercase) to a CSS hex color for the swatch dot.
@@ -732,17 +731,63 @@ export default function ImageManagerPage() {
         )}
         <ImageTray
           images={trayImages}
-          onBulkUpload={(files) => {
-            Array.from(files).forEach((file) => {
-              const preview = URL.createObjectURL(file);
-              const newImg: TrayImage = {
-                id: `tray-${Date.now()}-${Math.random()}`,
-                storageKey: "",
-                previewUrl: preview,
-                originalFileName: file.name,
-              };
-              setTrayImages((prev) => [...prev, newImg]);
-            });
+          onBulkUpload={async (files) => {
+            await Promise.all(
+              Array.from(files).map(async (file) => {
+                // Show preview immediately while uploading
+                const preview = URL.createObjectURL(file);
+                const imgId = `tray-${Date.now()}-${Math.random()}`;
+                const placeholder: TrayImage = {
+                  id: imgId,
+                  storageKey: "",
+                  previewUrl: preview,
+                  originalFileName: file.name,
+                };
+                setTrayImages((prev) => [...prev, placeholder]);
+
+                try {
+                  // Get presigned URL from server
+                  const fd = new FormData();
+                  fd.set("intent", "tray-upload");
+                  fd.set("productConfigId", config.id);
+                  fd.set("contentType", file.type);
+                  fd.set("fileName", file.name);
+                  const urlRes = await fetch("/api/admin/upload-url", {
+                    method: "POST",
+                    body: fd,
+                  });
+                  if (!urlRes.ok) throw new Error("Failed to get upload URL");
+                  const { uploadUrl, key } = (await urlRes.json()) as {
+                    uploadUrl: string;
+                    key: string;
+                    success: boolean;
+                  };
+
+                  // PUT file directly to R2
+                  const putRes = await fetch(uploadUrl, {
+                    method: "PUT",
+                    headers: { "Content-Type": file.type },
+                    body: file,
+                  });
+                  if (!putRes.ok) throw new Error(`R2 upload failed: ${putRes.status}`);
+
+                  // Stamp the real storageKey onto the tray image
+                  setTrayImages((prev) =>
+                    prev.map((img) =>
+                      img.id === imgId ? { ...img, storageKey: key } : img
+                    )
+                  );
+                } catch {
+                  // Remove the placeholder so the merchant can try again
+                  setTrayImages((prev) => prev.filter((img) => img.id !== imgId));
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  (window.shopify as any)?.toast?.show(
+                    `Failed to upload ${file.name}`,
+                    { isError: true }
+                  );
+                }
+              })
+            );
           }}
           onDragStart={(img) => setDraggedTrayImage(img)}
           onSelect={(img) => setSelectedTrayImageId(img?.id ?? null)}
@@ -953,8 +998,11 @@ export default function ImageManagerPage() {
                             }
                           }}
                         >
-                          {/* Hidden file input */}
+                          {/* Hidden file input — the empty-cell label below
+                              activates it so the browser treats the click as a
+                              direct user gesture even inside iframes */}
                           <input
+                            id={`file-${key}`}
                             ref={(el) => {
                               fileInputRefs.current[key] = el;
                             }}
@@ -1019,21 +1067,38 @@ export default function ImageManagerPage() {
                             </BlockStack>
                           )}
 
-                          {/* Empty cell */}
+                          {/* Empty cell — <label> for the hidden input so
+                              the browser treats the activation as a direct
+                              user gesture even inside iframes */}
                           {!cell.imageUrl &&
                             !isUploading &&
                             !hasError && (
-                              <Button
-                                size="slim"
-                                variant="plain"
-                                icon={PlusIcon}
-                                onClick={() =>
-                                  fileInputRefs.current[
-                                    key
-                                  ]?.click()
-                                }
-                                accessibilityLabel={`Upload ${group.colorValue} ${viewLabel}`}
-                              />
+                              <label
+                                htmlFor={`file-${key}`}
+                                aria-label={`Upload ${group.colorValue} ${viewLabel}`}
+                                style={{
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  width: 28,
+                                  height: 28,
+                                  borderRadius: 4,
+                                  color: "var(--p-color-text-subdued)",
+                                }}
+                              >
+                                {/* Plus icon inline so the label has visible content */}
+                                <svg
+                                  viewBox="0 0 20 20"
+                                  width="16"
+                                  height="16"
+                                  fill="currentColor"
+                                  aria-hidden="true"
+                                  focusable="false"
+                                >
+                                  <path d="M11 9V5H9v4H5v2h4v4h2v-4h4V9h-4z" />
+                                </svg>
+                              </label>
                             )}
 
                           {/* Uploaded image — show actions popover */}

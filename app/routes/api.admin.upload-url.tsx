@@ -34,6 +34,42 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const formData = await request.formData();
     const intent = formData.get("intent");
 
+    if (intent === "tray-upload") {
+      const productConfigId = formData.get("productConfigId") as string;
+      const contentType = formData.get("contentType") as string;
+      const fileName = formData.get("fileName") as string;
+      if (!productConfigId || !contentType || !fileName) {
+        return Errors.badRequest("Missing required fields: productConfigId, contentType, fileName");
+      }
+
+      // Allowlist MIME types — prevents arbitrary file types being stored under
+      // the app's R2 namespace, which could be served publicly as HTML/JS.
+      const ALLOWED_CONTENT_TYPES = new Set([
+        "image/jpeg",
+        "image/png",
+        "image/webp",
+        "image/gif",
+        "image/tiff",
+        "image/heic",
+        "image/svg+xml",
+      ]);
+      if (!ALLOWED_CONTENT_TYPES.has(contentType)) {
+        return Errors.badRequest(`Unsupported content type: ${contentType}`);
+      }
+
+      // Verify ownership before issuing upload URL
+      const config = await db.productConfig.findFirst({
+        where: { id: productConfigId, shopId: shop.id },
+        select: { id: true },
+      });
+      if (!config) return Errors.notFound("Product config");
+
+      const trayId = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      const key = StorageKeys.trayImage(shop.id, trayId, fileName);
+      const uploadUrl = await getPresignedPutUrl(key, contentType, 300);
+      return data({ uploadUrl, key, success: true });
+    }
+
     if (intent === "placeholder-logo") {
       const contentType = formData.get("contentType") as string;
       const fileName = formData.get("fileName") as string;
