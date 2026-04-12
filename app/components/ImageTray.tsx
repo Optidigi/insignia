@@ -101,24 +101,24 @@ export function ImageTray({
           </Text>
         )}
 
-        {/* Use <label> instead of programmatic .click() — browsers block
-            programmatic file-input activation inside Shopify's embedded iframe. */}
-        <label style={{ cursor: "pointer", display: "inline-flex" }}>
-          <input
-            ref={fileRef}
-            type="file"
-            multiple
-            accept="image/jpeg,image/png,image/webp,image/gif"
-            style={{ display: "none" }}
-            onChange={(e) => {
-              if (e.target.files?.length) onBulkUpload(e.target.files);
-              e.target.value = "";
-            }}
-          />
-          <Button size="slim" icon={PlusIcon}>
-            Upload
-          </Button>
-        </label>
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          style={{ display: "none" }}
+          onChange={(e) => {
+            if (e.target.files?.length) onBulkUpload(e.target.files);
+            e.target.value = "";
+          }}
+        />
+        <Button
+          size="slim"
+          icon={PlusIcon}
+          onClick={() => fileRef.current?.click()}
+        >
+          Upload
+        </Button>
       </InlineStack>
     </Card>
   );
