@@ -1,11 +1,14 @@
 version: 2
 updates:
-  # GitHub Actions — keep these current (security matters for CI runners)
+  # GitHub Actions — minor/patch only; major version bumps require manual review
   - package-ecosystem: github-actions
     directory: "/"
     schedule:
       interval: weekly
     open-pull-requests-limit: 5
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
   # npm — patch and minor only, grouped to reduce noise
   # Major version upgrades require manual evaluation and are ignored here.
