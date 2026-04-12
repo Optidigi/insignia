@@ -93,11 +93,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     return jsonResponse({ ...config, translations, locale }, 200, allowedOrigin);
   } catch (error) {
     if (error instanceof Response) throw error;
-    if (error instanceof AppError && error.status === 404) {
+    if (error instanceof AppError) {
+      // Return the AppError's own status (404 for not found, 400 for invalid config, etc.)
       // shopDomain may or may not be in scope here; use undefined to be safe
       return jsonResponse(
-        { error: { code: ErrorCodes.NOT_FOUND, message: error.message } },
-        404
+        { error: { code: error.code, message: error.message } },
+        error.status
       );
     }
     console.error("[apps.insignia.config]", error);

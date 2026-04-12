@@ -671,7 +671,7 @@ export default function ProductConfigDetailPage() {
                       <Button>Open view editor</Button>
                     </Link>
                   ) : (
-                    <form method="post">
+                    <form method="post" action="?index">
                       <input type="hidden" name="intent" value="create-view" />
                       <input type="hidden" name="perspective" value="custom" />
                       <input type="hidden" name="name" value="Front" />
