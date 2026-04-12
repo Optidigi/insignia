@@ -6,8 +6,7 @@
  */
 
 import { useEffect } from "react";
-import type { StorefrontConfig } from "./types";
-import type { PlacementSelections } from "./CustomizationModal";
+import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { TranslationStrings } from "./i18n";
 import { formatCurrency } from "./currency";
 import { IconCheck } from "./icons";

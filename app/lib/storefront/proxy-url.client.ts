@@ -1,5 +1,5 @@
 /**
- * proxy-url.ts
+ * proxy-url.client.ts
  *
  * Utility for building URLs that route through the Shopify App Proxy.
  *

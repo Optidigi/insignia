@@ -26,27 +26,11 @@ import {
   CursorIcon,
 } from "@shopify/polaris-icons";
 import { useSubmit } from "react-router";
+import type { Placement } from "../lib/admin-types";
 
 // ============================================================================
 // Types
 // ============================================================================
-
-type PlacementStep = {
-  id: string;
-  label: string;
-  scaleFactor: number;
-  priceAdjustmentCents: number;
-  displayOrder: number;
-};
-
-type Placement = {
-  id: string;
-  name: string;
-  basePriceAdjustmentCents: number;
-  hidePriceWhenZero: boolean;
-  defaultStepIndex: number;
-  steps: PlacementStep[];
-};
 
 type Props = {
   placements: Placement[];
@@ -564,4 +548,4 @@ export function ZonePricingPanel({
 }
 
 // Re-export types for parent route usage
-export type { Placement, PlacementStep };
+export type { Placement, PlacementStep } from "../lib/admin-types";

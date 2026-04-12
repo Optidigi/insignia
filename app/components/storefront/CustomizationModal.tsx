@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { StorefrontConfig, WizardStep } from "./types";
+import type { StorefrontConfig, WizardStep, PlacementSelections } from "./types";
 import { WIZARD_STEPS } from "./types";
 import { UploadStep } from "./UploadStep";
 import { PlacementStep } from "./PlacementStep";
@@ -13,7 +13,7 @@ import { SizeStep } from "./SizeStep";
 import { ReviewStep } from "./ReviewStep";
 import { PreviewSheet } from "./PreviewSheet";
 import { addCustomizedToCart, buildInsigniaProperties } from "../../lib/storefront/cart.client";
-import { proxyUrl } from "../../lib/storefront/proxy-url";
+import { proxyUrl } from "../../lib/storefront/proxy-url.client";
 import { getTranslations, detectLocale } from "./i18n";
 import { IconUpload, IconPlacement, IconSize, IconEye, IconCircleCheck, IconX } from "./icons";
 import { formatCurrency } from "./currency";
@@ -94,8 +94,6 @@ export type LogoState =
       previewPngUrl: string;
       sanitizedSvgUrl: string | null;
     };
-
-export type PlacementSelections = Record<string, number>; // placementId -> stepIndex
 
 type PriceResult = {
   unitPriceCents: number;

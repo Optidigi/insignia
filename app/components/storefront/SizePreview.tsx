@@ -6,8 +6,8 @@
  */
 
 import { useMemo, useState } from "react";
-import type { StorefrontConfig } from "./types";
-import type { PlacementSelections, LogoState } from "./CustomizationModal";
+import type { StorefrontConfig, PlacementSelections } from "./types";
+import type { LogoState } from "./CustomizationModal";
 import NativeCanvas from "./NativeCanvas";
 
 type SizePreviewProps = {

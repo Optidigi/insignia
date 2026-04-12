@@ -3,8 +3,8 @@
  * floating preview button, and green Add to Cart button.
  */
 
-import type { StorefrontConfig } from "./types";
-import type { LogoState, PlacementSelections } from "./CustomizationModal";
+import type { StorefrontConfig, PlacementSelections } from "./types";
+import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
 import { formatCurrency } from "./currency";
 import { IconMinus, IconPlus, IconEye } from "./icons";

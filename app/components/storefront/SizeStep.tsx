@@ -6,8 +6,8 @@
  */
 
 import { useEffect, useState } from "react";
-import type { StorefrontConfig } from "./types";
-import type { PlacementSelections, LogoState } from "./CustomizationModal";
+import type { StorefrontConfig, PlacementSelections } from "./types";
+import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
 import { formatCurrency } from "./currency";
 import { SizePreview } from "./SizePreview";

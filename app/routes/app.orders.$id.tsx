@@ -32,16 +32,11 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import { handleError } from "../lib/errors.server";
 import { getPresignedDownloadUrl, getPresignedGetUrl } from "../lib/storage.server";
+import type { PlacementGeometry } from "../lib/admin-types";
 
 const OrderLinePreviewLazy = lazy(() =>
   import("../components/OrderLinePreview.client").then((m) => ({ default: m.OrderLinePreview }))
 );
-
-type PlacementGeometry = {
-  centerXPercent: number;
-  centerYPercent: number;
-  maxWidthPercent: number;
-};
 
 const PRODUCTION_STATUS_ORDER: ProductionStatus[] = [
   ProductionStatus.ARTWORK_PENDING,

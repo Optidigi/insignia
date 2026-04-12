@@ -9,7 +9,7 @@ import type { StorefrontConfig } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import { IconCheck, IconChevronRight, IconScissors, IconUpload } from "./icons";
 import type { TranslationStrings } from "./i18n";
-import { proxyUrl } from "../../lib/storefront/proxy-url";
+import { proxyUrl } from "../../lib/storefront/proxy-url.client";
 import { formatCurrency } from "./currency";
 
 const ACCEPT = ".svg,.png,.jpg,.jpeg,image/svg+xml,image/png,image/jpeg";

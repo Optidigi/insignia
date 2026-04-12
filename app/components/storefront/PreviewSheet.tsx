@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import type { StorefrontConfig } from "./types";
-import type { PlacementSelections, LogoState } from "./CustomizationModal";
+import type { StorefrontConfig, PlacementSelections } from "./types";
+import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
 import NativeCanvas from "./NativeCanvas";
 import { IconX, IconChevronLeft, IconChevronRight, IconInfo } from "./icons";

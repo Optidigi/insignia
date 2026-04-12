@@ -9,6 +9,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Stage, Layer, Image, Rect, Transformer, Line } from "react-konva";
 import type Konva from "konva";
 import { Button, InlineStack } from "@shopify/polaris";
+import type { PlacementGeometry, PlacementDefinition } from "../lib/admin-types";
+
+export type { PlacementGeometry, PlacementDefinition };
 
 const MAX_CANVAS = 560;
 const SNAP_GRID_PERCENT = 2;
@@ -22,16 +25,6 @@ const ZONE_COLORS = [
   { fill: "rgba(239, 68, 68, 0.25)", stroke: "#EF4444" },
   { fill: "rgba(236, 72, 153, 0.25)", stroke: "#EC4899" },
 ];
-
-export type PlacementGeometry = {
-  centerXPercent: number;
-  centerYPercent: number;
-  maxWidthPercent: number;
-  /** Height as % of stage height. Falls back to maxWidthPercent for legacy square zones. */
-  maxHeightPercent?: number;
-};
-
-export type PlacementDefinition = { id: string; name: string };
 
 type RectState = {
   x: number;

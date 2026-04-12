@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { Stage, Layer, Image as KonvaImage, Rect, Text as KonvaText, Group } from "react-konva";
+import type { PlacementGeometry } from "../lib/admin-types";
 
 const STAGE_SIZE = 400;
 
@@ -14,12 +15,6 @@ const ZONE_COLORS = [
   { fill: "rgba(139, 92, 246, 0.15)", stroke: "#8B5CF6" },
   { fill: "rgba(239, 68, 68, 0.15)", stroke: "#EF4444" },
 ];
-
-type PlacementGeometry = {
-  centerXPercent: number;
-  centerYPercent: number;
-  maxWidthPercent: number;
-};
 
 type Props = {
   imageUrl: string; // presigned product image URL

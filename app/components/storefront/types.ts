@@ -68,6 +68,9 @@ export type PlacementSelection = {
   stepIndex: number;
 };
 
+/** UI state map: placementId → selected stepIndex. */
+export type PlacementSelections = Record<string, number>;
+
 /** Draft payload for POST /apps/insignia/customizations */
 export type CustomizationDraftPayload = {
   productId: string;
