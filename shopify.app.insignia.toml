@@ -1,9 +1,7 @@
 # Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
-# TODO: Run `npx shopify app config link` after creating the production app
-# in Shopify Partner Dashboard to update client_id to the production app's ID.
-client_id = "8248a0f27cfcd0613b21d5e75cddebc8"
-name = "Insignia Print-on-Demand App"
+client_id = "eb2c3c7dd059991bc6cd4d421578a8ab"
+name = "Insignia"
 application_url = "https://insignia.optidigi.nl"
 embedded = true
 
@@ -26,14 +24,13 @@ api_version = "2026-04"
   topics = [ "app/scopes_update" ]
   uri = "/webhooks/app/scopes_update"
 
-
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 # write_app_proxy required for app proxy (storefront modal)
 scopes = "write_products,read_products,read_orders,write_orders,write_app_proxy,write_publications,write_inventory"
 
 [auth]
-redirect_urls = ["https://insignia.optidigi.nl/api/auth"]
+redirect_urls = [ "https://insignia.optidigi.nl/api/auth" ]
 
 [app_proxy]
 url = "https://insignia.optidigi.nl"
