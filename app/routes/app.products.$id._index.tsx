@@ -671,12 +671,18 @@ export default function ProductConfigDetailPage() {
                       <Button>Open view editor</Button>
                     </Link>
                   ) : (
-                    <form method="post" action="?index">
-                      <input type="hidden" name="intent" value="create-view" />
-                      <input type="hidden" name="perspective" value="custom" />
-                      <input type="hidden" name="name" value="Front" />
-                      <Button submit loading={isSubmitting}>Add first view</Button>
-                    </form>
+                    <Button
+                      loading={isSubmitting}
+                      onClick={() => {
+                        const fd = new FormData();
+                        fd.append("intent", "create-view");
+                        fd.append("perspective", "custom");
+                        fd.append("name", "Front");
+                        submit(fd, { method: "POST" });
+                      }}
+                    >
+                      Add first view
+                    </Button>
                   )}
                 </InlineStack>
 
