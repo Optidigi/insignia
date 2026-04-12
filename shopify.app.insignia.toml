@@ -30,7 +30,7 @@ api_version = "2026-04"
 scopes = "write_products,read_products,read_orders,write_orders,write_app_proxy,write_publications,write_inventory"
 
 [auth]
-redirect_urls = [ "https://insignia.optidigi.nl/api/auth" ]
+redirect_urls = [ "https://insignia.optidigi.nl/auth/callback" ]
 
 [app_proxy]
 url = "https://insignia.optidigi.nl"
