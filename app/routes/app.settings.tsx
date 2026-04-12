@@ -374,7 +374,10 @@ export default function SettingsPage() {
                     </Text>
                   </Banner>
                   {themeEditorUrl && (
-                    <Button url={themeEditorUrl} external icon={ExternalIcon}>
+                    <Button
+                      icon={ExternalIcon}
+                      onClick={() => window.open(themeEditorUrl, "_top")}
+                    >
                       Open theme editor
                     </Button>
                   )}
