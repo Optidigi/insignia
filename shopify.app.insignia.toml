@@ -33,6 +33,6 @@ scopes = "write_products,read_products,read_orders,write_orders,write_app_proxy,
 redirect_urls = [ "https://insignia.optidigi.nl/auth/callback" ]
 
 [app_proxy]
-url = "https://insignia.optidigi.nl"
+url = "https://insignia.optidigi.nl/apps/insignia"
 subpath = "insignia"
 prefix = "apps"
