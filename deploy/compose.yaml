@@ -1,7 +1,7 @@
 # deploy/compose.yaml
 #
 # Production Docker Compose stack for Insignia.
-# Server path: /srv/prod/infra/stacks/insignia/compose.yaml
+# Server path: /srv/saas/infra/stacks/insignia/compose.yaml
 #
 # Deploy a new version:
 #   sed -i 's/APP_VERSION=.*/APP_VERSION=v1.x.x/' .env
@@ -38,7 +38,7 @@ services:
     networks:
       - internal  # NOT on proxy — db is never reachable from outside this stack
     volumes:
-      - /srv/data/prod/insignia/postgres:/var/lib/postgresql/data
+      - /srv/data/saas/insignia/postgres:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}

@@ -6,30 +6,30 @@ This folder contains the production server configuration files.
 
 | File | Server path | Purpose |
 |------|------------|---------|
-| `compose.yaml` | `/srv/prod/infra/stacks/insignia/compose.yaml` | Docker Compose stack |
-| `.env.example` | `/srv/prod/infra/stacks/insignia/.env` | Environment variables template |
+| `compose.yaml` | `/srv/saas/infra/stacks/insignia/compose.yaml` | Docker Compose stack |
+| `.env.example` | `/srv/saas/infra/stacks/insignia/.env` | Environment variables template |
 
 ## First-Time Setup (run on VPS over SSH)
 
 ```bash
 # 1. Create directories
-sudo mkdir -p /srv/data/prod/insignia/postgres
-sudo mkdir -p /srv/prod/infra/stacks/insignia
-sudo chown -R serveradmin:serveradmin /srv/data/prod/insignia /srv/prod/infra/stacks/insignia
+sudo mkdir -p /srv/data/saas/insignia/postgres
+sudo mkdir -p /srv/saas/infra/stacks/insignia
+sudo chown -R serveradmin:serveradmin /srv/data/saas/insignia /srv/saas/infra/stacks/insignia
 
 # 2. Copy compose file
-cp deploy/compose.yaml /srv/prod/infra/stacks/insignia/compose.yaml
+cp deploy/compose.yaml /srv/saas/infra/stacks/insignia/compose.yaml
 
 # 3. Copy and fill in secrets
-cp deploy/.env.example /srv/prod/infra/stacks/insignia/.env
-chmod 600 /srv/prod/infra/stacks/insignia/.env
-nano /srv/prod/infra/stacks/insignia/.env  # fill in all values
+cp deploy/.env.example /srv/saas/infra/stacks/insignia/.env
+chmod 600 /srv/saas/infra/stacks/insignia/.env
+nano /srv/saas/infra/stacks/insignia/.env  # fill in all values
 
 # 4. The proxy Docker network already exists on this server (used by Nginx Proxy Manager)
 docker network ls | grep proxy  # should show: proxy
 
 # 5. Pull and start
-cd /srv/prod/infra/stacks/insignia
+cd /srv/saas/infra/stacks/insignia
 docker compose pull
 docker compose up -d
 docker compose logs -f app
@@ -38,7 +38,7 @@ docker compose logs -f app
 ## Deploying a New Version
 
 ```bash
-cd /srv/prod/infra/stacks/insignia
+cd /srv/saas/infra/stacks/insignia
 # Update version (or edit .env directly)
 sed -i 's/APP_VERSION=.*/APP_VERSION=v1.x.x/' .env
 docker compose pull
