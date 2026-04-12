@@ -48,3 +48,6 @@ pnpm-lock.yaml
 # Stale snapshot files
 dashboard-snapshot.md
 deep-snapshot.md
+
+# Claude Code agent logs (runtime, not source)
+.claude/logs/
