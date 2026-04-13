@@ -392,6 +392,7 @@ model CustomizationConfig {
   @@index([shopId, configHash])
   @@index([state])
   @@index([customizationDraftId])
+  @@index([shopId, state, expiredAt])
 }
 
 // ============================================================================
@@ -443,6 +444,7 @@ model OrderLineCustomization {
   @@unique([shopifyOrderId, shopifyLineId])
   @@index([shopifyOrderId])
   @@index([productConfigId])
+  @@index([artworkStatus, productionStatus])
 }
 
 // ============================================================================
