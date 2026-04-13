@@ -28,7 +28,19 @@ function toVariantGid(id: string): string {
 }
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  await authenticate.public.appProxy(request);
+  // authenticate.public.appProxy validates the Shopify HMAC signature first.
+  // If HMAC is invalid it throws Response(400) — we let that propagate.
+  // After HMAC validation it tries to load/refresh the offline session.
+  // Session errors (expired token, refresh failure → Response(500) or
+  // HttpResponseError) must NOT crash the modal: the loader only needs the
+  // URL params, not the session. Security is fully covered by the HMAC check.
+  try {
+    await authenticate.public.appProxy(request);
+  } catch (e) {
+    if (e instanceof Response && e.status === 400) throw e; // invalid HMAC — reject
+    // Anything else (session expiry, token refresh failure, etc.) — log and continue
+    console.error("[modal] appProxy session error (continuing after HMAC passed):", e);
+  }
 
   const url = new URL(request.url);
   const rawProductId = url.searchParams.get("productId") ?? "";
@@ -40,6 +52,40 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
   return { productId, variantId, appUrl };
 };
+
+/**
+ * clientLoader — runs on the client for ALL client-side data loads (navigations,
+ * revalidations, hydration when hydrate=true).
+ *
+ * WHY THIS EXISTS
+ * ---------------
+ * AppProxyProvider injects <base href="https://<app-tunnel>"> so JS/CSS assets
+ * load from the app server. But the HTML <base> element also affects JavaScript
+ * fetch() URL resolution — a React Router _data= revalidation fetch with a
+ * relative URL resolves against the base URL and goes directly to the backend,
+ * bypassing the Shopify proxy entirely. Without the proxy, there is no HMAC
+ * signature → authenticate.public.appProxy throws 400.
+ *
+ * By exporting a clientLoader we intercept all client-side data loads and read
+ * the params directly from window.location, so no _data= fetch ever reaches the
+ * backend without HMAC. Security is guaranteed by the server loader's HMAC check
+ * on the initial (SSR) request.
+ */
+export async function clientLoader() {
+  const url = new URL(window.location.href);
+  const rawProductId = url.searchParams.get("productId") ?? "";
+  const rawVariantId = url.searchParams.get("variantId") ?? "";
+  const productId = rawProductId ? toProductGid(rawProductId) : rawProductId;
+  const variantId = rawVariantId ? toVariantGid(rawVariantId) : rawVariantId;
+  // Read appUrl from the <base> tag that AppProxyProvider injected on the server
+  // render. The href may end with "/" — strip it to keep the value consistent.
+  const appUrl =
+    document.querySelector("base")?.getAttribute("href")?.replace(/\/$/, "") ??
+    window.location.origin;
+  return { productId, variantId, appUrl };
+}
+// Run on hydration so any hydration-time revalidation also uses this path.
+clientLoader.hydrate = true as const;
 
 export default function ModalRoute() {
   const { productId, variantId, appUrl } = useLoaderData() as {

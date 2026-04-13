@@ -334,7 +334,7 @@ export function CustomizationModal({
 
     try {
       const response = await fetch(
-        `/apps/insignia/uploads/${logo.logoAssetId}/refresh`,
+        proxyUrl(`/apps/insignia/uploads/${logo.logoAssetId}/refresh`),
         { method: "POST" }
       );
       if (response.ok) {
