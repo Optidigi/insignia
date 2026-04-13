@@ -643,7 +643,7 @@ export default function ProductConfigDetailPage() {
       backAction={{ content: "Products", url: "/app/products" }}
       secondaryActions={
         customizerUrl
-          ? [{ content: "Preview on store", onAction: () => window.open(customizerUrl, "_blank") }]
+          ? [{ content: "Preview on store", onAction: () => setTimeout(() => window.open(customizerUrl!, "_blank"), 0) }]
           : undefined
       }
     >

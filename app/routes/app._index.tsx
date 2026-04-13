@@ -578,7 +578,7 @@ export default function Dashboard() {
         },
         {
           content: "Preview store",
-          onAction: () => window.open(`https://${shopDomain}`, "_blank"),
+          onAction: () => setTimeout(() => window.open(`https://${shopDomain}`, "_blank"), 0),
         },
       ]}
     >
@@ -1122,8 +1122,7 @@ export default function Dashboard() {
                     themeEditorUrl
                       ? {
                           content: "Open theme editor",
-                          onAction: () =>
-                            window.open(themeEditorUrl, "_blank"),
+                          onAction: () => setTimeout(() => window.open(themeEditorUrl, "_blank"), 0),
                         }
                       : {
                           content: "Go to products",

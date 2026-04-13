@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { useLoaderData, useSubmit, useNavigation, useRevalidator, useActionData, useBlocker, useNavigate, Link } from "react-router";
+import { useLoaderData, useSubmit, useNavigation, useRevalidator, useActionData, useBlocker, useNavigate, Link, redirect } from "react-router";
 import {
   Text,
   Spinner,
@@ -36,8 +36,11 @@ import {
   getView,
   upsertVariantViewConfig,
   copyVariantViewConfigs,
+  createView,
+  deleteView,
+  CreateViewSchema,
 } from "../lib/services/views.server";
-import { handleError, AppError } from "../lib/errors.server";
+import { handleError, validateOrThrow, AppError } from "../lib/errors.server";
 import { getPresignedPutUrl, getPresignedGetUrl, StorageKeys } from "../lib/storage.server";
 
 // ============================================================================
@@ -555,11 +558,61 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return { success: true, intent: "save-calibration" };
     }
 
+    if (intent === "create-view") {
+      const perspective = (formData.get("perspective") as string) || "custom";
+      const name = (formData.get("name") as string | null)?.trim() || undefined;
+      const input = validateOrThrow(
+        CreateViewSchema,
+        { perspective, name },
+        "Invalid view data"
+      );
+      const newView = await createView(configId, input);
+      return redirect(`/app/products/${configId}/views/${newView.id}`);
+    }
+
+    if (intent === "rename-view") {
+      const name = (formData.get("name") as string | null)?.trim();
+      if (!name) {
+        return { success: false, intent: "rename-view", error: "View name cannot be empty" };
+      }
+      await db.productView.update({
+        where: { id: viewId, productConfig: { id: configId, shopId: shop.id } },
+        data: { name },
+      });
+      return { success: true, intent: "rename-view" };
+    }
+
+    if (intent === "delete-view") {
+      // Guard: cannot delete the last view
+      const viewCount = await db.productView.count({ where: { productConfigId: configId } });
+      if (viewCount <= 1) {
+        return { success: false, intent: "delete-view", error: "Cannot delete the only view. A product setup must have at least one view." };
+      }
+      await deleteView(configId, viewId);
+      return redirect(`/app/products/${configId}`);
+    }
+
     throw new Response("Invalid intent", { status: 400 });
   } catch (error) {
     return handleError(error);
   }
 };
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+function getPerspectiveLabel(perspective: string) {
+  const labels: Record<string, string> = {
+    front: "Front",
+    back: "Back",
+    left: "Left",
+    right: "Right",
+    side: "Side",
+    custom: "Custom",
+  };
+  return labels[perspective] || perspective;
+}
 
 // ============================================================================
 // Component
@@ -593,6 +646,11 @@ export default function ViewDetailPage() {
   const [rulerActive, setRulerActive] = useState(false);
   /** Natural pixel dimensions of the currently-displayed variant image (set when image loads). */
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  /** Rename view state */
+  const [viewName, setViewName] = useState<string>(view.name ?? getPerspectiveLabel(view.perspective));
+  const [renameSaved, setRenameSaved] = useState(false);
+  /** Delete view confirmation modal */
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
   // Warn before browser navigation when there are unsaved geometry changes
   useEffect(() => {
@@ -645,6 +703,10 @@ export default function ViewDetailPage() {
         window.shopify?.toast?.show("Size tier added");
       } else if (intent === "apply-to-all") {
         window.shopify?.toast?.show("Applied to all variants");
+      } else if (intent === "rename-view") {
+        setRenameSaved(true);
+        window.shopify?.toast?.show("View renamed");
+        setTimeout(() => setRenameSaved(false), 2000);
       }
       // update-placement and update-step are silent (too frequent with debounce)
     } else if ("error" in data) {
@@ -681,18 +743,6 @@ export default function ViewDetailPage() {
   };
   const currencySymbol = currencySymbolMap[currencyCode] ?? currencyCode + " ";
 
-  const getPerspectiveLabel = (perspective: string) => {
-    const labels: Record<string, string> = {
-      front: "Front",
-      back: "Back",
-      left: "Left",
-      right: "Right",
-      side: "Side",
-      custom: "Custom",
-    };
-    return labels[perspective] || perspective;
-  };
-
   const handleSaveGeometry = useCallback(() => {
     if (!pendingGeometry || !selectedVariantId) return;
     const fd = new FormData();
@@ -727,6 +777,28 @@ export default function ViewDetailPage() {
     [submit]
   );
 
+  const handleRenameBlur = useCallback(() => {
+    const trimmed = viewName.trim();
+    if (!trimmed) {
+      // Reset to last saved name
+      setViewName(view.name ?? getPerspectiveLabel(view.perspective));
+      return;
+    }
+    const currentName = view.name ?? getPerspectiveLabel(view.perspective);
+    if (trimmed === currentName) return;
+    const fd = new FormData();
+    fd.set("intent", "rename-view");
+    fd.set("name", trimmed);
+    submit(fd, { method: "POST" });
+  }, [viewName, view.name, view.perspective, submit]);
+
+  const handleDeleteView = useCallback(() => {
+    const fd = new FormData();
+    fd.set("intent", "delete-view");
+    submit(fd, { method: "POST" });
+    setDeleteModalOpen(false);
+  }, [submit]);
+
   const handleAddZone = useCallback(() => {
     if (!newZoneName.trim()) return;
     const formData = new FormData();
@@ -742,6 +814,11 @@ export default function ViewDetailPage() {
   // references on every render cause PlacementGeometryEditor's initialisation useEffect
   // to fire repeatedly, resetting rects back to the saved position on every drag event.
   const selectedVariantImageUrl = selectedVariantId ? (signedImageUrls[selectedVariantId] ?? null) : null;
+
+  // Sync viewName when navigating to a different view
+  useEffect(() => {
+    setViewName(view.name ?? getPerspectiveLabel(view.perspective));
+  }, [view.id, view.name, view.perspective]);
 
   // Load natural image dimensions whenever the selected variant image changes
   useEffect(() => {
@@ -795,6 +872,25 @@ export default function ViewDetailPage() {
         setups={otherSetups}
         loading={isCloning}
       />
+
+      {/* Delete View Confirmation Modal */}
+      <Modal
+        open={deleteModalOpen}
+        title="Delete view?"
+        primaryAction={{
+          content: "Delete view",
+          destructive: true,
+          onAction: handleDeleteView,
+        }}
+        secondaryActions={[{ content: "Cancel", onAction: () => setDeleteModalOpen(false) }]}
+        onClose={() => setDeleteModalOpen(false)}
+      >
+        <Modal.Section>
+          <Text as="p">
+            This will permanently delete this view and all its variant images. This cannot be undone.
+          </Text>
+        </Modal.Section>
+      </Modal>
 
       {/* In-app navigation blocker when geometry is dirty */}
       {blocker.state === "blocked" && (
@@ -930,7 +1026,7 @@ export default function ViewDetailPage() {
                   fd.append("intent", "create-view");
                   fd.append("perspective", "custom");
                   fd.append("name", "New view");
-                  submit(fd, { method: "POST", action: `/app/products/${config.id}` });
+                  submit(fd, { method: "POST" });
                 }}
                 style={{
                   display: "flex", alignItems: "center", gap: 4,
@@ -1228,11 +1324,31 @@ export default function ViewDetailPage() {
           }}>
             {/* Panel header */}
             <div style={{ padding: "14px 18px", borderBottom: "1px solid #E5E7EB" }}>
-              <div style={{ fontWeight: 600, fontSize: 16, color: "#111827", marginBottom: 2 }}>
-                {getPerspectiveLabel(view.perspective)} View
+              {/* Rename inline text field */}
+              <div style={{ marginBottom: 6 }}>
+                <TextField
+                  label="View name"
+                  labelHidden
+                  value={viewName}
+                  onChange={setViewName}
+                  onBlur={handleRenameBlur}
+                  autoComplete="off"
+                  placeholder="View name"
+                  suffix={renameSaved ? <span style={{ color: "#16A34A", fontSize: 11 }}>Saved</span> : undefined}
+                />
               </div>
-              <div style={{ fontSize: 12, color: "#6B7280" }}>
-                Position print areas for this view
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ fontSize: 12, color: "#6B7280" }}>
+                  Position print areas for this view
+                </div>
+                <Button
+                  tone="critical"
+                  variant="plain"
+                  onClick={() => setDeleteModalOpen(true)}
+                  disabled={config.views.length <= 1}
+                >
+                  Delete view
+                </Button>
               </div>
             </div>
 
