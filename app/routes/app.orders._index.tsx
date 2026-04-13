@@ -3,6 +3,7 @@
  * Canonical: docs/admin/orders-workflow.md
  */
 
+import { useCallback } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useSearchParams } from "react-router";
 import {
@@ -22,6 +23,8 @@ import {
   UnstyledLink,
   Pagination,
   Button,
+  Filters,
+  ChoiceList,
 } from "@shopify/polaris";
 import { SearchIcon, ExportIcon } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
@@ -46,6 +49,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const search = url.searchParams.get("search") || "";
   const methodId = url.searchParams.get("methodId") || "";
   const dateRange = url.searchParams.get("dateRange") || "all";
+  const artworkStatus = url.searchParams.get("artworkStatus") || "";
   const rawPage = parseInt(url.searchParams.get("page") || "1", 10);
   const page = Number.isFinite(rawPage) && rawPage > 0 ? rawPage : 1;
 
@@ -53,7 +57,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     where: { shopifyDomain: session.shop },
     select: { id: true, currencyCode: true },
   });
-  if (!shop) return { orders: [], currency: "$", tab: "all", methods: [], search: "", methodId: "", dateRange: "all", page: 1, totalPages: 1, totalCount: 0 };
+  if (!shop) return { orders: [], currency: "$", tab: "all", methods: [], search: "", methodId: "", dateRange: "all", artworkStatus: "", page: 1, totalPages: 1, totalCount: 0 };
 
   const currency = currencySymbol(shop.currencyCode);
 
@@ -73,7 +77,11 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Build shared where clause for both count and findMany
   const where = {
     productConfig: { shopId: shop.id },
-    ...(tab === "awaiting" ? { artworkStatus: "PENDING_CUSTOMER" as const } : {}),
+    ...(tab === "awaiting"
+      ? { artworkStatus: "PENDING_CUSTOMER" as const }
+      : artworkStatus === "PENDING_CUSTOMER" || artworkStatus === "PROVIDED"
+        ? { artworkStatus: artworkStatus as "PENDING_CUSTOMER" | "PROVIDED" }
+        : {}),
     ...(numericSearch
       ? {
           shopifyOrderId: {
@@ -151,7 +159,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
   }
 
-  return { orders: Array.from(groupMap.values()), currency, tab, methods, search, methodId, dateRange, page, totalPages, totalCount };
+  return { orders: Array.from(groupMap.values()), currency, tab, methods, search, methodId, dateRange, artworkStatus, page, totalPages, totalCount };
 };
 
 const ORDER_TABS = [
@@ -160,9 +168,10 @@ const ORDER_TABS = [
 ];
 
 export default function OrdersPage() {
-  const { orders, currency, tab, methods, search, methodId, dateRange, page, totalPages } = useLoaderData<typeof loader>();
+  const { orders, currency, tab, methods, search, methodId, dateRange, artworkStatus, page, totalPages } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+
 
   const selectedTabIndex = ORDER_TABS.findIndex((t) => t.id === tab);
   const activeTabIndex = selectedTabIndex === -1 ? 0 : selectedTabIndex;
@@ -211,6 +220,31 @@ export default function OrdersPage() {
     next.delete("page");
     setSearchParams(next);
   };
+
+  const handleArtworkStatusChange = useCallback((value: string[]) => {
+    const next = new URLSearchParams(searchParams);
+    if (value.length > 0) {
+      next.set("artworkStatus", value[0]);
+    } else {
+      next.delete("artworkStatus");
+    }
+    next.delete("page");
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
+  const handleRemoveArtworkStatusFilter = useCallback(() => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("artworkStatus");
+    next.delete("page");
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
+
+  const handleClearAllFilters = useCallback(() => {
+    const next = new URLSearchParams(searchParams);
+    next.delete("artworkStatus");
+    next.delete("page");
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
 
   const handlePreviousPage = () => {
     const next = new URLSearchParams(searchParams);
@@ -293,6 +327,44 @@ export default function OrdersPage() {
                 />
               </Box>
             </InlineStack>
+            <Filters
+              queryValue=""
+              queryPlaceholder=""
+              onQueryChange={() => {}}
+              onQueryClear={() => {}}
+              hideQueryField
+              filters={[
+                {
+                  key: "artworkStatus",
+                  label: "Artwork status",
+                  filter: (
+                    <ChoiceList
+                      title="Artwork status"
+                      titleHidden
+                      choices={[
+                        { label: "Provided", value: "PROVIDED" },
+                        { label: "Pending customer", value: "PENDING_CUSTOMER" },
+                      ]}
+                      selected={artworkStatus ? [artworkStatus] : []}
+                      onChange={handleArtworkStatusChange}
+                    />
+                  ),
+                  shortcut: true,
+                },
+              ]}
+              appliedFilters={
+                artworkStatus
+                  ? [
+                      {
+                        key: "artworkStatus",
+                        label: artworkStatus === "PROVIDED" ? "Artwork: Provided" : "Artwork: Pending customer",
+                        onRemove: handleRemoveArtworkStatusFilter,
+                      },
+                    ]
+                  : []
+              }
+              onClearAll={handleClearAllFilters}
+            />
           </Card>
           <Card padding="0">
             <Tabs
