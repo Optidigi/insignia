@@ -89,6 +89,7 @@ export function PlacementGeometryEditor({
   const historyIndexRef = useRef(-1);
   const [canUndo, setCanUndo] = useState(false);
   const [canRedo, setCanRedo] = useState(false);
+  const stageRef = useRef<Konva.Stage>(null);
   const imageRef = useRef<Konva.Image>(null);
   const transformerRef = useRef<Konva.Transformer>(null);
   const rectRefs = useRef<Record<string, Konva.Rect | null>>({});
@@ -266,6 +267,37 @@ export function PlacementGeometryEditor({
     onSave(geometry);
   }, [rects, stageWidth, stageHeight, onSave]);
 
+  // Mouse-wheel zoom: zoom toward pointer, clamped between 0.5x and 3x
+  const handleWheel = useCallback(
+    (e: Konva.KonvaEventObject<WheelEvent>) => {
+      e.evt.preventDefault();
+      const stage = stageRef.current;
+      if (!stage) return;
+      const oldScale = stage.scaleX();
+      const pointer = stage.getPointerPosition();
+      if (!pointer) return;
+      const newScale = e.evt.deltaY > 0 ? oldScale * 0.9 : oldScale * 1.1;
+      const clampedScale = Math.max(0.5, Math.min(3, newScale));
+      const mousePointTo = {
+        x: (pointer.x - stage.x()) / oldScale,
+        y: (pointer.y - stage.y()) / oldScale,
+      };
+      stage.scale({ x: clampedScale, y: clampedScale });
+      stage.position({
+        x: pointer.x - mousePointTo.x * clampedScale,
+        y: pointer.y - mousePointTo.y * clampedScale,
+      });
+    },
+    [],
+  );
+
+  const handleResetZoom = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage) return;
+    stage.scale({ x: 1, y: 1 });
+    stage.position({ x: 0, y: 0 });
+  }, []);
+
   // Keyboard: arrow-key nudge for the selected zone + Ctrl+Z/Y undo/redo
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -415,8 +447,11 @@ export function PlacementGeometryEditor({
         }}
       >
         <Stage
+          ref={stageRef}
           width={stageWidth}
           height={stageHeight}
+          draggable
+          onWheel={handleWheel}
           onClick={(e) => {
             const clickedOnEmpty = e.target === e.target.getStage();
             if (clickedOnEmpty) setSelectedId(null);
@@ -555,6 +590,14 @@ export function PlacementGeometryEditor({
             accessibilityLabel="Redo last move"
           >
             Redo
+          </Button>
+          <Button
+            variant="plain"
+            onClick={handleResetZoom}
+            size="slim"
+            accessibilityLabel="Reset zoom and pan"
+          >
+            Reset zoom
           </Button>
         </InlineStack>
       )}
