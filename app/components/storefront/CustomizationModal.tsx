@@ -27,33 +27,44 @@ type DraftState = {
   sizeSelections: Record<string, number>;
 };
 
-function makeDraftKey(productId: string) {
-  return `insignia-draft-${productId}`;
+const DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+function makeDraftKey(productId: string, variantId: string) {
+  return `insignia_draft_${productId}_${variantId}`;
 }
 
-function saveDraft(productId: string, state: DraftState, configVersion: string) {
+function saveDraft(productId: string, variantId: string, state: DraftState, configVersion: string) {
   try {
-    localStorage.setItem(makeDraftKey(productId), JSON.stringify({ ...state, _configVersion: configVersion, _savedAt: Date.now() }));
+    localStorage.setItem(
+      makeDraftKey(productId, variantId),
+      JSON.stringify({ ...state, _configVersion: configVersion, _savedAt: Date.now() }),
+    );
   } catch { /* quota exceeded — silently fail */ }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function loadDraft(productId: string, currentConfigVersion: string): DraftState | null {
+function loadDraft(productId: string, variantId: string, currentConfigVersion: string): DraftState | null {
   try {
-    const raw = localStorage.getItem(makeDraftKey(productId));
+    const key = makeDraftKey(productId, variantId);
+    const raw = localStorage.getItem(key);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
+    // Discard drafts older than 24 hours
+    if (Date.now() - (parsed._savedAt ?? 0) > DRAFT_TTL_MS) {
+      localStorage.removeItem(key);
+      return null;
+    }
     if (parsed._configVersion !== currentConfigVersion) {
-      localStorage.removeItem(makeDraftKey(productId));
+      localStorage.removeItem(key);
       return null;
     }
     return parsed;
   } catch { return null; }
 }
 
-function clearDraft(productId: string) {
+function clearDraft(productId: string, variantId: string) {
   try {
-    localStorage.removeItem(makeDraftKey(productId));
+    localStorage.removeItem(makeDraftKey(productId, variantId));
   } catch {
     // ignore
   }
@@ -241,10 +252,10 @@ export function CustomizationModal({
   const handleCloseConfirm = useCallback((confirmed: boolean) => {
     setShowCloseConfirm(false);
     if (confirmed && typeof window !== "undefined") {
-      clearDraft(productId);
+      clearDraft(productId, variantId);
       window.history.back();
     }
-  }, [productId]);
+  }, [productId, variantId]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -288,7 +299,7 @@ export function CustomizationModal({
   useEffect(() => {
     if (step !== "upload" && config) {
       const configVersion = config.productConfigId;
-      saveDraft(productId, {
+      saveDraft(productId, variantId, {
         step,
         logoType: logo.type,
         selectedPlacements: Object.keys(placementSelections),
@@ -457,14 +468,14 @@ export function CustomizationModal({
         const d = await confirmRes.json().catch(() => ({}));
         throw new Error(d?.error?.message ?? "Failed to confirm cart");
       }
-      clearDraft(productId);
+      clearDraft(productId, variantId);
       window.history.back();
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Failed to add to cart");
     } finally {
       setSubmitLoading(false);
     }
-  }, [customizationId, priceResult, selectedMethodId, quantity, saveDraftAndPrice, config, productId]);
+  }, [customizationId, priceResult, selectedMethodId, quantity, saveDraftAndPrice, config, productId, variantId]);
 
   // Early returns after all hooks — this is the required pattern.
   if (configLoading) {
