@@ -1,125 +1,29 @@
-# Engineering Platform — Insignia App
+# Insignia App — Claude Instructions
 
-This repository is a **software engineering platform** for Claude Code.
-It enables fully autonomous, multi-agent development with deliberate model
-routing, deterministic policy enforcement, and first-class plugin support.
+This file contains mandatory rules for working on this codebase.
+Read it at session start before doing anything else.
 
-This file covers two things:
-1. **Platform** — how Claude Code agents are orchestrated in this repo.
-2. **Insignia App** — mandatory rules for working on the Shopify app under `Insignia-shopify-app/`.
+## Tooling
 
-Read both sections at session start. Detail lives in skills — keep this short.
+This project uses **Superpowers** and **MCP servers** as the primary workflow tools.
 
----
+- Use Superpowers skills for planning, TDD, debugging, and code review workflows.
+- Always use the Shopify Dev MCP before touching any Shopify API, GraphQL, or Liquid.
+- Use Context7 MCP when looking up library/framework documentation.
+- Hooks in `.claude/hooks/` enforce policy automatically — do not bypass them.
 
-# Part 1 — Engineering Platform
+## Core rules
 
-## Getting started
-
-Run once after cloning:
-
-```bash
-bash scripts/setup.sh
-```
-
-This checks and auto-installs the one required system dependency (`jq`),
-using whichever package manager is available (scoop, brew, apt, dnf, choco,
-winget). No manual steps needed.
+1. **Plan first.** Use `superpowers:writing-plans` before writing code for any non-trivial task. Get user approval before executing.
+2. **Verify before claiming done.** Use `superpowers:verification-before-completion` — run typecheck + lint and confirm output before saying anything is finished.
+3. **Test-driven.** Use `superpowers:test-driven-development` for features and bugfixes.
+4. **Debug systematically.** Use `superpowers:systematic-debugging` before proposing any fix.
 
 ---
 
-## Core philosophy
+# Insignia Shopify App
 
-1. **Plan first, always.** No agent writes code without an approved plan.
-2. **Right model, right task.** Haiku explores. Sonnet builds. Opus decides.
-3. **Skills over prompts.** Repeatable logic belongs in a skill, not in chat.
-4. **Hooks enforce policy.** Trust is not a control; hooks are.
-5. **Agents are autonomous.** The architect delegates without asking permission.
-
----
-
-## When a task arrives — use a command
-
-| Command | Use when |
-|---|---|
-| `/build <description>` | Any feature, app, or medium+ task |
-| `/fix <description>` | Small bug or isolated change |
-| `/platform-change <description>` | Infra, Docker, CI, migrations |
-| `/escalate <type> <context>` | Architect needs Opus reasoning |
-| `/release` | Prepare and publish a release |
-
-The architect agent owns `/build`. It plans, delegates, and drives autonomously.
-You do not sequence agents manually.
-
----
-
-## Model routing
-
-| Task | Model | Why |
-|---|---|---|
-| Scan files, grep, run tests, summarise output | Haiku | Cheapest for read-only work |
-| Write code, review, refactor, document | Sonnet | Best cost/capability ratio |
-| Architectural decisions, root-cause debugging, migrations | Opus | Reserved for high-stakes reasoning |
-
-Attempt every task with Haiku or Sonnet first. Opus is invoked only when
-the architect determines that cheaper models have insufficient context or
-reasoning depth for a decision.
-
----
-
-## Plugin integration
-
-This repo is designed to complement, not duplicate, installed plugins.
-
-- **Superpowers** — if installed, the architect defers planning and TDD phases
-  to Superpowers commands (`/sp:plan`, `/sp:tdd`) instead of its own planning
-  skill. Detection is automatic via the `stack` skill.
-- **Context7** — loaded automatically by the researcher when fetching library
-  docs. Reduces hallucinated API usage.
-- **Sequential Thinking** — activated by the architect before any Opus
-  escalation to ensure structured reasoning.
-- **Language servers** (pyright, vtsls, rust-analyzer) — used by the
-  implementer for real-time type checking after every edit.
-
-If a plugin is not installed, the platform's native skills fill the gap
-without error. All plugin touchpoints have fallbacks defined in their skills.
-
----
-
-## Repository layout
-
-```
-CLAUDE.md                   — This file (session-start manifest)
-.claude/
-  agents/                   — Sub-agent definitions (model + tools + persona)
-  commands/                 — Slash commands (user-facing entry points)
-  skills/                   — Domain skills (loaded on demand)
-    architect/              — Planning and delegation logic
-    stack/                  — Plugin detection and stack conventions
-    implement/              — Coding standards and patterns
-    test/                   — Test execution and interpretation
-    review/                 — Code review criteria
-    debug/                  — Systematic debugging protocol
-    infra/                  — Infrastructure change procedures
-    release/                — Release and versioning procedure
-  hooks/                    — Shell scripts (deterministic enforcement)
-  vendor/                   — Plugin integration notes
-```
-
----
-
-## Contribution rules
-
-- Add a skill instead of expanding this file.
-- Add a hook instead of writing a prompt about what Claude "should" do.
-- If you run a procedure more than twice, it becomes a skill.
-- Every new agent must specify model, toolsAllow, and a description.
-
----
-
-# Part 2 — Insignia Shopify App
-
-All rules in this section apply when working inside `Insignia-shopify-app/`.
+All rules below apply to this repository.
 
 ## Project Overview
 
