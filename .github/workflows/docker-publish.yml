@@ -2,15 +2,15 @@
 #
 # Builds the Insignia Docker image and pushes it to GitHub Container Registry.
 # Triggers:
-#   - Push to main branch  → tags :latest and :sha-{short_sha}
-#   - Version tag v*.*.* → tags :v1.2.3, :1.2, :1, and :latest
+#   - Any branch push → runs quality check (typecheck + lint)
+#   - Push to main or version tag v*.*.* → also builds and pushes Docker image
 
 name: Publish Docker Image
 
 on:
   push:
     branches:
-      - main
+      - '**'
     tags:
       - "v*.*.*"
 
@@ -19,7 +19,32 @@ env:
   IMAGE_NAME: optidigi/insignia-app
 
 jobs:
+  quality:
+    name: Typecheck & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.3.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
   build-and-push:
+    name: Build & Push Docker Image
+    needs: quality
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
       contents: read
