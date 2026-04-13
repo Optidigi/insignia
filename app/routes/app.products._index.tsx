@@ -395,17 +395,11 @@ export default function ProductConfigsPage() {
           {configs.length === 0 ? (
             <Card>
               <EmptyState
-                heading="Create your first product setup"
-                action={{
-                  content: "Add Product Setup",
-                  onAction: handleModalOpen,
-                }}
+                heading="Set up your first product"
+                action={{ content: "Add product setup", onAction: handleModalOpen }}
                 image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
               >
-                <p>
-                  Product setups link your Shopify products to customization
-                  options like views, placements, and decoration methods.
-                </p>
+                <p>Configure which products customers can customize with logos and artwork.</p>
               </EmptyState>
             </Card>
           ) : (
@@ -445,17 +439,11 @@ export default function ProductConfigsPage() {
                 hasZebraStriping
                 emptyState={
                   <EmptyState
-                    heading="Create your first product setup"
-                    action={{
-                      content: "Add Product Setup",
-                      onAction: handleModalOpen,
-                    }}
+                    heading="Set up your first product"
+                    action={{ content: "Add product setup", onAction: handleModalOpen }}
                     image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
                   >
-                    <p>
-                      Product setups link your Shopify products to customization
-                      options like views, placements, and decoration methods.
-                    </p>
+                    <p>Configure which products customers can customize with logos and artwork.</p>
                   </EmptyState>
                 }
               >

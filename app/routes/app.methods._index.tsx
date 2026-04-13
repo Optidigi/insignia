@@ -166,17 +166,11 @@ export default function MethodsPage() {
           {methods.length === 0 && !isSubmitting ? (
             <Card>
               <EmptyState
-                heading="Create your first decoration method"
-                action={{
-                  content: "Add Method",
-                  onAction: () => setModalOpen(true),
-                }}
+                heading="Create a decoration method"
+                action={{ content: "Add method", onAction: () => setModalOpen(true) }}
                 image="https://cdn.shopify.com/s/files/1/0262/4071/2726/files/emptystate-files.png"
               >
-                <p>
-                  Decoration methods define how logos can be applied to products,
-                  such as Embroidery, DTG, or Screen Print.
-                </p>
+                <p>Decoration methods define how logos are applied (embroidery, screen print, DTG, etc.) and their base pricing.</p>
               </EmptyState>
             </Card>
           ) : (
