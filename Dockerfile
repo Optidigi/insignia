@@ -12,6 +12,12 @@ RUN npm ci
 
 COPY . .
 
+# Expose the production app URL so that Vite sets an absolute base for assets.
+# Assets must be fully-qualified because the storefront modal is served via
+# Shopify App Proxy (myshopify.com/apps/insignia/*) which does NOT proxy /assets/*.
+ARG SHOPIFY_APP_URL=https://insignia.optidigi.nl
+ENV SHOPIFY_APP_URL=$SHOPIFY_APP_URL
+
 # Build the React Router app
 RUN npm run build
 

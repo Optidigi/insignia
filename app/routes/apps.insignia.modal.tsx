@@ -35,10 +35,21 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // HttpResponseError) must NOT crash the modal: the loader only needs the
   // URL params, not the session. Security is fully covered by the HMAC check.
   try {
-    await authenticate.public.appProxy(request);
+    // Race against a 5-second timeout: token-refresh hangs (e.g. Shopify API slow)
+    // must not block the modal render. Shopify's App Proxy kills the connection
+    // after ~30 s, so we need to respond well within that window. Security is
+    // fully covered by the HMAC check that happens synchronously at the top of
+    // authenticate.public.appProxy — if HMAC is invalid it throws 400 before the
+    // network calls begin, and that 400 still propagates (see catch below).
+    await Promise.race([
+      authenticate.public.appProxy(request),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("[modal] appProxy session load timed out after 5s")), 5000)
+      ),
+    ]);
   } catch (e) {
     if (e instanceof Response && e.status === 400) throw e; // invalid HMAC — reject
-    // Anything else (session expiry, token refresh failure, etc.) — log and continue
+    // Anything else (session expiry, token refresh failure, timeout, etc.) — log and continue
     console.error("[modal] appProxy session error (continuing after HMAC passed):", e);
   }
 
