@@ -16,7 +16,11 @@ import {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, payload } = await authenticate.webhook(request);
-  const eventId = request.headers.get("X-Shopify-Event-Id") || `fallback-${Date.now()}`;
+  const eventId = request.headers.get("X-Shopify-Event-Id");
+  if (!eventId) {
+    console.error("[orders/create] Missing X-Shopify-Event-Id header");
+    return new Response(null, { status: 400 });
+  }
 
   console.log(`[orders/create] Received webhook for ${shop}, event: ${eventId}`);
 
