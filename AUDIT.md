@@ -329,6 +329,10 @@ Everything below was identified as a problem and resolved prior to this audit da
 - ✅ Geometry snapshot immutability enforced via Postgres `BEFORE UPDATE` trigger
 - ✅ Webhook idempotency via `WebhookEvent` deduplication table
 - ✅ SVG sanitisation via DOMPurify + JSDOM before R2 storage
+- ✅ Artwork download button on order detail — presigned GET URL via `getPresignedDownloadUrl()`, rendered at `app/routes/app.orders.$id.tsx:785`
+- ✅ CSV export UI button — Export CSV button at `app/routes/app.orders._index.tsx:255` calling `/api/admin/orders/export`
+- ✅ Order production status API — `advance-status` intent handler in `app/routes/app.orders.$id.tsx:380`
+- ✅ Order production status UI controls — per-line action buttons in `app/routes/app.orders.$id.tsx:833`
 
 ---
 
@@ -339,20 +343,17 @@ Everything below was identified as a problem and resolved prior to this audit da
 | 1 | Apply for Shopify protected data access | §1.1 | Low (form) | 🔴 Critical |
 | 2 | Confirm `SENTRY_DSN` on VPS | §2.1 | 5 min | 🔴 Critical |
 | 3 | Variant slot expiry cron | §1.3 | 2–3 h | 🔴 Critical |
-| 4 | Artwork download button on order detail | §4.1 | 2–3 h | 🔴 Critical |
-| 5 | Order production status controls (UI + API) | §2.5, §4.2 | 4–6 h | 🟡 High |
-| 6 | `CustomizationDraft` cleanup cron | §2.3 | 1–2 h | 🟡 High |
-| 7 | Rate limiting on storefront endpoints | §2.2 | 2–3 h | 🟡 High |
-| 8 | Add lint/typecheck gate to CI | §8.1 | 30 min | 🟡 High |
-| 9 | Merchant email notification on new order | §2.4 | 4–6 h | 🟡 High |
-| 10 | Empty states + onboarding checklist | §4.3, §5.7 | 1 day | 🟡 High |
-| 11 | Test suite — variant pool + storefront prep | §1.2 | 2–3 days | 🟡 High |
-| 12 | Storefront mobile layout audit | §4.4 | 4–6 h | 🟡 High |
-| 13 | View Editor UX decision + implementation | §4.5 | 1–2 days | 🟡 High |
-| 14 | Logo sizing UX decision | §4.6 | 1 day | 🟡 High |
-| 15 | Orders filter by artwork status | §5.3 | 2–3 h | 🟢 Medium |
-| 16 | CSV export UI button | §5.4 | 1 h | 🟢 Medium |
-| 17 | Storefront artwork re-upload shortcut | §5.1 | 3–4 h | 🟢 Medium |
-| 18 | Placement editor zoom/pan | §5.2 | 2–3 h | 🟢 Medium |
-| 19 | Staging environment | §8.2 | 1 day | 🟢 Medium |
-| 20 | Multi-image support per view | §3.1 | 2–3 days | 🟢 Medium |
+| 4 | `CustomizationDraft` cleanup cron | §2.3 | 1–2 h | 🟡 High |
+| 5 | Rate limiting on storefront endpoints | §2.2 | 2–3 h | 🟡 High |
+| 6 | Add lint/typecheck gate to CI | §8.1 | 30 min | 🟡 High |
+| 7 | Merchant email notification on new order | §2.4 | 4–6 h | 🟡 High |
+| 8 | Empty states + onboarding checklist | §4.3, §5.7 | 1 day | 🟡 High |
+| 9 | Test suite — variant pool + storefront prep | §1.2 | 2–3 days | 🟡 High |
+| 10 | Storefront mobile layout audit | §4.4 | 4–6 h | 🟡 High |
+| 11 | View Editor UX decision + implementation | §4.5 | 1–2 days | 🟡 High |
+| 12 | Logo sizing UX decision | §4.6 | 1 day | 🟡 High |
+| 13 | Orders filter by artwork status | §5.3 | 2–3 h | 🟢 Medium |
+| 14 | Storefront artwork re-upload shortcut | §5.1 | 3–4 h | 🟢 Medium |
+| 15 | Placement editor zoom/pan | §5.2 | 2–3 h | 🟢 Medium |
+| 16 | Staging environment | §8.2 | 1 day | 🟢 Medium |
+| 17 | Multi-image support per view | §3.1 | 2–3 days | 🟢 Medium |
