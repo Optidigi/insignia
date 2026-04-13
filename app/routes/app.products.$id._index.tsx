@@ -94,6 +94,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       (vc) => vc.placementGeometry && Object.keys(vc.placementGeometry as object).length > 0
     ).length;
 
+    // Also check view-level shared geometry (used when sharedZones is true)
+    const viewsWithGeometry = config.views.filter(
+      (v) => v.placementGeometry && Object.keys(v.placementGeometry as object).length > 0
+    ).length;
+
     // Get variant count for this config (total per view)
     const totalVariants = config.linkedProductIds.length > 0
       ? await db.variantViewConfiguration.groupBy({
@@ -173,14 +178,16 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const totalMinCents = pricingRanges.length > 0 ? Math.min(...pricingRanges.map((r) => r.minCents)) : 0;
     const totalMaxCents = pricingRanges.length > 0 ? Math.max(...pricingRanges.map((r) => r.maxCents)) : 0;
 
-    // Config is "ready" for storefront use when all setup steps are complete
+    // Config is "ready" for storefront use when all setup steps are complete.
+    // Geometry can live on views (shared zones) or per-variant configs — either counts.
+    const hasAnyGeometry = viewsWithGeometry > 0 || variantConfigsWithGeometry > 0;
     const isConfigReady =
       config.linkedProductIds.length > 0 &&
       config.allowedMethods.length > 0 &&
       config.views.length > 0 &&
       variantConfigsWithImages > 0 &&
       config.placements.length > 0 &&
-      variantConfigsWithGeometry > 0;
+      hasAnyGeometry;
 
     // Sync insignia.enabled metafield: set "true" only when config is ready,
     // "false" otherwise. This controls the storefront Customize button visibility.
@@ -222,6 +229,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         variantConfigCount,
         variantConfigsWithImages,
         variantConfigsWithGeometry,
+        viewsWithGeometry,
       },
       totalVariants,
       filledImageCounts,
@@ -633,7 +641,7 @@ export default function ProductConfigDetailPage() {
   const hasLinkedProducts = config.linkedProductIds.length > 0;
   const hasMethods = config.allowedMethods.length > 0;
   const hasImages = stats.variantConfigsWithImages > 0;
-  const hasGeometry = stats.variantConfigsWithGeometry > 0;
+  const hasGeometry = stats.variantConfigsWithGeometry > 0 || stats.viewsWithGeometry > 0;
 
   const setupSteps = [
     { done: hasLinkedProducts, label: "Linked products" },
