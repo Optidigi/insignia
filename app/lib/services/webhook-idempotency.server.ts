@@ -40,12 +40,25 @@ export async function processWebhookIdempotently(
       },
     });
   } catch (error: unknown) {
-    // Unique constraint violation = duplicate event
+    // Unique constraint violation = either duplicate or incomplete prior attempt
     if ((error as { code?: string }).code === "P2002") {
-      console.log(`[Webhook] Duplicate event ${eventId} for ${topic}, skipping`);
-      return { processed: false, duplicate: true, eventId };
+      const existing = await db.webhookEvent.findFirst({
+        where: { eventId },
+        select: { processedAt: true },
+      });
+      if (existing && !existing.processedAt) {
+        // Previous handler crashed mid-execution — delete incomplete record and retry
+        console.warn(`[Webhook] Retrying incomplete event ${eventId}`);
+        await db.webhookEvent.deleteMany({ where: { eventId } });
+        await db.webhookEvent.create({ data: { shopId, eventId, topic } });
+        // Fall through to execute handler below
+      } else {
+        console.log(`[Webhook] Duplicate event ${eventId} for ${topic}, skipping`);
+        return { processed: false, duplicate: true, eventId };
+      }
+    } else {
+      throw error;
     }
-    throw error;
   }
 
   try {
