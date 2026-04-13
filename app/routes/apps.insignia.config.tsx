@@ -13,7 +13,7 @@ import { authenticate, unauthenticated } from "../shopify.server";
 import db from "../db.server";
 import { getStorefrontConfig } from "../lib/services/storefront-config.server";
 import { checkRateLimit } from "../lib/storefront/rate-limit.server";
-import { AppError, ErrorCodes } from "../lib/errors.server";
+import { AppError } from "../lib/errors.server";
 import { parseAcceptLanguage, getStorefrontTranslations } from "../lib/storefront/i18n.server";
 
 function jsonResponse(data: unknown, status = 200, origin?: string, extra?: Record<string, string>): Response {
@@ -82,12 +82,10 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
 
     // Normalize numeric IDs to Shopify GIDs (supports both formats)
-    function toProductGid(id: string): string {
-      return id.startsWith("gid://") ? id : `gid://shopify/Product/${id}`;
-    }
-    function toVariantGid(id: string): string {
-      return id.startsWith("gid://") ? id : `gid://shopify/ProductVariant/${id}`;
-    }
+    const toProductGid = (id: string) =>
+      id.startsWith("gid://") ? id : `gid://shopify/Product/${id}`;
+    const toVariantGid = (id: string) =>
+      id.startsWith("gid://") ? id : `gid://shopify/ProductVariant/${id}`;
     const normalizedProductId = toProductGid(productId);
     const normalizedVariantId = toVariantGid(variantId);
 

@@ -428,7 +428,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 // ============================================================================
 
 export default function ProductConfigDetailPage() {
-  const { config, methods, stats, totalVariants, filledImageCounts, isFirstSetup, shopDomain, productHandle, customizerUrl, currencyCode, pricingRanges, totalMinCents, totalMaxCents } =
+  const { config, methods, stats, totalVariants, filledImageCounts, isFirstSetup, customizerUrl, currencyCode, pricingRanges, totalMinCents, totalMaxCents } =
     useLoaderData<typeof loader>();
 
   const currencySymbolMap: Record<string, string> = {
