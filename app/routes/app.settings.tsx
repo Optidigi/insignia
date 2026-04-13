@@ -5,9 +5,9 @@
  * Canonical: docs/core/api-contracts/admin.md
  */
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { Form, useLoaderData, useSubmit, useNavigation, useActionData } from "react-router";
+import { useLoaderData, useSubmit, useNavigation, useActionData } from "react-router";
 import {
   Page,
   Layout,
@@ -225,6 +225,43 @@ export default function SettingsPage() {
 
   const isSubmitting = navigation.state === "submitting";
 
+  // -- Translation dirty tracking & SaveBar --------------------------------
+  const originalTranslationValues = useMemo(
+    () => translationMap[selectedLocale] ?? {},
+    [translationMap, selectedLocale],
+  );
+
+  const translationsDirty = useMemo(() => {
+    const allKeys = TRANSLATION_KEYS.map((k) => k.key);
+    return allKeys.some(
+      (key) => (translationValues[key] ?? "") !== (originalTranslationValues[key] ?? ""),
+    );
+  }, [translationValues, originalTranslationValues]);
+
+  useEffect(() => {
+    const shopify = window.shopify;
+    if (translationsDirty) {
+      shopify?.saveBar?.show("settings-save-bar");
+    } else {
+      shopify?.saveBar?.hide("settings-save-bar");
+    }
+    return () => { shopify?.saveBar?.hide("settings-save-bar"); };
+  }, [translationsDirty]);
+
+  const handleSaveTranslations = useCallback(() => {
+    const formData = new FormData();
+    formData.append("intent", "save-translations");
+    formData.append("locale", selectedLocale);
+    for (const { key } of TRANSLATION_KEYS) {
+      formData.append(`t_${key}`, translationValues[key] ?? "");
+    }
+    submit(formData, { method: "POST" });
+  }, [selectedLocale, translationValues, submit]);
+
+  const handleDiscardTranslations = useCallback(() => {
+    setTranslationValues(originalTranslationValues);
+  }, [originalTranslationValues]);
+
   const handleFileDrop = useCallback(
     async (files: File[]) => {
       const file = files[0];
@@ -351,6 +388,11 @@ export default function SettingsPage() {
       title="Settings"
       subtitle="Configure storefront appearance and defaults"
     >
+      <ui-save-bar id="settings-save-bar">
+        <button variant="primary" type="button" onClick={handleSaveTranslations}>Save</button>
+        <button type="button" onClick={handleDiscardTranslations}>Discard</button>
+      </ui-save-bar>
+
       <Tabs tabs={tabs} selected={selectedTab} onSelect={setSelectedTab}>
         {selectedTab === 0 && (
           <Layout>
@@ -456,44 +498,32 @@ export default function SettingsPage() {
                   </Banner>
                 )}
 
-                <Form method="post">
-                  <input type="hidden" name="intent" value="save-translations" />
-                  <input type="hidden" name="locale" value={selectedLocale} />
+                <BlockStack gap="400">
+                  <Select
+                    label="Language"
+                    options={SUPPORTED_LOCALES.map((l) => ({ label: l.label, value: l.code }))}
+                    value={selectedLocale}
+                    onChange={handleLocaleChange}
+                  />
 
-                  <BlockStack gap="400">
-                    <Select
-                      label="Language"
-                      options={SUPPORTED_LOCALES.map((l) => ({ label: l.label, value: l.code }))}
-                      value={selectedLocale}
-                      onChange={handleLocaleChange}
-                    />
-
-                    <Card>
-                      <BlockStack gap="300">
-                        {TRANSLATION_KEYS.map(({ key, label, default: defaultVal }) => (
-                          <TextField
-                            key={key}
-                            name={`t_${key}`}
-                            label={label}
-                            placeholder={defaultVal}
-                            value={translationValues[key] ?? ""}
-                            onChange={(val) =>
-                              setTranslationValues((prev) => ({ ...prev, [key]: val }))
-                            }
-                            helpText={`Default: "${defaultVal}"`}
-                            autoComplete="off"
-                          />
-                        ))}
-                      </BlockStack>
-                    </Card>
-
-                    <InlineStack align="end">
-                      <Button submit variant="primary" loading={isSubmitting}>
-                        Save translations
-                      </Button>
-                    </InlineStack>
-                  </BlockStack>
-                </Form>
+                  <Card>
+                    <BlockStack gap="300">
+                      {TRANSLATION_KEYS.map(({ key, label, default: defaultVal }) => (
+                        <TextField
+                          key={key}
+                          label={label}
+                          placeholder={defaultVal}
+                          value={translationValues[key] ?? ""}
+                          onChange={(val) =>
+                            setTranslationValues((prev) => ({ ...prev, [key]: val }))
+                          }
+                          helpText={`Default: "${defaultVal}"`}
+                          autoComplete="off"
+                        />
+                      ))}
+                    </BlockStack>
+                  </Card>
+                </BlockStack>
               </BlockStack>
             </Layout.Section>
           </Layout>
