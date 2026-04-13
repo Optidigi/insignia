@@ -81,13 +81,23 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       );
     }
 
+    // Normalize numeric IDs to Shopify GIDs (supports both formats)
+    function toProductGid(id: string): string {
+      return id.startsWith("gid://") ? id : `gid://shopify/Product/${id}`;
+    }
+    function toVariantGid(id: string): string {
+      return id.startsWith("gid://") ? id : `gid://shopify/ProductVariant/${id}`;
+    }
+    const normalizedProductId = toProductGid(productId);
+    const normalizedVariantId = toVariantGid(variantId);
+
     const { admin } = await unauthenticated.admin(shopDomain);
     const runGraphql = async (query: string, variables?: Record<string, unknown>) => {
       const response = await admin.graphql(query, { variables } as Record<string, unknown>);
       return response as Response;
     };
 
-    const config = await getStorefrontConfig(shop.id, shopDomain, productId, variantId, runGraphql);
+    const config = await getStorefrontConfig(shop.id, shopDomain, normalizedProductId, normalizedVariantId, runGraphql);
     const locale = parseAcceptLanguage(request.headers.get("Accept-Language"));
     const translations = await getStorefrontTranslations(shop.id, locale);
     return jsonResponse({ ...config, translations, locale }, 200, allowedOrigin);

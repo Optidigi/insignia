@@ -19,13 +19,24 @@ import { authenticate } from "../shopify.server";
 import { AppProxyProvider } from "@shopify/shopify-app-react-router/react";
 import { CustomizationModal } from "../components/storefront/CustomizationModal";
 
+// Normalize numeric IDs to Shopify GIDs (supports both formats)
+function toProductGid(id: string): string {
+  return id.startsWith("gid://") ? id : `gid://shopify/Product/${id}`;
+}
+function toVariantGid(id: string): string {
+  return id.startsWith("gid://") ? id : `gid://shopify/ProductVariant/${id}`;
+}
+
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   await authenticate.public.appProxy(request);
 
   const url = new URL(request.url);
-  const productId = url.searchParams.get("productId") ?? "";
-  const variantId = url.searchParams.get("variantId") ?? "";
+  const rawProductId = url.searchParams.get("productId") ?? "";
+  const rawVariantId = url.searchParams.get("variantId") ?? "";
   const appUrl = (process.env.SHOPIFY_APP_URL ?? "").replace(/\/$/, "");
+
+  const productId = rawProductId ? toProductGid(rawProductId) : rawProductId;
+  const variantId = rawVariantId ? toVariantGid(rawVariantId) : rawVariantId;
 
   return { productId, variantId, appUrl };
 };

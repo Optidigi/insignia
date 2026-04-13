@@ -116,6 +116,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Fetch the Shopify product handle for the "Preview on store" button.
     // Only fetch if there is at least one linked product GID.
     let productHandle: string | null = null;
+    let customizerUrl: string | null = null;
     const firstProductGid = config.linkedProductIds[0];
     if (firstProductGid) {
       try {
@@ -124,22 +125,35 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           query GetProductHandle($id: ID!) {
             product(id: $id) {
               handle
+              variants(first: 1) {
+                nodes {
+                  id
+                }
+              }
             }
           }`,
           { variables: { id: firstProductGid } }
         );
         const handleData = (await handleResponse.json()) as {
-          data?: { product?: { handle?: string } };
+          data?: { product?: { handle?: string; variants?: { nodes?: Array<{ id?: string }> } } };
           errors?: unknown;
         };
         if (handleData.errors) {
           console.error("[GetProductHandle] GraphQL errors:", handleData.errors);
         }
         productHandle = handleData.data?.product?.handle ?? null;
+        const firstVariantGid = handleData.data?.product?.variants?.nodes?.[0]?.id ?? null;
+        const productNumericId = firstProductGid?.split("/").pop() ?? null;
+        const variantNumericId = firstVariantGid?.split("/").pop() ?? null;
+        customizerUrl =
+          productNumericId && variantNumericId
+            ? `https://${session.shop}/apps/insignia/modal?productId=${productNumericId}&variantId=${variantNumericId}`
+            : null;
       } catch (e) {
         // Non-fatal: if the product no longer exists in Shopify, skip the button
         console.error("[GetProductHandle] unexpected error:", e);
         productHandle = null;
+        customizerUrl = null;
       }
     }
 
@@ -159,6 +173,33 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const totalMinCents = pricingRanges.length > 0 ? Math.min(...pricingRanges.map((r) => r.minCents)) : 0;
     const totalMaxCents = pricingRanges.length > 0 ? Math.max(...pricingRanges.map((r) => r.maxCents)) : 0;
 
+    // Fire-and-forget: backfill insignia.enabled metafield for all currently
+    // linked products so products linked before this feature was deployed
+    // automatically get the metafield set on next page load.
+    if (config.linkedProductIds.length > 0) {
+      void admin
+        .graphql(
+          `#graphql
+          mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
+            metafieldsSet(metafields: $metafields) {
+              userErrors { field message }
+            }
+          }`,
+          {
+            variables: {
+              metafields: (config.linkedProductIds as string[]).map((productGid) => ({
+                ownerId: productGid,
+                namespace: "insignia",
+                key: "enabled",
+                value: "true",
+                type: "single_line_text_field",
+              })),
+            },
+          }
+        )
+        .catch(() => {}); // non-fatal, ignore errors
+    }
+
     return {
       config,
       methods,
@@ -166,6 +207,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       shopDomain: session.shop,
       currencyCode: shop.currencyCode,
       productHandle,
+      customizerUrl,
       isFirstSetup,
       stats: {
         variantConfigCount,
@@ -192,7 +234,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
   try {
-    const { session } = await authenticate.admin(request);
+    const { session, admin } = await authenticate.admin(request);
     const { id } = params;
 
     if (!id) {
@@ -228,7 +270,9 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
     if (intent === "update-basic") {
       const name = formData.get("name") as string;
-      const productIds = JSON.parse(formData.get("productIds") as string || "[]");
+      const productIds = JSON.parse(formData.get("productIds") as string || "[]") as string[];
+
+      const prevProductIds: string[] = (configOwnership.linkedProductIds ?? []) as string[];
 
       const input = validateOrThrow(
         UpdateProductConfigSchema,
@@ -237,6 +281,68 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       );
 
       await updateProductConfig(shop.id, id, input);
+
+      // Sync the insignia.enabled metafield so the theme block only shows the
+      // Customize button on products that have an active Insignia configuration.
+      try {
+        const added = productIds.filter((pid) => !prevProductIds.includes(pid));
+        const removed = prevProductIds.filter((pid) => !productIds.includes(pid));
+
+        // Set metafield on newly linked products
+        if (added.length > 0) {
+          await admin.graphql(
+            `#graphql
+            mutation MetafieldsSet($metafields: [MetafieldsSetInput!]!) {
+              metafieldsSet(metafields: $metafields) {
+                userErrors { field message }
+              }
+            }`,
+            {
+              variables: {
+                metafields: added.map((productGid) => ({
+                  ownerId: productGid,
+                  namespace: "insignia",
+                  key: "enabled",
+                  value: "true",
+                  type: "single_line_text_field",
+                })),
+              },
+            }
+          );
+        }
+
+        // Delete metafield on unlinked products
+        for (const productGid of removed) {
+          const metafieldQuery = await admin.graphql(
+            `#graphql
+            query GetInsigniaMetafield($id: ID!) {
+              product(id: $id) {
+                metafield(namespace: "insignia", key: "enabled") { id }
+              }
+            }`,
+            { variables: { id: productGid } }
+          );
+          const mfData = (await metafieldQuery.json()) as {
+            data?: { product?: { metafield?: { id?: string } } };
+          };
+          const metafieldId = mfData.data?.product?.metafield?.id;
+          if (metafieldId) {
+            await admin.graphql(
+              `#graphql
+              mutation MetafieldDelete($input: MetafieldDeleteInput!) {
+                metafieldDelete(input: $input) {
+                  userErrors { field message }
+                }
+              }`,
+              { variables: { input: { id: metafieldId } } }
+            );
+          }
+        }
+      } catch (metafieldError) {
+        // Non-fatal: log but do not fail the save
+        console.error("[update-basic] metafield sync error:", metafieldError);
+      }
+
       return { success: true, intent: "update-basic" };
     }
 
@@ -322,7 +428,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 // ============================================================================
 
 export default function ProductConfigDetailPage() {
-  const { config, methods, stats, totalVariants, filledImageCounts, isFirstSetup, shopDomain, productHandle, currencyCode, pricingRanges, totalMinCents, totalMaxCents } =
+  const { config, methods, stats, totalVariants, filledImageCounts, isFirstSetup, shopDomain, productHandle, customizerUrl, currencyCode, pricingRanges, totalMinCents, totalMaxCents } =
     useLoaderData<typeof loader>();
 
   const currencySymbolMap: Record<string, string> = {
@@ -530,20 +636,14 @@ export default function ProductConfigDetailPage() {
   ];
   const completedSteps = setupSteps.filter((s) => s.done).length;
 
-  // "Preview on store" URL — only available when there is a linked product with a known handle
-  const previewUrl =
-    productHandle
-      ? `https://${shopDomain}/products/${productHandle}`
-      : null;
-
   return (
     <Page
       title={config.name}
       subtitle={`${config.linkedProductIds.length} product${config.linkedProductIds.length !== 1 ? "s" : ""} · ${config.views.length} view${config.views.length !== 1 ? "s" : ""} · ${config.placements.length} print area${config.placements.length !== 1 ? "s" : ""}`}
       backAction={{ content: "Products", url: "/app/products" }}
       secondaryActions={
-        previewUrl
-          ? [{ content: "Preview on store", onAction: () => window.open(previewUrl, "_blank") }]
+        customizerUrl
+          ? [{ content: "Preview on store", onAction: () => window.open(customizerUrl, "_blank") }]
           : undefined
       }
     >

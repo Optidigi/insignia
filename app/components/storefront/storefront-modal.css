@@ -1696,6 +1696,17 @@ html, body {
     max-height: none;
     aspect-ratio: unset;
     height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* Ensure canvas scales properly within the centered carousel */
+  .insignia-desktop-preview .insignia-preview-carousel canvas,
+  .insignia-desktop-preview .insignia-preview-carousel .insignia-canvas {
+    max-width: 100%;
+    height: auto;
   }
 
   /* Right panel: scrollable body + footer */

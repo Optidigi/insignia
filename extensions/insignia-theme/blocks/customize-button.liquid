@@ -7,18 +7,16 @@
   button class, so it matches Add to Cart and other theme buttons.
 {% endcomment %}
 
-{% if product and product.selected_or_first_available_variant %}
-  {% assign product_gid = 'gid://shopify/Product/' | append: product.id %}
-  {% assign variant_gid = 'gid://shopify/ProductVariant/' | append: product.selected_or_first_available_variant.id %}
-  {% assign modal_url = '/apps/insignia/modal?productId=' | append: product_gid | append: '&variantId=' | append: variant_gid %}
+{% if product and product.selected_or_first_available_variant and product.metafields.insignia.enabled == "true" %}
+  {% assign modal_url = '/apps/insignia/modal?productId=' | append: product.id | append: '&variantId=' | append: product.selected_or_first_available_variant.id %}
 
   <div class="insignia-customize-block" {{ block.shopify_attributes }}>
     <a
       href="{{ modal_url }}"
       class="insignia-customize-button {% if block.settings.use_theme_style %}button btn{% endif %} {{ block.settings.custom_class }}"
       data-insignia-modal
-      data-product-id="{{ product_gid }}"
-      data-variant-id="{{ variant_gid }}"
+      data-product-id="{{ product.id }}"
+      data-variant-id="{{ product.selected_or_first_available_variant.id }}"
       {% if block.settings.custom_id != blank %}id="{{ block.settings.custom_id }}"{% endif %}
     >
       {{ block.settings.button_label }}
