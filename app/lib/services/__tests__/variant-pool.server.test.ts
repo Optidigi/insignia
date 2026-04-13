@@ -163,6 +163,12 @@ describe("ensureVariantPoolExists", () => {
     expect(prismaMock.decorationMethod.findFirst).toHaveBeenCalledWith({
       where: { id: "method-1", shopId: "shop-1" },
     });
+
+    // Verify that a new fee product was created in Shopify
+    const createCall = adminGraphql.mock.calls.find(
+      (args) => typeof args[0] === "string" && args[0].includes("productCreate")
+    );
+    expect(createCall).toBeDefined();
   });
 
   it("throws NOT_FOUND when no slots exist and decorationMethod is not found", async () => {

@@ -159,6 +159,9 @@ describe("prepareCustomization", () => {
     // Must NOT have reserved a new slot
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
     expect(prismaMock.variantSlot.update).not.toHaveBeenCalled();
+
+    // Verify no new slot was provisioned (idempotent path short-circuits)
+    expect(vi.mocked(ensureVariantPoolExists)).not.toHaveBeenCalled();
   });
 
   it("reserves a slot when no prior config exists and returns pricing data", async () => {
