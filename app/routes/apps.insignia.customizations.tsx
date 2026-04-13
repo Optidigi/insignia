@@ -113,6 +113,27 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     );
   }
 
+  // Validate placements array structure
+  if (!placements.every((p: unknown) => {
+    if (typeof p !== "object" || p === null) return false;
+    const pl = p as Record<string, unknown>;
+    return typeof pl.placementId === "string" && typeof pl.stepIndex === "number" && pl.stepIndex >= 0;
+  })) {
+    return jsonResponse(
+      { error: { code: "BAD_REQUEST", message: "Invalid placements structure" } },
+      400, allowedOrigin
+    );
+  }
+
+  // Validate logoAssetIdsByPlacementId values are strings or null
+  const logoMap = logoAssetIdsByPlacementId as Record<string, unknown>;
+  if (!Object.values(logoMap).every((v) => v === null || typeof v === "string")) {
+    return jsonResponse(
+      { error: { code: "BAD_REQUEST", message: "Invalid logo asset mapping" } },
+      400, allowedOrigin
+    );
+  }
+
   try {
     const result = await createCustomizationDraft(shop.id, {
       productId: String(productId),
