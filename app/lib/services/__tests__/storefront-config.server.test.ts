@@ -1,0 +1,384 @@
+// app/lib/services/__tests__/storefront-config.server.test.ts
+import { vi, describe, it, expect, beforeEach } from "vitest";
+
+// ---------------------------------------------------------------------------
+// Hoisted db mock
+// ---------------------------------------------------------------------------
+const prismaMock = vi.hoisted(() => {
+  const makeFn = () => vi.fn();
+  return {
+    productConfig: {
+      findFirst: makeFn(),
+    },
+    variantViewConfiguration: {
+      findMany: makeFn(),
+    },
+    shop: {
+      findUnique: makeFn(),
+    },
+    merchantSettings: {
+      findUnique: makeFn(),
+    },
+  };
+});
+
+vi.mock("../../../db.server", () => ({
+  default: prismaMock,
+}));
+
+vi.mock("../../storage.server", () => ({
+  getPresignedGetUrl: vi.fn().mockResolvedValue("https://cdn.example.com/signed-image.png"),
+}));
+
+vi.mock("../settings.server", () => ({
+  getMerchantSettings: vi.fn().mockResolvedValue({
+    placeholderLogoImageUrl: null,
+  }),
+}));
+
+// Static imports after mocks
+import { getStorefrontConfig } from "../storefront-config.server";
+import { ErrorCodes } from "../../errors.server";
+import { getMerchantSettings } from "../settings.server";
+import { getPresignedGetUrl } from "../../storage.server";
+
+beforeEach(() => {
+  vi.resetAllMocks();
+  // Restore default mocks
+  vi.mocked(getMerchantSettings).mockResolvedValue({
+    placeholderLogoImageUrl: null,
+  } as never);
+  vi.mocked(getPresignedGetUrl).mockResolvedValue(
+    "https://cdn.example.com/signed-image.png"
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Shared test data
+// ---------------------------------------------------------------------------
+
+const MOCK_VIEW_FRONT = {
+  id: "view-front",
+  perspective: "front",
+  displayOrder: 0,
+  defaultImageKey: "shops/s1/views/front.png",
+  sharedZones: true,
+  placementGeometry: {
+    "placement-chest": {
+      centerXPercent: 50,
+      centerYPercent: 30,
+      maxWidthPercent: 40,
+    },
+  },
+};
+
+const MOCK_VIEW_BACK = {
+  id: "view-back",
+  perspective: "back",
+  displayOrder: 1,
+  defaultImageKey: null, // missing image
+  sharedZones: true,
+  placementGeometry: {},
+};
+
+const MOCK_PLACEMENT = {
+  id: "placement-chest",
+  name: "Chest",
+  basePriceAdjustmentCents: 200,
+  hidePriceWhenZero: false,
+  defaultStepIndex: 0,
+  displayOrder: 0,
+  steps: [
+    {
+      label: "Small",
+      priceAdjustmentCents: 0,
+      scaleFactor: 0.5,
+      displayOrder: 0,
+    },
+    {
+      label: "Large",
+      priceAdjustmentCents: 300,
+      scaleFactor: 1.0,
+      displayOrder: 1,
+    },
+  ],
+};
+
+const MOCK_METHOD = {
+  decorationMethod: {
+    id: "method-1",
+    name: "Screen Print",
+    basePriceCents: 1000,
+    customerName: "Screen Printing",
+    customerDescription: "Vibrant colors",
+    description: "Internal desc",
+    artworkConstraints: {
+      fileTypes: ["png", "svg"],
+      maxColors: 6,
+      minDpi: 300,
+    },
+  },
+};
+
+function makeProductConfig(overrides: Record<string, unknown> = {}) {
+  return {
+    id: "config-1",
+    shopId: "shop-1",
+    linkedProductIds: ["gid://shopify/Product/100"],
+    views: [MOCK_VIEW_FRONT, MOCK_VIEW_BACK],
+    placements: [MOCK_PLACEMENT],
+    allowedMethods: [MOCK_METHOD],
+    ...overrides,
+  };
+}
+
+function makeRunGraphql() {
+  return vi.fn().mockResolvedValue({
+    json: vi.fn().mockResolvedValue({
+      data: {
+        productVariant: {
+          price: "29.99",
+          product: { title: "Classic Tee" },
+        },
+      },
+    }),
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Tests
+// ---------------------------------------------------------------------------
+
+describe("getStorefrontConfig", () => {
+  it("returns full config shape with views, methods, placements for a product/variant", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(makeProductConfig());
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const runGraphql = makeRunGraphql();
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      runGraphql
+    );
+
+    expect(result.productConfigId).toBe("config-1");
+    expect(result.shop).toBe("test.myshopify.com");
+    expect(result.productId).toBe("gid://shopify/Product/100");
+    expect(result.variantId).toBe("gid://shopify/ProductVariant/200");
+    expect(result.currency).toBe("USD");
+    expect(result.baseProductPriceCents).toBe(2999);
+    expect(result.productTitle).toBe("Classic Tee");
+
+    // Views
+    expect(result.views).toHaveLength(2);
+    expect(result.views[0].perspective).toBe("front");
+
+    // Methods
+    expect(result.methods).toHaveLength(1);
+    expect(result.methods[0].name).toBe("Screen Print");
+    expect(result.methods[0].basePriceCents).toBe(1000);
+    expect(result.methods[0].customerName).toBe("Screen Printing");
+
+    // Placements
+    expect(result.placements).toHaveLength(1);
+    expect(result.placements[0].name).toBe("Chest");
+    expect(result.placements[0].steps).toHaveLength(2);
+  });
+
+  it("resolves shared zone geometry from view-level placementGeometry", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(makeProductConfig());
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    // Front view has geometry for placement-chest (shared zone)
+    const frontGeom = result.placements[0].geometryByViewId["view-front"];
+    expect(frontGeom).toEqual({
+      centerXPercent: 50,
+      centerYPercent: 30,
+      maxWidthPercent: 40,
+    });
+  });
+
+  it("prefers variant-specific geometry over view-level when sharedZones is off", async () => {
+    const viewWithNonShared = {
+      ...MOCK_VIEW_FRONT,
+      sharedZones: false,
+      placementGeometry: {
+        "placement-chest": {
+          centerXPercent: 50,
+          centerYPercent: 30,
+          maxWidthPercent: 40,
+        },
+      },
+    };
+
+    prismaMock.productConfig.findFirst.mockResolvedValue(
+      makeProductConfig({ views: [viewWithNonShared] })
+    );
+
+    // Variant-specific geometry overrides
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([
+      {
+        viewId: "view-front",
+        imageUrl: null,
+        productView: viewWithNonShared,
+        placementGeometry: {
+          "placement-chest": {
+            centerXPercent: 55,
+            centerYPercent: 35,
+            maxWidthPercent: 45,
+          },
+        },
+      },
+    ]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    // Variant-level should win when sharedZones is false
+    const frontGeom = result.placements[0].geometryByViewId["view-front"];
+    expect(frontGeom).toEqual({
+      centerXPercent: 55,
+      centerYPercent: 35,
+      maxWidthPercent: 45,
+    });
+  });
+
+  it("sets isMissingImage when view has no image key and no variant override", async () => {
+    vi.mocked(getPresignedGetUrl).mockRejectedValue(new Error("not found"));
+
+    prismaMock.productConfig.findFirst.mockResolvedValue(
+      makeProductConfig({ views: [MOCK_VIEW_BACK] })
+    );
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    expect(result.views[0].isMissingImage).toBe(true);
+    expect(result.views[0].imageUrl).toBeNull();
+  });
+
+  it("returns null geometry for placements with no geometry data on a view", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(makeProductConfig());
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    // Back view has no geometry for placement-chest
+    const backGeom = result.placements[0].geometryByViewId["view-back"];
+    expect(backGeom).toBeNull();
+  });
+
+  it("returns currency from shop record", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(makeProductConfig());
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "CAD" });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    expect(result.currency).toBe("CAD");
+  });
+
+  it("returns empty string currency when shop has no currencyCode", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(makeProductConfig());
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue(null);
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    expect(result.currency).toBe("");
+  });
+
+  it("throws NOT_FOUND when no product config links this product", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(null);
+
+    await expect(
+      getStorefrontConfig(
+        "shop-1",
+        "test.myshopify.com",
+        "gid://shopify/Product/999",
+        "gid://shopify/ProductVariant/999"
+      )
+    ).rejects.toMatchObject({
+      code: ErrorCodes.NOT_FOUND,
+    });
+  });
+
+  it("throws INVALID_CONFIG when config has no decoration methods", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(
+      makeProductConfig({ allowedMethods: [] })
+    );
+
+    await expect(
+      getStorefrontConfig(
+        "shop-1",
+        "test.myshopify.com",
+        "gid://shopify/Product/100",
+        "gid://shopify/ProductVariant/200"
+      )
+    ).rejects.toMatchObject({
+      code: ErrorCodes.INVALID_CONFIG,
+    });
+  });
+
+  it("throws INVALID_CONFIG when config has no placements", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(
+      makeProductConfig({ placements: [] })
+    );
+
+    await expect(
+      getStorefrontConfig(
+        "shop-1",
+        "test.myshopify.com",
+        "gid://shopify/Product/100",
+        "gid://shopify/ProductVariant/200"
+      )
+    ).rejects.toMatchObject({
+      code: ErrorCodes.INVALID_CONFIG,
+    });
+  });
+});
