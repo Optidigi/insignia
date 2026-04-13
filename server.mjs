@@ -10,6 +10,7 @@
 
 import { createRequestHandler } from "@react-router/express";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -29,6 +30,37 @@ app.use((_req, res, next) => {
   res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
   next();
 });
+
+// Rate limiting for storefront proxy endpoints.
+// These endpoints are public (no Shopify session auth) and directly handle
+// slot reservation and file uploads — both prime targets for abuse.
+const standardLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: { message: "Too many requests. Please try again later.", code: "RATE_LIMITED" },
+    });
+  },
+});
+
+const uploadLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({
+      error: { message: "Too many upload requests. Please try again later.", code: "RATE_LIMITED" },
+    });
+  },
+});
+
+app.use("/apps/insignia/prepare", standardLimiter);
+app.use("/apps/insignia/config", standardLimiter);
+app.use("/apps/insignia/upload", uploadLimiter);
 
 // Static assets with long-lived cache.
 app.use(
