@@ -185,18 +185,46 @@ export async function prepareCustomization(
         userErrors { field message }
       }
     }`;
-  const response = await adminGraphql(updateMutation, {
-    productId: productGid,
-    variants: [{ id: variantGid, price: priceStr }],
-  });
-  const json = await response.json();
-  const errors = json?.data?.productVariantsBulkUpdate?.userErrors;
+
+  const rollbackSlot = async () => {
+    await db.$transaction([
+      db.variantSlot.update({
+        where: { id: result.slot.id },
+        data: { state: "FREE", currentConfigId: null, reservedAt: null, reservedUntil: null },
+      }),
+      db.customizationConfig.update({
+        where: { id: result.config.id },
+        data: { state: "EXPIRED", expiredAt: new Date() },
+      }),
+    ]);
+  };
+
+  let json: unknown;
+  try {
+    const response = await adminGraphql(updateMutation, {
+      productId: productGid,
+      variants: [{ id: variantGid, price: priceStr }],
+    });
+    json = await response.json();
+  } catch (networkError) {
+    console.error("[prepare] Shopify variant update network error:", networkError);
+    await rollbackSlot();
+    throw new AppError(
+      ErrorCodes.SERVICE_UNAVAILABLE,
+      "Failed to set variant price — please retry",
+      503
+    );
+  }
+
+  const errors = (json as { data?: { productVariantsBulkUpdate?: { userErrors?: Array<unknown> } } })
+    ?.data?.productVariantsBulkUpdate?.userErrors;
   if (errors?.length) {
     console.error("[prepare] Shopify variant update errors:", errors);
+    await rollbackSlot();
     throw new AppError(
-      ErrorCodes.INTERNAL_ERROR,
-      "Failed to set slot price in Shopify",
-      500
+      ErrorCodes.SERVICE_UNAVAILABLE,
+      "Failed to set variant price — please retry",
+      503
     );
   }
 
