@@ -23,11 +23,24 @@ export function verifyCronToken(request: Request): void {
   const authHeader = request.headers.get("Authorization");
   const expected = `Bearer ${secret}`;
 
-  if (
-    !authHeader ||
-    authHeader.length !== expected.length ||
-    !timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected))
-  ) {
+  if (!authHeader) {
+    throw new Response("Unauthorized", { status: 401 });
+  }
+
+  // Pad both buffers to the same length so timingSafeEqual (which requires
+  // equal-length inputs) never throws. The length equality check is done
+  // separately after the constant-time comparison so that both conditions
+  // must hold — this prevents a timing side-channel from the length pre-check.
+  const a = Buffer.from(authHeader, "utf8");
+  const b = Buffer.from(expected, "utf8");
+  const len = Math.max(a.length, b.length);
+  const aPadded = Buffer.alloc(len);
+  const bPadded = Buffer.alloc(len);
+  a.copy(aPadded);
+  b.copy(bPadded);
+
+  const valid = timingSafeEqual(aPadded, bPadded) && a.length === b.length;
+  if (!valid) {
     throw new Response("Unauthorized", { status: 401 });
   }
 }
