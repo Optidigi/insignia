@@ -918,20 +918,20 @@ export default function ViewDetailPage() {
           padding: "0 24px", height: 52, flexShrink: 0,
           background: "#ffffff", borderBottom: "1px solid #E5E7EB",
         }}>
-          <a
-            href={`/app/products/${config.id}`}
+          <Link
+            to={`/app/products/${config.id}`}
             style={{ color: "#6B7280", display: "flex", alignItems: "center", textDecoration: "none" }}
           >
             <svg width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
               <path d="M19 12H5M12 5l-7 7 7 7" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
-          </a>
-          <a
-            href={`/app/products/${config.id}`}
+          </Link>
+          <Link
+            to={`/app/products/${config.id}`}
             style={{ color: "#2563EB", fontSize: 14, textDecoration: "none" }}
           >
             {config.name}
-          </a>
+          </Link>
           <div style={{ flex: 1 }} />
           <button
             type="button"
