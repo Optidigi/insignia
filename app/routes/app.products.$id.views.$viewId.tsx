@@ -924,17 +924,23 @@ export default function ViewDetailPage() {
               )}
               <div style={{ flex: 1 }} />
               {/* Add view — always visible */}
-              <Link
-                to={`/app/products/${config.id}`}
+              <button
+                onClick={() => {
+                  const fd = new FormData();
+                  fd.append("intent", "create-view");
+                  fd.append("perspective", "custom");
+                  fd.append("name", "New view");
+                  submit(fd, { method: "POST", action: `/app/products/${config.id}` });
+                }}
                 style={{
                   display: "flex", alignItems: "center", gap: 4,
                   padding: "4px 10px", borderRadius: 6,
                   background: "#F3F4F6", border: "none",
-                  color: "#6B7280", fontSize: 11, textDecoration: "none",
+                  color: "#6B7280", fontSize: 11, cursor: "pointer",
                 }}
               >
                 + Add view
-              </Link>
+              </button>
             </div>
 
             {/* Canvas area */}

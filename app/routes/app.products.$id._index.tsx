@@ -543,7 +543,7 @@ export default function ProductConfigDetailPage() {
       backAction={{ content: "Products", url: "/app/products" }}
       secondaryActions={
         previewUrl
-          ? [{ content: "Preview on store", url: previewUrl, external: true }]
+          ? [{ content: "Preview on store", onAction: () => window.open(previewUrl, "_blank") }]
           : undefined
       }
     >
@@ -667,9 +667,23 @@ export default function ProductConfigDetailPage() {
                     Views
                   </Text>
                   {views.length > 0 ? (
-                    <Link to={`/app/products/${config.id}/views/${views[0].id}`}>
-                      <Button>Open view editor</Button>
-                    </Link>
+                    <InlineStack gap="200">
+                      <Button
+                        loading={isSubmitting}
+                        onClick={() => {
+                          const fd = new FormData();
+                          fd.append("intent", "create-view");
+                          fd.append("perspective", "custom");
+                          fd.append("name", "New view");
+                          submit(fd, { method: "POST" });
+                        }}
+                      >
+                        Add view
+                      </Button>
+                      <Link to={`/app/products/${config.id}/views/${views[0].id}`}>
+                        <Button variant="primary">Open view editor</Button>
+                      </Link>
+                    </InlineStack>
                   ) : (
                     <Button
                       loading={isSubmitting}
