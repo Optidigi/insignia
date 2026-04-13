@@ -26,9 +26,20 @@ app.set("trust proxy", 1);
 // CORS headers — required for <script type="module"> loaded cross-origin
 // when the Shopify app proxy serves HTML at myshopify.com but assets
 // are fetched directly from insignia.optidigi.nl.
-app.use((_req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, HEAD, OPTIONS");
+// Restricted to Shopify domains only for security.
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (
+    origin &&
+    (origin.endsWith(".myshopify.com") ||
+     origin.endsWith(".shopify.com") ||
+     origin === process.env.SHOPIFY_APP_URL)
+  ) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, PATCH, DELETE, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
   next();
 });
 
