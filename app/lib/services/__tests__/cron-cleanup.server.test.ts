@@ -88,7 +88,8 @@ describe("cleanupStaleDrafts", () => {
     expect(result).toEqual({ deleted: 42 });
 
     const call = db.customizationDraft.deleteMany.mock.calls[0][0];
-    const cutoff = call?.where?.createdAt?.lt as Date;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const cutoff = (call?.where?.createdAt as any)?.lt as Date;
     const diff = Date.now() - cutoff.getTime();
     expect(diff).toBeGreaterThan(23 * 60 * 60 * 1000);
     expect(diff).toBeLessThan(25 * 60 * 60 * 1000);

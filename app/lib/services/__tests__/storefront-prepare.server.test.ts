@@ -35,6 +35,8 @@ vi.mock("../storefront-customizations.server", () => ({
   computeCustomizationPrice: vi.fn().mockResolvedValue({
     unitPriceCents: 1500,
     feeCents: 500,
+    breakdown: [],
+    validation: { ok: true },
   }),
 }));
 
@@ -52,6 +54,8 @@ beforeEach(() => {
   vi.mocked(computeCustomizationPrice).mockResolvedValue({
     unitPriceCents: 1500,
     feeCents: 500,
+    breakdown: [],
+    validation: { ok: true },
   });
 });
 

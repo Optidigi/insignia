@@ -39,7 +39,7 @@ vi.mock("../../../db.server", () => ({
 
 // Static imports after mocks
 import { provisionVariantPool, ensureVariantPoolExists } from "../variant-pool.server";
-import { AppError, ErrorCodes } from "../../errors.server";
+import { ErrorCodes } from "../../errors.server";
 
 // Reset all mocks between tests
 beforeEach(() => {
