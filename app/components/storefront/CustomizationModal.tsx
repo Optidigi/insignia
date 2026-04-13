@@ -122,7 +122,7 @@ type PrepareResult = {
 };
 
 const CLOSE_CONFIRM_MESSAGE =
-  "Are you sure you want to close? Your customization progress will be lost.";
+  "You have an unfinished customization. Close without adding to cart?";
 
 export function CustomizationModal({
   productId,
@@ -246,8 +246,13 @@ export function CustomizationModal({
   }, [currentStepIndex, goToStep]);
 
   const handleClose = useCallback(() => {
-    setShowCloseConfirm(true);
-  }, []);
+    const hasSelections = step !== "upload" || logo.type !== "none";
+    if (hasSelections) {
+      setShowCloseConfirm(true);
+    } else {
+      window.history.back();
+    }
+  }, [step, logo.type]);
 
   const handleCloseConfirm = useCallback((confirmed: boolean) => {
     setShowCloseConfirm(false);
