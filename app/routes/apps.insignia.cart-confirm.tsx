@@ -11,6 +11,7 @@ import db from "../db.server";
 import { cartConfirm } from "../lib/services/storefront-cart-confirm.server";
 import { checkRateLimit } from "../lib/storefront/rate-limit.server";
 import { AppError, ErrorCodes } from "../lib/errors.server";
+import { notifyMerchantNewOrder } from "../lib/services/merchant-notifications.server";
 
 function jsonResponse(data: unknown, status = 200, origin?: string, extra?: Record<string, string>): Response {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -84,6 +85,28 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   }
   try {
     const result = await cartConfirm(shop.id, String(customizationId));
+
+    // Fire-and-forget: send merchant notification email (non-blocking)
+    db.customizationConfig
+      .findFirst({
+        where: { shopId: shop.id, customizationDraftId: String(customizationId) },
+        select: {
+          decorationMethod: { select: { name: true } },
+        },
+      })
+      .then((config) => {
+        notifyMerchantNewOrder(shopDomain, {
+          productName: "Customized Product",
+          methodName: config?.decorationMethod?.name ?? "Custom",
+          artworkStatus: "PROVIDED",
+        }).catch((e) =>
+          console.error("[cart-confirm] Notification error:", e),
+        );
+      })
+      .catch((e) =>
+        console.error("[cart-confirm] Notification lookup error:", e),
+      );
+
     return jsonResponse(result, 200, origin);
   } catch (error) {
     if (error instanceof AppError) {
