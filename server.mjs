@@ -12,11 +12,11 @@ import { createRequestHandler } from "@react-router/express";
 import express from "express";
 import rateLimit from "express-rate-limit";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const BUILD_SERVER = path.resolve(__dirname, "build/server/index.js");
+const BUILD_SERVER = pathToFileURL(path.resolve(__dirname, "build/server/index.js")).href;
 const CLIENT_DIR = path.resolve(__dirname, "build/client");
 
 const app = express();
