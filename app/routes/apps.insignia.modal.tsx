@@ -45,7 +45,13 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const rawProductId = url.searchParams.get("productId") ?? "";
   const rawVariantId = url.searchParams.get("variantId") ?? "";
-  const appUrl = url.origin;
+  // Nginx Proxy Manager terminates TLS and proxies to the container over plain
+  // HTTP. url.origin is therefore "http://insignia.optidigi.nl" — serving that
+  // as <base href> causes mixed-content failures on the HTTPS storefront page,
+  // blocking all JS/CSS bundle loads. X-Forwarded-Proto carries the original
+  // scheme; fall back to url.protocol if the header is absent.
+  const proto = request.headers.get("x-forwarded-proto") ?? url.protocol.replace(/:$/, "");
+  const appUrl = `${proto}://${url.host}`;
 
   const productId = rawProductId ? toProductGid(rawProductId) : rawProductId;
   const variantId = rawVariantId ? toVariantGid(rawVariantId) : rawVariantId;
@@ -78,10 +84,12 @@ export async function clientLoader() {
   const productId = rawProductId ? toProductGid(rawProductId) : rawProductId;
   const variantId = rawVariantId ? toVariantGid(rawVariantId) : rawVariantId;
   // Read appUrl from the <base> tag that AppProxyProvider injected on the server
-  // render. The href may end with "/" — strip it to keep the value consistent.
-  const appUrl =
-    document.querySelector("base")?.getAttribute("href")?.replace(/\/$/, "") ??
-    window.location.origin;
+  // render. Force https:// — if a stale http:// slips through from an old SSR,
+  // mixed-content would block every bundle load. Trim trailing slash too.
+  const baseHref = document.querySelector("base")?.getAttribute("href");
+  const appUrl = baseHref
+    ? baseHref.replace(/^http:\/\//, "https://").replace(/\/$/, "")
+    : window.location.origin;
   return { productId, variantId, appUrl };
 }
 // Run on hydration so any hydration-time revalidation also uses this path.
