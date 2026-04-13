@@ -20,7 +20,7 @@ Note: App proxies do not forward cookies; Shopify strips the `Cookie` header fro
 Pattern A (canonical):
 
 1. `GET /apps/insignia/config` (load config + placeholder logo; response contract: `../storefront-config.md`)
-2. Upload logo (optional): `POST /apps/insignia/uploads` (multipart/form-data) → `{ logoAsset }`
+2. Upload logo (optional): `POST /apps/insignia/upload` (multipart/form-data) → `{ assetId, previewUrl }`
 3. `POST /apps/insignia/customizations` (persist draft)
 4. `POST /apps/insignia/price` (authoritative unit price + breakdown for review tab)
 5. `POST /apps/insignia/prepare` (reserve variant-pool slot + set slot price)
@@ -29,30 +29,33 @@ Pattern A (canonical):
 
 ## Endpoint contracts
 
-### POST /apps/insignia/uploads
+### Logo Upload
 
-Upload buyer artwork server-side. The modal POSTs a `multipart/form-data` request; the Node server receives the file, uploads it to R2, and returns the created logo asset directly.
+**Endpoint:** `POST /apps/insignia/upload`
 
-> **Note**: Server-side upload eliminates the need for R2 CORS configuration on the storefront domain. The `createStorefrontUpload` / `completeStorefrontUpload` two-step flow (presigned PUT) exists in the service layer but is not used by the storefront.
+The storefront modal sends logo files to the app server — not directly to R2.
 
-**Request**
-```
-Content-Type: multipart/form-data
+**Request:** `multipart/form-data`
+- `file` — the logo file (SVG, PNG, or JPG; max 10 MB)
+- `shopId` — the shop identifier
 
-Field: file  (the logo file; max 5MB; allowed types: image/svg+xml, image/png, image/jpeg, image/webp)
-```
-
-**Response 200**
+**Response (200):**
 ```json
 {
-  "logoAsset": {
-    "id": "<uuid>",
-    "kind": "buyer_upload",
-    "previewPngUrl": "<presigned-get-url>",
-    "sanitizedSvgUrl": "<presigned-get-url> | null"
-  }
+  "assetId": "uuid",
+  "previewUrl": "https://..."
 }
 ```
+
+**Server behaviour:**
+1. Validates MIME type (SVG, PNG, JPG only). Rejects anything else with 415.
+2. For SVG: sanitises with DOMPurify + JSDOM before storing.
+3. Generates a PNG preview via Sharp.
+4. Stores both files in Cloudflare R2 under `logos/<shopId>/<assetId>.*`.
+5. Creates a `LogoAsset` DB record.
+6. Returns `assetId` + `previewUrl`.
+
+> **Note:** R2 bucket CORS policy allows GET and PUT only. The upload goes through the app server, not directly from the browser to R2.
 
 ### POST /apps/insignia/customizations
 
