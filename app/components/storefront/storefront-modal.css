@@ -1591,6 +1591,56 @@ html, body {
   display: contents;
 }
 
+/* ===== Narrow mobile (≤480px) ===== */
+@media (max-width: 480px) {
+  /* Tighten horizontal padding so content breathes on 375px/390px screens */
+  .insignia-modal-body {
+    padding: 12px;
+    padding-bottom: 100px;
+  }
+
+  /* Reduce header height to gain more vertical space for content */
+  .insignia-modal-header {
+    height: 44px;
+    padding: 0 12px;
+  }
+
+  /* Step pills: smaller text + tighter tap targets to fit 4 pills in 375px */
+  .insignia-step-pill {
+    font-size: 9px;
+    height: 44px;
+    padding: 0 2px;
+    gap: 3px;
+  }
+
+  /* Constrain canvas carousel so it never overflows a 375px viewport */
+  .insignia-preview-carousel {
+    max-height: 55vw;
+  }
+
+  /* Size canvas: reduce min-height so it doesn't push controls offscreen */
+  .insignia-size-canvas {
+    min-height: 220px;
+  }
+
+  /* Reduce section label margin-bottom for tighter lists */
+  .insignia-section-label,
+  .insignia-placement-section-label {
+    margin-bottom: 8px;
+  }
+
+  /* Confirm dialog: full-width on narrow screens */
+  .insignia-dialog {
+    max-width: 100%;
+    padding: 20px 16px;
+  }
+
+  /* Preview sheet area: shorter on small screens */
+  .insignia-preview-sheet-area {
+    height: 300px;
+  }
+}
+
 /* ===== Tablet (≥768px) ===== */
 @media (min-width: 768px) {
   .insignia-modal-header,

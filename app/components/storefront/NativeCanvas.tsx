@@ -142,8 +142,9 @@ export default function NativeCanvas({
       <div
         className={className}
         style={{
-          width: CANVAS_W,
-          height: CANVAS_H,
+          width: "100%",
+          maxWidth: CANVAS_W,
+          aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
           background: "#f3f4f6",
           display: "flex",
           alignItems: "center",
@@ -163,8 +164,9 @@ export default function NativeCanvas({
       <div
         className={className}
         style={{
-          width: CANVAS_W,
-          height: CANVAS_H,
+          width: "100%",
+          maxWidth: CANVAS_W,
+          aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
           background: "#f9fafb",
           display: "flex",
           alignItems: "center",
