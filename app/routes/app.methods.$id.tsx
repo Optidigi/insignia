@@ -199,7 +199,10 @@ export default function MethodDetailPage() {
   const submit = useSubmit();
   const navigation = useNavigation();
 
-  const loaderConstraints = (method.artworkConstraints as ArtworkConstraints | null) ?? {};
+  const loaderConstraints = useMemo(
+    () => (method.artworkConstraints as ArtworkConstraints | null) ?? {},
+    [method.artworkConstraints],
+  );
 
   // -- Form state -----------------------------------------------------------
   const [name, setName] = useState(method.name);

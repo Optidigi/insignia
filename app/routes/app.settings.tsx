@@ -322,7 +322,7 @@ export default function SettingsPage() {
     if (navigation.state === "idle" && navigation.formData) {
       setError(null);
     }
-  }, [navigation.state]);
+  }, [navigation.state, navigation.formData]);
 
   const hasPlaceholder = Boolean(settings.placeholderLogoImageUrl);
 

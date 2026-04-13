@@ -4,7 +4,7 @@
  * Canonical: docs/storefront/modal-spec.md, docs/notes/design-intent/storefront-modal.md
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StorefrontConfig, WizardStep, PlacementSelections } from "./types";
 import { WIZARD_STEPS } from "./types";
 import { UploadStep } from "./UploadStep";
@@ -314,16 +314,19 @@ export function CustomizationModal({
     .filter((p) => placementSelections[p.id] !== undefined)
     .every((p) => p.steps.length <= 1) : false;
 
-  const logoAssetIdsByPlacementId: Record<string, string | null> = {};
-  (config?.placements ?? []).forEach((p) => {
-    if (logo.type === "uploaded") {
-      logoAssetIdsByPlacementId[p.id] = Object.keys(placementSelections).includes(p.id)
-        ? logo.logoAssetId
-        : null;
-    } else {
-      logoAssetIdsByPlacementId[p.id] = null;
-    }
-  });
+  const logoAssetIdsByPlacementId = useMemo<Record<string, string | null>>(() => {
+    const result: Record<string, string | null> = {};
+    (config?.placements ?? []).forEach((p) => {
+      if (logo.type === "uploaded") {
+        result[p.id] = Object.keys(placementSelections).includes(p.id)
+          ? logo.logoAssetId
+          : null;
+      } else {
+        result[p.id] = null;
+      }
+    });
+    return result;
+  }, [config?.placements, logo, placementSelections]);
 
   // Refresh presigned logo URLs if they are approaching expiry (8-minute threshold).
   // Silently no-ops when no logo is uploaded yet.
