@@ -147,7 +147,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         const variantNumericId = firstVariantGid?.split("/").pop() ?? null;
         customizerUrl =
           productNumericId && variantNumericId
-            ? `https://${session.shop}/apps/insignia/modal?productId=${productNumericId}&variantId=${variantNumericId}`
+            ? `https://${session.shop}/apps/insignia/customize/${productNumericId}?variantId=${variantNumericId}`
             : null;
       } catch (e) {
         // Non-fatal: if the product no longer exists in Shopify, skip the button
@@ -173,9 +173,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const totalMinCents = pricingRanges.length > 0 ? Math.min(...pricingRanges.map((r) => r.minCents)) : 0;
     const totalMaxCents = pricingRanges.length > 0 ? Math.max(...pricingRanges.map((r) => r.maxCents)) : 0;
 
-    // Fire-and-forget: backfill insignia.enabled metafield for all currently
-    // linked products so products linked before this feature was deployed
-    // automatically get the metafield set on next page load.
+    // Config is "ready" for storefront use when all setup steps are complete
+    const isConfigReady =
+      config.linkedProductIds.length > 0 &&
+      config.allowedMethods.length > 0 &&
+      config.views.length > 0 &&
+      variantConfigsWithImages > 0 &&
+      config.placements.length > 0 &&
+      variantConfigsWithGeometry > 0;
+
+    // Sync insignia.enabled metafield: set "true" only when config is ready,
+    // "false" otherwise. This controls the storefront Customize button visibility.
     if (config.linkedProductIds.length > 0) {
       void admin
         .graphql(
@@ -191,7 +199,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
                 ownerId: productGid,
                 namespace: "insignia",
                 key: "enabled",
-                value: "true",
+                value: isConfigReady ? "true" : "false",
                 type: "single_line_text_field",
               })),
             },
@@ -208,6 +216,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       currencyCode: shop.currencyCode,
       productHandle,
       customizerUrl,
+      isConfigReady,
       isFirstSetup,
       stats: {
         variantConfigCount,
@@ -428,7 +437,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 // ============================================================================
 
 export default function ProductConfigDetailPage() {
-  const { config, methods, stats, totalVariants, filledImageCounts, isFirstSetup, customizerUrl, currencyCode, pricingRanges, totalMinCents, totalMaxCents } =
+  const { config, methods, stats, totalVariants, filledImageCounts, isFirstSetup, customizerUrl, isConfigReady, currencyCode, pricingRanges, totalMinCents, totalMaxCents } =
     useLoaderData<typeof loader>();
 
   const currencySymbolMap: Record<string, string> = {
@@ -643,7 +652,12 @@ export default function ProductConfigDetailPage() {
       backAction={{ content: "Products", url: "/app/products" }}
       secondaryActions={
         customizerUrl
-          ? [{ content: "Preview on store", onAction: () => setTimeout(() => window.open(customizerUrl!, "_blank"), 0) }]
+          ? [{
+              content: "Preview on store",
+              onAction: () => setTimeout(() => window.open(customizerUrl!, "_blank"), 0),
+              disabled: !isConfigReady,
+              helpText: !isConfigReady ? "Complete all setup steps to enable preview" : undefined,
+            }]
           : undefined
       }
     >

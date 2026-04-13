@@ -1,8 +1,8 @@
 /**
- * GET /apps/insignia/modal
+ * GET /apps/insignia/customize/:productId
  *
  * Full-page storefront customization wizard (Upload → Placement → Size → Review).
- * Loaded via App Proxy; productId and variantId from query params.
+ * Loaded via App Proxy; productId from URL path, variantId from optional query param.
  * Canonical: docs/storefront/modal-spec.md, docs/notes/design-intent/storefront-modal.md
  *
  * This route owns its own proxy authentication and AppProxyProvider so it is
@@ -27,7 +27,7 @@ function toVariantGid(id: string): string {
   return id.startsWith("gid://") ? id : `gid://shopify/ProductVariant/${id}`;
 }
 
-export const loader = async ({ request }: LoaderFunctionArgs) => {
+export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   // authenticate.public.appProxy validates the Shopify HMAC signature first.
   // If HMAC is invalid it throws Response(400) — we let that propagate.
   // After HMAC validation it tries to load/refresh the offline session.
@@ -54,7 +54,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   const url = new URL(request.url);
-  const rawProductId = url.searchParams.get("productId") ?? "";
+  const rawProductId = params.productId ?? "";
   const rawVariantId = url.searchParams.get("variantId") ?? "";
   // Nginx Proxy Manager terminates TLS and proxies to the container over plain
   // HTTP. url.origin is therefore "http://insignia.optidigi.nl" — serving that
@@ -90,7 +90,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
  */
 export async function clientLoader() {
   const url = new URL(window.location.href);
-  const rawProductId = url.searchParams.get("productId") ?? "";
+  // productId is the last path segment: /apps/insignia/customize/{productId}
+  const pathSegments = url.pathname.replace(/\/$/, "").split("/");
+  const rawProductId = pathSegments[pathSegments.length - 1] ?? "";
   const rawVariantId = url.searchParams.get("variantId") ?? "";
   const productId = rawProductId ? toProductGid(rawProductId) : rawProductId;
   const variantId = rawVariantId ? toVariantGid(rawVariantId) : rawVariantId;
