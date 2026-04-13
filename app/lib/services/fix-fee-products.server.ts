@@ -40,9 +40,6 @@ export async function fixExistingFeeProducts(shopId: string, adminGraphql: Admin
           product: {
             id: productGid,
             status: "UNLISTED",
-            productType: "Customization Fee",
-            tags: ["insignia-fee", "insignia-internal"],
-            seo: { title: " ", description: " " },
           },
         }
       );
