@@ -8,15 +8,19 @@
 {% endcomment %}
 
 {% if product and product.selected_or_first_available_variant and product.metafields.insignia.enabled == "true" %}
-  {% assign modal_url = '/apps/insignia/modal?productId=' | append: product.id | append: '&variantId=' | append: product.selected_or_first_available_variant.id %}
+  {% comment %}Extract numeric IDs — Liquid product.id returns the full GID (gid://shopify/Product/...)
+    which Shopify's App Proxy cannot route. We need only the numeric tail.{% endcomment %}
+  {% assign product_numeric_id = product.id | split: '/' | last %}
+  {% assign variant_numeric_id = product.selected_or_first_available_variant.id | split: '/' | last %}
+  {% assign modal_url = '/apps/insignia/modal?productId=' | append: product_numeric_id | append: '&variantId=' | append: variant_numeric_id %}
 
   <div class="insignia-customize-block" {{ block.shopify_attributes }}>
     <a
       href="{{ modal_url }}"
       class="insignia-customize-button {% if block.settings.use_theme_style %}button btn{% endif %} {{ block.settings.custom_class }}"
       data-insignia-modal
-      data-product-id="{{ product.id }}"
-      data-variant-id="{{ product.selected_or_first_available_variant.id }}"
+      data-product-id="{{ product_numeric_id }}"
+      data-variant-id="{{ variant_numeric_id }}"
       {% if block.settings.custom_id != blank %}id="{{ block.settings.custom_id }}"{% endif %}
     >
       {{ block.settings.button_label }}
