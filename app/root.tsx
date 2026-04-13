@@ -11,9 +11,10 @@ import {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const isAppProxy = url.pathname.startsWith("/apps/");
-  const appUrl = isAppProxy
-    ? (process.env.SHOPIFY_APP_URL ?? "").replace(/\/$/, "")
-    : null;
+  // Derive the app URL from the incoming request origin — this is correct regardless
+  // of which Cloudflare tunnel is active, avoiding stale SHOPIFY_APP_URL in .env.
+  // Falls back to the env var for production deployments where the origin is fixed.
+  const appUrl = isAppProxy ? url.origin : null;
   return { appUrl };
 };
 
