@@ -1,6 +1,6 @@
 # Open work / decisions to revisit
 
-> **Last updated**: 2026-04-10
+> **Last updated**: 2026-04-14
 
 This file tracks decisions and missing contracts that block completion.
 
@@ -21,6 +21,15 @@ Rules:
 ### Logo sizing UX improvement
 - **Decision needed**: Keep stepped tiers with better cards, add fixed-size-per-zone mode, or both?
 - See: memory file `project_v21_view_editor_notes.md`
+
+### Pretty storefront URLs
+- **Pinned**: `/customize/:productId` was attempted in Phase 2 but broke App Proxy routing. Reverted to `/modal?productId=X`.
+- Needs App Proxy routing research before re-implementing.
+- See: AUDIT.md "Low Priority" section.
+
+### Access token encryption
+- **Decision needed**: Accept the risk of plaintext Shopify access tokens in the database, or implement Prisma middleware for encryption at rest.
+- Tokens are in a server-only database behind VPS firewall, so risk is bounded. But encryption at rest is a best practice for App Store review.
 
 ## Resolved (kept for history)
 

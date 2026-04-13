@@ -3,25 +3,44 @@
 ## Unreleased
 
 ### Added
-- Staging image tray on product images page — drag images onto color-card cells
+- Staging image tray on product images page -- drag images onto color-card cells
 - Bulk image upload to Cloudflare R2 via presigned PUT URLs
 - `shopify.app.insignia-demo.toml` config for isolated local development
 - `.env.demo` for demo app credentials (gitignored)
 
-### Fixed
-- Double file picker on image tray Upload button (removed `<label>` wrapper, use direct `onClick`)
-- "admin.shopify.com refused to connect" — theme editor button now uses `window.open(url, "_top")` instead of embedded iframe navigation
-- R2 image upload 403 — R2 bucket CORS policy updated to allow `PUT` from app origins
-- 405 on "Add first view" — replaced native `<form>` with `useSubmit()` to prevent OAuth re-auth loop in embedded iframe
-- 500 on storefront `/config` endpoint — `AppError` catch now handles all status codes, not just 404
-- MIME type allowlist on tray upload endpoint (security)
-- Extension key sanitisation in R2 storage path (security)
-- `use_theme_style` toggle default changed to `false` so the Customize button renders independently of the theme style
+---
 
-### Changed
-- `shopify.app.toml` renamed to `shopify.app.insignia.toml`
-- `package.json` name updated to `insignia-shopify-app`, version set to `0.2.0`
-- README rewritten to be Insignia-specific (removed Shopify template boilerplate)
+## 0.3.0 — 2026-04-14
+
+Phase 2 production hardening.
+
+### Added
+- Webhook idempotency: reject missing event IDs, retry incomplete handlers
+- Slot rollback on Shopify price update failure in /prepare
+- Retry with backoff for slot price reset on orders/paid
+- CORS restricted to Shopify domains (was wildcard)
+- Deep input validation on storefront customizations endpoint
+- Database indexes for order status queries and config cleanup
+- 0-methods/0-placements guards (storefront 422 + admin warning banners)
+- ARIA roles on storefront method cards and step pills
+- 44px touch targets on storefront modal buttons
+- localStorage draft persistence with 24h expiry
+- Close confirmation dialog with neutral copy
+- Empty states on Products, Methods, Orders pages
+- Artwork status filter on Orders page
+- ContextualSaveBar on Settings translations form
+- Merchant email notification service (gated behind RESEND_API_KEY)
+- Placement editor zoom/pan (mouse wheel + drag)
+- Mobile responsive CSS for storefront modal (375px, 390px)
+- Config readiness guards: Preview button disabled until config complete
+- Storefront Customize button visibility tied to config completeness
+- Test suite: 38 tests (webhook idempotency, config, cart-confirm, variant pool, prepare, cron)
+
+### Fixed
+- ESLint hook dependency warnings (useMemo/useCallback/useEffect)
+- View editor back navigation causing login prompt (Link instead of `<a>`)
+- Setup progress "Print areas positioned" not recognizing view-level geometry
+- Theme editor link opening in same tab instead of new tab
 
 ---
 
@@ -30,7 +49,7 @@
 Initial production deployment.
 
 - Product configuration (views, placements, decoration methods)
-- Storefront modal (4-step: upload → placement → size → review)
+- Storefront modal (4-step: upload, placement, size, review)
 - Variant pool pricing for non-Shopify-Plus merchants
 - Cloudflare R2 storage with server-side upload
 - Docker + GitHub Actions CI/CD

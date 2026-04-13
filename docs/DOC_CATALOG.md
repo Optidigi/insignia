@@ -1,6 +1,6 @@
 # Documentation Catalog
 
-> **Last updated**: 2026-04-10
+> **Last updated**: 2026-04-14
 > **Purpose**: Inventory of all docs with tiering. Start at `AGENT_ENTRY.md` for navigation.
 
 ## Tier 1 — Canonical Contracts (source of truth)
@@ -64,3 +64,5 @@
 | `specs/2026-04-09-v2.1-view-editor-brainstorm.md` | ACTIVE | View Editor rework research + competitor analysis |
 | `specs/2026-04-10-v3-future-features.md` | ACTIVE | V3 feature backlog (ruler tool, 3D, etc.) |
 | `specs/v2-design-decisions-and-todos.md` | ACTIVE | Consolidated design decisions + open todos |
+| `plans/2026-04-13-phase1-hardening.md` | EXECUTED | Phase 1 hardening (cron, rate limiting, CI, tests) |
+| `specs/2026-04-13-phase1-hardening-design.md` | EXECUTED | Phase 1 hardening design spec |
