@@ -96,6 +96,22 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     };
 
     const config = await getStorefrontConfig(shop.id, shopDomain, normalizedProductId, normalizedVariantId, runGraphql);
+
+    if (!config.methods || config.methods.length === 0) {
+      return jsonResponse(
+        { error: { code: "INVALID_CONFIG", message: "Product has no decoration methods configured" } },
+        422,
+        allowedOrigin
+      );
+    }
+    if (!config.placements || config.placements.length === 0) {
+      return jsonResponse(
+        { error: { code: "INVALID_CONFIG", message: "Product has no placements configured" } },
+        422,
+        allowedOrigin
+      );
+    }
+
     const locale = parseAcceptLanguage(request.headers.get("Accept-Language"));
     const translations = await getStorefrontTranslations(shop.id, locale);
     return jsonResponse({ ...config, translations, locale }, 200, allowedOrigin);

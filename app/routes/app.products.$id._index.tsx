@@ -678,6 +678,24 @@ export default function ProductConfigDetailPage() {
           </Layout.Section>
         )}
 
+        {/* 0-methods warning */}
+        {selectedMethodIds.length === 0 && (
+          <Layout.Section>
+            <Banner tone="warning">
+              This product has no decoration methods linked. Customers won&apos;t be able to customize it until you add at least one method.
+            </Banner>
+          </Layout.Section>
+        )}
+
+        {/* 0-placements warning */}
+        {placements.length === 0 && (
+          <Layout.Section>
+            <Banner tone="warning">
+              This product has no print areas defined. Add at least one print area before publishing.
+            </Banner>
+          </Layout.Section>
+        )}
+
         {/* ============ MAIN CONTENT ============ */}
         <Layout.Section>
           <BlockStack gap="500">
