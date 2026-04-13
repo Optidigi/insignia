@@ -12,7 +12,7 @@
     which Shopify's App Proxy cannot route. We need only the numeric tail.{% endcomment %}
   {% assign product_numeric_id = product.id | split: '/' | last %}
   {% assign variant_numeric_id = product.selected_or_first_available_variant.id | split: '/' | last %}
-  {% assign modal_url = '/apps/insignia/customize/' | append: product_numeric_id | append: '?variantId=' | append: variant_numeric_id %}
+  {% assign modal_url = '/apps/insignia/modal?productId=' | append: product_numeric_id | append: '&variantId=' | append: variant_numeric_id %}
 
   <div class="insignia-customize-block" {{ block.shopify_attributes }}>
     <a

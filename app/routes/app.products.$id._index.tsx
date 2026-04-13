@@ -152,7 +152,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         const variantNumericId = firstVariantGid?.split("/").pop() ?? null;
         customizerUrl =
           productNumericId && variantNumericId
-            ? `https://${session.shop}/apps/insignia/customize/${productNumericId}?variantId=${variantNumericId}`
+            ? `https://${session.shop}/apps/insignia/modal?productId=${productNumericId}&variantId=${variantNumericId}`
             : null;
       } catch (e) {
         // Non-fatal: if the product no longer exists in Shopify, skip the button
