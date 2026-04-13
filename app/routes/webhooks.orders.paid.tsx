@@ -80,7 +80,21 @@ async function handleOrdersPaid(shopId: string, shopDomain: string, payload: any
 
     // Reset slot variant price to 0 outside the transaction to avoid holding locks during API calls
     if (!result.skipped && result.productId && result.variantId) {
-      await resetSlotVariantPrice(adminGraphql, result.productId, result.variantId);
+      let lastError: unknown;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await resetSlotVariantPrice(adminGraphql, result.productId, result.variantId);
+          lastError = null;
+          break;
+        } catch (e) {
+          lastError = e;
+          console.warn(`[orders/paid] Price reset attempt ${attempt}/3 failed for ${result.variantId}:`, e);
+          if (attempt < 3) await new Promise((r) => setTimeout(r, 1000 * attempt));
+        }
+      }
+      if (lastError) {
+        console.error(`[orders/paid] Price reset failed after 3 attempts for ${result.variantId} — slot needs manual cleanup`);
+      }
     }
   }
 }
