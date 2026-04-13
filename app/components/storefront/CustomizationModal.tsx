@@ -515,6 +515,7 @@ export function CustomizationModal({
                 disabled={i > currentStepIndex}
                 onClick={() => i < currentStepIndex && goToStep(stepKey)}
                 aria-label={label}
+                aria-current={step === stepKey ? "step" : undefined}
               >
                 <StepIcon size={16} />
                 <span>{label}</span>

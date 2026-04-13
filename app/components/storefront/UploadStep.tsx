@@ -294,6 +294,7 @@ export function UploadStep({
       <p className="insignia-section-label">{t.upload.methodLabel}</p>
 
       {/* Method selection cards */}
+      <div role="radiogroup" aria-label="Decoration method">
       {config.methods.map((method) => {
         const isSelected = method.id === selectedMethodId;
         const displayName = method.customerName || method.name;
@@ -304,7 +305,16 @@ export function UploadStep({
             type="button"
             className="insignia-method-card"
             data-selected={isSelected ? "true" : undefined}
+            role="radio"
+            aria-checked={isSelected}
+            tabIndex={0}
             onClick={() => onMethodChange(method.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                onMethodChange(method.id);
+              }
+            }}
           >
             <div
               className="insignia-method-icon-wrap"
@@ -341,6 +351,7 @@ export function UploadStep({
           </button>
         );
       })}
+      </div>
     </section>
   );
 }
