@@ -21,6 +21,7 @@ const CLIENT_DIR = path.resolve(__dirname, "build/client");
 
 const app = express();
 app.disable("x-powered-by");
+app.set("trust proxy", 1);
 
 // CORS headers — required for <script type="module"> loaded cross-origin
 // when the Shopify app proxy serves HTML at myshopify.com but assets

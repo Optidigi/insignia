@@ -1,4 +1,6 @@
 // app/lib/cron-auth.server.ts
+import { timingSafeEqual } from "node:crypto";
+
 /**
  * Validates the Authorization header for cron endpoints.
  *
@@ -19,7 +21,13 @@ export function verifyCronToken(request: Request): void {
   }
 
   const authHeader = request.headers.get("Authorization");
-  if (!authHeader || authHeader !== `Bearer ${secret}`) {
+  const expected = `Bearer ${secret}`;
+
+  if (
+    !authHeader ||
+    authHeader.length !== expected.length ||
+    !timingSafeEqual(Buffer.from(authHeader), Buffer.from(expected))
+  ) {
     throw new Response("Unauthorized", { status: 401 });
   }
 }
