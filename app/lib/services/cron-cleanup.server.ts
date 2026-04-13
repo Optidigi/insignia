@@ -54,7 +54,7 @@ export async function cleanupExpiredSlots(
   if (configIds.length > 0) {
     const r = await prisma.customizationConfig.updateMany({
       where: { id: { in: configIds } },
-      data: { state: "EXPIRED" },
+      data: { state: "EXPIRED", expiredAt: new Date() },
     });
     expiredConfigs = r.count;
   }

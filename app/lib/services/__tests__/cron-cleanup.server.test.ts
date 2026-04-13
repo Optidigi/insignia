@@ -33,7 +33,7 @@ describe("cleanupExpiredSlots", () => {
     });
     expect(db.customizationConfig.updateMany).toHaveBeenCalledWith({
       where: { id: { in: ["cfg-1"] } },
-      data: { state: "EXPIRED" },
+      data: expect.objectContaining({ state: "EXPIRED", expiredAt: expect.any(Date) }),
     });
   });
 
@@ -74,7 +74,7 @@ describe("cleanupExpiredSlots", () => {
     expect(result).toEqual({ freedSlots: 2, expiredConfigs: 1 });
     expect(db.customizationConfig.updateMany).toHaveBeenCalledWith({
       where: { id: { in: ["cfg-4"] } },
-      data: { state: "EXPIRED" },
+      data: expect.objectContaining({ state: "EXPIRED", expiredAt: expect.any(Date) }),
     });
   });
 });
