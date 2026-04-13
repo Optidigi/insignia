@@ -24,6 +24,7 @@ arguments:
 
    | Agent | Model |
    |---|---|
+   | main | Sonnet |
    | researcher | Haiku |
    | tester | Haiku |
    | implementer | Sonnet |
@@ -32,7 +33,7 @@ arguments:
    | architect | Sonnet |
    | opus-decision | Opus |
 
-   Unknown agents default to Sonnet.
+   `main` is the primary conversation thread. Unknown agents default to Sonnet.
 
 4. Compute estimated cost per agent using these per-million-token rates
    (approximate — verify current pricing at anthropic.com/pricing):

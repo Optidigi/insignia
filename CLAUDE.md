@@ -1,14 +1,32 @@
 # Engineering Platform — Insignia App
 
+This repository is a **software engineering platform** for Claude Code.
+It enables fully autonomous, multi-agent development with deliberate model
+routing, deterministic policy enforcement, and first-class plugin support.
+
 This file covers two things:
 1. **Platform** — how Claude Code agents are orchestrated in this repo.
 2. **Insignia App** — mandatory rules for working on the Shopify app under `Insignia-shopify-app/`.
 
-Read both sections at session start.
+Read both sections at session start. Detail lives in skills — keep this short.
 
 ---
 
 # Part 1 — Engineering Platform
+
+## Getting started
+
+Run once after cloning:
+
+```bash
+bash scripts/setup.sh
+```
+
+This checks and auto-installs the one required system dependency (`jq`),
+using whichever package manager is available (scoop, brew, apt, dnf, choco,
+winget). No manual steps needed.
+
+---
 
 ## Core philosophy
 
