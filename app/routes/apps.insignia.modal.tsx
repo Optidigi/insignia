@@ -33,7 +33,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const rawProductId = url.searchParams.get("productId") ?? "";
   const rawVariantId = url.searchParams.get("variantId") ?? "";
-  const appUrl = (process.env.SHOPIFY_APP_URL ?? "").replace(/\/$/, "");
+  const appUrl = url.origin;
 
   const productId = rawProductId ? toProductGid(rawProductId) : rawProductId;
   const variantId = rawVariantId ? toVariantGid(rawVariantId) : rawVariantId;

@@ -1,8 +1,8 @@
 # Insignia — Production Readiness Audit
 
-> **Date**: 2026-04-12
-> **Version**: `0.2.0` (commit `1af78df`)
-> **Overall**: Core product is functional and deployed. Gaps are in operational hardening, missing merchant-facing flows, and zero test coverage — not in core features.
+> **Date**: 2026-04-13
+> **Version**: `0.2.1` (phase1-hardening — commit `2937802`)
+> **Overall**: Core product is functional and deployed. Phase 1 hardening complete: rate limiting, cron cleanup, test coverage (partial), CI quality gate, admin UX fixes, storefront URL normalization. Remaining gaps are in merchant-facing flows and operational monitoring.
 
 ---
 
@@ -20,7 +20,7 @@
 | Variant pool pricing | ✅ Implemented | Self-healing, UNLISTED status, inventory disabled |
 | Error handling | 🟡 Partial | Global handler in place; some edge cases unhandled |
 | Monitoring | 🟡 Partial | Sentry installed; DSN may not be set on VPS |
-| Tests | ❌ None | Zero test coverage |
+| Tests | 🟡 Partial | Variant pool, storefront-prepare, cron-cleanup covered |
 | Order webhooks | ❌ Blocked | Requires Shopify "protected data" approval |
 
 ---
@@ -58,12 +58,10 @@ Order webhooks (`orders/paid`, `orders/updated`, etc.) are commented out — Sho
 
 ---
 
-### 1.2 No test coverage
-Zero `*.test.ts` / `*.spec.ts` files in the repo. The variant pool, geometry snapshot, price calculation, and order binding logic are entirely unguarded. A bad dependency update or refactor can silently break pricing or order fulfillment.
+### 1.2 Test coverage is partial
+Unit tests added for variant pool, storefront-prepare, and cron-cleanup (phase1). Core order binding, storefront-config, and webhook idempotency remain untested.
 
-**Minimum viable test suite:**
-- Unit: `variant-pool.server.ts` — slot reservation, expiry, self-heal, concurrency
-- Unit: `storefront-prepare.server.ts` — price calculation, config hash
+**Still needed:**
 - Unit: `storefront-config.server.ts` — config shape, placement resolution
 - Integration: `POST /apps/insignia/prepare` — full round-trip
 - Integration: `POST /apps/insignia/cart-confirm` — order binding
@@ -71,12 +69,8 @@ Zero `*.test.ts` / `*.spec.ts` files in the repo. The variant pool, geometry sna
 
 ---
 
-### 1.3 Variant slot expiry has no scheduled cleanup
-**File**: `app/lib/services/variant-pool.server.ts`
-
-Expired `RESERVED` and `IN_CART` slots are reclaimed lazily on the next `ensureVariantPoolExists` call. Under high concurrency or a flash sale the pool can exhaust before self-heal kicks in, blocking new customizations.
-
-**Fix**: A `/api/admin/cron/cleanup-slots` endpoint + VPS cron entry running every 5 minutes.
+### ~~1.3 Variant slot expiry has no scheduled cleanup~~ ✅ Resolved (phase1)
+`POST /api/admin/cron/cleanup-slots` endpoint added. VPS cron setup instructions in `docs/ops/cron-setup.md`. Bearer-token auth via `lib/cron-auth.server.ts`.
 
 ---
 
@@ -89,17 +83,13 @@ Expired `RESERVED` and `IN_CART` slots are reclaimed lazily on the next `ensureV
 
 ---
 
-### 2.2 No rate limiting on storefront endpoints
-`/apps/insignia/prepare`, `/apps/insignia/upload`, and `/apps/insignia/config` have no per-IP or per-shop throttling. A malicious actor can exhaust variant slots or hammer uploads.
-
-**Fix**: `express-rate-limit` or `rate-limiter-flexible` on storefront routes.
+### ~~2.2 No rate limiting on storefront endpoints~~ ✅ Resolved (phase1)
+Per-shop rate limiting via `checkRateLimit()` applied to all storefront proxy routes (`/prepare`, `/upload`, `/config`, `/price`, `/cart-confirm`, `/customizations`).
 
 ---
 
-### 2.3 `CustomizationDraft` records accumulate indefinitely
-Every storefront modal open creates a draft. Abandoned sessions (the majority) are never cleaned up. This table will grow into millions over time.
-
-**Fix**: Postgres trigger or cron sweep — delete drafts older than 24h.
+### ~~2.3 `CustomizationDraft` records accumulate indefinitely~~ ✅ Resolved (phase1)
+`POST /api/admin/cron/cleanup-drafts` endpoint added. Deletes drafts older than 24 h. VPS cron setup in `docs/ops/cron-setup.md`.
 
 ---
 
@@ -131,8 +121,8 @@ Currently one image per variant-view cell. Some products (jacket front with coll
 
 ---
 
-### 3.2 `docs/core/api-contracts/storefront.md` diverges from implementation
-The spec describes a presigned URL upload flow for storefront logo uploads. The actual implementation uses server-side upload via `/apps/insignia/upload`. The spec should be updated to match reality to avoid confusing future agents.
+### ~~3.2 `docs/core/api-contracts/storefront.md` diverges from implementation~~ ✅ Resolved (phase1)
+Spec updated to reflect server-side upload via `/apps/insignia/upload`.
 
 ---
 
@@ -280,16 +270,8 @@ These are meaningful features that aren't currently built but would directly inc
 
 ## 8. Infrastructure & DevOps
 
-### 8.1 CI pipeline has no lint/typecheck gate
-**File**: `.github/workflows/docker-publish.yml`
-
-Docker image is built and published without running `typecheck` or `lint`. A broken-types commit ships to production immediately.
-
-**Fix** — add before the build step:
-```yaml
-- run: npm run typecheck
-- run: npm run lint
-```
+### ~~8.1 CI pipeline has no lint/typecheck gate~~ ✅ Resolved (phase1)
+`Typecheck & Lint` job added to `.github/workflows/docker-publish.yml`. Docker build only runs if quality gate passes. CI runs on Node 22 to match Dockerfile.
 
 ---
 
@@ -333,6 +315,19 @@ Everything below was identified as a problem and resolved prior to this audit da
 - ✅ CSV export UI button — Export CSV button at `app/routes/app.orders._index.tsx:255` calling `/api/admin/orders/export`
 - ✅ Order production status API — `advance-status` intent handler in `app/routes/app.orders.$id.tsx:380`
 - ✅ Order production status UI controls — per-line action buttons in `app/routes/app.orders.$id.tsx:833`
+- ✅ Rate limiting on all storefront endpoints — `checkRateLimit()` in `lib/storefront/rate-limit.server.ts`
+- ✅ Cron cleanup: variant slots — `POST /api/admin/cron/cleanup-slots`, VPS setup in `docs/ops/cron-setup.md`
+- ✅ Cron cleanup: abandoned drafts — `POST /api/admin/cron/cleanup-drafts`, bearer-token auth
+- ✅ CI lint/typecheck quality gate — `Typecheck & Lint` job in `docker-publish.yml` (Node 22)
+- ✅ Partial test coverage — variant pool, storefront-prepare, cron-cleanup unit tests added (`app/lib/services/__tests__/`)
+- ✅ Storefront spec corrected — `docs/core/api-contracts/storefront.md` updated to match server-side upload implementation
+- ✅ Admin button popup blocker fix — `setTimeout(() => window.open(...), 0)` on all external-link actions
+- ✅ View editor: inline rename, delete-with-confirmation, create-view on same page (405 fix)
+- ✅ Storefront modal base URL derived from request origin — never stale on tunnel rotation (`app/root.tsx`, `apps.insignia.modal.tsx`)
+- ✅ Storefront URL uses numeric IDs — GID extracted before building `customizerUrl` to avoid App Proxy routing failure
+- ✅ Canvas centering fix in storefront modal
+- ✅ Fee product UNLISTED fix — removed invalid `seo`/`productType` fields from `fix-fee-products` mutation
+- ✅ Timing-safe cron auth — constant-time token comparison in `lib/cron-auth.server.ts`
 
 ---
 
@@ -342,18 +337,14 @@ Everything below was identified as a problem and resolved prior to this audit da
 |---|---|---|---|---|
 | 1 | Apply for Shopify protected data access | §1.1 | Low (form) | 🔴 Critical |
 | 2 | Confirm `SENTRY_DSN` on VPS | §2.1 | 5 min | 🔴 Critical |
-| 3 | Variant slot expiry cron | §1.3 | 2–3 h | 🔴 Critical |
-| 4 | `CustomizationDraft` cleanup cron | §2.3 | 1–2 h | 🟡 High |
-| 5 | Rate limiting on storefront endpoints | §2.2 | 2–3 h | 🟡 High |
-| 6 | Add lint/typecheck gate to CI | §8.1 | 30 min | 🟡 High |
-| 7 | Merchant email notification on new order | §2.4 | 4–6 h | 🟡 High |
-| 8 | Empty states + onboarding checklist | §4.3, §5.7 | 1 day | 🟡 High |
-| 9 | Test suite — variant pool + storefront prep | §1.2 | 2–3 days | 🟡 High |
-| 10 | Storefront mobile layout audit | §4.4 | 4–6 h | 🟡 High |
-| 11 | View Editor UX decision + implementation | §4.5 | 1–2 days | 🟡 High |
-| 12 | Logo sizing UX decision | §4.6 | 1 day | 🟡 High |
-| 13 | Orders filter by artwork status | §5.3 | 2–3 h | 🟢 Medium |
-| 14 | Storefront artwork re-upload shortcut | §5.1 | 3–4 h | 🟢 Medium |
-| 15 | Placement editor zoom/pan | §5.2 | 2–3 h | 🟢 Medium |
-| 16 | Staging environment | §8.2 | 1 day | 🟢 Medium |
-| 17 | Multi-image support per view | §3.1 | 2–3 days | 🟢 Medium |
+| 3 | Complete test coverage (config, cart-confirm, webhooks) | §1.2 | 2–3 days | 🟡 High |
+| 4 | Merchant email notification on new order | §2.4 | 4–6 h | 🟡 High |
+| 5 | Empty states + onboarding checklist | §4.3, §5.7 | 1 day | 🟡 High |
+| 6 | Storefront mobile layout audit | §4.4 | 4–6 h | 🟡 High |
+| 7 | View Editor UX decision + implementation | §4.5 | 1–2 days | 🟡 High |
+| 8 | Logo sizing UX decision | §4.6 | 1 day | 🟡 High |
+| 9 | Orders filter by artwork status | §5.3 | 2–3 h | 🟢 Medium |
+| 10 | Storefront artwork re-upload shortcut | §5.1 | 3–4 h | 🟢 Medium |
+| 11 | Placement editor zoom/pan | §5.2 | 2–3 h | 🟢 Medium |
+| 12 | Staging environment | §8.2 | 1 day | 🟢 Medium |
+| 13 | Multi-image support per view | §3.1 | 2–3 days | 🟢 Medium |
