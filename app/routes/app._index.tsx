@@ -1130,7 +1130,7 @@ export default function Dashboard() {
             </Layout.Section>
 
             {/* Theme editor reminder */}
-            {isFullySetup && !themeCardDismissed && (
+            {isFullySetup && !themeCardDismissed && !setupGuideDismissed && (
               <Layout.Section>
                 <Banner
                   title="Add the Customize button to your theme"
