@@ -1513,8 +1513,8 @@ export default function ViewDetailPage() {
 
               {/* Manage images link */}
               <div style={{ padding: "12px 18px" }}>
-                <a
-                  href={`/app/products/${config.id}/images`}
+                <Link
+                  to={`/app/products/${config.id}/images`}
                   style={{
                     display: "flex", alignItems: "center", gap: 6,
                     color: "#2563EB", textDecoration: "none", fontSize: 12, fontWeight: 500,
@@ -1533,7 +1533,7 @@ export default function ViewDetailPage() {
                   }}>
                     {imageCount} of {variants.length}
                   </span>
-                </a>
+                </Link>
               </div>
             </div>
           </div>

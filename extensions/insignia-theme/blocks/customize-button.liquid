@@ -64,6 +64,18 @@
       }
     {% endif %}
   </style>
+{% else %}
+  <div class="insignia-customize-block" {{ block.shopify_attributes }}>
+    <div
+      class="insignia-customize-button"
+      style="opacity: 0.5; pointer-events: none; text-align: center; padding: 12px 24px; background: #e5e7eb; border-radius: {{ block.settings.border_radius }}px; color: #6b7280; font-weight: 600; font-size: {{ block.settings.font_size }}px;"
+    >
+      {{ block.settings.button_label }}
+    </div>
+    <p style="text-align: center; font-size: 11px; color: #9ca3af; margin-top: 4px;">
+      Enable Insignia on this product to activate
+    </p>
+  </div>
 {% endif %}
 
 {% schema %}
