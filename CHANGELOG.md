@@ -10,6 +10,53 @@
 
 ---
 
+## 0.4.0 — 2026-04-14
+
+Phase 3 production readiness audit — 31 findings fixed across security, GDPR, performance, and code quality.
+
+### Security
+- GDPR `customers/redact` now filters by customer email (was deleting all shop drafts)
+- GDPR `customers/data_request` compiles customer-specific data
+- Redundant CORS OPTIONS handlers removed from 8 routes (server.mjs handles globally)
+- CORS Allow-Methods/Allow-Headers only sent when origin matches Shopify domains
+- Response compression via gzip middleware
+- Security headers: X-Content-Type-Options, Referrer-Policy, HSTS
+- Request body size limit (6MB) rejects oversized payloads
+- Rate limiting expanded to all public storefront endpoints
+- Upload content-type bypass fixed (was accepting any MIME with valid extension)
+- Image dimension limits (4096x4096) prevent decompression bombs
+- SVG external reference check extended (data:, ftp://, protocol-relative URLs)
+- HTML escaping in merchant notification emails (XSS prevention)
+- Generic error messages in production 500 responses (no internal details leaked)
+- CSP fallback expanded with script-src, style-src, img-src, connect-src
+
+### Fixed
+- Webhook idempotency race condition: atomic upsert replaces non-atomic delete+create
+- Expired slot recycling race: atomized with updateMany + raw SQL (was find-then-update loop)
+- loadDraft() wired up on CustomizationModal mount (was defined but never called)
+- Slider thumb increased from 24px to 36px for touch accessibility
+- customizationId UUID format validation on /prepare, /price, /cart-confirm
+- 0-methods/0-placements guard added to /prepare endpoint
+- All storefront routes wrapped in full try/catch (was only around service calls)
+- Rate limiting added to post-purchase upload route
+
+### Added
+- `customerEmail` field on CustomizationDraft (for GDPR compliance)
+- GDPR service (`gdpr.server.ts`) with testable handler functions
+- GIN index on ProductConfig.linkedProductIds for storefront config lookup performance
+- B-tree indexes on CustomizationDraft.productConfigId and variantId
+- Timestamps on PlacementStep model
+- StorefrontUploadSession cleanup in cron job
+- Optional `shopEmail` parameter on notification service
+- 7 new GDPR tests (45 total across 7 files)
+
+### Changed
+- Explicit onDelete: SetNull on OrderLineCustomization.customizationConfig relation
+- Removed redundant Shop.shopifyDomain index (@unique already creates one)
+- Updated stale checkboxes in v2-design-decisions doc
+
+---
+
 ## 0.3.0 — 2026-04-14
 
 Phase 2 production hardening.

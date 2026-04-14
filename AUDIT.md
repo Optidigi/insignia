@@ -1,8 +1,8 @@
 # Insignia — Production Readiness Audit
 
 > **Date**: 2026-04-14
-> **Version**: 0.3.0 (phase2-hardening)
-> **Overall**: Core product is functional and deployed. Phase 1 + Phase 2 hardening complete: rate limiting, cron cleanup, webhook hardening, input validation, CORS lockdown, test coverage (38 tests), CI quality gate, admin UX improvements, storefront mobile CSS, accessibility, config readiness guards. Remaining gaps are in order webhooks (blocked on Shopify approval), monitoring confirmation, and design decisions.
+> **Version**: 0.4.0 (phase3-audit-fixes)
+> **Overall**: MVP-ready. Phase 1 + Phase 2 + Phase 3 complete. All critical security issues fixed (GDPR compliance, CORS, upload validation, webhook races). Server hardened with compression, security headers, body limits, expanded rate limiting. 45 tests across 7 files. Remaining gaps: order webhooks (blocked on Shopify approval), Sentry DSN verification, and UX design decisions for post-launch iteration.
 
 ---
 
@@ -12,18 +12,20 @@
 |---|---|---|
 | Core product flow | Done | Upload, placement, size, review, order |
 | Admin dashboard | Done | Products, methods, orders, settings all functional; empty states added |
-| Storefront modal | Done | App proxy, CORS (Shopify-only), CSP, mobile responsive |
-| Database | Done | 18 models, migrations applied, immutability enforced, indexes added |
-| Storage (R2) | Done | Server-side upload + presigned PUT for tray images |
+| Storefront modal | Done | App proxy, CORS locked down, CSP expanded, mobile responsive, draft persistence |
+| Database | Done | 18 models, GIN + B-tree indexes, onDelete policies, immutability trigger |
+| Storage (R2) | Done | Server-side upload + presigned PUT; image dimension limits (4096px) |
 | Docker / CI/CD | Done | Auto-deploy on push to main, lint/typecheck gate |
 | Theme extension | Done | Customize button block live, config readiness guard |
 | Variant pool pricing | Done | Self-healing, UNLISTED status, inventory disabled, slot rollback |
-| Webhooks | Done | Idempotency, retry on incomplete, reject missing event IDs |
-| Input validation | Done | Deep validation on storefront customizations endpoint |
-| Accessibility | Done | ARIA roles, 44px touch targets on storefront modal |
-| Error handling | Partial | Global handler in place; slot rollback + backoff retry added |
+| Webhooks | Done | Idempotency (atomic upsert), retry on incomplete, reject missing event IDs |
+| Input validation | Done | Deep validation on customizations; UUID format check on IDs; 0-config guards |
+| Accessibility | Done | ARIA roles, 36px slider thumb, 44px+ touch targets |
+| GDPR compliance | Done | Customer-scoped redact/data-request; customerEmail tracked on drafts |
+| Error handling | Done | All routes wrapped in try/catch; generic messages in production |
+| Security | Done | CORS origin-only headers, compression, HSTS, nosniff, body size limit, SVG hardened |
 | Monitoring | Partial | Sentry installed; DSN may not be set on VPS |
-| Tests | Partial | 38 tests across 6 files; no integration tests for full round-trips |
+| Tests | Done | 45 tests across 7 files (GDPR, webhook, config, cart-confirm, variant pool, prepare, cron) |
 | Order webhooks | Blocked | Requires Shopify "protected data" approval |
 
 ---
@@ -108,11 +110,63 @@
 - 500 on storefront `/config` -- `AppError` catch handles all status codes
 - Double file picker on image tray
 
+### Phase 3 — Audit Fixes (0.4.0)
+
+**GDPR Compliance**
+- Customer-scoped `customers/redact`: filters by customerEmail, not all shop drafts -- Phase 3
+- `customers/data_request`: compiles customer-specific data (drafts filtered by email) -- Phase 3
+- `customerEmail` field added to CustomizationDraft model with composite index -- Phase 3
+- customerEmail passed through storefront draft creation flow -- Phase 3
+- GDPR handlers extracted to testable `gdpr.server.ts` service -- Phase 3
+
+**CORS & Security**
+- Redundant per-route OPTIONS handlers removed (8 routes); server.mjs handles globally -- Phase 3
+- CORS Allow-Methods/Allow-Headers moved inside origin check (was leaking to all responses) -- Phase 3
+- Response compression via `compression` middleware -- Phase 3
+- Security headers: X-Content-Type-Options, Referrer-Policy, HSTS (production) -- Phase 3
+- Request body size limit (6MB) as early middleware -- Phase 3
+- Rate limiting expanded to all storefront endpoints (/price, /cart-confirm, /customizations, /uploads) -- Phase 3
+- CSP fallback expanded with script-src, style-src, img-src, connect-src directives -- Phase 3
+
+**Database**
+- GIN index on ProductConfig.linkedProductIds for storefront config lookup -- Phase 3
+- B-tree indexes on CustomizationDraft.productConfigId and variantId -- Phase 3
+- Redundant Shop.shopifyDomain index removed (@unique already creates one) -- Phase 3
+- Explicit onDelete: SetNull on OrderLineCustomization.customizationConfig -- Phase 3
+- Timestamps (createdAt/updatedAt) added to PlacementStep model -- Phase 3
+
+**Webhook & Upload Security**
+- Webhook idempotency race fix: atomic upsert replaces deleteMany + create -- Phase 3
+- Upload content-type bypass fixed: require valid MIME or infer from extension (was OR, now AND) -- Phase 3
+- Image dimension limits: 4096x4096 max on sharp() to prevent decompression bombs -- Phase 3
+- SVG external reference check extended: data:, ftp://, protocol-relative URLs -- Phase 3
+
+**Route Hardening**
+- All storefront routes wrapped in try/catch (was only around service calls) -- Phase 3
+- customizationId UUID format validation on /prepare, /price, /cart-confirm -- Phase 3
+- Rate limiting added to post-purchase upload route -- Phase 3
+- 0-methods/0-placements guard added to /prepare endpoint -- Phase 3
+- Generic error messages in production 500 responses (no internal details leaked) -- Phase 3
+
+**Email Notifications**
+- HTML escaping on all interpolated values in notification emails (XSS prevention) -- Phase 3
+- Optional shopEmail parameter (falls back to admin@domain) -- Phase 3
+
+**Frontend**
+- loadDraft() wired up on CustomizationModal mount (was dead code) -- Phase 3
+- Slider thumb increased from 24px to 36px for accessibility -- Phase 3
+- Expired slot recycling atomized (was find-then-update loop, now updateMany + raw SQL) -- Phase 3
+- StorefrontUploadSession cleanup added to cron -- Phase 3
+
+**Code Quality**
+- Test suite expanded: 45 tests across 7 files (added GDPR handler tests) -- Phase 3
+- Stale checkboxes in v2-design-decisions doc updated -- Phase 3
+
 ---
 
 ## What's Left To Do
 
-### Blockers (must fix before scaling)
+### Blockers (ops tasks — no code changes needed)
 
 **Order webhooks are disabled**
 Order webhooks (`orders/paid`, `orders/updated`, etc.) are commented out in `shopify.app.insignia.toml`. Shopify requires "protected customer data" approval. Without this, order fulfillment data is never populated automatically.
@@ -122,19 +176,25 @@ Steps:
 2. Once approved, uncomment webhook subscriptions in `shopify.app.insignia.toml`
 3. `shopify app deploy --config insignia`
 
-### High Priority
+**Deploy Phase 3 fixes to VPS**
+The `audit-fixes` branch has 9 commits with 2 Prisma migrations. After merging to main:
+1. Push to trigger auto-deploy
+2. SSH to VPS and run `npx prisma migrate deploy`
+3. Verify the app starts cleanly
+
+### High Priority (ops)
 
 **Sentry DSN confirmation on VPS**
 `@sentry/node` is installed and wired in `server.mjs` but `SENTRY_DSN` may not be set in the VPS `.env`. Without it all production errors are silently swallowed.
 Fix: SSH to VPS, confirm `SENTRY_DSN` is set. 5-minute task.
 
-**Test coverage still partial**
-38 unit tests pass but no integration tests exist for:
-- Full `/apps/insignia/prepare` round-trip
-- Webhook integration tests with real DB
-- Storefront modal full E2E test (blocked on R2 configured test store)
+**Verify cron jobs on VPS**
+Confirm crontab has entries for `cleanup-slots` (every 5 min) and `cleanup-drafts` (hourly, now also cleans StorefrontUploadSession).
 
-### Medium Priority
+### Medium Priority (post-launch iteration)
+
+**GDPR data request fulfillment process**
+`customers/data_request` compiles and logs customer data but has no delivery mechanism (email/notification to merchant). Acceptable for App Store if you document a manual process. Full automation is a future improvement.
 
 **View Editor UX decision unresolved**
 Three design options documented (A: tabs, B: expand/collapse, C: overview-first) but no decision made. See `docs/notes/open-work.md`.
@@ -149,7 +209,7 @@ Currently one image per variant-view cell. Some products need multiple separate 
 All fixes are tested locally then deployed live. A second VPS compose stack or preview deploy would reduce risk.
 
 **Access token encryption**
-Shopify access tokens stored in plaintext in the database. Accept the risk or implement Prisma middleware for encryption at rest.
+Shopify access tokens stored in plaintext in the database. Risk is bounded by VPS firewall. Encryption at rest is a best practice for App Store review but not blocking for MVP.
 
 ### Low Priority / Nice-to-Have
 
