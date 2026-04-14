@@ -24,9 +24,11 @@ function toVariantGid(id: string): string {
 
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const splatValue = (params["*"] ?? "").replace(/\/$/, "");
+  console.log("[splat] params['*']:", JSON.stringify(params["*"]), "splatValue:", JSON.stringify(splatValue), "url:", request.url);
 
   // Only handle numeric product IDs — let non-numeric paths 404
   if (!splatValue || !/^\d+$/.test(splatValue)) {
+    console.log("[splat] Rejecting non-numeric splat:", JSON.stringify(splatValue));
     throw new Response("Not Found", { status: 404 });
   }
 
