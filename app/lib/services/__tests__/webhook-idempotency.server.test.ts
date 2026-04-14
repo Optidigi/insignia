@@ -12,6 +12,7 @@ const prismaMock = vi.hoisted(() => {
       findFirst: makeFn(),
       update: makeFn(),
       deleteMany: makeFn(),
+      upsert: makeFn(),
     },
     shop: {
       upsert: makeFn(),
@@ -97,35 +98,35 @@ describe("processWebhookIdempotently", () => {
     // create throws unique constraint violation
     const uniqueError = new Error("Unique constraint failed");
     (uniqueError as unknown as { code: string }).code = "P2002";
-    prismaMock.webhookEvent.create
-      .mockRejectedValueOnce(uniqueError) // first call: conflict
-      .mockResolvedValueOnce({}); // second call: re-insert succeeds
+    prismaMock.webhookEvent.create.mockRejectedValueOnce(uniqueError);
 
     // Existing event has processedAt null (incomplete)
     prismaMock.webhookEvent.findFirst.mockResolvedValue({
       processedAt: null,
     });
-    prismaMock.webhookEvent.deleteMany.mockResolvedValue({ count: 1 });
+    prismaMock.webhookEvent.upsert.mockResolvedValue({});
     prismaMock.webhookEvent.update.mockResolvedValue({});
 
     const handler = vi.fn().mockResolvedValue(undefined);
 
     const result = await processWebhookIdempotently(
       "shop-1",
-      "evt-retry",
-      "products/update",
+      "evt-1",
+      "orders/create",
       handler
     );
 
     expect(result).toEqual({
       processed: true,
       duplicate: false,
-      eventId: "evt-retry",
+      eventId: "evt-1",
     });
     expect(handler).toHaveBeenCalledTimes(1);
-    // Old record should have been deleted before re-insert
-    expect(prismaMock.webhookEvent.deleteMany).toHaveBeenCalledWith({
-      where: { eventId: "evt-retry" },
+    // Should use atomic upsert instead of deleteMany + create
+    expect(prismaMock.webhookEvent.upsert).toHaveBeenCalledWith({
+      where: { eventId: "evt-1" },
+      update: { shopId: "shop-1", topic: "orders/create", receivedAt: expect.any(Date), processedAt: null },
+      create: { shopId: "shop-1", eventId: "evt-1", topic: "orders/create", receivedAt: expect.any(Date), processedAt: null },
     });
   });
 
