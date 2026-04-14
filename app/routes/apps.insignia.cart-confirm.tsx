@@ -95,11 +95,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         },
       })
       .then((config) => {
-        notifyMerchantNewOrder(shopDomain, {
-          productName: "Customized Product",
-          methodName: config?.decorationMethod?.name ?? "Custom",
-          artworkStatus: "PROVIDED",
-        }).catch((e) =>
+        // TODO: Query shop contact email from Shopify API (shop { email }) for better delivery
+        notifyMerchantNewOrder(
+          shopDomain,
+          {
+            productName: "Customized Product",
+            methodName: config?.decorationMethod?.name ?? "Custom",
+            artworkStatus: "PROVIDED",
+          },
+          undefined,
+        ).catch((e) =>
           console.error("[cart-confirm] Notification error:", e),
         );
       })

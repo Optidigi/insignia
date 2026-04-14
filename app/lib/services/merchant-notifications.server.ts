@@ -5,6 +5,14 @@
  * are silently skipped so the feature is fully opt-in.
  */
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 export async function notifyMerchantNewOrder(
   shopDomain: string,
   orderDetails: {
@@ -12,12 +20,20 @@ export async function notifyMerchantNewOrder(
     methodName: string;
     artworkStatus: string;
   },
+  shopEmail?: string,
 ): Promise<void> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
     console.warn("[notifications] RESEND_API_KEY not set — skipping email");
     return;
   }
+
+  const productName = escapeHtml(orderDetails.productName);
+  const methodName = escapeHtml(orderDetails.methodName);
+  const artworkText =
+    orderDetails.artworkStatus === "PROVIDED"
+      ? "Provided by customer"
+      : "Pending — customer will upload later";
 
   try {
     const response = await fetch("https://api.resend.com/emails", {
@@ -28,13 +44,13 @@ export async function notifyMerchantNewOrder(
       },
       body: JSON.stringify({
         from: "Insignia <notifications@insignia.optidigi.nl>",
-        to: [`admin@${shopDomain}`],
-        subject: `New customization order: ${orderDetails.productName}`,
+        to: [shopEmail || `admin@${shopDomain}`],
+        subject: `New customization order: ${escapeHtml(orderDetails.productName)}`,
         html: `
           <h2>New Customization Order</h2>
-          <p><strong>Product:</strong> ${orderDetails.productName}</p>
-          <p><strong>Method:</strong> ${orderDetails.methodName}</p>
-          <p><strong>Artwork:</strong> ${orderDetails.artworkStatus === "PROVIDED" ? "Provided by customer" : "Pending — customer will upload later"}</p>
+          <p><strong>Product:</strong> ${productName}</p>
+          <p><strong>Method:</strong> ${methodName}</p>
+          <p><strong>Artwork:</strong> ${artworkText}</p>
           <p>View the order in your <a href="https://admin.shopify.com/store/${shopDomain.replace(".myshopify.com", "")}/apps/insignia">Insignia dashboard</a>.</p>
         `,
       }),
