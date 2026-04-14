@@ -64,18 +64,23 @@
       }
     {% endif %}
   </style>
-{% else %}
+{% elsif request.design_mode %}
+  {%- comment -%}Theme editor preview — show a styled preview button{%- endcomment -%}
   <div class="insignia-customize-block" {{ block.shopify_attributes }}>
-    <div
-      class="insignia-customize-button"
-      style="opacity: 0.5; pointer-events: none; text-align: center; padding: 12px 24px; background: #e5e7eb; border-radius: {{ block.settings.border_radius }}px; color: #6b7280; font-weight: 600; font-size: {{ block.settings.font_size }}px;"
+    <a
+      href="#"
+      class="insignia-customize-button {% if block.settings.use_theme_style %}button btn{% endif %} {{ block.settings.custom_class }}"
+      onclick="event.preventDefault();"
+      style="{% unless block.settings.use_theme_style %}display: inline-block; padding: {{ block.settings.padding_y }}px {{ block.settings.padding_x }}px; background: {{ block.settings.background_color }}; color: {{ block.settings.text_color }}; text-decoration: none; border-radius: {{ block.settings.border_radius }}px; font-weight: 600; font-size: {{ block.settings.font_size }}px; border: none; cursor: default; width: {% if block.settings.full_width %}100%{% else %}auto{% endif %}; text-align: center;{% endunless %}"
     >
       {{ block.settings.button_label }}
-    </div>
-    <p style="text-align: center; font-size: 11px; color: #9ca3af; margin-top: 4px;">
-      Enable Insignia on this product to activate
-    </p>
+    </a>
   </div>
+  <style>
+    .insignia-customize-block {
+      margin: {{ block.settings.margin_top }}px 0 {{ block.settings.margin_bottom }}px;
+    }
+  </style>
 {% endif %}
 
 {% schema %}

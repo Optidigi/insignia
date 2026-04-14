@@ -105,7 +105,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const shopDomain = session.shop;
   const themeEditorUrl =
     apiKey && shopDomain
-      ? `https://${shopDomain}/admin/themes/current/editor?template=product`
+      ? `https://${shopDomain}/admin/themes/current/editor?template=product&addAppBlockId=${apiKey}/customize-button&target=mainSection`
       : null;
 
   // Load all translations for this shop (all locales)

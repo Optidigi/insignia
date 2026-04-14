@@ -39,6 +39,8 @@ import type { Placement } from "../lib/admin-types";
 /** Pending edits for a placement's own fields. */
 type PlacementEdit = {
   basePriceAdjustmentCents?: number;
+  hidePriceWhenZero?: boolean;
+  defaultStepIndex?: number;
 };
 
 /** Pending edits for a single step's text/number fields. */
@@ -191,8 +193,8 @@ export function ZonePricingPanel({
         "basePriceAdjustmentCents",
         String(edit.basePriceAdjustmentCents ?? p.basePriceAdjustmentCents),
       );
-      fd.set("hidePriceWhenZero", String(p.hidePriceWhenZero));
-      fd.set("defaultStepIndex", String(p.defaultStepIndex));
+      fd.set("hidePriceWhenZero", String(edit.hidePriceWhenZero ?? p.hidePriceWhenZero));
+      fd.set("defaultStepIndex", String(edit.defaultStepIndex ?? p.defaultStepIndex));
       changes.push({ type: "placement", placementId, data: fd });
     }
 
@@ -515,22 +517,12 @@ export function ZonePricingPanel({
                           label: s.label,
                           value: String(si),
                         }))}
-                        value={String(p.defaultStepIndex)}
+                        value={String(placementEdits[p.id]?.defaultStepIndex ?? p.defaultStepIndex)}
                         onChange={(val) => {
-                          const fd = new FormData();
-                          fd.set("intent", "update-placement");
-                          fd.set("placementId", p.id);
-                          fd.set("name", p.name);
-                          fd.set(
-                            "basePriceAdjustmentCents",
-                            String(p.basePriceAdjustmentCents),
-                          );
-                          fd.set(
-                            "hidePriceWhenZero",
-                            String(p.hidePriceWhenZero),
-                          );
-                          fd.set("defaultStepIndex", val);
-                          submit(fd, { method: "post" });
+                          setPlacementEdits((prev) => ({
+                            ...prev,
+                            [p.id]: { ...prev[p.id], defaultStepIndex: parseInt(val, 10) },
+                          }));
                         }}
                       />
                     )}
@@ -644,22 +636,12 @@ export function ZonePricingPanel({
                   {/* Hide price when zero */}
                   <Checkbox
                     label={`Hide price when ${currencySymbol}0`}
-                    checked={p.hidePriceWhenZero}
+                    checked={placementEdits[p.id]?.hidePriceWhenZero ?? p.hidePriceWhenZero}
                     onChange={(checked) => {
-                      const fd = new FormData();
-                      fd.set("intent", "update-placement");
-                      fd.set("placementId", p.id);
-                      fd.set("name", p.name);
-                      fd.set(
-                        "basePriceAdjustmentCents",
-                        String(p.basePriceAdjustmentCents),
-                      );
-                      fd.set("hidePriceWhenZero", String(checked));
-                      fd.set(
-                        "defaultStepIndex",
-                        String(p.defaultStepIndex),
-                      );
-                      submit(fd, { method: "post" });
+                      setPlacementEdits((prev) => ({
+                        ...prev,
+                        [p.id]: { ...prev[p.id], hidePriceWhenZero: checked },
+                      }));
                     }}
                   />
                 </BlockStack>

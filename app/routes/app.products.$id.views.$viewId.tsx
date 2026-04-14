@@ -1143,6 +1143,8 @@ export default function ViewDetailPage() {
                         setGeometryDirty(true);
                         setPendingGeometry(geometry);
                       }}
+                      selectedPlacementId={selectedPlacementId}
+                      onSelectPlacement={setSelectedPlacementId}
                     />
                   </Suspense>
 
