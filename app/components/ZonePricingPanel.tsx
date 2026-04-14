@@ -535,6 +535,24 @@ export function ZonePricingPanel({
                       </Text>
                     )}
 
+                    {/* Step column headers — only shown when 2+ sizes */}
+                    {p.steps.length >= 2 && (
+                      <div
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "16px 1fr 68px 80px 28px",
+                          gap: 6,
+                          paddingBottom: 2,
+                        }}
+                      >
+                        <span />
+                        <Text as="span" variant="bodySm" tone="subdued">Name</Text>
+                        <Text as="span" variant="bodySm" tone="subdued">Scale</Text>
+                        <Text as="span" variant="bodySm" tone="subdued">Price</Text>
+                        <span />
+                      </div>
+                    )}
+
                     {/* Step rows */}
                     {p.steps.map((step) => {
                       const editedPriceCents = stepEdits[step.id]?.priceAdjustmentCents;
