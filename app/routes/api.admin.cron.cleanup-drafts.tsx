@@ -11,7 +11,7 @@
 import type { ActionFunctionArgs } from "react-router";
 import db from "../db.server";
 import { verifyCronToken } from "../lib/cron-auth.server";
-import { cleanupStaleDrafts } from "../lib/services/cron-cleanup.server";
+import { cleanupStaleDrafts, cleanupStaleUploadSessions } from "../lib/services/cron-cleanup.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   if (request.method !== "POST") {
@@ -20,8 +20,15 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   verifyCronToken(request);
 
-  const result = await cleanupStaleDrafts(db);
-  console.log(`[cron/cleanup-drafts] deleted=${result.deleted}`);
+  const [draftsResult, uploadsResult] = await Promise.all([
+    cleanupStaleDrafts(db),
+    cleanupStaleUploadSessions(db),
+  ]);
+  console.log(`[cron/cleanup-drafts] drafts=${draftsResult.deleted} uploads=${uploadsResult.deleted}`);
 
-  return Response.json({ ...result, timestamp: new Date().toISOString() });
+  return Response.json({
+    deletedDrafts: draftsResult.deleted,
+    deletedUploadSessions: uploadsResult.deleted,
+    timestamp: new Date().toISOString(),
+  });
 };

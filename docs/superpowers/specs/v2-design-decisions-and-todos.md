@@ -176,17 +176,17 @@ Architecture: **Zone-centric** (no tabs). Single scrollable panel. Click a zone 
 ## Still Open (from earlier reviews, NOT YET DONE)
 
 ### Critical
-- [ ] ContextualSaveBar — use App Bridge SaveBar on all admin form pages (required for Built for Shopify)
-- [ ] Storefront draft persistence — `localStorage` instead of `sessionStorage`
+- [x] [DONE] ContextualSaveBar — use App Bridge SaveBar on all admin form pages (implemented on 4 pages)
+- [x] [DONE] Storefront draft persistence — `localStorage` with loadDraft wired up on mount
 - [ ] Geometry editor unsaved-changes — `beforeunload` + React Router `useBlocker`
-- [ ] 0-methods guard — reject products with 0 methods linked
-- [ ] 0-placements guard — reject products with 0 placements
+- [x] [DONE] 0-methods guard — reject products with 0 methods linked
+- [x] [DONE] 0-placements guard — reject products with 0 placements
 
 ### Important
-- [ ] Close confirmation copy — neutral tone: "Close without adding to cart?"
-- [ ] Touch targets — qty buttons 36→44px, slider thumb 24→36px, close button 40→44px
-- [ ] Method cards — add `role="radio"` + `aria-checked` screen reader semantics
-- [ ] Step pills — add `aria-current="step"` to active pill
+- [x] [DONE] Close confirmation copy — neutral tone: "Close without adding to cart?"
+- [x] [DONE] Touch targets — qty buttons 36→44px, slider thumb 24→36px, close button 40→44px
+- [x] [DONE] Method cards — add `role="radio"` + `aria-checked` screen reader semantics
+- [x] [DONE] Step pills — add `aria-current="step"` to active pill
 - [ ] Artwork re-upload — allow replacing uploaded artwork on both merchant and customer sides
 - [ ] Import from Shopify — query `variant.media` images in Image Manager
 

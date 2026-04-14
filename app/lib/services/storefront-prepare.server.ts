@@ -100,23 +100,33 @@ export async function prepareCustomization(
   const now = new Date();
   const reservedUntil = new Date(now.getTime() + RESERVED_TTL_MINUTES * 60 * 1000);
 
-  // Recycle expired reservations before looking for a free slot
-  const expiredSlots = await db.variantSlot.findMany({
-    where: { shopId, methodId, state: "RESERVED", reservedUntil: { lt: now } },
-    select: { id: true, currentConfigId: true },
+  // Atomically free expired reserved slots for this method
+  await db.variantSlot.updateMany({
+    where: {
+      shopId,
+      methodId,
+      state: "RESERVED",
+      reservedUntil: { lt: now },
+    },
+    data: {
+      state: "FREE",
+      reservedAt: null,
+      reservedUntil: null,
+      currentConfigId: null,
+    },
   });
-  for (const slot of expiredSlots) {
-    if (slot.currentConfigId) {
-      await db.customizationConfig.update({
-        where: { id: slot.currentConfigId },
-        data: { state: "EXPIRED", expiredAt: now, variantSlotId: null },
-      });
-    }
-    await db.variantSlot.update({
-      where: { id: slot.id },
-      data: { state: "FREE", reservedAt: null, reservedUntil: null, currentConfigId: null },
-    });
-  }
+
+  // Expire linked configs whose slots were just freed (requires raw SQL for subquery join)
+  await db.$executeRaw`
+    UPDATE "CustomizationConfig"
+    SET state = 'EXPIRED', "expiredAt" = ${now}, "variantSlotId" = NULL
+    WHERE "shopId" = ${shopId} AND state = 'RESERVED'
+      AND "variantSlotId" IN (
+        SELECT id FROM "VariantSlot"
+        WHERE "shopId" = ${shopId} AND "methodId" = ${methodId}
+          AND state = 'FREE' AND "reservedUntil" IS NULL
+      )
+  `;
 
   const result = await db.$transaction(async (tx) => {
     // Use raw SQL with FOR UPDATE SKIP LOCKED to prevent race conditions

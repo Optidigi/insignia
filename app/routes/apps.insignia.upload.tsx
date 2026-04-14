@@ -17,59 +17,80 @@ import { AppProxyProvider } from "@shopify/shopify-app-react-router/react";
 import db from "../db.server";
 import { serverSideStorefrontUpload } from "../lib/services/storefront-uploads.server";
 import { AppError } from "../lib/errors.server";
+import { checkRateLimit } from "../lib/storefront/rate-limit.server";
 
 // ============================================================================
 // Loader — validates order + line and returns order context
 // ============================================================================
 
 export const loader = async ({ request }: LoaderFunctionArgs) => {
-  const { session } = await authenticate.public.appProxy(request);
-  const shopDomain = session?.shop;
-  if (!shopDomain) {
-    throw new Response("Unauthorized", { status: 401 });
+  try {
+    const { session } = await authenticate.public.appProxy(request);
+    const shopDomain = session?.shop;
+    if (!shopDomain) {
+      throw new Response("Unauthorized", { status: 401 });
+    }
+
+    const url = new URL(request.url);
+    const orderId = url.searchParams.get("orderId") ?? "";
+    const lineId = url.searchParams.get("lineId") ?? "";
+    const appUrl = (process.env.SHOPIFY_APP_URL ?? "").replace(/\/$/, "");
+
+    const shop = await db.shop.findUnique({
+      where: { shopifyDomain: shopDomain },
+      select: { id: true },
+    });
+    if (!shop) throw new Response("Shop not found", { status: 404 });
+
+    const rateLimit = checkRateLimit(shop.id);
+    if (!rateLimit.allowed) {
+      throw new Response(JSON.stringify({ error: { code: "RATE_LIMITED", message: "Too many requests. Please slow down." } }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": String(rateLimit.retryAfter) },
+      });
+    }
+
+    if (!orderId || !lineId) {
+      return { status: "missing_params", orderId, lineId, appUrl, shopDomain };
+    }
+
+    const orderLine = await db.orderLineCustomization.findFirst({
+      where: {
+        shopifyOrderId: orderId,
+        shopifyLineId: lineId,
+        productConfig: { shopId: shop.id },
+      },
+      select: {
+        id: true,
+        artworkStatus: true,
+        productConfigId: true,
+      },
+    });
+
+    if (!orderLine) {
+      return { status: "not_found", orderId, lineId, appUrl, shopDomain };
+    }
+
+    if (orderLine.artworkStatus === "PROVIDED") {
+      return { status: "already_uploaded", orderId, lineId, appUrl, shopDomain };
+    }
+
+    if (orderLine.artworkStatus !== "PENDING_CUSTOMER") {
+      return { status: "not_pending", orderId, lineId, appUrl, shopDomain };
+    }
+
+    return { status: "ready", orderId, lineId, appUrl, shopDomain };
+  } catch (error) {
+    if (error instanceof Response) throw error;
+    if (error instanceof AppError) {
+      throw new Response(JSON.stringify({ error: { code: error.code, message: error.message } }), {
+        status: error.status,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    console.error("[upload] Loader unexpected error:", error);
+    throw new Response("An unexpected error occurred", { status: 500 });
   }
-
-  const url = new URL(request.url);
-  const orderId = url.searchParams.get("orderId") ?? "";
-  const lineId = url.searchParams.get("lineId") ?? "";
-  const appUrl = (process.env.SHOPIFY_APP_URL ?? "").replace(/\/$/, "");
-
-  const shop = await db.shop.findUnique({
-    where: { shopifyDomain: shopDomain },
-    select: { id: true },
-  });
-  if (!shop) throw new Response("Shop not found", { status: 404 });
-
-  if (!orderId || !lineId) {
-    return { status: "missing_params", orderId, lineId, appUrl, shopDomain };
-  }
-
-  const orderLine = await db.orderLineCustomization.findFirst({
-    where: {
-      shopifyOrderId: orderId,
-      shopifyLineId: lineId,
-      productConfig: { shopId: shop.id },
-    },
-    select: {
-      id: true,
-      artworkStatus: true,
-      productConfigId: true,
-    },
-  });
-
-  if (!orderLine) {
-    return { status: "not_found", orderId, lineId, appUrl, shopDomain };
-  }
-
-  if (orderLine.artworkStatus === "PROVIDED") {
-    return { status: "already_uploaded", orderId, lineId, appUrl, shopDomain };
-  }
-
-  if (orderLine.artworkStatus !== "PENDING_CUSTOMER") {
-    return { status: "not_pending", orderId, lineId, appUrl, shopDomain };
-  }
-
-  return { status: "ready", orderId, lineId, appUrl, shopDomain };
 };
 
 // ============================================================================
@@ -77,65 +98,70 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 // ============================================================================
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  const { session } = await authenticate.public.appProxy(request);
-  const shopDomain = session?.shop;
-  if (!shopDomain) {
-    return { success: false, error: "Unauthorized" };
-  }
-
-  const shop = await db.shop.findUnique({
-    where: { shopifyDomain: shopDomain },
-    select: { id: true },
-  });
-  if (!shop) return { success: false, error: "Shop not found" };
-
-  const formData = await request.formData();
-  const orderId = formData.get("orderId") as string | null;
-  const lineId = formData.get("lineId") as string | null;
-  const file = formData.get("file") as File | null;
-
-  if (!orderId || !lineId) {
-    return { success: false, error: "Missing order or line ID" };
-  }
-
-  if (!file || !(file instanceof File) || file.size === 0) {
-    return { success: false, error: "Please select a file to upload" };
-  }
-
-  // Validate file type
-  const allowed = ["image/svg+xml", "image/png", "application/pdf", "image/jpeg"];
-  if (!allowed.includes(file.type)) {
-    return { success: false, error: "Invalid file type. Please upload SVG, PNG, PDF, or JPEG." };
-  }
-
-  // Validate file size (5 MB)
-  if (file.size > 5 * 1024 * 1024) {
-    return { success: false, error: "File too large (maximum 5 MB)" };
-  }
-
-  // Find and verify the order line
-  const orderLine = await db.orderLineCustomization.findFirst({
-    where: {
-      shopifyOrderId: orderId,
-      shopifyLineId: lineId,
-      productConfig: { shopId: shop.id },
-    },
-    select: {
-      id: true,
-      artworkStatus: true,
-      productConfigId: true,
-    },
-  });
-
-  if (!orderLine) return { success: false, error: "Order not found" };
-  if (orderLine.artworkStatus === "PROVIDED") {
-    return { success: false, error: "Artwork has already been uploaded for this order" };
-  }
-  if (orderLine.artworkStatus !== "PENDING_CUSTOMER") {
-    return { success: false, error: "This order is not waiting for customer artwork" };
-  }
-
   try {
+    const { session } = await authenticate.public.appProxy(request);
+    const shopDomain = session?.shop;
+    if (!shopDomain) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const shop = await db.shop.findUnique({
+      where: { shopifyDomain: shopDomain },
+      select: { id: true },
+    });
+    if (!shop) return { success: false, error: "Shop not found" };
+
+    const rateLimit = checkRateLimit(shop.id);
+    if (!rateLimit.allowed) {
+      return { success: false, error: "Too many requests. Please slow down." };
+    }
+
+    const formData = await request.formData();
+    const orderId = formData.get("orderId") as string | null;
+    const lineId = formData.get("lineId") as string | null;
+    const file = formData.get("file") as File | null;
+
+    if (!orderId || !lineId) {
+      return { success: false, error: "Missing order or line ID" };
+    }
+
+    if (!file || !(file instanceof File) || file.size === 0) {
+      return { success: false, error: "Please select a file to upload" };
+    }
+
+    // Validate file type
+    const allowed = ["image/svg+xml", "image/png", "application/pdf", "image/jpeg"];
+    if (!allowed.includes(file.type)) {
+      return { success: false, error: "Invalid file type. Please upload SVG, PNG, PDF, or JPEG." };
+    }
+
+    // Validate file size (5 MB)
+    if (file.size > 5 * 1024 * 1024) {
+      return { success: false, error: "File too large (maximum 5 MB)" };
+    }
+
+    // Find and verify the order line
+    const orderLine = await db.orderLineCustomization.findFirst({
+      where: {
+        shopifyOrderId: orderId,
+        shopifyLineId: lineId,
+        productConfig: { shopId: shop.id },
+      },
+      select: {
+        id: true,
+        artworkStatus: true,
+        productConfigId: true,
+      },
+    });
+
+    if (!orderLine) return { success: false, error: "Order not found" };
+    if (orderLine.artworkStatus === "PROVIDED") {
+      return { success: false, error: "Artwork has already been uploaded for this order" };
+    }
+    if (orderLine.artworkStatus !== "PENDING_CUSTOMER") {
+      return { success: false, error: "This order is not waiting for customer artwork" };
+    }
+
     // Upload the file using the existing storefront upload service
     const uploadResult = await serverSideStorefrontUpload(shop.id, file);
     const logoAssetId = uploadResult.logoAsset.id;
@@ -167,11 +193,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     return { success: true, error: null };
   } catch (error) {
+    if (error instanceof Response) throw error;
     if (error instanceof AppError) {
       return { success: false, error: error.message };
     }
     console.error("[upload] Unexpected error:", error);
-    return { success: false, error: "Upload failed — please try again" };
+    return { success: false, error: process.env.NODE_ENV === "production" ? "Upload failed — please try again" : (error instanceof Error ? error.message : "Upload failed") };
   }
 };
 

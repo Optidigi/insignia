@@ -678,8 +678,8 @@ html, body {
 }
 .insignia-size-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--insignia-primary);
   cursor: pointer;
@@ -687,8 +687,8 @@ html, body {
   box-shadow: var(--insignia-shadow);
 }
 .insignia-size-slider::-moz-range-thumb {
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: var(--insignia-primary);
   cursor: pointer;

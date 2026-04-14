@@ -75,7 +75,10 @@ export default async function handleRequest(
           if (!responseHeaders.has('Content-Security-Policy')) {
             responseHeaders.set(
               'Content-Security-Policy',
-              'frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev;',
+              "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; " +
+              "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; " +
+              "style-src 'self' 'unsafe-inline' https://cdn.shopify.com; " +
+              "img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;"
             );
           }
 

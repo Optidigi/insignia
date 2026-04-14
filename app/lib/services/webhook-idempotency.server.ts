@@ -47,10 +47,13 @@ export async function processWebhookIdempotently(
         select: { processedAt: true },
       });
       if (existing && !existing.processedAt) {
-        // Previous handler crashed mid-execution — delete incomplete record and retry
+        // Previous handler crashed mid-execution — atomically reset record and retry
         console.warn(`[Webhook] Retrying incomplete event ${eventId}`);
-        await db.webhookEvent.deleteMany({ where: { eventId } });
-        await db.webhookEvent.create({ data: { shopId, eventId, topic } });
+        await db.webhookEvent.upsert({
+          where: { eventId },
+          update: { shopId, topic, receivedAt: new Date(), processedAt: null },
+          create: { shopId, eventId, topic, receivedAt: new Date(), processedAt: null },
+        });
         // Fall through to execute handler below
       } else {
         console.log(`[Webhook] Duplicate event ${eventId} for ${topic}, skipping`);

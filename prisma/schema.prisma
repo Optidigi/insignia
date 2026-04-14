@@ -60,7 +60,6 @@ model Shop {
   customizationDrafts    CustomizationDraft[]
   storefrontTranslations StorefrontTranslation[]
 
-  @@index([shopifyDomain])
 }
 
 // ============================================================================
@@ -82,6 +81,7 @@ model CustomizationDraft {
   placements                Json                // [{ placementId, stepIndex }]
   logoAssetIdsByPlacementId Json                // { [placementId]: logoAssetId | null }
   artworkStatus             ArtworkStatusDraft  @default(PROVIDED)
+  customerEmail             String?             // Shopify customer email (for GDPR redact)
   unitPriceCents            Int?                // set after price call (base + fee)
   feeCents                  Int?                // placement/customization fee only
   configHash                String?             // for variant pool aggregation
@@ -92,6 +92,9 @@ model CustomizationDraft {
 
   @@index([shopId])
   @@index([createdAt])
+  @@index([shopId, customerEmail])
+  @@index([productConfigId])
+  @@index([variantId])
 }
 
 // ============================================================================
@@ -268,6 +271,8 @@ model PlacementStep {
   priceAdjustmentCents Int    @default(0)
   scaleFactor          Float  @default(1.0)
   displayOrder         Int    @default(0)
+  createdAt               DateTime            @default(now())
+  updatedAt               DateTime            @updatedAt
 
   // Relations
   placementDefinition PlacementDefinition @relation(fields: [placementDefinitionId], references: [id], onDelete: Cascade)
@@ -439,7 +444,7 @@ model OrderLineCustomization {
 
   // Relations
   productConfig       ProductConfig        @relation(fields: [productConfigId], references: [id])
-  customizationConfig CustomizationConfig? @relation(fields: [customizationConfigId], references: [id])
+  customizationConfig CustomizationConfig? @relation(fields: [customizationConfigId], references: [id], onDelete: SetNull)
 
   @@unique([shopifyOrderId, shopifyLineId])
   @@index([shopifyOrderId])

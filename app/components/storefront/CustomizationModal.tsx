@@ -42,7 +42,6 @@ function saveDraft(productId: string, variantId: string, state: DraftState, conf
   } catch { /* quota exceeded — silently fail */ }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function loadDraft(productId: string, variantId: string, currentConfigVersion: string): DraftState | null {
   try {
     const key = makeDraftKey(productId, variantId);
@@ -212,6 +211,32 @@ export function CustomizationModal({
   useEffect(() => {
     fetchConfig();
   }, [fetchConfig]);
+
+  // Restore draft from localStorage once config is available
+  useEffect(() => {
+    if (!config) return;
+    const draft = loadDraft(productId, variantId, config.productConfigId);
+    if (!draft) return;
+    if (draft.selectedPlacements.length === 0) return;
+
+    // Restore placement selections — map saved placement IDs to their saved step indices
+    const restoredSelections: PlacementSelections = {};
+    for (const pid of draft.selectedPlacements) {
+      const placement = config.placements.find((p) => p.id === pid);
+      if (placement) {
+        restoredSelections[pid] = draft.sizeSelections[pid] ?? placement.defaultStepIndex;
+      }
+    }
+    if (Object.keys(restoredSelections).length > 0) {
+      setPlacementSelections(restoredSelections);
+    }
+
+    // Restore step — only advance if the draft step is valid and reachable
+    const draftStepIndex = STEP_ORDER.indexOf(draft.step as WizardStep);
+    if (draftStepIndex > 0) {
+      setStep(draft.step as WizardStep);
+    }
+  }, [config, productId, variantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const goToStep = useCallback((s: WizardStep) => {
     setStep(s);

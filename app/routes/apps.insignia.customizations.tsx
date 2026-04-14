@@ -20,16 +20,6 @@ function jsonResponse(data: unknown, status = 200, origin?: string, extra?: Reco
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": request.headers.get("Origin") ?? "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
-  }
   if (request.method !== "POST") {
     return jsonResponse({ error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405);
   }
@@ -72,6 +62,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     placements?: Array<{ placementId: string; stepIndex: number }>;
     logoAssetIdsByPlacementId?: Record<string, string | null>;
     artworkStatus?: string;
+    customerEmail?: string;
   };
   try {
     body = await request.json();
@@ -148,6 +139,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         logoAssetIdsByPlacementId as Record<string, string | null>,
       artworkStatus:
         artworkStatus === "PENDING_CUSTOMER" ? "PENDING_CUSTOMER" : "PROVIDED",
+      customerEmail:
+        typeof body.customerEmail === "string" ? body.customerEmail : undefined,
     });
     return jsonResponse(result, 200, `https://${shopDomain}`);
   } catch (error) {
@@ -160,7 +153,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
     console.error("[customizations] Unexpected error:", error);
     return jsonResponse(
-      { error: { code: "INTERNAL_ERROR", message: error instanceof Error ? error.message : "Customization failed" } },
+      { error: { code: "INTERNAL_ERROR", message: process.env.NODE_ENV === "production" ? "An unexpected error occurred" : (error instanceof Error ? error.message : "Internal error") } },
       500,
       `https://${shopDomain}`
     );

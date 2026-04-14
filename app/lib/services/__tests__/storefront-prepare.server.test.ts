@@ -18,8 +18,10 @@ const prismaMock = vi.hoisted(() => {
     variantSlot: {
       findMany: makeFn(),
       update: makeFn(),
+      updateMany: makeFn(),
     },
     $transaction: makeFn(),
+    $executeRaw: makeFn(),
   };
 });
 
@@ -172,8 +174,9 @@ describe("prepareCustomization", () => {
     prismaMock.customizationDraft.findFirst.mockResolvedValue(MOCK_DRAFT);
     // No existing config
     prismaMock.customizationConfig.findFirst.mockResolvedValue(null);
-    // No expired slots to recycle
-    prismaMock.variantSlot.findMany.mockResolvedValue([]);
+    // Atomic expired slot recycling (no-op mocks)
+    prismaMock.variantSlot.updateMany.mockResolvedValue({ count: 0 });
+    prismaMock.$executeRaw.mockResolvedValue(0);
 
     makeSuccessfulTransaction();
 
@@ -196,7 +199,9 @@ describe("prepareCustomization", () => {
   it("throws SERVICE_UNAVAILABLE when no free slot is available", async () => {
     prismaMock.customizationDraft.findFirst.mockResolvedValue(MOCK_DRAFT);
     prismaMock.customizationConfig.findFirst.mockResolvedValue(null);
-    prismaMock.variantSlot.findMany.mockResolvedValue([]);
+    // Atomic expired slot recycling (no-op mocks)
+    prismaMock.variantSlot.updateMany.mockResolvedValue({ count: 0 });
+    prismaMock.$executeRaw.mockResolvedValue(0);
 
     // Transaction returns no free slots
     prismaMock.$transaction.mockImplementation(

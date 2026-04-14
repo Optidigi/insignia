@@ -23,58 +23,48 @@ function jsonResponse(data: unknown, status = 200, origin?: string, extra?: Reco
 const REFRESH_TTL_SEC = 10 * 60;
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": request.headers.get("Origin") ?? "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
-  }
   if (request.method !== "POST") {
     return jsonResponse({ error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405);
   }
 
-  const { session } = await authenticate.public.appProxy(request);
-  const shopDomain = session?.shop;
-  if (!shopDomain) {
-    return jsonResponse(
-      { error: { code: "UNAUTHORIZED", message: "Invalid or missing App Proxy signature" } },
-      401
-    );
-  }
-
-  const assetId = params.id;
-  if (!assetId) {
-    return jsonResponse(
-      { error: { code: ErrorCodes.BAD_REQUEST, message: "Asset ID required" } },
-      400
-    );
-  }
-
-  const origin = `https://${shopDomain}`;
-
-  const shop = await db.shop.findUnique({
-    where: { shopifyDomain: shopDomain },
-    select: { id: true },
-  });
-  if (!shop) {
-    return jsonResponse({ error: { code: "NOT_FOUND", message: "Shop not found" } }, 404, origin);
-  }
-
-  const rateLimit = checkRateLimit(shop.id);
-  if (!rateLimit.allowed) {
-    return jsonResponse(
-      { error: { code: "RATE_LIMITED", message: "Too many requests. Please slow down." } },
-      429,
-      origin,
-      { "Retry-After": String(rateLimit.retryAfter) }
-    );
-  }
-
   try {
+    const { session } = await authenticate.public.appProxy(request);
+    const shopDomain = session?.shop;
+    if (!shopDomain) {
+      return jsonResponse(
+        { error: { code: "UNAUTHORIZED", message: "Invalid or missing App Proxy signature" } },
+        401
+      );
+    }
+
+    const assetId = params.id;
+    if (!assetId) {
+      return jsonResponse(
+        { error: { code: ErrorCodes.BAD_REQUEST, message: "Asset ID required" } },
+        400
+      );
+    }
+
+    const origin = `https://${shopDomain}`;
+
+    const shop = await db.shop.findUnique({
+      where: { shopifyDomain: shopDomain },
+      select: { id: true },
+    });
+    if (!shop) {
+      return jsonResponse({ error: { code: "NOT_FOUND", message: "Shop not found" } }, 404, origin);
+    }
+
+    const rateLimit = checkRateLimit(shop.id);
+    if (!rateLimit.allowed) {
+      return jsonResponse(
+        { error: { code: "RATE_LIMITED", message: "Too many requests. Please slow down." } },
+        429,
+        origin,
+        { "Retry-After": String(rateLimit.retryAfter) }
+      );
+    }
+
     // Find the logo asset and verify shop ownership
     const asset = await db.logoAsset.findFirst({
       where: { id: assetId, shopId: shop.id },
@@ -92,14 +82,14 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
     return jsonResponse({ previewUrl, sanitizedUrl }, 200, origin);
   } catch (error) {
+    if (error instanceof Response) throw error;
     if (error instanceof AppError) {
-      return jsonResponse({ error: { code: error.code, message: error.message } }, error.status, origin);
+      return jsonResponse({ error: { code: error.code, message: error.message } }, error.status);
     }
     console.error("[uploads/refresh] Unexpected error:", error);
     return jsonResponse(
-      { error: { code: "INTERNAL_ERROR", message: "Refresh failed" } },
-      500,
-      origin
+      { error: { code: "INTERNAL_ERROR", message: process.env.NODE_ENV === "production" ? "An unexpected error occurred" : (error instanceof Error ? error.message : "Internal error") } },
+      500
     );
   }
 };

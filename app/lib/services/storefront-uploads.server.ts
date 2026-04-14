@@ -103,6 +103,7 @@ export async function completeStorefrontUpload(
     sanitizedSvgKey = StorageKeys.logo(shopId, logoId, "sanitized.svg");
     await putObject(sanitizedSvgKey, Buffer.from(cleaned, "utf8"), "image/svg+xml");
     const pngBuffer = await sharp(Buffer.from(cleaned, "utf8"))
+      .resize({ width: 4096, height: 4096, fit: "inside", withoutEnlargement: true })
       .png()
       .toBuffer();
     pngKey = StorageKeys.logo(shopId, logoId, "preview.png");
@@ -112,7 +113,10 @@ export async function completeStorefrontUpload(
     if (!allowedImageTypes.includes(contentType)) {
       throw new AppError(ErrorCodes.VALIDATION_ERROR, "Allowed types: image/svg+xml, image/png, image/jpeg, image/webp", 400);
     }
-    const pngBuffer = await sharp(rawBuffer).png().toBuffer();
+    const pngBuffer = await sharp(rawBuffer)
+      .resize({ width: 4096, height: 4096, fit: "inside", withoutEnlargement: true })
+      .png()
+      .toBuffer();
     pngKey = StorageKeys.logo(shopId, logoId, "preview.png");
     await putObject(pngKey, pngBuffer, "image/png");
   }
@@ -166,11 +170,21 @@ export async function serverSideStorefrontUpload(
   }
 
   const allowedTypes = ["image/svg+xml", "image/png", "image/jpeg", "image/webp"];
-  if (!allowedTypes.includes(contentType) && !file.name.match(/\.(svg|png|jpg|jpeg)$/i)) {
-    throw new AppError(ErrorCodes.VALIDATION_ERROR, "Allowed types: SVG, PNG, JPEG, WebP", 400);
+  let effectiveContentType = contentType;
+  if (!allowedTypes.includes(contentType)) {
+    const ext = file.name.match(/\.(svg|png|jpe?g|webp)$/i)?.[1]?.toLowerCase();
+    const extToMime: Record<string, string> = {
+      svg: "image/svg+xml", png: "image/png",
+      jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+    };
+    if (ext && extToMime[ext]) {
+      effectiveContentType = extToMime[ext];
+    } else {
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, "Allowed types: SVG, PNG, JPEG, WebP", 400);
+    }
   }
 
-  const isSvg = contentType === "image/svg+xml" || file.name.endsWith(".svg");
+  const isSvg = effectiveContentType === "image/svg+xml";
   let sanitizedSvgKey: string | null = null;
   let pngKey: string;
   const logoId = uuid();
@@ -180,11 +194,17 @@ export async function serverSideStorefrontUpload(
     const cleaned = sanitizeSvg(svgString);
     sanitizedSvgKey = StorageKeys.logo(shopId, logoId, "sanitized.svg");
     await putObject(sanitizedSvgKey, Buffer.from(cleaned, "utf8"), "image/svg+xml");
-    const pngBuffer = await sharp(Buffer.from(cleaned, "utf8")).png().toBuffer();
+    const pngBuffer = await sharp(Buffer.from(cleaned, "utf8"))
+      .resize({ width: 4096, height: 4096, fit: "inside", withoutEnlargement: true })
+      .png()
+      .toBuffer();
     pngKey = StorageKeys.logo(shopId, logoId, "preview.png");
     await putObject(pngKey, pngBuffer, "image/png");
   } else {
-    const pngBuffer = await sharp(rawBuffer).png().toBuffer();
+    const pngBuffer = await sharp(rawBuffer)
+      .resize({ width: 4096, height: 4096, fit: "inside", withoutEnlargement: true })
+      .png()
+      .toBuffer();
     pngKey = StorageKeys.logo(shopId, logoId, "preview.png");
     await putObject(pngKey, pngBuffer, "image/png");
   }
