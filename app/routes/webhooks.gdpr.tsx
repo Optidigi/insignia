@@ -11,6 +11,8 @@
 import type { ActionFunctionArgs } from "react-router";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
+import type { GdprPayload } from "../lib/services/gdpr.server";
+import { handleCustomerRedact, handleCustomerDataRequest } from "../lib/services/gdpr.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   const { topic, shop, payload } = await authenticate.webhook(request);
@@ -25,23 +27,19 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   switch (topic) {
     case "customers/data_request": {
-      // Customer has requested their data
-      const dataReqShop = await db.shop.findUnique({ where: { shopifyDomain: shop }, select: { id: true } });
-      if (dataReqShop) {
-        const draftCount = await db.customizationDraft.count({ where: { shopId: dataReqShop.id } });
-        const orderCount = await db.orderLineCustomization.count({ where: { productConfig: { shopId: dataReqShop.id } } });
-        console.log(`[GDPR] Customer data request for ${shop}: ${draftCount} drafts, ${orderCount} order lines`);
-      }
+      // Customer has requested their data — compile customer-specific records
+      // TODO: Persist compiled data or send notification to merchant for GDPR fulfillment. Currently logged only.
+      const dataSummary = await handleCustomerDataRequest(shop, payload as GdprPayload);
+      console.log(`[GDPR] customers/data_request compiled for ${shop}:`, {
+        draftsCount: dataSummary.drafts.length,
+        orderLineCount: dataSummary.orderLineCount,
+      });
       return new Response(null, { status: 200 });
     }
 
     case "customers/redact": {
-      // Customer has requested deletion of their data
-      const redactShop = await db.shop.findUnique({ where: { shopifyDomain: shop }, select: { id: true } });
-      if (redactShop) {
-        const deleted = await db.customizationDraft.deleteMany({ where: { shopId: redactShop.id } });
-        console.log(`[GDPR] Customer data deleted for ${shop}: ${deleted.count} drafts removed`);
-      }
+      // Customer has requested deletion of their data — filter by customer email
+      await handleCustomerRedact(shop, payload as GdprPayload);
       return new Response(null, { status: 200 });
     }
 

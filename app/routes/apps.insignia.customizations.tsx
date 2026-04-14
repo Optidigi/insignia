@@ -72,6 +72,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     placements?: Array<{ placementId: string; stepIndex: number }>;
     logoAssetIdsByPlacementId?: Record<string, string | null>;
     artworkStatus?: string;
+    customerEmail?: string;
   };
   try {
     body = await request.json();
@@ -148,6 +149,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         logoAssetIdsByPlacementId as Record<string, string | null>,
       artworkStatus:
         artworkStatus === "PENDING_CUSTOMER" ? "PENDING_CUSTOMER" : "PROVIDED",
+      customerEmail:
+        typeof body.customerEmail === "string" ? body.customerEmail : undefined,
     });
     return jsonResponse(result, 200, `https://${shopDomain}`);
   } catch (error) {

@@ -82,6 +82,7 @@ model CustomizationDraft {
   placements                Json                // [{ placementId, stepIndex }]
   logoAssetIdsByPlacementId Json                // { [placementId]: logoAssetId | null }
   artworkStatus             ArtworkStatusDraft  @default(PROVIDED)
+  customerEmail             String?             // Shopify customer email (for GDPR redact)
   unitPriceCents            Int?                // set after price call (base + fee)
   feeCents                  Int?                // placement/customization fee only
   configHash                String?             // for variant pool aggregation
@@ -92,6 +93,7 @@ model CustomizationDraft {
 
   @@index([shopId])
   @@index([createdAt])
+  @@index([shopId, customerEmail])
 }
 
 // ============================================================================

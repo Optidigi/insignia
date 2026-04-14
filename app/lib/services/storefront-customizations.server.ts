@@ -20,6 +20,7 @@ export type CreateDraftInput = {
   placements: PlacementSelection[];
   logoAssetIdsByPlacementId: Record<string, string | null>;
   artworkStatus: "PROVIDED" | "PENDING_CUSTOMER";
+  customerEmail?: string;
 };
 
 /**
@@ -68,6 +69,7 @@ export async function createCustomizationDraft(
       placements: input.placements as unknown as object,
       logoAssetIdsByPlacementId: input.logoAssetIdsByPlacementId as unknown as object,
       artworkStatus: input.artworkStatus === "PENDING_CUSTOMER" ? "PENDING_CUSTOMER" : "PROVIDED",
+      customerEmail: input.customerEmail ?? null,
     },
   });
 
