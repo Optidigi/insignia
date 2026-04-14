@@ -20,16 +20,6 @@ function jsonResponse(data: unknown, status = 200, origin?: string, extra?: Reco
 }
 
 export const action = async ({ request, params }: ActionFunctionArgs) => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": request.headers.get("Origin") ?? "*",
-        "Access-Control-Allow-Methods": "POST, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
-  }
   if (request.method !== "POST") {
     return jsonResponse({ error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405);
   }

@@ -8,7 +8,7 @@
  * No default export = resource route per React Router; loader return is sent as response.
  */
 
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type { LoaderFunctionArgs } from "react-router";
 import { authenticate, unauthenticated } from "../shopify.server";
 import db from "../db.server";
 import { getStorefrontConfig } from "../lib/services/storefront-config.server";
@@ -136,18 +136,4 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       500
     );
   }
-};
-
-export const action = async ({ request }: ActionFunctionArgs) => {
-  if (request.method === "OPTIONS") {
-    return new Response(null, {
-      status: 204,
-      headers: {
-        "Access-Control-Allow-Origin": request.headers.get("Origin") ?? "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "Content-Type",
-      },
-    });
-  }
-  return new Response(null, { status: 405 });
 };
