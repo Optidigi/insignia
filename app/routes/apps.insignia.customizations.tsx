@@ -153,7 +153,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
     console.error("[customizations] Unexpected error:", error);
     return jsonResponse(
-      { error: { code: "INTERNAL_ERROR", message: error instanceof Error ? error.message : "Customization failed" } },
+      { error: { code: "INTERNAL_ERROR", message: process.env.NODE_ENV === "production" ? "An unexpected error occurred" : (error instanceof Error ? error.message : "Internal error") } },
       500,
       `https://${shopDomain}`
     );

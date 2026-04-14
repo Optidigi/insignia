@@ -27,36 +27,36 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     return jsonResponse({ error: { code: "METHOD_NOT_ALLOWED", message: "POST only" } }, 405);
   }
 
-  const { session } = await authenticate.public.appProxy(request);
-  const shopDomain = session?.shop;
-  if (!shopDomain) {
-    return jsonResponse(
-      { error: { code: "UNAUTHORIZED", message: "Invalid or missing App Proxy signature" } },
-      401
-    );
-  }
-
-  const shop = await db.shop.findUnique({
-    where: { shopifyDomain: shopDomain },
-    select: { id: true },
-  });
-  if (!shop) {
-    return jsonResponse({ error: { code: "NOT_FOUND", message: "Shop not found" } }, 404);
-  }
-
-  const origin = `https://${shopDomain}`;
-
-  const rateLimit = checkRateLimit(shop.id);
-  if (!rateLimit.allowed) {
-    return jsonResponse(
-      { error: { code: "RATE_LIMITED", message: "Too many requests. Please slow down." } },
-      429,
-      origin,
-      { "Retry-After": String(rateLimit.retryAfter) }
-    );
-  }
-
   try {
+    const { session } = await authenticate.public.appProxy(request);
+    const shopDomain = session?.shop;
+    if (!shopDomain) {
+      return jsonResponse(
+        { error: { code: "UNAUTHORIZED", message: "Invalid or missing App Proxy signature" } },
+        401
+      );
+    }
+
+    const shop = await db.shop.findUnique({
+      where: { shopifyDomain: shopDomain },
+      select: { id: true },
+    });
+    if (!shop) {
+      return jsonResponse({ error: { code: "NOT_FOUND", message: "Shop not found" } }, 404);
+    }
+
+    const origin = `https://${shopDomain}`;
+
+    const rateLimit = checkRateLimit(shop.id);
+    if (!rateLimit.allowed) {
+      return jsonResponse(
+        { error: { code: "RATE_LIMITED", message: "Too many requests. Please slow down." } },
+        429,
+        origin,
+        { "Retry-After": String(rateLimit.retryAfter) }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
 
@@ -71,14 +71,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const result = await serverSideStorefrontUpload(shop.id, file);
     return jsonResponse(result, 200, origin);
   } catch (error) {
+    if (error instanceof Response) throw error;
     if (error instanceof AppError) {
-      return jsonResponse({ error: { code: error.code, message: error.message } }, error.status, origin);
+      return jsonResponse({ error: { code: error.code, message: error.message } }, error.status);
     }
     console.error("[uploads] Unexpected error:", error);
     return jsonResponse(
-      { error: { code: "INTERNAL_ERROR", message: error instanceof Error ? error.message : "Upload failed" } },
-      500,
-      origin
+      { error: { code: "INTERNAL_ERROR", message: process.env.NODE_ENV === "production" ? "An unexpected error occurred" : (error instanceof Error ? error.message : "Internal error") } },
+      500
     );
   }
 };

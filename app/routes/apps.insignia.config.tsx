@@ -130,7 +130,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       {
         error: {
           code: "INTERNAL_ERROR",
-          message: error instanceof Error ? error.message : "Configuration failed",
+          message: process.env.NODE_ENV === "production" ? "An unexpected error occurred" : (error instanceof Error ? error.message : "Internal error"),
         },
       },
       500
