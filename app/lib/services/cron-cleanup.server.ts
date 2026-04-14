@@ -77,3 +77,19 @@ export async function cleanupStaleDrafts(
   });
   return { deleted: r.count };
 }
+
+/**
+ * Delete StorefrontUploadSession records older than 24 hours.
+ *
+ * @param prisma - Prisma client instance
+ * @returns Count of deleted upload session records
+ */
+export async function cleanupStaleUploadSessions(
+  prisma: PrismaClient
+): Promise<{ deleted: number }> {
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const r = await prisma.storefrontUploadSession.deleteMany({
+    where: { createdAt: { lt: cutoff } },
+  });
+  return { deleted: r.count };
+}
