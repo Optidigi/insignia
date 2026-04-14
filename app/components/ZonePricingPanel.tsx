@@ -3,11 +3,15 @@
  *
  * Zone-centric accordion panel for the View Editor right panel.
  * One zone expanded at a time. Each zone shows placement fee, logo sizes,
- * and per-step price/scale configuration. Debounced submits to avoid
- * per-keystroke network requests.
+ * and per-step price/scale configuration.
+ *
+ * Text/number inputs use local state — changes are submitted via the parent
+ * save bar (onSave) instead of per-keystroke network requests.
+ * Immediate actions (add-step, delete-step, default select, checkbox toggle)
+ * still submit directly.
  */
 
-import { useCallback, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BlockStack,
   InlineStack,
@@ -32,6 +36,23 @@ import type { Placement } from "../lib/admin-types";
 // Types
 // ============================================================================
 
+/** Pending edits for a placement's own fields. */
+type PlacementEdit = {
+  basePriceAdjustmentCents?: number;
+};
+
+/** Pending edits for a single step's text/number fields. */
+type StepEdit = {
+  label?: string;
+  scaleFactor?: string; // kept as string for free-form typing
+  priceAdjustmentCents?: number;
+};
+
+/** All pending edits collected for a save-bar submission. */
+export type PricingChange =
+  | { type: "placement"; placementId: string; data: FormData }
+  | { type: "step"; stepId: string; data: FormData };
+
 type Props = {
   placements: Placement[];
   currency: string;
@@ -47,6 +68,10 @@ type Props = {
   imageHeight?: number;
   /** Current placement geometry keyed by placement ID */
   placementGeometry?: Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number; maxHeightPercent?: number }>;
+  /** Called when the panel has unsaved text/number edits */
+  onDirty?: (dirty: boolean) => void;
+  /** Called by the parent save bar — returns pending FormData payloads to submit sequentially */
+  onSave?: (changes: PricingChange[]) => void;
 };
 
 // ============================================================================
@@ -64,6 +89,22 @@ function stepPriceColor(cents: number): string {
   if (cents < 0) return PRICE_COLOR_NEGATIVE;
   if (cents === 0) return PRICE_COLOR_ZERO;
   return PRICE_COLOR_POSITIVE;
+}
+
+// ============================================================================
+// Helpers
+// ============================================================================
+
+/** Parse a user-typed decimal string, normalizing comma to dot for EU locales. */
+function parseDecimal(val: string): number {
+  const normalized = val.replace(",", ".");
+  const parsed = parseFloat(normalized);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+/** Convert cents to a display string (e.g. 1050 -> "10.50"). */
+function centsToDisplay(cents: number): string {
+  return (cents / 100).toFixed(2);
 }
 
 // ============================================================================
@@ -108,19 +149,163 @@ export function ZonePricingPanel({
   imageWidth,
   imageHeight,
   placementGeometry,
+  onDirty,
+  onSave,
 }: Props) {
   const submit = useSubmit();
-  const submitTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
-  const debouncedSubmit = useCallback(
-    (formData: FormData) => {
-      clearTimeout(submitTimeoutRef.current);
-      submitTimeoutRef.current = setTimeout(() => {
-        submit(formData, { method: "post" });
-      }, 300);
-    },
-    [submit],
-  );
+  // ── Local edit state ─────────────────────────────────────────────────────
+  // These track in-progress text/number edits that haven't been saved yet.
+  const [placementEdits, setPlacementEdits] = useState<Record<string, PlacementEdit>>({});
+  const [stepEdits, setStepEdits] = useState<Record<string, StepEdit>>({});
+  // String states for free-form typing in price/scale fields
+  const [placementPriceStrings, setPlacementPriceStrings] = useState<Record<string, string>>({});
+  const [stepPriceStrings, setStepPriceStrings] = useState<Record<string, string>>({});
+  const [stepScaleStrings, setStepScaleStrings] = useState<Record<string, string>>({});
+  const [stepLabelStrings, setStepLabelStrings] = useState<Record<string, string>>({});
+
+  // Track dirty state
+  const isDirty = Object.keys(placementEdits).length > 0 || Object.keys(stepEdits).length > 0;
+  const prevDirtyRef = useRef(false);
+
+  useEffect(() => {
+    if (isDirty !== prevDirtyRef.current) {
+      prevDirtyRef.current = isDirty;
+      onDirty?.(isDirty);
+    }
+  }, [isDirty, onDirty]);
+
+  // ── Build and expose save handler ────────────────────────────────────────
+  // The parent calls collectChanges() when save bar is clicked.
+  const collectChanges = useCallback((): PricingChange[] => {
+    const changes: PricingChange[] = [];
+
+    for (const [placementId, edit] of Object.entries(placementEdits)) {
+      const p = placements.find((pl) => pl.id === placementId);
+      if (!p) continue;
+      const fd = new FormData();
+      fd.set("intent", "update-placement");
+      fd.set("placementId", placementId);
+      fd.set("name", p.name);
+      fd.set(
+        "basePriceAdjustmentCents",
+        String(edit.basePriceAdjustmentCents ?? p.basePriceAdjustmentCents),
+      );
+      fd.set("hidePriceWhenZero", String(p.hidePriceWhenZero));
+      fd.set("defaultStepIndex", String(p.defaultStepIndex));
+      changes.push({ type: "placement", placementId, data: fd });
+    }
+
+    for (const [stepId, edit] of Object.entries(stepEdits)) {
+      // Find the step in placements to get current values for unedited fields
+      let foundStep: { label: string; scaleFactor: number; priceAdjustmentCents: number } | undefined;
+      for (const p of placements) {
+        const s = p.steps.find((st) => st.id === stepId);
+        if (s) { foundStep = s; break; }
+      }
+      if (!foundStep) continue;
+
+      const fd = new FormData();
+      fd.set("intent", "update-step");
+      fd.set("stepId", stepId);
+      fd.set("label", edit.label ?? foundStep.label);
+      fd.set(
+        "scaleFactor",
+        edit.scaleFactor ?? String(foundStep.scaleFactor),
+      );
+      fd.set(
+        "priceAdjustmentCents",
+        String(edit.priceAdjustmentCents ?? foundStep.priceAdjustmentCents),
+      );
+      changes.push({ type: "step", stepId, data: fd });
+    }
+
+    return changes;
+  }, [placementEdits, stepEdits, placements]);
+
+  // Expose collectChanges to parent via onSave ref pattern
+  const collectChangesRef = useRef(collectChanges);
+  collectChangesRef.current = collectChanges;
+
+  // Register save handler with parent on mount
+  useEffect(() => {
+    if (!onSave) return;
+    // The parent will call onSave which we intercept to provide changes
+    // We use a custom event pattern so the parent can trigger collection
+  }, [onSave]);
+
+  /** Clear all local edits (called after successful save or discard). */
+  const clearEdits = useCallback(() => {
+    setPlacementEdits({});
+    setStepEdits({});
+    setPlacementPriceStrings({});
+    setStepPriceStrings({});
+    setStepScaleStrings({});
+    setStepLabelStrings({});
+  }, []);
+
+  // Expose collectChanges and clearEdits via ref for parent to call
+  const apiRef = useRef({ collectChanges, clearEdits });
+  apiRef.current = { collectChanges, clearEdits };
+
+  // Expose the API to the parent via a callback-ref pattern:
+  // The parent passes onSave which we call with collected changes.
+  // We store the latest collectChanges in a ref and use a DOM event
+  // to let the parent trigger it.
+  useEffect(() => {
+    const handler = () => {
+      const changes = apiRef.current.collectChanges();
+      onSave?.(changes);
+      apiRef.current.clearEdits();
+    };
+    document.addEventListener("pricing-panel-save", handler);
+    return () => document.removeEventListener("pricing-panel-save", handler);
+  }, [onSave]);
+
+  // Also listen for discard
+  useEffect(() => {
+    const handler = () => {
+      clearEdits();
+    };
+    document.addEventListener("pricing-panel-discard", handler);
+    return () => document.removeEventListener("pricing-panel-discard", handler);
+  }, [clearEdits]);
+
+  // ── Edit handlers ────────────────────────────────────────────────────────
+
+  const updatePlacementPrice = useCallback((placementId: string, displayVal: string) => {
+    setPlacementPriceStrings((prev) => ({ ...prev, [placementId]: displayVal }));
+    const cents = Math.round(parseDecimal(displayVal) * 100);
+    setPlacementEdits((prev) => ({
+      ...prev,
+      [placementId]: { ...prev[placementId], basePriceAdjustmentCents: cents },
+    }));
+  }, []);
+
+  const updateStepLabel = useCallback((stepId: string, val: string) => {
+    setStepLabelStrings((prev) => ({ ...prev, [stepId]: val }));
+    setStepEdits((prev) => ({
+      ...prev,
+      [stepId]: { ...prev[stepId], label: val },
+    }));
+  }, []);
+
+  const updateStepScale = useCallback((stepId: string, val: string) => {
+    setStepScaleStrings((prev) => ({ ...prev, [stepId]: val }));
+    setStepEdits((prev) => ({
+      ...prev,
+      [stepId]: { ...prev[stepId], scaleFactor: val || "1" },
+    }));
+  }, []);
+
+  const updateStepPrice = useCallback((stepId: string, displayVal: string) => {
+    setStepPriceStrings((prev) => ({ ...prev, [stepId]: displayVal }));
+    const cents = Math.round(parseDecimal(displayVal) * 100);
+    setStepEdits((prev) => ({
+      ...prev,
+      [stepId]: { ...prev[stepId], priceAdjustmentCents: cents },
+    }));
+  }, []);
 
   const toggle = useCallback(
     (id: string) => {
@@ -280,29 +465,15 @@ export function ZonePricingPanel({
                       <TextField
                         label="Placement fee"
                         labelHidden
-                        type="number"
-                        value={(p.basePriceAdjustmentCents / 100).toFixed(2)}
+                        type="text"
+                        inputMode="decimal"
+                        value={
+                          placementPriceStrings[p.id] ??
+                          centsToDisplay(p.basePriceAdjustmentCents)
+                        }
                         prefix={currencySymbol}
                         autoComplete="off"
-                        onChange={(val) => {
-                          const cents = Math.round(
-                            parseFloat(val || "0") * 100,
-                          );
-                          const fd = new FormData();
-                          fd.set("intent", "update-placement");
-                          fd.set("placementId", p.id);
-                          fd.set("name", p.name);
-                          fd.set("basePriceAdjustmentCents", String(cents));
-                          fd.set(
-                            "hidePriceWhenZero",
-                            String(p.hidePriceWhenZero),
-                          );
-                          fd.set(
-                            "defaultStepIndex",
-                            String(p.defaultStepIndex),
-                          );
-                          debouncedSubmit(fd);
-                        }}
+                        onChange={(val) => updatePlacementPrice(p.id, val)}
                       />
                     </BlockStack>
                   </div>
@@ -374,7 +545,9 @@ export function ZonePricingPanel({
 
                     {/* Step rows */}
                     {p.steps.map((step) => {
-                      const priceColor = stepPriceColor(step.priceAdjustmentCents);
+                      const editedPriceCents = stepEdits[step.id]?.priceAdjustmentCents;
+                      const effectivePriceCents = editedPriceCents ?? step.priceAdjustmentCents;
+                      const priceColor = stepPriceColor(effectivePriceCents);
                       const hasMultipleSteps = p.steps.length >= 2;
                       return (
                         <div
@@ -397,20 +570,9 @@ export function ZonePricingPanel({
                           <TextField
                             label="Size name"
                             labelHidden
-                            value={step.label}
+                            value={stepLabelStrings[step.id] ?? step.label}
                             autoComplete="off"
-                            onChange={(val) => {
-                              const fd = new FormData();
-                              fd.set("intent", "update-step");
-                              fd.set("stepId", step.id);
-                              fd.set("label", val);
-                              fd.set("scaleFactor", String(step.scaleFactor));
-                              fd.set(
-                                "priceAdjustmentCents",
-                                String(step.priceAdjustmentCents),
-                              );
-                              debouncedSubmit(fd);
-                            }}
+                            onChange={(val) => updateStepLabel(step.id, val)}
                           />
 
                           {/* Scale — only shown when 2+ steps */}
@@ -418,22 +580,15 @@ export function ZonePricingPanel({
                             <TextField
                               label="Scale"
                               labelHidden
-                              type="number"
-                              value={String(step.scaleFactor)}
+                              type="text"
+                              inputMode="decimal"
+                              value={
+                                stepScaleStrings[step.id] ??
+                                String(step.scaleFactor)
+                              }
                               suffix="x"
                               autoComplete="off"
-                              onChange={(val) => {
-                                const fd = new FormData();
-                                fd.set("intent", "update-step");
-                                fd.set("stepId", step.id);
-                                fd.set("label", step.label);
-                                fd.set("scaleFactor", val || "1");
-                                fd.set(
-                                  "priceAdjustmentCents",
-                                  String(step.priceAdjustmentCents),
-                                );
-                                debouncedSubmit(fd);
-                              }}
+                              onChange={(val) => updateStepScale(step.id, val)}
                             />
                           )}
 
@@ -442,20 +597,15 @@ export function ZonePricingPanel({
                             <TextField
                               label="Price add-on"
                               labelHidden
-                              type="number"
-                              value={(step.priceAdjustmentCents / 100).toFixed(2)}
+                              type="text"
+                              inputMode="decimal"
+                              value={
+                                stepPriceStrings[step.id] ??
+                                centsToDisplay(step.priceAdjustmentCents)
+                              }
                               prefix={currencySymbol}
                               autoComplete="off"
-                              onChange={(val) => {
-                                const cents = Math.round(parseFloat(val || "0") * 100);
-                                const fd = new FormData();
-                                fd.set("intent", "update-step");
-                                fd.set("stepId", step.id);
-                                fd.set("label", step.label);
-                                fd.set("scaleFactor", String(step.scaleFactor));
-                                fd.set("priceAdjustmentCents", String(cents));
-                                debouncedSubmit(fd);
-                              }}
+                              onChange={(val) => updateStepPrice(step.id, val)}
                             />
                             {/* Price color indicator dot */}
                             <div
