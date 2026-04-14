@@ -650,11 +650,12 @@ export default function ViewDetailPage() {
   const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
   /** Rename view state */
   const [viewName, setViewName] = useState<string>(view.name ?? getPerspectiveLabel(view.perspective));
+  const [nameDirty, setNameDirty] = useState(false);
   const [renameSaved, setRenameSaved] = useState(false);
   /** Delete view confirmation modal */
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-  const anyDirty = geometryDirty || pricingDirty;
+  const anyDirty = geometryDirty || pricingDirty || nameDirty;
 
   // Warn before browser navigation when there are unsaved changes
   useEffect(() => {
@@ -708,6 +709,7 @@ export default function ViewDetailPage() {
       } else if (intent === "apply-to-all") {
         window.shopify?.toast?.show("Applied to all variants");
       } else if (intent === "rename-view") {
+        setNameDirty(false);
         setRenameSaved(true);
         window.shopify?.toast?.show("View renamed");
         setTimeout(() => setRenameSaved(false), 2000);
@@ -760,7 +762,18 @@ export default function ViewDetailPage() {
     if (pricingDirty) {
       document.dispatchEvent(new CustomEvent("pricing-panel-save"));
     }
-  }, [pendingGeometry, selectedVariantId, submit, pricingDirty]);
+    // Submit rename if name changed
+    if (nameDirty) {
+      const trimmed = viewName.trim();
+      if (trimmed && trimmed !== (view.name ?? getPerspectiveLabel(view.perspective))) {
+        const fd = new FormData();
+        fd.set("intent", "rename-view");
+        fd.set("name", trimmed);
+        submit(fd, { method: "POST" });
+      }
+      setNameDirty(false);
+    }
+  }, [pendingGeometry, selectedVariantId, submit, pricingDirty, nameDirty, viewName, view.name, view.perspective]);
 
   const handleDiscardGeometry = useCallback(() => {
     setEditorResetKey((k) => k + 1);
@@ -769,7 +782,10 @@ export default function ViewDetailPage() {
     // Also discard pricing edits
     setPricingDirty(false);
     document.dispatchEvent(new CustomEvent("pricing-panel-discard"));
-  }, []);
+    // Revert view name
+    setViewName(view.name ?? getPerspectiveLabel(view.perspective));
+    setNameDirty(false);
+  }, [view.name, view.perspective]);
 
   /** Submit pricing changes sequentially from the ZonePricingPanel. */
   const handlePricingSave = useCallback(
@@ -844,6 +860,7 @@ export default function ViewDetailPage() {
   // Sync viewName when navigating to a different view
   useEffect(() => {
     setViewName(view.name ?? getPerspectiveLabel(view.perspective));
+    setNameDirty(false);
   }, [view.id, view.name, view.perspective]);
 
   // Load natural image dimensions whenever the selected variant image changes
@@ -875,7 +892,7 @@ export default function ViewDetailPage() {
   const viewTabs = useMemo(
     () => config.views.map((v) => ({
       id: v.id,
-      label: getPerspectiveLabel(v.perspective),
+      label: v.name || getPerspectiveLabel(v.perspective),
       url: `/app/products/${config.id}/views/${v.id}`,
       isCurrent: v.id === view.id,
     })),
@@ -1358,7 +1375,7 @@ export default function ViewDetailPage() {
                   label="View name"
                   labelHidden
                   value={viewName}
-                  onChange={setViewName}
+                  onChange={(val) => { setViewName(val); setNameDirty(true); }}
                   onBlur={handleRenameBlur}
                   autoComplete="off"
                   placeholder="View name"
