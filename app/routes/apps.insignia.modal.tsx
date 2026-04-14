@@ -54,8 +54,9 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   const url = new URL(request.url);
-  const rawProductId = url.searchParams.get("productId") ?? "";
-  const rawVariantId = url.searchParams.get("variantId") ?? "";
+  // Support both long params (productId/variantId) and short params (p/v)
+  const rawProductId = url.searchParams.get("productId") ?? url.searchParams.get("p") ?? "";
+  const rawVariantId = url.searchParams.get("variantId") ?? url.searchParams.get("v") ?? "";
   // Nginx Proxy Manager terminates TLS and proxies to the container over plain
   // HTTP. url.origin is therefore "http://insignia.optidigi.nl" — serving that
   // as <base href> causes mixed-content failures on the HTTPS storefront page,
@@ -90,8 +91,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
  */
 export async function clientLoader() {
   const url = new URL(window.location.href);
-  const rawProductId = url.searchParams.get("productId") ?? "";
-  const rawVariantId = url.searchParams.get("variantId") ?? "";
+  const rawProductId = url.searchParams.get("productId") ?? url.searchParams.get("p") ?? "";
+  const rawVariantId = url.searchParams.get("variantId") ?? url.searchParams.get("v") ?? "";
   const productId = rawProductId ? toProductGid(rawProductId) : rawProductId;
   const variantId = rawVariantId ? toVariantGid(rawVariantId) : rawVariantId;
   // Read appUrl from the <base> tag that AppProxyProvider injected on the server
