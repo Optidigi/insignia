@@ -91,7 +91,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const apiKey = process.env.SHOPIFY_API_KEY || "";
   const themeEditorUrl =
     apiKey && session.shop
-      ? `https://${session.shop}/admin/themes/current/editor?template=product&addAppBlockId=${apiKey}/customize-button&target=mainSection`
+      ? `https://${session.shop}/admin/themes/current/editor?template=product`
       : null;
 
   if (!shop) {

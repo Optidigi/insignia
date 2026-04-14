@@ -384,7 +384,7 @@ export default function ProductConfigsPage() {
             <Banner tone="warning">
               <p>
                 You haven&apos;t created any decoration methods yet.{" "}
-                <a href="/app/methods">Create a method</a> first to enable
+                <Link to="/app/methods">Create a method</Link> first to enable
                 customization options.
               </p>
             </Banner>

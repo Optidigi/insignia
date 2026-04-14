@@ -47,6 +47,10 @@ type Props = {
    * Keyboard shortcuts (Ctrl+Z/Y, arrow keys) still work.
    */
   inline?: boolean;
+  /** Externally-driven selection — when the parent sets this, the canvas syncs its internal selection. */
+  selectedPlacementId?: string | null;
+  /** Called when a zone is clicked (or deselected by clicking empty canvas). */
+  onSelectPlacement?: (id: string | null) => void;
 };
 
 function snapToGrid(value: number, step: number): number {
@@ -76,6 +80,8 @@ export function PlacementGeometryEditor({
   onCancel,
   onChange,
   inline = false,
+  selectedPlacementId: externalSelectedId,
+  onSelectPlacement,
 }: Props) {
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const [stageSize, setStageSize] = useState<{ width: number; height: number }>({ width: MAX_CANVAS, height: MAX_CANVAS });
@@ -169,6 +175,13 @@ export function PlacementGeometryEditor({
     }
     transformerRef.current.getLayer()?.batchDraw();
   }, [selectedId]);
+
+  // Sync external selection into internal Konva selection
+  useEffect(() => {
+    if (externalSelectedId !== undefined) {
+      setSelectedId(externalSelectedId ?? null);
+    }
+  }, [externalSelectedId]);
 
   // Push a new snapshot onto the history stack (discards any redo states ahead of current index)
   const pushHistory = useCallback((nextRects: Record<string, RectState>) => {
@@ -454,11 +467,11 @@ export function PlacementGeometryEditor({
           onWheel={handleWheel}
           onClick={(e) => {
             const clickedOnEmpty = e.target === e.target.getStage();
-            if (clickedOnEmpty) setSelectedId(null);
+            if (clickedOnEmpty) { setSelectedId(null); onSelectPlacement?.(null); }
           }}
           onTap={(e) => {
             const clickedOnEmpty = e.target === e.target.getStage();
-            if (clickedOnEmpty) setSelectedId(null);
+            if (clickedOnEmpty) { setSelectedId(null); onSelectPlacement?.(null); }
           }}
         >
           <Layer>
@@ -531,8 +544,8 @@ export function PlacementGeometryEditor({
                 onDragEnd={(e) => handleDragEnd(p.id, e)}
                 onTransformStart={handleTransformStart}
                 onTransformEnd={(e) => handleTransformEnd(p.id, e)}
-                onClick={() => setSelectedId(p.id)}
-                onTap={() => setSelectedId(p.id)}
+                onClick={() => { setSelectedId(p.id); onSelectPlacement?.(p.id); }}
+                onTap={() => { setSelectedId(p.id); onSelectPlacement?.(p.id); }}
               />
             );
           })}

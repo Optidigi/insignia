@@ -26,6 +26,7 @@ const PlacementGeometryEditorLazy = lazy(() =>
   }))
 );
 import { ZonePricingPanel } from "../components/ZonePricingPanel";
+import type { PricingChange } from "../components/ZonePricingPanel";
 import { CloneLayoutModal } from "../components/CloneLayoutModal";
 import type { SetupItem } from "../components/CloneLayoutModal";
 import { authenticate } from "../shopify.server";
@@ -633,6 +634,7 @@ export default function ViewDetailPage() {
   );
   const [selectedPlacementId, setSelectedPlacementId] = useState<string | null>(null);
   const [geometryDirty, setGeometryDirty] = useState(false);
+  const [pricingDirty, setPricingDirty] = useState(false);
   const [editorResetKey, setEditorResetKey] = useState(0);
   const [cloneModalOpen, setCloneModalOpen] = useState(false);
   const [addingZone, setAddingZone] = useState(false);
@@ -652,34 +654,36 @@ export default function ViewDetailPage() {
   /** Delete view confirmation modal */
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
 
-  // Warn before browser navigation when there are unsaved geometry changes
+  const anyDirty = geometryDirty || pricingDirty;
+
+  // Warn before browser navigation when there are unsaved changes
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (geometryDirty) {
+      if (anyDirty) {
         e.preventDefault();
         e.returnValue = "";
       }
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [geometryDirty]);
+  }, [anyDirty]);
 
-  // Block in-app (React Router) navigation when geometry is dirty
+  // Block in-app (React Router) navigation when there are unsaved changes
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      geometryDirty && currentLocation.pathname !== nextLocation.pathname
+      anyDirty && currentLocation.pathname !== nextLocation.pathname
   );
 
   // Show / hide Shopify SaveBar in sync with dirty state
   useEffect(() => {
     const saveBar = window.shopify?.saveBar;
-    if (geometryDirty) {
+    if (anyDirty) {
       saveBar?.show("view-editor-save-bar");
     } else {
       saveBar?.hide("view-editor-save-bar");
     }
     return () => { saveBar?.hide("view-editor-save-bar"); };
-  }, [geometryDirty]);
+  }, [anyDirty]);
 
   // Clear dirty flag and show toast feedback after action responses
   useEffect(() => {
@@ -708,7 +712,7 @@ export default function ViewDetailPage() {
         window.shopify?.toast?.show("View renamed");
         setTimeout(() => setRenameSaved(false), 2000);
       }
-      // update-placement and update-step are silent (too frequent with debounce)
+      // update-placement and update-step are silent — saved via save bar batch
     } else if ("error" in data) {
       const intent = data.intent as string | undefined;
       // error shape from handleError: { error: { message, code, ... } }
@@ -744,19 +748,41 @@ export default function ViewDetailPage() {
   const currencySymbol = currencySymbolMap[currencyCode] ?? currencyCode + " ";
 
   const handleSaveGeometry = useCallback(() => {
-    if (!pendingGeometry || !selectedVariantId) return;
-    const fd = new FormData();
-    fd.set("intent", "save-placement-geometry");
-    fd.set("variantId", selectedVariantId);
-    fd.set("placementGeometry", JSON.stringify(pendingGeometry));
-    submit(fd, { method: "POST" });
-  }, [pendingGeometry, selectedVariantId, submit]);
+    // Submit geometry changes if any
+    if (pendingGeometry && selectedVariantId) {
+      const fd = new FormData();
+      fd.set("intent", "save-placement-geometry");
+      fd.set("variantId", selectedVariantId);
+      fd.set("placementGeometry", JSON.stringify(pendingGeometry));
+      submit(fd, { method: "POST" });
+    }
+    // Trigger pricing panel save via custom event
+    if (pricingDirty) {
+      document.dispatchEvent(new CustomEvent("pricing-panel-save"));
+    }
+  }, [pendingGeometry, selectedVariantId, submit, pricingDirty]);
 
   const handleDiscardGeometry = useCallback(() => {
     setEditorResetKey((k) => k + 1);
     setGeometryDirty(false);
     setPendingGeometry(null);
+    // Also discard pricing edits
+    setPricingDirty(false);
+    document.dispatchEvent(new CustomEvent("pricing-panel-discard"));
   }, []);
+
+  /** Submit pricing changes sequentially from the ZonePricingPanel. */
+  const handlePricingSave = useCallback(
+    async (changes: PricingChange[]) => {
+      for (const change of changes) {
+        submit(change.data, { method: "post" });
+        // Small delay between sequential submits to avoid race conditions
+        await new Promise((r) => setTimeout(r, 50));
+      }
+      setPricingDirty(false);
+    },
+    [submit],
+  );
 
   const handleCalibrate = useCallback(
     (pxPerCm: number) => {
@@ -860,7 +886,7 @@ export default function ViewDetailPage() {
     <>
       {/* App Bridge SaveBar — shown when geometry has unsaved changes */}
       <ui-save-bar id="view-editor-save-bar">
-        <button variant="primary" type="button" onClick={handleSaveGeometry}>Save print areas</button>
+        <button variant="primary" type="button" onClick={handleSaveGeometry}>Save changes</button>
         <button type="button" onClick={handleDiscardGeometry}>Discard</button>
       </ui-save-bar>
 
@@ -902,7 +928,7 @@ export default function ViewDetailPage() {
           onClose={() => blocker.reset?.()}
         >
           <Modal.Section>
-            <Text as="p">You have unsaved print area changes. Leave without saving?</Text>
+            <Text as="p">You have unsaved changes. Leave without saving?</Text>
           </Modal.Section>
         </Modal>
       )}
@@ -935,11 +961,11 @@ export default function ViewDetailPage() {
           <div style={{ flex: 1 }} />
           <button
             type="button"
-            disabled={!geometryDirty}
+            disabled={!anyDirty}
             onClick={handleSaveGeometry}
             style={{
-              padding: "8px 16px", borderRadius: 8, border: "none", cursor: geometryDirty ? "pointer" : "default",
-              background: geometryDirty ? "#111827" : "#D1D5DB",
+              padding: "8px 16px", borderRadius: 8, border: "none", cursor: anyDirty ? "pointer" : "default",
+              background: anyDirty ? "#111827" : "#D1D5DB",
               color: "#ffffff", fontSize: 13, fontWeight: 600,
             }}
           >
@@ -1117,6 +1143,8 @@ export default function ViewDetailPage() {
                         setGeometryDirty(true);
                         setPendingGeometry(geometry);
                       }}
+                      selectedPlacementId={selectedPlacementId}
+                      onSelectPlacement={setSelectedPlacementId}
                     />
                   </Suspense>
 
@@ -1211,16 +1239,16 @@ export default function ViewDetailPage() {
                     <button
                       key={v.id}
                       type="button"
-                      disabled={geometryDirty && !isSelected}
-                      title={geometryDirty && !isSelected ? "Save or discard current changes before switching variant" : v.displayName}
+                      disabled={anyDirty && !isSelected}
+                      title={anyDirty && !isSelected ? "Save or discard current changes before switching variant" : v.displayName}
                       onClick={() => setSelectedVariantId(v.id)}
                       style={{
                         padding: "4px 10px", borderRadius: 6, border: "none",
-                        cursor: geometryDirty && !isSelected ? "not-allowed" : "pointer",
+                        cursor: anyDirty && !isSelected ? "not-allowed" : "pointer",
                         background: isSelected ? "#111827" : "#F3F4F6",
                         color: isSelected ? "#ffffff" : "#374151",
                         fontSize: 11, fontWeight: isSelected ? 500 : 400,
-                        whiteSpace: "nowrap", opacity: geometryDirty && !isSelected ? 0.4 : 1,
+                        whiteSpace: "nowrap", opacity: anyDirty && !isSelected ? 0.4 : 1,
                       }}
                     >
                       {v.title === "Default Title" ? "Default" : v.title}
@@ -1235,14 +1263,14 @@ export default function ViewDetailPage() {
                     <button
                       type="button"
                       onClick={() => setVariantPopoverOpen((o) => !o)}
-                      disabled={geometryDirty}
+                      disabled={anyDirty}
                       style={{
                         display: "inline-flex", alignItems: "center", gap: 6,
                         padding: "4px 10px", borderRadius: 6,
                         border: "1px solid #D1D5DB", background: "#F9FAFB",
-                        cursor: geometryDirty ? "not-allowed" : "pointer",
-                        fontSize: 11, fontWeight: 500, color: geometryDirty ? "#9CA3AF" : "#111827",
-                        opacity: geometryDirty ? 0.6 : 1,
+                        cursor: anyDirty ? "not-allowed" : "pointer",
+                        fontSize: 11, fontWeight: 500, color: anyDirty ? "#9CA3AF" : "#111827",
+                        opacity: anyDirty ? 0.6 : 1,
                       }}
                     >
                       {(() => {
@@ -1268,7 +1296,7 @@ export default function ViewDetailPage() {
                       return {
                         content: label,
                         icon: isSelected ? CheckSmallIcon : undefined,
-                        disabled: geometryDirty && !isSelected,
+                        disabled: anyDirty && !isSelected,
                         onAction: () => {
                           setVariantPopoverOpen(false);
                           setSelectedVariantId(v.id);
@@ -1407,6 +1435,8 @@ export default function ViewDetailPage() {
                     imageWidth={imageDimensions?.width}
                     imageHeight={imageDimensions?.height}
                     placementGeometry={pendingGeometry ?? selectedVariantGeometry}
+                    onDirty={setPricingDirty}
+                    onSave={handlePricingSave}
                   />
                 )}
 
@@ -1485,8 +1515,8 @@ export default function ViewDetailPage() {
 
               {/* Manage images link */}
               <div style={{ padding: "12px 18px" }}>
-                <a
-                  href={`/app/products/${config.id}/images`}
+                <Link
+                  to={`/app/products/${config.id}/images`}
                   style={{
                     display: "flex", alignItems: "center", gap: 6,
                     color: "#2563EB", textDecoration: "none", fontSize: 12, fontWeight: 500,
@@ -1505,7 +1535,7 @@ export default function ViewDetailPage() {
                   }}>
                     {imageCount} of {variants.length}
                   </span>
-                </a>
+                </Link>
               </div>
             </div>
           </div>
