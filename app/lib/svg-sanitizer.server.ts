@@ -41,11 +41,11 @@ export function sanitizeSvg(svgString: string): string {
 }
 
 function hasExternalReferences(svg: string): boolean {
-  const hrefMatch = svg.match(/\bhref\s*=\s*["']?\s*https?:\/\//i);
-  if (hrefMatch) return true;
-  const xlinkMatch = svg.match(/\bxlink:href\s*=\s*["']?\s*https?:\/\//i);
-  if (xlinkMatch) return true;
-  const urlMatch = svg.match(/url\s*\(\s*["']?\s*https?:\/\//i);
-  if (urlMatch) return true;
+  const dangerousUriPattern = /\b(?:xlink:)?href\s*=\s*["']?\s*(?:https?:\/\/|ftp:\/\/|\/\/|data:)/i;
+  if (dangerousUriPattern.test(svg)) return true;
+
+  const urlPattern = /url\s*\(\s*["']?\s*(?:https?:\/\/|ftp:\/\/|\/\/|data:)/i;
+  if (urlPattern.test(svg)) return true;
+
   return false;
 }
