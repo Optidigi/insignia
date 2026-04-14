@@ -369,6 +369,8 @@ function SetupStepRow({
   active,
   actionLabel,
   actionUrl,
+  secondaryActionLabel,
+  onSecondaryAction,
 }: {
   stepNum: number;
   title: string;
@@ -377,6 +379,8 @@ function SetupStepRow({
   active: boolean;
   actionLabel: string;
   actionUrl: string;
+  secondaryActionLabel?: string;
+  onSecondaryAction?: () => void;
 }) {
   return (
     <InlineStack align="space-between" blockAlign="start" wrap={false} gap="400">
@@ -417,9 +421,16 @@ function SetupStepRow({
         </BlockStack>
       </InlineStack>
       {!completed && active && (
-        <Button url={actionUrl} size="slim">
-          {actionLabel}
-        </Button>
+        <InlineStack gap="200">
+          <Button url={actionUrl} size="slim">
+            {actionLabel}
+          </Button>
+          {secondaryActionLabel && onSecondaryAction && (
+            <Button size="slim" variant="plain" onClick={onSecondaryAction}>
+              {secondaryActionLabel}
+            </Button>
+          )}
+        </InlineStack>
       )}
     </InlineStack>
   );
@@ -697,6 +708,12 @@ export default function Dashboard() {
                     }
                     actionLabel="Go to Settings"
                     actionUrl="/app/settings"
+                    secondaryActionLabel="I've added it"
+                    onSecondaryAction={() => {
+                      const formData = new FormData();
+                      formData.append("intent", "dismiss-setup-guide");
+                      submit(formData, { method: "POST" });
+                    }}
                   />
                 </BlockStack>
               </BlockStack>
@@ -1129,7 +1146,12 @@ export default function Dashboard() {
                           url: "/app/products",
                         }
                   }
-                  onDismiss={() => setThemeCardDismissed(true)}
+                  onDismiss={() => {
+                    setThemeCardDismissed(true);
+                    const formData = new FormData();
+                    formData.append("intent", "dismiss-setup-guide");
+                    submit(formData, { method: "POST" });
+                  }}
                 >
                   <Text as="p" variant="bodySm">
                     Click to open the theme editor with the Insignia Customize
