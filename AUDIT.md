@@ -82,6 +82,9 @@
 - Mobile responsive CSS for 375px and 390px viewports -- Phase 2
 - Config readiness guards: Preview button disabled until config complete -- Phase 2
 - Storefront Customize button visibility tied to config completeness (insignia.enabled metafield) -- Phase 2
+- Shorter storefront URLs using `?p=` and `?v=` short query params (both long and short params supported) -- Phase 2
+- Setup guide "I've added it" button for theme block step (persisted) -- Phase 2
+- Theme banner dismiss persisted across page reloads -- Phase 2
 
 ### Merchant Notifications
 - Merchant email notification service (gated behind RESEND_API_KEY) -- Phase 2
@@ -151,7 +154,7 @@ Shopify access tokens stored in plaintext in the database. Accept the risk or im
 ### Low Priority / Nice-to-Have
 
 **Pretty storefront URLs**
-`/customize/:productId` was attempted but broke App Proxy routing. Reverted to `/modal?productId=X`. Needs App Proxy routing research before re-attempting. Pinned as future work.
+Path-based URLs (`/customize/:productId` and splat routes) were attempted but broke App Proxy routing due to `AppProxyProvider` `<base>` tag incompatibility with non-static routes. Settled on short query params (`/modal?p=X&v=Y`). True path-based pretty URLs would require dropping `AppProxyProvider` — a major architectural change for cosmetic gain.
 
 **No CDN for storefront modal assets**
 Storefront modal scripts load from single VPS (Netherlands). International customers see latency.
@@ -162,17 +165,11 @@ Allow merchants to pull existing product images from Shopify instead of re-uploa
 **Storefront artwork re-upload on review step**
 "Change artwork" shortcut on the review step to reduce drop-off.
 
-**Orders page CSV export button**
-Export endpoint exists but no UI trigger.
-
 **Admin preview of storefront modal**
 Let merchants see the customer experience without going to a live storefront.
 
 **Bulk product linking**
 Currently product configs are linked to product IDs one at a time.
-
-**Dashboard onboarding checklist**
-Setup checklist for new merchants.
 
 **Image tray should use Polaris DropZone**
 Replace hidden file input + `.click()` with Polaris DropZone for drag-and-drop.

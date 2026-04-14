@@ -41,6 +41,9 @@ Phase 2 production hardening.
 - View editor back navigation causing login prompt (Link instead of `<a>`)
 - Setup progress "Print areas positioned" not recognizing view-level geometry
 - Theme editor link opening in same tab instead of new tab
+- Setup guide theme block step now has "I've added it" button (persisted)
+- Theme banner dismiss persisted across page reloads
+- Shorter storefront URLs: `?p=` and `?v=` short query params (old format still works)
 
 ---
 

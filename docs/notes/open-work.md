@@ -23,9 +23,8 @@ Rules:
 - See: memory file `project_v21_view_editor_notes.md`
 
 ### Pretty storefront URLs
-- **Pinned**: `/customize/:productId` was attempted in Phase 2 but broke App Proxy routing. Reverted to `/modal?productId=X`.
-- Needs App Proxy routing research before re-implementing.
-- See: AUDIT.md "Low Priority" section.
+- **Resolved (partial)**: Path-based URLs (`/customize/:productId` and splat routes) both failed due to `AppProxyProvider` `<base>` tag incompatibility. Settled on short query params (`/modal?p=X&v=Y`) which are shorter than the original format.
+- True path-based URLs would require dropping `AppProxyProvider` entirely — a major architectural change for cosmetic gain. Accepted as-is.
 
 ### Access token encryption
 - **Decision needed**: Accept the risk of plaintext Shopify access tokens in the database, or implement Prisma middleware for encryption at rest.
