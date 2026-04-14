@@ -426,7 +426,7 @@ function SetupStepRow({
             {actionLabel}
           </Button>
           {secondaryActionLabel && onSecondaryAction && (
-            <Button size="slim" variant="plain" onClick={onSecondaryAction}>
+            <Button size="slim" variant="primary" tone="success" onClick={onSecondaryAction}>
               {secondaryActionLabel}
             </Button>
           )}
