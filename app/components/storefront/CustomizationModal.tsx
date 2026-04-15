@@ -270,22 +270,29 @@ export function CustomizationModal({
     if (i < STEP_ORDER.length - 1) goToStep(STEP_ORDER[i + 1]);
   }, [currentStepIndex, goToStep]);
 
+  /** Close the modal: navigate back to the product page. */
+  const closeModal = useCallback(() => {
+    if (typeof window === "undefined") return;
+    const numericId = productId.replace(/^gid:\/\/shopify\/Product\//, "");
+    window.location.href = `/products/${numericId}`;
+  }, [productId]);
+
   const handleClose = useCallback(() => {
     const hasSelections = step !== "upload" || logo.type !== "none";
     if (hasSelections) {
       setShowCloseConfirm(true);
     } else {
-      window.history.back();
+      closeModal();
     }
-  }, [step, logo.type]);
+  }, [step, logo.type, closeModal]);
 
   const handleCloseConfirm = useCallback((confirmed: boolean) => {
     setShowCloseConfirm(false);
-    if (confirmed && typeof window !== "undefined") {
+    if (confirmed) {
       clearDraft(productId, variantId);
-      window.history.back();
+      closeModal();
     }
-  }, [productId, variantId]);
+  }, [productId, variantId, closeModal]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -499,13 +506,13 @@ export function CustomizationModal({
         throw new Error(d?.error?.message ?? "Failed to confirm cart");
       }
       clearDraft(productId, variantId);
-      window.history.back();
+      closeModal();
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Failed to add to cart");
     } finally {
       setSubmitLoading(false);
     }
-  }, [customizationId, priceResult, selectedMethodId, quantity, saveDraftAndPrice, config, productId, variantId]);
+  }, [customizationId, priceResult, selectedMethodId, quantity, saveDraftAndPrice, config, productId, variantId, closeModal]);
 
   // Early returns after all hooks — this is the required pattern.
   if (configLoading) {
@@ -582,7 +589,6 @@ export function CustomizationModal({
             config={config}
             placementSelections={placementSelections}
             logo={logo}
-            sizeMultiplier={0.6}
           />
         </div>
 

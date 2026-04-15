@@ -83,12 +83,16 @@ async function getProductConfigByProductId(shopId: string, productId: string) {
       linkedProductIds: { has: productId },
     },
     include: {
-      views: { orderBy: { displayOrder: "asc" } },
-      placements: {
-        include: {
-          steps: { orderBy: { displayOrder: "asc" } },
-        },
+      views: {
         orderBy: { displayOrder: "asc" },
+        include: {
+          placements: {
+            include: {
+              steps: { orderBy: { displayOrder: "asc" } },
+            },
+            orderBy: { displayOrder: "asc" },
+          },
+        },
       },
       allowedMethods: {
         include: { decorationMethod: true },
@@ -124,7 +128,7 @@ export async function getStorefrontConfig(
     );
   }
 
-  if (config.placements.length === 0) {
+  if (config.views.every((v) => v.placements.length === 0)) {
     throw new AppError(
       ErrorCodes.INVALID_CONFIG,
       "This product has no print areas configured. Please contact the store.",
@@ -204,18 +208,35 @@ export async function getStorefrontConfig(
     })
   );
 
+  // Build a lookup: placementId → viewId (the view that owns this placement)
+  const placementOwnerViewId = new Map<string, string>();
+  for (const view of config.views) {
+    for (const p of view.placements) {
+      placementOwnerViewId.set(p.id, view.id);
+    }
+  }
+
   const geometryByViewIdForPlacement = (placementId: string): Record<string, PlacementGeometry | null> => {
     const out: Record<string, PlacementGeometry | null> = {};
+    const ownerViewId = placementOwnerViewId.get(placementId);
+
     for (const view of config.views) {
+      // Only look up geometry on the view that owns this placement.
+      // Before per-view placements, geometry JSON on other views may
+      // contain stale entries for placements that were migrated away.
+      if (ownerViewId && view.id !== ownerViewId) {
+        out[view.id] = null;
+        continue;
+      }
+
       const vc = viewConfigByViewId.get(view.id);
       const variantGeom = (vc?.placementGeometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number } | null> | null) ?? {};
       const viewGeom = (view.placementGeometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number } | null> | null) ?? {};
 
-      // Prefer view-level geometry when sharedZones is ON; otherwise prefer per-variant
       const isShared = view.sharedZones ?? true;
       const effectiveGeom = isShared
-        ? { ...variantGeom, ...viewGeom }  // view-level wins over variant-level
-        : { ...viewGeom, ...variantGeom }; // variant-level wins over view-level
+        ? { ...variantGeom, ...viewGeom }
+        : { ...viewGeom, ...variantGeom };
 
       const g = effectiveGeom[placementId];
       if (g && typeof g === "object" && "centerXPercent" in g) {
@@ -231,19 +252,28 @@ export async function getStorefrontConfig(
     return out;
   };
 
-  const placements: Placement[] = config.placements.map((p) => ({
-    id: p.id,
-    name: p.name,
-    basePriceAdjustmentCents: p.basePriceAdjustmentCents,
-    hidePriceWhenZero: p.hidePriceWhenZero,
-    steps: p.steps.map((s) => ({
-      label: s.label,
-      priceAdjustmentCents: s.priceAdjustmentCents,
-      scaleFactor: s.scaleFactor ?? 1.0,
-    })),
-    defaultStepIndex: p.defaultStepIndex,
-    geometryByViewId: geometryByViewIdForPlacement(p.id),
-  }));
+  // Include all placements from all views. Placements with 0 steps get a
+  // synthetic default step so they behave as single-size in the storefront.
+  const DEFAULT_STEP = { label: "Standard", priceAdjustmentCents: 0, scaleFactor: 1.0 };
+  const allPlacements = config.views.flatMap((v) => v.placements);
+  const placements: Placement[] = allPlacements.map((p) => {
+    const steps = p.steps.length > 0
+      ? p.steps.map((s) => ({
+          label: s.label,
+          priceAdjustmentCents: s.priceAdjustmentCents,
+          scaleFactor: s.scaleFactor ?? 1.0,
+        }))
+      : [DEFAULT_STEP];
+    return {
+      id: p.id,
+      name: p.name,
+      basePriceAdjustmentCents: p.basePriceAdjustmentCents,
+      hidePriceWhenZero: p.hidePriceWhenZero,
+      steps,
+      defaultStepIndex: Math.min(p.defaultStepIndex, steps.length - 1),
+      geometryByViewId: geometryByViewIdForPlacement(p.id),
+    };
+  });
 
   let placeholderMode: "merchant_asset" | "bold_text" = "bold_text";
   let placeholderImageUrl: string | null = null;

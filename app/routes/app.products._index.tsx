@@ -206,7 +206,7 @@ export default function ProductConfigsPage() {
           cmp = a.views.length - b.views.length;
           break;
         case "placements":
-          cmp = a.placements.length - b.placements.length;
+          cmp = a.views.reduce((s, v) => s + v.placements.length, 0) - b.views.reduce((s, v) => s + v.placements.length, 0);
           break;
         default:
           cmp = a.name.localeCompare(b.name);
@@ -478,7 +478,7 @@ export default function ProductConfigsPage() {
                     </IndexTable.Cell>
                     <IndexTable.Cell>
                       <Text variant="bodySm" as="span" alignment="end" numeric>
-                        {String(config.placements.length)}
+                        {String(config.views.reduce((s, v) => s + v.placements.length, 0))}
                       </Text>
                     </IndexTable.Cell>
                     <IndexTable.Cell>
@@ -674,7 +674,7 @@ export default function ProductConfigsPage() {
                                       {config.views.length} {config.views.length === 1 ? "view" : "views"}
                                     </Text>
                                     <Text variant="bodySm" as="span" tone="subdued">
-                                      {config.placements.length} {config.placements.length === 1 ? "placement" : "placements"}
+                                      {config.views.reduce((s, v) => s + v.placements.length, 0)} {config.views.reduce((s, v) => s + v.placements.length, 0) === 1 ? "placement" : "placements"}
                                     </Text>
                                     {config.allowedMethods.length > 0 && (
                                       <Text variant="bodySm" as="span" tone="subdued">

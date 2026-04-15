@@ -280,7 +280,26 @@ export function PlacementGeometryEditor({
     onSave(geometry);
   }, [rects, stageWidth, stageHeight, onSave]);
 
-  // Mouse-wheel zoom: zoom toward pointer, clamped between 0.5x and 3x
+  /**
+   * Clamp stage position so the scaled image always covers the entire canvas viewport.
+   * Image edges must be at or beyond canvas edges — no whitespace gaps.
+   */
+  const clampStagePosition = useCallback(
+    (stage: Konva.Stage, scale: number) => {
+      const scaledW = stageWidth * scale;
+      const scaledH = stageHeight * scale;
+      let x = stage.x();
+      let y = stage.y();
+      // Right edge of image must reach or extend past canvas right edge
+      // Left edge of image must be at or before canvas left edge
+      x = Math.min(0, Math.max(stageWidth - scaledW, x));
+      y = Math.min(0, Math.max(stageHeight - scaledH, y));
+      stage.position({ x, y });
+    },
+    [stageWidth, stageHeight],
+  );
+
+  // Mouse-wheel zoom: zoom toward pointer, clamped so image always fills canvas
   const handleWheel = useCallback(
     (e: Konva.KonvaEventObject<WheelEvent>) => {
       e.evt.preventDefault();
@@ -290,7 +309,8 @@ export function PlacementGeometryEditor({
       const pointer = stage.getPointerPosition();
       if (!pointer) return;
       const newScale = e.evt.deltaY > 0 ? oldScale * 0.9 : oldScale * 1.1;
-      const clampedScale = Math.max(0.5, Math.min(3, newScale));
+      // Minimum scale = 1 (image fits canvas exactly at scale 1; below 1 creates whitespace)
+      const clampedScale = Math.max(1, Math.min(3, newScale));
       const mousePointTo = {
         x: (pointer.x - stage.x()) / oldScale,
         y: (pointer.y - stage.y()) / oldScale,
@@ -300,8 +320,9 @@ export function PlacementGeometryEditor({
         x: pointer.x - mousePointTo.x * clampedScale,
         y: pointer.y - mousePointTo.y * clampedScale,
       });
+      clampStagePosition(stage, clampedScale);
     },
-    [],
+    [clampStagePosition],
   );
 
   const handleResetZoom = useCallback(() => {
@@ -465,6 +486,10 @@ export function PlacementGeometryEditor({
           height={stageHeight}
           draggable
           onWheel={handleWheel}
+          onDragEnd={() => {
+            const stage = stageRef.current;
+            if (stage) clampStagePosition(stage, stage.scaleX());
+          }}
           onClick={(e) => {
             const clickedOnEmpty = e.target === e.target.getStage();
             if (clickedOnEmpty) { setSelectedId(null); onSelectPlacement?.(null); }

@@ -10,6 +10,32 @@
 
 ---
 
+## 0.5.0 — 2026-04-15
+
+UI polish + per-view placements architecture change.
+
+### Architecture
+- **Per-view placements**: PlacementDefinition now belongs to ProductView (was ProductConfig). Each view has its own independent set of print areas. Migration assigns existing placements to first view.
+- Auto-create default "Front" view on product config creation (image manager immediately usable)
+
+### Fixed
+- Admin save clobbering: useFetcher per save type (geometry, pricing, name) + batch-pricing-update intent — saves no longer cancel each other
+- View switching: all view-dependent state reset on view.id change; Link→navigate for embedded app compatibility
+- Canvas zoom: minimum 1x so image always fills viewport; position clamped after zoom/pan
+- Storefront logo scaling: per-placement scaleFactor from config data (was synthetic linear interpolation)
+- Storefront placement rendering: all placements shown (0-step get synthetic default); geometry scoped to owning view only
+- Storefront close button: navigates to product page instead of closing tab
+- View rows on product detail: entire row clickable with hover state (was only name text)
+- Clone layout: geometry re-keyed with new placement IDs (was copying stale source IDs)
+- save-calibration: ownership scoping via productConfig chain
+
+### Changed
+- Size selector: range slider replaced with clickable cards (name, scale, price, "Recommended" badge)
+- Dead CSS removed: ~90 lines of old slider/tick styles
+- Delete placement: action handler with cascade + geometry cleanup from view JSON
+
+---
+
 ## 0.4.0 — 2026-04-14
 
 Phase 3 production readiness audit — 31 findings fixed across security, GDPR, performance, and code quality.

@@ -34,7 +34,11 @@ export async function createCustomizationDraft(
     where: { id: input.productConfigId, shopId },
     include: {
       allowedMethods: { include: { decorationMethod: true } },
-      placements: { include: { steps: true }, orderBy: { displayOrder: "asc" } },
+      views: {
+        include: {
+          placements: { include: { steps: true }, orderBy: { displayOrder: "asc" } },
+        },
+      },
     },
   });
   if (!config) {
@@ -48,12 +52,13 @@ export async function createCustomizationDraft(
     throw new AppError(ErrorCodes.BAD_REQUEST, "Product not linked to this configuration", 400);
   }
 
-  const placementIds = new Set(config.placements.map((p) => p.id));
+  const allPlacements = config.views.flatMap((v) => v.placements);
+  const placementIds = new Set(allPlacements.map((p) => p.id));
   for (const { placementId, stepIndex } of input.placements) {
     if (!placementIds.has(placementId)) {
       throw new AppError(ErrorCodes.BAD_REQUEST, `Placement ${placementId} not in configuration`, 400);
     }
-    const placement = config.placements.find((p) => p.id === placementId);
+    const placement = allPlacements.find((p) => p.id === placementId);
     if (placement && (stepIndex < 0 || stepIndex >= placement.steps.length)) {
       throw new AppError(ErrorCodes.BAD_REQUEST, `Invalid stepIndex for placement ${placementId}`, 400);
     }
@@ -114,8 +119,9 @@ export async function computeCustomizationPrice(
   let placementsCents = 0;
   const breakdown: Array<{ label: string; amountCents: number }> = [];
 
+  const allConfigPlacements = config.views.flatMap((v) => v.placements);
   for (const { placementId, stepIndex } of placementsPayload) {
-    const placement = config.placements.find((p) => p.id === placementId);
+    const placement = allConfigPlacements.find((p) => p.id === placementId);
     if (!placement) continue;
     const step = placement.steps[stepIndex];
     const stepCents = step ? step.priceAdjustmentCents : 0;

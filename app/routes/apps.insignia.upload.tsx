@@ -166,9 +166,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const uploadResult = await serverSideStorefrontUpload(shop.id, file);
     const logoAssetId = uploadResult.logoAsset.id;
 
-    // Get all placement definitions for this product config
+    // Get all placement definitions for this product config (via views)
     const placements = await db.placementDefinition.findMany({
-      where: { productConfigId: orderLine.productConfigId },
+      where: { productView: { productConfigId: orderLine.productConfigId } },
       select: { id: true },
     });
 

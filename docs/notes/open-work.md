@@ -1,6 +1,6 @@
 # Open work / decisions to revisit
 
-> **Last updated**: 2026-04-14 (Phase 3 audit fixes applied)
+> **Last updated**: 2026-04-15 (UI polish + per-view placements)
 
 This file tracks decisions and missing contracts that block completion.
 
@@ -19,8 +19,8 @@ Rules:
 - Design file: `admin-dashboard-v2.1-final.pen`
 
 ### Logo sizing UX improvement
-- **Decision needed**: Keep stepped tiers with better cards, add fixed-size-per-zone mode, or both?
-- See: memory file `project_v21_view_editor_notes.md`
+- **Partially resolved**: Storefront range slider replaced with clickable size cards (name, scale, price delta, "Recommended" badge). Placements with 0 steps get a synthetic "Standard" single-size default.
+- **Remaining**: Fixed-size-per-zone mode not yet implemented. Stepped tiers with cards is the current approach.
 
 ### Pretty storefront URLs
 - **Resolved (partial)**: Path-based URLs (`/customize/:productId` and splat routes) both failed due to `AppProxyProvider` `<base>` tag incompatibility. Settled on short query params (`/modal?p=X&v=Y`) which are shorter than the original format.

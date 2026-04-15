@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { useLoaderData, useSubmit, useNavigation, useRevalidator, useActionData, useBlocker, useNavigate, Link, redirect } from "react-router";
+import { useLoaderData, useSubmit, useFetcher, useNavigation, useRevalidator, useActionData, useBlocker, useNavigate, Link, redirect } from "react-router";
 import {
   Text,
   Spinner,
@@ -101,12 +101,20 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       db.productConfig.findMany({
         where: { shopId: shop.id, id: { not: configId } },
         include: {
-          views: { select: { id: true } },
-          placements: { select: { id: true } },
+          views: {
+            select: { id: true, placements: { select: { id: true } } },
+          },
           allowedMethods: { include: { decorationMethod: { select: { name: true } } } },
         },
       }),
     ]);
+
+    // Fetch placements belonging to this specific view
+    const viewPlacements = await db.placementDefinition.findMany({
+      where: { productViewId: viewId },
+      include: { steps: { orderBy: { displayOrder: "asc" } } },
+      orderBy: { displayOrder: "asc" },
+    });
 
     // Fetch variants from Shopify for all linked products
     const productIds = config.linkedProductIds;
@@ -198,13 +206,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       id: c.id,
       name: c.name,
       viewCount: c.views.length,
-      placementCount: c.placements.length,
+      placementCount: c.views.reduce((sum, v) => sum + v.placements.length, 0),
       methodNames: c.allowedMethods.map((m) => m.decorationMethod.name),
     }));
 
     return {
       config,
       view,
+      viewPlacements,
       variants,
       variantImages,
       signedImageUrls,
@@ -414,7 +423,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       await db.placementDefinition.update({
         where: {
           id: placementId,
-          productConfig: { shopId: shop.id },
+          productView: { productConfig: { shopId: shop.id } },
         },
         data: { name, basePriceAdjustmentCents, hidePriceWhenZero, defaultStepIndex },
       });
@@ -425,8 +434,8 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     if (intent === "update-step") {
       const stepId = formData.get("stepId") as string;
       const label = formData.get("label") as string;
-      const scaleFactor =
-        parseFloat(formData.get("scaleFactor") as string ?? "1") || 1.0;
+      const rawScale = parseFloat(formData.get("scaleFactor") as string ?? "1");
+      const scaleFactor = Number.isNaN(rawScale) ? 1.0 : rawScale;
       const priceAdjustmentCents =
         parseInt(formData.get("priceAdjustmentCents") as string ?? "0", 10) || 0;
 
@@ -437,12 +446,59 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       await db.placementStep.update({
         where: {
           id: stepId,
-          placementDefinition: { productConfig: { shopId: shop.id } },
+          placementDefinition: { productView: { productConfig: { shopId: shop.id } } },
         },
         data: { label, scaleFactor, priceAdjustmentCents },
       });
 
       return { success: true, intent: "update-step" };
+    }
+
+    if (intent === "batch-pricing-update") {
+      const payloadJson = formData.get("payload") as string;
+      if (!payloadJson) {
+        throw new Response("Missing payload", { status: 400 });
+      }
+
+      let payload: {
+        placements?: Array<{ placementId: string; name: string; basePriceAdjustmentCents: number; hidePriceWhenZero: boolean; defaultStepIndex: number }>;
+        steps?: Array<{ stepId: string; label: string; scaleFactor: number; priceAdjustmentCents: number }>;
+      };
+      try {
+        payload = JSON.parse(payloadJson);
+      } catch {
+        throw new Response("Invalid JSON payload", { status: 400 });
+      }
+
+      // Apply all placement updates
+      for (const p of payload.placements ?? []) {
+        if (!p.placementId || !p.name) continue;
+        await db.placementDefinition.update({
+          where: { id: p.placementId, productView: { productConfig: { shopId: shop.id } } },
+          data: {
+            name: p.name,
+            basePriceAdjustmentCents: p.basePriceAdjustmentCents,
+            hidePriceWhenZero: p.hidePriceWhenZero,
+            defaultStepIndex: p.defaultStepIndex,
+          },
+        });
+      }
+
+      // Apply all step updates
+      for (const s of payload.steps ?? []) {
+        if (!s.stepId || !s.label) continue;
+        const rawScale = Number.isNaN(s.scaleFactor) ? 1.0 : s.scaleFactor;
+        await db.placementStep.update({
+          where: { id: s.stepId, placementDefinition: { productView: { productConfig: { shopId: shop.id } } } },
+          data: {
+            label: s.label,
+            scaleFactor: rawScale,
+            priceAdjustmentCents: s.priceAdjustmentCents,
+          },
+        });
+      }
+
+      return { success: true, intent: "batch-pricing-update" };
     }
 
     if (intent === "add-step") {
@@ -457,7 +513,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       const placement = await db.placementDefinition.findUnique({
         where: {
           id: placementId,
-          productConfig: { shopId: shop.id },
+          productView: { productConfig: { shopId: shop.id } },
         },
         select: { id: true },
       });
@@ -494,7 +550,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       const step = await db.placementStep.findUnique({
         where: {
           id: stepId,
-          placementDefinition: { productConfig: { shopId: shop.id } },
+          placementDefinition: { productView: { productConfig: { shopId: shop.id } } },
         },
         include: {
           placementDefinition: {
@@ -514,7 +570,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       await db.placementStep.delete({
         where: {
           id: stepId,
-          placementDefinition: { productConfig: { shopId: shop.id } },
+          placementDefinition: { productView: { productConfig: { shopId: shop.id } } },
         },
       });
 
@@ -536,7 +592,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         throw new Response("Missing placement name", { status: 400 });
       }
 
-      await createPlacement(shop.id, configId, {
+      await createPlacement(shop.id, viewId, {
         name,
         basePriceAdjustmentCents: 0,
         hidePriceWhenZero: false,
@@ -547,13 +603,51 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return { success: true, intent: "add-placement" };
     }
 
+    if (intent === "delete-placement") {
+      const placementId = formData.get("placementId") as string;
+      if (!placementId) {
+        throw new Response("Missing placement ID", { status: 400 });
+      }
+
+      // Verify ownership (placement belongs to this view, which belongs to this shop)
+      const placement = await db.placementDefinition.findFirst({
+        where: { id: placementId, productView: { id: viewId, productConfig: { shopId: shop.id } } },
+        select: { id: true },
+      });
+      if (!placement) {
+        throw new Response("Placement not found", { status: 404 });
+      }
+
+      // Delete (cascades to PlacementStep via schema)
+      await db.placementDefinition.delete({ where: { id: placementId } });
+
+      // Clean up geometry references in the current view
+      const currentView = await db.productView.findUnique({
+        where: { id: viewId },
+        select: { id: true, placementGeometry: true },
+      });
+      if (currentView) {
+        const geom = currentView.placementGeometry as Record<string, unknown> | null;
+        if (geom && placementId in geom) {
+          const { [placementId]: _removed, ...rest } = geom;
+          void _removed; // destructured to remove key
+          await db.productView.update({
+            where: { id: currentView.id },
+            data: { placementGeometry: rest as import("@prisma/client").Prisma.InputJsonValue },
+          });
+        }
+      }
+
+      return { success: true, intent: "delete-placement" };
+    }
+
     if (intent === "save-calibration") {
       const pxPerCm = Number(formData.get("pxPerCm"));
       if (!Number.isFinite(pxPerCm) || pxPerCm <= 0) {
         return { success: false, intent: "save-calibration", error: "Invalid calibration value" };
       }
       await db.productView.update({
-        where: { id: viewId },
+        where: { id: viewId, productConfig: { id: configId, shopId: shop.id } },
         data: { calibrationPxPerCm: pxPerCm },
       });
       return { success: true, intent: "save-calibration" };
@@ -621,9 +715,12 @@ function getPerspectiveLabel(perspective: string) {
 
 export default function ViewDetailPage() {
   const loaderData = useLoaderData<typeof loader>();
-  const { config, view, variants, signedImageUrls, variantPlacementGeometry, currencyCode, otherSetups } =
+  const { config, view, viewPlacements, variants, signedImageUrls, variantPlacementGeometry, currencyCode, otherSetups } =
     loaderData;
   const submit = useSubmit();
+  const geometryFetcher = useFetcher();
+  const pricingFetcher = useFetcher();
+  const nameFetcher = useFetcher();
   const navigation = useNavigation();
   const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
@@ -686,15 +783,38 @@ export default function ViewDetailPage() {
     return () => { saveBar?.hide("view-editor-save-bar"); };
   }, [anyDirty]);
 
-  // Clear dirty flag and show toast feedback after action responses
+  // Show toast + clear dirty for fetcher-based saves (geometry, pricing, name)
+  useEffect(() => {
+    const data = geometryFetcher.data as Record<string, unknown> | undefined;
+    if (data && "success" in data && data.success === true) {
+      setGeometryDirty(false);
+      setPendingGeometry(null);
+    }
+  }, [geometryFetcher.data]);
+
+  useEffect(() => {
+    const data = pricingFetcher.data as Record<string, unknown> | undefined;
+    if (data && "success" in data && data.success === true) {
+      window.shopify?.toast?.show("Pricing saved");
+    }
+  }, [pricingFetcher.data]);
+
+  useEffect(() => {
+    const data = nameFetcher.data as Record<string, unknown> | undefined;
+    if (data && "success" in data && data.success === true) {
+      setNameDirty(false);
+      setRenameSaved(true);
+      window.shopify?.toast?.show("View renamed");
+      setTimeout(() => setRenameSaved(false), 2000);
+    }
+  }, [nameFetcher.data]);
+
+  // Clear dirty flag and show toast feedback after action responses (non-fetcher submits)
   useEffect(() => {
     if (!actionData) return;
     const data = actionData as Record<string, unknown>;
 
     if ("success" in data && data.success === true) {
-      setGeometryDirty(false);
-      setPendingGeometry(null);
-
       const intent = data.intent as string | undefined;
       if (intent === "delete-step") {
         window.shopify?.toast?.show("Size tier deleted");
@@ -704,17 +824,13 @@ export default function ViewDetailPage() {
         window.shopify?.toast?.show("View calibrated");
       } else if (intent === "add-placement") {
         window.shopify?.toast?.show("Print area added");
+      } else if (intent === "delete-placement") {
+        window.shopify?.toast?.show("Print area deleted");
       } else if (intent === "add-step") {
         window.shopify?.toast?.show("Size tier added");
       } else if (intent === "apply-to-all") {
         window.shopify?.toast?.show("Applied to all variants");
-      } else if (intent === "rename-view") {
-        setNameDirty(false);
-        setRenameSaved(true);
-        window.shopify?.toast?.show("View renamed");
-        setTimeout(() => setRenameSaved(false), 2000);
       }
-      // update-placement and update-step are silent — saved via save bar batch
     } else if ("error" in data) {
       const intent = data.intent as string | undefined;
       // error shape from handleError: { error: { message, code, ... } }
@@ -750,30 +866,30 @@ export default function ViewDetailPage() {
   const currencySymbol = currencySymbolMap[currencyCode] ?? currencyCode + " ";
 
   const handleSaveGeometry = useCallback(() => {
-    // Submit geometry changes if any
+    // Submit geometry changes via dedicated fetcher (won't cancel other fetchers)
     if (pendingGeometry && selectedVariantId) {
       const fd = new FormData();
       fd.set("intent", "save-placement-geometry");
       fd.set("variantId", selectedVariantId);
       fd.set("placementGeometry", JSON.stringify(pendingGeometry));
-      submit(fd, { method: "POST" });
+      geometryFetcher.submit(fd, { method: "POST" });
     }
-    // Trigger pricing panel save via custom event
+    // Trigger pricing panel save via custom event (uses pricingFetcher)
     if (pricingDirty) {
       document.dispatchEvent(new CustomEvent("pricing-panel-save"));
     }
-    // Submit rename if name changed
+    // Submit rename via dedicated fetcher
     if (nameDirty) {
       const trimmed = viewName.trim();
       if (trimmed && trimmed !== (view.name ?? getPerspectiveLabel(view.perspective))) {
         const fd = new FormData();
         fd.set("intent", "rename-view");
         fd.set("name", trimmed);
-        submit(fd, { method: "POST" });
+        nameFetcher.submit(fd, { method: "POST" });
       }
       setNameDirty(false);
     }
-  }, [pendingGeometry, selectedVariantId, submit, pricingDirty, nameDirty, viewName, view.name, view.perspective]);
+  }, [pendingGeometry, selectedVariantId, geometryFetcher, pricingDirty, nameDirty, viewName, view.name, view.perspective, nameFetcher]);
 
   const handleDiscardGeometry = useCallback(() => {
     setEditorResetKey((k) => k + 1);
@@ -787,17 +903,55 @@ export default function ViewDetailPage() {
     setNameDirty(false);
   }, [view.name, view.perspective]);
 
-  /** Submit pricing changes sequentially from the ZonePricingPanel. */
-  const handlePricingSave = useCallback(
-    async (changes: PricingChange[]) => {
-      for (const change of changes) {
-        submit(change.data, { method: "post" });
-        // Small delay between sequential submits to avoid race conditions
-        await new Promise((r) => setTimeout(r, 50));
-      }
-      setPricingDirty(false);
+  const handleDeletePlacement = useCallback(
+    (placementId: string) => {
+      if (!window.confirm("Delete this print area? This cannot be undone.")) return;
+      const fd = new FormData();
+      fd.set("intent", "delete-placement");
+      fd.set("placementId", placementId);
+      submit(fd, { method: "POST" });
     },
     [submit],
+  );
+
+  /** Submit all pricing changes as a single batch via dedicated fetcher. */
+  const handlePricingSave = useCallback(
+    (changes: PricingChange[]) => {
+      if (changes.length === 0) {
+        setPricingDirty(false);
+        return;
+      }
+
+      // Build a batch payload from the FormData objects
+      const placementUpdates: Array<{ placementId: string; name: string; basePriceAdjustmentCents: number; hidePriceWhenZero: boolean; defaultStepIndex: number }> = [];
+      const stepUpdates: Array<{ stepId: string; label: string; scaleFactor: number; priceAdjustmentCents: number }> = [];
+
+      for (const change of changes) {
+        if (change.type === "placement") {
+          placementUpdates.push({
+            placementId: change.data.get("placementId") as string,
+            name: change.data.get("name") as string,
+            basePriceAdjustmentCents: parseInt(change.data.get("basePriceAdjustmentCents") as string ?? "0", 10) || 0,
+            hidePriceWhenZero: change.data.get("hidePriceWhenZero") === "true",
+            defaultStepIndex: parseInt(change.data.get("defaultStepIndex") as string ?? "0", 10) || 0,
+          });
+        } else {
+          stepUpdates.push({
+            stepId: change.data.get("stepId") as string,
+            label: change.data.get("label") as string,
+            scaleFactor: parseFloat(change.data.get("scaleFactor") as string ?? "1") || 1.0,
+            priceAdjustmentCents: parseInt(change.data.get("priceAdjustmentCents") as string ?? "0", 10) || 0,
+          });
+        }
+      }
+
+      const fd = new FormData();
+      fd.set("intent", "batch-pricing-update");
+      fd.set("payload", JSON.stringify({ placements: placementUpdates, steps: stepUpdates }));
+      pricingFetcher.submit(fd, { method: "POST" });
+      setPricingDirty(false);
+    },
+    [pricingFetcher],
   );
 
   const handleCalibrate = useCallback(
@@ -831,8 +985,8 @@ export default function ViewDetailPage() {
     const fd = new FormData();
     fd.set("intent", "rename-view");
     fd.set("name", trimmed);
-    submit(fd, { method: "POST" });
-  }, [viewName, view.name, view.perspective, submit]);
+    nameFetcher.submit(fd, { method: "POST" });
+  }, [viewName, view.name, view.perspective, nameFetcher]);
 
   const handleDeleteView = useCallback(() => {
     const fd = new FormData();
@@ -857,11 +1011,23 @@ export default function ViewDetailPage() {
   // to fire repeatedly, resetting rects back to the saved position on every drag event.
   const selectedVariantImageUrl = selectedVariantId ? (signedImageUrls[selectedVariantId] ?? null) : null;
 
-  // Sync viewName when navigating to a different view
+  // Reset ALL view-dependent state when navigating to a different view.
+  // React Router reuses the component instance for param-only changes
+  // (same route module), so all useState values persist across views.
   useEffect(() => {
     setViewName(view.name ?? getPerspectiveLabel(view.perspective));
     setNameDirty(false);
-  }, [view.id, view.name, view.perspective]);
+    setPendingGeometry(null);
+    setGeometryDirty(false);
+    setPricingDirty(false);
+    setSelectedPlacementId(null);
+    setSelectedVariantId(variants[0]?.id ?? null);
+    setEditorResetKey((k) => k + 1);
+    setAddingZone(false);
+    setNewZoneName("");
+    setRulerActive(false);
+    setDeleteModalOpen(false);
+  }, [view.id, view.name, view.perspective, variants]);
 
   // Load natural image dimensions whenever the selected variant image changes
   useEffect(() => {
@@ -879,8 +1045,8 @@ export default function ViewDetailPage() {
   );
 
   const editorPlacements = useMemo(
-    () => config.placements.map((p) => ({ id: p.id, name: p.name })),
-    [config.placements]
+    () => viewPlacements.map((p) => ({ id: p.id, name: p.name })),
+    [viewPlacements]
   );
 
   const isCloning =
@@ -1086,9 +1252,9 @@ export default function ViewDetailPage() {
             <div style={{
               flex: 1, display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
-              padding: "16px 24px 8px", overflow: "auto",
+              padding: "16px 24px 8px", overflow: "hidden",
             }}>
-              {config.placements.length === 0 ? (
+              {viewPlacements.length === 0 ? (
                 <div style={{ textAlign: "center", color: "#9CA3AF" }}>
                   <p style={{ margin: "0 0 8px", fontSize: 14 }}>No print areas defined yet.</p>
                   <p style={{ margin: 0, fontSize: 13 }}>Use the panel on the right to add your first print area.</p>
@@ -1180,7 +1346,7 @@ export default function ViewDetailPage() {
             </div>
 
             {/* Hint bar */}
-            {selectedVariantImageUrl && config.placements.length > 0 && (
+            {selectedVariantImageUrl && viewPlacements.length > 0 && (
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "center",
                 gap: 6, height: 28, flexShrink: 0,
@@ -1245,7 +1411,7 @@ export default function ViewDetailPage() {
               display: "flex", alignItems: "center", gap: 8,
               padding: "8px 16px", height: 40, flexShrink: 0,
               background: "#ffffff", borderTop: "1px solid #E5E7EB",
-              overflowX: "auto",
+              overflowX: "hidden",
             }}>
               <span style={{ fontSize: 11, color: "#6B7280", whiteSpace: "nowrap" }}>Variant:</span>
               {variants.length <= 6 ? (
@@ -1405,7 +1571,7 @@ export default function ViewDetailPage() {
                 <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
                   <span style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>Print areas</span>
                   <div style={{ flex: 1 }} />
-                  {config.placements.length > 0 && !addingZone && (
+                  {viewPlacements.length > 0 && !addingZone && (
                     <button
                       type="button"
                       onClick={() => setAddingZone(true)}
@@ -1424,7 +1590,7 @@ export default function ViewDetailPage() {
                   )}
                 </div>
 
-                {config.placements.length === 0 && !addingZone ? (
+                {viewPlacements.length === 0 && !addingZone ? (
                   <div style={{ padding: "32px 18px", textAlign: "center" }}>
                     <div style={{
                       width: 48, height: 48, borderRadius: "50%", background: "#F3F4F6",
@@ -1442,7 +1608,8 @@ export default function ViewDetailPage() {
                   </div>
                 ) : (
                   <ZonePricingPanel
-                    placements={config.placements}
+                    key={view.id}
+                    placements={viewPlacements}
                     currency={currencyCode}
                     currencySymbol={currencySymbol}
                     selectedPlacementId={selectedPlacementId}
@@ -1454,6 +1621,8 @@ export default function ViewDetailPage() {
                     placementGeometry={pendingGeometry ?? selectedVariantGeometry}
                     onDirty={setPricingDirty}
                     onSave={handlePricingSave}
+                    viewName={view.name ?? getPerspectiveLabel(view.perspective)}
+                    onDeletePlacement={handleDeletePlacement}
                   />
                 )}
 
@@ -1461,7 +1630,7 @@ export default function ViewDetailPage() {
                 {addingZone && (
                   <div style={{
                     padding: "10px 14px", borderRadius: 8, background: "#EFF6FF",
-                    border: "1px solid #2563EB", marginTop: config.placements.length > 0 ? 10 : 0,
+                    border: "1px solid #2563EB", marginTop: viewPlacements.length > 0 ? 10 : 0,
                   }}>
                     <Text as="p" variant="headingXs" fontWeight="semibold">New print area name</Text>
                     <div style={{ marginTop: 6 }}>

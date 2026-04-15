@@ -74,6 +74,10 @@ type Props = {
   onDirty?: (dirty: boolean) => void;
   /** Called by the parent save bar — returns pending FormData payloads to submit sequentially */
   onSave?: (changes: PricingChange[]) => void;
+  /** Current view name — shown in panel header for context */
+  viewName?: string;
+  /** Called when user clicks delete on a placement */
+  onDeletePlacement?: (placementId: string) => void;
 };
 
 // ============================================================================
@@ -153,6 +157,7 @@ export function ZonePricingPanel({
   placementGeometry,
   onDirty,
   onSave,
+  onDeletePlacement,
 }: Props) {
   const submit = useSubmit();
 
@@ -344,8 +349,9 @@ export function ZonePricingPanel({
         const dotColor = ZONE_COLORS[idx % ZONE_COLORS.length];
         const summary = buildBadgeSummary(p, currencySymbol);
 
-        // Dimension badge — only when calibrated and geometry is available
+        // Geometry and positioning status per-view
         const geom = placementGeometry?.[p.id];
+        const isPositioned = geom != null;
         const dimBadge =
           calibrationPxPerCm && imageWidth && imageHeight && geom
             ? getAreaLabel(
@@ -423,6 +429,23 @@ export function ZonePricingPanel({
                   }}
                 >
                   {dimBadge}
+                </span>
+              )}
+              {/* Position status badge */}
+              {!isExpanded && (
+                <span
+                  style={{
+                    fontSize: 10,
+                    color: isPositioned ? "#16A34A" : "#D97706",
+                    background: isPositioned ? "#F0FDF4" : "#FFFBEB",
+                    borderRadius: 8,
+                    padding: "2px 6px",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
+                    fontWeight: 500,
+                  }}
+                >
+                  {isPositioned ? "Positioned" : "Not placed"}
                 </span>
               )}
               {/* Summary badge */}
@@ -655,6 +678,20 @@ export function ZonePricingPanel({
                       }));
                     }}
                   />
+
+                  {/* Delete placement */}
+                  {onDeletePlacement && (
+                    <div style={{ borderTop: "1px solid #F3F4F6", paddingTop: 10 }}>
+                      <Button
+                        icon={DeleteIcon}
+                        variant="plain"
+                        tone="critical"
+                        onClick={() => onDeletePlacement(p.id)}
+                      >
+                        Delete print area
+                      </Button>
+                    </div>
+                  )}
                 </BlockStack>
               </div>
             )}

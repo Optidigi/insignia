@@ -5,6 +5,7 @@ type Placement = {
   centerXPercent: number;
   centerYPercent: number;
   maxWidthPercent: number;
+  scaleFactor?: number;
 };
 
 type NativeCanvasProps = {
@@ -12,6 +13,7 @@ type NativeCanvasProps = {
   logoUrl: string | null;
   placements: Placement[];
   highlightedPlacementId?: string | null;
+  /** @deprecated Use per-placement scaleFactor instead. Kept as fallback. */
   sizeMultiplier?: number;
   className?: string;
 };
@@ -86,7 +88,8 @@ export default function NativeCanvas({
     for (const placement of placements) {
       const cx = px + (placement.centerXPercent / 100) * pw;
       const cy = py + (placement.centerYPercent / 100) * ph;
-      const maxW = (placement.maxWidthPercent / 100) * pw * sizeMultiplier;
+      const effectiveScale = placement.scaleFactor ?? sizeMultiplier;
+      const maxW = (placement.maxWidthPercent / 100) * pw * effectiveScale;
       const aspect = logoImg.naturalHeight / logoImg.naturalWidth;
       const logoW = maxW;
       const logoH = maxW * aspect;

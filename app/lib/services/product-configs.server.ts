@@ -48,9 +48,11 @@ export async function listProductConfigs(shopId: string) {
       },
       views: {
         orderBy: { displayOrder: "asc" },
-      },
-      placements: {
-        orderBy: { displayOrder: "asc" },
+        include: {
+          placements: {
+            orderBy: { displayOrder: "asc" },
+          },
+        },
       },
       _count: {
         select: {
@@ -79,14 +81,16 @@ export async function getProductConfig(shopId: string, configId: string) {
       },
       views: {
         orderBy: { displayOrder: "asc" },
-      },
-      placements: {
         include: {
-          steps: {
+          placements: {
+            include: {
+              steps: {
+                orderBy: { displayOrder: "asc" },
+              },
+            },
             orderBy: { displayOrder: "asc" },
           },
         },
-        orderBy: { displayOrder: "asc" },
       },
       variantViewConfigurations: true,
     },
@@ -126,6 +130,16 @@ export async function createProductConfig(
         })),
       });
     }
+
+    // Auto-create a default "Front" view so the image manager is immediately usable
+    await tx.productView.create({
+      data: {
+        productConfigId: newConfig.id,
+        perspective: "front",
+        name: "Front",
+        displayOrder: 0,
+      },
+    });
 
     return newConfig;
   });
@@ -227,10 +241,17 @@ export async function cloneLayoutInto(
   if (!source || !target) throw new AppError(ErrorCodes.NOT_FOUND, "Config not found", 404);
 
   return db.$transaction(async (tx) => {
-    // Delete all existing placements on target (cascade deletes steps)
-    await tx.placementDefinition.deleteMany({
+    // Get target views for matching by perspective
+    const targetViews = await tx.productView.findMany({
       where: { productConfigId: targetConfigId },
     });
+
+    // Delete all existing placements on target views (cascade deletes steps)
+    for (const tv of targetViews) {
+      await tx.placementDefinition.deleteMany({
+        where: { productViewId: tv.id },
+      });
+    }
 
     // Clear view-level geometry on target views
     await tx.productView.updateMany({
@@ -238,42 +259,55 @@ export async function cloneLayoutInto(
       data: { placementGeometry: Prisma.DbNull },
     });
 
-    // Copy placements from source
-    for (const placement of source.placements) {
-      const newPlacement = await tx.placementDefinition.create({
-        data: {
-          productConfigId: targetConfigId,
-          name: placement.name,
-          basePriceAdjustmentCents: placement.basePriceAdjustmentCents,
-          hidePriceWhenZero: placement.hidePriceWhenZero,
-          defaultStepIndex: placement.defaultStepIndex,
-          displayOrder: placement.displayOrder,
-        },
-      });
+    // Copy placements per-view from source to matching target views (by perspective)
+    for (const sourceView of source.views) {
+      const targetView = targetViews.find(
+        (tv) => tv.perspective === sourceView.perspective
+      );
+      if (!targetView) continue;
 
-      if (placement.steps.length > 0) {
-        await tx.placementStep.createMany({
-          data: placement.steps.map((step) => ({
-            placementDefinitionId: newPlacement.id,
-            label: step.label,
-            scaleFactor: step.scaleFactor,
-            priceAdjustmentCents: step.priceAdjustmentCents,
-            displayOrder: step.displayOrder,
-          })),
+      // Build mapping from source placement IDs to new target placement IDs
+      const oldIdToNewId = new Map<string, string>();
+
+      // Copy placements from this source view to the matching target view
+      for (const placement of sourceView.placements) {
+        const newPlacement = await tx.placementDefinition.create({
+          data: {
+            productViewId: targetView.id,
+            name: placement.name,
+            basePriceAdjustmentCents: placement.basePriceAdjustmentCents,
+            hidePriceWhenZero: placement.hidePriceWhenZero,
+            defaultStepIndex: placement.defaultStepIndex,
+            displayOrder: placement.displayOrder,
+          },
         });
-      }
-    }
 
-    // Copy view-level geometry from source to matching target views (by perspective)
-    const sourceViews = await tx.productView.findMany({
-      where: { productConfigId: sourceConfigId },
-      select: { perspective: true, placementGeometry: true },
-    });
-    for (const sv of sourceViews) {
-      if (sv.placementGeometry) {
-        await tx.productView.updateMany({
-          where: { productConfigId: targetConfigId, perspective: sv.perspective },
-          data: { placementGeometry: sv.placementGeometry as Prisma.InputJsonValue },
+        oldIdToNewId.set(placement.id, newPlacement.id);
+
+        if (placement.steps.length > 0) {
+          await tx.placementStep.createMany({
+            data: placement.steps.map((step) => ({
+              placementDefinitionId: newPlacement.id,
+              label: step.label,
+              scaleFactor: step.scaleFactor,
+              priceAdjustmentCents: step.priceAdjustmentCents,
+              displayOrder: step.displayOrder,
+            })),
+          });
+        }
+      }
+
+      // Copy geometry with re-keyed placement IDs
+      if (sourceView.placementGeometry) {
+        const sourceGeometry = sourceView.placementGeometry as Record<string, unknown>;
+        const reKeyedGeometry: Record<string, unknown> = {};
+        for (const [oldId, geom] of Object.entries(sourceGeometry)) {
+          const newId = oldIdToNewId.get(oldId);
+          if (newId && geom) reKeyedGeometry[newId] = geom;
+        }
+        await tx.productView.update({
+          where: { id: targetView.id },
+          data: { placementGeometry: reKeyedGeometry as Prisma.InputJsonValue },
         });
       }
     }
@@ -388,22 +422,28 @@ export async function applyPreset(
   if (!preset) return; // Unknown preset — silently skip
 
   await db.$transaction(async (tx) => {
-    // Create views
+    // Create views and track them
+    const createdViews: Array<{ id: string; displayOrder: number }> = [];
     for (const view of preset.views) {
-      await tx.productView.create({
+      const created = await tx.productView.create({
         data: {
           productConfigId,
           perspective: view.perspective,
           displayOrder: view.displayOrder,
         },
       });
+      createdViews.push({ id: created.id, displayOrder: view.displayOrder });
     }
 
-    // Create placements with steps
+    // Assign placements to the first view (front view in all presets)
+    const firstView = createdViews.sort((a, b) => a.displayOrder - b.displayOrder)[0];
+    if (!firstView) return;
+
+    // Create placements with steps on the first view
     for (const placement of preset.placements) {
       const created = await tx.placementDefinition.create({
         data: {
-          productConfigId,
+          productViewId: firstView.id,
           name: placement.name,
           displayOrder: placement.displayOrder,
         },
@@ -454,9 +494,9 @@ export async function duplicateProductConfig(
       });
     }
 
-    // Copy views
+    // Copy views with their placements
     for (const view of source.views) {
-      await tx.productView.create({
+      const newView = await tx.productView.create({
         data: {
           productConfigId: newConfig.id,
           name: view.name ?? null,
@@ -464,32 +504,32 @@ export async function duplicateProductConfig(
           displayOrder: view.displayOrder,
         },
       });
-    }
 
-    // Copy placements with steps
-    for (const placement of source.placements) {
-      const newPlacement = await tx.placementDefinition.create({
-        data: {
-          productConfigId: newConfig.id,
-          name: placement.name,
-          basePriceAdjustmentCents: placement.basePriceAdjustmentCents,
-          hidePriceWhenZero: placement.hidePriceWhenZero,
-          defaultStepIndex: placement.defaultStepIndex,
-          displayOrder: placement.displayOrder,
-        },
-      });
-
-      // Copy steps
-      if (placement.steps.length > 0) {
-        await tx.placementStep.createMany({
-          data: placement.steps.map((step) => ({
-            placementDefinitionId: newPlacement.id,
-            label: step.label,
-            scaleFactor: step.scaleFactor,
-            priceAdjustmentCents: step.priceAdjustmentCents,
-            displayOrder: step.displayOrder,
-          })),
+      // Copy placements for this view
+      for (const placement of view.placements) {
+        const newPlacement = await tx.placementDefinition.create({
+          data: {
+            productViewId: newView.id,
+            name: placement.name,
+            basePriceAdjustmentCents: placement.basePriceAdjustmentCents,
+            hidePriceWhenZero: placement.hidePriceWhenZero,
+            defaultStepIndex: placement.defaultStepIndex,
+            displayOrder: placement.displayOrder,
+          },
         });
+
+        // Copy steps
+        if (placement.steps.length > 0) {
+          await tx.placementStep.createMany({
+            data: placement.steps.map((step) => ({
+              placementDefinitionId: newPlacement.id,
+              label: step.label,
+              scaleFactor: step.scaleFactor,
+              priceAdjustmentCents: step.priceAdjustmentCents,
+              displayOrder: step.displayOrder,
+            })),
+          });
+        }
       }
     }
 

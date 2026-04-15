@@ -63,7 +63,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         select: {
           id: true,
           name: true,
-          placements: { include: { steps: true }, orderBy: { displayOrder: "asc" } },
+          views: {
+            include: {
+              placements: { include: { steps: true }, orderBy: { displayOrder: "asc" } },
+            },
+          },
         },
       },
       customizationConfig: {
@@ -292,7 +296,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       methodName: l.customizationConfig?.decorationMethod?.name ?? "Unknown",
       configState: l.customizationConfig?.state ?? "UNKNOWN",
       unitPriceCents: l.customizationConfig?.unitPriceCents ?? 0,
-      placements: l.productConfig?.placements ?? [],
+      placements: l.productConfig?.views.flatMap((v) => v.placements) ?? [],
       logoAssetIdsByPlacementId: l.logoAssetIdsByPlacementId as Record<string, string | null> | null,
       createdAt: l.createdAt.toISOString(),
     })),

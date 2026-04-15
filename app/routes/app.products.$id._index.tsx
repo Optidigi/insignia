@@ -162,7 +162,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       }
     }
 
-    const pricingRanges = config.placements.map((p) => {
+    const allPlacements = config.views.flatMap((v) => v.placements);
+    const pricingRanges = allPlacements.map((p) => {
       const methodBase = config.allowedMethods[0]?.decorationMethod?.basePriceCents ?? 0;
       const placementBase = p.basePriceAdjustmentCents;
       const stepPrices = p.steps.length > 0 ? p.steps.map((s) => s.priceAdjustmentCents) : [0];
@@ -186,7 +187,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       config.allowedMethods.length > 0 &&
       config.views.length > 0 &&
       variantConfigsWithImages > 0 &&
-      config.placements.length > 0 &&
+      allPlacements.length > 0 &&
       hasAnyGeometry;
 
     // Sync insignia.enabled metafield: set "true" only when config is ready,
@@ -416,7 +417,9 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     if (intent === "delete-placement") {
       const placementId = formData.get("placementId") as string;
       // Guard: cannot delete the last placement
-      const placementCount = await db.placementDefinition.count({ where: { productConfigId: id } });
+      const placementCount = await db.placementDefinition.count({
+        where: { productView: { productConfigId: id } },
+      });
       if (placementCount <= 1) {
         return { success: false, intent: "delete-placement", error: "Cannot delete the last placement. A product setup must have at least one placement." };
       }
@@ -534,7 +537,7 @@ export default function ProductConfigDetailPage() {
   }, [actionData, isSubmitting]);
 
   const views = config.views;
-  const placements = config.placements;
+  const placements = config.views.flatMap((v) => v.placements);
 
   const hasBasicChanges =
     name !== config.name ||
@@ -656,7 +659,7 @@ export default function ProductConfigDetailPage() {
   return (
     <Page
       title={config.name}
-      subtitle={`${config.linkedProductIds.length} product${config.linkedProductIds.length !== 1 ? "s" : ""} · ${config.views.length} view${config.views.length !== 1 ? "s" : ""} · ${config.placements.length} print area${config.placements.length !== 1 ? "s" : ""}`}
+      subtitle={`${config.linkedProductIds.length} product${config.linkedProductIds.length !== 1 ? "s" : ""} · ${config.views.length} view${config.views.length !== 1 ? "s" : ""} · ${placements.length} print area${placements.length !== 1 ? "s" : ""}`}
       backAction={{ content: "Products", url: "/app/products" }}
       secondaryActions={
         customizerUrl
@@ -856,18 +859,30 @@ export default function ProductConfigDetailPage() {
                       const hasPartial = filled > 0 && !isComplete;
 
                       return (
-                        <div key={view.id} style={{ padding: "8px 0", borderBottom: "1px solid var(--p-color-border)" }}>
+                        <Link
+                          key={view.id}
+                          to={`/app/products/${config.id}/views/${view.id}`}
+                          style={{
+                            display: "block",
+                            padding: "10px 12px",
+                            borderBottom: "1px solid var(--p-color-border)",
+                            textDecoration: "none",
+                            color: "inherit",
+                            borderRadius: 8,
+                            transition: "background 100ms",
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--p-color-bg-surface-hover, #f6f6f7)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                        >
                           <InlineStack align="space-between" blockAlign="center" wrap={false}>
                             <InlineStack gap="200" blockAlign="center">
                               <Icon
                                 source={ImageIcon}
                                 tone={isComplete ? "success" : hasPartial ? "warning" : "subdued"}
                               />
-                              <Link to={`/app/products/${config.id}/views/${view.id}`} style={{ textDecoration: "none" }}>
-                                <Text fontWeight="semibold" as="span">
-                                  {view.name || view.perspective.charAt(0).toUpperCase() + view.perspective.slice(1)}
-                                </Text>
-                              </Link>
+                              <Text fontWeight="semibold" as="span">
+                                {view.name || view.perspective.charAt(0).toUpperCase() + view.perspective.slice(1)}
+                              </Text>
                             </InlineStack>
                             <InlineStack gap="200" blockAlign="center">
                               <Badge tone={isComplete ? "success" : hasPartial ? "warning" : undefined}>
@@ -876,7 +891,7 @@ export default function ProductConfigDetailPage() {
                               <Icon source={ChevronRightIcon} tone="subdued" />
                             </InlineStack>
                           </InlineStack>
-                        </div>
+                        </Link>
                       );
                     })}
                   </BlockStack>

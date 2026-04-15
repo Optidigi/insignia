@@ -1,7 +1,7 @@
 /**
  * Placements Service
  *
- * Business logic for placement definitions and steps per product config.
+ * Business logic for placement definitions and steps per product view.
  * Canonical: docs/core/placement-editor.md, docs/core/api-contracts/admin.md
  */
 
@@ -42,16 +42,16 @@ export type UpdatePlacementInput = z.infer<typeof UpdatePlacementSchema>;
 // Helpers
 // ============================================================================
 
-async function ensureConfigBelongsToShop(
-  productConfigId: string,
+async function ensureViewBelongsToShop(
+  productViewId: string,
   shopId: string
 ) {
-  const config = await db.productConfig.findFirst({
-    where: { id: productConfigId, shopId },
+  const view = await db.productView.findFirst({
+    where: { id: productViewId, productConfig: { shopId } },
     select: { id: true },
   });
-  if (!config) {
-    throw new AppError(ErrorCodes.NOT_FOUND, "Product config not found", 404);
+  if (!view) {
+    throw new AppError(ErrorCodes.NOT_FOUND, "Product view not found", 404);
   }
 }
 
@@ -60,13 +60,13 @@ async function ensureConfigBelongsToShop(
 // ============================================================================
 
 /**
- * List all placement definitions for a product config
+ * List all placement definitions for a product view
  */
-export async function listPlacements(shopId: string, productConfigId: string) {
-  await ensureConfigBelongsToShop(productConfigId, shopId);
+export async function listPlacements(shopId: string, productViewId: string) {
+  await ensureViewBelongsToShop(productViewId, shopId);
 
   return db.placementDefinition.findMany({
-    where: { productConfigId },
+    where: { productViewId },
     include: {
       steps: { orderBy: { displayOrder: "asc" } },
     },
@@ -79,15 +79,15 @@ export async function listPlacements(shopId: string, productConfigId: string) {
  */
 export async function getPlacement(
   shopId: string,
-  productConfigId: string,
+  productViewId: string,
   placementId: string
 ) {
-  await ensureConfigBelongsToShop(productConfigId, shopId);
+  await ensureViewBelongsToShop(productViewId, shopId);
 
   const placement = await db.placementDefinition.findFirst({
     where: {
       id: placementId,
-      productConfigId,
+      productViewId,
     },
     include: {
       steps: { orderBy: { displayOrder: "asc" } },
@@ -106,21 +106,21 @@ export async function getPlacement(
  */
 export async function createPlacement(
   shopId: string,
-  productConfigId: string,
+  productViewId: string,
   input: CreatePlacementInput
 ) {
-  await ensureConfigBelongsToShop(productConfigId, shopId);
+  await ensureViewBelongsToShop(productViewId, shopId);
 
   const maxOrder = await db.placementDefinition
     .aggregate({
-      where: { productConfigId },
+      where: { productViewId },
       _max: { displayOrder: true },
     })
     .then((r) => (r._max.displayOrder ?? -1) + 1);
 
   const placement = await db.placementDefinition.create({
     data: {
-      productConfigId,
+      productViewId,
       name: input.name,
       basePriceAdjustmentCents: input.basePriceAdjustmentCents ?? 0,
       hidePriceWhenZero: input.hidePriceWhenZero ?? false,
@@ -144,7 +144,7 @@ export async function createPlacement(
     });
   }
 
-  return getPlacement(shopId, productConfigId, placement.id);
+  return getPlacement(shopId, productViewId, placement.id);
 }
 
 /**
@@ -152,11 +152,11 @@ export async function createPlacement(
  */
 export async function updatePlacement(
   shopId: string,
-  productConfigId: string,
+  productViewId: string,
   placementId: string,
   input: UpdatePlacementInput
 ) {
-  const existing = await getPlacement(shopId, productConfigId, placementId);
+  const existing = await getPlacement(shopId, productViewId, placementId);
 
   const data: Parameters<typeof db.placementDefinition.update>[0]["data"] = {};
 
@@ -201,7 +201,7 @@ export async function updatePlacement(
     });
   }
 
-  return getPlacement(shopId, productConfigId, placementId);
+  return getPlacement(shopId, productViewId, placementId);
 }
 
 /**
@@ -209,10 +209,10 @@ export async function updatePlacement(
  */
 export async function deletePlacement(
   shopId: string,
-  productConfigId: string,
+  productViewId: string,
   placementId: string
 ) {
-  await getPlacement(shopId, productConfigId, placementId);
+  await getPlacement(shopId, productViewId, placementId);
 
   await db.placementDefinition.delete({
     where: { id: placementId },
