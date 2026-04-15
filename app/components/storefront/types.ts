@@ -45,6 +45,14 @@ export type DecorationMethodRef = {
   } | null;
 };
 
+export type ProductVariantOption = {
+  id: string;       // Shopify GID (gid://shopify/ProductVariant/...)
+  title: string;    // e.g. "Small", "Medium / Blue"
+  sizeLabel: string; // Extracted size option value, e.g. "S", "M", "L"
+  priceCents: number;
+  available: boolean;
+};
+
 export type StorefrontConfig = {
   productConfigId: string;
   shop: string;
@@ -61,6 +69,7 @@ export type StorefrontConfig = {
   views: ConfiguredView[];
   methods: DecorationMethodRef[];
   placements: Placement[];
+  variants: ProductVariantOption[];
 };
 
 export type PlacementSelection = {

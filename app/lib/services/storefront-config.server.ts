@@ -9,6 +9,7 @@ import db from "../../db.server";
 import { AppError, ErrorCodes } from "../errors.server";
 import { getMerchantSettings } from "./settings.server";
 import { getPresignedGetUrl } from "../storage.server";
+import type { ProductVariantOption } from "../../components/storefront/types";
 
 // Response types per storefront-config.md
 export type PlacementGeometry = {
@@ -69,6 +70,7 @@ export type StorefrontConfig = {
   views: ConfiguredView[];
   methods: DecorationMethodRef[];
   placements: Placement[];
+  variants: ProductVariantOption[];
 };
 
 const SIGNED_URL_EXPIRES_SEC = 600;
@@ -136,9 +138,10 @@ export async function getStorefrontConfig(
     );
   }
 
-  // Fetch variant price and product title from Shopify Admin API
+  // Fetch variant price, product title, and sibling variants from Shopify Admin API
   let baseProductPriceCents = 0;
   let productTitle = "Product";
+  let variants: ProductVariantOption[] = [];
   if (runGraphql) {
     try {
       const variantRes = await runGraphql(
@@ -148,6 +151,18 @@ export async function getStorefrontConfig(
             price
             product {
               title
+              variants(first: 50) {
+                nodes {
+                  id
+                  title
+                  price
+                  availableForSale
+                  selectedOptions {
+                    name
+                    value
+                  }
+                }
+              }
             }
           }
         }`,
@@ -157,7 +172,18 @@ export async function getStorefrontConfig(
         data?: {
           productVariant?: {
             price: string;
-            product?: { title: string };
+            product?: {
+              title: string;
+              variants?: {
+                nodes: Array<{
+                  id: string;
+                  title: string;
+                  price: string;
+                  availableForSale: boolean;
+                  selectedOptions: Array<{ name: string; value: string }>;
+                }>;
+              };
+            };
           };
         };
       };
@@ -166,6 +192,19 @@ export async function getStorefrontConfig(
         baseProductPriceCents = Math.round(parseFloat(variant.price) * 100);
         productTitle = variant.product?.title ?? "Product";
       }
+      const variantNodes = variantData?.data?.productVariant?.product?.variants?.nodes ?? [];
+      variants = variantNodes.map((v) => {
+        const sizeOption = v.selectedOptions?.find((o) =>
+          /^size$/i.test(o.name)
+        );
+        return {
+          id: v.id,
+          title: v.title,
+          sizeLabel: sizeOption?.value ?? v.title,
+          priceCents: Math.round(parseFloat(v.price) * 100),
+          available: v.availableForSale ?? true,
+        };
+      });
     } catch {
       // Non-fatal: fall back to defaults
     }
@@ -315,5 +354,6 @@ export async function getStorefrontConfig(
     views,
     methods,
     placements,
+    variants,
   };
 }
