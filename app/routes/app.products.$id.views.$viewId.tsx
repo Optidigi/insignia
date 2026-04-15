@@ -101,12 +101,20 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       db.productConfig.findMany({
         where: { shopId: shop.id, id: { not: configId } },
         include: {
-          views: { select: { id: true } },
-          placements: { select: { id: true } },
+          views: {
+            select: { id: true, placements: { select: { id: true } } },
+          },
           allowedMethods: { include: { decorationMethod: { select: { name: true } } } },
         },
       }),
     ]);
+
+    // Fetch placements belonging to this specific view
+    const viewPlacements = await db.placementDefinition.findMany({
+      where: { productViewId: viewId },
+      include: { steps: { orderBy: { displayOrder: "asc" } } },
+      orderBy: { displayOrder: "asc" },
+    });
 
     // Fetch variants from Shopify for all linked products
     const productIds = config.linkedProductIds;
@@ -198,13 +206,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       id: c.id,
       name: c.name,
       viewCount: c.views.length,
-      placementCount: c.placements.length,
+      placementCount: c.views.reduce((sum, v) => sum + v.placements.length, 0),
       methodNames: c.allowedMethods.map((m) => m.decorationMethod.name),
     }));
 
     return {
       config,
       view,
+      viewPlacements,
       variants,
       variantImages,
       signedImageUrls,
@@ -414,7 +423,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       await db.placementDefinition.update({
         where: {
           id: placementId,
-          productConfig: { shopId: shop.id },
+          productView: { productConfig: { shopId: shop.id } },
         },
         data: { name, basePriceAdjustmentCents, hidePriceWhenZero, defaultStepIndex },
       });
@@ -437,7 +446,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       await db.placementStep.update({
         where: {
           id: stepId,
-          placementDefinition: { productConfig: { shopId: shop.id } },
+          placementDefinition: { productView: { productConfig: { shopId: shop.id } } },
         },
         data: { label, scaleFactor, priceAdjustmentCents },
       });
@@ -465,7 +474,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       for (const p of payload.placements ?? []) {
         if (!p.placementId || !p.name) continue;
         await db.placementDefinition.update({
-          where: { id: p.placementId, productConfig: { shopId: shop.id } },
+          where: { id: p.placementId, productView: { productConfig: { shopId: shop.id } } },
           data: {
             name: p.name,
             basePriceAdjustmentCents: p.basePriceAdjustmentCents,
@@ -480,7 +489,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         if (!s.stepId || !s.label) continue;
         const rawScale = Number.isNaN(s.scaleFactor) ? 1.0 : s.scaleFactor;
         await db.placementStep.update({
-          where: { id: s.stepId, placementDefinition: { productConfig: { shopId: shop.id } } },
+          where: { id: s.stepId, placementDefinition: { productView: { productConfig: { shopId: shop.id } } } },
           data: {
             label: s.label,
             scaleFactor: rawScale,
@@ -504,7 +513,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       const placement = await db.placementDefinition.findUnique({
         where: {
           id: placementId,
-          productConfig: { shopId: shop.id },
+          productView: { productConfig: { shopId: shop.id } },
         },
         select: { id: true },
       });
@@ -541,7 +550,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       const step = await db.placementStep.findUnique({
         where: {
           id: stepId,
-          placementDefinition: { productConfig: { shopId: shop.id } },
+          placementDefinition: { productView: { productConfig: { shopId: shop.id } } },
         },
         include: {
           placementDefinition: {
@@ -561,7 +570,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       await db.placementStep.delete({
         where: {
           id: stepId,
-          placementDefinition: { productConfig: { shopId: shop.id } },
+          placementDefinition: { productView: { productConfig: { shopId: shop.id } } },
         },
       });
 
@@ -583,7 +592,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         throw new Response("Missing placement name", { status: 400 });
       }
 
-      await createPlacement(shop.id, configId, {
+      await createPlacement(shop.id, viewId, {
         name,
         basePriceAdjustmentCents: 0,
         hidePriceWhenZero: false,
@@ -600,9 +609,9 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         throw new Response("Missing placement ID", { status: 400 });
       }
 
-      // Verify ownership
+      // Verify ownership (placement belongs to this view, which belongs to this shop)
       const placement = await db.placementDefinition.findFirst({
-        where: { id: placementId, productConfig: { id: configId, shopId: shop.id } },
+        where: { id: placementId, productView: { id: viewId, productConfig: { shopId: shop.id } } },
         select: { id: true },
       });
       if (!placement) {
@@ -612,18 +621,18 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       // Delete (cascades to PlacementStep via schema)
       await db.placementDefinition.delete({ where: { id: placementId } });
 
-      // Clean up geometry references in all views for this config
-      const views = await db.productView.findMany({
-        where: { productConfigId: configId },
+      // Clean up geometry references in the current view
+      const currentView = await db.productView.findUnique({
+        where: { id: viewId },
         select: { id: true, placementGeometry: true },
       });
-      for (const v of views) {
-        const geom = v.placementGeometry as Record<string, unknown> | null;
+      if (currentView) {
+        const geom = currentView.placementGeometry as Record<string, unknown> | null;
         if (geom && placementId in geom) {
           const { [placementId]: _removed, ...rest } = geom;
           void _removed; // destructured to remove key
           await db.productView.update({
-            where: { id: v.id },
+            where: { id: currentView.id },
             data: { placementGeometry: rest as import("@prisma/client").Prisma.InputJsonValue },
           });
         }
@@ -706,7 +715,7 @@ function getPerspectiveLabel(perspective: string) {
 
 export default function ViewDetailPage() {
   const loaderData = useLoaderData<typeof loader>();
-  const { config, view, variants, signedImageUrls, variantPlacementGeometry, currencyCode, otherSetups } =
+  const { config, view, viewPlacements, variants, signedImageUrls, variantPlacementGeometry, currencyCode, otherSetups } =
     loaderData;
   const submit = useSubmit();
   const geometryFetcher = useFetcher();
@@ -896,7 +905,7 @@ export default function ViewDetailPage() {
 
   const handleDeletePlacement = useCallback(
     (placementId: string) => {
-      if (!window.confirm("Delete this print area? This will remove it from all views and cannot be undone.")) return;
+      if (!window.confirm("Delete this print area? This cannot be undone.")) return;
       const fd = new FormData();
       fd.set("intent", "delete-placement");
       fd.set("placementId", placementId);
@@ -1036,8 +1045,8 @@ export default function ViewDetailPage() {
   );
 
   const editorPlacements = useMemo(
-    () => config.placements.map((p) => ({ id: p.id, name: p.name })),
-    [config.placements]
+    () => viewPlacements.map((p) => ({ id: p.id, name: p.name })),
+    [viewPlacements]
   );
 
   const isCloning =
@@ -1160,13 +1169,11 @@ export default function ViewDetailPage() {
               background: "#ffffff", borderBottom: "1px solid #E5E7EB",
             }}>
               {viewTabs.length <= 4 ? (
-                /* Tab buttons mode (≤4 views) — uses navigate() instead of <Link>
-                   to avoid full page navigation that breaks OAuth in embedded apps */
+                /* Tab links mode (≤4 views) */
                 viewTabs.map((tab) => (
-                  <button
+                  <Link
                     key={tab.id}
-                    type="button"
-                    onClick={() => { if (!tab.isCurrent) navigate(tab.url); }}
+                    to={tab.url}
                     style={{
                       display: "flex", alignItems: "center", gap: 6,
                       height: "100%", padding: "0 16px",
@@ -1174,12 +1181,10 @@ export default function ViewDetailPage() {
                       color: tab.isCurrent ? "#2563EB" : "#6B7280",
                       fontSize: 13, fontWeight: tab.isCurrent ? 600 : 400,
                       textDecoration: "none", whiteSpace: "nowrap",
-                      background: "none", border: "none", cursor: "pointer",
-                      fontFamily: "inherit",
                     }}
                   >
                     {tab.label}
-                  </button>
+                  </Link>
                 ))
               ) : (
                 /* Dropdown mode (5+ views) */
@@ -1249,7 +1254,7 @@ export default function ViewDetailPage() {
               alignItems: "center", justifyContent: "center",
               padding: "16px 24px 8px", overflow: "hidden",
             }}>
-              {config.placements.length === 0 ? (
+              {viewPlacements.length === 0 ? (
                 <div style={{ textAlign: "center", color: "#9CA3AF" }}>
                   <p style={{ margin: "0 0 8px", fontSize: 14 }}>No print areas defined yet.</p>
                   <p style={{ margin: 0, fontSize: 13 }}>Use the panel on the right to add your first print area.</p>
@@ -1341,7 +1346,7 @@ export default function ViewDetailPage() {
             </div>
 
             {/* Hint bar */}
-            {selectedVariantImageUrl && config.placements.length > 0 && (
+            {selectedVariantImageUrl && viewPlacements.length > 0 && (
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "center",
                 gap: 6, height: 28, flexShrink: 0,
@@ -1566,7 +1571,7 @@ export default function ViewDetailPage() {
                 <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
                   <span style={{ fontWeight: 600, fontSize: 13, color: "#111827" }}>Print areas</span>
                   <div style={{ flex: 1 }} />
-                  {config.placements.length > 0 && !addingZone && (
+                  {viewPlacements.length > 0 && !addingZone && (
                     <button
                       type="button"
                       onClick={() => setAddingZone(true)}
@@ -1585,7 +1590,7 @@ export default function ViewDetailPage() {
                   )}
                 </div>
 
-                {config.placements.length === 0 && !addingZone ? (
+                {viewPlacements.length === 0 && !addingZone ? (
                   <div style={{ padding: "32px 18px", textAlign: "center" }}>
                     <div style={{
                       width: 48, height: 48, borderRadius: "50%", background: "#F3F4F6",
@@ -1604,7 +1609,7 @@ export default function ViewDetailPage() {
                 ) : (
                   <ZonePricingPanel
                     key={view.id}
-                    placements={config.placements}
+                    placements={viewPlacements}
                     currency={currencyCode}
                     currencySymbol={currencySymbol}
                     selectedPlacementId={selectedPlacementId}
@@ -1625,7 +1630,7 @@ export default function ViewDetailPage() {
                 {addingZone && (
                   <div style={{
                     padding: "10px 14px", borderRadius: 8, background: "#EFF6FF",
-                    border: "1px solid #2563EB", marginTop: config.placements.length > 0 ? 10 : 0,
+                    border: "1px solid #2563EB", marginTop: viewPlacements.length > 0 ? 10 : 0,
                   }}>
                     <Text as="p" variant="headingXs" fontWeight="semibold">New print area name</Text>
                     <div style={{ marginTop: 6 }}>
