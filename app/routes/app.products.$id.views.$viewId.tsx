@@ -6,7 +6,7 @@
 
 import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { useLoaderData, useSubmit, useNavigation, useRevalidator, useActionData, useBlocker, useNavigate, Link, redirect } from "react-router";
+import { useLoaderData, useSubmit, useFetcher, useNavigation, useRevalidator, useActionData, useBlocker, useNavigate, Link, redirect } from "react-router";
 import {
   Text,
   Spinner,
@@ -425,8 +425,8 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     if (intent === "update-step") {
       const stepId = formData.get("stepId") as string;
       const label = formData.get("label") as string;
-      const scaleFactor =
-        parseFloat(formData.get("scaleFactor") as string ?? "1") || 1.0;
+      const rawScale = parseFloat(formData.get("scaleFactor") as string ?? "1");
+      const scaleFactor = Number.isNaN(rawScale) ? 1.0 : rawScale;
       const priceAdjustmentCents =
         parseInt(formData.get("priceAdjustmentCents") as string ?? "0", 10) || 0;
 
@@ -443,6 +443,53 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       });
 
       return { success: true, intent: "update-step" };
+    }
+
+    if (intent === "batch-pricing-update") {
+      const payloadJson = formData.get("payload") as string;
+      if (!payloadJson) {
+        throw new Response("Missing payload", { status: 400 });
+      }
+
+      let payload: {
+        placements?: Array<{ placementId: string; name: string; basePriceAdjustmentCents: number; hidePriceWhenZero: boolean; defaultStepIndex: number }>;
+        steps?: Array<{ stepId: string; label: string; scaleFactor: number; priceAdjustmentCents: number }>;
+      };
+      try {
+        payload = JSON.parse(payloadJson);
+      } catch {
+        throw new Response("Invalid JSON payload", { status: 400 });
+      }
+
+      // Apply all placement updates
+      for (const p of payload.placements ?? []) {
+        if (!p.placementId || !p.name) continue;
+        await db.placementDefinition.update({
+          where: { id: p.placementId, productConfig: { shopId: shop.id } },
+          data: {
+            name: p.name,
+            basePriceAdjustmentCents: p.basePriceAdjustmentCents,
+            hidePriceWhenZero: p.hidePriceWhenZero,
+            defaultStepIndex: p.defaultStepIndex,
+          },
+        });
+      }
+
+      // Apply all step updates
+      for (const s of payload.steps ?? []) {
+        if (!s.stepId || !s.label) continue;
+        const rawScale = Number.isNaN(s.scaleFactor) ? 1.0 : s.scaleFactor;
+        await db.placementStep.update({
+          where: { id: s.stepId, placementDefinition: { productConfig: { shopId: shop.id } } },
+          data: {
+            label: s.label,
+            scaleFactor: rawScale,
+            priceAdjustmentCents: s.priceAdjustmentCents,
+          },
+        });
+      }
+
+      return { success: true, intent: "batch-pricing-update" };
     }
 
     if (intent === "add-step") {
@@ -624,6 +671,9 @@ export default function ViewDetailPage() {
   const { config, view, variants, signedImageUrls, variantPlacementGeometry, currencyCode, otherSetups } =
     loaderData;
   const submit = useSubmit();
+  const geometryFetcher = useFetcher();
+  const pricingFetcher = useFetcher();
+  const nameFetcher = useFetcher();
   const navigation = useNavigation();
   const revalidator = useRevalidator();
   const actionData = useActionData<typeof action>();
@@ -686,15 +736,38 @@ export default function ViewDetailPage() {
     return () => { saveBar?.hide("view-editor-save-bar"); };
   }, [anyDirty]);
 
-  // Clear dirty flag and show toast feedback after action responses
+  // Show toast + clear dirty for fetcher-based saves (geometry, pricing, name)
+  useEffect(() => {
+    const data = geometryFetcher.data as Record<string, unknown> | undefined;
+    if (data && "success" in data && data.success === true) {
+      setGeometryDirty(false);
+      setPendingGeometry(null);
+    }
+  }, [geometryFetcher.data]);
+
+  useEffect(() => {
+    const data = pricingFetcher.data as Record<string, unknown> | undefined;
+    if (data && "success" in data && data.success === true) {
+      window.shopify?.toast?.show("Pricing saved");
+    }
+  }, [pricingFetcher.data]);
+
+  useEffect(() => {
+    const data = nameFetcher.data as Record<string, unknown> | undefined;
+    if (data && "success" in data && data.success === true) {
+      setNameDirty(false);
+      setRenameSaved(true);
+      window.shopify?.toast?.show("View renamed");
+      setTimeout(() => setRenameSaved(false), 2000);
+    }
+  }, [nameFetcher.data]);
+
+  // Clear dirty flag and show toast feedback after action responses (non-fetcher submits)
   useEffect(() => {
     if (!actionData) return;
     const data = actionData as Record<string, unknown>;
 
     if ("success" in data && data.success === true) {
-      setGeometryDirty(false);
-      setPendingGeometry(null);
-
       const intent = data.intent as string | undefined;
       if (intent === "delete-step") {
         window.shopify?.toast?.show("Size tier deleted");
@@ -708,13 +781,7 @@ export default function ViewDetailPage() {
         window.shopify?.toast?.show("Size tier added");
       } else if (intent === "apply-to-all") {
         window.shopify?.toast?.show("Applied to all variants");
-      } else if (intent === "rename-view") {
-        setNameDirty(false);
-        setRenameSaved(true);
-        window.shopify?.toast?.show("View renamed");
-        setTimeout(() => setRenameSaved(false), 2000);
       }
-      // update-placement and update-step are silent — saved via save bar batch
     } else if ("error" in data) {
       const intent = data.intent as string | undefined;
       // error shape from handleError: { error: { message, code, ... } }
@@ -750,30 +817,30 @@ export default function ViewDetailPage() {
   const currencySymbol = currencySymbolMap[currencyCode] ?? currencyCode + " ";
 
   const handleSaveGeometry = useCallback(() => {
-    // Submit geometry changes if any
+    // Submit geometry changes via dedicated fetcher (won't cancel other fetchers)
     if (pendingGeometry && selectedVariantId) {
       const fd = new FormData();
       fd.set("intent", "save-placement-geometry");
       fd.set("variantId", selectedVariantId);
       fd.set("placementGeometry", JSON.stringify(pendingGeometry));
-      submit(fd, { method: "POST" });
+      geometryFetcher.submit(fd, { method: "POST" });
     }
-    // Trigger pricing panel save via custom event
+    // Trigger pricing panel save via custom event (uses pricingFetcher)
     if (pricingDirty) {
       document.dispatchEvent(new CustomEvent("pricing-panel-save"));
     }
-    // Submit rename if name changed
+    // Submit rename via dedicated fetcher
     if (nameDirty) {
       const trimmed = viewName.trim();
       if (trimmed && trimmed !== (view.name ?? getPerspectiveLabel(view.perspective))) {
         const fd = new FormData();
         fd.set("intent", "rename-view");
         fd.set("name", trimmed);
-        submit(fd, { method: "POST" });
+        nameFetcher.submit(fd, { method: "POST" });
       }
       setNameDirty(false);
     }
-  }, [pendingGeometry, selectedVariantId, submit, pricingDirty, nameDirty, viewName, view.name, view.perspective]);
+  }, [pendingGeometry, selectedVariantId, geometryFetcher, pricingDirty, nameDirty, viewName, view.name, view.perspective, nameFetcher]);
 
   const handleDiscardGeometry = useCallback(() => {
     setEditorResetKey((k) => k + 1);
@@ -787,17 +854,44 @@ export default function ViewDetailPage() {
     setNameDirty(false);
   }, [view.name, view.perspective]);
 
-  /** Submit pricing changes sequentially from the ZonePricingPanel. */
+  /** Submit all pricing changes as a single batch via dedicated fetcher. */
   const handlePricingSave = useCallback(
-    async (changes: PricingChange[]) => {
-      for (const change of changes) {
-        submit(change.data, { method: "post" });
-        // Small delay between sequential submits to avoid race conditions
-        await new Promise((r) => setTimeout(r, 50));
+    (changes: PricingChange[]) => {
+      if (changes.length === 0) {
+        setPricingDirty(false);
+        return;
       }
+
+      // Build a batch payload from the FormData objects
+      const placementUpdates: Array<{ placementId: string; name: string; basePriceAdjustmentCents: number; hidePriceWhenZero: boolean; defaultStepIndex: number }> = [];
+      const stepUpdates: Array<{ stepId: string; label: string; scaleFactor: number; priceAdjustmentCents: number }> = [];
+
+      for (const change of changes) {
+        if (change.type === "placement") {
+          placementUpdates.push({
+            placementId: change.data.get("placementId") as string,
+            name: change.data.get("name") as string,
+            basePriceAdjustmentCents: parseInt(change.data.get("basePriceAdjustmentCents") as string ?? "0", 10) || 0,
+            hidePriceWhenZero: change.data.get("hidePriceWhenZero") === "true",
+            defaultStepIndex: parseInt(change.data.get("defaultStepIndex") as string ?? "0", 10) || 0,
+          });
+        } else {
+          stepUpdates.push({
+            stepId: change.data.get("stepId") as string,
+            label: change.data.get("label") as string,
+            scaleFactor: parseFloat(change.data.get("scaleFactor") as string ?? "1") || 1.0,
+            priceAdjustmentCents: parseInt(change.data.get("priceAdjustmentCents") as string ?? "0", 10) || 0,
+          });
+        }
+      }
+
+      const fd = new FormData();
+      fd.set("intent", "batch-pricing-update");
+      fd.set("payload", JSON.stringify({ placements: placementUpdates, steps: stepUpdates }));
+      pricingFetcher.submit(fd, { method: "POST" });
       setPricingDirty(false);
     },
-    [submit],
+    [pricingFetcher],
   );
 
   const handleCalibrate = useCallback(
@@ -831,8 +925,8 @@ export default function ViewDetailPage() {
     const fd = new FormData();
     fd.set("intent", "rename-view");
     fd.set("name", trimmed);
-    submit(fd, { method: "POST" });
-  }, [viewName, view.name, view.perspective, submit]);
+    nameFetcher.submit(fd, { method: "POST" });
+  }, [viewName, view.name, view.perspective, nameFetcher]);
 
   const handleDeleteView = useCallback(() => {
     const fd = new FormData();
