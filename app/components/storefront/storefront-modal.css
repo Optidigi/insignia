@@ -1237,18 +1237,16 @@ html, body {
   color: var(--insignia-primary);
 }
 
-/* Total bar */
+/* Total bar — gradient v2 */
 .insignia-review-total-bar {
-  background: #111827;
-  color: white;
-  border-radius: var(--insignia-radius);
-  height: 64px;
-  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 12px;
-  gap: 12px;
+  padding: 0 24px;
+  height: 80px;
+  background: linear-gradient(180deg, #1E3A8A 0%, #2563EB 100%);
+  border-radius: var(--insignia-radius);
+  margin-top: 16px;
 }
 .insignia-review-total-bar .insignia-total-left {
   display: flex;
@@ -1257,22 +1255,20 @@ html, body {
   min-width: 0;
 }
 .insignia-review-total-bar .label {
-  font-size: 12px;
-  color: #9ca3af;
-  font-weight: 400;
-  white-space: nowrap;
+  font-size: 13px;
+  font-weight: normal;
+  color: #DBEAFE;
 }
 .insignia-review-total-bar .breakdown {
-  font-size: 11px;
-  color: #6b7280;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  font-size: 12px;
+  color: #93C5FD;
+  display: block;
+  margin-top: 2px;
 }
 .insignia-review-total-bar .amount {
-  font-size: 22px;
+  font-size: 26px;
   font-weight: 700;
-  flex-shrink: 0;
+  color: white;
 }
 
 /* Review actions — rendered inside the shared footer (modal footer) */
@@ -1389,7 +1385,7 @@ html, body {
   flex-shrink: 0;
 }
 
-/* Sheet nav buttons */
+/* Sheet nav buttons — semi-transparent circles over canvas */
 .insignia-preview-sheet-nav {
   position: absolute;
   top: 50%;
@@ -1399,17 +1395,27 @@ html, body {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.8);
   border: none;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: var(--insignia-shadow);
+  cursor: pointer;
+  z-index: 2;
+  color: #374151;
+  transition: background var(--insignia-transition);
+  padding: 0;
+}
+.insignia-preview-sheet-nav:hover {
+  background: rgba(255, 255, 255, 0.95);
 }
 .insignia-preview-sheet-nav[data-dir="prev"] {
   left: 8px;
 }
 .insignia-preview-sheet-nav[data-dir="next"] {
   right: 8px;
+}
+.insignia-preview-sheet-nav:disabled {
+  opacity: 0.4;
+  cursor: default;
 }
 
 /* Sheet dots */
@@ -1672,6 +1678,317 @@ html, body {
   margin-top: 4px;
 }
 
+/* ── Step 4 review + preview sheet v2 ────────────────────────── */
+
+/* Artwork section in review summary */
+.insignia-review-artwork-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: #FEF3C7;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  color: #D97706;
+}
+
+/* B2B per-size quantity section */
+.insignia-qty-section {
+  border: 1px solid var(--insignia-border);
+  border-radius: var(--insignia-radius);
+  overflow: hidden;
+  margin-top: 16px;
+}
+.insignia-qty-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  height: 44px;
+  background: var(--insignia-bg-subtle);
+}
+.insignia-qty-section-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--insignia-text);
+}
+.insignia-qty-section-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  background: var(--insignia-primary-light);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--insignia-primary);
+}
+.insignia-qty-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  height: 48px;
+  border-top: 1px solid var(--insignia-border);
+}
+.insignia-qty-row-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+}
+.insignia-qty-row-stepper {
+  display: flex;
+  align-items: center;
+  border: 1px solid var(--insignia-border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.insignia-qty-row-stepper .insignia-qty-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--insignia-bg-subtle);
+  border: none;
+  cursor: pointer;
+  color: #374151;
+  font-size: 14px;
+  padding: 0;
+}
+.insignia-qty-row-stepper .insignia-qty-btn:disabled {
+  color: #9CA3AF;
+  cursor: default;
+}
+.insignia-qty-row-stepper .insignia-qty-btn:hover:not(:disabled) {
+  background: var(--insignia-bg-muted);
+}
+.insignia-qty-row-stepper .insignia-qty-val {
+  width: 44px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-left: 1px solid var(--insignia-border);
+  border-right: 1px solid var(--insignia-border);
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  background: white;
+}
+.insignia-qty-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  height: 44px;
+  background: var(--insignia-bg-muted);
+  border-top: 1px solid var(--insignia-border);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--insignia-text);
+}
+
+/* Back as text link on review step */
+.insignia-review-back-link {
+  background: none;
+  border: none;
+  color: var(--insignia-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 8px;
+  transition: color var(--insignia-transition);
+}
+.insignia-review-back-link:hover {
+  color: var(--insignia-text);
+}
+
+/* ── Step 3 slider & states v2 ───────────────────────────────── */
+
+/* Size slider card (State A: 3+ sizes, State C: multi-position) */
+.insignia-size-slider-card {
+  background: var(--insignia-bg-subtle);
+  border: 1px solid var(--insignia-border);
+  border-radius: var(--insignia-radius);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.insignia-size-display-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.insignia-size-display-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--insignia-text);
+}
+.insignia-size-display-dim {
+  font-size: 14px;
+  color: var(--insignia-text-secondary);
+}
+.insignia-size-display-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--insignia-primary);
+}
+
+/* Slider track */
+.insignia-slider-wrap {
+  position: relative;
+  height: 44px;
+  touch-action: none;
+  user-select: none;
+  cursor: pointer;
+}
+.insignia-slider-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: var(--insignia-border);
+  border-radius: 3px;
+  transform: translateY(-50%);
+}
+.insignia-slider-fill {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  height: 6px;
+  background: var(--insignia-primary);
+  border-radius: 3px;
+  transform: translateY(-50%);
+  transition: width 150ms ease-out;
+}
+.insignia-slider-thumb {
+  position: absolute;
+  top: 50%;
+  width: 26px;
+  height: 26px;
+  background: white;
+  border: 2px solid var(--insignia-primary);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: grab;
+  transition: left 150ms ease-out;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  z-index: 1;
+}
+.insignia-slider-thumb:active {
+  cursor: grabbing;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+}
+
+/* Tick marks */
+.insignia-slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  padding: 0;
+}
+.insignia-slider-tick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  min-width: 24px;
+}
+.insignia-slider-tick-mark {
+  width: 2px;
+  height: 6px;
+  background: #D1D5DB;
+  border-radius: 1px;
+}
+.insignia-slider-tick[data-active="true"] .insignia-slider-tick-mark {
+  background: var(--insignia-primary);
+}
+.insignia-slider-tick-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #9CA3AF;
+}
+.insignia-slider-tick[data-active="true"] .insignia-slider-tick-label {
+  color: var(--insignia-primary);
+  font-weight: 700;
+}
+
+/* Position tabs — multi-position sizing (State C) */
+.insignia-position-tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.insignia-position-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  border: 1px solid var(--insignia-border);
+  background: white;
+  color: #9CA3AF;
+  cursor: pointer;
+  transition: all var(--insignia-transition);
+}
+.insignia-position-tab[data-state="done"] {
+  background: #F0FDF4;
+  border-color: #16A34A;
+  color: #16A34A;
+  font-weight: 600;
+}
+.insignia-position-tab[data-state="active"] {
+  background: var(--insignia-primary-light);
+  border-color: var(--insignia-primary);
+  color: var(--insignia-primary);
+  font-weight: 700;
+}
+.insignia-position-tab[data-state="pending"] {
+  color: #9CA3AF;
+}
+.insignia-position-tab-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--insignia-border);
+}
+
+/* Reassurance card — State D (single size / preview only) */
+.insignia-reassurance {
+  background: var(--insignia-bg-subtle);
+  border: 1px solid var(--insignia-border);
+  border-radius: var(--insignia-radius);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.insignia-reassurance-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.insignia-reassurance-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--insignia-text);
+}
+.insignia-reassurance-body {
+  font-size: 12px;
+  color: var(--insignia-text-secondary);
+  line-height: 1.4;
+}
+
 /* ===== Narrow mobile (≤480px) ===== */
 @media (max-width: 480px) {
   /* Tighten horizontal padding so content breathes on 375px/390px screens */
@@ -1724,6 +2041,43 @@ html, body {
   .insignia-method-card {
     min-height: 56px;
     padding: 0 14px;
+  }
+
+  .insignia-qty-section-header {
+    height: 40px;
+    padding: 0 12px;
+  }
+  .insignia-qty-section-title {
+    font-size: 13px;
+  }
+  .insignia-qty-row {
+    height: 42px;
+    padding: 0 12px;
+  }
+  .insignia-qty-total-row {
+    height: 40px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .insignia-review-total-bar {
+    padding: 0 16px;
+    height: 68px;
+  }
+  .insignia-review-total-bar .amount {
+    font-size: 22px;
+  }
+
+  .insignia-size-slider-card {
+    padding: 20px;
+    gap: 12px;
+  }
+  .insignia-size-display-name {
+    font-size: 16px;
+  }
+  .insignia-position-tab {
+    height: 30px;
+    padding: 0 10px;
+    font-size: 11px;
   }
 }
 
