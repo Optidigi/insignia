@@ -573,7 +573,7 @@ export function CustomizationModal({
           {STEP_ORDER.map((stepKey, i) => {
             const StepIcon = stepKey === "size" && allSingleStep ? IconEye : STEP_ICONS[stepKey];
             const label = stepKey === "size"
-              ? (allSingleStep ? "Preview" : "Logo size")
+              ? (allSingleStep ? t.size.preview : t.size.logoSize)
               : t.steps[stepKey];
             return (
               <button
