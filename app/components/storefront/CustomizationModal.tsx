@@ -139,7 +139,7 @@ export function CustomizationModal({
   const [logo, setLogo] = useState<LogoState>({ type: "none" });
   const [placementSelections, setPlacementSelections] = useState<PlacementSelections>({});
   const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [customizationId, setCustomizationId] = useState<string | null>(null);
   const [priceResult, setPriceResult] = useState<PriceResult | null>(null);
   const [prepareResult, setPrepareResult] = useState<PrepareResult | null>(null);
@@ -151,6 +151,8 @@ export function CustomizationModal({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const currentStepIndex = STEP_ORDER.indexOf(step);
+
+  const totalQuantity = Object.values(quantities).reduce((a, b) => a + b, 0);
 
   // Compute footer label and price based on step
   const selectedMethod = config?.methods.find(m => m.id === selectedMethodId);
@@ -212,6 +214,26 @@ export function CustomizationModal({
     fetchConfig();
   }, [fetchConfig]);
 
+  // Initialize per-size quantities when config first loads
+  useEffect(() => {
+    if (config && config.variants.length > 0 && Object.keys(quantities).length === 0) {
+      const init: Record<string, number> = {};
+      for (const v of config.variants) {
+        init[v.id] = 0;
+      }
+      // Pre-select the current variant with qty 1
+      const currentGid = `gid://shopify/ProductVariant/${variantId}`;
+      if (init[currentGid] !== undefined) {
+        init[currentGid] = 1;
+      } else if (config.variants.length > 0) {
+        init[config.variants[0].id] = 1;
+      }
+      setQuantities(init);
+    } else if (config && config.variants.length === 0 && Object.keys(quantities).length === 0) {
+      setQuantities({ _default: 1 });
+    }
+  }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Restore draft from localStorage once config is available
   useEffect(() => {
     if (!config) return;
@@ -254,11 +276,11 @@ export function CustomizationModal({
       case "size":
         return true;
       case "review":
-        return quantity > 0;
+        return totalQuantity > 0;
       default:
         return false;
     }
-  }, [step, logo, placementSelections, quantity]);
+  }, [step, logo, placementSelections, totalQuantity]);
 
   const handleBack = useCallback(() => {
     const i = currentStepIndex;
@@ -495,7 +517,7 @@ export function CustomizationModal({
         prep.configHash,
         prep.pricingVersion
       );
-      await addCustomizedToCart(config!.variantId, prep.slotVariantId, quantity, properties);
+      await addCustomizedToCart(config!.variantId, prep.slotVariantId, totalQuantity, properties);
       const confirmRes = await fetchWithRetry(proxyUrl("/apps/insignia/cart-confirm"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -512,7 +534,7 @@ export function CustomizationModal({
     } finally {
       setSubmitLoading(false);
     }
-  }, [customizationId, priceResult, selectedMethodId, quantity, saveDraftAndPrice, config, productId, variantId, closeModal]);
+  }, [customizationId, priceResult, selectedMethodId, totalQuantity, saveDraftAndPrice, config, productId, variantId, closeModal]);
 
   // Early returns after all hooks — this is the required pattern.
   if (configLoading) {
@@ -632,8 +654,8 @@ export function CustomizationModal({
                 selectedMethodId={selectedMethodId!}
                 placementSelections={placementSelections}
                 logo={logo}
-                quantity={quantity}
-                onQuantityChange={setQuantity}
+                quantities={quantities}
+                onQuantitiesChange={setQuantities}
                 customizationId={customizationId}
                 priceResult={priceResult}
                 prepareResult={prepareResult}

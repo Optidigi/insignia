@@ -1,13 +1,13 @@
 /**
- * Step 4: Review & quantity — sectioned summary card, redesigned total bar,
- * floating preview button, and green Add to Cart button.
+ * Step 4: Review — sectioned summary, B2B per-size quantities,
+ * gradient total bar, artwork section, green Add to Cart button.
  */
 
 import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
 import { formatCurrency } from "./currency";
-import { IconMinus, IconPlus, IconEye } from "./icons";
+import { IconEye, IconShoppingCart } from "./icons";
 
 type PriceResult = {
   unitPriceCents: number;
@@ -21,11 +21,17 @@ type ReviewStepProps = {
   selectedMethodId: string;
   placementSelections: PlacementSelections;
   logo: LogoState;
-  quantity: number;
-  onQuantityChange: (n: number) => void;
+  quantities: Record<string, number>;
+  onQuantitiesChange: (q: Record<string, number>) => void;
   customizationId: string | null;
   priceResult: PriceResult | null;
-  prepareResult: { slotVariantId: string; configHash: string; pricingVersion: string; unitPriceCents: number; feeCents: number } | null;
+  prepareResult: {
+    slotVariantId: string;
+    configHash: string;
+    pricingVersion: string;
+    unitPriceCents: number;
+    feeCents: number;
+  } | null;
   submitLoading: boolean;
   submitError: string | null;
   onSaveDraftAndPrice: () => Promise<void>;
@@ -41,8 +47,9 @@ export function ReviewStep({
   config,
   selectedMethodId,
   placementSelections,
-  quantity,
-  onQuantityChange,
+  logo,
+  quantities,
+  onQuantitiesChange,
   priceResult,
   submitLoading,
   submitError,
@@ -77,16 +84,31 @@ export function ReviewStep({
 
   const totalFeeCents =
     methodPriceCents +
-    selectedPlacements.reduce((sum, p) => sum + p.placementPriceCents + p.sizePriceCents, 0);
+    selectedPlacements.reduce(
+      (sum, p) => sum + p.placementPriceCents + p.sizePriceCents,
+      0
+    );
 
-  const unitCents = priceResult?.unitPriceCents ?? baseProductPriceCents + totalFeeCents;
-  const totalCents = unitCents * quantity;
+  const totalQuantity = Object.values(quantities).reduce((a, b) => a + b, 0);
+  const unitCents =
+    priceResult?.unitPriceCents ?? baseProductPriceCents + totalFeeCents;
+  const totalCents = unitCents * totalQuantity;
+
+  const setQty = (variantId: string, qty: number) => {
+    onQuantitiesChange({ ...quantities, [variantId]: Math.max(0, qty) });
+  };
 
   return (
     <section aria-labelledby="review-heading">
       <h2 id="review-heading" className="visually-hidden">
-        {t.review.title}
+        {t.review.orderSummary}
       </h2>
+
+      {/* Desktop step heading */}
+      <div className="insignia-step-heading">
+        <p className="insignia-step-heading-title">{t.review.orderSummary}</p>
+        <p className="insignia-step-heading-sub">{t.review.reviewSubtitle}</p>
+      </div>
 
       {/* Summary Card */}
       <div className="insignia-review-summary">
@@ -94,13 +116,17 @@ export function ReviewStep({
         <span className="insignia-review-section-label">{t.review.product}</span>
         <div className="insignia-review-line">
           <span className="insignia-review-line-name">{productTitle}</span>
-          <span className="insignia-review-line-price">{fmt(baseProductPriceCents)}</span>
+          <span className="insignia-review-line-price">
+            {fmt(baseProductPriceCents)}
+          </span>
         </div>
 
         <div className="insignia-review-divider" />
 
         {/* DECORATION section */}
-        <span className="insignia-review-section-label">{t.review.decoration}</span>
+        <span className="insignia-review-section-label">
+          {t.review.decoration}
+        </span>
         <div className="insignia-review-line">
           <span className="insignia-review-line-name">{methodName}</span>
           <span className="insignia-review-line-price insignia-review-line-price--blue">
@@ -111,76 +137,162 @@ export function ReviewStep({
         <div className="insignia-review-divider" />
 
         {/* CUSTOMIZATIONS section */}
-        <span className="insignia-review-section-label">{t.review.customizations}</span>
+        <span className="insignia-review-section-label">
+          {t.review.customizations}
+        </span>
         {selectedPlacements.map((p) => (
           <div key={p.id} className="insignia-review-line">
-            <span className="insignia-review-line-name">{p.name} placement</span>
-            <span className="insignia-review-line-price">+{fmt(p.placementPriceCents)}</span>
+            <span className="insignia-review-line-name">
+              {p.name} placement
+            </span>
+            <span className="insignia-review-line-price">
+              +{fmt(p.placementPriceCents)}
+            </span>
           </div>
         ))}
         {selectedPlacements
           .filter((p) => p.sizePriceCents !== 0)
           .map((p) => (
             <div key={`${p.id}-size`} className="insignia-review-line">
-              <span className="insignia-review-line-name">{p.sizeLabel} size adjustment</span>
-              <span className="insignia-review-line-price">
-                {p.sizePriceCents > 0 ? "+" : ""}
-                {fmt(p.sizePriceCents)}
+              <span className="insignia-review-line-name">
+                {p.sizeLabel} size
+              </span>
+              <span className="insignia-review-line-price insignia-review-line-price--blue">
+                +{fmt(p.sizePriceCents)}
               </span>
             </div>
           ))}
-      </div>
 
-      {/* Quantity row */}
-      <div className="insignia-review-quantity">
-        <label htmlFor="insignia-qty" className="insignia-review-qty-label">
-          {t.review.quantity}
-        </label>
-        <div className="insignia-qty-stepper">
-          <button
-            type="button"
-            className="insignia-qty-btn"
-            onClick={() => onQuantityChange(Math.max(1, quantity - 1))}
-            disabled={quantity <= 1}
-            aria-label="Decrease quantity"
-          >
-            <IconMinus size={16} />
-          </button>
-          <input
-            id="insignia-qty"
-            type="number"
-            className="insignia-quantity-input"
-            min={1}
-            max={999}
-            value={quantity}
-            onChange={(e) => {
-              const v = parseInt(e.target.value, 10);
-              if (!isNaN(v) && v >= 1) onQuantityChange(v);
-            }}
-          />
-          <button
-            type="button"
-            className="insignia-qty-btn insignia-qty-btn--plus"
-            onClick={() => onQuantityChange(quantity + 1)}
-            aria-label="Increase quantity"
-          >
-            <IconPlus size={16} />
-          </button>
+        <div className="insignia-review-divider" />
+
+        {/* ARTWORK section */}
+        <span className="insignia-review-section-label">
+          {t.review.artwork}
+        </span>
+        <div className="insignia-review-line">
+          <span className="insignia-review-line-name">{t.review.logo}</span>
+          {logo.type === "later" ? (
+            <span className="insignia-review-artwork-badge">
+              {t.review.uploadAfterPurchase}
+            </span>
+          ) : (
+            <span className="insignia-review-line-price">✓</span>
+          )}
         </div>
       </div>
 
-      {/* Total bar */}
+      {/* B2B per-size quantities */}
+      {config.variants.length > 0 && (
+        <div className="insignia-qty-section">
+          <div className="insignia-qty-section-header">
+            <span className="insignia-qty-section-title">
+              {t.review.orderQuantities}
+            </span>
+            <span className="insignia-qty-section-badge">
+              {totalQuantity} {t.review.items}
+            </span>
+          </div>
+          {config.variants.map((variant) => {
+            const qty = quantities[variant.id] ?? 0;
+            return (
+              <div key={variant.id} className="insignia-qty-row">
+                <span className="insignia-qty-row-label">
+                  {variant.sizeLabel}
+                </span>
+                <div className="insignia-qty-row-stepper">
+                  <button
+                    type="button"
+                    className="insignia-qty-btn"
+                    disabled={qty <= 0}
+                    onClick={() => setQty(variant.id, qty - 1)}
+                    aria-label={`Decrease ${variant.sizeLabel}`}
+                  >
+                    −
+                  </button>
+                  <div className="insignia-qty-val">{qty}</div>
+                  <button
+                    type="button"
+                    className="insignia-qty-btn"
+                    onClick={() => setQty(variant.id, qty + 1)}
+                    aria-label={`Increase ${variant.sizeLabel}`}
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+          <div className="insignia-qty-total-row">
+            <span>{t.review.total}</span>
+            <span>
+              {totalQuantity} {t.review.items}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Fallback single quantity if no variants */}
+      {config.variants.length === 0 && (
+        <div className="insignia-review-quantity">
+          <label htmlFor="insignia-qty" className="insignia-review-qty-label">
+            {t.review.quantity}
+          </label>
+          <div className="insignia-qty-stepper">
+            <button
+              type="button"
+              className="insignia-qty-btn"
+              onClick={() => {
+                const currentQty = Object.values(quantities)[0] ?? 1;
+                const key = Object.keys(quantities)[0] ?? "_default";
+                onQuantitiesChange({ [key]: Math.max(1, currentQty - 1) });
+              }}
+              disabled={(Object.values(quantities)[0] ?? 1) <= 1}
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+            <input
+              id="insignia-qty"
+              type="number"
+              className="insignia-quantity-input"
+              min={1}
+              max={999}
+              value={Object.values(quantities)[0] ?? 1}
+              onChange={(e) => {
+                const v = parseInt(e.target.value, 10);
+                const key = Object.keys(quantities)[0] ?? "_default";
+                if (!isNaN(v) && v >= 1) onQuantitiesChange({ [key]: v });
+              }}
+            />
+            <button
+              type="button"
+              className="insignia-qty-btn insignia-qty-btn--plus"
+              onClick={() => {
+                const currentQty = Object.values(quantities)[0] ?? 1;
+                const key = Object.keys(quantities)[0] ?? "_default";
+                onQuantitiesChange({ [key]: currentQty + 1 });
+              }}
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Gradient total bar */}
       <div className="insignia-review-total-bar">
         <div>
-          <span className="label">Estimated total</span>
+          <span className="label">{t.review.orderTotalLabel}</span>
           <span className="breakdown">
-            {fmt(baseProductPriceCents)} base · {fmt(totalFeeCents)} customization
+            {totalQuantity} × ({fmt(baseProductPriceCents)} +{" "}
+            {fmt(totalFeeCents)} custom) · {t.review.perItem}
           </span>
         </div>
         <span className="amount">{fmt(totalCents)}</span>
       </div>
 
-      {/* Floating preview button — mobile only, CSS controls visibility */}
+      {/* Floating preview button — mobile only */}
       <button
         type="button"
         className="insignia-preview-float-btn"
@@ -201,18 +313,26 @@ export function ReviewStep({
       <div className="insignia-review-actions">
         <button
           type="button"
-          className="insignia-btn insignia-btn-secondary"
+          className="insignia-review-back-link"
           onClick={onBack}
         >
-          {t.review.btnBack}
+          ← {t.review.btnBack}
         </button>
         <button
           type="button"
           className="insignia-btn insignia-btn-success"
-          disabled={quantity < 1 || submitLoading || !priceResult?.validation?.ok}
+          disabled={
+            totalQuantity < 1 || submitLoading || !priceResult?.validation?.ok
+          }
           onClick={() => onPrepareAndAddToCart()}
+          style={{ display: "flex", alignItems: "center", gap: 8 }}
         >
-          {submitLoading ? "Adding…" : t.review.btnCart}
+          <IconShoppingCart size={16} />
+          <span>
+            {submitLoading
+              ? "Adding…"
+              : `${t.review.addToCartWithPrice} — ${fmt(totalCents)}`}
+          </span>
         </button>
       </div>
     </section>
