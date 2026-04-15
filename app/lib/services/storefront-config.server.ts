@@ -128,7 +128,9 @@ export async function getStorefrontConfig(
     );
   }
 
-  if (config.views.every((v) => v.placements.length === 0)) {
+  // Check for placements with at least one step (complete configuration)
+  const hasCompletePlacements = config.views.some((v) => v.placements.some((p) => p.steps.length > 0));
+  if (!hasCompletePlacements) {
     throw new AppError(
       ErrorCodes.INVALID_CONFIG,
       "This product has no print areas configured. Please contact the store.",
@@ -235,7 +237,9 @@ export async function getStorefrontConfig(
     return out;
   };
 
-  const allPlacements = config.views.flatMap((v) => v.placements);
+  // Only include placements that have at least one step (complete configuration)
+  // and geometry on at least one view with an image (visible to customers)
+  const allPlacements = config.views.flatMap((v) => v.placements).filter((p) => p.steps.length > 0);
   const placements: Placement[] = allPlacements.map((p) => ({
     id: p.id,
     name: p.name,
