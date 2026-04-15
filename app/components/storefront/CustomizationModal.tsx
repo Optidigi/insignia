@@ -12,7 +12,7 @@ import { PlacementStep } from "./PlacementStep";
 import { SizeStep } from "./SizeStep";
 import { ReviewStep } from "./ReviewStep";
 import { PreviewSheet } from "./PreviewSheet";
-import { addCustomizedToCart, buildInsigniaProperties } from "../../lib/storefront/cart.client";
+import { addCustomizedToCart, addMultipleCustomizedToCart, buildInsigniaProperties } from "../../lib/storefront/cart.client";
 import { proxyUrl } from "../../lib/storefront/proxy-url.client";
 import { getTranslations, detectLocale } from "./i18n";
 import { IconUpload, IconPlacement, IconSize, IconEye, IconCircleCheck, IconX } from "./icons";
@@ -500,24 +500,77 @@ export function CustomizationModal({
     setSubmitLoading(true);
     setSubmitError(null);
     try {
-      const prepareRes = await fetchWithRetry(proxyUrl("/apps/insignia/prepare"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customizationId: cid }),
-      });
-      if (!prepareRes.ok) {
-        const d = await prepareRes.json().catch(() => ({}));
-        throw new Error(d?.error?.message ?? "Failed to prepare");
+      const isMultiVariant = config!.variants.length > 0;
+
+      if (isMultiVariant) {
+        // B2B per-size mode: call /prepare once per variant with qty > 0,
+        // then batch all pairs into a single cart/add.js request.
+        const activeVariants = config!.variants.filter(
+          (v) => (quantities[v.id] ?? 0) > 0
+        );
+        if (activeVariants.length === 0) return;
+
+        // Prepare each variant sequentially to get a dedicated fee slot per variant.
+        const pairs: Array<{
+          baseVariantId: string;
+          feeVariantId: string;
+          quantity: number;
+          properties: Record<string, string>;
+        }> = [];
+        let lastPrep: PrepareResult | null = null;
+
+        for (const variant of activeVariants) {
+          const prepareRes = await fetchWithRetry(proxyUrl("/apps/insignia/prepare"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ customizationId: cid }),
+          });
+          if (!prepareRes.ok) {
+            const d = await prepareRes.json().catch(() => ({}));
+            throw new Error(d?.error?.message ?? "Failed to prepare");
+          }
+          const prep: PrepareResult = await prepareRes.json();
+          lastPrep = prep;
+
+          const properties = buildInsigniaProperties(
+            cid,
+            selectedMethodId!,
+            prep.configHash,
+            prep.pricingVersion
+          );
+          pairs.push({
+            baseVariantId: variant.id,
+            feeVariantId: prep.slotVariantId,
+            quantity: quantities[variant.id],
+            properties,
+          });
+        }
+
+        if (lastPrep) setPrepareResult(lastPrep);
+        await addMultipleCustomizedToCart(pairs);
+      } else {
+        // Single-variant mode: original behaviour preserved.
+        const qty = quantities["_default"] ?? totalQuantity;
+        const prepareRes = await fetchWithRetry(proxyUrl("/apps/insignia/prepare"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customizationId: cid }),
+        });
+        if (!prepareRes.ok) {
+          const d = await prepareRes.json().catch(() => ({}));
+          throw new Error(d?.error?.message ?? "Failed to prepare");
+        }
+        const prep: PrepareResult = await prepareRes.json();
+        setPrepareResult(prep);
+        const properties = buildInsigniaProperties(
+          cid,
+          selectedMethodId!,
+          prep.configHash,
+          prep.pricingVersion
+        );
+        await addCustomizedToCart(config!.variantId, prep.slotVariantId, qty, properties);
       }
-      const prep: PrepareResult = await prepareRes.json();
-      setPrepareResult(prep);
-      const properties = buildInsigniaProperties(
-        cid,
-        selectedMethodId!,
-        prep.configHash,
-        prep.pricingVersion
-      );
-      await addCustomizedToCart(config!.variantId, prep.slotVariantId, totalQuantity, properties);
+
       const confirmRes = await fetchWithRetry(proxyUrl("/apps/insignia/cart-confirm"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -534,7 +587,7 @@ export function CustomizationModal({
     } finally {
       setSubmitLoading(false);
     }
-  }, [customizationId, priceResult, selectedMethodId, totalQuantity, saveDraftAndPrice, config, productId, variantId, closeModal]);
+  }, [customizationId, priceResult, selectedMethodId, totalQuantity, quantities, saveDraftAndPrice, config, productId, variantId, closeModal]);
 
   // Early returns after all hooks — this is the required pattern.
   if (configLoading) {
