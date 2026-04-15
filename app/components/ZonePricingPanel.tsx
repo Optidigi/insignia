@@ -229,13 +229,6 @@ export function ZonePricingPanel({
   const collectChangesRef = useRef(collectChanges);
   collectChangesRef.current = collectChanges;
 
-  // Register save handler with parent on mount
-  useEffect(() => {
-    if (!onSave) return;
-    // The parent will call onSave which we intercept to provide changes
-    // We use a custom event pattern so the parent can trigger collection
-  }, [onSave]);
-
   /** Clear all local edits (called after successful save or discard). */
   const clearEdits = useCallback(() => {
     setPlacementEdits({});

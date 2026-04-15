@@ -42,11 +42,11 @@
 ## Priority 2 Fixes
 
 - [x] [DONE] Logo thumbnail in Review summary
-- [ ] Close confirmation — change guilt-based copy to neutral: "You've configured [Method, Placement]. Close without adding to cart?"
+- [x] [DONE] Close confirmation — change guilt-based copy to neutral: "You've configured [Method, Placement]. Close without adding to cart?"
 - [x] [DONE] Contrast fixes — darken muted text from #9CA3AF to #6B7280
-- [ ] Touch targets — qty buttons 36→44px, slider thumb 24→36px, close button 40→44px
-- [ ] Method cards — add `role="radio"` + `aria-checked` semantics
-- [ ] Step pills — add `aria-current="step"` to active pill
+- [x] [DONE] Touch targets — qty buttons 36→44px, slider thumb 24→36px, close button 40→44px
+- [x] [DONE] Method cards — add `role="radio"` + `aria-checked` semantics
+- [x] [DONE] Step pills — add `aria-current="step"` to active pill
 - [x] [DONE] Size context — "Logo size" disambiguation from Shopify garment size
 
 ## Priority 3 (Nice to Have)
@@ -62,10 +62,10 @@
 ## Open Implementation Todos
 
 ### Critical
-- [ ] Storefront draft persistence — `localStorage` instead of `sessionStorage`
+- [x] [DONE] Storefront draft persistence — `localStorage` instead of `sessionStorage`
 - [ ] Geometry editor unsaved-changes — `beforeunload` + React Router `useBlocker`
-- [ ] 0-methods guard — reject products with 0 methods linked
-- [ ] 0-placements guard — reject products with 0 placements
+- [x] [DONE] 0-methods guard — reject products with 0 methods linked
+- [x] [DONE] 0-placements guard — reject products with 0 placements
 
 ### Important
 - [x] [DONE] Single-placement auto-select

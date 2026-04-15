@@ -15,9 +15,7 @@ See canonical stack decisions:
 
 ### R2 CORS (browser uploads)
 
-For **direct browser uploads** (e.g. view images via presigned PUT URLs), the R2 bucket must have a CORS policy that allows your app origin and `PUT` with `Content-Type`. Otherwise the browser’s OPTIONS preflight gets **403** and uploads fail.
-
-See **[R2 CORS setup](r2-cors.md)** for the exact JSON and steps.
+For **direct browser uploads** (e.g. view images via presigned PUT URLs), the R2 bucket must have a CORS policy that allows your app origin and `PUT` with `Content-Type`. Otherwise the browser’s OPTIONS preflight gets **403** and uploads fail. Configure this in the Cloudflare R2 dashboard under your bucket’s CORS settings.
 
 ## Start order (recommended)
 
@@ -34,25 +32,6 @@ This section captures operational requirements needed for production.
 - PostgreSQL migrations MUST run before serving traffic.
 - Background workers MUST run for:
   - variant pool maintenance jobs
-
-## Implementation order (parallel work)
-
-This section exists to enable parallel work without stepping on each other.
-
-### Suggested sequence
-
-1. Implement auth verification middleware for:
-   - admin session tokens
-   - App Proxy signature
-   - webhook signature
-2. Implement core persistence for:
-   - ProductConfig / ProductView / Viewport
-3. Implement variant pool endpoints:
-   - `/apps/insignia/prepare`
-   - `/apps/insignia/cart-confirm`
-4. Implement webhook finalization:
-   - orders/create
-   - orders/paid
 
 ## Canonical references
 
