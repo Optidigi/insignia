@@ -1545,6 +1545,133 @@ html, body {
   display: contents;
 }
 
+/* ── Step 1-2 v2 design additions ────────────────────────────── */
+
+/* Or-divider between upload zone and logo-later card */
+.insignia-or-divider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.insignia-or-divider-line {
+  flex: 1;
+  height: 1px;
+  background: var(--insignia-border);
+}
+.insignia-or-divider-text {
+  font-size: 12px;
+  color: #9CA3AF;
+  font-weight: normal;
+  user-select: none;
+}
+
+/* Logo later card v2 */
+.insignia-logo-later-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 64px;
+  padding: 0 16px;
+  background: var(--insignia-bg);
+  border: 1px solid var(--insignia-border);
+  border-radius: var(--insignia-radius);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color var(--insignia-transition), background var(--insignia-transition);
+}
+.insignia-logo-later-card:hover {
+  border-color: #D1D5DB;
+  background: var(--insignia-bg-subtle);
+}
+.insignia-logo-later-card:focus-visible {
+  outline: 2px solid var(--insignia-primary);
+  outline-offset: 2px;
+}
+.insignia-logo-later-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.insignia-logo-later-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+.insignia-logo-later-subtitle {
+  font-size: 12px;
+  color: var(--insignia-text-secondary);
+}
+
+/* Method card v2 — price area + indicator */
+.insignia-method-price-area {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.insignia-method-price-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--insignia-text);
+}
+.insignia-method-price-label {
+  font-size: 10px;
+  font-weight: normal;
+  color: var(--insignia-text-secondary);
+}
+.insignia-method-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background var(--insignia-transition), border-color var(--insignia-transition);
+}
+.insignia-method-indicator[data-selected="true"] {
+  background: var(--insignia-primary);
+}
+.insignia-method-indicator:not([data-selected="true"]) {
+  border: 1.5px solid #D1D5DB;
+  background: white;
+}
+
+/* Method badge — shown on placement step */
+.insignia-method-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 10px;
+  background: var(--insignia-primary-light);
+  border: 1px solid var(--insignia-primary);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--insignia-primary);
+  margin-bottom: 4px;
+}
+
+/* Placement tile "Included" text */
+.insignia-placement-tile .price[data-included="true"] {
+  color: #16A34A;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+/* Mobile helper text below logo-later card */
+.insignia-upload-helper-text {
+  font-size: 11px;
+  color: var(--insignia-text-secondary);
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
 /* ===== Narrow mobile (≤480px) ===== */
 @media (max-width: 480px) {
   /* Tighten horizontal padding so content breathes on 375px/390px screens */
@@ -1592,6 +1719,11 @@ html, body {
   /* Preview sheet area: shorter on small screens */
   .insignia-preview-sheet-area {
     height: 300px;
+  }
+
+  .insignia-method-card {
+    min-height: 56px;
+    padding: 0 14px;
   }
 }
 
@@ -1805,6 +1937,10 @@ html, body {
 
   /* Hide preview sheet on desktop */
   .insignia-preview-sheet-overlay {
+    display: none;
+  }
+
+  .insignia-upload-helper-text {
     display: none;
   }
 }
