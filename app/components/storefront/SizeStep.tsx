@@ -81,9 +81,10 @@ export function SizeStep({
                 </span>
               )}
               {/* Size cards — replaces the old range slider */}
-              <div className="insignia-size-cards">
+              <div className="insignia-size-cards" role="group" aria-label={t.size.sizeLabel}>
                 {currentPlacement.steps.map((step, i) => {
                   const isSelected = i === stepIndex;
+                  const isDefault = i === currentPlacement.defaultStepIndex;
                   const hasPriceDelta = step.priceAdjustmentCents !== 0;
                   return (
                     <button
@@ -92,18 +93,25 @@ export function SizeStep({
                       className={`insignia-size-card${isSelected ? " insignia-size-card--selected" : ""}`}
                       onClick={() => setStepIndex(i)}
                       aria-pressed={isSelected}
-                      aria-label={`${step.label}${hasPriceDelta ? `, ${step.priceAdjustmentCents > 0 ? "+" : ""}${formatCurrency(step.priceAdjustmentCents, config.currency)}` : ""}`}
+                      aria-label={`${step.label}${isDefault ? `, ${t.placement.recommended}` : ""}${hasPriceDelta ? `, ${step.priceAdjustmentCents > 0 ? "+" : ""}${formatCurrency(step.priceAdjustmentCents, config.currency)}` : ""}`}
                     >
                       <span className="insignia-size-card-letter">{step.label.charAt(0).toUpperCase()}</span>
                       <span className="insignia-size-card-info">
-                        <span className="insignia-size-card-name">{step.label}</span>
+                        <span className="insignia-size-card-name">
+                          {step.label}
+                          {isDefault && (
+                            <span className="insignia-size-card-badge">{t.placement.recommended}</span>
+                          )}
+                        </span>
                         <span className="insignia-size-card-scale">{step.scaleFactor}x</span>
                       </span>
-                      {hasPriceDelta && (
+                      {hasPriceDelta ? (
                         <span className="insignia-size-card-price">
                           {step.priceAdjustmentCents > 0 ? "+" : ""}{formatCurrency(step.priceAdjustmentCents, config.currency)}
                         </span>
-                      )}
+                      ) : isDefault ? (
+                        <span className="insignia-size-card-included">Included</span>
+                      ) : null}
                     </button>
                   );
                 })}
