@@ -10,9 +10,10 @@ import { WIZARD_STEPS } from "./types";
 import { UploadStep } from "./UploadStep";
 import { PlacementStep } from "./PlacementStep";
 import { SizeStep } from "./SizeStep";
+import type { SizeStepHandle } from "./SizeStep";
 import { ReviewStep } from "./ReviewStep";
 import { PreviewSheet } from "./PreviewSheet";
-import { addCustomizedToCart, buildInsigniaProperties } from "../../lib/storefront/cart.client";
+import { addCustomizedToCart, addMultipleCustomizedToCart, buildInsigniaProperties } from "../../lib/storefront/cart.client";
 import { proxyUrl } from "../../lib/storefront/proxy-url.client";
 import { getTranslations, detectLocale } from "./i18n";
 import { IconUpload, IconPlacement, IconSize, IconEye, IconCircleCheck, IconX } from "./icons";
@@ -139,7 +140,7 @@ export function CustomizationModal({
   const [logo, setLogo] = useState<LogoState>({ type: "none" });
   const [placementSelections, setPlacementSelections] = useState<PlacementSelections>({});
   const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [customizationId, setCustomizationId] = useState<string | null>(null);
   const [priceResult, setPriceResult] = useState<PriceResult | null>(null);
   const [prepareResult, setPrepareResult] = useState<PrepareResult | null>(null);
@@ -149,8 +150,11 @@ export function CustomizationModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [logoUrlTimestamp, setLogoUrlTimestamp] = useState(Date.now());
   const containerRef = useRef<HTMLDivElement>(null);
+  const sizeStepRef = useRef<SizeStepHandle>(null);
 
   const currentStepIndex = STEP_ORDER.indexOf(step);
+
+  const totalQuantity = Object.values(quantities).reduce((a, b) => a + b, 0);
 
   // Compute footer label and price based on step
   const selectedMethod = config?.methods.find(m => m.id === selectedMethodId);
@@ -212,6 +216,29 @@ export function CustomizationModal({
     fetchConfig();
   }, [fetchConfig]);
 
+  // Variants are pre-filtered by the backend to only include sizes matching
+  // the selected variant's non-size options (e.g. same color).
+
+  // Initialize per-size quantities when config first loads
+  useEffect(() => {
+    if (config && config.variants.length > 0 && Object.keys(quantities).length === 0) {
+      const init: Record<string, number> = {};
+      for (const v of config.variants) {
+        init[v.id] = 0;
+      }
+      // Pre-select the current variant with qty 1
+      const currentGid = `gid://shopify/ProductVariant/${variantId}`;
+      if (init[currentGid] !== undefined) {
+        init[currentGid] = 1;
+      } else if (config.variants.length > 0) {
+        init[config.variants[0].id] = 1;
+      }
+      setQuantities(init);
+    } else if (config && config.variants.length === 0 && Object.keys(quantities).length === 0) {
+      setQuantities({ _default: 1 });
+    }
+  }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Restore draft from localStorage once config is available
   useEffect(() => {
     if (!config) return;
@@ -254,11 +281,11 @@ export function CustomizationModal({
       case "size":
         return true;
       case "review":
-        return quantity > 0;
+        return totalQuantity > 0;
       default:
         return false;
     }
-  }, [step, logo, placementSelections, quantity]);
+  }, [step, logo, placementSelections, totalQuantity]);
 
   const handleBack = useCallback(() => {
     const i = currentStepIndex;
@@ -266,9 +293,13 @@ export function CustomizationModal({
   }, [currentStepIndex, goToStep]);
 
   const handleNext = useCallback(() => {
+    // On size step with multiple positions: advance position first
+    if (step === "size" && sizeStepRef.current?.tryAdvance()) {
+      return; // stay on size step, position advanced
+    }
     const i = currentStepIndex;
     if (i < STEP_ORDER.length - 1) goToStep(STEP_ORDER[i + 1]);
-  }, [currentStepIndex, goToStep]);
+  }, [step, currentStepIndex, goToStep]);
 
   /** Close the modal: navigate back to the product page. */
   const closeModal = useCallback(() => {
@@ -478,32 +509,92 @@ export function CustomizationModal({
     setSubmitLoading(true);
     setSubmitError(null);
     try {
-      const prepareRes = await fetchWithRetry(proxyUrl("/apps/insignia/prepare"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customizationId: cid }),
-      });
-      if (!prepareRes.ok) {
-        const d = await prepareRes.json().catch(() => ({}));
-        throw new Error(d?.error?.message ?? "Failed to prepare");
+      const isMultiVariant = config!.variants.length > 0;
+      // Track all prepared slot IDs for the confirm step.
+      // Use local variables — not React state — to avoid stale closure reads.
+      const confirmedSlotIds: string[] = [];
+
+      if (isMultiVariant) {
+        // B2B per-size mode: call /prepare once per variant with qty > 0,
+        // then batch all pairs into a single cart/add.js request.
+        const activeVariants = config!.variants.filter(
+          (v) => (quantities[v.id] ?? 0) > 0
+        );
+        if (activeVariants.length === 0) return;
+
+        const pairs: Array<{
+          baseVariantId: string;
+          feeVariantId: string;
+          quantity: number;
+          properties: Record<string, string>;
+        }> = [];
+        let lastPrep: PrepareResult | null = null;
+
+        for (const variant of activeVariants) {
+          const prepareRes = await fetchWithRetry(proxyUrl("/apps/insignia/prepare"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ customizationId: cid }),
+          });
+          if (!prepareRes.ok) {
+            const d = await prepareRes.json().catch(() => ({}));
+            throw new Error(d?.error?.message ?? "Failed to prepare");
+          }
+          const prep: PrepareResult = await prepareRes.json();
+          lastPrep = prep;
+          confirmedSlotIds.push(prep.slotVariantId);
+
+          const properties = buildInsigniaProperties(
+            cid,
+            selectedMethodId!,
+            prep.configHash,
+            prep.pricingVersion
+          );
+          pairs.push({
+            baseVariantId: variant.id,
+            feeVariantId: prep.slotVariantId,
+            quantity: quantities[variant.id],
+            properties,
+          });
+        }
+
+        if (lastPrep) setPrepareResult(lastPrep);
+        await addMultipleCustomizedToCart(pairs);
+      } else {
+        // Single-variant mode: original behaviour preserved.
+        const qty = quantities["_default"] ?? totalQuantity;
+        const prepareRes = await fetchWithRetry(proxyUrl("/apps/insignia/prepare"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customizationId: cid }),
+        });
+        if (!prepareRes.ok) {
+          const d = await prepareRes.json().catch(() => ({}));
+          throw new Error(d?.error?.message ?? "Failed to prepare");
+        }
+        const prep: PrepareResult = await prepareRes.json();
+        setPrepareResult(prep);
+        confirmedSlotIds.push(prep.slotVariantId);
+        const properties = buildInsigniaProperties(
+          cid,
+          selectedMethodId!,
+          prep.configHash,
+          prep.pricingVersion
+        );
+        await addCustomizedToCart(config!.variantId, prep.slotVariantId, qty, properties);
       }
-      const prep: PrepareResult = await prepareRes.json();
-      setPrepareResult(prep);
-      const properties = buildInsigniaProperties(
-        cid,
-        selectedMethodId!,
-        prep.configHash,
-        prep.pricingVersion
-      );
-      await addCustomizedToCart(config!.variantId, prep.slotVariantId, quantity, properties);
-      const confirmRes = await fetchWithRetry(proxyUrl("/apps/insignia/cart-confirm"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customizationId: cid }),
-      });
-      if (!confirmRes.ok) {
-        const d = await confirmRes.json().catch(() => ({}));
-        throw new Error(d?.error?.message ?? "Failed to confirm cart");
+
+      // Confirm each prepared slot (required for slot lifecycle management)
+      for (const slotVariantId of confirmedSlotIds) {
+        const confirmRes = await fetchWithRetry(proxyUrl("/apps/insignia/cart-confirm"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customizationId: cid, slotVariantId }),
+        });
+        if (!confirmRes.ok) {
+          const d = await confirmRes.json().catch(() => ({}));
+          throw new Error(d?.error?.message ?? "Failed to confirm cart");
+        }
       }
       clearDraft(productId, variantId);
       closeModal();
@@ -512,7 +603,9 @@ export function CustomizationModal({
     } finally {
       setSubmitLoading(false);
     }
-  }, [customizationId, priceResult, selectedMethodId, quantity, saveDraftAndPrice, config, productId, variantId, closeModal]);
+  // priceResult is intentionally read outside deps (optimization check, not a reactive dependency)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customizationId, selectedMethodId, totalQuantity, quantities, saveDraftAndPrice, config, productId, variantId, closeModal]);
 
   // Early returns after all hooks — this is the required pattern.
   if (configLoading) {
@@ -551,7 +644,7 @@ export function CustomizationModal({
           {STEP_ORDER.map((stepKey, i) => {
             const StepIcon = stepKey === "size" && allSingleStep ? IconEye : STEP_ICONS[stepKey];
             const label = stepKey === "size"
-              ? (allSingleStep ? "Preview" : "Logo size")
+              ? (allSingleStep ? t.size.preview : t.size.logoSize)
               : t.steps[stepKey];
             return (
               <button
@@ -589,6 +682,7 @@ export function CustomizationModal({
             config={config}
             placementSelections={placementSelections}
             logo={logo}
+            showTabs
           />
         </div>
 
@@ -612,11 +706,13 @@ export function CustomizationModal({
                 placementSelections={placementSelections}
                 onPlacementSelectionsChange={setPlacementSelections}
                 onContinue={() => handleNext()}
+                selectedMethodId={selectedMethodId}
                 t={t}
               />
             )}
             {step === "size" && (
               <SizeStep
+                ref={sizeStepRef}
                 config={config}
                 placementSelections={placementSelections}
                 onPlacementSelectionsChange={setPlacementSelections}
@@ -631,8 +727,8 @@ export function CustomizationModal({
                 selectedMethodId={selectedMethodId!}
                 placementSelections={placementSelections}
                 logo={logo}
-                quantity={quantity}
-                onQuantityChange={setQuantity}
+                quantities={quantities}
+                onQuantitiesChange={setQuantities}
                 customizationId={customizationId}
                 priceResult={priceResult}
                 prepareResult={prepareResult}

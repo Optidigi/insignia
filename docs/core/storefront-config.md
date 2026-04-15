@@ -42,7 +42,8 @@ A variant has a selected color; for MVP the merchant provides manual per-color a
 `ConfiguredView`
 
 - `id` (string): internal view ID.
-- `perspective` (`front` | `back` | `left` | `right` | `side`): display ordering key.
+- `name` (string | null): merchant-defined display name for the view (optional).
+- `perspective` (`front` | `back` | `left` | `right` | `side` | `custom`): display ordering key. Use `custom` for merchant-defined views that don't map to a standard perspective.
 - `imageUrl` (URL | null): preview image for this variant/perspective.
 - `isMissingImage` (boolean): true if `imageUrl` is null.
 
@@ -87,7 +88,24 @@ Missing-data rules:
 - If a placement has `geometryByViewId[viewId] = null`, the modal MUST treat preview geometry as missing for that view.
 - If all selected placements for the current view have null geometry, the size tab SHOULD be slider-only.
 
+### Variants
+
+The config response includes the available Shopify variants filtered to those matching the selected non-size options (e.g. same color).
+
+- `variants` (array of `ProductVariantOption`)
+
+`ProductVariantOption`
+
+- `id` (string): Shopify variant GID.
+- `title` (string): variant display title.
+- `sizeLabel` (string): resolved size label (extracted from the size-typed selected option, across 12 languages with value-based fallback).
+- `priceCents` (integer): variant price in the smallest currency unit.
+- `available` (boolean): true if the variant is in stock and purchasable.
+
+Note: `selectedOptions` (the raw Shopify option array) is used server-side for size detection and non-size filtering but is **stripped before the client response** — it is not present in `ProductVariantOption` as returned to the storefront.
+
 ### Notes
 
 - This contract intentionally uses percent geometry; the renderer converts percent → pixels at runtime.
 - This contract intentionally does not include tint/mask pipeline fields (feature deferred).
+- Variant list is capped at 250 per Shopify API limit; server-side filtering by non-size options reduces this further to only the relevant color variants.

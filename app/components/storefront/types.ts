@@ -27,7 +27,8 @@ export type Placement = {
 
 export type ConfiguredView = {
   id: string;
-  perspective: "front" | "back" | "left" | "right" | "side";
+  name: string | null;
+  perspective: "front" | "back" | "left" | "right" | "side" | "custom";
   imageUrl: string | null;
   isMissingImage: boolean;
 };
@@ -43,6 +44,15 @@ export type DecorationMethodRef = {
     maxColors: number | null;
     minDpi: number | null;
   } | null;
+};
+
+export type ProductVariantOption = {
+  id: string;       // Shopify GID (gid://shopify/ProductVariant/...)
+  title: string;    // e.g. "Small", "Medium / Blue"
+  sizeLabel: string; // Extracted size option value, e.g. "S", "M", "L"
+  priceCents: number;
+  available: boolean;
+  selectedOptions: Array<{ name: string; value: string }>;
 };
 
 export type StorefrontConfig = {
@@ -61,6 +71,7 @@ export type StorefrontConfig = {
   views: ConfiguredView[];
   methods: DecorationMethodRef[];
   placements: Placement[];
+  variants: ProductVariantOption[];
 };
 
 export type PlacementSelection = {

@@ -10,6 +10,35 @@
 
 ---
 
+## 0.6.0 — 2026-04-16
+
+Storefront modal v2 redesign + B2B per-size ordering.
+
+### Architecture
+- **StorefrontConfig variants**: Config response now includes `variants: ProductVariantOption[]` (id, title, sizeLabel, priceCents, available). `selectedOptions` is stripped before client response.
+- **ConfiguredView.name**: Views now carry an optional `name` field and support `"custom"` as a perspective value.
+- **Multi-language size detection**: Size option resolved across 12 languages plus value-based fallback.
+- **Server-side variant filtering**: Variants filtered by non-size options (color match) before returning to client.
+- **Variant query limit**: Increased to 250.
+- **Multi-variant /prepare**: One /prepare call per size variant with qty > 0; batch /cart/add.js for multiple items; per-slot cart-confirm.
+
+### Changed
+- **Step 1 (Upload)**: Or-divider between upload zone and "logo later" card (empty state only). Method cards redesigned: price with "per placement" sub-label, circle-check/radio indicator. Mobile helper text below logo-later card. `IconCloudUpload` replaces `IconUpload` in upload zone.
+- **Step 2 (Placement)**: Method badge with sparkles icon showing selected method name. Zero-cost selected placements show "Included" (green) instead of "+$0.00".
+- **Step 3 (Size)**: Complete rewrite with 4 conditional states:
+  - State A (slider): 1 position, 3+ sizes — range slider with tick marks, pointer drag + keyboard.
+  - State B (cards): 1 position, 2 sizes — radio cards with name, dimensions, and price.
+  - State C (multi): 2+ positions — position tabs (done/active/pending) + slider/cards per position.
+  - State D (preview): all positions ≤1 size — reassurance card, step pill shows "Preview" with eye icon.
+- **Step 4 (Review)**: Artwork section with amber "Upload after purchase" badge when `logo.type === "later"`. B2B per-size quantity steppers (one row per Shopify variant size). Unavailable variants shown as disabled with "Sold out" label. Gradient total bar (#1E3A8A → #2563EB) with breakdown text. "Add to Cart — $price" green button with cart icon. Back rendered as text link.
+- **Preview sheet**: Semi-transparent navigation circles inside canvas area. Swipe-to-dismiss on drag handle (150px threshold).
+- **Admin**: Add/delete size tiers use `useFetcher` (no page refresh).
+
+### Added
+- ~20 new i18n keys across 8 locales.
+
+---
+
 ## 0.5.0 — 2026-04-15
 
 UI polish + per-view placements architecture change.

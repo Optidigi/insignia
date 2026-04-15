@@ -816,9 +816,8 @@ export default function ViewDetailPage() {
 
     if ("success" in data && data.success === true) {
       const intent = data.intent as string | undefined;
-      if (intent === "delete-step") {
-        window.shopify?.toast?.show("Size tier deleted");
-      } else if (intent === "clone-layout") {
+      // add-step / delete-step are handled by ZonePricingPanel's stepFetcher
+      if (intent === "clone-layout") {
         window.shopify?.toast?.show("Layout cloned successfully");
       } else if (intent === "save-calibration") {
         window.shopify?.toast?.show("View calibrated");
@@ -826,8 +825,6 @@ export default function ViewDetailPage() {
         window.shopify?.toast?.show("Print area added");
       } else if (intent === "delete-placement") {
         window.shopify?.toast?.show("Print area deleted");
-      } else if (intent === "add-step") {
-        window.shopify?.toast?.show("Size tier added");
       } else if (intent === "apply-to-all") {
         window.shopify?.toast?.show("Applied to all variants");
       }

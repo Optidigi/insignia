@@ -9,13 +9,14 @@ import { useEffect } from "react";
 import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { TranslationStrings } from "./i18n";
 import { formatCurrency } from "./currency";
-import { IconCheck } from "./icons";
+import { IconCheck, IconSparkles } from "./icons";
 
 type PlacementStepProps = {
   config: StorefrontConfig;
   placementSelections: PlacementSelections;
   onPlacementSelectionsChange: (s: PlacementSelections) => void;
   onContinue: () => void;
+  selectedMethodId: string | null;
   t: TranslationStrings;
 };
 
@@ -23,6 +24,7 @@ export function PlacementStep({
   config,
   placementSelections,
   onPlacementSelectionsChange,
+  selectedMethodId,
   t,
 }: PlacementStepProps) {
   const fmt = (cents: number) => formatCurrency(cents, config.currency);
@@ -60,13 +62,21 @@ export function PlacementStep({
         <p className="insignia-step-heading-sub">{t.placement.subtitle}</p>
       </div>
 
+      {/* Method badge */}
+      {selectedMethodId && (
+        <div className="insignia-method-badge">
+          <IconSparkles size={14} />
+          <span>{config.methods.find((m) => m.id === selectedMethodId)?.name ?? ""}</span>
+        </div>
+      )}
+
       <p className="insignia-section-label">{t.placement.sectionLabel}</p>
       <div className="insignia-placement-grid">
         {config.placements.map((p) => {
           const selected = placementSelections[p.id] !== undefined;
           const priceText =
             selected && p.basePriceAdjustmentCents === 0
-              ? "Included"
+              ? t.placement.included
               : `+${fmt(p.basePriceAdjustmentCents)}`;
           return (
             <button
@@ -83,7 +93,14 @@ export function PlacementStep({
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div className="name">{p.name}</div>
                 {(!p.hidePriceWhenZero || p.basePriceAdjustmentCents > 0 || selected) && (
-                  <div className="price">{priceText}</div>
+                  <div
+                    className="price"
+                    data-included={
+                      selected && p.basePriceAdjustmentCents === 0 ? "true" : undefined
+                    }
+                  >
+                    {priceText}
+                  </div>
                 )}
               </div>
             </button>

@@ -29,7 +29,7 @@ import {
   DragHandleIcon,
   CursorIcon,
 } from "@shopify/polaris-icons";
-import { useSubmit } from "react-router";
+import { useFetcher, useRevalidator } from "react-router";
 import type { Placement } from "../lib/admin-types";
 
 // ============================================================================
@@ -159,7 +159,23 @@ export function ZonePricingPanel({
   onSave,
   onDeletePlacement,
 }: Props) {
-  const submit = useSubmit();
+  const stepFetcher = useFetcher();
+  const revalidator = useRevalidator();
+
+  // Show toast + revalidate when add-step / delete-step fetcher completes
+  useEffect(() => {
+    const data = stepFetcher.data as Record<string, unknown> | undefined;
+    if (!data || stepFetcher.state !== "idle") return;
+    if (data.success) {
+      const intent = data.intent as string | undefined;
+      if (intent === "add-step") window.shopify?.toast?.show("Size tier added");
+      else if (intent === "delete-step") window.shopify?.toast?.show("Size tier deleted");
+      revalidator.revalidate();
+    } else if (data.error) {
+      const msg = typeof data.error === "string" ? data.error : "An error occurred";
+      window.shopify?.toast?.show(msg, { isError: true });
+    }
+  }, [stepFetcher.data, stepFetcher.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Local edit state ─────────────────────────────────────────────────────
   // These track in-progress text/number edits that haven't been saved yet.
@@ -509,7 +525,7 @@ export function ZonePricingPanel({
                           const fd = new FormData();
                           fd.set("intent", "add-step");
                           fd.set("placementId", p.id);
-                          submit(fd, { method: "post" });
+                          stepFetcher.submit(fd, { method: "post" });
                         }}
                         style={{
                           background: "none",
@@ -659,7 +675,7 @@ export function ZonePricingPanel({
                               const fd = new FormData();
                               fd.set("intent", "delete-step");
                               fd.set("stepId", step.id);
-                              submit(fd, { method: "post" });
+                              stepFetcher.submit(fd, { method: "post" });
                             }}
                           />
                         </div>

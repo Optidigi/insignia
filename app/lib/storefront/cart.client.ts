@@ -87,6 +87,47 @@ export async function addCustomizedToCart(
   return getCart();
 }
 
+export type CartItemPair = {
+  baseVariantId: string | number;
+  feeVariantId: string | number;
+  quantity: number;
+  properties: Record<string, string>;
+};
+
+/**
+ * Add multiple base+fee variant pairs to the cart in a single request.
+ * Used for B2B per-size quantity ordering where each size is a separate cart line.
+ */
+export async function addMultipleCustomizedToCart(pairs: CartItemPair[]): Promise<Cart> {
+  const items: Array<{ id: number; quantity: number; properties: Record<string, string> }> = [];
+
+  for (const { baseVariantId, feeVariantId, quantity, properties } of pairs) {
+    const baseId =
+      typeof baseVariantId === "string"
+        ? baseVariantId.replace("gid://shopify/ProductVariant/", "")
+        : baseVariantId;
+    const feeId =
+      typeof feeVariantId === "string"
+        ? feeVariantId.replace("gid://shopify/ProductVariant/", "")
+        : feeVariantId;
+
+    items.push({ id: Number(baseId), quantity, properties });
+    items.push({ id: Number(feeId), quantity, properties });
+  }
+
+  const res = await fetch(`${getCartRoot()}cart/add.js`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.description || "Failed to add to cart");
+  }
+  await res.json();
+  return getCart();
+}
+
 export async function changeCartLine(
   key: string,
   quantity: number,

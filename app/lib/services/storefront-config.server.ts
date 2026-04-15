@@ -9,6 +9,7 @@ import db from "../../db.server";
 import { AppError, ErrorCodes } from "../errors.server";
 import { getMerchantSettings } from "./settings.server";
 import { getPresignedGetUrl } from "../storage.server";
+import type { ProductVariantOption } from "../../components/storefront/types";
 
 // Response types per storefront-config.md
 export type PlacementGeometry = {
@@ -69,6 +70,7 @@ export type StorefrontConfig = {
   views: ConfiguredView[];
   methods: DecorationMethodRef[];
   placements: Placement[];
+  variants: ProductVariantOption[];
 };
 
 const SIGNED_URL_EXPIRES_SEC = 600;
@@ -136,9 +138,10 @@ export async function getStorefrontConfig(
     );
   }
 
-  // Fetch variant price and product title from Shopify Admin API
+  // Fetch variant price, product title, and sibling variants from Shopify Admin API
   let baseProductPriceCents = 0;
   let productTitle = "Product";
+  let variants: ProductVariantOption[] = [];
   if (runGraphql) {
     try {
       const variantRes = await runGraphql(
@@ -148,6 +151,18 @@ export async function getStorefrontConfig(
             price
             product {
               title
+              variants(first: 250) {
+                nodes {
+                  id
+                  title
+                  price
+                  availableForSale
+                  selectedOptions {
+                    name
+                    value
+                  }
+                }
+              }
             }
           }
         }`,
@@ -157,7 +172,18 @@ export async function getStorefrontConfig(
         data?: {
           productVariant?: {
             price: string;
-            product?: { title: string };
+            product?: {
+              title: string;
+              variants?: {
+                nodes: Array<{
+                  id: string;
+                  title: string;
+                  price: string;
+                  availableForSale: boolean;
+                  selectedOptions: Array<{ name: string; value: string }>;
+                }>;
+              };
+            };
           };
         };
       };
@@ -166,6 +192,67 @@ export async function getStorefrontConfig(
         baseProductPriceCents = Math.round(parseFloat(variant.price) * 100);
         productTitle = variant.product?.title ?? "Product";
       }
+      const variantNodes = variantData?.data?.productVariant?.product?.variants?.nodes ?? [];
+
+      // Detect which option is the "size" option using multi-strategy heuristic:
+      // 1. Match common size option names across languages
+      // 2. Fall back to checking if option values look like sizes (S, M, L, XL, etc.)
+      const SIZE_NAME_RE = /^(size|sizes|maat|größe|groesse|taille|taglia|tamanho|rozmiar|storlek|koko|サイズ)$/i;
+      const SIZE_VALUE_RE = /^(xs|s|m|l|xl|xxl|xxxl|2xl|3xl|4xl|5xl|small|medium|large|x-?large|xx-?large)$/i;
+
+      let sizeOptionName: string | null = null;
+      if (variantNodes.length > 0) {
+        const firstOptions = variantNodes[0].selectedOptions ?? [];
+        // Strategy 1: match by name
+        sizeOptionName = firstOptions.find((o) => SIZE_NAME_RE.test(o.name))?.name ?? null;
+        // Strategy 2: match by values that look like sizes
+        if (!sizeOptionName) {
+          for (const opt of firstOptions) {
+            const allValues = variantNodes.map((v) =>
+              v.selectedOptions?.find((o) => o.name === opt.name)?.value ?? ""
+            );
+            if (allValues.some((val) => SIZE_VALUE_RE.test(val))) {
+              sizeOptionName = opt.name;
+              break;
+            }
+          }
+        }
+      }
+
+      // Map all variants
+      const allMappedVariants = variantNodes.map((v) => {
+        const sizeOption = sizeOptionName
+          ? v.selectedOptions?.find((o) => o.name === sizeOptionName)
+          : null;
+        return {
+          id: v.id,
+          title: v.title,
+          sizeLabel: sizeOption?.value ?? v.title,
+          priceCents: Math.round(parseFloat(v.price) * 100),
+          available: v.availableForSale ?? true,
+          selectedOptions: v.selectedOptions ?? [],
+        };
+      });
+
+      // Filter to only variants matching the selected variant's non-size options
+      const selectedVariant = allMappedVariants.find((v) => v.id === variantId);
+      if (selectedVariant && sizeOptionName) {
+        const nonSizeOpts = selectedVariant.selectedOptions.filter(
+          (o) => o.name !== sizeOptionName
+        );
+        variants = allMappedVariants.filter((v) =>
+          nonSizeOpts.every((nso) =>
+            v.selectedOptions.some((vo) => vo.name === nso.name && vo.value === nso.value)
+          )
+        );
+      } else {
+        // No size option detected or no selected variant — return all
+        variants = allMappedVariants;
+      }
+
+      // Strip selectedOptions from client response — only needed for server-side filtering
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      variants = variants.map(({ selectedOptions, ...rest }) => ({ ...rest, selectedOptions: [] }));
     } catch {
       // Non-fatal: fall back to defaults
     }
@@ -201,6 +288,7 @@ export async function getStorefrontConfig(
       }
       return {
         id: view.id,
+        name: view.name ?? null,
         perspective: view.perspective as ConfiguredView["perspective"],
         imageUrl,
         isMissingImage: imageUrl == null,
@@ -315,5 +403,6 @@ export async function getStorefrontConfig(
     views,
     methods,
     placements,
+    variants,
   };
 }

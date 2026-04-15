@@ -18,10 +18,6 @@ Rules:
 - See: `docs/superpowers/specs/2026-04-09-v2.1-view-editor-brainstorm.md`
 - Design file: `admin-dashboard-v2.1-final.pen`
 
-### Logo sizing UX improvement
-- **Partially resolved**: Storefront range slider replaced with clickable size cards (name, scale, price delta, "Recommended" badge). Placements with 0 steps get a synthetic "Standard" single-size default.
-- **Remaining**: Fixed-size-per-zone mode not yet implemented. Stepped tiers with cards is the current approach.
-
 ### Pretty storefront URLs
 - **Resolved (partial)**: Path-based URLs (`/customize/:productId` and splat routes) both failed due to `AppProxyProvider` `<base>` tag incompatibility. Settled on short query params (`/modal?p=X&v=Y`) which are shorter than the original format.
 - True path-based URLs would require dropping `AppProxyProvider` entirely — a major architectural change for cosmetic gain. Accepted as-is.
@@ -44,3 +40,4 @@ Rules:
 - ~~Webhook idempotency race condition~~ — Fixed in Phase 3: atomic upsert replaces deleteMany + create. Closed 2026-04-14.
 - ~~Upload content-type bypass~~ — Fixed in Phase 3: require valid MIME or infer from extension. Closed 2026-04-14.
 - ~~Missing database indexes~~ — Fixed in Phase 3: GIN on linkedProductIds, B-tree on draft fields. Closed 2026-04-14.
+- ~~Logo sizing UX improvement~~ — Storefront size step rewritten with 4 conditional states (slider for 3+, cards for 2, multi-position tabs, preview-only). Stepped tiers with cards approach is replaced by conditional UI based on size count and position count. Closed 2026-04-16.
