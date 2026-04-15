@@ -612,6 +612,7 @@ export function CustomizationModal({
                 placementSelections={placementSelections}
                 onPlacementSelectionsChange={setPlacementSelections}
                 onContinue={() => handleNext()}
+                selectedMethodId={selectedMethodId}
                 t={t}
               />
             )}
