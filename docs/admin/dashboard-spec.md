@@ -28,7 +28,7 @@ The **Insignia Admin Dashboard** is a Shopify Embedded App designed to manage pr
 
 **Critical Goal**: This frontend is the UI layer; a backend is required for persistence, Shopify API communication, and any secure operations.
 
-**Current Status**: The core tabs (`Orders`, `Products`, `Settings`) are responsive and follow Shopify Admin visual patterns; the preview environment uses a mock API layer.
+**Current Status**: The core tabs (`Home`, `Decoration methods`, `Products`, `Orders`, `Settings`) are responsive and follow Shopify Admin visual patterns.
 
 ---
 
@@ -126,9 +126,8 @@ What the backend must provide (implementation-agnostic):
 
 ## BACKEND INTEGRATION CHECKLIST
 
-- Replace mock API responses with real backend integration for configs, orders, and assets.
-- Ensure all admin endpoints are protected by Shopify session token verification.
-- Provide a theme-editor link for merchants to enable the storefront App Embed Block (see storefront docs).
+- All admin endpoints are protected by Shopify session token verification.
+- Theme-editor link provided for merchants to enable the storefront App Embed Block (opens in new tab).
 
 ---
 

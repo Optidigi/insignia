@@ -63,10 +63,6 @@
  - [`docs/notes/open-work.md`](notes/open-work.md)
  - [`docs/notes/docs-audit.md`](notes/docs-audit.md)
  
-**Verification**
-- [`docs/notes/verification/TRACEABILITY_MATRIX.md`](notes/verification/TRACEABILITY_MATRIX.md)
-- [`docs/notes/verification/VERIFICATION_REPORT.md`](notes/verification/VERIFICATION_REPORT.md)
-
  **Design intent (UI only)**
  - [`docs/notes/design-intent/dashboard-ui.md`](notes/design-intent/dashboard-ui.md)
  - [`docs/notes/design-intent/storefront-modal.md`](notes/design-intent/storefront-modal.md)

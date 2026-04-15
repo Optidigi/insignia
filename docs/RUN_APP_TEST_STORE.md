@@ -15,7 +15,7 @@ Use this when you want to see the app live in your test store.
 ### 1. Open the project and install dependencies
 
 ```bash
-cd /Users/pc/Development/GitHub/Insignia-shopify-app
+cd <your-project-directory>
 npm install
 ```
 
@@ -36,7 +36,7 @@ npx prisma generate
 npx prisma migrate deploy
 ```
 
-(Uses SQLite by default; `dev` will use the same DB.)
+(Uses PostgreSQL — ensure `DATABASE_URL` is set in `.env`.)
 
 ### 4. Start the app (tunnel + dev store)
 
