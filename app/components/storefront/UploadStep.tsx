@@ -7,7 +7,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StorefrontConfig } from "./types";
 import type { LogoState } from "./CustomizationModal";
-import { IconCheck, IconChevronRight, IconScissors, IconUpload } from "./icons";
+import { IconCheck, IconChevronRight, IconCloudUpload, IconCircleCheck } from "./icons";
 import type { TranslationStrings } from "./i18n";
 import { proxyUrl } from "../../lib/storefront/proxy-url.client";
 import { formatCurrency } from "./currency";
@@ -216,13 +216,13 @@ export function UploadStep({
         >
           {uploading ? (
             <>
-              <IconUpload size={32} style={{ color: "#9CA3AF" }} />
+              <IconCloudUpload size={32} style={{ color: "#9CA3AF" }} />
               <p>{t.common.loading}</p>
               <p className="hint">{t.upload.formats}</p>
             </>
           ) : (
             <>
-              <IconUpload size={32} style={{ color: "#9CA3AF" }} />
+              <IconCloudUpload size={32} style={{ color: "#9CA3AF" }} />
               <p>{t.upload.tapUpload}</p>
               <p className="hint">{t.upload.formats}</p>
             </>
@@ -259,26 +259,32 @@ export function UploadStep({
           onClick={onChooseFile}
           disabled={uploading}
         >
-          <IconUpload size={14} style={{ marginRight: 6 }} />
+          <IconCloudUpload size={14} style={{ marginRight: 6 }} />
           Replace artwork
         </button>
       )}
 
-      {/* Logo Later card — shown when no logo is selected yet */}
-      {!hasLogo && (
-        <button
-          type="button"
-          className="insignia-method-card"
-          data-selected={undefined}
-          onClick={onLogoLater}
-          style={{ marginTop: 12 }}
-        >
-          <div className="insignia-method-info">
-            <div className="insignia-method-name">{t.upload.laterTitle}</div>
-            <div className="insignia-method-price">{t.upload.laterCard}</div>
+      {/* Or-divider + Logo later — only shown when no logo */}
+      {logo.type === "none" && (
+        <>
+          <div className="insignia-or-divider">
+            <div className="insignia-or-divider-line" />
+            <span className="insignia-or-divider-text">{t.upload.orDivider}</span>
+            <div className="insignia-or-divider-line" />
           </div>
-          <IconChevronRight size={16} style={{ color: "#9CA3AF" }} />
-        </button>
+          <button
+            type="button"
+            className="insignia-logo-later-card"
+            onClick={onLogoLater}
+          >
+            <div className="insignia-logo-later-info">
+              <div className="insignia-logo-later-title">{t.upload.laterTitle}</div>
+              <div className="insignia-logo-later-subtitle">{t.upload.laterSubtitle}</div>
+            </div>
+            <IconChevronRight size={18} style={{ color: "#9CA3AF", flexShrink: 0 }} />
+          </button>
+          <p className="insignia-upload-helper-text">{t.upload.laterHelperMobile}</p>
+        </>
       )}
 
       {error && (
@@ -316,37 +322,27 @@ export function UploadStep({
               }
             }}
           >
-            <div
-              className="insignia-method-icon-wrap"
-              data-selected={isSelected ? "true" : undefined}
-            >
-              <IconScissors size={18} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div
-                style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}
-              >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 600, fontSize: 14, color: "#111827" }}>
                 {displayName}
               </div>
-              {displayDescription ? (
+              {displayDescription && (
                 <div style={{ fontSize: 12, color: "#6B7280", marginTop: 2 }}>
                   {displayDescription}
                 </div>
-              ) : (
-                <div style={{ fontSize: 12, color: "#9CA3AF" }}>
-                  {method.basePriceCents > 0
-                    ? `+${formatCurrency(method.basePriceCents, config.currency)}`
-                    : "Included"}
-                </div>
               )}
             </div>
+            <div className="insignia-method-price-area">
+              <span className="insignia-method-price-value">
+                +{formatCurrency(method.basePriceCents, config.currency)}
+              </span>
+              <span className="insignia-method-price-label">{t.upload.perPlacement}</span>
+            </div>
             <div
-              className="insignia-method-radio"
+              className="insignia-method-indicator"
               data-selected={isSelected ? "true" : undefined}
             >
-              {isSelected && (
-                <IconCheck size={12} style={{ color: "white" }} />
-              )}
+              {isSelected && <IconCircleCheck size={18} style={{ color: "white" }} />}
             </div>
           </button>
         );
