@@ -6,12 +6,18 @@
  * - preview: all ≤1 size (reassurance card, auto-skips)
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
 import type { StorefrontConfig, PlacementSelections, PlacementStep as PlacementStepType } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
 import { formatCurrency } from "./currency";
+import { SizePreview } from "./SizePreview";
 import { IconCheck, IconCircleCheck, IconMapPin } from "./icons";
+
+export type SizeStepHandle = {
+  /** Advance to next position. Returns true if advanced, false if all positions done. */
+  tryAdvance: () => boolean;
+};
 
 type SizeState = "slider" | "cards" | "multi" | "preview";
 
@@ -131,14 +137,17 @@ type SizeStepProps = {
   t: TranslationStrings;
 };
 
-export function SizeStep({
-  config,
-  placementSelections,
-  onPlacementSelectionsChange,
-  logo: _logo, // eslint-disable-line @typescript-eslint/no-unused-vars
-  onContinue,
-  t,
-}: SizeStepProps) {
+export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeStep(
+  {
+    config,
+    placementSelections,
+    onPlacementSelectionsChange,
+    logo,
+    onContinue,
+    t,
+  },
+  ref
+) {
   const selectedPlacementIds = config.placements.filter(
     (p) => placementSelections[p.id] !== undefined
   );
@@ -146,6 +155,17 @@ export function SizeStep({
   const currentPlacement = selectedPlacementIds[currentPlacementIndex];
 
   const sizeState = getSizeState(selectedPlacementIds);
+
+  // Expose tryAdvance so the parent can advance positions before going to next step
+  useImperativeHandle(ref, () => ({
+    tryAdvance() {
+      if (selectedPlacementIds.length > 1 && currentPlacementIndex < selectedPlacementIds.length - 1) {
+        setCurrentPlacementIndex((i) => i + 1);
+        return true; // advanced — stay on size step
+      }
+      return false; // all positions done — proceed to next step
+    },
+  }), [selectedPlacementIds.length, currentPlacementIndex]);
 
   // Auto-skip when ALL selected placements have ≤1 step
   useEffect(() => {
@@ -188,6 +208,16 @@ export function SizeStep({
       <h2 id="size-heading" className="visually-hidden">
         {t.size.sizeLabel}
       </h2>
+
+      {/* Mobile product preview — hidden on desktop (left panel shows it) */}
+      <div className="insignia-size-canvas">
+        <SizePreview
+          config={config}
+          placementSelections={placementSelections}
+          logo={logo}
+          highlightPlacementId={currentPlacement?.id}
+        />
+      </div>
 
       {/* Desktop step heading */}
       <div className="insignia-step-heading">
@@ -297,13 +327,67 @@ export function SizeStep({
             })}
           </div>
 
-          {currentPlacement.steps.length >= 2 && (
+          {currentPlacement.steps.length >= 3 && (
             <SizeSlider
               steps={currentPlacement.steps}
               activeIndex={stepIndex}
               onIndexChange={setStepIndex}
               currency={config.currency}
             />
+          )}
+
+          {currentPlacement.steps.length === 2 && (
+            <div
+              className="insignia-size-cards"
+              role="group"
+              aria-label={t.size.sizeLabel}
+              style={{ display: "flex", flexDirection: "column", gap: 12 }}
+            >
+              {currentPlacement.steps.map((step, i) => {
+                const isSelected = i === stepIndex;
+                const priceText =
+                  step.priceAdjustmentCents === 0
+                    ? "No extra charge"
+                    : `+${formatCurrency(step.priceAdjustmentCents, config.currency)}`;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    className={`insignia-size-card${isSelected ? " insignia-size-card--selected" : ""}`}
+                    onClick={() => setStepIndex(i)}
+                    aria-pressed={isSelected}
+                    style={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      padding: "0 20px",
+                      minHeight: 72,
+                      background: isSelected ? "var(--insignia-primary-light)" : "white",
+                      border: `1px solid ${isSelected ? "var(--insignia-primary)" : "var(--insignia-border)"}`,
+                      borderRadius: "var(--insignia-radius)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                      <span style={{ fontSize: 15, fontWeight: 600, color: "var(--insignia-text)" }}>
+                        {step.label}
+                      </span>
+                      <span style={{ fontSize: 12, color: isSelected ? "var(--insignia-primary)" : "#6B7280" }}>
+                        {step.scaleFactor}x · {priceText}
+                      </span>
+                    </div>
+                    <div
+                      className="insignia-method-indicator"
+                      data-selected={isSelected ? "true" : undefined}
+                    >
+                      {isSelected && (
+                        <IconCheck size={12} style={{ color: "white" }} />
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           )}
 
           {currentPlacement.steps.length <= 1 && (
@@ -342,4 +426,4 @@ export function SizeStep({
       )}
     </section>
   );
-}
+});

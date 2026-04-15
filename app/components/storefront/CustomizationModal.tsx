@@ -10,6 +10,7 @@ import { WIZARD_STEPS } from "./types";
 import { UploadStep } from "./UploadStep";
 import { PlacementStep } from "./PlacementStep";
 import { SizeStep } from "./SizeStep";
+import type { SizeStepHandle } from "./SizeStep";
 import { ReviewStep } from "./ReviewStep";
 import { PreviewSheet } from "./PreviewSheet";
 import { addCustomizedToCart, addMultipleCustomizedToCart, buildInsigniaProperties } from "../../lib/storefront/cart.client";
@@ -149,6 +150,7 @@ export function CustomizationModal({
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [logoUrlTimestamp, setLogoUrlTimestamp] = useState(Date.now());
   const containerRef = useRef<HTMLDivElement>(null);
+  const sizeStepRef = useRef<SizeStepHandle>(null);
 
   const currentStepIndex = STEP_ORDER.indexOf(step);
 
@@ -214,25 +216,38 @@ export function CustomizationModal({
     fetchConfig();
   }, [fetchConfig]);
 
+  // Filter variants to only sizes matching the selected variant's non-size options (e.g. same color)
+  const sizeVariants = useMemo(() => {
+    if (!config || config.variants.length === 0) return [];
+    const currentGid = `gid://shopify/ProductVariant/${variantId}`;
+    const current = config.variants.find((v) => v.id === currentGid);
+    const nonSizeOpts = current?.selectedOptions.filter((o) => !/^size$/i.test(o.name)) ?? [];
+    return config.variants.filter((v) =>
+      nonSizeOpts.every((nso) =>
+        v.selectedOptions.some((vo) => vo.name === nso.name && vo.value === nso.value)
+      )
+    );
+  }, [config, variantId]);
+
   // Initialize per-size quantities when config first loads
   useEffect(() => {
-    if (config && config.variants.length > 0 && Object.keys(quantities).length === 0) {
+    if (config && sizeVariants.length > 0 && Object.keys(quantities).length === 0) {
       const init: Record<string, number> = {};
-      for (const v of config.variants) {
+      for (const v of sizeVariants) {
         init[v.id] = 0;
       }
       // Pre-select the current variant with qty 1
       const currentGid = `gid://shopify/ProductVariant/${variantId}`;
       if (init[currentGid] !== undefined) {
         init[currentGid] = 1;
-      } else if (config.variants.length > 0) {
-        init[config.variants[0].id] = 1;
+      } else if (sizeVariants.length > 0) {
+        init[sizeVariants[0].id] = 1;
       }
       setQuantities(init);
-    } else if (config && config.variants.length === 0 && Object.keys(quantities).length === 0) {
+    } else if (config && sizeVariants.length === 0 && Object.keys(quantities).length === 0) {
       setQuantities({ _default: 1 });
     }
-  }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [config, sizeVariants]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Restore draft from localStorage once config is available
   useEffect(() => {
@@ -288,9 +303,13 @@ export function CustomizationModal({
   }, [currentStepIndex, goToStep]);
 
   const handleNext = useCallback(() => {
+    // On size step with multiple positions: advance position first
+    if (step === "size" && sizeStepRef.current?.tryAdvance()) {
+      return; // stay on size step, position advanced
+    }
     const i = currentStepIndex;
     if (i < STEP_ORDER.length - 1) goToStep(STEP_ORDER[i + 1]);
-  }, [currentStepIndex, goToStep]);
+  }, [step, currentStepIndex, goToStep]);
 
   /** Close the modal: navigate back to the product page. */
   const closeModal = useCallback(() => {
@@ -500,12 +519,12 @@ export function CustomizationModal({
     setSubmitLoading(true);
     setSubmitError(null);
     try {
-      const isMultiVariant = config!.variants.length > 0;
+      const isMultiVariant = sizeVariants.length > 0;
 
       if (isMultiVariant) {
         // B2B per-size mode: call /prepare once per variant with qty > 0,
         // then batch all pairs into a single cart/add.js request.
-        const activeVariants = config!.variants.filter(
+        const activeVariants = sizeVariants.filter(
           (v) => (quantities[v.id] ?? 0) > 0
         );
         if (activeVariants.length === 0) return;
@@ -587,7 +606,7 @@ export function CustomizationModal({
     } finally {
       setSubmitLoading(false);
     }
-  }, [customizationId, priceResult, selectedMethodId, totalQuantity, quantities, saveDraftAndPrice, config, productId, variantId, closeModal]);
+  }, [customizationId, priceResult, selectedMethodId, totalQuantity, quantities, saveDraftAndPrice, config, sizeVariants, productId, variantId, closeModal]);
 
   // Early returns after all hooks — this is the required pattern.
   if (configLoading) {
@@ -664,6 +683,7 @@ export function CustomizationModal({
             config={config}
             placementSelections={placementSelections}
             logo={logo}
+            showTabs
           />
         </div>
 
@@ -693,6 +713,7 @@ export function CustomizationModal({
             )}
             {step === "size" && (
               <SizeStep
+                ref={sizeStepRef}
                 config={config}
                 placementSelections={placementSelections}
                 onPlacementSelectionsChange={setPlacementSelections}

@@ -51,6 +51,7 @@ export type ProductVariantOption = {
   sizeLabel: string; // Extracted size option value, e.g. "S", "M", "L"
   priceCents: number;
   available: boolean;
+  selectedOptions: Array<{ name: string; value: string }>;
 };
 
 export type StorefrontConfig = {

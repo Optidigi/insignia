@@ -89,6 +89,21 @@ export function ReviewStep({
       0
     );
 
+  // Filter variants to only show sizes matching the selected variant's non-size options (e.g. same color).
+  // The modal is opened with a specific variant (e.g. "Red / Medium"), so only show Red sizes.
+  const currentVariantGid = `gid://shopify/ProductVariant/${config.variantId}`;
+  const currentVariant = config.variants.find((v) => v.id === currentVariantGid);
+  const nonSizeOptions = currentVariant?.selectedOptions.filter(
+    (o) => !/^size$/i.test(o.name)
+  ) ?? [];
+
+  const sizeVariants = config.variants.filter((v) => {
+    // Keep only variants whose non-size options match the selected variant
+    return nonSizeOptions.every((nso) =>
+      v.selectedOptions.some((vo) => vo.name === nso.name && vo.value === nso.value)
+    );
+  });
+
   const totalQuantity = Object.values(quantities).reduce((a, b) => a + b, 0);
   const unitCents =
     priceResult?.unitPriceCents ?? baseProductPriceCents + totalFeeCents;
@@ -182,7 +197,7 @@ export function ReviewStep({
       </div>
 
       {/* B2B per-size quantities */}
-      {config.variants.length > 0 && (
+      {sizeVariants.length > 0 && (
         <div className="insignia-qty-section">
           <div className="insignia-qty-section-header">
             <span className="insignia-qty-section-title">
@@ -192,7 +207,7 @@ export function ReviewStep({
               {totalQuantity} {t.review.items}
             </span>
           </div>
-          {config.variants.map((variant) => {
+          {sizeVariants.map((variant) => {
             const qty = quantities[variant.id] ?? 0;
             return (
               <div key={variant.id} className="insignia-qty-row">

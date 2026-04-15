@@ -203,6 +203,7 @@ export async function getStorefrontConfig(
           sizeLabel: sizeOption?.value ?? v.title,
           priceCents: Math.round(parseFloat(v.price) * 100),
           available: v.availableForSale ?? true,
+          selectedOptions: v.selectedOptions ?? [],
         };
       });
     } catch {
