@@ -41,6 +41,13 @@ Behavior:
 
 - If “Logo later” is chosen, the order MUST be marked as `artworkStatus = PENDING_CUSTOMER` (or equivalent) so the merchant can see the missing artwork in the dashboard.
 
+UI details (v2):
+
+- An or-divider is rendered between the upload zone and the “logo later” card (empty state only; hidden once a file is uploaded).
+- Method cards show price with a “per placement” sub-label and a circle-check/radio indicator for the selected method.
+- Mobile helper text is shown below the logo-later card.
+- Upload zone uses `IconCloudUpload`.
+
 ### 2) Placement
 
 - Buyer selects one or more print locations (“placements”).
@@ -52,16 +59,22 @@ Pricing display:
 - If placement price is 0, the UI MUST NOT show a currency amount for that placement (treat as “free”).
 - If placement price is > 0, show the price for that placement.
 
+UI details (v2):
+
+- A method badge with a sparkles icon showing the selected method name is displayed above the placement list.
+- Zero-cost selected placements display “Included” in green instead of “+$0.00”.
+
 ### 3) Size (per placement)
 
 - The buyer sets a size level for each selected placement.
-- This tab uses a canvas preview (ConvaJS implementation) showing the logo positioned on a garment mockup.
+- This tab uses a canvas preview (Konva implementation) showing the logo positioned on a garment mockup.
 
-Size control:
+Size control — 4 conditional states (v2):
 
-- A stepped slider with N steps (merchant-defined).
-- The default/starting step is merchant-defined per placement.
-- Each step has a merchant-defined label (free text), e.g. “Small/Normal/Big” or “5×5 cm / 10×10 cm / 15×15 cm”.
+- **State A (slider)**: 1 position selected, 3 or more size steps — range slider with tick marks; supports pointer drag and keyboard.
+- **State B (cards)**: 1 position selected, exactly 2 size steps — radio cards showing name, dimensions, and price.
+- **State C (multi)**: 2 or more positions selected — position tabs with done/active/pending states; each tab renders slider (3+ steps) or cards (2 steps) for that position.
+- **State D (preview-only)**: all selected positions have ≤1 size step — reassurance card shown; step pill label changes to “Preview” with an eye icon.
 
 Pricing by size:
 
@@ -71,12 +84,7 @@ Pricing by size:
 Missing preview assets / missing placement geometry:
 
 - If a placement does not have preview geometry for the current view, the UI MUST still allow choosing the size step, but SHOULD hide the canvas preview for that placement.
-- If no preview images are available for the product (no usable view assets), the size tab SHOULD render “slider only” (no mockup preview) and the Preview tab SHOULD be hidden.
-
-Multi-placement sizing:
-
-- If multiple placements are selected, the buyer sizes them one-by-one via “Next placement”.
-- If multiple placements are visible on the same view, the preview SHOULD render all selected placements, but MUST clearly highlight the placement currently being edited.
+- If no preview images are available for the product (no usable view assets), the size tab SHOULD render without mockup preview and the Preview tab SHOULD be hidden.
 
 Logo overrides (future-friendly, but in-scope behavior):
 
@@ -98,6 +106,15 @@ Logo overrides (future-friendly, but in-scope behavior):
 Pricing rule:
 
 - The configured unit price (base garment + placement prices + step adjustments, if any) is multiplied by total quantity.
+
+UI details (v2):
+
+- Artwork section: if `logo.type === "later"`, an amber "Upload after purchase" badge is shown.
+- B2B quantity steppers: one row per Shopify variant size (`ProductVariantOption`). Unavailable variants render as disabled with a "Sold out" label.
+- Gradient total bar: background gradient #1E3A8A → #2563EB with breakdown text below the total.
+- Add to cart button: green, labeled "Add to Cart — $price", with a cart icon.
+- Back navigation: rendered as a text link (not a button).
+- Cart integration: one /prepare call per size variant with qty > 0; items are batched into a single /cart/add.js call; per-slot cart-confirm follows.
 
 ## Mockup views & color variants (MVP)
 

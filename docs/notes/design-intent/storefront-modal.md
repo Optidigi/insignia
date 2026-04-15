@@ -8,7 +8,9 @@
  do_not_infer_api_contracts: true
  last_reviewed: 2026-02-03
  ---
- 
+
+> **Note (2026-04-16):** This document predates the v0.6.0 storefront modal v2 redesign. The canonical storefront spec is `docs/storefront/modal-spec.md`. Key changes: 4-state conditional size step, B2B per-size quantities, method badge, redesigned method cards, gradient total bar, swipe-to-dismiss preview sheet.
+
  # Insignia Storefront Modal Design Intent
  
  ## 1) Entry points
