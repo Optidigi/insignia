@@ -208,18 +208,35 @@ export async function getStorefrontConfig(
     })
   );
 
+  // Build a lookup: placementId → viewId (the view that owns this placement)
+  const placementOwnerViewId = new Map<string, string>();
+  for (const view of config.views) {
+    for (const p of view.placements) {
+      placementOwnerViewId.set(p.id, view.id);
+    }
+  }
+
   const geometryByViewIdForPlacement = (placementId: string): Record<string, PlacementGeometry | null> => {
     const out: Record<string, PlacementGeometry | null> = {};
+    const ownerViewId = placementOwnerViewId.get(placementId);
+
     for (const view of config.views) {
+      // Only look up geometry on the view that owns this placement.
+      // Before per-view placements, geometry JSON on other views may
+      // contain stale entries for placements that were migrated away.
+      if (ownerViewId && view.id !== ownerViewId) {
+        out[view.id] = null;
+        continue;
+      }
+
       const vc = viewConfigByViewId.get(view.id);
       const variantGeom = (vc?.placementGeometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number } | null> | null) ?? {};
       const viewGeom = (view.placementGeometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number } | null> | null) ?? {};
 
-      // Prefer view-level geometry when sharedZones is ON; otherwise prefer per-variant
       const isShared = view.sharedZones ?? true;
       const effectiveGeom = isShared
-        ? { ...variantGeom, ...viewGeom }  // view-level wins over variant-level
-        : { ...viewGeom, ...variantGeom }; // variant-level wins over view-level
+        ? { ...variantGeom, ...viewGeom }
+        : { ...viewGeom, ...variantGeom };
 
       const g = effectiveGeom[placementId];
       if (g && typeof g === "object" && "centerXPercent" in g) {
