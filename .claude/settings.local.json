@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "pencil": {
+      "command": "C:\\Users\\Shimmy\\.vscode\\extensions\\highagency.pencildev-0.6.42\\out\\mcp-server-windows-x64.exe",
+      "args": ["--app", "visual_studio_code"],
+      "env": {},
+      "type": "stdio"
+    }
+  }
+}
