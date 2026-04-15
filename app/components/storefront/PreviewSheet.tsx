@@ -16,6 +16,8 @@ type PreviewSheetProps = {
 
 export function PreviewSheet({ open, onClose, config, placementSelections, logo, t }: PreviewSheetProps) {
   const [currentViewIndex, setCurrentViewIndex] = useState(0);
+  const [dragY, setDragY] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Derive logo URL from logo state (same logic as SizePreview)
   const logoUrl = useMemo(() => {
@@ -80,6 +82,27 @@ export function PreviewSheet({ open, onClose, config, placementSelections, logo,
     setCurrentViewIndex(i => Math.min(previewableViews.length - 1, i + 1));
   }, [previewableViews.length]);
 
+  const handleDragStart = (e: React.PointerEvent) => {
+    setIsDragging(true);
+    const startY = e.clientY;
+    const onMove = (moveEvent: PointerEvent) => {
+      const delta = Math.max(0, moveEvent.clientY - startY);
+      setDragY(delta);
+    };
+    const onUp = (upEvent: PointerEvent) => {
+      document.removeEventListener("pointermove", onMove);
+      document.removeEventListener("pointerup", onUp);
+      const delta = upEvent.clientY - startY;
+      setIsDragging(false);
+      if (delta > 150) {
+        onClose();
+      }
+      setDragY(0);
+    };
+    document.addEventListener("pointermove", onMove);
+    document.addEventListener("pointerup", onUp);
+  };
+
   if (!open) return null;
 
   return (
@@ -93,9 +116,14 @@ export function PreviewSheet({ open, onClose, config, placementSelections, logo,
         aria-label={t.previewSheet.title}
         onClick={e => e.stopPropagation()}
         onKeyDown={e => e.stopPropagation()}
+        style={isDragging ? { transform: `translateY(${dragY}px)`, transition: "none" } : undefined}
       >
         {/* Drag handle */}
-        <div className="insignia-preview-sheet-handle-wrap">
+        <div
+          className="insignia-preview-sheet-handle-wrap"
+          onPointerDown={handleDragStart}
+          style={{ touchAction: "none", cursor: "grab" }}
+        >
           <div className="insignia-preview-sheet-handle" />
         </div>
 
@@ -115,7 +143,7 @@ export function PreviewSheet({ open, onClose, config, placementSelections, logo,
         </div>
 
         {/* Preview area */}
-        <div className="insignia-preview-sheet-area">
+        <div className="insignia-preview-sheet-area" style={{ position: "relative" }}>
           {currentView ? (
             <>
               <NativeCanvas
@@ -123,14 +151,15 @@ export function PreviewSheet({ open, onClose, config, placementSelections, logo,
                 logoUrl={logoUrl}
                 placements={canvasPlacements}
               />
+
               {previewableViews.length > 1 && (
                 <>
                   <button
                     type="button"
                     className="insignia-preview-sheet-nav"
                     data-dir="prev"
-                    onClick={goPrev}
                     disabled={currentViewIndex === 0}
+                    onClick={goPrev}
                     aria-label="Previous view"
                   >
                     <IconChevronLeft size={18} />
@@ -139,26 +168,30 @@ export function PreviewSheet({ open, onClose, config, placementSelections, logo,
                     type="button"
                     className="insignia-preview-sheet-nav"
                     data-dir="next"
-                    onClick={goNext}
                     disabled={currentViewIndex === previewableViews.length - 1}
+                    onClick={goNext}
                     aria-label="Next view"
                   >
                     <IconChevronRight size={18} />
                   </button>
                 </>
               )}
-              <div className="insignia-preview-sheet-dots">
-                {previewableViews.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    className="insignia-preview-sheet-dot"
-                    data-active={i === currentViewIndex ? "true" : undefined}
-                    onClick={() => setCurrentViewIndex(i)}
-                    aria-label={`View ${i + 1}`}
-                  />
-                ))}
-              </div>
+
+              {/* Dot indicators */}
+              {previewableViews.length > 1 && (
+                <div className="insignia-preview-sheet-dots" style={{ position: "absolute", bottom: 8, left: 0, right: 0 }}>
+                  {previewableViews.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      className="insignia-preview-sheet-dot"
+                      data-active={i === currentViewIndex ? "true" : undefined}
+                      onClick={() => setCurrentViewIndex(i)}
+                      aria-label={`View ${i + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </>
           ) : (
             <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#9CA3AF" }}>
