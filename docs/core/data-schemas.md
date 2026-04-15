@@ -15,8 +15,7 @@ Connects one or more Shopify products to customization rules.
 - `name` (string): merchant-visible setup name.
 - `linkedProductIds` (string[]): Shopify product GIDs.
 - `presetKey` (string | null): preset applied at creation — "t-shirt", "hoodie", "polo", "cap", or null.
-- `views` (ProductView[]): supported perspectives (front/back/etc.).
-- `placements` (PlacementDefinition[]): selectable print areas.
+- `views` (ProductView[]): supported perspectives (front/back/etc.). Each view owns its own placements.
 - `allowedMethods` (ProductConfigMethod[]): many-to-many relation to DecorationMethod via join table.
 
 ## ProductConfigMethod (join table)
@@ -64,10 +63,10 @@ Variant-specific view image + optional per-variant placement geometry override.
 
 ## PlacementDefinition
 
-Defines a print area on a product (e.g., "Left Chest", "Full Front").
+Defines a print area on a specific product view (e.g., "Left Chest" on the "Front" view). Each view owns its own placements — switching views shows different print areas.
 
 - `id` (UUID)
-- `productConfigId` (UUID)
+- `productViewId` (UUID): the view this placement belongs to.
 - `name` (string)
 - `basePriceAdjustmentCents` (integer): placement-specific price delta.
 - `hidePriceWhenZero` (boolean): suppress price display when the adjustment is zero.

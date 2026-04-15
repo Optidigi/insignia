@@ -1,8 +1,8 @@
 # Insignia — Production Readiness Audit
 
-> **Date**: 2026-04-14
-> **Version**: 0.4.0 (phase3-audit-fixes)
-> **Overall**: MVP-ready. Phase 1 + Phase 2 + Phase 3 complete. All critical security issues fixed (GDPR compliance, CORS, upload validation, webhook races). Server hardened with compression, security headers, body limits, expanded rate limiting. 45 tests across 7 files. Remaining gaps: order webhooks (blocked on Shopify approval), Sentry DSN verification, and UX design decisions for post-launch iteration.
+> **Date**: 2026-04-15
+> **Version**: 0.5.0 (ui-polish + per-view-placements)
+> **Overall**: MVP-ready. Phase 1 + Phase 2 + Phase 3 + UI Polish complete. Per-view placements architecture change (PlacementDefinition now per-ProductView). All critical security issues fixed. 45 tests across 7 files. Remaining gaps: order webhooks (blocked on Shopify approval), Sentry DSN verification.
 
 ---
 
@@ -13,7 +13,7 @@
 | Core product flow | Done | Upload, placement, size, review, order |
 | Admin dashboard | Done | Products, methods, orders, settings all functional; empty states added |
 | Storefront modal | Done | App proxy, CORS locked down, CSP expanded, mobile responsive, draft persistence |
-| Database | Done | 18 models, GIN + B-tree indexes, onDelete policies, immutability trigger |
+| Database | Done | 18 models, GIN + B-tree indexes, onDelete policies, immutability trigger. PlacementDefinition now per-ProductView (was per-ProductConfig). |
 | Storage (R2) | Done | Server-side upload + presigned PUT; image dimension limits (4096px) |
 | Docker / CI/CD | Done | Auto-deploy on push to main, lint/typecheck gate |
 | Theme extension | Done | Customize button block live, config readiness guard |
