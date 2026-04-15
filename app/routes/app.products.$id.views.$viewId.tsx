@@ -647,7 +647,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         return { success: false, intent: "save-calibration", error: "Invalid calibration value" };
       }
       await db.productView.update({
-        where: { id: viewId },
+        where: { id: viewId, productConfig: { id: configId, shopId: shop.id } },
         data: { calibrationPxPerCm: pxPerCm },
       });
       return { success: true, intent: "save-calibration" };

@@ -266,13 +266,8 @@ export async function cloneLayoutInto(
       );
       if (!targetView) continue;
 
-      // Copy geometry
-      if (sourceView.placementGeometry) {
-        await tx.productView.update({
-          where: { id: targetView.id },
-          data: { placementGeometry: sourceView.placementGeometry as Prisma.InputJsonValue },
-        });
-      }
+      // Build mapping from source placement IDs to new target placement IDs
+      const oldIdToNewId = new Map<string, string>();
 
       // Copy placements from this source view to the matching target view
       for (const placement of sourceView.placements) {
@@ -287,6 +282,8 @@ export async function cloneLayoutInto(
           },
         });
 
+        oldIdToNewId.set(placement.id, newPlacement.id);
+
         if (placement.steps.length > 0) {
           await tx.placementStep.createMany({
             data: placement.steps.map((step) => ({
@@ -298,6 +295,20 @@ export async function cloneLayoutInto(
             })),
           });
         }
+      }
+
+      // Copy geometry with re-keyed placement IDs
+      if (sourceView.placementGeometry) {
+        const sourceGeometry = sourceView.placementGeometry as Record<string, unknown>;
+        const reKeyedGeometry: Record<string, unknown> = {};
+        for (const [oldId, geom] of Object.entries(sourceGeometry)) {
+          const newId = oldIdToNewId.get(oldId);
+          if (newId && geom) reKeyedGeometry[newId] = geom;
+        }
+        await tx.productView.update({
+          where: { id: targetView.id },
+          data: { placementGeometry: reKeyedGeometry as Prisma.InputJsonValue },
+        });
       }
     }
   });
