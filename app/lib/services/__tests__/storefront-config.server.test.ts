@@ -57,30 +57,6 @@ beforeEach(() => {
 // Shared test data
 // ---------------------------------------------------------------------------
 
-const MOCK_VIEW_FRONT = {
-  id: "view-front",
-  perspective: "front",
-  displayOrder: 0,
-  defaultImageKey: "shops/s1/views/front.png",
-  sharedZones: true,
-  placementGeometry: {
-    "placement-chest": {
-      centerXPercent: 50,
-      centerYPercent: 30,
-      maxWidthPercent: 40,
-    },
-  },
-};
-
-const MOCK_VIEW_BACK = {
-  id: "view-back",
-  perspective: "back",
-  displayOrder: 1,
-  defaultImageKey: null, // missing image
-  sharedZones: true,
-  placementGeometry: {},
-};
-
 const MOCK_PLACEMENT = {
   id: "placement-chest",
   name: "Chest",
@@ -102,6 +78,32 @@ const MOCK_PLACEMENT = {
       displayOrder: 1,
     },
   ],
+};
+
+const MOCK_VIEW_FRONT = {
+  id: "view-front",
+  perspective: "front",
+  displayOrder: 0,
+  defaultImageKey: "shops/s1/views/front.png",
+  sharedZones: true,
+  placementGeometry: {
+    "placement-chest": {
+      centerXPercent: 50,
+      centerYPercent: 30,
+      maxWidthPercent: 40,
+    },
+  },
+  placements: [MOCK_PLACEMENT],
+};
+
+const MOCK_VIEW_BACK = {
+  id: "view-back",
+  perspective: "back",
+  displayOrder: 1,
+  defaultImageKey: null, // missing image
+  sharedZones: true,
+  placementGeometry: {},
+  placements: [],
 };
 
 const MOCK_METHOD = {
@@ -126,7 +128,6 @@ function makeProductConfig(overrides: Record<string, unknown> = {}) {
     shopId: "shop-1",
     linkedProductIds: ["gid://shopify/Product/100"],
     views: [MOCK_VIEW_FRONT, MOCK_VIEW_BACK],
-    placements: [MOCK_PLACEMENT],
     allowedMethods: [MOCK_METHOD],
     ...overrides,
   };
@@ -222,6 +223,7 @@ describe("getStorefrontConfig", () => {
           maxWidthPercent: 40,
         },
       },
+      placements: [MOCK_PLACEMENT],
     };
 
     prismaMock.productConfig.findFirst.mockResolvedValue(
@@ -265,8 +267,9 @@ describe("getStorefrontConfig", () => {
   it("sets isMissingImage when view has no image key and no variant override", async () => {
     vi.mocked(getPresignedGetUrl).mockRejectedValue(new Error("not found"));
 
+    const backViewWithPlacement = { ...MOCK_VIEW_BACK, placements: [MOCK_PLACEMENT] };
     prismaMock.productConfig.findFirst.mockResolvedValue(
-      makeProductConfig({ views: [MOCK_VIEW_BACK] })
+      makeProductConfig({ views: [backViewWithPlacement] })
     );
     prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
     prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
@@ -366,8 +369,12 @@ describe("getStorefrontConfig", () => {
   });
 
   it("throws INVALID_CONFIG when config has no placements", async () => {
+    const viewsWithNoPlacements = [
+      { ...MOCK_VIEW_FRONT, placements: [] },
+      { ...MOCK_VIEW_BACK, placements: [] },
+    ];
     prismaMock.productConfig.findFirst.mockResolvedValue(
-      makeProductConfig({ placements: [] })
+      makeProductConfig({ views: viewsWithNoPlacements })
     );
 
     await expect(

@@ -96,7 +96,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     }
     const prepConfig = await db.productConfig.findFirst({
       where: { id: draft.productConfigId, shopId: shop.id },
-      include: { allowedMethods: true, placements: true },
+      include: {
+        allowedMethods: true,
+        views: { include: { placements: true } },
+      },
     });
     if (!prepConfig || prepConfig.allowedMethods.length === 0) {
       return jsonResponse(
@@ -104,7 +107,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         422, origin
       );
     }
-    if (prepConfig.placements.length === 0) {
+    if (prepConfig.views.every((v) => v.placements.length === 0)) {
       return jsonResponse(
         { error: { code: "INVALID_CONFIG", message: "Product has no placements configured" } },
         422, origin

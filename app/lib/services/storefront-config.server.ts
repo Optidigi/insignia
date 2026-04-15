@@ -83,12 +83,16 @@ async function getProductConfigByProductId(shopId: string, productId: string) {
       linkedProductIds: { has: productId },
     },
     include: {
-      views: { orderBy: { displayOrder: "asc" } },
-      placements: {
-        include: {
-          steps: { orderBy: { displayOrder: "asc" } },
-        },
+      views: {
         orderBy: { displayOrder: "asc" },
+        include: {
+          placements: {
+            include: {
+              steps: { orderBy: { displayOrder: "asc" } },
+            },
+            orderBy: { displayOrder: "asc" },
+          },
+        },
       },
       allowedMethods: {
         include: { decorationMethod: true },
@@ -124,7 +128,7 @@ export async function getStorefrontConfig(
     );
   }
 
-  if (config.placements.length === 0) {
+  if (config.views.every((v) => v.placements.length === 0)) {
     throw new AppError(
       ErrorCodes.INVALID_CONFIG,
       "This product has no print areas configured. Please contact the store.",
@@ -231,7 +235,8 @@ export async function getStorefrontConfig(
     return out;
   };
 
-  const placements: Placement[] = config.placements.map((p) => ({
+  const allPlacements = config.views.flatMap((v) => v.placements);
+  const placements: Placement[] = allPlacements.map((p) => ({
     id: p.id,
     name: p.name,
     basePriceAdjustmentCents: p.basePriceAdjustmentCents,

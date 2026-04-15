@@ -170,7 +170,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       where: { productConfig: { shopId: shop.id } },
     }),
     db.placementDefinition.count({
-      where: { productConfig: { shopId: shop.id } },
+      where: { productView: { productConfig: { shopId: shop.id } } },
     }),
     db.variantViewConfiguration.count({
       where: {
@@ -233,8 +233,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       id: true,
       name: true,
       linkedProductIds: true,
-      views: { select: { id: true } },
-      placements: { select: { id: true } },
+      views: {
+        select: {
+          id: true,
+          placements: { select: { id: true } },
+        },
+      },
       allowedMethods: { select: { decorationMethodId: true } },
     },
   });
@@ -243,7 +247,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     id: c.id,
     name: c.name,
     viewCount: c.views.length,
-    placementCount: c.placements.length,
+    placementCount: c.views.reduce((sum, v) => sum + v.placements.length, 0),
     methodCount: c.allowedMethods.length,
     productCount: c.linkedProductIds.length,
   }));
