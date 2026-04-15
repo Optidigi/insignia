@@ -270,22 +270,35 @@ export function CustomizationModal({
     if (i < STEP_ORDER.length - 1) goToStep(STEP_ORDER[i + 1]);
   }, [currentStepIndex, goToStep]);
 
+  /** Close the modal: try window.close() first (for popup/iframe), fall back to history.back(). */
+  const closeModal = useCallback(() => {
+    if (typeof window === "undefined") return;
+    // If opened as popup or in iframe, window.close() works
+    try { window.close(); } catch { /* ignore */ }
+    // Fallback: navigate back. If there's no history, navigate to the product page.
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      window.location.href = `/products/${productId.replace(/^gid:\/\/shopify\/Product\//, "")}`;
+    }
+  }, [productId]);
+
   const handleClose = useCallback(() => {
     const hasSelections = step !== "upload" || logo.type !== "none";
     if (hasSelections) {
       setShowCloseConfirm(true);
     } else {
-      window.history.back();
+      closeModal();
     }
-  }, [step, logo.type]);
+  }, [step, logo.type, closeModal]);
 
   const handleCloseConfirm = useCallback((confirmed: boolean) => {
     setShowCloseConfirm(false);
-    if (confirmed && typeof window !== "undefined") {
+    if (confirmed) {
       clearDraft(productId, variantId);
-      window.history.back();
+      closeModal();
     }
-  }, [productId, variantId]);
+  }, [productId, variantId, closeModal]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -499,13 +512,13 @@ export function CustomizationModal({
         throw new Error(d?.error?.message ?? "Failed to confirm cart");
       }
       clearDraft(productId, variantId);
-      window.history.back();
+      closeModal();
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Failed to add to cart");
     } finally {
       setSubmitLoading(false);
     }
-  }, [customizationId, priceResult, selectedMethodId, quantity, saveDraftAndPrice, config, productId, variantId]);
+  }, [customizationId, priceResult, selectedMethodId, quantity, saveDraftAndPrice, config, productId, variantId, closeModal]);
 
   // Early returns after all hooks — this is the required pattern.
   if (configLoading) {
