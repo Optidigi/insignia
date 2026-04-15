@@ -859,18 +859,30 @@ export default function ProductConfigDetailPage() {
                       const hasPartial = filled > 0 && !isComplete;
 
                       return (
-                        <div key={view.id} style={{ padding: "8px 0", borderBottom: "1px solid var(--p-color-border)" }}>
+                        <Link
+                          key={view.id}
+                          to={`/app/products/${config.id}/views/${view.id}`}
+                          style={{
+                            display: "block",
+                            padding: "10px 12px",
+                            borderBottom: "1px solid var(--p-color-border)",
+                            textDecoration: "none",
+                            color: "inherit",
+                            borderRadius: 8,
+                            transition: "background 100ms",
+                          }}
+                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--p-color-bg-surface-hover, #f6f6f7)"; }}
+                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                        >
                           <InlineStack align="space-between" blockAlign="center" wrap={false}>
                             <InlineStack gap="200" blockAlign="center">
                               <Icon
                                 source={ImageIcon}
                                 tone={isComplete ? "success" : hasPartial ? "warning" : "subdued"}
                               />
-                              <Link to={`/app/products/${config.id}/views/${view.id}`} style={{ textDecoration: "none" }}>
-                                <Text fontWeight="semibold" as="span">
-                                  {view.name || view.perspective.charAt(0).toUpperCase() + view.perspective.slice(1)}
-                                </Text>
-                              </Link>
+                              <Text fontWeight="semibold" as="span">
+                                {view.name || view.perspective.charAt(0).toUpperCase() + view.perspective.slice(1)}
+                              </Text>
                             </InlineStack>
                             <InlineStack gap="200" blockAlign="center">
                               <Badge tone={isComplete ? "success" : hasPartial ? "warning" : undefined}>
@@ -879,7 +891,7 @@ export default function ProductConfigDetailPage() {
                               <Icon source={ChevronRightIcon} tone="subdued" />
                             </InlineStack>
                           </InlineStack>
-                        </div>
+                        </Link>
                       );
                     })}
                   </BlockStack>
