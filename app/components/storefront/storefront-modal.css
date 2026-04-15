@@ -873,9 +873,15 @@ html, body {
   font-weight: 500;
   font-size: 13px;
 }
+.insignia-size-card-scale {
+  font-size: 11px;
+  color: var(--insignia-text-secondary, #6B7280);
+}
 .insignia-size-card-price {
   font-weight: 600;
   font-size: 13px;
+  color: var(--insignia-primary, #2563EB);
+  flex-shrink: 0;
 }
 
 /* ===== Preview Confirmation (single-step placement) ===== */

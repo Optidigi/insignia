@@ -582,7 +582,6 @@ export function CustomizationModal({
             config={config}
             placementSelections={placementSelections}
             logo={logo}
-            sizeMultiplier={0.6}
           />
         </div>
 

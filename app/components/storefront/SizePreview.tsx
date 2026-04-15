@@ -64,11 +64,14 @@ export function SizePreview({
       })
       .map((p) => {
         const geom = p.geometryByViewId[viewId]!;
+        const stepIndex = placementSelections[p.id] ?? p.defaultStepIndex;
+        const step = p.steps[stepIndex] ?? p.steps[0];
         return {
           id: p.id,
           centerXPercent: geom.centerXPercent,
           centerYPercent: geom.centerYPercent,
           maxWidthPercent: geom.maxWidthPercent,
+          scaleFactor: step?.scaleFactor ?? 1,
         };
       });
   }, [config.placements, viewId, placementSelections]);

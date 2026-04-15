@@ -57,10 +57,6 @@ export function SizeStep({
     });
   };
 
-  // Compute sizeMultiplier from step index for NativeCanvas
-  const totalSteps = currentPlacement.steps.length;
-  const sizeMultiplier = totalSteps > 1 ? 0.3 + (stepIndex / (totalSteps - 1)) * 0.7 : 0.6;
-
   return (
     <section aria-labelledby="size-heading">
       <h2 id="size-heading" className="visually-hidden">
@@ -73,7 +69,6 @@ export function SizeStep({
             placementSelections={placementSelections}
             logo={logo}
             highlightPlacementId={currentPlacement.id}
-            sizeMultiplier={sizeMultiplier}
           />
         </div>
         <div className="insignia-size-controls">
@@ -85,40 +80,34 @@ export function SizeStep({
                   {t.size.position} {currentPlacementIndex + 1} {t.size.of} {selectedPlacementIds.length}: {currentPlacement.name}
                 </span>
               )}
-              <div className="insignia-size-row">
-                <input
-                  type="range"
-                  className="insignia-size-slider"
-                  min={0}
-                  max={currentPlacement.steps.length - 1}
-                  value={stepIndex}
-                  onChange={(e) => setStepIndex(Number(e.target.value))}
-                  aria-label={`${t.size.sizeLabel} for ${currentPlacement.name}`}
-                />
+              {/* Size cards — replaces the old range slider */}
+              <div className="insignia-size-cards">
+                {currentPlacement.steps.map((step, i) => {
+                  const isSelected = i === stepIndex;
+                  const hasPriceDelta = step.priceAdjustmentCents !== 0;
+                  return (
+                    <button
+                      key={i}
+                      type="button"
+                      className={`insignia-size-card${isSelected ? " insignia-size-card--selected" : ""}`}
+                      onClick={() => setStepIndex(i)}
+                      aria-pressed={isSelected}
+                      aria-label={`${step.label}${hasPriceDelta ? `, ${step.priceAdjustmentCents > 0 ? "+" : ""}${formatCurrency(step.priceAdjustmentCents, config.currency)}` : ""}`}
+                    >
+                      <span className="insignia-size-card-letter">{step.label.charAt(0).toUpperCase()}</span>
+                      <span className="insignia-size-card-info">
+                        <span className="insignia-size-card-name">{step.label}</span>
+                        <span className="insignia-size-card-scale">{step.scaleFactor}x</span>
+                      </span>
+                      {hasPriceDelta && (
+                        <span className="insignia-size-card-price">
+                          {step.priceAdjustmentCents > 0 ? "+" : ""}{formatCurrency(step.priceAdjustmentCents, config.currency)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
-              <div className="insignia-size-ticks">
-                {currentPlacement.steps.map((s, i) => (
-                  <span
-                    key={i}
-                    style={{
-                      left: currentPlacement.steps.length > 1
-                        ? `${(i / (currentPlacement.steps.length - 1)) * 100}%`
-                        : "50%",
-                    }}
-                    data-active={i === stepIndex ? "true" : undefined}
-                  >
-                    {s.label}
-                  </span>
-                ))}
-              </div>
-              <span className="insignia-size-label">
-                {currentPlacement.steps[stepIndex]?.label ?? "—"}
-                {currentPlacement.steps[stepIndex] && currentPlacement.steps[stepIndex].priceAdjustmentCents !== 0 && (
-                  <span style={{ color: "var(--insignia-text-secondary)", fontWeight: 400 }}>
-                    {" "}{currentPlacement.steps[stepIndex].priceAdjustmentCents > 0 ? "+" : ""}{formatCurrency(currentPlacement.steps[stepIndex].priceAdjustmentCents, config.currency)}
-                  </span>
-                )}
-              </span>
             </>
           ) : (
             <div className="insignia-preview-confirmation">
@@ -127,7 +116,6 @@ export function SizeStep({
                 placementSelections={placementSelections}
                 logo={logo}
                 highlightPlacementId={currentPlacement.id}
-                sizeMultiplier={0.6}
               />
               <div className="insignia-preview-info">
                 <strong>Your logo on {currentPlacement.name}</strong>
