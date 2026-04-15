@@ -159,7 +159,6 @@ model ProductConfig {
   shop                    Shop                      @relation(fields: [shopId], references: [id], onDelete: Cascade)
   allowedMethods          ProductConfigMethod[]
   views                   ProductView[]
-  placements              PlacementDefinition[]
   variantViewConfigurations VariantViewConfiguration[]
   orderLineCustomizations OrderLineCustomization[]
 
@@ -206,6 +205,7 @@ model ProductView {
   // Relations
   productConfig             ProductConfig              @relation(fields: [productConfigId], references: [id], onDelete: Cascade)
   variantViewConfigurations VariantViewConfiguration[]
+  placements                PlacementDefinition[]
 
   @@index([productConfigId])
 }
@@ -244,7 +244,7 @@ model VariantViewConfiguration {
 
 model PlacementDefinition {
   id                      String  @id @default(uuid())
-  productConfigId         String
+  productViewId           String
   name                    String
   basePriceAdjustmentCents Int     @default(0)
   hidePriceWhenZero       Boolean @default(false)
@@ -254,10 +254,10 @@ model PlacementDefinition {
   updatedAt               DateTime @updatedAt
 
   // Relations
-  productConfig ProductConfig   @relation(fields: [productConfigId], references: [id], onDelete: Cascade)
-  steps         PlacementStep[]
+  productView ProductView      @relation(fields: [productViewId], references: [id], onDelete: Cascade)
+  steps       PlacementStep[]
 
-  @@index([productConfigId])
+  @@index([productViewId])
 }
 
 // ============================================================================
