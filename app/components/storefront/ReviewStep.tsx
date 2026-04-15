@@ -89,20 +89,9 @@ export function ReviewStep({
       0
     );
 
-  // Filter variants to only show sizes matching the selected variant's non-size options (e.g. same color).
-  // The modal is opened with a specific variant (e.g. "Red / Medium"), so only show Red sizes.
-  const currentVariantGid = `gid://shopify/ProductVariant/${config.variantId}`;
-  const currentVariant = config.variants.find((v) => v.id === currentVariantGid);
-  const nonSizeOptions = currentVariant?.selectedOptions.filter(
-    (o) => !/^size$/i.test(o.name)
-  ) ?? [];
-
-  const sizeVariants = config.variants.filter((v) => {
-    // Keep only variants whose non-size options match the selected variant
-    return nonSizeOptions.every((nso) =>
-      v.selectedOptions.some((vo) => vo.name === nso.name && vo.value === nso.value)
-    );
-  });
+  // Variants are pre-filtered by the backend to only include sizes matching
+  // the selected variant's non-size options (e.g. same color).
+  const sizeVariants = config.variants;
 
   const totalQuantity = Object.values(quantities).reduce((a, b) => a + b, 0);
   const unitCents =

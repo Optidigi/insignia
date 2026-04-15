@@ -106,7 +106,7 @@ export function SizePreview({
                 data-active={i === viewIndex ? "true" : undefined}
                 onClick={() => setViewIndex(i)}
               >
-                {capitalize(v.perspective)}
+                {v.name || capitalize(v.perspective)}
               </button>
             ))}
           </div>

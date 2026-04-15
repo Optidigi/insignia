@@ -27,7 +27,8 @@ export type Placement = {
 
 export type ConfiguredView = {
   id: string;
-  perspective: "front" | "back" | "left" | "right" | "side";
+  name: string | null;
+  perspective: "front" | "back" | "left" | "right" | "side" | "custom";
   imageUrl: string | null;
   isMissingImage: boolean;
 };

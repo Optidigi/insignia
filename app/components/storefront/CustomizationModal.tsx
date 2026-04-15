@@ -216,38 +216,28 @@ export function CustomizationModal({
     fetchConfig();
   }, [fetchConfig]);
 
-  // Filter variants to only sizes matching the selected variant's non-size options (e.g. same color)
-  const sizeVariants = useMemo(() => {
-    if (!config || config.variants.length === 0) return [];
-    const currentGid = `gid://shopify/ProductVariant/${variantId}`;
-    const current = config.variants.find((v) => v.id === currentGid);
-    const nonSizeOpts = current?.selectedOptions.filter((o) => !/^size$/i.test(o.name)) ?? [];
-    return config.variants.filter((v) =>
-      nonSizeOpts.every((nso) =>
-        v.selectedOptions.some((vo) => vo.name === nso.name && vo.value === nso.value)
-      )
-    );
-  }, [config, variantId]);
+  // Variants are pre-filtered by the backend to only include sizes matching
+  // the selected variant's non-size options (e.g. same color).
 
   // Initialize per-size quantities when config first loads
   useEffect(() => {
-    if (config && sizeVariants.length > 0 && Object.keys(quantities).length === 0) {
+    if (config && config.variants.length > 0 && Object.keys(quantities).length === 0) {
       const init: Record<string, number> = {};
-      for (const v of sizeVariants) {
+      for (const v of config.variants) {
         init[v.id] = 0;
       }
       // Pre-select the current variant with qty 1
       const currentGid = `gid://shopify/ProductVariant/${variantId}`;
       if (init[currentGid] !== undefined) {
         init[currentGid] = 1;
-      } else if (sizeVariants.length > 0) {
-        init[sizeVariants[0].id] = 1;
+      } else if (config.variants.length > 0) {
+        init[config.variants[0].id] = 1;
       }
       setQuantities(init);
-    } else if (config && sizeVariants.length === 0 && Object.keys(quantities).length === 0) {
+    } else if (config && config.variants.length === 0 && Object.keys(quantities).length === 0) {
       setQuantities({ _default: 1 });
     }
-  }, [config, sizeVariants]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Restore draft from localStorage once config is available
   useEffect(() => {
@@ -519,12 +509,12 @@ export function CustomizationModal({
     setSubmitLoading(true);
     setSubmitError(null);
     try {
-      const isMultiVariant = sizeVariants.length > 0;
+      const isMultiVariant = config!.variants.length > 0;
 
       if (isMultiVariant) {
         // B2B per-size mode: call /prepare once per variant with qty > 0,
         // then batch all pairs into a single cart/add.js request.
-        const activeVariants = sizeVariants.filter(
+        const activeVariants = config!.variants.filter(
           (v) => (quantities[v.id] ?? 0) > 0
         );
         if (activeVariants.length === 0) return;
@@ -606,7 +596,7 @@ export function CustomizationModal({
     } finally {
       setSubmitLoading(false);
     }
-  }, [customizationId, priceResult, selectedMethodId, totalQuantity, quantities, saveDraftAndPrice, config, sizeVariants, productId, variantId, closeModal]);
+  }, [customizationId, priceResult, selectedMethodId, totalQuantity, quantities, saveDraftAndPrice, config, productId, variantId, closeModal]);
 
   // Early returns after all hooks — this is the required pattern.
   if (configLoading) {

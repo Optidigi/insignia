@@ -193,10 +193,37 @@ export async function getStorefrontConfig(
         productTitle = variant.product?.title ?? "Product";
       }
       const variantNodes = variantData?.data?.productVariant?.product?.variants?.nodes ?? [];
-      variants = variantNodes.map((v) => {
-        const sizeOption = v.selectedOptions?.find((o) =>
-          /^size$/i.test(o.name)
-        );
+
+      // Detect which option is the "size" option using multi-strategy heuristic:
+      // 1. Match common size option names across languages
+      // 2. Fall back to checking if option values look like sizes (S, M, L, XL, etc.)
+      const SIZE_NAME_RE = /^(size|sizes|maat|größe|groesse|taille|taglia|tamanho|rozmiar|storlek|koko|サイズ)$/i;
+      const SIZE_VALUE_RE = /^(xs|s|m|l|xl|xxl|xxxl|2xl|3xl|4xl|5xl|small|medium|large|x-?large|xx-?large)$/i;
+
+      let sizeOptionName: string | null = null;
+      if (variantNodes.length > 0) {
+        const firstOptions = variantNodes[0].selectedOptions ?? [];
+        // Strategy 1: match by name
+        sizeOptionName = firstOptions.find((o) => SIZE_NAME_RE.test(o.name))?.name ?? null;
+        // Strategy 2: match by values that look like sizes
+        if (!sizeOptionName) {
+          for (const opt of firstOptions) {
+            const allValues = variantNodes.map((v) =>
+              v.selectedOptions?.find((o) => o.name === opt.name)?.value ?? ""
+            );
+            if (allValues.some((val) => SIZE_VALUE_RE.test(val))) {
+              sizeOptionName = opt.name;
+              break;
+            }
+          }
+        }
+      }
+
+      // Map all variants
+      const allMappedVariants = variantNodes.map((v) => {
+        const sizeOption = sizeOptionName
+          ? v.selectedOptions?.find((o) => o.name === sizeOptionName)
+          : null;
         return {
           id: v.id,
           title: v.title,
@@ -206,6 +233,22 @@ export async function getStorefrontConfig(
           selectedOptions: v.selectedOptions ?? [],
         };
       });
+
+      // Filter to only variants matching the selected variant's non-size options
+      const selectedVariant = allMappedVariants.find((v) => v.id === variantId);
+      if (selectedVariant && sizeOptionName) {
+        const nonSizeOpts = selectedVariant.selectedOptions.filter(
+          (o) => o.name !== sizeOptionName
+        );
+        variants = allMappedVariants.filter((v) =>
+          nonSizeOpts.every((nso) =>
+            v.selectedOptions.some((vo) => vo.name === nso.name && vo.value === nso.value)
+          )
+        );
+      } else {
+        // No size option detected or no selected variant — return all
+        variants = allMappedVariants;
+      }
     } catch {
       // Non-fatal: fall back to defaults
     }
@@ -241,6 +284,7 @@ export async function getStorefrontConfig(
       }
       return {
         id: view.id,
+        name: view.name ?? null,
         perspective: view.perspective as ConfiguredView["perspective"],
         imageUrl,
         isMissingImage: imageUrl == null,
