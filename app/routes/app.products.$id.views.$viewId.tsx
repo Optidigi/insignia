@@ -594,6 +594,44 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return { success: true, intent: "add-placement" };
     }
 
+    if (intent === "delete-placement") {
+      const placementId = formData.get("placementId") as string;
+      if (!placementId) {
+        throw new Response("Missing placement ID", { status: 400 });
+      }
+
+      // Verify ownership
+      const placement = await db.placementDefinition.findFirst({
+        where: { id: placementId, productConfig: { id: configId, shopId: shop.id } },
+        select: { id: true },
+      });
+      if (!placement) {
+        throw new Response("Placement not found", { status: 404 });
+      }
+
+      // Delete (cascades to PlacementStep via schema)
+      await db.placementDefinition.delete({ where: { id: placementId } });
+
+      // Clean up geometry references in all views for this config
+      const views = await db.productView.findMany({
+        where: { productConfigId: configId },
+        select: { id: true, placementGeometry: true },
+      });
+      for (const v of views) {
+        const geom = v.placementGeometry as Record<string, unknown> | null;
+        if (geom && placementId in geom) {
+          const { [placementId]: _removed, ...rest } = geom;
+          void _removed; // destructured to remove key
+          await db.productView.update({
+            where: { id: v.id },
+            data: { placementGeometry: rest as import("@prisma/client").Prisma.InputJsonValue },
+          });
+        }
+      }
+
+      return { success: true, intent: "delete-placement" };
+    }
+
     if (intent === "save-calibration") {
       const pxPerCm = Number(formData.get("pxPerCm"));
       if (!Number.isFinite(pxPerCm) || pxPerCm <= 0) {
@@ -777,6 +815,8 @@ export default function ViewDetailPage() {
         window.shopify?.toast?.show("View calibrated");
       } else if (intent === "add-placement") {
         window.shopify?.toast?.show("Print area added");
+      } else if (intent === "delete-placement") {
+        window.shopify?.toast?.show("Print area deleted");
       } else if (intent === "add-step") {
         window.shopify?.toast?.show("Size tier added");
       } else if (intent === "apply-to-all") {
@@ -853,6 +893,17 @@ export default function ViewDetailPage() {
     setViewName(view.name ?? getPerspectiveLabel(view.perspective));
     setNameDirty(false);
   }, [view.name, view.perspective]);
+
+  const handleDeletePlacement = useCallback(
+    (placementId: string) => {
+      if (!window.confirm("Delete this print area? This will remove it from all views and cannot be undone.")) return;
+      const fd = new FormData();
+      fd.set("intent", "delete-placement");
+      fd.set("placementId", placementId);
+      submit(fd, { method: "POST" });
+    },
+    [submit],
+  );
 
   /** Submit all pricing changes as a single batch via dedicated fetcher. */
   const handlePricingSave = useCallback(
@@ -951,9 +1002,9 @@ export default function ViewDetailPage() {
   // to fire repeatedly, resetting rects back to the saved position on every drag event.
   const selectedVariantImageUrl = selectedVariantId ? (signedImageUrls[selectedVariantId] ?? null) : null;
 
-  // Reset all view-dependent state when navigating to a different view.
+  // Reset ALL view-dependent state when navigating to a different view.
   // React Router reuses the component instance for param-only changes
-  // (same route module), so useState values persist across views.
+  // (same route module), so all useState values persist across views.
   useEffect(() => {
     setViewName(view.name ?? getPerspectiveLabel(view.perspective));
     setNameDirty(false);
@@ -961,8 +1012,13 @@ export default function ViewDetailPage() {
     setGeometryDirty(false);
     setPricingDirty(false);
     setSelectedPlacementId(null);
+    setSelectedVariantId(variants[0]?.id ?? null);
     setEditorResetKey((k) => k + 1);
-  }, [view.id, view.name, view.perspective]);
+    setAddingZone(false);
+    setNewZoneName("");
+    setRulerActive(false);
+    setDeleteModalOpen(false);
+  }, [view.id, view.name, view.perspective, variants]);
 
   // Load natural image dimensions whenever the selected variant image changes
   useEffect(() => {
@@ -1104,11 +1160,13 @@ export default function ViewDetailPage() {
               background: "#ffffff", borderBottom: "1px solid #E5E7EB",
             }}>
               {viewTabs.length <= 4 ? (
-                /* Tab links mode (≤4 views) */
+                /* Tab buttons mode (≤4 views) — uses navigate() instead of <Link>
+                   to avoid full page navigation that breaks OAuth in embedded apps */
                 viewTabs.map((tab) => (
-                  <Link
+                  <button
                     key={tab.id}
-                    to={tab.url}
+                    type="button"
+                    onClick={() => { if (!tab.isCurrent) navigate(tab.url); }}
                     style={{
                       display: "flex", alignItems: "center", gap: 6,
                       height: "100%", padding: "0 16px",
@@ -1116,10 +1174,12 @@ export default function ViewDetailPage() {
                       color: tab.isCurrent ? "#2563EB" : "#6B7280",
                       fontSize: 13, fontWeight: tab.isCurrent ? 600 : 400,
                       textDecoration: "none", whiteSpace: "nowrap",
+                      background: "none", border: "none", cursor: "pointer",
+                      fontFamily: "inherit",
                     }}
                   >
                     {tab.label}
-                  </Link>
+                  </button>
                 ))
               ) : (
                 /* Dropdown mode (5+ views) */
@@ -1556,6 +1616,8 @@ export default function ViewDetailPage() {
                     placementGeometry={pendingGeometry ?? selectedVariantGeometry}
                     onDirty={setPricingDirty}
                     onSave={handlePricingSave}
+                    viewName={view.name ?? getPerspectiveLabel(view.perspective)}
+                    onDeletePlacement={handleDeletePlacement}
                   />
                 )}
 
