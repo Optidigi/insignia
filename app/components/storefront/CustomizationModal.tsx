@@ -510,12 +510,9 @@ export function CustomizationModal({
     setSubmitError(null);
     try {
       const isMultiVariant = config!.variants.length > 0;
-      const pairs: Array<{
-        baseVariantId: string;
-        feeVariantId: string;
-        quantity: number;
-        properties: Record<string, string>;
-      }> = [];
+      // Track all prepared slot IDs for the confirm step.
+      // Use local variables — not React state — to avoid stale closure reads.
+      const confirmedSlotIds: string[] = [];
 
       if (isMultiVariant) {
         // B2B per-size mode: call /prepare once per variant with qty > 0,
@@ -524,6 +521,13 @@ export function CustomizationModal({
           (v) => (quantities[v.id] ?? 0) > 0
         );
         if (activeVariants.length === 0) return;
+
+        const pairs: Array<{
+          baseVariantId: string;
+          feeVariantId: string;
+          quantity: number;
+          properties: Record<string, string>;
+        }> = [];
         let lastPrep: PrepareResult | null = null;
 
         for (const variant of activeVariants) {
@@ -538,6 +542,7 @@ export function CustomizationModal({
           }
           const prep: PrepareResult = await prepareRes.json();
           lastPrep = prep;
+          confirmedSlotIds.push(prep.slotVariantId);
 
           const properties = buildInsigniaProperties(
             cid,
@@ -569,6 +574,7 @@ export function CustomizationModal({
         }
         const prep: PrepareResult = await prepareRes.json();
         setPrepareResult(prep);
+        confirmedSlotIds.push(prep.slotVariantId);
         const properties = buildInsigniaProperties(
           cid,
           selectedMethodId!,
@@ -579,10 +585,7 @@ export function CustomizationModal({
       }
 
       // Confirm each prepared slot (required for slot lifecycle management)
-      const slotIds = pairs.length > 0
-        ? pairs.map((p) => p.feeVariantId)
-        : prepareResult ? [prepareResult.slotVariantId] : [];
-      for (const slotVariantId of slotIds) {
+      for (const slotVariantId of confirmedSlotIds) {
         const confirmRes = await fetchWithRetry(proxyUrl("/apps/insignia/cart-confirm"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -600,7 +603,9 @@ export function CustomizationModal({
     } finally {
       setSubmitLoading(false);
     }
-  }, [customizationId, priceResult, selectedMethodId, totalQuantity, quantities, saveDraftAndPrice, config, productId, variantId, closeModal]);
+  // priceResult is intentionally read outside deps (optimization check, not a reactive dependency)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customizationId, selectedMethodId, totalQuantity, quantities, saveDraftAndPrice, config, productId, variantId, closeModal]);
 
   // Early returns after all hooks — this is the required pattern.
   if (configLoading) {
