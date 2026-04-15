@@ -951,10 +951,17 @@ export default function ViewDetailPage() {
   // to fire repeatedly, resetting rects back to the saved position on every drag event.
   const selectedVariantImageUrl = selectedVariantId ? (signedImageUrls[selectedVariantId] ?? null) : null;
 
-  // Sync viewName when navigating to a different view
+  // Reset all view-dependent state when navigating to a different view.
+  // React Router reuses the component instance for param-only changes
+  // (same route module), so useState values persist across views.
   useEffect(() => {
     setViewName(view.name ?? getPerspectiveLabel(view.perspective));
     setNameDirty(false);
+    setPendingGeometry(null);
+    setGeometryDirty(false);
+    setPricingDirty(false);
+    setSelectedPlacementId(null);
+    setEditorResetKey((k) => k + 1);
   }, [view.id, view.name, view.perspective]);
 
   // Load natural image dimensions whenever the selected variant image changes
