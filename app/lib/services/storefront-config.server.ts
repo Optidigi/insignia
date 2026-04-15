@@ -128,9 +128,7 @@ export async function getStorefrontConfig(
     );
   }
 
-  // Check for placements with at least one step (complete configuration)
-  const hasCompletePlacements = config.views.some((v) => v.placements.some((p) => p.steps.length > 0));
-  if (!hasCompletePlacements) {
+  if (config.views.every((v) => v.placements.length === 0)) {
     throw new AppError(
       ErrorCodes.INVALID_CONFIG,
       "This product has no print areas configured. Please contact the store.",
@@ -237,22 +235,28 @@ export async function getStorefrontConfig(
     return out;
   };
 
-  // Only include placements that have at least one step (complete configuration)
-  // and geometry on at least one view with an image (visible to customers)
-  const allPlacements = config.views.flatMap((v) => v.placements).filter((p) => p.steps.length > 0);
-  const placements: Placement[] = allPlacements.map((p) => ({
-    id: p.id,
-    name: p.name,
-    basePriceAdjustmentCents: p.basePriceAdjustmentCents,
-    hidePriceWhenZero: p.hidePriceWhenZero,
-    steps: p.steps.map((s) => ({
-      label: s.label,
-      priceAdjustmentCents: s.priceAdjustmentCents,
-      scaleFactor: s.scaleFactor ?? 1.0,
-    })),
-    defaultStepIndex: p.defaultStepIndex,
-    geometryByViewId: geometryByViewIdForPlacement(p.id),
-  }));
+  // Include all placements from all views. Placements with 0 steps get a
+  // synthetic default step so they behave as single-size in the storefront.
+  const DEFAULT_STEP = { label: "Standard", priceAdjustmentCents: 0, scaleFactor: 1.0 };
+  const allPlacements = config.views.flatMap((v) => v.placements);
+  const placements: Placement[] = allPlacements.map((p) => {
+    const steps = p.steps.length > 0
+      ? p.steps.map((s) => ({
+          label: s.label,
+          priceAdjustmentCents: s.priceAdjustmentCents,
+          scaleFactor: s.scaleFactor ?? 1.0,
+        }))
+      : [DEFAULT_STEP];
+    return {
+      id: p.id,
+      name: p.name,
+      basePriceAdjustmentCents: p.basePriceAdjustmentCents,
+      hidePriceWhenZero: p.hidePriceWhenZero,
+      steps,
+      defaultStepIndex: Math.min(p.defaultStepIndex, steps.length - 1),
+      geometryByViewId: geometryByViewIdForPlacement(p.id),
+    };
+  });
 
   let placeholderMode: "merchant_asset" | "bold_text" = "bold_text";
   let placeholderImageUrl: string | null = null;
