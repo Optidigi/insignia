@@ -46,6 +46,7 @@ function SizeSlider({
   currency: string;
 }) {
   const sliderRef = useRef<HTMLDivElement>(null);
+  const listenersRef = useRef<{ onMove: (e: PointerEvent) => void; onUp: (e: PointerEvent) => void } | null>(null);
   const fillPercent = steps.length <= 1 ? 0 : (activeIndex / (steps.length - 1)) * 100;
 
   const snapToNearest = (clientX: number) => {
@@ -61,10 +62,22 @@ function SizeSlider({
     const onUp = () => {
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
+      listenersRef.current = null;
     };
+    listenersRef.current = { onMove, onUp };
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
   };
+
+  // Clean up listeners if the component unmounts mid-drag
+  useEffect(() => {
+    return () => {
+      if (listenersRef.current) {
+        document.removeEventListener("pointermove", listenersRef.current.onMove);
+        document.removeEventListener("pointerup", listenersRef.current.onUp);
+      }
+    };
+  }, []);
 
   const current = steps[activeIndex];
 
@@ -122,6 +135,76 @@ function SizeSlider({
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/* ── SizeCards sub-component ──────────────────────────────── */
+
+function SizeCards({
+  steps,
+  activeIndex,
+  onIndexChange,
+  currency,
+  t,
+}: {
+  steps: PlacementStepType[];
+  activeIndex: number;
+  onIndexChange: (i: number) => void;
+  currency: string;
+  t: TranslationStrings;
+}) {
+  return (
+    <div
+      className="insignia-size-cards"
+      role="group"
+      aria-label={t.size.sizeLabel}
+      style={{ display: "flex", flexDirection: "column", gap: 12 }}
+    >
+      {steps.map((step, i) => {
+        const isSelected = i === activeIndex;
+        const priceText =
+          step.priceAdjustmentCents === 0
+            ? t.size.noExtraCharge
+            : `+${formatCurrency(step.priceAdjustmentCents, currency)}`;
+        return (
+          <button
+            key={i}
+            type="button"
+            className={`insignia-size-card${isSelected ? " insignia-size-card--selected" : ""}`}
+            onClick={() => onIndexChange(i)}
+            aria-pressed={isSelected}
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              padding: "0 20px",
+              minHeight: 72,
+              background: isSelected ? "var(--insignia-primary-light)" : "white",
+              border: `1px solid ${isSelected ? "var(--insignia-primary)" : "var(--insignia-border)"}`,
+              borderRadius: "var(--insignia-radius)",
+              cursor: "pointer",
+            }}
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+              <span style={{ fontSize: 15, fontWeight: 600, color: "var(--insignia-text)" }}>
+                {step.label}
+              </span>
+              <span style={{ fontSize: 12, color: isSelected ? "var(--insignia-primary)" : "#6B7280" }}>
+                {step.scaleFactor}x · {priceText}
+              </span>
+            </div>
+            <div
+              className="insignia-method-indicator"
+              data-selected={isSelected ? "true" : undefined}
+            >
+              {isSelected && (
+                <IconCheck size={12} style={{ color: "white" }} />
+              )}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -247,57 +330,13 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
 
       {/* State B: Cards (2 sizes, single position) */}
       {sizeState === "cards" && (
-        <div
-          className="insignia-size-cards"
-          role="group"
-          aria-label={t.size.sizeLabel}
-          style={{ display: "flex", flexDirection: "column", gap: 12 }}
-        >
-          {currentPlacement.steps.map((step, i) => {
-            const isSelected = i === stepIndex;
-            const priceText =
-              step.priceAdjustmentCents === 0
-                ? "No extra charge"
-                : `+${formatCurrency(step.priceAdjustmentCents, config.currency)}`;
-            return (
-              <button
-                key={i}
-                type="button"
-                className={`insignia-size-card${isSelected ? " insignia-size-card--selected" : ""}`}
-                onClick={() => setStepIndex(i)}
-                aria-pressed={isSelected}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  padding: "0 20px",
-                  minHeight: 72,
-                  background: isSelected ? "var(--insignia-primary-light)" : "white",
-                  border: `1px solid ${isSelected ? "var(--insignia-primary)" : "var(--insignia-border)"}`,
-                  borderRadius: "var(--insignia-radius)",
-                  cursor: "pointer",
-                }}
-              >
-                <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600, color: "var(--insignia-text)" }}>
-                    {step.label}
-                  </span>
-                  <span style={{ fontSize: 12, color: isSelected ? "var(--insignia-primary)" : "#6B7280" }}>
-                    {step.scaleFactor}x · {priceText}
-                  </span>
-                </div>
-                <div
-                  className="insignia-method-indicator"
-                  data-selected={isSelected ? "true" : undefined}
-                >
-                  {isSelected && (
-                    <IconCheck size={12} style={{ color: "white" }} />
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        <SizeCards
+          steps={currentPlacement.steps}
+          activeIndex={stepIndex}
+          onIndexChange={setStepIndex}
+          currency={config.currency}
+          t={t}
+        />
       )}
 
       {/* State C: Multi-position (tabs + slider) */}
@@ -337,57 +376,13 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
           )}
 
           {currentPlacement.steps.length === 2 && (
-            <div
-              className="insignia-size-cards"
-              role="group"
-              aria-label={t.size.sizeLabel}
-              style={{ display: "flex", flexDirection: "column", gap: 12 }}
-            >
-              {currentPlacement.steps.map((step, i) => {
-                const isSelected = i === stepIndex;
-                const priceText =
-                  step.priceAdjustmentCents === 0
-                    ? "No extra charge"
-                    : `+${formatCurrency(step.priceAdjustmentCents, config.currency)}`;
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    className={`insignia-size-card${isSelected ? " insignia-size-card--selected" : ""}`}
-                    onClick={() => setStepIndex(i)}
-                    aria-pressed={isSelected}
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: "0 20px",
-                      minHeight: 72,
-                      background: isSelected ? "var(--insignia-primary-light)" : "white",
-                      border: `1px solid ${isSelected ? "var(--insignia-primary)" : "var(--insignia-border)"}`,
-                      borderRadius: "var(--insignia-radius)",
-                      cursor: "pointer",
-                    }}
-                  >
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                      <span style={{ fontSize: 15, fontWeight: 600, color: "var(--insignia-text)" }}>
-                        {step.label}
-                      </span>
-                      <span style={{ fontSize: 12, color: isSelected ? "var(--insignia-primary)" : "#6B7280" }}>
-                        {step.scaleFactor}x · {priceText}
-                      </span>
-                    </div>
-                    <div
-                      className="insignia-method-indicator"
-                      data-selected={isSelected ? "true" : undefined}
-                    >
-                      {isSelected && (
-                        <IconCheck size={12} style={{ color: "white" }} />
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <SizeCards
+              steps={currentPlacement.steps}
+              activeIndex={stepIndex}
+              onIndexChange={setStepIndex}
+              currency={config.currency}
+              t={t}
+            />
           )}
 
           {currentPlacement.steps.length <= 1 && (

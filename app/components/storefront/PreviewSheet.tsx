@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
@@ -18,6 +18,7 @@ export function PreviewSheet({ open, onClose, config, placementSelections, logo,
   const [currentViewIndex, setCurrentViewIndex] = useState(0);
   const [dragY, setDragY] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const dragListenersRef = useRef<{ onMove: (e: PointerEvent) => void; onUp: (e: PointerEvent) => void } | null>(null);
 
   // Derive logo URL from logo state (same logic as SizePreview)
   const logoUrl = useMemo(() => {
@@ -82,6 +83,16 @@ export function PreviewSheet({ open, onClose, config, placementSelections, logo,
     setCurrentViewIndex(i => Math.min(previewableViews.length - 1, i + 1));
   }, [previewableViews.length]);
 
+  // Clean up drag listeners if the component unmounts mid-drag
+  useEffect(() => {
+    return () => {
+      if (dragListenersRef.current) {
+        document.removeEventListener("pointermove", dragListenersRef.current.onMove);
+        document.removeEventListener("pointerup", dragListenersRef.current.onUp);
+      }
+    };
+  }, []);
+
   const handleDragStart = (e: React.PointerEvent) => {
     setIsDragging(true);
     const startY = e.clientY;
@@ -92,6 +103,7 @@ export function PreviewSheet({ open, onClose, config, placementSelections, logo,
     const onUp = (upEvent: PointerEvent) => {
       document.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerup", onUp);
+      dragListenersRef.current = null;
       const delta = upEvent.clientY - startY;
       setIsDragging(false);
       if (delta > 150) {
@@ -99,6 +111,7 @@ export function PreviewSheet({ open, onClose, config, placementSelections, logo,
       }
       setDragY(0);
     };
+    dragListenersRef.current = { onMove, onUp };
     document.addEventListener("pointermove", onMove);
     document.addEventListener("pointerup", onUp);
   };

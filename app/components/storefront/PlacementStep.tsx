@@ -76,7 +76,7 @@ export function PlacementStep({
           const selected = placementSelections[p.id] !== undefined;
           const priceText =
             selected && p.basePriceAdjustmentCents === 0
-              ? "Included"
+              ? t.placement.included
               : `+${fmt(p.basePriceAdjustmentCents)}`;
           return (
             <button

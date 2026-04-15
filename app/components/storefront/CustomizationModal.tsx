@@ -510,6 +510,12 @@ export function CustomizationModal({
     setSubmitError(null);
     try {
       const isMultiVariant = config!.variants.length > 0;
+      const pairs: Array<{
+        baseVariantId: string;
+        feeVariantId: string;
+        quantity: number;
+        properties: Record<string, string>;
+      }> = [];
 
       if (isMultiVariant) {
         // B2B per-size mode: call /prepare once per variant with qty > 0,
@@ -518,14 +524,6 @@ export function CustomizationModal({
           (v) => (quantities[v.id] ?? 0) > 0
         );
         if (activeVariants.length === 0) return;
-
-        // Prepare each variant sequentially to get a dedicated fee slot per variant.
-        const pairs: Array<{
-          baseVariantId: string;
-          feeVariantId: string;
-          quantity: number;
-          properties: Record<string, string>;
-        }> = [];
         let lastPrep: PrepareResult | null = null;
 
         for (const variant of activeVariants) {
@@ -580,14 +578,20 @@ export function CustomizationModal({
         await addCustomizedToCart(config!.variantId, prep.slotVariantId, qty, properties);
       }
 
-      const confirmRes = await fetchWithRetry(proxyUrl("/apps/insignia/cart-confirm"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customizationId: cid }),
-      });
-      if (!confirmRes.ok) {
-        const d = await confirmRes.json().catch(() => ({}));
-        throw new Error(d?.error?.message ?? "Failed to confirm cart");
+      // Confirm each prepared slot (required for slot lifecycle management)
+      const slotIds = pairs.length > 0
+        ? pairs.map((p) => p.feeVariantId)
+        : prepareResult ? [prepareResult.slotVariantId] : [];
+      for (const slotVariantId of slotIds) {
+        const confirmRes = await fetchWithRetry(proxyUrl("/apps/insignia/cart-confirm"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ customizationId: cid, slotVariantId }),
+        });
+        if (!confirmRes.ok) {
+          const d = await confirmRes.json().catch(() => ({}));
+          throw new Error(d?.error?.message ?? "Failed to confirm cart");
+        }
       }
       clearDraft(productId, variantId);
       closeModal();

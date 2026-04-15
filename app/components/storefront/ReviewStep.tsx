@@ -198,16 +198,18 @@ export function ReviewStep({
           </div>
           {sizeVariants.map((variant) => {
             const qty = quantities[variant.id] ?? 0;
+            const unavailable = !variant.available;
             return (
-              <div key={variant.id} className="insignia-qty-row">
+              <div key={variant.id} className="insignia-qty-row" style={unavailable ? { opacity: 0.5 } : undefined}>
                 <span className="insignia-qty-row-label">
                   {variant.sizeLabel}
+                  {unavailable && <span style={{ fontSize: 11, color: "#9CA3AF", marginLeft: 6 }}>Sold out</span>}
                 </span>
                 <div className="insignia-qty-row-stepper">
                   <button
                     type="button"
                     className="insignia-qty-btn"
-                    disabled={qty <= 0}
+                    disabled={qty <= 0 || unavailable}
                     onClick={() => setQty(variant.id, qty - 1)}
                     aria-label={`Decrease ${variant.sizeLabel}`}
                   >
@@ -217,6 +219,7 @@ export function ReviewStep({
                   <button
                     type="button"
                     className="insignia-qty-btn"
+                    disabled={unavailable || qty >= 999}
                     onClick={() => setQty(variant.id, qty + 1)}
                     aria-label={`Increase ${variant.sizeLabel}`}
                   >

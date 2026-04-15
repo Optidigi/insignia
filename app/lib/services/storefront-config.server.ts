@@ -151,7 +151,7 @@ export async function getStorefrontConfig(
             price
             product {
               title
-              variants(first: 50) {
+              variants(first: 250) {
                 nodes {
                   id
                   title
@@ -249,6 +249,10 @@ export async function getStorefrontConfig(
         // No size option detected or no selected variant — return all
         variants = allMappedVariants;
       }
+
+      // Strip selectedOptions from client response — only needed for server-side filtering
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      variants = variants.map(({ selectedOptions, ...rest }) => ({ ...rest, selectedOptions: [] }));
     } catch {
       // Non-fatal: fall back to defaults
     }

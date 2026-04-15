@@ -62,6 +62,7 @@ const translations = {
       allSetBody: "Your logo has been positioned on the product. Hit Continue to review your order.",
       allSetBodyMobile: "Your logo has been positioned. Tap Continue to review your order.",
       preview: "Preview",
+      noExtraCharge: "No extra charge",
     },
     review: {
       title: "Review order",
@@ -165,6 +166,7 @@ const translations = {
       allSetBody: "Your logo has been positioned on the product. Hit Continue to review your order.",
       allSetBodyMobile: "Your logo has been positioned. Tap Continue to review your order.",
       preview: "Preview",
+      noExtraCharge: "No extra charge",
     },
     review: {
       title: "Bestelling beoordelen",
@@ -268,6 +270,7 @@ const translations = {
       allSetBody: "Your logo has been positioned on the product. Hit Continue to review your order.",
       allSetBodyMobile: "Your logo has been positioned. Tap Continue to review your order.",
       preview: "Preview",
+      noExtraCharge: "No extra charge",
     },
     review: {
       title: "Bestellung überprüfen",
@@ -371,6 +374,7 @@ const translations = {
       allSetBody: "Your logo has been positioned on the product. Hit Continue to review your order.",
       allSetBodyMobile: "Your logo has been positioned. Tap Continue to review your order.",
       preview: "Preview",
+      noExtraCharge: "No extra charge",
     },
     review: {
       title: "Vérifier la commande",
@@ -474,6 +478,7 @@ const translations = {
       allSetBody: "Your logo has been positioned on the product. Hit Continue to review your order.",
       allSetBodyMobile: "Your logo has been positioned. Tap Continue to review your order.",
       preview: "Preview",
+      noExtraCharge: "No extra charge",
     },
     review: {
       title: "Revisar pedido",
@@ -577,6 +582,7 @@ const translations = {
       allSetBody: "Your logo has been positioned on the product. Hit Continue to review your order.",
       allSetBodyMobile: "Your logo has been positioned. Tap Continue to review your order.",
       preview: "Preview",
+      noExtraCharge: "No extra charge",
     },
     review: {
       title: "Rivedi ordine",
@@ -680,6 +686,7 @@ const translations = {
       allSetBody: "Your logo has been positioned on the product. Hit Continue to review your order.",
       allSetBodyMobile: "Your logo has been positioned. Tap Continue to review your order.",
       preview: "Preview",
+      noExtraCharge: "No extra charge",
     },
     review: {
       title: "Revisar pedido",
@@ -783,6 +790,7 @@ const translations = {
       allSetBody: "Your logo has been positioned on the product. Hit Continue to review your order.",
       allSetBodyMobile: "Your logo has been positioned. Tap Continue to review your order.",
       preview: "Preview",
+      noExtraCharge: "No extra charge",
     },
     review: {
       title: "Przejrzyj zamówienie",
