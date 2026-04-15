@@ -131,6 +131,16 @@ export async function createProductConfig(
       });
     }
 
+    // Auto-create a default "Front" view so the image manager is immediately usable
+    await tx.productView.create({
+      data: {
+        productConfigId: newConfig.id,
+        perspective: "front",
+        name: "Front",
+        displayOrder: 0,
+      },
+    });
+
     return newConfig;
   });
 
