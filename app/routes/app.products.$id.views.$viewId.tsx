@@ -1180,7 +1180,7 @@ export default function ViewDetailPage() {
             <div style={{
               flex: 1, display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
-              padding: "16px 24px 8px", overflow: "auto",
+              padding: "16px 24px 8px", overflow: "hidden",
             }}>
               {config.placements.length === 0 ? (
                 <div style={{ textAlign: "center", color: "#9CA3AF" }}>
@@ -1339,7 +1339,7 @@ export default function ViewDetailPage() {
               display: "flex", alignItems: "center", gap: 8,
               padding: "8px 16px", height: 40, flexShrink: 0,
               background: "#ffffff", borderTop: "1px solid #E5E7EB",
-              overflowX: "auto",
+              overflowX: "hidden",
             }}>
               <span style={{ fontSize: 11, color: "#6B7280", whiteSpace: "nowrap" }}>Variant:</span>
               {variants.length <= 6 ? (
@@ -1536,6 +1536,7 @@ export default function ViewDetailPage() {
                   </div>
                 ) : (
                   <ZonePricingPanel
+                    key={view.id}
                     placements={config.placements}
                     currency={currencyCode}
                     currencySymbol={currencySymbol}
