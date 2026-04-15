@@ -270,17 +270,11 @@ export function CustomizationModal({
     if (i < STEP_ORDER.length - 1) goToStep(STEP_ORDER[i + 1]);
   }, [currentStepIndex, goToStep]);
 
-  /** Close the modal: try window.close() first (for popup/iframe), fall back to history.back(). */
+  /** Close the modal: navigate back to the product page. */
   const closeModal = useCallback(() => {
     if (typeof window === "undefined") return;
-    // If opened as popup or in iframe, window.close() works
-    try { window.close(); } catch { /* ignore */ }
-    // Fallback: navigate back. If there's no history, navigate to the product page.
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.href = `/products/${productId.replace(/^gid:\/\/shopify\/Product\//, "")}`;
-    }
+    const numericId = productId.replace(/^gid:\/\/shopify\/Product\//, "");
+    window.location.href = `/products/${numericId}`;
   }, [productId]);
 
   const handleClose = useCallback(() => {
