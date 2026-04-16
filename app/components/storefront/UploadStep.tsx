@@ -300,7 +300,7 @@ export function UploadStep({
       <p className="insignia-section-label">{t.upload.methodLabel}</p>
 
       {/* Method selection cards */}
-      <div role="radiogroup" aria-label="Decoration method">
+      <div role="radiogroup" aria-label="Decoration method" style={{ display: "flex", flexDirection: "column", gap: 10 }}>
       {config.methods.map((method) => {
         const isSelected = method.id === selectedMethodId;
         const displayName = method.customerName || method.name;

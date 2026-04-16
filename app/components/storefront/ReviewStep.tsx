@@ -196,39 +196,49 @@ export function ReviewStep({
               {totalQuantity} {t.review.items}
             </span>
           </div>
-          {sizeVariants.map((variant) => {
-            const qty = quantities[variant.id] ?? 0;
-            const unavailable = !variant.available;
-            return (
-              <div key={variant.id} className="insignia-qty-row" style={unavailable ? { opacity: 0.5 } : undefined}>
-                <span className="insignia-qty-row-label">
-                  {variant.sizeLabel}
-                  {unavailable && <span style={{ fontSize: 11, color: "#9CA3AF", marginLeft: 6 }}>Sold out</span>}
-                </span>
-                <div className="insignia-qty-row-stepper">
-                  <button
-                    type="button"
-                    className="insignia-qty-btn"
-                    disabled={qty <= 0 || unavailable}
-                    onClick={() => setQty(variant.id, qty - 1)}
-                    aria-label={`Decrease ${variant.sizeLabel}`}
-                  >
-                    −
-                  </button>
-                  <div className="insignia-qty-val">{qty}</div>
-                  <button
-                    type="button"
-                    className="insignia-qty-btn"
-                    disabled={unavailable || qty >= 999}
-                    onClick={() => setQty(variant.id, qty + 1)}
-                    aria-label={`Increase ${variant.sizeLabel}`}
-                  >
-                    +
-                  </button>
+          <div className="insignia-qty-grid">
+            {sizeVariants.map((variant) => {
+              const qty = quantities[variant.id] ?? 0;
+              const unavailable = !variant.available;
+              return (
+                <div
+                  key={variant.id}
+                  className="insignia-qty-card"
+                  data-unavailable={unavailable ? "true" : undefined}
+                  data-active={qty > 0 ? "true" : undefined}
+                >
+                  <span className="insignia-qty-card-label">
+                    {variant.sizeLabel}
+                  </span>
+                  {unavailable ? (
+                    <span className="insignia-qty-card-sold-out">Sold out</span>
+                  ) : (
+                    <div className="insignia-qty-card-stepper">
+                      <button
+                        type="button"
+                        className="insignia-qty-btn"
+                        disabled={qty <= 0}
+                        onClick={() => setQty(variant.id, qty - 1)}
+                        aria-label={`Decrease ${variant.sizeLabel}`}
+                      >
+                        −
+                      </button>
+                      <span className="insignia-qty-card-val">{qty}</span>
+                      <button
+                        type="button"
+                        className="insignia-qty-btn"
+                        disabled={qty >= 999}
+                        onClick={() => setQty(variant.id, qty + 1)}
+                        aria-label={`Increase ${variant.sizeLabel}`}
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
           <div className="insignia-qty-total-row">
             <span>{t.review.total}</span>
             <span>
