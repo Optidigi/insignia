@@ -10,21 +10,13 @@ import { Stage, Layer, Image, Rect, Transformer, Line } from "react-konva";
 import type Konva from "konva";
 import { Button, InlineStack } from "@shopify/polaris";
 import type { PlacementGeometry, PlacementDefinition } from "../lib/admin-types";
+import { getZoneColor } from "../lib/zone-colors";
 
 export type { PlacementGeometry, PlacementDefinition };
 
 const MAX_CANVAS = 560;
 const SNAP_GRID_PERCENT = 2;
 const NUDGE_PERCENT = 0.5; // 0.5% nudge per arrow key press
-
-const ZONE_COLORS = [
-  { fill: "rgba(37, 99, 235, 0.25)", stroke: "#2563EB" },
-  { fill: "rgba(16, 185, 129, 0.25)", stroke: "#10B981" },
-  { fill: "rgba(245, 158, 11, 0.25)", stroke: "#F59E0B" },
-  { fill: "rgba(139, 92, 246, 0.25)", stroke: "#8B5CF6" },
-  { fill: "rgba(239, 68, 68, 0.25)", stroke: "#EF4444" },
-  { fill: "rgba(236, 72, 153, 0.25)", stroke: "#EC4899" },
-];
 
 type RectState = {
   x: number;
@@ -546,10 +538,10 @@ export function PlacementGeometryEditor({
               opacity={0.08}
               listening={false}
             />
-          {placements.map((p, index) => {
+          {placements.map((p) => {
             const r = rects[p.id];
             if (!r) return null;
-            const zoneColor = ZONE_COLORS[index % ZONE_COLORS.length];
+            const zoneColor = getZoneColor(p.id);
             return (
               <Rect
                 key={p.id}

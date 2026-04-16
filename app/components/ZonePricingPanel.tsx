@@ -32,6 +32,7 @@ import {
 } from "@shopify/polaris-icons";
 import { useFetcher, useRevalidator } from "react-router";
 import type { Placement } from "../lib/admin-types";
+import { getZoneColor } from "../lib/zone-colors";
 
 // ============================================================================
 // Types
@@ -39,6 +40,7 @@ import type { Placement } from "../lib/admin-types";
 
 /** Pending edits for a placement's own fields. */
 type PlacementEdit = {
+  name?: string;
   basePriceAdjustmentCents?: number;
   hidePriceWhenZero?: boolean;
   defaultStepIndex?: number;
@@ -84,17 +86,6 @@ type Props = {
 // ============================================================================
 // Constants
 // ============================================================================
-
-const ZONE_COLORS = ["#2563EB", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899"];
-
-/** Returns a stable color index based on the placement ID string hash. */
-function stableColorIndex(id: string): number {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash) % ZONE_COLORS.length;
-}
 
 // Price color coding
 const PRICE_COLOR_NEGATIVE = "#16A34A"; // green — discount
@@ -187,6 +178,24 @@ export function ZonePricingPanel({
         window.shopify?.toast?.show("Order updated");
         setLocalStepOrders({});  // Reset to server data
       }
+      if (intent === "add-step" || intent === "delete-step") {
+        // Clear any stale defaultStepIndex edits since step indices changed
+        setPlacementEdits((prev) => {
+          const next = { ...prev };
+          for (const key of Object.keys(next)) {
+            if (next[key]?.defaultStepIndex !== undefined) {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              const { defaultStepIndex: _dsi, ...rest } = next[key];
+              if (Object.keys(rest).length === 0) {
+                delete next[key];
+              } else {
+                next[key] = rest;
+              }
+            }
+          }
+          return next;
+        });
+      }
       revalidator.revalidate();
     } else if (data.error) {
       const msg = typeof data.error === "string" ? data.error : "An error occurred";
@@ -199,6 +208,7 @@ export function ZonePricingPanel({
   const [placementEdits, setPlacementEdits] = useState<Record<string, PlacementEdit>>({});
   const [stepEdits, setStepEdits] = useState<Record<string, StepEdit>>({});
   // String states for free-form typing in price/scale fields
+  const [placementNameStrings, setPlacementNameStrings] = useState<Record<string, string>>({});
   const [placementPriceStrings, setPlacementPriceStrings] = useState<Record<string, string>>({});
   const [stepPriceStrings, setStepPriceStrings] = useState<Record<string, string>>({});
   const [stepScaleStrings, setStepScaleStrings] = useState<Record<string, string>>({});
@@ -259,7 +269,7 @@ export function ZonePricingPanel({
       const fd = new FormData();
       fd.set("intent", "update-placement");
       fd.set("placementId", placementId);
-      fd.set("name", p.name);
+      fd.set("name", edit.name ?? p.name);
       fd.set(
         "basePriceAdjustmentCents",
         String(edit.basePriceAdjustmentCents ?? p.basePriceAdjustmentCents),
@@ -304,6 +314,7 @@ export function ZonePricingPanel({
   const clearEdits = useCallback(() => {
     setPlacementEdits({});
     setStepEdits({});
+    setPlacementNameStrings({});
     setPlacementPriceStrings({});
     setStepPriceStrings({});
     setStepScaleStrings({});
@@ -357,10 +368,12 @@ export function ZonePricingPanel({
   }, []);
 
   const updateStepScale = useCallback((stepId: string, val: string) => {
-    setStepScaleStrings((prev) => ({ ...prev, [stepId]: val }));
+    // Allow only digits, one decimal point, and empty string
+    const filtered = val.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+    setStepScaleStrings((prev) => ({ ...prev, [stepId]: filtered }));
     setStepEdits((prev) => ({
       ...prev,
-      [stepId]: { ...prev[stepId], scaleFactor: val || "1" },
+      [stepId]: { ...prev[stepId], scaleFactor: filtered || "1" },
     }));
   }, []);
 
@@ -412,7 +425,7 @@ export function ZonePricingPanel({
     <BlockStack gap="200">
       {displayPlacements.map((p) => {
         const isExpanded = p.id === selectedPlacementId;
-        const dotColor = ZONE_COLORS[stableColorIndex(p.id)];
+        const dotColor = getZoneColor(p.id).hex;
         const summary = buildBadgeSummary(p, currencySymbol);
 
         // Geometry and positioning status per-view
@@ -589,8 +602,24 @@ export function ZonePricingPanel({
             {isExpanded && (
               <div style={{ padding: "0 14px 14px" }}>
                 <BlockStack gap="300">
-                  {/* Section 1: Placement fee */}
+                  {/* Section 0: Print area name */}
                   <div style={{ paddingTop: 12 }}>
+                    <TextField
+                      label="Print area name"
+                      value={placementNameStrings[p.id] ?? p.name}
+                      onChange={(val) => {
+                        setPlacementNameStrings((prev) => ({ ...prev, [p.id]: val }));
+                        setPlacementEdits((prev) => ({
+                          ...prev,
+                          [p.id]: { ...prev[p.id], name: val },
+                        }));
+                      }}
+                      autoComplete="off"
+                    />
+                  </div>
+
+                  {/* Section 1: Placement fee */}
+                  <div>
                     <BlockStack gap="100">
                       <Text as="p" variant="bodySm" fontWeight="semibold" tone="subdued">
                         Placement fee
