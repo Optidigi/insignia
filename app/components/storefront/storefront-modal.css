@@ -1788,7 +1788,9 @@ html, body {
 
 .insignia-qty-card-stepper .insignia-qty-btn {
   width: 22px;
+  min-width: 0;
   height: 26px;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2344,7 +2346,9 @@ html, body {
   }
   .insignia-qty-card-stepper .insignia-qty-btn {
     width: 24px;
+    min-width: 0;
     height: 28px;
+    min-height: 0;
   }
   .insignia-qty-card-val {
     width: 32px;
