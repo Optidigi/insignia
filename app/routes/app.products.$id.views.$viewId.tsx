@@ -4,7 +4,7 @@
  * Configure per-variant images for a specific view.
  */
 
-import { useState, useCallback, useEffect, useMemo, lazy, Suspense } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef, lazy, Suspense } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 import { useLoaderData, useSubmit, useFetcher, useNavigation, useRevalidator, useActionData, useBlocker, useNavigate, Link, redirect } from "react-router";
 import {
@@ -730,6 +730,13 @@ export default function ViewDetailPage() {
     variants[0]?.id ?? null
   );
   const [selectedPlacementId, setSelectedPlacementId] = useState<string | null>(null);
+  const selectedPlacementIdRef = useRef<string | null>(null);
+
+  const handleSelectPlacement = useCallback((id: string | null) => {
+    selectedPlacementIdRef.current = id;
+    setSelectedPlacementId(id);
+  }, []);
+
   const [geometryDirty, setGeometryDirty] = useState(false);
   const [pricingDirty, setPricingDirty] = useState(false);
   const [editorResetKey, setEditorResetKey] = useState(0);
@@ -854,6 +861,18 @@ export default function ViewDetailPage() {
       revalidator.revalidate();
     }
   }, [navigation.state, navigation.formData, revalidator]);
+
+  // Restore accordion state after revalidation
+  useEffect(() => {
+    if (selectedPlacementId === null && selectedPlacementIdRef.current) {
+      const stillExists = viewPlacements.some(p => p.id === selectedPlacementIdRef.current);
+      if (stillExists) {
+        setSelectedPlacementId(selectedPlacementIdRef.current);
+      } else {
+        selectedPlacementIdRef.current = null;
+      }
+    }
+  }, [viewPlacements]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Map ISO 4217 currency code to symbol for display
   const currencySymbolMap: Record<string, string> = {
@@ -1324,7 +1343,7 @@ export default function ViewDetailPage() {
                         setPendingGeometry(geometry);
                       }}
                       selectedPlacementId={selectedPlacementId}
-                      onSelectPlacement={setSelectedPlacementId}
+                      onSelectPlacement={handleSelectPlacement}
                     />
                   </Suspense>
 
@@ -1610,7 +1629,7 @@ export default function ViewDetailPage() {
                     currency={currencyCode}
                     currencySymbol={currencySymbol}
                     selectedPlacementId={selectedPlacementId}
-                    onSelectPlacement={setSelectedPlacementId}
+                    onSelectPlacement={handleSelectPlacement}
                     methodBasePriceCents={config.allowedMethods[0]?.decorationMethod?.basePriceCents ?? 0}
                     calibrationPxPerCm={view.calibrationPxPerCm ?? undefined}
                     imageWidth={imageDimensions?.width}
