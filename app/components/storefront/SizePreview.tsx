@@ -5,7 +5,7 @@
  *  - showTabs (desktop left panel): named view tabs + centered canvas area
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import NativeCanvas from "./NativeCanvas";
@@ -18,6 +18,8 @@ type SizePreviewProps = {
   sizeMultiplier?: number;
   /** Desktop left panel mode: shows named view tabs and centers the canvas */
   showTabs?: boolean;
+  /** Auto-switch to the view that contains this view ID */
+  activeViewId?: string;
 };
 
 function capitalize(s: string) {
@@ -31,11 +33,21 @@ export function SizePreview({
   highlightPlacementId,
   sizeMultiplier = 0.6,
   showTabs = false,
+  activeViewId,
 }: SizePreviewProps) {
   // Only show views that have a real image assigned
   const availableViews = config.views.filter((v) => v.imageUrl && !v.isMissingImage);
 
   const [viewIndex, setViewIndex] = useState(0);
+
+  useEffect(() => {
+    if (!activeViewId) return;
+    const idx = availableViews.findIndex((v) => v.id === activeViewId);
+    if (idx !== -1 && idx !== viewIndex) {
+      setViewIndex(idx);
+    }
+  }, [activeViewId]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const view = availableViews[viewIndex] ?? availableViews[0];
   const viewId = view?.id;
   const imageUrl = view?.imageUrl ?? null;

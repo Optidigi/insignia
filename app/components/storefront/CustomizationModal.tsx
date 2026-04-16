@@ -163,9 +163,12 @@ export function CustomizationModal({
     + (selectedMethod?.basePriceCents ?? 0)
     + Object.keys(placementSelections).reduce((sum, pid) => {
         const p = config?.placements.find(x => x.id === pid);
-        const stepIdx = placementSelections[pid];
-        const pStep = p?.steps[stepIdx];
-        return sum + (p?.basePriceAdjustmentCents ?? 0) + (pStep?.priceAdjustmentCents ?? 0);
+        const placementPrice = p?.basePriceAdjustmentCents ?? 0;
+        // Only include size-step price from the size step onward
+        const stepPrice = (step === "size" || step === "review")
+          ? (p?.steps[placementSelections[pid]]?.priceAdjustmentCents ?? 0)
+          : 0;
+        return sum + placementPrice + stepPrice;
       }, 0);
 
   const footerPriceLabel = (() => {

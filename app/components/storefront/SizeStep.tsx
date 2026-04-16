@@ -6,7 +6,7 @@
  * - preview: all ≤1 size (reassurance card, auto-skips)
  */
 
-import { useEffect, useImperativeHandle, useRef, useState, forwardRef } from "react";
+import { useEffect, useImperativeHandle, useMemo, useRef, useState, forwardRef } from "react";
 import type { StorefrontConfig, PlacementSelections, PlacementStep as PlacementStepType } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
@@ -237,6 +237,12 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
   const [currentPlacementIndex, setCurrentPlacementIndex] = useState(0);
   const currentPlacement = selectedPlacementIds[currentPlacementIndex];
 
+  const activeViewId = useMemo(() => {
+    if (!currentPlacement) return undefined;
+    const viewIds = Object.keys(currentPlacement.geometryByViewId);
+    return viewIds[0];
+  }, [currentPlacement]);
+
   const sizeState = getSizeState(selectedPlacementIds);
 
   // Expose tryAdvance so the parent can advance positions before going to next step
@@ -299,6 +305,7 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
           placementSelections={placementSelections}
           logo={logo}
           highlightPlacementId={currentPlacement?.id}
+          activeViewId={activeViewId}
         />
       </div>
 
