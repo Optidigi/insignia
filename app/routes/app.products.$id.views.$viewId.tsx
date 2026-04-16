@@ -687,6 +687,56 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return redirect(`/app/products/${configId}`);
     }
 
+    if (intent === "reorder-placements") {
+      const orderJson = formData.get("order") as string;
+      if (!orderJson) {
+        throw new Response("Missing order data", { status: 400 });
+      }
+      let order: string[];
+      try {
+        order = JSON.parse(orderJson);
+      } catch {
+        throw new Response("Invalid order JSON", { status: 400 });
+      }
+      for (let i = 0; i < order.length; i++) {
+        await db.placementDefinition.update({
+          where: {
+            id: order[i],
+            productView: { productConfig: { shopId: shop.id } },
+          },
+          data: { displayOrder: i },
+        });
+      }
+      return { success: true, intent: "reorder-placements" };
+    }
+
+    if (intent === "reorder-steps") {
+      const placementId = formData.get("placementId") as string;
+      const orderJson = formData.get("order") as string;
+      if (!placementId || !orderJson) {
+        throw new Response("Missing data", { status: 400 });
+      }
+      let order: string[];
+      try {
+        order = JSON.parse(orderJson);
+      } catch {
+        throw new Response("Invalid order JSON", { status: 400 });
+      }
+      for (let i = 0; i < order.length; i++) {
+        await db.placementStep.update({
+          where: {
+            id: order[i],
+            placementDefinition: {
+              id: placementId,
+              productView: { productConfig: { shopId: shop.id } },
+            },
+          },
+          data: { displayOrder: i },
+        });
+      }
+      return { success: true, intent: "reorder-steps" };
+    }
+
     throw new Response("Invalid intent", { status: 400 });
   } catch (error) {
     return handleError(error);

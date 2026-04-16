@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BlockStack,
+  Box,
   InlineStack,
   Text,
   Button,
@@ -170,6 +171,8 @@ export function ZonePricingPanel({
       const intent = data.intent as string | undefined;
       if (intent === "add-step") window.shopify?.toast?.show("Size tier added");
       else if (intent === "delete-step") window.shopify?.toast?.show("Size tier deleted");
+      else if (intent === "reorder-placements") window.shopify?.toast?.show("Order updated");
+      else if (intent === "reorder-steps") window.shopify?.toast?.show("Order updated");
       revalidator.revalidate();
     } else if (data.error) {
       const msg = typeof data.error === "string" ? data.error : "An error occurred";
@@ -186,6 +189,27 @@ export function ZonePricingPanel({
   const [stepPriceStrings, setStepPriceStrings] = useState<Record<string, string>>({});
   const [stepScaleStrings, setStepScaleStrings] = useState<Record<string, string>>({});
   const [stepLabelStrings, setStepLabelStrings] = useState<Record<string, string>>({});
+
+  // Drag-and-drop state
+  const [draggedPlacementId, setDraggedPlacementId] = useState<string | null>(null);
+  const [dragOverPlacementId, setDragOverPlacementId] = useState<string | null>(null);
+  const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
+  const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
+
+  const submitReorderPlacements = useCallback((newOrder: string[]) => {
+    const fd = new FormData();
+    fd.set("intent", "reorder-placements");
+    fd.set("order", JSON.stringify(newOrder));
+    stepFetcher.submit(fd, { method: "post" });
+  }, [stepFetcher]);
+
+  const submitReorderSteps = useCallback((placementId: string, newOrder: string[]) => {
+    const fd = new FormData();
+    fd.set("intent", "reorder-steps");
+    fd.set("placementId", placementId);
+    fd.set("order", JSON.stringify(newOrder));
+    stepFetcher.submit(fd, { method: "post" });
+  }, [stepFetcher]);
 
   // Track dirty state
   const isDirty = Object.keys(placementEdits).length > 0 || Object.keys(stepEdits).length > 0;
@@ -382,11 +406,47 @@ export function ZonePricingPanel({
         return (
           <div
             key={p.id}
+            draggable
+            onDragStart={(e) => {
+              e.dataTransfer.effectAllowed = "move";
+              setDraggedPlacementId(p.id);
+            }}
+            onDragEnd={() => {
+              setDraggedPlacementId(null);
+              setDragOverPlacementId(null);
+            }}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = "move";
+              if (draggedPlacementId && draggedPlacementId !== p.id) {
+                setDragOverPlacementId(p.id);
+              }
+            }}
+            onDragLeave={() => setDragOverPlacementId(null)}
+            onDrop={(e) => {
+              e.preventDefault();
+              if (!draggedPlacementId || draggedPlacementId === p.id) return;
+              const fromIdx = placements.findIndex((pl) => pl.id === draggedPlacementId);
+              const toIdx = placements.findIndex((pl) => pl.id === p.id);
+              if (fromIdx === -1 || toIdx === -1) return;
+              const newOrder = placements.map((pl) => pl.id);
+              newOrder.splice(fromIdx, 1);
+              newOrder.splice(toIdx, 0, draggedPlacementId);
+              setDraggedPlacementId(null);
+              setDragOverPlacementId(null);
+              submitReorderPlacements(newOrder);
+            }}
             style={{
               borderRadius: 8,
-              border: isExpanded ? "1.5px solid #2563EB" : "1px solid #E5E7EB",
+              border: dragOverPlacementId === p.id
+                ? "1.5px solid #2563EB"
+                : isExpanded
+                ? "1.5px solid #2563EB"
+                : "1px solid #E5E7EB",
+              borderTop: dragOverPlacementId === p.id ? "2px solid #2563EB" : undefined,
               overflow: "hidden",
               background: "#ffffff",
+              opacity: draggedPlacementId === p.id ? 0.4 : 1,
             }}
           >
             {/* ── Collapsed / expanded header ───────────────────────────── */}
@@ -397,7 +457,7 @@ export function ZonePricingPanel({
                 display: "flex",
                 alignItems: "center",
                 width: "100%",
-                padding: isExpanded ? "10px 14px" : "10px 14px",
+                padding: "10px 14px",
                 background: isExpanded ? "#EFF6FF" : "#ffffff",
                 border: "none",
                 cursor: "pointer",
@@ -405,6 +465,17 @@ export function ZonePricingPanel({
                 textAlign: "left",
               }}
             >
+              {/* Drag handle */}
+              {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+              <span
+                aria-hidden="true"
+                style={{ color: "#D1D5DB", flexShrink: 0, cursor: "grab", display: "flex", alignItems: "center" }}
+                onMouseDown={(e) => e.stopPropagation()}
+              >
+                <Box>
+                  <Icon source={DragHandleIcon} tone="subdued" />
+                </Box>
+              </span>
               {/* Colored dot */}
               <div
                 style={{
@@ -594,6 +665,36 @@ export function ZonePricingPanel({
                       return (
                         <div
                           key={step.id}
+                          draggable={hasMultipleSteps}
+                          onDragStart={hasMultipleSteps ? (e) => {
+                            e.dataTransfer.effectAllowed = "move";
+                            setDraggedStepId(step.id);
+                          } : undefined}
+                          onDragEnd={hasMultipleSteps ? () => {
+                            setDraggedStepId(null);
+                            setDragOverStepId(null);
+                          } : undefined}
+                          onDragOver={hasMultipleSteps ? (e) => {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                            if (draggedStepId && draggedStepId !== step.id) {
+                              setDragOverStepId(step.id);
+                            }
+                          } : undefined}
+                          onDragLeave={hasMultipleSteps ? () => setDragOverStepId(null) : undefined}
+                          onDrop={hasMultipleSteps ? (e) => {
+                            e.preventDefault();
+                            if (!draggedStepId || draggedStepId === step.id) return;
+                            const fromIdx = p.steps.findIndex((s) => s.id === draggedStepId);
+                            const toIdx = p.steps.findIndex((s) => s.id === step.id);
+                            if (fromIdx === -1 || toIdx === -1) return;
+                            const newOrder = p.steps.map((s) => s.id);
+                            newOrder.splice(fromIdx, 1);
+                            newOrder.splice(toIdx, 0, draggedStepId);
+                            setDraggedStepId(null);
+                            setDragOverStepId(null);
+                            submitReorderSteps(p.id, newOrder);
+                          } : undefined}
                           style={{
                             display: "grid",
                             gridTemplateColumns: hasMultipleSteps
@@ -601,11 +702,15 @@ export function ZonePricingPanel({
                               : "16px 1fr 80px 28px",
                             gap: 6,
                             alignItems: "center",
+                            opacity: draggedStepId === step.id ? 0.4 : 1,
+                            borderTop: dragOverStepId === step.id ? "2px solid #2563EB" : undefined,
                           }}
                         >
                           {/* Grip */}
-                          <span style={{ color: "#D1D5DB", display: "flex", alignItems: "center" }}>
-                            <Icon source={DragHandleIcon} />
+                          <span style={{ color: "#D1D5DB", display: "flex", alignItems: "center", cursor: hasMultipleSteps ? "grab" : "default" }}>
+                            <Box>
+                              <Icon source={DragHandleIcon} tone="subdued" />
+                            </Box>
                           </span>
 
                           {/* Name */}
