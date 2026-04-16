@@ -7,7 +7,7 @@ import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
 import { formatCurrency } from "./currency";
-import { IconEye, IconShoppingCart } from "./icons";
+import { IconEye } from "./icons";
 
 type PriceResult = {
   unitPriceCents: number;
@@ -32,11 +32,8 @@ type ReviewStepProps = {
     unitPriceCents: number;
     feeCents: number;
   } | null;
-  submitLoading: boolean;
   submitError: string | null;
   onSaveDraftAndPrice: () => Promise<void>;
-  onPrepareAndAddToCart: () => Promise<void>;
-  onBack: () => void;
   baseProductPriceCents: number;
   productTitle: string;
   onShowPreviewSheet: () => void;
@@ -51,10 +48,7 @@ export function ReviewStep({
   quantities,
   onQuantitiesChange,
   priceResult,
-  submitLoading,
   submitError,
-  onPrepareAndAddToCart,
-  onBack,
   baseProductPriceCents,
   productTitle,
   onShowPreviewSheet,
@@ -326,32 +320,6 @@ export function ReviewStep({
         </div>
       )}
 
-      {/* Footer actions */}
-      <div className="insignia-review-actions">
-        <button
-          type="button"
-          className="insignia-review-back-link"
-          onClick={onBack}
-        >
-          ← {t.review.btnBack}
-        </button>
-        <button
-          type="button"
-          className="insignia-btn insignia-btn-success"
-          disabled={
-            totalQuantity < 1 || submitLoading || !priceResult?.validation?.ok
-          }
-          onClick={() => onPrepareAndAddToCart()}
-          style={{ display: "flex", alignItems: "center", gap: 8 }}
-        >
-          <IconShoppingCart size={16} />
-          <span>
-            {submitLoading
-              ? "Adding…"
-              : `${t.review.addToCartWithPrice} — ${fmt(totalCents)}`}
-          </span>
-        </button>
-      </div>
     </section>
   );
 }

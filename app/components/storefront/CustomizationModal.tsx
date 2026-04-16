@@ -16,7 +16,7 @@ import { PreviewSheet } from "./PreviewSheet";
 import { addCustomizedToCart, addMultipleCustomizedToCart, buildInsigniaProperties } from "../../lib/storefront/cart.client";
 import { proxyUrl } from "../../lib/storefront/proxy-url.client";
 import { getTranslations, detectLocale } from "./i18n";
-import { IconUpload, IconPlacement, IconSize, IconEye, IconCircleCheck, IconX } from "./icons";
+import { IconUpload, IconPlacement, IconSize, IconEye, IconCircleCheck, IconX, IconShoppingCart } from "./icons";
 import { formatCurrency } from "./currency";
 import { SizePreview } from "./SizePreview";
 import "./storefront-modal.css";
@@ -735,11 +735,8 @@ export function CustomizationModal({
                 customizationId={customizationId}
                 priceResult={priceResult}
                 prepareResult={prepareResult}
-                submitLoading={submitLoading}
                 submitError={submitError}
                 onSaveDraftAndPrice={() => saveDraftAndPrice().then(() => {})}
-                onPrepareAndAddToCart={prepareAndAddToCart}
-                onBack={handleBack}
                 baseProductPriceCents={config.baseProductPriceCents}
                 productTitle={config.productTitle}
                 onShowPreviewSheet={() => setShowPreviewSheet(true)}
@@ -748,33 +745,58 @@ export function CustomizationModal({
             )}
           </main>
 
-          {step !== "review" && (
-            <footer className="insignia-modal-footer">
-              <div className="insignia-footer-price-area">
-                <span className="insignia-footer-price-label">{footerPriceLabel}</span>
-                <span className="insignia-footer-price-value">
-                  {formatCurrency(footerPriceValue, config.currency)}
-                </span>
-              </div>
-              <div className="insignia-footer-buttons">
-                {currentStepIndex > 0 && (
+          <footer className="insignia-modal-footer">
+            <div className="insignia-footer-price-area">
+              <span className="insignia-footer-price-label">{footerPriceLabel}</span>
+              <span className="insignia-footer-price-value">
+                {formatCurrency(
+                  step === "review" ? footerPriceValue * totalQuantity : footerPriceValue,
+                  config.currency
+                )}
+              </span>
+            </div>
+            <div className="insignia-footer-buttons">
+              {step === "review" ? (
+                <>
                   <button
                     className="insignia-btn insignia-btn-secondary"
                     onClick={handleBack}
                   >
                     {t.placement.btnBack}
                   </button>
-                )}
-                <button
-                  className="insignia-btn insignia-btn-primary"
-                  disabled={!canGoNext()}
-                  onClick={handleNext}
-                >
-                  {t.placement.btnNext}
-                </button>
-              </div>
-            </footer>
-          )}
+                  <button
+                    className="insignia-btn insignia-btn-success"
+                    disabled={totalQuantity < 1 || submitLoading || !priceResult?.validation?.ok}
+                    onClick={prepareAndAddToCart}
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <IconShoppingCart size={16} />
+                    <span>
+                      {submitLoading ? "Adding…" : t.review.addToCartWithPrice}
+                    </span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  {currentStepIndex > 0 && (
+                    <button
+                      className="insignia-btn insignia-btn-secondary"
+                      onClick={handleBack}
+                    >
+                      {t.placement.btnBack}
+                    </button>
+                  )}
+                  <button
+                    className="insignia-btn insignia-btn-primary"
+                    disabled={!canGoNext()}
+                    onClick={handleNext}
+                  >
+                    {t.placement.btnNext}
+                  </button>
+                </>
+              )}
+            </div>
+          </footer>
         </div>
       </div>
 

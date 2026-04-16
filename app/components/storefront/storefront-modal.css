@@ -1723,17 +1723,17 @@ html, body {
   font-weight: 600;
   color: var(--insignia-primary);
 }
-/* Quantity card grid — 3 per row desktop, 2 per row mobile */
+/* Quantity card grid — 4 per row desktop, 3 per row mobile */
 .insignia-qty-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 8px;
-  padding: 12px;
+  padding: 8px 0;
 }
 
 @media (max-width: 480px) {
   .insignia-qty-grid {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
@@ -1741,16 +1741,17 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 12px 8px;
+  min-height: 76px;
+  gap: 5px;
+  padding: 0 4px;
   border: 1px solid var(--insignia-border);
-  border-radius: var(--insignia-radius);
+  border-radius: 10px;
   background: var(--insignia-bg);
   transition: border-color var(--insignia-transition), background var(--insignia-transition);
 }
 
 .insignia-qty-card[data-active="true"] {
-  border-color: var(--insignia-primary);
+  border: 2px solid var(--insignia-primary);
   background: var(--insignia-primary-light);
 }
 
@@ -1760,10 +1761,16 @@ html, body {
 }
 
 .insignia-qty-card-label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
   color: var(--insignia-text);
   text-align: center;
+}
+
+.insignia-qty-card[data-active="true"] .insignia-qty-card-label {
+  color: #1D4ED8;
 }
 
 .insignia-qty-card-sold-out {
@@ -1780,8 +1787,8 @@ html, body {
 }
 
 .insignia-qty-card-stepper .insignia-qty-btn {
-  width: 28px;
-  height: 28px;
+  width: 22px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1789,7 +1796,7 @@ html, body {
   border: none;
   cursor: pointer;
   color: #374151;
-  font-size: 14px;
+  font-size: 12px;
   padding: 0;
 }
 
@@ -1802,18 +1809,30 @@ html, body {
   background: var(--insignia-bg-muted);
 }
 
+.insignia-qty-card[data-active="true"] .insignia-qty-card-stepper .insignia-qty-btn {
+  background: #DBEAFE;
+  color: #2563EB;
+}
+
 .insignia-qty-card-val {
-  width: 36px;
-  height: 28px;
+  width: 28px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-left: 1px solid var(--insignia-border);
   border-right: 1px solid var(--insignia-border);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 600;
-  color: #374151;
+  color: #9CA3AF;
   background: white;
+}
+
+.insignia-qty-card[data-active="true"] .insignia-qty-card-val {
+  color: #2563EB;
+  font-weight: 700;
+  border-left-color: #BFDBFE;
+  border-right-color: #BFDBFE;
 }
 .insignia-qty-total-row {
   display: flex;
