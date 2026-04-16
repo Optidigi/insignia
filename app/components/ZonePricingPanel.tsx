@@ -161,6 +161,7 @@ export function ZonePricingPanel({
   onDeletePlacement,
 }: Props) {
   const stepFetcher = useFetcher();
+  const reorderFetcher = useFetcher();
   const revalidator = useRevalidator();
 
   // Show toast + revalidate when add-step / delete-step fetcher completes
@@ -171,13 +172,6 @@ export function ZonePricingPanel({
       const intent = data.intent as string | undefined;
       if (intent === "add-step") window.shopify?.toast?.show("Size tier added");
       else if (intent === "delete-step") window.shopify?.toast?.show("Size tier deleted");
-      else if (intent === "reorder-placements") {
-        window.shopify?.toast?.show("Order updated");
-        setLocalPlacementOrder(null);  // Reset to server data
-      } else if (intent === "reorder-steps") {
-        window.shopify?.toast?.show("Order updated");
-        setLocalStepOrders({});  // Reset to server data
-      }
       if (intent === "add-step" || intent === "delete-step") {
         // Clear any stale defaultStepIndex edits since step indices changed
         setPlacementEdits((prev) => {
@@ -202,6 +196,21 @@ export function ZonePricingPanel({
       window.shopify?.toast?.show(msg, { isError: true });
     }
   }, [stepFetcher.data, stepFetcher.state]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Show toast + reset optimistic state when reorder fetcher completes
+  useEffect(() => {
+    const data = reorderFetcher.data as Record<string, unknown> | undefined;
+    if (!data || reorderFetcher.state !== "idle") return;
+    if (data.success) {
+      const intent = data.intent as string | undefined;
+      if (intent === "reorder-placements" || intent === "reorder-steps") {
+        window.shopify?.toast?.show("Order updated");
+        setLocalPlacementOrder(null);
+        setLocalStepOrders({});
+      }
+      revalidator.revalidate();
+    }
+  }, [reorderFetcher.data, reorderFetcher.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Local edit state ─────────────────────────────────────────────────────
   // These track in-progress text/number edits that haven't been saved yet.
@@ -228,16 +237,16 @@ export function ZonePricingPanel({
     const fd = new FormData();
     fd.set("intent", "reorder-placements");
     fd.set("order", JSON.stringify(newOrder));
-    stepFetcher.submit(fd, { method: "post" });
-  }, [stepFetcher]);
+    reorderFetcher.submit(fd, { method: "post" });
+  }, [reorderFetcher]);
 
   const submitReorderSteps = useCallback((placementId: string, newOrder: string[]) => {
     const fd = new FormData();
     fd.set("intent", "reorder-steps");
     fd.set("placementId", placementId);
     fd.set("order", JSON.stringify(newOrder));
-    stepFetcher.submit(fd, { method: "post" });
-  }, [stepFetcher]);
+    reorderFetcher.submit(fd, { method: "post" });
+  }, [reorderFetcher]);
 
   // Derive display placements from optimistic local order or server data
   const displayPlacements = useMemo(() => {
@@ -730,6 +739,7 @@ export function ZonePricingPanel({
                           key={step.id}
                           draggable={hasMultipleSteps}
                           onDragStart={hasMultipleSteps ? (e) => {
+                            e.stopPropagation();
                             e.dataTransfer.effectAllowed = "move";
                             setDraggedStepId(step.id);
                           } : undefined}

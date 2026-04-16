@@ -409,7 +409,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
     if (intent === "update-placement") {
       const placementId = formData.get("placementId") as string;
-      const name = formData.get("name") as string;
+      const name = (formData.get("name") as string)?.trim();
       const basePriceAdjustmentCents =
         parseInt(formData.get("basePriceAdjustmentCents") as string ?? "0", 10) || 0;
       const hidePriceWhenZero = formData.get("hidePriceWhenZero") === "true";
@@ -698,6 +698,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       } catch {
         throw new Response("Invalid order JSON", { status: 400 });
       }
+      if (!Array.isArray(order) || order.some(id => typeof id !== "string" || !id)) {
+        throw new Response("Invalid order format", { status: 400 });
+      }
+      if (new Set(order).size !== order.length) {
+        throw new Response("Duplicate IDs in order", { status: 400 });
+      }
       for (let i = 0; i < order.length; i++) {
         await db.placementDefinition.update({
           where: {
@@ -721,6 +727,12 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         order = JSON.parse(orderJson);
       } catch {
         throw new Response("Invalid order JSON", { status: 400 });
+      }
+      if (!Array.isArray(order) || order.some(id => typeof id !== "string" || !id)) {
+        throw new Response("Invalid order format", { status: 400 });
+      }
+      if (new Set(order).size !== order.length) {
+        throw new Response("Duplicate IDs in order", { status: 400 });
       }
       for (let i = 0; i < order.length; i++) {
         await db.placementStep.update({
@@ -1085,7 +1097,10 @@ export default function ViewDetailPage() {
   const prevViewIdRef = useRef(view.id);
   useEffect(() => {
     // Always sync view name from server (may have been renamed)
-    setViewName(view.name ?? getPerspectiveLabel(view.perspective));
+    // BUT skip if user is actively editing the name
+    if (!nameDirty) {
+      setViewName(view.name ?? getPerspectiveLabel(view.perspective));
+    }
 
     // Only reset editing state when switching to a different view
     if (prevViewIdRef.current !== view.id) {

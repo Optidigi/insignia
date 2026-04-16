@@ -10,6 +10,7 @@ import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 import {
   useLoaderData,
   useSubmit,
+  useFetcher,
   useNavigation,
   useActionData,
   redirect,
@@ -459,6 +460,7 @@ export default function ProductConfigDetailPage() {
   const fmt = (cents: number) => formatCurrency(cents, currencyCode ?? "USD");
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
+  const methodFetcher = useFetcher();
   const navigation = useNavigation();
 
   const [hasChanges, setHasChanges] = useState(false);
@@ -527,14 +529,20 @@ export default function ProductConfigDetailPage() {
           window.shopify?.toast?.show("Changes saved");
           setHasChanges(false);
         }
-        if (data.intent === "update-methods") {
-          window.shopify?.toast?.show("Methods updated");
-          setHasChanges(false);
-        }
         setError(null);
       }
     }
   }, [actionData, isSubmitting]);
+
+  // Handle methodFetcher response (separate from main submit to avoid dual-submit race)
+  useEffect(() => {
+    const data = methodFetcher.data as Record<string, unknown> | undefined;
+    if (!data || methodFetcher.state !== "idle") return;
+    if (data.success && data.intent === "update-methods") {
+      window.shopify?.toast?.show("Methods updated");
+      setHasChanges(false);
+    }
+  }, [methodFetcher.data, methodFetcher.state]);
 
   const views = config.views;
   const placements = config.views.flatMap((v) => v.placements);
@@ -594,8 +602,8 @@ export default function ProductConfigDetailPage() {
     const formData = new FormData();
     formData.append("intent", "update-methods");
     formData.append("methodIds", JSON.stringify(selectedMethodIds));
-    submit(formData, { method: "POST" });
-  }, [selectedMethodIds, submit]);
+    methodFetcher.submit(formData, { method: "POST" });
+  }, [selectedMethodIds, methodFetcher]);
 
   const handleSaveAll = useCallback(() => {
     if (hasBasicChanges) {
