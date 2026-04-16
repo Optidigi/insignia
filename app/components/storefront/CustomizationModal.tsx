@@ -148,6 +148,7 @@ export function CustomizationModal({
   const [submitLoading, setSubmitLoading] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [logoUrlTimestamp, setLogoUrlTimestamp] = useState(Date.now());
+  const [desktopActiveViewId, setDesktopActiveViewId] = useState<string | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
   const sizeStepRef = useRef<SizeStepHandle>(null);
 
@@ -363,6 +364,11 @@ export function CustomizationModal({
     el.addEventListener("keydown", onKeyDown);
     first?.focus();
     return () => el.removeEventListener("keydown", onKeyDown);
+  }, [step]);
+
+  // Reset desktop preview's auto-switched view when leaving the size step
+  useEffect(() => {
+    if (step !== "size") setDesktopActiveViewId(undefined);
   }, [step]);
 
   // Save draft to localStorage on step change
@@ -680,6 +686,7 @@ export function CustomizationModal({
             placementSelections={placementSelections}
             logo={logo}
             showTabs
+            activeViewId={step === "size" ? desktopActiveViewId : undefined}
           />
         </div>
 
@@ -715,6 +722,7 @@ export function CustomizationModal({
                 onPlacementSelectionsChange={setPlacementSelections}
                 logo={logo}
                 onContinue={() => handleNext()}
+                onActiveViewChange={setDesktopActiveViewId}
                 t={t}
               />
             )}

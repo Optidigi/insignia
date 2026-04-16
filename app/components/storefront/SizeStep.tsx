@@ -217,6 +217,7 @@ type SizeStepProps = {
   onPlacementSelectionsChange: (s: PlacementSelections) => void;
   logo: LogoState;
   onContinue: () => void;
+  onActiveViewChange?: (viewId: string | undefined) => void;
   t: TranslationStrings;
 };
 
@@ -227,6 +228,7 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
     onPlacementSelectionsChange,
     logo,
     onContinue,
+    onActiveViewChange,
     t,
   },
   ref
@@ -242,6 +244,10 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
     const viewIds = Object.keys(currentPlacement.geometryByViewId);
     return viewIds[0];
   }, [currentPlacement]);
+
+  useEffect(() => {
+    onActiveViewChange?.(activeViewId);
+  }, [activeViewId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sizeState = getSizeState(selectedPlacementIds);
 
