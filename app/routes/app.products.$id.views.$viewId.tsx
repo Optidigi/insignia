@@ -435,7 +435,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       const stepId = formData.get("stepId") as string;
       const label = formData.get("label") as string;
       const rawScale = parseFloat(formData.get("scaleFactor") as string ?? "1");
-      const scaleFactor = Number.isNaN(rawScale) ? 1.0 : Math.max(0, Math.min(1, rawScale));
+      const scaleFactor = Number.isNaN(rawScale) ? 1.0 : Math.max(0.1, Math.min(1, rawScale));
       const priceAdjustmentCents =
         parseInt(formData.get("priceAdjustmentCents") as string ?? "0", 10) || 0;
 
@@ -487,7 +487,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       // Apply all step updates
       for (const s of payload.steps ?? []) {
         if (!s.stepId || !s.label) continue;
-        const rawScale = Number.isNaN(s.scaleFactor) ? 1.0 : Math.max(0, Math.min(1, s.scaleFactor));
+        const rawScale = Number.isNaN(s.scaleFactor) ? 1.0 : Math.max(0.1, Math.min(1, s.scaleFactor));
         await db.placementStep.update({
           where: { id: s.stepId, placementDefinition: { productView: { productConfig: { shopId: shop.id } } } },
           data: {
@@ -1080,20 +1080,30 @@ export default function ViewDetailPage() {
   // Reset ALL view-dependent state when navigating to a different view.
   // React Router reuses the component instance for param-only changes
   // (same route module), so all useState values persist across views.
+  // IMPORTANT: Only reset on view.id change — NOT on revalidation (variants
+  // array ref changes on every revalidate, which would collapse the accordion).
+  const prevViewIdRef = useRef(view.id);
   useEffect(() => {
+    // Always sync view name from server (may have been renamed)
     setViewName(view.name ?? getPerspectiveLabel(view.perspective));
-    setNameDirty(false);
-    setPendingGeometry(null);
-    setGeometryDirty(false);
-    setPricingDirty(false);
-    setSelectedPlacementId(null);
-    setSelectedVariantId(variants[0]?.id ?? null);
-    setEditorResetKey((k) => k + 1);
-    setAddingZone(false);
-    setNewZoneName("");
-    setRulerActive(false);
-    setDeleteModalOpen(false);
-  }, [view.id, view.name, view.perspective, variants]);
+
+    // Only reset editing state when switching to a different view
+    if (prevViewIdRef.current !== view.id) {
+      prevViewIdRef.current = view.id;
+      setNameDirty(false);
+      setPendingGeometry(null);
+      setGeometryDirty(false);
+      setPricingDirty(false);
+      setSelectedPlacementId(null);
+      selectedPlacementIdRef.current = null;
+      setSelectedVariantId(variants[0]?.id ?? null);
+      setEditorResetKey((k) => k + 1);
+      setAddingZone(false);
+      setNewZoneName("");
+      setRulerActive(false);
+      setDeleteModalOpen(false);
+    }
+  }, [view.id, view.name, view.perspective, variants]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load natural image dimensions whenever the selected variant image changes
   useEffect(() => {
@@ -1477,7 +1487,7 @@ export default function ViewDetailPage() {
               display: "flex", alignItems: "center", gap: 8,
               padding: "8px 16px", height: 40, flexShrink: 0,
               background: "#ffffff", borderTop: "1px solid #E5E7EB",
-              overflowX: "hidden",
+              overflow: "hidden",
             }}>
               <span style={{ fontSize: 11, color: "#6B7280", whiteSpace: "nowrap" }}>Variant:</span>
               {variants.length <= 6 ? (

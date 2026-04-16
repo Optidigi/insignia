@@ -727,10 +727,8 @@ export function ZonePricingPanel({
                             <TextField
                               label="Scale"
                               labelHidden
-                              type="number"
-                              min={0}
-                              max={1}
-                              step={0.05}
+                              type="text"
+                              inputMode="decimal"
                               value={
                                 stepScaleStrings[step.id] ??
                                 String(step.scaleFactor)
@@ -745,7 +743,7 @@ export function ZonePricingPanel({
                                 );
                                 if (!Number.isNaN(raw)) {
                                   const clamped = Math.max(
-                                    0,
+                                    0.1,
                                     Math.min(1, raw),
                                   );
                                   updateStepScale(step.id, String(clamped));
