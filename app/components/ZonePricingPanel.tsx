@@ -11,7 +11,7 @@
  * still submit directly.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BlockStack,
   Box,
@@ -86,6 +86,15 @@ type Props = {
 // ============================================================================
 
 const ZONE_COLORS = ["#2563EB", "#10B981", "#F59E0B", "#8B5CF6", "#EC4899"];
+
+/** Returns a stable color index based on the placement ID string hash. */
+function stableColorIndex(id: string): number {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) % ZONE_COLORS.length;
+}
 
 // Price color coding
 const PRICE_COLOR_NEGATIVE = "#16A34A"; // green — discount
@@ -171,8 +180,13 @@ export function ZonePricingPanel({
       const intent = data.intent as string | undefined;
       if (intent === "add-step") window.shopify?.toast?.show("Size tier added");
       else if (intent === "delete-step") window.shopify?.toast?.show("Size tier deleted");
-      else if (intent === "reorder-placements") window.shopify?.toast?.show("Order updated");
-      else if (intent === "reorder-steps") window.shopify?.toast?.show("Order updated");
+      else if (intent === "reorder-placements") {
+        window.shopify?.toast?.show("Order updated");
+        setLocalPlacementOrder(null);  // Reset to server data
+      } else if (intent === "reorder-steps") {
+        window.shopify?.toast?.show("Order updated");
+        setLocalStepOrders({});  // Reset to server data
+      }
       revalidator.revalidate();
     } else if (data.error) {
       const msg = typeof data.error === "string" ? data.error : "An error occurred";
@@ -196,6 +210,10 @@ export function ZonePricingPanel({
   const [draggedStepId, setDraggedStepId] = useState<string | null>(null);
   const [dragOverStepId, setDragOverStepId] = useState<string | null>(null);
 
+  // Optimistic local order state for smooth drag-and-drop reordering
+  const [localPlacementOrder, setLocalPlacementOrder] = useState<string[] | null>(null);
+  const [localStepOrders, setLocalStepOrders] = useState<Record<string, string[]>>({});
+
   const submitReorderPlacements = useCallback((newOrder: string[]) => {
     const fd = new FormData();
     fd.set("intent", "reorder-placements");
@@ -210,6 +228,14 @@ export function ZonePricingPanel({
     fd.set("order", JSON.stringify(newOrder));
     stepFetcher.submit(fd, { method: "post" });
   }, [stepFetcher]);
+
+  // Derive display placements from optimistic local order or server data
+  const displayPlacements = useMemo(() => {
+    if (!localPlacementOrder) return placements;
+    return localPlacementOrder
+      .map((id) => placements.find((p) => p.id === id))
+      .filter(Boolean) as typeof placements;
+  }, [placements, localPlacementOrder]);
 
   // Track dirty state
   const isDirty = Object.keys(placementEdits).length > 0 || Object.keys(stepEdits).length > 0;
@@ -380,13 +406,13 @@ export function ZonePricingPanel({
   }
 
   const expandedPlacement =
-    placements.find((p) => p.id === selectedPlacementId) ?? null;
+    displayPlacements.find((p) => p.id === selectedPlacementId) ?? null;
 
   return (
     <BlockStack gap="200">
-      {placements.map((p, idx) => {
+      {displayPlacements.map((p) => {
         const isExpanded = p.id === selectedPlacementId;
-        const dotColor = ZONE_COLORS[idx % ZONE_COLORS.length];
+        const dotColor = ZONE_COLORS[stableColorIndex(p.id)];
         const summary = buildBadgeSummary(p, currencySymbol);
 
         // Geometry and positioning status per-view
@@ -426,15 +452,16 @@ export function ZonePricingPanel({
             onDrop={(e) => {
               e.preventDefault();
               if (!draggedPlacementId || draggedPlacementId === p.id) return;
-              const fromIdx = placements.findIndex((pl) => pl.id === draggedPlacementId);
-              const toIdx = placements.findIndex((pl) => pl.id === p.id);
+              const fromIdx = displayPlacements.findIndex((pl) => pl.id === draggedPlacementId);
+              const toIdx = displayPlacements.findIndex((pl) => pl.id === p.id);
               if (fromIdx === -1 || toIdx === -1) return;
-              const newOrder = placements.map((pl) => pl.id);
+              const newOrder = displayPlacements.map((pl) => pl.id);
               newOrder.splice(fromIdx, 1);
               newOrder.splice(toIdx, 0, draggedPlacementId);
               setDraggedPlacementId(null);
               setDragOverPlacementId(null);
-              submitReorderPlacements(newOrder);
+              setLocalPlacementOrder(newOrder);  // Instant visual update
+              submitReorderPlacements(newOrder);  // Background persist
             }}
             style={{
               borderRadius: 8,
@@ -447,6 +474,7 @@ export function ZonePricingPanel({
               overflow: "hidden",
               background: "#ffffff",
               opacity: draggedPlacementId === p.id ? 0.4 : 1,
+              transition: "transform 150ms ease, opacity 150ms ease",
             }}
           >
             {/* ── Collapsed / expanded header ───────────────────────────── */}
@@ -657,11 +685,17 @@ export function ZonePricingPanel({
                     )}
 
                     {/* Step rows */}
-                    {p.steps.map((step) => {
+                    {(localStepOrders[p.id]
+                      ? localStepOrders[p.id].map((id) => p.steps.find((s) => s.id === id)).filter(Boolean) as typeof p.steps
+                      : p.steps
+                    ).map((step) => {
                       const editedPriceCents = stepEdits[step.id]?.priceAdjustmentCents;
                       const effectivePriceCents = editedPriceCents ?? step.priceAdjustmentCents;
                       const priceColor = stepPriceColor(effectivePriceCents);
                       const hasMultipleSteps = p.steps.length >= 2;
+                      const displaySteps = localStepOrders[p.id]
+                        ? localStepOrders[p.id].map((id) => p.steps.find((s) => s.id === id)).filter(Boolean) as typeof p.steps
+                        : p.steps;
                       return (
                         <div
                           key={step.id}
@@ -685,15 +719,16 @@ export function ZonePricingPanel({
                           onDrop={hasMultipleSteps ? (e) => {
                             e.preventDefault();
                             if (!draggedStepId || draggedStepId === step.id) return;
-                            const fromIdx = p.steps.findIndex((s) => s.id === draggedStepId);
-                            const toIdx = p.steps.findIndex((s) => s.id === step.id);
+                            const fromIdx = displaySteps.findIndex((s) => s.id === draggedStepId);
+                            const toIdx = displaySteps.findIndex((s) => s.id === step.id);
                             if (fromIdx === -1 || toIdx === -1) return;
-                            const newOrder = p.steps.map((s) => s.id);
+                            const newOrder = displaySteps.map((s) => s.id);
                             newOrder.splice(fromIdx, 1);
                             newOrder.splice(toIdx, 0, draggedStepId);
                             setDraggedStepId(null);
                             setDragOverStepId(null);
-                            submitReorderSteps(p.id, newOrder);
+                            setLocalStepOrders((prev) => ({ ...prev, [p.id]: newOrder }));  // Instant visual update
+                            submitReorderSteps(p.id, newOrder);  // Background persist
                           } : undefined}
                           style={{
                             display: "grid",
@@ -704,6 +739,7 @@ export function ZonePricingPanel({
                             alignItems: "center",
                             opacity: draggedStepId === step.id ? 0.4 : 1,
                             borderTop: dragOverStepId === step.id ? "2px solid #2563EB" : undefined,
+                            transition: "transform 150ms ease, opacity 150ms ease",
                           }}
                         >
                           {/* Grip */}
