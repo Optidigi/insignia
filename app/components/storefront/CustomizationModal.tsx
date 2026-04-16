@@ -269,7 +269,12 @@ export function CustomizationModal({
   }, [config, productId, variantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const goToStep = useCallback((s: WizardStep) => {
-    setStep(s);
+    setStep((prev) => {
+      if (STEP_ORDER.indexOf(s) > STEP_ORDER.indexOf(prev)) {
+        history.pushState({ insigniaStep: s }, "");
+      }
+      return s;
+    });
     setSubmitError(null);
   }, []);
 
@@ -338,6 +343,35 @@ export function CustomizationModal({
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
   }, [handleClose]);
+
+  // Tag the initial history entry so popstate can detect when the user has
+  // swiped back past all wizard steps. Must use replaceState (not pushState)
+  // here — it is not inside a user gesture, and iOS Safari 16+ silently drops
+  // pushState calls that originate outside of user-gesture handlers.
+  useEffect(() => {
+    history.replaceState({ insigniaStep: STEP_ORDER[0] }, "");
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Intercept browser back-swipe / back button on mobile.
+  // goToStep() already called pushState for each forward step, so the history
+  // stack mirrors the wizard progress. Popping to a non-first entry means the
+  // user went back within the flow; popping to the first entry (or unknown
+  // state) means they want to leave — show the close confirmation dialog and
+  // push the entry back so they are not ejected while the dialog is open.
+  useEffect(() => {
+    const onPopState = (e: PopStateEvent) => {
+      const historyStep = (e.state as { insigniaStep?: WizardStep } | null)
+        ?.insigniaStep;
+      if (historyStep && STEP_ORDER.indexOf(historyStep) > 0) {
+        goToStep(historyStep);
+      } else {
+        setShowCloseConfirm(true);
+        history.pushState({ insigniaStep: STEP_ORDER[0] }, "");
+      }
+    };
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, [goToStep]);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -772,7 +806,11 @@ export function CustomizationModal({
                   >
                     <IconShoppingCart size={16} />
                     <span>
-                      {submitLoading ? "Adding…" : t.review.addToCartWithPrice}
+                      {submitLoading
+                        ? "Adding…"
+                        : window.innerWidth <= 480
+                          ? `${t.review.addToCartWithPrice} \u2014 ${formatCurrency(footerPriceValue * totalQuantity, config.currency)}`
+                          : t.review.addToCartWithPrice}
                     </span>
                   </button>
                 </>

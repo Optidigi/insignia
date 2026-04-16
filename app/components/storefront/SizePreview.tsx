@@ -5,7 +5,7 @@
  *  - showTabs (desktop left panel): named view tabs + centered canvas area
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import NativeCanvas from "./NativeCanvas";
@@ -39,6 +39,28 @@ export function SizePreview({
   const availableViews = config.views.filter((v) => v.imageUrl && !v.isMissingImage);
 
   const [viewIndex, setViewIndex] = useState(0);
+
+  const touchStartXRef = useRef<number | null>(null);
+
+  const goToPrev = useCallback(() => {
+    setViewIndex((i) => Math.max(0, i - 1));
+  }, []);
+
+  const goToNext = useCallback(() => {
+    setViewIndex((i) => Math.min(availableViews.length - 1, i + 1));
+  }, [availableViews.length]);
+
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    touchStartXRef.current = e.touches[0].clientX;
+  }, []);
+
+  const handleTouchEnd = useCallback((e: React.TouchEvent) => {
+    if (touchStartXRef.current === null) return;
+    const delta = e.changedTouches[0].clientX - touchStartXRef.current;
+    touchStartXRef.current = null;
+    if (delta <= -50) goToNext();
+    else if (delta >= 50) goToPrev();
+  }, [goToNext, goToPrev]);
 
   useEffect(() => {
     if (!activeViewId) return;
@@ -156,7 +178,11 @@ export function SizePreview({
 
   // ── Inline / mobile carousel mode ────────────────────────────────────────
   return (
-    <div className="insignia-preview-carousel">
+    <div
+      className="insignia-preview-carousel"
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       {canvasContent}
       {availableViews.length > 1 && (
         <>
@@ -166,7 +192,7 @@ export function SizePreview({
             data-dir="prev"
             aria-label="Previous view"
             disabled={viewIndex === 0}
-            onClick={() => setViewIndex((i) => Math.max(0, i - 1))}
+            onClick={goToPrev}
           >
             ‹
           </button>
@@ -176,7 +202,7 @@ export function SizePreview({
             data-dir="next"
             aria-label="Next view"
             disabled={viewIndex === availableViews.length - 1}
-            onClick={() => setViewIndex((i) => Math.min(availableViews.length - 1, i + 1))}
+            onClick={goToNext}
           >
             ›
           </button>

@@ -77,9 +77,9 @@ html, body {
 
 /* ===== Close Button ===== */
 .insignia-modal-close {
-  width: 44px;
-  min-width: 44px;
-  height: 44px;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
   border: none;
   border-radius: 10px;
   background: var(--insignia-bg-muted);
@@ -177,6 +177,7 @@ html, body {
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
   z-index: 20;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.06);
@@ -868,6 +869,7 @@ html, body {
   background: var(--insignia-bg-subtle);
   aspect-ratio: 4/5;
   max-height: 70vh;
+  touch-action: pan-y;
 }
 .insignia-preview-carousel img {
   width: 100%;
@@ -2036,9 +2038,31 @@ html, body {
     gap: 3px;
   }
 
-  /* Constrain canvas carousel so it never overflows a 375px viewport */
+  /* Carousel: dynamic height that fills available vertical space without pushing
+     the position badge and slider controls off-screen.
+     min(50dvh, calc(100dvh - 350px)):
+       • 50dvh  — caps on tall phones so the canvas never dominates the screen
+       • 350px  — header(44) + footer(72) + body-top-pad(12) + controls(206) + gaps(16)
+     min-height: 180px — always usable even on very small phones (iPhone SE) */
   .insignia-preview-carousel {
-    max-height: 55vw;
+    height: min(50dvh, calc(100dvh - 350px));
+    min-height: 180px;
+    max-height: none;
+    aspect-ratio: unset;
+    overflow: visible;
+  }
+  /* Chevrons: straddle the canvas edge at -6px so their centre sits 24px from
+     the screen edge — fully visible, comfortably tappable, clearly "at the edge" */
+  .insignia-preview-nav[data-dir="prev"] {
+    left: -6px;
+  }
+  .insignia-preview-nav[data-dir="next"] {
+    right: -6px;
+  }
+
+  /* Active dot: circle (not pill) on mobile */
+  .insignia-preview-dot[data-active="true"] {
+    width: 8px;
   }
 
   /* Size canvas: reduce min-height so it doesn't push controls offscreen */
@@ -2068,12 +2092,12 @@ html, body {
     padding: 0 14px;
   }
 
-  .insignia-review-total-bar {
-    padding: 0 16px;
-    height: 68px;
+  .insignia-footer-price-area {
+    display: none;
   }
-  .insignia-review-total-bar .amount {
-    font-size: 22px;
+
+  .insignia-review-total-bar {
+    display: none;
   }
 
   .insignia-size-slider-card {
@@ -2087,6 +2111,16 @@ html, body {
     height: 30px;
     padding: 0 10px;
     font-size: 11px;
+  }
+
+  /* Preview float button: icon-only circular FAB on narrow mobile */
+  .insignia-preview-float-btn {
+    width: 44px;
+    padding: 0;
+    border-radius: 50%;
+  }
+  .insignia-preview-float-btn span {
+    display: none;
   }
 }
 

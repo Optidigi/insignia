@@ -11,10 +11,12 @@ import {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const isAppProxy = url.pathname.startsWith("/apps/");
-  // Derive the app URL from the incoming request origin — this is correct regardless
-  // of which Cloudflare tunnel is active, avoiding stale SHOPIFY_APP_URL in .env.
-  // Falls back to the env var for production deployments where the origin is fixed.
-  const appUrl = isAppProxy ? url.origin : null;
+  // Derive the app URL from the incoming request origin. When behind a Cloudflare
+  // tunnel (dev) or reverse proxy (prod), TLS is terminated upstream so request.url
+  // arrives as http://. X-Forwarded-Proto carries the original scheme.
+  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0].trim() ?? url.protocol.replace(":", "");
+  const origin = proto === "https" ? url.origin.replace(/^http:/, "https:") : url.origin;
+  const appUrl = isAppProxy ? origin : null;
   return { appUrl };
 };
 
