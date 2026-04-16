@@ -1195,7 +1195,7 @@ export default function ViewDetailPage() {
       {/* ================================================================
           Full-width two-column view editor layout (matches design S8Dx0)
           ================================================================ */}
-      <div style={{ display: "flex", flexDirection: "column", height: "100vh", minHeight: 0 }}>
+      <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", minHeight: 0, zIndex: 1, background: "#ffffff" }}>
 
         {/* Sub-nav bar */}
         <div style={{
