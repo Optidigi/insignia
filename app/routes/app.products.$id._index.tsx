@@ -597,6 +597,18 @@ export default function ProductConfigDetailPage() {
     submit(formData, { method: "POST" });
   }, [selectedMethodIds, submit]);
 
+  const handleSaveAll = useCallback(() => {
+    if (hasBasicChanges) {
+      handleSaveBasic();
+    }
+    if (hasMethodChanges) {
+      handleSaveMethods();
+    }
+    if (!hasBasicChanges && !hasMethodChanges) {
+      setHasChanges(false);
+    }
+  }, [hasBasicChanges, hasMethodChanges, handleSaveBasic, handleSaveMethods]);
+
   const handleMethodToggle = useCallback((methodId: string) => {
     setSelectedMethodIds((prev) =>
       prev.includes(methodId)
@@ -673,7 +685,7 @@ export default function ProductConfigDetailPage() {
       }
     >
       <ui-save-bar id="product-detail-save-bar">
-        <button variant="primary" type="button" onClick={handleSaveBasic}>Save</button>
+        <button variant="primary" type="button" onClick={handleSaveAll}>Save</button>
         <button type="button" onClick={handleDiscard}>Discard</button>
       </ui-save-bar>
 
