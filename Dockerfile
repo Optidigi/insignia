@@ -12,13 +12,9 @@ RUN npm ci
 
 COPY . .
 
-# Expose the production app URL so that Vite sets an absolute base for assets.
-# Assets must be fully-qualified because the storefront modal is served via
-# Shopify App Proxy (myshopify.com/apps/insignia/*) which does NOT proxy /assets/*.
-ARG SHOPIFY_APP_URL=https://insignia.optidigi.nl
-ENV SHOPIFY_APP_URL=$SHOPIFY_APP_URL
-
-# Build the React Router app
+# Build the React Router app.
+# SHOPIFY_APP_URL is intentionally NOT set here — the Vite build uses base: "/"
+# (relative paths). The runtime container receives SHOPIFY_APP_URL via env_file.
 RUN npm run build
 
 # Generate the Prisma client into node_modules (will be copied to runner)
