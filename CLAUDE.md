@@ -60,7 +60,7 @@ docs/
   admin/               # Tier 2: admin dashboard specs
   storefront/          # Tier 2: storefront modal specs
 prisma/
-  schema.prisma        # 13 models, PostgreSQL
+  schema.prisma        # 18 models, PostgreSQL
 ```
 
 ## Documentation Tiers

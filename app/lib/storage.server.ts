@@ -205,31 +205,69 @@ export async function objectExists(key: string): Promise<boolean> {
 }
 
 /**
- * Generate storage keys for different asset types
+ * Extract a safe extension from a user-supplied filename.
+ * Only allows 1-10 alphanumeric chars — rejects anything with slashes, dots,
+ * path traversal segments, null bytes, or non-ASCII characters.
+ * Falls back to the provided default if the extension is unsafe.
+ */
+function safeExtension(fileName: string, fallback: string): string {
+  const dotIdx = fileName.lastIndexOf(".");
+  if (dotIdx === -1 || dotIdx === fileName.length - 1) return fallback;
+  const raw = fileName.slice(dotIdx + 1);
+  return /^[a-z0-9]{1,10}$/i.test(raw) ? raw.toLowerCase() : fallback;
+}
+
+/**
+ * Validate a complete filename for use as the last segment of a storage key.
+ * Rejects anything containing path separators (`/`, `\`), `..` sequences,
+ * null bytes, control chars, or non-allowlist characters. Returns the fallback
+ * if the input is unsafe.
+ */
+function safeFilename(fileName: string, fallback: string): string {
+  if (!fileName || fileName.length > 128) return fallback;
+  if (fileName.includes("..")) return fallback;
+  // Allow alphanumeric, dot, dash, underscore only.
+  return /^[A-Za-z0-9._-]+$/.test(fileName) ? fileName : fallback;
+}
+
+/**
+ * Generate storage keys for different asset types.
+ * All keys enforce a deterministic path — user-supplied filenames are reduced
+ * to a validated extension (or validated filename) only, preventing
+ * path-traversal (`../`), null-byte, and other injection vectors in R2 keys.
  */
 export const StorageKeys = {
   /**
    * Logo asset key
    * Format: shops/{shopId}/logos/{logoId}/{filename}
+   *
+   * The filename is validated at this boundary: any character outside
+   * `[A-Za-z0-9._-]` or any `..` sequence is rejected and replaced with "file".
+   * This is defense-in-depth — callers SHOULD still pass deterministic names.
    */
   logo(shopId: string, logoId: string, filename: string): string {
-    return `shops/${shopId}/logos/${logoId}/${filename}`;
+    return `shops/${shopId}/logos/${logoId}/${safeFilename(filename, "file")}`;
   },
 
   /**
    * View image key
-   * Format: shops/{shopId}/views/{viewId}/variants/{variantId}/{filename}
+   * Format: shops/{shopId}/views/{viewId}/variants/{variantId}/img.{ext}
+   *
+   * The filename argument is reduced to a validated extension only —
+   * any path segments, traversal sequences, or special chars are stripped.
    */
   viewImage(shopId: string, viewId: string, variantId: string, filename: string): string {
-    return `shops/${shopId}/views/${viewId}/variants/${variantId}/${filename}`;
+    const ext = safeExtension(filename, "jpg");
+    return `shops/${shopId}/views/${viewId}/variants/${variantId}/img.${ext}`;
   },
 
   /**
    * Placeholder logo key
-   * Format: shops/{shopId}/placeholder/{filename}
+   * Format: shops/{shopId}/placeholder/img.{ext}
    */
   placeholder(shopId: string, filename: string): string {
-    return `shops/${shopId}/placeholder/${filename}`;
+    const ext = safeExtension(filename, "png");
+    return `shops/${shopId}/placeholder/img.${ext}`;
   },
 
   /**
@@ -237,7 +275,7 @@ export const StorageKeys = {
    * Format: shops/{shopId}/uploads/{uploadId}/raw.{ext}
    */
   uploadRaw(shopId: string, uploadId: string, fileName: string): string {
-    const ext = fileName.includes(".") ? fileName.split(".").pop()! : "bin";
+    const ext = safeExtension(fileName, "bin");
     return `shops/${shopId}/uploads/${uploadId}/raw.${ext}`;
   },
 
@@ -246,10 +284,7 @@ export const StorageKeys = {
    * Format: shops/{shopId}/tray/{trayId}.{ext}
    */
   trayImage(shopId: string, trayId: string, fileName: string): string {
-    // Sanitise extension: only allow alphanumeric chars (max 10) to prevent
-    // path injection via crafted filenames like "foo.jpg/../../bar".
-    const rawExt = fileName.includes(".") ? fileName.split(".").pop()! : "";
-    const ext = /^[a-z0-9]{1,10}$/i.test(rawExt) ? rawExt.toLowerCase() : "jpg";
+    const ext = safeExtension(fileName, "jpg");
     return `shops/${shopId}/tray/${trayId}.${ext}`;
   },
 };

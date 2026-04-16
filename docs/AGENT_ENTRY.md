@@ -61,14 +61,10 @@
  
  **Open work & audits**
  - [`docs/notes/open-work.md`](notes/open-work.md)
- - [`docs/notes/docs-audit.md`](notes/docs-audit.md)
  
  **Design intent (UI only)**
  - [`docs/notes/design-intent/dashboard-ui.md`](notes/design-intent/dashboard-ui.md)
  - [`docs/notes/design-intent/storefront-modal.md`](notes/design-intent/storefront-modal.md)
- 
- **Research**
- - [`docs/notes/research/agentic-workflow-research.md`](notes/research/agentic-workflow-research.md)
  
  ## Conflict policy
  

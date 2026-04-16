@@ -27,12 +27,16 @@ export default function AppsInsigniaLayout() {
 
 export function ErrorBoundary() {
   const error = useRouteError();
+  // In production, never expose raw error messages to storefront customers — they
+  // could contain internal DB query details, service names, or stack traces.
   const message =
-    error instanceof Error
-      ? error.message
-      : typeof error === "string"
-        ? error
-        : "An unexpected error occurred.";
+    process.env.NODE_ENV === "production"
+      ? "An unexpected error occurred."
+      : error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : "An unexpected error occurred.";
 
   return (
     <html lang="en">

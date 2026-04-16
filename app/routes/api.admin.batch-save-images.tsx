@@ -66,6 +66,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return Errors.notFound("Product config");
     }
 
+    // Verify all viewIds belong to this productConfig to prevent cross-tenant
+    // viewId references (same class of bug as the single-image save-image intent).
+    const uniqueViewIds = [...new Set(images.map((img) => img.viewId))];
+    const validViews = await db.productView.findMany({
+      where: { id: { in: uniqueViewIds }, productConfigId },
+      select: { id: true },
+    });
+    if (validViews.length !== uniqueViewIds.length) {
+      return Errors.notFound("View");
+    }
+
     const typedImages: BatchSaveImageItem[] = images;
     const count = await batchSaveImages(productConfigId, typedImages);
     return data({ saved: count });

@@ -27,7 +27,7 @@ This is the canonical, concise statement of the install flow:
 - Backend MUST validate request authenticity using Shopify HMAC on OAuth callback requests.
 - Backend MUST validate a `state` nonce to prevent CSRF.
 - Backend exchanges `code` for an Admin API access token.
-- Backend stores the access token encrypted at rest (application-layer encryption).
+- Backend stores the access token in the database via `PrismaSessionStorage`. Tokens are currently stored **plaintext** — application-layer encryption is an open decision (see `docs/notes/open-work.md`). Risk is bounded by VPS firewall + DB access controls.
 - After install, embedded admin UI uses App Bridge session tokens for per-request authorization.
 
 If you need the detailed step-by-step walkthrough and example encryption code, see:

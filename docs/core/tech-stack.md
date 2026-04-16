@@ -47,6 +47,6 @@ These are the fixed stack decisions for Insignia.
 
 ## Email policy
 
-- Automated email sending is deferred.
-- Dashboard supports template management + manual-copy helpers.
-- Automated send buttons are disabled with “Coming soon” note.
+- Merchant email notifications are implemented via [Resend](https://resend.com) in `app/lib/services/merchant-notifications.server.ts`.
+- Gated behind `RESEND_API_KEY` env var — if absent, notifications are silently skipped and the app behaves normally.
+- Storefront-to-customer emails are deferred to a future version.

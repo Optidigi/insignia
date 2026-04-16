@@ -10,7 +10,7 @@
  */
 
 import db from "../../db.server";
-import { getPresignedPutUrl } from "../storage.server";
+import { getPresignedPutUrl, StorageKeys } from "../storage.server";
 
 // ---------- Types ----------
 
@@ -173,8 +173,8 @@ export async function batchGetUploadUrls(
     items.map(async (item) => {
       // Strip Shopify GID to numeric ID for safe path usage (avoids :// in R2 keys)
       const numericVariantId = item.variantId.split("/").pop() || item.variantId;
-      const ext = item.fileName.split(".").pop()?.toLowerCase() || "jpg";
-      const storageKey = `shops/${shopId}/views/${item.viewId}/variants/${numericVariantId}/view-image.${ext}`;
+      // Use StorageKeys for consistent key format and centralized sanitization.
+      const storageKey = StorageKeys.viewImage(shopId, item.viewId, numericVariantId, item.fileName);
       const uploadUrl = await getPresignedPutUrl(storageKey, item.contentType, 300);
       return { viewId: item.viewId, variantId: item.variantId, uploadUrl, storageKey };
     })

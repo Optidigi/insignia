@@ -8,6 +8,7 @@
  * <script type="module"> which requires CORS for cross-origin loading.
  */
 
+import * as Sentry from "@sentry/node";
 import compression from "compression";
 import { createRequestHandler } from "@react-router/express";
 import express from "express";
@@ -16,6 +17,21 @@ import path from "path";
 import { fileURLToPath, pathToFileURL } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// ---------------------------------------------------------------------------
+// Sentry — initialise at the Express layer so unhandled errors and uncaught
+// rejections that never reach the React Router handler are also captured.
+// Graceful: if SENTRY_DSN is absent the app starts normally with no warnings.
+// Note: Sentry is also initialised in entry.server.tsx for React Router SSR
+// errors. Both instances share the same DSN and deduplicate on the server.
+// ---------------------------------------------------------------------------
+if (process.env.SENTRY_DSN) {
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    environment: process.env.NODE_ENV ?? "production",
+    tracesSampleRate: 0.1,
+  });
+}
 
 const BUILD_SERVER = pathToFileURL(path.resolve(__dirname, "build/server/index.js")).href;
 const CLIENT_DIR = path.resolve(__dirname, "build/client");
@@ -59,6 +75,10 @@ app.use((_req, res, next) => {
 // Rate limiting for storefront proxy endpoints.
 // These endpoints are public (no Shopify session auth) and directly handle
 // slot reservation and file uploads — both prime targets for abuse.
+//
+// Note: express-rate-limit stores state in-process. For multi-process
+// deployments, use a shared store (e.g. redis) to aggregate limits.
+// This is acceptable for the current single-instance VPS deployment.
 const standardLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100,
@@ -122,6 +142,13 @@ app.all(
     mode: process.env.NODE_ENV,
   })
 );
+
+// Sentry error handler — must be registered after all routes, before any
+// other error-handling middleware. Captures Express-level errors that never
+// reach the React Router handler (e.g. middleware crashes, uncaught throws).
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app);
+}
 
 const port = Number(process.env.PORT || 3000);
 app.listen(port, () => {

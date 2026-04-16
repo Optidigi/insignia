@@ -1,6 +1,6 @@
 /**
  * Step 4: Review — sectioned summary, B2B per-size quantities,
- * gradient total bar, artwork section, green Add to Cart button.
+ * gradient total bar, green Add to Cart button.
  */
 
 import type { StorefrontConfig, PlacementSelections } from "./types";
@@ -132,10 +132,10 @@ export function ReviewStep({
         {selectedPlacements.map((p) => (
           <div key={p.id} className="insignia-review-line">
             <span className="insignia-review-line-name">
-              {p.name} placement
+              {p.name} placement{p.sizeLabel ? ` · ${p.sizeLabel}` : ""}
             </span>
             <span className="insignia-review-line-price">
-              +{fmt(p.placementPriceCents)}
+              +{fmt(p.placementPriceCents + p.sizePriceCents)}
             </span>
           </div>
         ))}

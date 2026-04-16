@@ -47,7 +47,7 @@
     "@shopify/shopify-app-react-router": "^1.1.0",
     "@shopify/shopify-app-session-storage-prisma": "^9.0.0",
     "compression": "^1.8.1",
-    "dompurify": "^3.3.1",
+    "dompurify": "^3.4.0",
     "express": "^4.21.2",
     "express-rate-limit": "^8.3.2",
     "isbot": "^5.1.31",

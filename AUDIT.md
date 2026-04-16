@@ -1,8 +1,8 @@
 # Insignia — Production Readiness Audit
 
-> **Date**: 2026-04-15
-> **Version**: 0.5.0 (ui-polish + per-view-placements)
-> **Overall**: MVP-ready. Phase 1 + Phase 2 + Phase 3 + UI Polish complete. Per-view placements architecture change (PlacementDefinition now per-ProductView). All critical security issues fixed. 45 tests across 7 files. Remaining gaps: order webhooks (blocked on Shopify approval), Sentry DSN verification.
+> **Date**: 2026-04-16
+> **Version**: 0.4.0 (ui-polish + per-view-placements + production hardening + security audit)
+> **Overall**: MVP-ready. Phase 1 + Phase 2 + Phase 3 + UI Polish + Production Hardening + 3-pass security audit complete. Per-view placements architecture change (PlacementDefinition now per-ProductView). All critical security issues fixed. 45 tests across 7 files. Remaining gaps: order webhooks (blocked on Shopify approval), Sentry DSN verification on VPS.
 
 ---
 
@@ -162,6 +162,53 @@
 - Test suite expanded: 45 tests across 7 files (added GDPR handler tests) -- Phase 3
 - Stale checkboxes in v2-design-decisions doc updated -- Phase 3
 
+### 3-Pass Security Audit (2026-04-16)
+
+Three independent passes (Sonnet/Opus/Sonnet) performed after UI polish. Scope: tenant isolation, storage path injection, scope least-privilege, error information disclosure, monitoring gaps, docs accuracy.
+
+**Theme extension**
+- `customize-button.liquid` theme-style mode: removed all visual CSS from explicit rule; moved CSS variable fallback to `:where()` wrapper (zero specificity) so merchant's theme button rules always win.
+
+**Scope least-privilege**
+- Removed `write_themes` from access scopes in both `shopify.app.insignia.toml` and `shopify.app.insignia-demo.toml`. The scope was never used — only `read_themes` is needed for the block detection query. Manual op required: `shopify app deploy --config insignia` after merge.
+
+**Error information disclosure**
+- Storefront `ErrorBoundary` was rendering `error.message` to customers in production. Guarded with `process.env.NODE_ENV === "production"` check; shows generic message in production.
+
+**Monitoring**
+- Added Sentry Express-layer init to `server.mjs` (was only in React Router SSR layer). Added `Sentry.setupExpressErrorHandler(app)` after all routes, both gated on `SENTRY_DSN`.
+
+**P0 — Tenant isolation (order detail loader)** — `app/routes/app.orders.$id.tsx`
+- `orderLineCustomization.findMany()` had no shop scope. Shop A admin could read Shop B's order customizations by constructing a URL with any Shopify order GID (which are not secrets). Fixed: added `productConfig: { shopId: shop.id }` Prisma relation filter.
+
+**P1 — Tenant isolation (single-image save/remove)** — `app/routes/app.products.$id.images.tsx`
+- `save-image` and `remove-image` intents verified productConfig ownership but then wrote with user-supplied `viewId` without verifying it belongs to that productConfig. Fixed: added `productView.findFirst({ where: { id: viewId, productConfigId } })` guard before each write.
+
+**P2 — Tenant isolation (batch image endpoints)** — `app/routes/api.admin.batch-save-images.tsx`, `app/routes/api.admin.batch-upload-urls.tsx`
+- Same class of bug as the P1 fix: both batch routes verified productConfigId ownership but not that provided viewId values belonged to it. Fixed: added bulk `productView.findMany({ where: { id: { in: uniqueViewIds }, productConfigId } })` pre-check in both routes.
+
+**P2 — Storage key path injection** — `app/lib/storage.server.ts`
+- User-supplied filenames were interpolated directly into R2 object keys in `StorageKeys.logo()`, `StorageKeys.viewImage()`, `StorageKeys.placeholder()`, and `StorageKeys.uploadRaw()`. Added `safeExtension()` (regex `^[a-z0-9]{1,10}$`) and `safeFilename()` (`^[A-Za-z0-9._-]+$`, rejects `..`) helpers; applied across all key constructors.
+
+**P2 — `batchGetUploadUrls` bypassed StorageKeys** — `app/lib/services/image-manager.server.ts`
+- Inline key construction using raw `split(".").pop()` without character-class validation. Changed to use `StorageKeys.viewImage()` for consistent sanitization. Key format for new batch uploads changes from `view-image.{ext}` → `img.{ext}`; existing stored keys are opaque strings and unaffected.
+
+**P3 — logoAsset query unscoped** — `app/routes/app.orders.$id.tsx`
+- `logoAsset.findMany({ where: { id: { in: ids } } })` had no `shopId` filter. IDs came from already-shop-scoped orderLines so exploitation required chaining two bugs; added `shopId: shop.id` for defense-in-depth.
+
+**Docs corrections**
+- `docs/core/auth.md`: removed false claim that access tokens are encrypted at rest; documented current plaintext reality with open-work note.
+- `docs/core/tech-stack.md`: updated stale "email deferred" note; reflects live Resend implementation.
+- `docs/ops/cron-setup.md`: fixed stale expected response for `cleanup-drafts` endpoint.
+- `docs/AGENT_ENTRY.md`: removed two dead links (`docs-audit.md`, `agentic-workflow-research.md`).
+- `CLAUDE.md`: corrected Prisma schema model count 13 → 18.
+
+**Environment**
+- `.env.example`: added `CRON_SECRET` and `RESEND_API_KEY` (both were missing); annotated `SCOPES` as toml-managed.
+
+**Dependencies**
+- `dompurify` bumped `^3.3.1` → `^3.4.0` (patches GHSA-39q2-94rc-95cp; defense-in-depth for server-side SVG sanitization pipeline).
+
 ---
 
 ## What's Left To Do
@@ -176,11 +223,10 @@ Steps:
 2. Once approved, uncomment webhook subscriptions in `shopify.app.insignia.toml`
 3. `shopify app deploy --config insignia`
 
-**Deploy Phase 3 fixes to VPS**
-The `audit-fixes` branch has 9 commits with 2 Prisma migrations. After merging to main:
-1. Push to trigger auto-deploy
-2. SSH to VPS and run `npx prisma migrate deploy`
-3. Verify the app starts cleanly
+**Deploy to VPS**
+After merging to main the auto-deploy pipeline triggers. No Prisma migrations are pending in this batch (schema unchanged since Phase 3). After deploy:
+1. Confirm the app starts cleanly (check Docker logs)
+2. Run `shopify app deploy --config insignia` to push the updated access scopes (write_themes removed)
 
 ### High Priority (ops)
 

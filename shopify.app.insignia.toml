@@ -27,7 +27,7 @@ api_version = "2026-04"
 [access_scopes]
 # Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
 # write_app_proxy required for app proxy (storefront modal)
-scopes = "write_products,read_products,read_orders,write_orders,write_app_proxy,write_publications,write_inventory"
+scopes = "write_products,read_products,read_orders,write_orders,write_app_proxy,write_publications,write_inventory,read_themes"
 
 [auth]
 redirect_urls = [ "https://insignia.optidigi.nl/auth/callback" ]

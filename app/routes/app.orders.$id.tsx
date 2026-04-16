@@ -56,8 +56,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   });
   if (!shop) throw new Response("Shop not found", { status: 404 });
 
+  // Scope by shop to prevent cross-tenant order data exposure. Shopify order GIDs
+  // are not secrets — without this filter, an authenticated admin at Shop A could
+  // view Shop B's order customizations by constructing a URL with Shop B's order ID.
   const orderLines = await db.orderLineCustomization.findMany({
-    where: { shopifyOrderId },
+    where: {
+      shopifyOrderId,
+      productConfig: { shopId: shop.id },
+    },
     include: {
       productConfig: {
         select: {
@@ -96,7 +102,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   }
 
   const logoAssets = logoAssetIds.size > 0
-    ? await db.logoAsset.findMany({ where: { id: { in: Array.from(logoAssetIds) } } })
+    ? await db.logoAsset.findMany({
+        where: { id: { in: Array.from(logoAssetIds) }, shopId: shop.id },
+      })
     : [];
 
   // Generate presigned download URLs and preview URLs for each asset

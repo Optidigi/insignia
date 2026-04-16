@@ -66,6 +66,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return Errors.notFound("Product config");
     }
 
+    // Verify all viewIds belong to this productConfig to prevent cross-tenant
+    // viewId references when generating presigned upload URLs.
+    const uniqueViewIds = [...new Set(items.map((item) => item.viewId))];
+    const validViews = await db.productView.findMany({
+      where: { id: { in: uniqueViewIds }, productConfigId },
+      select: { id: true },
+    });
+    if (validViews.length !== uniqueViewIds.length) {
+      return Errors.notFound("View");
+    }
+
     const results = await batchGetUploadUrls(shop.id, items);
     return data({ items: results });
   } catch (error) {

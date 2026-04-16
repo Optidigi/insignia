@@ -241,9 +241,10 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
 
   const activeViewId = useMemo(() => {
     if (!currentPlacement) return undefined;
-    const viewIds = Object.keys(currentPlacement.geometryByViewId);
-    return viewIds[0];
-  }, [currentPlacement]);
+    // Use config.views order to find the first view where this placement has real geometry.
+    // geometryByViewId includes ALL view IDs; null means no geometry for that view.
+    return config.views.find((v) => currentPlacement.geometryByViewId[v.id] != null)?.id;
+  }, [currentPlacement, config.views]);
 
   useEffect(() => {
     onActiveViewChange?.(activeViewId);

@@ -21,11 +21,27 @@
   {% assign variant_numeric_id = product.selected_or_first_available_variant.id | split: '/' | last %}
   {% assign modal_url = '/apps/insignia/modal?p=' | append: product_numeric_id | append: '&v=' | append: variant_numeric_id %}
 
+  {% case block.settings.button_size %}
+    {% when 's' %}
+      {% assign btn_font = 13 %}
+      {% assign btn_py = 10 %}
+      {% assign btn_px = 20 %}
+    {% when 'l' %}
+      {% assign btn_font = 17 %}
+      {% assign btn_py = 16 %}
+      {% assign btn_px = 36 %}
+    {% else %}
+      {% assign btn_font = block.settings.font_size %}
+      {% assign btn_py = block.settings.padding_y %}
+      {% assign btn_px = block.settings.padding_x %}
+  {% endcase %}
+
   <div class="insignia-customize-block" {{ block.shopify_attributes }}>
     <a
       href="{% if request.design_mode %}#{% else %}{{ modal_url }}{% endif %}"
-      class="insignia-customize-button {% if block.settings.use_theme_style %}button btn{% endif %} {{ block.settings.custom_class }}"
+      class="insignia-customize-button {% if block.settings.use_theme_style %}button button--primary btn btn--primary btn--solid button-primary{% endif %} {{ block.settings.custom_class }}"
       {% if request.design_mode %}onclick="event.preventDefault();"{% endif %}
+      {% if block.settings.use_theme_style %}data-insignia-theme-style{% endif %}
       data-insignia-modal
       data-product-id="{{ product_numeric_id }}"
       data-variant-id="{{ variant_numeric_id }}"
@@ -40,31 +56,60 @@
       margin: {{ block.settings.margin_top }}px 0 {{ block.settings.margin_bottom }}px;
     }
 
+    /* Accessibility: visible focus indicator in both modes */
+    .insignia-customize-button:focus-visible {
+      outline: 2px solid currentColor;
+      outline-offset: 2px;
+    }
+
     {% if block.settings.use_theme_style %}
-      /* Inherit theme button styles — matches Add to Cart */
-      .insignia-customize-button.button {
-        display: inline-block;
+      /* Structural/layout only — the theme class cascade (button, button--primary,
+         btn, btn--primary, btn--solid, button-primary) handles all visual styling.
+         We deliberately set NO visual properties here so we don't fight the theme. */
+      .insignia-customize-button {
         text-decoration: none;
+        width: {% if block.settings.full_width %}100%{% else %}auto{% endif %};
+        box-sizing: border-box;
+        min-height: 44px;
+        min-width: 44px;
+      }
+
+      /* Zero-specificity CSS-variable fallback for Dawn-lineage themes that expose
+         CSS custom properties but may not match any of the class names above.
+         :where() reduces specificity to (0,0,0) so ANY single theme class rule wins. */
+      :where(.insignia-customize-button) {
+        display: inline-block;
         text-align: center;
         cursor: pointer;
-        width: {% if block.settings.full_width %}100%{% else %}auto{% endif %};
+        padding: 15px 30px;
+        background: rgb(var(--color-button, 18 18 18) / var(--alpha-button-background, 1));
+        color: rgb(var(--color-button-text, 255 255 255));
+        border-radius: var(--buttons-radius, 4px);
+        border: var(--buttons-border-width, 1px) solid rgb(var(--color-button, 18 18 18) / var(--alpha-button-border, 1));
+        font-family: var(--font-body-family, inherit);
+        font-size: 14px;
       }
     {% else %}
       /* Custom Insignia styling */
       .insignia-customize-button {
         display: inline-block;
-        padding: {{ block.settings.padding_y }}px {{ block.settings.padding_x }}px;
+        padding: {{ btn_py }}px {{ btn_px }}px;
         background: {{ block.settings.background_color }};
         color: {{ block.settings.text_color }};
         text-decoration: none;
         border-radius: {{ block.settings.border_radius }}px;
-        font-weight: 600;
-        font-size: {{ block.settings.font_size }}px;
+        font-weight: 500;
+        font-size: {{ btn_font }}px;
+        font-family: inherit;
+        letter-spacing: 0.05em;
         border: none;
         cursor: pointer;
         transition: opacity 150ms ease;
         width: {% if block.settings.full_width %}100%{% else %}auto{% endif %};
+        min-height: 44px;
+        min-width: 44px;
         text-align: center;
+        {% if block.settings.uppercase %}text-transform: uppercase;{% endif %}
       }
       .insignia-customize-button:hover {
         opacity: 0.85;
@@ -92,7 +137,7 @@
       "type": "checkbox",
       "id": "use_theme_style",
       "label": "Use theme button style",
-      "default": false,
+      "default": true,
       "info": "When enabled, the button inherits your theme's button styling to match Add to Cart and other buttons."
     },
     {
@@ -100,6 +145,17 @@
       "id": "full_width",
       "label": "Full width",
       "default": true
+    },
+    {
+      "type": "select",
+      "id": "button_size",
+      "label": "Button size",
+      "options": [
+        { "value": "s", "label": "Small" },
+        { "value": "m", "label": "Medium" },
+        { "value": "l", "label": "Large" }
+      ],
+      "default": "m"
     },
     {
       "type": "header",
@@ -137,13 +193,19 @@
       "type": "color",
       "id": "background_color",
       "label": "Background color",
-      "default": "#2c6ecb"
+      "default": "#1a1a1a"
     },
     {
       "type": "color",
       "id": "text_color",
       "label": "Text color",
       "default": "#ffffff"
+    },
+    {
+      "type": "checkbox",
+      "id": "uppercase",
+      "label": "Uppercase text",
+      "default": false
     },
     {
       "type": "range",
@@ -153,7 +215,7 @@
       "step": 2,
       "unit": "px",
       "label": "Border radius",
-      "default": 8
+      "default": 4
     },
     {
       "type": "range",
@@ -163,7 +225,7 @@
       "step": 1,
       "unit": "px",
       "label": "Font size",
-      "default": 16
+      "default": 15
     },
     {
       "type": "range",
@@ -173,7 +235,7 @@
       "step": 2,
       "unit": "px",
       "label": "Vertical padding",
-      "default": 12
+      "default": 14
     },
     {
       "type": "range",
@@ -183,7 +245,7 @@
       "step": 4,
       "unit": "px",
       "label": "Horizontal padding",
-      "default": 24
+      "default": 28
     },
     {
       "type": "header",

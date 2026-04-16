@@ -7,7 +7,7 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { useLoaderData, useSubmit, useNavigation, useActionData } from "react-router";
+import { useLoaderData, useSubmit, useNavigation, useActionData, useFetcher } from "react-router";
 import {
   Page,
   Layout,
@@ -34,6 +34,7 @@ import {
   updateMerchantSettings,
   UpdateSettingsSchema,
 } from "../lib/services/settings.server";
+import { checkThemeBlockInstalled } from "../lib/services/install-theme-block.server";
 import { handleError, validateOrThrow } from "../lib/errors.server";
 
 // ============================================================================
@@ -107,6 +108,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     apiKey && shopDomain
       ? `https://${shopDomain}/admin/themes/current/editor?template=product`
       : null;
+  // Deep link that opens the theme editor with the Insignia customize button
+  // pre-selected for one-click add. See Shopify "app block deep linking" docs.
+  const themeBlockDeepLinkUrl =
+    apiKey && shopDomain
+      ? `https://${shopDomain}/admin/themes/current/editor?template=product&addAppBlockId=${apiKey}/customize-button&target=mainSection`
+      : null;
 
   // Load all translations for this shop (all locales)
   const translations = await db.storefrontTranslation.findMany({
@@ -126,6 +133,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     sessionTokenForApi,
     shopId: shop.id,
     themeEditorUrl,
+    themeBlockDeepLinkUrl,
     translationMap,
   };
 };
@@ -136,6 +144,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
+    const formData = await request.formData();
+    const intent = formData.get("intent");
+
+    if (intent === "install-theme-block") {
+      const { admin } = await authenticate.admin(request);
+      const result = await checkThemeBlockInstalled(admin.graphql);
+      return { themeBlockInstall: result };
+    }
+
     const { session } = await authenticate.admin(request);
 
     const shop = await db.shop.findUnique({
@@ -146,9 +163,6 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     if (!shop) {
       throw new Response("Shop not found", { status: 404 });
     }
-
-    const formData = await request.formData();
-    const intent = formData.get("intent");
 
     if (intent === "remove-placeholder") {
       await updateMerchantSettings(shop.id, {
@@ -209,11 +223,12 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 // ============================================================================
 
 export default function SettingsPage() {
-  const { settings, apiBaseUrl, sessionTokenForApi, themeEditorUrl, translationMap } =
+  const { settings, apiBaseUrl, sessionTokenForApi, themeEditorUrl, themeBlockDeepLinkUrl, translationMap } =
     useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const navigation = useNavigation();
+  const installFetcher = useFetcher<typeof action>();
 
   const [selectedTab, setSelectedTab] = useState(0);
   const [uploading, setUploading] = useState(false);
@@ -222,6 +237,21 @@ export default function SettingsPage() {
   const [translationValues, setTranslationValues] = useState<Record<string, string>>(
     () => translationMap["en"] ?? {}
   );
+  type ThemeBlockDebug = {
+    themeId?: string;
+    themeName?: string;
+    fileFound: boolean;
+    parseOk: boolean;
+    sectionCount: number;
+    blockTypesSeen: string[];
+    ourBlockCount: number;
+    graphqlErrors?: string[];
+  };
+  const [themeBlockBanner, setThemeBlockBanner] = useState<
+    "error" | "diagnostic" | null
+  >(null);
+  const [themeBlockErrorMsg, setThemeBlockErrorMsg] = useState<string | null>(null);
+  const [themeBlockDebug, setThemeBlockDebug] = useState<ThemeBlockDebug | null>(null);
 
   const isSubmitting = navigation.state === "submitting";
 
@@ -247,6 +277,55 @@ export default function SettingsPage() {
     }
     return () => { shopify?.saveBar?.hide("settings-save-bar"); };
   }, [translationsDirty]);
+
+  // Handle theme block install-check result:
+  //   - already_installed → open normal theme editor
+  //   - needs_install → open deep link ONLY if we're confident block is missing
+  //     (prevents cumulative adds when read permission is missing or the
+  //     file couldn't be parsed)
+  //   - error / unconfirmed needs_install → show diagnostic banner
+  useEffect(() => {
+    const result = (installFetcher.data as {
+      themeBlockInstall?: {
+        status: string;
+        themeId?: string;
+        message?: string;
+        debug?: ThemeBlockDebug;
+      };
+    } | null)?.themeBlockInstall;
+    if (!result) return;
+
+    if (result.status === "already_installed") {
+      if (themeEditorUrl) {
+        setTimeout(() => window.open(themeEditorUrl, "_blank"), 0);
+      }
+    } else if (result.status === "needs_install") {
+      const confidentlyMissing =
+        result.debug?.fileFound &&
+        result.debug?.parseOk &&
+        result.debug?.ourBlockCount === 0;
+      if (confidentlyMissing) {
+        const url = themeBlockDeepLinkUrl ?? themeEditorUrl;
+        if (url) setTimeout(() => window.open(url, "_blank"), 0);
+      } else {
+        setThemeBlockBanner("diagnostic");
+        setThemeBlockDebug(result.debug ?? null);
+      }
+    } else if (result.status === "error") {
+      setThemeBlockBanner("error");
+      setThemeBlockErrorMsg(result.message ?? "An error occurred.");
+      setThemeBlockDebug(result.debug ?? null);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [installFetcher.data]);
+
+  const isInstallingThemeBlock = installFetcher.state !== "idle";
+
+  function handleOpenThemeEditor() {
+    const fd = new FormData();
+    fd.set("intent", "install-theme-block");
+    installFetcher.submit(fd, { method: "POST" });
+  }
 
   const handleSaveTranslations = useCallback(() => {
     const formData = new FormData();
@@ -410,17 +489,80 @@ export default function SettingsPage() {
             >
               <Card>
                 <BlockStack gap="300">
+                  {(themeBlockBanner === "error" || themeBlockBanner === "diagnostic") && (
+                    <Banner
+                      title={
+                        themeBlockBanner === "error"
+                          ? "Could not check theme block"
+                          : "Couldn't verify block state"
+                      }
+                      tone="warning"
+                      onDismiss={() => {
+                        setThemeBlockBanner(null);
+                        setThemeBlockDebug(null);
+                      }}
+                    >
+                      <BlockStack gap="200">
+                        {themeBlockBanner === "error" && themeBlockErrorMsg && (
+                          <Text as="p">{themeBlockErrorMsg}</Text>
+                        )}
+                        {themeBlockBanner === "diagnostic" && (
+                          <Text as="p">
+                            We could not confirm whether the Customize block is
+                            already in your theme, so we did not open the
+                            add-block link to avoid duplicating it. Please open
+                            the theme editor manually via Online Store → Themes.
+                          </Text>
+                        )}
+                        {themeBlockDebug && (
+                          <Box
+                            background="bg-surface-secondary"
+                            padding="200"
+                            borderRadius="200"
+                          >
+                            <BlockStack gap="100">
+                              <Text as="p" variant="bodySm" tone="subdued">
+                                <strong>Diagnostic:</strong>
+                              </Text>
+                              <Text as="p" variant="bodySm">
+                                Theme: {themeBlockDebug.themeName ?? "?"} ({themeBlockDebug.themeId ?? "no id"})
+                              </Text>
+                              <Text as="p" variant="bodySm">
+                                product.json found: {String(themeBlockDebug.fileFound)} · parsed: {String(themeBlockDebug.parseOk)} · sections: {themeBlockDebug.sectionCount} · blocks total: {themeBlockDebug.blockTypesSeen.length} · ours: {themeBlockDebug.ourBlockCount}
+                              </Text>
+                              {themeBlockDebug.graphqlErrors && themeBlockDebug.graphqlErrors.length > 0 && (
+                                <Text as="p" variant="bodySm" tone="critical">
+                                  GraphQL: {themeBlockDebug.graphqlErrors.join(" | ")}
+                                </Text>
+                              )}
+                              {themeBlockDebug.blockTypesSeen.length > 0 && (
+                                <Text as="p" variant="bodySm" tone="subdued">
+                                  Block types seen: {themeBlockDebug.blockTypesSeen.slice(0, 10).join(", ")}
+                                  {themeBlockDebug.blockTypesSeen.length > 10 ? " …" : ""}
+                                </Text>
+                              )}
+                            </BlockStack>
+                          </Box>
+                        )}
+                      </BlockStack>
+                    </Banner>
+                  )}
                   <Banner tone="info">
                     <Text as="p">
-                      Add the Customize button to your theme to let customers personalize products directly from product pages.
+                      Add the Customize button to your theme to let customers
+                      personalize products directly from product pages.
                     </Text>
                   </Banner>
                   {themeEditorUrl && (
                     <Button
                       icon={ExternalIcon}
-                      onClick={() => window.open(themeEditorUrl, "_blank")}
+                      onClick={handleOpenThemeEditor}
+                      loading={isInstallingThemeBlock}
+                      disabled={isInstallingThemeBlock}
                     >
-                      Open theme editor
+                      {isInstallingThemeBlock
+                        ? "Adding to theme\u2026"
+                        : "Open theme editor"}
                     </Button>
                   )}
                 </BlockStack>

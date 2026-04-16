@@ -168,6 +168,15 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         return Errors.badRequest("Missing required fields");
       }
 
+      // Verify viewId belongs to this productConfig (which is already shop-scoped).
+      // Without this, a crafted request could associate this shop's productConfig
+      // with another shop's viewId, corrupting both shops' data.
+      const view = await db.productView.findFirst({
+        where: { id: viewId, productConfigId },
+        select: { id: true },
+      });
+      if (!view) return Errors.notFound("View");
+
       await db.variantViewConfiguration.upsert({
         where: {
           productConfigId_variantId_viewId: { productConfigId, variantId, viewId },
@@ -185,6 +194,13 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       if (!viewId || !variantId) {
         return Errors.badRequest("Missing required fields");
       }
+
+      // Same shop-scoping requirement as save-image above.
+      const view = await db.productView.findFirst({
+        where: { id: viewId, productConfigId },
+        select: { id: true },
+      });
+      if (!view) return Errors.notFound("View");
 
       await db.variantViewConfiguration.updateMany({
         where: { productConfigId, variantId, viewId },

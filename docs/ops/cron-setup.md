@@ -35,7 +35,7 @@ curl -v -X POST https://insignia.optidigi.nl/api/admin/cron/cleanup-slots \
 # Test draft cleanup
 curl -v -X POST https://insignia.optidigi.nl/api/admin/cron/cleanup-drafts \
   -H "Authorization: Bearer YOUR_CRON_SECRET"
-# Expected: {"deleted":0,"timestamp":"2026-..."}
+# Expected: {"deletedDrafts":0,"deletedUploadSessions":0,"timestamp":"2026-..."}
 ```
 
 ## Viewing logs
