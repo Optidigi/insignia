@@ -63,6 +63,31 @@ In NPM admin (port 81):
 
 ## Cloudflare DNS
 
+---
+
+## Running a second app instance (custom/private)
+
+See the full runbook at [`docs/ops/multi-instance-deployment.md`](../docs/ops/multi-instance-deployment.md).
+
+Quick reference — files for the second instance:
+
+| File | Purpose |
+|------|---------|
+| `deploy/compose.custom.example.yaml` | Compose stack template (rename to `compose.yaml` in the stack folder) |
+| `deploy/.env.custom.example` | Env template for the custom app |
+| `shopify.app.insignia-custom.toml` | Shopify app config (fill in `client_id` after creating the app in Partner Dashboard) |
+
+Key isolation points:
+- Compose project name: `insignia-custom` (not `insignia`)
+- Container names: `insignia-custom-app`, `insignia-custom-postgres`
+- Data path: `/srv/data/saas/insignia-custom/postgres`
+- NPM forward hostname: `insignia-custom-app`
+- Both instances use the same Docker image (`ghcr.io/optidigi/insignia-app:latest`) — the image is domain-agnostic; `SHOPIFY_APP_URL` is runtime-only.
+
+---
+
+## Cloudflare DNS
+
 For `insignia.optidigi.nl`, add an **AAAA record** (IPv6) in Cloudflare DNS:
 
 | Type | Name | Content | Proxy status |

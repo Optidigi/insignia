@@ -36,15 +36,14 @@ if (host === "localhost") {
 }
 
 export default defineConfig({
-  // Set an absolute base URL so that asset references in the HTML are
-  // fully-qualified (e.g. https://insignia.optidigi.nl/assets/...).
-  // Required when the modal is served via Shopify App Proxy: the HTML is
-  // delivered at myshopify.com/apps/insignia/modal, but /assets/* is NOT
-  // proxied — relative paths 503.  The backend server has CORS headers so
-  // the browser can fetch assets cross-origin.
-  base: process.env.SHOPIFY_APP_URL && host !== "localhost"
-    ? `${process.env.SHOPIFY_APP_URL}/`
-    : "/",
+  // base: "/" emits relative asset paths (/assets/xyz.js).
+  // root.tsx injects <base href={appUrl + "/"} /> as the first element in <head>
+  // before <Links /> and <Scripts />, so the browser resolves relative paths
+  // against the running app's domain — not myshopify.com.
+  // appUrl is derived at runtime from X-Forwarded-Proto + Host headers, making
+  // the built image domain-agnostic (same image works for any app URL).
+  // CORS in server.mjs allows .myshopify.com origins, so cross-origin loading works.
+  base: "/",
   server: {
     allowedHosts: [host],
     // Allow storefront (store origin) to load scripts from the app/tunnel when modal is served via app proxy

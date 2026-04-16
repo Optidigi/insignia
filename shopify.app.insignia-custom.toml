@@ -1,0 +1,55 @@
+# shopify.app.insignia-custom.toml
+#
+# Shopify app configuration for the custom/private Insignia instance.
+# Usage:
+#   shopify app deploy --config insignia-custom
+#
+# Setup steps before using this file:
+# 1. Create a NEW app in Shopify Partner Dashboard (separate from the public app).
+# 2. Replace the placeholder client_id below with the new app's client ID.
+# 3. Set application_url and all URLs to the custom app domain.
+# 4. Run: shopify app deploy --config insignia-custom
+#
+# Distribution: set to "Custom" in Partner Dashboard for private/custom apps.
+# Install URL: https://admin.shopify.com/oauth/install?client_id=<client_id>
+# (or use Partner Dashboard → [your app] → "Select stores" for direct install)
+
+client_id = "REPLACE_WITH_CUSTOM_APP_CLIENT_ID"
+name = "Insignia Custom"
+application_url = "https://insignia-custom.optidigi.nl"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2026-04"
+
+  [webhooks.privacy_compliance]
+  customer_deletion_url = "/webhooks/gdpr/customer-deletion"
+  customer_data_request_url = "/webhooks/gdpr/data-request"
+  shop_deletion_url = "/webhooks/gdpr/shop-deletion"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+[access_scopes]
+# Same scopes as the public app — custom and public apps have identical functionality.
+scopes = "write_products,read_products,read_orders,write_orders,write_app_proxy,write_publications,write_inventory,read_themes"
+
+[auth]
+redirect_urls = [ "https://insignia-custom.optidigi.nl/auth/callback" ]
+
+[app_proxy]
+# Server-side path: the app receives requests at https://insignia-custom.optidigi.nl/apps/insignia/*
+# Store-side path:  myshopify.com/apps/insignia/* (same subpath as public app)
+# This is intentional — both apps target different merchants so no same-store conflict.
+# See docs/ops/multi-instance-deployment.md §"App proxy subpath" for full rationale.
+url = "https://insignia-custom.optidigi.nl/apps/insignia"
+subpath = "insignia"
+prefix = "apps"
