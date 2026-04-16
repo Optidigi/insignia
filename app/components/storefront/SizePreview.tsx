@@ -123,7 +123,33 @@ export function SizePreview({
             ))}
           </div>
         )}
-        <div className="insignia-preview-panel-canvas">{canvasContent}</div>
+        <div className="insignia-preview-panel-canvas">
+          {canvasContent}
+          {availableViews.length > 1 && (
+            <>
+              <button
+                type="button"
+                className="insignia-preview-nav"
+                data-dir="prev"
+                aria-label="Previous view"
+                disabled={viewIndex === 0}
+                onClick={() => setViewIndex((i) => Math.max(0, i - 1))}
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                className="insignia-preview-nav"
+                data-dir="next"
+                aria-label="Next view"
+                disabled={viewIndex === availableViews.length - 1}
+                onClick={() => setViewIndex((i) => Math.min(availableViews.length - 1, i + 1))}
+              >
+                ›
+              </button>
+            </>
+          )}
+        </div>
       </div>
     );
   }

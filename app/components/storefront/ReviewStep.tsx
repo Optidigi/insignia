@@ -36,7 +36,6 @@ export function ReviewStep({
   config,
   selectedMethodId,
   placementSelections,
-  logo,
   quantities,
   onQuantitiesChange,
   priceResult,
@@ -119,7 +118,7 @@ export function ReviewStep({
         </span>
         <div className="insignia-review-line">
           <span className="insignia-review-line-name">{methodName}</span>
-          <span className="insignia-review-line-price insignia-review-line-price--blue">
+          <span className="insignia-review-line-price" data-blue="true">
             +{fmt(methodPriceCents)}
           </span>
         </div>
@@ -140,35 +139,6 @@ export function ReviewStep({
             </span>
           </div>
         ))}
-        {selectedPlacements
-          .filter((p) => p.sizePriceCents !== 0)
-          .map((p) => (
-            <div key={`${p.id}-size`} className="insignia-review-line">
-              <span className="insignia-review-line-name">
-                {p.sizeLabel} size
-              </span>
-              <span className="insignia-review-line-price insignia-review-line-price--blue">
-                +{fmt(p.sizePriceCents)}
-              </span>
-            </div>
-          ))}
-
-        <div className="insignia-review-divider" />
-
-        {/* ARTWORK section */}
-        <span className="insignia-review-section-label">
-          {t.review.artwork}
-        </span>
-        <div className="insignia-review-line">
-          <span className="insignia-review-line-name">{t.review.logo}</span>
-          {logo.type === "later" ? (
-            <span className="insignia-review-artwork-badge">
-              {t.review.uploadAfterPurchase}
-            </span>
-          ) : (
-            <span className="insignia-review-line-price">✓</span>
-          )}
-        </div>
       </div>
 
       {/* B2B per-size quantities */}
@@ -224,12 +194,6 @@ export function ReviewStep({
                 </div>
               );
             })}
-          </div>
-          <div className="insignia-qty-total-row">
-            <span>{t.review.total}</span>
-            <span>
-              {totalQuantity} {t.review.items}
-            </span>
           </div>
         </div>
       )}

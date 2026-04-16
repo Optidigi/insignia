@@ -21,7 +21,7 @@ type NativeCanvasProps = {
 // Canvas dimensions are computed dynamically from the loaded image's aspect ratio,
 // capped at MAX_CANVAS_DIM on the longer side. This eliminates letterboxing for
 // any product image shape (portrait, landscape, or square).
-const MAX_CANVAS_DIM = 560;
+const MAX_CANVAS_DIM = 700;
 
 export default function NativeCanvas({
   imageUrl,

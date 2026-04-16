@@ -894,6 +894,10 @@ html, body {
 }
 .insignia-preview-nav[data-dir="prev"] { left: 8px; }
 .insignia-preview-nav[data-dir="next"] { right: 8px; }
+.insignia-preview-nav:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
 .insignia-preview-nav:focus-visible {
   outline: 2px solid var(--insignia-primary);
   outline-offset: 2px;
@@ -1511,6 +1515,7 @@ html, body {
 
 /* Canvas area — fills remaining height, centers the canvas */
 .insignia-preview-panel-canvas {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
@@ -1520,11 +1525,11 @@ html, body {
   min-height: 0;
 }
 
-/* Canvas element inside the panel — fills up to 440px wide, portrait aspect
+/* Canvas element inside the panel — fills up to 560px wide, portrait aspect
    ratio. Using `width` (not max-width) so it expands to fill the container
-   rather than staying at the 440px intrinsic size. height:auto follows 440×560. */
+   rather than staying at the intrinsic size. height:auto follows aspect ratio. */
 .insignia-preview-panel-canvas canvas {
-  width: min(440px, 100%);
+  width: min(560px, 100%);
   height: auto;
   border-radius: var(--insignia-radius);
   border: 1px solid var(--insignia-border);
@@ -1677,19 +1682,6 @@ html, body {
 
 /* ── Step 4 review + preview sheet v2 ────────────────────────── */
 
-/* Artwork section in review summary */
-.insignia-review-artwork-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 8px;
-  background: #FEF3C7;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  color: #D97706;
-}
-
 /* B2B per-size quantity section */
 .insignia-qty-section {
   margin-top: 16px;
@@ -1835,19 +1827,6 @@ html, body {
   border-left-color: #BFDBFE;
   border-right-color: #BFDBFE;
 }
-.insignia-qty-total-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 16px;
-  height: 44px;
-  background: var(--insignia-bg-muted);
-  border-top: 1px solid var(--insignia-border);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--insignia-text);
-}
-
 
 /* ── Step 3 slider & states v2 ───────────────────────────────── */
 
@@ -2089,11 +2068,6 @@ html, body {
     padding: 0 14px;
   }
 
-  .insignia-qty-total-row {
-    height: 40px;
-    padding: 0 12px;
-    font-size: 13px;
-  }
   .insignia-review-total-bar {
     padding: 0 16px;
     height: 68px;
