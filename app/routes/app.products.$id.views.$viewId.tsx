@@ -1176,7 +1176,7 @@ export default function ViewDetailPage() {
         <div style={{ display: "flex", flex: 1, overflow: "hidden", minHeight: 0 }}>
 
           {/* Left: canvas column */}
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#F3F4F6", minWidth: 0 }}>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#F3F4F6", minWidth: 0, overflow: "hidden" }}>
 
             {/* View tabs / dropdown selector */}
             <div style={{
@@ -1268,7 +1268,7 @@ export default function ViewDetailPage() {
             <div style={{
               flex: 1, display: "flex", flexDirection: "column",
               alignItems: "center", justifyContent: "center",
-              padding: "16px 24px 8px", overflow: "hidden",
+              padding: "16px 24px 0", overflow: "hidden",
             }}>
               {viewPlacements.length === 0 ? (
                 <div style={{ textAlign: "center", color: "#9CA3AF" }}>
@@ -1649,7 +1649,16 @@ export default function ViewDetailPage() {
                     border: "1px solid #2563EB", marginTop: viewPlacements.length > 0 ? 10 : 0,
                   }}>
                     <Text as="p" variant="headingXs" fontWeight="semibold">New print area name</Text>
-                    <div style={{ marginTop: 6 }}>
+                    {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+                    <div
+                      style={{ marginTop: 6 }}
+                      onKeyDown={(e: React.KeyboardEvent) => {
+                        if (e.key === "Enter" && newZoneName.trim()) {
+                          e.preventDefault();
+                          handleAddZone();
+                        }
+                      }}
+                    >
                       <TextField
                         label="Name"
                         labelHidden
