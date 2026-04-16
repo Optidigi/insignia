@@ -1692,21 +1692,18 @@ html, body {
 
 /* B2B per-size quantity section */
 .insignia-qty-section {
-  border: 1px solid var(--insignia-border);
   border-radius: var(--insignia-radius);
-  overflow: hidden;
   margin-top: 16px;
 }
 .insignia-qty-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 16px;
-  height: 44px;
-  background: var(--insignia-bg-subtle);
+  padding: 0;
+  height: 40px;
 }
 .insignia-qty-section-title {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   color: var(--insignia-text);
 }
@@ -1715,7 +1712,7 @@ html, body {
   align-items: center;
   padding: 2px 8px;
   background: var(--insignia-primary-light);
-  border-radius: 4px;
+  border-radius: 10px;
   font-size: 11px;
   font-weight: 600;
   color: var(--insignia-primary);
@@ -1738,6 +1735,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   min-height: 76px;
   gap: 5px;
   padding: 0 4px;
@@ -1751,6 +1749,10 @@ html, body {
   border-color: var(--insignia-primary);
   box-shadow: inset 0 0 0 1px var(--insignia-primary);
   background: var(--insignia-primary-light);
+}
+
+.insignia-qty-card[data-active="true"] .insignia-qty-card-stepper {
+  border-color: #BFDBFE;
 }
 
 .insignia-qty-card[data-unavailable="true"] {
@@ -1823,7 +1825,7 @@ html, body {
   font-size: 11px;
   font-weight: 600;
   color: #9CA3AF;
-  background: white;
+  background: transparent;
 }
 
 .insignia-qty-card[data-active="true"] .insignia-qty-card-val {
@@ -2086,13 +2088,6 @@ html, body {
     padding: 0 14px;
   }
 
-  .insignia-qty-section-header {
-    height: 40px;
-    padding: 0 12px;
-  }
-  .insignia-qty-section-title {
-    font-size: 13px;
-  }
   .insignia-qty-total-row {
     height: 40px;
     padding: 0 12px;
@@ -2335,5 +2330,24 @@ html, body {
 
   .insignia-upload-helper-text {
     display: none;
+  }
+
+  /* Qty section — desktop sizes */
+  .insignia-qty-section-header {
+    height: 44px;
+  }
+  .insignia-qty-section-title {
+    font-size: 14px;
+  }
+  .insignia-qty-card {
+    min-height: 80px;
+  }
+  .insignia-qty-card-stepper .insignia-qty-btn {
+    width: 24px;
+    height: 28px;
+  }
+  .insignia-qty-card-val {
+    width: 32px;
+    height: 28px;
   }
 }
