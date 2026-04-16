@@ -435,7 +435,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       const stepId = formData.get("stepId") as string;
       const label = formData.get("label") as string;
       const rawScale = parseFloat(formData.get("scaleFactor") as string ?? "1");
-      const scaleFactor = Number.isNaN(rawScale) ? 1.0 : rawScale;
+      const scaleFactor = Number.isNaN(rawScale) ? 1.0 : Math.max(0, Math.min(1, rawScale));
       const priceAdjustmentCents =
         parseInt(formData.get("priceAdjustmentCents") as string ?? "0", 10) || 0;
 
@@ -487,7 +487,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       // Apply all step updates
       for (const s of payload.steps ?? []) {
         if (!s.stepId || !s.label) continue;
-        const rawScale = Number.isNaN(s.scaleFactor) ? 1.0 : s.scaleFactor;
+        const rawScale = Number.isNaN(s.scaleFactor) ? 1.0 : Math.max(0, Math.min(1, s.scaleFactor));
         await db.placementStep.update({
           where: { id: s.stepId, placementDefinition: { productView: { productConfig: { shopId: shop.id } } } },
           data: {
