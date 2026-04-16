@@ -1692,7 +1692,6 @@ html, body {
 
 /* B2B per-size quantity section */
 .insignia-qty-section {
-  border-radius: var(--insignia-radius);
   margin-top: 16px;
 }
 .insignia-qty-section-header {
