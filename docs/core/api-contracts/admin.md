@@ -164,6 +164,20 @@ Endpoints (suggested):
 
 This copies geometry + step schedules from a source variant to a target variant, and leaves images to be swapped.
 
+### Reorder placements
+
+- Intent: `reorder-placements` on view editor route
+- Payload: `order` (JSON array of placement IDs in desired order)
+- Validation: array of non-empty strings, no duplicates
+- Updates `displayOrder` for each placement with shopId ownership check
+
+### Reorder steps
+
+- Intent: `reorder-steps` on view editor route
+- Payload: `placementId` + `order` (JSON array of step IDs in desired order)
+- Validation: array of non-empty strings, no duplicates
+- Updates `displayOrder` for each step with 3-level ownership check (placement → view → config → shop)
+
 ## Orders (Logo later)
 
 Dashboard must list order customizations and show `artworkStatus` per customized line item.

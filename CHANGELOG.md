@@ -7,6 +7,25 @@
 - Bulk image upload to Cloudflare R2 via presigned PUT URLs
 - `shopify.app.insignia-demo.toml` config for isolated local development
 - `.env.demo` for demo app credentials (gitignored)
+- Drag-and-drop reordering for print areas and size tiers (`reorder-placements`, `reorder-steps` intents)
+- Editable print area names in view editor accordion
+- Shared zone color utility (`app/lib/zone-colors.ts`) for deterministic ID-based colors across panel and canvas
+- Scale input validation: clamped 0.10–1.0, numeric-only filter, server-side enforcement
+
+### Fixed
+- SaveBar on product detail page now saves both basic info and decoration methods together (was only saving basic)
+- Accordion expanded state persists across revalidations in view editor (no longer collapses on save)
+- Print area name input submits on Enter key
+- Canvas column no longer shows scrollbar; variant bar overflow hidden
+- View editor uses full-bleed layout (position: fixed) to eliminate bottom margin
+- Default size selector clears stale index when steps are added/deleted
+
+### Hardened
+- Dedicated fetchers for reorder and method-save operations (prevents request cancellation race)
+- Reorder payload validation: array type check, non-empty strings, no duplicates
+- Step drag events no longer bubble to parent placement drag (stopPropagation)
+- Placement name trimmed on server before save
+- View name sync skipped when user is actively editing
 
 ---
 

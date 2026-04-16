@@ -54,6 +54,15 @@ Note: The canonical data schema uses the name `placementGeometry` for this map. 
 - Editor MUST save percent values (not pixels).
 - Editor MUST support duplicating a view configuration to another variant (copy geometry + step schedules, swap images only).
 
+## Dashboard editor behavior (v2 — Phase 1 updates)
+
+- Placements and steps support drag-and-drop reordering (`displayOrder` field).
+- Print area names are editable inline in the view editor accordion.
+- Zone colors are deterministic by placement ID (hash-based), consistent between panel dots and canvas rectangles. See `app/lib/zone-colors.ts`.
+- Scale factor clamped 0.10–1.0 on both client and server.
+- Accordion expanded state persists across revalidations (not reset on save).
+- Full-bleed canvas layout (position: fixed) for maximum editing area.
+
 ## Canonical references
 
 - Storefront config response: `docs/core/storefront-config.md`

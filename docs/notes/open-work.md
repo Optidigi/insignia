@@ -1,6 +1,6 @@
 # Open work / decisions to revisit
 
-> **Last updated**: 2026-04-15 (UI polish + per-view placements)
+> **Last updated**: 2026-04-16 (Phase 1 admin view editor UX tweaks)
 
 This file tracks decisions and missing contracts that block completion.
 
@@ -12,11 +12,6 @@ Rules:
 ---
 
 ## Active Open Questions
-
-### View Editor right panel architecture
-- **Decision needed**: Tabs (A) vs expand/collapse per-zone (B) vs overview-first (C)
-- See: `docs/superpowers/specs/2026-04-09-v2.1-view-editor-brainstorm.md`
-- Design file: `admin-dashboard-v2.1-final.pen`
 
 ### Pretty storefront URLs
 - **Resolved (partial)**: Path-based URLs (`/customize/:productId` and splat routes) both failed due to `AppProxyProvider` `<base>` tag incompatibility. Settled on short query params (`/modal?p=X&v=Y`) which are shorter than the original format.
@@ -41,3 +36,4 @@ Rules:
 - ~~Upload content-type bypass~~ — Fixed in Phase 3: require valid MIME or infer from extension. Closed 2026-04-14.
 - ~~Missing database indexes~~ — Fixed in Phase 3: GIN on linkedProductIds, B-tree on draft fields. Closed 2026-04-14.
 - ~~Logo sizing UX improvement~~ — Storefront size step rewritten with 4 conditional states (slider for 3+, cards for 2, multi-position tabs, preview-only). Stepped tiers with cards approach is replaced by conditional UI based on size count and position count. Closed 2026-04-16.
+- ~~View Editor right panel architecture~~ — Phase 1 (2026-04-16) implemented 8 UX tweaks to the existing accordion layout: drag-and-drop reordering, editable names, scale clamping, accordion state persistence, full-bleed layout. Closed 2026-04-16.
