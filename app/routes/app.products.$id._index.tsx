@@ -898,7 +898,9 @@ export default function ProductConfigDetailPage() {
                             </InlineStack>
                             <InlineStack gap="200" blockAlign="center">
                               <Badge tone={isComplete ? "success" : hasPartial ? "warning" : undefined}>
-                                {`${filled}/${total} images`}
+                                {filled === 0
+                                  ? "No images"
+                                  : `${filled} image${filled !== 1 ? "s" : ""}`}
                               </Badge>
                               <Icon source={ChevronRightIcon} tone="subdued" />
                             </InlineStack>
