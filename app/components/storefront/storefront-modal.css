@@ -1271,9 +1271,6 @@ html, body {
   color: white;
 }
 
-/* Review actions — rendered inside the shared footer (modal footer) */
-/* The .insignia-review-actions class is no longer used; kept for reference */
-
 /* ===== Floating Preview Button (mobile only, fixed above footer) ===== */
 .insignia-preview-float-btn {
   position: fixed;
@@ -1751,7 +1748,8 @@ html, body {
 }
 
 .insignia-qty-card[data-active="true"] {
-  border: 2px solid var(--insignia-primary);
+  border-color: var(--insignia-primary);
+  box-shadow: inset 0 0 0 1px var(--insignia-primary);
   background: var(--insignia-primary-light);
 }
 
@@ -1847,19 +1845,6 @@ html, body {
   color: var(--insignia-text);
 }
 
-/* Back as text link on review step */
-.insignia-review-back-link {
-  background: none;
-  border: none;
-  color: var(--insignia-text-secondary);
-  font-size: 12px;
-  cursor: pointer;
-  padding: 8px;
-  transition: color var(--insignia-transition);
-}
-.insignia-review-back-link:hover {
-  color: var(--insignia-text);
-}
 
 /* ── Step 3 slider & states v2 ───────────────────────────────── */
 

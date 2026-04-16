@@ -23,15 +23,7 @@ type ReviewStepProps = {
   logo: LogoState;
   quantities: Record<string, number>;
   onQuantitiesChange: (q: Record<string, number>) => void;
-  customizationId: string | null;
   priceResult: PriceResult | null;
-  prepareResult: {
-    slotVariantId: string;
-    configHash: string;
-    pricingVersion: string;
-    unitPriceCents: number;
-    feeCents: number;
-  } | null;
   submitError: string | null;
   onSaveDraftAndPrice: () => Promise<void>;
   baseProductPriceCents: number;

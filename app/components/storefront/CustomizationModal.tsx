@@ -143,7 +143,6 @@ export function CustomizationModal({
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const [customizationId, setCustomizationId] = useState<string | null>(null);
   const [priceResult, setPriceResult] = useState<PriceResult | null>(null);
-  const [prepareResult, setPrepareResult] = useState<PrepareResult | null>(null);
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [showPreviewSheet, setShowPreviewSheet] = useState(false);
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -531,8 +530,6 @@ export function CustomizationModal({
           quantity: number;
           properties: Record<string, string>;
         }> = [];
-        let lastPrep: PrepareResult | null = null;
-
         for (const variant of activeVariants) {
           const prepareRes = await fetchWithRetry(proxyUrl("/apps/insignia/prepare"), {
             method: "POST",
@@ -544,7 +541,6 @@ export function CustomizationModal({
             throw new Error(d?.error?.message ?? "Failed to prepare");
           }
           const prep: PrepareResult = await prepareRes.json();
-          lastPrep = prep;
           confirmedSlotIds.push(prep.slotVariantId);
 
           const properties = buildInsigniaProperties(
@@ -561,7 +557,6 @@ export function CustomizationModal({
           });
         }
 
-        if (lastPrep) setPrepareResult(lastPrep);
         await addMultipleCustomizedToCart(pairs);
       } else {
         // Single-variant mode: original behaviour preserved.
@@ -576,7 +571,6 @@ export function CustomizationModal({
           throw new Error(d?.error?.message ?? "Failed to prepare");
         }
         const prep: PrepareResult = await prepareRes.json();
-        setPrepareResult(prep);
         confirmedSlotIds.push(prep.slotVariantId);
         const properties = buildInsigniaProperties(
           cid,
@@ -732,9 +726,7 @@ export function CustomizationModal({
                 logo={logo}
                 quantities={quantities}
                 onQuantitiesChange={setQuantities}
-                customizationId={customizationId}
                 priceResult={priceResult}
-                prepareResult={prepareResult}
                 submitError={submitError}
                 onSaveDraftAndPrice={() => saveDraftAndPrice().then(() => {})}
                 baseProductPriceCents={config.baseProductPriceCents}
