@@ -18,11 +18,10 @@ type NativeCanvasProps = {
   className?: string;
 };
 
-// Portrait canvas matching the design's 440×560 product card aspect ratio.
-// Product images are typically portrait (T-shirts, hoodies, etc.) so this
-// eliminates the letterboxing that made images appear small in a square canvas.
-const CANVAS_W = 440;
-const CANVAS_H = 560;
+// Canvas dimensions are computed dynamically from the loaded image's aspect ratio,
+// capped at MAX_CANVAS_DIM on the longer side. This eliminates letterboxing for
+// any product image shape (portrait, landscape, or square).
+const MAX_CANVAS_DIM = 560;
 
 export default function NativeCanvas({
   imageUrl,
@@ -35,6 +34,7 @@ export default function NativeCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const [canvasDims, setCanvasDims] = useState({ w: 440, h: 560 });
   const productImgRef = useRef<HTMLImageElement | null>(null);
   const logoImgRef = useRef<HTMLImageElement | null>(null);
 
@@ -46,6 +46,16 @@ export default function NativeCanvas({
     img.onload = () => {
       if (cancelled) return;
       productImgRef.current = img;
+      const aspect = img.naturalWidth / img.naturalHeight;
+      let w: number, h: number;
+      if (aspect >= 1) {
+        w = MAX_CANVAS_DIM;
+        h = Math.round(MAX_CANVAS_DIM / aspect);
+      } else {
+        h = MAX_CANVAS_DIM;
+        w = Math.round(MAX_CANVAS_DIM * aspect);
+      }
+      setCanvasDims({ w, h });
       setLoaded(true);
       setError(false);
     };
@@ -146,8 +156,8 @@ export default function NativeCanvas({
         className={className}
         style={{
           width: "100%",
-          maxWidth: CANVAS_W,
-          aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
+          maxWidth: canvasDims.w,
+          aspectRatio: `${canvasDims.w} / ${canvasDims.h}`,
           background: "#f3f4f6",
           display: "flex",
           alignItems: "center",
@@ -168,8 +178,8 @@ export default function NativeCanvas({
         className={className}
         style={{
           width: "100%",
-          maxWidth: CANVAS_W,
-          aspectRatio: `${CANVAS_W} / ${CANVAS_H}`,
+          maxWidth: canvasDims.w,
+          aspectRatio: `${canvasDims.w} / ${canvasDims.h}`,
           background: "#f9fafb",
           display: "flex",
           alignItems: "center",
@@ -194,8 +204,8 @@ export default function NativeCanvas({
   return (
     <canvas
       ref={canvasRef}
-      width={CANVAS_W}
-      height={CANVAS_H}
+      width={canvasDims.w}
+      height={canvasDims.h}
       className={className}
       style={{ maxWidth: "100%", height: "auto", borderRadius: "12px" }}
     />

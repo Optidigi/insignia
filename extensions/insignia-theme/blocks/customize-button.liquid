@@ -7,7 +7,7 @@
   button class, so it matches Add to Cart and other theme buttons.
 {% endcomment %}
 
-{% if product and product.selected_or_first_available_variant and product.metafields.insignia.enabled == "true" %}
+{% if product and product.selected_or_first_available_variant and (product.metafields.insignia.enabled == "true" or request.design_mode) %}
   {% comment %}Extract numeric IDs — Liquid product.id returns the full GID (gid://shopify/Product/...)
     which Shopify's App Proxy cannot route. We need only the numeric tail.{% endcomment %}
   {% assign product_numeric_id = product.id | split: '/' | last %}
@@ -16,8 +16,9 @@
 
   <div class="insignia-customize-block" {{ block.shopify_attributes }}>
     <a
-      href="{{ modal_url }}"
+      href="{% if request.design_mode %}#{% else %}{{ modal_url }}{% endif %}"
       class="insignia-customize-button {% if block.settings.use_theme_style %}button btn{% endif %} {{ block.settings.custom_class }}"
+      {% if request.design_mode %}onclick="event.preventDefault();"{% endif %}
       data-insignia-modal
       data-product-id="{{ product_numeric_id }}"
       data-variant-id="{{ variant_numeric_id }}"
@@ -63,23 +64,6 @@
         color: {{ block.settings.text_color }};
       }
     {% endif %}
-  </style>
-{% elsif request.design_mode %}
-  {%- comment -%}Theme editor preview — show a styled preview button{%- endcomment -%}
-  <div class="insignia-customize-block" {{ block.shopify_attributes }}>
-    <a
-      href="#"
-      class="insignia-customize-button {% if block.settings.use_theme_style %}button btn{% endif %} {{ block.settings.custom_class }}"
-      onclick="event.preventDefault();"
-      style="{% unless block.settings.use_theme_style %}display: inline-block; padding: {{ block.settings.padding_y }}px {{ block.settings.padding_x }}px; background: {{ block.settings.background_color }}; color: {{ block.settings.text_color }}; text-decoration: none; border-radius: {{ block.settings.border_radius }}px; font-weight: 600; font-size: {{ block.settings.font_size }}px; border: none; cursor: default; width: {% if block.settings.full_width %}100%{% else %}auto{% endif %}; text-align: center;{% endunless %}"
-    >
-      {{ block.settings.button_label }}
-    </a>
-  </div>
-  <style>
-    .insignia-customize-block {
-      margin: {{ block.settings.margin_top }}px 0 {{ block.settings.margin_bottom }}px;
-    }
   </style>
 {% endif %}
 
