@@ -17,6 +17,7 @@ database.sqlite
 .env.*
 !.env.example
 !deploy/.env.example
+!deploy/.env.custom.example
 
 yarn.lock
 pnpm-lock.yaml

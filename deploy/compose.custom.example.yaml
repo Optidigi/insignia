@@ -1,0 +1,66 @@
+# deploy/compose.custom.example.yaml
+#
+# Second Insignia instance — custom/private Shopify app.
+# Server path: /srv/saas/infra/stacks/insignia-custom/compose.yaml
+#
+# Isolation from the public instance:
+#   - Compose project name: insignia-custom  (different from "insignia")
+#   - Container names:      insignia-custom-app, insignia-custom-postgres
+#   - Volume path:          /srv/data/saas/insignia-custom/postgres
+#   - .env:                 separate file with its own credentials + SHOPIFY_APP_URL
+#
+# Same image as the public instance (domain-agnostic since the base: "/" change).
+# NPM routes insignia-custom.optidigi.nl → insignia-custom-app:3000.
+#
+# Deploy a new version:
+#   sed -i 's/APP_VERSION=.*/APP_VERSION=v1.x.x/' .env
+#   docker compose pull && docker compose up -d
+
+name: insignia-custom
+
+services:
+
+  app:
+    image: ghcr.io/optidigi/insignia-app:${APP_VERSION:-latest}
+    container_name: insignia-custom-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - proxy     # shared with Nginx Proxy Manager — NPM forwards insignia-custom.optidigi.nl → insignia-custom-app:3000
+      - internal  # private link to the db container
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  db:
+    image: postgres:16-alpine
+    container_name: insignia-custom-postgres
+    restart: unless-stopped
+    networks:
+      - internal  # NOT on proxy — db is never reachable from outside this stack
+    volumes:
+      - /srv/data/saas/insignia-custom/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  proxy:
+    external: true
+    name: proxy   # shared Docker network — nginx-proxy-manager is already on this network
+  internal:
+    internal: true
