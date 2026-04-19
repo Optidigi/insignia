@@ -12,8 +12,12 @@ import db from "../../db.server";
 // Validation Schemas
 // ============================================================================
 
+const SUPPORTED_LOCALE_CODES_CONST = ["en", "nl", "de", "fr", "es", "it", "pt", "pl"] as const;
+export type SupportedStorefrontLocale = (typeof SUPPORTED_LOCALE_CODES_CONST)[number];
+
 export const UpdateSettingsSchema = z.object({
   placeholderLogoImageUrl: z.string().url().nullable().optional(),
+  defaultStorefrontLocale: z.enum(SUPPORTED_LOCALE_CODES_CONST).optional(),
 });
 
 export type UpdateSettingsInput = z.infer<typeof UpdateSettingsSchema>;
@@ -53,6 +57,9 @@ export async function updateMerchantSettings(
     data: {
       ...(input.placeholderLogoImageUrl !== undefined && {
         placeholderLogoImageUrl: input.placeholderLogoImageUrl,
+      }),
+      ...(input.defaultStorefrontLocale !== undefined && {
+        defaultStorefrontLocale: input.defaultStorefrontLocale,
       }),
     },
   });

@@ -12,6 +12,7 @@ import type { LoaderFunctionArgs } from "react-router";
 import { authenticate, unauthenticated } from "../shopify.server";
 import db from "../db.server";
 import { getStorefrontConfig } from "../lib/services/storefront-config.server";
+import { getMerchantSettings } from "../lib/services/settings.server";
 import { checkRateLimit } from "../lib/storefront/rate-limit.server";
 import { AppError } from "../lib/errors.server";
 import { parseAcceptLanguage, getStorefrontTranslations } from "../lib/storefront/i18n.server";
@@ -112,7 +113,12 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
       );
     }
 
-    const locale = parseAcceptLanguage(request.headers.get("Accept-Language"));
+    // Locale priority: merchant default → Accept-Language header → "en"
+    const merchantSettings = await getMerchantSettings(shop.id);
+    const locale =
+      (merchantSettings.defaultStorefrontLocale || null) ??
+      parseAcceptLanguage(request.headers.get("Accept-Language")) ??
+      "en";
     const translations = await getStorefrontTranslations(shop.id, locale);
     return jsonResponse({ ...config, translations, locale }, 200, allowedOrigin);
   } catch (error) {

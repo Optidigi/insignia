@@ -33,6 +33,7 @@ import {
   getMerchantSettings,
   updateMerchantSettings,
   UpdateSettingsSchema,
+  type SupportedStorefrontLocale,
 } from "../lib/services/settings.server";
 import { checkThemeBlockInstalled } from "../lib/services/install-theme-block.server";
 import { handleError, validateOrThrow } from "../lib/errors.server";
@@ -75,6 +76,18 @@ const SUPPORTED_LOCALES = [
   { code: "pt", label: "Portuguese (Portugu\u00eas)" },
   { code: "pl", label: "Polish (Polski)" },
 ] as const;
+
+// Options for the default storefront language Select — labeled in native names
+const DEFAULT_LOCALE_OPTIONS = [
+  { label: "English", value: "en" },
+  { label: "Nederlands", value: "nl" },
+  { label: "Deutsch", value: "de" },
+  { label: "Fran\u00e7ais", value: "fr" },
+  { label: "Espa\u00f1ol", value: "es" },
+  { label: "Italiano", value: "it" },
+  { label: "Portugu\u00eas", value: "pt" },
+  { label: "Polski", value: "pl" },
+];
 
 const VALID_LOCALES = SUPPORTED_LOCALES.map((l) => l.code) as unknown as string[];
 
@@ -171,6 +184,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { success: "Settings saved" };
     }
 
+    if (intent === "save-general-settings") {
+      const defaultStorefrontLocale = formData.get("defaultStorefrontLocale") as string | null;
+      const input = validateOrThrow(
+        UpdateSettingsSchema,
+        { defaultStorefrontLocale: defaultStorefrontLocale ?? undefined },
+        "Invalid settings"
+      );
+      await updateMerchantSettings(shop.id, input);
+      return { success: "Settings saved" };
+    }
+
     if (intent === "save-placeholder") {
       const placeholderLogoImageUrl = formData.get(
         "placeholderLogoImageUrl"
@@ -233,6 +257,9 @@ export default function SettingsPage() {
   const [selectedTab, setSelectedTab] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [defaultLocale, setDefaultLocale] = useState<string>(
+    settings.defaultStorefrontLocale ?? "en"
+  );
   const [selectedLocale, setSelectedLocale] = useState("en");
   const [translationValues, setTranslationValues] = useState<Record<string, string>>(
     () => translationMap["en"] ?? {}
@@ -434,6 +461,16 @@ export default function SettingsPage() {
     setError(null);
   }, [submit]);
 
+  const handleSaveDefaultLocale = useCallback(
+    (locale: string) => {
+      const formData = new FormData();
+      formData.append("intent", "save-general-settings");
+      formData.append("defaultStorefrontLocale", locale);
+      submit(formData, { method: "POST" });
+    },
+    [submit]
+  );
+
   useEffect(() => {
     if (navigation.state === "idle" && navigation.formData) {
       setError(null);
@@ -619,6 +656,27 @@ export default function SettingsPage() {
                       </Box>
                     )}
                   </DropZone>
+                </BlockStack>
+              </Card>
+            </Layout.AnnotatedSection>
+
+            <Layout.AnnotatedSection
+              title="Storefront language"
+              description="Set the default language for the customization modal. Customers whose browser language is not supported will see this language. Individual translation strings can be overridden in the Translations tab."
+            >
+              <Card>
+                <BlockStack gap="400">
+                  <Select
+                    label="Default storefront language"
+                    options={DEFAULT_LOCALE_OPTIONS}
+                    value={defaultLocale}
+                    onChange={(value) => {
+                      setDefaultLocale(value);
+                      handleSaveDefaultLocale(value as SupportedStorefrontLocale);
+                    }}
+                    disabled={isSubmitting}
+                    helpText="Applies when no matching browser language is detected."
+                  />
                 </BlockStack>
               </Card>
             </Layout.AnnotatedSection>

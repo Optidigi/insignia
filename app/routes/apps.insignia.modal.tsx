@@ -117,7 +117,7 @@ export default function ModalRoute() {
   return (
     <AppProxyProvider appUrl={appUrl}>
       <title>Customize your product</title>
-      <div className="insignia-modal-page" style={{ minHeight: "100dvh" }}>
+      <div className="insignia-modal-page">
         <CustomizationModal productId={productId} variantId={variantId} />
       </div>
     </AppProxyProvider>

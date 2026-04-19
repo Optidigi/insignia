@@ -209,6 +209,7 @@ describe("getStorefrontConfig", () => {
       centerXPercent: 50,
       centerYPercent: 30,
       maxWidthPercent: 40,
+      maxHeightPercent: null,
     });
   });
 
@@ -261,6 +262,7 @@ describe("getStorefrontConfig", () => {
       centerXPercent: 55,
       centerYPercent: 35,
       maxWidthPercent: 45,
+      maxHeightPercent: null,
     });
   });
 

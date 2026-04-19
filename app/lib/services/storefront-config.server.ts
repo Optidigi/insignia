@@ -16,6 +16,9 @@ export type PlacementGeometry = {
   centerXPercent: number;
   centerYPercent: number;
   maxWidthPercent: number;
+  /** Optional — set when the merchant configured the print zone with a
+   * specific height. Falls back to maxWidthPercent when null. */
+  maxHeightPercent?: number | null;
 };
 
 export type PlacementStep = {
@@ -36,9 +39,12 @@ export type Placement = {
 
 export type ConfiguredView = {
   id: string;
+  name: string | null;
   perspective: "front" | "back" | "left" | "right" | "side";
   imageUrl: string | null;
   isMissingImage: boolean;
+  /** Merchant-set ruler calibration; null when no ruler has been calibrated. */
+  calibrationPxPerCm: number | null;
 };
 
 export type DecorationMethodRef = {
@@ -292,6 +298,7 @@ export async function getStorefrontConfig(
         perspective: view.perspective as ConfiguredView["perspective"],
         imageUrl,
         isMissingImage: imageUrl == null,
+        calibrationPxPerCm: view.calibrationPxPerCm ?? null,
       };
     })
   );
@@ -317,9 +324,15 @@ export async function getStorefrontConfig(
         continue;
       }
 
+      type RawGeom = {
+        centerXPercent: number;
+        centerYPercent: number;
+        maxWidthPercent: number;
+        maxHeightPercent?: number | null;
+      };
       const vc = viewConfigByViewId.get(view.id);
-      const variantGeom = (vc?.placementGeometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number } | null> | null) ?? {};
-      const viewGeom = (view.placementGeometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number } | null> | null) ?? {};
+      const variantGeom = (vc?.placementGeometry as Record<string, RawGeom | null> | null) ?? {};
+      const viewGeom = (view.placementGeometry as Record<string, RawGeom | null> | null) ?? {};
 
       const isShared = view.sharedZones ?? true;
       const effectiveGeom = isShared
@@ -332,6 +345,8 @@ export async function getStorefrontConfig(
           centerXPercent: Number(g.centerXPercent),
           centerYPercent: Number(g.centerYPercent),
           maxWidthPercent: Number(g.maxWidthPercent),
+          maxHeightPercent:
+            g.maxHeightPercent != null ? Number(g.maxHeightPercent) : null,
         };
       } else {
         out[view.id] = null;
