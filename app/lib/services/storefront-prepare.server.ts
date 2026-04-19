@@ -34,18 +34,27 @@ export async function prepareCustomization(
     throw new AppError(ErrorCodes.NOT_FOUND, "Customization not found", 404);
   }
 
-  // Idempotency: if already prepared, return the existing result —
-  // but only if the fee product still exists in Shopify (it may have been deleted).
+  // Idempotency: if a RESERVED config still owns its slot, return the existing
+  // result — but only if the fee product still exists in Shopify. Slot ownership
+  // is the source of truth (VariantSlot.currentConfigId), so we only consider
+  // RESERVED configs here. Configs in IN_CART/ORDERED/PURCHASED states have
+  // already moved past the prepare step and shouldn't be replayed.
   const existingConfig = await db.customizationConfig.findFirst({
     where: {
       customizationDraftId: customizationId,
-      state: { in: ["RESERVED", "IN_CART", "ORDERED", "PURCHASED"] },
+      state: "RESERVED",
     },
-    include: { variantSlot: { select: { shopifyVariantId: true, shopifyProductId: true } } },
+    select: { id: true, configHash: true, pricingVersion: true, unitPriceCents: true, feeCents: true },
   });
-  if (existingConfig?.variantSlot) {
+  const existingSlot = existingConfig
+    ? await db.variantSlot.findUnique({
+        where: { currentConfigId: existingConfig.id },
+        select: { shopifyVariantId: true, shopifyProductId: true },
+      })
+    : null;
+  if (existingConfig && existingSlot) {
     // Verify the fee product still exists before returning stale data
-    const productGid = existingConfig.variantSlot.shopifyProductId;
+    const productGid = existingSlot.shopifyProductId;
     let productExists = true;
     try {
       const checkRes = await adminGraphql(
@@ -61,7 +70,7 @@ export async function prepareCustomization(
 
     if (productExists) {
       return {
-        slotVariantId: existingConfig.variantSlot.shopifyVariantId,
+        slotVariantId: existingSlot.shopifyVariantId,
         configHash: existingConfig.configHash,
         pricingVersion: existingConfig.pricingVersion,
         unitPriceCents: existingConfig.unitPriceCents,
@@ -73,7 +82,7 @@ export async function prepareCustomization(
     console.warn(`[prepare] Fee product ${productGid} deleted — expiring config ${existingConfig.id}`);
     await db.customizationConfig.update({
       where: { id: existingConfig.id },
-      data: { state: "EXPIRED", variantSlotId: null },
+      data: { state: "EXPIRED" },
     });
   }
 
@@ -94,13 +103,32 @@ export async function prepareCustomization(
 
   const methodId = draft.methodId;
 
-  // Lazy-provision: if no slots exist for this method, create them now
-  await ensureVariantPoolExists(shopId, methodId, adminGraphql);
+  // Lazy-provision and elastic-grow: ensure at least one FREE slot exists
+  // for this method. /prepare consumes exactly one slot per call; the modal
+  // serializes multi-size submissions one at a time so neededNow=1 is correct
+  // here. Bulk burst protection comes from MIN_GROW_BATCH inside the grower.
+  await ensureVariantPoolExists(shopId, methodId, adminGraphql, 1);
 
   const now = new Date();
   const reservedUntil = new Date(now.getTime() + RESERVED_TTL_MINUTES * 60 * 1000);
 
-  // Atomically free expired reserved slots for this method
+  // Free expired RESERVED slots for this method and expire the configs they
+  // were linked to. Order matters: read the soon-to-be-freed slots' configIds
+  // BEFORE the updateMany clears `currentConfigId` (otherwise the link is gone
+  // and we can't expire those configs).
+  const expiredSlots = await db.variantSlot.findMany({
+    where: {
+      shopId,
+      methodId,
+      state: "RESERVED",
+      reservedUntil: { lt: now },
+    },
+    select: { currentConfigId: true },
+  });
+  const expiredConfigIds = expiredSlots
+    .map((s) => s.currentConfigId)
+    .filter((id): id is string => id !== null);
+
   await db.variantSlot.updateMany({
     where: {
       shopId,
@@ -116,70 +144,76 @@ export async function prepareCustomization(
     },
   });
 
-  // Expire linked configs whose slots were just freed (requires raw SQL for subquery join)
-  await db.$executeRaw`
-    UPDATE "CustomizationConfig"
-    SET state = 'EXPIRED', "expiredAt" = ${now}, "variantSlotId" = NULL
-    WHERE "shopId" = ${shopId} AND state = 'RESERVED'
-      AND "variantSlotId" IN (
-        SELECT id FROM "VariantSlot"
-        WHERE "shopId" = ${shopId} AND "methodId" = ${methodId}
-          AND state = 'FREE' AND "reservedUntil" IS NULL
-      )
-  `;
+  if (expiredConfigIds.length > 0) {
+    await db.customizationConfig.updateMany({
+      where: { id: { in: expiredConfigIds }, state: "RESERVED" },
+      data: { state: "EXPIRED", expiredAt: now },
+    });
+  }
 
-  const result = await db.$transaction(async (tx) => {
-    // Use raw SQL with FOR UPDATE SKIP LOCKED to prevent race conditions
-    const freeSlots: Array<{ id: string; shopifyProductId: string; shopifyVariantId: string }> =
-      await tx.$queryRaw`
-        SELECT id, "shopifyProductId", "shopifyVariantId"
-        FROM "VariantSlot"
-        WHERE "shopId" = ${shopId}
-          AND "methodId" = ${methodId}
-          AND state = 'FREE'
-        ORDER BY "createdAt" ASC
-        LIMIT 1
-        FOR UPDATE SKIP LOCKED
-      `;
-    const freeSlot = freeSlots[0];
-    if (!freeSlot) {
-      throw new AppError(
-        ErrorCodes.SERVICE_UNAVAILABLE,
-        "All customization slots are in use. Please try again shortly.",
-        503
-      );
+  // Acquire a slot. Under parallel /prepare bursts, multiple callers race
+  // SELECT FOR UPDATE SKIP LOCKED for the same FREE rows; losers see no row.
+  // We retry up to MAX_ACQUIRE_ATTEMPTS times — each retry calls
+  // ensureVariantPoolExists again, which (with the BLOCKING advisory lock in
+  // growVariantPoolToTarget) will grow the pool if needed before the next
+  // SELECT. This makes parallel multi-size submissions self-healing without
+  // bouncing the failure all the way to the customer's UI.
+  const MAX_ACQUIRE_ATTEMPTS = 3;
+  let acquired: { config: { id: string }; slot: { id: string; shopifyProductId: string; shopifyVariantId: string } } | null = null;
+  for (let attempt = 0; attempt < MAX_ACQUIRE_ATTEMPTS && !acquired; attempt++) {
+    if (attempt > 0) {
+      // Lost the FOR UPDATE SKIP LOCKED race; trigger another grow cycle and retry.
+      await ensureVariantPoolExists(shopId, methodId, adminGraphql, 1);
     }
+    acquired = await db.$transaction(async (tx) => {
+      const freeSlots: Array<{ id: string; shopifyProductId: string; shopifyVariantId: string }> =
+        await tx.$queryRaw`
+          SELECT id, "shopifyProductId", "shopifyVariantId"
+          FROM "VariantSlot"
+          WHERE "shopId" = ${shopId}
+            AND "methodId" = ${methodId}
+            AND state = 'FREE'
+          ORDER BY "createdAt" ASC
+          LIMIT 1
+          FOR UPDATE SKIP LOCKED
+        `;
+      const freeSlot = freeSlots[0];
+      if (!freeSlot) return null;
 
-    const config = await tx.customizationConfig.create({
-      data: {
-        shopId,
-        methodId,
-        configHash: configHash!,
-        pricingVersion: pricingVersion!,
-        unitPriceCents: unitPriceCents!,
-        feeCents: feeCents ?? 0,
-        state: "RESERVED",
-        customizationDraftId: customizationId,
-      },
+      const config = await tx.customizationConfig.create({
+        data: {
+          shopId,
+          methodId,
+          configHash: configHash!,
+          pricingVersion: pricingVersion!,
+          unitPriceCents: unitPriceCents!,
+          feeCents: feeCents ?? 0,
+          state: "RESERVED",
+          customizationDraftId: customizationId,
+        },
+      });
+
+      await tx.variantSlot.update({
+        where: { id: freeSlot.id },
+        data: {
+          state: "RESERVED",
+          reservedAt: now,
+          reservedUntil,
+          currentConfigId: config.id,
+        },
+      });
+
+      return { config, slot: freeSlot };
     });
-
-    await tx.variantSlot.update({
-      where: { id: freeSlot.id },
-      data: {
-        state: "RESERVED",
-        reservedAt: now,
-        reservedUntil,
-        currentConfigId: config.id,
-      },
-    });
-
-    await tx.customizationConfig.update({
-      where: { id: config.id },
-      data: { variantSlotId: freeSlot.id },
-    });
-
-    return { config, slot: freeSlot };
-  });
+  }
+  if (!acquired) {
+    throw new AppError(
+      ErrorCodes.SERVICE_UNAVAILABLE,
+      "All customization slots are in use. Please try again shortly.",
+      503
+    );
+  }
+  const result = acquired;
 
   const priceStr = ((feeCents ?? 0) / 100).toFixed(2);
   const variantId = result.slot.shopifyVariantId;
@@ -196,6 +230,7 @@ export async function prepareCustomization(
       }
     }`;
 
+  // Default rollback: return slot to FREE so a retry can reclaim it.
   const rollbackSlot = async () => {
     await db.$transaction([
       db.variantSlot.update({
@@ -207,6 +242,23 @@ export async function prepareCustomization(
         data: { state: "EXPIRED", expiredAt: new Date() },
       }),
     ]);
+  };
+
+  // Permanent failure: the Shopify variant has been deleted out from under us.
+  // Rolling back to FREE would just hand the same broken slot to the next
+  // /prepare call, looping forever. Delete the slot row instead so the pool
+  // shrinks. EXPIRE the config too. The pool will be re-grown on next deplete.
+  const deleteBrokenSlot = async () => {
+    await db.$transaction([
+      db.customizationConfig.update({
+        where: { id: result.config.id },
+        data: { state: "EXPIRED", expiredAt: new Date() },
+      }),
+      db.variantSlot.delete({ where: { id: result.slot.id } }),
+    ]);
+    console.warn(
+      `[prepare] Deleted orphan slot ${result.slot.id} — Shopify variant ${variantGid} no longer exists`,
+    );
   };
 
   let json: unknown;
@@ -226,11 +278,22 @@ export async function prepareCustomization(
     );
   }
 
-  const errors = (json as { data?: { productVariantsBulkUpdate?: { userErrors?: Array<unknown> } } })
-    ?.data?.productVariantsBulkUpdate?.userErrors;
+  const errors = (json as {
+    data?: { productVariantsBulkUpdate?: { userErrors?: Array<{ message?: string }> } };
+  })?.data?.productVariantsBulkUpdate?.userErrors;
   if (errors?.length) {
     console.error("[prepare] Shopify variant update errors:", errors);
-    await rollbackSlot();
+    // "Product variant does not exist" means the slot's Shopify variant was
+    // deleted out-of-band. The slot row is permanently broken — never hand it
+    // out again. Other errors are treated as transient.
+    const variantMissing = errors.some((e) =>
+      typeof e?.message === "string" && /variant does not exist/i.test(e.message),
+    );
+    if (variantMissing) {
+      await deleteBrokenSlot();
+    } else {
+      await rollbackSlot();
+    }
     throw new AppError(
       ErrorCodes.SERVICE_UNAVAILABLE,
       "Failed to set variant price — please retry",

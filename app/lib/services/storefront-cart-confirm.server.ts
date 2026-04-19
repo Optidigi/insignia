@@ -14,7 +14,7 @@ const IN_CART_TTL_DAYS = 7;
 export async function cartConfirm(shopId: string, customizationId: string): Promise<{ ok: true }> {
   const config = await db.customizationConfig.findFirst({
     where: { shopId, customizationDraftId: customizationId, state: "RESERVED" },
-    include: { variantSlot: true },
+    select: { id: true },
   });
   if (!config) {
     throw new AppError(
@@ -32,9 +32,16 @@ export async function cartConfirm(shopId: string, customizationId: string): Prom
       where: { id: config.id },
       data: { state: "IN_CART", inCartAt: new Date() },
     });
-    if (config.variantSlotId) {
+    // Look up the slot via the canonical slot-side pointer. The lookup runs
+    // inside the transaction so a concurrent recycler can't null `currentConfigId`
+    // between read and write.
+    const slot = await tx.variantSlot.findUnique({
+      where: { currentConfigId: config.id },
+      select: { id: true },
+    });
+    if (slot) {
       await tx.variantSlot.update({
-        where: { id: config.variantSlotId },
+        where: { id: slot.id },
         data: { state: "IN_CART", inCartUntil },
       });
     }

@@ -41,6 +41,8 @@ vi.mock("../../../db.server", () => ({
 import { provisionVariantPool, ensureVariantPoolExists } from "../variant-pool.server";
 import { ErrorCodes } from "../../errors.server";
 
+const TARGET_POOL_SIZE = 25;
+
 // Reset all mocks between tests
 beforeEach(() => {
   vi.resetAllMocks();
@@ -64,7 +66,7 @@ function makeAdminGraphql(productExists = true) {
         },
         productVariantsBulkUpdate: { productVariants: [], userErrors: [] },
         productVariantsBulkCreate: {
-          productVariants: Array.from({ length: 9 }, (_, i) => ({
+          productVariants: Array.from({ length: TARGET_POOL_SIZE - 1 }, (_, i) => ({
             id: `gid://shopify/ProductVariant/${i + 2}`,
           })),
           userErrors: [],
@@ -85,7 +87,7 @@ function makeAdminGraphql(productExists = true) {
 
 describe("provisionVariantPool", () => {
   it("is idempotent — skips Shopify calls and returns existing product ID + count when slots already exist", async () => {
-    prismaMock.variantSlot.count.mockResolvedValue(10);
+    prismaMock.variantSlot.count.mockResolvedValue(TARGET_POOL_SIZE);
     prismaMock.variantSlot.findFirst.mockResolvedValue({
       shopifyProductId: "gid://shopify/Product/42",
     });
@@ -96,12 +98,12 @@ describe("provisionVariantPool", () => {
 
     expect(result).toEqual({
       productId: "gid://shopify/Product/42",
-      slotCount: 10,
+      slotCount: TARGET_POOL_SIZE,
     });
     expect(adminGraphql).not.toHaveBeenCalled();
   });
 
-  it("provisions a new pool when no slots exist — calls productCreate with UNLISTED and inserts 10 DB rows", async () => {
+  it("provisions a new pool when no slots exist — calls productCreate with UNLISTED and inserts DEFAULT_SLOT_COUNT DB rows", async () => {
     prismaMock.variantSlot.count.mockResolvedValue(0);
 
     // $transaction called with an array of prisma.variantSlot.create calls
@@ -115,7 +117,7 @@ describe("provisionVariantPool", () => {
     const result = await provisionVariantPool("shop-1", "method-1", "Screen Print", adminGraphql);
 
     expect(result.productId).toBe("gid://shopify/Product/99");
-    expect(result.slotCount).toBe(10);
+    expect(result.slotCount).toBe(TARGET_POOL_SIZE);
 
     // productCreate must have been called with status: "UNLISTED"
     const createCall = adminGraphql.mock.calls.find((args) =>
@@ -125,11 +127,11 @@ describe("provisionVariantPool", () => {
     const variables = createCall![1] as { product: { status: string } };
     expect(variables.product.status).toBe("UNLISTED");
 
-    // $transaction called once with an array of 10 create operations
+    // $transaction called once with an array of TARGET_POOL_SIZE create operations
     expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
     const txArg = prismaMock.$transaction.mock.calls[0][0];
     expect(Array.isArray(txArg)).toBe(true);
-    expect((txArg as unknown[]).length).toBe(10);
+    expect((txArg as unknown[]).length).toBe(TARGET_POOL_SIZE);
   });
 });
 
@@ -252,10 +254,11 @@ describe("ensureVariantPoolExists", () => {
     expect(prismaMock.variantSlot.deleteMany).toHaveBeenCalledWith({
       where: { shopId: "shop-1", methodId: "method-1" },
     });
-    // Config linked to slot-1 must be expired
+    // Active config linked to slot-1 (cfg-1) must be expired via slot-side
+    // currentConfigId lookup, not the dropped variantSlotId back-pointer.
     expect(prismaMock.customizationConfig.updateMany).toHaveBeenCalledWith({
-      where: { variantSlotId: "slot-1" },
-      data: { variantSlotId: null, state: "EXPIRED" },
+      where: { id: { in: ["cfg-1"] }, state: { in: ["RESERVED", "IN_CART"] } },
+      data: { state: "EXPIRED", expiredAt: expect.any(Date) },
     });
   });
 });

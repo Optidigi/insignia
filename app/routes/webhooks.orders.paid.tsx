@@ -44,15 +44,14 @@ async function handleOrdersPaid(shopId: string, shopDomain: string, payload: any
 
   console.log(`[orders/paid] Processing payment for order ${orderId}`);
 
-  // Find all order line customizations for this order
+  // Find all order line customizations for this order. We DON'T traverse to
+  // `customizationConfig.variantSlot` here — that link was being dropped from
+  // the schema. Instead, the fee variant snapshot captured at orders/create
+  // (feeShopifyVariantId / feeShopifyProductId) is the canonical reference.
   const orderLineCustomizations = await db.orderLineCustomization.findMany({
     where: { shopifyOrderId: orderId },
     include: {
-      customizationConfig: {
-        include: {
-          variantSlot: true,
-        },
-      },
+      customizationConfig: { select: { id: true } },
     },
   });
 
@@ -76,7 +75,11 @@ async function handleOrdersPaid(shopId: string, shopDomain: string, payload: any
       continue;
     }
 
-    const result = await recycleSlotAfterPurchase(olc.customizationConfig.id);
+    const result = await recycleSlotAfterPurchase(
+      olc.customizationConfig.id,
+      olc.feeShopifyVariantId,
+      olc.feeShopifyProductId,
+    );
 
     // Reset slot variant price to 0 outside the transaction to avoid holding locks during API calls
     if (!result.skipped && result.productId && result.variantId) {
@@ -140,16 +143,28 @@ type RecycleResult =
 
 /**
  * Recycle a variant slot after purchase.
- * Uses transactions and row locking to prevent race conditions.
- * Returns slot productId + variantId so the caller can reset the price outside the transaction.
+ *
+ * Slot identification priority:
+ *   1. The shopifyVariantId snapshot captured by orders/create (feeShopifyVariantId).
+ *      This is preferred because it can't be lost to a cron-cleanup race that
+ *      nulled the slot's currentConfigId.
+ *   2. Live lookup via VariantSlot.currentConfigId. Only used for legacy orders
+ *      created before the snapshot column existed.
+ *
+ * Returns slot productId + variantId so the caller can reset the price outside
+ * the transaction.
  */
-async function recycleSlotAfterPurchase(customizationConfigId: string): Promise<RecycleResult> {
+async function recycleSlotAfterPurchase(
+  customizationConfigId: string,
+  feeShopifyVariantId: string | null,
+  feeShopifyProductId: string | null,
+): Promise<RecycleResult> {
   const result = await db.$transaction(
     async (tx) => {
       // 1. Fetch the customization config
       const config = await tx.customizationConfig.findUnique({
         where: { id: customizationConfigId },
-        include: { variantSlot: true },
+        select: { id: true, state: true, shopId: true },
       });
 
       if (!config) {
@@ -172,37 +187,60 @@ async function recycleSlotAfterPurchase(customizationConfigId: string): Promise<
         },
       });
 
-      // 3. Recycle the slot if it exists
-      if (config.variantSlot) {
-        // Use raw query for row-level locking
-        await tx.$executeRaw`
-          SELECT * FROM "VariantSlot" 
-          WHERE id = ${config.variantSlot.id} 
-          FOR UPDATE
-        `;
+      // 3. Resolve which slot to recycle. Prefer the snapshot; fall back to a
+      //    live lookup for legacy orders that predate the snapshot column.
+      let slot:
+        | { id: string; shopifyVariantId: string; shopifyProductId: string }
+        | null = null;
 
-        await tx.variantSlot.update({
-          where: { id: config.variantSlot.id },
-          data: {
-            state: "FREE",
-            currentConfigId: null,
-            reservedAt: null,
-            reservedUntil: null,
-            inCartUntil: null,
-          },
+      if (feeShopifyVariantId) {
+        slot = await tx.variantSlot.findFirst({
+          where: { shopId: config.shopId, shopifyVariantId: feeShopifyVariantId },
+          select: { id: true, shopifyVariantId: true, shopifyProductId: true },
         });
-
-        console.log(`[orders/paid] Recycled slot ${config.variantSlot.id}`);
-
-        return {
-          skipped: false as const,
-          slotId: config.variantSlot.id,
-          variantId: config.variantSlot.shopifyVariantId,
-          productId: config.variantSlot.shopifyProductId,
-        };
+      }
+      if (!slot) {
+        slot = await tx.variantSlot.findUnique({
+          where: { currentConfigId: config.id },
+          select: { id: true, shopifyVariantId: true, shopifyProductId: true },
+        });
       }
 
-      return { skipped: false as const, slotId: null as null };
+      if (!slot) {
+        // Slot couldn't be located by either path — already recycled or never claimed.
+        console.warn(
+          `[orders/paid] No slot found to recycle for config ${customizationConfigId}` +
+            (feeShopifyVariantId ? ` (snapshot=${feeShopifyVariantId})` : ""),
+        );
+        return { skipped: false as const, slotId: null as null };
+      }
+
+      // Use raw query for row-level locking
+      await tx.$executeRaw`
+        SELECT * FROM "VariantSlot"
+        WHERE id = ${slot.id}
+        FOR UPDATE
+      `;
+
+      await tx.variantSlot.update({
+        where: { id: slot.id },
+        data: {
+          state: "FREE",
+          currentConfigId: null,
+          reservedAt: null,
+          reservedUntil: null,
+          inCartUntil: null,
+        },
+      });
+
+      console.log(`[orders/paid] Recycled slot ${slot.id}`);
+
+      return {
+        skipped: false as const,
+        slotId: slot.id,
+        variantId: feeShopifyVariantId ?? slot.shopifyVariantId,
+        productId: feeShopifyProductId ?? slot.shopifyProductId,
+      };
     },
     {
       isolationLevel: "Serializable", // Strongest isolation for slot operations

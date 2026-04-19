@@ -84,18 +84,22 @@ async function handleOrdersCreate(shopId: string, payload: any) {
       continue;
     }
 
-    // Find the customization config
+    // Find the customization config and its currently-claimed slot.
+    // Capture shopifyVariantId/ProductId now so orders/paid can recycle even
+    // if the slot's currentConfigId is nulled later by a cron race.
     const customizationConfig = await db.customizationConfig.findUnique({
       where: { id: customizationId },
-      include: {
-        variantSlot: true,
-      },
     });
 
     if (!customizationConfig) {
       console.warn(`[orders/create] CustomizationConfig ${customizationId} not found`);
       continue;
     }
+
+    const claimedSlot = await db.variantSlot.findUnique({
+      where: { currentConfigId: customizationConfig.id },
+      select: { shopifyVariantId: true, shopifyProductId: true },
+    });
 
     // Resolve draft to get productConfigId, artworkStatus, and logoAssetIdsByPlacementId
     let productConfigId = customizationConfig.id; // fallback (will likely fail FK)
@@ -142,6 +146,8 @@ async function handleOrdersCreate(shopId: string, payload: any) {
           : Prisma.DbNull,
         useLiveConfigFallback: geometrySnapshot === null,
         orderStatusUrl,
+        feeShopifyVariantId: claimedSlot?.shopifyVariantId ?? null,
+        feeShopifyProductId: claimedSlot?.shopifyProductId ?? null,
       },
     });
 

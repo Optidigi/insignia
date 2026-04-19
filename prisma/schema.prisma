@@ -290,6 +290,7 @@ model MerchantSettings {
   placeholderLogoImageUrl String?
   setupGuideDismissedAt   DateTime? // NEW
   emailReminderTemplate   String?   // Custom email template for artwork reminders
+  defaultStorefrontLocale String    @default("en") // BCP-47 primary subtag; one of the 8 supported locales
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
 
@@ -349,7 +350,7 @@ model VariantSlot {
   // Relations
   shop              Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
   decorationMethod  DecorationMethod     @relation(fields: [methodId], references: [id], onDelete: Cascade)
-  currentConfig     CustomizationConfig? @relation("SlotToConfig")
+  currentConfig     CustomizationConfig? @relation("SlotToConfig", fields: [currentConfigId], references: [id], onDelete: SetNull)
 
   @@unique([shopId, shopifyVariantId])
   @@index([shopId, methodId, state])
@@ -390,8 +391,10 @@ model CustomizationConfig {
   // Relations
   shop              Shop                     @relation(fields: [shopId], references: [id], onDelete: Cascade)
   decorationMethod  DecorationMethod         @relation(fields: [methodId], references: [id], onDelete: Cascade)
-  variantSlot       VariantSlot?             @relation("SlotToConfig", fields: [variantSlotId], references: [id])
-  variantSlotId     String?                  @unique
+  // Inverse of VariantSlot.currentConfig — the slot side owns the FK
+  // (`VariantSlot.currentConfigId @unique`). Look up "which slot does this
+  // config own?" via `db.variantSlot.findUnique({ where: { currentConfigId: c.id }})`.
+  currentSlot       VariantSlot?             @relation("SlotToConfig")
   orderLineCustomizations OrderLineCustomization[]
 
   @@index([shopId, configHash])
@@ -438,6 +441,13 @@ model OrderLineCustomization {
   useLiveConfigFallback           Boolean       @default(false)
 
   orderStatusUrl                  String?       // NEW: Shopify customer-facing order status page URL
+
+  // Fee variant snapshot — captured at orders/create when the slot link is still
+  // live, so orders/paid can recycle the slot even if its currentConfigId was
+  // already nulled by a race with cron-cleanup. Also serves as the audit trail
+  // for which fee variant was charged on this order line.
+  feeShopifyVariantId             String?
+  feeShopifyProductId             String?
 
   createdAt                       DateTime      @default(now())
   updatedAt                       DateTime      @updatedAt

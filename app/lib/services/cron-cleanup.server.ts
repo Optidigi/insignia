@@ -52,9 +52,12 @@ export async function cleanupExpiredSlots(
 
   let expiredConfigs = 0;
   if (configIds.length > 0) {
+    // Only expire configs still in an active state. ORDERED/PURCHASED configs
+    // could legitimately have a slot pointer (e.g. a paid order whose slot is
+    // about to be recycled by orders/paid) — never overwrite their state.
     const r = await prisma.customizationConfig.updateMany({
-      where: { id: { in: configIds } },
-      data: { state: "EXPIRED", expiredAt: new Date(), variantSlotId: null },
+      where: { id: { in: configIds }, state: { in: ["RESERVED", "IN_CART"] } },
+      data: { state: "EXPIRED", expiredAt: new Date() },
     });
     expiredConfigs = r.count;
   }

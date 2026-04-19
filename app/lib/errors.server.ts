@@ -24,6 +24,7 @@ export const ErrorCodes = {
   // Server errors (5xx)
   INTERNAL_ERROR: "INTERNAL_ERROR",
   SERVICE_UNAVAILABLE: "SERVICE_UNAVAILABLE",
+  POOL_CEILING_REACHED: "POOL_CEILING_REACHED",
 } as const;
 
 export type ErrorCode = typeof ErrorCodes[keyof typeof ErrorCodes];

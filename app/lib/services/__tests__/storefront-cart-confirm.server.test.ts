@@ -12,6 +12,7 @@ const prismaMock = vi.hoisted(() => {
       update: makeFn(),
     },
     variantSlot: {
+      findUnique: makeFn(),
       update: makeFn(),
     },
     $transaction: makeFn(),
@@ -36,15 +37,9 @@ beforeEach(() => {
 
 const MOCK_CONFIG = {
   id: "cfg-1",
-  shopId: "shop-1",
-  customizationDraftId: "draft-1",
-  state: "RESERVED",
-  variantSlotId: "slot-1",
-  variantSlot: {
-    id: "slot-1",
-    state: "RESERVED",
-  },
 };
+
+const MOCK_SLOT = { id: "slot-1" };
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -62,6 +57,7 @@ describe("cartConfirm", () => {
             update: vi.fn().mockResolvedValue({}),
           },
           variantSlot: {
+            findUnique: vi.fn().mockResolvedValue(MOCK_SLOT),
             update: vi.fn().mockResolvedValue({}),
           },
         };
@@ -76,7 +72,7 @@ describe("cartConfirm", () => {
     // Verify findFirst was queried for RESERVED state
     expect(prismaMock.customizationConfig.findFirst).toHaveBeenCalledWith({
       where: { shopId: "shop-1", customizationDraftId: "draft-1", state: "RESERVED" },
-      include: { variantSlot: true },
+      select: { id: true },
     });
 
     // Verify transaction was called
@@ -86,13 +82,20 @@ describe("cartConfirm", () => {
     const txFn = prismaMock.$transaction.mock.calls[0][0] as (tx: unknown) => Promise<void>;
     const spyTx = {
       customizationConfig: { update: vi.fn().mockResolvedValue({}) },
-      variantSlot: { update: vi.fn().mockResolvedValue({}) },
+      variantSlot: {
+        findUnique: vi.fn().mockResolvedValue(MOCK_SLOT),
+        update: vi.fn().mockResolvedValue({}),
+      },
     };
     await txFn(spyTx);
 
     expect(spyTx.customizationConfig.update).toHaveBeenCalledWith({
       where: { id: "cfg-1" },
       data: { state: "IN_CART", inCartAt: expect.any(Date) },
+    });
+    expect(spyTx.variantSlot.findUnique).toHaveBeenCalledWith({
+      where: { currentConfigId: "cfg-1" },
+      select: { id: true },
     });
     expect(spyTx.variantSlot.update).toHaveBeenCalledWith({
       where: { id: "slot-1" },
@@ -107,7 +110,10 @@ describe("cartConfirm", () => {
       async (fn: (tx: unknown) => Promise<unknown>) => {
         const spyTx = {
           customizationConfig: { update: vi.fn().mockResolvedValue({}) },
-          variantSlot: { update: vi.fn().mockResolvedValue({}) },
+          variantSlot: {
+            findUnique: vi.fn().mockResolvedValue(MOCK_SLOT),
+            update: vi.fn().mockResolvedValue({}),
+          },
         };
         await fn(spyTx);
         // Capture the inCartUntil value from the slot update call
@@ -167,19 +173,17 @@ describe("cartConfirm", () => {
     expect(prismaMock.$transaction).not.toHaveBeenCalled();
   });
 
-  it("skips slot update when config has no linked variantSlotId", async () => {
-    const configNoSlot = {
-      ...MOCK_CONFIG,
-      variantSlotId: null,
-      variantSlot: null,
-    };
-    prismaMock.customizationConfig.findFirst.mockResolvedValue(configNoSlot);
+  it("skips slot update when no slot currently owns the config", async () => {
+    prismaMock.customizationConfig.findFirst.mockResolvedValue(MOCK_CONFIG);
 
     prismaMock.$transaction.mockImplementation(
       async (fn: (tx: unknown) => Promise<unknown>) => {
         const spyTx = {
           customizationConfig: { update: vi.fn().mockResolvedValue({}) },
-          variantSlot: { update: vi.fn().mockResolvedValue({}) },
+          variantSlot: {
+            findUnique: vi.fn().mockResolvedValue(null),
+            update: vi.fn().mockResolvedValue({}),
+          },
         };
         await fn(spyTx);
         // variantSlot.update should NOT have been called

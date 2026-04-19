@@ -14,9 +14,11 @@ const prismaMock = vi.hoisted(() => {
       findFirst: makeFn(),
       create: makeFn(),
       update: makeFn(),
+      updateMany: makeFn(),
     },
     variantSlot: {
       findMany: makeFn(),
+      findUnique: makeFn(),
       update: makeFn(),
       updateMany: makeFn(),
     },
@@ -135,18 +137,18 @@ describe("prepareCustomization", () => {
   it("is idempotent — returns existing RESERVED config data without reserving a new slot", async () => {
     prismaMock.customizationDraft.findFirst.mockResolvedValue(MOCK_DRAFT);
 
-    // An existing RESERVED config with a linked slot
+    // An existing RESERVED config
     prismaMock.customizationConfig.findFirst.mockResolvedValue({
       id: "cfg-existing",
       configHash: "abc123",
       pricingVersion: "v1",
       unitPriceCents: 1500,
       feeCents: 500,
-      state: "RESERVED",
-      variantSlot: {
-        shopifyVariantId: "gid://shopify/ProductVariant/1",
-        shopifyProductId: "gid://shopify/Product/99",
-      },
+    });
+    // The slot it currently owns
+    prismaMock.variantSlot.findUnique.mockResolvedValue({
+      shopifyVariantId: "gid://shopify/ProductVariant/1",
+      shopifyProductId: "gid://shopify/Product/99",
     });
 
     // adminGraphql confirms the product still exists
@@ -174,9 +176,10 @@ describe("prepareCustomization", () => {
     prismaMock.customizationDraft.findFirst.mockResolvedValue(MOCK_DRAFT);
     // No existing config
     prismaMock.customizationConfig.findFirst.mockResolvedValue(null);
-    // Atomic expired slot recycling (no-op mocks)
+    // Expired-slot cleanup: nothing to expire
+    prismaMock.variantSlot.findMany.mockResolvedValue([]);
     prismaMock.variantSlot.updateMany.mockResolvedValue({ count: 0 });
-    prismaMock.$executeRaw.mockResolvedValue(0);
+    prismaMock.customizationConfig.updateMany.mockResolvedValue({ count: 0 });
 
     makeSuccessfulTransaction();
 
@@ -190,7 +193,7 @@ describe("prepareCustomization", () => {
     expect(result.configHash).toBe("abc123");
 
     // ensureVariantPoolExists must have been called
-    expect(ensureVariantPoolExists).toHaveBeenCalledWith("shop-1", "method-1", adminGraphql);
+    expect(ensureVariantPoolExists).toHaveBeenCalledWith("shop-1", "method-1", adminGraphql, 1);
 
     // $transaction must have been called
     expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
@@ -199,9 +202,10 @@ describe("prepareCustomization", () => {
   it("throws SERVICE_UNAVAILABLE when no free slot is available", async () => {
     prismaMock.customizationDraft.findFirst.mockResolvedValue(MOCK_DRAFT);
     prismaMock.customizationConfig.findFirst.mockResolvedValue(null);
-    // Atomic expired slot recycling (no-op mocks)
+    // Expired-slot cleanup: nothing to expire
+    prismaMock.variantSlot.findMany.mockResolvedValue([]);
     prismaMock.variantSlot.updateMany.mockResolvedValue({ count: 0 });
-    prismaMock.$executeRaw.mockResolvedValue(0);
+    prismaMock.customizationConfig.updateMany.mockResolvedValue({ count: 0 });
 
     // Transaction returns no free slots
     prismaMock.$transaction.mockImplementation(
