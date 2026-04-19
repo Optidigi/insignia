@@ -1,7 +1,21 @@
 /**
- * Storefront customization wizard: Upload → Placement → Size → Review.
- * Mobile-first, design intent (Tier 3) + modal-spec (Tier 2).
- * Canonical: docs/storefront/modal-spec.md, docs/notes/design-intent/storefront-modal.md
+ * Customization modal v2.3 — full-page wizard mounted by
+ * `apps.insignia.modal-v2.tsx`.
+ *
+ * Owns: config fetch, wizard state machine, draft persistence (localStorage,
+ * 24 h TTL, version-invalidated), scroll lock, popstate guard, Esc handling,
+ * close-confirm, header/tabs/footer chrome, body routing, /price + /prepare
+ * + Shopify cart + /cart-confirm submit, analytics dispatch, idempotency key.
+ *
+ * Backend bindings — every fetch routed through proxyUrl() so the App Proxy
+ * HMAC stays attached:
+ *   GET  /apps/insignia/config          → StorefrontConfig
+ *   POST /apps/insignia/uploads         → handled by UploadStep
+ *   POST /apps/insignia/customizations  → { customizationId }
+ *   POST /apps/insignia/price           → PriceResult
+ *   POST /apps/insignia/prepare         → PrepareResult { slotVariantId, … }
+ *   POST {origin}/cart/add.js           → Shopify Ajax Cart
+ *   POST /apps/insignia/cart-confirm    → { ok: true }
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -9,92 +23,38 @@ import type { StorefrontConfig, WizardStep, PlacementSelections } from "./types"
 import { WIZARD_STEPS } from "./types";
 import { UploadStep } from "./UploadStep";
 import { PlacementStep } from "./PlacementStep";
-import { SizeStep } from "./SizeStep";
-import type { SizeStepHandle } from "./SizeStep";
+import { SizeStep, type SizeStepHandle } from "./SizeStep";
 import { ReviewStep } from "./ReviewStep";
 import { PreviewSheet } from "./PreviewSheet";
-import { addCustomizedToCart, addMultipleCustomizedToCart, buildInsigniaProperties } from "../../lib/storefront/cart.client";
+import { PreviewCanvas } from "./PreviewCanvas";
+import { CloseConfirmDialog } from "./CloseConfirmDialog";
+import {
+  addCustomizedToCart,
+  addMultipleCustomizedToCart,
+  buildInsigniaProperties,
+} from "../../lib/storefront/cart.client";
 import { proxyUrl } from "../../lib/storefront/proxy-url.client";
 import { getTranslations, detectLocale } from "./i18n";
-import { IconUpload, IconPlacement, IconSize, IconEye, IconCircleCheck, IconX, IconShoppingCart } from "./icons";
+import {
+  IconAlertTriangle,
+  IconArrowLeft,
+  IconArrowRight,
+  IconCheck,
+  IconCircleCheck,
+  IconCloudUpload,
+  IconClipboardCheck,
+  IconEye,
+  IconLoaderCircle,
+  IconPlacement,
+  IconShoppingCart,
+  IconSize,
+  IconWifiOff,
+  IconX,
+} from "./icons";
 import { formatCurrency } from "./currency";
-import { SizePreview } from "./SizePreview";
 import "./storefront-modal.css";
 
-type DraftState = {
-  step: string;
-  logoType: string;
-  selectedPlacements: string[];
-  sizeSelections: Record<string, number>;
-};
-
-const DRAFT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
-
-function makeDraftKey(productId: string, variantId: string) {
-  return `insignia_draft_${productId}_${variantId}`;
-}
-
-function saveDraft(productId: string, variantId: string, state: DraftState, configVersion: string) {
-  try {
-    localStorage.setItem(
-      makeDraftKey(productId, variantId),
-      JSON.stringify({ ...state, _configVersion: configVersion, _savedAt: Date.now() }),
-    );
-  } catch { /* quota exceeded — silently fail */ }
-}
-
-function loadDraft(productId: string, variantId: string, currentConfigVersion: string): DraftState | null {
-  try {
-    const key = makeDraftKey(productId, variantId);
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    // Discard drafts older than 24 hours
-    if (Date.now() - (parsed._savedAt ?? 0) > DRAFT_TTL_MS) {
-      localStorage.removeItem(key);
-      return null;
-    }
-    if (parsed._configVersion !== currentConfigVersion) {
-      localStorage.removeItem(key);
-      return null;
-    }
-    return parsed;
-  } catch { return null; }
-}
-
-function clearDraft(productId: string, variantId: string) {
-  try {
-    localStorage.removeItem(makeDraftKey(productId, variantId));
-  } catch {
-    // ignore
-  }
-}
-
-async function fetchWithRetry(
-  url: string,
-  options?: RequestInit,
-  retries = 2,
-): Promise<Response> {
-  for (let i = 0; i <= retries; i++) {
-    try {
-      const res = await fetch(url, options);
-      if (res.ok || res.status < 500) return res;
-    } catch (err) {
-      if (i === retries) throw err;
-    }
-    await new Promise((r) => setTimeout(r, 1000 * (i + 1)));
-  }
-  throw new Error("Request failed after retries");
-}
-
-const STEP_ORDER: WizardStep[] = ["upload", "placement", "size", "review"];
-
-const STEP_ICONS = {
-  upload: IconUpload,
-  placement: IconPlacement,
-  size: IconSize,
-  review: IconCircleCheck,
-} as const;
+// ─── Local types ────────────────────────────────────────────────────────────
 
 export type LogoState =
   | { type: "none" }
@@ -121,8 +81,124 @@ type PrepareResult = {
   feeCents: number;
 };
 
-const CLOSE_CONFIRM_MESSAGE =
-  "You have an unfinished customization. Close without adding to cart?";
+type SubmitState = "ready" | "submitting" | "success" | "error" | "pool-exhausted";
+
+// ─── Constants ──────────────────────────────────────────────────────────────
+
+const STEP_ORDER: WizardStep[] = ["upload", "placement", "size", "review"];
+const DRAFT_TTL_MS = 24 * 60 * 60 * 1000;
+const SUBMIT_RETRY_409_MS = 1500;
+/** How long the "Added to cart" success state is shown before redirecting to /cart.
+ *  Long enough to register (>1s) but short enough not to annoy (~1.5s).
+ *  Increase if you want a "Go to cart" CTA to be readable before the redirect. */
+const SUCCESS_STATE_DURATION_MS = 1500;
+
+const STEP_ICONS = {
+  upload: IconCloudUpload,
+  placement: IconPlacement,
+  size: IconSize,
+  review: IconClipboardCheck,
+} as const;
+
+// ─── Draft persistence (localStorage) ───────────────────────────────────────
+
+type DraftState = {
+  step: WizardStep;
+  logoType: "none" | "later" | "uploaded";
+  selectedPlacements: PlacementSelections;
+  quantities: Record<string, number>;
+  selectedMethodId: string | null;
+};
+
+function makeDraftKey(productId: string, variantId: string): string {
+  return `insignia_draft_v2_${productId}_${variantId}`;
+}
+
+function saveDraft(
+  productId: string,
+  variantId: string,
+  state: DraftState,
+  configVersion: string,
+) {
+  try {
+    localStorage.setItem(
+      makeDraftKey(productId, variantId),
+      JSON.stringify({ ...state, _configVersion: configVersion, _savedAt: Date.now() }),
+    );
+  } catch {
+    /* quota — silent */
+  }
+}
+
+function loadDraft(
+  productId: string,
+  variantId: string,
+  configVersion: string,
+): DraftState | null {
+  try {
+    const raw = localStorage.getItem(makeDraftKey(productId, variantId));
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as DraftState & { _savedAt?: number; _configVersion?: string };
+    if (Date.now() - (parsed._savedAt ?? 0) > DRAFT_TTL_MS) {
+      localStorage.removeItem(makeDraftKey(productId, variantId));
+      return null;
+    }
+    if (parsed._configVersion !== configVersion) {
+      localStorage.removeItem(makeDraftKey(productId, variantId));
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft(productId: string, variantId: string) {
+  try {
+    localStorage.removeItem(makeDraftKey(productId, variantId));
+  } catch {
+    /* ignore */
+  }
+}
+
+// ─── Network helpers ────────────────────────────────────────────────────────
+
+async function fetchWithRetry(
+  url: string,
+  options?: RequestInit,
+  retries = 2,
+): Promise<Response> {
+  let lastResponse: Response | null = null;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const res = await fetch(url, options);
+      // Retry only on 429 / 503 per intent doc; bubble 4xx immediately.
+      if (res.ok || (res.status !== 429 && res.status !== 503)) return res;
+      lastResponse = res;
+    } catch (err) {
+      if (i === retries) throw err;
+    }
+    await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+  }
+  // Retries exhausted. Return the last 429/503 response so callers' existing
+  // `res.ok` / `res.status` checks surface the real HTTP code instead of a
+  // status-less generic Error.
+  if (lastResponse) return lastResponse;
+  throw new Error("Request failed after retries");
+}
+
+// ─── Analytics ──────────────────────────────────────────────────────────────
+
+function dispatchAnalytics(name: string, detail: Record<string, unknown>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.dispatchEvent(new CustomEvent(`insignia:${name}`, { detail }));
+  } catch {
+    /* no-op */
+  }
+}
+
+// ─── Main component ─────────────────────────────────────────────────────────
 
 export function CustomizationModal({
   productId,
@@ -131,748 +207,1096 @@ export function CustomizationModal({
   productId: string;
   variantId: string;
 }) {
-  const t = getTranslations(detectLocale());
-
   const [config, setConfig] = useState<StorefrontConfig | null>(null);
+  // Use the merchant's chosen locale from the config response when available.
+  // Before config arrives we fall back to the browser's preference so the
+  // tiny pre-fetch skeleton still reads as something coherent.
+  const t = getTranslations(config?.locale ?? detectLocale());
   const [configError, setConfigError] = useState<string | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
+
   const [step, setStep] = useState<WizardStep>("upload");
   const [logo, setLogo] = useState<LogoState>({ type: "none" });
   const [placementSelections, setPlacementSelections] = useState<PlacementSelections>({});
   const [selectedMethodId, setSelectedMethodId] = useState<string | null>(null);
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+
   const [customizationId, setCustomizationId] = useState<string | null>(null);
   const [priceResult, setPriceResult] = useState<PriceResult | null>(null);
+  const [priceLoading, setPriceLoading] = useState(false);
+
+  const [submitState, setSubmitState] = useState<SubmitState>("ready");
+  const [submitErrorCode, setSubmitErrorCode] = useState<string | null>(null);
+  const [hasRetriedPool, setHasRetriedPool] = useState(false);
+
   const [showCloseConfirm, setShowCloseConfirm] = useState(false);
   const [showPreviewSheet, setShowPreviewSheet] = useState(false);
-  const [submitLoading, setSubmitLoading] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [logoUrlTimestamp, setLogoUrlTimestamp] = useState(Date.now());
   const [desktopActiveViewId, setDesktopActiveViewId] = useState<string | undefined>(undefined);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [offline, setOffline] = useState(false);
+  // Per-view natural image dimensions (set by PreviewCanvas → NativeCanvas
+  // onImageMeta). Drives wide-aspect detection (B6) and SizeStep's calibration
+  // cm suffix (C6) without requiring backend to project image dimensions.
+  const [imageMetaByViewId, setImageMetaByViewId] = useState<
+    Record<string, { naturalWidthPx: number; naturalHeightPx: number; aspect: number }>
+  >({});
+  const onImageMeta = useCallback(
+    (viewId: string, meta: { naturalWidthPx: number; naturalHeightPx: number; aspect: number }) => {
+      setImageMetaByViewId((prev) =>
+        prev[viewId]?.naturalWidthPx === meta.naturalWidthPx ? prev : { ...prev, [viewId]: meta },
+      );
+    },
+    [],
+  );
+  // Logo image dimensions (uploaded artwork OR placeholder asset). Lifted
+  // here so SizeStep can compute the actual rendered logo size after
+  // letterbox-fitting it inside the placement zone.
+  const [logoMeta, setLogoMeta] = useState<
+    { naturalWidthPx: number; naturalHeightPx: number; aspect: number } | null
+  >(null);
+  const onLogoMeta = useCallback(
+    (meta: { naturalWidthPx: number; naturalHeightPx: number; aspect: number } | null) => {
+      setLogoMeta((prev) =>
+        prev?.naturalWidthPx === meta?.naturalWidthPx &&
+        prev?.naturalHeightPx === meta?.naturalHeightPx
+          ? prev
+          : meta,
+      );
+    },
+    [],
+  );
+
+  const idempotencyKeyRef = useRef<string | null>(null);
+  const closingRef = useRef(false);
   const sizeStepRef = useRef<SizeStepHandle>(null);
 
-  const currentStepIndex = STEP_ORDER.indexOf(step);
+  // Track which layout is active so we mount only ONE step instance.
+  // Mounting both (mobile + desktop simultaneously) creates duplicate component
+  // instances that each hold their own activeIndex — and the React ref ends up
+  // pointing at whichever rendered last, so SizeStep's tryAdvance() acts on the
+  // wrong instance and Next-step jumps over placements on desktop.
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined" ? window.matchMedia("(min-width: 1024px)").matches : false,
+  );
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = () => setIsDesktop(mq.matches);
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, []);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const tabBtnRefs = useRef<Record<WizardStep, HTMLButtonElement | null>>({
+    upload: null,
+    placement: null,
+    size: null,
+    review: null,
+  });
+  const [underline, setUnderline] = useState<{ left: number; width: number }>({
+    left: 0,
+    width: 0,
+  });
 
+  const currentStepIndex = STEP_ORDER.indexOf(step);
   const totalQuantity = Object.values(quantities).reduce((a, b) => a + b, 0);
 
-  // Compute footer label and price based on step
-  const selectedMethod = config?.methods.find(m => m.id === selectedMethodId);
+  // ─── Derived state ──
+  const selectedMethod = config?.methods.find((m) => m.id === selectedMethodId);
+  const allSingleStep = useMemo(() => {
+    if (!config) return false;
+    return Object.entries(placementSelections).every(([id]) => {
+      const p = config.placements.find((pp) => pp.id === id);
+      return (p?.steps.length ?? 0) <= 1;
+    });
+  }, [config, placementSelections]);
 
-  const estimatedTotal = (config?.baseProductPriceCents ?? 0)
-    + (selectedMethod?.basePriceCents ?? 0)
-    + Object.keys(placementSelections).reduce((sum, pid) => {
-        const p = config?.placements.find(x => x.id === pid);
-        const placementPrice = p?.basePriceAdjustmentCents ?? 0;
-        // Only include size-step price from the size step onward
-        const stepPrice = (step === "size" || step === "review")
-          ? (p?.steps[placementSelections[pid]]?.priceAdjustmentCents ?? 0)
+  const stepLabels: Record<WizardStep, string> = {
+    upload: t.steps.upload,
+    placement: t.steps.placement,
+    size: allSingleStep ? t.size.preview : t.steps.size,
+    review: t.steps.review,
+  };
+
+  const hasSelections =
+    logo.type !== "none" ||
+    Object.keys(placementSelections).length > 0 ||
+    totalQuantity > 0;
+
+  const stepTabState = (s: WizardStep): "active" | "completed" | "default" => {
+    if (s === step) return "active";
+    if (STEP_ORDER.indexOf(s) < currentStepIndex) return "completed";
+    return "default";
+  };
+
+  // ─── Estimated total (footer) ──
+  const estimatedTotal = useMemo(() => {
+    if (!config) return 0;
+    const base = config.baseProductPriceCents ?? 0;
+    const method = selectedMethod?.basePriceCents ?? 0;
+    const placements = Object.entries(placementSelections).reduce((sum, [pid, idx]) => {
+      const p = config.placements.find((pp) => pp.id === pid);
+      const placementCents = p?.basePriceAdjustmentCents ?? 0;
+      const stepCents =
+        step === "size" || step === "review"
+          ? p?.steps[idx]?.priceAdjustmentCents ?? 0
           : 0;
-        return sum + placementPrice + stepPrice;
-      }, 0);
+      return sum + placementCents + stepCents;
+    }, 0);
+    return base + method + placements;
+  }, [config, selectedMethod, placementSelections, step]);
 
-  const footerPriceLabel = (() => {
-    switch (step) {
-      case "upload": return t.footer.startingFrom;
-      case "placement":
-      case "size": return t.footer.totalSoFar;
-      case "review": return t.footer.orderTotal;
-    }
-  })();
+  const fallbackUnitPriceCents = useMemo(() => {
+    if (!config) return 0;
+    const base = config.baseProductPriceCents ?? 0;
+    const method = selectedMethod?.basePriceCents ?? 0;
+    const placements = Object.entries(placementSelections).reduce((sum, [pid, idx]) => {
+      const p = config.placements.find((pp) => pp.id === pid);
+      return sum + (p?.basePriceAdjustmentCents ?? 0) + (p?.steps[idx]?.priceAdjustmentCents ?? 0);
+    }, 0);
+    return base + method + placements;
+  }, [config, selectedMethod, placementSelections]);
 
-  const footerPriceValue = step === "review"
-    ? (priceResult?.unitPriceCents ?? estimatedTotal)
-    : step === "upload"
-      ? (config?.baseProductPriceCents ?? 0)
-      : estimatedTotal;
+  const footerPriceLabel =
+    step === "review"
+      ? t.footer.orderTotal
+      : step === "upload"
+        ? t.footer.startingFrom
+        : t.footer.estimatedTotal;
 
+  const footerPriceValue =
+    step === "review"
+      ? totalQuantity * (priceResult?.unitPriceCents ?? fallbackUnitPriceCents)
+      : step === "upload"
+        ? config?.baseProductPriceCents ?? 0
+        : estimatedTotal;
+
+  // ─── Config fetch ──
   const fetchConfig = useCallback(async () => {
     if (!productId || !variantId) return;
     setConfigLoading(true);
     setConfigError(null);
     try {
       const res = await fetchWithRetry(
-        proxyUrl(`/apps/insignia/config?${new URLSearchParams({ productId, variantId })}`)
+        proxyUrl(`/apps/insignia/config?${new URLSearchParams({ productId, variantId })}`),
       );
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error?.message || `Config failed: ${res.status}`);
+        const data = (await res.json().catch(() => ({}))) as {
+          error?: { message?: string };
+        };
+        throw new Error(data.error?.message || `Config failed: ${res.status}`);
       }
-      const data: StorefrontConfig = await res.json();
+      const data = (await res.json()) as StorefrontConfig;
       setConfig(data);
-      // Auto-select first method only on initial load — use functional setState
-      // to read current value without adding selectedMethodId to deps (avoids re-fetch loop)
-      setSelectedMethodId((current) => {
-        if (data.methods.length > 0 && !current) {
-          return data.methods[0].id;
-        }
-        return current;
-      });
-    } catch (e) {
-      setConfigError(e instanceof Error ? e.message : "Failed to load configuration");
+      // Restore draft if version matches; otherwise pre-fill the quantity for
+      // the variant the customer selected on the product page (they already
+      // told us "I want this size" — don't make them pick it again).
+      const draft = loadDraft(productId, variantId, data.productConfigId);
+      if (draft) {
+        setStep(draft.step);
+        setPlacementSelections(draft.selectedPlacements);
+        setQuantities(draft.quantities);
+        setSelectedMethodId(draft.selectedMethodId);
+        if (draft.logoType === "later") setLogo({ type: "later" });
+        // Uploaded logo isn't restored — its asset URL has expired by now.
+      } else {
+        const incoming = data.variants.find((v) => v.id === variantId && v.available);
+        if (incoming) setQuantities({ [incoming.id]: 1 });
+      }
+      dispatchAnalytics("modal_open", { productId, variantId, shop: data.shop });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Couldn't load product details";
+      setConfigError(msg);
+      console.error("[insignia]", { tag: "config-fetch", err });
     } finally {
       setConfigLoading(false);
     }
   }, [productId, variantId]);
 
   useEffect(() => {
-    fetchConfig();
+    void fetchConfig();
   }, [fetchConfig]);
 
-  // Variants are pre-filtered by the backend to only include sizes matching
-  // the selected variant's non-size options (e.g. same color).
-
-  // Initialize per-size quantities when config first loads
-  useEffect(() => {
-    if (config && config.variants.length > 0 && Object.keys(quantities).length === 0) {
-      const init: Record<string, number> = {};
-      for (const v of config.variants) {
-        init[v.id] = 0;
-      }
-      // Pre-select the current variant with qty 1
-      const currentGid = `gid://shopify/ProductVariant/${variantId}`;
-      if (init[currentGid] !== undefined) {
-        init[currentGid] = 1;
-      } else if (config.variants.length > 0) {
-        init[config.variants[0].id] = 1;
-      }
-      setQuantities(init);
-    } else if (config && config.variants.length === 0 && Object.keys(quantities).length === 0) {
-      setQuantities({ _default: 1 });
-    }
-  }, [config]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Restore draft from localStorage once config is available
+  // ─── Persist draft on relevant changes ──
   useEffect(() => {
     if (!config) return;
-    const draft = loadDraft(productId, variantId, config.productConfigId);
-    if (!draft) return;
-    if (draft.selectedPlacements.length === 0) return;
-
-    // Restore placement selections — map saved placement IDs to their saved step indices
-    const restoredSelections: PlacementSelections = {};
-    for (const pid of draft.selectedPlacements) {
-      const placement = config.placements.find((p) => p.id === pid);
-      if (placement) {
-        restoredSelections[pid] = draft.sizeSelections[pid] ?? placement.defaultStepIndex;
-      }
-    }
-    if (Object.keys(restoredSelections).length > 0) {
-      setPlacementSelections(restoredSelections);
-    }
-
-    // Restore step — only advance if the draft step is valid and reachable
-    const draftStepIndex = STEP_ORDER.indexOf(draft.step as WizardStep);
-    if (draftStepIndex > 0) {
-      setStep(draft.step as WizardStep);
-    }
-  }, [config, productId, variantId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const goToStep = useCallback((s: WizardStep) => {
-    setStep((prev) => {
-      if (STEP_ORDER.indexOf(s) > STEP_ORDER.indexOf(prev)) {
-        history.pushState({ insigniaStep: s }, "");
-      }
-      return s;
-    });
-    setSubmitError(null);
-  }, []);
-
-  const canGoNext = useCallback((): boolean => {
-    switch (step) {
-      case "upload":
-        return logo.type !== "none";
-      case "placement": {
-        const count = Object.keys(placementSelections).length;
-        return count > 0;
-      }
-      case "size":
-        return true;
-      case "review":
-        return totalQuantity > 0;
-      default:
-        return false;
-    }
-  }, [step, logo, placementSelections, totalQuantity]);
-
-  const handleBack = useCallback(() => {
-    const i = currentStepIndex;
-    if (i > 0) goToStep(STEP_ORDER[i - 1]);
-  }, [currentStepIndex, goToStep]);
-
-  const handleNext = useCallback(() => {
-    // On size step with multiple positions: advance position first
-    if (step === "size" && sizeStepRef.current?.tryAdvance()) {
-      return; // stay on size step, position advanced
-    }
-    const i = currentStepIndex;
-    if (i < STEP_ORDER.length - 1) goToStep(STEP_ORDER[i + 1]);
-  }, [step, currentStepIndex, goToStep]);
-
-  /** Close the modal: navigate back to the product page. */
-  const closeModal = useCallback(() => {
-    if (typeof window === "undefined") return;
-    const numericId = productId.replace(/^gid:\/\/shopify\/Product\//, "");
-    window.location.href = `/products/${numericId}`;
-  }, [productId]);
-
-  const handleClose = useCallback(() => {
-    const hasSelections = step !== "upload" || logo.type !== "none";
-    if (hasSelections) {
-      setShowCloseConfirm(true);
-    } else {
-      closeModal();
-    }
-  }, [step, logo.type, closeModal]);
-
-  const handleCloseConfirm = useCallback((confirmed: boolean) => {
-    setShowCloseConfirm(false);
-    if (confirmed) {
-      clearDraft(productId, variantId);
-      closeModal();
-    }
-  }, [productId, variantId, closeModal]);
-
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        handleClose();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleClose]);
-
-  // Tag the initial history entry so popstate can detect when the user has
-  // swiped back past all wizard steps. Must use replaceState (not pushState)
-  // here — it is not inside a user gesture, and iOS Safari 16+ silently drops
-  // pushState calls that originate outside of user-gesture handlers.
-  useEffect(() => {
-    history.replaceState({ insigniaStep: STEP_ORDER[0] }, "");
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Intercept browser back-swipe / back button on mobile.
-  // goToStep() already called pushState for each forward step, so the history
-  // stack mirrors the wizard progress. Popping to a non-first entry means the
-  // user went back within the flow; popping to the first entry (or unknown
-  // state) means they want to leave — show the close confirmation dialog and
-  // push the entry back so they are not ejected while the dialog is open.
-  useEffect(() => {
-    const onPopState = (e: PopStateEvent) => {
-      const historyStep = (e.state as { insigniaStep?: WizardStep } | null)
-        ?.insigniaStep;
-      if (historyStep && STEP_ORDER.indexOf(historyStep) > 0) {
-        goToStep(historyStep);
-      } else {
-        setShowCloseConfirm(true);
-        history.pushState({ insigniaStep: STEP_ORDER[0] }, "");
-      }
-    };
-    window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
-  }, [goToStep]);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const focusable = el.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== "Tab") return;
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last?.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first?.focus();
-        }
-      }
-    };
-    el.addEventListener("keydown", onKeyDown);
-    first?.focus();
-    return () => el.removeEventListener("keydown", onKeyDown);
-  }, [step]);
-
-  // Reset desktop preview's auto-switched view when leaving the size step
-  useEffect(() => {
-    if (step !== "size") setDesktopActiveViewId(undefined);
-  }, [step]);
-
-  // Save draft to localStorage on step change
-  useEffect(() => {
-    if (step !== "upload" && config) {
-      const configVersion = config.productConfigId;
-      saveDraft(productId, variantId, {
+    saveDraft(
+      productId,
+      variantId,
+      {
         step,
         logoType: logo.type,
-        selectedPlacements: Object.keys(placementSelections),
-        sizeSelections: placementSelections,
-      }, configVersion);
-    }
-  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+        selectedPlacements: placementSelections,
+        quantities,
+        selectedMethodId,
+      },
+      config.productConfigId,
+    );
+  }, [productId, variantId, config, step, logo.type, placementSelections, quantities, selectedMethodId]);
 
-  const stepLabel = WIZARD_STEPS.find((s) => s.id === step)?.label ?? step;
-
-  // Derived values — computed unconditionally so hooks below can reference them
-  // safely. When config is null (loading / error state), these produce empty
-  // arrays/objects; the callbacks guard against that with `if (!config)` checks.
-  const selectedPlacements = (config?.placements ?? []).filter(
-    (p) => placementSelections[p.id] !== undefined
-  );
-  const selectedPlacementsWithStep = selectedPlacements.map((p) => ({
-    placementId: p.id,
-    stepIndex: placementSelections[p.id] ?? p.defaultStepIndex,
-  }));
-
-  const allSingleStep = config ? config.placements
-    .filter((p) => placementSelections[p.id] !== undefined)
-    .every((p) => p.steps.length <= 1) : false;
-
-  const logoAssetIdsByPlacementId = useMemo<Record<string, string | null>>(() => {
-    const result: Record<string, string | null> = {};
-    (config?.placements ?? []).forEach((p) => {
-      if (logo.type === "uploaded") {
-        result[p.id] = Object.keys(placementSelections).includes(p.id)
-          ? logo.logoAssetId
-          : null;
-      } else {
-        result[p.id] = null;
-      }
-    });
-    return result;
-  }, [config?.placements, logo, placementSelections]);
-
-  // Refresh presigned logo URLs if they are approaching expiry (8-minute threshold).
-  // Silently no-ops when no logo is uploaded yet.
-  const URL_REFRESH_THRESHOLD_MS = 8 * 60 * 1000;
-  const refreshLogoUrlsIfNeeded = useCallback(async () => {
-    if (logo.type !== "uploaded") return;
-    if (Date.now() - logoUrlTimestamp <= URL_REFRESH_THRESHOLD_MS) return;
-
-    try {
-      const response = await fetch(
-        proxyUrl(`/apps/insignia/uploads/${logo.logoAssetId}/refresh`),
-        { method: "POST" }
-      );
-      if (response.ok) {
-        const { previewUrl, sanitizedUrl } = await response.json();
-        setLogo((prev) =>
-          prev.type === "uploaded"
-            ? {
-                ...prev,
-                previewPngUrl: previewUrl ?? prev.previewPngUrl,
-                sanitizedSvgUrl: sanitizedUrl ?? prev.sanitizedSvgUrl,
-              }
-            : prev
-        );
-        setLogoUrlTimestamp(Date.now());
-      }
-    } catch {
-      // Silent fail — existing URLs may still be valid
-    }
-  }, [logo, logoUrlTimestamp]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Attempt URL refresh on each step transition
+  // ─── Body scroll lock + popstate close-confirm guard ──
   useEffect(() => {
-    refreshLogoUrlsIfNeeded();
-  }, [step]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (typeof document === "undefined") return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
-  // ALL hooks must be called unconditionally, before any early return.
-  const saveDraftAndPrice = useCallback(async (): Promise<{ customizationId: string; priceResult: PriceResult } | null> => {
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    history.pushState({ insigniaModal: true }, "");
+    const onPop = () => {
+      if (closingRef.current) return;
+      if (hasSelections) setShowCloseConfirm(true);
+      else closeNow();
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSelections]);
+
+  // ─── Esc handler at the shell level ──
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (showCloseConfirm || showPreviewSheet) return; // those have their own handlers
+        if (hasSelections) setShowCloseConfirm(true);
+        else closeNow();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasSelections, showCloseConfirm, showPreviewSheet]);
+
+  // ─── Online/offline tracking ──
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const update = () => setOffline(!navigator.onLine);
+    update();
+    window.addEventListener("online", update);
+    window.addEventListener("offline", update);
+    return () => {
+      window.removeEventListener("online", update);
+      window.removeEventListener("offline", update);
+    };
+  }, []);
+
+  // ─── Tab underline positioning ──
+  useEffect(() => {
+    const measure = () => {
+      const btn = tabBtnRefs.current[step];
+      const container = tabsRef.current;
+      if (!btn || !container) return;
+      const cRect = container.getBoundingClientRect();
+      const bRect = btn.getBoundingClientRect();
+      setUnderline({ left: bRect.left - cRect.left, width: bRect.width });
+    };
+    measure();
+    const ro = new ResizeObserver(() => measure());
+    if (tabsRef.current) ro.observe(tabsRef.current);
+    return () => ro.disconnect();
+  }, [step, configLoading]);
+
+  // ─── Price + prepare ──
+  // Declared BEFORE goNext so the dependency array is well-formed (TDZ-safe).
+  const ensureCustomization = useCallback(async (): Promise<string | null> => {
     if (!config || !selectedMethodId) return null;
-    setSubmitError(null);
+    if (customizationId) return customizationId;
     try {
-      const draftRes = await fetchWithRetry(proxyUrl("/apps/insignia/customizations"), {
+      const placements = Object.entries(placementSelections).map(([placementId, stepIndex]) => ({
+        placementId,
+        stepIndex,
+      }));
+      const logoAssetIdsByPlacementId: Record<string, string | null> = {};
+      const logoAssetId = logo.type === "uploaded" ? logo.logoAssetId : null;
+      for (const p of placements) {
+        logoAssetIdsByPlacementId[p.placementId] = logoAssetId;
+      }
+      const body = {
+        productId,
+        variantId,
+        productConfigId: config.productConfigId,
+        methodId: selectedMethodId,
+        placements,
+        logoAssetIdsByPlacementId,
+        artworkStatus: logo.type === "later" ? "PENDING_CUSTOMER" : "PROVIDED",
+      };
+      const res = await fetchWithRetry(proxyUrl("/apps/insignia/customizations"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          productId: config.productId,
-          variantId: config.variantId,
-          productConfigId: config.productConfigId,
-          methodId: selectedMethodId,
-          placements: selectedPlacementsWithStep,
-          logoAssetIdsByPlacementId,
-          artworkStatus: logo.type === "later" ? "PENDING_CUSTOMER" : "PROVIDED",
-        }),
+        body: JSON.stringify(body),
       });
-      if (!draftRes.ok) {
-        const d = await draftRes.json().catch(() => ({}));
-        throw new Error(d?.error?.message ?? "Failed to save customization");
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+        throw new Error(data.error?.message || `Draft create failed: ${res.status}`);
       }
-      const { customizationId: id } = await draftRes.json();
-      setCustomizationId(id);
-      const priceRes = await fetchWithRetry(proxyUrl("/apps/insignia/price"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customizationId: id }),
-      });
-      if (!priceRes.ok) {
-        const d = await priceRes.json().catch(() => ({}));
-        throw new Error(d?.error?.message ?? "Failed to get price");
-      }
-      const priceData: PriceResult = await priceRes.json();
-      setPriceResult(priceData);
-      return { customizationId: id, priceResult: priceData };
-    } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Something went wrong");
+      const data = (await res.json()) as { customizationId: string };
+      setCustomizationId(data.customizationId);
+      return data.customizationId;
+    } catch (err) {
+      console.error("[insignia]", { tag: "draft-create", err });
       return null;
     }
-  }, [
-    config,
-    selectedMethodId,
-    selectedPlacementsWithStep,
-    logoAssetIdsByPlacementId,
-    logo.type,
-  ]);
+  }, [config, selectedMethodId, customizationId, placementSelections, logo, productId, variantId]);
 
-  useEffect(() => {
-    if (step === "review" && config && selectedMethodId && !customizationId) {
-      saveDraftAndPrice();
-    }
-  }, [step, config, selectedMethodId, customizationId, saveDraftAndPrice]);
-
-  const prepareAndAddToCart = useCallback(async () => {
-    let cid = customizationId;
-    let pr = priceResult;
-    if (!cid || !pr?.validation?.ok) {
-      const out = await saveDraftAndPrice();
-      if (!out) return;
-      cid = out.customizationId;
-      pr = out.priceResult;
-    }
-    if (!cid || !pr?.validation?.ok) return;
-    setSubmitLoading(true);
-    setSubmitError(null);
+  /**
+   * Always creates a brand-new customization draft — never returns a cached one.
+   * Used by the multi-size submit loop so each size variant gets its own slot.
+   */
+  const createFreshCustomization = useCallback(async (): Promise<string | null> => {
+    if (!config || !selectedMethodId) return null;
     try {
-      const isMultiVariant = config!.variants.length > 0;
-      // Track all prepared slot IDs for the confirm step.
-      // Use local variables — not React state — to avoid stale closure reads.
-      const confirmedSlotIds: string[] = [];
+      const placements = Object.entries(placementSelections).map(([placementId, stepIndex]) => ({
+        placementId,
+        stepIndex,
+      }));
+      const logoAssetIdsByPlacementId: Record<string, string | null> = {};
+      const logoAssetId = logo.type === "uploaded" ? logo.logoAssetId : null;
+      for (const p of placements) {
+        logoAssetIdsByPlacementId[p.placementId] = logoAssetId;
+      }
+      const body = {
+        productId,
+        variantId,
+        productConfigId: config.productConfigId,
+        methodId: selectedMethodId,
+        placements,
+        logoAssetIdsByPlacementId,
+        artworkStatus: logo.type === "later" ? "PENDING_CUSTOMER" : "PROVIDED",
+      };
+      const res = await fetchWithRetry(proxyUrl("/apps/insignia/customizations"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+        throw new Error(data.error?.message || `Draft create failed: ${res.status}`);
+      }
+      const data = (await res.json()) as { customizationId: string };
+      return data.customizationId;
+    } catch (err) {
+      console.error("[insignia]", { tag: "draft-create-fresh", err });
+      return null;
+    }
+  }, [config, selectedMethodId, placementSelections, logo, productId, variantId]);
 
-      if (isMultiVariant) {
-        // B2B per-size mode: call /prepare once per variant with qty > 0,
-        // then batch all pairs into a single cart/add.js request.
-        const activeVariants = config!.variants.filter(
-          (v) => (quantities[v.id] ?? 0) > 0
-        );
-        if (activeVariants.length === 0) return;
+  const preparePriceForReview = useCallback(async () => {
+    setPriceLoading(true);
+    setPriceResult(null);
+    try {
+      const cid = await ensureCustomization();
+      if (!cid) {
+        setPriceLoading(false);
+        return;
+      }
+      const res = await fetchWithRetry(proxyUrl("/apps/insignia/price"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customizationId: cid }),
+      });
+      if (!res.ok) {
+        const data = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
+        throw new Error(data.error?.message || `Price failed: ${res.status}`);
+      }
+      const json = (await res.json()) as PriceResult;
+      setPriceResult(json);
+    } catch (err) {
+      console.error("[insignia]", { tag: "price-fetch", err });
+    } finally {
+      setPriceLoading(false);
+    }
+  }, [ensureCustomization]);
 
-        const pairs: Array<{
-          baseVariantId: string;
-          feeVariantId: string;
-          quantity: number;
-          properties: Record<string, string>;
-        }> = [];
-        for (const variant of activeVariants) {
-          const prepareRes = await fetchWithRetry(proxyUrl("/apps/insignia/prepare"), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ customizationId: cid }),
-          });
-          if (!prepareRes.ok) {
-            const d = await prepareRes.json().catch(() => ({}));
-            throw new Error(d?.error?.message ?? "Failed to prepare");
-          }
-          const prep: PrepareResult = await prepareRes.json();
-          confirmedSlotIds.push(prep.slotVariantId);
+  // ─── Navigation ──
+  const goNext = useCallback(async () => {
+    if (step === "size" && sizeStepRef.current?.tryAdvance()) return;
+    const nextIndex = currentStepIndex + 1;
+    if (nextIndex >= STEP_ORDER.length) return;
+    const nextStep = STEP_ORDER[nextIndex];
+    // Skip "size" if every selected placement has ≤ 1 step AND we're not on review.
+    if (nextStep === "size" && allSingleStep) {
+      setStep("review");
+      dispatchAnalytics("step_view", { step: "review", productId });
+      await preparePriceForReview();
+      return;
+    }
+    setStep(nextStep);
+    dispatchAnalytics("step_view", { step: nextStep, productId });
+    if (nextStep === "review") await preparePriceForReview();
+  }, [step, currentStepIndex, allSingleStep, productId, preparePriceForReview]);
 
-          const properties = buildInsigniaProperties(
-            cid,
-            selectedMethodId!,
-            prep.configHash,
-            prep.pricingVersion
-          );
-          pairs.push({
-            baseVariantId: variant.id,
-            feeVariantId: prep.slotVariantId,
-            quantity: quantities[variant.id],
-            properties,
-          });
-        }
+  const goBack = useCallback(() => {
+    const prevIndex = currentStepIndex - 1;
+    if (prevIndex < 0) return;
+    setStep(STEP_ORDER[prevIndex]);
+    dispatchAnalytics("step_view", { step: STEP_ORDER[prevIndex], productId });
+  }, [currentStepIndex, productId]);
 
-        await addMultipleCustomizedToCart(pairs);
-      } else {
-        // Single-variant mode: original behaviour preserved.
-        const qty = quantities["_default"] ?? totalQuantity;
-        const prepareRes = await fetchWithRetry(proxyUrl("/apps/insignia/prepare"), {
+  const setStepDirect = useCallback(
+    (target: WizardStep) => {
+      const targetIndex = STEP_ORDER.indexOf(target);
+      // Allow only backwards or to current; forward navigation must use Continue.
+      if (targetIndex > currentStepIndex) return;
+      setStep(target);
+      dispatchAnalytics("step_view", { step: target, productId });
+    },
+    [currentStepIndex, productId],
+  );
+
+  // ─── Submit (Add to Cart) ──
+  const closeNow = useCallback(() => {
+    if (typeof window === "undefined") return;
+    closingRef.current = true;
+    // Try to step back over the modal-pushed history entry.
+    try {
+      window.history.back();
+    } catch {
+      // Fallback: redirect to product page if available, else home.
+      window.location.href = `${window.location.origin}/`;
+    }
+  }, []);
+
+  const onCartSuccess = useCallback(
+    (totalCents: number, customizationIds: string[]) => {
+      setSubmitState("success");
+      dispatchAnalytics("cart_success", {
+        totalItems: totalQuantity,
+        totalCents,
+        customizationId: customizationIds.join(","),
+      });
+      // Show the success state briefly, then redirect to cart.
+      // SUCCESS_STATE_DURATION_MS is long enough to register (~1.5 s) without
+      // annoying users. The redirect is non-blocking — if the user is already
+      // on /cart the browser handles the navigation instantly.
+      window.setTimeout(() => {
+        if (productId) clearDraft(productId, variantId);
+        if (typeof window !== "undefined") window.location.href = `${window.location.origin}/cart`;
+      }, SUCCESS_STATE_DURATION_MS);
+    },
+    [totalQuantity, productId, variantId],
+  );
+
+  const submitOneVariant = useCallback(
+    async (variantId: string, qty: number) => {
+      if (!selectedMethodId) throw new Error("No decoration method selected");
+      const cid = await ensureCustomization();
+      if (!cid) throw new Error("Could not create customization draft");
+      const res = await fetch(proxyUrl("/apps/insignia/prepare"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customizationId: cid }),
+      });
+      const json = (await res.json().catch(() => ({}))) as Partial<PrepareResult> & {
+        error?: { code?: string; message?: string };
+      };
+      if (!res.ok) {
+        const err = new Error(json.error?.message ?? `Prepare failed: ${res.status}`);
+        (err as Error & { status?: number }).status = res.status;
+        throw err;
+      }
+      const slotVariantId = json.slotVariantId!;
+      const properties = buildInsigniaProperties(
+        cid,
+        selectedMethodId,
+        json.configHash ?? "",
+        json.pricingVersion ?? "",
+      );
+      const cart = await addCustomizedToCart(variantId, slotVariantId, qty, properties);
+      // Best-effort confirm; failures don't block the cart redirect.
+      try {
+        await fetch(proxyUrl("/apps/insignia/cart-confirm"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ customizationId: cid }),
         });
-        if (!prepareRes.ok) {
-          const d = await prepareRes.json().catch(() => ({}));
-          throw new Error(d?.error?.message ?? "Failed to prepare");
-        }
-        const prep: PrepareResult = await prepareRes.json();
-        confirmedSlotIds.push(prep.slotVariantId);
-        const properties = buildInsigniaProperties(
-          cid,
-          selectedMethodId!,
-          prep.configHash,
-          prep.pricingVersion
+      } catch {
+        /* non-fatal */
+      }
+      return { cart, customizationId: cid };
+    },
+    [ensureCustomization, selectedMethodId],
+  );
+
+  const onSubmit = useCallback(async (opts?: { isAutoRetry?: boolean }) => {
+    if (!config || !selectedMethodId) return;
+    const items = Object.entries(quantities).filter(([, q]) => q > 0);
+    if (items.length === 0) return;
+    if (!idempotencyKeyRef.current) {
+      idempotencyKeyRef.current = `insignia-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    }
+    setSubmitState("submitting");
+    setSubmitErrorCode(null);
+    // Reset auto-retry flag for each USER-initiated attempt so the customer
+    // clicking "Try again" gets a fresh auto-retry. Skip the reset when the
+    // call originates from the in-flight retry timer (would loop forever).
+    if (!opts?.isAutoRetry) setHasRetriedPool(false);
+    dispatchAnalytics("cart_submit", {
+      totalItems: totalQuantity,
+      totalCents: totalQuantity * (priceResult?.unitPriceCents ?? estimatedTotal),
+      currency: config.currency,
+    });
+
+    try {
+      if (items.length === 1 && items[0][0] === variantId) {
+        // Single line item — fast path.
+        const [vId, qty] = items[0];
+        const result = await submitOneVariant(vId, qty);
+        const totalCents = result.cart.items.reduce(
+          (sum, it) => sum + (it.quantity ?? 0) * (priceResult?.unitPriceCents ?? estimatedTotal),
+          0,
         );
-        await addCustomizedToCart(config!.variantId, prep.slotVariantId, qty, properties);
+        onCartSuccess(totalCents, [result.customizationId]);
+        return;
       }
 
-      // Confirm each prepared slot (required for slot lifecycle management)
-      for (const slotVariantId of confirmedSlotIds) {
-        const confirmRes = await fetchWithRetry(proxyUrl("/apps/insignia/cart-confirm"), {
+      // Multiple line items: prepare each in parallel, batch into one /cart/add.js.
+      // Each size needs its own customization draft so it gets a unique slot variant.
+      // createFreshCustomization always POSTs a new draft (never returns a cached id),
+      // which is required because the slot reserved by /prepare is per-draft.
+      // Slot claims use FOR UPDATE SKIP LOCKED in Postgres, so concurrent /prepare
+      // calls are race-safe by design.
+      const prepared = await Promise.all(
+        items.map(async ([vId, qty]) => {
+          const cid = await createFreshCustomization();
+          if (!cid) throw new Error("Could not create customization draft");
+          const res = await fetch(proxyUrl("/apps/insignia/prepare"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ customizationId: cid }),
+          });
+          const json = (await res.json().catch(() => ({}))) as Partial<PrepareResult> & {
+            error?: { code?: string; message?: string };
+          };
+          if (!res.ok) {
+            const err = new Error(json.error?.message ?? `Prepare failed: ${res.status}`);
+            (err as Error & { status?: number }).status = res.status;
+            throw err;
+          }
+          const properties = buildInsigniaProperties(
+            cid,
+            selectedMethodId,
+            json.configHash ?? "",
+            json.pricingVersion ?? "",
+          );
+          return {
+            cid,
+            lineItem: {
+              baseVariantId: vId,
+              feeVariantId: json.slotVariantId!,
+              quantity: qty,
+              properties,
+            },
+          };
+        }),
+      );
+      const lineItems = prepared.map((p) => p.lineItem);
+      const cids = prepared.map((p) => p.cid);
+      const cart = await addMultipleCustomizedToCart(lineItems);
+      // Confirm each cid (non-blocking).
+      for (const cid of cids) {
+        fetch(proxyUrl("/apps/insignia/cart-confirm"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ customizationId: cid, slotVariantId }),
-        });
-        if (!confirmRes.ok) {
-          const d = await confirmRes.json().catch(() => ({}));
-          throw new Error(d?.error?.message ?? "Failed to confirm cart");
-        }
+          body: JSON.stringify({ customizationId: cid }),
+        }).catch(() => {});
       }
-      clearDraft(productId, variantId);
-      closeModal();
-    } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : "Failed to add to cart");
-    } finally {
-      setSubmitLoading(false);
+      const totalCents = cart.items.reduce(
+        (sum, it) => sum + (it.quantity ?? 0) * (priceResult?.unitPriceCents ?? estimatedTotal),
+        0,
+      );
+      onCartSuccess(totalCents, cids);
+    } catch (err) {
+      const status = (err as Error & { status?: number })?.status;
+      const rawMessage = err instanceof Error ? err.message : "Add to cart failed";
+      console.error("[insignia]", { tag: "cart-submit", err, step, productId, variantId });
+      // 503 and 409 are both transient pool-contention signals (slot in use,
+      // pool growing, etc). Auto-retry once with backoff; on second failure
+      // surface the friendly pool-exhausted UI so the customer can manual-retry.
+      const isTransient = status === 409 || status === 503;
+      if (isTransient && !hasRetriedPool) {
+        setHasRetriedPool(true);
+        window.setTimeout(() => {
+          setSubmitState("ready");
+          void onSubmit({ isAutoRetry: true });
+        }, SUBMIT_RETRY_409_MS);
+        return;
+      }
+      if (isTransient) {
+        setSubmitState("pool-exhausted");
+      } else {
+        setSubmitState("error");
+      }
+      // Surface the HTTP status as a short error code so support can correlate
+      // a customer report to a server log. The friendly UI controls the body
+      // text — raw message stays in console + analytics, never to the user.
+      setSubmitErrorCode(status ? String(status) : "ERR");
+      dispatchAnalytics("cart_error", { code: status ?? "unknown", message: rawMessage, retriable: status !== 401 });
     }
-  // priceResult is intentionally read outside deps (optimization check, not a reactive dependency)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [customizationId, selectedMethodId, totalQuantity, quantities, saveDraftAndPrice, config, productId, variantId, closeModal]);
+  }, [
+    config,
+    selectedMethodId,
+    quantities,
+    variantId,
+    priceResult,
+    estimatedTotal,
+    totalQuantity,
+    submitOneVariant,
+    createFreshCustomization,
+    onCartSuccess,
+    hasRetriedPool,
+    step,
+    productId,
+  ]);
 
-  // Early returns after all hooks — this is the required pattern.
+  // ─── Render ──
   if (configLoading) {
     return (
-      <div className="insignia-modal-page">
-        <div className="insignia-loading">Loading…</div>
+      <div className="insignia-modal" aria-busy="true" aria-label={t.common.loading}>
+        <div className="insignia-modal-header">
+          <span className="insignia-skeleton" style={{ height: 18, width: 100 }} />
+          <div className="insignia-tabs" aria-hidden="true">
+            {WIZARD_STEPS.map((s) => (
+              <span key={s.id} className="insignia-skeleton" style={{ height: 12, width: 60, marginInline: 8 }} />
+            ))}
+          </div>
+          <span className="insignia-skeleton" style={{ height: 36, width: 36, borderRadius: 8 }} />
+        </div>
+        <div className="insignia-shell-skeleton">
+          <span className="insignia-skeleton canvas" />
+          <span className="insignia-skeleton row" />
+          <span className="insignia-skeleton row" />
+          <span className="insignia-skeleton row" />
+        </div>
       </div>
     );
   }
 
   if (configError || !config) {
     return (
-      <div className="insignia-modal-page">
-        <div className="insignia-modal-body">
-          <div className="insignia-error" role="alert">
-            {configError ?? "Product configuration not found."}
-          </div>
+      <div className="insignia-modal">
+        <div className="insignia-modal-header">
+          <span className="insignia-modal-header-title insignia-only-desktop">
+            <span className="title">{t.v2.header.title}</span>
+          </span>
+          <div style={{ flex: 1 }} />
+          <button
+            type="button"
+            className="insignia-modal-close"
+            onClick={closeNow}
+            aria-label={t.v2.header.closeAria}
+          >
+            <IconX size={18} />
+          </button>
+        </div>
+        <div className="insignia-modal-body" role="alert">
+          <h2 style={{ fontSize: 18, fontWeight: 600 }}>{t.v2.shell.configError}</h2>
+          <p style={{ color: "var(--insignia-text-secondary)", fontSize: 14 }}>{configError}</p>
+          <button
+            type="button"
+            className="insignia-btn insignia-btn--primary"
+            onClick={() => void fetchConfig()}
+          >
+            {t.v2.shell.configErrorRetry}
+          </button>
         </div>
       </div>
     );
   }
 
+  const desktopShowPreview = ["upload", "placement", "size", "review"].includes(step);
+  const showFooterBackButton = currentStepIndex > 0;
+  const continueDisabled = (() => {
+    if (step === "upload") return logo.type === "none" || !selectedMethodId;
+    if (step === "placement") return Object.keys(placementSelections).length === 0;
+    if (step === "review") return totalQuantity === 0 || submitState === "submitting";
+    return false;
+  })();
+
   return (
-    <div
-      ref={containerRef}
-      className="insignia-modal-page"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="insignia-modal-title"
-    >
+    <div className="insignia-modal" role="dialog" aria-modal="true" aria-label={t.v2.header.title}>
+      {offline && (
+        <div className="insignia-offline-banner" role="status">
+          <IconWifiOff size={14} />
+          <span>{t.v2.shell.offline}</span>
+        </div>
+      )}
+
+      {/* Header */}
       <header className="insignia-modal-header">
-        <h1 id="insignia-modal-title" className="insignia-modal-title visually-hidden">
-          {stepLabel}
-        </h1>
-        <nav className="insignia-steps" aria-label="Progress">
-          {STEP_ORDER.map((stepKey, i) => {
-            const StepIcon = stepKey === "size" && allSingleStep ? IconEye : STEP_ICONS[stepKey];
-            const label = stepKey === "size"
-              ? (allSingleStep ? t.size.preview : t.size.logoSize)
-              : t.steps[stepKey];
+        {config.shopLogoUrl && (
+          <img src={config.shopLogoUrl} alt="" className="insignia-modal-header-logo" />
+        )}
+        <div className="insignia-modal-header-title insignia-only-desktop">
+          <span className="title">{t.v2.header.title}</span>
+          <span className="subtitle">{config.productTitle}</span>
+        </div>
+        <div className="insignia-tabs" ref={tabsRef} role="tablist" aria-label="Wizard steps">
+          {WIZARD_STEPS.map((tab) => {
+            const tabState = stepTabState(tab.id);
+            const Icon = STEP_ICONS[tab.id];
             return (
               <button
-                key={stepKey}
+                key={tab.id}
+                ref={(el) => {
+                  tabBtnRefs.current[tab.id] = el;
+                }}
                 type="button"
-                className="insignia-step-pill"
-                data-current={step === stepKey ? "true" : undefined}
-                data-completed={i < currentStepIndex ? "true" : undefined}
-                disabled={i > currentStepIndex}
-                onClick={() => i < currentStepIndex && goToStep(stepKey)}
-                aria-label={label}
-                aria-current={step === stepKey ? "step" : undefined}
+                role="tab"
+                className="insignia-tab"
+                data-state={tabState !== "default" ? tabState : undefined}
+                aria-selected={tabState === "active"}
+                disabled={STEP_ORDER.indexOf(tab.id) > currentStepIndex}
+                onClick={() => setStepDirect(tab.id)}
               >
-                <StepIcon size={16} />
-                <span>{label}</span>
+                <span className="tab-icon" aria-hidden="true">
+                  {tabState === "completed" ? <IconCheck size={14} /> : <Icon size={14} />}
+                </span>
+                <span>{stepLabels[tab.id]}</span>
               </button>
             );
           })}
-        </nav>
+          <span className="insignia-tab-underline" style={{ left: underline.left, width: underline.width }} />
+        </div>
         <button
           type="button"
           className="insignia-modal-close"
-          onClick={handleClose}
-          aria-label="Close"
+          onClick={() => (hasSelections ? setShowCloseConfirm(true) : closeNow())}
+          aria-label={t.v2.header.closeAria}
         >
           <IconX size={18} />
         </button>
       </header>
 
-      {/* Desktop two-panel layout — on mobile this is display:contents (no visual change) */}
-      <div className="insignia-desktop-layout">
-        {/* Left panel: persistent product preview — desktop only */}
-        <div className="insignia-desktop-preview" aria-hidden="true">
-          <SizePreview
-            config={config}
-            placementSelections={placementSelections}
-            logo={logo}
-            showTabs
-            activeViewId={step === "size" ? desktopActiveViewId : undefined}
-          />
-        </div>
-
-        {/* Right panel: scrollable content + footer */}
-        <div className="insignia-desktop-right">
-          <main className="insignia-modal-body">
-            {step === "upload" && (
-              <UploadStep
-                config={config}
-                logo={logo}
-                onLogoChange={setLogo}
-                selectedMethodId={selectedMethodId}
-                onMethodChange={setSelectedMethodId}
-                onContinue={() => handleNext()}
-                t={t}
-              />
-            )}
-            {step === "placement" && (
-              <PlacementStep
-                config={config}
-                placementSelections={placementSelections}
-                onPlacementSelectionsChange={setPlacementSelections}
-                onContinue={() => handleNext()}
-                selectedMethodId={selectedMethodId}
-                t={t}
-              />
-            )}
-            {step === "size" && (
-              <SizeStep
-                ref={sizeStepRef}
-                config={config}
-                placementSelections={placementSelections}
-                onPlacementSelectionsChange={setPlacementSelections}
-                logo={logo}
-                onContinue={() => handleNext()}
-                onActiveViewChange={setDesktopActiveViewId}
-                t={t}
-              />
-            )}
-            {step === "review" && (
-              <ReviewStep
-                config={config}
-                selectedMethodId={selectedMethodId!}
-                placementSelections={placementSelections}
-                logo={logo}
-                quantities={quantities}
-                onQuantitiesChange={setQuantities}
-                priceResult={priceResult}
-                submitError={submitError}
-                onSaveDraftAndPrice={() => saveDraftAndPrice().then(() => {})}
-                baseProductPriceCents={config.baseProductPriceCents}
-                productTitle={config.productTitle}
-                onShowPreviewSheet={() => setShowPreviewSheet(true)}
-                t={t}
-              />
-            )}
-          </main>
-
-          <footer className="insignia-modal-footer">
-            <div className="insignia-footer-price-area">
-              <span className="insignia-footer-price-label">{footerPriceLabel}</span>
-              <span className="insignia-footer-price-value">
-                {formatCurrency(
-                  step === "review" ? footerPriceValue * totalQuantity : footerPriceValue,
-                  config.currency
-                )}
-              </span>
-            </div>
-            <div className="insignia-footer-buttons">
-              {step === "review" ? (
-                <>
-                  <button
-                    className="insignia-btn insignia-btn-secondary"
-                    onClick={handleBack}
-                  >
-                    {t.placement.btnBack}
-                  </button>
-                  <button
-                    className="insignia-btn insignia-btn-success"
-                    disabled={totalQuantity < 1 || submitLoading || !priceResult?.validation?.ok}
-                    onClick={prepareAndAddToCart}
-                    style={{ display: "flex", alignItems: "center", gap: 8 }}
-                  >
-                    <IconShoppingCart size={16} />
-                    <span>
-                      {submitLoading
-                        ? "Adding…"
-                        : window.innerWidth <= 480
-                          ? `${t.review.addToCartWithPrice} \u2014 ${formatCurrency(footerPriceValue * totalQuantity, config.currency)}`
-                          : t.review.addToCartWithPrice}
-                    </span>
-                  </button>
-                </>
-              ) : (
-                <>
-                  {currentStepIndex > 0 && (
-                    <button
-                      className="insignia-btn insignia-btn-secondary"
-                      onClick={handleBack}
-                    >
-                      {t.placement.btnBack}
-                    </button>
-                  )}
-                  <button
-                    className="insignia-btn insignia-btn-primary"
-                    disabled={!canGoNext()}
-                    onClick={handleNext}
-                  >
-                    {t.placement.btnNext}
-                  </button>
-                </>
+      {/* Body — desktop wraps in a 60/40 split. Only ONE layout mounts at
+          a time so step-component refs (SizeStep.tryAdvance) target the
+          live instance rather than a hidden duplicate. */}
+      {isDesktop ? (
+        <div className="insignia-modal-body-wrap">
+          <aside className="insignia-desktop-preview">
+            <div className="insignia-desktop-preview-canvas">
+              {desktopShowPreview && (
+                <PreviewCanvas
+                  config={config}
+                  placementSelections={placementSelections}
+                  logo={logo}
+                  viewId={desktopActiveViewId}
+                  onViewChange={setDesktopActiveViewId}
+                  context="panel"
+                  onImageMeta={onImageMeta}
+                  onLogoMeta={onLogoMeta}
+                  t={t}
+                />
               )}
             </div>
-          </footer>
+          </aside>
+          <section className="insignia-desktop-content">
+            <div className="insignia-desktop-content-body">{renderStep()}</div>
+            {renderFooter()}
+          </section>
         </div>
-      </div>
+      ) : (
+        <>
+          <div className="insignia-modal-body">{renderStep()}</div>
+          <div className="insignia-mobile-footer-wrap">{renderFooter()}</div>
+        </>
+      )}
 
-      {showCloseConfirm && (
-        <div className="insignia-overlay" role="dialog" aria-modal="true" aria-labelledby="close-dialog-title">
-          <div className="insignia-dialog">
-            <h3 id="close-dialog-title">Close customization?</h3>
-            <p>{CLOSE_CONFIRM_MESSAGE}</p>
-            <div className="insignia-dialog-actions">
+      <CloseConfirmDialog
+        open={showCloseConfirm}
+        onKeepEditing={() => setShowCloseConfirm(false)}
+        onCloseAnyway={() => {
+          setShowCloseConfirm(false);
+          dispatchAnalytics("modal_close", { step, hasDraft: hasSelections });
+          closeNow();
+        }}
+        t={t}
+      />
+
+      <PreviewSheet
+        open={showPreviewSheet}
+        onClose={() => setShowPreviewSheet(false)}
+        config={config}
+        placementSelections={placementSelections}
+        logo={logo}
+        t={t}
+      />
+    </div>
+  );
+
+  function renderStep() {
+    if (!config) return null;
+    switch (step) {
+      case "upload":
+        return (
+          <UploadStep
+            config={config}
+            logo={logo}
+            onLogoChange={(next) => {
+              setLogo(next);
+              // Invalidate any draft id so the next price/prepare uses fresh logo.
+              setCustomizationId(null);
+              setPriceResult(null);
+            }}
+            selectedMethodId={selectedMethodId}
+            onMethodChange={(id) => {
+              setSelectedMethodId(id);
+              setCustomizationId(null);
+              setPriceResult(null);
+            }}
+            t={t}
+            onAnalytics={dispatchAnalytics}
+          />
+        );
+      case "placement":
+        return (
+          <PlacementStep
+            config={config}
+            placementSelections={placementSelections}
+            onPlacementSelectionsChange={(next) => {
+              setPlacementSelections(next);
+              setCustomizationId(null);
+              setPriceResult(null);
+            }}
+            logo={logo}
+            desktopActiveViewId={desktopActiveViewId}
+            onDesktopActiveViewChange={setDesktopActiveViewId}
+            onImageMeta={onImageMeta}
+            t={t}
+            onAnalytics={dispatchAnalytics}
+          />
+        );
+      case "size":
+        return (
+          <SizeStep
+            ref={sizeStepRef}
+            config={config}
+            placementSelections={placementSelections}
+            onPlacementSelectionsChange={(next) => {
+              setPlacementSelections(next);
+              setCustomizationId(null);
+              setPriceResult(null);
+            }}
+            logo={logo}
+            desktopActiveViewId={desktopActiveViewId}
+            onDesktopActiveViewChange={setDesktopActiveViewId}
+            onImageMeta={onImageMeta}
+            onLogoMeta={onLogoMeta}
+            imageMetaByViewId={imageMetaByViewId}
+            logoMeta={logoMeta}
+            t={t}
+            onAnalytics={dispatchAnalytics}
+          />
+        );
+      case "review":
+        return (
+          <ReviewStep
+            config={config}
+            selectedMethodId={selectedMethodId ?? ""}
+            placementSelections={placementSelections}
+            logo={logo}
+            quantities={quantities}
+            onQuantitiesChange={setQuantities}
+            priceResult={priceResult}
+            priceLoading={priceLoading}
+            t={t}
+          />
+        );
+    }
+  }
+
+  function renderFooter() {
+    return (
+      <footer className="insignia-modal-footer">
+        {step === "review" ? (
+          <ReviewFooter
+            currency={config!.currency}
+            totalCents={footerPriceValue}
+            totalQty={totalQuantity}
+            submitState={submitState}
+            submitErrorCode={submitErrorCode}
+            onBack={goBack}
+            onShowPreview={() => setShowPreviewSheet(true)}
+            onSubmit={() => void onSubmit()}
+            t={t}
+          />
+        ) : (
+          <>
+            <div className="insignia-footer-price">
+              <span className="insignia-footer-price-label">{footerPriceLabel}</span>
+              <span className="insignia-footer-price-value">
+                {formatCurrency(footerPriceValue, config!.currency)}
+              </span>
+            </div>
+            <div className="insignia-footer-actions">
+              {showFooterBackButton && (
+                <button
+                  type="button"
+                  className="insignia-btn insignia-btn--ghost"
+                  onClick={goBack}
+                >
+                  <IconArrowLeft size={14} />
+                  <span>{t.placement.btnBack}</span>
+                </button>
+              )}
               <button
                 type="button"
-                className="insignia-btn insignia-btn-secondary"
-                onClick={() => handleCloseConfirm(false)}
+                className="insignia-btn insignia-btn--primary"
+                onClick={() => void goNext()}
+                disabled={continueDisabled}
               >
-                Cancel
-              </button>
-              <button
-                type="button"
-                className="insignia-btn insignia-btn-primary"
-                onClick={() => handleCloseConfirm(true)}
-              >
-                Close
+                <span>{t.upload.btnNext}</span>
+                <IconArrowRight size={14} />
               </button>
             </div>
-          </div>
-        </div>
-      )}
+          </>
+        )}
+      </footer>
+    );
+  }
+}
 
-      {showPreviewSheet && (
-        <PreviewSheet
-          open={showPreviewSheet}
-          onClose={() => setShowPreviewSheet(false)}
-          config={config}
-          placementSelections={placementSelections}
-          logo={logo}
-          t={t}
+// ─── Review footer (Add-to-Cart) ─────────────────────────────────────────────
+
+function ReviewFooter({
+  currency,
+  totalCents,
+  totalQty,
+  submitState,
+  submitErrorCode,
+  onBack,
+  onShowPreview,
+  onSubmit,
+  t,
+}: {
+  currency: string;
+  totalCents: number;
+  totalQty: number;
+  submitState: SubmitState;
+  submitErrorCode: string | null;
+  onBack: () => void;
+  onShowPreview: () => void;
+  onSubmit: () => void;
+  t: ReturnType<typeof getTranslations>;
+}) {
+  const disabled = totalQty === 0 || submitState === "submitting" || submitState === "success";
+
+  // In error/pool-exhausted states, the primary CTA becomes "Try again" so
+  // it's the obvious next step. We disable it slightly less than the success
+  // CTA — empty cart still blocks it.
+  const inErrorState = submitState === "error" || submitState === "pool-exhausted";
+  let buttonLabel: React.ReactNode;
+  if (inErrorState) {
+    buttonLabel = (
+      <>
+        <IconAlertTriangle size={16} />
+        <span>{t.v2.review.errorRetry}</span>
+      </>
+    );
+  } else if (submitState === "submitting") {
+    buttonLabel = (
+      <>
+        {/* AlpVH (D4): loader-circle always visible immediately (no delay) +
+            "Adding to cart…" — fill driven by [data-state="submitting"] CSS */}
+        <IconLoaderCircle
+          size={16}
+          aria-hidden="true"
+          className="insignia-spin"
         />
-      )}
-    </div>
+        <span>{t.v2.review.submitting}</span>
+      </>
+    );
+  } else if (submitState === "success") {
+    buttonLabel = (
+      <>
+        {/* EsOhG (D5): circle-check size 18 + "Added to cart" —
+            fill driven by [data-state="success"] CSS (#065F46) */}
+        <IconCircleCheck size={18} aria-hidden="true" />
+        <span>{t.v2.review.success}</span>
+      </>
+    );
+  } else {
+    buttonLabel = (
+      <>
+        {/* D3: icon + label + em-dash separator (50% opacity) + price per .pen design (Nt3H7) */}
+        <IconShoppingCart size={16} />
+        <span>{t.v2.review.addToCart}</span>
+        <span aria-hidden="true" style={{ opacity: 0.5 }}>—</span>
+        <span>{formatCurrency(totalCents, currency)}</span>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, gap: 8 }}>
+        {submitState === "pool-exhausted" && (
+          <div className="insignia-banner" data-tone="warning" role="alert">
+            <span className="insignia-banner-icon"><IconAlertTriangle size={14} /></span>
+            <div className="insignia-banner-body">
+              <strong>
+                {t.v2.review.poolExhaustedTitle}
+                {submitErrorCode && (
+                  <span className="insignia-banner-code"> ({submitErrorCode})</span>
+                )}
+              </strong>
+              <div>{t.v2.review.poolExhaustedBody}</div>
+            </div>
+          </div>
+        )}
+        {submitState === "error" && (
+          <div className="insignia-banner" data-tone="error" role="alert">
+            <span className="insignia-banner-icon"><IconAlertTriangle size={14} /></span>
+            <div className="insignia-banner-body">
+              <strong>
+                {t.v2.review.errorTitle}
+                {submitErrorCode && (
+                  <span className="insignia-banner-code"> ({submitErrorCode})</span>
+                )}
+              </strong>
+              <div>{t.v2.review.errorBody}</div>
+            </div>
+          </div>
+        )}
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <button
+            type="button"
+            className="insignia-btn insignia-btn--ghost"
+            onClick={onBack}
+            aria-label={t.placement.btnBack}
+          >
+            <IconArrowLeft size={14} />
+          </button>
+          <button
+            type="button"
+            className="insignia-btn insignia-btn--icon insignia-only-mobile"
+            onClick={onShowPreview}
+            aria-label={t.previewSheet.title}
+          >
+            <IconEye size={16} />
+          </button>
+          <button
+            type="button"
+            className="insignia-btn insignia-btn--success"
+            data-state={
+              submitState === "success"
+                ? "success"
+                : submitState === "submitting"
+                  ? "submitting"
+                  : undefined
+            }
+            onClick={onSubmit}
+            disabled={disabled}
+            style={{ flex: 1 }}
+            aria-live="polite"
+          >
+            {buttonLabel}
+          </button>
+        </div>
+        {/* qty=0: button already grays out via .insignia-btn--success:disabled — no separate hint needed */}
+      </div>
+    </>
   );
 }

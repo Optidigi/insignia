@@ -1,6 +1,23 @@
+/**
+ * Native HTML Canvas 2D renderer for product mockups + scaled logo overlays.
+ *
+ * Uses plain Canvas API (NOT Konva — Konva is admin-only). Draws a product
+ * image and one or more logo overlays positioned by percent-of-image
+ * coordinates and scaled by per-placement scaleFactor.
+ *
+ * Tainted-canvas note: R2 presigned URLs serve no CORS headers, so drawing
+ * the image marks the canvas tainted. We never call toDataURL/getImageData,
+ * so display works fine. Don't try to "fix" this — see CLAUDE.md.
+ *
+ * The new modal wraps this in its own data-state container for loading /
+ * failed UI; this component reports its load state via onLoadStateChange so
+ * the parent can render whatever shell it wants. The legacy inline spinner
+ * is kept as a fallback for callers that don't supply a parent shell.
+ */
+
 import { useRef, useEffect, useState, useCallback } from "react";
 
-type Placement = {
+export type CanvasPlacement = {
   id: string;
   centerXPercent: number;
   centerYPercent: number;
@@ -8,19 +25,43 @@ type Placement = {
   scaleFactor?: number;
 };
 
+export type ImageMeta = {
+  naturalWidthPx: number;
+  naturalHeightPx: number;
+  aspect: number;
+};
+
 type NativeCanvasProps = {
   imageUrl: string;
   logoUrl: string | null;
-  placements: Placement[];
+  placements: CanvasPlacement[];
   highlightedPlacementId?: string | null;
-  /** @deprecated Use per-placement scaleFactor instead. Kept as fallback. */
+  /** @deprecated Use per-placement scaleFactor instead. */
   sizeMultiplier?: number;
   className?: string;
+  /**
+   * When true, parent renders its own loading/error UI. The canvas just
+   * stays empty until ready, and reports state changes via onLoadStateChange.
+   */
+  headless?: boolean;
+  onLoadStateChange?: (state: "loading" | "ready" | "error") => void;
+  /**
+   * Reports the loaded image's natural pixel dimensions + aspect ratio
+   * (width/height). Fired once per `imageUrl` after the image loads.
+   * Consumers use this for wide-aspect frame detection (B6) and for
+   * calibration cm computation (C6).
+   */
+  onImageMeta?: (meta: ImageMeta) => void;
+  /**
+   * Reports the loaded LOGO's intrinsic pixel dimensions + aspect.
+   * Fired once per `logoUrl` after the logo image loads. Consumers use
+   * this to compute the actual rendered logo size in cm (the logo is
+   * letterboxed inside the placement zone — only one of width/height
+   * matches the zone, the other is determined by the logo's aspect ratio).
+   */
+  onLogoMeta?: (meta: ImageMeta | null) => void;
 };
 
-// Canvas dimensions are computed dynamically from the loaded image's aspect ratio,
-// capped at MAX_CANVAS_DIM on the longer side. This eliminates letterboxing for
-// any product image shape (portrait, landscape, or square).
 const MAX_CANVAS_DIM = 700;
 
 export default function NativeCanvas({
@@ -30,6 +71,10 @@ export default function NativeCanvas({
   highlightedPlacementId,
   sizeMultiplier = 0.6,
   className,
+  headless = false,
+  onLoadStateChange,
+  onImageMeta,
+  onLogoMeta,
 }: NativeCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [loaded, setLoaded] = useState(false);
@@ -41,6 +86,7 @@ export default function NativeCanvas({
   useEffect(() => {
     setLoaded(false);
     setError(false);
+    onLoadStateChange?.("loading");
     const img = new Image();
     let cancelled = false;
     img.onload = () => {
@@ -58,11 +104,18 @@ export default function NativeCanvas({
       setCanvasDims({ w, h });
       setLoaded(true);
       setError(false);
+      onLoadStateChange?.("ready");
+      onImageMeta?.({
+        naturalWidthPx: img.naturalWidth,
+        naturalHeightPx: img.naturalHeight,
+        aspect,
+      });
     };
     img.onerror = () => {
       if (cancelled) return;
       setError(true);
       setLoaded(false);
+      onLoadStateChange?.("error");
     };
     img.src = imageUrl;
     return () => {
@@ -70,6 +123,7 @@ export default function NativeCanvas({
       img.onload = null;
       img.onerror = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageUrl]);
 
   const draw = useCallback(() => {
@@ -128,6 +182,8 @@ export default function NativeCanvas({
   useEffect(() => {
     if (!logoUrl) {
       logoImgRef.current = null;
+      onLogoMeta?.(null);
+      if (loaded) draw();
       return;
     }
     const img = new Image();
@@ -135,7 +191,11 @@ export default function NativeCanvas({
     img.onload = () => {
       if (cancelled) return;
       logoImgRef.current = img;
-      // Trigger redraw
+      onLogoMeta?.({
+        naturalWidthPx: img.naturalWidth,
+        naturalHeightPx: img.naturalHeight,
+        aspect: img.naturalHeight ? img.naturalWidth / img.naturalHeight : 1,
+      });
       if (loaded) draw();
     };
     img.src = logoUrl;
@@ -149,6 +209,19 @@ export default function NativeCanvas({
   useEffect(() => {
     if (loaded) draw();
   }, [loaded, draw]);
+
+  if (headless) {
+    if (!loaded || error) return null;
+    return (
+      <canvas
+        ref={canvasRef}
+        width={canvasDims.w}
+        height={canvasDims.h}
+        className={className}
+        style={{ maxWidth: "100%", height: "auto", display: "block" }}
+      />
+    );
+  }
 
   if (error) {
     return (
@@ -186,18 +259,7 @@ export default function NativeCanvas({
           justifyContent: "center",
           borderRadius: "12px",
         }}
-      >
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            border: "4px solid #e5e7eb",
-            borderTopColor: "#2563eb",
-            borderRadius: "50%",
-            animation: "spin 1s linear infinite",
-          }}
-        />
-      </div>
+      />
     );
   }
 
@@ -207,7 +269,7 @@ export default function NativeCanvas({
       width={canvasDims.w}
       height={canvasDims.h}
       className={className}
-      style={{ maxWidth: "100%", height: "auto", borderRadius: "12px" }}
+      style={{ maxWidth: "100%", height: "auto", display: "block" }}
     />
   );
 }

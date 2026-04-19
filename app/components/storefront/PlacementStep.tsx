@@ -1,44 +1,57 @@
 /**
- * Step 2: Placement selection — choose one or more print locations.
- * Design: tiles with checkbox (filled blue when selected, grey border when not),
- * name (#374151 unselected / #111827 selected), price (#9CA3AF normal / #2563EB bold selected).
- * Desktop shows a page heading + method badge.
+ * Step 2 — Placement selection.
+ *
+ * Pattern: full-row tap target (label + hidden checkbox), one row per
+ * configured placement. Selected row gets tint fill + accent border.
+ *
+ * Auto-selects when there's exactly one placement and nothing is set.
+ *
+ * Backend bindings: none (pure UI state on top of config.placements).
  */
 
 import { useEffect } from "react";
 import type { StorefrontConfig, PlacementSelections } from "./types";
+import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
-import { formatCurrency } from "./currency";
-import { IconCheck, IconSparkles } from "./icons";
+import { formatPriceDelta } from "./currency";
+import { IconCheck } from "./icons";
+import { PreviewCanvas } from "./PreviewCanvas";
+import type { ImageMeta } from "./NativeCanvas";
 
 type PlacementStepProps = {
   config: StorefrontConfig;
   placementSelections: PlacementSelections;
   onPlacementSelectionsChange: (s: PlacementSelections) => void;
-  onContinue: () => void;
-  selectedMethodId: string | null;
+  logo: LogoState;
+  desktopActiveViewId?: string;
+  onDesktopActiveViewChange?: (viewId: string) => void;
+  highlightedPlacementId?: string | null;
+  onImageMeta?: (viewId: string, meta: ImageMeta) => void;
   t: TranslationStrings;
+  onAnalytics?: (name: string, detail: Record<string, unknown>) => void;
 };
+
+function viewName(view: { name: string | null; perspective: string }): string {
+  if (view.name) return view.name;
+  return view.perspective.charAt(0).toUpperCase() + view.perspective.slice(1);
+}
 
 export function PlacementStep({
   config,
   placementSelections,
   onPlacementSelectionsChange,
-  selectedMethodId,
+  logo,
+  desktopActiveViewId,
+  onDesktopActiveViewChange,
+  highlightedPlacementId,
+  onImageMeta,
   t,
+  onAnalytics,
 }: PlacementStepProps) {
-  const fmt = (cents: number) => formatCurrency(cents, config.currency);
-  const toggle = (placementId: string, defaultStepIndex: number) => {
-    const next = { ...placementSelections };
-    if (next[placementId] !== undefined) {
-      delete next[placementId];
-    } else {
-      next[placementId] = defaultStepIndex;
-    }
-    onPlacementSelectionsChange(next);
-  };
+  const totalPlacements = config.placements.length;
+  const selectedCount = Object.keys(placementSelections).length;
 
-  // Auto-select when there is exactly one placement and nothing is selected yet
+  // Auto-select if exactly one placement is configured.
   useEffect(() => {
     if (
       config.placements.length === 1 &&
@@ -48,70 +61,108 @@ export function PlacementStep({
         [config.placements[0].id]: config.placements[0].defaultStepIndex,
       });
     }
-  }, [config.placements.length]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.placements.length]);
+
+  const toggle = (placementId: string, defaultStepIndex: number) => {
+    const next: PlacementSelections = { ...placementSelections };
+    let action: "select" | "deselect";
+    if (next[placementId] !== undefined) {
+      delete next[placementId];
+      action = "deselect";
+    } else {
+      next[placementId] = defaultStepIndex;
+      action = "select";
+    }
+    onPlacementSelectionsChange(next);
+    onAnalytics?.("placement_selected", {
+      placementId,
+      selected: action === "select",
+      totalSelected: Object.keys(next).length,
+    });
+  };
 
   return (
-    <section aria-labelledby="placement-heading">
-      <h2 id="placement-heading" className="visually-hidden">
-        {t.placement.title}
-      </h2>
-
-      {/* Desktop-only step heading */}
+    <section aria-labelledby="insignia-placement-heading">
       <div className="insignia-step-heading">
-        <p className="insignia-step-heading-title">{t.placement.title}</p>
+        <h2 id="insignia-placement-heading" className="insignia-step-heading-title">
+          {t.placement.title}
+        </h2>
         <p className="insignia-step-heading-sub">{t.placement.subtitle}</p>
       </div>
 
-      {/* Method badge */}
-      {selectedMethodId && (
-        <div className="insignia-method-badge">
-          <IconSparkles size={14} />
-          <span>{config.methods.find((m) => m.id === selectedMethodId)?.name ?? ""}</span>
-        </div>
-      )}
+      <PreviewCanvas
+        config={config}
+        placementSelections={placementSelections}
+        logo={logo}
+        highlightPlacementId={highlightedPlacementId}
+        viewId={desktopActiveViewId}
+        onViewChange={onDesktopActiveViewChange}
+        onImageMeta={onImageMeta}
+        context="step"
+        t={t}
+      />
 
-      <p className="insignia-section-label">{t.placement.sectionLabel}</p>
-      <div className="insignia-placement-grid">
+      <div className="insignia-pick-header">
+        <span className="insignia-pick-header-title">{t.v2.placement.title}</span>
+        <span className="insignia-pick-header-meta">
+          {t.v2.placement.selectedCount
+            .replace("{count}", String(selectedCount))
+            .replace("{total}", String(totalPlacements))}
+        </span>
+      </div>
+
+      <div className="insignia-placement-list">
         {config.placements.map((p) => {
           const selected = placementSelections[p.id] !== undefined;
-          const priceText =
-            selected && p.basePriceAdjustmentCents === 0
-              ? t.placement.included
-              : `+${fmt(p.basePriceAdjustmentCents)}`;
+          // Find which view owns this placement so we can show its name as subtitle.
+          const ownerView = config.views.find((v) => p.geometryByViewId[v.id] != null);
+          const ownerLabel = ownerView ? `${viewName(ownerView)} view` : null;
+          const isFree = p.basePriceAdjustmentCents === 0;
+          // Zero-delta: green "Included" when selected, hidden otherwise.
+          // Positive delta: always show "+€X.XX" in accent. Never render "+€0.00".
+          const showPrice = isFree ? selected : true;
+
           return (
-            <button
+            <label
               key={p.id}
-              type="button"
-              className="insignia-placement-tile"
-              data-selected={selected ? "true" : undefined}
-              onClick={() => toggle(p.id, p.defaultStepIndex)}
-              aria-pressed={selected}
+              className="insignia-placement-row"
+              data-state={selected ? "selected" : undefined}
+              onMouseEnter={() => {
+                if (onDesktopActiveViewChange && ownerView?.id) {
+                  onDesktopActiveViewChange(ownerView.id);
+                }
+              }}
             >
-              <div className="insignia-checkbox" data-checked={selected ? "true" : undefined}>
-                {selected && <IconCheck size={12} style={{ color: "white" }} />}
-              </div>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div className="name">{p.name}</div>
-                {(!p.hidePriceWhenZero || p.basePriceAdjustmentCents > 0 || selected) && (
-                  <div
-                    className="price"
-                    data-included={
-                      selected && p.basePriceAdjustmentCents === 0 ? "true" : undefined
-                    }
-                  >
-                    {priceText}
-                  </div>
+              <input
+                type="checkbox"
+                checked={selected}
+                onChange={() => toggle(p.id, p.defaultStepIndex)}
+                aria-label={p.name}
+              />
+              <span className="insignia-checkbox" aria-hidden="true">
+                <IconCheck className="insignia-checkbox-check" size={14} />
+              </span>
+              <span className="insignia-placement-row-text">
+                <span className="insignia-placement-row-name">{p.name}</span>
+                {ownerLabel && (
+                  <span className="insignia-placement-row-view">{ownerLabel}</span>
                 )}
-              </div>
-            </button>
+              </span>
+              {showPrice && (
+                <span
+                  className="insignia-placement-row-price"
+                  data-included={selected && isFree ? "true" : undefined}
+                >
+                  {selected && isFree
+                    ? t.v2.placement.included
+                    : formatPriceDelta(p.basePriceAdjustmentCents, config.currency)}
+                </span>
+              )}
+            </label>
           );
         })}
       </div>
-      {config.placements.length === 1 && (
-        <p style={{ color: "var(--insignia-text-secondary)", fontSize: 13, marginTop: 8 }}>
-          This product has one print area.
-        </p>
-      )}
     </section>
   );
 }

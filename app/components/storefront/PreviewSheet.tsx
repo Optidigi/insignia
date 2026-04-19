@@ -1,9 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+/**
+ * E7 — Mobile bottom-sheet preview overlay.
+ *
+ * Hidden on desktop (CSS rule). Drag handle at top dismisses on swipe-down.
+ * Sticky header with title + close button. Body contains a PreviewCanvas
+ * scrolled into a `min(85dvh, 720px)` bounded surface so iOS URL bar
+ * collapse can't crop content.
+ */
+
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
-import NativeCanvas from "./NativeCanvas";
-import { IconX, IconChevronLeft, IconChevronRight, IconInfo } from "./icons";
+import { PreviewCanvas } from "./PreviewCanvas";
+import { IconX } from "./icons";
 
 type PreviewSheetProps = {
   open: boolean;
@@ -14,211 +23,109 @@ type PreviewSheetProps = {
   t: TranslationStrings;
 };
 
-export function PreviewSheet({ open, onClose, config, placementSelections, logo, t }: PreviewSheetProps) {
-  const [currentViewIndex, setCurrentViewIndex] = useState(0);
+const DISMISS_THRESHOLD_PX = 80;
+
+export function PreviewSheet({
+  open,
+  onClose,
+  config,
+  placementSelections,
+  logo,
+  t,
+}: PreviewSheetProps) {
   const [dragY, setDragY] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragListenersRef = useRef<{ onMove: (e: PointerEvent) => void; onUp: (e: PointerEvent) => void } | null>(null);
+  const dragStartRef = useRef<number | null>(null);
 
-  // Derive logo URL from logo state (same logic as SizePreview)
-  const logoUrl = useMemo(() => {
-    if (logo.type === "uploaded") return logo.previewPngUrl;
-    if (logo.type === "later" && config.placeholderLogo.mode === "merchant_asset" && config.placeholderLogo.imageUrl) {
-      return config.placeholderLogo.imageUrl;
-    }
-    return null;
-  }, [logo, config.placeholderLogo]);
-
-  // Compute previewable views (views with image + at least one selected placement with geometry)
-  const previewableViews = useMemo(() => {
-    return config.views.filter(view => {
-      if (!view.imageUrl) return false;
-      return config.placements.some(p => {
-        if (placementSelections[p.id] === undefined) return false;
-        return p.geometryByViewId[view.id] != null;
-      });
-    });
-  }, [config.views, config.placements, placementSelections]);
-
-  // Build NativeCanvas placement data for current view
-  const currentView = previewableViews[currentViewIndex];
-  const canvasPlacements = useMemo(() => {
-    if (!currentView) return [];
-    return config.placements
-      .filter(p => placementSelections[p.id] !== undefined && p.geometryByViewId[currentView.id] != null)
-      .map(p => {
-        const geom = p.geometryByViewId[currentView.id]!;
-        return {
-          id: p.id,
-          centerXPercent: geom.centerXPercent,
-          centerYPercent: geom.centerYPercent,
-          maxWidthPercent: geom.maxWidthPercent,
-        };
-      });
-  }, [config.placements, currentView, placementSelections]);
-
-  // Close on Escape
+  // Esc closes.
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
-      }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
-  // Reset view index when opening
-  useEffect(() => {
-    if (open) setCurrentViewIndex(0);
-  }, [open]);
-
-  const goPrev = useCallback(() => {
-    setCurrentViewIndex(i => Math.max(0, i - 1));
+  const onPointerDown = useCallback((e: React.PointerEvent) => {
+    dragStartRef.current = e.clientY;
+    (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
   }, []);
 
-  const goNext = useCallback(() => {
-    setCurrentViewIndex(i => Math.min(previewableViews.length - 1, i + 1));
-  }, [previewableViews.length]);
-
-  // Clean up drag listeners if the component unmounts mid-drag
-  useEffect(() => {
-    return () => {
-      if (dragListenersRef.current) {
-        document.removeEventListener("pointermove", dragListenersRef.current.onMove);
-        document.removeEventListener("pointerup", dragListenersRef.current.onUp);
-      }
-    };
+  const onPointerMove = useCallback((e: React.PointerEvent) => {
+    if (dragStartRef.current == null) return;
+    const delta = e.clientY - dragStartRef.current;
+    if (delta > 0) setDragY(delta);
   }, []);
 
-  const handleDragStart = (e: React.PointerEvent) => {
-    setIsDragging(true);
-    const startY = e.clientY;
-    const onMove = (moveEvent: PointerEvent) => {
-      const delta = Math.max(0, moveEvent.clientY - startY);
-      setDragY(delta);
-    };
-    const onUp = (upEvent: PointerEvent) => {
-      document.removeEventListener("pointermove", onMove);
-      document.removeEventListener("pointerup", onUp);
-      dragListenersRef.current = null;
-      const delta = upEvent.clientY - startY;
-      setIsDragging(false);
-      if (delta > 150) {
+  const onPointerUp = useCallback(
+    (e: React.PointerEvent) => {
+      if (dragStartRef.current == null) return;
+      const delta = e.clientY - dragStartRef.current;
+      dragStartRef.current = null;
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+      if (delta > DISMISS_THRESHOLD_PX) {
+        setDragY(0);
         onClose();
+      } else {
+        setDragY(0);
       }
-      setDragY(0);
-    };
-    dragListenersRef.current = { onMove, onUp };
-    document.addEventListener("pointermove", onMove);
-    document.addEventListener("pointerup", onUp);
-  };
+    },
+    [onClose],
+  );
 
   if (!open) return null;
 
   return (
-    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions
-    <div className="insignia-preview-sheet-overlay" onClick={onClose} role="presentation">
-      {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
+    <>
+      <div
+        className="insignia-preview-sheet-backdrop"
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div
         className="insignia-preview-sheet"
         role="dialog"
         aria-modal="true"
         aria-label={t.previewSheet.title}
-        onClick={e => e.stopPropagation()}
-        onKeyDown={e => e.stopPropagation()}
-        style={isDragging ? { transform: `translateY(${dragY}px)`, transition: "none" } : undefined}
+        style={{
+          transform: dragY > 0 ? `translateY(${dragY}px)` : undefined,
+          transition: dragStartRef.current == null ? "transform var(--insignia-dur-med) var(--insignia-ease-out)" : "none",
+        }}
       >
-        {/* Drag handle */}
         <div
-          className="insignia-preview-sheet-handle-wrap"
-          onPointerDown={handleDragStart}
-          style={{ touchAction: "none", cursor: "grab" }}
-        >
-          <div className="insignia-preview-sheet-handle" />
-        </div>
-
-        {/* Header */}
+          className="insignia-preview-sheet-handle"
+          onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          onPointerCancel={() => {
+            dragStartRef.current = null;
+            setDragY(0);
+          }}
+          role="button"
+          aria-label={t.v2.preview.dragHandle}
+          tabIndex={0}
+        />
         <div className="insignia-preview-sheet-header">
-          <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: "#111827" }}>
-            {t.previewSheet.title}
-          </h3>
+          <span className="insignia-preview-sheet-title">{t.previewSheet.title}</span>
           <button
             type="button"
-            className="insignia-preview-sheet-close"
+            className="insignia-modal-close"
             onClick={onClose}
-            aria-label="Close preview"
+            aria-label={t.v2.preview.closeSheet}
           >
             <IconX size={18} />
           </button>
         </div>
-
-        {/* Preview area */}
-        <div className="insignia-preview-sheet-area" style={{ position: "relative" }}>
-          {currentView ? (
-            <>
-              <NativeCanvas
-                imageUrl={currentView.imageUrl!}
-                logoUrl={logoUrl}
-                placements={canvasPlacements}
-              />
-
-              {previewableViews.length > 1 && (
-                <>
-                  <button
-                    type="button"
-                    className="insignia-preview-sheet-nav"
-                    data-dir="prev"
-                    disabled={currentViewIndex === 0}
-                    onClick={goPrev}
-                    aria-label="Previous view"
-                  >
-                    <IconChevronLeft size={18} />
-                  </button>
-                  <button
-                    type="button"
-                    className="insignia-preview-sheet-nav"
-                    data-dir="next"
-                    disabled={currentViewIndex === previewableViews.length - 1}
-                    onClick={goNext}
-                    aria-label="Next view"
-                  >
-                    <IconChevronRight size={18} />
-                  </button>
-                </>
-              )}
-
-              {/* Dot indicators */}
-              {previewableViews.length > 1 && (
-                <div className="insignia-preview-sheet-dots" style={{ position: "absolute", bottom: 8, left: 0, right: 0 }}>
-                  {previewableViews.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      className="insignia-preview-sheet-dot"
-                      data-active={i === currentViewIndex ? "true" : undefined}
-                      onClick={() => setCurrentViewIndex(i)}
-                      aria-label={`View ${i + 1}`}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "#9CA3AF" }}>
-              No preview available
-            </div>
-          )}
-        </div>
-
-        {/* Caption */}
-        <div className="insignia-preview-sheet-caption">
-          <IconInfo size={14} />
-          <span>{t.previewSheet.caption}</span>
+        <div className="insignia-preview-sheet-body">
+          <PreviewCanvas
+            config={config}
+            placementSelections={placementSelections}
+            logo={logo}
+            context="sheet"
+            t={t}
+          />
         </div>
       </div>
-    </div>
+    </>
   );
 }

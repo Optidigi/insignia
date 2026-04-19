@@ -7,6 +7,8 @@ export type PlacementGeometry = {
   centerXPercent: number;
   centerYPercent: number;
   maxWidthPercent: number;
+  /** Optional — set when the merchant configured a specific zone height. */
+  maxHeightPercent?: number | null;
 };
 
 export type PlacementStep = {
@@ -31,6 +33,14 @@ export type ConfiguredView = {
   perspective: "front" | "back" | "left" | "right" | "side" | "custom";
   imageUrl: string | null;
   isMissingImage: boolean;
+  /**
+   * Forward-compat: pixels-per-cm calibration from the placement editor's
+   * ruler tool. Null = not calibrated. The storefront config service does
+   * not return this yet (DB column exists at ProductView.calibrationPxPerCm
+   * but is not projected into the response). When backend ships, the size
+   * step will append "· ~N cm wide" to step labels.
+   */
+  calibrationPxPerCm?: number | null;
 };
 
 export type DecorationMethodRef = {
@@ -72,6 +82,19 @@ export type StorefrontConfig = {
   methods: DecorationMethodRef[];
   placements: Placement[];
   variants: ProductVariantOption[];
+  /**
+   * Forward-compat: shop's branding square logo URL fetched via
+   * `shop { brand { squareLogo { image { url } } } }`. The storefront
+   * config service does not return this yet. When backend ships, the
+   * modal header will prepend a 32×32 thumbnail before the title.
+   */
+  shopLogoUrl?: string | null;
+  /**
+   * Resolved storefront locale (BCP-47 base, e.g. "en", "nl"). Picked by the
+   * server from merchant default → Accept-Language → "en". The modal uses
+   * this to choose the right TranslationStrings bundle.
+   */
+  locale?: string;
 };
 
 export type PlacementSelection = {

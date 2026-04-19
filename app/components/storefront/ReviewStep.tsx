@@ -1,13 +1,22 @@
 /**
- * Step 4: Review — sectioned summary, B2B per-size quantities,
- * gradient total bar, green Add to Cart button.
+ * Step 4 — Review.
+ *
+ * Sectioned summary: garment row, method row, per-placement rows with
+ * "Included" tone for free placements, per-garment total. Logo card at top
+ * (D1 with thumbnail when uploaded; D10 amber clock when "later"). Quantity
+ * grid (D9): 4-column compact cards, each with size label + minus/input/plus
+ * stepper. iOS-friendly numeric input per design intent doc spec.
+ *
+ * Backend bindings: none in this component. The shell calls /price for the
+ * authoritative total and /prepare + /cart-confirm at submit time.
  */
 
 import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
-import { formatCurrency } from "./currency";
-import { IconEye } from "./icons";
+import { formatCurrency, formatPriceDelta } from "./currency";
+import { IconAlertTriangle, IconHelpCircle, IconMapPin, IconSparkles } from "./icons";
+import { QuantityGrid } from "./QuantityGrid";
 
 type PriceResult = {
   unitPriceCents: number;
@@ -24,258 +33,197 @@ type ReviewStepProps = {
   quantities: Record<string, number>;
   onQuantitiesChange: (q: Record<string, number>) => void;
   priceResult: PriceResult | null;
-  submitError: string | null;
-  onSaveDraftAndPrice: () => Promise<void>;
-  baseProductPriceCents: number;
-  productTitle: string;
-  onShowPreviewSheet: () => void;
+  priceLoading: boolean;
   t: TranslationStrings;
 };
+
+function originalFileName(logo: LogoState): string {
+  if (logo.type !== "uploaded") return "";
+  const url = logo.previewPngUrl;
+  // Best-effort: pick out the basename after the last slash, before query.
+  const path = url.split("?")[0];
+  const segs = path.split("/");
+  return segs[segs.length - 1] || "logo";
+}
 
 export function ReviewStep({
   config,
   selectedMethodId,
   placementSelections,
+  logo,
   quantities,
   onQuantitiesChange,
   priceResult,
-  submitError,
-  baseProductPriceCents,
-  productTitle,
-  onShowPreviewSheet,
+  priceLoading,
   t,
 }: ReviewStepProps) {
   const fmt = (cents: number) => formatCurrency(cents, config.currency);
 
   const methodName =
-    config.methods.find((m) => m.id === selectedMethodId)?.name ?? selectedMethodId;
-  const methodPriceCents =
+    config.methods.find((m) => m.id === selectedMethodId)?.customerName ??
+    config.methods.find((m) => m.id === selectedMethodId)?.name ??
+    selectedMethodId;
+  const methodFeeCents =
     config.methods.find((m) => m.id === selectedMethodId)?.basePriceCents ?? 0;
 
-  const selectedPlacements = Object.entries(placementSelections)
-    .map(([placementId, stepIndex]) => {
-      const placement = config.placements.find((p) => p.id === placementId);
-      if (!placement) return null;
-      const step = placement.steps[stepIndex];
+  // Iterate config.placements (canonical order) so the summary matches the
+  // order on Placement + Size steps. Object.entries(placementSelections)
+  // returns click-insertion order, which would scramble the rows here.
+  const selectedPlacements = config.placements
+    .filter((p) => placementSelections[p.id] !== undefined)
+    .map((p) => {
+      const stepIndex = placementSelections[p.id]!;
+      const step = p.steps[stepIndex];
       return {
-        id: placementId,
-        name: placement.name,
-        placementPriceCents: placement.basePriceAdjustmentCents,
+        id: p.id,
+        name: p.name,
         sizeLabel: step?.label ?? "",
-        sizePriceCents: step?.priceAdjustmentCents ?? 0,
+        placementCents: p.basePriceAdjustmentCents,
+        stepCents: step?.priceAdjustmentCents ?? 0,
       };
-    })
-    .filter((p): p is NonNullable<typeof p> => p !== null);
+    });
 
-  const totalFeeCents =
-    methodPriceCents +
-    selectedPlacements.reduce(
-      (sum, p) => sum + p.placementPriceCents + p.sizePriceCents,
-      0
-    );
-
-  // Variants are pre-filtered by the backend to only include sizes matching
-  // the selected variant's non-size options (e.g. same color).
-  const sizeVariants = config.variants;
-
-  const totalQuantity = Object.values(quantities).reduce((a, b) => a + b, 0);
-  const unitCents =
-    priceResult?.unitPriceCents ?? baseProductPriceCents + totalFeeCents;
-  const totalCents = unitCents * totalQuantity;
-
-  const setQty = (variantId: string, qty: number) => {
-    onQuantitiesChange({ ...quantities, [variantId]: Math.max(0, qty) });
-  };
+  const perGarmentCents =
+    (config.baseProductPriceCents || 0) +
+    methodFeeCents +
+    selectedPlacements.reduce((s, p) => s + p.placementCents + p.stepCents, 0);
+  const unitPriceCents = priceResult?.unitPriceCents ?? perGarmentCents;
+  const totalQty = Object.values(quantities).reduce((s, n) => s + n, 0);
 
   return (
-    <section aria-labelledby="review-heading">
-      <h2 id="review-heading" className="visually-hidden">
-        {t.review.orderSummary}
-      </h2>
-
-      {/* Desktop step heading */}
+    <section aria-labelledby="insignia-review-heading">
       <div className="insignia-step-heading">
-        <p className="insignia-step-heading-title">{t.review.orderSummary}</p>
-        <p className="insignia-step-heading-sub">{t.review.reviewSubtitle}</p>
+        <h2 id="insignia-review-heading" className="insignia-step-heading-title">
+          {t.review.orderSummary}
+        </h2>
       </div>
 
-      {/* Summary Card */}
       <div className="insignia-review-summary">
-        {/* PRODUCT section */}
-        <span className="insignia-review-section-label">{t.review.product}</span>
-        <div className="insignia-review-line">
-          <span className="insignia-review-line-name">{productTitle}</span>
-          <span className="insignia-review-line-price">
-            {fmt(baseProductPriceCents)}
-          </span>
-        </div>
-
-        <div className="insignia-review-divider" />
-
-        {/* DECORATION section */}
-        <span className="insignia-review-section-label">
-          {t.review.decoration}
-        </span>
-        <div className="insignia-review-line">
-          <span className="insignia-review-line-name">{methodName}</span>
-          <span className="insignia-review-line-price" data-blue="true">
-            +{fmt(methodPriceCents)}
-          </span>
-        </div>
-
-        <div className="insignia-review-divider" />
-
-        {/* CUSTOMIZATIONS section */}
-        <span className="insignia-review-section-label">
-          {t.review.customizations}
-        </span>
-        {selectedPlacements.map((p) => (
-          <div key={p.id} className="insignia-review-line">
-            <span className="insignia-review-line-name">
-              {p.name} placement{p.sizeLabel ? ` · ${p.sizeLabel}` : ""}
-            </span>
-            <span className="insignia-review-line-price">
-              +{fmt(p.placementPriceCents + p.sizePriceCents)}
-            </span>
-          </div>
-        ))}
-      </div>
-
-      {/* B2B per-size quantities */}
-      {sizeVariants.length > 0 && (
-        <div className="insignia-qty-section">
-          <div className="insignia-qty-section-header">
-            <span className="insignia-qty-section-title">
-              {t.review.orderQuantities}
-            </span>
-            <span className="insignia-qty-section-badge">
-              {totalQuantity} {t.review.items}
-            </span>
-          </div>
-          <div className="insignia-qty-grid">
-            {sizeVariants.map((variant) => {
-              const qty = quantities[variant.id] ?? 0;
-              const unavailable = !variant.available;
-              return (
-                <div
-                  key={variant.id}
-                  className="insignia-qty-card"
-                  data-unavailable={unavailable ? "true" : undefined}
-                  data-active={qty > 0 ? "true" : undefined}
-                >
-                  <span className="insignia-qty-card-label">
-                    {variant.sizeLabel}
-                  </span>
-                  {unavailable ? (
-                    <span className="insignia-qty-card-sold-out">Sold out</span>
-                  ) : (
-                    <div className="insignia-qty-card-stepper">
-                      <button
-                        type="button"
-                        className="insignia-qty-btn"
-                        disabled={qty <= 0}
-                        onClick={() => setQty(variant.id, qty - 1)}
-                        aria-label={`Decrease ${variant.sizeLabel}`}
-                      >
-                        −
-                      </button>
-                      <span className="insignia-qty-card-val">{qty}</span>
-                      <button
-                        type="button"
-                        className="insignia-qty-btn"
-                        disabled={qty >= 999}
-                        onClick={() => setQty(variant.id, qty + 1)}
-                        aria-label={`Increase ${variant.sizeLabel}`}
-                      >
-                        +
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Fallback single quantity if no variants */}
-      {config.variants.length === 0 && (
-        <div className="insignia-review-quantity">
-          <label htmlFor="insignia-qty" className="insignia-review-qty-label">
-            {t.review.quantity}
-          </label>
-          <div className="insignia-qty-stepper">
-            <button
-              type="button"
-              className="insignia-qty-btn"
-              onClick={() => {
-                const currentQty = Object.values(quantities)[0] ?? 1;
-                const key = Object.keys(quantities)[0] ?? "_default";
-                onQuantitiesChange({ [key]: Math.max(1, currentQty - 1) });
-              }}
-              disabled={(Object.values(quantities)[0] ?? 1) <= 1}
-              aria-label="Decrease quantity"
-            >
-              −
-            </button>
-            <input
-              id="insignia-qty"
-              type="number"
-              className="insignia-quantity-input"
-              min={1}
-              max={999}
-              value={Object.values(quantities)[0] ?? 1}
-              onChange={(e) => {
-                const v = parseInt(e.target.value, 10);
-                const key = Object.keys(quantities)[0] ?? "_default";
-                if (!isNaN(v) && v >= 1) onQuantitiesChange({ [key]: v });
-              }}
+        {logo.type === "uploaded" && (
+          <div className="insignia-review-logo-card">
+            <img
+              src={logo.previewPngUrl}
+              alt=""
+              className="insignia-review-logo-thumb"
             />
-            <button
-              type="button"
-              className="insignia-qty-btn insignia-qty-btn--plus"
-              onClick={() => {
-                const currentQty = Object.values(quantities)[0] ?? 1;
-                const key = Object.keys(quantities)[0] ?? "_default";
-                onQuantitiesChange({ [key]: currentQty + 1 });
-              }}
-              aria-label="Increase quantity"
-            >
-              +
-            </button>
+            <div className="insignia-review-logo-text">
+              <span className="insignia-review-logo-label">{t.v2.review.yourLogo}</span>
+              <span className="insignia-review-logo-name">{originalFileName(logo)}</span>
+            </div>
+          </div>
+        )}
+        {logo.type === "later" && (
+          <div className="insignia-review-logo-card insignia-review-logo-card--later">
+            <span className="insignia-review-logo-thumb insignia-review-logo-thumb--later">
+              <IconHelpCircle size={20} />
+            </span>
+            <div className="insignia-review-logo-text">
+              <span className="insignia-review-logo-label">{t.v2.review.artworkLabel}</span>
+              <span className="insignia-review-logo-name">{t.v2.review.artworkLaterBody}</span>
+            </div>
+          </div>
+        )}
+
+        <div className="insignia-review-row">
+          <span className="insignia-review-row-label">{config.productTitle}</span>
+          <span className="insignia-review-row-value">{fmt(config.baseProductPriceCents)}</span>
+        </div>
+        <div className="insignia-review-row">
+          <span className="insignia-review-row-label">
+            <IconSparkles className="icon" size={14} />
+            <span>{methodName}</span>
+          </span>
+          <span
+            className="insignia-review-row-value"
+            data-tone={methodFeeCents > 0 ? "accent" : "success"}
+          >
+            {methodFeeCents === 0 ? t.v2.placement.included : formatPriceDelta(methodFeeCents, config.currency)}
+          </span>
+        </div>
+
+        <div className="insignia-review-row" data-tone="header">
+          <span className="insignia-review-row-label">
+            <span className="insignia-section-label" style={{ margin: 0 }}>
+              {t.v2.review.customizationsLabel}
+            </span>
+          </span>
+          <span className="insignia-review-customizations-meta">
+            {(selectedPlacements.length === 1
+              ? t.v2.review.placementCount.one
+              : t.v2.review.placementCount.other
+            ).replace("{count}", String(selectedPlacements.length))}
+          </span>
+        </div>
+
+        {selectedPlacements.map((p) => {
+          const cents = p.placementCents + p.stepCents;
+          const free = cents === 0;
+          return (
+            <div key={p.id} className="insignia-review-row">
+              <span className="insignia-review-row-label">
+                <IconMapPin className="icon" size={14} />
+                <span>
+                  {p.name}
+                  {p.sizeLabel ? ` · ${p.sizeLabel}` : ""}
+                </span>
+              </span>
+              <span
+                className="insignia-review-row-value"
+                data-tone={free ? "success" : "accent"}
+              >
+                {free ? t.v2.placement.included : formatPriceDelta(cents, config.currency)}
+              </span>
+            </div>
+          );
+        })}
+
+        <div className="insignia-review-row" data-tone="total">
+          <span className="insignia-review-row-label">{t.v2.review.perGarment}</span>
+          <span className="insignia-review-row-value">
+            {priceLoading ? "—" : fmt(unitPriceCents)}
+          </span>
+        </div>
+      </div>
+
+      {logo.type === "later" && (
+        <div className="insignia-review-later-alert" role="note">
+          <IconAlertTriangle size={16} />
+          <div>
+            <p className="insignia-review-later-alert-title">
+              {t.v2.review.artworkLaterAlertTitle}
+            </p>
+            <p className="insignia-review-later-alert-body">
+              {t.v2.review.artworkLaterAlertBody}
+            </p>
           </div>
         </div>
       )}
 
-      {/* Gradient total bar */}
-      <div className="insignia-review-total-bar">
-        <div>
-          <span className="label">{t.review.orderTotalLabel}</span>
-          <span className="breakdown">
-            {totalQuantity} × ({fmt(baseProductPriceCents)} +{" "}
-            {fmt(totalFeeCents)} custom) · {t.review.perItem}
-          </span>
-        </div>
-        <span className="amount">{fmt(totalCents)}</span>
+      <div className="insignia-qty-header">
+        <span className="insignia-qty-header-title">{t.v2.review.orderQuantities}</span>
+        <span className="insignia-qty-header-meta">
+          {t.v2.review.sizesItems
+            .replace("{sizes}", String(config.variants.length))
+            .replace(
+              "{sizesUnit}",
+              config.variants.length === 1
+                ? t.v2.review.sizesUnit.one
+                : t.v2.review.sizesUnit.other,
+            )
+            .replace("{items}", String(totalQty))
+            .replace(
+              "{itemsUnit}",
+              totalQty === 1 ? t.v2.review.itemsUnit.one : t.v2.review.itemsUnit.other,
+            )}
+        </span>
       </div>
 
-      {/* Floating preview button — mobile only */}
-      <button
-        type="button"
-        className="insignia-preview-float-btn"
-        onClick={onShowPreviewSheet}
-      >
-        <IconEye size={16} />
-        <span>{t.review.previewBtn}</span>
-      </button>
-
-      {/* Error display */}
-      {submitError && (
-        <div className="insignia-error" role="alert" style={{ marginTop: 12 }}>
-          {submitError}
-        </div>
-      )}
-
+      <QuantityGrid
+        variants={config.variants}
+        quantities={quantities}
+        onChange={onQuantitiesChange}
+        t={t}
+      />
     </section>
   );
 }
