@@ -44,7 +44,17 @@ pnpm-lock.yaml
 
 # Screenshots (transient — taken by Playwright for verification)
 /*.jpg
+/*.jpeg
 /*.png
+
+# Dev tunnel / scratch logs
+console-*.log
+
+# Claude scheduled-task lock (transient)
+.claude/scheduled_tasks.lock
+
+# Local dev test scaffolding
+test-pages/
 
 # Stale snapshot files
 dashboard-snapshot.md
