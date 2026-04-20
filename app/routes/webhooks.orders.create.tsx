@@ -7,7 +7,7 @@
 
 import type { ActionFunctionArgs } from "react-router";
 import { Prisma, ProductionStatus } from "@prisma/client";
-import { authenticate } from "../shopify.server";
+import { authenticate, unauthenticated } from "../shopify.server";
 import db from "../db.server";
 import {
   processWebhookIdempotently,
@@ -36,7 +36,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
   let webhookError: unknown;
   try {
     await processWebhookIdempotently(shopRecord.id, eventId, topic, async () => {
-      await handleOrdersCreate(shopRecord.id, payload);
+      await handleOrdersCreate(shopRecord.id, payload, shop);
     });
   } catch (error) {
     console.error(`[orders/create] Error processing webhook:`, error);
@@ -47,7 +47,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function handleOrdersCreate(shopId: string, payload: any) {
+async function handleOrdersCreate(shopId: string, payload: any, shop: string) {
   const orderId = payload.admin_graphql_api_id || `gid://shopify/Order/${payload.id}`;
   const orderStatusUrl = payload.order_status_url ?? null;
   const lineItems = payload.line_items || [];
@@ -207,6 +207,36 @@ async function handleOrdersCreate(shopId: string, payload: any) {
 
     if (bound) {
       console.log(`[orders/create] Bound line item ${lineItemId} to order ${orderId}`);
+    }
+  }
+
+  // Tag the Shopify order after all lines are processed
+  const boundLines = await db.orderLineCustomization.findMany({
+    where: { shopifyOrderId: orderId, productConfig: { shopId: shopId } },
+    select: { artworkStatus: true },
+  });
+
+  if (boundLines.length > 0) {
+    const tags = ["insignia-customized"];
+    if (boundLines.some((l) => l.artworkStatus === "PENDING_CUSTOMER")) {
+      tags.push("insignia-artwork-pending");
+    }
+
+    try {
+      const { admin } = await unauthenticated.admin(shop);
+      await admin.graphql(
+        `#graphql
+        mutation tagsAdd($id: ID!, $tags: [String!]!) {
+          tagsAdd(id: $id, tags: $tags) {
+            node { id }
+            userErrors { field message }
+          }
+        }`,
+        { variables: { id: orderId, tags } }
+      );
+      console.log(`[orders/create] Tagged order ${orderId} with: ${tags.join(", ")}`);
+    } catch (e) {
+      console.error(`[orders/create] Failed to tag order ${orderId}:`, e);
     }
   }
 }

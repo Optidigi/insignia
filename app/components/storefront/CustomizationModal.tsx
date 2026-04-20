@@ -743,7 +743,7 @@ export function CustomizationModal({
       }
       return { cart, customizationId: cid };
     },
-    [ensureCustomization, selectedMethodId],
+    [ensureCustomization, selectedMethodId, selectedMethod, config, placementSelections, logo.type],
   );
 
   const onSubmit = useCallback(async (opts?: { isAutoRetry?: boolean }) => {
@@ -880,6 +880,9 @@ export function CustomizationModal({
     hasRetriedPool,
     step,
     productId,
+    selectedMethod,
+    placementSelections,
+    logo.type,
   ]);
 
   // ─── Render ──
