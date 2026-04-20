@@ -237,8 +237,16 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     orderDataError = true;
   }
 
-  // --- Per-line view preview data (Konva canvas) ---
-  const linePreviewData: Record<string, { imageUrl: string; geometry: Record<string, PlacementGeometry | null>; logoUrls: Record<string, string | null> } | null> = {};
+  type ViewPreview = {
+    viewId: string;
+    viewName: string;
+    imageUrl: string;
+    geometry: Record<string, PlacementGeometry | null>;
+    logoUrls: Record<string, string | null>;
+  };
+
+  // --- Per-line view preview data (Konva canvas) — all views per line ---
+  const linePreviewData: Record<string, ViewPreview[] | null> = {};
 
   await Promise.all(
     orderLines.map(async (line) => {
@@ -254,55 +262,62 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         },
         include: {
           productView: {
-            select: { id: true, placementGeometry: true, sharedZones: true },
+            select: { id: true, name: true, placementGeometry: true, sharedZones: true },
           },
         },
       });
 
-      let chosen: (typeof variantConfigs)[0] | null = null;
-      for (const vc of variantConfigs) {
-        if (vc.imageUrl) { chosen = vc; break; }
-      }
-      if (!chosen) { linePreviewData[line.id] = null; return; }
-
-      // Use immutable snapshot geometry when available; fall back to live config
       const snapshot = line.placementGeometrySnapshotByViewId as Record<string, Record<string, PlacementGeometry | null> | null> | null;
-      let effectiveGeometry: Record<string, PlacementGeometry | null>;
 
-      if (!line.useLiveConfigFallback && snapshot && chosen.productView?.id && snapshot[chosen.productView.id]) {
-        effectiveGeometry = (snapshot[chosen.productView.id] ?? {}) as Record<string, PlacementGeometry | null>;
-      } else {
-        const sharedZones = chosen.productView?.sharedZones ?? true;
-        const sharedGeometry = (chosen.productView?.placementGeometry ?? null) as Record<string, PlacementGeometry | null> | null;
-        const perVariantGeometry = (chosen.placementGeometry ?? null) as Record<string, PlacementGeometry | null> | null;
-        effectiveGeometry = sharedZones
-          ? (sharedGeometry ?? perVariantGeometry ?? {})
-          : (perVariantGeometry ?? sharedGeometry ?? {});
-      }
-
-      let signedImageUrl: string | null = null;
-      try {
-        const rawKey = chosen.imageUrl!;
-        const key = rawKey.startsWith("shops/")
-          ? rawKey
-          : rawKey.split("/").slice(-4).join("/");
-        signedImageUrl = await getPresignedGetUrl(key, 3600);
-      } catch (e) {
-        console.error(`[OrderDetail] failed to sign image URL for line ${line.id}:`, e);
-      }
-
-      // Build logoUrls map from already-computed logoAssetPreviewUrls
+      // Build logoUrls map shared across all views for this line
       const logoUrlsForLine: Record<string, string | null> = {};
       if (line.logoAssetIdsByPlacementId) {
         for (const [placementId, logoId] of Object.entries(line.logoAssetIdsByPlacementId as Record<string, string | null>)) {
-          const previewUrl = logoId ? (logoAssetPreviewUrls[logoId] || null) : null;
-          logoUrlsForLine[placementId] = previewUrl;
+          logoUrlsForLine[placementId] = logoId ? (logoAssetPreviewUrls[logoId] || null) : null;
         }
       }
 
-      linePreviewData[line.id] = signedImageUrl
-        ? { imageUrl: signedImageUrl, geometry: effectiveGeometry, logoUrls: logoUrlsForLine }
-        : null;
+      const views: ViewPreview[] = [];
+      for (const vc of variantConfigs) {
+        if (!vc.imageUrl) continue;
+        const viewId = vc.productView?.id;
+        if (!viewId) continue;
+
+        let geometry: Record<string, PlacementGeometry | null>;
+        if (!line.useLiveConfigFallback && snapshot && snapshot[viewId]) {
+          geometry = (snapshot[viewId] ?? {}) as Record<string, PlacementGeometry | null>;
+        } else {
+          const sharedZones = vc.productView?.sharedZones ?? true;
+          const sharedGeometry = (vc.productView?.placementGeometry ?? null) as Record<string, PlacementGeometry | null> | null;
+          const perVariantGeometry = (vc.placementGeometry ?? null) as Record<string, PlacementGeometry | null> | null;
+          geometry = sharedZones
+            ? (sharedGeometry ?? perVariantGeometry ?? {})
+            : (perVariantGeometry ?? sharedGeometry ?? {});
+        }
+
+        let signedImageUrl: string | null = null;
+        try {
+          const rawKey = vc.imageUrl;
+          const key = rawKey.startsWith("shops/")
+            ? rawKey
+            : rawKey.split("/").slice(-4).join("/");
+          signedImageUrl = await getPresignedGetUrl(key, 3600);
+        } catch (e) {
+          console.error(`[OrderDetail] failed to sign image URL for line ${line.id} view ${viewId}:`, e);
+        }
+
+        if (signedImageUrl) {
+          views.push({
+            viewId,
+            viewName: vc.productView?.name ?? "View",
+            imageUrl: signedImageUrl,
+            geometry,
+            logoUrls: logoUrlsForLine,
+          });
+        }
+      }
+
+      linePreviewData[line.id] = views.length > 0 ? views : null;
     })
   );
 
@@ -320,6 +335,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       variantTitle: shopifyVariantTitles[l.shopifyLineId] ?? null,
       unitPriceCents: l.customizationConfig?.unitPriceCents ?? 0,
       placements: l.productConfig?.views.flatMap((v) => v.placements) ?? [],
+      viewPlacements: l.productConfig?.views.map((v) => ({
+        viewId: v.id,
+        viewName: v.name,
+        placements: v.placements,
+      })) ?? [],
       logoAssetIdsByPlacementId: l.logoAssetIdsByPlacementId as Record<string, string | null> | null,
       createdAt: l.createdAt.toISOString(),
     })),
@@ -500,6 +520,8 @@ export default function OrderDetailPage() {
   const submit = useSubmit();
   const navigation = useNavigation();
 
+  // activeViewByLine tracks the selected view tab index per line card
+  const [activeViewByLine, setActiveViewByLine] = useState<Record<string, number>>({});
   // expandedUploader tracks which "lineId:placementId" is expanded, or "lineId:" for legacy
   const [expandedUploader, setExpandedUploader] = useState<string | null>(null);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -736,31 +758,53 @@ export default function OrderDetailPage() {
                     </Text>
                   </InlineStack>
 
-                  {/* Visual mockup canvas */}
+                  {/* Visual mockup canvas — multi-view with tab switcher */}
                   {(() => {
-                    const preview = linePreviewData[line.id];
-                    if (!preview) return null;
-
-                    const logoUrlsForLine = preview.logoUrls;
+                    const views = linePreviewData[line.id];
+                    if (!views || views.length === 0) return null;
+                    const activeIdx = activeViewByLine[line.id] ?? 0;
+                    const activeView = views[Math.min(activeIdx, views.length - 1)];
+                    const viewPlacements = line.viewPlacements.find((vp) => vp.viewId === activeView.viewId)?.placements ?? line.placements;
 
                     return (
-                      <Suspense fallback={<Spinner size="small" />}>
-                        <OrderLinePreviewLazy
-                          imageUrl={preview.imageUrl}
-                          placements={line.placements.map((p) => ({ id: p.id, name: p.name }))}
-                          geometry={preview.geometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number } | null>}
-                          logoUrls={logoUrlsForLine}
-                        />
-                      </Suspense>
+                      <BlockStack gap="200">
+                        {views.length > 1 && (
+                          <InlineStack gap="100">
+                            {views.map((v, idx) => (
+                              <Button
+                                key={v.viewId}
+                                size="slim"
+                                variant={idx === activeIdx ? "primary" : "plain"}
+                                onClick={() => setActiveViewByLine((prev) => ({ ...prev, [line.id]: idx }))}
+                              >
+                                {v.viewName}
+                              </Button>
+                            ))}
+                          </InlineStack>
+                        )}
+                        <Suspense fallback={<Spinner size="small" />}>
+                          <OrderLinePreviewLazy
+                            imageUrl={activeView.imageUrl}
+                            placements={viewPlacements.map((p) => ({ id: p.id, name: p.name }))}
+                            geometry={activeView.geometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number } | null>}
+                            logoUrls={activeView.logoUrls}
+                          />
+                        </Suspense>
+                      </BlockStack>
                     );
                   })()}
 
-                  {line.placements.length > 0 && (
+                  {line.viewPlacements.length > 0 && (
                     <BlockStack gap="200">
                       <Text variant="headingSm" as="h4">
                         Placements
                       </Text>
-                      {line.placements.map((p) => {
+                      {line.viewPlacements.map((vp) => (
+                        <BlockStack key={vp.viewId} gap="100">
+                          {line.viewPlacements.length > 1 && (
+                            <Text variant="headingXs" tone="subdued" as="p">{vp.viewName}</Text>
+                          )}
+                          {vp.placements.map((p) => {
                         const logoId = line.logoAssetIdsByPlacementId?.[p.id] ?? null;
                         const asset = logoId ? logoAssetMap[logoId] : null;
                         const uploaderKey = `${line.id}:${p.id}`;
@@ -818,6 +862,8 @@ export default function OrderDetailPage() {
                           </BlockStack>
                         );
                       })}
+                        </BlockStack>
+                      ))}
                     </BlockStack>
                   )}
 
