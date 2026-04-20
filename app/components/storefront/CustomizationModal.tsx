@@ -722,8 +722,14 @@ export function CustomizationModal({
       const garmentProps = buildGarmentProperties({
         customizationId: cid,
         methodCustomerName: selectedMethod?.customerName ?? selectedMethod?.name ?? "",
-        placementNames: Object.keys(placementSelections)
-          .map((id) => config?.placements.find((p) => p.id === id)?.name ?? id),
+        placementNames: Object.keys(placementSelections).map((id) => {
+          const placement = config?.placements.find((p) => p.id === id);
+          const name = placement?.name ?? id;
+          const stepLabel = (placement?.steps.length ?? 0) > 1
+            ? placement?.steps[placementSelections[id]]?.label
+            : undefined;
+          return stepLabel ? `${name} (${stepLabel})` : name;
+        }),
         artworkStatus: logo.type === "uploaded" ? "PROVIDED" : "PENDING_CUSTOMER",
       });
       const feeProps = buildFeeProperties();
@@ -801,8 +807,14 @@ export function CustomizationModal({
           const garmentProps = buildGarmentProperties({
             customizationId: cid,
             methodCustomerName: selectedMethod?.customerName ?? selectedMethod?.name ?? "",
-            placementNames: Object.keys(placementSelections)
-              .map((id) => config?.placements.find((p) => p.id === id)?.name ?? id),
+            placementNames: Object.keys(placementSelections).map((id) => {
+              const placement = config?.placements.find((p) => p.id === id);
+              const name = placement?.name ?? id;
+              const stepLabel = (placement?.steps.length ?? 0) > 1
+                ? placement?.steps[placementSelections[id]]?.label
+                : undefined;
+              return stepLabel ? `${name} (${stepLabel})` : name;
+            }),
             artworkStatus: logo.type === "uploaded" ? "PROVIDED" : "PENDING_CUSTOMER",
           });
           return {
