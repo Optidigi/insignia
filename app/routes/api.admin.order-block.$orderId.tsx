@@ -149,8 +149,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       logoThumbnailUrl: logoMap?.[p.id] ? (thumbnailUrls[logoMap[p.id]!] ?? null) : null,
     }));
 
+    // Check asset ID presence (not thumbnail URL) so transient presign failures don't flip status
     const overallArtworkStatus: "PROVIDED" | "PENDING_CUSTOMER" =
-      placementBlocks.some(p => !p.logoThumbnailUrl) || olc.artworkStatus === "PENDING_CUSTOMER"
+      allPlacements.some(p => !logoMap?.[p.id]) || olc.artworkStatus === "PENDING_CUSTOMER"
         ? "PENDING_CUSTOMER"
         : "PROVIDED";
 

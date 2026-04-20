@@ -7,6 +7,7 @@ import db from "../../db.server";
  */
 export async function syncOrderTags(
   shopifyOrderId: string,
+  shopId: string,
   admin: { graphql: (query: string, opts?: { variables?: Record<string, unknown> }) => Promise<Response> }
 ): Promise<void> {
   // Fetch current tags from Shopify so we don't clobber merchant tags
@@ -21,11 +22,14 @@ export async function syncOrderTags(
   );
   const tagsData = await currentTagsResp.json() as { data?: { order?: { tags?: string[] } } };
   const currentTags: string[] = tagsData.data?.order?.tags ?? [];
-  const nonInsigniaTags = currentTags.filter(t => !t.startsWith("insignia:"));
+  // Strip both colon-namespaced (current) and legacy flat-format tags
+  const nonInsigniaTags = currentTags.filter(
+    t => !t.startsWith("insignia:") && !t.startsWith("insignia-")
+  );
 
-  // Determine target insignia: tags from DB
+  // Determine target insignia: tags from DB, scoped by shopId to prevent cross-tenant reads
   const lines = await db.orderLineCustomization.findMany({
-    where: { shopifyOrderId },
+    where: { shopifyOrderId, productConfig: { shopId } },
     select: { productionStatus: true, artworkStatus: true },
   });
 

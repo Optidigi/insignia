@@ -484,7 +484,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
 
       // Fire-and-forget tag sync — never block the status advance on this
-      syncOrderTags(line.shopifyOrderId, admin).catch(e =>
+      syncOrderTags(line.shopifyOrderId, shop.id, admin).catch(e =>
         console.error(`[advance-status] Tag sync failed for ${line.shopifyOrderId}:`, e)
       );
 

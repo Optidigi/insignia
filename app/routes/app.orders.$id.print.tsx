@@ -3,6 +3,15 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import { getPresignedGetUrl } from "../lib/storage.server";
 
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { session, admin } = await authenticate.admin(request);
   const shopifyOrderId = decodeURIComponent(params.id ?? "");
@@ -90,6 +99,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     }
   } catch { /**/ }
 
+  const safeOrderName = escapeHtml(orderName);
+
   // Build HTML
   const lineHtml = olcs.map((olc, idx) => {
     const ld = lineData[olc.shopifyLineId];
@@ -102,6 +113,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const allPlacements = olc.productConfig?.views.flatMap(v => v.placements) ?? [];
     const assetMap = olc.logoAssetIdsByPlacementId as Record<string, string | null> | null;
 
+    const lineDesc = ld
+      ? `${escapeHtml(ld.title)}${ld.variantTitle ? ` — ${escapeHtml(ld.variantTitle)}` : ""} × ${ld.quantity}`
+      : escapeHtml(olc.shopifyLineId);
+
     const placementsHtml = allPlacements.map(p => {
       const assetId = assetMap?.[p.id];
       const asset = assetId ? logoMap[assetId] : null;
@@ -110,23 +125,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         <tr>
           <td style="padding:8px;border:1px solid #e5e7eb;">
             ${previewUrl
-              ? `<img src="${previewUrl}" style="width:60px;height:60px;object-fit:contain;" alt="Logo"/>`
+              ? `<img src="${escapeHtml(previewUrl)}" style="width:60px;height:60px;object-fit:contain;" alt="Logo"/>`
               : '<div style="width:60px;height:60px;background:#f3f4f6;display:flex;align-items:center;justify-content:center;font-size:10px;color:#9ca3af;">No logo</div>'}
           </td>
-          <td style="padding:8px;border:1px solid #e5e7eb;">${p.name}</td>
-          <td style="padding:8px;border:1px solid #e5e7eb;">${asset ? (asset.originalFileName ?? "—") : "⚠ Pending"}</td>
+          <td style="padding:8px;border:1px solid #e5e7eb;">${escapeHtml(p.name)}</td>
+          <td style="padding:8px;border:1px solid #e5e7eb;">${asset ? escapeHtml(asset.originalFileName ?? "—") : "⚠ Pending"}</td>
         </tr>`;
     }).join("");
 
     return `
       <div style="page-break-after:always;padding:24px;">
         <h2 style="margin:0 0 4px;font-size:18px;">Line ${idx + 1} of ${olcs.length}</h2>
-        <p style="margin:0 0 16px;color:#6b7280;font-size:14px;">${ld
-          ? `${ld.title}${ld.variantTitle ? ` — ${ld.variantTitle}` : ""} × ${ld.quantity}`
-          : olc.shopifyLineId}</p>
-        <p style="margin:0 0 4px;"><strong>Decoration:</strong> ${method}</p>
+        <p style="margin:0 0 16px;color:#6b7280;font-size:14px;">${lineDesc}</p>
+        <p style="margin:0 0 4px;"><strong>Decoration:</strong> ${escapeHtml(method)}</p>
         ${constraints
-          ? `<p style="margin:0 0 16px;font-size:12px;color:#6b7280;">File types: ${constraints.fileTypes?.join(", ") ?? "any"} · Max colors: ${constraints.maxColors ?? "—"} · Min DPI: ${constraints.minDpi ?? "—"}</p>`
+          ? `<p style="margin:0 0 16px;font-size:12px;color:#6b7280;">File types: ${escapeHtml(constraints.fileTypes?.join(", ") ?? "any")} · Max colors: ${escapeHtml(String(constraints.maxColors ?? "—"))} · Min DPI: ${escapeHtml(String(constraints.minDpi ?? "—"))}</p>`
           : ""}
         <table style="width:100%;border-collapse:collapse;font-size:13px;">
           <thead>
@@ -145,7 +158,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 <html>
 <head>
   <meta charset="utf-8"/>
-  <title>Production Sheet — ${orderName}</title>
+  <title>Production Sheet — ${safeOrderName}</title>
   <style>
     body { font-family: -apple-system, sans-serif; margin: 0; color: #111; }
     h1 { font-size: 22px; margin: 0 0 8px; }
@@ -160,7 +173,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     <button onclick="window.print()" style="padding:8px 16px;background:#4f46e5;color:#fff;border:none;border-radius:6px;cursor:pointer;">Print production sheet</button>
   </div>
   <div style="padding:24px 24px 0;">
-    <h1>Production Sheet — ${orderName}</h1>
+    <h1>Production Sheet — ${safeOrderName}</h1>
     <p style="color:#6b7280;margin:0 0 4px;">${olcs.length} customized line${olcs.length > 1 ? "s" : ""}</p>
   </div>
   ${lineHtml}

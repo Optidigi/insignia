@@ -217,9 +217,11 @@ async function handleOrdersCreate(shopId: string, payload: any, shop: string) {
   });
 
   if (boundLines.length > 0) {
-    const tags = ["insignia-customized"];
+    const tags = ["insignia:customized"];
     if (boundLines.some((l) => l.artworkStatus === "PENDING_CUSTOMER")) {
-      tags.push("insignia-artwork-pending");
+      tags.push("insignia:artwork-pending");
+    } else {
+      tags.push("insignia:artwork-ready");
     }
 
     try {
