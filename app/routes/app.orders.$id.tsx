@@ -79,7 +79,6 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       customizationConfig: {
         select: {
           id: true,
-          state: true,
           unitPriceCents: true,
           methodId: true,
           customizationDraftId: true,
@@ -149,13 +148,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   // Fetch order details from Shopify Admin GraphQL: customer info + line item prices
   let customer: { name: string; email: string } | null = null;
   const shopifyLineItemPrices: Record<string, { amount: string; currencyCode: string; quantity: number }> = {};
+  const shopifyVariantTitles: Record<string, string> = {};
   let currencyCode = shop.currencyCode ?? "";
   let orderDataError = false;
+  const idNum = shopifyOrderId.replace(/\D/g, "");
+  let orderName = `#${idNum.slice(-6)}`; // fallback until GraphQL returns name
   try {
     const orderResponse = await admin.graphql(
       `#graphql
       query GetOrderDetails($id: ID!) {
         order(id: $id) {
+          name
           currencyCode
           customer {
             firstName
@@ -167,6 +170,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
               node {
                 id
                 quantity
+                variant {
+                  title
+                }
                 originalUnitPriceSet {
                   shopMoney {
                     amount
@@ -183,6 +189,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const orderData = (await orderResponse.json()) as {
       data?: {
         order?: {
+          name?: string;
           currencyCode?: string;
           customer?: { firstName?: string; lastName?: string; email?: string } | null;
           lineItems?: {
@@ -190,6 +197,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
               node: {
                 id: string;
                 quantity: number;
+                variant?: { title?: string } | null;
                 originalUnitPriceSet: {
                   shopMoney: { amount: string; currencyCode: string };
                 };
@@ -207,6 +215,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     const shopifyOrder = orderData.data?.order;
     if (shopifyOrder) {
       currencyCode = shopifyOrder.currencyCode ?? "USD";
+      if (shopifyOrder.name) orderName = shopifyOrder.name;
       const firstName = shopifyOrder.customer?.firstName ?? "";
       const lastName = shopifyOrder.customer?.lastName ?? "";
       const fullName = [firstName, lastName].filter(Boolean).join(" ");
@@ -220,15 +229,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           currencyCode: edge.node.originalUnitPriceSet.shopMoney.currencyCode,
           quantity: edge.node.quantity,
         };
+        shopifyVariantTitles[edge.node.id] = edge.node.variant?.title ?? "";
       }
     }
   } catch (e) {
     console.error("[GetOrderDetails] unexpected error:", e);
     orderDataError = true;
   }
-
-  const idNum = shopifyOrderId.replace(/\D/g, "");
-  const orderName = `#${idNum.slice(-6)}`;
 
   // --- Per-line view preview data (Konva canvas) ---
   const linePreviewData: Record<string, { imageUrl: string; geometry: Record<string, PlacementGeometry | null>; logoUrls: Record<string, string | null> } | null> = {};
@@ -310,7 +317,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       productionStatus: l.productionStatus,
       productConfigName: l.productConfig?.name ?? "Unknown config",
       methodName: l.customizationConfig?.decorationMethod?.name ?? "Unknown",
-      configState: l.customizationConfig?.state ?? "UNKNOWN",
+      variantTitle: shopifyVariantTitles[l.shopifyLineId] ?? null,
       unitPriceCents: l.customizationConfig?.unitPriceCents ?? 0,
       placements: l.productConfig?.views.flatMap((v) => v.placements) ?? [],
       logoAssetIdsByPlacementId: l.logoAssetIdsByPlacementId as Record<string, string | null> | null,
@@ -581,6 +588,7 @@ export default function OrderDetailPage() {
           )}
         </Layout.Section>
 
+        {hasPendingArtwork && (
         <Layout.Section>
           <Card>
             <BlockStack gap="200">
@@ -637,6 +645,7 @@ export default function OrderDetailPage() {
             </BlockStack>
           </Card>
         </Layout.Section>
+        )}
 
         {orderDataError && (
           <Layout.Section>
@@ -710,20 +719,10 @@ export default function OrderDetailPage() {
                         {line.productConfigName}
                       </Text>
                       <Text variant="bodySm" tone="subdued" as="p">
-                        Method: {line.methodName} &middot; Variant: {line.variantId.split("/").pop()}
+                        Method: {line.methodName}
+                        {line.variantTitle ? ` · ${line.variantTitle}` : ""}
                       </Text>
                     </BlockStack>
-                    <Badge
-                      tone={
-                        line.configState === "PURCHASED"
-                          ? "success"
-                          : line.configState === "ORDERED"
-                            ? "info"
-                            : undefined
-                      }
-                    >
-                      {line.configState}
-                    </Badge>
                   </InlineStack>
 
                   <Divider />
