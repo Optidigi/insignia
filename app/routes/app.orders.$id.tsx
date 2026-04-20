@@ -142,7 +142,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   const settings = await db.merchantSettings.findUnique({
     where: { shopId: shop.id },
-    select: { placeholderLogoImageUrl: true, emailReminderTemplate: true },
+    select: { placeholderLogoImageUrl: true, emailReminderTemplate: true, productionQcEnabled: true },
   });
 
   // Fetch order details from Shopify Admin GraphQL: customer info + line item prices
@@ -371,6 +371,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     ),
     placeholderLogoImageUrl: settings?.placeholderLogoImageUrl ?? null,
     emailReminderTemplate: settings?.emailReminderTemplate ?? null,
+    productionQcEnabled: settings?.productionQcEnabled ?? false,
     shopDomain: session.shop,
     customer,
     shopifyLineItemPrices,
@@ -460,8 +461,17 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
       if (!line) return { error: "Order line not found" };
 
-      const currentIndex = PRODUCTION_STATUS_ORDER.indexOf(line.productionStatus);
-      const newIndex = PRODUCTION_STATUS_ORDER.indexOf(newStatus as ProductionStatus);
+      const shopSettings = await db.merchantSettings.findUnique({
+        where: { shopId: shop.id },
+        select: { productionQcEnabled: true },
+      });
+      const qcEnabled = shopSettings?.productionQcEnabled ?? false;
+      const effectiveOrder = qcEnabled
+        ? PRODUCTION_STATUS_ORDER
+        : PRODUCTION_STATUS_ORDER.filter(s => s !== ProductionStatus.QUALITY_CHECK);
+
+      const currentIndex = effectiveOrder.indexOf(line.productionStatus);
+      const newIndex = effectiveOrder.indexOf(newStatus as ProductionStatus);
 
       if (newIndex <= currentIndex) {
         return { error: "Can only advance production status forward" };
@@ -570,6 +580,7 @@ export default function OrderDetailPage() {
     currencyCode,
     orderDataError,
     linePreviewData,
+    productionQcEnabled,
   } = useLoaderData<typeof loader>();
   const submit = useSubmit();
   const navigation = useNavigation();
@@ -609,7 +620,7 @@ export default function OrderDetailPage() {
     { key: "artwork_pending", label: "Artwork pending" },
     { key: "artwork_provided", label: "Artwork provided" },
     { key: "in_production", label: "In production" },
-    { key: "quality_check", label: "Quality check" },
+    ...(productionQcEnabled ? [{ key: "quality_check", label: "Quality check" }] : []),
     { key: "shipped", label: "Shipped" },
   ];
 
@@ -838,7 +849,9 @@ export default function OrderDetailPage() {
         </Layout.Section>
 
         {lines.map((line) => {
-          const currentStepIndex = PRODUCTION_STATUS_ORDER.indexOf(line.productionStatus as ProductionStatus);
+          const currentStepIndex = WORKFLOW_STEPS.findIndex(
+            (s) => s.key === line.productionStatus.toLowerCase()
+          );
           return (
             <Layout.Section key={line.id}>
               <Card>
@@ -1022,7 +1035,7 @@ export default function OrderDetailPage() {
                         Mark in production
                       </Button>
                     )}
-                    {line.productionStatus === ProductionStatus.IN_PRODUCTION && (
+                    {line.productionStatus === ProductionStatus.IN_PRODUCTION && productionQcEnabled && (
                       <Button
                         size="slim"
                         loading={navigation.state === "submitting" && pendingLineId === line.id}
@@ -1037,6 +1050,23 @@ export default function OrderDetailPage() {
                         }}
                       >
                         Mark quality check
+                      </Button>
+                    )}
+                    {line.productionStatus === ProductionStatus.IN_PRODUCTION && !productionQcEnabled && (
+                      <Button
+                        size="slim"
+                        loading={navigation.state === "submitting" && pendingLineId === line.id}
+                        disabled={navigation.state === "submitting" && pendingLineId !== line.id}
+                        onClick={() => {
+                          setPendingLineId(line.id);
+                          const fd = new FormData();
+                          fd.append("intent", "advance-status");
+                          fd.append("lineId", line.id);
+                          fd.append("newStatus", ProductionStatus.SHIPPED);
+                          submit(fd, { method: "POST" });
+                        }}
+                      >
+                        Mark shipped
                       </Button>
                     )}
                     {line.productionStatus === ProductionStatus.QUALITY_CHECK && (

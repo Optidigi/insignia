@@ -290,6 +290,7 @@ model MerchantSettings {
   placeholderLogoImageUrl String?
   setupGuideDismissedAt   DateTime? // NEW
   emailReminderTemplate   String?   // Custom email template for artwork reminders
+  productionQcEnabled     Boolean   @default(false)
   defaultStorefrontLocale String    @default("en") // BCP-47 primary subtag; one of the 8 supported locales
   createdAt               DateTime  @default(now())
   updatedAt               DateTime  @updatedAt
