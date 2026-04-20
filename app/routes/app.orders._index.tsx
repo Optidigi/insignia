@@ -3,13 +3,14 @@
  * Canonical: docs/admin/orders-workflow.md
  */
 
-import { useCallback } from "react";
+import { useCallback, useEffect } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { useLoaderData, useNavigate, useSearchParams } from "react-router";
+import { useLoaderData, useNavigate, useSearchParams, useFetcher } from "react-router";
 import {
   Page,
   Layout,
   Card,
+  useIndexResourceState,
   EmptyState,
   IndexTable,
   Badge,
@@ -186,7 +187,23 @@ export default function OrdersPage() {
   const { orders, currency, tab, methods, search, methodId, dateRange, artworkStatus, page, totalPages } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const fetcher = useFetcher<{ advanced?: number; skipped?: number; error?: string }>();
 
+  const { selectedResources, allResourcesSelected, handleSelectionChange } =
+    useIndexResourceState(orders, { resourceIDResolver: (order) => order.shopifyOrderId });
+
+  const handleBulkMarkInProduction = useCallback(() => {
+    const formData = new FormData();
+    selectedResources.forEach(id => formData.append("orderId", id));
+    formData.append("newStatus", "IN_PRODUCTION");
+    fetcher.submit(formData, { method: "POST", action: "/app/orders/bulk-advance" });
+  }, [selectedResources, fetcher]);
+
+  useEffect(() => {
+    if (fetcher.data && "advanced" in fetcher.data) {
+      window.shopify?.toast?.show(`${fetcher.data.advanced} lines marked as In Production`);
+    }
+  }, [fetcher.data]);
 
   const selectedTabIndex = ORDER_TABS.findIndex((t) => t.id === tab);
   const activeTabIndex = selectedTabIndex === -1 ? 0 : selectedTabIndex;
@@ -417,7 +434,11 @@ export default function OrdersPage() {
                   { title: "Fee total", alignment: "end" },
                   { title: "Date", alignment: "end" },
                 ]}
-                selectable={false}
+                selectedItemsCount={allResourcesSelected ? "All" : selectedResources.length}
+                onSelectionChange={handleSelectionChange}
+                promotedBulkActions={[
+                  { content: "Mark as In Production", onAction: handleBulkMarkInProduction },
+                ]}
                 hasZebraStriping
               >
                 {orders.map((order, idx) => {
@@ -427,6 +448,7 @@ export default function OrdersPage() {
                       key={order.shopifyOrderId}
                       id={order.shopifyOrderId}
                       position={idx}
+                      selected={selectedResources.includes(order.shopifyOrderId)}
                       onNavigation={() => navigate(`/app/orders/${encodedId}`)}
                     >
                       <IndexTable.Cell>
