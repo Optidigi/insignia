@@ -3,6 +3,7 @@ api_version = "2026-01"
 [[extensions]]
 name = "Insignia Order Block"
 handle = "insignia-order-block"
+uid = "adfc2e6a-3191-d03b-81b9-2cd68476213c0fcdc15f"
 type = "ui_extension"
 
 [[extensions.targeting]]
