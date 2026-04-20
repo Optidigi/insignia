@@ -54,11 +54,38 @@ export async function addToCart(
   return getCart();
 }
 
+export type GarmentPropertiesInput = {
+  customizationId: string;
+  methodId: string;
+  configHash: string;
+  pricingVersion: string;
+  methodCustomerName: string;
+  placementNames: string[];
+  artworkStatus: "PROVIDED" | "PENDING_CUSTOMER";
+};
+
+export function buildGarmentProperties(p: GarmentPropertiesInput): Record<string, string> {
+  return {
+    _insignia_customization_id: p.customizationId,
+    _insignia_method: p.methodId,
+    _insignia_config_hash: p.configHash,
+    _insignia_pricing_version: p.pricingVersion,
+    Decoration: p.methodCustomerName,
+    Placement: p.placementNames.join(", "),
+    "Artwork status": p.artworkStatus === "PROVIDED" ? "Provided" : "Artwork requested",
+  };
+}
+
+export function buildFeeProperties(): Record<string, string> {
+  return { _insignia_fee: "true" };
+}
+
 export async function addCustomizedToCart(
   baseVariantId: string | number,
   feeVariantId: string | number,
   quantity: number,
-  properties: Record<string, string>
+  garmentProperties: Record<string, string>,
+  feeProperties: Record<string, string>
 ): Promise<Cart> {
   const baseId =
     typeof baseVariantId === "string"
@@ -69,9 +96,9 @@ export async function addCustomizedToCart(
       ? feeVariantId.replace("gid://shopify/ProductVariant/", "")
       : feeVariantId;
 
-  const items: Array<{ id: number; quantity: number; properties?: Record<string, string> }> = [
-    { id: Number(baseId), quantity, properties },
-    { id: Number(feeId), quantity, properties },
+  const items: Array<{ id: number; quantity: number; properties: Record<string, string> }> = [
+    { id: Number(baseId), quantity, properties: garmentProperties },
+    { id: Number(feeId), quantity, properties: feeProperties },
   ];
 
   const res = await fetch(`${getCartRoot()}cart/add.js`, {
@@ -91,7 +118,8 @@ export type CartItemPair = {
   baseVariantId: string | number;
   feeVariantId: string | number;
   quantity: number;
-  properties: Record<string, string>;
+  garmentProperties: Record<string, string>;
+  feeProperties: Record<string, string>;
 };
 
 /**
@@ -101,7 +129,7 @@ export type CartItemPair = {
 export async function addMultipleCustomizedToCart(pairs: CartItemPair[]): Promise<Cart> {
   const items: Array<{ id: number; quantity: number; properties: Record<string, string> }> = [];
 
-  for (const { baseVariantId, feeVariantId, quantity, properties } of pairs) {
+  for (const { baseVariantId, feeVariantId, quantity, garmentProperties, feeProperties } of pairs) {
     const baseId =
       typeof baseVariantId === "string"
         ? baseVariantId.replace("gid://shopify/ProductVariant/", "")
@@ -111,8 +139,8 @@ export async function addMultipleCustomizedToCart(pairs: CartItemPair[]): Promis
         ? feeVariantId.replace("gid://shopify/ProductVariant/", "")
         : feeVariantId;
 
-    items.push({ id: Number(baseId), quantity, properties });
-    items.push({ id: Number(feeId), quantity, properties });
+    items.push({ id: Number(baseId), quantity, properties: garmentProperties });
+    items.push({ id: Number(feeId), quantity, properties: feeProperties });
   }
 
   const res = await fetch(`${getCartRoot()}cart/add.js`, {
@@ -154,16 +182,3 @@ export async function changeCartLine(
   return getCart();
 }
 
-export function buildInsigniaProperties(
-  customizationId: string,
-  methodId: string,
-  configHash: string,
-  pricingVersion: string
-): Record<string, string> {
-  return {
-    _insignia_customization_id: customizationId,
-    _insignia_method: methodId,
-    _insignia_config_hash: configHash,
-    _insignia_pricing_version: pricingVersion,
-  };
-}

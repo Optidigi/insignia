@@ -31,7 +31,8 @@ import { CloseConfirmDialog } from "./CloseConfirmDialog";
 import {
   addCustomizedToCart,
   addMultipleCustomizedToCart,
-  buildInsigniaProperties,
+  buildGarmentProperties,
+  buildFeeProperties,
 } from "../../lib/storefront/cart.client";
 import { proxyUrl } from "../../lib/storefront/proxy-url.client";
 import { getTranslations, detectLocale } from "./i18n";
@@ -203,9 +204,11 @@ function dispatchAnalytics(name: string, detail: Record<string, unknown>) {
 export function CustomizationModal({
   productId,
   variantId,
+  returnUrl,
 }: {
   productId: string;
   variantId: string;
+  returnUrl: string | null;
 }) {
   const [config, setConfig] = useState<StorefrontConfig | null>(null);
   // Use the merchant's chosen locale from the config response when available.
@@ -442,9 +445,20 @@ export function CustomizationModal({
     };
   }, []);
 
+  // Push a single history entry when the modal mounts so the back button
+  // (hardware or browser) triggers the close-confirm guard.  Must run ONCE —
+  // re-pushing on every hasSelections flip stacks up extra entries that require
+  // multiple presses to unwind.
   useEffect(() => {
     if (typeof window === "undefined") return;
     history.pushState({ insigniaModal: true }, "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Separate effect: keep the popstate listener in sync with hasSelections so
+  // it always sees the latest value without re-pushing history state.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
     const onPop = () => {
       if (closingRef.current) return;
       if (hasSelections) setShowCloseConfirm(true);
@@ -452,6 +466,10 @@ export function CustomizationModal({
     };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
+    // closeNow is intentionally omitted: it closes over returnUrl which is
+    // stable loader data (never changes during the session), so the stale
+    // closure is safe. Adding it would require hoisting the declaration above
+    // this effect, which adds structural complexity for no practical benefit.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasSelections]);
 
@@ -650,14 +668,17 @@ export function CustomizationModal({
   const closeNow = useCallback(() => {
     if (typeof window === "undefined") return;
     closingRef.current = true;
-    // Try to step back over the modal-pushed history entry.
-    try {
-      window.history.back();
-    } catch {
-      // Fallback: redirect to product page if available, else home.
-      window.location.href = `${window.location.origin}/`;
-    }
-  }, []);
+    // Hard-navigate off the modal route. history.back() cannot leave this
+    // URL: React Router intercepts the popstate and re-renders the same route
+    // in place because the URL doesn't change. Use returnUrl (passed from the
+    // loader, sourced from ?return= on the Customize button link) so the
+    // customer always lands back on the product page. Fall back to shop root
+    // when returnUrl is absent (direct-link access without the param).
+    // Use an absolute URL so AppProxyProvider's <base href> (which points at
+    // the app tunnel) does not intercept resolution of a relative returnUrl.
+    const origin = window.location.origin;
+    window.location.href = returnUrl ? `${origin}${returnUrl}` : `${origin}/`;
+  }, [returnUrl]);
 
   const onCartSuccess = useCallback(
     (totalCents: number, customizationIds: string[]) => {
@@ -698,13 +719,18 @@ export function CustomizationModal({
         throw err;
       }
       const slotVariantId = json.slotVariantId!;
-      const properties = buildInsigniaProperties(
-        cid,
-        selectedMethodId,
-        json.configHash ?? "",
-        json.pricingVersion ?? "",
-      );
-      const cart = await addCustomizedToCart(variantId, slotVariantId, qty, properties);
+      const garmentProps = buildGarmentProperties({
+        customizationId: cid,
+        methodId: selectedMethodId,
+        configHash: json.configHash ?? "",
+        pricingVersion: json.pricingVersion ?? "",
+        methodCustomerName: selectedMethod?.customerName ?? selectedMethod?.name ?? "",
+        placementNames: Object.keys(placementSelections)
+          .map((id) => config?.placements.find((p) => p.id === id)?.name ?? id),
+        artworkStatus: logo.type === "uploaded" ? "PROVIDED" : "PENDING_CUSTOMER",
+      });
+      const feeProps = buildFeeProperties();
+      const cart = await addCustomizedToCart(variantId, slotVariantId, qty, garmentProps, feeProps);
       // Best-effort confirm; failures don't block the cart redirect.
       try {
         await fetch(proxyUrl("/apps/insignia/cart-confirm"), {
@@ -775,19 +801,24 @@ export function CustomizationModal({
             (err as Error & { status?: number }).status = res.status;
             throw err;
           }
-          const properties = buildInsigniaProperties(
-            cid,
-            selectedMethodId,
-            json.configHash ?? "",
-            json.pricingVersion ?? "",
-          );
+          const garmentProps = buildGarmentProperties({
+            customizationId: cid,
+            methodId: selectedMethodId,
+            configHash: json.configHash ?? "",
+            pricingVersion: json.pricingVersion ?? "",
+            methodCustomerName: selectedMethod?.customerName ?? selectedMethod?.name ?? "",
+            placementNames: Object.keys(placementSelections)
+              .map((id) => config?.placements.find((p) => p.id === id)?.name ?? id),
+            artworkStatus: logo.type === "uploaded" ? "PROVIDED" : "PENDING_CUSTOMER",
+          });
           return {
             cid,
             lineItem: {
               baseVariantId: vId,
               feeVariantId: json.slotVariantId!,
               quantity: qty,
-              properties,
+              garmentProperties: garmentProps,
+              feeProperties: buildFeeProperties(),
             },
           };
         }),
