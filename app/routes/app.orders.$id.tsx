@@ -149,6 +149,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   let customer: { name: string; email: string } | null = null;
   const shopifyLineItemPrices: Record<string, { amount: string; currencyCode: string; quantity: number }> = {};
   const shopifyVariantTitles: Record<string, string> = {};
+  const allShopifyLineItems: Array<{ id: string; title: string; quantity: number; variantTitle: string; amount: string; currencyCode: string }> = [];
   let currencyCode = shop.currencyCode ?? "";
   let orderDataError = false;
   const idNum = shopifyOrderId.replace(/\D/g, "");
@@ -169,6 +170,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
             edges {
               node {
                 id
+                title
                 quantity
                 variant {
                   title
@@ -196,6 +198,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
             edges: Array<{
               node: {
                 id: string;
+                title: string;
                 quantity: number;
                 variant?: { title?: string } | null;
                 originalUnitPriceSet: {
@@ -230,6 +233,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           quantity: edge.node.quantity,
         };
         shopifyVariantTitles[edge.node.id] = edge.node.variant?.title ?? "";
+        allShopifyLineItems.push({
+          id: edge.node.id,
+          title: edge.node.title,
+          quantity: edge.node.quantity,
+          variantTitle: edge.node.variant?.title ?? "",
+          amount: edge.node.originalUnitPriceSet.shopMoney.amount,
+          currencyCode: edge.node.originalUnitPriceSet.shopMoney.currencyCode,
+        });
       }
     }
   } catch (e) {
@@ -363,6 +374,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     shopDomain: session.shop,
     customer,
     shopifyLineItemPrices,
+    allShopifyLineItems,
     currencyCode,
     orderDataError,
     linePreviewData,
@@ -463,6 +475,47 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { success: true };
     }
 
+    if (intent === "bulk-advance-status") {
+      const lineIds = formData.getAll("lineId") as string[];
+      const newStatus = formData.get("newStatus") as string;
+
+      if (!lineIds.length || !newStatus) return { error: "Missing lineIds or newStatus" };
+      if (!PRODUCTION_STATUS_ORDER.includes(newStatus as ProductionStatus)) {
+        return { error: "Invalid production status" };
+      }
+
+      const shop = await db.shop.findUnique({
+        where: { shopifyDomain: session.shop },
+        select: { id: true },
+      });
+      if (!shop) return { error: "Shop not found" };
+
+      const newStatusTyped = newStatus as ProductionStatus;
+      const newIndex = PRODUCTION_STATUS_ORDER.indexOf(newStatusTyped);
+
+      const linesToAdvance = await db.orderLineCustomization.findMany({
+        where: { id: { in: lineIds }, productConfig: { shopId: shop.id } },
+        select: { id: true, productionStatus: true },
+      });
+
+      const eligible = linesToAdvance.filter(
+        (l) => PRODUCTION_STATUS_ORDER.indexOf(l.productionStatus) < newIndex
+      );
+
+      if (eligible.length > 0) {
+        await db.$transaction(
+          eligible.map((l) =>
+            db.orderLineCustomization.update({
+              where: { id: l.id },
+              data: { productionStatus: newStatusTyped },
+            })
+          )
+        );
+      }
+
+      return { success: true, advanced: eligible.length, skipped: linesToAdvance.length - eligible.length };
+    }
+
     if (intent === "save-template") {
       const shop = await db.shop.findUnique({
         where: { shopifyDomain: session.shop },
@@ -513,6 +566,7 @@ export default function OrderDetailPage() {
     shopDomain,
     customer,
     shopifyLineItemPrices,
+    allShopifyLineItems,
     currencyCode,
     orderDataError,
     linePreviewData,
@@ -571,15 +625,18 @@ export default function OrderDetailPage() {
     }
   };
 
-  // Product subtotal: sum of unit price × qty for Insignia-customized line items
-  const productSubtotal = lines.reduce((sum, line) => {
-    const priceData = shopifyLineItemPrices[line.shopifyLineId];
-    if (!priceData) return sum;
-    return sum + parseFloat(priceData.amount) * priceData.quantity;
-  }, 0);
+  // Product subtotal: sum of ALL Shopify line items (complete order total from Shopify)
+  const productSubtotal = allShopifyLineItems.reduce(
+    (sum, li) => sum + parseFloat(li.amount) * li.quantity,
+    0
+  );
 
   // Customization fee total
   const feeTotal = lines.reduce((sum, line) => sum + line.unitPriceCents / 100, 0);
+
+  // Non-customized lines: Shopify line items that are not bound to any OLC
+  const customizedLineIds = new Set(lines.map((l) => l.shopifyLineId));
+  const nonCustomizedItems = allShopifyLineItems.filter((li) => !customizedLineIds.has(li.id));
 
   // Shopify admin URL for this order
   const numericOrderId = shopifyOrderId.replace(/\D/g, "");
@@ -677,6 +734,37 @@ export default function OrderDetailPage() {
           </Layout.Section>
         )}
 
+        {lines.filter((l) => l.productionStatus === "ARTWORK_PROVIDED").length > 1 && (
+          <Layout.Section>
+            <Card>
+              <InlineStack align="space-between" blockAlign="center">
+                <Text as="p">
+                  {`${lines.filter((l) => l.productionStatus === "ARTWORK_PROVIDED").length} items ready for production`}
+                </Text>
+                <Button
+                  tone="success"
+                  variant="primary"
+                  size="slim"
+                  loading={navigation.state === "submitting" && pendingLineId === "bulk"}
+                  disabled={navigation.state === "submitting" && pendingLineId !== "bulk"}
+                  onClick={() => {
+                    setPendingLineId("bulk");
+                    const fd = new FormData();
+                    fd.append("intent", "bulk-advance-status");
+                    lines
+                      .filter((l) => l.productionStatus === "ARTWORK_PROVIDED")
+                      .forEach((l) => fd.append("lineId", l.id));
+                    fd.append("newStatus", ProductionStatus.IN_PRODUCTION);
+                    submit(fd, { method: "POST" });
+                  }}
+                >
+                  {`Mark all as In Production (${lines.filter((l) => l.productionStatus === "ARTWORK_PROVIDED").length} items)`}
+                </Button>
+              </InlineStack>
+            </Card>
+          </Layout.Section>
+        )}
+
         <Layout.Section>
           <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
             <Card>
@@ -706,6 +794,26 @@ export default function OrderDetailPage() {
                 </Box>
               </BlockStack>
             </Card>
+
+            {nonCustomizedItems.length > 0 && (
+              <Card>
+                <BlockStack gap="200">
+                  <Text variant="headingSm" as="h3">Other items in this order</Text>
+                  {nonCustomizedItems.map((li) => (
+                    <InlineStack key={li.id} align="space-between" blockAlign="center">
+                      <Text as="p">
+                        {li.title}
+                        {li.variantTitle ? ` — ${li.variantTitle}` : ""}
+                        {li.quantity > 1 ? ` × ${li.quantity}` : ""}
+                      </Text>
+                      <Text as="p" tone="subdued">
+                        {formatMoney(parseFloat(li.amount) * li.quantity)}
+                      </Text>
+                    </InlineStack>
+                  ))}
+                </BlockStack>
+              </Card>
+            )}
 
             <Card>
               <BlockStack gap="300">
