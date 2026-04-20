@@ -66,12 +66,8 @@ async function handleOrdersCreate(shopId: string, payload: any, shop: string) {
 
     const lineItemId = `gid://shopify/LineItem/${lineItem.id}`;
     const variantId = `gid://shopify/ProductVariant/${lineItem.variant_id}`;
-    const configHash = getProperty(properties, "_insignia_config_hash");
 
-    console.log(`[orders/create] Found customized line item: ${lineItemId}`, {
-      customizationId,
-      configHash,
-    });
+    console.log(`[orders/create] Found customized line item: ${lineItemId}`, { customizationId });
 
     // Fast-path: skip heavy work if this line item was already bound
     const existing = await db.orderLineCustomization.findUnique({

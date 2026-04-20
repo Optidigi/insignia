@@ -721,9 +721,6 @@ export function CustomizationModal({
       const slotVariantId = json.slotVariantId!;
       const garmentProps = buildGarmentProperties({
         customizationId: cid,
-        methodId: selectedMethodId,
-        configHash: json.configHash ?? "",
-        pricingVersion: json.pricingVersion ?? "",
         methodCustomerName: selectedMethod?.customerName ?? selectedMethod?.name ?? "",
         placementNames: Object.keys(placementSelections)
           .map((id) => config?.placements.find((p) => p.id === id)?.name ?? id),
@@ -803,9 +800,6 @@ export function CustomizationModal({
           }
           const garmentProps = buildGarmentProperties({
             customizationId: cid,
-            methodId: selectedMethodId,
-            configHash: json.configHash ?? "",
-            pricingVersion: json.pricingVersion ?? "",
             methodCustomerName: selectedMethod?.customerName ?? selectedMethod?.name ?? "",
             placementNames: Object.keys(placementSelections)
               .map((id) => config?.placements.find((p) => p.id === id)?.name ?? id),

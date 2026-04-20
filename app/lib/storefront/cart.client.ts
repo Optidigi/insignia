@@ -56,9 +56,6 @@ export async function addToCart(
 
 export type GarmentPropertiesInput = {
   customizationId: string;
-  methodId: string;
-  configHash: string;
-  pricingVersion: string;
   methodCustomerName: string;
   placementNames: string[];
   artworkStatus: "PROVIDED" | "PENDING_CUSTOMER";
@@ -67,9 +64,6 @@ export type GarmentPropertiesInput = {
 export function buildGarmentProperties(p: GarmentPropertiesInput): Record<string, string> {
   return {
     _insignia_customization_id: p.customizationId,
-    _insignia_method: p.methodId,
-    _insignia_config_hash: p.configHash,
-    _insignia_pricing_version: p.pricingVersion,
     Decoration: p.methodCustomerName,
     Placement: p.placementNames.join(", "),
     "Artwork status": p.artworkStatus === "PROVIDED" ? "Provided" : "Artwork requested",
