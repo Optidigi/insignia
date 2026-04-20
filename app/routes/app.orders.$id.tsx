@@ -773,7 +773,7 @@ export default function OrderDetailPage() {
                                 )}
                                 <Text as="span">{p.name}</Text>
                               </InlineStack>
-                              {!asset && line.artworkStatus === "PENDING_CUSTOMER" && (
+                              {!asset && (
                                 <Button
                                   size="slim"
                                   variant="plain"
