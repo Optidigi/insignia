@@ -29,6 +29,7 @@ import {
 import { ExternalIcon } from "@shopify/polaris-icons";
 import { ProductionStatus } from "@prisma/client";
 import { authenticate } from "../shopify.server";
+import { syncOrderTags } from "../lib/services/order-tags.server";
 import db from "../db.server";
 import { handleError } from "../lib/errors.server";
 import { getPresignedDownloadUrl, getPresignedGetUrl } from "../lib/storage.server";
@@ -384,7 +385,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
 export const action = async ({ request }: ActionFunctionArgs) => {
   try {
-    const { session } = await authenticate.admin(request);
+    const { session, admin } = await authenticate.admin(request);
     const formData = await request.formData();
     const intent = formData.get("intent");
 
@@ -457,7 +458,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
       const line = await db.orderLineCustomization.findFirst({
         where: { id: lineId, productConfig: { shopId: shop.id } },
-        select: { productionStatus: true },
+        select: { productionStatus: true, shopifyOrderId: true },
       });
       if (!line) return { error: "Order line not found" };
 
@@ -481,6 +482,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         where: { id: lineId },
         data: { productionStatus: newStatus as ProductionStatus },
       });
+
+      // Fire-and-forget tag sync — never block the status advance on this
+      syncOrderTags(line.shopifyOrderId, admin).catch(e =>
+        console.error(`[advance-status] Tag sync failed for ${line.shopifyOrderId}:`, e)
+      );
 
       return { success: true };
     }
