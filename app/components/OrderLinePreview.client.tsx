@@ -1,12 +1,13 @@
 /**
  * OrderLinePreview — read-only Konva canvas showing product image + placement zones.
  * Client-only (Konva). Lazy-loaded by the parent.
+ * Responsive: fills container width up to BASE_SIZE using ResizeObserver.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Stage, Layer, Image as KonvaImage, Rect, Text as KonvaText, Group } from "react-konva";
 import type { PlacementGeometry } from "../lib/admin-types";
 
-const STAGE_SIZE = 400;
+const BASE_SIZE = 400;
 
 const ZONE_COLORS = [
   { fill: "rgba(37, 99, 235, 0.15)", stroke: "#2563EB" },
@@ -17,15 +18,29 @@ const ZONE_COLORS = [
 ];
 
 type Props = {
-  imageUrl: string; // presigned product image URL
-  placements: Array<{ id: string; name: string }>; // ordered list
-  geometry: Record<string, PlacementGeometry | null>; // keyed by placementId
-  logoUrls: Record<string, string | null>; // keyed by placementId, presigned logo URLs or null
+  imageUrl: string;
+  placements: Array<{ id: string; name: string }>;
+  geometry: Record<string, PlacementGeometry | null>;
+  logoUrls: Record<string, string | null>;
 };
 
 export function OrderLinePreview({ imageUrl, placements, geometry, logoUrls }: Props) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [stageSize, setStageSize] = useState(BASE_SIZE);
   const [bgImage, setBgImage] = useState<HTMLImageElement | null>(null);
   const [logoImages, setLogoImages] = useState<Record<string, HTMLImageElement>>({});
+
+  // Responsive sizing via ResizeObserver
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver((entries) => {
+      const width = entries[0]?.contentRect.width;
+      if (width) setStageSize(Math.min(Math.round(width), BASE_SIZE));
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   // Load background product image
   useEffect(() => {
@@ -65,75 +80,69 @@ export function OrderLinePreview({ imageUrl, placements, geometry, logoUrls }: P
     return () => { cancelled = true; };
   }, [logoUrls]);
 
+  const scale = stageSize / BASE_SIZE;
+
   return (
-    <Stage width={STAGE_SIZE} height={STAGE_SIZE}>
-      <Layer>
-        {/* Background product image */}
-        {bgImage && (
-          <KonvaImage
-            image={bgImage}
-            x={0}
-            y={0}
-            width={STAGE_SIZE}
-            height={STAGE_SIZE}
-          />
-        )}
+    <div ref={containerRef} style={{ width: "100%" }}>
+      <Stage width={stageSize} height={stageSize}>
+        <Layer>
+          {bgImage && (
+            <KonvaImage image={bgImage} x={0} y={0} width={stageSize} height={stageSize} />
+          )}
 
-        {/* Placement zones */}
-        {placements.map((placement, i) => {
-          const geo = geometry[placement.id];
-          if (!geo) return null;
+          {placements.map((placement, i) => {
+            const geo = geometry[placement.id];
+            if (!geo) return null;
 
-          const zoneW = (geo.maxWidthPercent / 100) * STAGE_SIZE;
-          const zoneH = zoneW; // square zone
-          const zoneX = (geo.centerXPercent / 100) * STAGE_SIZE - zoneW / 2;
-          const zoneY = (geo.centerYPercent / 100) * STAGE_SIZE - zoneH / 2;
-          const color = ZONE_COLORS[i % ZONE_COLORS.length];
-          const logoImg = logoImages[placement.id];
+            const zoneW = (geo.maxWidthPercent / 100) * stageSize;
+            const zoneH = geo.maxHeightPercent ? (geo.maxHeightPercent / 100) * stageSize : zoneW;
+            const zoneX = (geo.centerXPercent / 100) * stageSize - zoneW / 2;
+            const zoneY = (geo.centerYPercent / 100) * stageSize - zoneH / 2;
+            const color = ZONE_COLORS[i % ZONE_COLORS.length];
+            const logoImg = logoImages[placement.id];
 
-          return (
-            <Group key={placement.id} x={zoneX} y={zoneY}>
-              {/* Zone rectangle */}
-              <Rect
-                width={zoneW}
-                height={zoneH}
-                fill={color.fill}
-                stroke={color.stroke}
-                strokeWidth={1.5}
-              />
-
-              {/* Logo image or placeholder text */}
-              {logoImg ? (() => {
-                const scale = Math.min((zoneW - 8) / logoImg.width, (zoneH - 8) / logoImg.height);
-                const drawW = logoImg.width * scale;
-                const drawH = logoImg.height * scale;
-                const offsetX = (zoneW - drawW) / 2;
-                const offsetY = (zoneH - drawH) / 2;
-                return (
-                  <KonvaImage
-                    image={logoImg}
-                    x={offsetX}
-                    y={offsetY}
-                    width={drawW}
-                    height={drawH}
-                  />
-                );
-              })() : (
-                <KonvaText
-                  text={placement.name}
-                  x={0}
-                  y={zoneH / 2 - 8}
+            return (
+              <Group key={placement.id} x={zoneX} y={zoneY}>
+                <Rect
                   width={zoneW}
-                  align="center"
-                  fontSize={Math.max(10, Math.min(14, zoneW / 6))}
-                  fill={color.stroke}
-                  fontStyle="bold"
+                  height={zoneH}
+                  fill={color.fill}
+                  stroke={color.stroke}
+                  strokeWidth={1.5 * scale}
                 />
-              )}
-            </Group>
-          );
-        })}
-      </Layer>
-    </Stage>
+
+                {logoImg ? (() => {
+                  const imgScale = Math.min((zoneW - 8) / logoImg.width, (zoneH - 8) / logoImg.height);
+                  const drawW = logoImg.width * imgScale;
+                  const drawH = logoImg.height * imgScale;
+                  const offsetX = (zoneW - drawW) / 2;
+                  const offsetY = (zoneH - drawH) / 2;
+                  return (
+                    <KonvaImage
+                      image={logoImg}
+                      x={offsetX}
+                      y={offsetY}
+                      width={drawW}
+                      height={drawH}
+                    />
+                  );
+                })() : (
+                  <KonvaText
+                    text={placement.name}
+                    x={0}
+                    y={zoneH / 2 - 8 * scale}
+                    width={zoneW}
+                    align="center"
+                    fontSize={Math.max(8 * scale, Math.min(14 * scale, zoneW / 6))}
+                    fill={color.stroke}
+                    fontStyle="bold"
+                  />
+                )}
+              </Group>
+            );
+          })}
+        </Layer>
+      </Stage>
+    </div>
   );
 }
