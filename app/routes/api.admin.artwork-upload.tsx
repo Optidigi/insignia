@@ -86,8 +86,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       const updatedMap = { ...existingMap };
 
       if (placementId) {
-        // Per-placement: only update the specified placement slot
-        if (placementId in updatedMap) {
+        // Allow if key already exists OR map is empty (OLC created before logoAssetIdsByPlacementId was populated)
+        if (placementId in updatedMap || Object.keys(updatedMap).length === 0) {
           updatedMap[placementId] = logoAssetId;
         }
       } else {
