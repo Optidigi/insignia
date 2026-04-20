@@ -247,7 +247,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         },
         include: {
           productView: {
-            select: { placementGeometry: true, sharedZones: true },
+            select: { id: true, placementGeometry: true, sharedZones: true },
           },
         },
       });
@@ -258,12 +258,20 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       }
       if (!chosen) { linePreviewData[line.id] = null; return; }
 
-      const sharedGeometry = (chosen.productView?.placementGeometry ?? null) as Record<string, PlacementGeometry | null> | null;
-      const perVariantGeometry = (chosen.placementGeometry ?? null) as Record<string, PlacementGeometry | null> | null;
-      const sharedZones = chosen.productView?.sharedZones ?? true;
-      const effectiveGeometry: Record<string, PlacementGeometry | null> = sharedZones
-        ? (sharedGeometry ?? perVariantGeometry ?? {})
-        : (perVariantGeometry ?? sharedGeometry ?? {});
+      // Use immutable snapshot geometry when available; fall back to live config
+      const snapshot = line.placementGeometrySnapshotByViewId as Record<string, Record<string, PlacementGeometry | null> | null> | null;
+      let effectiveGeometry: Record<string, PlacementGeometry | null>;
+
+      if (!line.useLiveConfigFallback && snapshot && chosen.productView?.id && snapshot[chosen.productView.id]) {
+        effectiveGeometry = (snapshot[chosen.productView.id] ?? {}) as Record<string, PlacementGeometry | null>;
+      } else {
+        const sharedZones = chosen.productView?.sharedZones ?? true;
+        const sharedGeometry = (chosen.productView?.placementGeometry ?? null) as Record<string, PlacementGeometry | null> | null;
+        const perVariantGeometry = (chosen.placementGeometry ?? null) as Record<string, PlacementGeometry | null> | null;
+        effectiveGeometry = sharedZones
+          ? (sharedGeometry ?? perVariantGeometry ?? {})
+          : (perVariantGeometry ?? sharedGeometry ?? {});
+      }
 
       let signedImageUrl: string | null = null;
       try {
