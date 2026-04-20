@@ -11,7 +11,7 @@ import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import {
   processWebhookIdempotently,
-  getOrCreateShopByDomain,
+  getShopByDomain,
 } from "../lib/services/webhook-idempotency.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -24,20 +24,26 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   console.log(`[orders/create] Received webhook for ${shop}, event: ${eventId}`);
 
-  // Get or create shop record
-  const shopRecord = await getOrCreateShopByDomain(shop);
+  // Get shop record — return 200 (discard) if shop is not installed
+  let shopRecord: { id: string };
+  try {
+    shopRecord = await getShopByDomain(shop);
+  } catch {
+    console.log(`[orders/create] Shop not installed: ${shop} — discarding`);
+    return new Response(null, { status: 200 });
+  }
 
+  let webhookError: unknown;
   try {
     await processWebhookIdempotently(shopRecord.id, eventId, topic, async () => {
       await handleOrdersCreate(shopRecord.id, payload);
     });
   } catch (error) {
     console.error(`[orders/create] Error processing webhook:`, error);
-    // Still return 200 to prevent infinite retries
-    // The error is logged and can be investigated
+    webhookError = error;
   }
 
-  return new Response(null, { status: 200 });
+  return new Response(null, { status: webhookError ? 500 : 200 });
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,15 +67,13 @@ async function handleOrdersCreate(shopId: string, payload: any) {
     const lineItemId = `gid://shopify/LineItem/${lineItem.id}`;
     const variantId = `gid://shopify/ProductVariant/${lineItem.variant_id}`;
     const configHash = getProperty(properties, "_insignia_config_hash");
-    const methodId = getProperty(properties, "_insignia_method");
 
     console.log(`[orders/create] Found customized line item: ${lineItemId}`, {
       customizationId,
       configHash,
-      methodId,
     });
 
-    // Check if already processed (order-independence)
+    // Fast-path: skip heavy work if this line item was already bound
     const existing = await db.orderLineCustomization.findUnique({
       where: {
         shopifyOrderId_shopifyLineId: {
@@ -78,7 +82,6 @@ async function handleOrdersCreate(shopId: string, payload: any) {
         },
       },
     });
-
     if (existing) {
       console.log(`[orders/create] Line item ${lineItemId} already bound, skipping`);
       continue;
@@ -87,39 +90,66 @@ async function handleOrdersCreate(shopId: string, payload: any) {
     // Find the customization config and its currently-claimed slot.
     // Capture shopifyVariantId/ProductId now so orders/paid can recycle even
     // if the slot's currentConfigId is nulled later by a cron race.
-    const customizationConfig = await db.customizationConfig.findUnique({
+    // The storefront stores the CustomizationDraft ID as _insignia_customization_id.
+    // Try direct config ID first (legacy), then fall back to lookup by draft ID.
+    let customizationConfig = await db.customizationConfig.findUnique({
       where: { id: customizationId },
     });
+    if (!customizationConfig) {
+      customizationConfig = await db.customizationConfig.findFirst({
+        where: {
+          customizationDraftId: customizationId,
+          state: { in: ["RESERVED", "IN_CART", "ORDERED", "PURCHASED"] },
+        },
+        orderBy: { reservedAt: "desc" },
+      });
+    }
 
     if (!customizationConfig) {
-      console.warn(`[orders/create] CustomizationConfig ${customizationId} not found`);
+      console.warn(`[orders/create] CustomizationConfig not found for id/draftId=${customizationId}`);
       continue;
     }
 
+    // Snapshot to const so TypeScript narrowing holds inside async $transaction callback
+    const config = customizationConfig;
+
     const claimedSlot = await db.variantSlot.findUnique({
-      where: { currentConfigId: customizationConfig.id },
+      where: { currentConfigId: config.id },
       select: { shopifyVariantId: true, shopifyProductId: true },
     });
 
-    // Resolve draft to get productConfigId, artworkStatus, and logoAssetIdsByPlacementId
-    let productConfigId = customizationConfig.id; // fallback (will likely fail FK)
-    let artworkStatus: "PROVIDED" | "PENDING_CUSTOMER" = "PROVIDED";
-    let logoAssetIdsByPlacementId: Record<string, string | null> | null = null;
-    let garmentVariantId = variantId;
-
-    if (customizationConfig.customizationDraftId) {
-      const draft = await db.customizationDraft.findUnique({
-        where: { id: customizationConfig.customizationDraftId },
-      });
-      if (draft) {
-        productConfigId = draft.productConfigId;
-        artworkStatus = draft.artworkStatus === "PENDING_CUSTOMER" ? "PENDING_CUSTOMER" : "PROVIDED";
-        logoAssetIdsByPlacementId = draft.logoAssetIdsByPlacementId as Record<string, string | null> | null;
-        garmentVariantId = draft.variantId;
-      } else {
-        console.warn(`[orders/create] CustomizationDraft ${customizationConfig.customizationDraftId} not found`);
+    // H2: no draftId means we cannot resolve a valid productConfigId — skip OLC creation
+    // to avoid a broken FK. Still advance config to ORDERED so orders/paid can recycle
+    // the slot via the live currentConfigId lookup instead of waiting on an OLC row.
+    if (!config.customizationDraftId) {
+      console.error(
+        `[orders/create] CustomizationConfig ${config.id} has no customizationDraftId — skipping OLC for ${lineItemId}`
+      );
+      if (config.state !== "ORDERED" && config.state !== "PURCHASED") {
+        await db.customizationConfig.update({
+          where: { id: config.id },
+          data: { state: "ORDERED", orderedAt: new Date() },
+        });
       }
+      continue;
     }
+
+    const draft = await db.customizationDraft.findUnique({
+      where: { id: config.customizationDraftId },
+    });
+
+    if (!draft) {
+      console.error(
+        `[orders/create] CustomizationDraft ${customizationConfig.customizationDraftId} not found — skipping ${lineItemId}`
+      );
+      continue;
+    }
+
+    const productConfigId = draft.productConfigId;
+    const artworkStatus: "PROVIDED" | "PENDING_CUSTOMER" =
+      draft.artworkStatus === "PENDING_CUSTOMER" ? "PENDING_CUSTOMER" : "PROVIDED";
+    const logoAssetIdsByPlacementId = draft.logoAssetIdsByPlacementId as Record<string, string | null> | null;
+    const garmentVariantId = draft.variantId;
 
     // Capture geometry snapshot using garment variant + productConfigId
     const geometrySnapshot = await captureGeometrySnapshot(productConfigId, garmentVariantId);
@@ -130,39 +160,54 @@ async function handleOrdersCreate(shopId: string, payload: any) {
         ? ProductionStatus.ARTWORK_PROVIDED
         : ProductionStatus.ARTWORK_PENDING;
 
-    // Create the order line customization record
-    await db.orderLineCustomization.create({
-      data: {
-        shopifyOrderId: orderId,
-        shopifyLineId: lineItemId,
-        productConfigId,
-        variantId,
-        customizationConfigId: customizationConfig.id,
-        artworkStatus,
-        productionStatus,
-        logoAssetIdsByPlacementId: logoAssetIdsByPlacementId ?? Prisma.DbNull,
-        placementGeometrySnapshotByViewId: geometrySnapshot
-          ? (geometrySnapshot as Prisma.InputJsonValue)
-          : Prisma.DbNull,
-        useLiveConfigFallback: geometrySnapshot === null,
-        orderStatusUrl,
-        feeShopifyVariantId: claimedSlot?.shopifyVariantId ?? null,
-        feeShopifyProductId: claimedSlot?.shopifyProductId ?? null,
-      },
+    // Atomic: create OLC + transition config in a single transaction.
+    // A crash between the two writes would otherwise leave the config stuck in RESERVED.
+    // P2002 on OLC create means a concurrent worker bound this line item — skip gracefully.
+    let bound = false;
+    await db.$transaction(async (tx) => {
+      try {
+        await tx.orderLineCustomization.create({
+          data: {
+            shopifyOrderId: orderId,
+            shopifyLineId: lineItemId,
+            productConfigId,
+            variantId,
+            customizationConfigId: config.id,
+            artworkStatus,
+            productionStatus,
+            logoAssetIdsByPlacementId: logoAssetIdsByPlacementId ?? Prisma.DbNull,
+            placementGeometrySnapshotByViewId: geometrySnapshot
+              ? (geometrySnapshot as Prisma.InputJsonValue)
+              : Prisma.DbNull,
+            useLiveConfigFallback: geometrySnapshot === null,
+            orderStatusUrl,
+            feeShopifyVariantId: claimedSlot?.shopifyVariantId ?? null,
+            feeShopifyProductId: claimedSlot?.shopifyProductId ?? null,
+          },
+        });
+      } catch (e) {
+        if ((e as { code?: string }).code === "P2002") {
+          console.log(`[orders/create] Line item ${lineItemId} bound by concurrent worker, skipping`);
+          return;
+        }
+        throw e;
+      }
+
+      if (config.state !== "ORDERED" && config.state !== "PURCHASED") {
+        await tx.customizationConfig.update({
+          where: { id: config.id },
+          data: {
+            state: "ORDERED",
+            orderedAt: new Date(),
+          },
+        });
+      }
+      bound = true;
     });
 
-    // Transition customization config to ORDERED
-    if (customizationConfig.state !== "ORDERED" && customizationConfig.state !== "PURCHASED") {
-      await db.customizationConfig.update({
-        where: { id: customizationConfig.id },
-        data: {
-          state: "ORDERED",
-          orderedAt: new Date(),
-        },
-      });
+    if (bound) {
+      console.log(`[orders/create] Bound line item ${lineItemId} to order ${orderId}`);
     }
-
-    console.log(`[orders/create] Bound line item ${lineItemId} to order ${orderId}`);
   }
 }
 
