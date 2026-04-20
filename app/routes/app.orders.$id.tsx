@@ -663,6 +663,13 @@ export default function OrderDetailPage() {
     <Page
       title={`Order ${orderName}`}
       backAction={{ content: "Orders", url: "/app/orders" }}
+      secondaryActions={[
+        {
+          content: "Print production sheet",
+          url: `/app/orders/${encodeURIComponent(shopifyOrderId)}/print`,
+          external: true,
+        },
+      ]}
       titleMetadata={
         hasPendingArtwork ? (
           <Badge tone="attention">Artwork pending</Badge>
