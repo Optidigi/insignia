@@ -1,0 +1,10 @@
+api_version = "2026-01"
+
+[[extensions]]
+name = "Insignia Order Block"
+handle = "insignia-order-block"
+type = "ui_extension"
+
+[[extensions.targeting]]
+target = "admin.order-details.block.render"
+module = "./src/OrderBlockExtension.tsx"
