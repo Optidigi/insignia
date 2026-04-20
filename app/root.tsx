@@ -11,12 +11,10 @@ import {
 export const loader = async ({ request }: LoaderFunctionArgs) => {
   const url = new URL(request.url);
   const isAppProxy = url.pathname.startsWith("/apps/");
-  // Derive the app URL from the incoming request origin. When behind a Cloudflare
-  // tunnel (dev) or reverse proxy (prod), TLS is terminated upstream so request.url
-  // arrives as http://. X-Forwarded-Proto carries the original scheme.
-  const proto = request.headers.get("x-forwarded-proto")?.split(",")[0].trim() ?? url.protocol.replace(":", "");
-  const origin = proto === "https" ? url.origin.replace(/^http:/, "https:") : url.origin;
-  const appUrl = isAppProxy ? origin : null;
+  // Shopify App Proxy sets X-Forwarded-Host to the shop domain (e.g. shop.myshopify.com),
+  // so we can't derive the app's own origin from the incoming request. Use SHOPIFY_APP_URL
+  // which is the explicit app domain and is always correct.
+  const appUrl = isAppProxy ? (process.env.SHOPIFY_APP_URL ?? null) : null;
   return { appUrl };
 };
 
