@@ -109,7 +109,8 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const distinctOrderIds = await db.orderLineCustomization.groupBy({
     by: ["shopifyOrderId"],
     where,
-    orderBy: { shopifyOrderId: "asc" },
+    orderBy: { _max: { createdAt: "desc" } },
+    _max: { createdAt: true },
   });
   const totalCount = distinctOrderIds.length;
 
@@ -120,7 +121,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   const orderLines = await db.orderLineCustomization.findMany({
     where: { shopifyOrderId: { in: pagedOrderIds } },
     include: {
-      customizationConfig: { select: { state: true, unitPriceCents: true, decorationMethod: { select: { name: true } } } },
+      customizationConfig: { select: { unitPriceCents: true, decorationMethod: { select: { name: true } } } },
     },
   });
 
@@ -140,11 +141,16 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   for (const line of orderLines) {
     const existing = groupMap.get(line.shopifyOrderId);
     const unitCents = line.customizationConfig?.unitPriceCents ?? 0;
-    const status = line.customizationConfig?.state ?? "UNKNOWN";
     if (existing) {
       existing.lineCount++;
       existing.totalCents += unitCents;
       if (line.artworkStatus === "PENDING_CUSTOMER") existing.pendingArtwork++;
+      // Keep the lowest-priority (most actionable) production status
+      const existingPriority = STATUS_PRIORITY[existing.latestStatus] ?? -1;
+      const newPriority = STATUS_PRIORITY[line.productionStatus] ?? -1;
+      if (newPriority < existingPriority) {
+        existing.latestStatus = line.productionStatus;
+      }
     } else {
       const idNum = line.shopifyOrderId.replace(/\D/g, "");
       groupMap.set(line.shopifyOrderId, {
@@ -152,7 +158,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         orderName: `#${idNum.slice(-6)}`,
         lineCount: 1,
         pendingArtwork: line.artworkStatus === "PENDING_CUSTOMER" ? 1 : 0,
-        latestStatus: status,
+        latestStatus: line.productionStatus,
         totalCents: unitCents,
         createdAt: line.createdAt.toISOString(),
       });
@@ -160,6 +166,15 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   }
 
   return { orders: Array.from(groupMap.values()), currency, tab, methods, search, methodId, dateRange, artworkStatus, page, totalPages, totalCount };
+};
+
+const STATUS_PRIORITY: Record<string, number> = {
+  ARTWORK_PENDING: 0,
+  ARTWORK_PROVIDED: 1,
+  IN_PRODUCTION: 2,
+  QUALITY_CHECK: 3,
+  SHIPPED: 4,
+  UNKNOWN: -1,
 };
 
 const ORDER_TABS = [
@@ -183,6 +198,8 @@ export default function OrdersPage() {
       next.delete("tab");
     } else {
       next.set("tab", selected.id);
+      // Clear artwork status filter — tab already sets the artwork constraint
+      next.delete("artworkStatus");
     }
     next.delete("page");
     setSearchParams(next);
@@ -268,7 +285,7 @@ export default function OrdersPage() {
     if (search) params.set("search", search);
     if (methodId) params.set("methodId", methodId);
     if (dateRange && dateRange !== "all") params.set("dateRange", dateRange);
-    if (activeTabIndex === 1) params.set("tab", "awaiting-artwork");
+    if (activeTabIndex === 1) params.set("tab", "awaiting");
     const response = await fetch(`/api/admin/orders/export?${params.toString()}`);
     if (!response.ok) return;
     const blob = await response.blob();
@@ -434,14 +451,16 @@ export default function OrdersPage() {
                       <IndexTable.Cell>
                         <Badge
                           tone={
-                            order.latestStatus === "PURCHASED"
+                            order.latestStatus === "SHIPPED"
                               ? "success"
-                              : order.latestStatus === "ORDERED"
+                              : order.latestStatus === "IN_PRODUCTION" || order.latestStatus === "QUALITY_CHECK"
                                 ? "info"
-                                : undefined
+                                : order.latestStatus === "ARTWORK_PENDING"
+                                  ? "attention"
+                                  : undefined
                           }
                         >
-                          {order.latestStatus}
+                          {order.latestStatus.replace(/_/g, " ")}
                         </Badge>
                       </IndexTable.Cell>
                       <IndexTable.Cell>
