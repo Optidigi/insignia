@@ -6,7 +6,8 @@ const VISIBLE_COUNT = 3;
 
 export function ItemRows({ items }: { items: LineItemBlock[] }) {
   const [expanded, setExpanded] = useState(false);
-  const btnRef = useRef<Element>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const btnRef = useRef<any>(null);
 
   useEffect(() => {
     const el = btnRef.current;

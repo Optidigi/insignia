@@ -6,7 +6,7 @@ type ErrorStateProps = {
 };
 
 export function ErrorState({ onRetry, orderId }: ErrorStateProps) {
-  const retryRef = useRef<Element>(null);
+  const retryRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
 
   useEffect(() => {
     const el = retryRef.current;
@@ -23,15 +23,13 @@ export function ErrorState({ onRetry, orderId }: ErrorStateProps) {
       <s-button variant="secondary" type="button" ref={retryRef}>
         Retry
       </s-button>
-      {orderId && (
-        <s-button
-          variant="primary"
-          inline-size="fill"
-          href={`app:orders/${encodeURIComponent(orderId)}`}
-        >
-          Open in Insignia →
-        </s-button>
-      )}
+      <s-button
+        variant="primary"
+        inline-size="fill"
+        href={orderId ? `app:orders/${encodeURIComponent(orderId)}` : undefined}
+      >
+        Open in Insignia →
+      </s-button>
     </s-stack>
   );
 }
