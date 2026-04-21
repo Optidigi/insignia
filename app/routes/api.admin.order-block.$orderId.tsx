@@ -168,15 +168,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     const logoMap = olc.logoAssetIdsByPlacementId as Record<string, string | null> | null;
     const allPlacements = olc.productConfig?.views.flatMap(v => v.placements) ?? [];
 
-    const placementBlocks: PlacementBlock[] = allPlacements.map(p => ({
-      placementId: p.id,
-      name: p.name,
-      logoThumbnailUrl: logoMap?.[p.id] ? (thumbnailUrls[logoMap[p.id]!] ?? null) : null,
-    }));
+    // Only include placements the customer actually selected (keys in logoMap).
+    // A missing key means the placement was not chosen — not that artwork is pending.
+    const placementBlocks: PlacementBlock[] = allPlacements
+      .filter(p => logoMap != null && p.id in logoMap)
+      .map(p => ({
+        placementId: p.id,
+        name: p.name,
+        logoThumbnailUrl: logoMap![p.id] ? (thumbnailUrls[logoMap![p.id]!] ?? null) : null,
+      }));
 
-    // Check asset ID presence (not thumbnail URL) so transient presign failures don't flip status
+    // Artwork is pending only when a selected placement has no logo uploaded (null value).
     const overallArtworkStatus: "PROVIDED" | "PENDING_CUSTOMER" =
-      allPlacements.some(p => !logoMap?.[p.id]) || olc.artworkStatus === "PENDING_CUSTOMER"
+      Object.values(logoMap ?? {}).some(id => !id) || olc.artworkStatus === "PENDING_CUSTOMER"
         ? "PENDING_CUSTOMER"
         : "PROVIDED";
 
