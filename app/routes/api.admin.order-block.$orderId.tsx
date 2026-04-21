@@ -44,7 +44,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     select: { id: true },
   });
   if (!shop) {
-    return cors(Response.json({ orderId, items: [] }));
+    return cors(Response.json({ orderId, items: [], feeTotal: null, feeCurrencyCode: null }));
   }
 
   const olcs = await db.orderLineCustomization.findMany({
@@ -69,7 +69,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   });
 
   if (olcs.length === 0) {
-    return cors(Response.json({ orderId, items: [] }));
+    return cors(Response.json({ orderId, items: [], feeTotal: null, feeCurrencyCode: null }));
   }
 
   // Collect all logo asset IDs
