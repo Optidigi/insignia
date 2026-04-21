@@ -25,6 +25,8 @@ type LineItemBlock = {
 type OrderBlockResponse = {
   orderId: string;
   items: LineItemBlock[];
+  feeTotal: string | null;
+  feeCurrencyCode: string | null;
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -97,6 +99,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   // Fetch line item titles and variant titles from Shopify Admin GraphQL
   const lineItemData: Record<string, { title: string; variantTitle: string; quantity: number }> = {};
+  let feeTotal: string | null = null;
+  let feeCurrencyCode: string | null = null;
   try {
     const resp = await admin.graphql(
       `#graphql
@@ -109,6 +113,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
                 title
                 quantity
                 variant { title }
+                customAttributes { key value }
+                originalTotalSet { shopMoney { amount currencyCode } }
               }
             }
           }
@@ -121,22 +127,41 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         order?: {
           lineItems?: {
             edges: Array<{
-              node: { id: string; title: string; quantity: number; variant?: { title?: string } | null };
+              node: {
+                id: string;
+                title: string;
+                quantity: number;
+                variant?: { title?: string } | null;
+                customAttributes?: Array<{ key: string; value: string }>;
+                originalTotalSet?: {
+                  shopMoney?: { amount: string; currencyCode: string } | null;
+                } | null;
+              };
             }>;
           };
         };
       };
     };
+    let feeAccumulator = 0;
     for (const edge of data.data?.order?.lineItems?.edges ?? []) {
-      lineItemData[edge.node.id] = {
-        title: edge.node.title,
-        variantTitle: edge.node.variant?.title ?? "",
-        quantity: edge.node.quantity,
+      const node = edge.node;
+      lineItemData[node.id] = {
+        title: node.title,
+        variantTitle: node.variant?.title ?? "",
+        quantity: node.quantity,
       };
+      const isFeeItem = node.customAttributes?.some(
+        a => a.key === "_insignia_fee" && a.value === "true"
+      );
+      if (isFeeItem && node.originalTotalSet?.shopMoney?.amount) {
+        feeAccumulator += parseFloat(node.originalTotalSet.shopMoney.amount);
+        feeCurrencyCode ??= node.originalTotalSet.shopMoney.currencyCode;
+      }
     }
+    if (feeAccumulator > 0) feeTotal = feeAccumulator.toFixed(2);
   } catch (e) {
     console.error("[order-block] Failed to fetch Shopify line item data:", e);
-    // Non-fatal: block renders without product names
+    // Non-fatal: block renders without product names or fee
   }
 
   const items: LineItemBlock[] = olcs.map((olc) => {
@@ -176,5 +201,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   });
 
-  return cors(Response.json({ orderId, items } satisfies OrderBlockResponse));
+  return cors(Response.json({ orderId, items, feeTotal, feeCurrencyCode } satisfies OrderBlockResponse));
 }
