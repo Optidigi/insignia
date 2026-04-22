@@ -1,10 +1,53 @@
 # Data schemas (canonical)
 
-> **Last verified against prisma/schema.prisma**: 2026-04-10
+> **Last verified against prisma/schema.prisma**: 2026-04-23
 
 This file defines the canonical shape and meaning of shared data objects.
 
 If a field is described here, other docs MUST link here instead of duplicating definitions.
+
+## Shop
+
+Root installation record. Every tenant-scoped model cascades from this.
+
+- `id` (UUID)
+- `shopifyDomain` (string, unique): e.g., `"store.myshopify.com"`
+- `accessToken` (string): Shopify offline access token. Currently stored plaintext despite the schema comment saying "Encrypted at rest" — the comment is aspirational. Encryption at rest is an open decision (see `docs/notes/open-work.md`).
+- `currencyCode` (string): ISO 4217 code from Shopify, e.g. `"EUR"`. Defaults to `"USD"`.
+- `installedAt` (timestamp)
+- `uninstalledAt` (timestamp | null)
+
+## CustomizationDraft
+
+Storefront draft created by `POST /apps/insignia/customizations`. Persists buyer selections before the variant pool slot is reserved.
+
+- `id` (UUID)
+- `shopId` (UUID)
+- `productId` (string): Shopify product GID
+- `variantId` (string): Shopify variant GID
+- `productConfigId` (UUID)
+- `methodId` (UUID): references `DecorationMethod.id`
+- `placements` (JSON): `[{ placementId: string, stepIndex: number }]`
+- `logoAssetIdsByPlacementId` (JSON): `{ [placementId: string]: string | null }`
+- `artworkStatus` (`PROVIDED` | `PENDING_CUSTOMER`, default `PROVIDED`)
+- `customerEmail` (string | null): Shopify customer email, used for GDPR redact scoping
+- `unitPriceCents` (integer | null): set after `POST /apps/insignia/price`
+- `feeCents` (integer | null): placement/customization fee component
+- `configHash` (string | null): for variant pool aggregation
+- `pricingVersion` (string | null)
+- `createdAt` (timestamp)
+
+## StorefrontUploadSession
+
+Temporary record created when a presigned PUT URL is issued for a browser-direct upload. Cleaned up by cron after TTL.
+
+- `id` (UUID)
+- `shopId` (UUID)
+- `storageKey` (string): R2 key where the client PUTs the file
+- `contentType` (string)
+- `fileName` (string | null)
+- `sizeBytes` (integer | null)
+- `createdAt` (timestamp)
 
 ## ProductConfig
 
@@ -50,6 +93,7 @@ A view is a perspective (front/back/left/right/etc.) and does not include color-
 - `defaultImageKey` (string | null): R2 key for the view-level default image.
 - `placementGeometry` (JSON | null): shared zone geometry, overridable per-variant.
 - `sharedZones` (boolean, default true): whether geometry is shared across variants.
+- `calibrationPxPerCm` (float | null): pixels-per-cm from the ruler calibration tool; null = not calibrated. Used to convert between on-screen pixels and real-world measurements in the placement editor.
 
 ## VariantViewConfiguration
 
@@ -91,6 +135,7 @@ Percent-based geometry relative to the view image. Used in both `ProductView.pla
 - `centerXPercent` (number 0–100)
 - `centerYPercent` (number 0–100)
 - `maxWidthPercent` (number 0–100)
+- `maxHeightPercent` (number 0–100 | null): optional maximum height constraint. When present, the logo is constrained to whichever dimension (width or height) is more restrictive.
 
 Validation:
 
@@ -104,6 +149,9 @@ Validation:
 - `shopId` (UUID, unique)
 - `placeholderLogoImageUrl` (URL | null): merchant-provided placeholder used when buyer selects "Logo later".
 - `setupGuideDismissedAt` (timestamp | null): tracks whether the setup guide has been dismissed.
+- `emailReminderTemplate` (string | null): custom email template for artwork reminder messages.
+- `productionQcEnabled` (boolean, default false): enables the `QUALITY_CHECK` production status step.
+- `defaultStorefrontLocale` (string, default `"en"`): BCP-47 primary subtag; determines which locale the storefront modal loads by default. One of the 8 supported locales.
 
 ## LogoAsset
 
@@ -133,6 +181,8 @@ Internal record linking a Shopify line item to an Insignia customization.
 - `placementGeometrySnapshotByViewId` (JSON | null): immutable snapshot of placement geometry captured at order creation. Shape: `{ [viewId: string]: { [placementId: string]: PlacementGeometry | null } | null }`. See `geometry-snapshot-specification.md`.
 - `useLiveConfigFallback` (boolean, default false): when true, fall back to live config geometry (for legacy orders without snapshots).
 - `orderStatusUrl` (string | null): Shopify customer-facing order status page URL.
+- `feeShopifyVariantId` (string | null): snapshot of the fee variant GID captured at `orders/create`. Allows `orders/paid` to recycle the slot even if `currentConfigId` was already cleared by cron.
+- `feeShopifyProductId` (string | null): snapshot of the fee product GID, paired with `feeShopifyVariantId`.
 
 Notes:
 
@@ -163,8 +213,10 @@ Represents a reusable slot variant for non-Plus pricing.
 - `shopifyProductId` (string): Shopify product GID (the fee product).
 - `shopifyVariantId` (string): Shopify variant GID.
 - `state` (`FREE` | `RESERVED` | `IN_CART`)
+- `reservedAt` (timestamp | null): when the slot was last reserved.
 - `reservedUntil` (timestamp | null)
 - `inCartUntil` (timestamp | null)
+- `currentConfigId` (UUID | null, unique): FK to the `CustomizationConfig` currently occupying this slot.
 
 ## WebhookEvent
 
@@ -174,6 +226,20 @@ Record used to deduplicate Shopify webhook deliveries.
 - `eventId` (string): `X-Shopify-Event-Id`
 - `topic` (string): `X-Shopify-Topic`
 - `receivedAt` (timestamp)
+- `processedAt` (timestamp | null): set when the handler completes successfully.
+
+## OrderNote
+
+Production notes written by merchant staff on an order. Anchored to `(shopId, shopifyOrderId)` — not to `OrderLineCustomization` — so notes survive line-level changes and are covered by GDPR cascade deletes via the Shop FK.
+
+- `id` (UUID)
+- `shopId` (UUID)
+- `shopifyOrderId` (string): Shopify Order GID, e.g. `"gid://shopify/Order/1234"`
+- `body` (text): note content
+- `authorUserId` (bigint | null): Shopify user ID from Session (null = system note)
+- `authorName` (string | null): denormalized display name (avoids a Session join at render time)
+- `createdAt` (timestamp)
+- `updatedAt` (timestamp)
 
 ## StorefrontTranslation
 

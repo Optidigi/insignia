@@ -95,6 +95,7 @@ export async function clientLoader() {
   const rawVariantId = url.searchParams.get("variantId") ?? url.searchParams.get("v") ?? "";
   const productId = rawProductId ? toProductGid(rawProductId) : rawProductId;
   const variantId = rawVariantId ? toVariantGid(rawVariantId) : rawVariantId;
+  const returnUrl = url.searchParams.get("returnUrl");
   // Read appUrl from the <base> tag that AppProxyProvider injected on the server
   // render. Force https:// — if a stale http:// slips through from an old SSR,
   // mixed-content would block every bundle load. Trim trailing slash too.
@@ -102,23 +103,24 @@ export async function clientLoader() {
   const appUrl = baseHref
     ? baseHref.replace(/^http:\/\//, "https://").replace(/\/$/, "")
     : window.location.origin;
-  return { productId, variantId, appUrl };
+  return { productId, variantId, appUrl, returnUrl };
 }
 // Run on hydration so any hydration-time revalidation also uses this path.
 clientLoader.hydrate = true as const;
 
 export default function ModalRoute() {
-  const { productId, variantId, appUrl } = useLoaderData() as {
+  const { productId, variantId, appUrl, returnUrl } = useLoaderData() as {
     productId: string;
     variantId: string;
     appUrl: string;
+    returnUrl: string | null;
   };
 
   return (
     <AppProxyProvider appUrl={appUrl}>
       <title>Customize your product</title>
       <div className="insignia-modal-page">
-        <CustomizationModal productId={productId} variantId={variantId} />
+        <CustomizationModal productId={productId} variantId={variantId} returnUrl={returnUrl} />
       </div>
     </AppProxyProvider>
   );

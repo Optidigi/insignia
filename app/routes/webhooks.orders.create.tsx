@@ -11,7 +11,7 @@ import { authenticate, unauthenticated } from "../shopify.server";
 import db from "../db.server";
 import {
   processWebhookIdempotently,
-  getShopByDomain,
+  getOrCreateShopByDomain as getShopByDomain,
 } from "../lib/services/webhook-idempotency.server";
 
 export const action = async ({ request }: ActionFunctionArgs) => {

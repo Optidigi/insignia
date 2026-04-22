@@ -1,184 +1,104 @@
-# Order detail rendering + secure downloads (Dashboard)
+# Order detail rendering (Dashboard)
 
-> **Last verified**: 2026-04-10
+> **Last verified**: 2026-04-23
 
-This doc describes how the embedded dashboard should render order line previews and provide secure download links for logo/artwork assets.
+This doc describes how the embedded dashboard renders order line previews and provides download links for logo/artwork assets.
 
-**Important**: For order rendering, always use the immutable geometry snapshot (`placementGeometrySnapshotByViewId`) from `OrderLineCustomization`, NOT the live config geometry. The snapshot captures what was ordered. See `docs/core/geometry-snapshot-specification.md` for details.
+**Important**: For order rendering always use the immutable geometry snapshot (`placementGeometrySnapshotByViewId`) from `OrderLineCustomization`, NOT the live config geometry. The snapshot captures what was ordered. See `docs/core/geometry-snapshot-specification.md` for details.
+
+## Implementation pattern
+
+Order data is loaded by the **React Router loader** in `app.orders.$id.tsx` — there is no separate JSON endpoint. The loader returns all data needed to render the page in one pass. The frontend renders client-side using Konva.
 
 ## Goals
 
-- Merchant sees accurate previews (same placement geometry as storefront).
+- Merchant sees accurate previews (same placement geometry as the storefront at time of order).
 - Merchant can download the correct logo/artwork per placement.
-- Asset links must not be publicly guessable.
+- Asset links must not be publicly guessable (presigned R2 URLs, 10-minute TTL).
 
-## Authentication (embedded admin)
+## Authentication
 
-Dashboard → backend calls use Shopify **session tokens**:
+The page route is authenticated by `authenticate.admin(request)` from `@shopify/shopify-app-react-router`. No manual session token handling required.
 
-- Frontend obtains a session token via Shopify App Bridge.
-- Frontend sends `Authorization: Bearer <session_token>` to backend `/admin/*` endpoints.
-- Backend MUST validate the session token on every request (tokens are short-lived and auto-refreshed by App Bridge).
+## Data returned by the loader
 
-Reference: https://shopify.dev/docs/apps/build/authentication-authorization/session-tokens
+The loader for `app.orders.$id.tsx` returns (approximate shape):
 
-## Data needed to render previews
-
-Rendering should be done client-side (Konva), using the same primitives as the storefront modal:
-
-For each order line customization, the dashboard needs:
-
-- `OrderLineCustomization` (placements, step index per placement, `artworkStatus`, `logoAssetIdsByPlacementId`).
-- `ProductConfig.placements` (placement steps and labels).
-- `VariantViewConfiguration` for the order line's `variantId` and every `ProductView` (base `imageUrl` + `placementGeometry`).
-- Resolved logo assets per placement:
-  - if `logoAssetIdsByPlacementId[placementId] != null`, use that LogoAsset's `previewPngUrl`.
-  - else (logo later), use `MerchantSettings.placeholderLogoImageUrl` if present, else render bold `LOGO` text.
-
-Canonical schemas:
-
-- `docs/core/data-schemas.md`
-
-## Admin endpoints (recommended)
-
-### Get order details
-
-`GET /admin/orders/:id`
-
-**Response shape (MVP, required):**
-
-```json
+```ts
 {
-  "order": {
-    "id": "gid://shopify/Order/123",
-    "name": "#1001",
-    "createdAt": "2026-01-31T00:00:00Z",
-    "financialStatus": "paid",
-    "currency": "EUR"
+  order: {
+    id: string,            // Shopify Order GID
+    name: string,          // "#1001"
+    createdAt: string,
+    financialStatus: string,
+    currencyCode: string,
+    orderStatusUrl: string | null,
+    customer: { name, email } | null,
   },
-  "customizedLines": [
-    {
-      "shopifyLineId": "gid://shopify/LineItem/456",
-      "variantId": "gid://shopify/ProductVariant/999",
-      "productConfigId": "uuid",
-      "quantity": 5,
-      "artworkStatus": "PROVIDED",
-      "placements": [
-        { "placementId": "uuid", "stepIndex": 1 }
-      ],
-      "logoAssetIdsByPlacementId": {
-        "uuid": "uuid"
-      }
-    }
-  ],
-  "productConfig": {
-    "id": "uuid",
-    "views": [{ "id": "uuid", "perspective": "front" }],
-    "placements": [
-      {
-        "id": "uuid",
-        "name": "Left chest",
-        "basePriceAdjustmentCents": 500,
-        "hidePriceWhenZero": false,
-        "defaultStepIndex": 1,
-        "steps": [{ "label": "Small", "priceAdjustmentCents": 0 }]
-      }
-    ]
+  customizedLines: Array<{
+    shopifyLineId: string,
+    variantId: string,
+    productConfigId: string,
+    quantity: number,
+    artworkStatus: "PROVIDED" | "PENDING_CUSTOMER",
+    productionStatus: ProductionStatus,
+    placements: Array<{ placementId: string, stepIndex: number }>,
+    logoAssetIdsByPlacementId: Record<string, string | null>,
+    placementGeometrySnapshotByViewId: Record<string, Record<string, PlacementGeometry | null> | null> | null,
+    feeShopifyVariantId: string | null,
+  }>,
+  allShopifyLineItems: Array<{ ... }>,  // all lines for full order context
+  productConfig: {
+    id: string,
+    views: Array<{ id, perspective, name }>,
+    placements: Array<{ id, name, basePriceAdjustmentCents, hidePriceWhenZero, defaultStepIndex, steps }>
   },
-  "variantViewConfigurations": [
-    {
-      "variantId": "gid://shopify/ProductVariant/999",
-      "viewId": "uuid",
-      "imageUrl": "https://<signed-url-to-view-image>?expires=2026-01-31T00:45:00Z",
-      "placementGeometry": {
-        "uuid": { "centerXPercent": 50, "centerYPercent": 40, "maxWidthPercent": 30 }
-      }
-    }
-  ],
-  "logoAssets": [
-    {
-      "id": "uuid",
-      "kind": "buyer_upload",
-      "previewPngUrl": "https://<signed-url-to-logo-preview-png>?expires=2026-01-31T00:45:00Z",
-      "sanitizedSvgUrl": "https://<signed-url-to-sanitized-svg>?expires=2026-01-31T00:45:00Z"
-    }
-  ],
-  "downloads": {
-    "lines": {
-      "gid://shopify/LineItem/456": {
-        "placements": {
-          "uuid": {
-            "png": "/admin/logo-assets/uuid/download?format=png",
-            "svg": "/admin/logo-assets/uuid/download?format=svg"
-          }
-        }
-      }
-    }
-  },
-  "expiresInSeconds": 600
+  variantViewConfigurations: Array<{
+    variantId: string,
+    viewId: string,
+    imageUrl: string | null,  // presigned R2 URL (10-min TTL)
+    placementGeometry: Record<string, PlacementGeometry | null> | null,
+  }>,
+  logoAssets: Array<{
+    id: string,
+    kind: "buyer_upload" | "merchant_placeholder",
+    previewPngUrl: string,        // presigned R2 URL
+    sanitizedSvgUrl: string | null, // presigned R2 URL
+    downloadUrl: string,          // presigned R2 URL for download
+  }>,
+  notes: Array<{
+    id: string,
+    body: string,
+    authorName: string | null,
+    createdAt: string,
+  }>,
+  emailReminderTemplate: string | null,
+  productionQcEnabled: boolean,
 }
 ```
 
-**Response contract rules:**
-- All URLs intended for `<img>` tags (imageUrl, previewPngUrl, sanitizedSvgUrl) MUST be signed with a short-lived TTL (10 minutes).
-- Signed image URLs expire at the timestamp in the query parameter (e.g., `expires=2026-01-31T00:45:00Z`).
-- Download URLs MAY be authenticated endpoints (recommended), fetched using `authenticatedFetch` and saved as a Blob.
-- Never return original (unsanitized) SVG; return sanitized SVG only per `docs/core/svg-upload-safety.md`.
-- `expiresInSeconds` (600) applies to the entire response and all signed image URLs within it.
+## Asset URL strategy
 
-### Signed URL expiration (images only)
+- All image URLs (`imageUrl`, `previewPngUrl`, `sanitizedSvgUrl`) are **presigned R2 URLs** with a 10-minute TTL.
+- Download URLs are also presigned R2 URLs. The frontend triggers a download by fetching with `authenticatedFetch` (App Bridge) and saving as a Blob — there is no separate `/admin/logo-assets/:id/download` endpoint.
+- If an `<img>` returns 403 (expired URL), trigger a full re-fetch of the loader to get fresh signed URLs.
+- Never expose raw R2 storage keys to the frontend.
 
-**Frontend responsibility:**
-- Display or track `expiresInSeconds` from the response to know when to refresh.
-- If an `<img>` fails to load due to 403/410, trigger a re-fetch of the entire order detail response to get fresh signed URLs.
-- Do not cache image URLs beyond their expiration time.
-
-**Backend implementation:**
-- Use short-lived signing with a consistent clock (NTP-synced).
-- TTL: 10 minutes (600 seconds) recommended for embedded admin workflows.
-- Include the expiration timestamp in the URL query parameter for visibility and debugging.
-
-### Download a placement artwork
-
-Provide a backend download endpoint that requires admin Authorization and is fetched using `authenticatedFetch` (App Bridge).
-
-Example:
-
-`GET /admin/logo-assets/:logoAssetId/download?format=svg|png`
-
-**Notes:**
-- Backend MUST authenticate the request with `Authorization: Bearer <session_token>` validation.
-- The dashboard should trigger downloads by fetching the bytes with Authorization and saving as a file (Blob download), rather than relying on `<a href>` with headers.
-- Response MUST set `Content-Disposition: attachment; filename="..."` for a clean "save as" UX.
-- Implement as a backend stream or return signed URLs; do not expose raw storage keys.
-
-## Image URL strategy (best practice)
-
-Images used in `<img>` tags cannot include Authorization headers.
-
-Two acceptable approaches:
-
-1. **Short-lived signed URLs (recommended for MVP):** Backend returns a time-limited signed GET URL for `imageUrl` and `previewPngUrl`. Tokens expire after 10 minutes; frontend re-fetches the order detail if images fail.
-2. **Backend image proxy with one-time token:** Backend issues a short-lived opaque token embedded in the URL and validates it server-side.
-
-For MVP, prefer (1) to keep implementation smaller.
-
-Reference on signed URLs: https://docs.aws.amazon.com/AmazonS3/latest/userguide/using-presigned-url.html
-
-## Rendering algorithm (per order line)
+## Rendering algorithm (per order line, per view)
 
 For each `ProductView`:
 
-1. Load the base `VariantViewConfiguration.imageUrl` (PNG/JPG).
+1. Load the base `VariantViewConfiguration.imageUrl` (presigned R2 PNG/JPG).
 2. For each selected placement in `OrderLineCustomization.placements`:
-   - Read `placementGeometry[placementId]` for this view; if null, skip (nothing to render on this view).
+   - Read geometry from `placementGeometrySnapshotByViewId[viewId][placementId]`; if null, skip (placement not on this view).
    - Resolve the logo preview:
-     - if `logoAssetId` present: use its `previewPngUrl`
-     - else: placeholder image or `LOGO` text
-   - Render logo centered at `(centerXPercent, centerYPercent)` and scale to `maxWidthPercent`.
+     - if `logoAssetIdsByPlacementId[placementId]` is set → use that `LogoAsset.previewPngUrl`
+     - else if merchant placeholder configured → use `MerchantSettings.placeholderLogoImageUrl`
+     - else → render bold `LOGO` text
+   - Render logo centered at `(centerXPercent, centerYPercent)`, scale to `maxWidthPercent` (and `maxHeightPercent` if set).
 
 ## Operational notes
 
-- Keep download endpoints strictly authenticated; do not leak raw storage keys.
-- Prefer returning sanitized SVG only (not original SVG) as described in `docs/core/svg-upload-safety.md`.
-- Never store secrets, auth tokens, or PII in line item properties; use only IDs and hashes (properties are visible in Shopify Admin).
+- Use `placementGeometrySnapshotByViewId` (immutable) not live config geometry.
+- Return only `sanitizedSvgUrl` (never original unsanitized SVG) per `docs/core/svg-upload-safety.md`.
+- Never store secrets or PII in line item properties; use only IDs and hashes.
