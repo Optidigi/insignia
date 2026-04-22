@@ -13,29 +13,22 @@ export function ItemRow({ item }: { item: LineItemBlock }) {
     detailParts.push(item.placements.map(p => p.name).join(", "));
   }
   if (item.decorationMethod) detailParts.push(item.decorationMethod);
-  if (item.quantity > 1) detailParts.push(`Qty ${item.quantity}`);
 
   return (
-    <s-stack direction="inline" gap="base" align-items="start">
-      {item.firstLogoThumbnailUrl ? (
-        <s-thumbnail src={item.firstLogoThumbnailUrl} alt="Logo preview" size="small" />
-      ) : (
-        <s-box
-          inline-size="40px"
-          block-size="40px"
-          background="subdued"
-          border-radius="base"
-        />
-      )}
-      <s-stack direction="block" gap="base">
-        <s-stack direction="inline" gap="base" align-items="center">
-          <s-text type="strong">{name}</s-text>
-          <s-badge tone={badge.tone}>{badge.label}</s-badge>
-        </s-stack>
+    <s-grid gridTemplateColumns="1fr auto" alignItems="center">
+      <s-stack direction="block" gap="none">
+        <s-text type="strong">{name}</s-text>
         {detailParts.length > 0 && (
           <s-text color="subdued">{detailParts.join(" · ")}</s-text>
         )}
       </s-stack>
-    </s-stack>
+      <s-stack direction="inline" alignItems="center" gap="small">
+        <s-stack direction="inline" alignItems="center" gap="none">
+          <s-text color="subdued">×</s-text>
+          <s-chip accessibility-label={`Qty ${item.quantity}`}>{item.quantity}</s-chip>
+        </s-stack>
+        <s-badge tone={badge.tone} icon={badge.icon}>{badge.label}</s-badge>
+      </s-stack>
+    </s-grid>
   );
 }

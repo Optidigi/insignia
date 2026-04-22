@@ -16,19 +16,19 @@ export function ErrorState({ onRetry, orderId }: ErrorStateProps) {
   }, [onRetry]);
 
   return (
-    <s-stack direction="block" gap="base">
+    <s-stack direction="block" gap="base" alignItems="stretch">
       <s-banner tone="critical" heading="Couldn't load customization data">
         Refresh the page or open Insignia to retry.
       </s-banner>
-      <s-button variant="secondary" type="button" ref={retryRef}>
+      <s-button variant="secondary" inline-size="fill" type="button" ref={retryRef}>
         Retry
       </s-button>
       <s-button
         variant="primary"
         inline-size="fill"
-        href={orderId ? `app:orders/${encodeURIComponent(orderId)}` : undefined}
+        href={orderId ? `/app/orders/${encodeURIComponent(orderId)}` : undefined}
       >
-        Open in Insignia →
+        Open in Insignia
       </s-button>
     </s-stack>
   );
