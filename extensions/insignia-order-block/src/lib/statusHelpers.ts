@@ -2,13 +2,16 @@ import type { LineItemBlock } from "./types";
 
 type BadgeTone = "caution" | "info" | "warning" | "success";
 
-export function productionBadge(status: string): { tone: BadgeTone; label: string } {
-  const map: Record<string, { tone: BadgeTone; label: string }> = {
-    ARTWORK_PENDING:  { tone: "caution",  label: "Awaiting artwork" },
-    ARTWORK_PROVIDED: { tone: "info",     label: "Artwork received" },
-    IN_PRODUCTION:    { tone: "info",     label: "In production" },
-    QUALITY_CHECK:    { tone: "warning",  label: "Quality check" },
-    SHIPPED:          { tone: "success",  label: "Shipped" },
+type BadgeIcon = "check-circle" | "alert-triangle" | "clock";
+export type BadgeProps = { tone: BadgeTone; label: string; icon?: BadgeIcon };
+
+export function productionBadge(status: string): BadgeProps {
+  const map: Record<string, BadgeProps> = {
+    ARTWORK_PENDING:  { tone: "caution",  label: "Awaiting artwork", icon: "alert-triangle" },
+    ARTWORK_PROVIDED: { tone: "info",     label: "Artwork received",  icon: "check-circle" },
+    IN_PRODUCTION:    { tone: "info",     label: "In production",    icon: "clock" },
+    QUALITY_CHECK:    { tone: "warning",  label: "Quality check",    icon: "alert-triangle" },
+    SHIPPED:          { tone: "success",  label: "Shipped",          icon: "check-circle" },
   };
   return map[status] ?? { tone: "caution", label: status };
 }
@@ -16,9 +19,9 @@ export function productionBadge(status: string): { tone: BadgeTone; label: strin
 // Single highest-urgency badge per item row
 export function itemBadge(
   item: Pick<LineItemBlock, "overallArtworkStatus" | "productionStatus">
-): { tone: BadgeTone; label: string } {
+): BadgeProps {
   if (item.overallArtworkStatus === "PENDING_CUSTOMER") {
-    return { tone: "caution", label: "Awaiting artwork" };
+    return { tone: "caution", label: "Awaiting artwork", icon: "alert-triangle" };
   }
   return productionBadge(item.productionStatus);
 }
@@ -26,15 +29,15 @@ export function itemBadge(
 // Overall worst-case badge for the block header
 export function overallBadge(
   items: Pick<LineItemBlock, "overallArtworkStatus" | "productionStatus">[]
-): { tone: BadgeTone; label: string } {
+): BadgeProps {
   if (items.length === 0) return { tone: "info", label: "No items" };
   if (items.every(i => i.productionStatus === "SHIPPED")) {
-    return { tone: "success", label: "Complete" };
+    return { tone: "success", label: "Complete", icon: "check-circle" };
   }
   if (items.some(i => i.overallArtworkStatus === "PENDING_CUSTOMER")) {
-    return { tone: "caution", label: "Needs action" };
+    return { tone: "caution", label: "Needs action", icon: "alert-triangle" };
   }
-  return { tone: "info", label: "In progress" };
+  return { tone: "info", label: "In progress", icon: "clock" };
 }
 
 function formatFee(amount: string, currencyCode: string): string {

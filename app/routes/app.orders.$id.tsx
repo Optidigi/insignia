@@ -4,40 +4,21 @@
  * Canonical: docs/admin/order-detail-rendering.md, docs/admin/orders-workflow.md
  */
 
-import { useState, useCallback, useEffect, lazy, Suspense } from "react";
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
-import { useLoaderData, useSubmit, useNavigation } from "react-router";
-import {
-  Page,
-  Layout,
-  Card,
-  BlockStack,
-  InlineStack,
-  InlineGrid,
-  Text,
-  Badge,
-  Divider,
-  Banner,
-  Box,
-  Button,
-  Collapsible,
-  DropZone,
-  Spinner,
-  Thumbnail,
-  TextField,
-} from "@shopify/polaris";
-import { ExternalIcon } from "@shopify/polaris-icons";
 import { ProductionStatus } from "@prisma/client";
+import OrderDetail from "../components/admin/orders/OrderDetail";
 import { authenticate } from "../shopify.server";
 import { syncOrderTags } from "../lib/services/order-tags.server";
+import {
+  SaveNoteSchema,
+  createOrderNote,
+  listOrderNotes,
+} from "../lib/services/order-notes.server";
 import db from "../db.server";
 import { handleError } from "../lib/errors.server";
 import { getPresignedDownloadUrl, getPresignedGetUrl } from "../lib/storage.server";
 import type { PlacementGeometry } from "../lib/admin-types";
 
-const OrderLinePreviewLazy = lazy(() =>
-  import("../components/OrderLinePreview.client").then((m) => ({ default: m.OrderLinePreview }))
-);
 
 const PRODUCTION_STATUS_ORDER: ProductionStatus[] = [
   ProductionStatus.ARTWORK_PENDING,
@@ -255,6 +236,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     imageUrl: string;
     geometry: Record<string, PlacementGeometry | null>;
     logoUrls: Record<string, string | null>;
+    calibrationPxPerCm: number | null;
   };
 
   // --- Per-line view preview data (Konva canvas) — all views per line ---
@@ -274,10 +256,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         },
         include: {
           productView: {
-            select: { id: true, name: true, placementGeometry: true, sharedZones: true },
+            select: { id: true, name: true, perspective: true, placementGeometry: true, sharedZones: true, calibrationPxPerCm: true },
           },
         },
       });
+      // Unnamed-view counter scoped per line — used only as the final
+      // fallback when BOTH name and perspective are null/empty.
+      let unnamedViewCounter = 0;
 
       const snapshot = line.placementGeometrySnapshotByViewId as Record<string, Record<string, PlacementGeometry | null> | null> | null;
 
@@ -319,12 +304,28 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         }
 
         if (signedImageUrl) {
+          // Mirror the storefront + view-editor naming precedence:
+          //   explicit `name` → capitalized `perspective` ("Front" / "Back")
+          //   → indexed fallback ("View 1"). See PlacementStep.viewName +
+          //   getPerspectiveLabel. DO NOT regress this to `name ?? "View"` —
+          //   merchants often leave `name` null and rely on perspective.
+          const rawName = vc.productView?.name;
+          const perspective = vc.productView?.perspective;
+          let viewName: string;
+          if (rawName && rawName.trim()) {
+            viewName = rawName;
+          } else if (perspective && perspective.trim()) {
+            viewName = perspective.charAt(0).toUpperCase() + perspective.slice(1);
+          } else {
+            viewName = `View ${++unnamedViewCounter}`;
+          }
           views.push({
             viewId,
-            viewName: vc.productView?.name ?? "View",
+            viewName,
             imageUrl: signedImageUrl,
             geometry,
             logoUrls: logoUrlsForLine,
+            calibrationPxPerCm: vc.productView?.calibrationPxPerCm ?? null,
           });
         }
       }
@@ -332,6 +333,78 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       linePreviewData[line.id] = views.length > 0 ? views : null;
     })
   );
+
+  // --- Batch-fetch CustomizationDrafts for selected step resolution ---
+  // Collect all unique draft IDs from order lines (filter nulls + dedupe).
+  const draftIds = Array.from(
+    new Set(
+      orderLines
+        .map((l) => l.customizationConfig?.customizationDraftId)
+        .filter((id): id is string => id != null),
+    ),
+  );
+
+  type DraftPlacementEntry = { placementId: string; stepIndex: number };
+
+  // stepIndexByPlacementByDraft: draftId → { [placementId]: stepIndex }
+  const stepIndexByPlacementByDraft: Record<string, Record<string, number>> = {};
+
+  if (draftIds.length > 0) {
+    const drafts = await db.customizationDraft.findMany({
+      where: { id: { in: draftIds } },
+      select: { id: true, placements: true },
+    });
+    for (const draft of drafts) {
+      const entries = draft.placements as DraftPlacementEntry[];
+      if (!Array.isArray(entries)) continue;
+      stepIndexByPlacementByDraft[draft.id] = Object.fromEntries(
+        entries.map((e) => [e.placementId, e.stepIndex]),
+      );
+    }
+  }
+
+  // Build selectedSteps per line: Record<placementId, { stepIndex, label, scaleFactor, priceAdjustmentCents } | null>
+  const selectedStepsByLine: Record<
+    string,
+    Record<string, { stepIndex: number; label: string; scaleFactor: number; priceAdjustmentCents: number } | null>
+  > = {};
+
+  for (const line of orderLines) {
+    const draftId = line.customizationConfig?.customizationDraftId ?? null;
+    const stepIndexByPlacement = draftId ? (stepIndexByPlacementByDraft[draftId] ?? {}) : {};
+
+    // All placements across all views for this line.
+    const allPlacements = line.productConfig?.views.flatMap((v) => v.placements) ?? [];
+
+    const selectedSteps: Record<
+      string,
+      { stepIndex: number; label: string; scaleFactor: number; priceAdjustmentCents: number } | null
+    > = {};
+
+    for (const placement of allPlacements) {
+      const stepIndex = stepIndexByPlacement[placement.id];
+      if (stepIndex == null) {
+        selectedSteps[placement.id] = null;
+        continue;
+      }
+      const step = placement.steps[stepIndex];
+      if (!step) {
+        selectedSteps[placement.id] = null;
+        continue;
+      }
+      selectedSteps[placement.id] = {
+        stepIndex,
+        label: step.label,
+        scaleFactor: step.scaleFactor,
+        priceAdjustmentCents: step.priceAdjustmentCents,
+      };
+    }
+
+    selectedStepsByLine[line.id] = selectedSteps;
+  }
+
+  // TODO: Add cursor-based pagination when per-order note counts exceed ~50 (see listOrderNotes).
+  const notes = await listOrderNotes(shop.id, shopifyOrderId);
 
   return {
     shopifyOrderId,
@@ -353,7 +426,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         placements: v.placements,
       })) ?? [],
       logoAssetIdsByPlacementId: l.logoAssetIdsByPlacementId as Record<string, string | null> | null,
+      orderStatusUrl: l.orderStatusUrl, // Phase 3 patch: exposes upload link for pending-artwork banner
       createdAt: l.createdAt.toISOString(),
+      selectedSteps: selectedStepsByLine[l.id] ?? {},
     })),
     logoAssetMap: Object.fromEntries(
       Object.entries(logoAssetMap).map(([k, v]) => [
@@ -380,6 +455,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     currencyCode,
     orderDataError,
     linePreviewData,
+    notes,
   };
 };
 
@@ -550,671 +626,64 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return { success: true };
     }
 
+    if (intent === "save-note") {
+      const shop = await db.shop.findUnique({
+        where: { shopifyDomain: session.shop },
+        select: { id: true },
+      });
+      if (!shop) return { error: { code: "NOT_FOUND", message: "Shop not found" } };
+
+      // Resolve shopifyOrderId from formData (the UI must POST it alongside intent).
+      const shopifyOrderId = formData.get("shopifyOrderId") as string | null;
+      if (!shopifyOrderId) {
+        return { error: { code: "BAD_REQUEST", message: "Missing shopifyOrderId" } };
+      }
+
+      // Confirm the order belongs to this shop: at least one OLC must exist for it.
+      const orderExists = await db.orderLineCustomization.findFirst({
+        where: { shopifyOrderId, productConfig: { shopId: shop.id } },
+        select: { id: true },
+      });
+      if (!orderExists) {
+        return { error: { code: "NOT_FOUND", message: "Order not found in this shop" } };
+      }
+
+      // Validate body
+      const rawBody = formData.get("body");
+      const parsed = SaveNoteSchema.safeParse({ body: rawBody });
+      if (!parsed.success) {
+        const message = parsed.error.issues[0]?.message ?? "Invalid note body";
+        return { error: { code: "VALIDATION_ERROR", message } };
+      }
+
+      // Derive author info from the online session's associated_user (present for
+      // merchant staff logins; absent for offline / API tokens — treated as system note).
+      const associatedUser = session.onlineAccessInfo?.associated_user;
+      const authorUserId = associatedUser ? BigInt(associatedUser.id) : null;
+      const firstName = associatedUser?.first_name ?? "";
+      const lastName = associatedUser?.last_name ?? "";
+      const authorName = [firstName, lastName].filter(Boolean).join(" ") || null;
+
+      const note = await createOrderNote(
+        shop.id,
+        shopifyOrderId,
+        parsed.data.body,
+        authorUserId,
+        authorName,
+      );
+
+      return { ok: true, note };
+    }
+
     return { error: "Unknown intent" };
   } catch (error) {
     return handleError(error);
   }
 };
 
-function getDefaultTemplate(orderName: string, pendingCount: number, shopDomain: string): string {
-  return `Hi,\n\nThank you for your order ${orderName}!\n\nWe noticed you chose to provide your logo later for ${pendingCount} customized item(s). Please reply to this email with your logo file (SVG, PNG, or JPG).\n\nThank you,\n${shopDomain}`;
-}
-
 function sanitizeFilename(name: string): string {
   // Keep only safe characters for Content-Disposition filename parameter
   return name.replace(/[^A-Za-z0-9._\-() ]/g, "_").trim() || "download";
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes >= 1_000_000) return `${(bytes / 1_000_000).toFixed(1)} MB`;
-  if (bytes >= 1_000) return `${Math.round(bytes / 1_000)} KB`;
-  return `${bytes} B`;
-}
-
-export default function OrderDetailPage() {
-  const {
-    shopifyOrderId,
-    orderName,
-    lines,
-    logoAssetMap,
-    placeholderLogoImageUrl,
-    emailReminderTemplate,
-    shopDomain,
-    customer,
-    shopifyLineItemPrices,
-    allShopifyLineItems,
-    currencyCode,
-    orderDataError,
-    linePreviewData,
-    productionQcEnabled,
-  } = useLoaderData<typeof loader>();
-  const submit = useSubmit();
-  const navigation = useNavigation();
-
-  // activeViewByLine tracks the selected view tab index per line card
-  const [activeViewByLine, setActiveViewByLine] = useState<Record<string, number>>({});
-  // expandedUploader tracks which "lineId:placementId" is expanded, or "lineId:" for legacy
-  const [expandedUploader, setExpandedUploader] = useState<string | null>(null);
-  const [copySuccess, setCopySuccess] = useState(false);
-  const [pendingLineId, setPendingLineId] = useState<string | null>(null);
-  const [templateText, setTemplateText] = useState(emailReminderTemplate ?? "");
-  const [showTemplateEditor, setShowTemplateEditor] = useState(false);
-  const [templateSaving, setTemplateSaving] = useState(false);
-
-  useEffect(() => {
-    if (navigation.state === "idle") {
-      setPendingLineId(null);
-      setTemplateSaving(false);
-      setTemplateText(emailReminderTemplate ?? "");
-    }
-  }, [navigation.state, emailReminderTemplate]);
-
-  const hasPendingArtwork = lines.some((l) => l.artworkStatus === "PENDING_CUSTOMER");
-
-  const handleCopyEmail = useCallback(() => {
-    const pendingLines = lines.filter((l) => l.artworkStatus === "PENDING_CUSTOMER");
-    const textToCopy = templateText.trim()
-      ? templateText
-      : getDefaultTemplate(orderName, pendingLines.length, shopDomain);
-    navigator.clipboard.writeText(textToCopy).then(() => {
-      setCopySuccess(true);
-      setTimeout(() => setCopySuccess(false), 2000);
-    });
-  }, [lines, orderName, shopDomain, templateText]);
-
-  const WORKFLOW_STEPS = [
-    { key: "artwork_pending", label: "Artwork pending" },
-    { key: "artwork_provided", label: "Artwork provided" },
-    { key: "in_production", label: "In production" },
-    ...(productionQcEnabled ? [{ key: "quality_check", label: "Quality check" }] : []),
-    { key: "shipped", label: "Shipped" },
-  ];
-
-  const formatMoney = (amount: number) => {
-    try {
-      return new Intl.NumberFormat(undefined, {
-        style: "currency",
-        currency: currencyCode,
-        minimumFractionDigits: 2,
-      }).format(amount);
-    } catch {
-      return `${currencyCode} ${amount.toFixed(2)}`;
-    }
-  };
-
-  // Product subtotal: sum of ALL Shopify line items (complete order total from Shopify)
-  const productSubtotal = allShopifyLineItems.reduce(
-    (sum, li) => sum + parseFloat(li.amount) * li.quantity,
-    0
-  );
-
-  // Customization fee total
-  const feeTotal = lines.reduce((sum, line) => sum + line.unitPriceCents / 100, 0);
-
-  // Non-customized lines: Shopify line items that are not bound to any OLC
-  const customizedLineIds = new Set(lines.map((l) => l.shopifyLineId));
-  const nonCustomizedItems = allShopifyLineItems.filter((li) => !customizedLineIds.has(li.id));
-
-  // Shopify admin URL for this order
-  const numericOrderId = shopifyOrderId.replace(/\D/g, "");
-  const shopifyAdminOrderUrl = `https://${shopDomain}/admin/orders/${numericOrderId}`;
-
-  return (
-    <Page
-      title={`Order ${orderName}`}
-      backAction={{ content: "Orders", url: "/app/orders" }}
-      secondaryActions={[
-        {
-          content: "Print production sheet",
-          url: `/app/orders/${encodeURIComponent(shopifyOrderId)}/print`,
-          external: true,
-        },
-      ]}
-      titleMetadata={
-        hasPendingArtwork ? (
-          <Badge tone="attention">Artwork pending</Badge>
-        ) : (
-          <Badge tone="success">Complete</Badge>
-        )
-      }
-    >
-      <Layout>
-        <Layout.Section>
-          {hasPendingArtwork ? (
-            <Banner tone="warning" title="Artwork pending — Waiting for customer">
-              <Text as="p">Customer chose to provide artwork later. Send a reminder via the customer upload link.</Text>
-            </Banner>
-          ) : (
-            <Banner tone="success" title="Artwork provided — Ready for production">
-              <Text as="p">Customer uploaded artwork. Review the file and mark as in production when ready.</Text>
-            </Banner>
-          )}
-        </Layout.Section>
-
-        {hasPendingArtwork && (
-        <Layout.Section>
-          <Card>
-            <BlockStack gap="200">
-              <Text variant="headingSm" as="h3">Artwork reminder</Text>
-              <InlineStack gap="200" blockAlign="center">
-                <Button size="slim" variant="plain" onClick={handleCopyEmail}>
-                  {copySuccess ? "Copied!" : "Copy email template"}
-                </Button>
-                <Button
-                  size="slim"
-                  variant="plain"
-                  onClick={() => setShowTemplateEditor((v) => !v)}
-                >
-                  {showTemplateEditor ? "Hide editor" : "Edit template"}
-                </Button>
-              </InlineStack>
-              <Collapsible open={showTemplateEditor} id="template-editor">
-                <BlockStack gap="200">
-                  <TextField
-                    label="Email reminder template"
-                    value={templateText}
-                    onChange={setTemplateText}
-                    multiline={6}
-                    autoComplete="off"
-                    helpText="Leave blank to use the default template. The text is copied as-is when you click 'Copy email template'."
-                  />
-                  <InlineStack gap="200">
-                    <Button
-                      size="slim"
-                      loading={templateSaving}
-                      onClick={() => {
-                        setTemplateSaving(true);
-                        const fd = new FormData();
-                        fd.append("intent", "save-template");
-                        fd.append("template", templateText);
-                        submit(fd, { method: "POST" });
-                      }}
-                    >
-                      Save template
-                    </Button>
-                    <Button
-                      size="slim"
-                      variant="plain"
-                      onClick={() => {
-                        const pendingLines = lines.filter((l) => l.artworkStatus === "PENDING_CUSTOMER");
-                        setTemplateText(getDefaultTemplate(orderName, pendingLines.length, shopDomain));
-                      }}
-                    >
-                      Reset to default
-                    </Button>
-                  </InlineStack>
-                </BlockStack>
-              </Collapsible>
-            </BlockStack>
-          </Card>
-        </Layout.Section>
-        )}
-
-        {orderDataError && (
-          <Layout.Section>
-            <Banner tone="info" title="Order data unavailable">
-              <Text as="p">Could not load customer and pricing information from Shopify. The order details below are still accurate.</Text>
-            </Banner>
-          </Layout.Section>
-        )}
-
-        {lines.filter((l) => l.productionStatus === "ARTWORK_PROVIDED").length > 1 && (
-          <Layout.Section>
-            <Card>
-              <InlineStack align="space-between" blockAlign="center">
-                <Text as="p">
-                  {`${lines.filter((l) => l.productionStatus === "ARTWORK_PROVIDED").length} items ready for production`}
-                </Text>
-                <Button
-                  tone="success"
-                  variant="primary"
-                  size="slim"
-                  loading={navigation.state === "submitting" && pendingLineId === "bulk"}
-                  disabled={navigation.state === "submitting" && pendingLineId !== "bulk"}
-                  onClick={() => {
-                    setPendingLineId("bulk");
-                    const fd = new FormData();
-                    fd.append("intent", "bulk-advance-status");
-                    lines
-                      .filter((l) => l.productionStatus === "ARTWORK_PROVIDED")
-                      .forEach((l) => fd.append("lineId", l.id));
-                    fd.append("newStatus", ProductionStatus.IN_PRODUCTION);
-                    submit(fd, { method: "POST" });
-                  }}
-                >
-                  {`Mark all as In Production (${lines.filter((l) => l.productionStatus === "ARTWORK_PROVIDED").length} items)`}
-                </Button>
-              </InlineStack>
-            </Card>
-          </Layout.Section>
-        )}
-
-        <Layout.Section>
-          <InlineGrid columns={{ xs: 1, md: 2 }} gap="400">
-            <Card>
-              <BlockStack gap="300">
-                <Text variant="headingSm" as="h3">Customer</Text>
-                <Divider />
-                {customer ? (
-                  <BlockStack gap="100">
-                    <Text as="p" fontWeight="semibold">{customer.name}</Text>
-                    {customer.email && (
-                      <Text as="p" tone="subdued">{customer.email}</Text>
-                    )}
-                  </BlockStack>
-                ) : (
-                  <Text as="p" tone="subdued">No customer information available</Text>
-                )}
-                <Box paddingBlockStart="100">
-                  <Button
-                    url={shopifyAdminOrderUrl}
-                    external
-                    icon={ExternalIcon}
-                    size="slim"
-                    variant="plain"
-                  >
-                    View in Shopify
-                  </Button>
-                </Box>
-              </BlockStack>
-            </Card>
-
-            {nonCustomizedItems.length > 0 && (
-              <Card>
-                <BlockStack gap="200">
-                  <Text variant="headingSm" as="h3">Other items in this order</Text>
-                  {nonCustomizedItems.map((li) => (
-                    <InlineStack key={li.id} align="space-between" blockAlign="center">
-                      <Text as="p">
-                        {li.title}
-                        {li.variantTitle ? ` — ${li.variantTitle}` : ""}
-                        {li.quantity > 1 ? ` × ${li.quantity}` : ""}
-                      </Text>
-                      <Text as="p" tone="subdued">
-                        {formatMoney(parseFloat(li.amount) * li.quantity)}
-                      </Text>
-                    </InlineStack>
-                  ))}
-                </BlockStack>
-              </Card>
-            )}
-
-            <Card>
-              <BlockStack gap="300">
-                <Text variant="headingSm" as="h3">Order summary</Text>
-                <Divider />
-                <InlineStack align="space-between">
-                  <Text as="p" tone="subdued">Product subtotal</Text>
-                  <Text as="p">{formatMoney(productSubtotal)}</Text>
-                </InlineStack>
-                <InlineStack align="space-between">
-                  <Text as="p" tone="subdued">Customization fees</Text>
-                  <Text as="p">{formatMoney(feeTotal)}</Text>
-                </InlineStack>
-                <Divider />
-                <InlineStack align="space-between">
-                  <Text as="p" fontWeight="semibold">Total</Text>
-                  <Text as="p" fontWeight="semibold">{formatMoney(productSubtotal + feeTotal)}</Text>
-                </InlineStack>
-              </BlockStack>
-            </Card>
-          </InlineGrid>
-        </Layout.Section>
-
-        {lines.map((line) => {
-          const currentStepIndex = WORKFLOW_STEPS.findIndex(
-            (s) => s.key === line.productionStatus.toLowerCase()
-          );
-          return (
-            <Layout.Section key={line.id}>
-              <Card>
-                <BlockStack gap="300">
-                  <InlineStack align="space-between" blockAlign="center">
-                    <BlockStack gap="100">
-                      <Text variant="headingSm" as="h3">
-                        {line.productConfigName}
-                      </Text>
-                      <Text variant="bodySm" tone="subdued" as="p">
-                        Method: {line.methodName}
-                        {line.variantTitle ? ` · ${line.variantTitle}` : ""}
-                      </Text>
-                    </BlockStack>
-                  </InlineStack>
-
-                  <Divider />
-
-                  <InlineStack align="space-between">
-                    <Text as="p" variant="bodySm">
-                      Customization fee
-                    </Text>
-                    <Text as="p" variant="bodyMd" fontWeight="semibold">
-                      {formatMoney(line.unitPriceCents / 100)}
-                    </Text>
-                  </InlineStack>
-
-                  {/* Visual mockup canvas — multi-view with tab switcher */}
-                  {(() => {
-                    const views = linePreviewData[line.id];
-                    if (!views || views.length === 0) return null;
-                    const activeIdx = activeViewByLine[line.id] ?? 0;
-                    const activeView = views[Math.min(activeIdx, views.length - 1)];
-                    const viewPlacements = line.viewPlacements.find((vp) => vp.viewId === activeView.viewId)?.placements ?? line.placements;
-
-                    return (
-                      <BlockStack gap="200">
-                        {views.length > 1 && (
-                          <InlineStack gap="100">
-                            {views.map((v, idx) => (
-                              <Button
-                                key={v.viewId}
-                                size="slim"
-                                variant={idx === activeIdx ? "primary" : "plain"}
-                                onClick={() => setActiveViewByLine((prev) => ({ ...prev, [line.id]: idx }))}
-                              >
-                                {v.viewName}
-                              </Button>
-                            ))}
-                          </InlineStack>
-                        )}
-                        <Suspense fallback={<Spinner size="small" />}>
-                          <OrderLinePreviewLazy
-                            imageUrl={activeView.imageUrl}
-                            placements={viewPlacements.map((p) => ({ id: p.id, name: p.name }))}
-                            geometry={activeView.geometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number } | null>}
-                            logoUrls={activeView.logoUrls}
-                          />
-                        </Suspense>
-                      </BlockStack>
-                    );
-                  })()}
-
-                  {line.viewPlacements.length > 0 && (
-                    <BlockStack gap="200">
-                      <Text variant="headingSm" as="h4">
-                        Placements
-                      </Text>
-                      {line.viewPlacements.map((vp) => (
-                        <BlockStack key={vp.viewId} gap="100">
-                          {line.viewPlacements.length > 1 && (
-                            <Text variant="headingXs" tone="subdued" as="p">{vp.viewName}</Text>
-                          )}
-                          {vp.placements.map((p) => {
-                        const logoId = line.logoAssetIdsByPlacementId?.[p.id] ?? null;
-                        const asset = logoId ? logoAssetMap[logoId] : null;
-                        const uploaderKey = `${line.id}:${p.id}`;
-                        const isUploaderOpen = expandedUploader === uploaderKey;
-                        return (
-                          <BlockStack key={p.id} gap="100">
-                            <InlineStack gap="300" blockAlign="center" align="space-between">
-                              <InlineStack gap="300" blockAlign="center">
-                                {asset ? (
-                                  <Thumbnail source={asset.previewUrl || ""} alt="Logo" size="small" />
-                                ) : placeholderLogoImageUrl ? (
-                                  <Thumbnail source={placeholderLogoImageUrl} alt="Placeholder" size="small" />
-                                ) : (
-                                  <Box padding="200" background="bg-surface-secondary" borderRadius="200">
-                                    <Text as="span" variant="bodySm" fontWeight="bold">LOGO</Text>
-                                  </Box>
-                                )}
-                                <Text as="span">{p.name}</Text>
-                              </InlineStack>
-                              {!asset && (
-                                <Button
-                                  size="slim"
-                                  variant="plain"
-                                  onClick={() =>
-                                    setExpandedUploader(isUploaderOpen ? null : uploaderKey)
-                                  }
-                                >
-                                  {isUploaderOpen ? "Cancel" : "Attach"}
-                                </Button>
-                              )}
-                            </InlineStack>
-                            {asset ? (
-                              <BlockStack gap="050">
-                                {asset.originalFileName && (
-                                  <Text as="p" variant="bodySm" tone="subdued">{asset.originalFileName}</Text>
-                                )}
-                                {typeof asset.fileSizeBytes === "number" && (
-                                  <Text as="p" variant="bodySm" tone="subdued">{formatFileSize(asset.fileSizeBytes)}</Text>
-                                )}
-                                {asset.downloadUrl && (
-                                  <Button url={asset.downloadUrl} external size="slim" variant="plain">Download</Button>
-                                )}
-                              </BlockStack>
-                            ) : line.artworkStatus === "PENDING_CUSTOMER" ? (
-                              <Text as="p" variant="bodySm" tone="subdued">Artwork not yet provided</Text>
-                            ) : null}
-                            <Collapsible open={isUploaderOpen} id={`artwork-${uploaderKey}`}>
-                              <ArtworkUploader
-                                lineId={line.id}
-                                placementId={p.id}
-                                submit={submit}
-                                onDone={() => setExpandedUploader(null)}
-                              />
-                            </Collapsible>
-                          </BlockStack>
-                        );
-                      })}
-                        </BlockStack>
-                      ))}
-                    </BlockStack>
-                  )}
-
-                  <Divider />
-
-                  <BlockStack gap="200">
-                    <Text variant="headingSm" as="h4">
-                      Production status
-                    </Text>
-                    <BlockStack gap="300">
-                      {WORKFLOW_STEPS.map((step, i) => {
-                        const isComplete = i < currentStepIndex;
-                        const isCurrent = i === currentStepIndex;
-                        return (
-                          <InlineStack key={step.key} gap="200" blockAlign="center">
-                            <div style={{
-                              width: 16, height: 16, borderRadius: "50%", flexShrink: 0,
-                              background: isComplete ? "var(--p-color-bg-fill-success)" : isCurrent ? "var(--p-color-bg-fill-info)" : "var(--p-color-bg-fill-secondary)",
-                              border: isCurrent ? "2px solid var(--p-color-border-info)" : "none",
-                            }} />
-                            <Text
-                              tone={i > currentStepIndex ? "subdued" : undefined}
-                              fontWeight={isCurrent ? "semibold" : "regular"}
-                              as="span"
-                            >
-                              {step.label}
-                            </Text>
-                          </InlineStack>
-                        );
-                      })}
-                    </BlockStack>
-                    {line.productionStatus === ProductionStatus.ARTWORK_PROVIDED && (
-                      <Button
-                        tone="success"
-                        variant="primary"
-                        size="slim"
-                        loading={navigation.state === "submitting" && pendingLineId === line.id}
-                        disabled={navigation.state === "submitting" && pendingLineId !== line.id}
-                        onClick={() => {
-                          setPendingLineId(line.id);
-                          const fd = new FormData();
-                          fd.append("intent", "advance-status");
-                          fd.append("lineId", line.id);
-                          fd.append("newStatus", ProductionStatus.IN_PRODUCTION);
-                          submit(fd, { method: "POST" });
-                        }}
-                      >
-                        Mark in production
-                      </Button>
-                    )}
-                    {line.productionStatus === ProductionStatus.IN_PRODUCTION && productionQcEnabled && (
-                      <Button
-                        size="slim"
-                        loading={navigation.state === "submitting" && pendingLineId === line.id}
-                        disabled={navigation.state === "submitting" && pendingLineId !== line.id}
-                        onClick={() => {
-                          setPendingLineId(line.id);
-                          const fd = new FormData();
-                          fd.append("intent", "advance-status");
-                          fd.append("lineId", line.id);
-                          fd.append("newStatus", ProductionStatus.QUALITY_CHECK);
-                          submit(fd, { method: "POST" });
-                        }}
-                      >
-                        Mark quality check
-                      </Button>
-                    )}
-                    {line.productionStatus === ProductionStatus.IN_PRODUCTION && !productionQcEnabled && (
-                      <Button
-                        size="slim"
-                        loading={navigation.state === "submitting" && pendingLineId === line.id}
-                        disabled={navigation.state === "submitting" && pendingLineId !== line.id}
-                        onClick={() => {
-                          setPendingLineId(line.id);
-                          const fd = new FormData();
-                          fd.append("intent", "advance-status");
-                          fd.append("lineId", line.id);
-                          fd.append("newStatus", ProductionStatus.SHIPPED);
-                          submit(fd, { method: "POST" });
-                        }}
-                      >
-                        Mark shipped
-                      </Button>
-                    )}
-                    {line.productionStatus === ProductionStatus.QUALITY_CHECK && (
-                      <Button
-                        size="slim"
-                        loading={navigation.state === "submitting" && pendingLineId === line.id}
-                        disabled={navigation.state === "submitting" && pendingLineId !== line.id}
-                        onClick={() => {
-                          setPendingLineId(line.id);
-                          const fd = new FormData();
-                          fd.append("intent", "advance-status");
-                          fd.append("lineId", line.id);
-                          fd.append("newStatus", ProductionStatus.SHIPPED);
-                          submit(fd, { method: "POST" });
-                        }}
-                      >
-                        Mark shipped
-                      </Button>
-                    )}
-                  </BlockStack>
-
-                </BlockStack>
-              </Card>
-            </Layout.Section>
-          );
-        })}
-      </Layout>
-    </Page>
-  );
-}
-
-function ArtworkUploader({
-  lineId,
-  placementId,
-  submit,
-  onDone,
-}: {
-  lineId: string;
-  placementId: string;
-  submit: ReturnType<typeof useSubmit>;
-  onDone?: () => void;
-}) {
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [done, setDone] = useState(false);
-
-  const handleDrop = useCallback(
-    async (files: File[]) => {
-      const file = files[0];
-      if (!file) return;
-
-      const allowedTypes = ["image/jpeg", "image/png", "image/svg+xml"];
-      if (!allowedTypes.includes(file.type)) {
-        setError("Please upload a JPG, PNG, or SVG file");
-        return;
-      }
-
-      setUploading(true);
-      setError(null);
-
-      try {
-        // Step 1: Get presigned upload URL + create LogoAsset
-        const urlForm = new FormData();
-        urlForm.append("intent", "get-upload-url");
-        urlForm.append("lineId", lineId);
-        urlForm.append("contentType", file.type);
-        urlForm.append("fileName", file.name);
-
-        const urlRes = await fetch("/api/admin/artwork-upload", {
-          method: "POST",
-          body: urlForm,
-        });
-        const urlData = await urlRes.json();
-        if (!urlData.success) throw new Error(urlData?.error?.message ?? "Failed to get upload URL");
-
-        // Step 2: Upload file directly to R2
-        const putRes = await fetch(urlData.uploadUrl, {
-          method: "PUT",
-          body: file,
-          headers: { "Content-Type": file.type },
-        });
-        if (!putRes.ok) throw new Error("Failed to upload file to storage");
-
-        // Step 3: Complete the upload and bind to the specific placement
-        const completeForm = new FormData();
-        completeForm.append("intent", "complete-upload");
-        completeForm.append("lineId", lineId);
-        completeForm.append("logoAssetId", urlData.logoAssetId);
-        completeForm.append("placementId", placementId);
-
-        const completeRes = await fetch("/api/admin/artwork-upload", {
-          method: "POST",
-          body: completeForm,
-        });
-        const completeData = await completeRes.json();
-        if (!completeData.success) throw new Error("Failed to finalize upload");
-
-        setDone(true);
-        onDone?.();
-        // Trigger a page reload to reflect the new status
-        submit(null, { method: "GET" });
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Upload failed");
-      } finally {
-        setUploading(false);
-      }
-    },
-    [lineId, placementId, submit, onDone]
-  );
-
-  if (done) {
-    return (
-      <Box paddingBlockStart="200">
-        <Banner tone="success">Artwork uploaded successfully.</Banner>
-      </Box>
-    );
-  }
-
-  return (
-    <Box paddingBlockStart="200">
-      {error && (
-        <Banner tone="critical" onDismiss={() => setError(null)}>
-          <p>{error}</p>
-        </Banner>
-      )}
-      <DropZone
-        accept="image/jpeg,image/png,image/svg+xml"
-        type="image"
-        onDrop={handleDrop}
-        disabled={uploading}
-        variableHeight
-      >
-        <DropZone.FileUpload actionTitle="Upload artwork" actionHint="SVG, PNG, JPG" />
-        {uploading && <Spinner size="small" />}
-      </DropZone>
-    </Box>
-  );
-}
+export default OrderDetail;

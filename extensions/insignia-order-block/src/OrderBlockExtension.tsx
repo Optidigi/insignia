@@ -49,30 +49,43 @@ function useOrderData(orderId: string | undefined) {
   return { state, retry: load };
 }
 
+const MAX_VISIBLE = 2;
+
 function BlockContent({ data }: { data: OrderBlockResponse }) {
   const allComplete = data.items.every((i) => i.productionStatus === "SHIPPED");
+  const visible = data.items.slice(0, MAX_VISIBLE);
+  const overflow = data.items.length - MAX_VISIBLE;
 
   return (
-    <s-stack direction="block" gap="base">
-      <BlockHeader
-        items={data.items}
-        feeTotal={data.feeTotal}
-        feeCurrencyCode={data.feeCurrencyCode}
-      />
-      <s-divider />
-      {!allComplete && (
-        <>
-          <ItemRows items={data.items} />
-          <s-divider />
-        </>
-      )}
-      <s-button
-        variant={allComplete ? "secondary" : "primary"}
-        inline-size="fill"
-        href={`app:orders/${encodeURIComponent(data.orderId)}`}
-      >
-        Open in Insignia →
-      </s-button>
+    <s-stack direction="block" gap="small">
+      <s-box border="base" borderRadius="large" overflow="hidden" padding="base">
+        <s-stack direction="block" gap="small">
+          <BlockHeader
+            items={data.items}
+            feeTotal={data.feeTotal}
+            feeCurrencyCode={data.feeCurrencyCode}
+          />
+          {!allComplete && (
+            <>
+              <s-divider />
+              <ItemRows items={visible} />
+              {overflow > 0 && (
+                <s-text color="subdued">+{overflow} more</s-text>
+              )}
+            </>
+          )}
+        </s-stack>
+      </s-box>
+      <s-stack direction="inline" justifyContent="end">
+        {/* Relative URL form (per Shopify admin-extensions docs: "Relative urls
+            are relative to your app"). `app:` alone would resolve to
+            `/orders/:id` at the iframe root, but our authenticated routes are
+            nested under `/app/` (file `app.orders.$id.tsx`), so we need the
+            full `/app/orders/:id` path. */}
+        <s-button variant="primary" href={`/app/orders/${encodeURIComponent(data.orderId)}`}>
+          Open in Insignia
+        </s-button>
+      </s-stack>
     </s-stack>
   );
 }

@@ -97,6 +97,16 @@ All **admin dashboard** UI (routes under `app/routes/app.*`) MUST use Shopify Po
 - Use Polaris icons from `@shopify/polaris-icons` — never inline SVGs for standard actions.
 - Validate component usage against the MCP: `mcp__shopify-dev-mcp__validate_component_codeblocks`.
 
+**Exception — Orders pages use Polaris Web Components.** [app/routes/app.orders._index.tsx](app/routes/app.orders._index.tsx) and [app/routes/app.orders.$id.tsx](app/routes/app.orders.$id.tsx) render via `<s-*>` custom elements from Shopify's `polaris.js` CDN, not the React `@shopify/polaris` package. This matches Shopify's Oct-2025 pivot to Polaris Web Components for admin. Key rules:
+- JSX props are **camelCase** per `@shopify/polaris-types` (`alignItems`, `gridTemplateColumns`, `listSlot`, `onPreviousPage`, `accessibilityLabel`), not kebab-case. The kebab-case rule applies to vanilla HTML contexts only.
+- `@shopify/polaris-types` (dev dep) provides JSX intrinsic element declarations — don't hand-write a `.d.ts`.
+- Status labels + badge tones route through [app/lib/admin/terminology.ts](app/lib/admin/terminology.ts); App Bridge APIs (toast, saveBar, modal, print, batch download) through [app/lib/admin/app-bridge.ts](app/lib/admin/app-bridge.ts). Don't call `window.shopify` directly.
+- Badge amber tone = `warning`, not `attention` (per `@shopify/polaris-types`).
+- `<s-page>` aside slot renders only when `inlineSize="base"` — other values hide the sidebar.
+- `<s-button-group>` children need `slot="primary-action"` or `slot="secondary-actions"`; the default slot does not render.
+- `<s-press-button pressed={}>` is the right primitive for segmented toggles (not manual variant-swapping on `<s-button>`).
+- Prefer WC for new admin pages; other existing admin pages still use Polaris React and may migrate incrementally.
+
 **Note**: The storefront modal (`app/components/storefront/`, `app/routes/apps.insignia.*`) is customer-facing and does NOT use Polaris. It uses custom CSS to blend with the merchant's theme. Polaris rules do not apply there.
 
 ### 3. UI/UX: Design Thinking and Best Practices
