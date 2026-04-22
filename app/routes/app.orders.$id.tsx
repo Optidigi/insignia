@@ -236,6 +236,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     imageUrl: string;
     geometry: Record<string, PlacementGeometry | null>;
     logoUrls: Record<string, string | null>;
+    calibrationPxPerCm: number | null;
   };
 
   // --- Per-line view preview data (Konva canvas) — all views per line ---
@@ -255,10 +256,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         },
         include: {
           productView: {
-            select: { id: true, name: true, placementGeometry: true, sharedZones: true },
+            select: { id: true, name: true, perspective: true, placementGeometry: true, sharedZones: true, calibrationPxPerCm: true },
           },
         },
       });
+      // Unnamed-view counter scoped per line — used only as the final
+      // fallback when BOTH name and perspective are null/empty.
+      let unnamedViewCounter = 0;
 
       const snapshot = line.placementGeometrySnapshotByViewId as Record<string, Record<string, PlacementGeometry | null> | null> | null;
 
@@ -300,12 +304,28 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         }
 
         if (signedImageUrl) {
+          // Mirror the storefront + view-editor naming precedence:
+          //   explicit `name` → capitalized `perspective` ("Front" / "Back")
+          //   → indexed fallback ("View 1"). See PlacementStep.viewName +
+          //   getPerspectiveLabel. DO NOT regress this to `name ?? "View"` —
+          //   merchants often leave `name` null and rely on perspective.
+          const rawName = vc.productView?.name;
+          const perspective = vc.productView?.perspective;
+          let viewName: string;
+          if (rawName && rawName.trim()) {
+            viewName = rawName;
+          } else if (perspective && perspective.trim()) {
+            viewName = perspective.charAt(0).toUpperCase() + perspective.slice(1);
+          } else {
+            viewName = `View ${++unnamedViewCounter}`;
+          }
           views.push({
             viewId,
-            viewName: vc.productView?.name ?? "View",
+            viewName,
             imageUrl: signedImageUrl,
             geometry,
             logoUrls: logoUrlsForLine,
+            calibrationPxPerCm: vc.productView?.calibrationPxPerCm ?? null,
           });
         }
       }
@@ -313,6 +333,75 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       linePreviewData[line.id] = views.length > 0 ? views : null;
     })
   );
+
+  // --- Batch-fetch CustomizationDrafts for selected step resolution ---
+  // Collect all unique draft IDs from order lines (filter nulls + dedupe).
+  const draftIds = Array.from(
+    new Set(
+      orderLines
+        .map((l) => l.customizationConfig?.customizationDraftId)
+        .filter((id): id is string => id != null),
+    ),
+  );
+
+  type DraftPlacementEntry = { placementId: string; stepIndex: number };
+
+  // stepIndexByPlacementByDraft: draftId → { [placementId]: stepIndex }
+  const stepIndexByPlacementByDraft: Record<string, Record<string, number>> = {};
+
+  if (draftIds.length > 0) {
+    const drafts = await db.customizationDraft.findMany({
+      where: { id: { in: draftIds } },
+      select: { id: true, placements: true },
+    });
+    for (const draft of drafts) {
+      const entries = draft.placements as DraftPlacementEntry[];
+      if (!Array.isArray(entries)) continue;
+      stepIndexByPlacementByDraft[draft.id] = Object.fromEntries(
+        entries.map((e) => [e.placementId, e.stepIndex]),
+      );
+    }
+  }
+
+  // Build selectedSteps per line: Record<placementId, { stepIndex, label, scaleFactor, priceAdjustmentCents } | null>
+  const selectedStepsByLine: Record<
+    string,
+    Record<string, { stepIndex: number; label: string; scaleFactor: number; priceAdjustmentCents: number } | null>
+  > = {};
+
+  for (const line of orderLines) {
+    const draftId = line.customizationConfig?.customizationDraftId ?? null;
+    const stepIndexByPlacement = draftId ? (stepIndexByPlacementByDraft[draftId] ?? {}) : {};
+
+    // All placements across all views for this line.
+    const allPlacements = line.productConfig?.views.flatMap((v) => v.placements) ?? [];
+
+    const selectedSteps: Record<
+      string,
+      { stepIndex: number; label: string; scaleFactor: number; priceAdjustmentCents: number } | null
+    > = {};
+
+    for (const placement of allPlacements) {
+      const stepIndex = stepIndexByPlacement[placement.id];
+      if (stepIndex == null) {
+        selectedSteps[placement.id] = null;
+        continue;
+      }
+      const step = placement.steps[stepIndex];
+      if (!step) {
+        selectedSteps[placement.id] = null;
+        continue;
+      }
+      selectedSteps[placement.id] = {
+        stepIndex,
+        label: step.label,
+        scaleFactor: step.scaleFactor,
+        priceAdjustmentCents: step.priceAdjustmentCents,
+      };
+    }
+
+    selectedStepsByLine[line.id] = selectedSteps;
+  }
 
   // TODO: Add cursor-based pagination when per-order note counts exceed ~50 (see listOrderNotes).
   const notes = await listOrderNotes(shop.id, shopifyOrderId);
@@ -339,6 +428,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       logoAssetIdsByPlacementId: l.logoAssetIdsByPlacementId as Record<string, string | null> | null,
       orderStatusUrl: l.orderStatusUrl, // Phase 3 patch: exposes upload link for pending-artwork banner
       createdAt: l.createdAt.toISOString(),
+      selectedSteps: selectedStepsByLine[l.id] ?? {},
     })),
     logoAssetMap: Object.fromEntries(
       Object.entries(logoAssetMap).map(([k, v]) => [

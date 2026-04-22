@@ -17,7 +17,7 @@
 
 import { useCallback, useState } from "react";
 import NativeCanvas from "../../storefront/NativeCanvas";
-import type { CanvasPlacement } from "../../storefront/NativeCanvas";
+import type { CanvasPlacement, ImageMeta } from "../../storefront/NativeCanvas";
 import type { PlacementGeometry, Placement } from "../../../lib/admin-types";
 
 // ---------------------------------------------------------------------------
@@ -44,12 +44,25 @@ export type ViewPreview = {
   imageUrl: string;
   geometry: Record<string, PlacementGeometry | null>;
   logoUrls: Record<string, string | null>;
+  calibrationPxPerCm: number | null;
 };
 
 type Props = {
   views: ViewPreview[] | null;
   /** All placements for this line — used for names and colour assignment. */
   placements: Placement[];
+  /**
+   * Called when the active view's product image loads (or when the view changes).
+   * Forwarded from NativeCanvas `onImageMeta` with the active viewId prepended.
+   */
+  onViewImageMeta?: (viewId: string, meta: { naturalWidthPx: number; naturalHeightPx: number } | null) => void;
+  /**
+   * Handler for the "Download all" legend button. When omitted or undefined,
+   * the button renders disabled — no artwork is currently available to
+   * download for the line. Caller owns the download logic (typically via
+   * `triggerBatchDownload` over the line's uploaded assets).
+   */
+  onDownloadAll?: () => void;
 };
 
 // ---------------------------------------------------------------------------
@@ -70,7 +83,7 @@ function buildZoneColors(
 // Component
 // ---------------------------------------------------------------------------
 
-export default function PlacementCanvas({ views, placements }: Props) {
+export default function PlacementCanvas({ views, placements, onViewImageMeta, onDownloadAll }: Props) {
   const [activeIdx, setActiveIdx] = useState(0);
   const [canvasState, setCanvasState] = useState<"loading" | "ready" | "error">(
     "loading",
@@ -83,8 +96,43 @@ export default function PlacementCanvas({ views, placements }: Props) {
     [],
   );
 
-  // No views available — product not configured yet or all view images failed.
-  if (!views || views.length === 0) {
+  // Filter down to views that are *relevant* to this order line — i.e. at
+  // least one customer-selected placement has non-null geometry on the view.
+  // Views with no selected zones shouldn't appear as buttons; otherwise the
+  // merchant sees a "Back" tab for a line where the customer only customised
+  // the front, and clicking it renders an empty canvas with zero zones.
+  const selectedPlacementIds = new Set(placements.map((p) => p.id));
+  const relevantViews = views
+    ? views.filter((v) =>
+        Object.entries(v.geometry).some(
+          ([id, g]) => g !== null && selectedPlacementIds.has(id),
+        ),
+      )
+    : null;
+
+  const hasRelevantViews = relevantViews != null && relevantViews.length > 0;
+  const safeIdx = hasRelevantViews
+    ? Math.min(activeIdx, relevantViews.length - 1)
+    : 0;
+  const activeView = hasRelevantViews ? relevantViews[safeIdx] : null;
+
+  // Hooks must run in the same order on every render — declare before any
+  // early return. `activeView` may be null during the empty state; the
+  // callback guards against it.
+  const activeViewId = activeView?.viewId;
+  const handleImageMeta = useCallback(
+    (meta: ImageMeta) => {
+      if (!activeViewId) return;
+      onViewImageMeta?.(activeViewId, {
+        naturalWidthPx: meta.naturalWidthPx,
+        naturalHeightPx: meta.naturalHeightPx,
+      });
+    },
+    [activeViewId, onViewImageMeta],
+  );
+
+  // Empty-state early return is safe here — all hooks above have been called.
+  if (!hasRelevantViews || !activeView) {
     return (
       <s-box background="subdued" borderRadius="base" padding="base">
         <s-stack direction="block" alignItems="center" gap="small-200">
@@ -96,12 +144,12 @@ export default function PlacementCanvas({ views, placements }: Props) {
     );
   }
 
-  const safeIdx = Math.min(activeIdx, views.length - 1);
-  const activeView = views[safeIdx];
-
-  // Build CanvasPlacement array from the active view's geometry.
+  // Build CanvasPlacement array — only customer-selected placements (the
+  // caller passes the filtered set in `placements`). Unselected zones must
+  // NOT render, otherwise the merchant sees phantom outlines for placements
+  // the customer chose not to customize.
   const canvasPlacements: CanvasPlacement[] = Object.entries(activeView.geometry)
-    .filter(([, g]) => g !== null)
+    .filter(([id, g]) => g !== null && selectedPlacementIds.has(id))
     .map(([id, g]) => ({
       id,
       centerXPercent: g!.centerXPercent,
@@ -122,35 +170,54 @@ export default function PlacementCanvas({ views, placements }: Props) {
 
   return (
     <s-box background="subdued" borderRadius="base" overflow="hidden">
-      {/* View selector — only shown when there are 2+ views. */}
-      {views.length > 1 && (
-        <s-stack direction="inline" justifyContent="center" paddingBlock="small-400">
-          {/* Segmented view selector — ARIA roles applied via data-* not native ARIA
-              because s-button WC type does not accept role/aria-selected props.
-              Keyboard users can navigate with Tab + Enter between buttons. */}
+      {/* View selector — segmented toggle when 2+ views, label-only when 1 view.
+          Why this shape:
+          - `<s-button-group>` requires children to live in `primary-action`
+            or `secondary-actions` slots; the default slot doesn't render.
+          - `<s-press-button>` is the documented primitive for toggle /
+            segmented-control state (carries `pressed` boolean). Using plain
+            `<s-button>` with variant-swapping fights the design system. */}
+      <s-stack direction="inline" justifyContent="center" paddingBlock="large-200">
+        {relevantViews.length > 1 ? (
           <s-button-group gap="none" accessibilityLabel="Product view selector">
-            {views.map((v, i) => (
-              <s-button
+            {relevantViews.map((v, i) => (
+              <s-press-button
                 key={v.viewId}
-                variant={i === safeIdx ? "secondary" : "tertiary"}
+                slot="secondary-actions"
+                variant="secondary"
+                pressed={i === safeIdx}
                 onClick={() => {
                   setActiveIdx(i);
                   setCanvasState("loading");
                 }}
               >
                 {v.viewName}
-              </s-button>
+              </s-press-button>
             ))}
           </s-button-group>
-        </s-stack>
-      )}
+        ) : (
+          <s-text type="strong">{activeView.viewName}</s-text>
+        )}
+      </s-stack>
 
-      {/* Canvas area — headless mode so we control the loading/error shell. */}
-      <div
-        style={{ position: "relative", minHeight: 200 }}
-        aria-label={`Product view: ${activeView.viewName}`}
-        role="img"
-      >
+      {/* Canvas area — headless mode so we control the loading/error shell.
+          Wrapped in an <s-box> for Polaris-token horizontal + vertical padding
+          so the <canvas> doesn't run flush against the subdued container's
+          edges. Inner <div> retains `position: relative` for the canvas
+          exception layout (zone overlays are absolutely positioned over the
+          canvas in NativeCanvas; the wrapper provides a flex center). */}
+      <s-box paddingInline="base" paddingBlockEnd="small-400">
+        <div
+          style={{
+            position: "relative",
+            minHeight: 200,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+          aria-label={`Product view: ${activeView.viewName}`}
+          role="img"
+        >
         {canvasState === "loading" && (
           <div
             style={{
@@ -178,7 +245,21 @@ export default function PlacementCanvas({ views, placements }: Props) {
             </s-text>
           </div>
         )}
-        <div style={{ display: canvasState === "ready" ? "block" : "none" }}>
+        {/* Ready-state canvas wrapper: rounded corners + subtle shadow to
+            lift the product image off the subdued container background.
+            Token sources:
+              borderRadius → Polaris --p-border-radius-200 (4–8 px scale)
+              boxShadow    → Polaris --p-shadow-100 (subtle card lift)
+            overflow:hidden clips the <canvas> element to the rounded corners. */}
+        <div
+          style={{
+            display: canvasState === "ready" ? "block" : "none",
+            borderRadius: "var(--p-border-radius-200)",
+            overflow: "hidden",
+            boxShadow: "var(--p-shadow-100)",
+            backgroundColor: "var(--p-color-bg-surface, #fff)",
+          }}
+        >
           <NativeCanvas
             imageUrl={activeView.imageUrl}
             logoUrl={null}
@@ -188,11 +269,15 @@ export default function PlacementCanvas({ views, placements }: Props) {
             zoneColors={zoneColors}
             headless={true}
             onLoadStateChange={handleLoadStateChange}
+            onImageMeta={handleImageMeta}
           />
         </div>
-      </div>
+        </div>
+      </s-box>
 
-      {/* Legend row below canvas. */}
+      {/* Legend row: zone colour dots (start) + Download all (end).
+          Mirrors the in-scope prototype's canvas footer. Download all is
+          disabled until a bulk-download backend exists (v3 feature #19). */}
       <s-box paddingBlock="small-300" paddingInline="base">
         <s-stack direction="inline" justifyContent="space-between" alignItems="center">
           <s-stack direction="inline" gap="small-300" alignItems="center">
@@ -225,6 +310,21 @@ export default function PlacementCanvas({ views, placements }: Props) {
               })
             )}
           </s-stack>
+          {activePlacementIds.length > 0 && (
+            <s-button
+              variant="tertiary"
+              icon="download"
+              disabled={!onDownloadAll}
+              accessibilityLabel={
+                onDownloadAll
+                  ? "Download all uploaded artwork for this line"
+                  : "No artwork has been uploaded yet"
+              }
+              onClick={onDownloadAll}
+            >
+              Download all
+            </s-button>
+          )}
         </s-stack>
       </s-box>
     </s-box>

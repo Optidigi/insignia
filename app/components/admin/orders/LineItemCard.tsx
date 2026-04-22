@@ -19,14 +19,15 @@
  */
 
 import { useFetcher } from "react-router";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ProductionStatus, ArtworkStatus } from "@prisma/client";
 import {
   productionStatusLabel,
   productionStatusTone,
   lineItemArtworkSummary,
 } from "../../../lib/admin/terminology";
-import { useToast } from "../../../lib/admin/app-bridge.client";
+import { useToast, triggerBatchDownload } from "../../../lib/admin/app-bridge";
+import { computeCmDimensions, formatCmLabel } from "../../../lib/admin/calibration";
 import PlacementCanvas from "./PlacementCanvas";
 import type { ViewPreview } from "./PlacementCanvas";
 import PlacementsTable from "./PlacementsTable";
@@ -50,6 +51,8 @@ export type LineItem = {
   logoAssetIdsByPlacementId: Record<string, string | null> | null;
   orderStatusUrl: string | null;
   createdAt: string;
+  /** Customer's chosen step per placement, keyed by placementId. Null when no draft entry. */
+  selectedSteps: Record<string, { stepIndex: number; label: string; scaleFactor: number; priceAdjustmentCents: number } | null>;
 };
 
 type Props = {
@@ -78,6 +81,18 @@ export default function LineItemCard({
   // regardless of which transition (In production / Quality check / Complete).
   const submittedLabelRef = useRef<string | null>(null);
 
+  // Image meta keyed by viewId — populated by PlacementCanvas via onViewImageMeta.
+  const [imageMetaByViewId, setImageMetaByViewId] = useState<
+    Record<string, { naturalWidthPx: number; naturalHeightPx: number } | null>
+  >({});
+
+  const handleViewImageMeta = useCallback(
+    (viewId: string, meta: { naturalWidthPx: number; naturalHeightPx: number } | null) => {
+      setImageMetaByViewId((prev) => ({ ...prev, [viewId]: meta }));
+    },
+    [],
+  );
+
   // Toast on status advance result.
   useEffect(() => {
     if (fetcher.state !== "idle") return;
@@ -94,9 +109,20 @@ export default function LineItemCard({
     }
   }, [fetcher.state, fetcher.data, showToast]);
 
-  // Compute per-placement artwork statuses.
-  const placementArtworkStatuses: ArtworkStatus[] = line.placements.map((p) => {
-    const assetId = line.logoAssetIdsByPlacementId?.[p.id] ?? null;
+  // `line.placements` from the loader is ALL configured placements across
+  // every view of the product config. The customer only selected a subset —
+  // the authoritative "which placements apply to THIS order line" source is
+  // `logoAssetIdsByPlacementId` keys (key present = selected, absent = not).
+  // Legacy OLCs may have a null/empty map → fall back to all placements.
+  const assetMap = line.logoAssetIdsByPlacementId;
+  const hasSelectionMap = assetMap != null && Object.keys(assetMap).length > 0;
+  const selectedPlacements: Placement[] = hasSelectionMap
+    ? line.placements.filter((p) => p.id in assetMap!)
+    : line.placements;
+
+  // Compute per-placement artwork statuses (over the selected subset only).
+  const placementArtworkStatuses: ArtworkStatus[] = selectedPlacements.map((p) => {
+    const assetId = assetMap?.[p.id] ?? null;
     return assetId ? "PROVIDED" : "PENDING_CUSTOMER";
   });
 
@@ -109,7 +135,7 @@ export default function LineItemCard({
 
   // Determine what advance button (if any) to show.
   const allArtworkProvided =
-    line.placements.length > 0 &&
+    selectedPlacements.length > 0 &&
     placementArtworkStatuses.every((s) => s === "PROVIDED");
 
   type AdvanceAction = {
@@ -139,6 +165,55 @@ export default function LineItemCard({
 
   const isSubmitting = fetcher.state === "submitting";
 
+  // Batch-download target list: for every customer-selected placement that
+  // has an uploaded artwork asset, pull the presigned `downloadUrl` + a
+  // filename. Undefined / null entries (placements awaiting upload) are
+  // silently skipped. `downloadUrl` is already filename-safe (loader passes
+  // it through `sanitizeFilename`).
+  const downloadableAssets: Array<{ url: string; filename: string }> = [];
+  for (const placement of selectedPlacements) {
+    const assetId = assetMap?.[placement.id];
+    if (!assetId) continue;
+    const asset = logoAssetMap[assetId];
+    if (!asset?.downloadUrl) continue;
+    downloadableAssets.push({
+      url: asset.downloadUrl,
+      filename: asset.originalFileName ?? `artwork-${placement.id}.svg`,
+    });
+  }
+
+  const handleDownloadAll = useCallback(() => {
+    if (downloadableAssets.length === 0) return;
+    triggerBatchDownload(downloadableAssets);
+    const count = downloadableAssets.length;
+    showToast(`Downloading ${count} file${count === 1 ? "" : "s"}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showToast, downloadableAssets.length]);
+
+  // Build enriched placement rows (customer-selected only) with step label +
+  // cm dimensions. For each placement:
+  //   1. Find owner view — first view whose geometry has this placement id.
+  //   2. Read calibrationPxPerCm from that view (loader thread it through).
+  //   3. Read imageMeta from imageMetaByViewId (populated by PlacementCanvas).
+  //   4. Compute cmLabel from zone dims + step scaleFactor via the shared
+  //      calibration helper.
+  const placementsWithSize = selectedPlacements.map((placement) => {
+    const ownerView = views?.find((v) => placement.id in v.geometry) ?? null;
+    const geom = ownerView ? (ownerView.geometry[placement.id] ?? null) : null;
+    const calibrationPxPerCm = ownerView?.calibrationPxPerCm ?? null;
+    const imageMeta = ownerView ? (imageMetaByViewId[ownerView.viewId] ?? null) : null;
+    const stepEntry = line.selectedSteps[placement.id] ?? null;
+
+    const stepLabel = stepEntry?.label ?? null;
+    const cmLabel = stepEntry
+      ? formatCmLabel(
+          computeCmDimensions(geom, imageMeta, stepEntry.scaleFactor, calibrationPxPerCm),
+        )
+      : null;
+
+    return { placement, stepLabel, cmLabel };
+  });
+
   const heading = quantity !== undefined
     ? `${line.productConfigName} × ${quantity}`
     : line.productConfigName;
@@ -159,13 +234,20 @@ export default function LineItemCard({
           </s-stack>
         </s-stack>
 
-        {/* Canvas */}
-        <PlacementCanvas views={views} placements={line.placements} />
+        {/* Canvas — only customer-selected placements get zone overlays */}
+        <PlacementCanvas
+          views={views}
+          placements={selectedPlacements}
+          onViewImageMeta={handleViewImageMeta}
+          onDownloadAll={
+            downloadableAssets.length > 0 ? handleDownloadAll : undefined
+          }
+        />
 
         {/* Placements table */}
         <PlacementsTable
           lineId={line.id}
-          placements={line.placements}
+          placementsWithSize={placementsWithSize}
           logoAssetIdsByPlacementId={line.logoAssetIdsByPlacementId}
           logoAssetMap={logoAssetMap}
         />

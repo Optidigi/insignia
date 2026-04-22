@@ -20,7 +20,7 @@ import { useState, useCallback } from "react";
 import type { Placement } from "../../../lib/admin-types";
 import { artworkStatusLabel, artworkStatusTone } from "../../../lib/admin/terminology";
 import type { ArtworkStatus } from "@prisma/client";
-import { useToast } from "../../../lib/admin/app-bridge.client";
+import { useToast } from "../../../lib/admin/app-bridge";
 import { useSubmit } from "react-router";
 import { DropZone, Spinner, Banner, Box } from "@shopify/polaris";
 
@@ -148,9 +148,17 @@ export type LogoAssetDTO = {
 // PlacementsTable
 // ---------------------------------------------------------------------------
 
+export type PlacementWithSize = {
+  placement: Placement;
+  /** Customer's chosen step label (e.g. "Standaard"), or null when unknown. */
+  stepLabel: string | null;
+  /** Calibrated print dimensions (e.g. "21 × 8 cm"), or null when inputs missing. */
+  cmLabel: string | null;
+};
+
 type PlacementsTableProps = {
   lineId: string;
-  placements: Placement[];
+  placementsWithSize: PlacementWithSize[];
   logoAssetIdsByPlacementId: Record<string, string | null> | null;
   logoAssetMap: Record<string, LogoAssetDTO>;
 };
@@ -163,7 +171,7 @@ function formatFileSize(bytes: number): string {
 
 export default function PlacementsTable({
   lineId,
-  placements,
+  placementsWithSize,
   logoAssetIdsByPlacementId,
   logoAssetMap,
 }: PlacementsTableProps) {
@@ -191,7 +199,7 @@ export default function PlacementsTable({
     [showToast],
   );
 
-  if (placements.length === 0) {
+  if (placementsWithSize.length === 0) {
     return (
       <s-section heading="Placements" padding="none" accessibilityLabel="Placements table">
         <s-box padding="base">
@@ -215,7 +223,7 @@ export default function PlacementsTable({
             </s-table-header>
           </s-table-header-row>
           <s-table-body>
-            {placements.map((placement) => {
+            {placementsWithSize.map(({ placement, stepLabel, cmLabel }) => {
               const assetId = logoAssetIdsByPlacementId?.[placement.id] ?? null;
               const asset = assetId ? logoAssetMap[assetId] ?? null : null;
 
@@ -226,12 +234,27 @@ export default function PlacementsTable({
 
               const isExpanded = expandedUploader === placement.id;
 
+              // Build step+size label line. Renders as:
+              //   "Standaard (21 × 8 cm)"  — when both present
+              //   "Standaard"              — when step only
+              //   "(21 × 8 cm)"            — when cm only (step unknown)
+              const stepSizeLine = stepLabel
+                ? cmLabel
+                  ? `${stepLabel} (${cmLabel})`
+                  : stepLabel
+                : cmLabel
+                  ? `(${cmLabel})`
+                  : null;
+
               return (
                 <s-table-row key={placement.id}>
                   {/* Placement column */}
                   <s-table-cell>
                     <s-stack direction="block" gap="small-100">
                       <s-text type="strong">{placement.name}</s-text>
+                      {stepSizeLine && (
+                        <s-text color="subdued">{stepSizeLine}</s-text>
+                      )}
                       {asset?.originalFileName && (
                         <s-text color="subdued">
                           {asset.originalFileName}

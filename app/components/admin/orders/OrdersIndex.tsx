@@ -5,7 +5,7 @@
  * Does NOT import from @shopify/polaris — uses <s-*> WC elements exclusively.
  *
  * Selection state: useState<Set<string>> (replaces useIndexResourceState).
- * Toasts: useToast() from app-bridge.client.ts (no window.shopify calls).
+ * Toasts: useToast() from app-bridge.ts (no window.shopify calls).
  * Labels: terminology.ts for ALL status labels and badge tones.
  */
 
@@ -18,7 +18,7 @@ import {
   useFetcher,
 } from "react-router";
 import type { loader } from "../../../routes/app.orders._index";
-import { useToast } from "../../../lib/admin/app-bridge.client";
+import { useToast } from "../../../lib/admin/app-bridge";
 import {
   productionStatusLabel,
   productionStatusTone,

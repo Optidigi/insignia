@@ -73,3 +73,35 @@ export function printUrl(url: string): Window | null {
   // doc hasn't loaded yet.
   return w;
 }
+
+/**
+ * Trigger a staggered batch of downloads for presigned URLs.
+ *
+ * Creates an `<a download>` element per asset and clicks it, staggered so
+ * browsers don't throttle or cancel simultaneous downloads. Works with
+ * R2/S3 presigned URLs that carry `Content-Disposition: attachment` —
+ * the admin loader already sets that header via `getPresignedDownloadUrl`.
+ *
+ * SSR-guarded: no-ops when `document` isn't defined, so the helper is safe
+ * to import from modules that also compile to the server bundle. Callers
+ * typically invoke it from `onClick` handlers anyway, which only run on
+ * the client.
+ */
+export function triggerBatchDownload(
+  assets: ReadonlyArray<{ url: string; filename: string }>,
+  options: { staggerMs?: number } = {},
+): void {
+  if (typeof document === "undefined") return;
+  const stagger = options.staggerMs ?? 150;
+  assets.forEach((asset, i) => {
+    setTimeout(() => {
+      const a = document.createElement("a");
+      a.href = asset.url;
+      a.rel = "noopener noreferrer";
+      a.download = asset.filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }, i * stagger);
+  });
+}

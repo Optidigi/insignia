@@ -11,7 +11,7 @@
 
 import { useState, useEffect } from "react";
 import { useFetcher } from "react-router";
-import { useToast } from "../../../lib/admin/app-bridge.client";
+import { useToast } from "../../../lib/admin/app-bridge";
 import type { OrderNoteResult } from "../../../lib/services/order-notes.server";
 
 // ---------------------------------------------------------------------------

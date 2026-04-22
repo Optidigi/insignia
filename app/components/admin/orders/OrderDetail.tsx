@@ -6,11 +6,13 @@
  * (except for the ArtworkUploader island inside PlacementsTable, which is a
  * Polaris React DropZone preserved exactly as-is).
  *
- * Layout: <s-page inlineSize="large"> with main content + aside slot for
+ * Layout: <s-page inlineSize="base"> with main content + aside slot for
  * sidebar cards (OrderSummaryCard, PlanningCard, ProductionNotesCard,
- * StatusHistoryCard). The aside slot only renders when inlineSize="large".
+ * StatusHistoryCard). Per @shopify/polaris-types, the aside slot ONLY
+ * renders when inlineSize="base" — other values (small, large) hide it.
+ * DO NOT change this back to "large" — it breaks the sidebar.
  *
- * Toast: via useToast() (app-bridge.client.ts). Zero window.shopify calls.
+ * Toast: via useToast() (app-bridge.ts). Zero window.shopify calls.
  * Labels: terminology.ts for every status string.
  * Fetchers: useFetcher for all mutations (status advance, save note).
  */
@@ -18,7 +20,7 @@
 import { useState, useCallback } from "react";
 import { useLoaderData } from "react-router";
 import type { loader } from "../../../routes/app.orders.$id";
-import { useToast, printUrl } from "../../../lib/admin/app-bridge.client";
+import { useToast, printUrl } from "../../../lib/admin/app-bridge";
 import LineItemCard from "./LineItemCard";
 import OrderSummaryCard from "./OrderSummaryCard";
 import PlanningCard from "./PlanningCard";
@@ -83,7 +85,7 @@ export default function OrderDetail() {
   const shopifyAdminOrderUrl = `https://${shopDomain}/admin/orders/${shopifyOrderId.replace(/\D/g, "")}`;
 
   return (
-    <s-page heading={orderName} inlineSize="large">
+    <s-page heading={orderName} inlineSize="base">
       {/* Breadcrumb */}
       <s-link slot="breadcrumb-actions" href="/app/orders">
         Orders
