@@ -31,11 +31,35 @@ export type ImageMeta = {
   aspect: number;
 };
 
+export type ZoneColor = {
+  border: string;
+  fill: string;
+};
+
 type NativeCanvasProps = {
   imageUrl: string;
+  /**
+   * Fallback logo rendered at every placement when `logoUrlByPlacementId`
+   * doesn't provide a per-placement override. The storefront modal uses
+   * this (one customer logo across all zones); admin order detail uses
+   * `logoUrlByPlacementId` instead.
+   */
   logoUrl: string | null;
   placements: CanvasPlacement[];
+  /**
+   * Per-placement logo URLs for the admin order detail (each placement
+   * may have a different customer-uploaded artwork). When present, this
+   * takes precedence over `logoUrl` for matching placements. Missing or
+   * null entries fall back to `logoUrl`.
+   */
+  logoUrlByPlacementId?: Record<string, string | null>;
   highlightedPlacementId?: string | null;
+  /**
+   * Draws coloured zone rectangles behind each placement (admin use case).
+   * Zone colours are looked up by placement id in `zoneColors`. Default: off.
+   */
+  showZoneOverlays?: boolean;
+  zoneColors?: Record<string, ZoneColor>;
   /** @deprecated Use per-placement scaleFactor instead. */
   sizeMultiplier?: number;
   className?: string;
@@ -58,8 +82,14 @@ type NativeCanvasProps = {
    * this to compute the actual rendered logo size in cm (the logo is
    * letterboxed inside the placement zone — only one of width/height
    * matches the zone, the other is determined by the logo's aspect ratio).
+   * Only fired for the fallback `logoUrl`, not for per-placement overrides.
    */
   onLogoMeta?: (meta: ImageMeta | null) => void;
+};
+
+const DEFAULT_ZONE_COLOR: ZoneColor = {
+  border: "#7C3AED",
+  fill: "rgba(124,58,237,0.12)",
 };
 
 const MAX_CANVAS_DIM = 700;
@@ -68,7 +98,10 @@ export default function NativeCanvas({
   imageUrl,
   logoUrl,
   placements,
+  logoUrlByPlacementId,
   highlightedPlacementId,
+  showZoneOverlays = false,
+  zoneColors,
   sizeMultiplier = 0.6,
   className,
   headless = false,
@@ -82,6 +115,8 @@ export default function NativeCanvas({
   const [canvasDims, setCanvasDims] = useState({ w: 440, h: 560 });
   const productImgRef = useRef<HTMLImageElement | null>(null);
   const logoImgRef = useRef<HTMLImageElement | null>(null);
+  const perPlacementImgsRef = useRef<Record<string, HTMLImageElement>>({});
+  const [perPlacementTick, setPerPlacementTick] = useState(0);
 
   useEffect(() => {
     setLoaded(false);
@@ -146,10 +181,38 @@ export default function NativeCanvas({
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(productImg, px, py, pw, ph);
 
-    const logoImg = logoImgRef.current;
-    if (!logoImg) return;
+    // Pass 1 — zone overlays (coloured rects behind logos). Admin uses this
+    // to show the merchant where each placement zone lives regardless of
+    // whether artwork has been uploaded. Drawn at the zone's FULL width
+    // (maxWidthPercent without scaleFactor applied) so the zone outline
+    // matches the geometry as authored in product config.
+    if (showZoneOverlays) {
+      for (const placement of placements) {
+        const colour = zoneColors?.[placement.id] ?? DEFAULT_ZONE_COLOR;
+        const cx = px + (placement.centerXPercent / 100) * pw;
+        const cy = py + (placement.centerYPercent / 100) * ph;
+        const zoneW = (placement.maxWidthPercent / 100) * pw;
+        // Square-ish by default; real zone aspect comes from product config.
+        const zoneH = zoneW;
+        const rx = cx - zoneW / 2;
+        const ry = cy - zoneH / 2;
+        ctx.fillStyle = colour.fill;
+        ctx.fillRect(rx, ry, zoneW, zoneH);
+        ctx.strokeStyle = colour.border;
+        ctx.lineWidth = 2;
+        ctx.strokeRect(rx, ry, zoneW, zoneH);
+      }
+    }
 
+    // Pass 2 — logos per placement. Per-placement override takes precedence
+    // over the shared fallback `logoUrl`. If neither resolves, the zone
+    // overlay (if enabled) carries the visual meaning on its own.
+    const fallbackLogo = logoImgRef.current;
     for (const placement of placements) {
+      const perPlacementLogo = perPlacementImgsRef.current[placement.id] ?? null;
+      const logoImg = perPlacementLogo ?? fallbackLogo;
+      if (!logoImg) continue;
+
       const cx = px + (placement.centerXPercent / 100) * pw;
       const cy = py + (placement.centerYPercent / 100) * ph;
       const effectiveScale = placement.scaleFactor ?? sizeMultiplier;
@@ -177,7 +240,10 @@ export default function NativeCanvas({
       ctx.drawImage(logoImg, cx - logoW / 2, cy - logoH / 2, logoW, logoH);
       ctx.globalAlpha = 1;
     }
-  }, [placements, highlightedPlacementId, sizeMultiplier]);
+    // perPlacementTick is read implicitly via perPlacementImgsRef; listed
+    // in deps to re-draw when new per-placement images finish loading.
+    void perPlacementTick;
+  }, [placements, highlightedPlacementId, sizeMultiplier, showZoneOverlays, zoneColors, perPlacementTick]);
 
   useEffect(() => {
     if (!logoUrl) {
@@ -205,6 +271,44 @@ export default function NativeCanvas({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [logoUrl]);
+
+  // Per-placement logo loading. Each URL loads independently; a failed
+  // fetch (e.g. 403 from an expired presigned URL) leaves that placement
+  // empty without blocking sibling placements. When the map changes, we
+  // replace the ref entirely so stale entries don't leak.
+  useEffect(() => {
+    if (!logoUrlByPlacementId) {
+      perPlacementImgsRef.current = {};
+      setPerPlacementTick((t) => t + 1);
+      return;
+    }
+    const nextImgs: Record<string, HTMLImageElement> = {};
+    let cancelled = false;
+    const loaders: Array<HTMLImageElement> = [];
+    for (const [placementId, url] of Object.entries(logoUrlByPlacementId)) {
+      if (!url) continue;
+      const img = new Image();
+      img.onload = () => {
+        if (cancelled) return;
+        nextImgs[placementId] = img;
+        perPlacementImgsRef.current = { ...nextImgs };
+        setPerPlacementTick((t) => t + 1);
+      };
+      img.onerror = () => {
+        // Silent per-placement failure — draw falls back to zone overlay
+        // (if enabled) or the shared logoUrl. Do NOT set top-level error.
+      };
+      img.src = url;
+      loaders.push(img);
+    }
+    return () => {
+      cancelled = true;
+      for (const img of loaders) {
+        img.onload = null;
+        img.onerror = null;
+      }
+    };
+  }, [logoUrlByPlacementId]);
 
   useEffect(() => {
     if (loaded) draw();

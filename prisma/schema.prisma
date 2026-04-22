@@ -59,6 +59,7 @@ model Shop {
   uploadSessions         StorefrontUploadSession[]
   customizationDrafts    CustomizationDraft[]
   storefrontTranslations StorefrontTranslation[]
+  orderNotes             OrderNote[]
 
 }
 
@@ -480,6 +481,33 @@ model WebhookEvent {
 
   @@unique([eventId])
   @@index([shopId, topic])
+}
+
+// ============================================================================
+// OrderNote (per-order production notes written by merchant staff)
+// ============================================================================
+//
+// FK design rationale: OrderLineCustomization is the natural sibling, but it
+// is keyed by (shopifyOrderId, shopifyLineId) and does NOT carry a direct
+// shopId column — shop is reached via productConfig. Notes are order-level
+// (not line-level) and must survive even if an OLC is deleted, so we anchor
+// to (Shop.id, shopifyOrderId) directly. The composite index makes the loader
+// query O(log n) and the Shop FK with onDelete: Cascade covers GDPR purge.
+
+model OrderNote {
+  id             String    @id @default(uuid())
+  shopId         String
+  shopifyOrderId String    // Shopify Order GID, e.g. "gid://shopify/Order/1234"
+  body           String    @db.Text
+  authorUserId   BigInt?   // Shopify user id from Session (null = system note)
+  authorName     String?   // Denormalized first+last for display; avoids Session join
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, shopifyOrderId])
+  @@index([createdAt])
 }
 
 // ============================================================================
