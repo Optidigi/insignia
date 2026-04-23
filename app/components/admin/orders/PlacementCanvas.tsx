@@ -155,6 +155,7 @@ export default function PlacementCanvas({ views, placements, onViewImageMeta, on
       centerXPercent: g!.centerXPercent,
       centerYPercent: g!.centerYPercent,
       maxWidthPercent: g!.maxWidthPercent,
+      maxHeightPercent: g!.maxHeightPercent ?? null,
     }));
 
   const zoneColors = buildZoneColors(placements);

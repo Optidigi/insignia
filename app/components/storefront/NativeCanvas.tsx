@@ -22,6 +22,7 @@ export type CanvasPlacement = {
   centerXPercent: number;
   centerYPercent: number;
   maxWidthPercent: number;
+  maxHeightPercent?: number | null;
   scaleFactor?: number;
 };
 
@@ -212,14 +213,17 @@ export default function NativeCanvas({
       const perPlacementLogo = perPlacementImgsRef.current[placement.id] ?? null;
       const logoImg = perPlacementLogo ?? fallbackLogo;
       if (!logoImg) continue;
+      if (!logoImg.naturalWidth || !logoImg.naturalHeight) continue;
 
       const cx = px + (placement.centerXPercent / 100) * pw;
       const cy = py + (placement.centerYPercent / 100) * ph;
       const effectiveScale = placement.scaleFactor ?? sizeMultiplier;
       const maxW = (placement.maxWidthPercent / 100) * pw * effectiveScale;
-      const aspect = logoImg.naturalHeight / logoImg.naturalWidth;
-      const logoW = maxW;
-      const logoH = maxW * aspect;
+      const heightPct = placement.maxHeightPercent ?? placement.maxWidthPercent;
+      const maxH = (heightPct / 100) * ph * effectiveScale;
+      const fit = Math.min(maxW / logoImg.naturalWidth, maxH / logoImg.naturalHeight);
+      const logoW = logoImg.naturalWidth * fit;
+      const logoH = logoImg.naturalHeight * fit;
 
       const isHighlighted = placement.id === highlightedPlacementId;
 

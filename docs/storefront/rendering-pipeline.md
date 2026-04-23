@@ -35,8 +35,9 @@ Given a placement with center `(centerXPercent, centerYPercent)` and max width `
 - `centerX = (centerXPercent / 100) * canvasWidth`
 - `centerY = (centerYPercent / 100) * canvasHeight`
 - `logoMaxWidthPx = (maxWidthPercent / 100) * canvasWidth`
+- `logoMaxHeightPx = (maxHeightPercent / 100) * canvasHeight`  (`maxHeightPercent` falls back to `maxWidthPercent` when absent — legacy square zones)
 
-Logo should be scaled to fit within `logoMaxWidthPx` while preserving aspect ratio.
+Logo is scaled using contain-fit: `scaleFactor = min(logoMaxWidthPx / logo.naturalWidth, logoMaxHeightPx / logo.naturalHeight)`. Both dimensions are bounded so tall logos never overflow the print area vertically.
 
 ## Geometry source priority
 

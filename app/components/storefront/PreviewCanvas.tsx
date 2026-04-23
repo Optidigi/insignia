@@ -127,6 +127,7 @@ export function PreviewCanvas({
           centerXPercent: geom.centerXPercent,
           centerYPercent: geom.centerYPercent,
           maxWidthPercent: geom.maxWidthPercent,
+          maxHeightPercent: geom.maxHeightPercent ?? null,
           scaleFactor: step?.scaleFactor ?? 1,
         };
       });
