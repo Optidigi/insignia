@@ -26,6 +26,7 @@ import db from "../db.server";
 import { createMethod, CreateMethodSchema } from "../lib/services/methods.server";
 import { provisionVariantPool } from "../lib/services/variant-pool.server";
 import { handleError, validateOrThrow } from "../lib/errors.server";
+import { currencySymbol } from "../lib/services/shop-currency.server";
 
 // ============================================================================
 // Loader
@@ -37,7 +38,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
   // Get or create shop record
   let shop = await db.shop.findUnique({
     where: { shopifyDomain: session.shop },
-    select: { id: true },
+    select: { id: true, currencyCode: true },
   });
 
   if (!shop) {
@@ -46,7 +47,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         shopifyDomain: session.shop,
         accessToken: session.accessToken || "",
       },
-      select: { id: true },
+      select: { id: true, currencyCode: true },
     });
   }
 
@@ -58,7 +59,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     orderBy: { createdAt: "desc" },
   });
 
-  return { methods, shopId: shop.id };
+  return { methods, shopId: shop.id, currency: currencySymbol(shop.currencyCode) };
 };
 
 // ============================================================================
@@ -80,8 +81,10 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
     const formData = await request.formData();
     const name = formData.get("name") as string;
+    const basePriceCentsRaw = formData.get("basePriceCents");
+    const basePriceCents = basePriceCentsRaw ? parseInt(String(basePriceCentsRaw), 10) : 0;
 
-    const input = validateOrThrow(CreateMethodSchema, { name }, "Invalid method data");
+    const input = validateOrThrow(CreateMethodSchema, { name, basePriceCents }, "Invalid method data");
     const method = await createMethod(shop.id, input);
 
     // Auto-provision variant pool slots for the new method
@@ -106,12 +109,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 // ============================================================================
 
 export default function MethodsPage() {
-  const { methods } = useLoaderData<typeof loader>();
+  const { methods, currency } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const navigate = useNavigate();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [newMethodName, setNewMethodName] = useState("");
+  const [newMethodPrice, setNewMethodPrice] = useState("");
   const [error, setError] = useState<string | null>(null);
 
   // Track the optimistic method name while submitting
@@ -134,8 +138,13 @@ export default function MethodsPage() {
     }
 
     const trimmedName = newMethodName.trim();
+    const priceInput = newMethodPrice.trim();
+    const cents = priceInput === "" ? 0 : Math.round(parseFloat(priceInput) * 100);
+    const safeCents = Number.isFinite(cents) && cents >= 0 ? cents : 0;
+
     const formData = new FormData();
     formData.append("name", trimmedName);
+    formData.append("basePriceCents", String(safeCents));
 
     // Store the name for optimistic rendering
     setOptimisticName(trimmedName);
@@ -143,12 +152,14 @@ export default function MethodsPage() {
     fetcher.submit(formData, { method: "POST" });
     setModalOpen(false);
     setNewMethodName("");
+    setNewMethodPrice("");
     setError(null);
-  }, [newMethodName, fetcher]);
+  }, [newMethodName, newMethodPrice, fetcher]);
 
   const handleModalClose = useCallback(() => {
     setModalOpen(false);
     setNewMethodName("");
+    setNewMethodPrice("");
     setError(null);
   }, []);
 
@@ -282,6 +293,15 @@ export default function MethodsPage() {
               autoComplete="off"
               placeholder="e.g., Embroidery, DTG, Screen Print"
               helpText="This name will be visible to your customers"
+            />
+            <TextField
+              label="Base price"
+              type="number"
+              value={newMethodPrice}
+              onChange={setNewMethodPrice}
+              prefix={currency}
+              autoComplete="off"
+              helpText="Decoration fee added to every order (0 = free)"
             />
           </FormLayout>
         </Modal.Section>
