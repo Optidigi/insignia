@@ -15,6 +15,8 @@
 | File | Change |
 |---|---|
 | `app/components/ImageTray.tsx` | New props (`views`, `selectedViewIds`, `onViewSelectionChange`), pill/split-button render logic, `viewPopoverOpen` local state |
+
+> **Note — deliberate API deviation from spec:** The design spec defines `onViewToggle(viewId: string)` (per-item toggle). This plan uses `onViewSelectionChange(viewIds: string[])` (full-replacement setter) because Polaris `ChoiceList.onChange` returns the complete new selection array. The route callback (`setSelectedViewIds(viewIds)`) is simpler as a result. Ignore the spec's `handleViewToggle` body; Task 2 Step 1 is the source of truth.
 | `app/routes/app.products.$id.images.tsx` | New `selectedViewIds` state + `handleViewSelectionChange` callback, filter loop in `handleAutoAssignFromTray`, updated `autoAssignDisabled`, updated `<ImageTray>` JSX |
 
 No other files change.
@@ -385,39 +387,26 @@ Also add `selectedViewIds` to the `useCallback` dependency array at the end of `
   }, [trayImages, colorGroups, views, selectedViewIds, cells, config.id, revalidator]);
 ```
 
-- [ ] **Step 3: Update `autoAssignDisabled` in the `<ImageTray>` JSX**
+- [ ] **Step 3: Add three new props to `<ImageTray>` and update `autoAssignDisabled`**
 
-Find (around line 876):
+Use the Edit tool with this exact old/new string pair (targets the single `autoAssignDisabled` prop line, ~line 876):
 
+old_string:
 ```tsx
           autoAssignDisabled={isImporting || isAutoAssigning || revalidator.state !== "idle"}
 ```
 
-Replace with:
-
+new_string:
 ```tsx
-          autoAssignDisabled={isImporting || isAutoAssigning || revalidator.state !== "idle" || selectedViewIds.length === 0}
-```
-
-- [ ] **Step 4: Pass the three new props to `<ImageTray>`**
-
-Find the `<ImageTray>` opening tag (around line 872) and add three props after `autoAssignDisabled`:
-
-```tsx
-        <ImageTray
-          images={trayImages}
-          onAutoAssign={handleAutoAssignFromTray}
-          isAutoAssigning={isAutoAssigning}
           autoAssignDisabled={isImporting || isAutoAssigning || revalidator.state !== "idle" || selectedViewIds.length === 0}
           views={views.map((v) => ({ id: v.id, name: v.name ?? null, perspective: v.perspective }))}
           selectedViewIds={selectedViewIds}
           onViewSelectionChange={handleViewSelectionChange}
-          onBulkUpload={async (files) => {
 ```
 
-(The `views` prop maps Prisma's `ProductView` to the leaner `ViewOption` type that `ImageTray` expects, avoiding leaking DB types into the component.)
+This inserts the three new props immediately after `autoAssignDisabled` without touching the rest of the `<ImageTray>` JSX. The `views` map converts Prisma's `ProductView` to the leaner `ViewOption` type `ImageTray` expects, avoiding leaking DB types into the component.
 
-- [ ] **Step 5: Run typecheck and confirm no new errors**
+- [ ] **Step 4: Run typecheck and confirm no new errors**
 
 ```bash
 cd C:\Users\Shimmy\Desktop\env\insignia\.claude\worktrees\frosty-knuth-7dc8b2
@@ -426,7 +415,7 @@ npm run typecheck 2>&1 | tail -20
 
 Expected: only the pre-existing error in `$viewId.tsx(685)`. Zero new errors.
 
-- [ ] **Step 6: Run lint on the route only**
+- [ ] **Step 5: Run lint on the route only**
 
 ```bash
 cd C:\Users\Shimmy\Desktop\env\insignia\.claude\worktrees\frosty-knuth-7dc8b2
@@ -435,7 +424,7 @@ npx eslint "app/routes/app.products.\$id.images.tsx" 2>&1
 
 Expected: no output.
 
-- [ ] **Step 7: Commit route changes**
+- [ ] **Step 6: Commit route changes**
 
 ```bash
 cd C:\Users\Shimmy\Desktop\env\insignia\.claude\worktrees\frosty-knuth-7dc8b2
