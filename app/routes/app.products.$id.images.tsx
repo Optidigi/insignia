@@ -946,6 +946,7 @@ export default function ImageManagerPage() {
             );
           }}
           onDragStart={(img) => setDraggedTrayImage(img)}
+          onDragEnd={() => setDraggedTrayImage(null)}
           onSelect={(img) => setSelectedTrayImageId(img?.id ?? null)}
           selectedImageId={selectedTrayImageId}
         />
@@ -1075,8 +1076,8 @@ export default function ImageManagerPage() {
                             backgroundPosition: "center",
                           }}
                           onDragOver={(e) => {
-                            e.preventDefault();
                             if (draggedTrayImage) {
+                              e.preventDefault();
                               e.currentTarget.style.outline =
                                 "2px solid var(--p-color-border-brand)";
                             }
@@ -1154,11 +1155,8 @@ export default function ImageManagerPage() {
                             }
                           }}
                         >
-                          {/* Hidden file input — the empty-cell label below
-                              activates it so the browser treats the click as a
-                              direct user gesture even inside iframes */}
+                          {/* Hidden file input — activated by the parent div onClick */}
                           <input
-                            id={`file-${key}`}
                             ref={(el) => {
                               fileInputRefs.current[key] = el;
                             }}
@@ -1223,17 +1221,12 @@ export default function ImageManagerPage() {
                             </BlockStack>
                           )}
 
-                          {/* Empty cell — <label> for the hidden input so
-                              the browser treats the activation as a direct
-                              user gesture even inside iframes */}
                           {!cell.imageUrl &&
                             !isUploading &&
                             !hasError && (
-                              <label
-                                htmlFor={`file-${key}`}
-                                aria-label={`Upload ${group.colorValue} ${viewLabel}`}
+                              <div
                                 style={{
-                                  cursor: "pointer",
+                                  pointerEvents: "none",
                                   display: "flex",
                                   alignItems: "center",
                                   justifyContent: "center",
@@ -1243,7 +1236,6 @@ export default function ImageManagerPage() {
                                   color: "var(--p-color-text-subdued)",
                                 }}
                               >
-                                {/* Plus icon inline so the label has visible content */}
                                 <svg
                                   viewBox="0 0 20 20"
                                   width="16"
@@ -1254,7 +1246,7 @@ export default function ImageManagerPage() {
                                 >
                                   <path d="M11 9V5H9v4H5v2h4v4h2v-4h4V9h-4z" />
                                 </svg>
-                              </label>
+                              </div>
                             )}
 
                           {/* Uploaded image — show actions popover */}

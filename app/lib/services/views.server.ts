@@ -253,42 +253,60 @@ export async function deleteVariantViewConfig(
 }
 
 /**
- * Copy variant view configurations from one variant to another.
- * When copyImages is false (duplicate), copies only placement geometry; target images stay unset.
+ * Copy placementGeometry from a source variant to one or more target variants for a
+ * single view. Only geometry is touched — imageUrl on targets is never modified.
+ *
+ * If the source has no row for this view (or its geometry is null) we propagate null,
+ * clearing each target's geometry. The source variant itself is skipped from targets.
  */
-export async function copyVariantViewConfigs(
+export async function copyGeometryToTargets(
   productConfigId: string,
+  viewId: string,
   sourceVariantId: string,
-  targetVariantId: string,
-  options: { copyImages?: boolean } = {}
-) {
-  const { copyImages = true } = options;
-
-  const sourceConfigs = await db.variantViewConfiguration.findMany({
+  targetVariantIds: string[]
+): Promise<void> {
+  // Read the source geometry for this specific view only.
+  const sourceRow = await db.variantViewConfiguration.findUnique({
     where: {
-      productConfigId,
-      variantId: sourceVariantId,
-    },
-  });
-
-  await db.variantViewConfiguration.deleteMany({
-    where: {
-      productConfigId,
-      variantId: targetVariantId,
-    },
-  });
-
-  if (sourceConfigs.length > 0) {
-    await db.variantViewConfiguration.createMany({
-      data: sourceConfigs.map((config) => ({
+      productConfigId_variantId_viewId: {
         productConfigId,
-        variantId: targetVariantId,
-        viewId: config.viewId,
-        imageUrl: copyImages ? config.imageUrl : null,
-        placementGeometry: config.placementGeometry ?? Prisma.DbNull,
-      })),
-    });
-  }
+        variantId: sourceVariantId,
+        viewId,
+      },
+    },
+    select: { placementGeometry: true },
+  });
 
-  return getVariantViewConfigsByVariant(productConfigId, targetVariantId);
+  // Geometry to write — null when the source row is absent or its geometry is null.
+  const geometry =
+    sourceRow?.placementGeometry !== undefined && sourceRow.placementGeometry !== null
+      ? (sourceRow.placementGeometry as Prisma.InputJsonValue)
+      : Prisma.DbNull;
+
+  // Skip the source itself in case it appears in the list.
+  const targets = targetVariantIds.filter((id) => id !== sourceVariantId);
+
+  await db.$transaction(async (tx) => {
+    for (const targetVariantId of targets) {
+      await tx.variantViewConfiguration.upsert({
+        where: {
+          productConfigId_variantId_viewId: {
+            productConfigId,
+            variantId: targetVariantId,
+            viewId,
+          },
+        },
+        update: {
+          placementGeometry: geometry,
+        },
+        create: {
+          productConfigId,
+          variantId: targetVariantId,
+          viewId,
+          imageUrl: null,
+          placementGeometry: geometry,
+        },
+      });
+    }
+  });
 }

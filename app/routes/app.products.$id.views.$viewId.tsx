@@ -37,7 +37,7 @@ import { createPlacement } from "../lib/services/placements.server";
 import {
   getView,
   upsertVariantViewConfig,
-  copyVariantViewConfigs,
+  copyGeometryToTargets,
   createView,
   deleteView,
   CreateViewSchema,
@@ -345,9 +345,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         });
       }
 
-      await copyVariantViewConfigs(configId, sourceVariantId, targetVariantId, {
-        copyImages: false,
-      });
+      await copyGeometryToTargets(configId, viewId, sourceVariantId, [targetVariantId]);
 
       return { success: true };
     }
@@ -367,13 +365,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         throw new Response("Invalid targetVariantIds JSON", { status: 400 });
       }
 
-      for (const targetId of targetVariantIds) {
-        if (targetId !== sourceVariantId) {
-          await copyVariantViewConfigs(configId, sourceVariantId, targetId, {
-            copyImages: false,
-          });
-        }
-      }
+      await copyGeometryToTargets(configId, viewId, sourceVariantId, targetVariantIds);
 
       return { success: true, intent: "apply-to-all" };
     }
@@ -1681,7 +1673,7 @@ export default function ViewDetailPage() {
                   <div style={{ width: 1, height: 20, background: "#E5E7EB", flexShrink: 0 }} />
                   <button
                     type="button"
-                    disabled={!selectedVariantId}
+                    disabled={!selectedVariantId || geometryFetcher.state !== "idle" || navigation.state !== "idle"}
                     title="Copy this color's print area layout to all other colors"
                     onClick={() => {
                       if (!selectedVariantId) return;

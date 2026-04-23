@@ -42,6 +42,7 @@ type Props = {
   images: TrayImage[];
   onBulkUpload: (files: FileList) => void | Promise<void>;
   onDragStart: (image: TrayImage) => void;
+  onDragEnd?: () => void;
   onSelect?: (image: TrayImage | null) => void;
   selectedImageId?: string | null;
   onAutoAssign?: () => void | Promise<void>;
@@ -57,6 +58,7 @@ export function ImageTray({
   images,
   onBulkUpload,
   onDragStart,
+  onDragEnd,
   onSelect,
   selectedImageId,
   onAutoAssign,
@@ -204,6 +206,7 @@ export function ImageTray({
             type="button"
             draggable
             onDragStart={() => onDragStart(img)}
+            onDragEnd={() => onDragEnd?.()}
             onClick={() => {
               if (onSelect) {
                 onSelect(selectedImageId === img.id ? null : img);
