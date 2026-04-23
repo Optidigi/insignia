@@ -17,7 +17,7 @@ import {
   Popover,
   ActionList,
 } from "@shopify/polaris";
-import { PlusCircleIcon, CursorIcon, ChevronDownIcon, CheckSmallIcon } from "@shopify/polaris-icons";
+import { PlusCircleIcon, CursorIcon, ChevronDownIcon, CheckSmallIcon, DragHandleIcon } from "@shopify/polaris-icons";
 import { RulerCalibration } from "../components/RulerCalibration";
 
 const PlacementGeometryEditorLazy = lazy(() =>
@@ -835,6 +835,27 @@ export default function ViewDetailPage() {
   const actionData = useActionData<typeof action>();
   const navigate = useNavigate();
 
+  const viewReorderFetcher = useFetcher<{ success?: boolean; intent?: string; error?: unknown }>();
+  const [draggedViewId, setDraggedViewId] = useState<string | null>(null);
+  const [dragOverViewId, setDragOverViewId] = useState<string | null>(null);
+  const [localViewOrder, setLocalViewOrder] = useState<string[]>(() =>
+    config.views.map((v) => v.id)
+  );
+
+  // Re-sync localViewOrder when loader data updates (after revalidation)
+  useEffect(() => {
+    setLocalViewOrder(config.views.map((v) => v.id));
+  }, [config.views]);
+
+  // Revalidate after successful view reorder
+  useEffect(() => {
+    const data = viewReorderFetcher.data as Record<string, unknown> | undefined;
+    if (!data || viewReorderFetcher.state !== "idle") return;
+    if (data.success && data.intent === "reorder-views") {
+      revalidator.revalidate();
+    }
+  }, [viewReorderFetcher.data, viewReorderFetcher.state]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
     colorGroups[0]?.representativeVariantId ?? null
   );
@@ -1218,6 +1239,73 @@ export default function ViewDetailPage() {
     [config.views, config.id, view.id]
   );
 
+  const displayTabs = useMemo(() => {
+    const byId = new Map(viewTabs.map((t) => [t.id, t]));
+    return localViewOrder
+      .map((id) => byId.get(id))
+      .filter((t): t is (typeof viewTabs)[number] => t !== undefined);
+  }, [viewTabs, localViewOrder]);
+
+  const submitViewReorder = useCallback((newOrder: string[]) => {
+    setLocalViewOrder(newOrder);
+    const fd = new FormData();
+    fd.append("intent", "reorder-views");
+    fd.append("orderedViewIds", JSON.stringify(newOrder));
+    viewReorderFetcher.submit(fd, {
+      method: "POST",
+      action: `/app/products/${config.id}`,
+    });
+  }, [config.id, viewReorderFetcher]);
+
+  const handleTabDragStart = useCallback((e: React.DragEvent, viewId: string) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", viewId);
+    setDraggedViewId(viewId);
+  }, []);
+
+  const handleTabDragOver = useCallback((e: React.DragEvent, viewId: string) => {
+    if (!draggedViewId) return;
+    e.preventDefault();
+    setDragOverViewId(viewId);
+  }, [draggedViewId]);
+
+  const handleTabDragLeave = useCallback(() => {
+    setDragOverViewId(null);
+  }, []);
+
+  const handleTabDrop = useCallback((e: React.DragEvent, targetId: string) => {
+    e.preventDefault();
+    const sourceId = draggedViewId;
+    setDraggedViewId(null);
+    setDragOverViewId(null);
+    if (!sourceId || sourceId === targetId) return;
+    const current = [...localViewOrder];
+    const from = current.indexOf(sourceId);
+    const to = current.indexOf(targetId);
+    if (from === -1 || to === -1) return;
+    const [moved] = current.splice(from, 1);
+    current.splice(to, 0, moved);
+    submitViewReorder(current);
+  }, [draggedViewId, localViewOrder, submitViewReorder]);
+
+  const handleTabDragEnd = useCallback(() => {
+    setDraggedViewId(null);
+    setDragOverViewId(null);
+  }, []);
+
+  const handleTabHandleKeyDown = useCallback((e: React.KeyboardEvent, viewId: string) => {
+    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    e.preventDefault();
+    const current = [...localViewOrder];
+    const from = current.indexOf(viewId);
+    if (from === -1) return;
+    const to = e.key === "ArrowUp" ? from - 1 : from + 1;
+    if (to < 0 || to >= current.length) return;
+    const [moved] = current.splice(from, 1);
+    current.splice(to, 0, moved);
+    submitViewReorder(current);
+  }, [localViewOrder, submitViewReorder]);
+
   return (
     <>
       {/* App Bridge SaveBar — shown when geometry has unsaved changes */}
@@ -1321,23 +1409,52 @@ export default function ViewDetailPage() {
               padding: "0 16px", height: 40, flexShrink: 0,
               background: "#ffffff", borderBottom: "1px solid #E5E7EB",
             }}>
-              {viewTabs.length <= 4 ? (
+              {displayTabs.length <= 4 ? (
                 /* Tab links mode (≤4 views) */
-                viewTabs.map((tab) => (
-                  <Link
+                displayTabs.map((tab) => (
+                  <div
                     key={tab.id}
-                    to={tab.url}
+                    onDragOver={(e) => handleTabDragOver(e, tab.id)}
+                    onDragLeave={handleTabDragLeave}
+                    onDrop={(e) => handleTabDrop(e, tab.id)}
                     style={{
-                      display: "flex", alignItems: "center", gap: 6,
-                      height: "100%", padding: "0 16px",
-                      borderBottom: tab.isCurrent ? "2px solid #2563EB" : "2px solid transparent",
-                      color: tab.isCurrent ? "#2563EB" : "#6B7280",
-                      fontSize: 13, fontWeight: tab.isCurrent ? 600 : 400,
-                      textDecoration: "none", whiteSpace: "nowrap",
+                      display: "flex", alignItems: "center",
+                      height: "100%",
+                      outline: dragOverViewId === tab.id ? "1.5px solid #2563EB" : "none",
+                      outlineOffset: -1,
+                      opacity: draggedViewId === tab.id ? 0.4 : 1,
                     }}
                   >
-                    {tab.label}
-                  </Link>
+                    <span
+                      draggable
+                      onDragStart={(e) => handleTabDragStart(e, tab.id)}
+                      onDragEnd={handleTabDragEnd}
+                      onKeyDown={(e) => handleTabHandleKeyDown(e, tab.id)}
+                      role="button"
+                      tabIndex={0}
+                      aria-label="Drag to reorder"
+                      style={{
+                        flexShrink: 0, cursor: "grab",
+                        display: "inline-flex", alignItems: "center",
+                        padding: "0 4px", color: "var(--p-color-icon-subdued)",
+                      }}
+                    >
+                      <Icon source={DragHandleIcon} tone="subdued" />
+                    </span>
+                    <Link
+                      to={tab.url}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 6,
+                        height: "100%", padding: "0 12px 0 4px",
+                        borderBottom: tab.isCurrent ? "2px solid #2563EB" : "2px solid transparent",
+                        color: tab.isCurrent ? "#2563EB" : "#6B7280",
+                        fontSize: 13, fontWeight: tab.isCurrent ? 600 : 400,
+                        textDecoration: "none", whiteSpace: "nowrap",
+                      }}
+                    >
+                      {tab.label}
+                    </Link>
+                  </div>
                 ))
               ) : (
                 /* Dropdown mode (5+ views) */
@@ -1355,28 +1472,67 @@ export default function ViewDetailPage() {
                           cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#111827",
                         }}
                       >
-                        {viewTabs.find((t) => t.isCurrent)?.label ?? "View"}
+                        {displayTabs.find((t) => t.isCurrent)?.label ?? "View"}
                         <span style={{
                           fontSize: 10, fontWeight: 500, color: "#2563EB",
                           background: "#EFF6FF", borderRadius: 10, padding: "1px 6px",
                         }}>
-                          {`${viewTabs.findIndex((t) => t.isCurrent) + 1} of ${viewTabs.length}`}
+                          {`${displayTabs.findIndex((t) => t.isCurrent) + 1} of ${displayTabs.length}`}
                         </span>
                         <Icon source={ChevronDownIcon} tone="subdued" />
                       </button>
                     }
                     onClose={() => setViewPopoverOpen(false)}
                   >
-                    <ActionList
-                      items={viewTabs.map((tab) => ({
-                        content: tab.label,
-                        icon: tab.isCurrent ? CheckSmallIcon : undefined,
-                        onAction: () => {
-                          setViewPopoverOpen(false);
-                          navigate(tab.url);
-                        },
-                      }))}
-                    />
+                    <div style={{ minWidth: 200, maxWidth: 320, padding: 4 }}>
+                      {displayTabs.map((tab) => (
+                        <div
+                          key={tab.id}
+                          onDragOver={(e) => handleTabDragOver(e, tab.id)}
+                          onDragLeave={handleTabDragLeave}
+                          onDrop={(e) => handleTabDrop(e, tab.id)}
+                          style={{
+                            display: "flex", alignItems: "center", gap: 8,
+                            padding: "6px 8px", borderRadius: 4,
+                            background: dragOverViewId === tab.id ? "#EFF6FF" : "transparent",
+                            opacity: draggedViewId === tab.id ? 0.4 : 1,
+                          }}
+                        >
+                          <span
+                            draggable
+                            onDragStart={(e) => handleTabDragStart(e, tab.id)}
+                            onDragEnd={handleTabDragEnd}
+                            onKeyDown={(e) => handleTabHandleKeyDown(e, tab.id)}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Drag to reorder"
+                            style={{ cursor: "grab", display: "inline-flex", alignItems: "center", padding: 2 }}
+                          >
+                            <Icon source={DragHandleIcon} tone="subdued" />
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setViewPopoverOpen(false);
+                              navigate(tab.url);
+                            }}
+                            style={{
+                              flex: 1, textAlign: "left", background: "transparent", border: "none",
+                              padding: "4px 0", cursor: "pointer", fontSize: 13,
+                              fontWeight: tab.isCurrent ? 600 : 400,
+                              color: tab.isCurrent ? "#2563EB" : "#111827",
+                            }}
+                          >
+                            {tab.label}
+                            {tab.isCurrent && (
+                              <span style={{ marginInlineStart: 6, color: "#2563EB" }}>
+                                <Icon source={CheckSmallIcon} />
+                              </span>
+                            )}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
                   </Popover>
                 </div>
               )}
