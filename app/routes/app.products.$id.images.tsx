@@ -58,6 +58,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         cells: [],
         viewImageCounts: {} as Record<string, { filled: number; total: number }>,
         shopName: session.shop,
+        r2Configured: !!(
+          process.env.R2_ACCOUNT_ID &&
+          process.env.R2_ACCESS_KEY_ID &&
+          process.env.R2_SECRET_ACCESS_KEY
+        ),
+        isDev: process.env.NODE_ENV !== "production",
       });
     }
 
@@ -87,12 +93,18 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Generate presigned GET URLs for cells that have images (1-hour TTL for admin)
     const ADMIN_SIGNED_URL_EXPIRES_SEC = 3600;
     const cellsWithUrls = await Promise.all(
-      cells.map(async (cell) => ({
-        ...cell,
-        imageUrl: cell.imageUrl
-          ? await getPresignedGetUrl(cell.imageUrl, ADMIN_SIGNED_URL_EXPIRES_SEC)
-          : null,
-      }))
+      cells.map(async (cell) => {
+        let resolvedImageUrl: string | null = null;
+        if (cell.imageUrl) {
+          try {
+            resolvedImageUrl = await getPresignedGetUrl(cell.imageUrl, ADMIN_SIGNED_URL_EXPIRES_SEC);
+          } catch (err) {
+            console.warn(`[images] presign failed for key ${cell.imageUrl}:`, err);
+            resolvedImageUrl = null;
+          }
+        }
+        return { ...cell, imageUrl: resolvedImageUrl };
+      })
     );
 
     // Compute per-view image counts for tab badges
@@ -105,6 +117,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       };
     }
 
+    const r2Configured = !!(
+      process.env.R2_ACCOUNT_ID &&
+      process.env.R2_ACCESS_KEY_ID &&
+      process.env.R2_SECRET_ACCESS_KEY
+    );
+    const isDev = process.env.NODE_ENV !== "production";
+
     return data({
       config,
       views: config.views,
@@ -112,6 +131,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       cells: cellsWithUrls,
       viewImageCounts,
       shopName: session.shop,
+      r2Configured,
+      isDev,
     });
   } catch (error) {
     throw handleError(error);
@@ -307,7 +328,7 @@ type UploadJob = {
 const MAX_CONCURRENT = 4;
 
 export default function ImageManagerPage() {
-  const { config, views, colorGroups, cells, viewImageCounts } =
+  const { config, views, colorGroups, cells, viewImageCounts, r2Configured, isDev } =
     useLoaderData<typeof loader>();
   const submit = useSubmit();
   const navigation = useNavigation();
@@ -686,6 +707,15 @@ export default function ImageManagerPage() {
       ]}
     >
       <BlockStack gap="500">
+        {isDev && !r2Configured && (
+          <Banner tone="warning" title="Image storage not configured">
+            <p>
+              R2 credentials are missing. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and
+              R2_SECRET_ACCESS_KEY in .env to enable image thumbnails.
+            </p>
+          </Banner>
+        )}
+
         {/* ---- Progress with per-view breakdown ---- */}
         <Card>
           <BlockStack gap="300">

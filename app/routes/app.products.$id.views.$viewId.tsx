@@ -176,7 +176,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       rawVariantPlacementGeometry[vc.variantId] = (vc.placementGeometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number; maxHeightPercent?: number }>) ?? null;
     }
 
-    // Geometry is always view-level (shared across all variants)
+    // Per-variant geometry with fallback to shared view-level geometry.
+    // When sharedZones is true (default), use shared geometry for all variants.
+    // When sharedZones is false, use per-variant geometry with shared as fallback
+    // for variants that haven't been explicitly positioned yet.
     const sharedGeometry = (view.placementGeometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number; maxHeightPercent?: number }> | null) ?? null;
     const variantPlacementGeometry: Record<string, Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number; maxHeightPercent?: number }> | null> = {};
     const allVariantIds = new Set([
@@ -184,7 +187,9 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       ...(variants.map((v) => v.id)),
     ]);
     for (const vid of allVariantIds) {
-      variantPlacementGeometry[vid] = sharedGeometry;
+      variantPlacementGeometry[vid] = view.sharedZones
+        ? sharedGeometry
+        : (rawVariantPlacementGeometry[vid] ?? sharedGeometry);
     }
 
     // Generate signed URLs for existing images
@@ -377,30 +382,30 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         }
       }
 
-      // Always save to view-level geometry (shared across all variants)
-      // Include ownership check in the query — viewId must belong to configId/shopId
-      const view = await db.productView.findFirst({
-        where: { id: viewId, productConfig: { id: configId, shopId: shop.id } },
-        select: { placementGeometry: true },
+      // Save per-variant geometry to VariantViewConfiguration for this specific variant.
+      // configId is already verified against shopId by the route-level ownership check above.
+      await upsertVariantViewConfig(configId, variantId, viewId, {
+        placementGeometry: placementGeometry as Record<string, unknown> | null,
       });
-      if (!view) {
-        throw new Response("View not found", { status: 404 });
-      }
 
-      // Save to view-level geometry (merged with any existing entries)
-      const existing = (view.placementGeometry as Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number; maxHeightPercent?: number }> | null) ?? {};
-      const merged: Record<string, { centerXPercent: number; centerYPercent: number; maxWidthPercent: number; maxHeightPercent?: number }> = {
-        ...existing,
-        ...(placementGeometry ?? {}),
-      };
+      // Switch view to per-variant mode so storefront uses variant-specific geometry
+      // (productView.placementGeometry remains as fallback for variants not yet positioned).
       await db.productView.update({
         where: { id: viewId, productConfig: { id: configId, shopId: shop.id } },
-        data: {
-          placementGeometry: merged as import("@prisma/client").Prisma.InputJsonValue,
-        },
+        data: { sharedZones: false },
       });
 
       return { success: true, intent: "save-placement-geometry" };
+    }
+
+    if (intent === "reset-to-shared") {
+      // Restore shared geometry mode. Per-variant data in VariantViewConfiguration
+      // rows is preserved so it can be reactivated if the merchant saves per-variant again.
+      await db.productView.update({
+        where: { id: viewId, productConfig: { id: configId, shopId: shop.id } },
+        data: { sharedZones: true },
+      });
+      return { success: true, intent: "reset-to-shared" };
     }
 
     // ------------------------------------------------------------------
@@ -621,7 +626,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       // Delete (cascades to PlacementStep via schema)
       await db.placementDefinition.delete({ where: { id: placementId } });
 
-      // Clean up geometry references in the current view
+      // Clean up geometry references in the current view (shared geometry)
       const currentView = await db.productView.findUnique({
         where: { id: viewId },
         select: { id: true, placementGeometry: true },
@@ -634,6 +639,29 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
           await db.productView.update({
             where: { id: currentView.id },
             data: { placementGeometry: rest as import("@prisma/client").Prisma.InputJsonValue },
+          });
+        }
+      }
+
+      // Also purge the deleted placement ID from all VariantViewConfiguration.placementGeometry
+      // JSONB fields for this view to prevent stale key accumulation.
+      const vcRecords = await db.variantViewConfiguration.findMany({
+        where: { viewId },
+        select: { id: true, placementGeometry: true },
+      });
+      for (const vc of vcRecords) {
+        const vcGeom = vc.placementGeometry as Record<string, unknown> | null;
+        if (vcGeom && placementId in vcGeom) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { [placementId]: _vcRemoved, ...vcRest } = vcGeom;
+          void _vcRemoved;
+          await db.variantViewConfiguration.update({
+            where: { id: vc.id },
+            data: {
+              placementGeometry: Object.keys(vcRest).length > 0
+                ? (vcRest as Record<string, unknown>)
+                : null,
+            },
           });
         }
       }
@@ -896,6 +924,8 @@ export default function ViewDetailPage() {
         window.shopify?.toast?.show("Print area deleted");
       } else if (intent === "apply-to-all") {
         window.shopify?.toast?.show("Applied to all variants");
+      } else if (intent === "reset-to-shared") {
+        window.shopify?.toast?.show("Switched to shared layout");
       }
     } else if ("error" in data) {
       const intent = data.intent as string | undefined;
@@ -1581,6 +1611,32 @@ export default function ViewDetailPage() {
                 </Popover>
               )}
               <div style={{ flex: 1 }} />
+              {/* Use shared layout — visible when view is in per-variant mode */}
+              {!view.sharedZones && (
+                <>
+                  <div style={{ width: 1, height: 20, background: "#E5E7EB", flexShrink: 0 }} />
+                  <button
+                    type="button"
+                    disabled={anyDirty}
+                    title={anyDirty ? "Save or discard changes before switching to shared layout" : "Switch all variants back to using the same shared print area layout"}
+                    onClick={() => {
+                      const fd = new FormData();
+                      fd.set("intent", "reset-to-shared");
+                      submit(fd, { method: "POST" });
+                    }}
+                    style={{
+                      padding: "4px 10px", borderRadius: 6,
+                      border: "1px solid #D1D5DB", background: "#FFF7ED",
+                      color: "#92400E", fontSize: 11, fontWeight: 500,
+                      whiteSpace: "nowrap",
+                      cursor: anyDirty ? "not-allowed" : "pointer",
+                      opacity: anyDirty ? 0.4 : 1,
+                    }}
+                  >
+                    Use shared layout
+                  </button>
+                </>
+              )}
               {/* Apply to all — always visible, separated by divider */}
               {variants.length > 1 && (
                 <>
