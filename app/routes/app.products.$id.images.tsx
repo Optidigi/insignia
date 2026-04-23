@@ -579,6 +579,31 @@ export default function ImageManagerPage() {
     setIsImporting(true);
     setImportTruncated(false);
     try {
+      // Flush any pending debounced saves before reading `cells` for auto-assignment.
+      // Best-effort: prevents auto-assign from overwriting an image just uploaded
+      // but whose revalidation hasn't settled into `cells` state yet.
+      if (pendingSaves.current.length > 0) {
+        if (saveTimerRef.current) {
+          clearTimeout(saveTimerRef.current);
+          saveTimerRef.current = null;
+        }
+        const batch = [...pendingSaves.current];
+        pendingSaves.current = [];
+        await fetch("/api/admin/batch-save-images", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            productConfigId: config.id,
+            images: batch.map((s) => ({
+              viewId: s.viewId,
+              variantIds: [s.variantId],
+              storageKey: s.storageKey,
+            })),
+          }),
+        });
+        revalidator.revalidate();
+      }
+
       const res = await fetch("/api/admin/import-shopify-images", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -589,30 +614,116 @@ export default function ImageManagerPage() {
         imported: Array<{ storageKey: string; previewUrl: string; colorOption: string }>;
         truncated: boolean;
       };
+
       if (imported.length === 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window.shopify as any)?.toast?.show("No images found on Shopify product");
         return;
       }
-      const newTrayImages: TrayImage[] = imported.map((img) => ({
-        id: `import-${img.storageKey}`,
-        storageKey: img.storageKey,
-        previewUrl: img.previewUrl,
-        originalFileName: img.colorOption,
-      }));
-      setTrayImages((prev) => [...prev, ...newTrayImages]);
+
+      // Match each imported image to a color group; build auto-assign list and tray remainder.
+      // Matching is case-insensitive against colorGroup.colorValue.
+      const autoAssignImages: Array<{ viewId: string; variantIds: string[]; storageKey: string }> = [];
+      const unmatched: TrayImage[] = [];
+
+      for (const img of imported) {
+        const matchingGroup = colorGroups.find(
+          (g) => g.colorValue.toLowerCase() === img.colorOption.toLowerCase()
+        );
+        if (matchingGroup) {
+          let anyAssigned = false;
+          for (const view of views) {
+            const existingCell = cells.find(
+              (c: ImageCell) => c.colorValue === matchingGroup.colorValue && c.viewId === view.id
+            );
+            // Only auto-assign to cells that have no real image (null or default fallback)
+            if (!existingCell?.imageUrl || existingCell.isDefault) {
+              autoAssignImages.push({
+                viewId: view.id,
+                variantIds: matchingGroup.variantIds,
+                storageKey: img.storageKey,
+              });
+              anyAssigned = true;
+            }
+          }
+          if (!anyAssigned) {
+            // All cells for this color already have real images — put in tray rather than
+            // silently discard so the merchant can handle it manually if needed.
+            unmatched.push({
+              id: `import-${img.storageKey}`,
+              storageKey: img.storageKey,
+              previewUrl: img.previewUrl,
+              originalFileName: img.colorOption,
+            });
+          }
+        } else {
+          unmatched.push({
+            id: `import-${img.storageKey}`,
+            storageKey: img.storageKey,
+            previewUrl: img.previewUrl,
+            originalFileName: img.colorOption,
+          });
+        }
+      }
+
+      // Single consolidated POST for all auto-assigned cells
+      if (autoAssignImages.length > 0) {
+        try {
+          const autoRes = await fetch("/api/admin/batch-save-images", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ productConfigId: config.id, images: autoAssignImages }),
+          });
+          if (!autoRes.ok) throw new Error(`batch-save failed: ${autoRes.status}`);
+          revalidator.revalidate();
+        } catch (err) {
+          console.error("[handleImportFromShopify] auto-assign batch failed:", err);
+          // Fallback: move all matched items to tray so nothing is silently lost
+          for (const img of imported) {
+            if (!unmatched.some((u) => u.storageKey === img.storageKey)) {
+              unmatched.push({
+                id: `import-${img.storageKey}`,
+                storageKey: img.storageKey,
+                previewUrl: img.previewUrl,
+                originalFileName: img.colorOption,
+              });
+            }
+          }
+        }
+      }
+
+      if (unmatched.length > 0) {
+        setTrayImages((prev) => [...prev, ...unmatched]);
+      }
+
       setImportTruncated(!!truncated);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (window.shopify as any)?.toast?.show(
-        `${imported.length} image${imported.length !== 1 ? "s" : ""} imported — drag to assign`
-      );
-    } catch {
+
+      // Smart toast: report what happened
+      const autoCount = imported.length - unmatched.length;
+      if (autoCount > 0 && unmatched.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window.shopify as any)?.toast?.show(
+          `${autoCount} auto-assigned, ${unmatched.length} added to tray`
+        );
+      } else if (autoCount > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window.shopify as any)?.toast?.show(
+          `${autoCount} image${autoCount !== 1 ? "s" : ""} auto-assigned`
+        );
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window.shopify as any)?.toast?.show(
+          `${imported.length} image${imported.length !== 1 ? "s" : ""} imported — drag to assign`
+        );
+      }
+    } catch (err) {
+      console.error("[handleImportFromShopify] import failed", err);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window.shopify as any)?.toast?.show("Import failed — check network and try again", { isError: true });
     } finally {
       setIsImporting(false);
     }
-  }, [config.id, config.linkedProductIds]);
+  }, [config.id, config.linkedProductIds, colorGroups, views, cells, revalidator]);
 
   // ---- Tray DnD handler ----
 

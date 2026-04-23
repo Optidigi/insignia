@@ -48,6 +48,7 @@ import {
   duplicateProductConfig,
   UpdateProductConfigSchema,
 } from "../lib/services/product-configs.server";
+import { groupVariantsByColor } from "../lib/services/image-manager.server";
 import { listMethods } from "../lib/services/methods.server";
 import { createView, deleteView, CreateViewSchema } from "../lib/services/views.server";
 import { createPlacement, deletePlacement, CreatePlacementSchema } from "../lib/services/placements.server";
@@ -100,27 +101,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       (v) => v.placementGeometry && Object.keys(v.placementGeometry as object).length > 0
     ).length;
 
-    // Get variant count for this config (total per view)
-    const totalVariants = config.linkedProductIds.length > 0
-      ? await db.variantViewConfiguration.groupBy({
-          by: ["viewId"],
-          where: { productConfigId: id },
-          _count: true,
-        })
-      : [];
-
-    // Get filled image counts per view
-    const filledImageCounts = await db.variantViewConfiguration.groupBy({
-      by: ["viewId"],
-      where: { productConfigId: id, imageUrl: { not: null } },
-      _count: true,
-    });
-
     // First-setup state: no views have been created yet
     const isFirstSetup = config.views.length === 0;
 
     // Fetch the Shopify product handle for the "Preview on store" button.
     // Only fetch if there is at least one linked product GID.
+    // Also fetches all variants to compute color groups for badge counts.
+    let colorGroupCount = 0;
+    let representativeVariantIds: string[] = [];
     let productHandle: string | null = null;
     let customizerUrl: string | null = null;
     const firstProductGid = config.linkedProductIds[0];
@@ -131,9 +119,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           query GetProductHandle($id: ID!) {
             product(id: $id) {
               handle
-              variants(first: 1) {
+              variants(first: 250) {
                 nodes {
                   id
+                  selectedOptions { name value }
                 }
               }
             }
@@ -141,7 +130,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           { variables: { id: firstProductGid } }
         );
         const handleData = (await handleResponse.json()) as {
-          data?: { product?: { handle?: string; variants?: { nodes?: Array<{ id?: string }> } } };
+          data?: {
+            product?: {
+              handle?: string;
+              variants?: {
+                nodes?: Array<{
+                  id?: string;
+                  selectedOptions?: Array<{ name: string; value: string }>;
+                }>;
+              };
+            };
+          };
           errors?: unknown;
         };
         if (handleData.errors) {
@@ -155,6 +154,16 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
           productNumericId && variantNumericId
             ? `https://${session.shop}/apps/insignia/modal?p=${productNumericId}&v=${variantNumericId}`
             : null;
+
+        // Compute color groups for accurate per-view image badge counts
+        const rawVariants = handleData.data?.product?.variants?.nodes ?? [];
+        const typedVariants = rawVariants.filter(
+          (v): v is { id: string; selectedOptions: Array<{ name: string; value: string }> } =>
+            typeof v.id === "string" && Array.isArray(v.selectedOptions)
+        );
+        const colorGroups = groupVariantsByColor(typedVariants);
+        colorGroupCount = colorGroups.length;
+        representativeVariantIds = colorGroups.map((g) => g.representativeVariantId);
       } catch (e) {
         // Non-fatal: if the product no longer exists in Shopify, skip the button
         console.error("[GetProductHandle] unexpected error:", e);
@@ -162,6 +171,22 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         customizerUrl = null;
       }
     }
+
+    // Filled image counts per view, scoped to representative variant IDs only.
+    // representativeVariantId is always the image-bearing row (queueSave writes to it;
+    // batchSaveImages fans out to all variants including it). One row per color group
+    // per view → _count equals number of color groups with an image for that view.
+    const filledImageCounts = representativeVariantIds.length > 0
+      ? await db.variantViewConfiguration.groupBy({
+          by: ["viewId"],
+          where: {
+            productConfigId: id,
+            variantId: { in: representativeVariantIds },
+            imageUrl: { not: null },
+          },
+          _count: true,
+        })
+      : [];
 
     const allPlacements = config.views.flatMap((v) => v.placements);
     const pricingRanges = allPlacements.map((p) => {
@@ -233,7 +258,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         variantConfigsWithGeometry,
         viewsWithGeometry,
       },
-      totalVariants,
+      colorGroupCount,
       filledImageCounts,
       pricingRanges,
       totalMinCents,
@@ -449,7 +474,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 // ============================================================================
 
 export default function ProductConfigDetailPage() {
-  const { config, methods, stats, totalVariants, filledImageCounts, isFirstSetup, customizerUrl, isConfigReady, currencyCode, pricingRanges, totalMinCents, totalMaxCents } =
+  const { config, methods, stats, colorGroupCount, filledImageCounts, isFirstSetup, customizerUrl, isConfigReady, currencyCode, pricingRanges, totalMinCents, totalMaxCents } =
     useLoaderData<typeof loader>();
 
   const currencySymbolMap: Record<string, string> = {
@@ -874,7 +899,7 @@ export default function ProductConfigDetailPage() {
                   <BlockStack gap="0">
                     {views.map((view) => {
                       const filled = filledImageCounts.find((c) => c.viewId === view.id)?._count ?? 0;
-                      const total = totalVariants.find((c) => c.viewId === view.id)?._count ?? 0;
+                      const total = colorGroupCount;
                       const isComplete = total > 0 && filled >= total;
                       const hasPartial = filled > 0 && !isComplete;
 
