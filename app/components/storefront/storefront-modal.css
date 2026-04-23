@@ -464,11 +464,14 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   border-color: var(--insignia-border);
   cursor: wait;
 }
+/* Hidden file input. We open the picker programmatically via
+   inputRef.current?.click() from the zone's onClick/onKeyDown handlers, so
+   the input itself does NOT need to be clickable — and MUST NOT be, because
+   `position: absolute; inset: 0` overlays every interactive child (Remove /
+   Replace / Cancel buttons) and swallows their clicks. display:none works
+   for programmatic .click() in all modern browsers. */
 .insignia-upload-zone-input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: inherit;
+  display: none;
 }
 .insignia-upload-zone-icon {
   color: var(--insignia-accent);
