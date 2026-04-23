@@ -114,18 +114,23 @@ export function ImageTray({
 
         {/* ── View selector pills (≤ PILL_THRESHOLD) — always visible when views provided ── */}
         {hasViews && usePillMode && onViewSelectionChange && views && (
-          <InlineStack gap="100" blockAlign="center">
-            {views.map((view) => (
-              <Button
-                key={view.id}
-                size="slim"
-                variant={sel.includes(view.id) ? "primary" : undefined}
-                onClick={() => handlePillToggle(view.id)}
-                accessibilityLabel={`${sel.includes(view.id) ? "Exclude" : "Include"} ${viewLabel(view)} from auto-assign`}
-              >
-                {viewLabel(view)}
-              </Button>
-            ))}
+          <InlineStack gap="150" blockAlign="center">
+            <Text variant="bodySm" tone="subdued" as="span">
+              Assign to:
+            </Text>
+            <InlineStack gap="100" blockAlign="center">
+              {views.map((view) => (
+                <Button
+                  key={view.id}
+                  size="slim"
+                  variant={sel.includes(view.id) ? "primary" : "secondary"}
+                  onClick={() => handlePillToggle(view.id)}
+                  accessibilityLabel={`${sel.includes(view.id) ? "Exclude" : "Include"} ${viewLabel(view)} from auto-assign`}
+                >
+                  {viewLabel(view)}
+                </Button>
+              ))}
+            </InlineStack>
           </InlineStack>
         )}
 
