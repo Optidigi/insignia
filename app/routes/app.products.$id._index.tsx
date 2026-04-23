@@ -13,6 +13,8 @@ import {
   useFetcher,
   useNavigation,
   useActionData,
+  useNavigate,
+  useRevalidator,
   redirect,
   Link,
 } from "react-router";
@@ -36,7 +38,7 @@ import {
   ResourceItem,
   Icon,
 } from "@shopify/polaris";
-import { AlertCircleIcon, CalculatorIcon, CheckCircleIcon, ImageIcon, ChevronRightIcon } from "@shopify/polaris-icons";
+import { AlertCircleIcon, CalculatorIcon, CheckCircleIcon, ImageIcon, ChevronRightIcon, DragHandleIcon } from "@shopify/polaris-icons";
 import { formatCurrency } from "../components/storefront/currency";
 
 import { authenticate } from "../shopify.server";
@@ -50,7 +52,7 @@ import {
 } from "../lib/services/product-configs.server";
 import { groupVariantsByColor } from "../lib/services/image-manager.server";
 import { listMethods } from "../lib/services/methods.server";
-import { createView, deleteView, CreateViewSchema } from "../lib/services/views.server";
+import { createView, deleteView, reorderViews, CreateViewSchema } from "../lib/services/views.server";
 import { createPlacement, deletePlacement, CreatePlacementSchema } from "../lib/services/placements.server";
 import { handleError, validateOrThrow, AppError } from "../lib/errors.server";
 
@@ -468,6 +470,28 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       return redirect(`/app/products/${newConfig.id}`);
     }
 
+    if (intent === "reorder-views") {
+      const orderedViewIdsJson = formData.get("orderedViewIds") as string;
+      if (!orderedViewIdsJson) {
+        throw new Response("Missing orderedViewIds", { status: 400 });
+      }
+      let orderedViewIds: string[];
+      try {
+        orderedViewIds = JSON.parse(orderedViewIdsJson);
+      } catch {
+        throw new Response("Invalid orderedViewIds JSON", { status: 400 });
+      }
+      if (!Array.isArray(orderedViewIds) || orderedViewIds.length === 0 || orderedViewIds.some((v) => typeof v !== "string" || !v)) {
+        throw new Response("orderedViewIds must be a non-empty array of strings", { status: 400 });
+      }
+      if (new Set(orderedViewIds).size !== orderedViewIds.length) {
+        throw new Response("Duplicate IDs in orderedViewIds", { status: 400 });
+      }
+      // configOwnership already verified ownership (shopId check above)
+      await reorderViews(id, orderedViewIds);
+      return { success: true, intent: "reorder-views" };
+    }
+
     throw new Response("Invalid intent", { status: 400 });
   } catch (error) {
     return handleError(error);
@@ -491,7 +515,10 @@ export default function ProductConfigDetailPage() {
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const methodFetcher = useFetcher();
+  const viewReorderFetcher = useFetcher<typeof action>();
   const navigation = useNavigation();
+  const navigate = useNavigate();
+  const revalidator = useRevalidator();
 
   const [hasChanges, setHasChanges] = useState(false);
   const BANNER_KEY = `insignia-first-setup-dismissed-${config.id}`;
@@ -535,6 +562,27 @@ export default function ProductConfigDetailPage() {
     setName(value);
     setHasChanges(true);
   }, []);
+
+  // Drag-to-reorder state for Views card
+  const [draggedViewId, setDraggedViewId] = useState<string | null>(null);
+  const [dragOverViewId, setDragOverViewId] = useState<string | null>(null);
+  const [localViewOrder, setLocalViewOrder] = useState<string[]>(() =>
+    config.views.map((v) => v.id)
+  );
+
+  // Re-sync localViewOrder when loader data updates (after revalidation)
+  useEffect(() => {
+    setLocalViewOrder(config.views.map((v) => v.id));
+  }, [config.views]);
+
+  // Revalidate after successful view reorder
+  useEffect(() => {
+    const data = viewReorderFetcher.data as Record<string, unknown> | undefined;
+    if (!data || viewReorderFetcher.state !== "idle") return;
+    if (data.success && data.intent === "reorder-views") {
+      revalidator.revalidate();
+    }
+  }, [viewReorderFetcher.data, viewReorderFetcher.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Modals (delete only — add flows navigate to the view editor)
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -586,6 +634,10 @@ export default function ProductConfigDetailPage() {
   }, [methodFetcher.data, methodFetcher.state]);
 
   const views = config.views;
+  // Optimistic display order for drag-to-reorder (falls back to server order)
+  const displayViews = localViewOrder
+    .map((id) => views.find((v) => v.id === id))
+    .filter((v): v is typeof views[number] => v !== undefined);
   const placements = config.views.flatMap((v) => v.placements);
 
   const hasBasicChanges =
@@ -970,46 +1022,133 @@ export default function ProductConfigDetailPage() {
                   </BlockStack>
                 ) : (
                   <BlockStack gap="0">
-                    {views.map((view) => {
+                    {displayViews.map((view) => {
                       const filled = filledImageCounts.find((c) => c.viewId === view.id)?._count ?? 0;
                       const total = colorGroupCount;
                       const isComplete = total > 0 && filled >= total;
                       const hasPartial = filled > 0 && !isComplete;
+                      const isBeingDragged = draggedViewId === view.id;
+                      const isDropTarget = dragOverViewId === view.id;
 
                       return (
-                        <Link
+                        <div
                           key={view.id}
-                          to={`/app/products/${config.id}/views/${view.id}`}
+                          onDragOver={(e) => {
+                            if (!draggedViewId) return;
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = "move";
+                            if (draggedViewId !== view.id) {
+                              setDragOverViewId(view.id);
+                            }
+                          }}
+                          onDragLeave={() => setDragOverViewId(null)}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (!draggedViewId || draggedViewId === view.id) return;
+                            const fromIdx = localViewOrder.indexOf(draggedViewId);
+                            const toIdx = localViewOrder.indexOf(view.id);
+                            if (fromIdx === -1 || toIdx === -1) return;
+                            const newOrder = [...localViewOrder];
+                            newOrder.splice(fromIdx, 1);
+                            newOrder.splice(toIdx, 0, draggedViewId);
+                            setDraggedViewId(null);
+                            setDragOverViewId(null);
+                            setLocalViewOrder(newOrder);
+                            const formData = new FormData();
+                            formData.append("intent", "reorder-views");
+                            formData.append("orderedViewIds", JSON.stringify(newOrder));
+                            viewReorderFetcher.submit(formData, { method: "POST" });
+                          }}
                           style={{
                             display: "block",
-                            padding: "10px 12px",
                             borderBottom: "1px solid var(--p-color-border)",
-                            textDecoration: "none",
-                            color: "inherit",
                             borderRadius: 8,
-                            transition: "background 100ms",
+                            opacity: isBeingDragged ? 0.4 : 1,
+                            outline: isDropTarget ? "1.5px solid #2563EB" : undefined,
+                            transition: "opacity 150ms ease",
                           }}
-                          onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--p-color-bg-surface-hover, #f6f6f7)"; }}
-                          onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
                         >
-                          <InlineStack align="space-between" blockAlign="center" wrap={false}>
-                            <InlineStack gap="200" blockAlign="center">
-                              <Icon
-                                source={ImageIcon}
-                                tone={isComplete ? "success" : hasPartial ? "warning" : "subdued"}
-                              />
-                              <Text fontWeight="semibold" as="span">
-                                {view.name || view.perspective.charAt(0).toUpperCase() + view.perspective.slice(1)}
-                              </Text>
-                            </InlineStack>
-                            <InlineStack gap="200" blockAlign="center">
-                              <Badge tone={isComplete ? "success" : hasPartial ? "warning" : undefined}>
-                                {`${filled}/${total} images`}
-                              </Badge>
-                              <Icon source={ChevronRightIcon} tone="subdued" />
-                            </InlineStack>
-                          </InlineStack>
-                        </Link>
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              padding: "10px 12px",
+                              textDecoration: "none",
+                              color: "inherit",
+                              gap: 8,
+                            }}
+                            onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = "var(--p-color-bg-surface-hover, #f6f6f7)"; }}
+                            onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = "transparent"; }}
+                          >
+                            {/* Drag handle — only this element is draggable to avoid Link URL drag conflict */}
+                            {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+                            <span
+                              draggable
+                              aria-label="Drag to reorder"
+                              role="button"
+                              tabIndex={0}
+                              onDragStart={(e) => {
+                                e.dataTransfer.effectAllowed = "move";
+                                e.dataTransfer.setData("text/plain", view.id);
+                                setDraggedViewId(view.id);
+                              }}
+                              onDragEnd={() => {
+                                setDraggedViewId(null);
+                                setDragOverViewId(null);
+                              }}
+                              onKeyDown={(e) => {
+                                // Keyboard reorder: move up/down with arrow keys
+                                if (e.key === "ArrowUp" || e.key === "ArrowDown") {
+                                  e.preventDefault();
+                                  const currentIdx = localViewOrder.indexOf(view.id);
+                                  const targetIdx = e.key === "ArrowUp" ? currentIdx - 1 : currentIdx + 1;
+                                  if (targetIdx < 0 || targetIdx >= localViewOrder.length) return;
+                                  const newOrder = [...localViewOrder];
+                                  newOrder.splice(currentIdx, 1);
+                                  newOrder.splice(targetIdx, 0, view.id);
+                                  setLocalViewOrder(newOrder);
+                                  const formData = new FormData();
+                                  formData.append("intent", "reorder-views");
+                                  formData.append("orderedViewIds", JSON.stringify(newOrder));
+                                  viewReorderFetcher.submit(formData, { method: "POST" });
+                                }
+                              }}
+                              style={{
+                                flexShrink: 0,
+                                cursor: "grab",
+                                display: "flex",
+                                alignItems: "center",
+                                color: "var(--p-color-icon-subdued)",
+                              }}
+                            >
+                              <Icon source={DragHandleIcon} tone="subdued" />
+                            </span>
+
+                            {/* Clickable row navigates to view editor */}
+                            {/* eslint-disable-next-line jsx-a11y/interactive-supports-focus, jsx-a11y/click-events-have-key-events */}
+                            <div
+                              role="link"
+                              style={{ display: "flex", flex: 1, alignItems: "center", justifyContent: "space-between", cursor: "pointer", minWidth: 0 }}
+                              onClick={() => navigate(`/app/products/${config.id}/views/${view.id}`)}
+                            >
+                              <InlineStack gap="200" blockAlign="center">
+                                <Icon
+                                  source={ImageIcon}
+                                  tone={isComplete ? "success" : hasPartial ? "warning" : "subdued"}
+                                />
+                                <Text fontWeight="semibold" as="span">
+                                  {view.name || view.perspective.charAt(0).toUpperCase() + view.perspective.slice(1)}
+                                </Text>
+                              </InlineStack>
+                              <InlineStack gap="200" blockAlign="center">
+                                <Badge tone={isComplete ? "success" : hasPartial ? "warning" : undefined}>
+                                  {`${filled}/${total} images`}
+                                </Badge>
+                                <Icon source={ChevronRightIcon} tone="subdued" />
+                              </InlineStack>
+                            </div>
+                          </div>
+                        </div>
                       );
                     })}
                   </BlockStack>

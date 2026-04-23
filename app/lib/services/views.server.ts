@@ -143,10 +143,13 @@ export async function reorderViews(
   productConfigId: string,
   viewIds: string[]
 ) {
+  // updateMany scopes each write to { id, productConfigId } so a caller
+  // cannot mutate views belonging to another product config / tenant even
+  // if the id is known.
   await db.$transaction(
     viewIds.map((id, index) =>
-      db.productView.update({
-        where: { id },
+      db.productView.updateMany({
+        where: { id, productConfigId },
         data: { displayOrder: index },
       })
     )
