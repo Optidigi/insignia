@@ -2,6 +2,11 @@
  * ImageTray — compact inline staging area for unassigned images.
  * Images land here from Shopify import or bulk upload, then get
  * dragged/tapped onto color card cells.
+ *
+ * View selector:
+ *   - ≤ PILL_THRESHOLD views → individual toggle Button pills (always visible)
+ *   - >  PILL_THRESHOLD views → primary Button + ChevronDown Popover / ChoiceList
+ * In both modes the underlying state is `selectedViewIds: string[]` owned by the parent.
  */
 
 import {
@@ -10,15 +15,27 @@ import {
   Text,
   Badge,
   Button,
+  Popover,
+  ChoiceList,
+  Box,
 } from "@shopify/polaris";
-import { PlusIcon } from "@shopify/polaris-icons";
-import { useRef } from "react";
+import { PlusIcon, ChevronDownIcon } from "@shopify/polaris-icons";
+import { useRef, useState } from "react";
 
 export type TrayImage = {
   id: string;
   storageKey: string;
   previewUrl: string;
   originalFileName?: string;
+};
+
+/** Views at or below this count use inline toggle pills; above use split-button+popover. */
+const PILL_THRESHOLD = 3;
+
+type ViewOption = {
+  id: string;
+  name: string | null;
+  perspective: string;
 };
 
 type Props = {
@@ -30,6 +47,10 @@ type Props = {
   onAutoAssign?: () => void | Promise<void>;
   isAutoAssigning?: boolean;
   autoAssignDisabled?: boolean;
+  /** When provided, a view selector is rendered. Omit to hide the selector (backward-compatible). */
+  views?: ViewOption[];
+  selectedViewIds?: string[];
+  onViewSelectionChange?: (viewIds: string[]) => void;
 };
 
 export function ImageTray({
@@ -41,12 +62,45 @@ export function ImageTray({
   onAutoAssign,
   isAutoAssigning,
   autoAssignDisabled,
+  views,
+  selectedViewIds,
+  onViewSelectionChange,
 }: Props) {
   const fileRef = useRef<HTMLInputElement | null>(null);
+  const [viewPopoverOpen, setViewPopoverOpen] = useState(false);
+
+  const viewLabel = (v: ViewOption) => v.name || v.perspective;
+
+  // Resolved selection — fall back to all views if parent hasn't provided the array yet
+  const sel = selectedViewIds ?? (views?.map((v) => v.id) ?? []);
+
+  const hasViews = (views?.length ?? 0) > 0;
+  const usePillMode = (views?.length ?? 0) <= PILL_THRESHOLD;
+
+  // Label for the split-button main action (>3 views)
+  const autoAssignButtonLabel = (() => {
+    if (!views || sel.length === 0 || sel.length === views.length) {
+      return "Auto-assign by color";
+    }
+    const names = views
+      .filter((v) => sel.includes(v.id))
+      .map(viewLabel)
+      .join(", ");
+    return `Auto-assign · ${names}`;
+  })();
+
+  const handlePillToggle = (viewId: string) => {
+    if (!onViewSelectionChange) return;
+    const next = sel.includes(viewId)
+      ? sel.filter((id) => id !== viewId)
+      : [...sel, viewId];
+    onViewSelectionChange(next);
+  };
 
   return (
     <Card>
       <InlineStack gap="300" blockAlign="center" wrap>
+        {/* ── Label + count ── */}
         <InlineStack gap="200" blockAlign="center">
           <Text variant="bodySm" fontWeight="semibold" as="span">
             Staging Tray
@@ -56,16 +110,76 @@ export function ImageTray({
           )}
         </InlineStack>
 
+        {/* ── View selector pills (≤ PILL_THRESHOLD) — always visible when views provided ── */}
+        {hasViews && usePillMode && onViewSelectionChange && views && (
+          <InlineStack gap="100" blockAlign="center">
+            {views.map((view) => (
+              <Button
+                key={view.id}
+                size="slim"
+                variant={sel.includes(view.id) ? "primary" : undefined}
+                onClick={() => handlePillToggle(view.id)}
+                accessibilityLabel={`${sel.includes(view.id) ? "Exclude" : "Include"} ${viewLabel(view)} from auto-assign`}
+              >
+                {viewLabel(view)}
+              </Button>
+            ))}
+          </InlineStack>
+        )}
+
+        {/* ── Auto-assign controls ── */}
         {images.length > 0 && onAutoAssign && (
-          <Button
-            size="slim"
-            variant="primary"
-            onClick={() => onAutoAssign()}
-            loading={isAutoAssigning}
-            disabled={autoAssignDisabled}
-          >
-            Auto-assign by color
-          </Button>
+          // Split-button mode (> PILL_THRESHOLD views): main button + chevron popover
+          !usePillMode && hasViews && views ? (
+            <InlineStack gap="100" blockAlign="center">
+              <Button
+                size="slim"
+                variant="primary"
+                onClick={() => onAutoAssign()}
+                loading={isAutoAssigning}
+                disabled={autoAssignDisabled}
+              >
+                {autoAssignButtonLabel}
+              </Button>
+              <Popover
+                active={viewPopoverOpen}
+                activator={
+                  <Button
+                    size="slim"
+                    variant="primary"
+                    icon={ChevronDownIcon}
+                    onClick={() => setViewPopoverOpen((o) => !o)}
+                    accessibilityLabel="Select views for auto-assign"
+                  />
+                }
+                onClose={() => setViewPopoverOpen(false)}
+              >
+                <Box padding="300">
+                  <ChoiceList
+                    title="Assign to views"
+                    allowMultiple
+                    choices={(views ?? []).map((v) => ({
+                      label: viewLabel(v),
+                      value: v.id,
+                    }))}
+                    selected={sel}
+                    onChange={(newSel) => onViewSelectionChange?.(newSel)}
+                  />
+                </Box>
+              </Popover>
+            </InlineStack>
+          ) : (
+            // Simple button — pill mode or no views prop
+            <Button
+              size="slim"
+              variant="primary"
+              onClick={() => onAutoAssign()}
+              loading={isAutoAssigning}
+              disabled={autoAssignDisabled}
+            >
+              Auto-assign by color
+            </Button>
+          )
         )}
 
         {images.length === 0 && (
@@ -74,6 +188,7 @@ export function ImageTray({
           </Text>
         )}
 
+        {/* ── Thumbnails ── */}
         {images.map((img) => (
           <button
             key={img.id}
@@ -88,8 +203,6 @@ export function ImageTray({
             onKeyDown={(e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                // Selection handled by onClick; drag-and-drop API is pointer-only
-                // Tap-to-select flow provides keyboard-accessible cell assignment
               }
             }}
             style={{
