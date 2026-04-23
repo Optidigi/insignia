@@ -1,5 +1,6 @@
 // app/lib/services/__tests__/storefront-prepare.server.test.ts
 import { vi, describe, it, expect, beforeEach } from "vitest";
+import { Prisma } from "@prisma/client";
 
 // ---------------------------------------------------------------------------
 // Hoisted db mock — must exist before any module is imported
@@ -100,6 +101,7 @@ function makeSuccessfulTransaction() {
   prismaMock.$transaction.mockImplementation(
     async (fn: (tx: unknown) => Promise<unknown>) => {
       const fakeTx = {
+        $executeRaw: vi.fn().mockResolvedValue(undefined), // advisory lock
         $queryRaw: vi.fn().mockResolvedValue([MOCK_SLOT]),
         customizationConfig: {
           create: vi.fn().mockResolvedValue({ id: "cfg-new" }),
@@ -211,6 +213,7 @@ describe("prepareCustomization", () => {
     prismaMock.$transaction.mockImplementation(
       async (fn: (tx: unknown) => Promise<unknown>) => {
         const fakeTx = {
+          $executeRaw: vi.fn().mockResolvedValue(undefined), // advisory lock
           $queryRaw: vi.fn().mockResolvedValue([]), // no free slots
           customizationConfig: { create: vi.fn() },
           variantSlot: { update: vi.fn() },
@@ -227,5 +230,81 @@ describe("prepareCustomization", () => {
       code: ErrorCodes.SERVICE_UNAVAILABLE,
       message: expect.stringContaining("All customization slots are in use"),
     });
+  });
+
+  it("is idempotent on P2002 — concurrent /prepare returns the winner's slot without 500", async () => {
+    prismaMock.customizationDraft.findFirst.mockResolvedValue(MOCK_DRAFT);
+    // No existing RESERVED config at the idempotency short-circuit
+    prismaMock.customizationConfig.findFirst.mockResolvedValue(null);
+    // Expired-slot cleanup: nothing to expire
+    prismaMock.variantSlot.findMany.mockResolvedValue([]);
+    prismaMock.variantSlot.updateMany.mockResolvedValue({ count: 0 });
+    prismaMock.customizationConfig.updateMany.mockResolvedValue({ count: 0 });
+
+    // The winner's config that was created by the concurrent call
+    const WINNER_CONFIG = {
+      id: "cfg-winner",
+      configHash: "abc123",
+      pricingVersion: "v1",
+      unitPriceCents: 1500,
+      feeCents: 500,
+    };
+    const WINNER_SLOT = {
+      id: "slot-winner",
+      shopifyProductId: "gid://shopify/Product/99",
+      shopifyVariantId: "gid://shopify/ProductVariant/1",
+    };
+
+    // Capture the fakeTx so we can assert $executeRaw was called (advisory lock contract).
+    let capturedTx: { $executeRaw: ReturnType<typeof vi.fn> } | undefined;
+
+    // Transaction mock: advisory lock ok, free slot found, create throws P2002,
+    // findFirst returns the winner's config, findUnique returns the winner's slot.
+    prismaMock.$transaction.mockImplementation(
+      async (fn: (tx: unknown) => Promise<unknown>) => {
+        const fakeTx = {
+          $executeRaw: vi.fn().mockResolvedValue(undefined), // advisory lock
+          $queryRaw: vi.fn().mockResolvedValue([MOCK_SLOT]), // free slot found
+          customizationConfig: {
+            create: vi.fn().mockRejectedValue(
+              new Prisma.PrismaClientKnownRequestError(
+                "Unique constraint failed on the constraint: `CustomizationConfig_customizationDraftId_state_key`",
+                { code: "P2002", clientVersion: "6.0.0", meta: {} }
+              )
+            ),
+            findFirst: vi.fn().mockResolvedValue(WINNER_CONFIG),
+          },
+          variantSlot: {
+            findUnique: vi.fn().mockResolvedValue(WINNER_SLOT),
+            update: vi.fn().mockResolvedValue({}),
+          },
+        };
+        capturedTx = fakeTx;
+        return fn(fakeTx);
+      }
+    );
+
+    const adminGraphql = makeAdminGraphql();
+
+    // Must NOT throw — must return the winner's slot data
+    const result = await prepareCustomization("shop-1", "draft-1", adminGraphql);
+
+    expect(result).toEqual({
+      slotVariantId: "gid://shopify/ProductVariant/1",
+      configHash: "abc123",
+      pricingVersion: "v1",
+      unitPriceCents: 1500,
+      feeCents: 500,
+    });
+
+    // The Shopify variant price update must NOT be called — the winner already set it
+    expect(adminGraphql).not.toHaveBeenCalledWith(
+      expect.stringContaining("productVariantsBulkUpdate"),
+      expect.anything()
+    );
+
+    // Advisory lock must have been called — it is part of the concurrency contract.
+    // If a future refactor drops the lock, this assertion will catch it.
+    expect(capturedTx!.$executeRaw).toHaveBeenCalledTimes(1);
   });
 });

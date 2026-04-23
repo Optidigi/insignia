@@ -3,6 +3,7 @@
  * Canonical: docs/core/variant-pool/implementation.md, docs/core/api-contracts/storefront.md
  */
 
+import { Prisma } from "@prisma/client";
 import db from "../../db.server";
 const PRICING_VERSION = "v1";
 import { AppError, ErrorCodes } from "../errors.server";
@@ -151,6 +152,26 @@ export async function prepareCustomization(
     });
   }
 
+  // Discriminated union for the transaction result — avoids "as" casts and
+  // lets TypeScript narrow the caller path after the "already-reserved" check.
+  type AcquireResult =
+    | {
+        kind: "acquired";
+        config: { id: string };
+        slot: { id: string; shopifyProductId: string; shopifyVariantId: string };
+      }
+    | {
+        kind: "already-reserved";
+        config: {
+          id: string;
+          configHash: string;
+          pricingVersion: string;
+          unitPriceCents: number;
+          feeCents: number;
+        };
+        slot: { id: string; shopifyProductId: string; shopifyVariantId: string };
+      };
+
   // Acquire a slot. Under parallel /prepare bursts, multiple callers race
   // SELECT FOR UPDATE SKIP LOCKED for the same FREE rows; losers see no row.
   // We retry up to MAX_ACQUIRE_ATTEMPTS times — each retry calls
@@ -159,13 +180,20 @@ export async function prepareCustomization(
   // SELECT. This makes parallel multi-size submissions self-healing without
   // bouncing the failure all the way to the customer's UI.
   const MAX_ACQUIRE_ATTEMPTS = 3;
-  let acquired: { config: { id: string }; slot: { id: string; shopifyProductId: string; shopifyVariantId: string } } | null = null;
+  let acquired: AcquireResult | null = null;
   for (let attempt = 0; attempt < MAX_ACQUIRE_ATTEMPTS && !acquired; attempt++) {
     if (attempt > 0) {
       // Lost the FOR UPDATE SKIP LOCKED race; trigger another grow cycle and retry.
       await ensureVariantPoolExists(shopId, methodId, adminGraphql, 1);
     }
     acquired = await db.$transaction(async (tx) => {
+      // Advisory lock scoped to this customization — serializes concurrent
+      // /prepare calls for the same draft. Same pattern as variant-pool.server.ts:435.
+      // One-arg hashtext() maps the 36-char UUID to an int8 lock key.
+      await tx.$executeRaw`
+        SELECT pg_advisory_xact_lock(hashtext(${customizationId}))
+      `;
+
       const freeSlots: Array<{ id: string; shopifyProductId: string; shopifyVariantId: string }> =
         await tx.$queryRaw`
           SELECT id, "shopifyProductId", "shopifyVariantId"
@@ -180,18 +208,53 @@ export async function prepareCustomization(
       const freeSlot = freeSlots[0];
       if (!freeSlot) return null;
 
-      const config = await tx.customizationConfig.create({
-        data: {
-          shopId,
-          methodId,
-          configHash: configHash!,
-          pricingVersion: pricingVersion!,
-          unitPriceCents: unitPriceCents!,
-          feeCents: feeCents ?? 0,
-          state: "RESERVED",
-          customizationDraftId: customizationId,
-        },
-      });
+      let config: { id: string };
+      try {
+        config = await tx.customizationConfig.create({
+          data: {
+            shopId,
+            methodId,
+            configHash: configHash!,
+            pricingVersion: pricingVersion!,
+            unitPriceCents: unitPriceCents!,
+            feeCents: feeCents ?? 0,
+            state: "RESERVED",
+            customizationDraftId: customizationId,
+          },
+        });
+      } catch (err) {
+        // P2002: the partial unique index on (customizationDraftId) WHERE state='RESERVED'
+        // was violated — a concurrent /prepare call won the race and already
+        // created a RESERVED config for this draft. Read the winner's config and
+        // slot, then return them so the caller can skip the Shopify price update.
+        if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002") {
+          const winnerConfig = await tx.customizationConfig.findFirst({
+            where: { customizationDraftId: customizationId, state: "RESERVED" },
+            select: { id: true, configHash: true, pricingVersion: true, unitPriceCents: true, feeCents: true },
+          });
+          const winnerSlot = winnerConfig
+            ? await tx.variantSlot.findUnique({
+                where: { currentConfigId: winnerConfig.id },
+                select: { id: true, shopifyProductId: true, shopifyVariantId: true },
+              })
+            : null;
+          if (winnerConfig && winnerSlot) {
+            // Concurrent winner already reserved — return via discriminated union.
+            // Caller checks result.kind === "already-reserved" and skips Shopify price update.
+            return {
+              kind: "already-reserved" as const,
+              config: {
+                ...winnerConfig,
+                feeCents: winnerConfig.feeCents ?? 0,
+              },
+              slot: winnerSlot,
+            };
+          }
+          // Partial index race with no readable winner — treat as if no slot was acquired.
+          return null;
+        }
+        throw err;
+      }
 
       await tx.variantSlot.update({
         where: { id: freeSlot.id },
@@ -203,7 +266,7 @@ export async function prepareCustomization(
         },
       });
 
-      return { config, slot: freeSlot };
+      return { kind: "acquired" as const, config, slot: freeSlot };
     });
   }
   if (!acquired) {
@@ -214,6 +277,19 @@ export async function prepareCustomization(
     );
   }
   const result = acquired;
+
+  // Discriminated union — switch on kind, no type casts needed.
+  if (result.kind === "already-reserved") {
+    // A concurrent /prepare call won the race and already set the Shopify
+    // variant price. Return the winner's data directly — no Shopify call needed.
+    return {
+      slotVariantId: result.slot.shopifyVariantId,
+      configHash: result.config.configHash,
+      pricingVersion: result.config.pricingVersion,
+      unitPriceCents: result.config.unitPriceCents,
+      feeCents: result.config.feeCents,
+    };
+  }
 
   const priceStr = ((feeCents ?? 0) / 100).toFixed(2);
   const variantId = result.slot.shopifyVariantId;
