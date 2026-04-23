@@ -43,6 +43,7 @@ import {
 } from "../lib/services/views.server";
 import { handleError, validateOrThrow, AppError } from "../lib/errors.server";
 import { getPresignedPutUrl, getPresignedGetUrl, StorageKeys } from "../lib/storage.server";
+import { groupVariantsByColor } from "../lib/services/image-manager.server";
 
 // ============================================================================
 // Types
@@ -56,6 +57,7 @@ interface ShopifyVariant {
     url: string;
     altText?: string;
   };
+  selectedOptions: Array<{ name: string; value: string }>;
 }
 
 interface ShopifyProduct {
@@ -138,6 +140,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
                     url
                     altText
                   }
+                  selectedOptions {
+                    name
+                    value
+                  }
                 }
               }
             }
@@ -159,6 +165,11 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         }))
       );
     }
+
+    // Group variants by color for the view editor switcher.
+    // Pools all linked-product variants; assumes linked products share the same
+    // option schema (e.g. all shirts). Multilingual detection via keyword matching.
+    const colorGroups = groupVariantsByColor(variants);
 
     // Get existing variant view configurations
     const variantConfigs = await db.variantViewConfiguration.findMany({
@@ -220,6 +231,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       view,
       viewPlacements,
       variants,
+      colorGroups,
       variantImages,
       signedImageUrls,
       variantPlacementGeometry,
@@ -382,11 +394,23 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         }
       }
 
-      // Save per-variant geometry to VariantViewConfiguration for this specific variant.
+      // Fan-out: save geometry to all variant IDs in the color group.
       // configId is already verified against shopId by the route-level ownership check above.
-      await upsertVariantViewConfig(configId, variantId, viewId, {
-        placementGeometry: placementGeometry as Record<string, unknown> | null,
-      });
+      const variantIdsJson = formData.get("variantIds") as string | null;
+      let variantIds: string[];
+      try {
+        variantIds = variantIdsJson
+          ? (JSON.parse(variantIdsJson) as string[])
+          : [variantId];
+      } catch {
+        throw new Response("Invalid variantIds JSON", { status: 400 });
+      }
+
+      for (const vid of variantIds) {
+        await upsertVariantViewConfig(configId, vid, viewId, {
+          placementGeometry: placementGeometry as Record<string, unknown> | null,
+        });
+      }
 
       // Switch view to per-variant mode so storefront uses variant-specific geometry
       // (productView.placementGeometry remains as fallback for variants not yet positioned).
@@ -805,7 +829,7 @@ function getPerspectiveLabel(perspective: string) {
 
 export default function ViewDetailPage() {
   const loaderData = useLoaderData<typeof loader>();
-  const { config, view, viewPlacements, variants, signedImageUrls, variantPlacementGeometry, currencyCode, otherSetups } =
+  const { config, view, viewPlacements, variants, colorGroups, signedImageUrls, variantPlacementGeometry, currencyCode, otherSetups } =
     loaderData;
   const submit = useSubmit();
   const geometryFetcher = useFetcher();
@@ -817,7 +841,7 @@ export default function ViewDetailPage() {
   const navigate = useNavigate();
 
   const [selectedVariantId, setSelectedVariantId] = useState<string | null>(
-    variants[0]?.id ?? null
+    colorGroups[0]?.representativeVariantId ?? null
   );
   const [selectedPlacementId, setSelectedPlacementId] = useState<string | null>(null);
   const selectedPlacementIdRef = useRef<string | null>(null);
@@ -980,6 +1004,13 @@ export default function ViewDetailPage() {
       fd.set("intent", "save-placement-geometry");
       fd.set("variantId", selectedVariantId);
       fd.set("placementGeometry", JSON.stringify(pendingGeometry));
+      const selectedGroup = colorGroups.find(
+        (g) => g.representativeVariantId === selectedVariantId
+      );
+      fd.set(
+        "variantIds",
+        JSON.stringify(selectedGroup?.variantIds ?? [selectedVariantId ?? ""])
+      );
       geometryFetcher.submit(fd, { method: "POST" });
     }
     // Trigger pricing panel save via custom event (uses pricingFetcher)
@@ -997,7 +1028,7 @@ export default function ViewDetailPage() {
       }
       setNameDirty(false);
     }
-  }, [pendingGeometry, selectedVariantId, geometryFetcher, pricingDirty, nameDirty, viewName, view.name, view.perspective, nameFetcher]);
+  }, [pendingGeometry, selectedVariantId, colorGroups, geometryFetcher, pricingDirty, nameDirty, viewName, view.name, view.perspective, nameFetcher]);
 
   const handleDiscardGeometry = useCallback(() => {
     setEditorResetKey((k) => k + 1);
@@ -1141,14 +1172,14 @@ export default function ViewDetailPage() {
       setPricingDirty(false);
       setSelectedPlacementId(null);
       selectedPlacementIdRef.current = null;
-      setSelectedVariantId(variants[0]?.id ?? null);
+      setSelectedVariantId(colorGroups[0]?.representativeVariantId ?? null);
       setEditorResetKey((k) => k + 1);
       setAddingZone(false);
       setNewZoneName("");
       setRulerActive(false);
       setDeleteModalOpen(false);
     }
-  }, [view.id, view.name, view.perspective, variants]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [view.id, view.name, view.perspective, variants, colorGroups]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load natural image dimensions whenever the selected variant image changes
   useEffect(() => {
@@ -1534,18 +1565,23 @@ export default function ViewDetailPage() {
               background: "#ffffff", borderTop: "1px solid #E5E7EB",
               overflow: "hidden",
             }}>
-              <span style={{ fontSize: 11, color: "#6B7280", whiteSpace: "nowrap" }}>Variant:</span>
-              {variants.length <= 6 ? (
-                /* Pill mode (≤6 variants) */
-                variants.map((v) => {
-                  const isSelected = v.id === selectedVariantId;
+              <span style={{ fontSize: 11, color: "#6B7280", whiteSpace: "nowrap" }}>Color:</span>
+              {colorGroups.length <= 6 ? (
+                /* Pill mode (≤6 color groups) */
+                colorGroups.map((group) => {
+                  const isSelected = group.representativeVariantId === selectedVariantId;
+                  const tooltipTitle = anyDirty && !isSelected
+                    ? "Save or discard current changes before switching variant"
+                    : group.sizeValues.length > 0
+                      ? group.sizeValues.join(", ")
+                      : group.colorValue;
                   return (
                     <button
-                      key={v.id}
+                      key={group.colorValue}
                       type="button"
                       disabled={anyDirty && !isSelected}
-                      title={anyDirty && !isSelected ? "Save or discard current changes before switching variant" : v.displayName}
-                      onClick={() => setSelectedVariantId(v.id)}
+                      title={tooltipTitle}
+                      onClick={() => setSelectedVariantId(group.representativeVariantId)}
                       style={{
                         padding: "4px 10px", borderRadius: 6, border: "none",
                         cursor: anyDirty && !isSelected ? "not-allowed" : "pointer",
@@ -1555,12 +1591,12 @@ export default function ViewDetailPage() {
                         whiteSpace: "nowrap", opacity: anyDirty && !isSelected ? 0.4 : 1,
                       }}
                     >
-                      {v.title === "Default Title" ? "Default" : v.title}
+                      {group.colorValue}
                     </button>
                   );
                 })
               ) : (
-                /* Dropdown mode (7+ variants) */
+                /* Dropdown mode (7+ color groups) */
                 <Popover
                   active={variantPopoverOpen}
                   activator={
@@ -1578,15 +1614,14 @@ export default function ViewDetailPage() {
                       }}
                     >
                       {(() => {
-                        const v = variants.find((v) => v.id === selectedVariantId);
-                        if (!v) return "Select variant";
-                        return v.title === "Default Title" ? "Default" : v.title;
+                        const group = colorGroups.find((g) => g.representativeVariantId === selectedVariantId);
+                        return group ? group.colorValue : "Select color";
                       })()}
                       <span style={{
                         fontSize: 10, fontWeight: 500, color: "#2563EB",
                         background: "#EFF6FF", borderRadius: 10, padding: "1px 6px",
                       }}>
-                        {`${variants.findIndex((v) => v.id === selectedVariantId) + 1} of ${variants.length}`}
+                        {`${colorGroups.findIndex((g) => g.representativeVariantId === selectedVariantId) + 1} of ${colorGroups.length}`}
                       </span>
                       <Icon source={ChevronDownIcon} tone="subdued" />
                     </button>
@@ -1594,16 +1629,16 @@ export default function ViewDetailPage() {
                   onClose={() => setVariantPopoverOpen(false)}
                 >
                   <ActionList
-                    items={variants.map((v) => {
-                      const isSelected = v.id === selectedVariantId;
-                      const label = v.title === "Default Title" ? "Default" : v.title;
+                    items={colorGroups.map((group) => {
+                      const isSelected = group.representativeVariantId === selectedVariantId;
                       return {
-                        content: label,
+                        content: group.colorValue,
+                        helpText: group.sizeValues.length > 0 ? group.sizeValues.join(", ") : undefined,
                         icon: isSelected ? CheckSmallIcon : undefined,
                         disabled: anyDirty && !isSelected,
                         onAction: () => {
                           setVariantPopoverOpen(false);
-                          setSelectedVariantId(v.id);
+                          setSelectedVariantId(group.representativeVariantId);
                         },
                       };
                     })}
@@ -1638,18 +1673,18 @@ export default function ViewDetailPage() {
                 </>
               )}
               {/* Apply to all — always visible, separated by divider */}
-              {variants.length > 1 && (
+              {colorGroups.length > 1 && (
                 <>
                   <div style={{ width: 1, height: 20, background: "#E5E7EB", flexShrink: 0 }} />
                   <button
                     type="button"
                     disabled={!selectedVariantId}
-                    title="Copy this variant's print area layout to all other variants"
+                    title="Copy this color's print area layout to all other colors"
                     onClick={() => {
                       if (!selectedVariantId) return;
-                      const targetIds = variants
-                        .map((v) => v.id)
-                        .filter((id) => id !== selectedVariantId);
+                      const targetIds = colorGroups
+                        .filter((g) => g.representativeVariantId !== selectedVariantId)
+                        .flatMap((g) => g.variantIds);
                       submit(
                         {
                           intent: "apply-to-all",
