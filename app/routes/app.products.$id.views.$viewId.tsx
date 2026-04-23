@@ -846,6 +846,12 @@ export default function ViewDetailPage() {
     setSelectedPlacementId(id);
   }, []);
 
+  const handleSelectVariant = useCallback((variantId: string) => {
+    setSelectedVariantId(variantId);
+    setSelectedPlacementId(null);
+    selectedPlacementIdRef.current = null;
+  }, []);
+
   const [geometryDirty, setGeometryDirty] = useState(false);
   const [pricingDirty, setPricingDirty] = useState(false);
   const [editorResetKey, setEditorResetKey] = useState(0);
@@ -1576,7 +1582,7 @@ export default function ViewDetailPage() {
                       type="button"
                       disabled={anyDirty && !isSelected}
                       title={tooltipTitle}
-                      onClick={() => setSelectedVariantId(group.representativeVariantId)}
+                      onClick={() => handleSelectVariant(group.representativeVariantId)}
                       style={{
                         padding: "4px 10px", borderRadius: 6, border: "none",
                         cursor: anyDirty && !isSelected ? "not-allowed" : "pointer",
@@ -1633,7 +1639,7 @@ export default function ViewDetailPage() {
                         disabled: anyDirty && !isSelected,
                         onAction: () => {
                           setVariantPopoverOpen(false);
-                          setSelectedVariantId(group.representativeVariantId);
+                          handleSelectVariant(group.representativeVariantId);
                         },
                       };
                     })}
