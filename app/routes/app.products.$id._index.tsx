@@ -51,7 +51,7 @@ import {
   UpdateProductConfigSchema,
 } from "../lib/services/product-configs.server";
 import { groupVariantsByColor } from "../lib/services/image-manager.server";
-import { listMethods } from "../lib/services/methods.server";
+import { listMethods, effectiveMethodPriceCents } from "../lib/services/methods.server";
 import { createView, deleteView, reorderViews, CreateViewSchema } from "../lib/services/views.server";
 import { createPlacement, deletePlacement, CreatePlacementSchema } from "../lib/services/placements.server";
 import { handleError, validateOrThrow, AppError } from "../lib/errors.server";
@@ -192,7 +192,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
 
     const allPlacements = config.views.flatMap((v) => v.placements);
     const pricingRanges = allPlacements.map((p) => {
-      const methodBase = config.allowedMethods[0]?.decorationMethod?.basePriceCents ?? 0;
+      const firstMethod = config.allowedMethods[0];
+      const methodBase = firstMethod
+        ? effectiveMethodPriceCents(
+            firstMethod.decorationMethod.basePriceCents,
+            firstMethod.basePriceCentsOverride
+          )
+        : 0;
       const placementBase = p.basePriceAdjustmentCents;
       const stepPrices = p.steps.length > 0 ? p.steps.map((s) => s.priceAdjustmentCents) : [0];
       const minStep = Math.min(...stepPrices);
@@ -499,6 +505,24 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 };
 
 // ============================================================================
+// Helpers
+// ============================================================================
+
+type AllowedMethods = ReturnType<typeof useLoaderData<typeof loader>>["config"]["allowedMethods"];
+
+function deriveOverridesFromConfig(
+  methods: AllowedMethods
+): Record<string, string> {
+  const initial: Record<string, string> = {};
+  for (const row of methods ?? []) {
+    if (row.basePriceCentsOverride != null) {
+      initial[row.decorationMethodId] = (row.basePriceCentsOverride / 100).toFixed(2);
+    }
+  }
+  return initial;
+}
+
+// ============================================================================
 // Component
 // ============================================================================
 
@@ -548,15 +572,9 @@ export default function ProductConfigDetailPage() {
   );
 
   // Per-method price override inputs: key = decorationMethodId, value = display string (empty = inherit)
-  const [methodOverrides, setMethodOverrides] = useState<Record<string, string>>(() => {
-    const initial: Record<string, string> = {};
-    for (const row of config.allowedMethods ?? []) {
-      if (row.basePriceCentsOverride != null) {
-        initial[row.decorationMethodId] = (row.basePriceCentsOverride / 100).toFixed(2);
-      }
-    }
-    return initial;
-  });
+  const [methodOverrides, setMethodOverrides] = useState<Record<string, string>>(() =>
+    deriveOverridesFromConfig(config.allowedMethods)
+  );
 
   const handleNameChange = useCallback((value: string) => {
     setName(value);
@@ -630,8 +648,9 @@ export default function ProductConfigDetailPage() {
     if (data.success && data.intent === "update-methods") {
       window.shopify?.toast?.show("Methods updated");
       setHasChanges(false);
+      setMethodOverrides(deriveOverridesFromConfig(config.allowedMethods));
     }
-  }, [methodFetcher.data, methodFetcher.state]);
+  }, [methodFetcher.data, methodFetcher.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const views = config.views;
   // Optimistic display order for drag-to-reorder (falls back to server order)
@@ -945,9 +964,10 @@ export default function ProductConfigDetailPage() {
                                 helpText="Leave blank to use method default"
                                 autoComplete="off"
                                 value={methodOverrides[method.id] ?? ""}
-                                onChange={(v) =>
-                                  setMethodOverrides((prev) => ({ ...prev, [method.id]: v }))
-                                }
+                                onChange={(v) => {
+                                  setMethodOverrides((prev) => ({ ...prev, [method.id]: v }));
+                                  setHasChanges(true);
+                                }}
                                 disabled={isSubmitting}
                               />
                             </Box>

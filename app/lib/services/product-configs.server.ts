@@ -512,13 +512,13 @@ export async function duplicateProductConfig(
       },
     });
 
-    // Copy allowed methods
-    const methodIds = source.allowedMethods.map((m) => m.decorationMethodId);
-    if (methodIds.length > 0) {
+    // Copy allowed methods (including per-method price overrides)
+    if (source.allowedMethods.length > 0) {
       await tx.productConfigMethod.createMany({
-        data: methodIds.map((methodId) => ({
+        data: source.allowedMethods.map((m) => ({
           productConfigId: newConfig.id,
-          decorationMethodId: methodId,
+          decorationMethodId: m.decorationMethodId,
+          basePriceCentsOverride: m.basePriceCentsOverride,
         })),
       });
     }
