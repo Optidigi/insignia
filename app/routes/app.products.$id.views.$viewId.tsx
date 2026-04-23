@@ -1253,7 +1253,10 @@ export default function ViewDetailPage() {
     fd.append("orderedViewIds", JSON.stringify(newOrder));
     viewReorderFetcher.submit(fd, {
       method: "POST",
-      action: `/app/products/${config.id}`,
+      // ?index targets the index route (app.products.$id._index) where the
+      // reorder-views action lives — without it the submit hits the bare
+      // parent layout (app.products.$id.tsx) which has no action.
+      action: `/app/products/${config.id}?index`,
     });
   }, [config.id, viewReorderFetcher]);
 
