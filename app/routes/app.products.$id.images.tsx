@@ -343,10 +343,8 @@ export default function ImageManagerPage() {
   const [selectedTrayImageId, setSelectedTrayImageId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isAutoAssigning, setIsAutoAssigning] = useState(false);
-  // View selector — initialise to all views; resets on every page load (no persistence)
-  const [selectedViewIds, setSelectedViewIds] = useState<string[]>(
-    () => views.map((v) => v.id)
-  );
+  // View selector — starts empty (unselected); merchant actively picks target views
+  const [selectedViewIds, setSelectedViewIds] = useState<string[]>([]);
   const [importTruncated, setImportTruncated] = useState(false);
   const pendingSaves = useRef<Array<{ viewId: string; variantId: string; storageKey: string }>>([]);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

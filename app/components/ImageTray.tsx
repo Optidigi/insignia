@@ -71,8 +71,8 @@ export function ImageTray({
 
   const viewLabel = (v: ViewOption) => v.name || v.perspective;
 
-  // Resolved selection — fall back to all views if parent hasn't provided the array yet
-  const sel = selectedViewIds ?? (views?.map((v) => v.id) ?? []);
+  // Resolved selection — fall back to empty (nothing selected) if parent hasn't provided the array
+  const sel = selectedViewIds ?? [];
 
   const hasViews = (views?.length ?? 0) > 0;
   const usePillMode = (views?.length ?? 0) <= PILL_THRESHOLD;
