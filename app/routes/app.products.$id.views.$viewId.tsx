@@ -1297,12 +1297,16 @@ export default function ViewDetailPage() {
   }, []);
 
   const handleTabHandleKeyDown = useCallback((e: React.KeyboardEvent, viewId: string) => {
-    if (e.key !== "ArrowUp" && e.key !== "ArrowDown") return;
+    // Accept both axes: Up/Down for the dropdown-mode vertical list,
+    // Left/Right for the tab-mode horizontal strip.
+    const back = e.key === "ArrowUp" || e.key === "ArrowLeft";
+    const forward = e.key === "ArrowDown" || e.key === "ArrowRight";
+    if (!back && !forward) return;
     e.preventDefault();
     const current = [...localViewOrder];
     const from = current.indexOf(viewId);
     if (from === -1) return;
-    const to = e.key === "ArrowUp" ? from - 1 : from + 1;
+    const to = back ? from - 1 : from + 1;
     if (to < 0 || to >= current.length) return;
     const [moved] = current.splice(from, 1);
     current.splice(to, 0, moved);
@@ -1409,7 +1413,7 @@ export default function ViewDetailPage() {
             {/* View tabs / dropdown selector */}
             <div style={{
               display: "flex", alignItems: "center", gap: 0,
-              padding: "0 16px", height: 40, flexShrink: 0,
+              padding: "0 16px", height: 52, flexShrink: 0,
               background: "#ffffff", borderBottom: "1px solid #E5E7EB",
             }}>
               {displayTabs.length <= 4 ? (
@@ -1421,13 +1425,33 @@ export default function ViewDetailPage() {
                     onDragLeave={handleTabDragLeave}
                     onDrop={(e) => handleTabDrop(e, tab.id)}
                     style={{
-                      display: "flex", alignItems: "center",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 2,
                       height: "100%",
+                      padding: "4px 12px",
+                      borderBottom: tab.isCurrent ? "2px solid #2563EB" : "2px solid transparent",
                       outline: dragOverViewId === tab.id ? "1.5px solid #2563EB" : "none",
                       outlineOffset: -1,
                       opacity: draggedViewId === tab.id ? 0.4 : 1,
+                      transition: "opacity 120ms ease",
                     }}
                   >
+                    <Link
+                      to={tab.url}
+                      style={{
+                        color: tab.isCurrent ? "#2563EB" : "#6B7280",
+                        fontSize: 13,
+                        fontWeight: tab.isCurrent ? 600 : 400,
+                        textDecoration: "none",
+                        whiteSpace: "nowrap",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {tab.label}
+                    </Link>
                     <span
                       draggable
                       onDragStart={(e) => handleTabDragStart(e, tab.id)}
@@ -1435,28 +1459,19 @@ export default function ViewDetailPage() {
                       onKeyDown={(e) => handleTabHandleKeyDown(e, tab.id)}
                       role="button"
                       tabIndex={0}
-                      aria-label="Drag to reorder"
+                      aria-label={`Reorder ${tab.label}`}
                       style={{
-                        flexShrink: 0, cursor: "grab",
-                        display: "inline-flex", alignItems: "center",
-                        padding: "0 4px", color: "var(--p-color-icon-subdued)",
+                        cursor: "grab",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#9CA3AF",
+                        padding: 0,
+                        lineHeight: 0,
                       }}
                     >
                       <Icon source={DragHandleIcon} tone="subdued" />
                     </span>
-                    <Link
-                      to={tab.url}
-                      style={{
-                        display: "flex", alignItems: "center", gap: 6,
-                        height: "100%", padding: "0 12px 0 4px",
-                        borderBottom: tab.isCurrent ? "2px solid #2563EB" : "2px solid transparent",
-                        color: tab.isCurrent ? "#2563EB" : "#6B7280",
-                        fontSize: 13, fontWeight: tab.isCurrent ? 600 : 400,
-                        textDecoration: "none", whiteSpace: "nowrap",
-                      }}
-                    >
-                      {tab.label}
-                    </Link>
                   </div>
                 ))
               ) : (
