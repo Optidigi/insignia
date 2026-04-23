@@ -78,6 +78,8 @@ export type StorefrontConfig = {
   methods: DecorationMethodRef[];
   placements: Placement[];
   variants: ProductVariantOption[];
+  /** Which product axis drives the quantity grid cards. */
+  variantAxis: "size" | "color" | "option";
 };
 
 const SIGNED_URL_EXPIRES_SEC = 600;
@@ -149,6 +151,7 @@ export async function getStorefrontConfig(
   let baseProductPriceCents = 0;
   let productTitle = "Product";
   let variants: ProductVariantOption[] = [];
+  let variantAxis: "size" | "color" | "option" = "option";
   if (runGraphql) {
     try {
       const variantRes = await runGraphql(
@@ -206,8 +209,11 @@ export async function getStorefrontConfig(
       // 2. Fall back to checking if option values look like sizes (S, M, L, XL, etc.)
       const SIZE_NAME_RE = /^(size|sizes|maat|größe|groesse|taille|taglia|tamanho|rozmiar|storlek|koko|サイズ)$/i;
       const SIZE_VALUE_RE = /^(xs|s|m|l|xl|xxl|xxxl|2xl|3xl|4xl|5xl|small|medium|large|x-?large|xx-?large)$/i;
+      // Detect color axis by option name only (v1 heuristic — name-only, not values)
+      const COLOR_NAME_RE = /^(color|colour|kleur|farbe|couleur|colore|cor|kolor|färg|väri)$/i;
 
       let sizeOptionName: string | null = null;
+      let colorOptionName: string | null = null;
       if (variantNodes.length > 0) {
         const firstOptions = variantNodes[0].selectedOptions ?? [];
         // Strategy 1: match by name
@@ -223,6 +229,10 @@ export async function getStorefrontConfig(
               break;
             }
           }
+        }
+        // Detect color axis only when no size axis was found
+        if (!sizeOptionName) {
+          colorOptionName = firstOptions.find((o) => COLOR_NAME_RE.test(o.name))?.name ?? null;
         }
       }
 
@@ -240,6 +250,9 @@ export async function getStorefrontConfig(
           selectedOptions: v.selectedOptions ?? [],
         };
       });
+
+      // Compute variantAxis for this product
+      variantAxis = sizeOptionName ? "size" : colorOptionName ? "color" : "option";
 
       // Filter to only variants matching the selected variant's non-size options
       const selectedVariant = allMappedVariants.find((v) => v.id === variantId);
@@ -424,5 +437,6 @@ export async function getStorefrontConfig(
     methods,
     placements,
     variants,
+    variantAxis,
   };
 }

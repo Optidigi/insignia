@@ -431,4 +431,154 @@ describe("getStorefrontConfig", () => {
       code: ErrorCodes.INVALID_CONFIG,
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // variantAxis detection
+  // ---------------------------------------------------------------------------
+
+  it("detects variantAxis:'size' for a size+color product", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(makeProductConfig());
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const runGraphql = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        data: {
+          productVariant: {
+            price: "29.99",
+            product: {
+              title: "Classic Tee",
+              variants: {
+                nodes: [
+                  {
+                    id: "gid://shopify/ProductVariant/200",
+                    title: "S / Black",
+                    price: "29.99",
+                    availableForSale: true,
+                    selectedOptions: [
+                      { name: "Size", value: "S" },
+                      { name: "Color", value: "Black" },
+                    ],
+                  },
+                  {
+                    id: "gid://shopify/ProductVariant/201",
+                    title: "M / Black",
+                    price: "29.99",
+                    availableForSale: true,
+                    selectedOptions: [
+                      { name: "Size", value: "M" },
+                      { name: "Color", value: "Black" },
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      }),
+    });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      runGraphql
+    );
+
+    expect(result.variantAxis).toBe("size");
+    // Variants are filtered to those matching the non-size options (Color=Black)
+    expect(result.variants.length).toBeGreaterThanOrEqual(1);
+  });
+
+  it("detects variantAxis:'color' for a color-only product", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(makeProductConfig());
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const runGraphql = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        data: {
+          productVariant: {
+            price: "29.99",
+            product: {
+              title: "Logo Cap",
+              variants: {
+                nodes: [
+                  {
+                    id: "gid://shopify/ProductVariant/300",
+                    title: "Black",
+                    price: "29.99",
+                    availableForSale: true,
+                    selectedOptions: [{ name: "Color", value: "Black" }],
+                  },
+                  {
+                    id: "gid://shopify/ProductVariant/301",
+                    title: "Red",
+                    price: "29.99",
+                    availableForSale: true,
+                    selectedOptions: [{ name: "Color", value: "Red" }],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      }),
+    });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/300",
+      runGraphql
+    );
+
+    expect(result.variantAxis).toBe("color");
+    // All variants returned (no size-axis filtering)
+    expect(result.variants).toHaveLength(2);
+  });
+
+  it("detects variantAxis:'option' for a single-variant default product", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(makeProductConfig());
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const runGraphql = vi.fn().mockResolvedValue({
+      json: vi.fn().mockResolvedValue({
+        data: {
+          productVariant: {
+            price: "29.99",
+            product: {
+              title: "Custom Item",
+              variants: {
+                nodes: [
+                  {
+                    id: "gid://shopify/ProductVariant/400",
+                    title: "Default Title",
+                    price: "29.99",
+                    availableForSale: true,
+                    selectedOptions: [{ name: "Title", value: "Default Title" }],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      }),
+    });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/400",
+      runGraphql
+    );
+
+    expect(result.variantAxis).toBe("option");
+    // All variants returned
+    expect(result.variants).toHaveLength(1);
+  });
 });

@@ -78,7 +78,7 @@ export function QuantityGrid({ variants, quantities, onChange, t }: QuantityGrid
         return (
           <QuantityCard
             key={v.id}
-            label={(useTitleAsLabel ? v.title : v.sizeLabel).toUpperCase()}
+            label={useTitleAsLabel ? v.title : v.sizeLabel}
             qty={qty}
             disabled={disabled}
             onSet={(n) => setQty(v.id, n)}
@@ -110,7 +110,10 @@ function QuantityCard({
       className="insignia-qty-card"
       data-state={disabled ? "disabled" : qty > 0 ? "selected" : undefined}
     >
-      <span className="insignia-qty-card-label">{label}</span>
+      <span
+        className="insignia-qty-card-label"
+        data-label-kind={label.length > 4 ? "long" : "short"}
+      >{label}</span>
       {disabled ? (
         <span className="insignia-qty-card-soldout">{t.v2.review.soldOut}</span>
       ) : (

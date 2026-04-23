@@ -82,6 +82,8 @@ export type StorefrontConfig = {
   methods: DecorationMethodRef[];
   placements: Placement[];
   variants: ProductVariantOption[];
+  /** Which product axis drives the quantity grid cards. */
+  variantAxis: "size" | "color" | "option";
   /**
    * Forward-compat: shop's branding square logo URL fetched via
    * `shop { brand { squareLogo { image { url } } } }`. The storefront

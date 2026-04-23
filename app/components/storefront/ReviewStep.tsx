@@ -202,19 +202,21 @@ export function ReviewStep({
       <div className="insignia-qty-header">
         <span className="insignia-qty-header-title">{t.v2.review.orderQuantities}</span>
         <span className="insignia-qty-header-meta">
-          {t.v2.review.sizesItems
-            .replace("{sizes}", String(config.variants.length))
-            .replace(
-              "{sizesUnit}",
-              config.variants.length === 1
-                ? t.v2.review.sizesUnit.one
-                : t.v2.review.sizesUnit.other,
-            )
-            .replace("{items}", String(totalQty))
-            .replace(
-              "{itemsUnit}",
-              totalQty === 1 ? t.v2.review.itemsUnit.one : t.v2.review.itemsUnit.other,
-            )}
+          {(() => {
+            // Defensive fallback: older caches may not have variantAxis yet
+            const axis = config.variantAxis ?? "size";
+            const unitStrings = t.v2.review.variantsUnit[axis];
+            const count = config.variants.length;
+            const unit = count === 1 ? unitStrings.one : unitStrings.other;
+            return t.v2.review.variantsItems
+              .replace("{count}", String(count))
+              .replace("{unit}", unit)
+              .replace("{items}", String(totalQty))
+              .replace(
+                "{itemsUnit}",
+                totalQty === 1 ? t.v2.review.itemsUnit.one : t.v2.review.itemsUnit.other,
+              );
+          })()}
         </span>
       </div>
 
