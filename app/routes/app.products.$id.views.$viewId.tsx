@@ -29,6 +29,7 @@ import { ZonePricingPanel } from "../components/ZonePricingPanel";
 import type { PricingChange } from "../components/ZonePricingPanel";
 import { CloneLayoutModal } from "../components/CloneLayoutModal";
 import type { SetupItem } from "../components/CloneLayoutModal";
+import { Prisma } from "@prisma/client";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import { getProductConfig, cloneLayoutInto } from "../lib/services/product-configs.server";
@@ -682,9 +683,11 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
           await db.variantViewConfiguration.update({
             where: { id: vc.id },
             data: {
+              // Prisma JSONB columns need the sentinel Prisma.DbNull to set
+              // SQL NULL; a raw `null` is rejected at the type level.
               placementGeometry: Object.keys(vcRest).length > 0
-                ? (vcRest as Record<string, unknown>)
-                : null,
+                ? (vcRest as Prisma.InputJsonValue)
+                : Prisma.DbNull,
             },
           });
         }
