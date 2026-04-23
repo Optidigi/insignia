@@ -46,28 +46,32 @@ npx prisma migrate dev  # Run database migrations
 
 ```
 app/
-  routes/              # React Router routes (app.* = admin, apps.insignia.* = storefront proxy, api.* = internal API)
-  components/          # React components (storefront/ = modal components)
+  routes/              # React Router routes (app.* = admin pages, apps.insignia.* = storefront proxy, api.admin.* = admin JSON API, webhooks.* = webhook handlers)
+  components/          # React components (storefront/ = modal components, admin/ = dashboard components)
   lib/services/        # Backend services (*.server.ts)
   lib/storefront/      # Client-side storefront utilities
+  lib/admin/           # Admin-only helpers: terminology.ts (status labels/badge tones), app-bridge.ts (App Bridge wrappers), calibration.ts
+  lib/errors.server.ts # AppError class with HTTP status codes
+  lib/storage.server.ts # R2/S3 storage helpers
   shopify.server.ts    # Shopify app initialization
   db.server.ts         # Prisma singleton
 extensions/
   insignia-theme/      # Theme app extension (blocks + locales only, NO templates)
+  insignia-order-block/ # Shopify Admin UI extension — renders in native order detail page
 docs/
   AGENT_ENTRY.md       # Tier 1 navigation entry point (source of truth)
   core/                # Tier 1: canonical specs and contracts
   admin/               # Tier 2: admin dashboard specs
   storefront/          # Tier 2: storefront modal specs
 prisma/
-  schema.prisma        # 18 models, PostgreSQL
+  schema.prisma        # 19 models, PostgreSQL
 ```
 
 ## Documentation Tiers
 
 1. **Tier 1** (`docs/core/`): Canonical source of truth. Always read before modifying related code.
-2. **Tier 2** (`docs/admin/`, `docs/storefront/`): Working specs. Consult for feature context.
-3. **Tier 3** (`docs/notes/`): Research, audits, design intent. Reference only.
+2. **Tier 2** (`docs/admin/`, `docs/storefront/`, `docs/backend/`, `docs/ops/`, `docs/frontend/`): Working specs. Consult for feature context.
+3. **Tier 3** (`docs/notes/`, `docs/superpowers/`): Research, plans, design intent. Reference only.
 
 Start at `docs/AGENT_ENTRY.md` for navigation.
 
@@ -155,6 +159,8 @@ The theme extension (`extensions/insignia-theme/`) has strict rules:
 - App embed blocks use `"target": "head"` or `"target": "body"`.
 - Always validate with `mcp__shopify-dev-mcp__validate_theme` after changes.
 
+The admin UI extension (`extensions/insignia-order-block/`) targets `admin.order-details.block.render` and renders in the native Shopify Admin order detail page. Its backend data comes from `GET /api/admin/order-block/:orderId`. This extension uses its own `api_version = "2026-01"` (pinned separately from the main app's `2026-04`).
+
 ### 7. Fee Products Must Be UNLISTED
 
 Fee products (variant pool) must always be created with `status: "UNLISTED"`:
@@ -166,7 +172,7 @@ Fee products (variant pool) must always be created with `status: "UNLISTED"`:
 
 ### 8. GraphQL API Version
 
-The app uses API version `2026-04` (set in `shopify.app.toml`). Always use this version when querying the MCP or writing GraphQL operations.
+The main app uses Admin GraphQL API version `2026-04` (set in `shopify.app.toml`). Always use this version when querying the MCP or writing GraphQL operations. Note: extensions pin their own versions independently (`insignia-theme` uses `2024-01`, `insignia-order-block` uses `2026-01`).
 
 ### 9. Database Changes
 

@@ -20,7 +20,7 @@ Note: App proxies do not forward cookies; Shopify strips the `Cookie` header fro
 Pattern A (canonical):
 
 1. `GET /apps/insignia/config` (load config + placeholder logo; response contract: `../storefront-config.md`)
-2. Upload logo (optional): `POST /apps/insignia/upload` (multipart/form-data) → `{ assetId, previewUrl }`
+2. Upload logo (optional): `POST /apps/insignia/uploads` (multipart/form-data) → `{ logoAsset: { id, kind, previewPngUrl, sanitizedSvgUrl? } }`
 3. `POST /apps/insignia/customizations` (persist draft)
 4. `POST /apps/insignia/price` (authoritative unit price + breakdown for review tab)
 5. `POST /apps/insignia/prepare` (reserve variant-pool slot + set slot price)
@@ -31,29 +31,35 @@ Pattern A (canonical):
 
 ### Logo Upload
 
-**Endpoint:** `POST /apps/insignia/upload`
+**Endpoint:** `POST /apps/insignia/uploads`
 
 The storefront modal sends logo files to the app server — not directly to R2.
 
 **Request:** `multipart/form-data`
-- `file` — the logo file (SVG, PNG, or JPG; max 10 MB)
-- `shopId` — the shop identifier
+- `file` — the logo file (SVG, PNG, JPG, or WebP; max 5 MB)
+
+The shop is resolved from the App Proxy session signature — no `shopId` field is required in the request body.
 
 **Response (200):**
 ```json
 {
-  "assetId": "uuid",
-  "previewUrl": "https://..."
+  "logoAsset": {
+    "id": "uuid",
+    "kind": "buyer_upload",
+    "previewPngUrl": "https://...",
+    "sanitizedSvgUrl": "https://..." 
+  }
 }
 ```
+(`sanitizedSvgUrl` is only present when the uploaded file was SVG.)
 
 **Server behaviour:**
-1. Validates MIME type (SVG, PNG, JPG only). Rejects anything else with 415.
+1. Validates MIME type (SVG, PNG, JPG, WebP only). Rejects anything else with 415.
 2. For SVG: sanitises with DOMPurify + JSDOM before storing.
 3. Generates a PNG preview via Sharp.
 4. Stores both files in Cloudflare R2 under `logos/<shopId>/<assetId>.*`.
 5. Creates a `LogoAsset` DB record.
-6. Returns `assetId` + `previewUrl`.
+6. Returns the full `logoAsset` object.
 
 > **Note:** R2 bucket CORS policy allows GET and PUT only. The upload goes through the app server, not directly from the browser to R2.
 
@@ -167,11 +173,6 @@ When the storefront adds the reserved slot variant to cart, it MUST attach the c
 - `_insignia_config_hash`
 - `_insignia_pricing_version`
 
-- `_insignia_customization_id`
-- `_insignia_method`
-- `_insignia_config_hash`
-- `_insignia_pricing_version`
-
 See the canonical webhook contract for the rationale and mapping rules: `./webhooks.md`.
 
 ### Cart aggregation (MVP: optional)
@@ -185,6 +186,26 @@ For MVP, cart line aggregation by config hash is **optional**. The storefront ca
 You can add aggregation later by implementing the hash/version rules without breaking existing orders.
 
 See `../variant-pool/implementation.md` for the full aggregation algorithm and when to use it.
+
+### POST /apps/insignia/uploads/:id/refresh
+
+Refresh the signed URLs on an existing `LogoAsset` (called when a presigned URL has expired).
+
+**Response (200):**
+```json
+{
+  "logoAsset": {
+    "id": "uuid",
+    "kind": "buyer_upload",
+    "previewPngUrl": "https://...",
+    "sanitizedSvgUrl": "https://..."
+  }
+}
+```
+
+### POST /apps/insignia/uploads/:id/complete
+
+Marks an upload session as complete (used in flows where a presigned PUT was issued separately). In the current server-side multipart flow this is a no-op confirmation endpoint.
 
 ### Canonical references
 

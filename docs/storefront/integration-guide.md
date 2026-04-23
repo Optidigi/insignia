@@ -13,7 +13,7 @@ It is a practical implementation guide; canonical endpoint shapes live in:
 Pattern A (canonical):
 
 1. Load config: `GET /apps/insignia/config?productId=<gid>&variantId=<gid>`.
-2. (Optional) Upload logo: `POST /apps/insignia/uploads` → direct PUT to `putUrl` → `POST /apps/insignia/uploads/:uploadId/complete`.
+2. (Optional) Upload logo: `POST /apps/insignia/uploads` (multipart/form-data, `file` field) → returns `{ logoAsset: { id, kind, previewPngUrl, sanitizedSvgUrl? } }`.
 3. Persist draft: `POST /apps/insignia/customizations`.
 4. Price for review tab: `POST /apps/insignia/price`.
 5. Reserve slot + set checkout price: `POST /apps/insignia/prepare`.
@@ -31,7 +31,7 @@ Canonical references:
 
 ## Upload + Logo later
 
-Upload types: `.svg`, `.png`, `.jpg` up to 5MB.
+Upload types: `.svg`, `.png`, `.jpg`, `.webp` up to 5 MB.
 
 If buyer chooses "Logo later":
 

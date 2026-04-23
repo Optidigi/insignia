@@ -226,7 +226,7 @@ export default function ProductConfigsPage() {
 
   const handleSelectProducts = useCallback(async () => {
     try {
-      const selected = await window.shopify.resourcePicker({
+      const selected = await window.shopify?.resourcePicker?.({
         type: "product",
         multiple: false,
         action: "select",

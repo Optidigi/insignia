@@ -562,7 +562,7 @@ export default function ProductConfigDetailPage() {
 
   const handleOpenResourcePicker = useCallback(async () => {
     try {
-      const selected = await window.shopify.resourcePicker({
+      const selected = await window.shopify?.resourcePicker?.({
         type: "product",
         multiple: true,
         action: "select",

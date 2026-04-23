@@ -53,7 +53,7 @@ You should get JSON like `{ success: true, shop: "your-store.myshopify.com", ...
 
 Once the storefront modal exists:
 
-- **Normal path**: Use the theme “Customize” entry point (or App Embed) so the modal opens on the product page. The modal will call the same endpoints in order: config → (uploads) → customizations → price → prepare → cart update → cart-confirm.
+- **Normal path**: Use the theme “Customize” entry point (or App Embed) so the modal opens on the product page. The modal will call the same endpoints in order: config → (uploads multipart POST) → customizations → price → prepare → cart update → cart-confirm.
 - **Easier debugging**: In the modal, log API errors and optionally show a small “Debug” panel (e.g. last request/response or `customizationId`) when a query param like `?insignia_debug=1` is present.
 
 No extra backend work is required for modal testing.
@@ -65,8 +65,7 @@ No extra backend work is required for modal testing.
 | Step | Method | Path | What to provide |
 |------|--------|------|------------------|
 | 1 | GET | `/apps/insignia/config` | `productId`, `variantId` (query) |
-| 2a | POST | `/apps/insignia/uploads` | `fileName`, `contentType`, `sizeBytes?` (body) |
-| 2b | POST | `/apps/insignia/uploads/:id/complete` | upload id from 2a |
+| 2 | POST | `/apps/insignia/uploads` | `multipart/form-data` with `file` field (SVG/PNG/JPG/WebP, max 5 MB) → returns `{ logoAsset: { id, kind, previewPngUrl, sanitizedSvgUrl? } }` |
 | 3 | POST | `/apps/insignia/customizations` | draft payload (productId, variantId, productConfigId, methodId, placements, logoAssetIdsByPlacementId, …) |
 | 4 | POST | `/apps/insignia/price` | `customizationId` (body) |
 | 5 | POST | `/apps/insignia/prepare` | `customizationId` (body) |

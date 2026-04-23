@@ -1,215 +1,133 @@
 # Admin API contract (canonical)
 
-This file is the canonical reference for backend `/admin/*` endpoints consumed by the embedded dashboard.
+> **Last verified**: 2026-04-23
 
-If an admin endpoint is used by the dashboard, it must be documented here.
+This file documents the real backend surface consumed by the embedded dashboard.
+
+The admin surface is split into two layers:
+- **Page routes** (`app.*`) — React Router loader/action routes. The browser never calls these as JSON APIs; they are server-rendered or handle form submissions. Auth is handled automatically by `authenticate.admin(request)` from `@shopify/shopify-app-react-router`.
+- **JSON API routes** (`api.admin.*`) — called from the dashboard frontend (and from external tools). All require `Authorization: Bearer <shopify_session_token>`.
 
 ## Authentication
 
-All `/admin/*` endpoints:
+All `api.admin.*` endpoints are authenticated via `authenticate.admin(request)` on every request. This handles:
+- Session token validation (short-lived, auto-refreshed by App Bridge)
+- Shop resolution from the token
+- Tenant isolation (all queries scoped to the resolved shop)
 
-- MUST require `Authorization: Bearer <shopify_session_token>`.
-- MUST validate the token and authorize the shop on **every request** (do NOT cache token validation).
+Do not cache token validation. App Bridge issues a fresh token per request.
 
-### Session token validation requirements
+External reference: https://shopify.dev/docs/apps/build/authentication-authorization/session-tokens
 
-Session tokens from App Bridge are **short-lived (1 minute)** and auto-refreshed per request. Devs commonly mistake them for persistent session tokens.
+---
 
-**Validation pattern (REQUIRED):**
+## Decoration Methods
 
-1. Extract token from `Authorization: Bearer <token>` header.
-2. Verify the JWT signature against Shopify's public key.
-3. Reject tokens issued more than 2 minutes ago (handle clock skew).
-4. Return 401 on signature mismatch or expiration (App Bridge will retry with fresh token).
-5. Decode the JWT payload to get the shop domain and user ID.
+### `GET /api/admin/methods`
+Returns all decoration methods for the shop.
 
-**Implementation checklist:**
+### `GET /api/admin/methods/:id` (`api.admin.methods.$id.tsx`)
+Returns a single method + its variant pool stats.
 
-- [ ] Validate JWT signature on every request (not cached validation).
-- [ ] Reject tokens older than 2 minutes.
-- [ ] Handle 401 gracefully in frontend (App Bridge will retry).
-- [ ] Never store session tokens in database or cache.
-- [ ] Use Shopify's `@shopify/shopify-app-express` middleware if available (handles validation automatically).
-- [ ] Include the shop domain in authorization decisions (verify resolved shop matches request context).
+### `POST /api/admin/methods` (action on `api.admin.methods.tsx`)
+Create a new decoration method.
 
-**Anti-pattern (will cause intermittent 401 errors):**
+### `PUT /api/admin/methods/:id` (action on `api.admin.methods.$id.tsx`)
+Update method fields.
 
-```js
-let cachedTokenValid = false;
+### `DELETE /api/admin/methods/:id` (action on `api.admin.methods.$id.tsx`)
+Delete a method and its variant pool (fee product + variants).
 
-app.use((req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (cachedTokenValid) {
-    // ❌ WRONG—token expires after 1 minute
-    res.locals.authorized = true;
-    return next();
-  }
-  // ... validate and cache result
-});
-```
+Canonical references: `../data-schemas.md` (DecorationMethod)
 
-**Correct pattern:**
+---
 
-```js
-app.use((req, res, next) => {
-  const token = req.headers.authorization?.replace('Bearer ', '');
-  if (!token) {
-    return res.status(401).json({ error: 'No token' });
-  }
-  // Validate fresh token on EVERY request
-  try {
-    const decoded = jwt.verify(token, SHOPIFY_PUBLIC_KEY);
-    // Confirm issued within last 2 minutes
-    if (Date.now() - decoded.iat * 1000 > 120000) {
-      return res.status(401).json({ error: 'Token expired' });
-    }
-    res.locals.shop = decoded.dest;
-    next();
-  } catch (err) {
-    res.status(401).json({ error: 'Invalid token' });
-  }
-});
-```
+## Product Configuration
 
-External reference:
+Product config CRUD is handled by **page route loaders and actions** under `app.products.*`, not standalone JSON API endpoints. The routes return page data (including config, views, placements, variant assignments) directly to the React component.
 
-- Session tokens: https://shopify.dev/docs/apps/build/authentication-authorization/session-tokens
+Key page routes:
+- `app.products._index.tsx` — list all configs; create action also lives here
+- `app.products.$id.tsx` — edit config metadata + manage linked products
+- `app.products.$id.views.tsx` — views layout (wraps view editor with Outlet)
+- `app.products.$id.views.$viewId.tsx` — view editor (placement geometry, step schedules, variant image assignment)
 
-## Product configs
+---
 
-Minimum required resources:
+## Image Upload (Admin)
 
-- `ProductConfig` (see [`../data-schemas.md`](../data-schemas.md)).
+### `GET /api/admin/upload-url` (`api.admin.upload-url.tsx`)
+Returns a presigned R2 PUT URL for direct browser-to-R2 image uploads (used for view images).
 
-Endpoints:
+### `POST /api/admin/upload` (`api.admin.upload.tsx`)
+Server-side multipart image upload (fallback / alternative path).
 
-- `GET /admin/product-configs`
-- `POST /admin/product-configs`
-- `GET /admin/product-configs/:id`
-- `PUT /admin/product-configs/:id`
-- `DELETE /admin/product-configs/:id`
+### `POST /api/admin/batch-upload-urls` (`api.admin.batch-upload-urls.tsx`)
+Returns multiple presigned PUT URLs in one call (batch view image imports).
 
-## Merchant settings
+### `POST /api/admin/batch-save-images` (`api.admin.batch-save-images.tsx`)
+Saves metadata for batch-uploaded images after the client has PUT them to R2.
 
-Shop-level settings.
+### `POST /api/admin/import-shopify-images` (`api.admin.import-shopify-images.tsx`)
+Imports product images from Shopify into the view image library (copies from Shopify CDN to R2).
 
-### Placeholder logo (Logo later)
+---
 
-The merchant MAY upload a placeholder logo image used when a buyer chooses "Logo later".
+## Artwork Upload (Orders)
 
-If not configured, the storefront falls back to a bold `LOGO` text placeholder.
+### `POST /api/admin/artwork-upload` (`api.admin.artwork-upload.tsx`)
+Uploads or attaches artwork to an order line customization. Transitions `artworkStatus` to `PROVIDED` and creates/updates the associated `LogoAsset`.
 
-Endpoints:
+---
 
-- `GET /admin/settings`
-- `PUT /admin/settings`
+## Orders
+
+Orders are rendered as **page routes** (Polaris Web Components):
+- `app.orders._index.tsx` — order list with tabs (`all`, `awaiting`, `in-production`, `shipped`)
+- `app.orders.$id.tsx` — order detail page (loader returns all data needed for rendering)
+- `app.orders.$id.print.tsx` — printable order detail view
+- `app.orders.bulk-advance.tsx` — action route: bulk-advance production status for selected lines
+- `app.orders.export.tsx` — CSV export page route
+
+### `GET /api/admin/orders/export` (`api.admin.orders.export.tsx`)
+Returns orders data as a downloadable CSV stream.
+
+### `GET /api/admin/order-block/:orderId` (`api.admin.order-block.$orderId.tsx`)
+Data endpoint for the `insignia-order-block` Shopify Admin UI extension. Returns line preview data, placement geometry, logo asset URLs (presigned), and production status for all customized lines on the order. Auth is via the extension's admin session.
+
+Asset download links in the order detail are **presigned R2 URLs** returned inline in the page loader response — there is no separate `/admin/logo-assets/:id/download` endpoint. URLs expire after 10 minutes; the frontend re-fetches the loader if an `<img>` returns 403.
 
 Canonical references:
-
-- `../storefront-config.md` (placeholderLogo)
-- `../svg-upload-safety.md`
-
-## Decoration methods
-
-Methods define the available decoration options (e.g., Embroidery, DTG) and map to variant pools.
-
-Endpoints:
-
-- `GET /admin/methods`
-- `POST /admin/methods`
-- `PUT /admin/methods/:id`
-- `DELETE /admin/methods/:id`
-
-Canonical references:
-
-- `../data-schemas.md` (DecorationMethod)
-
-## View images (manual per-color, MVP)
-
-In MVP, merchants provide per-color view images manually.
-
-Endpoints (suggested):
-
-- `GET /admin/product-configs/:configId/views`
-- `POST /admin/product-configs/:configId/views` (create a view perspective)
-- `PUT /admin/product-configs/:configId/views/:viewId` (rename/reorder metadata)
-
-### Per-variant image assignment
-
-- `PUT /admin/product-configs/:configId/views/:viewId/variants/:variantId/image`
-
-This endpoint sets/updates the `imageUrl` for a given view+variant combination.
-
-## Placement editor (Konva)
-
-Dashboard persists placement definitions and per-view geometry.
-
-Canonical saved output contract:
-
-- `../placement-editor.md`
-
-Endpoints (suggested):
-
-- `GET /admin/product-configs/:configId/placements`
-- `POST /admin/product-configs/:configId/placements`
-- `PUT /admin/product-configs/:configId/placements/:placementId`
-- `DELETE /admin/product-configs/:configId/placements/:placementId`
-
-- `GET /admin/product-configs/:configId/view-configurations?variantId=<gid>`
-- `PUT /admin/product-configs/:configId/view-configurations?variantId=<gid>`
-
-### Duplicate view configuration
-
-- `POST /admin/product-configs/:configId/view-configurations/duplicate`
-
-This copies geometry + step schedules from a source variant to a target variant, and leaves images to be swapped.
-
-### Reorder placements
-
-- Intent: `reorder-placements` on view editor route
-- Payload: `order` (JSON array of placement IDs in desired order)
-- Validation: array of non-empty strings, no duplicates
-- Updates `displayOrder` for each placement with shopId ownership check
-
-### Reorder steps
-
-- Intent: `reorder-steps` on view editor route
-- Payload: `placementId` + `order` (JSON array of step IDs in desired order)
-- Validation: array of non-empty strings, no duplicates
-- Updates `displayOrder` for each step with 3-level ownership check (placement → view → config → shop)
-
-## Orders (Logo later)
-
-Dashboard must list order customizations and show `artworkStatus` per customized line item.
-
-Endpoints:
-
-- `GET /admin/orders?state=open|closed`
-- `GET /admin/orders/:id` (order detail; includes preview rendering data + secure download links)
-- `POST /admin/orders/:id/lines/:lineId/artwork` (upload/attach artwork, transitions `artworkStatus` to `PROVIDED`)
-
-### Secure asset downloads
-
-Because embedded admin requests must be authorized, the dashboard should download assets by fetching bytes with Authorization.
-
-Endpoints (recommended):
-
-- `GET /admin/logo-assets/:logoAssetId/download?format=svg|png`
-
-Notes:
-
-- Response MUST set `Content-Disposition: attachment; filename="..."` and require Authorization validation.
-- All image URLs in the order detail response MUST be signed with short-lived TTL (10 minutes).
-- Do not expose public storage keys; use backend streaming or short-lived signed URLs.
-- Never store secrets in line item properties (visible in Shopify Admin); use only IDs/hashes.
-
-Implementation guide:
-
-- `../../admin/order-detail-rendering.md`
-
-Canonical references:
-
-- `../data-schemas.md` (artworkStatus, OrderLineCustomization, LogoAsset)
+- `../data-schemas.md` (OrderLineCustomization, LogoAsset, OrderNote)
 - `../../admin/orders-workflow.md`
+- `../../admin/order-detail-rendering.md`
 - `./webhooks.md`
-- `../variant-pool/implementation.md`
+
+---
+
+## Cron Jobs
+
+These endpoints are called by an external cron scheduler (not by the dashboard). They require `Authorization: Bearer <CRON_SECRET>` (not a session token).
+
+### `POST /api/admin/cron/cleanup-slots` (`api.admin.cron.cleanup-slots.tsx`)
+Recycles expired `RESERVED`/`IN_CART` variant slots back to `FREE`.
+
+### `POST /api/admin/cron/cleanup-drafts` (`api.admin.cron.cleanup-drafts.tsx`)
+Deletes stale `CustomizationDraft` records older than the TTL.
+
+See `docs/ops/cron-setup.md` for scheduling setup.
+
+---
+
+## Placement Editor (Page Routes)
+
+The placement editor (Konva canvas) runs inside `app.products.$id.views.$viewId.tsx` and persists via form actions on that route. Sub-intents handled:
+
+- `reorder-placements` — reorders `PlacementDefinition.displayOrder` for a view
+- `reorder-steps` — reorders `PlacementStep.displayOrder` for a placement
+- `clone-layout` — copies placement geometry from one variant/view to another
+- `save-geometry` — persists `PlacementGeometry` for a view
+
+Canonical references:
+- `../placement-editor.md`
+- `../data-schemas.md` (PlacementDefinition, PlacementStep, PlacementGeometry)

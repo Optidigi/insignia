@@ -1,6 +1,6 @@
 # Documentation Catalog
 
-> **Last updated**: 2026-04-14
+> **Last updated**: 2026-04-23
 > **Purpose**: Inventory of all docs with tiering. Start at `AGENT_ENTRY.md` for navigation.
 
 ## Tier 1 — Canonical Contracts (source of truth)
@@ -15,7 +15,7 @@
 | `docs/core/storefront-config.md` | storefront, config | Storefront config response shape |
 | `docs/core/svg-upload-safety.md` | security, svg | SVG safety policy |
 | `docs/core/geometry-snapshot-specification.md` | orders, geometry | Snapshot spec for order accuracy |
-| `docs/core/api-contracts/admin.md` | api, admin | Admin API contract |
+| `docs/core/api-contracts/admin.md` | api, admin | Admin API contract (real routes) |
 | `docs/core/api-contracts/storefront.md` | api, storefront | Storefront API contract |
 | `docs/core/api-contracts/webhooks.md` | api, webhooks | Webhook contract |
 | `docs/core/variant-pool/overview.md` | pricing, variant-pool | Non-Plus pricing invariants |
@@ -32,35 +32,27 @@
 | `docs/admin/README.md` | admin, navigation | Admin folder index |
 | `docs/admin/dashboard-spec.md` | admin, dashboard | Dashboard functional spec |
 | `docs/admin/order-detail-rendering.md` | admin, rendering | Order detail rendering spec |
-| `docs/admin/orders-workflow.md` | admin, orders | Merchant order workflow |
+| `docs/admin/orders-workflow.md` | admin, orders | Merchant order workflow (incl. WC migration note) |
 | `docs/admin/product-configuration.md` | admin, product-config | Product config workflow |
 | `docs/backend/README.md` | backend, setup | Backend setup and ops |
+| `docs/frontend/backend-api-reference.md` | api, admin, order-block | Comprehensive admin API + order block reference (audited 2026-04-22) |
 | `docs/ops/cron-setup.md` | ops, cron | Cron job setup for variant slot + draft cleanup |
+| `docs/ops/multi-instance-deployment.md` | ops, deployment | Multi-instance VPS deployment guide |
 | `docs/storefront/README.md` | storefront, navigation | Storefront folder index |
 | `docs/storefront/modal-spec.md` | storefront, modal | Storefront modal UX spec |
 | `docs/storefront/rendering-pipeline.md` | storefront, rendering | Rendering pipeline rules |
 | `docs/storefront/integration-guide.md` | storefront, integration | Backend integration guide |
 | `docs/storefront/testing.md` | storefront, testing | Storefront testing guide |
 
-## Tier 3 — Reference & Planning (consult, don't treat as contracts)
+## Tier 3 — Notes (consult, don't treat as contracts)
 
 | Path | Tags | Purpose |
 |------|------|---------|
 | `docs/notes/open-work.md` | planning, decisions | Open questions and decisions to revisit |
-| `docs/notes/polaris-quirks.md` | ui, polaris | Known Polaris v13 layout bugs and workarounds |
-| `docs/notes/design-intent/dashboard-ui.md` | ui, design-intent | Dashboard UI design thinking |
-| `docs/notes/design-intent/storefront-modal.md` | ui, design-intent | Storefront modal design thinking |
+| `docs/notes/polaris-quirks.md` | ui, polaris | Known Polaris v13 layout bugs and workarounds (React only; WC pages exempt) |
 
-## Superpowers — Execution Plans & Specs
+## Superpowers — Active Specs
 
 | Path | Status | Purpose |
 |------|--------|---------|
-| `plans/2026-04-07-v2-completion.md` | ACTIVE | Gap closure plan — remaining V2 work |
-| `specs/2026-04-05-insignia-v2-user-test-findings.md` | REFERENCE | 5 persona cognitive walkthroughs |
-| `specs/2026-04-06-v2-image-upload-workflow.md` | REFERENCE | Image upload workflow design |
-| `specs/2026-04-09-v2.1-view-editor-brainstorm.md` | ACTIVE | View Editor rework research + competitor analysis |
-| `specs/2026-04-10-v3-future-features.md` | ACTIVE | V3 feature backlog (ruler tool, 3D, etc.) |
-| `specs/v2-design-decisions-and-todos.md` | ACTIVE | Consolidated design decisions + open todos |
-| `plans/2026-04-13-phase1-hardening.md` | EXECUTED | Phase 1 hardening (cron, rate limiting, CI, tests) |
-| `specs/2026-04-13-phase1-hardening-design.md` | EXECUTED | Phase 1 hardening design spec |
-| `specs/2026-04-14-frontend-must-haves-design.md` | EXECUTED | Frontend must-have fixes (pricing panel, canvas sync, theme) |
+| `docs/superpowers/specs/2026-04-10-v3-future-features.md` | ACTIVE | V3 feature backlog (ruler tool, 3D preview, etc.) |

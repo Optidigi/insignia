@@ -47,24 +47,24 @@
  - [`docs/admin/product-configuration.md`](admin/product-configuration.md)
  - [`docs/admin/orders-workflow.md`](admin/orders-workflow.md)
  - [`docs/admin/order-detail-rendering.md`](admin/order-detail-rendering.md)
+ - [`docs/frontend/backend-api-reference.md`](frontend/backend-api-reference.md) — comprehensive admin API + order block reference (last audited 2026-04-22)
  
  **Storefront**
  - [`docs/storefront/README.md`](storefront/README.md)
  - [`docs/storefront/modal-spec.md`](storefront/modal-spec.md)
  - [`docs/storefront/rendering-pipeline.md`](storefront/rendering-pipeline.md)
  - [`docs/storefront/integration-guide.md`](storefront/integration-guide.md)
+ - [`docs/storefront/testing.md`](storefront/testing.md)
  
- **Backend**
+ **Backend & Ops**
  - [`docs/backend/README.md`](backend/README.md)
+ - [`docs/ops/cron-setup.md`](ops/cron-setup.md)
+ - [`docs/ops/multi-instance-deployment.md`](ops/multi-instance-deployment.md)
  
  ## Notes & research (Tier 3)
  
- **Open work & audits**
- - [`docs/notes/open-work.md`](notes/open-work.md)
- 
- **Design intent (UI only)**
- - [`docs/notes/design-intent/dashboard-ui.md`](notes/design-intent/dashboard-ui.md)
- - [`docs/notes/design-intent/storefront-modal.md`](notes/design-intent/storefront-modal.md)
+ - [`docs/notes/open-work.md`](notes/open-work.md) — open decisions and questions to revisit
+ - [`docs/notes/polaris-quirks.md`](notes/polaris-quirks.md) — known Polaris v13 layout bugs (must-read before UI work)
  
  ## Conflict policy
  
