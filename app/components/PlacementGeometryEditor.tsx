@@ -362,6 +362,18 @@ export function PlacementGeometryEditor({
   // Keyboard: arrow-key nudge for the selected zone + Ctrl+Z/Y undo/redo
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      // Do not steal keys when focus is inside an editable element
+      const active = document.activeElement;
+      const tag = active?.tagName ?? "";
+      if (
+        tag === "INPUT" ||
+        tag === "TEXTAREA" ||
+        tag === "SELECT" ||
+        (active as HTMLElement | null)?.isContentEditable ||
+        e.isComposing
+      ) {
+        return;
+      }
       // Undo: Ctrl+Z
       if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
         e.preventDefault();
