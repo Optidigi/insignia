@@ -105,7 +105,7 @@ A placement step's `scaleFactor` multiplies this to get the actual logo size for
 5. **Price locked.** `POST /apps/insignia/price` computes the authoritative unit price for the review step:
    ```
    unitPriceCents = baseProductPriceCents
-                  + decorationMethod.basePriceCents
+                  + effectiveMethodPrice  // = ProductConfigMethod.basePriceCentsOverride ?? DecorationMethod.basePriceCents
                   + sum over placements of:
                       placement.basePriceAdjustmentCents
                     + step.priceAdjustmentCents
@@ -449,7 +449,7 @@ Routes served to the merchant inside the Shopify admin iframe. Always use Polari
 
 ### 3.4 Method detail — `/app/methods/:id` — [`app/routes/app.methods.$id.tsx`](../../app/routes/app.methods.$id.tsx)
 
-- **Loader →** `{ method: { id, name, basePriceCents, artworkConstraints, productConfigs[] }, shopId, currency }`.
+- **Loader →** `{ method: { id, name, basePriceCents, artworkConstraints, productConfigs[] }, shopId, currency }`. `basePriceCents` is the method-level default; per-product-config overrides live on `ProductConfigMethod.basePriceCentsOverride`.
 - **Action intents:**
   - `update` (JSON body): `{ name?, basePriceCents?, artworkConstraints? }` → `{ method }`.
   - `delete`: `{ success: true }`.
@@ -907,7 +907,7 @@ Root tenancy record.
 |---|---|---|
 | `shopId` | FK | |
 | `name` | `String` | Internal merchant label — "Embroidery" |
-| `basePriceCents` | `Int?` | Method-level fee |
+| `basePriceCents` | `Int?` | Method-level fee (default; may be overridden per product config via `ProductConfigMethod.basePriceCentsOverride`) |
 | `description` | `String?` | Merchant-only notes |
 | `customerName` | `String?` | Storefront label — "Embroider Your Logo" |
 | `customerDescription` | `String?` | Storefront body copy |
@@ -1160,7 +1160,7 @@ interface ConfiguredView {
 interface DecorationMethodRef {
   id: string;
   name: string;
-  basePriceCents: number;
+  basePriceCents: number; // effective price — override-resolved (ProductConfigMethod.basePriceCentsOverride ?? DecorationMethod.basePriceCents)
   customerName: string | null;
   customerDescription: string | null;
   artworkConstraints: ArtworkConstraints | null;

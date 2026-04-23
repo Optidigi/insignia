@@ -392,9 +392,14 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
 
     if (intent === "update-methods") {
       const methodIds = JSON.parse(formData.get("methodIds") as string || "[]");
+      const rawOverrides = formData.get("methodPriceOverrides");
+      const methodPriceOverrides = rawOverrides
+        ? (JSON.parse(rawOverrides as string) as Record<string, number | null>)
+        : undefined;
 
       await updateProductConfig(shop.id, id, {
         allowedMethodIds: methodIds,
+        methodPriceOverrides,
       });
       return { success: true, intent: "update-methods" };
     }
@@ -515,6 +520,17 @@ export default function ProductConfigDetailPage() {
     config.allowedMethods.map((m) => m.decorationMethodId)
   );
 
+  // Per-method price override inputs: key = decorationMethodId, value = display string (empty = inherit)
+  const [methodOverrides, setMethodOverrides] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    for (const row of config.allowedMethods ?? []) {
+      if (row.basePriceCentsOverride != null) {
+        initial[row.decorationMethodId] = (row.basePriceCentsOverride / 100).toFixed(2);
+      }
+    }
+    return initial;
+  });
+
   const handleNameChange = useCallback((value: string) => {
     setName(value);
     setHasChanges(true);
@@ -577,11 +593,20 @@ export default function ProductConfigDetailPage() {
     JSON.stringify(selectedProducts.sort()) !==
       JSON.stringify([...config.linkedProductIds].sort());
 
-  const hasMethodChanges =
-    JSON.stringify(selectedMethodIds.sort()) !==
-      JSON.stringify(
-        config.allowedMethods.map((m) => m.decorationMethodId).sort()
-      );
+  const hasMethodChanges = (() => {
+    if (JSON.stringify(selectedMethodIds.sort()) !==
+        JSON.stringify(config.allowedMethods.map((m) => m.decorationMethodId).sort())) {
+      return true;
+    }
+    // Also detect override edits
+    for (const row of config.allowedMethods) {
+      const savedCents = row.basePriceCentsOverride;
+      const inputStr = methodOverrides[row.decorationMethodId] ?? "";
+      const savedStr = savedCents != null ? (savedCents / 100).toFixed(2) : "";
+      if (inputStr !== savedStr) return true;
+    }
+    return false;
+  })();
 
   // ---- Handlers ----
 
@@ -620,15 +645,35 @@ export default function ProductConfigDetailPage() {
     setName(config.name);
     setSelectedProducts(config.linkedProductIds);
     setSelectedMethodIds(config.allowedMethods.map((m) => m.decorationMethodId));
+    const initial: Record<string, string> = {};
+    for (const row of config.allowedMethods) {
+      if (row.basePriceCentsOverride != null) {
+        initial[row.decorationMethodId] = (row.basePriceCentsOverride / 100).toFixed(2);
+      }
+    }
+    setMethodOverrides(initial);
     setHasChanges(false);
   }, [config.name, config.linkedProductIds, config.allowedMethods]);
 
   const handleSaveMethods = useCallback(() => {
+    // Build per-method price override payload (only for checked methods)
+    const overridesPayload: Record<string, number | null> = {};
+    for (const methodId of selectedMethodIds) {
+      const inputStr = (methodOverrides[methodId] ?? "").trim();
+      if (inputStr === "") {
+        overridesPayload[methodId] = null;
+      } else {
+        const parsed = parseFloat(inputStr);
+        overridesPayload[methodId] = Number.isFinite(parsed) ? Math.round(parsed * 100) : null;
+      }
+    }
+
     const formData = new FormData();
     formData.append("intent", "update-methods");
     formData.append("methodIds", JSON.stringify(selectedMethodIds));
+    formData.append("methodPriceOverrides", JSON.stringify(overridesPayload));
     methodFetcher.submit(formData, { method: "POST" });
-  }, [selectedMethodIds, methodFetcher]);
+  }, [selectedMethodIds, methodOverrides, methodFetcher]);
 
   const handleSaveAll = useCallback(() => {
     if (hasBasicChanges) {
@@ -643,11 +688,19 @@ export default function ProductConfigDetailPage() {
   }, [hasBasicChanges, hasMethodChanges, handleSaveBasic, handleSaveMethods]);
 
   const handleMethodToggle = useCallback((methodId: string) => {
-    setSelectedMethodIds((prev) =>
-      prev.includes(methodId)
-        ? prev.filter((id) => id !== methodId)
-        : [...prev, methodId]
-    );
+    setSelectedMethodIds((prev) => {
+      const isSelected = prev.includes(methodId);
+      if (isSelected) {
+        setMethodOverrides((overrides) => {
+          if (!(methodId in overrides)) return overrides;
+          const next = { ...overrides };
+          delete next[methodId];
+          return next;
+        });
+        return prev.filter((id) => id !== methodId);
+      }
+      return [...prev, methodId];
+    });
     setHasChanges(true);
   }, []);
 
@@ -822,14 +875,34 @@ export default function ProductConfigDetailPage() {
                   </Banner>
                 ) : (
                   <BlockStack gap="200">
-                    {methods.map((method) => (
-                      <Checkbox
-                        key={method.id}
-                        label={method.name}
-                        checked={selectedMethodIds.includes(method.id)}
-                        onChange={() => handleMethodToggle(method.id)}
-                      />
-                    ))}
+                    {methods.map((method) => {
+                      const isChecked = selectedMethodIds.includes(method.id);
+                      return (
+                        <BlockStack key={method.id} gap="150">
+                          <Checkbox
+                            label={method.name}
+                            checked={isChecked}
+                            onChange={() => handleMethodToggle(method.id)}
+                          />
+                          {isChecked && (
+                            <Box paddingInlineStart="600">
+                              <TextField
+                                label="Price override"
+                                type="number"
+                                prefix={currencySymbol}
+                                helpText="Leave blank to use method default"
+                                autoComplete="off"
+                                value={methodOverrides[method.id] ?? ""}
+                                onChange={(v) =>
+                                  setMethodOverrides((prev) => ({ ...prev, [method.id]: v }))
+                                }
+                                disabled={isSubmitting}
+                              />
+                            </Box>
+                          )}
+                        </BlockStack>
+                      );
+                    })}
                   </BlockStack>
                 )}
 

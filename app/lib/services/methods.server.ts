@@ -189,6 +189,17 @@ export async function updateMethod(
 }
 
 /**
+ * Resolve the price a given ProductConfigMethod row charges.
+ * Override semantics: null/undefined = inherit method base; non-null = full replacement.
+ */
+export function effectiveMethodPriceCents(
+  methodBasePriceCents: number,
+  overrideCents: number | null | undefined
+): number {
+  return overrideCents ?? methodBasePriceCents;
+}
+
+/**
  * Delete a decoration method
  */
 export async function deleteMethod(shopId: string, methodId: string) {

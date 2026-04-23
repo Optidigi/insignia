@@ -9,6 +9,7 @@ import db from "../../db.server";
 import { AppError, ErrorCodes } from "../errors.server";
 import { getMerchantSettings } from "./settings.server";
 import { getPresignedGetUrl } from "../storage.server";
+import { effectiveMethodPriceCents } from "./methods.server";
 import type { ProductVariantOption } from "../../components/storefront/types";
 
 // Response types per storefront-config.md
@@ -396,7 +397,11 @@ export async function getStorefrontConfig(
   const methods: DecorationMethodRef[] = config.allowedMethods.map((m) => ({
     id: m.decorationMethod.id,
     name: m.decorationMethod.name,
-    basePriceCents: m.decorationMethod.basePriceCents,
+    // Resolve per-product-config override; falls back to method-level price when override is null
+    basePriceCents: effectiveMethodPriceCents(
+      m.decorationMethod.basePriceCents,
+      m.basePriceCentsOverride
+    ),
     customerName: m.decorationMethod.customerName,
     customerDescription: m.decorationMethod.customerDescription ?? m.decorationMethod.description ?? null,
     artworkConstraints: m.decorationMethod.artworkConstraints as { fileTypes: string[]; maxColors: number | null; minDpi: number | null } | null,

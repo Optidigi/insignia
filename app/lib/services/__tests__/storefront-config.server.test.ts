@@ -107,6 +107,7 @@ const MOCK_VIEW_BACK = {
 };
 
 const MOCK_METHOD = {
+  basePriceCentsOverride: null,
   decorationMethod: {
     id: "method-1",
     name: "Screen Print",
@@ -188,6 +189,46 @@ describe("getStorefrontConfig", () => {
     expect(result.placements).toHaveLength(1);
     expect(result.placements[0].name).toBe("Chest");
     expect(result.placements[0].steps).toHaveLength(2);
+  });
+
+  it("uses basePriceCentsOverride when set on allowedMethods row", async () => {
+    const methodWithOverride = {
+      ...MOCK_METHOD,
+      basePriceCentsOverride: 500,
+    };
+    prismaMock.productConfig.findFirst.mockResolvedValue(
+      makeProductConfig({ allowedMethods: [methodWithOverride] })
+    );
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    // Override (500) should supersede method base (1000)
+    expect(result.methods[0].basePriceCents).toBe(500);
+  });
+
+  it("inherits method basePriceCents when override is null", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(makeProductConfig());
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    // null override → inherit method base of 1000
+    expect(result.methods[0].basePriceCents).toBe(1000);
   });
 
   it("resolves shared zone geometry from view-level placementGeometry", async () => {

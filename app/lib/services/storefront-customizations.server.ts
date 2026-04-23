@@ -7,6 +7,7 @@ import { createHash } from "crypto";
 import db from "../../db.server";
 import { AppError, ErrorCodes } from "../errors.server";
 import { getProductConfig } from "./product-configs.server";
+import { effectiveMethodPriceCents } from "./methods.server";
 
 const PRICING_VERSION = "v1";
 
@@ -115,14 +116,26 @@ export async function computeCustomizationPrice(
     throw new AppError(ErrorCodes.NOT_FOUND, "Customization not found", 404);
   }
 
-  const [config, method] = await Promise.all([
+  const [config, method, pcm] = await Promise.all([
     getProductConfig(shopId, draft.productConfigId),
     db.decorationMethod.findUnique({
       where: { id: draft.methodId },
       select: { basePriceCents: true },
     }),
+    db.productConfigMethod.findUnique({
+      where: {
+        productConfigId_decorationMethodId: {
+          productConfigId: draft.productConfigId,
+          decorationMethodId: draft.methodId,
+        },
+      },
+      select: { basePriceCentsOverride: true },
+    }),
   ]);
-  const methodBaseCents = method?.basePriceCents ?? 0;
+  const methodBaseCents = effectiveMethodPriceCents(
+    method?.basePriceCents ?? 0,
+    pcm?.basePriceCentsOverride ?? null
+  );
 
   const placementsPayload = draft.placements as unknown as PlacementSelection[];
   let placementsCents = 0;

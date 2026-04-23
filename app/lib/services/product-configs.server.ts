@@ -25,6 +25,8 @@ export const UpdateProductConfigSchema = z.object({
   name: z.string().min(1, "Name is required").max(200).optional(),
   linkedProductIds: z.array(z.string()).min(1).optional(),
   allowedMethodIds: z.array(z.string()).optional(),
+  // Key = decorationMethodId. null = inherit method default; missing key = preserve existing override.
+  methodPriceOverrides: z.record(z.string(), z.number().int().min(0).nullable()).optional(),
 });
 
 export type CreateProductConfigInput = z.infer<typeof CreateProductConfigSchema>;
@@ -178,20 +180,47 @@ export async function updateProductConfig(
       },
     });
 
-    // Update allowed methods if provided
+    // Update allowed methods if provided — diff-based upsert to preserve per-method price overrides
     if (input.allowedMethodIds !== undefined) {
-      // Remove existing
-      await tx.productConfigMethod.deleteMany({
+      const existingRows = await tx.productConfigMethod.findMany({
         where: { productConfigId: configId },
+        select: { decorationMethodId: true, basePriceCentsOverride: true },
       });
 
-      // Add new
-      if (input.allowedMethodIds.length > 0) {
-        await tx.productConfigMethod.createMany({
-          data: input.allowedMethodIds.map((methodId) => ({
+      const toDeleteIds = existingRows
+        .filter((r) => !input.allowedMethodIds!.includes(r.decorationMethodId))
+        .map((r) => r.decorationMethodId);
+
+      if (toDeleteIds.length > 0) {
+        await tx.productConfigMethod.deleteMany({
+          where: { productConfigId: configId, decorationMethodId: { in: toDeleteIds } },
+        });
+      }
+
+      // Upsert each desired method — preserves overrides unless caller explicitly changes them
+      for (const methodId of input.allowedMethodIds) {
+        // Resolve override: use value from input if key present; otherwise keep existing or null
+        let overrideValue: number | null;
+        if (input.methodPriceOverrides && Object.prototype.hasOwnProperty.call(input.methodPriceOverrides, methodId)) {
+          overrideValue = input.methodPriceOverrides[methodId];
+        } else {
+          const existingRow = existingRows.find((r) => r.decorationMethodId === methodId);
+          overrideValue = existingRow?.basePriceCentsOverride ?? null;
+        }
+
+        await tx.productConfigMethod.upsert({
+          where: {
+            productConfigId_decorationMethodId: {
+              productConfigId: configId,
+              decorationMethodId: methodId,
+            },
+          },
+          update: { basePriceCentsOverride: overrideValue },
+          create: {
             productConfigId: configId,
             decorationMethodId: methodId,
-          })),
+            basePriceCentsOverride: overrideValue,
+          },
         });
       }
     }

@@ -170,6 +170,8 @@ model ProductConfig {
 model ProductConfigMethod {
   productConfigId    String
   decorationMethodId String
+  // null = inherit DecorationMethod.basePriceCents; non-null = override for this product config only
+  basePriceCentsOverride Int?
 
   productConfig    ProductConfig    @relation(fields: [productConfigId], references: [id], onDelete: Cascade)
   decorationMethod DecorationMethod @relation(fields: [decorationMethodId], references: [id], onDelete: Cascade)
