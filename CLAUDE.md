@@ -3,6 +3,31 @@
 This file contains mandatory rules for working on this codebase.
 Read it at session start before doing anything else.
 
+---
+
+## Current mission: architecture review & hardening (April 2026 →)
+
+**The app is feature-complete enough to run. Your job is not to add features.** You are picking up a codebase that was built incrementally and is now due for a disciplined cleanup:
+
+1. **Audit** the codebase against Shopify's 2026 App guidelines and modern web-app best practices.
+2. **Propose** a redesigned architecture that is more performance-driven, simpler, and more up-to-date.
+3. **Harden** critical subsystems (webhooks, variant pool, app proxy, session management) so they don't regress silently.
+4. **Remove** subsystems and code paths that are unnecessary, dead, or duplicative.
+5. **Implement** changes interactively with the user, phase by phase, without breaking essential business logic.
+
+**Full brief:** read [`ARCHITECTURE_REVIEW_BRIEF.md`](./ARCHITECTURE_REVIEW_BRIEF.md) at the repo root before you do anything else. It is the canonical spec for this phase — non-negotiable subsystems, deliverables (Phase 0 → 3), Shopify 2026 checklist, and the interaction rules with the user.
+
+**Work mode for this phase:**
+- **Audit-first, then propose, then implement.** Do not refactor anything in the first pass — read, document, identify problems. Phase 1 is a written audit at `docs/architecture-review/2026-AUDIT.md`.
+- **Surface before changing.** When you find something you want to change, describe it (what, why, impact) and wait for explicit approval.
+- **Phases, not big-bang.** Each phase ends with typecheck + lint green, manual verification, and a commit. `main` must stay green.
+- **Interactive.** Ask questions, one at a time, multiple-choice when possible. Never assume about business logic.
+- **Load-bearing subsystems** (see the brief for the full list): Variant Pool, App Proxy auth, Webhook pipeline, Storefront modal UX flow, Prisma migrations, Admin orders page + order-block extension. Do not touch these without explicit approval.
+
+The mandatory rules below (Shopify MCP usage, Polaris conventions, visual verification, testing after every change, etc.) all still apply to the architecture work. They are how you stay safe while cleaning up.
+
+---
+
 ## Tooling
 
 This project uses **Superpowers** and **MCP servers** as the primary workflow tools.
