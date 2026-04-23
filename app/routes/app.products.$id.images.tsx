@@ -620,8 +620,11 @@ export default function ImageManagerPage() {
   const handleAutoAssignFromTray = useCallback(async () => {
     if (trayImages.length === 0) return;
 
-    // Snapshot length before async work to avoid stale-closure mislead in toast
-    const trayCount = trayImages.length;
+    // Snapshot the processable count (images with storageKey + colorOption) so the
+    // "remaining" toast reflects actual assignable images, not optimistic placeholders.
+    const processableCount = trayImages.filter(
+      (img) => img.storageKey && (img.originalFileName ?? "")
+    ).length;
 
     setIsAutoAssigning(true);
     try {
@@ -687,7 +690,7 @@ export default function ImageManagerPage() {
       revalidator.revalidate();
 
       const assignedCount = assignedTrayIds.size;
-      const remainingCount = trayCount - assignedCount;
+      const remainingCount = processableCount - assignedCount;
       if (remainingCount > 0) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (window.shopify as any)?.toast?.show(
@@ -873,7 +876,7 @@ export default function ImageManagerPage() {
           images={trayImages}
           onAutoAssign={handleAutoAssignFromTray}
           isAutoAssigning={isAutoAssigning}
-          autoAssignDisabled={isImporting || isAutoAssigning}
+          autoAssignDisabled={isImporting || isAutoAssigning || revalidator.state !== "idle"}
           onBulkUpload={async (files) => {
             await Promise.all(
               Array.from(files).map(async (file) => {

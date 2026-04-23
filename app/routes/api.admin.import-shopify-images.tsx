@@ -132,8 +132,9 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         .sort((a, b) => b[1].size - a[1].size)[0]?.[0];
     }
 
-    // Build a map of colorValue → URL from variant.featuredImage.
-    // Iterate all variants; first encountered featuredImage per color wins.
+    // Build a map of colorValue → URL from variant.image (the image assigned to the
+    // variant in the Shopify product admin, distinct from the Media API).
+    // Iterate all variants; first encountered image per color wins.
     // (Multiple size variants share the same color image — dedup handles the rest.)
     const colorImageMap: Record<string, { url: string; variantId: string }> = {};
     for (const variant of variants) {
