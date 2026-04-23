@@ -91,7 +91,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             nodes {
               id
               selectedOptions { name value }
-              featuredImage { url }
+              image { url }
             }
           }
         }
@@ -105,7 +105,7 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const variants: Array<{
       id: string;
       selectedOptions: Array<{ name: string; value: string }>;
-      featuredImage: { url: string } | null;
+      image: { url: string } | null;
     }> = responseData.data?.product?.variants?.nodes ?? [];
     const hasMore =
       responseData.data?.product?.variants?.pageInfo?.hasNextPage ?? false;
@@ -141,8 +141,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
         ? variant.selectedOptions.find((o) => o.name === colorOptionName)
         : null;
       const colorValue = colorOpt?.value ?? "Default";
-      if (!colorImageMap[colorValue] && variant.featuredImage?.url) {
-        colorImageMap[colorValue] = { url: variant.featuredImage.url, variantId: variant.id };
+      if (!colorImageMap[colorValue] && variant.image?.url) {
+        colorImageMap[colorValue] = { url: variant.image.url, variantId: variant.id };
       }
     }
 

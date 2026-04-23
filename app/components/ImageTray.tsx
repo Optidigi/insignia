@@ -27,6 +27,9 @@ type Props = {
   onDragStart: (image: TrayImage) => void;
   onSelect?: (image: TrayImage | null) => void;
   selectedImageId?: string | null;
+  onAutoAssign?: () => void | Promise<void>;
+  isAutoAssigning?: boolean;
+  autoAssignDisabled?: boolean;
 };
 
 export function ImageTray({
@@ -35,6 +38,9 @@ export function ImageTray({
   onDragStart,
   onSelect,
   selectedImageId,
+  onAutoAssign,
+  isAutoAssigning,
+  autoAssignDisabled,
 }: Props) {
   const fileRef = useRef<HTMLInputElement | null>(null);
 
@@ -49,6 +55,18 @@ export function ImageTray({
             <Badge size="small">{`${images.length}`}</Badge>
           )}
         </InlineStack>
+
+        {images.length > 0 && onAutoAssign && (
+          <Button
+            size="slim"
+            variant="primary"
+            onClick={() => onAutoAssign()}
+            loading={isAutoAssigning}
+            disabled={autoAssignDisabled}
+          >
+            Auto-assign by color
+          </Button>
+        )}
 
         {images.length === 0 && (
           <Text variant="bodySm" tone="subdued" as="span">
