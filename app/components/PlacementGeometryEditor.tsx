@@ -362,14 +362,21 @@ export function PlacementGeometryEditor({
   // Keyboard: arrow-key nudge for the selected zone + Ctrl+Z/Y undo/redo
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      // Do not steal keys when focus is inside an editable element
-      const active = document.activeElement;
+      // Do not steal keys when focus is inside an editable element or
+      // any focusable control (buttons, role="button" drag handles, etc.).
+      // The canvas takes keys only when focus is on the document body / canvas.
+      const active = document.activeElement as HTMLElement | null;
       const tag = active?.tagName ?? "";
+      const role = active?.getAttribute?.("role");
       if (
         tag === "INPUT" ||
         tag === "TEXTAREA" ||
         tag === "SELECT" ||
-        (active as HTMLElement | null)?.isContentEditable ||
+        tag === "BUTTON" ||
+        tag === "A" ||
+        role === "button" ||
+        role === "link" ||
+        active?.isContentEditable ||
         e.isComposing
       ) {
         return;
