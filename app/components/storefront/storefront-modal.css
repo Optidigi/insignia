@@ -1631,11 +1631,38 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
 .insignia-only-desktop { display: none; }
 .insignia-only-mobile { display: block; }
 
-.insignia-mobile-footer-wrap { display: contents; }
-
-@media (min-width: 1024px) {
-  .insignia-mobile-footer-wrap { display: none; }
+/* ===== Unified body-wrap: mobile-default layout ===== */
+/* On mobile the body-wrap is a flex column; preview pane is hidden;
+   content pane fills the viewport. This mirrors the old mobile branch
+   without requiring a separate HTML tree (avoids SSR/hydration mismatch). */
+.insignia-modal-body-wrap {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
 }
+.insignia-desktop-preview {
+  display: none;
+}
+.insignia-desktop-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+.insignia-desktop-content-body {
+  flex: 1;
+  min-height: 0; /* critical for flex children to shrink below content */
+  overflow-y: auto;
+  padding: 16px;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  min-width: 0;
+  overflow-x: hidden;
+}
+/* .insignia-modal-footer base styles (border-top, background, padding, etc.)
+   are already defined in the base CSS around line 263. No duplication needed here. */
 
 /* ===== Loading overlay / shell skeleton ===== */
 .insignia-shell-skeleton {

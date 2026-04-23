@@ -18,7 +18,7 @@
  *   POST /apps/insignia/cart-confirm    → { ok: true }
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { StorefrontConfig, WizardStep, PlacementSelections } from "./types";
 import { WIZARD_STEPS } from "./types";
 import { UploadStep } from "./UploadStep";
@@ -199,6 +199,21 @@ function dispatchAnalytics(name: string, detail: Record<string, unknown>) {
   }
 }
 
+// ─── Desktop viewport hook ──────────────────────────────────────────────────
+// Gates Konva PreviewCanvas mount only — does NOT branch the JSX tree.
+// useSyncExternalStore is SSR-safe: server snapshot returns false (mobile-first).
+function useIsDesktopViewport(): boolean {
+  return useSyncExternalStore(
+    (cb) => {
+      const mq = window.matchMedia("(min-width: 1024px)");
+      mq.addEventListener("change", cb);
+      return () => mq.removeEventListener("change", cb);
+    },
+    () => window.matchMedia("(min-width: 1024px)").matches, // client snapshot
+    () => false, // server snapshot — mobile-first (SSR returns false)
+  );
+}
+
 // ─── Main component ─────────────────────────────────────────────────────────
 
 export function CustomizationModal({
@@ -272,21 +287,9 @@ export function CustomizationModal({
   const closingRef = useRef(false);
   const sizeStepRef = useRef<SizeStepHandle>(null);
 
-  // Track which layout is active so we mount only ONE step instance.
-  // Mounting both (mobile + desktop simultaneously) creates duplicate component
-  // instances that each hold their own activeIndex — and the React ref ends up
-  // pointing at whichever rendered last, so SizeStep's tryAdvance() acts on the
-  // wrong instance and Next-step jumps over placements on desktop.
-  const [isDesktop, setIsDesktop] = useState(() =>
-    typeof window !== "undefined" ? window.matchMedia("(min-width: 1024px)").matches : false,
-  );
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mq = window.matchMedia("(min-width: 1024px)");
-    const onChange = () => setIsDesktop(mq.matches);
-    mq.addEventListener("change", onChange);
-    return () => mq.removeEventListener("change", onChange);
-  }, []);
+  // useIsDesktopViewport gates PreviewCanvas only — not the JSX tree structure.
+  // See the hook definition above the component for SSR safety notes.
+  const isDesktopViewport = useIsDesktopViewport();
   const tabsRef = useRef<HTMLDivElement>(null);
   const tabBtnRefs = useRef<Record<WizardStep, HTMLButtonElement | null>>({
     upload: null,
@@ -1015,39 +1018,36 @@ export function CustomizationModal({
         </button>
       </header>
 
-      {/* Body — desktop wraps in a 60/40 split. Only ONE layout mounts at
-          a time so step-component refs (SizeStep.tryAdvance) target the
-          live instance rather than a hidden duplicate. */}
-      {isDesktop ? (
-        <div className="insignia-modal-body-wrap">
-          <aside className="insignia-desktop-preview">
-            <div className="insignia-desktop-preview-canvas">
-              {desktopShowPreview && (
-                <PreviewCanvas
-                  config={config}
-                  placementSelections={placementSelections}
-                  logo={logo}
-                  viewId={desktopActiveViewId}
-                  onViewChange={setDesktopActiveViewId}
-                  context="panel"
-                  onImageMeta={onImageMeta}
-                  onLogoMeta={onLogoMeta}
-                  t={t}
-                />
-              )}
-            </div>
-          </aside>
-          <section className="insignia-desktop-content">
-            <div className="insignia-desktop-content-body">{renderStep()}</div>
-            {renderFooter()}
-          </section>
-        </div>
-      ) : (
-        <>
-          <div className="insignia-modal-body">{renderStep()}</div>
-          <div className="insignia-mobile-footer-wrap">{renderFooter()}</div>
-        </>
-      )}
+      {/* Body — single tree, always rendered. CSS media queries in
+          storefront-modal.css handle the mobile/desktop layout split.
+          This avoids the SSR/hydration mismatch that previously remounted
+          the entire subtree on desktop (isDesktop: false→true), which was
+          aborting in-flight uploads via UploadStep's cleanup effect.
+          PreviewCanvas is additionally gated by isDesktopViewport to prevent
+          Konva 0-width geometry errors when the aside is display:none on mobile. */}
+      <div className="insignia-modal-body-wrap">
+        <aside className="insignia-desktop-preview">
+          <div className="insignia-desktop-preview-canvas">
+            {desktopShowPreview && isDesktopViewport && (
+              <PreviewCanvas
+                config={config}
+                placementSelections={placementSelections}
+                logo={logo}
+                viewId={desktopActiveViewId}
+                onViewChange={setDesktopActiveViewId}
+                context="panel"
+                onImageMeta={onImageMeta}
+                onLogoMeta={onLogoMeta}
+                t={t}
+              />
+            )}
+          </div>
+        </aside>
+        <section className="insignia-desktop-content">
+          <div className="insignia-desktop-content-body">{renderStep()}</div>
+          {renderFooter()}
+        </section>
+      </div>
 
       <CloseConfirmDialog
         open={showCloseConfirm}
