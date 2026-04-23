@@ -343,6 +343,10 @@ export default function ImageManagerPage() {
   const [selectedTrayImageId, setSelectedTrayImageId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isAutoAssigning, setIsAutoAssigning] = useState(false);
+  // View selector — initialise to all views; resets on every page load (no persistence)
+  const [selectedViewIds, setSelectedViewIds] = useState<string[]>(
+    () => views.map((v) => v.id)
+  );
   const [importTruncated, setImportTruncated] = useState(false);
   const pendingSaves = useRef<Array<{ viewId: string; variantId: string; storageKey: string }>>([]);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -648,7 +652,8 @@ export default function ImageManagerPage() {
         colorMatchCount++;
 
         let anyAssigned = false;
-        for (const view of views) {
+        const targetViews = views.filter((v) => selectedViewIds.includes(v.id));
+        for (const view of targetViews) {
           const pairKey = `${matchingGroup.colorValue}::${view.id}`;
           if (claimedPairs.has(pairKey)) continue;
 
@@ -709,7 +714,11 @@ export default function ImageManagerPage() {
     } finally {
       setIsAutoAssigning(false);
     }
-  }, [trayImages, colorGroups, views, cells, config.id, revalidator]);
+  }, [trayImages, colorGroups, views, selectedViewIds, cells, config.id, revalidator]);
+
+  const handleViewSelectionChange = useCallback((viewIds: string[]) => {
+    setSelectedViewIds(viewIds);
+  }, []);
 
   // ---- Tray DnD handler ----
 
@@ -876,7 +885,10 @@ export default function ImageManagerPage() {
           images={trayImages}
           onAutoAssign={handleAutoAssignFromTray}
           isAutoAssigning={isAutoAssigning}
-          autoAssignDisabled={isImporting || isAutoAssigning || revalidator.state !== "idle"}
+          autoAssignDisabled={isImporting || isAutoAssigning || revalidator.state !== "idle" || selectedViewIds.length === 0}
+          views={views.map((v) => ({ id: v.id, name: v.name ?? null, perspective: v.perspective }))}
+          selectedViewIds={selectedViewIds}
+          onViewSelectionChange={handleViewSelectionChange}
           onBulkUpload={async (files) => {
             await Promise.all(
               Array.from(files).map(async (file) => {
