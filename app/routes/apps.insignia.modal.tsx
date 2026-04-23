@@ -95,7 +95,16 @@ export async function clientLoader() {
   const rawVariantId = url.searchParams.get("variantId") ?? url.searchParams.get("v") ?? "";
   const productId = rawProductId ? toProductGid(rawProductId) : rawProductId;
   const variantId = rawVariantId ? toVariantGid(rawVariantId) : rawVariantId;
-  const returnUrl = url.searchParams.get("returnUrl");
+  const rawReturnUrl = url.searchParams.get("returnUrl");
+  // Reject self-referential returnUrl values — if the customer lands back on
+  // /apps/insignia/* the modal would re-open in a loop. Also strip any value
+  // that is not a clean store-relative path (open-redirect guard).
+  const returnUrl =
+    rawReturnUrl &&
+    /^\/(?!\/|\\)/.test(rawReturnUrl) &&
+    !rawReturnUrl.startsWith("/apps/insignia/")
+      ? rawReturnUrl
+      : null;
   // Read appUrl from the <base> tag that AppProxyProvider injected on the server
   // render. Force https:// — if a stale http:// slips through from an old SSR,
   // mixed-content would block every bundle load. Trim trailing slash too.

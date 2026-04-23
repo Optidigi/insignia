@@ -19,7 +19,8 @@
     which Shopify's App Proxy cannot route. We need only the numeric tail.{% endcomment %}
   {% assign product_numeric_id = product.id | split: '/' | last %}
   {% assign variant_numeric_id = product.selected_or_first_available_variant.id | split: '/' | last %}
-  {% assign modal_url = '/apps/insignia/modal?p=' | append: product_numeric_id | append: '&v=' | append: variant_numeric_id %}
+  {% assign encoded_return = product.url | url_encode %}
+  {% assign modal_url = '/apps/insignia/modal?p=' | append: product_numeric_id | append: '&v=' | append: variant_numeric_id | append: '&returnUrl=' | append: encoded_return %}
 
   {% case block.settings.button_size %}
     {% when 's' %}

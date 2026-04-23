@@ -677,7 +677,12 @@ export function CustomizationModal({
     // Use an absolute URL so AppProxyProvider's <base href> (which points at
     // the app tunnel) does not intercept resolution of a relative returnUrl.
     const origin = window.location.origin;
-    window.location.href = returnUrl ? `${origin}${returnUrl}` : `${origin}/`;
+    // Guard: returnUrl must be a clean store-relative path (starts with /,
+    // no double-slash, no backslash). Rejects open-redirect attempts and
+    // any value that slipped through without url_encode.
+    const safeReturnUrl =
+      returnUrl && /^\/(?!\/|\\)/.test(returnUrl) ? returnUrl : null;
+    window.location.href = safeReturnUrl ? `${origin}${safeReturnUrl}` : `${origin}/`;
   }, [returnUrl]);
 
   const onCartSuccess = useCallback(
