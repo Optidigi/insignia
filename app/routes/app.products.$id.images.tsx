@@ -846,7 +846,7 @@ export default function ImageManagerPage() {
                 return (
                   <InlineStack key={view.id} gap="100" blockAlign="center">
                     <Text variant="bodySm" tone="subdued" as="span">
-                      {view.perspective}
+                      {view.name || view.perspective}
                     </Text>
                     <Badge tone={viewComplete ? "success" : "attention"} size="small">
                       {`${counts.filled}/${counts.total}`}
@@ -1004,10 +1004,10 @@ export default function ImageManagerPage() {
                 <InlineStack gap="300" wrap>
                   {groupCells.map((cell: ImageCell) => {
                     const key = cellKey(cell);
-                    const viewLabel =
-                      views.find(
-                        (v: (typeof views)[number]) => v.id === cell.viewId
-                      )?.perspective ?? "";
+                    const viewLabel = (() => {
+                      const v = views.find((v: (typeof views)[number]) => v.id === cell.viewId);
+                      return v ? (v.name || v.perspective) : "";
+                    })();
                     const job = [...uploadQueue]
                       .reverse()
                       .find((j) => cellKey(j.cell) === key);
