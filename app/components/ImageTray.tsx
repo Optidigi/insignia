@@ -77,7 +77,9 @@ export function ImageTray({
   const hasViews = (views?.length ?? 0) > 0;
   const usePillMode = (views?.length ?? 0) <= PILL_THRESHOLD;
 
-  // Label for the split-button main action (>3 views)
+  // Label for the split-button main action (>3 views).
+  // sel.length === 0 is a dead branch — the button is disabled when no views are selected —
+  // but it returns the generic label as a safe fallback.
   const autoAssignButtonLabel = (() => {
     if (!views || sel.length === 0 || sel.length === views.length) {
       return "Auto-assign by color";
@@ -128,58 +130,60 @@ export function ImageTray({
         )}
 
         {/* ── Auto-assign controls ── */}
-        {images.length > 0 && onAutoAssign && (
-          // Split-button mode (> PILL_THRESHOLD views): main button + chevron popover
-          !usePillMode && hasViews && views ? (
-            <InlineStack gap="100" blockAlign="center">
-              <Button
-                size="slim"
-                variant="primary"
-                onClick={() => onAutoAssign()}
-                loading={isAutoAssigning}
-                disabled={autoAssignDisabled}
-              >
-                {autoAssignButtonLabel}
-              </Button>
-              <Popover
-                active={viewPopoverOpen}
-                activator={
-                  <Button
-                    size="slim"
-                    variant="primary"
-                    icon={ChevronDownIcon}
-                    onClick={() => setViewPopoverOpen((o) => !o)}
-                    accessibilityLabel="Select views for auto-assign"
-                  />
-                }
-                onClose={() => setViewPopoverOpen(false)}
-              >
-                <Box padding="300">
-                  <ChoiceList
-                    title="Assign to views"
-                    allowMultiple
-                    choices={(views ?? []).map((v) => ({
-                      label: viewLabel(v),
-                      value: v.id,
-                    }))}
-                    selected={sel}
-                    onChange={(newSel) => onViewSelectionChange?.(newSel)}
-                  />
-                </Box>
-              </Popover>
-            </InlineStack>
-          ) : (
-            // Simple button — pill mode or no views prop
+
+        {/* Split-button mode (>3 views): always rendered so the popover is accessible even
+            when the tray is empty. Main action button is additionally disabled while empty. */}
+        {!usePillMode && hasViews && views && onAutoAssign && (
+          <InlineStack gap="100" blockAlign="center">
             <Button
               size="slim"
               variant="primary"
               onClick={() => onAutoAssign()}
               loading={isAutoAssigning}
-              disabled={autoAssignDisabled}
+              disabled={autoAssignDisabled || images.length === 0}
             >
-              Auto-assign by color
+              {autoAssignButtonLabel}
             </Button>
-          )
+            <Popover
+              active={viewPopoverOpen}
+              activator={
+                <Button
+                  size="slim"
+                  variant="primary"
+                  icon={ChevronDownIcon}
+                  onClick={() => setViewPopoverOpen((o) => !o)}
+                  accessibilityLabel="Select views for auto-assign"
+                />
+              }
+              onClose={() => setViewPopoverOpen(false)}
+            >
+              <Box padding="300">
+                <ChoiceList
+                  title="Assign to views"
+                  allowMultiple
+                  choices={(views ?? []).map((v) => ({
+                    label: viewLabel(v),
+                    value: v.id,
+                  }))}
+                  selected={sel}
+                  onChange={(newSel) => onViewSelectionChange?.(newSel)}
+                />
+              </Box>
+            </Popover>
+          </InlineStack>
+        )}
+
+        {/* Pill mode or no views prop: simple button (only visible when tray has images) */}
+        {images.length > 0 && onAutoAssign && (usePillMode || !hasViews) && (
+          <Button
+            size="slim"
+            variant="primary"
+            onClick={() => onAutoAssign()}
+            loading={isAutoAssigning}
+            disabled={autoAssignDisabled}
+          >
+            Auto-assign by color
+          </Button>
         )}
 
         {images.length === 0 && (
