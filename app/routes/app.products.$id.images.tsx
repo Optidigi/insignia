@@ -58,6 +58,12 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
         cells: [],
         viewImageCounts: {} as Record<string, { filled: number; total: number }>,
         shopName: session.shop,
+        r2Configured: !!(
+          process.env.R2_ACCOUNT_ID &&
+          process.env.R2_ACCESS_KEY_ID &&
+          process.env.R2_SECRET_ACCESS_KEY
+        ),
+        isDev: process.env.NODE_ENV !== "production",
       });
     }
 
@@ -87,12 +93,18 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Generate presigned GET URLs for cells that have images (1-hour TTL for admin)
     const ADMIN_SIGNED_URL_EXPIRES_SEC = 3600;
     const cellsWithUrls = await Promise.all(
-      cells.map(async (cell) => ({
-        ...cell,
-        imageUrl: cell.imageUrl
-          ? await getPresignedGetUrl(cell.imageUrl, ADMIN_SIGNED_URL_EXPIRES_SEC)
-          : null,
-      }))
+      cells.map(async (cell) => {
+        let resolvedImageUrl: string | null = null;
+        if (cell.imageUrl) {
+          try {
+            resolvedImageUrl = await getPresignedGetUrl(cell.imageUrl, ADMIN_SIGNED_URL_EXPIRES_SEC);
+          } catch (err) {
+            console.warn(`[images] presign failed for key ${cell.imageUrl}:`, err);
+            resolvedImageUrl = null;
+          }
+        }
+        return { ...cell, imageUrl: resolvedImageUrl };
+      })
     );
 
     // Compute per-view image counts for tab badges
@@ -105,6 +117,13 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       };
     }
 
+    const r2Configured = !!(
+      process.env.R2_ACCOUNT_ID &&
+      process.env.R2_ACCESS_KEY_ID &&
+      process.env.R2_SECRET_ACCESS_KEY
+    );
+    const isDev = process.env.NODE_ENV !== "production";
+
     return data({
       config,
       views: config.views,
@@ -112,6 +131,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       cells: cellsWithUrls,
       viewImageCounts,
       shopName: session.shop,
+      r2Configured,
+      isDev,
     });
   } catch (error) {
     throw handleError(error);
@@ -307,7 +328,7 @@ type UploadJob = {
 const MAX_CONCURRENT = 4;
 
 export default function ImageManagerPage() {
-  const { config, views, colorGroups, cells, viewImageCounts } =
+  const { config, views, colorGroups, cells, viewImageCounts, r2Configured, isDev } =
     useLoaderData<typeof loader>();
   const submit = useSubmit();
   const navigation = useNavigation();
@@ -321,6 +342,9 @@ export default function ImageManagerPage() {
   const [draggedTrayImage, setDraggedTrayImage] = useState<TrayImage | null>(null);
   const [selectedTrayImageId, setSelectedTrayImageId] = useState<string | null>(null);
   const [isImporting, setIsImporting] = useState(false);
+  const [isAutoAssigning, setIsAutoAssigning] = useState(false);
+  // View selector — starts empty (unselected); merchant actively picks target views
+  const [selectedViewIds, setSelectedViewIds] = useState<string[]>([]);
   const [importTruncated, setImportTruncated] = useState(false);
   const pendingSaves = useRef<Array<{ viewId: string; variantId: string; storageKey: string }>>([]);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -583,7 +607,7 @@ export default function ImageManagerPage() {
       setImportTruncated(!!truncated);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window.shopify as any)?.toast?.show(
-        `${imported.length} image${imported.length !== 1 ? "s" : ""} imported — drag to assign`
+        `${imported.length} image${imported.length !== 1 ? "s" : ""} imported`
       );
     } catch {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -592,6 +616,107 @@ export default function ImageManagerPage() {
       setIsImporting(false);
     }
   }, [config.id, config.linkedProductIds]);
+
+  // ---- Auto-assign tray images to color cells ----
+
+  const handleAutoAssignFromTray = useCallback(async () => {
+    if (trayImages.length === 0) return;
+
+    // Snapshot the processable count (images with storageKey + colorOption) so the
+    // "remaining" toast reflects actual assignable images, not optimistic placeholders.
+    const processableCount = trayImages.filter(
+      (img) => img.storageKey && (img.originalFileName ?? "")
+    ).length;
+
+    setIsAutoAssigning(true);
+    try {
+      const autoAssignImages: Array<{ viewId: string; variantIds: string[]; storageKey: string }> = [];
+      const assignedTrayIds = new Set<string>();
+      // Track claimed (colorValue, viewId) pairs so multiple tray images for the
+      // same color each claim a different view rather than overwriting the same cell.
+      // Policy: one tray image → one empty (color, view) slot, first available wins.
+      const claimedPairs = new Set<string>();
+      let colorMatchCount = 0;
+
+      for (const img of trayImages) {
+        if (!img.storageKey) continue; // skip optimistic-upload placeholders
+        const colorOption = img.originalFileName ?? "";
+        if (!colorOption) continue;
+
+        const matchingGroup = colorGroups.find(
+          (g) => g.colorValue.toLowerCase() === colorOption.toLowerCase()
+        );
+        if (!matchingGroup) continue;
+        colorMatchCount++;
+
+        let anyAssigned = false;
+        const targetViews = views.filter((v) => selectedViewIds.includes(v.id));
+        for (const view of targetViews) {
+          const pairKey = `${matchingGroup.colorValue}::${view.id}`;
+          if (claimedPairs.has(pairKey)) continue;
+
+          const existingCell = cells.find(
+            (c: ImageCell) => c.colorValue === matchingGroup.colorValue && c.viewId === view.id
+          );
+          if (!existingCell?.imageUrl || existingCell.isDefault) {
+            autoAssignImages.push({
+              viewId: view.id,
+              variantIds: matchingGroup.variantIds,
+              storageKey: img.storageKey,
+            });
+            claimedPairs.add(pairKey);
+            anyAssigned = true;
+            break; // one slot per tray image; next image for same color gets next view
+          }
+        }
+        if (anyAssigned) assignedTrayIds.add(img.id);
+      }
+
+      if (autoAssignImages.length === 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window.shopify as any)?.toast?.show(
+          colorMatchCount === 0
+            ? "No tray images match product colors"
+            : "All matching cells already have images"
+        );
+        return;
+      }
+
+      const res = await fetch("/api/admin/batch-save-images", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productConfigId: config.id, images: autoAssignImages }),
+      });
+      if (!res.ok) throw new Error(`batch-save failed: ${res.status}`);
+
+      setTrayImages((prev) => prev.filter((img) => !assignedTrayIds.has(img.id)));
+      revalidator.revalidate();
+
+      const assignedCount = assignedTrayIds.size;
+      const remainingCount = processableCount - assignedCount;
+      if (remainingCount > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window.shopify as any)?.toast?.show(
+          `${assignedCount} image${assignedCount !== 1 ? "s" : ""} auto-assigned, ${remainingCount} remaining in tray`
+        );
+      } else {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (window.shopify as any)?.toast?.show(
+          `${assignedCount} image${assignedCount !== 1 ? "s" : ""} auto-assigned`
+        );
+      }
+    } catch (err) {
+      console.error("[handleAutoAssignFromTray] failed:", err);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (window.shopify as any)?.toast?.show("Auto-assign failed — try again", { isError: true });
+    } finally {
+      setIsAutoAssigning(false);
+    }
+  }, [trayImages, colorGroups, views, selectedViewIds, cells, config.id, revalidator]);
+
+  const handleViewSelectionChange = useCallback((viewIds: string[]) => {
+    setSelectedViewIds(viewIds);
+  }, []);
 
   // ---- Tray DnD handler ----
 
@@ -680,12 +805,21 @@ export default function ImageManagerPage() {
         {
           content: "Import from Shopify",
           loading: isImporting,
-          disabled: !config.linkedProductIds[0],
+          disabled: !config.linkedProductIds[0] || isAutoAssigning,
           onAction: handleImportFromShopify,
         },
       ]}
     >
       <BlockStack gap="500">
+        {isDev && !r2Configured && (
+          <Banner tone="warning" title="Image storage not configured">
+            <p>
+              R2 credentials are missing. Set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, and
+              R2_SECRET_ACCESS_KEY in .env to enable image thumbnails.
+            </p>
+          </Banner>
+        )}
+
         {/* ---- Progress with per-view breakdown ---- */}
         <Card>
           <BlockStack gap="300">
@@ -705,7 +839,7 @@ export default function ImageManagerPage() {
                 return (
                   <InlineStack key={view.id} gap="100" blockAlign="center">
                     <Text variant="bodySm" tone="subdued" as="span">
-                      {view.perspective}
+                      {view.name || view.perspective}
                     </Text>
                     <Badge tone={viewComplete ? "success" : "attention"} size="small">
                       {`${counts.filled}/${counts.total}`}
@@ -747,6 +881,12 @@ export default function ImageManagerPage() {
         )}
         <ImageTray
           images={trayImages}
+          onAutoAssign={handleAutoAssignFromTray}
+          isAutoAssigning={isAutoAssigning}
+          autoAssignDisabled={isImporting || isAutoAssigning || revalidator.state !== "idle" || selectedViewIds.length === 0}
+          views={views.map((v) => ({ id: v.id, name: v.name ?? null, perspective: v.perspective }))}
+          selectedViewIds={selectedViewIds}
+          onViewSelectionChange={handleViewSelectionChange}
           onBulkUpload={async (files) => {
             await Promise.all(
               Array.from(files).map(async (file) => {
@@ -863,10 +1003,10 @@ export default function ImageManagerPage() {
                 <InlineStack gap="300" wrap>
                   {groupCells.map((cell: ImageCell) => {
                     const key = cellKey(cell);
-                    const viewLabel =
-                      views.find(
-                        (v: (typeof views)[number]) => v.id === cell.viewId
-                      )?.perspective ?? "";
+                    const viewLabel = (() => {
+                      const v = views.find((v: (typeof views)[number]) => v.id === cell.viewId);
+                      return v ? (v.name || v.perspective) : "";
+                    })();
                     const job = [...uploadQueue]
                       .reverse()
                       .find((j) => cellKey(j.cell) === key);

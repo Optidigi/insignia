@@ -69,9 +69,11 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       return Errors.notFound("Product config");
     }
 
-    // Query Shopify for both product-level media and variant-level media.
-    // Many products (especially single-variant) have images at the product level
-    // only — variant.media is empty in those cases.
+    // Query Shopify for variant featuredImages and product-level media.
+    // Most merchants assign images to color variants via the product admin, which
+    // sets variant.featuredImage (NOT variant.media — that's the Media API and is
+    // rarely populated). Product-level media serves as the fallback for products
+    // where no variant images are assigned (single-variant or unassigned images).
     const response = await admin.graphql(
       `#graphql
       query GetProductImages($productId: ID!) {
@@ -80,29 +82,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
             nodes {
               ... on MediaImage {
                 id
-                image {
-                  url
-                }
+                image { url }
               }
             }
           }
           variants(first: 100) {
-            pageInfo {
-              hasNextPage
-            }
+            pageInfo { hasNextPage }
             nodes {
               id
               selectedOptions { name value }
-              media(first: 10) {
-                nodes {
-                  ... on MediaImage {
-                    id
-                    image {
-                      url
-                    }
-                  }
-                }
-              }
+              image { url }
             }
           }
         }
@@ -113,17 +102,50 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const responseData = await response.json();
     const productMedia: Array<{ id?: string; image?: { url: string } }> =
       responseData.data?.product?.media?.nodes ?? [];
-    const variants = responseData.data?.product?.variants?.nodes ?? [];
+    const variants: Array<{
+      id: string;
+      selectedOptions: Array<{ name: string; value: string }>;
+      image: { url: string } | null;
+    }> = responseData.data?.product?.variants?.nodes ?? [];
     const hasMore =
       responseData.data?.product?.variants?.pageInfo?.hasNextPage ?? false;
 
-    // Check whether any variant has variant-specific media assigned.
-    // If yes → prefer variant media (each color has its own image).
-    // If no  → fall back to product-level media (images live on the product,
-    //           not on individual variants — common for single-variant products).
-    const anyVariantHasMedia = variants.some(
-      (v: { media: { nodes: unknown[] } }) => v.media?.nodes?.length > 0
+    // Detect the color option name using the same keywords and fallback as
+    // groupVariantsByColor() so colorOption values align with colorGroups[].colorValue.
+    const COLOR_KEYWORDS = ["color", "colour", "kleur", "farbe", "couleur"];
+    const optionNames = new Set<string>();
+    const optionValueCounts: Record<string, Set<string>> = {};
+    for (const v of variants) {
+      for (const opt of v.selectedOptions ?? []) {
+        optionNames.add(opt.name);
+        if (!optionValueCounts[opt.name]) optionValueCounts[opt.name] = new Set();
+        optionValueCounts[opt.name].add(opt.value);
+      }
+    }
+    let colorOptionName = Array.from(optionNames).find((n) =>
+      COLOR_KEYWORDS.some((k) => n.toLowerCase().includes(k))
     );
+    if (!colorOptionName) {
+      // Same fallback as groupVariantsByColor: option with most unique values
+      colorOptionName = Object.entries(optionValueCounts)
+        .filter(([name]) => name !== "Title")
+        .sort((a, b) => b[1].size - a[1].size)[0]?.[0];
+    }
+
+    // Build a map of colorValue → URL from variant.image (the image assigned to the
+    // variant in the Shopify product admin, distinct from the Media API).
+    // Iterate all variants; first encountered image per color wins.
+    // (Multiple size variants share the same color image — dedup handles the rest.)
+    const colorImageMap: Record<string, { url: string; variantId: string }> = {};
+    for (const variant of variants) {
+      const colorOpt = colorOptionName
+        ? variant.selectedOptions.find((o) => o.name === colorOptionName)
+        : null;
+      const colorValue = colorOpt?.value ?? "Default";
+      if (!colorImageMap[colorValue] && variant.image?.url) {
+        colorImageMap[colorValue] = { url: variant.image.url, variantId: variant.id };
+      }
+    }
 
     const seenUrls = new Set<string>();
     const importedImages: ImportedImage[] = [];
@@ -165,24 +187,14 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       });
     };
 
-    if (anyVariantHasMedia) {
-      // Use variant-specific media — each variant has its own image(s)
-      for (const variant of variants) {
-        const colorOpt = variant.selectedOptions?.find(
-          (o: { name: string; value: string }) =>
-            o.name.toLowerCase().includes("color") ||
-            o.name.toLowerCase().includes("colour")
-        );
-        const colorOption = colorOpt?.value ?? "Default";
-
-        for (const media of variant.media?.nodes ?? []) {
-          const url: string | undefined = media.image?.url;
-          if (!url) continue;
-          await downloadAndStore(url, variant.id, colorOption);
-        }
+    if (Object.keys(colorImageMap).length > 0) {
+      // Use per-color variant featuredImages — one image per color group
+      for (const [colorValue, { url, variantId }] of Object.entries(colorImageMap)) {
+        await downloadAndStore(url, variantId, colorValue);
       }
     } else {
-      // Fall back to product-level media — images are not variant-specific
+      // Fall back to product-level media — no variant images assigned
+      // (single-variant product or images not yet assigned to variants)
       const firstVariantId = variants[0]?.id ?? "";
       for (const media of productMedia) {
         const url: string | undefined = media.image?.url;

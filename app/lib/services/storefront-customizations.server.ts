@@ -59,8 +59,17 @@ export async function createCustomizationDraft(
       throw new AppError(ErrorCodes.BAD_REQUEST, `Placement ${placementId} not in configuration`, 400);
     }
     const placement = allPlacements.find((p) => p.id === placementId);
-    if (placement && (stepIndex < 0 || stepIndex >= placement.steps.length)) {
-      throw new AppError(ErrorCodes.BAD_REQUEST, `Invalid stepIndex for placement ${placementId}`, 400);
+    if (placement) {
+      // Placements with 0 configured steps are surfaced to the storefront as a
+      // single synthetic "Standard" step (see storefront-config.server.ts
+      // DEFAULT_STEP) so they behave as single-size. The client posts
+      // stepIndex=0 for them. Mirror that here: treat a 0-step placement as
+      // having exactly one valid index (0). Without this, every order for a
+      // 0-step placement is rejected with "Invalid stepIndex".
+      const maxValidIndex = Math.max(placement.steps.length, 1) - 1;
+      if (stepIndex < 0 || stepIndex > maxValidIndex) {
+        throw new AppError(ErrorCodes.BAD_REQUEST, `Invalid stepIndex for placement ${placementId}`, 400);
+      }
     }
   }
 

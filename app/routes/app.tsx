@@ -1,5 +1,5 @@
 import type { HeadersFunction, LoaderFunctionArgs } from "react-router";
-import { Outlet, useLoaderData, useRouteError, Link } from "react-router";
+import { Outlet, useLoaderData, useRouteError, isRouteErrorResponse, Link } from "react-router";
 import { forwardRef } from "react";
 import { boundary } from "@shopify/shopify-app-react-router/server";
 import { AppProvider } from "@shopify/shopify-app-react-router/react";
@@ -85,7 +85,22 @@ export default function App() {
 
 // Shopify needs React Router to catch some thrown responses, so that their headers are included in the response.
 export function ErrorBoundary() {
-  return boundary.error(useRouteError());
+  const error = useRouteError();
+  if (isRouteErrorResponse(error) && typeof error.data !== "string") {
+    const data = error.data as { error?: { message?: string } } | null;
+    const message = data?.error?.message ?? "An unexpected error occurred.";
+    // Object.assign + Object.create is required (not stylistic):
+    // boundary.error gates on constructor.name === 'ErrorResponseImpl'.
+    // A plain object spread { ...error } would produce constructor.name === 'Object'
+    // and cause boundary.error to re-throw instead of render.
+    const patched = Object.assign(
+      Object.create(Object.getPrototypeOf(error)) as typeof error,
+      error,
+      { data: message },
+    );
+    return boundary.error(patched);
+  }
+  return boundary.error(error);
 }
 
 export const headers: HeadersFunction = (headersArgs) => {

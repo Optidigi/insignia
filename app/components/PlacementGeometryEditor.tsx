@@ -15,7 +15,7 @@ import { getZoneColor } from "../lib/zone-colors";
 export type { PlacementGeometry, PlacementDefinition };
 
 const MAX_CANVAS = 560;
-const SNAP_GRID_PERCENT = 2;
+const SNAP_GRID_PERCENT = 1;
 const NUDGE_PERCENT = 0.5; // 0.5% nudge per arrow key press
 
 type RectState = {
@@ -127,36 +127,71 @@ export function PlacementGeometryEditor({
   const snapX = (stageWidth * SNAP_GRID_PERCENT) / 100;
   const snapY = (stageHeight * SNAP_GRID_PERCENT) / 100;
 
+  // Track the latest initialGeometry in a ref so the initialization effect can read it
+  // without listing it as a dep. This prevents spurious re-initialization on every
+  // React Router revalidation (which produces a new object reference even when the
+  // geometry values haven't changed).
+  const initialGeometryRef = useRef(initialGeometry);
+  useEffect(() => {
+    initialGeometryRef.current = initialGeometry;
+  }, [initialGeometry]);
+
   useEffect(() => {
     if (!imageLoaded || !stageWidth || !stageHeight || placements.length === 0) return;
 
-    const initial: Record<string, RectState> = {};
-    for (const p of placements) {
-      const geom = initialGeometry[p.id];
-      if (geom && typeof geom === "object" && "centerXPercent" in geom) {
-        const cw = (geom.centerXPercent / 100) * stageWidth;
-        const ch = (geom.centerYPercent / 100) * stageHeight;
-        const w = (geom.maxWidthPercent / 100) * stageWidth;
-        // Use stored height if available; fall back to width (legacy square zones)
-        const h = ((geom.maxHeightPercent ?? geom.maxWidthPercent) / 100) * stageHeight;
-        initial[p.id] = {
-          x: Math.max(0, cw - w / 2),
-          y: Math.max(0, ch - h / 2),
-          width: Math.min(w, stageWidth),
-          height: Math.min(h, stageHeight),
-        };
-      } else {
-        const defaultW = stageWidth * 0.2;
-        initial[p.id] = {
-          x: (stageWidth - defaultW) / 2,
-          y: (stageHeight - defaultW) / 2,
-          width: defaultW,
-          height: defaultW,
-        };
+    setRects((prev) => {
+      const placementIds = new Set(placements.map((p) => p.id));
+      const next: Record<string, RectState> = {};
+
+      // Keep existing rects for placements that still exist (preserves user-positioned rects
+      // across revalidations so the Konva Transformer stays properly attached).
+      for (const id of Object.keys(prev)) {
+        if (placementIds.has(id)) {
+          next[id] = prev[id];
+        }
       }
-    }
-    setRects(initial);
-  }, [imageLoaded, stageWidth, stageHeight, placements, initialGeometry]);
+
+      // Detect deleted placements (present in prev but not in the new placement list)
+      let changed = Object.keys(prev).some((id) => !placementIds.has(id));
+
+      // Initialize rects only for placements that are NEW (not yet in rects)
+      for (const p of placements) {
+        if (next[p.id]) continue; // already have a rect — don't reset it
+        const geom = initialGeometryRef.current[p.id];
+        if (geom && typeof geom === "object" && "centerXPercent" in geom) {
+          const cw = (geom.centerXPercent / 100) * stageWidth;
+          const ch = (geom.centerYPercent / 100) * stageHeight;
+          const w = (geom.maxWidthPercent / 100) * stageWidth;
+          // Use stored height if available; fall back to width (legacy square zones)
+          const h = ((geom.maxHeightPercent ?? geom.maxWidthPercent) / 100) * stageHeight;
+          next[p.id] = {
+            x: Math.max(0, cw - w / 2),
+            y: Math.max(0, ch - h / 2),
+            width: Math.min(w, stageWidth),
+            height: Math.min(h, stageHeight),
+          };
+        } else {
+          const defaultW = stageWidth * 0.2;
+          next[p.id] = {
+            x: (stageWidth - defaultW) / 2,
+            y: (stageHeight - defaultW) / 2,
+            width: defaultW,
+            height: defaultW,
+          };
+        }
+        changed = true;
+      }
+
+      // If nothing actually changed, return the same reference so React bails out the
+      // state update — no re-render, no Transformer disruption.
+      return changed ? next : prev;
+    });
+    // initialGeometry is intentionally read via initialGeometryRef rather than listed
+    // as a dep here — including it would re-run this effect on every revalidation even
+    // when geometry values are identical (React Router returns a new object reference
+    // after each loader run).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [imageLoaded, stageWidth, stageHeight, placements]);
 
   useEffect(() => {
     if (!transformerRef.current) return;
@@ -449,7 +484,7 @@ export function PlacementGeometryEditor({
               color: "var(--p-color-text-subdued, #6d7175)",
             }}
           >
-            Drag a zone to move it; select one to show resize handles. Zones snap to a 2% grid. Click the canvas background to deselect.
+            Drag a zone to move it; select one to show resize handles. Zones snap to a 1% grid. Click the canvas background to deselect.
           </p>
           {placements.length > 0 && (
             <p

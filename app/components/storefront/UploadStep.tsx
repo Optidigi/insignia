@@ -201,7 +201,11 @@ export function UploadStep({
         onAnalytics?.("upload_success", { logoAssetId: asset.id, fileType: file.type });
       } catch (err) {
         if ((err as DOMException)?.name === "AbortError") {
-          return; // user cancelled
+          // Aborted — could be explicit user cancel (cancelUpload()) or component
+          // unmount cleanup. Reset to idle so re-mounting the component starts fresh.
+          setState("idle");
+          setErrorBody(null);
+          return;
         }
         const message = err instanceof Error ? err.message : "Upload failed";
         setState("error-format");
