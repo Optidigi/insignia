@@ -138,6 +138,7 @@ model DecorationMethod {
   productConfigs    ProductConfigMethod[]
   variantSlots      VariantSlot[]
   customizationConfigs CustomizationConfig[]
+  placementPriceOverrides PlacementDefinitionMethodPrice[]
 
   @@unique([shopId, name])
   @@index([shopId])
@@ -259,6 +260,7 @@ model PlacementDefinition {
   // Relations
   productView ProductView      @relation(fields: [productViewId], references: [id], onDelete: Cascade)
   steps       PlacementStep[]
+  methodPriceOverrides PlacementDefinitionMethodPrice[]
 
   @@index([productViewId])
 }
@@ -278,9 +280,22 @@ model PlacementStep {
   updatedAt               DateTime            @updatedAt
 
   // Relations
-  placementDefinition PlacementDefinition @relation(fields: [placementDefinitionId], references: [id], onDelete: Cascade)
+  placementDefinition  PlacementDefinition        @relation(fields: [placementDefinitionId], references: [id], onDelete: Cascade)
 
   @@index([placementDefinitionId])
+}
+
+model PlacementDefinitionMethodPrice {
+  placementDefinitionId    String
+  decorationMethodId       String
+  // null not allowed — row absence = inherit PlacementDefinition.basePriceAdjustmentCents.
+  basePriceAdjustmentCents Int
+
+  placementDefinition PlacementDefinition @relation(fields: [placementDefinitionId], references: [id], onDelete: Cascade)
+  decorationMethod    DecorationMethod    @relation(fields: [decorationMethodId], references: [id], onDelete: Cascade)
+
+  @@id([placementDefinitionId, decorationMethodId])
+  @@index([decorationMethodId])
 }
 
 // ============================================================================

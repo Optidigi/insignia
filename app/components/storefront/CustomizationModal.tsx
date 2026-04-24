@@ -53,6 +53,7 @@ import {
   IconX,
 } from "./icons";
 import { formatCurrency } from "./currency";
+import { getPlacementCents } from "./pricing";
 import "./storefront-modal.css";
 
 // ─── Local types ────────────────────────────────────────────────────────────
@@ -340,7 +341,7 @@ export function CustomizationModal({
     const method = selectedMethod?.basePriceCents ?? 0;
     const placements = Object.entries(placementSelections).reduce((sum, [pid, idx]) => {
       const p = config.placements.find((pp) => pp.id === pid);
-      const placementCents = p?.basePriceAdjustmentCents ?? 0;
+      const placementCents = getPlacementCents(p, selectedMethodId);
       const stepCents =
         step === "size" || step === "review"
           ? p?.steps[idx]?.priceAdjustmentCents ?? 0
@@ -348,7 +349,7 @@ export function CustomizationModal({
       return sum + placementCents + stepCents;
     }, 0);
     return base + method + placements;
-  }, [config, selectedMethod, placementSelections, step]);
+  }, [config, selectedMethod, selectedMethodId, placementSelections, step]);
 
   const fallbackUnitPriceCents = useMemo(() => {
     if (!config) return 0;
@@ -356,10 +357,10 @@ export function CustomizationModal({
     const method = selectedMethod?.basePriceCents ?? 0;
     const placements = Object.entries(placementSelections).reduce((sum, [pid, idx]) => {
       const p = config.placements.find((pp) => pp.id === pid);
-      return sum + (p?.basePriceAdjustmentCents ?? 0) + (p?.steps[idx]?.priceAdjustmentCents ?? 0);
+      return sum + getPlacementCents(p, selectedMethodId) + (p?.steps[idx]?.priceAdjustmentCents ?? 0);
     }, 0);
     return base + method + placements;
-  }, [config, selectedMethod, placementSelections]);
+  }, [config, selectedMethod, selectedMethodId, placementSelections]);
 
   const footerPriceLabel =
     step === "review"
@@ -1109,6 +1110,7 @@ export function CustomizationModal({
             desktopActiveViewId={desktopActiveViewId}
             onDesktopActiveViewChange={setDesktopActiveViewId}
             onImageMeta={onImageMeta}
+            selectedMethodId={selectedMethodId}
             t={t}
             onAnalytics={dispatchAnalytics}
           />
@@ -1169,7 +1171,11 @@ export function CustomizationModal({
           />
         ) : (
           <>
-            <div className="insignia-footer-price">
+            <div
+              className="insignia-footer-price"
+              aria-live="polite"
+              aria-atomic="true"
+            >
               <span className="insignia-footer-price-label">{footerPriceLabel}</span>
               <span className="insignia-footer-price-value">
                 {formatCurrency(footerPriceValue, config!.currency)}

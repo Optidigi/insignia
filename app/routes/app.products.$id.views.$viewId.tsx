@@ -227,6 +227,24 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       methodNames: c.allowedMethods.map((m) => m.decorationMethod.name),
     }));
 
+    // Project per-placement, per-method base fee overrides.
+    // Keyed by placementId → methodId → override cents. Only placements with overrides land here.
+    const placementMethodOverrides: Record<string, Record<string, number>> = {};
+    for (const v of config.views) {
+      for (const placement of v.placements) {
+        if (placement.methodPriceOverrides.length > 0) {
+          placementMethodOverrides[placement.id] = {};
+          for (const o of placement.methodPriceOverrides) {
+            placementMethodOverrides[placement.id][o.decorationMethodId] = o.basePriceAdjustmentCents;
+          }
+        }
+      }
+    }
+    const allowedMethods = config.allowedMethods.map((m) => ({
+      id: m.decorationMethod.id,
+      name: m.decorationMethod.name,
+    }));
+
     return {
       config,
       view,
@@ -241,6 +259,8 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       apiBaseUrl,
       sessionTokenForApi,
       otherSetups,
+      placementMethodOverrides,
+      allowedMethods,
     };
   } catch (error) {
     if (error instanceof AppError && error.status === 404) {
@@ -485,6 +505,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       let payload: {
         placements?: Array<{ placementId: string; name: string; basePriceAdjustmentCents: number; hidePriceWhenZero: boolean; defaultStepIndex: number }>;
         steps?: Array<{ stepId: string; label: string; scaleFactor: number; priceAdjustmentCents: number }>;
+        placementMethodOverrides?: Array<{ placementId: string; decorationMethodId: string; basePriceAdjustmentCents: number | null }>;
       };
       try {
         payload = JSON.parse(payloadJson);
@@ -492,33 +513,80 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         throw new Response("Invalid JSON payload", { status: 400 });
       }
 
-      // Apply all placement updates
-      for (const p of payload.placements ?? []) {
-        if (!p.placementId || !p.name) continue;
-        await db.placementDefinition.update({
-          where: { id: p.placementId, productView: { productConfig: { shopId: shop.id } } },
-          data: {
-            name: p.name,
-            basePriceAdjustmentCents: p.basePriceAdjustmentCents,
-            hidePriceWhenZero: p.hidePriceWhenZero,
-            defaultStepIndex: p.defaultStepIndex,
-          },
-        });
-      }
+      await db.$transaction(async (tx) => {
+        // Apply all placement updates
+        for (const p of payload.placements ?? []) {
+          if (!p.placementId || !p.name) continue;
+          await tx.placementDefinition.update({
+            where: { id: p.placementId, productView: { productConfig: { shopId: shop.id } } },
+            data: {
+              name: p.name,
+              basePriceAdjustmentCents: p.basePriceAdjustmentCents,
+              hidePriceWhenZero: p.hidePriceWhenZero,
+              defaultStepIndex: p.defaultStepIndex,
+            },
+          });
+        }
 
-      // Apply all step updates
-      for (const s of payload.steps ?? []) {
-        if (!s.stepId || !s.label) continue;
-        const rawScale = Number.isNaN(s.scaleFactor) ? 1.0 : Math.max(0.1, Math.min(1, s.scaleFactor));
-        await db.placementStep.update({
-          where: { id: s.stepId, placementDefinition: { productView: { productConfig: { shopId: shop.id } } } },
-          data: {
-            label: s.label,
-            scaleFactor: rawScale,
-            priceAdjustmentCents: s.priceAdjustmentCents,
-          },
-        });
-      }
+        // Apply all step updates
+        for (const s of payload.steps ?? []) {
+          if (!s.stepId || !s.label) continue;
+          const rawScale = Number.isNaN(s.scaleFactor) ? 1.0 : Math.max(0.1, Math.min(1, s.scaleFactor));
+          await tx.placementStep.update({
+            where: { id: s.stepId, placementDefinition: { productView: { productConfig: { shopId: shop.id } } } },
+            data: {
+              label: s.label,
+              scaleFactor: rawScale,
+              priceAdjustmentCents: s.priceAdjustmentCents,
+            },
+          });
+        }
+
+        // Apply per-method placement base fee overrides
+        for (const o of payload.placementMethodOverrides ?? []) {
+          if (!o.placementId || !o.decorationMethodId) continue;
+
+          // Ownership guard: placement → view → config must belong to this shop.
+          const placement = await tx.placementDefinition.findFirst({
+            where: {
+              id: o.placementId,
+              productView: { productConfig: { shopId: shop.id } },
+            },
+            select: { id: true },
+          });
+          if (!placement) continue;
+          const method = await tx.decorationMethod.findFirst({
+            where: { id: o.decorationMethodId, shopId: shop.id },
+            select: { id: true },
+          });
+          if (!method) continue;
+
+          if (o.basePriceAdjustmentCents === null) {
+            await tx.placementDefinitionMethodPrice.deleteMany({
+              where: {
+                placementDefinitionId: o.placementId,
+                decorationMethodId: o.decorationMethodId,
+              },
+            });
+          } else {
+            const cents = Math.round(o.basePriceAdjustmentCents);
+            await tx.placementDefinitionMethodPrice.upsert({
+              where: {
+                placementDefinitionId_decorationMethodId: {
+                  placementDefinitionId: o.placementId,
+                  decorationMethodId: o.decorationMethodId,
+                },
+              },
+              update: { basePriceAdjustmentCents: cents },
+              create: {
+                placementDefinitionId: o.placementId,
+                decorationMethodId: o.decorationMethodId,
+                basePriceAdjustmentCents: cents,
+              },
+            });
+          }
+        }
+      });
 
       return { success: true, intent: "batch-pricing-update" };
     }
@@ -824,7 +892,7 @@ function getPerspectiveLabel(perspective: string) {
 
 export default function ViewDetailPage() {
   const loaderData = useLoaderData<typeof loader>();
-  const { config, view, viewPlacements, variants, colorGroups, signedImageUrls, variantPlacementGeometry, currencyCode, otherSetups } =
+  const { config, view, viewPlacements, variants, colorGroups, signedImageUrls, variantPlacementGeometry, currencyCode, otherSetups, placementMethodOverrides, allowedMethods } =
     loaderData;
   const submit = useSubmit();
   const geometryFetcher = useFetcher();
@@ -1086,6 +1154,7 @@ export default function ViewDetailPage() {
       // Build a batch payload from the FormData objects
       const placementUpdates: Array<{ placementId: string; name: string; basePriceAdjustmentCents: number; hidePriceWhenZero: boolean; defaultStepIndex: number }> = [];
       const stepUpdates: Array<{ stepId: string; label: string; scaleFactor: number; priceAdjustmentCents: number }> = [];
+      const placementMethodOverrideUpdates: Array<{ placementId: string; decorationMethodId: string; basePriceAdjustmentCents: number | null }> = [];
 
       for (const change of changes) {
         if (change.type === "placement") {
@@ -1096,19 +1165,30 @@ export default function ViewDetailPage() {
             hidePriceWhenZero: change.data.get("hidePriceWhenZero") === "true",
             defaultStepIndex: parseInt(change.data.get("defaultStepIndex") as string ?? "0", 10) || 0,
           });
-        } else {
+        } else if (change.type === "step") {
           stepUpdates.push({
             stepId: change.data.get("stepId") as string,
             label: change.data.get("label") as string,
             scaleFactor: parseFloat(change.data.get("scaleFactor") as string ?? "1") || 1.0,
             priceAdjustmentCents: parseInt(change.data.get("priceAdjustmentCents") as string ?? "0", 10) || 0,
           });
+        } else if (change.type === "placement-method-batch") {
+          for (const entry of change.payload) {
+            placementMethodOverrideUpdates.push(entry);
+          }
         }
       }
 
       const fd = new FormData();
       fd.set("intent", "batch-pricing-update");
-      fd.set("payload", JSON.stringify({ placements: placementUpdates, steps: stepUpdates }));
+      fd.set(
+        "payload",
+        JSON.stringify({
+          placements: placementUpdates,
+          steps: stepUpdates,
+          placementMethodOverrides: placementMethodOverrideUpdates,
+        }),
+      );
       pricingFetcher.submit(fd, { method: "POST" });
       setPricingDirty(false);
     },
@@ -1980,6 +2060,8 @@ export default function ViewDetailPage() {
                     onSave={handlePricingSave}
                     viewName={view.name ?? getPerspectiveLabel(view.perspective)}
                     onDeletePlacement={handleDeletePlacement}
+                    allowedMethods={allowedMethods}
+                    placementMethodOverrides={placementMethodOverrides}
                   />
                 )}
 

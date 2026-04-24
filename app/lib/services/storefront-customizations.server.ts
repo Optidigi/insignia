@@ -7,7 +7,10 @@ import { createHash } from "crypto";
 import db from "../../db.server";
 import { AppError, ErrorCodes } from "../errors.server";
 import { getProductConfig } from "./product-configs.server";
-import { effectiveMethodPriceCents } from "./methods.server";
+import {
+  effectiveMethodPriceCents,
+  effectivePlacementAdjustmentCents,
+} from "./methods.server";
 
 const PRICING_VERSION = "v1";
 
@@ -116,7 +119,7 @@ export async function computeCustomizationPrice(
     throw new AppError(ErrorCodes.NOT_FOUND, "Customization not found", 404);
   }
 
-  const [config, method, pcm] = await Promise.all([
+  const [config, method, pcm, placementOverrides] = await Promise.all([
     getProductConfig(shopId, draft.productConfigId),
     db.decorationMethod.findUnique({
       where: { id: draft.methodId },
@@ -131,10 +134,22 @@ export async function computeCustomizationPrice(
       },
       select: { basePriceCentsOverride: true },
     }),
+    db.placementDefinitionMethodPrice.findMany({
+      where: {
+        decorationMethodId: draft.methodId,
+        placementDefinition: {
+          productView: { productConfigId: draft.productConfigId },
+        },
+      },
+      select: { placementDefinitionId: true, basePriceAdjustmentCents: true },
+    }),
   ]);
   const methodBaseCents = effectiveMethodPriceCents(
     method?.basePriceCents ?? 0,
     pcm?.basePriceCentsOverride ?? null
+  );
+  const overrideByPlacementId = new Map(
+    placementOverrides.map((o) => [o.placementDefinitionId, o.basePriceAdjustmentCents])
   );
 
   const placementsPayload = draft.placements as unknown as PlacementSelection[];
@@ -147,7 +162,10 @@ export async function computeCustomizationPrice(
     if (!placement) continue;
     const step = placement.steps[stepIndex];
     const stepCents = step ? step.priceAdjustmentCents : 0;
-    const baseCents = placement.basePriceAdjustmentCents ?? 0;
+    const baseCents = effectivePlacementAdjustmentCents(
+      placement.basePriceAdjustmentCents ?? 0,
+      overrideByPlacementId.get(placement.id) ?? null
+    );
     placementsCents += baseCents + stepCents;
   }
 

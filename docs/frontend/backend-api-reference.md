@@ -107,8 +107,8 @@ A placement step's `scaleFactor` multiplies this to get the actual logo size for
    unitPriceCents = baseProductPriceCents
                   + effectiveMethodPrice  // = ProductConfigMethod.basePriceCentsOverride ?? DecorationMethod.basePriceCents
                   + sum over placements of:
-                      placement.basePriceAdjustmentCents
-                    + step.priceAdjustmentCents
+                      effectivePlacementAdjustmentCents(placement, method)  // = PlacementDefinitionMethodPrice.basePriceAdjustmentCents ?? placement.basePriceAdjustmentCents
+                    + effectiveStepPriceCents(step, method)                  // = PlacementStepMethodPrice.priceAdjustmentCents    ?? step.priceAdjustmentCents
    ```
 6. **Slot reserved.** `POST /apps/insignia/prepare` picks a `VariantSlot` from the pool (a pre-provisioned fee-product variant), sets its price to `unitPriceCents` via Shopify `productVariantsBulkUpdate`, and returns `slotVariantId`.
 7. **Customer adds to cart.** Theme JavaScript calls Shopify's `/cart/add.js` with **two line items**: the actual product variant they want + the fee slot variant. Shopify charges the combined total.
@@ -1131,6 +1131,18 @@ interface PlacementStep {
 }
 ```
 
+The storefront payload adds an optional `pricePerMethod` map resolved server-side via `effectiveStepPriceCents`. Keys are `DecorationMethod.id`, values are effective cents for that (step × method) pair. Only emitted when at least one `PlacementStepMethodPrice` row exists for the step.
+
+```ts
+// Storefront PlacementStep payload
+interface PlacementStep {
+  label: string;
+  priceAdjustmentCents: number;
+  scaleFactor: number;
+  pricePerMethod?: Record<string, number>; // methodId → effective cents
+}
+```
+
 #### `Placement` (admin, hydrated)
 ```ts
 interface Placement {
@@ -1140,6 +1152,16 @@ interface Placement {
   hidePriceWhenZero: boolean;
   defaultStepIndex: number;
   steps: PlacementStep[];
+}
+```
+
+The storefront payload adds an optional `pricePerMethod` map on `Placement` resolved server-side via `effectivePlacementAdjustmentCents`. Keys are `DecorationMethod.id`, values are the effective base fee cents for that (placement × method) pair. Only emitted when at least one `PlacementDefinitionMethodPrice` row exists for the placement.
+
+```ts
+// Storefront Placement payload (fields in addition to admin shape)
+interface Placement {
+  // ... existing fields ...
+  pricePerMethod?: Record<string, number>; // methodId → effective cents
 }
 ```
 

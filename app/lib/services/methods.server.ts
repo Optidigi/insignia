@@ -200,6 +200,18 @@ export function effectiveMethodPriceCents(
 }
 
 /**
+ * Resolve the effective base price adjustment for a (placement, method) pair.
+ * null/undefined override => fall back to the placement's own basePriceAdjustmentCents.
+ * Non-null override => full replacement.
+ */
+export function effectivePlacementAdjustmentCents(
+  placementDefaultCents: number,
+  methodOverrideCents: number | null | undefined
+): number {
+  return methodOverrideCents ?? placementDefaultCents;
+}
+
+/**
  * Delete a decoration method
  */
 export async function deleteMethod(shopId: string, methodId: string) {

@@ -1,0 +1,265 @@
+/**
+ * ZonePricingPanel matrix styling — inline-always redesign.
+ *
+ * Used by the placement-method fee matrix (PlacementMethodFee). Each
+ * placement × method cell renders an always-visible number input.
+ * Placeholder shows the placement's default fee; a typed value creates an
+ * override, an empty value inherits the default.
+ *
+ * Typography: tabular numerals on all price displays so columns line up.
+ * Colors: Polaris surface tokens; info tint ONLY on cells whose current
+ * value differs from the default (i.e. a real override). Default cells are
+ * visually quiet.
+ */
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* Section container                                                         */
+/* ───────────────────────────────────────────────────────────────────────── */
+
+.pmp-section {
+  border-top: 1px solid var(--p-color-border-tertiary, #F3F4F6);
+  padding-top: 16px;
+}
+
+.pmp-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.pmp-section-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pmp-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--p-color-text, #111827);
+  letter-spacing: -0.01em;
+}
+
+.pmp-section-subtitle {
+  font-size: 12px;
+  color: var(--p-color-text-secondary, #6B7280);
+  margin-top: 2px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* Override counter pill                                                     */
+/* ───────────────────────────────────────────────────────────────────────── */
+
+/* Small override counter pill inside section titles. */
+.pmp-method-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: 9px;
+  background: var(--p-color-bg-surface-info, #EFF6FF);
+  color: var(--p-color-text-info, #1D4ED8);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* Cell grid                                                                 */
+/* ───────────────────────────────────────────────────────────────────────── */
+
+.pmp-cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+}
+
+.pmp-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pmp-cell-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--p-color-text-secondary, #6B7280);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  min-height: 16px;
+}
+
+.pmp-cell-label-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Reset-cell button - only rendered when the cell has an override.
+   Hugs the label line so it doesn't steal space from the input. */
+.pmp-cell-reset {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  color: var(--p-color-icon-secondary, #6B7280);
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.pmp-cell-reset:hover {
+  background: var(--p-color-bg-surface-hover, #F3F4F6);
+  color: var(--p-color-icon, #374151);
+}
+
+.pmp-cell-reset:focus-visible {
+  outline: 2px solid var(--p-color-border-focus, #2563EB);
+  outline-offset: 1px;
+}
+
+.pmp-cell-reset svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* The input itself — big, clickable, bold, tabular                          */
+/* ───────────────────────────────────────────────────────────────────────── */
+
+.pmp-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  height: 40px;
+  border: 1px solid var(--p-color-border, #D1D5DB);
+  border-radius: 8px;
+  background: var(--p-color-bg-surface, #FFFFFF);
+  overflow: hidden;
+  transition: border-color 120ms ease, box-shadow 120ms ease, background-color 120ms ease;
+}
+
+.pmp-input-wrap:hover {
+  border-color: var(--p-color-border-hover, #9CA3AF);
+}
+
+.pmp-input-wrap:focus-within {
+  border-color: var(--p-color-border-focus, #2563EB);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.18);
+}
+
+/* Overridden state — cell has a real override value (not just placeholder). */
+.pmp-input-wrap.is-override {
+  background: var(--p-color-bg-surface-info, #EFF6FF);
+  border-color: #BFDBFE;
+}
+
+.pmp-input-wrap.is-override:focus-within {
+  border-color: var(--p-color-border-focus, #2563EB);
+}
+
+.pmp-input-prefix {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--p-color-text-secondary, #6B7280);
+  background: transparent;
+  pointer-events: none;
+  user-select: none;
+  min-width: 28px;
+}
+
+.pmp-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 0 12px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--p-color-text, #111827);
+  text-align: right;
+  letter-spacing: -0.01em;
+  /* Hide spinner — we validate/clamp on blur instead. */
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+.pmp-input::-webkit-outer-spin-button,
+.pmp-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.pmp-input:focus {
+  outline: none;
+}
+
+.pmp-input::placeholder {
+  color: var(--p-color-text-disabled, #9CA3AF);
+  font-weight: 500;
+  opacity: 1;
+}
+
+/* Override cells show the value in a brand-blue color for instant "this is
+   custom" recognition. Default cells stay neutral (placeholder is already
+   subdued). */
+.pmp-input-wrap.is-override .pmp-input {
+  color: var(--p-color-text-info, #1D4ED8);
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* Placement fee by method — flat one-row grid (no step axis).               */
+/* Reuses .pmp-cell / .pmp-input-wrap but lets cards render inline directly  */
+/* inside .pmp-section instead of stacked method-cards.                      */
+/* ───────────────────────────────────────────────────────────────────────── */
+
+.pmf-cells {
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* Orphan-override banner slot                                               */
+/* ───────────────────────────────────────────────────────────────────────── */
+
+.pmp-orphan-banner {
+  margin-bottom: 10px;
+}
+
+/* ───────────────────────────────────────────────────────────────────────── */
+/* Responsive: <=480px stacked layout                                        */
+/* ───────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .pmp-cells {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .pmp-input-wrap {
+    height: 44px;  /* slightly taller for touch */
+  }
+}

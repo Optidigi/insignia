@@ -15,6 +15,7 @@ import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
 import { formatCurrency, formatPriceDelta } from "./currency";
+import { getPlacementCents } from "./pricing";
 import { IconAlertTriangle, IconHelpCircle, IconMapPin, IconSparkles } from "./icons";
 import { QuantityGrid } from "./QuantityGrid";
 
@@ -78,7 +79,7 @@ export function ReviewStep({
         id: p.id,
         name: p.name,
         sizeLabel: step?.label ?? "",
-        placementCents: p.basePriceAdjustmentCents,
+        placementCents: getPlacementCents(p, selectedMethodId || null),
         stepCents: step?.priceAdjustmentCents ?? 0,
       };
     });

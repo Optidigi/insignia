@@ -63,10 +63,11 @@ Connects one or more Shopify products to customization rules.
 
 ## ProductConfigMethod (join table)
 
-Links ProductConfig to DecorationMethod (many-to-many).
+Links ProductConfig to DecorationMethod (many-to-many) and optionally overrides the method's base price for this product config.
 
 - `productConfigId` (UUID)
 - `decorationMethodId` (UUID)
+- `basePriceCentsOverride` (integer | null): per-config price override for the decoration method. Null = inherit `DecorationMethod.basePriceCents`; non-null replaces it entirely (including allowing `0`).
 
 ## DecorationMethod
 
@@ -127,6 +128,26 @@ A size tier within a placement (e.g., Small / Medium / Large).
 - `priceAdjustmentCents` (integer): price delta for this tier.
 - `scaleFactor` (float, default 1.0): logo scale multiplier.
 - `displayOrder` (integer): sort order.
+
+## PlacementStepMethodPrice
+
+Optional per-method override of a `PlacementStep`'s price. Composite primary key is `(placementStepId, decorationMethodId)`.
+
+- `placementStepId` (UUID): the step this row overrides.
+- `decorationMethodId` (UUID): the method whose price differs on this step.
+- `priceAdjustmentCents` (integer): replacement price delta for the step when the customer selects this method.
+
+Precedence: **row absence = inherit `PlacementStep.priceAdjustmentCents`**. When a row is present its `priceAdjustmentCents` fully replaces the step's own (including `0`). Rows cascade-delete with either side of the pair.
+
+## PlacementDefinitionMethodPrice
+
+Optional per-method override of a `PlacementDefinition`'s base fee. Composite primary key is `(placementDefinitionId, decorationMethodId)`.
+
+- `placementDefinitionId` (UUID): the placement this row overrides.
+- `decorationMethodId` (UUID): the method whose placement fee differs.
+- `basePriceAdjustmentCents` (integer): replacement base fee for the placement when the customer selects this method.
+
+Precedence: **row absence = inherit `PlacementDefinition.basePriceAdjustmentCents`**. When a row is present its `basePriceAdjustmentCents` fully replaces the placement's own (including `0`). Rows cascade-delete with either side of the pair.
 
 ## PlacementGeometry
 

@@ -9,7 +9,10 @@ import db from "../../db.server";
 import { AppError, ErrorCodes } from "../errors.server";
 import { getMerchantSettings } from "./settings.server";
 import { getPresignedGetUrl } from "../storage.server";
-import { effectiveMethodPriceCents } from "./methods.server";
+import {
+  effectiveMethodPriceCents,
+  effectivePlacementAdjustmentCents,
+} from "./methods.server";
 import type { ProductVariantOption } from "../../components/storefront/types";
 
 // Response types per storefront-config.md
@@ -36,6 +39,12 @@ export type Placement = {
   steps: PlacementStep[];
   defaultStepIndex: number;
   geometryByViewId: Record<string, PlacementGeometry | null>;
+  /**
+   * Optional per-method overrides for this placement's base fee. When present,
+   * each key is a DecorationMethod id and the value is the effective cents charged
+   * for that method. Only emitted when at least one override exists.
+   */
+  pricePerMethod?: Record<string, number>;
 };
 
 export type ConfiguredView = {
@@ -99,7 +108,10 @@ async function getProductConfigByProductId(shopId: string, productId: string) {
         include: {
           placements: {
             include: {
-              steps: { orderBy: { displayOrder: "asc" } },
+              methodPriceOverrides: true,
+              steps: {
+                orderBy: { displayOrder: "asc" },
+              },
             },
             orderBy: { displayOrder: "asc" },
           },
@@ -371,17 +383,17 @@ export async function getStorefrontConfig(
 
   // Include all placements from all views. Placements with 0 steps get a
   // synthetic default step so they behave as single-size in the storefront.
-  const DEFAULT_STEP = { label: "Standard", priceAdjustmentCents: 0, scaleFactor: 1.0 };
+  const DEFAULT_STEP: PlacementStep = { label: "Standard", priceAdjustmentCents: 0, scaleFactor: 1.0 };
   const allPlacements = config.views.flatMap((v) => v.placements);
   const placements: Placement[] = allPlacements.map((p) => {
-    const steps = p.steps.length > 0
+    const steps: PlacementStep[] = p.steps.length > 0
       ? p.steps.map((s) => ({
           label: s.label,
           priceAdjustmentCents: s.priceAdjustmentCents,
           scaleFactor: s.scaleFactor ?? 1.0,
         }))
       : [DEFAULT_STEP];
-    return {
+    const placement: Placement = {
       id: p.id,
       name: p.name,
       basePriceAdjustmentCents: p.basePriceAdjustmentCents,
@@ -390,6 +402,18 @@ export async function getStorefrontConfig(
       defaultStepIndex: Math.min(p.defaultStepIndex, steps.length - 1),
       geometryByViewId: geometryByViewIdForPlacement(p.id),
     };
+    if (p.methodPriceOverrides.length > 0) {
+      placement.pricePerMethod = Object.fromEntries(
+        p.methodPriceOverrides.map((o) => [
+          o.decorationMethodId,
+          effectivePlacementAdjustmentCents(
+            p.basePriceAdjustmentCents,
+            o.basePriceAdjustmentCents
+          ),
+        ])
+      );
+    }
+    return placement;
   });
 
   let placeholderMode: "merchant_asset" | "bold_text" = "bold_text";

@@ -14,6 +14,7 @@ import type { StorefrontConfig, PlacementSelections } from "./types";
 import type { LogoState } from "./CustomizationModal";
 import type { TranslationStrings } from "./i18n";
 import { formatPriceDelta } from "./currency";
+import { getPlacementCents } from "./pricing";
 import { IconCheck } from "./icons";
 import { PreviewCanvas } from "./PreviewCanvas";
 import type { ImageMeta } from "./NativeCanvas";
@@ -27,6 +28,8 @@ type PlacementStepProps = {
   onDesktopActiveViewChange?: (viewId: string) => void;
   highlightedPlacementId?: string | null;
   onImageMeta?: (viewId: string, meta: ImageMeta) => void;
+  /** Currently-selected decoration method, for per-method placement-fee resolution. */
+  selectedMethodId?: string | null;
   t: TranslationStrings;
   onAnalytics?: (name: string, detail: Record<string, unknown>) => void;
 };
@@ -45,6 +48,7 @@ export function PlacementStep({
   onDesktopActiveViewChange,
   highlightedPlacementId,
   onImageMeta,
+  selectedMethodId = null,
   t,
   onAnalytics,
 }: PlacementStepProps) {
@@ -118,7 +122,8 @@ export function PlacementStep({
           // Find which view owns this placement so we can show its name as subtitle.
           const ownerView = config.views.find((v) => p.geometryByViewId[v.id] != null);
           const ownerLabel = ownerView ? `${viewName(ownerView)} view` : null;
-          const isFree = p.basePriceAdjustmentCents === 0;
+          const placementCents = getPlacementCents(p, selectedMethodId);
+          const isFree = placementCents === 0;
           // Zero-delta: green "Included" when selected, hidden otherwise.
           // Positive delta: always show "+€X.XX" in accent. Never render "+€0.00".
           const showPrice = isFree ? selected : true;
@@ -156,7 +161,7 @@ export function PlacementStep({
                 >
                   {selected && isFree
                     ? t.v2.placement.included
-                    : formatPriceDelta(p.basePriceAdjustmentCents, config.currency)}
+                    : formatPriceDelta(placementCents, config.currency)}
                 </span>
               )}
             </label>

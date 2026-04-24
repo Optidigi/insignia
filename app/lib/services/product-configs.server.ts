@@ -86,6 +86,7 @@ export async function getProductConfig(shopId: string, configId: string) {
         include: {
           placements: {
             include: {
+              methodPriceOverrides: true,
               steps: {
                 orderBy: { displayOrder: "asc" },
               },
@@ -312,6 +313,16 @@ export async function cloneLayoutInto(
         });
 
         oldIdToNewId.set(placement.id, newPlacement.id);
+
+        if (placement.methodPriceOverrides.length > 0) {
+          await tx.placementDefinitionMethodPrice.createMany({
+            data: placement.methodPriceOverrides.map((mp) => ({
+              placementDefinitionId: newPlacement.id,
+              decorationMethodId: mp.decorationMethodId,
+              basePriceAdjustmentCents: mp.basePriceAdjustmentCents,
+            })),
+          });
+        }
 
         if (placement.steps.length > 0) {
           await tx.placementStep.createMany({
@@ -546,6 +557,17 @@ export async function duplicateProductConfig(
             displayOrder: placement.displayOrder,
           },
         });
+
+        // Copy placement-level per-method price overrides
+        if (placement.methodPriceOverrides.length > 0) {
+          await tx.placementDefinitionMethodPrice.createMany({
+            data: placement.methodPriceOverrides.map((mp) => ({
+              placementDefinitionId: newPlacement.id,
+              decorationMethodId: mp.decorationMethodId,
+              basePriceAdjustmentCents: mp.basePriceAdjustmentCents,
+            })),
+          });
+        }
 
         // Copy steps
         if (placement.steps.length > 0) {

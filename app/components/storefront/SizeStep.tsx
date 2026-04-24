@@ -348,12 +348,19 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
           </div>
 
           <p className="insignia-size-card-meta">
-            {t.v2.size.priceDelta} —{" "}
-            <strong data-included={currentStep.priceAdjustmentCents === 0 ? "true" : undefined}>
-              {currentStep.priceAdjustmentCents === 0
-                ? t.v2.size.included
-                : formatPriceDelta(currentStep.priceAdjustmentCents, config.currency)}
-            </strong>
+            {(() => {
+              const cents = currentStep?.priceAdjustmentCents ?? 0;
+              return (
+                <>
+                  {t.v2.size.priceDelta} —{" "}
+                  <strong data-included={cents === 0 ? "true" : undefined}>
+                    {cents === 0
+                      ? t.v2.size.included
+                      : formatPriceDelta(cents, config.currency)}
+                  </strong>
+                </>
+              );
+            })()}
           </p>
         </>
       ) : (
@@ -384,12 +391,19 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
           </div>
 
           <p className="insignia-size-card-meta">
-            {t.v2.size.priceDelta} —{" "}
-            <strong data-included={currentStep.priceAdjustmentCents === 0 ? "true" : undefined}>
-              {currentStep.priceAdjustmentCents === 0
-                ? t.v2.size.included
-                : formatPriceDelta(currentStep.priceAdjustmentCents, config.currency)}
-            </strong>
+            {(() => {
+              const cents = currentStep?.priceAdjustmentCents ?? 0;
+              return (
+                <>
+                  {t.v2.size.priceDelta} —{" "}
+                  <strong data-included={cents === 0 ? "true" : undefined}>
+                    {cents === 0
+                      ? t.v2.size.included
+                      : formatPriceDelta(cents, config.currency)}
+                  </strong>
+                </>
+              );
+            })()}
           </p>
         </>
       )}
@@ -521,10 +535,11 @@ function SizeSegmented({
     <div className="insignia-segmented" role="tablist">
       {steps.map((s, i) => {
         const isActive = i === activeIndex;
-        const isIncluded = s.priceAdjustmentCents === 0;
+        const cents = s.priceAdjustmentCents;
+        const isIncluded = cents === 0;
         const priceLabel = isIncluded
           ? t.v2.size.included
-          : formatPriceDelta(s.priceAdjustmentCents, currency);
+          : formatPriceDelta(cents, currency);
         return (
           <button
             key={i}

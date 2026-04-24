@@ -64,14 +64,20 @@ const MOCK_PLACEMENT = {
   hidePriceWhenZero: false,
   defaultStepIndex: 0,
   displayOrder: 0,
+  methodPriceOverrides: [] as Array<{
+    decorationMethodId: string;
+    basePriceAdjustmentCents: number;
+  }>,
   steps: [
     {
+      id: "step-small",
       label: "Small",
       priceAdjustmentCents: 0,
       scaleFactor: 0.5,
       displayOrder: 0,
     },
     {
+      id: "step-large",
       label: "Large",
       priceAdjustmentCents: 300,
       scaleFactor: 1.0,
@@ -229,6 +235,86 @@ describe("getStorefrontConfig", () => {
 
     // null override → inherit method base of 1000
     expect(result.methods[0].basePriceCents).toBe(1000);
+  });
+
+  it("placement without overrides has no pricePerMethod key", async () => {
+    prismaMock.productConfig.findFirst.mockResolvedValue(makeProductConfig());
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    expect(result.placements[0]).not.toHaveProperty("pricePerMethod");
+  });
+
+  it("placement with override for one method surfaces it via pricePerMethod", async () => {
+    const placementWithOverride = {
+      ...MOCK_PLACEMENT,
+      methodPriceOverrides: [
+        { decorationMethodId: "method-1", basePriceAdjustmentCents: 450 },
+      ],
+    };
+    const viewWithOverride = {
+      ...MOCK_VIEW_FRONT,
+      placements: [placementWithOverride],
+    };
+
+    prismaMock.productConfig.findFirst.mockResolvedValue(
+      makeProductConfig({ views: [viewWithOverride, MOCK_VIEW_BACK] })
+    );
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    expect(result.placements[0].pricePerMethod).toEqual({
+      "method-1": 450,
+    });
+  });
+
+  it("placement with overrides for multiple methods surfaces all of them", async () => {
+    const placementWithOverrides = {
+      ...MOCK_PLACEMENT,
+      methodPriceOverrides: [
+        { decorationMethodId: "method-1", basePriceAdjustmentCents: 450 },
+        { decorationMethodId: "method-2", basePriceAdjustmentCents: 900 },
+      ],
+    };
+    const viewWithOverrides = {
+      ...MOCK_VIEW_FRONT,
+      placements: [placementWithOverrides],
+    };
+
+    prismaMock.productConfig.findFirst.mockResolvedValue(
+      makeProductConfig({ views: [viewWithOverrides, MOCK_VIEW_BACK] })
+    );
+    prismaMock.variantViewConfiguration.findMany.mockResolvedValue([]);
+    prismaMock.shop.findUnique.mockResolvedValue({ currencyCode: "USD" });
+
+    const result = await getStorefrontConfig(
+      "shop-1",
+      "test.myshopify.com",
+      "gid://shopify/Product/100",
+      "gid://shopify/ProductVariant/200",
+      makeRunGraphql()
+    );
+
+    expect(result.placements[0].pricePerMethod).toEqual({
+      "method-1": 450,
+      "method-2": 900,
+    });
   });
 
   it("resolves shared zone geometry from view-level placementGeometry", async () => {

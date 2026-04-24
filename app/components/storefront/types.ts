@@ -25,6 +25,13 @@ export type Placement = {
   steps: PlacementStep[];
   defaultStepIndex: number;
   geometryByViewId: Record<string, PlacementGeometry | null>;
+  /**
+   * Optional per-method overrides for this placement's base fee. When present,
+   * keys are DecorationMethod ids and values are the effective cents charged
+   * for this placement when that method is chosen. Only set when at least one
+   * override exists server-side.
+   */
+  pricePerMethod?: Record<string, number>;
 };
 
 export type ConfiguredView = {

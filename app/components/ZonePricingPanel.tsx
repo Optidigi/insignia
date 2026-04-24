@@ -14,6 +14,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   BlockStack,
+  Banner,
   Box,
   InlineStack,
   Text,
@@ -29,10 +30,12 @@ import {
   DeleteIcon,
   DragHandleIcon,
   CursorIcon,
+  ResetIcon,
 } from "@shopify/polaris-icons";
 import { useFetcher, useRevalidator } from "react-router";
 import type { Placement } from "../lib/admin-types";
 import { getZoneColor } from "../lib/zone-colors";
+import "./zone-pricing-panel.css";
 
 // ============================================================================
 // Types
@@ -53,10 +56,19 @@ type StepEdit = {
   priceAdjustmentCents?: number;
 };
 
+/** Per-method placement-base-fee override payload entry. */
+export type PlacementMethodOverrideEntry = {
+  placementId: string;
+  decorationMethodId: string;
+  /** null = delete the saved override row. */
+  basePriceAdjustmentCents: number | null;
+};
+
 /** All pending edits collected for a save-bar submission. */
 export type PricingChange =
   | { type: "placement"; placementId: string; data: FormData }
-  | { type: "step"; stepId: string; data: FormData };
+  | { type: "step"; stepId: string; data: FormData }
+  | { type: "placement-method-batch"; payload: PlacementMethodOverrideEntry[] };
 
 type Props = {
   placements: Placement[];
@@ -81,6 +93,10 @@ type Props = {
   viewName?: string;
   /** Called when user clicks delete on a placement */
   onDeletePlacement?: (placementId: string) => void;
+  /** Decoration methods allowed for this product config (feeds the per-method price matrix). */
+  allowedMethods?: Array<{ id: string; name: string }>;
+  /** Saved per-(placementId, methodId) base-fee override in cents. Row absence = inherit placement's own basePriceAdjustmentCents. */
+  placementMethodOverrides?: Record<string, Record<string, number>>;
 };
 
 // ============================================================================
@@ -159,6 +175,8 @@ export function ZonePricingPanel({
   onDirty,
   onSave,
   onDeletePlacement,
+  allowedMethods = [],
+  placementMethodOverrides = {},
 }: Props) {
   const stepFetcher = useFetcher();
   const reorderFetcher = useFetcher();
@@ -233,6 +251,27 @@ export function ZonePricingPanel({
   const [localPlacementOrder, setLocalPlacementOrder] = useState<string[] | null>(null);
   const [localStepOrders, setLocalStepOrders] = useState<Record<string, string[]>>({});
 
+  // ── Per-method placement base-fee override state ────────────────────────────
+  // Mirrors the step buffer but keyed by placementId → methodId.
+  const [placementMethodOverrideStrings, setPlacementMethodOverrideStrings] =
+    useState<Record<string, Record<string, string>>>({});
+  const [placementExplicitDeletes, setPlacementExplicitDeletes] = useState<
+    Set<string>
+  >(new Set());
+  const placementMethodInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+
+  useEffect(() => {
+    const next: Record<string, Record<string, string>> = {};
+    for (const [placementId, byMethod] of Object.entries(placementMethodOverrides)) {
+      next[placementId] = {};
+      for (const [methodId, cents] of Object.entries(byMethod)) {
+        next[placementId][methodId] = (cents / 100).toFixed(2);
+      }
+    }
+    setPlacementMethodOverrideStrings(next);
+    setPlacementExplicitDeletes(new Set());
+  }, [placementMethodOverrides]);
+
   const submitReorderPlacements = useCallback((newOrder: string[]) => {
     const fd = new FormData();
     fd.set("intent", "reorder-placements");
@@ -256,8 +295,56 @@ export function ZonePricingPanel({
       .filter(Boolean) as typeof placements;
   }, [placements, localPlacementOrder]);
 
-  // Track dirty state
-  const isDirty = Object.keys(placementEdits).length > 0 || Object.keys(stepEdits).length > 0;
+  // Track dirty state. A cell is dirty when its effective pending value
+  // differs from saved.
+  const computeEffectivePlacementCents = useCallback(
+    (placementId: string, methodId: string): number | null => {
+      const key = `${placementId}:${methodId}`;
+      if (placementExplicitDeletes.has(key)) return null;
+      const bufRow = placementMethodOverrideStrings[placementId];
+      const hasBufKey =
+        bufRow != null && Object.prototype.hasOwnProperty.call(bufRow, methodId);
+      if (hasBufKey) {
+        const str = bufRow![methodId] ?? "";
+        return str.trim() === "" ? null : Math.round(parseDecimal(str) * 100);
+      }
+      return placementMethodOverrides[placementId]?.[methodId] ?? null;
+    },
+    [placementMethodOverrides, placementMethodOverrideStrings, placementExplicitDeletes],
+  );
+
+  const placementMethodOverrideDirty = (() => {
+    const placementIds = new Set<string>([
+      ...Object.keys(placementMethodOverrides),
+      ...Object.keys(placementMethodOverrideStrings),
+    ]);
+    for (const key of placementExplicitDeletes) {
+      placementIds.add(key.split(":")[0]);
+    }
+    for (const pId of placementIds) {
+      const savedRow = placementMethodOverrides[pId] ?? {};
+      const bufRow = placementMethodOverrideStrings[pId] ?? {};
+      const methodIds = new Set<string>([
+        ...Object.keys(savedRow),
+        ...Object.keys(bufRow),
+      ]);
+      for (const key of placementExplicitDeletes) {
+        const [pid, mid] = key.split(":");
+        if (pid === pId) methodIds.add(mid);
+      }
+      for (const methodId of methodIds) {
+        const savedCents = savedRow[methodId] ?? null;
+        const currentCents = computeEffectivePlacementCents(pId, methodId);
+        if (savedCents !== currentCents) return true;
+      }
+    }
+    return false;
+  })();
+
+  const isDirty =
+    Object.keys(placementEdits).length > 0 ||
+    Object.keys(stepEdits).length > 0 ||
+    placementMethodOverrideDirty;
   const prevDirtyRef = useRef(false);
 
   useEffect(() => {
@@ -312,8 +399,55 @@ export function ZonePricingPanel({
       changes.push({ type: "step", stepId, data: fd });
     }
 
+    // Collect per-method placement base-fee overrides. Same diff-based emit:
+    // only cells whose effective value differs from saved make it into the
+    // payload.
+    const placementOverridePayload: PlacementMethodOverrideEntry[] = [];
+    const allPlacementIds = new Set<string>([
+      ...Object.keys(placementMethodOverrides),
+      ...Object.keys(placementMethodOverrideStrings),
+    ]);
+    for (const key of placementExplicitDeletes)
+      allPlacementIds.add(key.split(":")[0]);
+    for (const pId of allPlacementIds) {
+      const savedRow = placementMethodOverrides[pId] ?? {};
+      const bufRow = placementMethodOverrideStrings[pId] ?? {};
+      const methodIds = new Set<string>([
+        ...Object.keys(savedRow),
+        ...Object.keys(bufRow),
+      ]);
+      for (const key of placementExplicitDeletes) {
+        const [pid, mid] = key.split(":");
+        if (pid === pId) methodIds.add(mid);
+      }
+      for (const methodId of methodIds) {
+        const savedCents = savedRow[methodId] ?? null;
+        const currentCents = computeEffectivePlacementCents(pId, methodId);
+        if (savedCents === currentCents) continue;
+        placementOverridePayload.push({
+          placementId: pId,
+          decorationMethodId: methodId,
+          basePriceAdjustmentCents: currentCents,
+        });
+      }
+    }
+    if (placementOverridePayload.length > 0) {
+      changes.push({
+        type: "placement-method-batch",
+        payload: placementOverridePayload,
+      });
+    }
+
     return changes;
-  }, [placementEdits, stepEdits, placements]);
+  }, [
+    placementEdits,
+    stepEdits,
+    placements,
+    placementMethodOverrideStrings,
+    placementMethodOverrides,
+    placementExplicitDeletes,
+    computeEffectivePlacementCents,
+  ]);
 
   // Expose collectChanges to parent via onSave ref pattern
   const collectChangesRef = useRef(collectChanges);
@@ -328,7 +462,17 @@ export function ZonePricingPanel({
     setStepPriceStrings({});
     setStepScaleStrings({});
     setStepLabelStrings({});
-  }, []);
+    // Reset per-method placement fee buffer to saved props.
+    const nextPlacement: Record<string, Record<string, string>> = {};
+    for (const [placementId, byMethod] of Object.entries(placementMethodOverrides)) {
+      nextPlacement[placementId] = {};
+      for (const [methodId, cents] of Object.entries(byMethod)) {
+        nextPlacement[placementId][methodId] = (cents / 100).toFixed(2);
+      }
+    }
+    setPlacementMethodOverrideStrings(nextPlacement);
+    setPlacementExplicitDeletes(new Set());
+  }, [placementMethodOverrides]);
 
   // Expose collectChanges and clearEdits via ref for parent to call
   const apiRef = useRef({ collectChanges, clearEdits });
@@ -400,6 +544,101 @@ export function ZonePricingPanel({
       onSelectPlacement(selectedPlacementId === id ? null : id);
     },
     [selectedPlacementId, onSelectPlacement],
+  );
+
+  // ── Per-method placement-fee cell handlers ──────────────────────────────────
+  // Inline-always editing model: no "pencil" step. Every cell is a number
+  // input. Typing writes to buffer; empty = inherit default; Reset clears
+  // (deletes saved row at save-time); Esc + blank-on-blur both revert to the
+  // saved value without destroying it.
+  const updatePlacementOverrideCell = useCallback(
+    (placementId: string, methodId: string, val: string) => {
+      const key = `${placementId}:${methodId}`;
+      setPlacementExplicitDeletes((prev) => {
+        if (!prev.has(key)) return prev;
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+      setPlacementMethodOverrideStrings((prev) => ({
+        ...prev,
+        [placementId]: { ...(prev[placementId] ?? {}), [methodId]: val },
+      }));
+    },
+    [],
+  );
+
+  const resetPlacementOverrideCell = useCallback(
+    (placementId: string, methodId: string) => {
+      const key = `${placementId}:${methodId}`;
+      setPlacementExplicitDeletes((prev) => {
+        const next = new Set(prev);
+        next.add(key);
+        return next;
+      });
+      setPlacementMethodOverrideStrings((prev) => {
+        const byMethod = { ...(prev[placementId] ?? {}) };
+        delete byMethod[methodId];
+        const next = { ...prev };
+        if (Object.keys(byMethod).length === 0) delete next[placementId];
+        else next[placementId] = byMethod;
+        return next;
+      });
+      setTimeout(() => {
+        placementMethodInputRefs.current[key]?.focus();
+      }, 0);
+    },
+    [],
+  );
+
+  const cancelPlacementCell = useCallback(
+    (placementId: string, methodId: string) => {
+      const key = `${placementId}:${methodId}`;
+      setPlacementExplicitDeletes((prev) => {
+        if (!prev.has(key)) return prev;
+        const next = new Set(prev);
+        next.delete(key);
+        return next;
+      });
+      const savedCents = placementMethodOverrides[placementId]?.[methodId];
+      if (savedCents != null) {
+        setPlacementMethodOverrideStrings((prev) => ({
+          ...prev,
+          [placementId]: {
+            ...(prev[placementId] ?? {}),
+            [methodId]: (savedCents / 100).toFixed(2),
+          },
+        }));
+      } else {
+        setPlacementMethodOverrideStrings((prev) => {
+          const byMethod = { ...(prev[placementId] ?? {}) };
+          delete byMethod[methodId];
+          const next = { ...prev };
+          if (Object.keys(byMethod).length === 0) delete next[placementId];
+          else next[placementId] = byMethod;
+          return next;
+        });
+      }
+    },
+    [placementMethodOverrides],
+  );
+
+  /**
+   * Check whether a placement has saved placement-method overrides keyed to a
+   * method that is no longer in `allowedMethods`. Mirrors the step-level
+   * orphan banner logic.
+   */
+  const hasPlacementOrphanOverrides = useCallback(
+    (placementId: string): boolean => {
+      const allowedIds = new Set(allowedMethods.map((m) => m.id));
+      const saved = placementMethodOverrides[placementId];
+      if (!saved) return false;
+      for (const mid of Object.keys(saved)) {
+        if (!allowedIds.has(mid)) return true;
+      }
+      return false;
+    },
+    [allowedMethods, placementMethodOverrides],
   );
 
   // ── No placements ──────────────────────────────────────────────────────────
@@ -648,6 +887,27 @@ export function ZonePricingPanel({
                       />
                     </BlockStack>
                   </div>
+
+                  {/* Section 1b: Placement fee by method — one input per method */}
+                  {allowedMethods.length >= 2 && (
+                    <PlacementMethodFee
+                      placement={p}
+                      currencySymbol={currencySymbol}
+                      allowedMethods={allowedMethods}
+                      placementDefaultCents={
+                        placementEdits[p.id]?.basePriceAdjustmentCents ??
+                        p.basePriceAdjustmentCents
+                      }
+                      placementMethodOverrides={placementMethodOverrides}
+                      placementMethodOverrideStrings={placementMethodOverrideStrings}
+                      placementExplicitDeletes={placementExplicitDeletes}
+                      hasOrphanOverrides={hasPlacementOrphanOverrides(p.id)}
+                      onUpdateCell={updatePlacementOverrideCell}
+                      onResetCell={resetPlacementOverrideCell}
+                      onCancelCell={cancelPlacementCell}
+                      inputRefs={placementMethodInputRefs}
+                    />
+                  )}
 
                   {/* Section 2: Logo sizes */}
                   <BlockStack gap="200">
@@ -933,6 +1193,167 @@ export function ZonePricingPanel({
       )}
 
     </BlockStack>
+  );
+}
+
+// ============================================================================
+// Placement base-fee by method — one-axis flat row (placement × method).
+// Inline-always editing: one input per method, no step axis.
+// ============================================================================
+
+type PlacementMethodFeeProps = {
+  placement: Placement;
+  currencySymbol: string;
+  allowedMethods: Array<{ id: string; name: string }>;
+  /** The placement's own default fee cents (may reflect a pending edit). */
+  placementDefaultCents: number;
+  placementMethodOverrides: Record<string, Record<string, number>>;
+  placementMethodOverrideStrings: Record<string, Record<string, string>>;
+  placementExplicitDeletes: Set<string>;
+  hasOrphanOverrides: boolean;
+  onUpdateCell: (placementId: string, methodId: string, val: string) => void;
+  onResetCell: (placementId: string, methodId: string) => void;
+  onCancelCell: (placementId: string, methodId: string) => void;
+  inputRefs: React.MutableRefObject<Record<string, HTMLInputElement | null>>;
+};
+
+function PlacementMethodFee({
+  placement,
+  currencySymbol,
+  allowedMethods,
+  placementDefaultCents,
+  placementMethodOverrides,
+  placementMethodOverrideStrings,
+  placementExplicitDeletes,
+  hasOrphanOverrides,
+  onUpdateCell,
+  onResetCell,
+  onCancelCell,
+  inputRefs,
+}: PlacementMethodFeeProps) {
+  const savedRow = placementMethodOverrides[placement.id] ?? {};
+  const bufRow = placementMethodOverrideStrings[placement.id] ?? {};
+  const defaultDisplay = centsToDisplay(placementDefaultCents);
+
+  // Count effective overrides (buffer wins, unless explicit delete).
+  let overrideCount = 0;
+  for (const method of allowedMethods) {
+    const key = `${placement.id}:${method.id}`;
+    if (placementExplicitDeletes.has(key)) continue;
+    const hasBufKey = Object.prototype.hasOwnProperty.call(bufRow, method.id);
+    if (hasBufKey) {
+      if ((bufRow[method.id] ?? "").trim() !== "") overrideCount += 1;
+    } else if (savedRow[method.id] != null) {
+      overrideCount += 1;
+    }
+  }
+
+  return (
+    <div className="pmp-section">
+      <div className="pmp-section-header">
+        <div className="pmp-section-title-wrap">
+          <span className="pmp-section-title">Placement fee by method</span>
+          {overrideCount > 0 && (
+            <span
+              className="pmp-method-count"
+              aria-label={`${overrideCount} overrides`}
+            >
+              {overrideCount}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="pmp-section-subtitle">
+        Leave a field empty to use the placement&apos;s default fee.
+      </div>
+
+      {hasOrphanOverrides && (
+        <div className="pmp-orphan-banner" style={{ marginTop: 10 }}>
+          <Banner tone="info">
+            This placement has saved fee overrides for methods that aren&apos;t
+            currently enabled. Re-enable the method to view or edit them.
+          </Banner>
+        </div>
+      )}
+
+      <div className="pmp-cells pmf-cells" style={{ marginTop: 10 }}>
+        {allowedMethods.map((method) => {
+          const key = `${placement.id}:${method.id}`;
+          const savedCents = savedRow[method.id] ?? null;
+          const hasBufKey = Object.prototype.hasOwnProperty.call(bufRow, method.id);
+          const bufStr = bufRow[method.id] ?? "";
+          const isExplicitDelete = placementExplicitDeletes.has(key);
+          const displayValue = isExplicitDelete
+            ? ""
+            : hasBufKey
+              ? bufStr
+              : savedCents != null
+                ? (savedCents / 100).toFixed(2)
+                : "";
+          const isOverride =
+            !isExplicitDelete &&
+            ((hasBufKey && bufStr.trim() !== "") || savedCents != null);
+          const ariaLabel = `${method.name} placement fee for ${placement.name}`;
+          return (
+            <div key={method.id} className="pmp-cell">
+              <div className="pmp-cell-label">
+                <span className="pmp-cell-label-text" title={method.name}>
+                  {method.name}
+                </span>
+                {isOverride && (
+                  <button
+                    type="button"
+                    className="pmp-cell-reset"
+                    onClick={() => onResetCell(placement.id, method.id)}
+                    aria-label={`Reset ${method.name} fee for ${placement.name} to default`}
+                    title={`Reset to default (${currencySymbol}${defaultDisplay})`}
+                  >
+                    <Icon source={ResetIcon} />
+                  </button>
+                )}
+              </div>
+              <div
+                className={`pmp-input-wrap${isOverride ? " is-override" : ""}`}
+              >
+                <span className="pmp-input-prefix" aria-hidden="true">
+                  {currencySymbol}
+                </span>
+                <input
+                  ref={(el) => {
+                    inputRefs.current[key] = el;
+                  }}
+                  className="pmp-input"
+                  type="text"
+                  inputMode="decimal"
+                  autoComplete="off"
+                  aria-label={ariaLabel}
+                  placeholder={defaultDisplay}
+                  value={displayValue}
+                  onChange={(e) =>
+                    onUpdateCell(placement.id, method.id, e.target.value)
+                  }
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onCancelCell(placement.id, method.id);
+                      (e.currentTarget as HTMLInputElement).blur();
+                    }
+                  }}
+                  onBlur={() => {
+                    const cur =
+                      placementMethodOverrideStrings[placement.id]?.[method.id];
+                    if (cur != null && cur.trim() === "" && !isExplicitDelete) {
+                      onCancelCell(placement.id, method.id);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
