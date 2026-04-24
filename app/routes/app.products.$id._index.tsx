@@ -38,7 +38,7 @@ import {
   ResourceItem,
   Icon,
 } from "@shopify/polaris";
-import { AlertCircleIcon, CalculatorIcon, CheckCircleIcon, ImageIcon, ChevronRightIcon, DragHandleIcon } from "@shopify/polaris-icons";
+import { AlertCircleIcon, CalculatorIcon, CheckCircleIcon, ImageIcon, ChevronRightIcon, DragHandleIcon, EditIcon, ResetIcon } from "@shopify/polaris-icons";
 import { formatCurrency } from "../components/storefront/currency";
 
 import { authenticate } from "../shopify.server";
@@ -576,6 +576,10 @@ export default function ProductConfigDetailPage() {
     deriveOverridesFromConfig(config.allowedMethods)
   );
 
+  // Tracks which methodIds the merchant has clicked the pencil icon for this session.
+  // Combined with a persisted basePriceCentsOverride, determines whether to show the input.
+  const [editingOverrideFor, setEditingOverrideFor] = useState<Set<string>>(new Set());
+
   const handleNameChange = useCallback((value: string) => {
     setName(value);
     setHasChanges(true);
@@ -649,6 +653,7 @@ export default function ProductConfigDetailPage() {
       window.shopify?.toast?.show("Methods updated");
       setHasChanges(false);
       setMethodOverrides(deriveOverridesFromConfig(config.allowedMethods));
+      setEditingOverrideFor(new Set());
     }
   }, [methodFetcher.data, methodFetcher.state]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -723,6 +728,7 @@ export default function ProductConfigDetailPage() {
       }
     }
     setMethodOverrides(initial);
+    setEditingOverrideFor(new Set());
     setHasChanges(false);
   }, [config.name, config.linkedProductIds, config.allowedMethods]);
 
@@ -759,21 +765,18 @@ export default function ProductConfigDetailPage() {
   }, [hasBasicChanges, hasMethodChanges, handleSaveBasic, handleSaveMethods]);
 
   useEffect(() => {
-    const el = document.getElementById("product-detail-save-bar") as HTMLFormElement | null;
-    if (!el) return;
-    const onSubmit = (e: Event) => {
-      e.preventDefault();
-      handleSaveAll();
-    };
-    const onReset = (e: Event) => {
-      e.preventDefault();
-      handleDiscard();
-    };
-    el.addEventListener("submit", onSubmit);
-    el.addEventListener("reset", onReset);
+    const bar = document.getElementById("product-detail-save-bar");
+    if (!bar) return;
+    const saveBtn = bar.querySelector('button[variant="primary"]') as HTMLButtonElement | null;
+    const discardBtn = bar.querySelector('button:not([variant="primary"])') as HTMLButtonElement | null;
+    if (!saveBtn || !discardBtn) return;
+    const onSave = () => handleSaveAll();
+    const onDiscard = () => handleDiscard();
+    saveBtn.addEventListener("click", onSave);
+    discardBtn.addEventListener("click", onDiscard);
     return () => {
-      el.removeEventListener("submit", onSubmit);
-      el.removeEventListener("reset", onReset);
+      saveBtn.removeEventListener("click", onSave);
+      discardBtn.removeEventListener("click", onDiscard);
     };
   }, [handleSaveAll, handleDiscard]);
 
@@ -787,12 +790,60 @@ export default function ProductConfigDetailPage() {
           delete next[methodId];
           return next;
         });
+        setEditingOverrideFor((prev) => {
+          if (!prev.has(methodId)) return prev;
+          const next = new Set(prev);
+          next.delete(methodId);
+          return next;
+        });
         return prev.filter((id) => id !== methodId);
       }
       return [...prev, methodId];
     });
     setHasChanges(true);
   }, []);
+
+  const handleStartOverride = useCallback((methodId: string) => {
+    const method = methods.find((m) => m.id === methodId);
+    if (!method) return;
+    const defaultStr = (method.basePriceCents / 100).toFixed(2);
+    setMethodOverrides((prev) => ({ ...prev, [methodId]: defaultStr }));
+    setEditingOverrideFor((prev) => new Set(prev).add(methodId));
+    // Note: deliberately NOT calling setHasChanges(true) here — starting edit isn't a change.
+    // (hasMethodChanges derived value will become true since pre-filled string differs from saved empty string.)
+  }, [methods]);
+
+  const handleClearOverride = useCallback((methodId: string) => {
+    setMethodOverrides((prev) => {
+      const next = { ...prev };
+      delete next[methodId];
+      return next;
+    });
+    setEditingOverrideFor((prev) => {
+      const next = new Set(prev);
+      next.delete(methodId);
+      return next;
+    });
+    setHasChanges(true);
+  }, []);
+
+  const handleOverrideBlur = useCallback((methodId: string) => {
+    const val = methodOverrides[methodId];
+    if (val == null || val.trim() === "") {
+      // Blank on blur → auto-cancel override
+      setMethodOverrides((prev) => {
+        const next = { ...prev };
+        delete next[methodId];
+        return next;
+      });
+      setEditingOverrideFor((prev) => {
+        const next = new Set(prev);
+        next.delete(methodId);
+        return next;
+      });
+      setHasChanges(true);
+    }
+  }, [methodOverrides]);
 
   const handleDelete = useCallback(() => {
     const formData = new FormData();
@@ -860,7 +911,10 @@ export default function ProductConfigDetailPage() {
           : undefined
       }
     >
-      <form data-save-bar id="product-detail-save-bar">
+      <ui-save-bar id="product-detail-save-bar">
+        <button variant="primary" type="button">Save</button>
+        <button type="button">Discard</button>
+      </ui-save-bar>
       <Layout>
         {error && (
           <Layout.Section>
@@ -963,36 +1017,71 @@ export default function ProductConfigDetailPage() {
                   <BlockStack gap="0">
                     {methods.map((method) => {
                       const isChecked = selectedMethodIds.includes(method.id);
-                      const overrideStr = methodOverrides[method.id] ?? "";
-                      const overrideCents = overrideStr.trim() !== "" ? Math.round(parseFloat(overrideStr) * 100) : null;
-                      const showBadge =
-                        isChecked &&
-                        overrideStr.trim() !== "" &&
-                        overrideCents !== null &&
-                        Number.isFinite(overrideCents) &&
-                        overrideCents !== method.basePriceCents;
+                      const savedOverrideCents = config.allowedMethods.find(
+                        (m) => m.decorationMethodId === method.id
+                      )?.basePriceCentsOverride ?? null;
+                      const isEditing = editingOverrideFor.has(method.id) || savedOverrideCents != null;
+                      const effectiveCents = (() => {
+                        const input = methodOverrides[method.id];
+                        if (input != null && input.trim() !== "") {
+                          const cents = Math.round(parseFloat(input) * 100);
+                          if (Number.isFinite(cents)) return cents;
+                        }
+                        return savedOverrideCents ?? method.basePriceCents;
+                      })();
+
                       return (
                         <Box
                           key={method.id}
-                          paddingBlockStart="300"
-                          paddingBlockEnd="300"
+                          paddingBlock="300"
                           borderBlockEndWidth="025"
                           borderColor="border-secondary"
                         >
-                          <InlineStack align="space-between" blockAlign="center" wrap gap="300">
-                            <InlineStack gap="300" blockAlign="center" wrap={false}>
-                              <Checkbox
-                                label={method.name}
-                                checked={isChecked}
-                                onChange={() => handleMethodToggle(method.id)}
-                              />
-                              <Text variant="bodySm" tone="subdued" as="span">
-                                {`Default: ${fmt(method.basePriceCents)}`}
-                              </Text>
-                            </InlineStack>
-                            {isChecked && (
-                              <InlineStack gap="200" blockAlign="center" wrap={false}>
-                                <Box width="140px">
+                          <InlineStack align="space-between" blockAlign="center" gap="300" wrap>
+                            <Checkbox
+                              label={method.name}
+                              checked={isChecked}
+                              onChange={() => handleMethodToggle(method.id)}
+                            />
+
+                            {isChecked && !isEditing && (
+                              <InlineStack gap="200" blockAlign="center">
+                                <Text variant="bodyMd" as="span">{fmt(effectiveCents)}</Text>
+                                <Button
+                                  variant="tertiary"
+                                  icon={EditIcon}
+                                  accessibilityLabel={`Customize ${method.name} price`}
+                                  onClick={() => handleStartOverride(method.id)}
+                                />
+                              </InlineStack>
+                            )}
+
+                            {isChecked && isEditing && (
+                              <InlineStack gap="200" blockAlign="center">
+                                {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
+                                <div
+                                  style={{ width: 120 }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Escape") {
+                                      e.preventDefault();
+                                      // Esc: reset value to saved state and exit editing mode
+                                      setMethodOverrides((prev) => {
+                                        const next = { ...prev };
+                                        if (savedOverrideCents != null) {
+                                          next[method.id] = (savedOverrideCents / 100).toFixed(2);
+                                        } else {
+                                          delete next[method.id];
+                                        }
+                                        return next;
+                                      });
+                                      setEditingOverrideFor((prev) => {
+                                        const next = new Set(prev);
+                                        next.delete(method.id);
+                                        return next;
+                                      });
+                                    }
+                                  }}
+                                >
                                   <TextField
                                     label={`${method.name} price override`}
                                     labelHidden
@@ -1001,18 +1090,25 @@ export default function ProductConfigDetailPage() {
                                     min={0}
                                     step={0.01}
                                     inputMode="decimal"
-                                    placeholder={fmt(method.basePriceCents)}
-                                    helpText="Leave blank = default"
                                     autoComplete="off"
-                                    value={overrideStr}
+                                    value={methodOverrides[method.id] ?? ""}
                                     onChange={(v) => {
                                       setMethodOverrides((prev) => ({ ...prev, [method.id]: v }));
                                       setHasChanges(true);
                                     }}
+                                    onBlur={() => handleOverrideBlur(method.id)}
                                     disabled={isSubmitting}
                                   />
-                                </Box>
-                                {showBadge && <Badge tone="info">Override</Badge>}
+                                </div>
+                                <Text variant="bodySm" tone="subdued" as="span">
+                                  Default {fmt(method.basePriceCents)}
+                                </Text>
+                                <Button
+                                  variant="tertiary"
+                                  icon={ResetIcon}
+                                  accessibilityLabel={`Reset ${method.name} to default ${fmt(method.basePriceCents)}`}
+                                  onClick={() => handleClearOverride(method.id)}
+                                />
                               </InlineStack>
                             )}
                           </InlineStack>
@@ -1432,7 +1528,6 @@ export default function ProductConfigDetailPage() {
           </BlockStack>
         </Layout.Section>
       </Layout>
-      </form>
 
       {/* ============ MODALS ============ */}
 
