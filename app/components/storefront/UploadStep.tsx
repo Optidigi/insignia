@@ -428,16 +428,13 @@ export function UploadStep({
                 <span className="insignia-method-card-name">{display}</span>
                 {desc && <span className="insignia-method-card-desc">{desc}</span>}
               </span>
-              <span
-                className="insignia-method-card-price"
-                data-included={m.hidePriceWhenZero && fee === 0 ? "true" : undefined}
-              >
-                {m.hidePriceWhenZero && fee === 0
-                  ? t.v2.placement.included
-                  : fee === 0
-                  ? formatCurrency(0, config.currency)
-                  : formatPriceDelta(fee, config.currency)}
-              </span>
+              {!(m.hidePriceWhenZero && fee === 0) && (
+                <span className="insignia-method-card-price">
+                  {fee === 0
+                    ? formatCurrency(0, config.currency)
+                    : formatPriceDelta(fee, config.currency)}
+                </span>
+              )}
               <span className="insignia-method-card-radio" aria-hidden="true">
                 <IconCheck size={12} />
               </span>
