@@ -945,50 +945,68 @@ export default function ProductConfigDetailPage() {
                     </p>
                   </Banner>
                 ) : (
-                  <BlockStack gap="200">
+                  <BlockStack gap="0">
                     {methods.map((method) => {
                       const isChecked = selectedMethodIds.includes(method.id);
+                      const overrideStr = methodOverrides[method.id] ?? "";
+                      const overrideCents = overrideStr.trim() !== "" ? Math.round(parseFloat(overrideStr) * 100) : null;
+                      const showBadge =
+                        isChecked &&
+                        overrideStr.trim() !== "" &&
+                        overrideCents !== null &&
+                        Number.isFinite(overrideCents) &&
+                        overrideCents !== method.basePriceCents;
                       return (
-                        <BlockStack key={method.id} gap="150">
-                          <Checkbox
-                            label={method.name}
-                            checked={isChecked}
-                            onChange={() => handleMethodToggle(method.id)}
-                          />
-                          {isChecked && (
-                            <Box paddingInlineStart="600">
-                              <TextField
-                                label="Price override"
-                                type="number"
-                                prefix={currencySymbol}
-                                helpText="Leave blank to use method default"
-                                autoComplete="off"
-                                value={methodOverrides[method.id] ?? ""}
-                                onChange={(v) => {
-                                  setMethodOverrides((prev) => ({ ...prev, [method.id]: v }));
-                                  setHasChanges(true);
-                                }}
-                                disabled={isSubmitting}
+                        <Box
+                          key={method.id}
+                          paddingBlockStart="300"
+                          paddingBlockEnd="300"
+                          borderBlockEndWidth="025"
+                          borderColor="border-secondary"
+                        >
+                          <InlineStack align="space-between" blockAlign="center" wrap gap="300">
+                            <InlineStack gap="300" blockAlign="center" wrap={false}>
+                              <Checkbox
+                                label={method.name}
+                                checked={isChecked}
+                                onChange={() => handleMethodToggle(method.id)}
                               />
-                            </Box>
-                          )}
-                        </BlockStack>
+                              <Text variant="bodySm" tone="subdued" as="span">
+                                {`Default: ${fmt(method.basePriceCents)}`}
+                              </Text>
+                            </InlineStack>
+                            {isChecked && (
+                              <InlineStack gap="200" blockAlign="center" wrap={false}>
+                                <Box width="140px">
+                                  <TextField
+                                    label={`${method.name} price override`}
+                                    labelHidden
+                                    type="number"
+                                    prefix={currencySymbol}
+                                    min={0}
+                                    step={0.01}
+                                    inputMode="decimal"
+                                    placeholder={fmt(method.basePriceCents)}
+                                    helpText="Leave blank = default"
+                                    autoComplete="off"
+                                    value={overrideStr}
+                                    onChange={(v) => {
+                                      setMethodOverrides((prev) => ({ ...prev, [method.id]: v }));
+                                      setHasChanges(true);
+                                    }}
+                                    disabled={isSubmitting}
+                                  />
+                                </Box>
+                                {showBadge && <Badge tone="info">Override</Badge>}
+                              </InlineStack>
+                            )}
+                          </InlineStack>
+                        </Box>
                       );
                     })}
                   </BlockStack>
                 )}
 
-                {hasMethodChanges && (
-                  <InlineStack align="end">
-                    <Button
-                      variant="primary"
-                      onClick={handleSaveMethods}
-                      loading={isSubmitting}
-                    >
-                      Save methods
-                    </Button>
-                  </InlineStack>
-                )}
               </BlockStack>
             </Card>
 
@@ -1334,7 +1352,9 @@ export default function ProductConfigDetailPage() {
                           </Text>
                         </BlockStack>
                         <Text variant="bodySm" as="span">
-                          {range.minCents === range.maxCents
+                          {range.minCents === 0 && range.maxCents === 0
+                            ? "Free"
+                            : range.minCents === range.maxCents
                             ? fmt(range.minCents)
                             : `${fmt(range.minCents)} – ${fmt(range.maxCents)}`}
                         </Text>
@@ -1347,7 +1367,9 @@ export default function ProductConfigDetailPage() {
                       Total range
                     </Text>
                     <Text variant="bodySm" fontWeight="semibold" as="span">
-                      {totalMinCents === totalMaxCents
+                      {totalMinCents === 0 && totalMaxCents === 0
+                        ? "Free"
+                        : totalMinCents === totalMaxCents
                         ? fmt(totalMinCents)
                         : `${fmt(totalMinCents)} – ${fmt(totalMaxCents)}`}
                     </Text>
