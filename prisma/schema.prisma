@@ -126,6 +126,7 @@ model DecorationMethod {
   shopId              String
   name                String
   basePriceCents      Int      @default(0)
+  hidePriceWhenZero   Boolean  @default(false)
   description         String?              // NEW: merchant-facing notes
   customerName        String?              // NEW: storefront display name
   customerDescription String?              // NEW: storefront method selector text

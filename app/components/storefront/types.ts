@@ -54,6 +54,7 @@ export type DecorationMethodRef = {
   id: string;
   name: string;
   basePriceCents: number;
+  hidePriceWhenZero: boolean;
   customerName: string | null;
   customerDescription: string | null;
   artworkConstraints: {

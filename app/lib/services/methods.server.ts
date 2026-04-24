@@ -38,6 +38,7 @@ const artworkConstraintsSchema = z.object({
 export const CreateMethodSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name too long"),
   basePriceCents: z.number().int().min(0).optional().default(0),
+  hidePriceWhenZero: z.boolean().optional(),
   description: z.string().max(500).optional(),
   customerName: z.string().max(100).optional(),
   customerDescription: z.string().max(300).optional(),
@@ -47,6 +48,7 @@ export const CreateMethodSchema = z.object({
 export const UpdateMethodSchema = z.object({
   name: z.string().min(1, "Name is required").max(100, "Name too long").optional(),
   basePriceCents: z.number().int().min(0).optional(),
+  hidePriceWhenZero: z.boolean().optional(),
   description: z.string().max(500).optional().nullable(),
   customerName: z.string().max(100).optional().nullable(),
   artworkConstraints: artworkConstraintsSchema.optional().nullable(),
@@ -117,6 +119,7 @@ export async function createMethod(shopId: string, input: CreateMethodInput) {
       shopId,
       name: parsed.name,
       basePriceCents: parsed.basePriceCents,
+      hidePriceWhenZero: parsed.hidePriceWhenZero ?? false,
       description: parsed.description,
       customerName: parsed.customerName,
       customerDescription: parsed.customerDescription,
@@ -174,6 +177,9 @@ export async function updateMethod(
       ...(parsed.name !== undefined && { name: parsed.name }),
       ...(parsed.basePriceCents !== undefined && {
         basePriceCents: parsed.basePriceCents,
+      }),
+      ...(parsed.hidePriceWhenZero !== undefined && {
+        hidePriceWhenZero: parsed.hidePriceWhenZero,
       }),
       ...(parsed.description !== undefined && {
         description: parsed.description,

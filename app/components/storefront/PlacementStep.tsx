@@ -154,7 +154,7 @@ export function PlacementStep({
           const selected = placementSelections[p.id] !== undefined;
           // Find which view owns this placement so we can show its name as subtitle.
           const ownerView = config.views.find((v) => p.geometryByViewId[v.id] != null);
-          const ownerLabel = ownerView ? `${viewName(ownerView)} view` : null;
+          const ownerLabel = ownerView ? viewName(ownerView) : null;
           const placementCents = getPlacementCents(p, selectedMethodId);
           const isFree = placementCents === 0;
           // Zero-delta: green "Included" when selected, hidden otherwise.

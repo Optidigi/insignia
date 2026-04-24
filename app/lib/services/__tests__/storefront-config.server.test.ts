@@ -118,6 +118,7 @@ const MOCK_METHOD = {
     id: "method-1",
     name: "Screen Print",
     basePriceCents: 1000,
+    hidePriceWhenZero: false,
     customerName: "Screen Printing",
     customerDescription: "Vibrant colors",
     description: "Internal desc",

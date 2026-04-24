@@ -140,6 +140,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       const customerName = formData.get("customerName") as string | null;
       const basePriceCents =
         parseInt(formData.get("basePriceCents") as string ?? "0", 10) || 0;
+      const hidePriceWhenZero = formData.get("hidePriceWhenZero") === "true";
       const fileTypesRaw = formData.getAll("fileTypes") as string[];
       const maxColorsRaw = formData.get("maxColors") as string | null;
       const minDpiRaw = formData.get("minDpi") as string | null;
@@ -160,6 +161,7 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
         description: description || null,
         customerName: customerName || null,
         basePriceCents,
+        hidePriceWhenZero,
         artworkConstraints: hasConstraints ? (artworkConstraints as Parameters<typeof updateMethod>[2]["artworkConstraints"]) : null,
       });
 
@@ -213,6 +215,7 @@ export default function MethodDetailPage() {
     return initial > 0 ? String((initial / 100).toFixed(2)) : "";
   });
   const [basePriceCents, setBasePriceCents] = useState(method.basePriceCents);
+  const [hidePriceWhenZero, setHidePriceWhenZero] = useState(method.hidePriceWhenZero);
   const [fileTypes, setFileTypes] = useState<string[]>(
     loaderConstraints.fileTypes ?? [],
   );
@@ -233,6 +236,7 @@ export default function MethodDetailPage() {
     if (description !== (method.description ?? "")) return true;
     if (customerName !== (method.customerName ?? "")) return true;
     if (basePriceCents !== method.basePriceCents) return true;
+    if (hidePriceWhenZero !== method.hidePriceWhenZero) return true;
 
     const origFileTypes = loaderConstraints.fileTypes ?? [];
     if (
@@ -250,6 +254,7 @@ export default function MethodDetailPage() {
     description,
     customerName,
     basePriceCents,
+    hidePriceWhenZero,
     fileTypes,
     maxColors,
     minDpi,
@@ -288,6 +293,7 @@ export default function MethodDetailPage() {
     formData.append("description", description);
     formData.append("customerName", customerName);
     formData.append("basePriceCents", String(basePriceCents));
+    formData.append("hidePriceWhenZero", hidePriceWhenZero ? "true" : "false");
     for (const ft of fileTypes) {
       formData.append("fileTypes", ft);
     }
@@ -305,6 +311,7 @@ export default function MethodDetailPage() {
     description,
     customerName,
     basePriceCents,
+    hidePriceWhenZero,
     fileTypes,
     maxColors,
     minDpi,
@@ -317,6 +324,7 @@ export default function MethodDetailPage() {
     setCustomerName(method.customerName ?? "");
     setBasePriceCents(method.basePriceCents);
     setPriceRaw(method.basePriceCents > 0 ? String((method.basePriceCents / 100).toFixed(2)) : "");
+    setHidePriceWhenZero(method.hidePriceWhenZero);
     setFileTypes(loaderConstraints.fileTypes ?? []);
     setMaxColors(loaderConstraints.maxColors ?? undefined);
     setMinDpi(loaderConstraints.minDpi ?? undefined);
@@ -423,16 +431,24 @@ export default function MethodDetailPage() {
           description="Base price added to every order using this method."
         >
           <Card>
-            <TextField
-              label="Base price"
-              type="number"
-              value={priceRaw}
-              onChange={handlePriceChange}
-              onBlur={handlePriceBlur}
-              prefix={currency}
-              autoComplete="off"
-              helpText="Added on top of the product price and placement pricing."
-            />
+            <BlockStack gap="400">
+              <TextField
+                label="Base price"
+                type="number"
+                value={priceRaw}
+                onChange={handlePriceChange}
+                onBlur={handlePriceBlur}
+                prefix={currency}
+                autoComplete="off"
+                helpText="Added on top of the product price and placement pricing."
+              />
+              <Checkbox
+                label="Hide price when €0"
+                checked={hidePriceWhenZero}
+                onChange={setHidePriceWhenZero}
+                helpText="Show 'Included' instead of +€0.00 on the storefront when the price is zero."
+              />
+            </BlockStack>
           </Card>
         </Layout.AnnotatedSection>
 

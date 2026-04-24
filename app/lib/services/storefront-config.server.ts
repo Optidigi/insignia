@@ -61,6 +61,7 @@ export type DecorationMethodRef = {
   id: string;
   name: string;
   basePriceCents: number;
+  hidePriceWhenZero: boolean;
   customerName: string | null;
   customerDescription: string | null;
   artworkConstraints: {
@@ -439,6 +440,7 @@ export async function getStorefrontConfig(
       m.decorationMethod.basePriceCents,
       m.basePriceCentsOverride
     ),
+    hidePriceWhenZero: m.decorationMethod.hidePriceWhenZero,
     customerName: m.decorationMethod.customerName,
     customerDescription: m.decorationMethod.customerDescription ?? m.decorationMethod.description ?? null,
     artworkConstraints: m.decorationMethod.artworkConstraints as { fileTypes: string[]; maxColors: number | null; minDpi: number | null } | null,
