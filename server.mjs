@@ -112,8 +112,22 @@ app.use("/apps/insignia/customizations", standardLimiter);
 app.use("/apps/insignia/uploads", uploadLimiter);
 
 // Static assets with long-lived cache.
+//
+// Permissive CORS for /assets — the React Router static JS/CSS bundles
+// need to load from ANY merchant's storefront origin, including custom
+// domains a merchant may publish on (e.g. stitchs.nl, not just
+// *.myshopify.com). Since these bundles are public and carry no
+// credentials, `Access-Control-Allow-Origin: *` is safe and scales
+// automatically to every future merchant without per-domain config.
+// `Vary: Origin` prevents a cached response from one caller masking
+// the header for another.
 app.use(
   "/assets",
+  (_req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.vary("Origin");
+    next();
+  },
   express.static(path.join(CLIENT_DIR, "assets"), {
     immutable: true,
     maxAge: "1y",
