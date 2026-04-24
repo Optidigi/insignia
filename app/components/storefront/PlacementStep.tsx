@@ -30,6 +30,17 @@ type PlacementStepProps = {
   onImageMeta?: (viewId: string, meta: ImageMeta) => void;
   /** Currently-selected decoration method, for per-method placement-fee resolution. */
   selectedMethodId?: string | null;
+  /**
+   * Placement id that the canvas preview should zoom toward. Forwarded to
+   * the embedded PreviewCanvas. Null = un-zoomed.
+   */
+  zoomTargetPlacementId?: string | null;
+  /**
+   * Fired when the user hovers, focuses, or taps-to-select a placement row,
+   * so the shell can retarget the preview zoom. Hover-out does NOT emit null
+   * (avoids flicker between adjacent rows).
+   */
+  onZoomTargetChange?: (placementId: string | null) => void;
   t: TranslationStrings;
   onAnalytics?: (name: string, detail: Record<string, unknown>) => void;
 };
@@ -49,6 +60,8 @@ export function PlacementStep({
   highlightedPlacementId,
   onImageMeta,
   selectedMethodId = null,
+  zoomTargetPlacementId,
+  onZoomTargetChange,
   t,
   onAnalytics,
 }: PlacementStepProps) {
@@ -79,6 +92,12 @@ export function PlacementStep({
       action = "select";
     }
     onPlacementSelectionsChange(next);
+    // Mobile zoom cue: when a row becomes selected, retarget the preview.
+    // Deselect does not clear the zoom — keep the last target visible so the
+    // customer doesn't see a jarring zoom-out mid-interaction.
+    if (action === "select") {
+      onZoomTargetChange?.(placementId);
+    }
     onAnalytics?.("placement_selected", {
       placementId,
       selected: action === "select",
@@ -100,6 +119,7 @@ export function PlacementStep({
         placementSelections={placementSelections}
         logo={logo}
         highlightPlacementId={highlightedPlacementId}
+        zoomTargetPlacementId={zoomTargetPlacementId}
         viewId={desktopActiveViewId}
         onViewChange={onDesktopActiveViewChange}
         onImageMeta={onImageMeta}
@@ -116,7 +136,20 @@ export function PlacementStep({
         </span>
       </div>
 
-      <div className="insignia-placement-list">
+      <div
+        className="insignia-placement-list"
+        // Clear zoom when the cursor leaves the entire list (not between
+        // individual rows — onMouseLeave here fires only when we exit the
+        // whole container, so row-to-row movement doesn't flicker).
+        onMouseLeave={() => onZoomTargetChange?.(null)}
+        // Keyboard equivalent: when focus leaves the list for something that
+        // isn't another row inside the list, clear zoom.
+        onBlur={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+            onZoomTargetChange?.(null);
+          }
+        }}
+      >
         {config.placements.map((p) => {
           const selected = placementSelections[p.id] !== undefined;
           // Find which view owns this placement so we can show its name as subtitle.
@@ -137,6 +170,16 @@ export function PlacementStep({
                 if (onDesktopActiveViewChange && ownerView?.id) {
                   onDesktopActiveViewChange(ownerView.id);
                 }
+                onZoomTargetChange?.(p.id);
+              }}
+              // Focus bubbles up from the nested checkbox (which is already
+              // focusable), so keyboard users get the same zoom cue as mouse
+              // users via hover. No extra tabIndex on the label needed.
+              onFocus={() => {
+                if (onDesktopActiveViewChange && ownerView?.id) {
+                  onDesktopActiveViewChange(ownerView.id);
+                }
+                onZoomTargetChange?.(p.id);
               }}
             >
               <input

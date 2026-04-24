@@ -20,6 +20,8 @@ type PreviewSheetProps = {
   config: StorefrontConfig;
   placementSelections: PlacementSelections;
   logo: LogoState;
+  /** Placement id the embedded PreviewCanvas should zoom toward. */
+  zoomTargetPlacementId?: string | null;
   t: TranslationStrings;
 };
 
@@ -31,6 +33,7 @@ export function PreviewSheet({
   config,
   placementSelections,
   logo,
+  zoomTargetPlacementId,
   t,
 }: PreviewSheetProps) {
   const [dragY, setDragY] = useState(0);
@@ -121,6 +124,7 @@ export function PreviewSheet({
             config={config}
             placementSelections={placementSelections}
             logo={logo}
+            zoomTargetPlacementId={zoomTargetPlacementId}
             context="sheet"
             t={t}
           />

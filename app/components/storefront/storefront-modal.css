@@ -83,7 +83,7 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   /* Motion */
   --insignia-dur-fast: 120ms;
   --insignia-dur-med: 200ms;
-  --insignia-dur-slow: 320ms;
+  --insignia-dur-slow: 300ms;
   --insignia-ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   /* Type */
@@ -849,6 +849,60 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   transition: background var(--insignia-dur-fast) var(--insignia-ease-out);
 }
 .insignia-canvas-dot[data-active="true"] { background: var(--insignia-text-strong); }
+
+/* View cross-fade layers. Two absolutely-positioned children stack inside
+   .insignia-canvas-frame during a view transition. The incoming layer
+   stays at opacity 1 the whole time; the outgoing layer (stacked ABOVE
+   via z-index) runs a CSS @keyframes fade 1 → 0, revealing the incoming
+   underneath. The JS side just mounts the outgoing, waits 320ms, and
+   unmounts it. See docs/notes/plans/storefront-canvas-view-switch-cue.md §11. */
+.insignia-canvas-layer {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.insignia-canvas-layer[data-role="outgoing"] {
+  pointer-events: none;
+  z-index: 2;
+  animation: insignia-canvas-fade-out 320ms var(--insignia-ease-out) forwards;
+}
+.insignia-canvas-layer[data-role="incoming"] {
+  z-index: 1;
+  opacity: 1;
+}
+@keyframes insignia-canvas-fade-out {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Small always-visible badge showing the active view's name (e.g. "Front",
+   "Back", "Left sleeve"). Top-left of the canvas frame, above both canvas
+   layers (z-index 3 beats outgoing z-index 2). Non-interactive. */
+.insignia-canvas-view-label {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 3;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.88);
+  color: var(--insignia-text);
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.04);
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Freeze the frame aspect-ratio while a cross-fade is in flight so the
+   frame does not wobble when the incoming view has a different aspect than
+   the outgoing one. The inline style.aspectRatio set on the frame during
+   the transition wins over the data-aspect rules below. */
+.insignia-canvas-frame[data-transitioning="true"] { /* aspect-ratio set inline */ }
 
 /* Placement count chip */
 .insignia-pick-header {
@@ -1945,4 +1999,5 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   .insignia-toast { animation: none !important; }
   .insignia-btn:active:not(:disabled) { transform: none !important; }
   .insignia-checkbox-check { stroke-dashoffset: 0 !important; }
+  .insignia-canvas-layer { animation: none !important; transition: none !important; }
 }

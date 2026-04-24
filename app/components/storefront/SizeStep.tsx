@@ -58,6 +58,18 @@ type SizeStepProps = {
   logoMeta?: ImageMeta | null;
   /** Forward to the embedded PreviewCanvas so it populates logoMeta. */
   onLogoMeta?: (meta: ImageMeta | null) => void;
+  /**
+   * Placement id that the preview should zoom toward. On this step the
+   * shell typically mirrors the currently-active placement, but the prop
+   * is forwarded verbatim so the shell owns the policy.
+   */
+  zoomTargetPlacementId?: string | null;
+  /**
+   * Emitted whenever the active placement changes (user navigated between
+   * placements or tryAdvance moved the pointer). Shell uses this to keep
+   * zoomTargetPlacementId in sync.
+   */
+  onActivePlacementChange?: (placementId: string | null) => void;
   t: TranslationStrings;
   onAnalytics?: (name: string, detail: Record<string, unknown>) => void;
 };
@@ -153,6 +165,8 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
     onImageMeta,
     logoMeta,
     onLogoMeta,
+    zoomTargetPlacementId,
+    onActivePlacementChange,
     t,
     onAnalytics,
   },
@@ -196,6 +210,14 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
     if (ownerView && ownerView.id !== desktopActiveViewId) {
       onDesktopActiveViewChange(ownerView.id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePlacement?.id]);
+
+  // Emit the active placement id up to the shell so it can drive the zoom
+  // target. Both user navigation and tryAdvance funnel through activeIndex,
+  // so a single effect keyed on activePlacement?.id covers both paths.
+  useEffect(() => {
+    onActivePlacementChange?.(activePlacement?.id ?? null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activePlacement?.id]);
 
@@ -279,6 +301,7 @@ export const SizeStep = forwardRef<SizeStepHandle, SizeStepProps>(function SizeS
         placementSelections={placementSelections}
         logo={logo}
         highlightPlacementId={activePlacement.id}
+        zoomTargetPlacementId={zoomTargetPlacementId}
         viewId={desktopActiveViewId}
         onViewChange={onDesktopActiveViewChange}
         onImageMeta={onImageMeta}

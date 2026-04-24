@@ -252,6 +252,11 @@ export function CustomizationModal({
   const [showPreviewSheet, setShowPreviewSheet] = useState(false);
   const [desktopActiveViewId, setDesktopActiveViewId] = useState<string | undefined>(undefined);
   const [offline, setOffline] = useState(false);
+  // Placement id the canvas preview should zoom toward. Null until the user
+  // interacts (hover/tap/size-step navigation). Draft restore intentionally
+  // does NOT set this — the reload UX stays un-zoomed until the customer
+  // gestures again, per plan decision #4.
+  const [zoomTargetPlacementId, setZoomTargetPlacementId] = useState<string | null>(null);
   // Per-view natural image dimensions (set by PreviewCanvas → NativeCanvas
   // onImageMeta). Drives wide-aspect detection (B6) and SizeStep's calibration
   // cm suffix (C6) without requiring backend to project image dimensions.
@@ -315,6 +320,24 @@ export function CustomizationModal({
       return (p?.steps.length ?? 0) <= 1;
     });
   }, [config, placementSelections]);
+
+  // Effective zoom target fed to the PreviewCanvas. The Upload step is always
+  // un-zoomed (no placements chosen yet). Review keeps whatever Size left in
+  // state; if nothing active (e.g. user jumped straight here via back-nav),
+  // fall back to the first selected placement in canonical config order.
+  // Placement/Size just use the raw state value.
+  const effectiveZoomTargetPlacementId: string | null = useMemo(() => {
+    if (!config) return null;
+    if (step === "upload") return null;
+    if (step === "review") {
+      if (zoomTargetPlacementId) return zoomTargetPlacementId;
+      const firstSelected = config.placements.find(
+        (p) => placementSelections[p.id] !== undefined,
+      );
+      return firstSelected?.id ?? null;
+    }
+    return zoomTargetPlacementId;
+  }, [config, step, zoomTargetPlacementId, placementSelections]);
 
   const stepLabels: Record<WizardStep, string> = {
     upload: t.steps.upload,
@@ -1034,6 +1057,7 @@ export function CustomizationModal({
                 config={config}
                 placementSelections={placementSelections}
                 logo={logo}
+                zoomTargetPlacementId={effectiveZoomTargetPlacementId}
                 viewId={desktopActiveViewId}
                 onViewChange={setDesktopActiveViewId}
                 context="panel"
@@ -1067,6 +1091,7 @@ export function CustomizationModal({
         config={config}
         placementSelections={placementSelections}
         logo={logo}
+        zoomTargetPlacementId={effectiveZoomTargetPlacementId}
         t={t}
       />
     </div>
@@ -1111,6 +1136,8 @@ export function CustomizationModal({
             onDesktopActiveViewChange={setDesktopActiveViewId}
             onImageMeta={onImageMeta}
             selectedMethodId={selectedMethodId}
+            zoomTargetPlacementId={effectiveZoomTargetPlacementId}
+            onZoomTargetChange={setZoomTargetPlacementId}
             t={t}
             onAnalytics={dispatchAnalytics}
           />
@@ -1133,6 +1160,8 @@ export function CustomizationModal({
             onLogoMeta={onLogoMeta}
             imageMetaByViewId={imageMetaByViewId}
             logoMeta={logoMeta}
+            zoomTargetPlacementId={effectiveZoomTargetPlacementId}
+            onActivePlacementChange={setZoomTargetPlacementId}
             t={t}
             onAnalytics={dispatchAnalytics}
           />
