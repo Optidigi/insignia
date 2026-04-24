@@ -758,6 +758,25 @@ export default function ProductConfigDetailPage() {
     }
   }, [hasBasicChanges, hasMethodChanges, handleSaveBasic, handleSaveMethods]);
 
+  useEffect(() => {
+    const el = document.getElementById("product-detail-save-bar") as HTMLFormElement | null;
+    if (!el) return;
+    const onSubmit = (e: Event) => {
+      e.preventDefault();
+      handleSaveAll();
+    };
+    const onReset = (e: Event) => {
+      e.preventDefault();
+      handleDiscard();
+    };
+    el.addEventListener("submit", onSubmit);
+    el.addEventListener("reset", onReset);
+    return () => {
+      el.removeEventListener("submit", onSubmit);
+      el.removeEventListener("reset", onReset);
+    };
+  }, [handleSaveAll, handleDiscard]);
+
   const handleMethodToggle = useCallback((methodId: string) => {
     setSelectedMethodIds((prev) => {
       const isSelected = prev.includes(methodId);
@@ -841,11 +860,7 @@ export default function ProductConfigDetailPage() {
           : undefined
       }
     >
-      <ui-save-bar id="product-detail-save-bar">
-        <button variant="primary" type="button" onClick={handleSaveAll}>Save</button>
-        <button type="button" onClick={handleDiscard}>Discard</button>
-      </ui-save-bar>
-
+      <form data-save-bar id="product-detail-save-bar">
       <Layout>
         {error && (
           <Layout.Section>
@@ -1417,6 +1432,7 @@ export default function ProductConfigDetailPage() {
           </BlockStack>
         </Layout.Section>
       </Layout>
+      </form>
 
       {/* ============ MODALS ============ */}
 
