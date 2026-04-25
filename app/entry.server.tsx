@@ -1,4 +1,4 @@
-import { PassThrough } from "stream";
+import { PassThrough, Transform } from "stream";
 import { renderToPipeableStream } from "react-dom/server";
 import { ServerRouter } from "react-router";
 import { createReadableStreamFromReadable } from "@react-router/node";
@@ -6,6 +6,51 @@ import { type EntryContext } from "react-router";
 import { isbot } from "isbot";
 import { addDocumentResponseHeaders } from "./shopify.server";
 import * as Sentry from "@sentry/node";
+
+/**
+ * iOS Safari (WebKit) does NOT honor <base href> when resolving the URL
+ * inside a dynamic `import("/assets/…")` call located in an inline
+ * <script type="module">. (Static imports in the same script DO honor
+ * <base>; this is a long-standing WebKit-vs-Chromium spec ambiguity.)
+ *
+ * React Router's SSR emits exactly such a script:
+ *   import * as route0 from "/assets/root-…js";   // OK in WebKit
+ *   ...
+ *   window.__reactRouterManifest = { entry: { module: "/assets/entry.client-…js" } };
+ *   import("/assets/entry.client-…js");            // FAILS in WebKit — resolves to storefront origin → 404
+ *
+ * Fix: when serving a /apps/* route (storefront via App Proxy), buffer
+ * the entire SSR stream and rewrite the dynamic import URL + the
+ * matching manifest entry to absolute SHOPIFY_APP_URL paths. This
+ * makes the URL unambiguous: WebKit can't resolve it incorrectly
+ * because there's nothing relative left to resolve. Modal HTML is small
+ * (~15 KB) so loss-of-streaming for /apps/* is fine.
+ *
+ * Static imports + modulepreload <link>s are left untouched — they
+ * resolve correctly via <base> in WebKit.
+ */
+function makeAppProxyRewriter(appUrl: string): Transform {
+  const chunks: Buffer[] = [];
+  return new Transform({
+    transform(chunk, _encoding, callback) {
+      chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+      callback();
+    },
+    flush(callback) {
+      let html = Buffer.concat(chunks).toString("utf8");
+      html = html.replace(
+        /import\(\s*"(\/assets\/[^"]+)"\s*\)/g,
+        (_m, p) => `import("${appUrl}${p}")`,
+      );
+      html = html.replace(
+        /("module"\s*:\s*")(\/assets\/[^"]+)(")/g,
+        (_m, l, p, r) => `${l}${appUrl}${p}${r}`,
+      );
+      this.push(html);
+      callback();
+    },
+  });
+}
 
 // ---------------------------------------------------------------------------
 // Sentry — initialise only when SENTRY_DSN is provided.
@@ -63,6 +108,17 @@ export default async function handleRequest(
       {
         [callbackName]: () => {
           const body = new PassThrough();
+
+          // For App Proxy routes (storefront), inject a buffer-and-rewrite
+          // Transform between the React renderer and the response body so
+          // WebKit's dynamic-import resolution bug can't bite. See
+          // makeAppProxyRewriter docstring above.
+          const reqUrl = new URL(request.url);
+          const appUrl = (process.env.SHOPIFY_APP_URL ?? "").replace(/\/$/, "");
+          const useRewriter = reqUrl.pathname.startsWith("/apps/") && appUrl.length > 0;
+          const sink = useRewriter ? makeAppProxyRewriter(appUrl) : null;
+          if (sink) sink.pipe(body);
+
           const stream = createReadableStreamFromReadable(body);
 
           responseHeaders.set("Content-Type", "text/html");
@@ -88,7 +144,9 @@ export default async function handleRequest(
               status: responseStatusCode,
             })
           );
-          pipe(body);
+          // Pipe React's rendered output into either the rewriter (which
+          // pipes to body) or directly into body when no rewrite is needed.
+          pipe(sink ?? body);
         },
         onShellError(error) {
           reject(error);
