@@ -13,7 +13,6 @@
 import type { LoaderFunctionArgs, ActionFunctionArgs } from "react-router";
 import { useLoaderData, useActionData, useNavigation, Form } from "react-router";
 import { authenticate } from "../shopify.server";
-import { AppProxyProvider } from "@shopify/shopify-app-react-router/react";
 import db from "../db.server";
 import { serverSideStorefrontUpload } from "../lib/services/storefront-uploads.server";
 import { AppError } from "../lib/errors.server";
@@ -34,7 +33,6 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     const url = new URL(request.url);
     const orderId = url.searchParams.get("orderId") ?? "";
     const lineId = url.searchParams.get("lineId") ?? "";
-    const appUrl = (process.env.SHOPIFY_APP_URL ?? "").replace(/\/$/, "");
 
     const shop = await db.shop.findUnique({
       where: { shopifyDomain: shopDomain },
@@ -51,7 +49,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     }
 
     if (!orderId || !lineId) {
-      return { status: "missing_params", orderId, lineId, appUrl, shopDomain };
+      return { status: "missing_params", orderId, lineId, shopDomain };
     }
 
     const orderLine = await db.orderLineCustomization.findFirst({
@@ -68,18 +66,18 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
     });
 
     if (!orderLine) {
-      return { status: "not_found", orderId, lineId, appUrl, shopDomain };
+      return { status: "not_found", orderId, lineId, shopDomain };
     }
 
     if (orderLine.artworkStatus === "PROVIDED") {
-      return { status: "already_uploaded", orderId, lineId, appUrl, shopDomain };
+      return { status: "already_uploaded", orderId, lineId, shopDomain };
     }
 
     if (orderLine.artworkStatus !== "PENDING_CUSTOMER") {
-      return { status: "not_pending", orderId, lineId, appUrl, shopDomain };
+      return { status: "not_pending", orderId, lineId, shopDomain };
     }
 
-    return { status: "ready", orderId, lineId, appUrl, shopDomain };
+    return { status: "ready", orderId, lineId, shopDomain };
   } catch (error) {
     if (error instanceof Response) throw error;
     if (error instanceof AppError) {
@@ -212,10 +210,10 @@ export default function CustomerUploadPage() {
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
 
-  const { appUrl, orderId, lineId, status } = loaderData;
+  const { orderId, lineId, status } = loaderData;
 
   return (
-    <AppProxyProvider appUrl={appUrl}>
+    <>
       <title>Upload Your Artwork</title>
       <div style={{
         minHeight: "100dvh",
@@ -339,6 +337,6 @@ export default function CustomerUploadPage() {
           )}
         </div>
       </div>
-    </AppProxyProvider>
+    </>
   );
 }

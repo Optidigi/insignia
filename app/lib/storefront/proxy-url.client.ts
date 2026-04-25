@@ -5,11 +5,14 @@
  *
  * WHY THIS EXISTS
  * ---------------
- * AppProxyProvider (used in apps.insignia.modal.tsx) injects:
- *   <base href="https://<tunnel>.trycloudflare.com">
- * into the page HTML so that React Router's bundled JS/CSS files
- * (e.g. /build/client/entry.client.js) are loaded from the app tunnel
- * rather than the store domain.
+ * `app/root.tsx` injects, for any /apps/* path:
+ *   <base href="https://<app-host>/">
+ * so that React Router's bundled JS/CSS files (e.g.
+ * /build/client/entry.client.js) are loaded from the app server rather
+ * than the store domain. (Previously this <base> was emitted by
+ * <AppProxyProvider> in each leaf route, but that produced a duplicate
+ * <base> tag — root in <head> AND provider in <body> — which iOS Safari
+ * resolved differently than Chromium and broke modal hydration.)
  *
  * Modern browsers resolve JavaScript `fetch()` relative URLs against
  * the document's base URL (i.e. the <base> element), NOT window.location.
