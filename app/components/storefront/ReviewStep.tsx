@@ -24,6 +24,14 @@ type PriceResult = {
   feeCents: number;
   breakdown: Array<{ label: string; amountCents: number }>;
   validation: { ok: boolean };
+  // design-fees: optional one-time fees, separated from unitPriceCents
+  designFees?: Array<{
+    categoryId: string;
+    categoryName: string;
+    methodId: string;
+    feeCents: number;
+    alreadyCharged: boolean;
+  }>;
 };
 
 type ReviewStepProps = {
@@ -36,6 +44,16 @@ type ReviewStepProps = {
   priceResult: PriceResult | null;
   priceLoading: boolean;
   t: TranslationStrings;
+  // design-fees: client-side preview, used when priceResult is null OR when
+  // the server returned no designFees (so the review breakdown still reflects
+  // what the customer is about to be charged).
+  designFeesFallback?: Array<{
+    categoryId: string;
+    categoryName: string;
+    methodId: string;
+    feeCents: number;
+    alreadyCharged: boolean;
+  }>;
 };
 
 function originalFileName(logo: LogoState): string {
@@ -57,6 +75,7 @@ export function ReviewStep({
   priceResult,
   priceLoading,
   t,
+  designFeesFallback,
 }: ReviewStepProps) {
   const fmt = (cents: number) => formatCurrency(cents, config.currency);
 
@@ -184,6 +203,51 @@ export function ReviewStep({
             {priceLoading ? "—" : fmt(unitPriceCents)}
           </span>
         </div>
+
+        {/* design-fees: explicit one-time design-fee rows. Per §14.E these are
+            NOT included in unitPriceCents — they're independent cart lines.
+            Falls back to the client-side preview when priceResult is empty. */}
+        {(() => {
+          const lines =
+            priceResult?.designFees && priceResult.designFees.length > 0
+              ? priceResult.designFees
+              : designFeesFallback ?? [];
+          if (lines.length === 0) return null;
+          return (
+          <>
+            {lines.map((df) => {
+              const methodName =
+                config.methods.find((m) => m.id === df.methodId)?.customerName ??
+                config.methods.find((m) => m.id === df.methodId)?.name ??
+                "";
+              const label = t.v2.designFees.lineItem
+                .replace("{method}", methodName)
+                .replace("{category}", df.categoryName);
+              return (
+                <div
+                  key={`df-${df.categoryId}-${df.methodId}`}
+                  className="insignia-review-row"
+                >
+                  <span className="insignia-review-row-label">
+                    <IconSparkles className="icon" size={14} />
+                    <span>
+                      {label} {t.v2.designFees.oneTime}
+                    </span>
+                  </span>
+                  <span
+                    className="insignia-review-row-value"
+                    data-tone={df.alreadyCharged ? "success" : "accent"}
+                  >
+                    {df.alreadyCharged
+                      ? t.v2.designFees.alreadyCharged
+                      : formatPriceDelta(df.feeCents, config.currency)}
+                  </span>
+                </div>
+              );
+            })}
+          </>
+          );
+        })()}
       </div>
 
       {logo.type === "later" && (

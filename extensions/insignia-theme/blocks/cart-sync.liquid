@@ -1,0 +1,99 @@
+{% comment %}
+  design-fees: Insignia design-fees cart-sync block.
+  Place this block on the cart template (or any cart-aware section).
+  Detects when a customization line was removed and asks the backend to
+  reconcile (remove orphaned design-fee lines + free their slots).
+
+  Safe to install even when DESIGN_FEES_ENABLED=false — the backend is a
+  no-op in that case.
+{% endcomment %}
+
+<script>
+(function() {
+  if (window.__insigniaDesignFeesSync) return;
+  window.__insigniaDesignFeesSync = true;
+
+  var APP_PROXY = '/apps/insignia';
+
+  function fetchCart() {
+    return fetch('{{ shop.url }}/cart.js', { credentials: 'same-origin' })
+      .then(function(r) { return r.ok ? r.json() : null; })
+      .catch(function() { return null; });
+  }
+
+  function changeLine(key) {
+    return fetch('{{ shop.url }}/cart/change.js', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: key, quantity: 0 })
+    }).catch(function() {});
+  }
+
+  function syncOnce() {
+    fetchCart().then(function(cart) {
+      if (!cart || !cart.token) return;
+      var lines = (cart.items || []).map(function(it) {
+        return {
+          key: it.key,
+          variant_id: it.variant_id,
+          properties: it.properties || {}
+        };
+      });
+      // Detect orphans (no commit yet)
+      fetch(APP_PROXY + '/design-fees/sync', {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cartToken: cart.token, cartLines: lines })
+      }).then(function(r) { return r.ok ? r.json() : null; })
+        .then(function(data) {
+          if (!data || !data.orphans || data.orphans.length === 0) return;
+          // Remove each orphan fee line client-side
+          var removals = data.orphans
+            .filter(function(o) { return !!o.feeLineKey; })
+            .map(function(o) { return changeLine(o.feeLineKey); });
+          return Promise.all(removals).then(function() {
+            // Commit removal server-side (deletes charge rows + frees slots)
+            return fetch(APP_PROXY + '/design-fees/sync', {
+              method: 'POST',
+              credentials: 'same-origin',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ cartToken: cart.token, cartLines: lines, commit: true })
+            });
+          });
+        }).catch(function() {});
+    });
+  }
+
+  // Initial sync on cart-page render
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', syncOnce);
+  } else {
+    syncOnce();
+  }
+
+  // Subscribe to common Shopify-theme cart-update events. Best-effort —
+  // not every theme emits these. Documented in admin help text.
+  var EVENTS = ['cart:updated', 'cart-update', 'cart:refresh', 'cart:change'];
+  EVENTS.forEach(function(ev) {
+    document.addEventListener(ev, syncOnce);
+  });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Insignia Cart Sync",
+  "target": "section",
+  "enabled_on": {
+    "templates": ["cart"]
+  },
+  "settings": [
+    {
+      "type": "paragraph",
+      "content": "Automatically removes orphaned design-fee charges when a customization line is removed from the cart. Add this block to your cart template once."
+    }
+  ]
+}
+{% endschema %}

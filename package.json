@@ -26,7 +26,8 @@
     "typecheck": "react-router typegen && tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "backfill:vvc-images": "tsx scripts/backfill-color-group-vvc-images.ts"
   },
   "type": "module",
   "engines": {
@@ -81,6 +82,7 @@
     "eslint-plugin-react-hooks": "^4.6.2",
     "graphql-config": "^5.1.1",
     "prettier": "^3.6.2",
+    "tsx": "^4.20.6",
     "typescript": "^5.9.3",
     "vite": "^6.3.6",
     "vitest": "^4.1.4",

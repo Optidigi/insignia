@@ -97,6 +97,8 @@ type Props = {
   allowedMethods?: Array<{ id: string; name: string }>;
   /** Saved per-(placementId, methodId) base-fee override in cents. Row absence = inherit placement's own basePriceAdjustmentCents. */
   placementMethodOverrides?: Record<string, Record<string, number>>;
+  /** ProductConfig id — used to deep-link to the dedicated placement-edit page. */
+  productConfigId?: string;
 };
 
 // ============================================================================
@@ -177,6 +179,7 @@ export function ZonePricingPanel({
   onDeletePlacement,
   allowedMethods = [],
   placementMethodOverrides = {},
+  productConfigId,
 }: Props) {
   const stepFetcher = useFetcher();
   const reorderFetcher = useFetcher();
@@ -1147,6 +1150,18 @@ export function ZonePricingPanel({
                       }));
                     }}
                   />
+
+                  {/* Open dedicated editor (links to /app/products/:configId/placements/:placementId) */}
+                  {productConfigId && (
+                    <div style={{ borderTop: "1px solid #F3F4F6", paddingTop: 10 }}>
+                      <Button
+                        variant="plain"
+                        url={`/app/products/${productConfigId}/placements/${p.id}`}
+                      >
+                        Open full editor →
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Delete placement */}
                   {onDeletePlacement && (

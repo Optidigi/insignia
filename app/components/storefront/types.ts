@@ -92,6 +92,16 @@ export type StorefrontConfig = {
   variants: ProductVariantOption[];
   /** Which product axis drives the quantity grid cards. */
   variantAxis: "size" | "color" | "option";
+  // design-fees: per-shop summary; null when feature disabled or no categories
+  designFees?: {
+    categories: Array<{
+      id: string;
+      methodId: string;
+      name: string;
+      feeCents: number;
+    }>;
+    placementCategoryByPlacementId: Record<string, string>;
+  } | null;
   /**
    * Forward-compat: shop's branding square logo URL fetched via
    * `shop { brand { squareLogo { image { url } } } }`. The storefront

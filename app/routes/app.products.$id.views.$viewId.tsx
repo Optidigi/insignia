@@ -2062,6 +2062,7 @@ export default function ViewDetailPage() {
                     onDeletePlacement={handleDeletePlacement}
                     allowedMethods={allowedMethods}
                     placementMethodOverrides={placementMethodOverrides}
+                    productConfigId={config.id}
                   />
                 )}
 

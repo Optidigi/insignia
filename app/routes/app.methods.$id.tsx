@@ -13,6 +13,8 @@ import {
   useActionData,
   useSubmit,
   useNavigation,
+  // design-fees:
+  useFetcher,
   redirect,
 } from "react-router";
 import {
@@ -37,6 +39,9 @@ import {
 } from "../lib/services/methods.server";
 import { handleError, AppError } from "../lib/errors.server";
 import { currencySymbol } from "../lib/services/shop-currency.server";
+// design-fees:
+import { designFeesEnabled } from "../lib/services/design-fees/feature-flag.server";
+import { listCategoriesForMethod } from "../lib/services/design-fees/categories.server";
 
 // ============================================================================
 // Types
@@ -94,7 +99,19 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       throw new Response("Method not found", { status: 404 });
     }
 
-    return { method, shopId: shop.id, currency };
+    // design-fees: load categories only when feature is enabled (else dormant)
+    const designFeesOn = designFeesEnabled();
+    const designFeeCategories = designFeesOn
+      ? await listCategoriesForMethod(shop.id, method.id)
+      : [];
+
+    return {
+      method,
+      shopId: shop.id,
+      currency,
+      designFeesOn,
+      designFeeCategories,
+    };
   } catch (error) {
     if (error instanceof Response) throw error;
     if (error instanceof AppError && error.status === 404) {
@@ -196,7 +213,7 @@ const FILE_TYPE_OPTIONS = [
 // ============================================================================
 
 export default function MethodDetailPage() {
-  const { method, currency } = useLoaderData<typeof loader>();
+  const { method, currency, designFeesOn, designFeeCategories } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const navigation = useNavigation();
@@ -452,6 +469,22 @@ export default function MethodDetailPage() {
           </Card>
         </Layout.AnnotatedSection>
 
+        {/* design-fees: Section 2.5 — Design fee categories (gated) */}
+        {designFeesOn && (
+          <Layout.AnnotatedSection
+            title="Design fee categories"
+            description="One-time charges per (cart × logo × category × method). Customers pay each unique category once per cart, even when used on multiple products."
+          >
+            <Card>
+              <DesignFeeCategoriesEditor
+                methodId={method.id}
+                categories={designFeeCategories}
+                currency={currency}
+              />
+            </Card>
+          </Layout.AnnotatedSection>
+        )}
+
         {/* Section 3 -- Artwork Constraints */}
         <Layout.AnnotatedSection
           title="Artwork constraints"
@@ -590,5 +623,127 @@ export default function MethodDetailPage() {
         </Modal.Section>
       </Modal>
     </Page>
+  );
+}
+
+// design-fees: inline editor for the per-method category list. Submits to
+// /api/admin/design-fees/categories via useFetcher.
+type DesignFeeCategoryRow = {
+  id: string;
+  shopId: string;
+  methodId: string;
+  name: string;
+  feeCents: number;
+  displayOrder: number;
+};
+
+function DesignFeeCategoriesEditor(props: {
+  methodId: string;
+  categories: DesignFeeCategoryRow[];
+  currency: string;
+}) {
+  const fetcher = useFetcher();
+  const [draftName, setDraftName] = useState("");
+  const [draftFeeRaw, setDraftFeeRaw] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  const submitting = fetcher.state !== "idle";
+
+  const onAdd = useCallback(() => {
+    const name = draftName.trim();
+    if (!name) {
+      setError("Name is required");
+      return;
+    }
+    const feeCents = Math.max(0, Math.round((parseFloat(draftFeeRaw || "0") || 0) * 100));
+    const fd = new FormData();
+    fd.append("intent", "create");
+    fd.append("methodId", props.methodId);
+    fd.append("name", name);
+    fd.append("feeCents", String(feeCents));
+    fetcher.submit(fd, {
+      method: "POST",
+      action: "/api/admin/design-fees/categories",
+    });
+    setDraftName("");
+    setDraftFeeRaw("");
+    setError(null);
+  }, [draftName, draftFeeRaw, props.methodId, fetcher]);
+
+  const onDelete = useCallback(
+    (id: string) => {
+      const fd = new FormData();
+      fd.append("intent", "delete");
+      fd.append("id", id);
+      fetcher.submit(fd, {
+        method: "POST",
+        action: "/api/admin/design-fees/categories",
+      });
+    },
+    [fetcher],
+  );
+
+  return (
+    <BlockStack gap="400">
+      {error && (
+        <Banner tone="critical" onDismiss={() => setError(null)}>
+          <p>{error}</p>
+        </Banner>
+      )}
+      {props.categories.length === 0 ? (
+        <Text tone="subdued" as="p">
+          No categories configured. Add one to start charging design fees for this
+          method.
+        </Text>
+      ) : (
+        <BlockStack gap="200">
+          {props.categories.map((c) => (
+            <BlockStack key={c.id} gap="100">
+              <Text variant="bodyMd" fontWeight="medium" as="p">
+                {c.name} — {props.currency}
+                {(c.feeCents / 100).toFixed(2)}
+              </Text>
+              <div>
+                <Button
+                  tone="critical"
+                  variant="plain"
+                  onClick={() => onDelete(c.id)}
+                  disabled={submitting}
+                >
+                  Delete
+                </Button>
+              </div>
+            </BlockStack>
+          ))}
+        </BlockStack>
+      )}
+
+      <BlockStack gap="200">
+        <Text variant="bodyMd" fontWeight="semibold" as="p">
+          Add new category
+        </Text>
+        <TextField
+          label="Category name"
+          value={draftName}
+          onChange={setDraftName}
+          autoComplete="off"
+          placeholder="e.g. Klein, Groot"
+        />
+        <TextField
+          label="Fee"
+          type="number"
+          prefix={props.currency}
+          value={draftFeeRaw}
+          onChange={setDraftFeeRaw}
+          autoComplete="off"
+          helpText="Charged once per cart per (logo × this category × this method)."
+        />
+        <div>
+          <Button onClick={onAdd} disabled={submitting} loading={submitting}>
+            Add category
+          </Button>
+        </div>
+      </BlockStack>
+    </BlockStack>
   );
 }

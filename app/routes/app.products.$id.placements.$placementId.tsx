@@ -37,13 +37,15 @@ import { DeleteIcon } from "@shopify/polaris-icons";
 import { authenticate } from "../shopify.server";
 import db from "../db.server";
 import {
-  getPlacement,
   updatePlacement,
   deletePlacement,
   UpdatePlacementSchema,
 } from "../lib/services/placements.server";
-import { handleError, validateOrThrow, AppError } from "../lib/errors.server";
+import { handleError, validateOrThrow, AppError, ErrorCodes } from "../lib/errors.server";
 import { currencySymbol } from "../lib/services/shop-currency.server";
+// design-fees:
+import { designFeesEnabled } from "../lib/services/design-fees/feature-flag.server";
+import { setPlacementCategory } from "../lib/services/design-fees/categories.server";
 
 // ============================================================================
 // Loader
@@ -69,8 +71,77 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const currency = currencySymbol(shop.currencyCode);
 
   try {
-    const placement = await getPlacement(shop.id, configId, placementId);
-    return { configId, placement, shopId: shop.id, currency };
+    // Resolve placement directly via productConfig — getPlacement() takes
+    // productViewId as its 2nd arg, but the URL gives us productConfigId.
+    // This route's URL pattern (/products/:configId/placements/:placementId)
+    // doesn't carry the viewId, so we look up the placement scoped to the
+    // shop AND to any view inside the given config.
+    const placementRow = await db.placementDefinition.findFirst({
+      where: {
+        id: placementId,
+        productView: {
+          productConfigId: configId,
+          productConfig: { shopId: shop.id },
+        },
+      },
+      include: { steps: { orderBy: { displayOrder: "asc" } } },
+    });
+    if (!placementRow) {
+      throw new AppError(ErrorCodes.NOT_FOUND, "Placement not found", 404);
+    }
+    const placement = placementRow;
+    // design-fees: load categories whose method is enabled on this product config
+    const designFeesOn = designFeesEnabled();
+    let designFeeCategories: Array<{
+      id: string;
+      methodId: string;
+      methodName: string;
+      name: string;
+      feeCents: number;
+    }> = [];
+    let placementFeeCategoryId: string | null = null;
+    if (designFeesOn) {
+      const config = await db.productConfig.findFirst({
+        where: { id: configId, shopId: shop.id },
+        select: { allowedMethods: { select: { decorationMethodId: true } } },
+      });
+      const methodIds = config?.allowedMethods.map((m) => m.decorationMethodId) ?? [];
+      if (methodIds.length > 0) {
+        const cats = await db.designFeeCategory.findMany({
+          where: { shopId: shop.id, methodId: { in: methodIds } },
+          orderBy: [{ methodId: "asc" }, { displayOrder: "asc" }, { name: "asc" }],
+          select: {
+            id: true,
+            methodId: true,
+            name: true,
+            feeCents: true,
+            decorationMethod: { select: { name: true } },
+          },
+        });
+        designFeeCategories = cats.map((c) => ({
+          id: c.id,
+          methodId: c.methodId,
+          methodName: c.decorationMethod.name,
+          name: c.name,
+          feeCents: c.feeCents,
+        }));
+      }
+      const pd = await db.placementDefinition.findUnique({
+        where: { id: placementId },
+        select: { feeCategoryId: true },
+      });
+      placementFeeCategoryId = pd?.feeCategoryId ?? null;
+    }
+    return {
+      configId,
+      placement,
+      shopId: shop.id,
+      currency,
+      // design-fees:
+      designFeesOn,
+      designFeeCategories,
+      placementFeeCategoryId,
+    };
   } catch (err) {
     if (err instanceof AppError && err.status === 404) {
       throw new Response("Placement not found", { status: 404 });
@@ -103,11 +174,29 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       throw new Response("Shop not found", { status: 404 });
     }
 
+    // Resolve productViewId from the placement (URL only carries configId).
+    // Same pre-existing arg-misalignment as the loader: updatePlacement /
+    // deletePlacement take productViewId as their 2nd arg.
+    const placementForView = await db.placementDefinition.findFirst({
+      where: {
+        id: placementId,
+        productView: {
+          productConfigId: configId,
+          productConfig: { shopId: shop.id },
+        },
+      },
+      select: { productViewId: true },
+    });
+    if (!placementForView) {
+      throw new Response("Placement not found", { status: 404 });
+    }
+    const productViewId = placementForView.productViewId;
+
     const formData = await request.formData();
     const intent = formData.get("intent");
 
     if (intent === "delete") {
-      await deletePlacement(shop.id, configId, placementId);
+      await deletePlacement(shop.id, productViewId, placementId);
       return redirect(`/app/products/${configId}`);
     }
 
@@ -136,7 +225,15 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
       "Invalid placement data"
     );
 
-    await updatePlacement(shop.id, configId, placementId, input);
+    await updatePlacement(shop.id, productViewId, placementId, input);
+    // design-fees: feeCategoryId is optional; "" means clear; absent = no change.
+    if (designFeesEnabled()) {
+      const raw = formData.get("feeCategoryId");
+      if (raw !== null) {
+        const value = String(raw);
+        await setPlacementCategory(shop.id, placementId, value === "" ? null : value);
+      }
+    }
     return { success: true };
   } catch (error) {
     return handleError(error);
@@ -154,7 +251,15 @@ type PriceTier = {
 };
 
 export default function PlacementEditPage() {
-  const { configId, placement, currency } = useLoaderData<typeof loader>();
+  const {
+    configId,
+    placement,
+    currency,
+    // design-fees:
+    designFeesOn,
+    designFeeCategories,
+    placementFeeCategoryId,
+  } = useLoaderData<typeof loader>();
   const actionData = useActionData<typeof action>();
   const submit = useSubmit();
   const navigation = useNavigation();
@@ -174,6 +279,10 @@ export default function PlacementEditPage() {
   );
   const [defaultStepIndex, setDefaultStepIndex] = useState(
     placement.defaultStepIndex
+  );
+  // design-fees: per-placement fee category mapping (null = no fee)
+  const [feeCategoryId, setFeeCategoryId] = useState<string | null>(
+    placementFeeCategoryId ?? null,
   );
   const [priceTiers, setPriceTiers] = useState<PriceTier[]>(
     placement.steps.length > 0
@@ -227,6 +336,8 @@ export default function PlacementEditPage() {
     Math.round((parseFloat(basePriceAmount) || 0) * 100) !== placement.basePriceAdjustmentCents ||
     hidePriceWhenZero !== placement.hidePriceWhenZero ||
     defaultStepIndex !== placement.defaultStepIndex ||
+    // design-fees: include in change detection
+    (designFeesOn && (feeCategoryId ?? null) !== (placementFeeCategoryId ?? null)) ||
     JSON.stringify(priceTiers.map((s) => ({ label: s.label, priceAdjustmentCents: s.priceAdjustmentCents }))) !==
       JSON.stringify(
         placement.steps.map((s: { label: string; priceAdjustmentCents: number }) => ({
@@ -261,6 +372,10 @@ export default function PlacementEditPage() {
     formData.append("hidePriceWhenZero", String(hidePriceWhenZero));
     formData.append("defaultStepIndex", String(Math.min(defaultStepIndex, stepValues.length - 1)));
     formData.append("steps", JSON.stringify(stepValues));
+    // design-fees: persist mapping (only when feature is on)
+    if (designFeesOn) {
+      formData.append("feeCategoryId", feeCategoryId ?? "");
+    }
     submit(formData, { method: "POST" });
     setError(null);
   }, [
@@ -270,6 +385,9 @@ export default function PlacementEditPage() {
     defaultStepIndex,
     priceTiers,
     submit,
+    // design-fees:
+    designFeesOn,
+    feeCategoryId,
   ]);
 
   const handleDelete = useCallback(() => {
@@ -345,6 +463,22 @@ export default function PlacementEditPage() {
                     checked={hidePriceWhenZero}
                     onChange={setHidePriceWhenZero}
                   />
+                  {/* design-fees: per-placement category mapping */}
+                  {designFeesOn && (
+                    <Select
+                      label="Design fee category"
+                      options={[
+                        { label: "No design fee for this placement", value: "" },
+                        ...designFeeCategories.map((c) => ({
+                          label: `${c.methodName} – ${c.name} (${currency}${(c.feeCents / 100).toFixed(2)})`,
+                          value: c.id,
+                        })),
+                      ]}
+                      value={feeCategoryId ?? ""}
+                      onChange={(v) => setFeeCategoryId(v === "" ? null : v)}
+                      helpText="Charged once per cart per (logo × this category × method) when this placement is selected."
+                    />
+                  )}
                 </FormLayout>
               </BlockStack>
             </Card>

@@ -55,7 +55,8 @@ export const action = async ({ request }: ActionFunctionArgs) => {
       );
     }
 
-    let body: { customizationId?: string };
+    // design-fees: cartToken is best-effort dedup, NOT a security boundary
+    let body: { customizationId?: string; cartToken?: string | null };
     try {
       body = await request.json();
     } catch {
@@ -88,7 +89,13 @@ export const action = async ({ request }: ActionFunctionArgs) => {
     const runGraphql = async (query: string, variables?: Record<string, unknown>) => {
       return (await admin.graphql(query, { variables } as Record<string, unknown>)) as Response;
     };
-    const result = await computeCustomizationPrice(shop.id, String(customizationId), runGraphql);
+    // design-fees: validate cart token format. Modern Shopify cart tokens
+    // include `?key=…` suffix; allow URL-safe chars and a generous cap.
+    // Sanity check only — no security impact.
+    const CART_TOKEN_FORMAT = /^[A-Za-z0-9_\-?=&:.+~]{1,512}$/;
+    const rawCartToken = typeof body.cartToken === "string" ? body.cartToken : null;
+    const cartToken = rawCartToken && CART_TOKEN_FORMAT.test(rawCartToken) ? rawCartToken : null;
+    const result = await computeCustomizationPrice(shop.id, String(customizationId), runGraphql, cartToken);
     return jsonResponse(result, 200, origin);
   } catch (error) {
     if (error instanceof Response) throw error;

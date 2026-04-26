@@ -14,6 +14,8 @@ import {
   effectivePlacementAdjustmentCents,
 } from "./methods.server";
 import type { ProductVariantOption } from "../../components/storefront/types";
+// design-fees:
+import { designFeesEnabled } from "./design-fees/feature-flag.server";
 
 // Response types per storefront-config.md
 export type PlacementGeometry = {
@@ -71,6 +73,19 @@ export type DecorationMethodRef = {
   } | null;
 };
 
+// design-fees: per-shop summary surfaced to the storefront. Null when feature
+// is disabled OR when no categories are configured (dead-quiet UX).
+export type StorefrontDesignFees = {
+  categories: Array<{
+    id: string;
+    methodId: string;
+    name: string;
+    feeCents: number;
+  }>;
+  /** placementId -> categoryId map, only for placements with a mapping */
+  placementCategoryByPlacementId: Record<string, string>;
+};
+
 export type StorefrontConfig = {
   productConfigId: string;
   shop: string;
@@ -90,6 +105,8 @@ export type StorefrontConfig = {
   variants: ProductVariantOption[];
   /** Which product axis drives the quantity grid cards. */
   variantAxis: "size" | "color" | "option";
+  // design-fees: null when feature off or no categories configured
+  designFees: StorefrontDesignFees | null;
 };
 
 const SIGNED_URL_EXPIRES_SEC = 600;
@@ -165,6 +182,9 @@ export async function getStorefrontConfig(
   let productTitle = "Product";
   let variants: ProductVariantOption[] = [];
   let variantAxis: "size" | "color" | "option" = "option";
+  // view-image-orphan-fix: capture color-group siblings outside the try-block so we can
+  // view-image-orphan-fix: query VVCs for them in the Promise.all below.
+  let siblingVariantIdsBySameColor: string[] = [];
   if (runGraphql) {
     try {
       const variantRes = await runGraphql(
@@ -243,10 +263,13 @@ export async function getStorefrontConfig(
             }
           }
         }
-        // Detect color axis only when no size axis was found
-        if (!sizeOptionName) {
-          colorOptionName = firstOptions.find((o) => COLOR_NAME_RE.test(o.name))?.name ?? null;
-        }
+        // view-image-orphan-fix: detect color axis INDEPENDENTLY of size axis.
+        // view-image-orphan-fix: previously this was gated behind `!sizeOptionName`, which
+        // view-image-orphan-fix: meant products with BOTH size and color (e.g. Stitchs's
+        // view-image-orphan-fix: shirts) never got `colorOptionName` set — so the color-group
+        // view-image-orphan-fix: image fallback would be a no-op for the merchants who
+        // view-image-orphan-fix: actually need it. Both axes can coexist on the same product.
+        colorOptionName = firstOptions.find((o) => COLOR_NAME_RE.test(o.name))?.name ?? null;
       }
 
       // Map all variants
@@ -266,6 +289,30 @@ export async function getStorefrontConfig(
 
       // Compute variantAxis for this product
       variantAxis = sizeOptionName ? "size" : colorOptionName ? "color" : "option";
+
+      // view-image-orphan-fix: identify all sibling variants in the same color group as the
+      // view-image-orphan-fix: selected variant. Used to recover view images when this
+      // view-image-orphan-fix: variant's per-view image was orphaned by Shopify variant churn
+      // view-image-orphan-fix: (the source size variant of the upload was deleted but other
+      // view-image-orphan-fix: same-color variants survive and have their own VVC rows).
+      if (colorOptionName) {
+        const selectedForColor = allMappedVariants.find((v) => v.id === variantId);
+        const colorOpt = selectedForColor?.selectedOptions.find(
+          (o) => o.name === colorOptionName
+        );
+        const selectedColorValue = colorOpt?.value ?? null;
+        if (selectedColorValue) {
+          siblingVariantIdsBySameColor = allMappedVariants
+            .filter(
+              (v) =>
+                v.id !== variantId &&
+                v.selectedOptions.some(
+                  (o) => o.name === colorOptionName && o.value === selectedColorValue
+                )
+            )
+            .map((v) => v.id);
+        }
+      }
 
       // Filter to only variants matching the selected variant's non-size options
       const selectedVariant = allMappedVariants.find((v) => v.id === variantId);
@@ -291,17 +338,54 @@ export async function getStorefrontConfig(
     }
   }
 
-  const [settings, variantViewConfigs, shopRecord] = await Promise.all([
+  const [settings, variantViewConfigs, colorGroupVVCs, shopRecord] = await Promise.all([
     getMerchantSettings(shopId),
     db.variantViewConfiguration.findMany({
       where: { productConfigId: config.id, variantId },
       include: { productView: true },
     }),
+    // view-image-orphan-fix: query VVCs for sibling variants in the same color group
+    // view-image-orphan-fix: that have a non-null imageUrl. This is the read-time fallback
+    // view-image-orphan-fix: that recovers view images when the selected variant's own VVC
+    // view-image-orphan-fix: row is missing or has imageUrl=null because the source upload
+    // view-image-orphan-fix: lived on a now-deleted variant.
+    // view-image-orphan-fix: Determinism caveat: if the chosen earliest sibling is later
+    // view-image-orphan-fix: deleted, the displayed image flips to the next-earliest.
+    // view-image-orphan-fix: Acceptable — better than showing a broken image — but worth
+    // view-image-orphan-fix: knowing for support diagnostics.
+    siblingVariantIdsBySameColor.length > 0
+      ? db.variantViewConfiguration.findMany({
+          where: {
+            productConfigId: config.id,
+            variantId: { in: siblingVariantIdsBySameColor },
+            imageUrl: { not: null },
+          },
+          select: { viewId: true, imageUrl: true, createdAt: true, id: true },
+          // view-image-orphan-fix: secondary sort on id breaks ties when
+          // multiple siblings share createdAt to the millisecond (rare but
+          // possible in batch inserts). Matches the SQL recovery script's
+          // determinism (vvc."createdAt" ASC, vvc.id ASC).
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        })
+      : Promise.resolve(
+          [] as Array<{ viewId: string; imageUrl: string | null; createdAt: Date; id: string }>
+        ),
     db.shop.findUnique({
       where: { id: shopId },
       select: { currencyCode: true },
     }),
   ]);
+
+  // view-image-orphan-fix: build a viewId -> first-available-sibling-imageKey map.
+  // view-image-orphan-fix: First-occurrence wins (orderBy createdAt asc above ensures the
+  // view-image-orphan-fix: earliest-uploaded sibling is selected, giving a consistent image
+  // view-image-orphan-fix: across page loads for the same color).
+  const colorGroupImageByViewId = new Map<string, string>();
+  for (const vvc of colorGroupVVCs) {
+    if (vvc.imageUrl && !colorGroupImageByViewId.has(vvc.viewId)) {
+      colorGroupImageByViewId.set(vvc.viewId, vvc.imageUrl);
+    }
+  }
 
   const currency = shopRecord?.currencyCode ?? "";
 
@@ -310,7 +394,16 @@ export async function getStorefrontConfig(
   const views: ConfiguredView[] = await Promise.all(
     config.views.map(async (view) => {
       const vc = viewConfigByViewId.get(view.id);
-      const rawImageKey = vc?.imageUrl ?? view.defaultImageKey ?? null;
+      // view-image-orphan-fix: resolution order is now:
+      // view-image-orphan-fix:   1. this variant's own VVC imageUrl (existing)
+      // view-image-orphan-fix:   2. NEW: any same-color sibling's VVC imageUrl
+      // view-image-orphan-fix:   3. ProductView.defaultImageKey (existing)
+      // view-image-orphan-fix:   4. null -> isMissingImage: true
+      const rawImageKey =
+        vc?.imageUrl
+        ?? colorGroupImageByViewId.get(view.id)
+        ?? view.defaultImageKey
+        ?? null;
       let imageUrl: string | null = null;
       if (rawImageKey) {
         try {
@@ -446,6 +539,39 @@ export async function getStorefrontConfig(
     artworkConstraints: m.decorationMethod.artworkConstraints as { fileTypes: string[]; maxColors: number | null; minDpi: number | null } | null,
   }));
 
+  // design-fees: build the per-shop summary if feature is enabled and any
+  // category exists. Returns null in all other cases (dead-quiet UX).
+  let designFees: StorefrontDesignFees | null = null;
+  if (designFeesEnabled()) {
+    const allowedMethodIds = config.allowedMethods.map((m) => m.decorationMethod.id);
+    if (allowedMethodIds.length > 0) {
+      const dfCategories = await db.designFeeCategory.findMany({
+        where: { shopId, methodId: { in: allowedMethodIds } },
+        orderBy: [{ displayOrder: "asc" }, { name: "asc" }],
+        select: {
+          id: true,
+          methodId: true,
+          name: true,
+          feeCents: true,
+        },
+      });
+      if (dfCategories.length > 0) {
+        const placementCategoryByPlacementId: Record<string, string> = {};
+        for (const v of config.views) {
+          for (const p of v.placements) {
+            if (p.feeCategoryId) {
+              placementCategoryByPlacementId[p.id] = p.feeCategoryId;
+            }
+          }
+        }
+        designFees = {
+          categories: dfCategories,
+          placementCategoryByPlacementId,
+        };
+      }
+    }
+  }
+
   return {
     productConfigId: config.id,
     shop: shopDomain,
@@ -464,5 +590,6 @@ export async function getStorefrontConfig(
     placements,
     variants,
     variantAxis,
+    designFees,
   };
 }

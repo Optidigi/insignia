@@ -33,6 +33,11 @@ import {
   addMultipleCustomizedToCart,
   buildGarmentProperties,
   buildFeeProperties,
+  // design-fees:
+  getCartToken,
+  buildCustomizationDesignFeeProperties,
+  changeCartLine,
+  type DesignFeeLineInput,
 } from "../../lib/storefront/cart.client";
 import { proxyUrl } from "../../lib/storefront/proxy-url.client";
 import { getTranslations, detectLocale } from "./i18n";
@@ -73,6 +78,27 @@ type PriceResult = {
   feeCents: number;
   breakdown: Array<{ label: string; amountCents: number }>;
   validation: { ok: boolean };
+  // design-fees: optional per-cart one-time fees (separate from unitPriceCents)
+  designFees?: Array<{
+    categoryId: string;
+    categoryName: string;
+    methodId: string;
+    feeCents: number;
+    alreadyCharged: boolean;
+  }>;
+};
+
+// design-fees: ephemeral pending lines from /prepare
+type PendingDesignFeeLine = {
+  tempId: string;
+  slotId: string;
+  slotVariantId: string;
+  feeCentsCharged: number;
+  categoryId: string;
+  categoryName: string;
+  methodId: string;
+  logoContentHash: string;
+  lineProperties: Record<string, string>;
 };
 
 type PrepareResult = {
@@ -81,6 +107,13 @@ type PrepareResult = {
   pricingVersion: string;
   unitPriceCents: number;
   feeCents: number;
+  // design-fees:
+  pendingDesignFeeLines?: PendingDesignFeeLine[];
+  designFeeTagging?: {
+    logoContentHash: string;
+    feeCategoryIds: string[];
+    methodId: string;
+  } | null;
 };
 
 type SubmitState = "ready" | "submitting" | "success" | "error" | "pool-exhausted";
@@ -292,6 +325,9 @@ export function CustomizationModal({
   const idempotencyKeyRef = useRef<string | null>(null);
   const closingRef = useRef(false);
   const sizeStepRef = useRef<SizeStepHandle>(null);
+  // design-fees: cart token captured lazily on mount. Best-effort dedup
+  // identity (§14.C). Null until the first /cart.js fetch resolves.
+  const cartTokenRef = useRef<string | null>(null);
 
   // useIsDesktopViewport gates PreviewCanvas only — not the JSX tree structure.
   // See the hook definition above the component for SSR safety notes.
@@ -374,6 +410,89 @@ export function CustomizationModal({
     return base + method + placements;
   }, [config, selectedMethod, selectedMethodId, placementSelections, step]);
 
+  // design-fees: client-side preview of which design fees apply for the
+  // CURRENT selection (method + selected placements). Used on placement/size
+  // steps before priceResult exists, so the running total + breakdown reflect
+  // fees in real time. On review step the priceResult-based version (with
+  // cart-aware alreadyCharged) takes priority — see designFeesActiveLines below.
+  const designFeesPreviewLines = useMemo(() => {
+    if (!config?.designFees || !selectedMethodId) {
+      return [] as Array<{
+        categoryId: string;
+        methodId: string;
+        categoryName: string;
+        feeCents: number;
+        alreadyCharged: boolean;
+      }>;
+    }
+    const seen = new Set<string>();
+    const out: Array<{
+      categoryId: string;
+      methodId: string;
+      categoryName: string;
+      feeCents: number;
+      alreadyCharged: boolean;
+    }> = [];
+    for (const placementId of Object.keys(placementSelections)) {
+      const categoryId = config.designFees.placementCategoryByPlacementId[placementId];
+      if (!categoryId) continue;
+      const cat = config.designFees.categories.find(
+        (c) => c.id === categoryId && c.methodId === selectedMethodId,
+      );
+      if (!cat || seen.has(cat.id)) continue;
+      seen.add(cat.id);
+      out.push({
+        categoryId: cat.id,
+        methodId: cat.methodId,
+        categoryName: cat.name,
+        feeCents: cat.feeCents,
+        alreadyCharged: false,
+      });
+    }
+    return out;
+  }, [config, selectedMethodId, placementSelections]);
+
+  // design-fees: source-of-truth for footer + Review breakdown. When
+  // priceResult is present (review step or after price-recalc), use it so
+  // alreadyCharged tuples render correctly. Otherwise fall back to the
+  // client-side preview computed above.
+  const designFeesActiveLines = useMemo(() => {
+    if (priceResult?.designFees && priceResult.designFees.length > 0) {
+      return priceResult.designFees;
+    }
+    return designFeesPreviewLines;
+  }, [priceResult, designFeesPreviewLines]);
+
+  // design-fees: per-placement preview map. Reads config.designFees +
+  // priceResult.designFees. When feature is off (config.designFees === null),
+  // resolves to undefined (PlacementStep renders no sub-labels).
+  const designFeesByPlacementId = useMemo(() => {
+    if (!config?.designFees) return undefined;
+    const map: Record<string, { feeCents: number; alreadyCharged: boolean }> = {};
+    const decisionByCategory = new Map<string, { feeCents: number; alreadyCharged: boolean }>();
+    for (const df of priceResult?.designFees ?? []) {
+      decisionByCategory.set(df.categoryId, {
+        feeCents: df.feeCents,
+        alreadyCharged: df.alreadyCharged,
+      });
+    }
+    for (const [placementId, categoryId] of Object.entries(
+      config.designFees.placementCategoryByPlacementId,
+    )) {
+      const decision = decisionByCategory.get(categoryId);
+      if (decision) {
+        map[placementId] = decision;
+      } else {
+        // No price computed yet — show base category fee from config
+        const cat = config.designFees.categories.find((c) => c.id === categoryId);
+        if (cat) {
+          map[placementId] = { feeCents: cat.feeCents, alreadyCharged: false };
+        }
+      }
+    }
+    return map;
+  }, [config, priceResult]);
+
   const fallbackUnitPriceCents = useMemo(() => {
     if (!config) return 0;
     const base = config.baseProductPriceCents ?? 0;
@@ -392,12 +511,28 @@ export function CustomizationModal({
         ? t.footer.startingFrom
         : t.footer.estimatedTotal;
 
+  // design-fees: pending fees (those NOT alreadyCharged) for the current
+  // active state — review uses cart-aware priceResult.designFees, earlier
+  // steps fall back to the client-side preview.
+  const designFeesPendingCents = useMemo(
+    () =>
+      designFeesActiveLines.reduce(
+        (sum, d) => (d.alreadyCharged ? sum : sum + d.feeCents),
+        0,
+      ),
+    [designFeesActiveLines],
+  );
+
+  // design-fees: include fees in the running total on EVERY step (placement,
+  // size, review). Without this the modal's running total disagrees with the
+  // Shopify cart total for any cart with active design fees.
   const footerPriceValue =
     step === "review"
-      ? totalQuantity * (priceResult?.unitPriceCents ?? fallbackUnitPriceCents)
+      ? totalQuantity * (priceResult?.unitPriceCents ?? fallbackUnitPriceCents) +
+        designFeesPendingCents
       : step === "upload"
         ? config?.baseProductPriceCents ?? 0
-        : estimatedTotal;
+        : estimatedTotal + designFeesPendingCents;
 
   // ─── Config fetch ──
   const fetchConfig = useCallback(async () => {
@@ -469,6 +604,18 @@ export function CustomizationModal({
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = prev;
+    };
+  }, []);
+
+  // design-fees: capture the cart token once on mount. Failure is non-fatal —
+  // missing token just disables design-fee dedup for this modal session.
+  useEffect(() => {
+    let cancelled = false;
+    void getCartToken().then((token) => {
+      if (!cancelled) cartTokenRef.current = token;
+    });
+    return () => {
+      cancelled = true;
     };
   }, []);
 
@@ -567,6 +714,8 @@ export function CustomizationModal({
         placements,
         logoAssetIdsByPlacementId,
         artworkStatus: logo.type === "later" ? "PENDING_CUSTOMER" : "PROVIDED",
+        // design-fees: forward best-effort dedup identity to the backend
+        cartToken: cartTokenRef.current,
       };
       const res = await fetchWithRetry(proxyUrl("/apps/insignia/customizations"), {
         method: "POST",
@@ -610,6 +759,8 @@ export function CustomizationModal({
         placements,
         logoAssetIdsByPlacementId,
         artworkStatus: logo.type === "later" ? "PENDING_CUSTOMER" : "PROVIDED",
+        // design-fees: forward best-effort dedup identity to the backend
+        cartToken: cartTokenRef.current,
       };
       const res = await fetchWithRetry(proxyUrl("/apps/insignia/customizations"), {
         method: "POST",
@@ -640,7 +791,8 @@ export function CustomizationModal({
       const res = await fetchWithRetry(proxyUrl("/apps/insignia/price"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customizationId: cid }),
+        // design-fees: include cartToken so the price response includes designFees
+        body: JSON.stringify({ customizationId: cid, cartToken: cartTokenRef.current }),
       });
       if (!res.ok) {
         const data = (await res.json().catch(() => ({}))) as { error?: { message?: string } };
@@ -732,6 +884,70 @@ export function CustomizationModal({
     [totalQuantity, productId, variantId],
   );
 
+  // design-fees: persist CartDesignFeeCharge rows and reconcile conflicts.
+  // For each conflict (another tab/parallel-prepare beat us to the tuple),
+  // the matching cart line is removed via /cart/change.js qty=0. Per §14.B.
+  const persistDesignFeeCharges = useCallback(
+    async (args: {
+      cartToken: string;
+      pendingFees: PendingDesignFeeLine[];
+      cart: { items: Array<{ key: string; variant_id: number }> };
+    }) => {
+      const { cartToken, pendingFees, cart } = args;
+      // Map slotVariantId (numeric) -> the cart-line key
+      const lineKeyByVariantId = new Map<number, string>();
+      for (const it of cart.items) {
+        lineKeyByVariantId.set(Number(it.variant_id), it.key);
+      }
+      const inputs = pendingFees.map((p) => {
+        const numericVariant = Number(
+          p.slotVariantId.replace("gid://shopify/ProductVariant/", ""),
+        );
+        return {
+          tempId: p.tempId,
+          slotId: p.slotId,
+          shopifyVariantId: p.slotVariantId,
+          shopifyLineKey: lineKeyByVariantId.get(numericVariant) ?? null,
+          feeCentsCharged: p.feeCentsCharged,
+          categoryId: p.categoryId,
+          methodId: p.methodId,
+          logoContentHash: p.logoContentHash,
+        };
+      });
+      try {
+        const res = await fetch(proxyUrl("/apps/insignia/design-fees/confirm-charges"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ cartToken, inputs }),
+        });
+        if (!res.ok) return;
+        const data = (await res.json().catch(() => ({}))) as {
+          conflicts?: Array<{ tempId: string; slotId: string }>;
+        };
+        const conflicts = data.conflicts ?? [];
+        if (conflicts.length === 0) return;
+        // Remove conflicted (duplicate) design-fee cart lines client-side
+        for (const c of conflicts) {
+          const pf = pendingFees.find((p) => p.tempId === c.tempId);
+          if (!pf) continue;
+          const numericVariant = Number(
+            pf.slotVariantId.replace("gid://shopify/ProductVariant/", ""),
+          );
+          const lineKey = lineKeyByVariantId.get(numericVariant);
+          if (!lineKey) continue;
+          try {
+            await changeCartLine(lineKey, 0);
+          } catch {
+            // Non-fatal — cart-sync will retry on next page load
+          }
+        }
+      } catch {
+        // Non-fatal — feature degrades gracefully
+      }
+    },
+    [],
+  );
+
   const submitOneVariant = useCallback(
     async (variantId: string, qty: number) => {
       if (!selectedMethodId) throw new Error("No decoration method selected");
@@ -740,7 +956,8 @@ export function CustomizationModal({
       const res = await fetch(proxyUrl("/apps/insignia/prepare"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ customizationId: cid }),
+        // design-fees: include cartToken so prepare returns pendingDesignFeeLines
+        body: JSON.stringify({ customizationId: cid, cartToken: cartTokenRef.current }),
       });
       const json = (await res.json().catch(() => ({}))) as Partial<PrepareResult> & {
         error?: { code?: string; message?: string };
@@ -765,7 +982,42 @@ export function CustomizationModal({
         artworkStatus: logo.type === "uploaded" ? "PROVIDED" : "PENDING_CUSTOMER",
       });
       const feeProps = buildFeeProperties();
-      const cart = await addCustomizedToCart(variantId, slotVariantId, qty, garmentProps, feeProps);
+      // design-fees: tag customization line + build extra fee lines
+      const designFeeProps = json.designFeeTagging
+        ? buildCustomizationDesignFeeProperties({
+            logoContentHash: json.designFeeTagging.logoContentHash,
+            feeCategoryIds: json.designFeeTagging.feeCategoryIds,
+            methodId: json.designFeeTagging.methodId,
+          })
+        : {};
+      const garmentPropsTagged = { ...garmentProps, ...designFeeProps };
+      const pendingFees = json.pendingDesignFeeLines ?? [];
+      const designFeeLines: DesignFeeLineInput[] = pendingFees.map((dfl) => ({
+        variantId: dfl.slotVariantId,
+        quantity: 1, // one-time per cart per (hash, category, method)
+        properties: dfl.lineProperties,
+      }));
+      let cart;
+      try {
+        cart = await addCustomizedToCart(
+          variantId,
+          slotVariantId,
+          qty,
+          garmentPropsTagged,
+          feeProps,
+          designFeeLines,
+        );
+      } catch (cartErr) {
+        // design-fees: free reserved slots so they're not lost on failure
+        if (pendingFees.length > 0) {
+          fetch(proxyUrl("/apps/insignia/design-fees/abort-charges"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ slotIds: pendingFees.map((p) => p.slotId) }),
+          }).catch(() => {});
+        }
+        throw cartErr;
+      }
       // Best-effort confirm; failures don't block the cart redirect.
       try {
         await fetch(proxyUrl("/apps/insignia/cart-confirm"), {
@@ -776,9 +1028,17 @@ export function CustomizationModal({
       } catch {
         /* non-fatal */
       }
+      // design-fees: persist charges + handle conflicts (§14.B)
+      if (pendingFees.length > 0 && cartTokenRef.current) {
+        await persistDesignFeeCharges({
+          cartToken: cartTokenRef.current,
+          pendingFees,
+          cart,
+        });
+      }
       return { cart, customizationId: cid };
     },
-    [ensureCustomization, selectedMethodId, selectedMethod, config, placementSelections, logo.type],
+    [ensureCustomization, selectedMethodId, selectedMethod, config, placementSelections, logo.type, persistDesignFeeCharges],
   );
 
   const onSubmit = useCallback(async (opts?: { isAutoRetry?: boolean }) => {
@@ -826,7 +1086,8 @@ export function CustomizationModal({
           const res = await fetch(proxyUrl("/apps/insignia/prepare"), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ customizationId: cid }),
+            // design-fees: include cartToken so prepare returns pendingDesignFeeLines
+            body: JSON.stringify({ customizationId: cid, cartToken: cartTokenRef.current }),
           });
           const json = (await res.json().catch(() => ({}))) as Partial<PrepareResult> & {
             error?: { code?: string; message?: string };
@@ -849,13 +1110,23 @@ export function CustomizationModal({
             }),
             artworkStatus: logo.type === "uploaded" ? "PROVIDED" : "PENDING_CUSTOMER",
           });
+          // design-fees: tag customization line + collect fee lines for batching
+          const designFeeProps = json.designFeeTagging
+            ? buildCustomizationDesignFeeProperties({
+                logoContentHash: json.designFeeTagging.logoContentHash,
+                feeCategoryIds: json.designFeeTagging.feeCategoryIds,
+                methodId: json.designFeeTagging.methodId,
+              })
+            : {};
           return {
             cid,
+            // design-fees:
+            pendingFees: json.pendingDesignFeeLines ?? [],
             lineItem: {
               baseVariantId: vId,
               feeVariantId: json.slotVariantId!,
               quantity: qty,
-              garmentProperties: garmentProps,
+              garmentProperties: { ...garmentProps, ...designFeeProps },
               feeProperties: buildFeeProperties(),
             },
           };
@@ -863,7 +1134,26 @@ export function CustomizationModal({
       );
       const lineItems = prepared.map((p) => p.lineItem);
       const cids = prepared.map((p) => p.cid);
-      const cart = await addMultipleCustomizedToCart(lineItems);
+      // design-fees: aggregate pending fee lines from all parallel prepares
+      const allPendingFees: PendingDesignFeeLine[] = prepared.flatMap((p) => p.pendingFees);
+      const designFeeLines: DesignFeeLineInput[] = allPendingFees.map((dfl) => ({
+        variantId: dfl.slotVariantId,
+        quantity: 1,
+        properties: dfl.lineProperties,
+      }));
+      let cart;
+      try {
+        cart = await addMultipleCustomizedToCart(lineItems, designFeeLines);
+      } catch (cartErr) {
+        if (allPendingFees.length > 0) {
+          fetch(proxyUrl("/apps/insignia/design-fees/abort-charges"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ slotIds: allPendingFees.map((p) => p.slotId) }),
+          }).catch(() => {});
+        }
+        throw cartErr;
+      }
       // Confirm each cid (non-blocking).
       for (const cid of cids) {
         fetch(proxyUrl("/apps/insignia/cart-confirm"), {
@@ -871,6 +1161,14 @@ export function CustomizationModal({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ customizationId: cid }),
         }).catch(() => {});
+      }
+      // design-fees: persist all charges + reconcile parallel-prepare conflicts
+      if (allPendingFees.length > 0 && cartTokenRef.current) {
+        await persistDesignFeeCharges({
+          cartToken: cartTokenRef.current,
+          pendingFees: allPendingFees,
+          cart,
+        });
       }
       const totalCents = cart.items.reduce(
         (sum, it) => sum + (it.quantity ?? 0) * (priceResult?.unitPriceCents ?? estimatedTotal),
@@ -921,6 +1219,8 @@ export function CustomizationModal({
     selectedMethod,
     placementSelections,
     logo.type,
+    // design-fees:
+    persistDesignFeeCharges,
   ]);
 
   // ─── Render ──
@@ -1140,6 +1440,8 @@ export function CustomizationModal({
             onZoomTargetChange={setZoomTargetPlacementId}
             t={t}
             onAnalytics={dispatchAnalytics}
+            // design-fees: hand the per-placement preview to the row sub-label
+            designFeesByPlacementId={designFeesByPlacementId}
           />
         );
       case "size":
@@ -1178,6 +1480,9 @@ export function CustomizationModal({
             priceResult={priceResult}
             priceLoading={priceLoading}
             t={t}
+            // design-fees: fallback so the review breakdown shows fees even
+            // before priceResult lands (or when backend returns empty).
+            designFeesFallback={designFeesPreviewLines}
           />
         );
     }
@@ -1200,6 +1505,9 @@ export function CustomizationModal({
           />
         ) : (
           <>
+            {/* design-fees: fees are baked into footerPriceValue on
+                placement/size; explicit breakdown lives only in the
+                Review step (and the placement-row sub-label upstream). */}
             <div
               className="insignia-footer-price"
               aria-live="polite"

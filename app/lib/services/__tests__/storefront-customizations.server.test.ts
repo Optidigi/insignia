@@ -24,6 +24,20 @@ const prismaMock = vi.hoisted(() => {
     placementDefinitionMethodPrice: {
       findMany: fn(),
     },
+    // design-fees: included for safety; computeFeeDecisionsForDraft early-returns
+    // when DESIGN_FEES_ENABLED is unset, so these are not actually called.
+    placementDefinition: {
+      findMany: fn(),
+    },
+    designFeeCategory: {
+      findMany: fn(),
+    },
+    logoAsset: {
+      findMany: fn(),
+    },
+    cartDesignFeeCharge: {
+      findMany: fn(),
+    },
   };
 });
 

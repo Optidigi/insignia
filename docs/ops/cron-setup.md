@@ -59,6 +59,11 @@ Each hosted instance needs its own cron entries pointing at its own URL with its
 # Delete stale customization drafts hourly
 0   * * * *  curl -sf -X POST https://insignia-custom.optidigi.nl/api/admin/cron/cleanup-drafts \
                -H "Authorization: Bearer $CRON_SECRET_CUSTOM" | logger -t insignia-custom-cron
+
+# design-fees: cleanup design-fee charges (>30d) + free expired design-fee slots — hourly
+# No-op on instances where DESIGN_FEES_ENABLED is unset/false.
+0   * * * *  curl -sf -X POST https://insignia-custom.optidigi.nl/api/admin/cron/cleanup-design-fee-charges \
+               -H "Authorization: Bearer $CRON_SECRET_CUSTOM" | logger -t insignia-custom-cron
 ```
 
 Where `CRON_SECRET_CUSTOM` is the value of `CRON_SECRET` from the custom instance's `.env`.

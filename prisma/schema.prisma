@@ -60,6 +60,10 @@ model Shop {
   customizationDrafts    CustomizationDraft[]
   storefrontTranslations StorefrontTranslation[]
   orderNotes             OrderNote[]
+  // design-fees: inverse relations for the merchant-configurable design-fees subsystem
+  designFeeCategories    DesignFeeCategory[]
+  cartDesignFeeCharges   CartDesignFeeCharge[]
+  designFeeSlots         DesignFeeSlot[]
 
 }
 
@@ -140,6 +144,9 @@ model DecorationMethod {
   variantSlots      VariantSlot[]
   customizationConfigs CustomizationConfig[]
   placementPriceOverrides PlacementDefinitionMethodPrice[]
+  // design-fees: inverse relations
+  designFeeCategories     DesignFeeCategory[]
+  cartDesignFeeCharges    CartDesignFeeCharge[]
 
   @@unique([shopId, name])
   @@index([shopId])
@@ -257,13 +264,20 @@ model PlacementDefinition {
   displayOrder            Int     @default(0)
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
+  // design-fees: optional mapping to a DesignFeeCategory. Null = no design fee
+  // is charged for this placement.
+  feeCategoryId           String?
 
   // Relations
   productView ProductView      @relation(fields: [productViewId], references: [id], onDelete: Cascade)
   steps       PlacementStep[]
   methodPriceOverrides PlacementDefinitionMethodPrice[]
+  // design-fees: relation to category (SetNull on category delete)
+  feeCategory DesignFeeCategory? @relation(fields: [feeCategoryId], references: [id], onDelete: SetNull)
 
   @@index([productViewId])
+  // design-fees: index for category-scoped lookups
+  @@index([feeCategoryId])
 }
 
 // ============================================================================
@@ -336,11 +350,16 @@ model LogoAsset {
   originalFileName String?
   fileSizeBytes   Int?
   createdAt       DateTime      @default(now())
+  // design-fees: SHA256 hex of the raw upload buffer (lowercase). Null for legacy
+  // rows pre-dating the feature; storefront treats null as "no fee".
+  contentHash     String?
 
   // Relations
   shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   @@index([shopId])
+  // design-fees: fast cross-cart "have we seen this logo before" lookup
+  @@index([shopId, contentHash])
 }
 
 // ============================================================================
@@ -543,4 +562,76 @@ model StorefrontTranslation {
 
   @@unique([shopId, locale, key])
   @@index([shopId, locale])
+}
+
+// ============================================================================
+// design-fees: merchant-configurable one-time design fees
+// Gated behind DESIGN_FEES_ENABLED env var; entire subsystem is dormant when off.
+// Canonical: docs/notes/plans/design-fees.md
+// ============================================================================
+
+model DesignFeeCategory {
+  id            String   @id @default(uuid())
+  shopId        String
+  methodId      String
+  name          String
+  feeCents      Int
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  shop             Shop                  @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  decorationMethod DecorationMethod      @relation(fields: [methodId], references: [id], onDelete: Cascade)
+  placements       PlacementDefinition[]
+  charges          CartDesignFeeCharge[]
+
+  @@unique([methodId, name])
+  @@index([shopId])
+  @@index([methodId])
+}
+
+model CartDesignFeeCharge {
+  id                 String   @id @default(uuid())
+  shopId             String
+  cartToken          String   // Shopify cart token, best-effort dedup identity (NOT a security boundary)
+  logoContentHash    String   // LogoAsset.contentHash
+  categoryId         String
+  methodId           String
+  feeCentsCharged    Int      // snapshot at charge time
+  shopifyVariantId   String?
+  shopifyLineKey     String?
+  createdAt          DateTime @default(now())
+
+  shop             Shop              @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  category         DesignFeeCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  decorationMethod DecorationMethod  @relation(fields: [methodId], references: [id], onDelete: Cascade)
+
+  @@unique([cartToken, logoContentHash, categoryId, methodId])
+  @@index([shopId, createdAt])
+  @@index([cartToken])
+}
+
+enum DesignFeeSlotState {
+  FREE
+  RESERVED
+  IN_CART
+}
+
+model DesignFeeSlot {
+  id                String              @id @default(uuid())
+  shopId            String
+  shopifyProductId  String
+  shopifyVariantId  String
+  state             DesignFeeSlotState  @default(FREE)
+  reservedAt        DateTime?
+  reservedUntil     DateTime?
+  inCartUntil       DateTime?
+  currentChargeId   String?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
+
+  @@unique([shopifyVariantId])
+  @@index([shopId, state])
 }

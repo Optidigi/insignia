@@ -9,6 +9,10 @@ const PRICING_VERSION = "v1";
 import { AppError, ErrorCodes } from "../errors.server";
 import { computeCustomizationPrice } from "./storefront-customizations.server";
 import { ensureVariantPoolExists } from "./variant-pool.server";
+// design-fees:
+import { computeFeeDecisionsForDraft } from "./design-fees/compute.server";
+import { buildPendingDesignFeeLines } from "./design-fees/cart-line.server";
+import type { PendingDesignFeeLine } from "./design-fees/cart-line.server";
 
 const RESERVED_TTL_MINUTES = 15;
 
@@ -18,6 +22,18 @@ export type PrepareResult = {
   pricingVersion: string;
   unitPriceCents: number;
   feeCents: number;
+  // design-fees: ephemeral, not-yet-persisted design-fee lines. Storefront
+  // adds these to /cart/add.js then calls confirm-charges with line keys.
+  // Empty when feature off, no cart token, or no fees apply.
+  pendingDesignFeeLines: PendingDesignFeeLine[];
+  // design-fees: tagging metadata for the customization cart line so the
+  // theme-block sync hook can detect when the last triggering line is removed
+  // and orphan the design-fee cart line. Per §14.B.
+  designFeeTagging: {
+    logoContentHash: string;
+    feeCategoryIds: string[];
+    methodId: string;
+  } | null;
 };
 
 /**
@@ -26,7 +42,10 @@ export type PrepareResult = {
 export async function prepareCustomization(
   shopId: string,
   customizationId: string,
-  adminGraphql: (query: string, variables?: Record<string, unknown>) => Promise<Response>
+  adminGraphql: (query: string, variables?: Record<string, unknown>) => Promise<Response>,
+  // design-fees: optional cart token threaded from the storefront. Required
+  // for design-fee computation; null/undefined → no design fees.
+  cartToken?: string | null,
 ): Promise<PrepareResult> {
   const draft = await db.customizationDraft.findFirst({
     where: { id: customizationId, shopId },
@@ -70,12 +89,21 @@ export async function prepareCustomization(
     }
 
     if (productExists) {
+      // design-fees: replay-safe — re-computes pending lines for current cart token
+      const dfBuild = await buildDesignFeesForDraft({
+        shopId,
+        customizationId,
+        cartToken,
+        adminGraphql,
+      });
       return {
         slotVariantId: existingSlot.shopifyVariantId,
         configHash: existingConfig.configHash,
         pricingVersion: existingConfig.pricingVersion,
         unitPriceCents: existingConfig.unitPriceCents,
         feeCents: existingConfig.feeCents,
+        pendingDesignFeeLines: dfBuild.pendingDesignFeeLines,
+        designFeeTagging: dfBuild.tagging,
       };
     }
 
@@ -282,12 +310,21 @@ export async function prepareCustomization(
   if (result.kind === "already-reserved") {
     // A concurrent /prepare call won the race and already set the Shopify
     // variant price. Return the winner's data directly — no Shopify call needed.
+    // design-fees: still build pending lines for THIS request
+    const dfBuild2 = await buildDesignFeesForDraft({
+      shopId,
+      customizationId,
+      cartToken,
+      adminGraphql,
+    });
     return {
       slotVariantId: result.slot.shopifyVariantId,
       configHash: result.config.configHash,
       pricingVersion: result.config.pricingVersion,
       unitPriceCents: result.config.unitPriceCents,
       feeCents: result.config.feeCents,
+      pendingDesignFeeLines: dfBuild2.pendingDesignFeeLines,
+      designFeeTagging: dfBuild2.tagging,
     };
   }
 
@@ -377,11 +414,91 @@ export async function prepareCustomization(
     );
   }
 
+  // design-fees: build pending lines AFTER the customization slot is firmly
+  // reserved + priced. Errors here roll back the customization slot so the
+  // customer can retry, otherwise we'd ship a customization without its fee.
+  let dfBuild3: DesignFeesBuildResult = { pendingDesignFeeLines: [], tagging: null };
+  try {
+    dfBuild3 = await buildDesignFeesForDraft({
+      shopId,
+      customizationId,
+      cartToken,
+      adminGraphql,
+    });
+  } catch (e) {
+    console.error("[prepare] design-fee slot reservation failed:", e);
+    await rollbackSlot();
+    throw e instanceof AppError
+      ? e
+      : new AppError(ErrorCodes.SERVICE_UNAVAILABLE, "Failed to reserve design fees", 503);
+  }
+
   return {
     slotVariantId: result.slot.shopifyVariantId,
     configHash: configHash!,
     pricingVersion: pricingVersion!,
     unitPriceCents: unitPriceCents!,
     feeCents: feeCents ?? 0,
+    pendingDesignFeeLines: dfBuild3.pendingDesignFeeLines,
+    designFeeTagging: dfBuild3.tagging,
   };
+}
+
+type DesignFeesBuildResult = {
+  pendingDesignFeeLines: PendingDesignFeeLine[];
+  tagging: PrepareResult["designFeeTagging"];
+};
+
+// design-fees: helper used by prepare's three return paths. Kept inside the
+// same module to avoid circular imports with cart-line.server.ts.
+async function buildDesignFeesForDraft(args: {
+  shopId: string;
+  customizationId: string;
+  cartToken: string | null | undefined;
+  adminGraphql: (query: string, variables?: Record<string, unknown>) => Promise<Response>;
+}): Promise<DesignFeesBuildResult> {
+  if (!args.cartToken) {
+    return { pendingDesignFeeLines: [], tagging: null };
+  }
+  const draft = await db.customizationDraft.findFirst({
+    where: { id: args.customizationId, shopId: args.shopId },
+    select: {
+      methodId: true,
+      placements: true,
+      logoAssetIdsByPlacementId: true,
+    },
+  });
+  if (!draft) return { pendingDesignFeeLines: [], tagging: null };
+  const decisions = await computeFeeDecisionsForDraft({
+    shopId: args.shopId,
+    cartToken: args.cartToken,
+    draft: {
+      methodId: draft.methodId,
+      placements: draft.placements as unknown as Array<{ placementId: string; stepIndex: number }>,
+      logoAssetIdsByPlacementId: draft.logoAssetIdsByPlacementId as unknown as Record<string, string | null>,
+    },
+  });
+  if (decisions.length === 0) return { pendingDesignFeeLines: [], tagging: null };
+  // Resolve a method name for the design-fee Shopify product title
+  const method = await db.decorationMethod.findUnique({
+    where: { id: draft.methodId },
+    select: { name: true },
+  });
+  const lines = await buildPendingDesignFeeLines({
+    shopId: args.shopId,
+    methodName: method?.name ?? "Design Fee",
+    cartToken: args.cartToken,
+    decisions,
+    adminGraphql: args.adminGraphql,
+  });
+  // Tagging: emit ALL category ids the modal-tuple covers (whether already-charged
+  // or fresh). The customization-line carries this so cart-sync can detect when
+  // the last triggering line is removed.
+  const allCategoryIds = Array.from(new Set(decisions.map((d) => d.categoryId)));
+  const hash = decisions[0]?.logoContentHash ?? null;
+  const tagging =
+    hash && allCategoryIds.length > 0
+      ? { logoContentHash: hash, feeCategoryIds: allCategoryIds, methodId: draft.methodId }
+      : null;
+  return { pendingDesignFeeLines: lines, tagging };
 }

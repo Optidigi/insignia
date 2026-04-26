@@ -202,6 +202,13 @@ const translations = {
         title: "Customize",
         closeAria: "Close customizer",
       },
+      // design-fees: 4 keys mirrored across 8 locales (32 entries total)
+      designFees: {
+        lineItem: "Design fee {method} – {category}",
+        oneTime: "(one-time)",
+        alreadyCharged: "Design fee already covered",
+        placementSublabel: "{amount} one-time design fee",
+      },
     },
 },
   nl: {
@@ -404,6 +411,13 @@ const translations = {
       header: {
         title: "Personaliseren",
         closeAria: "Personalisatie sluiten",
+      },
+      // design-fees:
+      designFees: {
+        lineItem: "Ontwerpkosten {method} – {category}",
+        oneTime: "(eenmalig)",
+        alreadyCharged: "Ontwerpkosten al verrekend",
+        placementSublabel: "{amount} eenmalige ontwerpkosten",
       },
     },
 },
@@ -609,6 +623,13 @@ const translations = {
         title: "TODO_TRANSLATE: Customize",
         closeAria: "TODO_TRANSLATE: Close customizer",
       },
+      // design-fees:
+      designFees: {
+        lineItem: "TODO_TRANSLATE: Design fee {method} – {category}",
+        oneTime: "TODO_TRANSLATE: (one-time)",
+        alreadyCharged: "TODO_TRANSLATE: Design fee already covered",
+        placementSublabel: "TODO_TRANSLATE: {amount} one-time design fee",
+      },
     },
 },
   fr: {
@@ -812,6 +833,13 @@ const translations = {
       header: {
         title: "TODO_TRANSLATE: Customize",
         closeAria: "TODO_TRANSLATE: Close customizer",
+      },
+      // design-fees:
+      designFees: {
+        lineItem: "TODO_TRANSLATE: Design fee {method} – {category}",
+        oneTime: "TODO_TRANSLATE: (one-time)",
+        alreadyCharged: "TODO_TRANSLATE: Design fee already covered",
+        placementSublabel: "TODO_TRANSLATE: {amount} one-time design fee",
       },
     },
 },
@@ -1017,6 +1045,13 @@ const translations = {
         title: "TODO_TRANSLATE: Customize",
         closeAria: "TODO_TRANSLATE: Close customizer",
       },
+      // design-fees:
+      designFees: {
+        lineItem: "TODO_TRANSLATE: Design fee {method} – {category}",
+        oneTime: "TODO_TRANSLATE: (one-time)",
+        alreadyCharged: "TODO_TRANSLATE: Design fee already covered",
+        placementSublabel: "TODO_TRANSLATE: {amount} one-time design fee",
+      },
     },
 },
   it: {
@@ -1220,6 +1255,13 @@ const translations = {
       header: {
         title: "TODO_TRANSLATE: Customize",
         closeAria: "TODO_TRANSLATE: Close customizer",
+      },
+      // design-fees:
+      designFees: {
+        lineItem: "TODO_TRANSLATE: Design fee {method} – {category}",
+        oneTime: "TODO_TRANSLATE: (one-time)",
+        alreadyCharged: "TODO_TRANSLATE: Design fee already covered",
+        placementSublabel: "TODO_TRANSLATE: {amount} one-time design fee",
       },
     },
 },
@@ -1425,6 +1467,13 @@ const translations = {
         title: "TODO_TRANSLATE: Customize",
         closeAria: "TODO_TRANSLATE: Close customizer",
       },
+      // design-fees:
+      designFees: {
+        lineItem: "TODO_TRANSLATE: Design fee {method} – {category}",
+        oneTime: "TODO_TRANSLATE: (one-time)",
+        alreadyCharged: "TODO_TRANSLATE: Design fee already covered",
+        placementSublabel: "TODO_TRANSLATE: {amount} one-time design fee",
+      },
     },
 },
   pl: {
@@ -1628,6 +1677,13 @@ const translations = {
       header: {
         title: "TODO_TRANSLATE: Customize",
         closeAria: "TODO_TRANSLATE: Close customizer",
+      },
+      // design-fees:
+      designFees: {
+        lineItem: "TODO_TRANSLATE: Design fee {method} – {category}",
+        oneTime: "TODO_TRANSLATE: (one-time)",
+        alreadyCharged: "TODO_TRANSLATE: Design fee already covered",
+        placementSublabel: "TODO_TRANSLATE: {amount} one-time design fee",
       },
     },
 },

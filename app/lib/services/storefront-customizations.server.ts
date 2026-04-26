@@ -11,6 +11,8 @@ import {
   effectiveMethodPriceCents,
   effectivePlacementAdjustmentCents,
 } from "./methods.server";
+// design-fees:
+import { computeFeeDecisionsForDraft } from "./design-fees/compute.server";
 
 const PRICING_VERSION = "v1";
 
@@ -99,6 +101,18 @@ export type PriceResult = {
   feeCents: number;
   breakdown: Array<{ label: string; amountCents: number }>;
   validation: { ok: boolean };
+  // design-fees: per-cart one-time design fees the customer will be charged
+  // (or has already been charged) on the current cart. Empty array when the
+  // feature is off, no cart token was sent, or no placement triggers a fee.
+  // unitPriceCents above does NOT include these — they are added as separate
+  // cart line items.
+  designFees: Array<{
+    categoryId: string;
+    categoryName: string;
+    methodId: string;
+    feeCents: number;
+    alreadyCharged: boolean;
+  }>;
 };
 
 type AdminGraphql = (query: string, variables?: Record<string, unknown>) => Promise<Response>;
@@ -106,11 +120,16 @@ type AdminGraphql = (query: string, variables?: Record<string, unknown>) => Prom
 /**
  * Compute unit price for a draft and optionally store on draft for prepare.
  * When adminGraphql is provided, fetches the real Shopify variant price for base garment.
+ *
+ * design-fees: pass `cartToken` to populate `priceResult.designFees`. Without it,
+ * design fees are not computed (the breakdown still works for the per-garment price).
  */
 export async function computeCustomizationPrice(
   shopId: string,
   customizationId: string,
-  adminGraphql?: AdminGraphql
+  adminGraphql?: AdminGraphql,
+  // design-fees:
+  cartToken?: string | null,
 ): Promise<PriceResult> {
   const draft = await db.customizationDraft.findFirst({
     where: { id: customizationId, shopId },
@@ -211,11 +230,31 @@ export async function computeCustomizationPrice(
     },
   });
 
+  // design-fees: compute decisions (no DB writes — persistence happens in
+  // confirm-charges after /cart/add.js succeeds, per §14.B)
+  const decisions = await computeFeeDecisionsForDraft({
+    shopId,
+    cartToken: cartToken ?? null,
+    draft: {
+      methodId: draft.methodId,
+      placements: placementsPayload,
+      logoAssetIdsByPlacementId: draft.logoAssetIdsByPlacementId as Record<string, string | null>,
+    },
+  });
+
   return {
     unitPriceCents,
     feeCents,
     breakdown,
     validation: { ok: true },
+    // design-fees:
+    designFees: decisions.map((d) => ({
+      categoryId: d.categoryId,
+      categoryName: d.categoryName,
+      methodId: d.methodId,
+      feeCents: d.feeCentsSnapshot,
+      alreadyCharged: d.alreadyCharged,
+    })),
   };
 }
 

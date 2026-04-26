@@ -5,8 +5,23 @@
 
 import { v4 as uuid } from "uuid";
 import sharp from "sharp";
+import { createHash } from "crypto";
 import db from "../../db.server";
 import { AppError, ErrorCodes } from "../errors.server";
+
+// design-fees: hash the RAW incoming buffer so identical re-uploads of the
+// same source file yield the same hex regardless of post-sanitization output.
+// SHA-256 collision is mathematically negligible (§14.J) — treat any match as
+// "same logo". Failure is non-fatal: contentHash stays null and the design-fees
+// system simply doesn't dedup that asset.
+function hashRawBuffer(buf: Buffer): string | null {
+  try {
+    return createHash("sha256").update(buf).digest("hex");
+  } catch (e) {
+    console.warn("[design-fees] logo hashing failed, continuing with null hash:", e);
+    return null;
+  }
+}
 import {
   getPresignedPutUrl,
   getPresignedGetUrl,
@@ -87,6 +102,8 @@ export async function completeStorefrontUpload(
   if (rawBuffer.length === 0) {
     throw new AppError(ErrorCodes.BAD_REQUEST, "Uploaded file is empty", 400);
   }
+  // design-fees: hash original bytes BEFORE sharp/sanitization
+  const contentHash = hashRawBuffer(rawBuffer);
 
   const contentType = session.contentType;
   const isSvg = contentType === "image/svg+xml";
@@ -130,6 +147,8 @@ export async function completeStorefrontUpload(
       previewPngUrl: pngKey,
       originalFileName: session.fileName ?? undefined,
       fileSizeBytes: session.sizeBytes ?? undefined,
+      // design-fees: persist content hash for cross-cart dedup (null on hash failure)
+      contentHash,
     },
   });
 
@@ -168,6 +187,8 @@ export async function serverSideStorefrontUpload(
   if (rawBuffer.length > MAX_UPLOAD_BYTES) {
     throw new AppError(ErrorCodes.VALIDATION_ERROR, "File must be 5MB or smaller", 400);
   }
+  // design-fees: hash original bytes BEFORE sharp/sanitization
+  const contentHash = hashRawBuffer(rawBuffer);
 
   const allowedTypes = ["image/svg+xml", "image/png", "image/jpeg", "image/webp"];
   let effectiveContentType = contentType;
@@ -218,6 +239,8 @@ export async function serverSideStorefrontUpload(
       previewPngUrl: pngKey,
       originalFileName: file.name ?? undefined,
       fileSizeBytes: rawBuffer.length,
+      // design-fees: persist content hash for cross-cart dedup (null on hash failure)
+      contentHash,
     },
   });
 

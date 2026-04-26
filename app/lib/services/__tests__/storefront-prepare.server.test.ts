@@ -42,6 +42,8 @@ vi.mock("../storefront-customizations.server", () => ({
     feeCents: 500,
     breakdown: [],
     validation: { ok: true },
+    // design-fees: required field on the new PriceResult shape
+    designFees: [],
   }),
 }));
 
@@ -61,6 +63,8 @@ beforeEach(() => {
     feeCents: 500,
     breakdown: [],
     validation: { ok: true },
+    // design-fees: required field on the new PriceResult shape
+    designFees: [],
   });
 });
 
@@ -164,6 +168,9 @@ describe("prepareCustomization", () => {
       pricingVersion: "v1",
       unitPriceCents: 1500,
       feeCents: 500,
+      // design-fees: empty when no cart token / feature off
+      pendingDesignFeeLines: [],
+      designFeeTagging: null,
     });
 
     // Must NOT have reserved a new slot
@@ -295,6 +302,9 @@ describe("prepareCustomization", () => {
       pricingVersion: "v1",
       unitPriceCents: 1500,
       feeCents: 500,
+      // design-fees: empty when no cart token / feature off
+      pendingDesignFeeLines: [],
+      designFeeTagging: null,
     });
 
     // The Shopify variant price update must NOT be called — the winner already set it

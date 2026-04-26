@@ -19,6 +19,12 @@ const prismaMock = vi.hoisted(() => {
     merchantSettings: {
       findUnique: makeFn(),
     },
+    // design-fees: optional mock for the new categories lookup. Default
+    // returns [] so existing tests pass without setup; feature-on tests can
+    // override.
+    designFeeCategory: {
+      findMany: makeFn(),
+    },
   };
 });
 
@@ -51,6 +57,8 @@ beforeEach(() => {
   vi.mocked(getPresignedGetUrl).mockResolvedValue(
     "https://cdn.example.com/signed-image.png"
   );
+  // design-fees: default to no categories so existing tests remain unaffected
+  prismaMock.designFeeCategory.findMany.mockResolvedValue([]);
 });
 
 // ---------------------------------------------------------------------------

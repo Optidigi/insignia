@@ -997,6 +997,46 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   color: var(--insignia-text-secondary);
   margin-top: 2px;
 }
+/* design-fees: prominent sub-label tone variants on placement rows. */
+.insignia-placement-row-view[data-tone="accent"] {
+  color: var(--insignia-accent, #2563eb);
+  font-weight: 600;
+}
+.insignia-placement-row-view[data-tone="success"] {
+  color: var(--insignia-success, #16a34a);
+  font-weight: 600;
+}
+/* design-fees: footer one-time-fee breakdown — readable, not dimmed. */
+.insignia-footer-design-fees {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--insignia-border, #e5e7eb);
+  margin-bottom: 8px;
+}
+.insignia-footer-design-fees-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 13px;
+  color: var(--insignia-text);
+}
+.insignia-footer-design-fees-row em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--insignia-text-secondary);
+}
+.insignia-footer-design-fees-row[data-already-charged="true"] {
+  color: var(--insignia-success, #16a34a);
+}
+.insignia-footer-design-fees-row[data-already-charged="true"] .insignia-footer-design-fees-label {
+  text-decoration: line-through;
+  color: var(--insignia-text-secondary);
+}
+.insignia-footer-design-fees-value {
+  font-weight: 600;
+}
 .insignia-placement-row-price {
   font-size: 14px;
   font-weight: 600;

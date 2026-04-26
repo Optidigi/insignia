@@ -43,6 +43,9 @@ type PlacementStepProps = {
   onZoomTargetChange?: (placementId: string | null) => void;
   t: TranslationStrings;
   onAnalytics?: (name: string, detail: Record<string, unknown>) => void;
+  // design-fees: per-placement design-fee preview, computed by the shell.
+  // Map: placementId -> { feeCents, alreadyCharged }. Absent entries render no sub-label.
+  designFeesByPlacementId?: Record<string, { feeCents: number; alreadyCharged: boolean }>;
 };
 
 function viewName(view: { name: string | null; perspective: string }): string {
@@ -64,6 +67,8 @@ export function PlacementStep({
   onZoomTargetChange,
   t,
   onAnalytics,
+  // design-fees:
+  designFeesByPlacementId,
 }: PlacementStepProps) {
   const totalPlacements = config.placements.length;
   const selectedCount = Object.keys(placementSelections).length;
@@ -196,6 +201,37 @@ export function PlacementStep({
                 {ownerLabel && (
                   <span className="insignia-placement-row-view">{ownerLabel}</span>
                 )}
+                {/* design-fees: optional one-time fee sub-label —
+                    rendered with accent tone so it's clearly a charge,
+                    not just metadata. */}
+                {(() => {
+                  const fee = designFeesByPlacementId?.[p.id];
+                  if (!fee) return null;
+                  if (fee.alreadyCharged) {
+                    return (
+                      <span
+                        className="insignia-placement-row-view"
+                        data-tone="success"
+                      >
+                        {t.v2.designFees.alreadyCharged}
+                      </span>
+                    );
+                  }
+                  if (fee.feeCents > 0) {
+                    return (
+                      <span
+                        className="insignia-placement-row-view"
+                        data-tone="accent"
+                      >
+                        {t.v2.designFees.placementSublabel.replace(
+                          "{amount}",
+                          formatPriceDelta(fee.feeCents, config.currency),
+                        )}
+                      </span>
+                    );
+                  }
+                  return null;
+                })()}
               </span>
               {showPrice && (
                 <span
