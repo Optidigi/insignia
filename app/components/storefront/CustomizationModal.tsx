@@ -483,15 +483,21 @@ export function CustomizationModal({
       if (decision) {
         map[placementId] = decision;
       } else {
-        // No price computed yet — show base category fee from config
-        const cat = config.designFees.categories.find((c) => c.id === categoryId);
+        // No price computed yet — show base category fee from config.
+        // design-fees: scope by selectedMethodId so the placement sub-label only
+        // renders when the chosen method actually triggers this category. Without
+        // this scope, switching from Borduren to Bedrukken kept the "+€25" hint
+        // visible even though the server-side compute correctly returns no fee.
+        const cat = config.designFees.categories.find(
+          (c) => c.id === categoryId && c.methodId === selectedMethodId,
+        );
         if (cat) {
           map[placementId] = { feeCents: cat.feeCents, alreadyCharged: false };
         }
       }
     }
     return map;
-  }, [config, priceResult]);
+  }, [config, priceResult, selectedMethodId]);
 
   const fallbackUnitPriceCents = useMemo(() => {
     if (!config) return 0;
