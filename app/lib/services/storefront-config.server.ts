@@ -285,10 +285,13 @@ export async function getStorefrontConfig(
       // Compute variantAxis for this product
       variantAxis = sizeOptionName ? "size" : colorOptionName ? "color" : "option";
 
-      // Map all variants. When the quantity-grid axis is `color`, normalize
-      // the displayed label to Title Case so Shopify's inconsistent casing
-      // (e.g. "BLACK", "donker blauw") renders uniformly. Size labels stay
-      // untouched — "S", "XL", "2XL" must remain uppercase.
+      // Map all variants. When the quantity-grid axis is `color` or `option`
+      // (the catch-all for non-standard option names like "Stijl"/"Type"/
+      // "Variant"), normalize the displayed label to Title Case so Shopify's
+      // inconsistent casing (e.g. "BLACK", "NAVY", "donker blauw") renders
+      // uniformly. Size labels stay untouched — "S", "XL", "2XL" must remain
+      // uppercase, and any stray size-shaped value in the option axis is
+      // left alone via SIZE_VALUE_RE.
       const allMappedVariants = variantNodes.map((v) => {
         const sizeOption = sizeOptionName
           ? v.selectedOptions?.find((o) => o.name === sizeOptionName)
@@ -296,10 +299,12 @@ export async function getStorefrontConfig(
         const colorOption = colorOptionName
           ? v.selectedOptions?.find((o) => o.name === colorOptionName)
           : null;
+        const rawValue =
+          (variantAxis === "size" ? sizeOption?.value : colorOption?.value) ?? v.title;
         const sizeLabel =
-          variantAxis === "color"
-            ? toTitleCase(colorOption?.value ?? v.title)
-            : sizeOption?.value ?? v.title;
+          variantAxis === "size" || SIZE_VALUE_RE.test(rawValue)
+            ? rawValue
+            : toTitleCase(rawValue);
         return {
           id: v.id,
           title: v.title,
