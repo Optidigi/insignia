@@ -111,6 +111,16 @@ export type StorefrontConfig = {
 
 const SIGNED_URL_EXPIRES_SEC = 600;
 
+/** Title-case a multi-word color label. "BLACK" → "Black", "donker blauw" → "Donker Blauw".
+ *  Whitespace-tolerant; preserves single-character tokens. */
+function toTitleCase(s: string): string {
+  return s
+    .toLowerCase()
+    .split(/(\s+)/) // keep whitespace tokens so "  X  Y" round-trips
+    .map((part) => (/\s/.test(part) ? part : part.charAt(0).toUpperCase() + part.slice(1)))
+    .join("");
+}
+
 /**
  * Resolve product config by shop and product GID (config must link this product).
  */
@@ -272,23 +282,33 @@ export async function getStorefrontConfig(
         colorOptionName = firstOptions.find((o) => COLOR_NAME_RE.test(o.name))?.name ?? null;
       }
 
-      // Map all variants
+      // Compute variantAxis for this product
+      variantAxis = sizeOptionName ? "size" : colorOptionName ? "color" : "option";
+
+      // Map all variants. When the quantity-grid axis is `color`, normalize
+      // the displayed label to Title Case so Shopify's inconsistent casing
+      // (e.g. "BLACK", "donker blauw") renders uniformly. Size labels stay
+      // untouched — "S", "XL", "2XL" must remain uppercase.
       const allMappedVariants = variantNodes.map((v) => {
         const sizeOption = sizeOptionName
           ? v.selectedOptions?.find((o) => o.name === sizeOptionName)
           : null;
+        const colorOption = colorOptionName
+          ? v.selectedOptions?.find((o) => o.name === colorOptionName)
+          : null;
+        const sizeLabel =
+          variantAxis === "color"
+            ? toTitleCase(colorOption?.value ?? v.title)
+            : sizeOption?.value ?? v.title;
         return {
           id: v.id,
           title: v.title,
-          sizeLabel: sizeOption?.value ?? v.title,
+          sizeLabel,
           priceCents: Math.round(parseFloat(v.price) * 100),
           available: v.availableForSale ?? true,
           selectedOptions: v.selectedOptions ?? [],
         };
       });
-
-      // Compute variantAxis for this product
-      variantAxis = sizeOptionName ? "size" : colorOptionName ? "color" : "option";
 
       // view-image-orphan-fix: identify all sibling variants in the same color group as the
       // view-image-orphan-fix: selected variant. Used to recover view images when this
