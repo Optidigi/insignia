@@ -998,14 +998,19 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   color: var(--insignia-text-secondary);
   margin-top: 2px;
 }
-/* design-fees: prominent sub-label tone variants on placement rows. */
-.insignia-placement-row-view[data-tone="accent"] {
-  color: var(--insignia-accent, #2563eb);
-  font-weight: 600;
-}
+/* design-fees: sub-label tones on placement rows.
+   Accent (to-charge): no override — inherits the parent's secondary-gray
+   so the fee preview reads as supporting metadata, not as a competing
+   accent next to the row's blue price. Information-hierarchy fix per UX
+   review: name > price > fee context.
+   Success (already-charged): keep semantic green for reassurance but drop
+   the bold weight so it reads as confirmation, not emphasis. */
 .insignia-placement-row-view[data-tone="success"] {
-  color: var(--insignia-success, #16a34a);
-  font-weight: 600;
+  color: var(--insignia-success-strong, #047857);
+  /* font-weight intentionally inherits regular (400) */
+  /* AA contrast: --insignia-success (#10b981) is ~2.8:1 on white at 12px and
+     fails WCAG AA. --insignia-success-strong (#047857) is ~6.5:1, comfortably
+     passes AA for normal text. */
 }
 /* design-fees: footer one-time-fee breakdown — readable, not dimmed. */
 .insignia-footer-design-fees {
