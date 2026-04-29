@@ -289,6 +289,7 @@ export function ReviewStep({
         variants={config.variants}
         quantities={quantities}
         onChange={onQuantitiesChange}
+        variantAxis={config.variantAxis ?? "size"}
         t={t}
       />
     </section>

@@ -1479,10 +1479,9 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   font-size: 14px;
   font-weight: 700;
   color: var(--insignia-text-secondary);
-  text-transform: uppercase;
 }
-.insignia-qty-card-label[data-label-kind="long"] {
-  text-transform: none;
+.insignia-qty-card-label[data-label-kind="size-code"] {
+  text-transform: uppercase;
 }
 .insignia-qty-card[data-state="selected"] .insignia-qty-card-label { color: var(--insignia-text-strong); }
 .insignia-qty-card[data-state="disabled"] .insignia-qty-card-label { color: var(--insignia-text-muted); }

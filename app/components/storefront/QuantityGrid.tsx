@@ -46,6 +46,7 @@ type QuantityGridProps = {
   variants: ProductVariantOption[];
   quantities: Record<string, number>;
   onChange: (q: Record<string, number>) => void;
+  variantAxis: "size" | "color" | "option";
   t: TranslationStrings;
 };
 
@@ -55,7 +56,7 @@ function clamp(n: number): number {
   return Math.floor(n);
 }
 
-export function QuantityGrid({ variants, quantities, onChange, t }: QuantityGridProps) {
+export function QuantityGrid({ variants, quantities, onChange, variantAxis, t }: QuantityGridProps) {
   const setQty = useCallback(
     (variantId: string, qty: number) => {
       const next = { ...quantities, [variantId]: clamp(qty) };
@@ -70,6 +71,9 @@ export function QuantityGrid({ variants, quantities, onChange, t }: QuantityGrid
   // is always unique. This keeps every cell visually distinct.
   const useTitleAsLabel = useMemo(() => hasSizeLabelCollisions(variants), [variants]);
 
+  const labelKind: "size-code" | "free-text" =
+    variantAxis === "size" && !useTitleAsLabel ? "size-code" : "free-text";
+
   return (
     <div className="insignia-qty-grid">
       {variants.map((v) => {
@@ -79,6 +83,7 @@ export function QuantityGrid({ variants, quantities, onChange, t }: QuantityGrid
           <QuantityCard
             key={v.id}
             label={useTitleAsLabel ? v.title : v.sizeLabel}
+            labelKind={labelKind}
             qty={qty}
             disabled={disabled}
             onSet={(n) => setQty(v.id, n)}
@@ -92,12 +97,14 @@ export function QuantityGrid({ variants, quantities, onChange, t }: QuantityGrid
 
 function QuantityCard({
   label,
+  labelKind,
   qty,
   disabled,
   onSet,
   t,
 }: {
   label: string;
+  labelKind: "size-code" | "free-text";
   qty: number;
   disabled: boolean;
   onSet: (n: number) => void;
@@ -112,7 +119,7 @@ function QuantityCard({
     >
       <span
         className="insignia-qty-card-label"
-        data-label-kind={label.length > 4 ? "long" : "short"}
+        data-label-kind={labelKind}
       >{label}</span>
       {disabled ? (
         <span className="insignia-qty-card-soldout">{t.v2.review.soldOut}</span>
