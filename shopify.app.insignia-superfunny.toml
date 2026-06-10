@@ -6,7 +6,7 @@
 #
 # Distribution: custom/private.
 
-client_id = "REPLACE_WITH_SUPERFUNNY_CLIENT_ID"
+client_id = "eafedb8d4f6d272ff1762dedfd971d41"
 name = "Insignia SuperFunny"
 application_url = "https://insignia-superfunny.optidigi.nl"
 embedded = true
