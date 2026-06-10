@@ -167,5 +167,10 @@ Use the matching container, database user, and database name for each instance.
 
 The historical Stitchs stack was named `insignia-custom`. When renaming it on the
 VPS, stop the old stack, preserve a database backup, move the data volume to
-`/srv/data/saas/insignia-stitchs/postgres`, update `.env` to the Stitchs domain,
-and bring it back under `/srv/saas/infra/stacks/insignia-stitchs`.
+`/srv/data/saas/insignia-stitchs/postgres`, update `SHOPIFY_APP_URL` to the
+Stitchs domain, and bring it back under `/srv/saas/infra/stacks/insignia-stitchs`.
+
+Do not change `DATABASE_URL`, `POSTGRES_USER`, `POSTGRES_DB`, `R2_BUCKET_NAME`,
+or `R2_PUBLIC_URL` during that cutover unless you also perform the corresponding
+Postgres and R2 data migrations. The existing live Stitchs data currently uses
+the former `insignia_custom` database/user and `insignia-custom-assets` bucket.
