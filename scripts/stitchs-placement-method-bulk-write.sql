@@ -4,7 +4,7 @@
 --
 -- Target shop:   stitchs-nl.myshopify.com
 -- Target shopId: e300bab6-d980-4ec2-9ef2-1067d181aaab
--- DB:            insignia-custom (production)
+-- DB:            insignia-stitchs (production)
 --
 -- RUN CONTEXT:
 --   This script MUST be run AFTER the Prisma migration

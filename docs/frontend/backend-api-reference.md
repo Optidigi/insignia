@@ -1317,7 +1317,8 @@ The loader additionally returns `logoAssetMap`, `logoAssetDownloadUrls`, `logoAs
 |---|---|---|---|
 | **Production** | [`shopify.app.insignia.toml`](../../shopify.app.insignia.toml) | `eb2c3c7dd059991bc6cd4d421578a8ab` | `https://insignia.optidigi.nl` |
 | **Development** | [`shopify.app.insignia-demo.toml`](../../shopify.app.insignia-demo.toml) | `8d5562e5ec9a58bfe5c0cc5e0f8e63a3` | Cloudflare tunnel (auto) |
-| **Custom (private)** | [`shopify.app.insignia-custom.toml`](../../shopify.app.insignia-custom.toml) | `REPLACE_WITH_CUSTOM_APP_CLIENT_ID` | Per-merchant; placeholder until used |
+| **Stitchs (private)** | [`shopify.app.insignia-stitchs.toml`](../../shopify.app.insignia-stitchs.toml) | `c6fa981c42fa7d0a405023f0438030e1` | `https://insignia-stitchs.optidigi.nl` |
+| **SuperFunny (private)** | [`shopify.app.insignia-superfunny.toml`](../../shopify.app.insignia-superfunny.toml) | `REPLACE_WITH_SUPERFUNNY_CLIENT_ID` | `https://insignia-superfunny.optidigi.nl` |
 
 **All configs share:**
 - **API version:** `2026-04`

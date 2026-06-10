@@ -2,8 +2,8 @@
 
 **Target shop:** `stitchs-nl.myshopify.com`
 **Target shopId:** `e300bab6-d980-4ec2-9ef2-1067d181aaab`
-**DB / stack:** `insignia-custom`
-**Deploy path on VPS:** `/srv/saas/infra/stacks/insignia-custom/`
+**DB / stack:** `insignia-stitchs`
+**Deploy path on VPS:** `/srv/saas/infra/stacks/insignia-stitchs/`
 
 This runbook pairs with [`stitchs-placement-method-bulk-write.sql`](./stitchs-placement-method-bulk-write.sql) and covers:
 1. What changes on deploy (Prisma side).
@@ -26,14 +26,14 @@ No Prisma code manipulates data — the migration is pure schema. Business-data 
 
 ## 2. Deploy steps on the VPS
 
-Run from `/srv/saas/infra/stacks/insignia-custom/`. Replace `$DB_USER` / `$DB_NAME` with values from your `.env` (typically `insignia` / `insignia`).
+Run from `/srv/saas/infra/stacks/insignia-stitchs/`. Replace `$DB_USER` / `$DB_NAME` with values from your `.env` (typically `insignia` / `insignia`).
 
 ### 2.1 Back up the affected tables
 
 Scope the dump to the four tables this work touches, so recovery is fast.
 
 ```bash
-cd /srv/saas/infra/stacks/insignia-custom/
+cd /srv/saas/infra/stacks/insignia-stitchs/
 
 mkdir -p backups/stitchs-placement-method
 
@@ -197,7 +197,7 @@ The drop-table migration is destructive (it drops `PlacementStepMethodPrice`). P
 
 ## 4. Summary — order of operations on the VPS
 
-1. `cd /srv/saas/infra/stacks/insignia-custom/`
+1. `cd /srv/saas/infra/stacks/insignia-stitchs/`
 2. Full snapshot: `docker compose exec -T db pg_dump -U $DB_USER -Fc $DB_NAME > backups/.../full-<ts>.dump`
 3. Scoped dump (section 2.1).
 4. `docker compose pull app`

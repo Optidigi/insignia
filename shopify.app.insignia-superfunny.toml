@@ -1,0 +1,50 @@
+# Shopify app configuration for the SuperFunny private Insignia instance.
+#
+# Usage after the Shopify Partner Dashboard app exists:
+#   1. Replace REPLACE_WITH_SUPERFUNNY_CLIENT_ID.
+#   2. Run: shopify app deploy --config insignia-superfunny
+#
+# Distribution: custom/private.
+
+client_id = "REPLACE_WITH_SUPERFUNNY_CLIENT_ID"
+name = "Insignia SuperFunny"
+application_url = "https://insignia-superfunny.optidigi.nl"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2026-04"
+
+  [webhooks.privacy_compliance]
+  customer_deletion_url = "/webhooks/gdpr/customer-deletion"
+  customer_data_request_url = "/webhooks/gdpr/data-request"
+  shop_deletion_url = "/webhooks/gdpr/shop-deletion"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+  [[webhooks.subscriptions]]
+  topics = [ "orders/create" ]
+  uri = "/webhooks/orders/create"
+
+  [[webhooks.subscriptions]]
+  topics = [ "orders/paid" ]
+  uri = "/webhooks/orders/paid"
+
+[access_scopes]
+scopes = "write_products,read_products,read_orders,write_orders,write_app_proxy,write_publications,write_inventory,read_themes"
+
+[auth]
+redirect_urls = [ "https://insignia-superfunny.optidigi.nl/auth/callback" ]
+
+[app_proxy]
+url = "https://insignia-superfunny.optidigi.nl/apps/insignia"
+subpath = "insignia"
+prefix = "apps"

@@ -56,8 +56,11 @@ The CLI creates a Cloudflare tunnel and auto-updates the app URL on the dev stor
 |---|---|---|
 | `shopify.app.insignia.toml` | Production app | `--config insignia` |
 | `shopify.app.insignia-demo.toml` | Demo app (local dev) | `--config insignia-demo` |
+| `shopify.app.insignia-stitchs.toml` | Stitchs private app | `--config insignia-stitchs` |
+| `shopify.app.insignia-superfunny.toml` | SuperFunny private app | `--config insignia-superfunny` |
 
-Corresponding env files: `.env` (prod) and `.env.demo` (demo, gitignored).
+Corresponding env files: `.env` (prod), `.env.demo` (demo, gitignored), and
+per-instance VPS `.env` files under `/srv/saas/infra/stacks/<instance>/`.
 
 ---
 

@@ -2,7 +2,7 @@
 
 ## 1. Summary
 
-We're adding a feature-flagged subsystem that charges a one-time **design fee** per (cart × logo content × fee category × decoration method) tuple, modeling the real-world digitizing-setup cost merchants like Stitchs absorb (Borduren on Klein/Groot zones: €25/€39 once per cart per logo per zone-class). Identity is the Shopify cart token; on checkout the cart token is consumed and on next cart the fee re-applies. The whole thing is gated behind `DESIGN_FEES_ENABLED` (env var, default false on the public `insignia` deployment, true on `insignia-custom`) AND a per-shop opt-in (creating any `DesignFeeCategory` row plus assigning it on a `PlacementDefinition`); with both off the diff is invisible. The shape of the diff: 1 migration, 2 new Prisma models + 2 new columns, ~5 server modules under `app/lib/services/design-fees/`, 4–5 new admin routes, ~6 storefront-modal touch points (all tagged `// design-fees:` for grep-and-delete reverse-out), 1 new cron endpoint, ~600 LOC total.
+We're adding a feature-flagged subsystem that charges a one-time **design fee** per (cart × logo content × fee category × decoration method) tuple, modeling the real-world digitizing-setup cost merchants like Stitchs absorb (Borduren on Klein/Groot zones: €25/€39 once per cart per logo per zone-class). Identity is the Shopify cart token; on checkout the cart token is consumed and on next cart the fee re-applies. The whole thing is gated behind `DESIGN_FEES_ENABLED` (env var, default false on the public `insignia` deployment, true on `insignia-stitchs`) AND a per-shop opt-in (creating any `DesignFeeCategory` row plus assigning it on a `PlacementDefinition`); with both off the diff is invisible. The shape of the diff: 1 migration, 2 new Prisma models + 2 new columns, ~5 server modules under `app/lib/services/design-fees/`, 4–5 new admin routes, ~6 storefront-modal touch points (all tagged `// design-fees:` for grep-and-delete reverse-out), 1 new cron endpoint, ~600 LOC total.
 
 Load-bearing files (per CLAUDE.md "load-bearing subsystem touch"):
 - `app/components/storefront/CustomizationModal.tsx` (storefront cart submit path)
@@ -436,9 +436,9 @@ Hourly is plenty. Aligned with existing `cleanup-drafts` cadence (see `docs/ops/
 Add to `docs/ops/cron-setup.md` under "Custom/private instance cron" (lines 53–62 in the current file). The public `insignia` deployment doesn't need this (feature off), so put it ONLY in the custom block:
 
 ```cron
-# Insignia CUSTOM design-fee cleanup
-0   * * * *  curl -sf -X POST https://insignia-custom.optidigi.nl/api/admin/cron/cleanup-design-fee-charges \
-               -H "Authorization: Bearer $CRON_SECRET_CUSTOM" | logger -t insignia-custom-cron
+# Insignia Stitchs design-fee cleanup
+0   * * * *  curl -sf -X POST https://insignia-stitchs.optidigi.nl/api/admin/cron/cleanup-design-fee-charges \
+               -H "Authorization: Bearer $CRON_SECRET_STITCHS" | logger -t insignia-stitchs-cron
 ```
 
 ## 10. Edge cases
@@ -473,8 +473,8 @@ Re-run `scripts/repro-ios.mjs` (the iOS Safari repro script per `CLAUDE.md`) on 
 ## 12. Rollout / risk
 
 - **Migration is additive.** New tables + nullable columns only. Safe under live traffic. Run via existing Prisma migrate flow.
-- **Env var stays false on `insignia`.** The public app deployment never gates the feature on; only `insignia-custom` (Stitchs' private instance) sets `DESIGN_FEES_ENABLED=true` in its `.env`.
-- **Runtime kill switch.** If the feature blows up in prod on `insignia-custom`: SSH the VPS, flip `DESIGN_FEES_ENABLED=false` in `/srv/saas/infra/stacks/insignia-custom/.env`, `docker-compose restart`. No code rollback. Customer-facing UI surfaces disappear within seconds; existing `CartDesignFeeCharge` rows stay (idle until customers' carts expire and the cron eats them).
+- **Env var stays false on `insignia`.** The public app deployment never gates the feature on; only `insignia-stitchs` (Stitchs' private instance) sets `DESIGN_FEES_ENABLED=true` in its `.env`.
+- **Runtime kill switch.** If the feature blows up in prod on `insignia-stitchs`: SSH the VPS, flip `DESIGN_FEES_ENABLED=false` in `/srv/saas/infra/stacks/insignia-stitchs/.env`, `docker-compose restart`. No code rollback. Customer-facing UI surfaces disappear within seconds; existing `CartDesignFeeCharge` rows stay (idle until customers' carts expire and the cron eats them).
 - **Removal path.** Documented for posterity:
   1. Drop the cron entry in `docs/ops/cron-setup.md`.
   2. `git rm app/lib/services/design-fees/ app/routes/api.admin.cron.cleanup-design-fee-charges.tsx app/routes/api.admin.design-fees.*`

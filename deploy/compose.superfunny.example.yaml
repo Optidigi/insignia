@@ -1,0 +1,52 @@
+# deploy/compose.superfunny.example.yaml
+#
+# SuperFunny private Insignia instance.
+# Server path: /srv/saas/infra/stacks/insignia-superfunny/compose.yaml
+
+name: insignia-superfunny
+
+services:
+  app:
+    image: ghcr.io/optidigi/insignia-app:${APP_VERSION:-latest}
+    container_name: insignia-superfunny-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - proxy
+      - internal
+    env_file: .env
+    environment:
+      NODE_ENV: production
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  db:
+    image: postgres:16-alpine
+    container_name: insignia-superfunny-postgres
+    restart: unless-stopped
+    networks:
+      - internal
+    volumes:
+      - /srv/data/saas/insignia-superfunny/postgres:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  proxy:
+    external: true
+    name: proxy
+  internal:
+    internal: true
