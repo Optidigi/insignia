@@ -27,6 +27,15 @@ Pattern A (canonical):
 6. Storefront updates cart using Shopify Ajax Cart API
 7. `POST /apps/insignia/cart-confirm`
 
+Pattern B (`ProductConfig.storefrontMode = "quote_request"`):
+
+1. `GET /apps/insignia/config`
+2. Upload logo/artwork or choose "send later"
+3. `POST /apps/insignia/quote-requests`
+
+Quote-request mode does not call `/customizations`, `/price`, `/prepare`,
+Shopify Ajax Cart, or `/cart-confirm`.
+
 ## Endpoint contracts
 
 ### Logo Upload
@@ -159,6 +168,44 @@ Confirm the cart line after Shopify Ajax Cart API updates.
 **Response body**
 ```json
 { "ok": true }
+```
+
+### POST /apps/insignia/quote-requests
+
+Persist a quote request for configs using `storefrontMode = "quote_request"`.
+
+**Request body**
+```json
+{
+  "productId": "gid://shopify/Product/123",
+  "variantId": "gid://shopify/ProductVariant/456",
+  "productConfigId": "uuid",
+  "logoAssetId": "uuid",
+  "artworkStatus": "PROVIDED",
+  "decorationChoice": "advise",
+  "maxFormatChoice": "10cm",
+  "maxFormatCustom": null,
+  "placementWish": "Visible front, centered if possible",
+  "notes": "Optional extra notes",
+  "contactName": "Customer",
+  "contactEmail": "customer@example.com",
+  "contactPhone": "0612345678",
+  "companyName": "Company",
+  "productSnapshot": {
+    "productTitle": "Product title",
+    "variantTitle": "Black / L",
+    "methodLabel": "Stitchs adviseert",
+    "maxFormatLabel": "Tot 10 cm",
+    "imageUrl": "https://cdn.shopify.com/..."
+  }
+}
+```
+
+**Response body**
+```json
+{
+  "quoteRequestId": "uuid"
+}
 ```
 
 ### Required cart line item properties

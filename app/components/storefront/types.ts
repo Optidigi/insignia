@@ -73,8 +73,15 @@ export type ProductVariantOption = {
   selectedOptions: Array<{ name: string; value: string }>;
 };
 
+export type ProductMediaImage = {
+  id: string;
+  url: string;
+  altText: string | null;
+};
+
 export type StorefrontConfig = {
   productConfigId: string;
+  storefrontMode: "standard" | "quote_request";
   shop: string;
   productId: string;
   variantId: string;
@@ -90,6 +97,7 @@ export type StorefrontConfig = {
   methods: DecorationMethodRef[];
   placements: Placement[];
   variants: ProductVariantOption[];
+  productMedia: ProductMediaImage[];
   /** Which product axis drives the quantity grid cards. */
   variantAxis: "size" | "color" | "option";
   // design-fees: per-shop summary; null when feature disabled or no categories

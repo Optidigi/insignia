@@ -105,7 +105,7 @@ export const loader = async ({ request }: LoaderFunctionArgs) => {
         allowedOrigin
       );
     }
-    if (!config.placements || config.placements.length === 0) {
+    if (config.storefrontMode !== "quote_request" && (!config.placements || config.placements.length === 0)) {
       return jsonResponse(
         { error: { code: "INVALID_CONFIG", message: "Product has no placements configured" } },
         422,

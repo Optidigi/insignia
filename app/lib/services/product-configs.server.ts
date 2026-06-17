@@ -19,11 +19,13 @@ export const CreateProductConfigSchema = z.object({
   linkedProductIds: z.array(z.string()).min(1, "At least one product required"),
   allowedMethodIds: z.array(z.string()).optional().default([]),
   presetKey: z.string().nullable().optional(),
+  storefrontMode: z.enum(["standard", "quote_request"]).optional().default("standard"),
 });
 
 export const UpdateProductConfigSchema = z.object({
   name: z.string().min(1, "Name is required").max(200).optional(),
   linkedProductIds: z.array(z.string()).min(1).optional(),
+  storefrontMode: z.enum(["standard", "quote_request"]).optional(),
   allowedMethodIds: z.array(z.string()).optional(),
   // Key = decorationMethodId. null = inherit method default; missing key = preserve existing override.
   methodPriceOverrides: z.record(z.string(), z.number().int().min(0).nullable()).optional(),
@@ -121,6 +123,7 @@ export async function createProductConfig(
         name: input.name,
         linkedProductIds: input.linkedProductIds,
         presetKey: input.presetKey ?? null,
+        storefrontMode: input.storefrontMode ?? "standard",
       },
     });
 
@@ -178,6 +181,7 @@ export async function updateProductConfig(
       data: {
         ...(input.name && { name: input.name }),
         ...(input.linkedProductIds && { linkedProductIds: input.linkedProductIds }),
+        ...(input.storefrontMode && { storefrontMode: input.storefrontMode }),
       },
     });
 
@@ -520,6 +524,7 @@ export async function duplicateProductConfig(
         shopId,
         name: newName,
         linkedProductIds: newProductIds,
+        storefrontMode: source.storefrontMode,
       },
     });
 

@@ -73,6 +73,7 @@ export default function App() {
           <Link to="/app/methods">Decoration methods</Link>
           <Link to="/app/products">Products</Link>
           <Link to="/app/orders">Orders</Link>
+          <Link to="/app/quote-requests">Quote requests</Link>
           <Link to="/app/settings">Settings</Link>
         </NavMenu>
         <Box paddingBlockEnd="1600">

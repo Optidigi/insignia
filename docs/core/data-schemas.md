@@ -61,6 +61,33 @@ Connects one or more Shopify products to customization rules.
 - `views` (ProductView[]): supported perspectives (front/back/etc.). Each view owns its own placements.
 - `allowedMethods` (ProductConfigMethod[]): many-to-many relation to DecorationMethod via join table.
 
+Additional field:
+
+- `storefrontMode` (`standard` | `quote_request`): controls which storefront flow loads. `standard` uses the existing canvas/cart customizer. `quote_request` uses the Stitchs quote-request form and does not require configured placements/zones.
+
+## QuoteRequest
+
+Stores generic quote requests from `ProductConfig.storefrontMode = "quote_request"` products. These records are separate from `CustomizationDraft`, `CustomizationConfig`, and cart/order line customizations.
+
+- `id` (UUID)
+- `shopId` (UUID)
+- `productId` (string): Shopify product GID
+- `variantId` (string): Shopify variant GID
+- `productConfigId` (UUID)
+- `logoAssetId` (UUID | null): uploaded artwork, null when customer will send later
+- `artworkStatus` (`PROVIDED` | `PENDING_CUSTOMER`)
+- `decorationChoice` (`print` | `embroidery` | `advise`)
+- `maxFormatChoice` (`10cm` | `20cm` | `30cm` | `other`)
+- `maxFormatCustom` (string | null)
+- `placementWish` (text)
+- `notes` (text | null)
+- `contactName` (string)
+- `contactEmail` (string)
+- `contactPhone` (string | null)
+- `companyName` (string | null)
+- `productSnapshot` (JSON): title, variant title, selected method/format labels, and preview image URL at submission time
+- `createdAt` (timestamp)
+
 ## ProductConfigMethod (join table)
 
 Links ProductConfig to DecorationMethod (many-to-many) and optionally overrides the method's base price for this product config.

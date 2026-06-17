@@ -25,6 +25,7 @@ import { UploadStep } from "./UploadStep";
 import { PlacementStep } from "./PlacementStep";
 import { SizeStep, type SizeStepHandle } from "./SizeStep";
 import { ReviewStep } from "./ReviewStep";
+import { QuoteRequestModal } from "./QuoteRequestModal";
 import { PreviewSheet } from "./PreviewSheet";
 import { PreviewCanvas } from "./PreviewCanvas";
 import { CloseConfirmDialog } from "./CloseConfirmDialog";
@@ -1282,6 +1283,10 @@ export function CustomizationModal({
         </div>
       </div>
     );
+  }
+
+  if (config.storefrontMode === "quote_request") {
+    return <QuoteRequestModal config={config} returnUrl={returnUrl} />;
   }
 
   const desktopShowPreview = ["upload", "placement", "size", "review"].includes(step);

@@ -37,6 +37,7 @@ import {
   ResourceList,
   ResourceItem,
   Icon,
+  Select,
 } from "@shopify/polaris";
 import { AlertCircleIcon, CalculatorIcon, CheckCircleIcon, ImageIcon, ChevronRightIcon, DragHandleIcon, EditIcon, ResetIcon } from "@shopify/polaris-icons";
 import { formatCurrency } from "../components/storefront/currency";
@@ -216,13 +217,15 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Config is "ready" for storefront use when all setup steps are complete.
     // Geometry can live on views (shared zones) or per-variant configs — either counts.
     const hasAnyGeometry = viewsWithGeometry > 0 || variantConfigsWithGeometry > 0;
-    const isConfigReady =
-      config.linkedProductIds.length > 0 &&
-      config.allowedMethods.length > 0 &&
-      config.views.length > 0 &&
-      variantConfigsWithImages > 0 &&
-      allPlacements.length > 0 &&
-      hasAnyGeometry;
+    const isQuoteMode = config.storefrontMode === "quote_request";
+    const isConfigReady = isQuoteMode
+      ? config.linkedProductIds.length > 0 && config.allowedMethods.length > 0
+      : config.linkedProductIds.length > 0 &&
+        config.allowedMethods.length > 0 &&
+        config.views.length > 0 &&
+        variantConfigsWithImages > 0 &&
+        allPlacements.length > 0 &&
+        hasAnyGeometry;
 
     // Sync insignia.enabled metafield: set "true" only when config is ready,
     // "false" otherwise. This controls the storefront Customize button visibility.
@@ -323,12 +326,13 @@ export const action = async ({ request, params }: ActionFunctionArgs) => {
     if (intent === "update-basic") {
       const name = formData.get("name") as string;
       const productIds = JSON.parse(formData.get("productIds") as string || "[]") as string[];
+      const storefrontMode = formData.get("storefrontMode") as string | null;
 
       const prevProductIds: string[] = (configOwnership.linkedProductIds ?? []) as string[];
 
       const input = validateOrThrow(
         UpdateProductConfigSchema,
-        { name, linkedProductIds: productIds },
+        { name, linkedProductIds: productIds, storefrontMode },
         "Invalid config data"
       );
 
@@ -567,6 +571,9 @@ export default function ProductConfigDetailPage() {
   const [selectedProducts, setSelectedProducts] = useState<string[]>(
     config.linkedProductIds
   );
+  const [storefrontMode, setStorefrontMode] = useState<"standard" | "quote_request">(
+    config.storefrontMode === "quote_request" ? "quote_request" : "standard"
+  );
   const [selectedMethodIds, setSelectedMethodIds] = useState<string[]>(
     config.allowedMethods.map((m) => m.decorationMethodId)
   );
@@ -582,6 +589,11 @@ export default function ProductConfigDetailPage() {
 
   const handleNameChange = useCallback((value: string) => {
     setName(value);
+    setHasChanges(true);
+  }, []);
+
+  const handleStorefrontModeChange = useCallback((value: string) => {
+    setStorefrontMode(value === "quote_request" ? "quote_request" : "standard");
     setHasChanges(true);
   }, []);
 
@@ -666,6 +678,7 @@ export default function ProductConfigDetailPage() {
 
   const hasBasicChanges =
     name !== config.name ||
+    storefrontMode !== (config.storefrontMode === "quote_request" ? "quote_request" : "standard") ||
     JSON.stringify(selectedProducts.sort()) !==
       JSON.stringify([...config.linkedProductIds].sort());
 
@@ -713,9 +726,10 @@ export default function ProductConfigDetailPage() {
     formData.append("intent", "update-basic");
     formData.append("name", name.trim());
     formData.append("productIds", JSON.stringify(selectedProducts));
+    formData.append("storefrontMode", storefrontMode);
     submit(formData, { method: "POST" });
     setError(null);
-  }, [name, selectedProducts, submit]);
+  }, [name, selectedProducts, storefrontMode, submit]);
 
   const handleDiscard = useCallback(() => {
     setName(config.name);
@@ -885,14 +899,20 @@ export default function ProductConfigDetailPage() {
   const hasImages = stats.variantConfigsWithImages > 0;
   const hasGeometry = stats.variantConfigsWithGeometry > 0 || stats.viewsWithGeometry > 0;
 
-  const setupSteps = [
-    { done: hasLinkedProducts, label: "Linked products" },
-    { done: hasMethods, label: "Decoration methods" },
-    { done: hasViews, label: "Views added" },
-    { done: hasImages, label: "Variant images uploaded" },
-    { done: hasPlacements, label: "Print areas defined" },
-    { done: hasGeometry, label: "Print areas positioned" },
-  ];
+  const setupSteps = storefrontMode === "quote_request"
+    ? [
+        { done: hasLinkedProducts, label: "Linked products" },
+        { done: hasMethods, label: "Decoration methods" },
+        { done: true, label: "Quote request form enabled" },
+      ]
+    : [
+        { done: hasLinkedProducts, label: "Linked products" },
+        { done: hasMethods, label: "Decoration methods" },
+        { done: hasViews, label: "Views added" },
+        { done: hasImages, label: "Variant images uploaded" },
+        { done: hasPlacements, label: "Print areas defined" },
+        { done: hasGeometry, label: "Print areas positioned" },
+      ];
   const completedSteps = setupSteps.filter((s) => s.done).length;
 
   return (
@@ -925,7 +945,7 @@ export default function ProductConfigDetailPage() {
         )}
 
         {/* First-setup guidance banner — shown when no views have been created yet */}
-        {isFirstSetup && !firstSetupBannerDismissed && (
+        {isFirstSetup && storefrontMode !== "quote_request" && !firstSetupBannerDismissed && (
           <Layout.Section>
             <Banner
               title="Product setup created — next steps"
@@ -951,7 +971,7 @@ export default function ProductConfigDetailPage() {
         )}
 
         {/* 0-placements warning */}
-        {placements.length === 0 && (
+        {placements.length === 0 && storefrontMode !== "quote_request" && (
           <Layout.Section>
             <Banner tone="warning">
               This product has no print areas defined. Add at least one print area before publishing.
@@ -975,6 +995,27 @@ export default function ProductConfigDetailPage() {
                     value={name}
                     onChange={handleNameChange}
                     autoComplete="off"
+                  />
+
+                  <Select
+                    label="Storefront flow"
+                    options={[
+                      {
+                        label: "Standard customizer",
+                        value: "standard",
+                      },
+                      {
+                        label: "Quote request form",
+                        value: "quote_request",
+                      },
+                    ]}
+                    value={storefrontMode}
+                    onChange={handleStorefrontModeChange}
+                    helpText={
+                      storefrontMode === "quote_request"
+                        ? "Uses the Stitchs quote form: product photos, artwork upload, technique, format, placement text, and contact details."
+                        : "Uses the standard Insignia canvas, print areas, pricing, and cart flow."
+                    }
                   />
 
                   <BlockStack gap="200">

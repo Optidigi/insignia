@@ -64,6 +64,7 @@ model Shop {
   designFeeCategories    DesignFeeCategory[]
   cartDesignFeeCharges   CartDesignFeeCharge[]
   designFeeSlots         DesignFeeSlot[]
+  quoteRequests          QuoteRequest[]
 
 }
 
@@ -162,6 +163,7 @@ model ProductConfig {
   name             String
   linkedProductIds String[] // Shopify product GIDs
   presetKey        String?  // NEW: "t-shirt", "hoodie", "polo", "cap", or null if no preset was applied
+  storefrontMode   String   @default("standard") // "standard" | "quote_request"
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -171,8 +173,44 @@ model ProductConfig {
   views                   ProductView[]
   variantViewConfigurations VariantViewConfiguration[]
   orderLineCustomizations OrderLineCustomization[]
+  quoteRequests           QuoteRequest[]
 
   @@index([shopId])
+}
+
+// ============================================================================
+// QuoteRequest
+// ============================================================================
+
+model QuoteRequest {
+  id               String   @id @default(uuid())
+  shopId           String
+  productId        String   // Shopify product GID
+  variantId        String   // Shopify variant GID
+  productConfigId  String
+  logoAssetId      String?
+  artworkStatus    String   @default("PENDING_CUSTOMER") // PROVIDED | PENDING_CUSTOMER
+
+  decorationChoice String   // print | embroidery | advise
+  maxFormatChoice  String   // 10cm | 20cm | 30cm | other
+  maxFormatCustom  String?
+  placementWish    String   @db.Text
+  notes            String?  @db.Text
+
+  contactName      String
+  contactEmail     String
+  contactPhone     String?
+  companyName      String?
+
+  productSnapshot  Json
+  createdAt        DateTime @default(now())
+
+  shop          Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  productConfig ProductConfig @relation(fields: [productConfigId], references: [id], onDelete: Cascade)
+
+  @@index([shopId, createdAt])
+  @@index([productConfigId])
+  @@index([productId])
 }
 
 // Many-to-many: ProductConfig <-> DecorationMethod

@@ -14,6 +14,9 @@ Contracts only: do not describe UI layout here; see `docs/storefront/modal-spec.
 
 ### Identity
 
+- `storefrontMode` (`standard` | `quote_request`): selects the storefront flow.
+  - `standard`: existing placement/canvas/cart customizer.
+  - `quote_request`: generic quote request form; placements may be empty.
 - `shop` (string): shop domain.
 - `productId` (string): Shopify product GID.
 - `variantId` (string): Shopify variant GID.
@@ -101,6 +104,16 @@ The config response includes the available Shopify variants filtered to those ma
 - `sizeLabel` (string): resolved size label (extracted from the size-typed selected option, across 12 languages with value-based fallback).
 - `priceCents` (integer): variant price in the smallest currency unit.
 - `available` (boolean): true if the variant is in stock and purchasable.
+
+### Product media
+
+For `quote_request` mode, the modal may render Shopify product media directly
+instead of configured Insignia view images.
+
+- `productMedia` (array)
+  - `id` (string): Shopify media ID.
+  - `url` (string): media image URL.
+  - `altText` (string | null): image alt text when available.
 
 Note: `selectedOptions` (the raw Shopify option array) is used server-side for size detection and non-size filtering but is **stripped before the client response** — it is not present in `ProductVariantOption` as returned to the storefront.
 

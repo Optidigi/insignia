@@ -193,19 +193,20 @@ export async function serverSideStorefrontUpload(
   const allowedTypes = ["image/svg+xml", "image/png", "image/jpeg", "image/webp"];
   let effectiveContentType = contentType;
   if (!allowedTypes.includes(contentType)) {
-    const ext = file.name.match(/\.(svg|png|jpe?g|webp)$/i)?.[1]?.toLowerCase();
+    const ext = file.name.match(/\.(svg|png|jpe?g|webp|pdf)$/i)?.[1]?.toLowerCase();
     const extToMime: Record<string, string> = {
       svg: "image/svg+xml", png: "image/png",
-      jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp",
+      jpg: "image/jpeg", jpeg: "image/jpeg", webp: "image/webp", pdf: "application/pdf",
     };
     if (ext && extToMime[ext]) {
       effectiveContentType = extToMime[ext];
     } else {
-      throw new AppError(ErrorCodes.VALIDATION_ERROR, "Allowed types: SVG, PNG, JPEG, WebP", 400);
+      throw new AppError(ErrorCodes.VALIDATION_ERROR, "Allowed types: SVG, PNG, JPEG, WebP, PDF", 400);
     }
   }
 
   const isSvg = effectiveContentType === "image/svg+xml";
+  const isPdf = effectiveContentType === "application/pdf";
   let sanitizedSvgKey: string | null = null;
   let pngKey: string;
   const logoId = uuid();
@@ -217,6 +218,21 @@ export async function serverSideStorefrontUpload(
     await putObject(sanitizedSvgKey, Buffer.from(cleaned, "utf8"), "image/svg+xml");
     const pngBuffer = await sharp(Buffer.from(cleaned, "utf8"))
       .resize({ width: 4096, height: 4096, fit: "inside", withoutEnlargement: true })
+      .png()
+      .toBuffer();
+    pngKey = StorageKeys.logo(shopId, logoId, "preview.png");
+    await putObject(pngKey, pngBuffer, "image/png");
+  } else if (isPdf) {
+    sanitizedSvgKey = StorageKeys.logo(shopId, logoId, "original.pdf");
+    await putObject(sanitizedSvgKey, rawBuffer, "application/pdf");
+    const previewSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="900" height="600" viewBox="0 0 900 600">
+      <rect width="900" height="600" rx="32" fill="#F3F6FA"/>
+      <rect x="300" y="105" width="300" height="390" rx="20" fill="#FFFFFF" stroke="#CBD5E1" stroke-width="8"/>
+      <path d="M535 105v115h65" fill="none" stroke="#CBD5E1" stroke-width="8" stroke-linejoin="round"/>
+      <text x="450" y="335" text-anchor="middle" font-family="Arial, sans-serif" font-size="72" font-weight="700" fill="#0B5ED7">PDF</text>
+      <text x="450" y="395" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" fill="#475569">Artwork geupload</text>
+    </svg>`;
+    const pngBuffer = await sharp(Buffer.from(previewSvg))
       .png()
       .toBuffer();
     pngKey = StorageKeys.logo(shopId, logoId, "preview.png");

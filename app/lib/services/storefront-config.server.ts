@@ -13,7 +13,7 @@ import {
   effectiveMethodPriceCents,
   effectivePlacementAdjustmentCents,
 } from "./methods.server";
-import type { ProductVariantOption } from "../../components/storefront/types";
+import type { ProductMediaImage, ProductVariantOption } from "../../components/storefront/types";
 // design-fees:
 import { designFeesEnabled } from "./design-fees/feature-flag.server";
 
@@ -52,7 +52,7 @@ export type Placement = {
 export type ConfiguredView = {
   id: string;
   name: string | null;
-  perspective: "front" | "back" | "left" | "right" | "side";
+  perspective: "front" | "back" | "left" | "right" | "side" | "custom";
   imageUrl: string | null;
   isMissingImage: boolean;
   /** Merchant-set ruler calibration; null when no ruler has been calibrated. */
@@ -88,6 +88,7 @@ export type StorefrontDesignFees = {
 
 export type StorefrontConfig = {
   productConfigId: string;
+  storefrontMode: "standard" | "quote_request";
   shop: string;
   productId: string;
   variantId: string;
@@ -103,6 +104,7 @@ export type StorefrontConfig = {
   methods: DecorationMethodRef[];
   placements: Placement[];
   variants: ProductVariantOption[];
+  productMedia: ProductMediaImage[];
   /** Which product axis drives the quantity grid cards. */
   variantAxis: "size" | "color" | "option";
   // design-fees: null when feature off or no categories configured
@@ -179,7 +181,10 @@ export async function getStorefrontConfig(
     );
   }
 
-  if (config.views.every((v) => v.placements.length === 0)) {
+  const storefrontMode =
+    config.storefrontMode === "quote_request" ? "quote_request" : "standard";
+
+  if (storefrontMode === "standard" && config.views.every((v) => v.placements.length === 0)) {
     throw new AppError(
       ErrorCodes.INVALID_CONFIG,
       "This product has no print areas configured. Please contact the store.",
@@ -191,6 +196,7 @@ export async function getStorefrontConfig(
   let baseProductPriceCents = 0;
   let productTitle = "Product";
   let variants: ProductVariantOption[] = [];
+  let productMedia: ProductMediaImage[] = [];
   let variantAxis: "size" | "color" | "option" = "option";
   // view-image-orphan-fix: capture color-group siblings outside the try-block so we can
   // view-image-orphan-fix: query VVCs for them in the Promise.all below.
@@ -204,6 +210,14 @@ export async function getStorefrontConfig(
             price
             product {
               title
+              media(first: 20, query: "media_type:IMAGE") {
+                nodes {
+                  ... on MediaImage {
+                    id
+                    image { url }
+                  }
+                }
+              }
               variants(first: 250) {
                 nodes {
                   id
@@ -227,6 +241,12 @@ export async function getStorefrontConfig(
             price: string;
             product?: {
               title: string;
+              media?: {
+                nodes: Array<{
+                  id: string;
+                  image: { url: string | null } | null;
+                }>;
+              };
               variants?: {
                 nodes: Array<{
                   id: string;
@@ -246,6 +266,13 @@ export async function getStorefrontConfig(
         productTitle = variant.product?.title ?? "Product";
       }
       const variantNodes = variantData?.data?.productVariant?.product?.variants?.nodes ?? [];
+      productMedia = (variantData?.data?.productVariant?.product?.media?.nodes ?? [])
+        .map((media) => ({
+          id: media.id,
+          url: media.image?.url ?? "",
+          altText: null,
+        }))
+        .filter((media) => media.url);
 
       // Detect which option is the "size" option using multi-strategy heuristic:
       // 1. Match common size option names across languages
@@ -599,6 +626,7 @@ export async function getStorefrontConfig(
 
   return {
     productConfigId: config.id,
+    storefrontMode,
     shop: shopDomain,
     productId,
     variantId,
@@ -614,6 +642,7 @@ export async function getStorefrontConfig(
     methods,
     placements,
     variants,
+    productMedia,
     variantAxis,
     designFees,
   };
