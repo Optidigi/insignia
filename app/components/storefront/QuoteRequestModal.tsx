@@ -45,9 +45,7 @@ export function QuoteRequestModal({
   const [decorationChoice, setDecorationChoice] = useState<DecorationChoice>("advise");
   const [maxFormatChoice, setMaxFormatChoice] = useState<MaxFormatChoice>("10cm");
   const [maxFormatCustom, setMaxFormatCustom] = useState("");
-  const [placementWish, setPlacementWish] = useState(
-    "Graag op de zichtbare voorkant, gecentreerd als dat mogelijk is.\nAls dit niet mooi past, graag advies over een betere plek."
-  );
+  const [placementWish, setPlacementWish] = useState("");
   const [notes, setNotes] = useState("");
   const [contactName, setContactName] = useState("");
   const [contactEmail, setContactEmail] = useState("");
@@ -68,7 +66,24 @@ export function QuoteRequestModal({
   const currentStepIndex = STEPS.findIndex((s) => s.id === step);
 
   const closeNow = () => {
-    window.location.href = returnUrl || "/";
+    const safeReturnUrl =
+      returnUrl && /^\/(?!\/|\\)/.test(returnUrl) ? returnUrl : null;
+    const isAppOrigin = (origin: string) => {
+      const host = new URL(origin).host;
+      return host === "insignia-stitchs.nl" || host === "insignia-stitchs.optidigi.nl";
+    };
+    let origin = window.location.origin;
+    try {
+      const referrerOrigin = document.referrer ? new URL(document.referrer).origin : null;
+      if (referrerOrigin && !isAppOrigin(referrerOrigin)) {
+        origin = referrerOrigin;
+      } else if (isAppOrigin(origin)) {
+        origin = "https://stitchs.nl";
+      }
+    } catch {
+      // Keep current origin when referrer parsing fails.
+    }
+    window.location.href = safeReturnUrl ? `${origin}${safeReturnUrl}` : `${origin}/`;
   };
 
   const canContinue = (() => {
@@ -288,7 +303,7 @@ export function QuoteRequestModal({
               <h2>Beschrijf de plaatsing</h2>
               <p>Vertel waar je het logo of ontwerp ongeveer wilt hebben. Wij beoordelen wat mogelijk en mooi is.</p>
               <label className="quote-label" htmlFor="quote-placement-wish">Plaatsingswens</label>
-              <textarea id="quote-placement-wish" className="quote-textarea large" value={placementWish} onChange={(e) => setPlacementWish(e.target.value)} />
+              <textarea id="quote-placement-wish" className="quote-textarea large" placeholder="Bijvoorbeeld: zichtbare voorkant, borst, mouw of een plek die volgens jullie mooi past." value={placementWish} onChange={(e) => setPlacementWish(e.target.value)} />
               <h3>Extra informatie</h3>
               <label className="quote-label" htmlFor="quote-notes">Opmerkingen</label>
               <textarea id="quote-notes" className="quote-textarea" placeholder="Bijvoorbeeld: meerdere posities, kleuren, deadline of speciale wensen." value={notes} onChange={(e) => setNotes(e.target.value)} />
