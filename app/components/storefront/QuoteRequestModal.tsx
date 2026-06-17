@@ -287,11 +287,11 @@ export function QuoteRequestModal({
             <section>
               <h2>Beschrijf de plaatsing</h2>
               <p>Vertel waar je het logo of ontwerp ongeveer wilt hebben. Wij beoordelen wat mogelijk en mooi is.</p>
-              <label className="quote-label">Plaatsingswens</label>
-              <textarea className="quote-textarea large" value={placementWish} onChange={(e) => setPlacementWish(e.target.value)} />
+              <label className="quote-label" htmlFor="quote-placement-wish">Plaatsingswens</label>
+              <textarea id="quote-placement-wish" className="quote-textarea large" value={placementWish} onChange={(e) => setPlacementWish(e.target.value)} />
               <h3>Extra informatie</h3>
-              <label className="quote-label">Opmerkingen</label>
-              <textarea className="quote-textarea" placeholder="Bijvoorbeeld: meerdere posities, kleuren, deadline of speciale wensen." value={notes} onChange={(e) => setNotes(e.target.value)} />
+              <label className="quote-label" htmlFor="quote-notes">Opmerkingen</label>
+              <textarea id="quote-notes" className="quote-textarea" placeholder="Bijvoorbeeld: meerdere posities, kleuren, deadline of speciale wensen." value={notes} onChange={(e) => setNotes(e.target.value)} />
               <p className="quote-info">Gebruik gewone taal. Je hoeft geen exacte drukpositie op te geven.</p>
             </section>
           )}
