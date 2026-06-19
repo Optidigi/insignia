@@ -221,29 +221,35 @@ export function QuoteRequestModal({
 
       <div className="insignia-modal-body-wrap quote-body-wrap" data-step={step}>
         <aside className="insignia-desktop-preview quote-product-panel">
-          <span className="quote-photo-pill">Productfoto</span>
-          <div className="quote-product-image-wrap">
-            {activeImage ? (
-              <img className="quote-product-image" src={activeImage.url} alt={activeImage.alt} />
-            ) : (
-              <div className="quote-product-placeholder">{config.productTitle}</div>
-            )}
-          </div>
-          {media.length > 1 && (
-            <>
-              <button className="quote-image-nav prev" type="button" aria-label="Vorige foto" onClick={() => setImageIndex((i) => (i - 1 + media.length) % media.length)}>
-                <IconArrowLeft size={18} />
-              </button>
-              <button className="quote-image-nav next" type="button" aria-label="Volgende foto" onClick={() => setImageIndex((i) => (i + 1) % media.length)}>
-                <IconArrowRight size={18} />
-              </button>
-              <div className="quote-image-dots" aria-hidden="true">
+          <div className="insignia-desktop-preview-canvas quote-product-preview-canvas">
+            <div className="insignia-canvas-frame quote-product-canvas-frame" data-state={activeImage ? "ready" : "empty"} data-context="panel">
+              <span className="insignia-canvas-view-label">Productfoto</span>
+              <div className="insignia-canvas-layer" data-role="incoming">
+                {activeImage ? (
+                  <img className="quote-product-image" src={activeImage.url} alt={activeImage.alt} />
+                ) : (
+                  <div className="insignia-canvas-status">{config.productTitle}</div>
+                )}
+              </div>
+              {media.length > 1 && (
+                <>
+                  <button className="insignia-canvas-nav insignia-canvas-nav--prev" type="button" aria-label="Vorige foto" onClick={() => setImageIndex((i) => (i - 1 + media.length) % media.length)}>
+                    <IconArrowLeft size={18} />
+                  </button>
+                  <button className="insignia-canvas-nav insignia-canvas-nav--next" type="button" aria-label="Volgende foto" onClick={() => setImageIndex((i) => (i + 1) % media.length)}>
+                    <IconArrowRight size={18} />
+                  </button>
+                </>
+              )}
+            </div>
+            {media.length > 1 && (
+              <div className="insignia-canvas-dots" data-context="panel" aria-label="Productfoto's">
                 {media.slice(0, 8).map((_, i) => (
-                  <span key={i} data-active={i === imageIndex} />
+                  <button key={i} type="button" className="insignia-canvas-dot" data-active={i === imageIndex} aria-label={`Foto ${i + 1}`} onClick={() => setImageIndex(i)} />
                 ))}
               </div>
-            </>
-          )}
+            )}
+          </div>
         </aside>
 
         <section className="insignia-desktop-content quote-content">
