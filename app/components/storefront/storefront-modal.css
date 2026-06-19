@@ -1119,6 +1119,37 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
 .quote-success { color: #047857 !important; }
 
 @media (max-width: 900px) {
+  .quote-body-wrap[data-step="placement"] .quote-product-panel {
+    display: flex;
+    flex: 0 0 auto;
+    min-height: 220px;
+    max-height: 30dvh;
+    padding: 16px 16px 34px;
+    border-bottom: 1px solid var(--insignia-border);
+    background: var(--insignia-bg-subtle);
+  }
+  .quote-body-wrap[data-step="placement"] .quote-photo-pill {
+    top: 12px;
+    left: 12px;
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  .quote-body-wrap[data-step="placement"] .quote-product-image-wrap {
+    width: min(54%, 220px);
+  }
+  .quote-body-wrap[data-step="placement"] .quote-image-nav {
+    width: 34px;
+    height: 34px;
+  }
+  .quote-body-wrap[data-step="placement"] .quote-image-nav.prev {
+    left: 14px;
+  }
+  .quote-body-wrap[data-step="placement"] .quote-image-nav.next {
+    right: 14px;
+  }
+  .quote-body-wrap[data-step="placement"] .quote-image-dots {
+    bottom: 14px;
+  }
   .quote-format-grid,
   .quote-contact-grid {
     grid-template-columns: 1fr;
