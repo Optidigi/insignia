@@ -743,22 +743,17 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   background: #ffffff;
 }
 
-.quote-body {
-  display: grid;
-  grid-template-columns: minmax(420px, 1.08fr) minmax(420px, 1fr);
-  min-height: calc(100vh - 176px);
-  border-top: 1px solid var(--insignia-border);
-  border-bottom: 1px solid var(--insignia-border);
+.quote-body-wrap {
+  flex: 1;
+}
+
+.quote-content {
+  min-width: 0;
 }
 
 .quote-product-panel {
   position: relative;
-  min-height: 620px;
-  border-right: 1px solid var(--insignia-border);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 56px 48px 76px;
+  padding-bottom: 76px;
 }
 
 .quote-photo-pill {
@@ -838,11 +833,6 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
 
 .quote-image-dots span[data-active="true"] {
   background: #111827;
-}
-
-.quote-step-panel {
-  padding: 44px 52px 48px;
-  overflow: auto;
 }
 
 .quote-step-panel section {
@@ -1119,20 +1109,6 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   gap: 18px 20px;
 }
 
-.quote-footer {
-  min-height: 96px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 40px;
-}
-
-.quote-footer-actions {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-}
-
 .quote-error,
 .quote-success {
   margin-top: 14px !important;
@@ -1143,36 +1119,9 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
 .quote-success { color: #047857 !important; }
 
 @media (max-width: 900px) {
-  .quote-body {
-    grid-template-columns: 1fr;
-  }
-  .quote-product-panel {
-    min-height: 340px;
-    border-right: 0;
-    border-bottom: 1px solid var(--insignia-border);
-    padding: 64px 24px 60px;
-  }
-  .quote-product-image-wrap {
-    width: min(78%, 320px);
-  }
-  .quote-step-panel {
-    padding: 28px 20px 34px;
-  }
   .quote-format-grid,
   .quote-contact-grid {
     grid-template-columns: 1fr;
-  }
-  .quote-footer {
-    padding: 18px 20px;
-    gap: 16px;
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .quote-footer-actions {
-    justify-content: stretch;
-  }
-  .quote-footer-actions .insignia-btn {
-    flex: 1;
   }
 }
 .insignia-method-card-price {

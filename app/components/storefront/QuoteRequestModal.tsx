@@ -219,8 +219,8 @@ export function QuoteRequestModal({
         </button>
       </header>
 
-      <div className="quote-body">
-        <aside className="quote-product-panel">
+      <div className="insignia-modal-body-wrap quote-body-wrap" data-step={step}>
+        <aside className="insignia-desktop-preview quote-product-panel">
           <span className="quote-photo-pill">Productfoto</span>
           <div className="quote-product-image-wrap">
             {activeImage ? (
@@ -246,7 +246,8 @@ export function QuoteRequestModal({
           )}
         </aside>
 
-        <main className="quote-step-panel">
+        <section className="insignia-desktop-content quote-content">
+        <main className="insignia-desktop-content-body quote-step-panel">
           {step === "artwork" && (
             <section>
               <h2>Upload je artwork</h2>
@@ -334,11 +335,12 @@ export function QuoteRequestModal({
             </section>
           )}
         </main>
-      </div>
-
-      <footer className="quote-footer">
-        <strong>Offerteaanvraag</strong>
-        <div className="quote-footer-actions">
+        <footer className="insignia-modal-footer quote-footer">
+        <div className="insignia-footer-price">
+          <span className="insignia-footer-price-label">Type aanvraag</span>
+          <span className="insignia-footer-price-value">Offerte</span>
+        </div>
+        <div className="insignia-footer-actions quote-footer-actions">
           {currentStepIndex > 0 && (
             <button type="button" className="insignia-btn insignia-btn--ghost" onClick={goBack}>
               <IconArrowLeft size={14} /> Terug
@@ -349,7 +351,9 @@ export function QuoteRequestModal({
             <IconArrowRight size={14} />
           </button>
         </div>
-      </footer>
+        </footer>
+        </section>
+      </div>
     </div>
   );
 }
