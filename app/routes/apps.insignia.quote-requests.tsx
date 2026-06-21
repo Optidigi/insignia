@@ -14,35 +14,13 @@ import {
   createQuoteRequest,
   QuoteRequestInputSchema,
 } from "../lib/services/quote-requests.server";
-import { notifyMerchantQuoteRequest } from "../lib/services/merchant-notifications.server";
+import { createQuoteRequestFlowMetaobject } from "../lib/services/shopify-quote-flow.server";
 
 function jsonResponse(data: unknown, status = 200, origin?: string, extra?: Record<string, string>): Response {
   const headers: Record<string, string> = { "Content-Type": "application/json" };
   if (origin) headers["Access-Control-Allow-Origin"] = origin;
   if (extra) Object.assign(headers, extra);
   return new Response(JSON.stringify(data), { status, headers });
-}
-
-async function getShopNotificationEmail(shopDomain: string): Promise<string | undefined> {
-  if (process.env.QUOTE_REQUEST_EMAIL) return process.env.QUOTE_REQUEST_EMAIL;
-  try {
-    const { admin } = await unauthenticated.admin(shopDomain);
-    const response = await admin.graphql(`#graphql
-      query QuoteRequestShopEmail {
-        shop {
-          email
-          contactEmail
-        }
-      }
-    `);
-    const json = (await response.json()) as {
-      data?: { shop?: { email?: string | null; contactEmail?: string | null } };
-    };
-    return json.data?.shop?.contactEmail ?? json.data?.shop?.email ?? undefined;
-  } catch (error) {
-    console.warn("[quote-requests] Could not resolve shop notification email:", error);
-    return undefined;
-  }
 }
 
 export const action = async ({ request }: ActionFunctionArgs) => {
@@ -106,29 +84,16 @@ export const action = async ({ request }: ActionFunctionArgs) => {
 
   try {
     const result = await createQuoteRequest(shop.id, parsed.data);
-    notifyMerchantQuoteRequest(
-      shopDomain,
-      {
-        id: result.quoteRequestId,
-        productTitle: parsed.data.productSnapshot.productTitle,
-        variantTitle: parsed.data.productSnapshot.variantTitle,
-        productImageUrl: parsed.data.productSnapshot.imageUrl,
-        artworkStatus: parsed.data.artworkStatus,
-        logoUrl: parsed.data.productSnapshot.logoUrl,
-        decorationLabel: parsed.data.productSnapshot.methodLabel,
-        maxFormatLabel: parsed.data.productSnapshot.maxFormatLabel,
-        placementWish: parsed.data.placementWish,
-        notes: parsed.data.notes,
-        quantities: parsed.data.productSnapshot.quantities,
-        contactName: parsed.data.contactName,
-        contactEmail: parsed.data.contactEmail,
-        contactPhone: parsed.data.contactPhone,
-        companyName: parsed.data.companyName,
-      },
-      await getShopNotificationEmail(shopDomain),
-    ).catch((e) =>
-      console.error("[quote-requests] Notification error:", e),
-    );
+    unauthenticated.admin(shopDomain)
+      .then(({ admin }) =>
+        createQuoteRequestFlowMetaobject(admin, {
+          quoteRequestId: result.quoteRequestId,
+          input: parsed.data,
+        }),
+      )
+      .catch((e) =>
+        console.error("[quote-requests] Shopify Flow metaobject error:", e),
+      );
     return jsonResponse(result, 200, allowedOrigin);
   } catch (error) {
     if (error instanceof AppError) {
