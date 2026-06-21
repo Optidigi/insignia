@@ -151,7 +151,7 @@ export async function createQuoteRequestFlowMetaobject(
     field("max_format", input.productSnapshot.maxFormatLabel),
     field("placement_wish", input.placementWish),
     field("notes", input.notes),
-    field("artwork_status", input.artworkStatus === "PROVIDED" ? "Artwork geupload" : "Artwork later sturen"),
+    field("artwork_status", input.artworkStatus === "PROVIDED" ? "Ontwerp geüpload" : "Ontwerp later aanleveren"),
     field("logo_url", input.productSnapshot.logoUrl),
     field("product_image_url", input.productSnapshot.imageUrl),
     field("contact_name", input.contactName),
