@@ -23,6 +23,14 @@ export const QuoteRequestInputSchema = z.object({
     methodLabel: z.string().max(200).nullable().optional(),
     maxFormatLabel: z.string().max(200).nullable().optional(),
     imageUrl: z.string().url().nullable().optional(),
+    logoUrl: z.string().url().nullable().optional(),
+    totalQuantity: z.number().int().min(0).optional(),
+    quantities: z.array(z.object({
+      variantId: z.string().min(1),
+      variantTitle: z.string().max(500).nullable().optional(),
+      sizeLabel: z.string().max(200).nullable().optional(),
+      quantity: z.number().int().positive(),
+    })).optional(),
   }),
 });
 

@@ -1,6 +1,8 @@
 import { useMemo, useRef, useState } from "react";
 import type { StorefrontConfig } from "./types";
 import { proxyUrl } from "../../lib/storefront/proxy-url.client";
+import { getTranslations, detectLocale } from "./i18n";
+import { QuantityGrid } from "./QuantityGrid";
 import {
   IconArrowLeft,
   IconArrowRight,
@@ -53,6 +55,13 @@ export function QuoteRequestModal({
   const [companyName, setCompanyName] = useState("");
   const [submitState, setSubmitState] = useState<"ready" | "submitting" | "success" | "error">("ready");
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [quantities, setQuantities] = useState<Record<string, number>>(() => {
+    const initialVariant =
+      config.variants.find((v) => v.id === config.variantId && v.available) ??
+      config.variants.find((v) => v.available);
+    return initialVariant ? { [initialVariant.id]: 1 } : {};
+  });
+  const t = getTranslations(config.locale ?? detectLocale());
 
   const media = useMemo(() => {
     const productMedia = config.productMedia.map((m) => ({ url: m.url, alt: m.altText ?? config.productTitle }));
@@ -64,6 +73,25 @@ export function QuoteRequestModal({
 
   const activeImage = media[imageIndex] ?? null;
   const currentStepIndex = STEPS.findIndex((s) => s.id === step);
+  const quantityLines = useMemo(
+    () =>
+      config.variants
+        .map((variant) => ({
+          variantId: variant.id,
+          variantTitle: variant.title,
+          sizeLabel: variant.sizeLabel,
+          quantity: quantities[variant.id] ?? 0,
+        }))
+        .filter((line) => line.quantity > 0),
+    [config.variants, quantities],
+  );
+  const totalQuantity = quantityLines.reduce((sum, line) => sum + line.quantity, 0);
+  const uploadedLogoUrl =
+    logo.type === "uploaded" ? logo.sanitizedSvgUrl ?? logo.previewPngUrl : null;
+  const quantitySummary =
+    quantityLines.length > 0
+      ? quantityLines.map((line) => `${line.sizeLabel || line.variantTitle} x ${line.quantity}`).join(", ")
+      : "Geen aantallen";
 
   const closeNow = () => {
     const safeReturnUrl =
@@ -90,7 +118,7 @@ export function QuoteRequestModal({
     if (step === "artwork") return logo.type !== "none";
     if (step === "decoration") return maxFormatChoice !== "other" || maxFormatCustom.trim().length > 0;
     if (step === "placement") return placementWish.trim().length > 0;
-    if (step === "quote") return contactName.trim().length > 0 && /\S+@\S+\.\S+/.test(contactEmail);
+    if (step === "quote") return totalQuantity > 0 && contactName.trim().length > 0 && /\S+@\S+\.\S+/.test(contactEmail);
     return true;
   })();
 
@@ -173,6 +201,9 @@ export function QuoteRequestModal({
             methodLabel: decorationSummary,
             maxFormatLabel: formatSummary,
             imageUrl: activeImage?.url ?? null,
+            logoUrl: uploadedLogoUrl,
+            totalQuantity,
+            quantities: quantityLines,
           },
         }),
       });
@@ -274,7 +305,16 @@ export function QuoteRequestModal({
                 <strong>{logo.type === "uploaded" ? "Artwork geupload" : "Tik om je artwork te uploaden"}</strong>
                 <span>SVG · PNG · JPG · PDF (Max 5 MB)</span>
               </button>
-              {logo.type === "uploaded" && <img className="quote-upload-preview" src={logo.previewPngUrl} alt="" />}
+              {logo.type === "uploaded" && (
+                <div className="quote-upload-result">
+                  <img className="quote-upload-preview" src={logo.previewPngUrl} alt="" />
+                  {uploadedLogoUrl && (
+                    <a className="quote-upload-url" href={uploadedLogoUrl} target="_blank" rel="noreferrer">
+                      {uploadedLogoUrl}
+                    </a>
+                  )}
+                </div>
+              )}
               {uploadError && <p className="quote-error">{uploadError}</p>}
               <div className="quote-divider"><span>of</span></div>
               <button type="button" className="quote-later-card" onClick={() => setLogo({ type: "later" })} data-selected={logo.type === "later"}>
@@ -320,24 +360,58 @@ export function QuoteRequestModal({
 
           {step === "quote" && (
             <section>
-              <h2>Offerte aanvragen</h2>
-              <p>Controleer je aanvraag en vul je contactgegevens in. Stitchs neemt contact met je op met een passende offerte.</p>
-              <div className="quote-summary">
-                <div><strong>Artwork</strong><span>{logo.type === "uploaded" ? "Geupload" : "Later sturen"}</span></div>
-                <div><strong>Techniek</strong><span>{decorationSummary}</span></div>
-                <div><strong>Maximaal formaat</strong><span>{formatSummary}</span></div>
-                <div><strong>Plaatsingswens</strong><span>{placementWish.split("\n")[0]}</span></div>
-              </div>
-              <h3>Contactgegevens</h3>
-              <div className="quote-contact-grid">
-                <input className="quote-input" placeholder="Je naam" value={contactName} onChange={(e) => setContactName(e.target.value)} aria-label="Naam" />
-                <input className="quote-input" placeholder="je@email.nl" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} aria-label="E-mail" />
-                <input className="quote-input" placeholder="06 12345678" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} aria-label="Telefoon" />
-                <input className="quote-input" placeholder="Naam van je bedrijf" value={companyName} onChange={(e) => setCompanyName(e.target.value)} aria-label="Bedrijf" />
-              </div>
-              <p className="quote-info strong">Dit is geen bestelling. Je ontvangt eerst een offerte op basis van product, artwork, formaat en plaatsingswens.</p>
-              {submitState === "success" && <p className="quote-success">Offerteaanvraag ontvangen.</p>}
-              {submitState === "error" && <p className="quote-error">{submitError}</p>}
+              {submitState === "success" ? (
+                <div className="quote-success-page">
+                  <span className="quote-success-icon" aria-hidden="true">
+                    <IconCheck size={26} />
+                  </span>
+                  <h2>Offerteaanvraag ontvangen</h2>
+                  <p>Dank je. Stitchs bekijkt je product, artwork, aantallen en plaatsingswens en neemt contact met je op.</p>
+                  <div className="quote-summary">
+                    <div><strong>Product</strong><span>{config.productTitle}</span></div>
+                    <div><strong>Aantal</strong><span>{quantitySummary}</span></div>
+                    <div><strong>Techniek</strong><span>{decorationSummary}</span></div>
+                    <div><strong>Plaatsingswens</strong><span>{placementWish.split("\n")[0]}</span></div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <h2>Offerte aanvragen</h2>
+                  <p>Controleer je aanvraag en vul je contactgegevens in. Stitchs neemt contact met je op met een passende offerte.</p>
+                  <div className="quote-summary">
+                    <div><strong>Artwork</strong><span>{logo.type === "uploaded" ? "Geupload" : "Later sturen"}</span></div>
+                    {uploadedLogoUrl && <div><strong>Artwork URL</strong><span><a href={uploadedLogoUrl} target="_blank" rel="noreferrer">{uploadedLogoUrl}</a></span></div>}
+                    <div><strong>Techniek</strong><span>{decorationSummary}</span></div>
+                    <div><strong>Maximaal formaat</strong><span>{formatSummary}</span></div>
+                    <div><strong>Aantal</strong><span>{quantitySummary}</span></div>
+                    <div><strong>Plaatsingswens</strong><span>{placementWish.split("\n")[0]}</span></div>
+                  </div>
+
+                  <div className="insignia-qty-header quote-qty-header">
+                    <span className="insignia-qty-header-title">Aantallen</span>
+                    <span className="insignia-qty-header-meta">
+                      {totalQuantity} {totalQuantity === 1 ? "stuk" : "stuks"}
+                    </span>
+                  </div>
+                  <QuantityGrid
+                    variants={config.variants}
+                    quantities={quantities}
+                    onChange={setQuantities}
+                    variantAxis={config.variantAxis ?? "size"}
+                    t={t}
+                  />
+
+                  <h3>Contactgegevens</h3>
+                  <div className="quote-contact-grid">
+                    <input className="quote-input" placeholder="Je naam" value={contactName} onChange={(e) => setContactName(e.target.value)} aria-label="Naam" />
+                    <input className="quote-input" placeholder="je@email.nl" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} aria-label="E-mail" />
+                    <input className="quote-input" placeholder="06 12345678" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} aria-label="Telefoon" />
+                    <input className="quote-input" placeholder="Naam van je bedrijf" value={companyName} onChange={(e) => setCompanyName(e.target.value)} aria-label="Bedrijf" />
+                  </div>
+                  <p className="quote-info strong">Dit is geen bestelling. Je ontvangt eerst een offerte op basis van product, artwork, formaat en plaatsingswens.</p>
+                  {submitState === "error" && <p className="quote-error">{submitError}</p>}
+                </>
+              )}
             </section>
           )}
         </main>
@@ -347,15 +421,22 @@ export function QuoteRequestModal({
           <span className="insignia-footer-price-value">Offerte</span>
         </div>
         <div className="insignia-footer-actions quote-footer-actions">
-          {currentStepIndex > 0 && (
+          {submitState !== "success" && currentStepIndex > 0 && (
             <button type="button" className="insignia-btn insignia-btn--ghost" onClick={goBack}>
               <IconArrowLeft size={14} /> Terug
             </button>
           )}
-          <button type="button" className="insignia-btn insignia-btn--primary" onClick={() => void goNext()} disabled={!canContinue || submitState === "submitting" || submitState === "success"}>
-            {step === "quote" ? (submitState === "submitting" ? "Versturen..." : "Offerte aanvragen") : "Volgende stap"}
-            <IconArrowRight size={14} />
-          </button>
+          {submitState === "success" ? (
+            <button type="button" className="insignia-btn insignia-btn--primary" onClick={closeNow}>
+              Terug naar product
+              <IconArrowRight size={14} />
+            </button>
+          ) : (
+            <button type="button" className="insignia-btn insignia-btn--primary" onClick={() => void goNext()} disabled={!canContinue || submitState === "submitting"}>
+              {step === "quote" ? (submitState === "submitting" ? "Versturen..." : "Offerte aanvragen") : "Volgende stap"}
+              <IconArrowRight size={14} />
+            </button>
+          )}
         </div>
         </footer>
         </section>

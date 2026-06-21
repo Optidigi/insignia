@@ -826,6 +826,23 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   margin: 14px auto 0;
 }
 
+.quote-upload-result {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+
+.quote-upload-url,
+.quote-summary a {
+  color: #0b5ed7;
+  overflow-wrap: anywhere;
+}
+
+.quote-upload-url {
+  max-width: 100%;
+  font-size: 12px;
+}
+
 .quote-divider {
   position: relative;
   text-align: center;
@@ -1030,6 +1047,29 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
 
 .quote-summary span {
   color: #6b7280;
+}
+
+.quote-qty-header {
+  margin-top: 0;
+}
+
+.quote-success-page {
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.quote-success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  background: #ecfdf3;
+  color: #047857;
 }
 
 .quote-contact-grid {

@@ -15,6 +15,10 @@
   {% assign insignia_enabled = true %}
 {% endif %}
 {% if product and product.selected_or_first_available_variant and insignia_enabled %}
+  {% assign insignia_button_label = block.settings.button_label %}
+  {% if product.metafields.insignia.storefront_mode == "quote_request" or product.metafields.insignia.storefront_mode.value == "quote_request" or product.tags contains "TGH" %}
+    {% assign insignia_button_label = "Offerte aanvragen" %}
+  {% endif %}
   {% comment %}Extract numeric IDs — Liquid product.id returns the full GID (gid://shopify/Product/...)
     which Shopify's App Proxy cannot route. We need only the numeric tail.{% endcomment %}
   {% assign product_numeric_id = product.id | split: '/' | last %}
@@ -48,7 +52,7 @@
       data-variant-id="{{ variant_numeric_id }}"
       {% if block.settings.custom_id != blank %}id="{{ block.settings.custom_id }}"{% endif %}
     >
-      {{ block.settings.button_label }}
+      {{ insignia_button_label }}
     </a>
   </div>
 
