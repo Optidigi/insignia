@@ -40,7 +40,7 @@ api_version = "2026-04"
   uri = "/webhooks/orders/paid"
 
 [access_scopes]
-scopes = "write_products,read_products,read_orders,write_orders,write_app_proxy,write_publications,write_inventory,read_themes,write_metaobjects"
+scopes = "write_products,read_products,read_orders,write_orders,write_app_proxy,write_publications,write_inventory,read_themes,write_metaobjects,write_metaobject_definitions"
 
 [auth]
 redirect_urls = [ "https://insignia-stitchs.optidigi.nl/auth/callback" ]

@@ -1,6 +1,6 @@
 import type { QuoteRequestInput } from "./quote-requests.server";
 
-const METAOBJECT_TYPE = "insignia_quote_request";
+const METAOBJECT_TYPE = "$app:quote_request";
 
 type AdminGraphql = {
   graphql: (query: string, options?: { variables?: Record<string, unknown> }) => Promise<Response>;
