@@ -68,7 +68,7 @@ export function QuoteRequestModal({
     const viewMedia = config.views
       .filter((v) => v.imageUrl)
       .map((v) => ({ url: v.imageUrl!, alt: v.name ?? config.productTitle }));
-    return productMedia.length > 0 ? productMedia : viewMedia;
+    return viewMedia.length > 0 ? viewMedia : productMedia;
   }, [config.productMedia, config.productTitle, config.views]);
 
   const activeImage = media[imageIndex] ?? null;
@@ -308,11 +308,7 @@ export function QuoteRequestModal({
               {logo.type === "uploaded" && (
                 <div className="quote-upload-result">
                   <img className="quote-upload-preview" src={logo.previewPngUrl} alt="" />
-                  {uploadedLogoUrl && (
-                    <a className="quote-upload-url" href={uploadedLogoUrl} target="_blank" rel="noreferrer">
-                      {uploadedLogoUrl}
-                    </a>
-                  )}
+                  <span className="quote-upload-file-label">Bestand toegevoegd</span>
                 </div>
               )}
               {uploadError && <p className="quote-error">{uploadError}</p>}

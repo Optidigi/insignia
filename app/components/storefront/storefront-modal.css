@@ -843,6 +843,12 @@ html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; }
   font-size: 12px;
 }
 
+.quote-upload-file-label {
+  color: #374151;
+  font-size: 13px;
+  font-weight: 650;
+}
+
 .quote-divider {
   position: relative;
   text-align: center;

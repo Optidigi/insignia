@@ -208,6 +208,11 @@ export async function getStorefrontConfig(
         query getVariantDetails($id: ID!) {
           productVariant(id: $id) {
             price
+            image {
+              id
+              url
+              altText
+            }
             product {
               title
               media(first: 20, query: "media_type:IMAGE") {
@@ -239,6 +244,11 @@ export async function getStorefrontConfig(
         data?: {
           productVariant?: {
             price: string;
+            image: {
+              id: string | null;
+              url: string | null;
+              altText: string | null;
+            } | null;
             product?: {
               title: string;
               media?: {
@@ -265,14 +275,22 @@ export async function getStorefrontConfig(
         baseProductPriceCents = Math.round(parseFloat(variant.price) * 100);
         productTitle = variant.product?.title ?? "Product";
       }
+      const selectedVariantImage = variant?.image?.url
+        ? [{
+            id: variant.image.id ?? `${variantId}:image`,
+            url: variant.image.url,
+            altText: variant.image.altText,
+          }]
+        : [];
       const variantNodes = variantData?.data?.productVariant?.product?.variants?.nodes ?? [];
-      productMedia = (variantData?.data?.productVariant?.product?.media?.nodes ?? [])
+      const allProductMedia = (variantData?.data?.productVariant?.product?.media?.nodes ?? [])
         .map((media) => ({
           id: media.id,
           url: media.image?.url ?? "",
           altText: null,
         }))
         .filter((media) => media.url);
+      productMedia = selectedVariantImage.length > 0 ? selectedVariantImage : allProductMedia;
 
       // Detect which option is the "size" option using multi-strategy heuristic:
       // 1. Match common size option names across languages
