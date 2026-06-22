@@ -56,6 +56,58 @@
     </a>
   </div>
 
+  {% unless request.design_mode %}
+    <script>
+      (() => {
+        const button = document.currentScript?.previousElementSibling?.querySelector("[data-insignia-modal]");
+        if (!button) return;
+
+        const productId = "{{ product_numeric_id }}";
+        const productUrl = {{ product.url | json }};
+        const variants = {{ product.variants | json }};
+        const variantIds = new Set(variants.map((variant) => String(variant.id)));
+        let currentVariantId = String(button.dataset.variantId || "{{ variant_numeric_id }}");
+
+        const buildModalUrl = (variantId) => {
+          const params = new URLSearchParams({
+            p: productId,
+            v: variantId,
+            returnUrl: productUrl,
+          });
+          return `/apps/insignia/modal?${params.toString()}`;
+        };
+
+        const readVariantId = () => {
+          const form = button.closest("form[action*='/cart/add']") || document.querySelector("form[action*='/cart/add']");
+          const formInput = form?.querySelector("[name='id']");
+          const formValue = formInput?.value;
+          if (formValue && variantIds.has(String(formValue))) return String(formValue);
+
+          const urlValue = new URLSearchParams(window.location.search).get("variant");
+          if (urlValue && variantIds.has(String(urlValue))) return String(urlValue);
+
+          return currentVariantId;
+        };
+
+        const syncVariant = () => {
+          const nextVariantId = readVariantId();
+          if (!nextVariantId || nextVariantId === currentVariantId) return;
+          currentVariantId = nextVariantId;
+          button.dataset.variantId = nextVariantId;
+          button.href = buildModalUrl(nextVariantId);
+        };
+
+        document.addEventListener("change", syncVariant, true);
+        document.addEventListener("variant:change", syncVariant, true);
+        document.addEventListener("variant:changed", syncVariant, true);
+        document.addEventListener("product:variant-change", syncVariant, true);
+        window.addEventListener("popstate", syncVariant);
+        setInterval(syncVariant, 500);
+        syncVariant();
+      })();
+    </script>
+  {% endunless %}
+
   <style>
     .insignia-customize-block {
       margin: {{ block.settings.margin_top }}px 0 {{ block.settings.margin_bottom }}px;

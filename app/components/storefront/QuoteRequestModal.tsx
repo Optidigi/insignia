@@ -68,10 +68,40 @@ export function QuoteRequestModal({
     const viewMedia = config.views
       .filter((v) => v.imageUrl)
       .map((v) => ({ url: v.imageUrl!, alt: v.name ?? config.productTitle }));
-    return viewMedia.length > 0 ? viewMedia : productMedia;
+    return productMedia.length > 0 ? productMedia : viewMedia;
   }, [config.productMedia, config.productTitle, config.views]);
 
   const activeImage = media[imageIndex] ?? null;
+  const productUrl = useMemo(() => {
+    const safeReturnUrl =
+      returnUrl && /^\/(?!\/|\\)/.test(returnUrl) ? returnUrl : null;
+    if (!safeReturnUrl) return null;
+    if (typeof window === "undefined") return null;
+
+    const isAppOrigin = (origin: string) => {
+      const host = new URL(origin).host;
+      return host === "insignia-stitchs.nl" || host === "insignia-stitchs.optidigi.nl";
+    };
+
+    let origin = window.location.origin;
+    try {
+      const referrerOrigin = document.referrer ? new URL(document.referrer).origin : null;
+      if (referrerOrigin && !isAppOrigin(referrerOrigin)) {
+        origin = referrerOrigin;
+      } else if (isAppOrigin(origin)) {
+        origin = "https://stitchs.nl";
+      }
+    } catch {
+      // Keep current origin when referrer parsing fails.
+    }
+
+    const url = new URL(safeReturnUrl, origin);
+    const numericVariantId = config.variantId.split("/").pop();
+    if (numericVariantId) {
+      url.searchParams.set("variant", numericVariantId);
+    }
+    return url.toString();
+  }, [config.variantId, returnUrl]);
   const currentStepIndex = STEPS.findIndex((s) => s.id === step);
   const quantityLines = useMemo(
     () =>
@@ -200,7 +230,7 @@ export function QuoteRequestModal({
             variantTitle: config.variants.find((v) => v.id === config.variantId)?.title ?? null,
             methodLabel: decorationSummary,
             maxFormatLabel: formatSummary,
-            imageUrl: activeImage?.url ?? null,
+            imageUrl: productUrl ?? activeImage?.url ?? null,
             logoUrl: uploadedLogoUrl,
             totalQuantity,
             quantities: quantityLines,
