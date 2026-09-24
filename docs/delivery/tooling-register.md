@@ -1,8 +1,19 @@
 # Tooling, MCP and skill acceptance register
 
-Version 1.1 — 24 September 2026. PF-001R current observations supersede the PF-001 snapshot below; the baseline matrix remains the acceptance criteria. See `preflight-report.md` and `evidence/pf001r-probes.md`.
+Version 1.1 — 24 September 2026. The PF-002 delta below is current for its three readiness outcomes; PF-001/PF-001R snapshots remain historical. See [PF-002 evidence](evidence/pf002-readiness.md) for exact commands and limits. The baseline matrix remains the acceptance criteria for later slices.
 
-## PF-001R current delta
+## PF-002 current delta
+
+| Capability | State | Observation |
+|---|---|---|
+| GitHub review/merge continuity | VERIFIED | [Principal review](PR-001-principal-review.md) is an attributed external verdict at PR #1 base `38a711ad46aec63b8f410519f30352a88e4113c7` and head `722afb3990468b7963407f9c6706127974d7a8fd`; native approve/comment returned HTTP 403. User-authorized normal merge is `bd4b0c12dc6d6c38e155ec6a1ce40fc215b4d6bb`; PF-002 branch starts from fetched remote `main`. |
+| Codex client model/effort | VERIFIED for explicit launch | CLI 0.156.1 same-process app-server `config/read`, `thread/start`, and live restricted `turn/start` resolved `gpt-6-sol`/`high` from session flags and completed file reads without reported fallback. Plain project config loading remains unverified; future sessions must use explicit flags until repaired. No provider-private attestation claimed. |
+| Restricted reviewer/writer and live skill reads | VERIFIED | After host maintainer installed distribution `bubblewrap`, both sandbox modes launched. A fresh read-only reviewer read AGENTS, ledger, PF-002 and pinned skill from disk with line citations and a denied canary append; a separate workspace-write session passed an exact scratch write/test and an outside-root denial. Explicit model/effort flags and disabled apps/plugins/multi-agent were used. Shell isolation does not cover separately credentialed connectors. |
+| Rust native host + Wasm | VERIFIED with explicit linker | Pinned Rust 1.98.1 and Wasm target reused. Official Zig 0.16.0 was SHA-256 verified and installed in isolated scratch as a C linker; dependency-free native `cargo test` passed with executed `build.rs` and proc macro. Generic Wasm smoke repeated. Default `cc` remains missing; later runs must pass the recorded linker setting or use a separately supplied host compiler. |
+| Shopify existing app | CLI app/client ID VERIFIED; Dashboard numeric binding OWNER-ATTESTED; distribution UNVERIFIED | CLI existing-app import in private scratch bound `insignia` in org `212732011` to OAuth client ID `942e6668fd1177524c0fc48b104b0ac3`. Owner confirmed that same Client ID at Dashboard resource `427859050497` under Settings → Credentials; agent could not independently read that page. Requested scopes empty. Read-only `app execute` reports app not installed on `insignia-staging.myshopify.com`; no Admin API access. User reports no Distribution section on app Home. |
+| Later resources | NOT_YET_REQUIRED | PostgreSQL remains for DB-dependent work; R2 and billing remain later prerequisites, not a PF-002 or fixed-input DB-free M0 harness requirement. |
+
+## PF-001R historical delta
 
 | Capability | State | Observation |
 |---|---|---|
@@ -17,7 +28,7 @@ Version 1.1 — 24 September 2026. PF-001R current observations supersede the PF
 | PostgreSQL | NOT_YET_REQUIRED | Missing for DB-dependent work; fixed-input DB-free M0-001 first spike does not need it. |
 | R2 / Partner pricing | NOT_YET_REQUIRED | Later M6 / G8 dependencies remain undesignated. |
 
-The project-local Codex config is not proven effective in this neutral repository. This current-thread API runtime has separate settings. Do not treat prompt injection as proof of sandboxed file access or an explicit model request as proof of the wire model.
+At the PF-001R checkpoint, the project-local Codex config was not proven effective. The current PF-002 delta above supersedes these historical statuses. Prompt injection is not proof of sandboxed file access.
 
 ## PF-001 observed snapshot — 24 September 2026
 

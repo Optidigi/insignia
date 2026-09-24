@@ -4,11 +4,11 @@
 
 Read `docs/architecture/decision-ledger.md`, `docs/delivery/state.md` and the currently authorized slice prompt. Before executing or delegating a slice, read `docs/delivery/operating-model.md`. For affected architecture, read the relevant sections of `docs/architecture/implementation-plan.md` before changing code. The detailed plan is a reference, not an always-loaded instruction blob.
 
-The user owns product decisions. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project. The local orchestrator is sol-6-high. Implement only the authorized slice; return every PR for principal review. The current authorization is **PF-001R preflight remediation only** in `docs/delivery/prompts/PF-001R-remediation.md`; PF-001 is its prior checkpoint. M0-001 and G1–G8 remain unauthorized.
+The user owns product decisions. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project. The local orchestrator is sol-6-high. Implement only the authorized slice; return every PR for principal review. The current authorization is **PF-002 readiness closure only** in `docs/delivery/prompts/PF-002-readiness-closure.md`; [the principal's attributed review of PR #1](docs/delivery/PR-001-principal-review.md) approves the preceding documentation bootstrap. M0-001 and G1–G8 remain unauthorized.
 
 ## Authority and scope
 
-The ledger controls settled decisions; the plan provides implementation detail; the operating model controls delivery. Record approved changes rather than silently replacing a decision. Legacy Insignia is a storefront UI/visual reference only. New-application SQL migrations are required; legacy import/migration/compatibility work is outside scope.
+The ledger controls settled decisions; the plan provides implementation detail; the operating model controls delivery. Record approved changes rather than silently replacing a decision. `Optidigi/insignia` is the rewrite repository; `Optidigi/insignia-legacy` is the storefront UI/visual reference only. New-application SQL migrations are required; legacy import/migration/compatibility work is outside scope.
 
 For missing access, conflicting instructions or platform evidence that invalidates a lock, report the narrow blocker and continue only independent safe work. Prefer reading available files/tool state to repeating answered product questions.
 
