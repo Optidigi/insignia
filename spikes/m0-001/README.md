@@ -13,4 +13,6 @@ corepack pnpm install --frozen-lockfile
 
 The script checks Rust formatting, clippy, native tests, the release Wasm build and the Shopify test helper's schema-validated Wasm fixtures. It does not contact a store or deploy an app. The fixture IDs are synthetic; stage-specific real variant IDs belong in the spike-owned Cart Transform metafield after installation.
 
+Use `corepack pnpm`, which selects the exact `packageManager` version in `package.json`. Project-local `pmOnFail: ignore` turns off pnpm's second package-manager resolver; Corepack retains the version pin and the lockfile stays a single YAML document for CI and dependency scanners.
+
 The [M0-001 prompt](../../docs/delivery/prompts/M0-001-same-variant-dev-lifecycle.md) controls staging use and cleanup. The [G1 evidence](../evidence/G1.md) distinguishes local results from development-store and public-app qualification.
