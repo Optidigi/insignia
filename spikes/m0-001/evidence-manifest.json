@@ -1,0 +1,107 @@
+{
+  "slice": "M0-001",
+  "gate": "G1",
+  "gateStatus": "IN_PROGRESS",
+  "sourceCommit": "7279b49fe983b4ac883435a5a73031ab52655c5a",
+  "apiVersion": "2026-07",
+  "toolchain": {
+    "shopifyCli": "4.8.2",
+    "shopifyFunctionSdk": "2.2.0",
+    "rust": "1.98.1",
+    "node": "24.21.0",
+    "pnpm": "12.6.0"
+  },
+  "hashesSha256": {
+    "generatedSchema": "4f5024326918113b836e52af66991ca0fd69884e18ca74a07a92fd57e64c2789",
+    "releaseWasm": "5db1b7838409ef4a2a85dbd1ba976e1abb15f32c267a87ab4c006e7d6bac8d1e",
+    "stagingActivationTranscript": "19303c020a630663ae1c5500ab62f3c517eaad93d7739063d0f222ab1f033c7a",
+    "directPostCleanupResponse": "5fdcd5086ccbc2b617c4293e7aa22c5946c16173fcd201905132533ff74d3e67"
+  },
+  "app": {
+    "name": "insignia",
+    "clientId": "942e6668fd1177524c0fc48b104b0ac3",
+    "organizationId": "212732011",
+    "distribution": "UNVERIFIED",
+    "installationId": "gid://shopify/AppInstallation/781307904158",
+    "grantedScopes": [
+      "read_cart_transforms",
+      "read_inventory",
+      "read_locations",
+      "read_products",
+      "write_cart_transforms",
+      "write_inventory",
+      "write_products"
+    ]
+  },
+  "store": {
+    "domain": "insignia-staging.myshopify.com",
+    "shopId": "gid://shopify/Shop/78935261342",
+    "plan": "basic",
+    "type": "dev",
+    "currency": "USD"
+  },
+  "ownedResources": {
+    "productId": "gid://shopify/Product/10294344482974",
+    "productHandle": "insignia-m0-001-fixture-20260924",
+    "productFinalStatus": "ARCHIVED",
+    "productOnlineStoreUrl": null,
+    "variants": [
+      {
+        "id": "gid://shopify/ProductVariant/50529053343902",
+        "inventoryItemId": "gid://shopify/InventoryItem/52644294131870",
+        "sku": "INS-M0-001-BLK-S",
+        "catalogUnitPrice": "20.00"
+      },
+      {
+        "id": "gid://shopify/ProductVariant/50529054163102",
+        "inventoryItemId": "gid://shopify/InventoryItem/52644294951070",
+        "sku": "INS-M0-001-BLK-M",
+        "catalogUnitPrice": "20.00"
+      }
+    ],
+    "functionHandle": "m0-001-same-variant",
+    "functionId": "01a0d577-84c9-7b97-abb9-e5be7ef3fd2b",
+    "transformId": "gid://shopify/CartTransform/143098014",
+    "transformMetafieldId": "gid://shopify/Metafield/70423168090270",
+    "orders": []
+  },
+  "hypothesis": {
+    "childCountPerEligibleLine": 1,
+    "childRelativeQuantity": 1,
+    "fixedChildUnitPrice": "30.00",
+    "currency": "USD",
+    "sampleParentQuantity": 3,
+    "expectedPrediscountSubtotal": "90.00"
+  },
+  "local": {
+    "wasmFixturesPassed": 11,
+    "nativeRustTestsPassed": 2,
+    "runnerInstructions": 45528,
+    "runnerMemoryUsage": 1152,
+    "runnerOutputSize": 40
+  },
+  "stagingCases": {
+    "appPreviewAndTransform": {
+      "status": "PASS_ACTIVATION_ONLY",
+      "functionApiVersion": "2026-07",
+      "blockOnFailure": true,
+      "createUserErrors": [],
+      "preexistingCartTransforms": 0
+    },
+    "onlineStoreCartAndCheckout": {
+      "status": "BLOCKED_ACCESS_SETUP",
+      "reason": "Fixture had zero stock and no Online Store URL; storefront password redirect; designated fixture location and authenticated native Admin access were unavailable"
+    },
+    "nativeFulfillmentRefundRestock": {
+      "status": "NOT_RUN"
+    }
+  },
+  "cleanup": {
+    "transformDeleted": true,
+    "previewEnded": true,
+    "productArchived": true,
+    "remainingAppInstallationAndScopes": true,
+    "fixtureAvailableCommittedOnHand": [0, 0, 0],
+    "ordersCreated": 0
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "payload": {
+    "export": "cart_transform_run",
+    "target": "cart.transform.run",
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/red-s",
+            "quantity": 2,
+            "marker": {
+              "value": "m0-001:red-s"
+            },
+            "cost": {
+              "amountPerQuantity": {
+                "currencyCode": "USD"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/111"
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/black-l",
+            "quantity": 3,
+            "marker": {
+              "value": "m0-001:black-l"
+            },
+            "cost": {
+              "amountPerQuantity": {
+                "currencyCode": "USD"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/222"
+            }
+          },
+          {
+            "id": "gid://shopify/CartLine/plain-other",
+            "quantity": 2,
+            "marker": null,
+            "cost": {
+              "amountPerQuantity": {
+                "currencyCode": "USD"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/333"
+            }
+          }
+        ]
+      },
+      "cartTransform": {
+        "fixture": {
+          "jsonValue": {
+            "allowedVariantIds": [
+              "gid://shopify/ProductVariant/111",
+              "gid://shopify/ProductVariant/222"
+            ],
+            "unitPrice": "30.00",
+            "currency": "USD"
+          }
+        }
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "lineExpand": {
+            "cartLineId": "gid://shopify/CartLine/red-s",
+            "expandedCartItems": [
+              {
+                "merchandiseId": "gid://shopify/ProductVariant/111",
+                "quantity": 1,
+                "attributes": [
+                  {
+                    "key": "_insignia_m0_001",
+                    "value": "m0-001:red-s"
+                  }
+                ],
+                "price": {
+                  "adjustment": {
+                    "fixedPricePerUnit": {
+                      "amount": "30.0"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        {
+          "lineExpand": {
+            "cartLineId": "gid://shopify/CartLine/black-l",
+            "expandedCartItems": [
+              {
+                "merchandiseId": "gid://shopify/ProductVariant/222",
+                "quantity": 1,
+                "attributes": [
+                  {
+                    "key": "_insignia_m0_001",
+                    "value": "m0-001:black-l"
+                  }
+                ],
+                "price": {
+                  "adjustment": {
+                    "fixedPricePerUnit": {
+                      "amount": "30.0"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

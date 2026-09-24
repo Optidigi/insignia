@@ -1,0 +1,27 @@
+query CartTransformRunInput {
+  cart {
+    lines {
+      id
+      quantity
+      marker: attribute(key: "_insignia_m0_001") {
+        value
+      }
+      cost {
+        amountPerQuantity {
+          currencyCode
+        }
+      }
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          id
+        }
+      }
+    }
+  }
+  cartTransform {
+    fixture: metafield(namespace: "insignia_m0_001", key: "fixture") {
+      jsonValue
+    }
+  }
+}
