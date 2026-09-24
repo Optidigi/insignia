@@ -1,0 +1,48 @@
+{
+  "repository": "Optidigi/insignia",
+  "repository_id": 1386102402,
+  "pr": 2,
+  "base": "bd4b0c12dc6d6c38e155ec6a1ce40fc215b4d6bb",
+  "head": "dda65d4f0570123035dd09ec3c9f9922d6df4ebf",
+  "effective_merge_base": "bd4b0c12dc6d6c38e155ec6a1ce40fc215b4d6bb",
+  "changed_files": 6,
+  "checks": {
+    "implementation-plan.md": {
+      "sha256": "c0432288deb778c4d717871d6f771f95e401d00b6a3caf1b878155cbf0e5422d",
+      "git_blob_sha": "d3d7d9c155cdcdcc3b88aeaaa77eebb10d8a767d",
+      "published_blob_match": true,
+      "handoff_zip_bytes_match": true,
+      "bytes": 117918
+    },
+    "decision-ledger.md": {
+      "sha256": "0c6c02bab83fb5032548c3d1be1f86ea1492ae3cfd26b6cacc8410f7d08737bb",
+      "git_blob_sha": "3544e054bb52c11713b2bc1c96cdf6d7a2264936",
+      "published_blob_match": true,
+      "handoff_zip_bytes_match": true,
+      "bytes": 6287
+    },
+    "PR-001-principal-review.md": {
+      "sha256": "23a00cb5a46b25744b9419c7357ce3de0ae302a44f1f4346dfc05a1719210e90",
+      "git_blob_sha": "b10309fe60c39ac2190e3f453a7512abfcacf8fe"
+    },
+    "PF-002-readiness-closure.md": {
+      "sha256": "63a28d6547f9305344adaeb3a73b2f2bb2f476930b399fde88d9398efb29cd35",
+      "git_blob_sha": "8f0b66bced9c287a0489b829b2892c9b8c7cc16c"
+    }
+  },
+  "review_method": "GitHub connector fixed-ref inspection; local hashes of supplied planning records compared to GitHub blob identities. Server probes read as reported evidence, not rerun.",
+  "local_server_probes_rerun": false,
+  "shopify_gates_executed_by_principal": false,
+  "native_review_submission": {
+    "attempted": true,
+    "action": "APPROVE",
+    "commit_id": "dda65d4f0570123035dd09ec3c9f9922d6df4ebf",
+    "result": "HTTP_403",
+    "message": "Resource not accessible by integration",
+    "posted": false,
+    "fallback_comment_attempted": false
+  },
+  "verdict": "APPROVED_DOCS_READINESS_CHECKPOINT",
+  "distribution": "UNVERIFIED; transferred to G1 qualification, not passed",
+  "next_slice": "M0-001, after reviewed merge; staging mutations require explicit user acceptance of permission envelope"
+}

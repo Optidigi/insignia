@@ -1,0 +1,7 @@
+# M0-001 local dependency and preview state
+spikes/m0-001/node_modules/
+spikes/m0-001/.shopify/
+spikes/m0-001/extensions/*/target/
+spikes/m0-001/.env
+spikes/m0-001/.env.*
+!spikes/m0-001/.env.example

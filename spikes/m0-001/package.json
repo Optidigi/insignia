@@ -1,0 +1,15 @@
+{
+  "name": "insignia-m0-001",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "test": "vitest run gates/nonplus-same-variant/function.test.js"
+  },
+  "devDependencies": {
+    "@shopify/cli": "4.8.2",
+    "@shopify/shopify-function-test-helpers": "1.1.0",
+    "vitest": "3.2.4"
+  }
+}

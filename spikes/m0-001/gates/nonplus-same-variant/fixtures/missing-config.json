@@ -1,0 +1,34 @@
+{
+  "payload": {
+    "export": "cart_transform_run",
+    "target": "cart.transform.run",
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/no-config",
+            "quantity": 1,
+            "marker": {
+              "value": "m0-001:no-config"
+            },
+            "cost": {
+              "amountPerQuantity": {
+                "currencyCode": "USD"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/111"
+            }
+          }
+        ]
+      },
+      "cartTransform": {
+        "fixture": null
+      }
+    },
+    "output": {
+      "operations": []
+    }
+  }
+}

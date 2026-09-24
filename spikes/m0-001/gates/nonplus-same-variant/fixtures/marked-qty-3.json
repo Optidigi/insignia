@@ -1,0 +1,68 @@
+{
+  "payload": {
+    "export": "cart_transform_run",
+    "target": "cart.transform.run",
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/q3",
+            "quantity": 3,
+            "marker": {
+              "value": "m0-001:q3"
+            },
+            "cost": {
+              "amountPerQuantity": {
+                "currencyCode": "USD"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/111"
+            }
+          }
+        ]
+      },
+      "cartTransform": {
+        "fixture": {
+          "jsonValue": {
+            "allowedVariantIds": [
+              "gid://shopify/ProductVariant/111",
+              "gid://shopify/ProductVariant/222"
+            ],
+            "unitPrice": "30.00",
+            "currency": "USD"
+          }
+        }
+      }
+    },
+    "output": {
+      "operations": [
+        {
+          "lineExpand": {
+            "cartLineId": "gid://shopify/CartLine/q3",
+            "expandedCartItems": [
+              {
+                "merchandiseId": "gid://shopify/ProductVariant/111",
+                "quantity": 1,
+                "attributes": [
+                  {
+                    "key": "_insignia_m0_001",
+                    "value": "m0-001:q3"
+                  }
+                ],
+                "price": {
+                  "adjustment": {
+                    "fixedPricePerUnit": {
+                      "amount": "30.0"
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  }
+}

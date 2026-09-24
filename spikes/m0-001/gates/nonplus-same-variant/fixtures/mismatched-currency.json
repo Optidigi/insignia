@@ -1,0 +1,43 @@
+{
+  "payload": {
+    "export": "cart_transform_run",
+    "target": "cart.transform.run",
+    "input": {
+      "cart": {
+        "lines": [
+          {
+            "id": "gid://shopify/CartLine/wrong-currency",
+            "quantity": 1,
+            "marker": {
+              "value": "m0-001:wrong-currency"
+            },
+            "cost": {
+              "amountPerQuantity": {
+                "currencyCode": "EUR"
+              }
+            },
+            "merchandise": {
+              "__typename": "ProductVariant",
+              "id": "gid://shopify/ProductVariant/111"
+            }
+          }
+        ]
+      },
+      "cartTransform": {
+        "fixture": {
+          "jsonValue": {
+            "allowedVariantIds": [
+              "gid://shopify/ProductVariant/111",
+              "gid://shopify/ProductVariant/222"
+            ],
+            "unitPrice": "30.00",
+            "currency": "USD"
+          }
+        }
+      }
+    },
+    "output": {
+      "operations": []
+    }
+  }
+}
