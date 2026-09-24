@@ -6,7 +6,7 @@
 |---|---|---|---|---|
 | Restricted execution and model | **VERIFIED** for explicit `gpt-6-sol`/`high` CLI launches after distro `bubblewrap` installation: app-server config resolution, fresh file/skill reads, scratch write/test and policy canary denials below. | Use the recorded explicit flags until project config trust/loading is separately resolved; repeat a fixed-ref review for each later PR. | Local orchestrator; host maintainer only if sandbox regresses. | M0-001 execution and local review. |
 | Native Rust and Wasm | **VERIFIED** using pinned Rust 1.98.1, local Zig 0.16.0 linker, `cargo test`, executed build script/proc macro and generic Wasm compile. | Supply the explicit linker environment for later host builds; normal `cc` remains absent. | Local orchestrator; host maintainer only if a system default compiler is desired. | M0-001 host harness. |
-| Existing Shopify app | **IDENTITY VERIFIED**, OAuth client ID `942e6668fd1177524c0fc48b104b0ac3`; CLI says **NO_EXISTING_INSTALL** on staging, empty requested scopes. Distribution remains **UNVERIFIED** despite CLI import and user-observed absence of a Dashboard setting control. | Obtain the exact nonsecret distribution status through a supported read or narrow owner view. A later separately authorized setup slice may set required scopes and install; PF-002 does neither. | App owner for distribution status; future authorized implementer for setup. | M0-001 setup and non-Plus interpretation. |
+| Existing Shopify app | **NAMED APP/CLIENT ID VERIFIED**, OAuth client ID `942e6668fd1177524c0fc48b104b0ac3`; CLI says **NO_EXISTING_INSTALL** on staging, empty requested scopes. Binding to numeric Dashboard resource `427859050497` and distribution remain **UNVERIFIED** despite CLI import and user-observed absence of a Distribution section. | Confirm the nonsecret Client ID on that exact Dashboard resource and obtain a supported distribution-status read or narrow owner view. A later separately authorized setup slice may set required scopes and install; PF-002 does neither. | App owner for Dashboard binding/status; future authorized implementer for setup. | M0-001 setup and non-Plus interpretation. |
 
 ## Predecessor and repository
 
@@ -17,7 +17,8 @@
 ## 1. Restricted execution and model configuration
 
 - Installed `codex-cli 0.156.1`, provider `openai`. Current project `.codex/config.toml` requests `model="gpt-6-sol"`, `model_reasoning_effort="high"`, `[features] multi_agent=false`. Plain `codex doctor --json` from the rewrite clone reported model `<default>` and no feature override, so loading of that project layer is NOT_VERIFIED. The user config has trust entry for `/home/serveradmin`; its effect on this nested clone is not established. No trust/global config was changed.
-- Explicit one-off launch overrides were resolved by `codex -c 'model="gpt-6-sol"' -c 'model_reasoning_effort="high"' -c 'features.multi_agent=false' doctor --json`: model `gpt-6-sol`, provider `openai`, `multi_agent=false`. A same-CWD app-server `config/read` under `--strict-config` resolved model `gpt-6-sol` and effort `high`; both origins were `sessionFlags`. Without overrides, the same `config/read` returned neither value, corroborating that the project config is not currently loaded. A fresh `codex exec --ephemeral --json -s read-only -m gpt-6-sol -c 'model_reasoning_effort="high"' -c 'features.multi_agent=false'` with a no-tool `READY` prompt returned `READY`, exit 0, no reported fallback. This shows a successful client launch with resolved model/effort overrides; the JSON events did not expose provider-private routing. It does not prove disk reads or sandbox enforcement.
+- Explicit one-off launch overrides were resolved by `codex -c 'model="gpt-6-sol"' -c 'model_reasoning_effort="high"' -c 'features.multi_agent=false' doctor --json`: model `gpt-6-sol`, provider `openai`, `multi_agent=false`. A same-CWD app-server `config/read` under `--strict-config` resolved model `gpt-6-sol` and effort `high`; both origins were `sessionFlags`. Without overrides, `config/read` returned neither value, corroborating that the project config is not currently loaded. A fresh `codex exec --ephemeral --json -s read-only -m gpt-6-sol -c 'model_reasoning_effort="high"' -c 'features.multi_agent=false'` with a no-tool `READY` prompt returned `READY`, exit 0, no reported fallback. This first probe isolated model launch from the then-broken sandbox; it was not treated as a file-read pass.
+- After sandbox repair, one **same-process** app-server probe started with `--strict-config` and explicit `model="gpt-6-sol"`, `model_reasoning_effort="high"`, `approval_policy="never"`, `features.multi_agent=false`, `features.apps=false`, `features.plugins=false`. In that process, `config/read` returned `gpt-6-sol`/`high`; `thread/start` returned model `gpt-6-sol`, `reasoningEffort="high"`, sandbox `readOnly` with `networkAccess=false`, and approval `never` for thread `01a0d51d-b95a-7030-b27c-2a78cb3a2a0d`. Its `turn/start` completed a live restricted disk read, citing AGENTS.md:7, PF-002:12 and writing-for-agents SKILL.md:47, with no reported fallback. The full nonsecret [probe driver](#same-launch-app-server-probe) below reproduces the config-read/thread-start/turn-start sequence. Provider-internal routing was not exposed or required.
 - Before host remediation, `codex sandbox -P :read-only -- /bin/true` and `codex sandbox -P :workspace -C /home/serveradmin/insignia-pf002-agent-scratch -- /bin/true` each exited 1 before command execution with `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`. `/usr/bin/bwrap` was absent; `unshare --user --map-root-user /bin/true` failed writing `/proc/self/uid_map` with `Operation not permitted`. Userns clone and max namespaces sysctls allowed namespaces numerically, while AppArmor restricted unprivileged userns. `/etc/apparmor.d/bwrap-userns-restrict` exists and names `/usr/bin/bwrap`.
 - The user reported installing Ubuntu's distribution package. Read-only inspection found `/usr/bin/bwrap`, `bubblewrap 0.11.1`, package `0.11.1-1ubuntu0.3`. The same direct `:read-only` and `:workspace` `/bin/true` probes then exited 0. No AppArmor/userns policy was relaxed and this agent changed no global configuration.
 - Direct canaries used files owned by `serveradmin`, mode 664 and host-writable. In `:read-only`, an append to `/home/serveradmin/insignia-pf002-agent-scratch/reviewer-canary.txt` exited 2, `Read-only file system`; SHA-256 stayed `1d82110d3f8a257eb1b8d64d2409a62814323fc8c6f78b3701d764b28f08b84c`. In `:workspace` rooted at the scratch directory, writing `writer-ok.txt` succeeded, while appending to `/home/serveradmin/outside-writer-canary.txt` exited 2 with the same filesystem denial and unchanged SHA-256. The positive write and negative write tested different policy zones; neither denial was a Unix ownership error.
@@ -50,11 +51,15 @@ The fresh CLI routes used the same explicit model/effort and disabled mutation-c
 ## 3. Existing Shopify app and access
 
 - Pinned Shopify CLI 4.8.2 and account login reused. `shopify app config link --path /home/serveradmin/insignia-pf002-shopify-import` ran in an empty mode-700 scratch directory; interactive selections were organization `My Store` ID `212732011`, **No, connect it to an existing app**, and exact app `insignia`. Exit 0; the only scratch file was `shopify.app.toml`. No app scaffold, creation, installation, deploy or remote configuration change occurred.
-- Imported config and authenticated `shopify app info --path ... --json` agree: app name `insignia`, organization ID `212732011`, OAuth client ID `942e6668fd1177524c0fc48b104b0ac3`. The imported TOML SHA-256 is `3937ccfd707a4a59717b0ecea779740937cb9ccfd56bb4ba2b7c228628411845`; the TOML remains outside Git. Dashboard numeric resource `427859050497` is not the OAuth client ID; its URL came from the user. The named existing-app selection within the same org and CLI returned client ID establish the app/client ID association without assuming the URL number is that ID.
+- Imported config and authenticated `shopify app info --path ... --json` agree: app name `insignia`, organization ID `212732011`, OAuth client ID `942e6668fd1177524c0fc48b104b0ac3`. The imported TOML SHA-256 is `3937ccfd707a4a59717b0ecea779740937cb9ccfd56bb4ba2b7c228628411845`; the TOML remains outside Git. The interactive list showed one `insignia` choice in this organization. Dashboard numeric resource `427859050497` is not the OAuth client ID; its URL came from the user and the CLI did not return that numeric resource. Thus the app name/client ID association is verified through Shopify CLI, but binding of this client ID to that exact Dashboard URL remains unverified pending a nonsecret Settings → Credentials comparison.
 - Imported requested scopes are empty (`scopes=""`, `optional_scopes=[]`), and no extensions are listed. The config has an example application URL. These are configuration observations, not distribution or install evidence.
 - Read-only `shopify app execute --path /home/serveradmin/insignia-pf002-shopify-import --store insignia-staging.myshopify.com --query 'query PF002ReadShop { shop { id myshopifyDomain } }'` exited 1: `App is not installed on insignia-staging.myshopify.com`. No Admin API response, installation, or scope grant occurred. Direct `store auth list --json` previously showed no sessions. Classify `NO_EXISTING_INSTALL / SETUP_REQUIRED`; a later separately authorized slice must establish app configuration/scopes and install before its store-facing proof.
 - `shopify app versions list --path ... --json` was a read-only call and returned two version records, one active and one inactive. This shows app version metadata only, not installation or distribution.
-- The imported config and `app info` do not expose the Dev Dashboard Distribution card. The user reports no UI for setting distribution in this app's Dev Dashboard; this does not itself distinguish Public, Custom or Unselected. Distribution remains **UNVERIFIED pending a supported read-only status route or the exact nonsecret card text**. Do not infer a mode from store plan, app version, UI control absence or TOML shape. Shopify documents a Distribution card in the Dev Dashboard at https://shopify.dev/docs/apps/launch/distribution/select-distribution-method ; the observed user UI differs, and no setting was changed.
+- The imported config and `app info` do not expose distribution. The user reports **no Distribution section** on this app's Dev Dashboard Home; this does not itself distinguish Public, Custom or Unselected. Distribution remains **UNVERIFIED pending a supported read-only status route or narrow owner evidence**. Do not infer a mode from store plan, app version, UI absence or TOML shape. Shopify documents a Distribution card in the Dev Dashboard at https://shopify.dev/docs/apps/launch/distribution/select-distribution-method ; the observed user UI differs, and no setting was changed.
+
+## Fixed-ref local review status
+
+A fresh Codex `-s read-only` reviewer with explicit `gpt-6-sol`/`high`, disabled apps/plugins and the pinned code-review skill examined base `bd4b0c12dc6d6c38e155ec6a1ce40fc215b4d6bb` against first PF-002 commit `d41ce6dde2fe6d2ce33b8fb3c8391d39fd51ff3b`. It found no scope or apparent secret issue, but identified two evidence gaps: the lack of a same-launch resolved model/effort record, and the unverified Dashboard numeric app binding/distribution. The same-process `config/read` → `thread/start` → restricted `turn/start` probe above closes the former. The Shopify gap remains explicit and owner-dependent. The reviewer's attempted parallel child launch failed locally; it continued its own sequential sandboxed read-only review. It did not rerun external Shopify, GitHub or Rust probes. A final fixed-ref review of the corrected commit is reported in PR metadata/external handoff after that commit exists.
 
 ## Reused evidence and boundaries
 
@@ -147,3 +152,97 @@ CARGO_TARGET_DIR=/home/serveradmin/insignia-pf002-rust-smoke/target-cargo-linker
 ```
 
 Result: exit 0; one consumer unit test passed, both host build script and proc macro executed. The wrapper is scratch-only. The pinned Zig archive checksum is recorded above; it has not been added to the repository.
+
+## Same-launch app-server probe
+
+Executed with `python3 /home/serveradmin/insignia-pf002-draft/appserver_same_launch_probe.py` (exit 0). This is the exact nonsecret driver used above:
+
+```python
+import json
+import select
+import subprocess
+import time
+
+cwd = '/home/serveradmin/insignia-rewrite-20260924'
+cmd = [
+    'codex', 'app-server', '--stdio', '--strict-config',
+    '-c', 'model="gpt-6-sol"',
+    '-c', 'model_reasoning_effort="high"',
+    '-c', 'approval_policy="never"',
+    '-c', 'features.multi_agent=false',
+    '-c', 'features.apps=false',
+    '-c', 'features.plugins=false',
+]
+proc = subprocess.Popen(
+    cmd, cwd=cwd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+    stderr=subprocess.DEVNULL, text=True, bufsize=1,
+)
+
+def send(value):
+    proc.stdin.write(json.dumps(value) + '\n')
+    proc.stdin.flush()
+
+def receive_until(request_id=None, methods=(), timeout=15):
+    end = time.monotonic() + timeout
+    events = []
+    while time.monotonic() < end:
+        ready, _, _ = select.select([proc.stdout], [], [], max(0, end - time.monotonic()))
+        if not ready:
+            break
+        line = proc.stdout.readline()
+        if not line:
+            break
+        try:
+            value = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        events.append(value)
+        if request_id is not None and value.get('id') == request_id:
+            return value, events
+        if value.get('method') in methods:
+            return value, events
+    raise TimeoutError(f'No response for id={request_id} methods={methods}')
+
+try:
+    send({'id': 1, 'method': 'initialize', 'params': {'clientInfo': {'name': 'pf002-same-launch-probe', 'version': '1'}}})
+    init, _ = receive_until(1)
+    assert 'result' in init, init.get('error')
+    send({'method': 'initialized', 'params': {}})
+    send({'id': 2, 'method': 'config/read', 'params': {'cwd': cwd, 'includeLayers': False}})
+    config, _ = receive_until(2)
+    assert 'result' in config, config.get('error')
+    resolved = config['result']['config']
+    send({'id': 3, 'method': 'thread/start', 'params': {'cwd': cwd, 'sandbox': 'read-only', 'approvalPolicy': 'never', 'ephemeral': True}})
+    started, _ = receive_until(3)
+    assert 'result' in started, started.get('error')
+    thread = started['result']
+    thread_id = thread['thread']['id']
+    print('config', {'model': resolved.get('model'), 'effort': resolved.get('model_reasoning_effort')})
+    print('thread_start', {'model': thread.get('model'), 'effort': thread.get('reasoningEffort'), 'sandbox': thread.get('sandbox'), 'approval': thread.get('approvalPolicy'), 'thread_id': thread_id})
+    prompt = 'Read AGENTS.md, docs/delivery/prompts/PF-002-readiness-closure.md, and .agents/skills/writing-for-agents/SKILL.md from disk. Cite file:line for current authorization and one skill rule. Do not edit files or call external services.'
+    send({'id': 4, 'method': 'turn/start', 'params': {'threadId': thread_id, 'input': [{'type': 'text', 'text': prompt}]}})
+    turn, _ = receive_until(4, timeout=15)
+    assert 'result' in turn, turn.get('error')
+    deadline = time.monotonic() + 120
+    methods = []
+    final = None
+    while time.monotonic() < deadline:
+        event, _ = receive_until(methods=('turn/completed', 'turn/failed', 'item/completed', 'codex/event/agent_message'), timeout=30)
+        method = event.get('method')
+        methods.append(method)
+        if method == 'item/completed':
+            item = event.get('params', {}).get('item', {})
+            if item.get('type') == 'agentMessage':
+                final = item.get('text')
+        if method in ('turn/completed', 'turn/failed'):
+            break
+    print('turn_event', methods[-1] if methods else None, 'event_methods_seen', sorted(set(methods)))
+    print('agent_message', final[:1800] if final else None)
+finally:
+    proc.terminate()
+    try:
+        proc.wait(timeout=3)
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        proc.wait()
+```
