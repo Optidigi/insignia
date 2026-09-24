@@ -1,0 +1,53 @@
+{
+  "prepared_date": "2026-09-24",
+  "architecture_version": "1.1",
+  "operating_model_version": "1.0",
+  "local_git_commit": "9c9a9d7c65e9be5bc7ea51db36560dea58a93d6b",
+  "local_git_branch": "handoff/insignia-bootstrap",
+  "remote_repository": null,
+  "github_publication": "NOT_PERFORMED",
+  "user_machine_preflight": "NOT_RUN",
+  "authorized_task": "PF-001",
+  "development_gates": {
+    "G1": "NOT_RUN",
+    "G2": "NOT_RUN",
+    "G3": "NOT_RUN",
+    "G4": "NOT_RUN",
+    "G5": "NOT_RUN",
+    "G6": "NOT_RUN",
+    "G7": "NOT_RUN",
+    "G8": "NOT_RUN"
+  },
+  "canonical_files": {
+    ".github/PULL_REQUEST_TEMPLATE.md": "c6a74d947a50acbc04edff3e447b660a15ab40a6574f0ddfb548af97349556b4",
+    "AGENTS.md": "211974c4c961b16ab8e4d7b8efca34fca75d7f89f1eac94557f1eb98872e7331",
+    "HANDOFF.md": "7be66515a4b793fe5f035c1339682138ebe361abaf018e2f48c09661ce86323f",
+    "docs/agents/issue-tracker.md": "b77d8a446c48fa9c08b248f3dce370e9b84cc040cbd526dcb15364204716dd85",
+    "docs/architecture/decision-ledger.md": "0c6c02bab83fb5032548c3d1be1f86ea1492ae3cfd26b6cacc8410f7d08737bb",
+    "docs/architecture/implementation-plan.md": "c0432288deb778c4d717871d6f771f95e401d00b6a3caf1b878155cbf0e5422d",
+    "docs/delivery/agent-roles.md": "a9bb32150f3439fa2f2cbc43d6377bbb780507ed270b534ea8240fc0e59a4f4d",
+    "docs/delivery/change-record.md": "5dbe998710b71348a58f85388cb8b0d873523f14d366d2e0b9056c28f2283abb",
+    "docs/delivery/operating-model.md": "a92d3bca1d6d482593ea574dc9bb5aac614f02e67a2ba11f7ae10d3e2965c03d",
+    "docs/delivery/prompts/PF-001-preflight.md": "4d39872fa06e98939160fa9f3b93763e3f4fe4fb37d6ab08fa3829c5a01f5dd1",
+    "docs/delivery/state.md": "4341f314af9a35b38cb05d8225ba8ab197bdd15e9dc47f46e6def3faf71369f0",
+    "docs/delivery/templates/gate-evidence.md": "15284dfa30aff1f49e5c6c41881827fe9c7c12c122916ae299eaeff6825dfd98",
+    "docs/delivery/templates/review-packet.md": "75be5e770db602b9dbe1e5cc2d220f496fabd2c6520924afa40630803667c337",
+    "docs/delivery/templates/slice-brief.md": "584191192d99fe38a213e0854ea2bd8ff9cc749e44c645cd5411cbf568b2d124",
+    "docs/delivery/tooling-register.md": "c24863c7e1a6b119b317fdaf625312daeb4edc350549556ba71ef86184203e44"
+  },
+  "superseded_v1_0_sha256": {
+    "decision-ledger.md": "01fceba7482ae88efb292212b5e76b73e41faab0f542bbfa81acfe3d8526ec80",
+    "implementation-plan.md": "fddbdedc9db54f3933731fdf1b0e0bd54e4cbd8f2d36eedf5f8df6891c23463c"
+  },
+  "verified_checks": [
+    "all_required_documents_exist",
+    "all_architecture_sections_retained",
+    "ledger_mirror_exact",
+    "business_and_technical_sections_unchanged",
+    "git_worktree_clean",
+    "git_fsck",
+    "git_bundle_verify"
+  ],
+  "git_bundle_sha256": "05e360ca288d20ea2344f22fb56531f6e18fcdef3bc2ef6a0e3fdd4fdfc127c7",
+  "notice": "The manifest verifies this transfer snapshot before edits, not future approved repository revisions. The Git bundle is a neutral docs-only save, not a selected rewrite remote."
+}
