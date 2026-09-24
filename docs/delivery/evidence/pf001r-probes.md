@@ -104,3 +104,25 @@ codex exec --ephemeral --json -s read-only -m gpt-6-sol -c 'model_reasoning_effo
 ```
 
 Conversation session `01a0d4e2-8eba-76c1-9afc-a65ac2faea10` exited 0 but its shell read failed before opening any file with `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`. It gave no invented line references and reported no edits or external calls. The fresh-session file/skill read remains **FAILED** in the final repository location; an unrestricted local reviewer cannot be substituted for this check.
+
+## Authenticated Shopify store identity and app limitation
+
+The user completed Shopify CLI device login in the same server account. The local CLI's authenticated, nonmutating commands then succeeded:
+
+```sh
+CI=1 SHOPIFY_CLI_NO_ANALYTICS=1 /home/serveradmin/insignia-pf001-tools/shopify/node_modules/.bin/shopify organization list --json
+CI=1 SHOPIFY_CLI_NO_ANALYTICS=1 /home/serveradmin/insignia-pf001-tools/shopify/node_modules/.bin/shopify store list --organization-id 212732011 --type dev --json
+CI=1 SHOPIFY_CLI_NO_ANALYTICS=1 /home/serveradmin/insignia-pf001-tools/shopify/node_modules/.bin/shopify store info --store insignia-staging.myshopify.com --json
+```
+
+Each returned exit 0. Organization `212732011` contained the exact designated display name `insignia-staging`. Store list returned domain `insignia-staging.myshopify.com`, Shopify ID `gid://shopify/Shop/78935261342`, type `dev`, plan `basic`; store info independently returned that ID, domain/subdomain, display name, organization ID, type and plan. Store-owner PII and admin URLs were not retained. `shopify store auth list --json` still returned no **direct store-auth sessions**; the successful store-info read uses the CLI account login and does not prove an app installation or Admin API scope. No store setting or data was changed.
+
+The user supplied Dev Dashboard URL `https://dev.shopify.com/dashboard/212732011/apps/427859050497` for the app named `insignia`. The numeric app resource is in the same organization identifier as the verified store, but this alone does not prove the app's name, OAuth client ID, distribution or installation. The connected web reader could not access the authenticated Dashboard page. A read-only CLI attempt from an empty disposable directory,
+
+```sh
+CI=1 SHOPIFY_CLI_NO_ANALYTICS=1 /home/serveradmin/insignia-pf001-tools/shopify/node_modules/.bin/shopify app info --path /tmp/insignia-pf001r-app-info --client-id 427859050497 --json
+```
+
+exited 1 because an app project configuration is required; no scratch file was created. The Dashboard numeric resource was tried as an exploratory identifier, not asserted to be the OAuth client ID. `app config link` was not run because it creates/overwrites app config, outside this no-scaffold preflight. The app identity/distribution remains **NOT_VERIFIED**.
+
+Shopify's [dev-store documentation](https://shopify.dev/docs/apps/build/stores/development-stores) says a Basic dev store models Basic-plan features but cannot process real transactions. Its [Functions testing documentation](https://shopify.dev/docs/apps/build/functions/test-debug-functions) distinguishes public-app availability on any plan from custom-app availability on Plus. Because this app's distribution is unverified, neither store metadata nor the generic Wasm smoke proves the intended non-Plus Function lifecycle.

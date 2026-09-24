@@ -10,7 +10,7 @@ Slice/spec: `docs/delivery/prompts/PF-001R-remediation.md`.
 
 Local provenance comparison base: `7f7fbabbfb60bd0e3d693d332e2b7da59693b9dd`. Approved remote `main` base: `38a711ad46aec63b8f410519f30352a88e4113c7`. Final PR head and effective merge base are in the external handoff, generated after publication.
 
-Required next action: principal reviews the actual export or PR and evidence. Sandbox and Shopify app/store authentication blockers remain for M0 readiness.
+Required next action: principal reviews the actual export or PR and evidence. Sandbox and Shopify app identity/distribution blockers remain for M0 readiness; the designated Basic dev-store identity is now verified.
 
 ## Outcome and scope
 
@@ -27,7 +27,8 @@ The implementation plan and decision ledger stayed byte-identical to the supplie
 | Shopify CLI binary | Local pinned version/help | PASS | `evidence/pf001r-probes.md` |
 | Fresh read-only instruction, ledger, skill reads | `codex exec -s read-only` | FAIL: sandbox init `bwrap` error | `evidence/pf001r-probes.md` |
 | Effective model/effort/project config | Doctor + launched JSON metadata | NOT_VERIFIED | `evidence/pf001r-probes.md` |
-| Designated Shopify app/store identity | CLI session listing and noninteractive organization read | BLOCKED: names designated, auth absent | `evidence/pf001r-probes.md` |
+| Designated Shopify store identity | Authenticated CLI organization/store list and store info | PASS: `insignia-staging.myshopify.com`, Basic dev store | `evidence/pf001r-probes.md` |
+| Designated Shopify app identity/distribution | User Dashboard URL; read-only web/CLI app-info attempts | BLOCKED: dashboard not accessible; no app project scaffold | `evidence/pf001r-probes.md` |
 | Remote publication and native review controls | `gh auth status`, repo/branch/ruleset reads, authorized `main` push | Base/write VERIFIED; no ruleset/native review enforcement | `evidence/pf001r-probes.md` |
 | G1–G8 | No procedures executed | NOT_RUN | Delivery state |
 
