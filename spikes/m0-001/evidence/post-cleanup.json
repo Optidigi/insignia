@@ -1,0 +1,109 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/78935261342",
+    "myshopifyDomain": "insignia-staging.myshopify.com",
+    "currencyCode": "USD"
+  },
+  "currentAppInstallation": {
+    "id": "gid://shopify/AppInstallation/781307904158",
+    "accessScopes": [
+      {
+        "handle": "read_cart_transforms"
+      },
+      {
+        "handle": "read_locations"
+      },
+      {
+        "handle": "write_cart_transforms"
+      },
+      {
+        "handle": "write_inventory"
+      },
+      {
+        "handle": "write_products"
+      },
+      {
+        "handle": "read_inventory"
+      },
+      {
+        "handle": "read_products"
+      }
+    ]
+  },
+  "cartTransforms": {
+    "nodes": []
+  },
+  "productByHandle": {
+    "id": "gid://shopify/Product/10294344482974",
+    "status": "ARCHIVED",
+    "onlineStoreUrl": null,
+    "variants": {
+      "nodes": [
+        {
+          "id": "gid://shopify/ProductVariant/50529053343902",
+          "price": "20.00",
+          "inventoryItem": {
+            "id": "gid://shopify/InventoryItem/52644294131870",
+            "sku": "INS-M0-001-BLK-S",
+            "tracked": true,
+            "inventoryLevels": {
+              "nodes": [
+                {
+                  "location": {
+                    "id": "gid://shopify/Location/89465290910"
+                  },
+                  "quantities": [
+                    {
+                      "name": "available",
+                      "quantity": 0
+                    },
+                    {
+                      "name": "committed",
+                      "quantity": 0
+                    },
+                    {
+                      "name": "on_hand",
+                      "quantity": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/ProductVariant/50529054163102",
+          "price": "20.00",
+          "inventoryItem": {
+            "id": "gid://shopify/InventoryItem/52644294951070",
+            "sku": "INS-M0-001-BLK-M",
+            "tracked": true,
+            "inventoryLevels": {
+              "nodes": [
+                {
+                  "location": {
+                    "id": "gid://shopify/Location/89465290910"
+                  },
+                  "quantities": [
+                    {
+                      "name": "available",
+                      "quantity": 0
+                    },
+                    {
+                      "name": "committed",
+                      "quantity": 0
+                    },
+                    {
+                      "name": "on_hand",
+                      "quantity": 0
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}

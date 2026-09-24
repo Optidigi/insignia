@@ -13,7 +13,9 @@
   },
   "hashesSha256": {
     "generatedSchema": "4f5024326918113b836e52af66991ca0fd69884e18ca74a07a92fd57e64c2789",
-    "releaseWasm": "5db1b7838409ef4a2a85dbd1ba976e1abb15f32c267a87ab4c006e7d6bac8d1e"
+    "releaseWasm": "5db1b7838409ef4a2a85dbd1ba976e1abb15f32c267a87ab4c006e7d6bac8d1e",
+    "stagingActivationTranscript": "19303c020a630663ae1c5500ab62f3c517eaad93d7739063d0f222ab1f033c7a",
+    "directPostCleanupResponse": "5fdcd5086ccbc2b617c4293e7aa22c5946c16173fcd201905132533ff74d3e67"
   },
   "app": {
     "name": "insignia",
