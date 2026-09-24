@@ -18,7 +18,7 @@
 
 - Installed `codex-cli 0.156.1`, provider `openai`. Current project `.codex/config.toml` requests `model="gpt-6-sol"`, `model_reasoning_effort="high"`, `[features] multi_agent=false`. Plain `codex doctor --json` from the rewrite clone reported model `<default>` and no feature override, so loading of that project layer is NOT_VERIFIED. The user config has trust entry for `/home/serveradmin`; its effect on this nested clone is not established. No trust/global config was changed.
 - Explicit one-off launch overrides were resolved by `codex -c 'model="gpt-6-sol"' -c 'model_reasoning_effort="high"' -c 'features.multi_agent=false' doctor --json`: model `gpt-6-sol`, provider `openai`, `multi_agent=false`. A same-CWD app-server `config/read` under `--strict-config` resolved model `gpt-6-sol` and effort `high`; both origins were `sessionFlags`. Without overrides, `config/read` returned neither value, corroborating that the project config is not currently loaded. A fresh `codex exec --ephemeral --json -s read-only -m gpt-6-sol -c 'model_reasoning_effort="high"' -c 'features.multi_agent=false'` with a no-tool `READY` prompt returned `READY`, exit 0, no reported fallback. This first probe isolated model launch from the then-broken sandbox; it was not treated as a file-read pass.
-- After sandbox repair, one **same-process** app-server probe started with `--strict-config` and explicit `model="gpt-6-sol"`, `model_reasoning_effort="high"`, `approval_policy="never"`, `features.multi_agent=false`, `features.apps=false`, `features.plugins=false`. In that process, `config/read` returned `gpt-6-sol`/`high`; `thread/start` returned model `gpt-6-sol`, `reasoningEffort="high"`, sandbox `readOnly` with `networkAccess=false`, and approval `never`. A fresh run after reviewer feedback asserted those exact values, `turn/completed`, and an agent message citing both instructions and the selected skill; it exited 0 for thread `01a0d524-e92b-74c3-9fea-aa88393dccfe`. The response cited AGENTS.md:7, PF-002:12 and writing-for-agents SKILL.md:78. The full nonsecret [probe driver](#same-launch-app-server-probe) below reproduces the config-read/thread-start/turn-start sequence. Provider-internal routing was not exposed or required.
+- After sandbox repair, one **same-process** app-server probe started with `--strict-config` and explicit `model="gpt-6-sol"`, `model_reasoning_effort="high"`, `approval_policy="never"`, `features.multi_agent=false`, `features.apps=false`, `features.plugins=false`. In that process, `config/read` returned `gpt-6-sol`/`high`; `thread/start` returned model `gpt-6-sol`, `reasoningEffort="high"`, sandbox `readOnly` with `networkAccess=false`, and approval `never`. A fresh run after reviewer feedback asserted those exact values, successful command read events with nonempty output for AGENTS, the active PF-002 prompt and the selected skill, `turn/completed`, line citations in the final response, and no surfaced fallback/failure event metadata. It exited 0 for thread `01a0d52d-6041-7350-9ed5-0eae035f6f75`; the response cited AGENTS.md:7, PF-002:12 and writing-for-agents SKILL.md:78. Provider-internal routing remains unexposed. The full nonsecret [probe driver](#same-launch-app-server-probe) below reproduces the config-read/thread-start/turn-start sequence. Provider-internal routing was not exposed or required.
 - Before host remediation, `codex sandbox -P :read-only -- /bin/true` and `codex sandbox -P :workspace -C /home/serveradmin/insignia-pf002-agent-scratch -- /bin/true` each exited 1 before command execution with `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`. `/usr/bin/bwrap` was absent; `unshare --user --map-root-user /bin/true` failed writing `/proc/self/uid_map` with `Operation not permitted`. Userns clone and max namespaces sysctls allowed namespaces numerically, while AppArmor restricted unprivileged userns. `/etc/apparmor.d/bwrap-userns-restrict` exists and names `/usr/bin/bwrap`.
 - The user reported installing Ubuntu's distribution package. Read-only inspection found `/usr/bin/bwrap`, `bubblewrap 0.11.1`, package `0.11.1-1ubuntu0.3`. The same direct `:read-only` and `:workspace` `/bin/true` probes then exited 0. No AppArmor/userns policy was relaxed and this agent changed no global configuration.
 - Direct canaries used files owned by `serveradmin`, mode 664 and host-writable. In `:read-only`, an append to `/home/serveradmin/insignia-pf002-agent-scratch/reviewer-canary.txt` exited 2, `Read-only file system`; SHA-256 stayed `1d82110d3f8a257eb1b8d64d2409a62814323fc8c6f78b3701d764b28f08b84c`. In `:workspace` rooted at the scratch directory, writing `writer-ok.txt` succeeded, while appending to `/home/serveradmin/outside-writer-canary.txt` exited 2 with the same filesystem denial and unchanged SHA-256. The positive write and negative write tested different policy zones; neither denial was a Unix ownership error.
@@ -59,7 +59,7 @@ The fresh CLI routes used the same explicit model/effort and disabled mutation-c
 
 ## Fixed-ref local review status
 
-A fresh Codex `-s read-only` reviewer with explicit `gpt-6-sol`/`high`, disabled apps/plugins and the pinned code-review skill examined base `bd4b0c12dc6d6c38e155ec6a1ce40fc215b4d6bb` against first PF-002 commit `d41ce6dde2fe6d2ce33b8fb3c8391d39fd51ff3b`. It found no scope or apparent secret issue, but identified two evidence gaps: the lack of a same-launch resolved model/effort record, and the unverified Dashboard numeric app binding/distribution. The same-process `config/read` → `thread/start` → restricted `turn/start` probe above closes the former. The owner subsequently compared the nonsecret Client ID at the exact Dashboard URL, closing the identity gap at owner-attested scope; distribution remains unknown. The reviewer's attempted parallel child launch failed locally; it continued its own sequential sandboxed read-only review. It did not rerun external Shopify, GitHub or Rust probes. A final fixed-ref review of the corrected commit is reported in PR metadata/external handoff after that commit exists.
+A fresh Codex `-s read-only` reviewer with explicit `gpt-6-sol`/`high`, disabled apps/plugins and the pinned code-review skill examined base `bd4b0c12dc6d6c38e155ec6a1ce40fc215b4d6bb` against first PF-002 commit `d41ce6dde2fe6d2ce33b8fb3c8391d39fd51ff3b`. It found no scope or apparent secret issue, but identified two evidence gaps: the lack of a same-launch resolved model/effort record, and the unverified Dashboard numeric app binding/distribution. The same-process `config/read` → `thread/start` → restricted `turn/start` probe above closes the former. The owner subsequently compared the nonsecret Client ID at the exact Dashboard URL, closing the identity gap at owner-attested scope; distribution remains unknown. The first reviewer's attempted parallel child launch failed locally; it continued its own sequential sandboxed read-only review. A second sequential read-only review of base `bd4b0c12dc6d6c38e155ec6a1ce40fc215b4d6bb` and head `1c26e8d5c0de2b5c26e4d848d5454e5514d61f20` identified that the probe could exit 0 without checking successful disk-read events or surfaced fallback. The executed driver below now asserts completed command read events with exit 0 and nonempty output for all three files, turn completion, line citations and no surfaced fallback/failure metadata. Neither reviewer reran external Shopify, GitHub or Rust probes. Final current-head review belongs in PR metadata/external handoff to avoid self-referential commits.
 
 ## Reused evidence and boundaries
 
@@ -159,8 +159,10 @@ Executed with `python3 /home/serveradmin/insignia-pf002-draft/appserver_same_lau
 
 ```python
 import json
-import select
+import queue
+import re
 import subprocess
+import threading
 import time
 
 cwd = '/home/serveradmin/insignia-rewrite-20260924'
@@ -177,6 +179,15 @@ proc = subprocess.Popen(
     cmd, cwd=cwd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
     stderr=subprocess.DEVNULL, text=True, bufsize=1,
 )
+all_events = []
+lines = queue.Queue()
+
+def read_stdout():
+    for line in proc.stdout:
+        lines.put(line)
+    lines.put(None)
+
+threading.Thread(target=read_stdout, daemon=True).start()
 
 def send(value):
     proc.stdin.write(json.dumps(value) + '\n')
@@ -186,16 +197,17 @@ def receive_until(request_id=None, methods=(), timeout=15):
     end = time.monotonic() + timeout
     events = []
     while time.monotonic() < end:
-        ready, _, _ = select.select([proc.stdout], [], [], max(0, end - time.monotonic()))
-        if not ready:
+        try:
+            line = lines.get(timeout=max(0, end - time.monotonic()))
+        except queue.Empty:
             break
-        line = proc.stdout.readline()
-        if not line:
-            break
+        if line is None:
+            raise EOFError('app-server stdout closed')
         try:
             value = json.loads(line)
         except json.JSONDecodeError:
             continue
+        all_events.append(value)
         events.append(value)
         if request_id is not None and value.get('id') == request_id:
             return value, events
@@ -229,11 +241,11 @@ try:
     send({'id': 4, 'method': 'turn/start', 'params': {'threadId': thread_id, 'input': [{'type': 'text', 'text': prompt}]}})
     turn, _ = receive_until(4, timeout=15)
     assert 'result' in turn, turn.get('error')
-    deadline = time.monotonic() + 120
+    deadline = time.monotonic() + 180
     methods = []
     final = None
     while time.monotonic() < deadline:
-        event, _ = receive_until(methods=('turn/completed', 'turn/failed', 'item/completed', 'codex/event/agent_message'), timeout=30)
+        event, _ = receive_until(methods=('turn/completed', 'turn/failed', 'item/completed', 'codex/event/agent_message'), timeout=max(1, deadline - time.monotonic()))
         method = event.get('method')
         methods.append(method)
         if method == 'item/completed':
@@ -244,8 +256,20 @@ try:
             break
     print('turn_event', methods[-1] if methods else None, 'event_methods_seen', sorted(set(methods)))
     print('agent_message', final[:1800] if final else None)
+    command_items = [e.get('params', {}).get('item', {}) for e in all_events if e.get('method') == 'item/completed' and e.get('params', {}).get('item', {}).get('type') == 'commandExecution']
+    required = ('AGENTS.md', 'docs/delivery/prompts/PF-002-readiness-closure.md', '.agents/skills/writing-for-agents/SKILL.md')
+    read_results = {}
+    for path in required:
+        matches = [item for item in command_items if any(action.get('type') == 'read' and action.get('path') == cwd + '/' + path for action in item.get('commandActions', []))]
+        assert matches, f'No completed disk read for {path}'
+        assert any(item.get('status') == 'completed' and item.get('exitCode') == 0 and item.get('aggregatedOutput') for item in matches), f'Read failed or empty for {path}'
+        read_results[path] = len(matches)
+    print('completed_disk_reads', read_results)
     assert methods and methods[-1] == 'turn/completed', methods
-    assert final and 'AGENTS.md' in final and 'SKILL.md' in final, final
+    assert final and 'AGENTS.md:7' in final and 'PF-002-readiness-closure.md:12' in final and re.search(r'SKILL\.md:\d+', final), final
+    surfaced_failures = [event for event in all_events if 'fallback' in str(event.get('method', '')).lower() or 'fallback' in str(event.get('error', '')).lower() or 'fallback' in str(event.get('params', {}).get('reason', '')).lower()]
+    assert not surfaced_failures, 'Fallback reported in event metadata'
+    assert not any(event.get('method') == 'turn/failed' for event in all_events), 'Turn failed'
 finally:
     proc.terminate()
     try:
