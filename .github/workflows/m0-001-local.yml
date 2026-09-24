@@ -27,7 +27,7 @@ jobs:
         with:
           node-version: "24.21.0"
       - name: Install pinned Rust and Wasm target
-        run: rustup toolchain install 1.98.1 --profile minimal --component rustfmt clippy --target wasm32-unknown-unknown
+        run: rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
       - name: Install pinned local dependencies
         working-directory: spikes/m0-001
         run: corepack pnpm install --frozen-lockfile
