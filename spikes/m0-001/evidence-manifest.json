@@ -2,6 +2,7 @@
   "slice": "M0-001",
   "gate": "G1",
   "gateStatus": "IN_PROGRESS",
+  "sourceCommit": "7279b49fe983b4ac883435a5a73031ab52655c5a",
   "apiVersion": "2026-07",
   "toolchain": {
     "shopifyCli": "4.8.2",
@@ -40,6 +41,8 @@
   "ownedResources": {
     "productId": "gid://shopify/Product/10294344482974",
     "productHandle": "insignia-m0-001-fixture-20260924",
+    "productFinalStatus": "ARCHIVED",
+    "productOnlineStoreUrl": null,
     "variants": [
       {
         "id": "gid://shopify/ProductVariant/50529053343902",
@@ -85,15 +88,18 @@
     },
     "onlineStoreCartAndCheckout": {
       "status": "BLOCKED_ACCESS_SETUP",
-      "reason": "Fixture draft and zero stock; storefront password redirect; awaiting designated fixture location and native Admin access"
+      "reason": "Fixture had zero stock and no Online Store URL; storefront password redirect; designated fixture location and authenticated native Admin access were unavailable"
     },
     "nativeFulfillmentRefundRestock": {
       "status": "NOT_RUN"
     }
   },
   "cleanup": {
-    "transformDeleted": false,
-    "previewEnded": false,
-    "productArchived": false
+    "transformDeleted": true,
+    "previewEnded": true,
+    "productArchived": true,
+    "remainingAppInstallationAndScopes": true,
+    "fixtureAvailableCommittedOnHand": [0, 0, 0],
+    "ordersCreated": 0
   }
 }
