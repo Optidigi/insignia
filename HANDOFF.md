@@ -1,10 +1,12 @@
 # Insignia — saved planning and delivery handoff
 
+This is the **historical transfer handoff** prepared before PF-001 execution. For current authorization and repository status, read `AGENTS.md`, `docs/delivery/state.md` and the active PF-001R prompt.
+
 Prepared 24 September 2026. Architecture/decision record version **1.1**; operating model version **1.0**.
 
 ## Start
 
-Give the local sol-6-high agent this folder and the prompt in `docs/delivery/prompts/PF-001-preflight.md`. PF-001 is the only currently authorized task. It checks access and instructions, saves these records in the verified rewrite repository and prepares a docs/config-only PR. It does not start development gates or build the application.
+At transfer, the local sol-6-high agent was to receive this folder and `docs/delivery/prompts/PF-001-preflight.md`; PF-001 was the only authorized task then. It checked access and instructions and prepared the records for a docs/config-only PR. PF-001R is now the current authorized continuation. Neither prompt starts development gates or builds the application.
 
 ## Authoritative paths
 
@@ -20,7 +22,7 @@ Give the local sol-6-high agent this folder and the prompt in `docs/delivery/pro
 
 ## What is saved versus executed
 
-These are actual saved files, with an additional local Git snapshot/portable Git bundle and SHA-256 transfer manifest. The archive is a handoff, not a deployed app. **No GitHub repository was created or modified, no local-user tooling was configured remotely, and no Shopify gate was executed.** The rewrite remote was not established from the available repository metadata. PF-001 must resolve it from the real local/user-approved workspace and not choose the legacy repository by name.
+These are actual saved files, with an additional local Git snapshot/portable Git bundle and SHA-256 transfer manifest. The archive is a handoff, not a deployed app. **At the time this archive was prepared, no GitHub repository had been created or modified, no local-user tooling was configured remotely, and no Shopify gate had run.** Later, the user designated `Optidigi/insignia` and authorized its minimal initial `main` commit. Current progress is in `docs/delivery/state.md`; the original transfer observation is retained as provenance.
 
 The optional Git bundle contains a neutral docs-only snapshot on `handoff/insignia-bootstrap`, with no remote. It is a recoverable save, not history that must be merged into the rewrite. Prefer copying the verified files into a feature branch of an existing approved rewrite repository; do not replace its `.git` directory or force unrelated histories together.
 

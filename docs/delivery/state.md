@@ -16,7 +16,7 @@ Updated: 24 September 2026, PF-001R local remediation. This is a progress index,
 | Last principal review / merge | None |
 | G1 / G2 / G3 / G4 | NOT_RUN / NOT_RUN / NOT_RUN / NOT_RUN |
 | G5 / G6 / G7 / G8 | NOT_RUN / NOT_RUN / NOT_RUN / NOT_RUN |
-| Active writers / test resources | One local orchestrator; no designated Shopify/PostgreSQL/R2/billing resources; no native sandboxed reviewer |
+| Active writers / test resources | One local orchestrator; Shopify app `insignia` and `insignia-staging` dev store designated by name but identities/access unverified; no designated PostgreSQL/R2/billing resources; no native sandboxed reviewer |
 | Next principal action | Review PF-001R PR/export; user arranges scoped Shopify CLI auth and host sandbox repair before any M0 authorization |
 
 ## Pending operational facts

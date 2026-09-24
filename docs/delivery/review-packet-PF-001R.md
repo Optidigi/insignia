@@ -47,7 +47,7 @@ Prior PF-001 feedback came from a collaboration child with no native read-only s
 
 ## Compatibility and safety
 
-No application API, schema, migration, money, setup, grouping, idempotency, tenant, retention or security implementation changed. No Function, app, theme or store mutation; no production or billing action. The staged diff must be checked for secrets before final commit. The external export excludes tool binaries, environment dumps and credentials.
+No application API, schema, migration, money, setup, grouping, idempotency, tenant, retention or security implementation changed. No Function, app, theme or store mutation; no production or billing action. The staged diff was scanned for common credential patterns before commit, with no matches; this is a bounded scan, not proof that arbitrary secrets cannot exist. The external export excludes tool binaries, environment dumps and credentials.
 
 ## Principal decision — principal/user completes externally
 
