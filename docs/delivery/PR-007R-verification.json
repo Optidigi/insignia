@@ -1,0 +1,149 @@
+{
+  "reviewDate": "2026-09-25",
+  "verdict": "APPROVED_OFF_STORE_SPIKE_ONLY",
+  "repository": "Optidigi/insignia",
+  "pullRequest": 7,
+  "base": "4591d102bb7368681622221253dbd4c997df1ad4",
+  "effectiveMergeBase": "4591d102bb7368681622221253dbd4c997df1ad4",
+  "reviewedHead": "f1bf2484a8805138bef4b95cfa0b90e60f8da7f3",
+  "supersedesExternalChangesRequestedHead": "d5e18b9a1dec9492f76b8a006f4b62ffc9c1dfae",
+  "observedPRState": {
+    "open": true,
+    "merged": false,
+    "mergeable": true
+  },
+  "correctionDescendantCommits": 5,
+  "nativeReviewAttempt": {
+    "action": "APPROVE",
+    "httpStatus": 403,
+    "message": "Resource not accessible by integration",
+    "posted": false
+  },
+  "ci": {
+    "runId": 36172396109,
+    "jobId": 108194840882,
+    "conclusion": "success",
+    "actualJobLogRead": true,
+    "checkout": "b2c689b6110b3fe2f78b4990d065f084d730d8a4",
+    "exactBaseHeadParentsVerified": true,
+    "headAndCheckoutTree": "db4768c69b688418c3328c17e4ea9b27bd636131",
+    "counts": {
+      "typescript": 77,
+      "rustCore": 18,
+      "rustCrossLanguage": 2,
+      "nativeTargetTests": 2,
+      "wasmTargets": 2,
+      "smokeRows": 16,
+      "benchmarkRows": 42
+    }
+  },
+  "builds": {
+    "localClean": {
+      "provenance": "retained evidence and PR report; not rebuilt by principal",
+      "transform": {
+        "bytes": 156805,
+        "sha256": "5f51256b9383657988169189235c282dbb1983149399a4ba2dc7079c4c434ce0"
+      },
+      "validation": {
+        "bytes": 158188,
+        "sha256": "f746d3e61d0baf9b46fd1a001e078d194903b22df4834cd0257f8289cf1a2b23"
+      }
+    },
+    "githubCI": {
+      "provenance": "actual CI log inspected",
+      "transform": {
+        "bytes": 156626,
+        "sha256": "d2b44c73184bebfd3a7be0ab71b774d3624dcd24db12a357cf258e6cfdaf958d"
+      },
+      "validation": {
+        "bytes": 157995,
+        "sha256": "bf592f539427895a3b7de2a993d8fba6278a5be2cba7d03b45dd988ba3b95fbb"
+      }
+    },
+    "sameBytesAcrossEnvironments": false,
+    "causeFullyEstablished": false,
+    "all58RowsMatchingExceptBinaryBytes": "reported by local agent; key rows independently inspected by principal, not exhaustive scripted comparison"
+  },
+  "capacity": {
+    "verdict": "FAIL_FOR_MEASURED_CANDIDATE",
+    "instructionReferencePerFunction": 11000000,
+    "outputReferenceBytes": 20000,
+    "tenSigned": {
+      "transform": 22024958,
+      "validation": 21977289
+    },
+    "threeSigned197Ordinary": {
+      "transform": 9805740,
+      "validation": 10115508
+    },
+    "fourSigned196Ordinary": {
+      "transform": 11961204,
+      "validation": 12264872
+    },
+    "fiveBuckets10000Physical": {
+      "transform": 11092566,
+      "validation": 11070692
+    },
+    "sixtyFourTransformOutputBytes": 32775,
+    "productFacingCapacityAccepted": false,
+    "notProofEveryEd25519ImplementationFails": true
+  },
+  "findingsClosed": [
+    "R1 raw magic byte comparison and signed high-bit vectors",
+    "R2 named pinned-runtime strict profile; Rust parsed nonweak key admission",
+    "checked effective validity interval E-2..E"
+  ],
+  "remainingUnverified": [
+    "all-hostile-key cross-runtime equivalence",
+    "live token transport",
+    "required-product policy projection and fail-closed rollout",
+    "live Validation pre-discount price semantics",
+    "native allocated-bucket lifecycle",
+    "per-key rollout",
+    "ordinary non-Plus/public-app qualification",
+    "stack peak",
+    "numeric query cost"
+  ],
+  "architectureRecords": {
+    "implementation-plan.md": {
+      "sha256": "c0432288deb778c4d717871d6f771f95e401d00b6a3caf1b878155cbf0e5422d",
+      "gitBlob": "d3d7d9c155cdcdcc3b88aeaaa77eebb10d8a767d",
+      "localCopyMatchesApprovedHash": true,
+      "publishedBlobMatches": true,
+      "mutated": false
+    },
+    "decision-ledger.md": {
+      "sha256": "0c6c02bab83fb5032548c3d1be1f86ea1492ae3cfd26b6cacc8410f7d08737bb",
+      "gitBlob": "3544e054bb52c11713b2bc1c96cdf6d7a2264936",
+      "localCopyMatchesApprovedHash": true,
+      "publishedBlobMatches": true,
+      "mutated": false
+    }
+  },
+  "principalDidNotExecute": [
+    "full local Node24/Rust/Wasm toolchain",
+    "all experiment-patch reconstructions",
+    "mechanical rehash of all repository evidence",
+    "Shopify actions",
+    "PR merge"
+  ],
+  "nextProposal": {
+    "id": "M0-005",
+    "purpose": "whole-quote signature and factored transport feasibility",
+    "status": "PROPOSED_REQUIRES_OWNER_EXPLICIT_LAUNCH",
+    "adoptionAuthorized": false,
+    "localOnly": true,
+    "newGatePassAuthorized": false
+  },
+  "sources": [
+    "https://github.com/Optidigi/insignia/pull/7",
+    "https://github.com/Optidigi/insignia/blob/f1bf2484a8805138bef4b95cfa0b90e60f8da7f3/docs/delivery/review-packet-M0-004R.md",
+    "https://github.com/Optidigi/insignia/blob/f1bf2484a8805138bef4b95cfa0b90e60f8da7f3/spikes/m0-004/evidence/m0-004r/README.md",
+    "https://github.com/Optidigi/insignia/actions/runs/36172396109",
+    "https://api.github.com/repos/Optidigi/insignia/git/commits/b2c689b6110b3fe2f78b4990d065f084d730d8a4",
+    "https://api.github.com/repos/Optidigi/insignia/git/commits/f1bf2484a8805138bef4b95cfa0b90e60f8da7f3",
+    "https://shopify.dev/docs/api/functions/latest#limitations",
+    "https://datatracker.ietf.org/doc/html/rfc8032",
+    "https://docs.rs/ed25519-dalek/2.2.0/ed25519_dalek/struct.VerifyingKey.html"
+  ]
+}
