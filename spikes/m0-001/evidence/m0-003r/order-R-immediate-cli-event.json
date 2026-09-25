@@ -1,0 +1,11 @@
+{
+  "provenance": "sanitized extraction of original T3 host command event after the native action",
+  "sourceSessionId": "01a0d465-b5c0-7b22-bc4c-4662c3307c5d",
+  "sourceEventId": "exec-f9331c50-53f0-4377-9ea8-8b0b757cf106",
+  "sourceEventCompletedAtUtc": "2026-09-25T12:49:02.107Z",
+  "extractedAtUtc": "2026-09-25T14:20:17.463570Z",
+  "command": "SHOPIFY_CLI_NO_ANALYTICS=1 /home/serveradmin/insignia-pf001-tools/shopify/node_modules/.bin/shopify app execute --path . --client-id 942e6668fd1177524c0fc48b104b0ac3 --store insignia-staging.myshopify.com --version 2026-07 --query-file evidence/m0-003/order-state.graphql --variable-file evidence/m0-003r/order-R.variables.json --output-file evidence/m0-003r/order-R-immediate-pre-submit.json",
+  "exitCode": 0,
+  "successBannerObserved": true,
+  "outputFile": "evidence/m0-003r/order-R-immediate-pre-submit.json"
+}

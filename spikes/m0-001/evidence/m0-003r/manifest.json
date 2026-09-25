@@ -12,10 +12,10 @@
   "newPurchasedUnits": 13,
   "receiptFiles": {
     "README.md": {
-      "sha256": "f13fed141bce6e090aa0a069361343d241615f464ce163716c19e2ec328e0484",
-      "bytes": 10333,
+      "sha256": "32a08f0677df1baedd6dc89437a4ee2ee60f0e755d550369d6e61e455a1e8e9b",
+      "bytes": 10630,
       "kind": "evidence_index",
-      "localFileModifiedUtc": "2026-09-25T14:15:56.428033Z"
+      "localFileModifiedUtc": "2026-09-25T14:20:40.733932Z"
     },
     "after-first-pay-click-orders.json": {
       "sha256": "923c8f05daa607efbe52e4617bed1ea961836114bcde45323bb1da288cd01af6",
@@ -82,6 +82,12 @@
       "bytes": 898,
       "kind": "native_or_storefront_projection",
       "localFileModifiedUtc": "2026-09-25T13:41:59.496075Z"
+    },
+    "candidate-R-immediate-tool-event.json": {
+      "sha256": "3927af75cacfc472f8876660ee62703ecea63c4cca36016ce7c7c85fa45d804a",
+      "bytes": 1088,
+      "kind": "sanitized_retrospective_host_event_extract",
+      "localFileModifiedUtc": "2026-09-25T14:20:17.463775Z"
     },
     "candidate-R-one-refund-form.json": {
       "sha256": "4dc0ca145a1e592dd32eb432d144a174e096ccfa45a2a93f3ecd799a3bbf031b",
@@ -299,6 +305,12 @@
       "kind": "direct_shopify_cli_api_response",
       "localFileModifiedUtc": "2026-09-25T12:40:31.432956Z"
     },
+    "order-R-immediate-cli-event.json": {
+      "sha256": "03c01bc42e29d480446b9eea739a9d419039462eab08c5627a16076fdec61718",
+      "bytes": 865,
+      "kind": "sanitized_retrospective_host_event_extract",
+      "localFileModifiedUtc": "2026-09-25T14:20:17.463894Z"
+    },
     "order-R-immediate-pre-submit.json": {
       "sha256": "771fda1bdc7a33ea633eddb87a66944d4605ceff398b8af3b92eed76e22bd04e",
       "bytes": 8542,
@@ -336,10 +348,10 @@
       "localFileModifiedUtc": "2026-09-25T11:34:47.447435Z"
     },
     "outcome.json": {
-      "sha256": "b3cbcb4b2744d3dc1760f4b5236da6bc3dae268ca5fdbaef1d2e1bed59837cf1",
-      "bytes": 3138,
+      "sha256": "deca3108e0ae0243135daa068cc2e8529df23f60caa735fa4dae6f4ddc2a0e4c",
+      "bytes": 3229,
       "kind": "local_runtime_or_outcome_projection",
-      "localFileModifiedUtc": "2026-09-25T14:15:56.429033Z"
+      "localFileModifiedUtc": "2026-09-25T14:20:40.734932Z"
     },
     "post-active-pre-publish.json": {
       "sha256": "45c59d530d9bc3236645a4c4fa2d3b74f3629593084ca516dc8d6ca64b4bd82c",
