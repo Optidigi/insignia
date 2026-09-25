@@ -1,0 +1,39 @@
+query M0002OrderState($id: ID!) {
+  order(id: $id) {
+    id name confirmationNumber createdAt test
+    displayFinancialStatus displayFulfillmentStatus paymentGatewayNames currencyCode
+    subtotalPriceSet { shopMoney { amount currencyCode } }
+    currentSubtotalPriceSet { shopMoney { amount currencyCode } }
+    totalPriceSet { shopMoney { amount currencyCode } }
+    currentTotalPriceSet { shopMoney { amount currencyCode } }
+    totalTaxSet { shopMoney { amount currencyCode } }
+    totalShippingPriceSet { shopMoney { amount currencyCode } }
+    totalRefundedSet { shopMoney { amount currencyCode } }
+    lineItems(first: 30) {
+      nodes {
+        id sku quantity currentQuantity refundableQuantity unfulfilledQuantity restockable merchantEditable
+        title variantTitle product { id } variant { id }
+        originalUnitPriceSet { shopMoney { amount currencyCode } }
+        discountedUnitPriceSet { shopMoney { amount currencyCode } }
+        originalTotalSet { shopMoney { amount currencyCode } }
+        discountedTotalSet { shopMoney { amount currencyCode } }
+        customAttributes { key value }
+        lineItemGroup {
+          id productId variantId variantSku quantity title
+          customAttributes { key value }
+        }
+      }
+      pageInfo { hasNextPage }
+    }
+    fulfillmentOrders(first: 20) {
+      nodes {
+        id status assignedLocation { location { id name } }
+        lineItems(first: 30) {
+          nodes { id totalQuantity remainingQuantity lineItem { id sku } }
+          pageInfo { hasNextPage }
+        }
+      }
+      pageInfo { hasNextPage }
+    }
+  }
+}

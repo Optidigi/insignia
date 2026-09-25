@@ -12,3 +12,8 @@ cargo build --locked --release --target wasm32-unknown-unknown
 
 cd "$spike_dir"
 corepack pnpm test
+python3 -B -m unittest discover -s tests -v
+python3 -B scripts/check-m0-002-evidence.py >/dev/null
+python3 -B scripts/verify_evidence_manifest.py evidence/m0-002/manifest.json
+python3 -B scripts/check-m0-003-evidence.py >/dev/null
+python3 -B scripts/verify_evidence_manifest.py evidence/m0-003/manifest.json

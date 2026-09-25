@@ -1,0 +1,128 @@
+{
+  "review_date": "2026-09-25",
+  "repository": "Optidigi/insignia",
+  "repository_id": 1386102402,
+  "pr": 4,
+  "base_sha": "523efa4e0248cb2c64ed846e0b37af0067f01d9c",
+  "head_sha": "1bfe9a13357b9c49042627f68fcca9daec93b1f5",
+  "effective_merge_base_sha": "523efa4e0248cb2c64ed846e0b37af0067f01d9c",
+  "review_method": "GitHub connector reads of metadata, comparison, code, selected direct receipts and CI job log; local archive hashing and selected-field arithmetic reconciliation.",
+  "repository_fetch_limit": "Container git ls-remote failed DNS resolution. No full repository checkout or source archive was obtained.",
+  "architecture_records": {
+    "implementation-plan.md": {
+      "sha256": "c0432288deb778c4d717871d6f771f95e401d00b6a3caf1b878155cbf0e5422d",
+      "git_blob_sha1": "d3d7d9c155cdcdcc3b88aeaaa77eebb10d8a767d",
+      "matches_supplied_v1_1_archive": true,
+      "matches_published_head_blob_metadata": true
+    },
+    "decision-ledger.md": {
+      "sha256": "0c6c02bab83fb5032548c3d1be1f86ea1492ae3cfd26b6cacc8410f7d08737bb",
+      "git_blob_sha1": "3544e054bb52c11713b2bc1c96cdf6d7a2264936",
+      "matches_supplied_v1_1_archive": true,
+      "matches_published_head_blob_metadata": true
+    }
+  },
+  "ci": {
+    "run_id": 36076245450,
+    "job_id": 107887983544,
+    "associated_head_sha": "1bfe9a13357b9c49042627f68fcca9daec93b1f5",
+    "status": "completed",
+    "conclusion": "success",
+    "checkout": "synthetic PR merge candidate 718a9171c228dee397d8ba6cef808f82e0d3de94",
+    "log_inspected": true,
+    "observed_native_tests": 2,
+    "observed_wasm_fixtures": 11,
+    "receipt_checker_executed_in_this_ci_job": false,
+    "staging_executed_in_ci": false
+  },
+  "principal_local_reconciliation": {
+    "source": "selected fields transcribed from retrieved order, fulfillment, selection and inventory artifacts",
+    "checks": [
+      {
+        "name": "order physical quantity six",
+        "passed": true
+      },
+      {
+        "name": "order merchandise USD 170.00",
+        "passed": true
+      },
+      {
+        "name": "three distinct order lines",
+        "passed": true
+      },
+      {
+        "name": "three distinct fulfillment-order lines",
+        "passed": true
+      },
+      {
+        "name": "plain and marked Small share variant but not line identity",
+        "passed": true
+      },
+      {
+        "name": "actual fulfillment has two physical units",
+        "passed": true
+      },
+      {
+        "name": "actual fulfillment differs from intended one-line selection",
+        "passed": true
+      },
+      {
+        "name": "extra fulfilled line is plain Small",
+        "passed": true
+      },
+      {
+        "name": "Small available unchanged",
+        "passed": true
+      },
+      {
+        "name": "Small committed and on-hand fall by actual two shipped",
+        "passed": true
+      },
+      {
+        "name": "Small inventory retains A + C = H",
+        "passed": true
+      },
+      {
+        "name": "Medium remains ten available two committed twelve on-hand",
+        "passed": true
+      },
+      {
+        "name": "four unfulfilled units remain",
+        "passed": true
+      },
+      {
+        "name": "pre-submit row-selected quantity and aggregate disagree",
+        "passed": true
+      }
+    ],
+    "count": 14,
+    "semantic_fulfillment_test": "FAILED_OBSERVED_INTENDED_VS_ACTUAL",
+    "root_cause": "UNDETERMINED"
+  },
+  "not_independently_executed": [
+    "local Rust/Wasm suite",
+    "Shopify staging operations",
+    "complete 36-assertion repository receipt checker",
+    "all 44 receipt file SHA-256 checks",
+    "shared browser operation or its historical raw trace"
+  ],
+  "important_evidence_boundary": "No original fulfillment mutation request is among the reviewed receipts. Native form projection already reported 2 items selected. The observed mismatch does not establish server-side line duplication or same-variant expansion as its cause.",
+  "native_review_submission": {
+    "attempted": true,
+    "action": "APPROVE",
+    "commit_id": "1bfe9a13357b9c49042627f68fcca9daec93b1f5",
+    "http_status": 403,
+    "posted": false,
+    "message": "Resource not accessible by integration"
+  },
+  "review_verdict": "APPROVED_EVIDENCE_CHECKPOINT_ONLY",
+  "gate_G1": "IN_PROGRESS",
+  "final_pr_read": {
+    "state": "open",
+    "merged": false,
+    "mergeable": true,
+    "base_sha": "523efa4e0248cb2c64ed846e0b37af0067f01d9c",
+    "head_sha": "1bfe9a13357b9c49042627f68fcca9daec93b1f5",
+    "matches_review_binding": true
+  }
+}
