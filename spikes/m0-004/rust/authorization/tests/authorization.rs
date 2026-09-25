@@ -217,6 +217,33 @@ fn signature_and_key_failures_are_distinct() {
 }
 
 #[test]
+fn strict_ed25519_rejects_weak_key_and_noncanonical_signature_scalar() {
+    let t = token(claims(0, 1, 1, 3000, 1, 3000));
+    let weak = [VerificationKey {
+        id: 9,
+        bytes: [0; 32],
+    }];
+    assert_eq!(
+        verify_set(&[line(&t, 111, 1, Some(3000))], &context(&weak), true),
+        Err(Error::Signature)
+    );
+
+    let mut raw = URL_SAFE_NO_PAD.decode(t).unwrap();
+    // The Ed25519 group order L in little-endian form is an invalid (noncanonical) S scalar.
+    raw[146..178].copy_from_slice(&[
+        0xed, 0xd3, 0xf5, 0x5c, 0x1a, 0x63, 0x12, 0x58, 0xd6, 0x9c, 0xf7, 0xa2, 0xde, 0xf9, 0xde,
+        0x14, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x10,
+    ]);
+    let bad = URL_SAFE_NO_PAD.encode(raw);
+    let k = keys();
+    assert_eq!(
+        verify_set(&[line(&bad, 111, 1, Some(3000))], &context(&k), true),
+        Err(Error::Signature)
+    );
+}
+
+#[test]
 fn removing_a_group_cannot_preserve_the_signed_500_unit_tier() {
     let shirts = token(claims(0, 2, 250, 2314, 500, 1_458_500));
     let hoodies = token(claims(1, 2, 250, 3520, 500, 1_458_500));
