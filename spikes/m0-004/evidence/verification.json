@@ -15,7 +15,7 @@
   },
   "testResults": {
     "typescript": 57,
-    "rustCoreBehavior": 13,
+    "rustCoreBehavior": 15,
     "rustCoreCrossLanguage": 2,
     "transformNative": 1,
     "validationNative": 1,
@@ -42,7 +42,7 @@
     "spikes/m0-004/ts/authorization.ts": "7143ff23dcaeac0017a4983b10443f60a622db33bb5d8acf3460d41926dd3992",
     "spikes/m0-004/ts/allocation.ts": "375edf46c76ca9b80e7d1ed5301497305f321b0a6de3f8a058fcc0a777c84b95",
     "spikes/m0-004/ts/verify-set.ts": "3dd360804bcfcdf899a4dc8bfeed444d6f0cc27a205163efd7772cfafe2a76b1",
-    "spikes/m0-004/rust/authorization/src/lib.rs": "0d7b0b5adfce36405d832f02440a87a38c7ee92e71c39bea3379455dc0f34a15",
+    "spikes/m0-004/rust/authorization/src/lib.rs": "cc9a593f18f015a8ef03de667de1d6bcc3742a6c1185005751684f5fe117fe00",
     "spikes/m0-004/extensions/transform/src/main.rs": "f83adc899101c0f1937bdfee596c3bcc5d3077ebf274c39d735ceb5281da58ea",
     "spikes/m0-004/extensions/validation/src/main.rs": "cd7c3f4cdd94ed2462e3221c8a580915221ad673eaac3a33aba33476e2bcdde8",
     "spikes/m0-004/scripts/target-runner.mjs": "df160ae1e4982d606ed9ceb70bcc8c531c0a16bf731840bc41739efce6c892b5",
@@ -52,17 +52,17 @@
   "cliBuiltWasm": {
     "transform": {
       "path": "spikes/m0-004/extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm",
-      "bytes": 155947,
-      "sha256": "5aa82b0b20afc8e4907ebe8843ffcff07cdce4a2b2ce6e5baf3b97a9dda75fda"
+      "bytes": 156148,
+      "sha256": "2621117ad81b4466309a6977933eaa39e21629d06cb1db076f9677c603e2884a"
     },
     "validation": {
       "path": "spikes/m0-004/extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm",
-      "bytes": 156909,
-      "sha256": "f5bc8dccbabe0c1ee70fc274bd86ae69bf1361f64a895ab3b010a81bc44de7f5"
+      "bytes": 157018,
+      "sha256": "12c628d765d1166f4ce1f2abb79e6b0420b6f3842ee2ee5665e5c5ca020e9e9b"
     }
   },
-  "runnerSmokeSha256": "ee907e14aa607ef95f102db7e0e5bb9437729d89de733c3d1d095455e2228b63",
-  "runnerBenchmarkSha256": "814c974ce516c27c1a890189c20e17848cd3bb2754e2996df5501a18751dd368",
+  "runnerSmokeSha256": "6e1aa68ced2ab627d1c75ef1459fe396c626f444db1b4c9990db598a88e9a7ff",
+  "runnerBenchmarkSha256": "21f9de2b2ba4328ae388a79dedb121683eaa5b2cac8ffca6e13ad22c5038d44b",
   "scope": "off-store synthetic only; no merchant calls or mutations",
   "unknowns": [
     "stack peak",
@@ -72,5 +72,16 @@
     "per-key rollout validity windows",
     "historical issuance day absent from candidate payload",
     "required-product policy projection and live rollout"
-  ]
+  ],
+  "historicalM0001FixtureReceipt": {
+    "command": "cd spikes/m0-001 && PATH=<project-local Rust cargo bin>:$PWD/node_modules/.bin:$PATH RUSTUP_HOME=<project-local rustup> CARGO_HOME=<project-local cargo> RUSTUP_TOOLCHAIN=1.98.1 CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=<verified cc-zig wrapper> SHOPIFY_CLI_NO_ANALYTICS=1 corepack pnpm test",
+    "exitCode": 0,
+    "testFilesPassed": 1,
+    "testsPassed": 11,
+    "testsFailed": 0,
+    "stdoutLogSha256": "44a8715e31eaac7d2fd25ad3668a03f3a800c7edb2e104638bbeb050fb569ade",
+    "fixtureTestSourceSha256": "4e72e266e5e574592f1afc3111c255c6fdeb88aaed4183a03f6097dbe55cd8ed",
+    "environment": "local, off-store, no merchant service",
+    "stdoutLogPath": "spikes/m0-004/evidence/historical-m0-001-test.log"
+  }
 }

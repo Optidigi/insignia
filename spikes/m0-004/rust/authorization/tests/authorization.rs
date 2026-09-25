@@ -114,12 +114,12 @@ fn strict_transport_rejects_wrong_length_padding_and_noncanonical_tail() {
 
 #[test]
 fn payload_bytes_match_fixed_offsets_and_wide_integers() {
-    let c = claims(1, 2, 10_000, 9_007_199_254_740_993, 10_001, u64::MAX);
+    let c = claims(1, 2, 1, 9_007_199_254_740_993, 2, u64::MAX);
     let p = encode_payload(&c).unwrap();
     assert_eq!(&p[..8], b"ISG1\x01\x00\x00\x09");
     assert_eq!(&p[60..64], &[0, 1, 0, 2]);
     assert_eq!(&p[64..72], &112u64.to_be_bytes());
-    assert_eq!(&p[72..76], &10_000u32.to_be_bytes());
+    assert_eq!(&p[72..76], &1u32.to_be_bytes());
     assert_eq!(&p[76..84], &9_007_199_254_740_993u64.to_be_bytes());
     assert_eq!(&p[106..114], &u64::MAX.to_be_bytes());
     assert_eq!(decode_token(&token(c)).unwrap().claims, c);
@@ -345,12 +345,51 @@ fn key_rotation_accepts_separate_sets_but_rejects_mixed_keys_within_one_set() {
 
 #[test]
 fn signed_arithmetic_overflow_is_rejected_even_with_valid_signature() {
-    let t = token(claims(0, 1, 2, u64::MAX, 2, u64::MAX));
+    let a = token(claims(0, 2, 1, u64::MAX, 2, u64::MAX));
+    let b = token(claims(1, 2, 1, u64::MAX, 2, u64::MAX));
     let k = keys();
     assert_eq!(
-        verify_set(&[line(&t, 111, 2, Some(u64::MAX))], &context(&k), true),
+        verify_set(
+            &[
+                line(&a, 111, 1, Some(u64::MAX)),
+                line(&b, 112, 1, Some(u64::MAX))
+            ],
+            &context(&k),
+            true
+        ),
         Err(Error::Overflow)
     );
+}
+
+#[test]
+fn codec_rejects_claims_larger_than_declared_quote() {
+    let c = claims(0, 1, 2, 100, 1, 100);
+    assert_eq!(encode_payload(&c), Err(Error::Line));
+    let mut p = encode_payload(&claims(0, 1, 2, 100, 2, 200)).unwrap();
+    p[102..106].copy_from_slice(&1u32.to_be_bytes());
+    assert_eq!(
+        insignia_m0_004_authorization::decode_payload(&p),
+        Err(Error::Line)
+    );
+    p[102..106].copy_from_slice(&2u32.to_be_bytes());
+    p[106..114].copy_from_slice(&100u64.to_be_bytes());
+    assert_eq!(
+        insignia_m0_004_authorization::decode_payload(&p),
+        Err(Error::Line)
+    );
+}
+
+#[test]
+fn non_ascii_hex_public_config_rejects_without_panic() {
+    use insignia_m0_004_authorization::{parse_hex, parse_public_config};
+    let malformed = format!("aé{}", "0".repeat(29));
+    assert_eq!(malformed.len(), 32);
+    assert_eq!(parse_hex::<16>(&malformed), Err(Error::Encoding));
+    let config = format!(
+        "{{\"generationHex\":\"{}\",\"epoch\":1,\"maxBuckets\":1,\"maxPhysicalQuantity\":1,\"allowNoMarket\":false,\"keys\":[{{\"id\":1,\"publicHex\":\"{}\"}}]}}",
+        malformed, "00".repeat(32)
+    );
+    assert!(matches!(parse_public_config(&config), Err(Error::Encoding)));
 }
 
 #[test]

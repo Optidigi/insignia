@@ -131,8 +131,10 @@ pub fn decode_payload(payload: &[u8; PAYLOAD_LEN]) -> Result<Claims, Error> {
     if claims.count == 0
         || claims.index >= claims.count
         || claims.quantity == 0
-        || claims.total_quantity == 0
+        || claims.total_quantity < claims.quantity
         || claims.variant == 0
+        || u128::from(claims.quantity) * u128::from(claims.unit_minor)
+            > u128::from(claims.total_minor)
     {
         return Err(Error::Line);
     }
@@ -143,8 +145,10 @@ pub fn encode_payload(claims: &Claims) -> Result<[u8; PAYLOAD_LEN], Error> {
     if claims.count == 0
         || claims.index >= claims.count
         || claims.quantity == 0
-        || claims.total_quantity == 0
+        || claims.total_quantity < claims.quantity
         || claims.variant == 0
+        || u128::from(claims.quantity) * u128::from(claims.unit_minor)
+            > u128::from(claims.total_minor)
     {
         return Err(Error::Line);
     }
@@ -419,7 +423,7 @@ pub fn parse_gid_suffix(value: &str, expected_kind: &str) -> Result<u64, Error> 
 }
 
 pub fn parse_hex<const N: usize>(value: &str) -> Result<[u8; N], Error> {
-    if value.len() != N * 2 {
+    if value.len() != N * 2 || !value.is_ascii() {
         return Err(Error::Encoding);
     }
     let mut out = [0; N];
