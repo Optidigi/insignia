@@ -1,0 +1,7 @@
+# Local M0-005 Function targets
+
+These are off-store 2026-07 Cart Transform and Cart & Checkout Validation targets. Their input queries read the untrusted cart `_insignia_quote_v2` attribute and each physical line's `_insignia_member_v2` attribute. Both call the whole-set verifier independently. Transform emits same-real-variant, one-child, relative-one fixed prices and copies the compact member. Validation parses `subtotalAmount.amount` as exact decimal minor units and compares its own observed unit amount.
+
+`fixtures/generate.py` creates deterministic synthetic inputs using a public test key. The generated JSON files are checked in so target tests do not need Python cryptography. The tests exercise generated-schema deserialization and full JSON serialization. Their 16-digit synthetic cart-line IDs yield 3,246 bytes for 10 signed + 190 ordinary, 10,352 for 32 signed and 20,688 for 64 signed. These are local host test measurements, not Wasm runner measurements. The integrated runner uses UUID-length cart-line IDs and measures 21,968 output bytes at 64 signed lines; both cases exceed the 20,000-byte reference.
+
+The shared cart attribute's survival through Transform, checkout, and order representation is unverified on a store. The expanded child's attribute and pre-discount interpretation of Validation's `subtotalAmount.amount` are also unverified live. Missing required-product policy remains a fail-open negative capability for unsigned plain lines; known required lines reject. Neither target is activated or deployable based on these synthetic results.

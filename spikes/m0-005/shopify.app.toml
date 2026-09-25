@@ -1,0 +1,13 @@
+# Offline test-only CLI discovery config. This synthetic client ID is not an app.
+name = "M0-005 local harness"
+client_id = "00000000000000000000000000000000"
+application_url = "https://example.invalid"
+embedded = false
+[access_scopes]
+scopes = ""
+[auth]
+redirect_urls = []
+[build]
+automatically_update_urls_on_dev = false
+[webhooks]
+api_version = "2026-07"

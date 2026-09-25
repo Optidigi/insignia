@@ -12,3 +12,8 @@ spikes/m0-001/**/*.pyc
 spikes/m0-004/node_modules/
 spikes/m0-004/**/target/
 spikes/m0-004/.shopify/
+
+# M0-005 isolated candidate dependencies and Function outputs
+spikes/m0-005/node_modules/
+spikes/m0-005/**/target/
+spikes/m0-005/.shopify/

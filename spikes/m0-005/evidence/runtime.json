@@ -1,0 +1,30 @@
+{
+  "dateUtc": "2026-09-25",
+  "orchestrator": {
+    "source": "T3 Code runtime_info supplied to this launch",
+    "model": "gpt-6-sol",
+    "reasoningEffort": "high",
+    "filesystemPermissionProfile": "unrestricted host integration owner"
+  },
+  "writers": [
+    {
+      "lane": "TypeScript issuer and verifier",
+      "source": "Codex v0.156.1 same-launch startup banner",
+      "model": "gpt-6-sol",
+      "reasoningEffort": "high",
+      "approval": "never",
+      "sandbox": "workspace-write",
+      "worktree": "/home/serveradmin/insignia-m0-005-ts"
+    },
+    {
+      "lane": "Rust verifier and two Function targets",
+      "source": "Codex v0.156.1 same-launch startup banner",
+      "model": "gpt-6-sol",
+      "reasoningEffort": "high",
+      "approval": "never",
+      "sandbox": "workspace-write",
+      "worktree": "/home/serveradmin/insignia-m0-005-rust"
+    }
+  ],
+  "claimLimit": "Observable launch configuration and restricted shell execution, not provider-private attestation or connector isolation"
+}

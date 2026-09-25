@@ -1,0 +1,17 @@
+api_version = "2026-07"
+
+[[extensions]]
+name = "M0-005 local transform"
+handle = "m0-005-local-transform"
+type = "function"
+uid = "b62be0ad-0b38-4a59-8b2b-63d312105001"
+description = "Local authorization harness only"
+
+  [[extensions.targeting]]
+  target = "cart.transform.run"
+  input_query = "src/cart_transform_run.graphql"
+  export = "cart_transform_run"
+
+  [extensions.build]
+  command = "cargo build --target=wasm32-unknown-unknown --release"
+  path = "target/wasm32-unknown-unknown/release/m0-005-cart-transform.wasm"

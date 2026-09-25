@@ -1,0 +1,1816 @@
+✓ Lockfile passes supply-chain policies (verified 3h ago)
+Lockfile is up to date, resolution step is skipped
+Done in 21ms using pnpm v12.6.0
+$ tsc --noEmit && node --test ts/*.test.ts
+✔ v2 canonical literal bytes and complete signed acceptance (4.659305ms)
+✔ complete cart is independent of enumeration and permits ordinary optional lines (1.141137ms)
+✔ issuer rejects noncanonical records, broken totals, and improper expiry (0.623623ms)
+✔ every marked physical member is bound to the full message and observed economics (1.356011ms)
+✔ independent context and key admission fail closed (2.450737ms)
+✔ rejects malformed carriers and fifteen raw high-bit header mutations (1.501628ms)
+✔ distinct signed equivalent statements accept; mixed quote, set and member data reject (2.924379ms)
+✔ existing M0-004 allocator conserves the EUR 91 quote (1.484276ms)
+✔ 10,000 units in five allocation buckets need no per-unit records (1.054678ms)
+✔ old per-line tokens, noncanonical tail bits and noncanonical Ed25519 S reject (0.791423ms)
+✔ rejects weak, expired, and not-yet-admitted verification keys (2.151511ms)
+✔ day-zero and u32-max issuance retain inclusive E-2..E validity (3.487773ms)
+✔ shared Python, TypeScript and Rust golden carrier bytes agree (0.629603ms)
+✔ all fifteen independently signed high-bit magic variants reject at header stage (2.9198ms)
+✔ large but bounded totals and removed 500-unit tier reject (1.076872ms)
+✔ 10, 32 and 64 complete buckets coexist with ordinary products; capacity is explicit (4.201159ms)
+✔ known required unsigned product denies, while absent required policy is a negative capability (0.264985ms)
+✔ no-market must be expressly enabled from independent context (0.728214ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 196.928439
+    Checking insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
+   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.33s
+     Running unittests src/lib.rs (rust/authorization/target/debug/deps/insignia_m0_005_authorization-e61c56a199b227cb)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/whole_quote.rs (rust/authorization/target/debug/deps/whole_quote-73d201e037af16e0)
+
+running 12 tests
+test canonical_carriers_reject_length_padding_alphabet_and_tail_bits ... ok
+test complete_ordered_set_verifies_once_and_matches_observed_price ... ok
+test compensated_price_mutations_cannot_preserve_authorization_by_preserving_total ... ok
+test every_header_byte_class_is_signed_and_structural_header_is_strict ... ok
+test last_member_change_invalidates_everything ... ok
+test independent_context_keys_date_and_physical_economics_reject ... ok
+test missing_duplicate_unsigned_and_extra_members_fail_closed ... ok
+test shared_python_typescript_rust_golden_vector_agrees ... ok
+test member_from_a_different_signed_quote_cannot_mix_with_original_envelope ... ok
+test signature_and_arithmetic_profiles_reject_mutations ... ok
+test large_complete_quantity_and_500_unit_tier_cannot_be_partially_reused ... ok
+test fifteen_independently_signed_high_bit_magic_variants_reject ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+
+   Doc-tests insignia_m0_005_authorization
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling semver v1.0.28
+   Compiling zmij v1.0.23
+   Compiling heck v0.5.0
+   Compiling rustc_version v0.4.1
+   Compiling serde_json v1.0.151
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling logos-codegen v0.15.1
+   Compiling fnv v1.0.7
+   Compiling generic-array v0.14.7
+    Checking typenum v1.20.1
+   Compiling regex-syntax v0.8.11
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling beef v0.5.2
+   Compiling lazy_static v1.5.0
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling either v1.18.0
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling itertools v0.14.0
+   Compiling strum_macros v0.27.2
+   Compiling enum-as-inner v0.6.1
+   Compiling logos-derive v0.15.1
+   Compiling serde v1.0.229
+   Compiling yansi v1.0.1
+   Compiling unicode-width v0.1.14
+   Compiling paste v1.0.15
+   Compiling ariadne v0.5.1
+   Compiling strum v0.27.2
+   Compiling bluejay-core v0.3.1
+   Compiling logos v0.15.1
+   Compiling serde_derive v1.0.229
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+   Compiling unicode-segmentation v1.13.3
+   Compiling seq-macro v0.3.6
+    Checking rmp v0.8.15
+    Checking digest v0.10.7
+   Compiling bluejay-parser v0.3.1
+   Compiling curve25519-dalek v4.1.3
+    Checking cfg-if v1.0.5
+   Compiling thiserror v2.0.21
+    Checking cpufeatures v0.2.17
+    Checking shopify_function_wasm_api_core v0.2.0
+   Compiling convert_case v0.8.0
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling bluejay-validator v0.3.1
+   Compiling thiserror-impl v2.0.21
+    Checking signature v2.2.0
+    Checking subtle v2.6.1
+    Checking bumpalo v3.20.3
+    Checking shopify_function_provider v2.0.1
+    Checking ed25519 v2.2.3
+    Checking sha2 v0.10.9
+   Compiling convert_case v0.11.0
+    Checking ed25519-dalek v2.2.0
+    Checking rmp-serde v1.3.1
+    Checking base64 v0.22.1
+    Checking ryu v1.0.23
+    Checking insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
+   Compiling bluejay-typegen-codegen v0.3.1
+    Checking shopify_function_wasm_api v0.3.1
+   Compiling shopify_function_macro v2.2.0
+    Checking shopify_function v2.2.0
+    Checking m0-005-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/transform)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.38s
+   Compiling zmij v1.0.23
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling strum v0.27.2
+   Compiling typenum v1.20.1
+   Compiling serde_core v1.0.229
+   Compiling num-traits v0.2.19
+   Compiling generic-array v0.14.7
+   Compiling serde_json v1.0.151
+   Compiling rmp v0.8.15
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling cfg-if v1.0.5
+   Compiling cpufeatures v0.2.17
+   Compiling shopify_function_wasm_api_core v0.2.0
+   Compiling subtle v2.6.1
+   Compiling bumpalo v3.20.3
+   Compiling signature v2.2.0
+   Compiling bluejay-core v0.3.1
+   Compiling bluejay-parser v0.3.1
+   Compiling shopify_function_provider v2.0.1
+   Compiling ed25519 v2.2.3
+   Compiling curve25519-dalek v4.1.3
+   Compiling serde v1.0.229
+   Compiling rmp-serde v1.3.1
+   Compiling sha2 v0.10.9
+   Compiling bluejay-validator v0.3.1
+   Compiling thiserror v2.0.21
+   Compiling ed25519-dalek v2.2.0
+   Compiling shopify_function_wasm_api v0.3.1
+   Compiling ryu v1.0.23
+   Compiling base64 v0.22.1
+   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling shopify_function_macro v2.2.0
+   Compiling shopify_function v2.2.0
+   Compiling m0-005-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/transform)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.72s
+     Running unittests src/main.rs (extensions/transform/target/debug/deps/m0_005_cart_transform-3bef210396d53e1a)
+
+running 4 tests
+test tests::no_partial_expansion_for_incomplete_or_tampered_set ... ok
+test tests::complete_set_sets_both_prices_and_copies_compact_member ... ok
+test tests::context_physical_line_policy_and_cart_order_are_enforced ... ok
+test tests::full_output_size_includes_real_ids_attribute_names_values_and_prices ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling semver v1.0.28
+   Compiling heck v0.5.0
+   Compiling rustc_version v0.4.1
+   Compiling zmij v1.0.23
+   Compiling serde_json v1.0.151
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling logos-codegen v0.15.1
+    Checking typenum v1.20.1
+   Compiling regex-syntax v0.8.11
+   Compiling generic-array v0.14.7
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling fnv v1.0.7
+   Compiling lazy_static v1.5.0
+   Compiling beef v0.5.2
+   Compiling autocfg v1.5.1
+   Compiling num-traits v0.2.19
+   Compiling itoa v1.0.18
+   Compiling either v1.18.0
+   Compiling memchr v2.8.3
+   Compiling itertools v0.14.0
+   Compiling strum_macros v0.27.2
+   Compiling logos-derive v0.15.1
+   Compiling enum-as-inner v0.6.1
+   Compiling serde v1.0.229
+   Compiling yansi v1.0.1
+   Compiling unicode-width v0.1.14
+   Compiling paste v1.0.15
+   Compiling ariadne v0.5.1
+   Compiling logos v0.15.1
+   Compiling serde_derive v1.0.229
+    Checking crypto-common v0.1.7
+    Checking block-buffer v0.10.4
+   Compiling seq-macro v0.3.6
+   Compiling strum v0.27.2
+   Compiling bluejay-core v0.3.1
+   Compiling unicode-segmentation v1.13.3
+   Compiling bluejay-parser v0.3.1
+    Checking digest v0.10.7
+    Checking rmp v0.8.15
+   Compiling curve25519-dalek v4.1.3
+    Checking cfg-if v1.0.5
+   Compiling thiserror v2.0.21
+    Checking cpufeatures v0.2.17
+   Compiling convert_case v0.8.0
+    Checking shopify_function_wasm_api_core v0.2.0
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling bluejay-validator v0.3.1
+   Compiling thiserror-impl v2.0.21
+    Checking subtle v2.6.1
+    Checking signature v2.2.0
+    Checking bumpalo v3.20.3
+    Checking shopify_function_provider v2.0.1
+    Checking ed25519 v2.2.3
+    Checking rmp-serde v1.3.1
+    Checking sha2 v0.10.9
+   Compiling convert_case v0.11.0
+    Checking ed25519-dalek v2.2.0
+    Checking shopify_function_wasm_api v0.3.1
+    Checking ryu v1.0.23
+    Checking base64 v0.22.1
+    Checking insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling shopify_function_macro v2.2.0
+    Checking shopify_function v2.2.0
+    Checking m0-005-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/validation)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.12s
+   Compiling zmij v1.0.23
+   Compiling itoa v1.0.18
+   Compiling memchr v2.8.3
+   Compiling strum v0.27.2
+   Compiling typenum v1.20.1
+   Compiling serde_core v1.0.229
+   Compiling num-traits v0.2.19
+   Compiling generic-array v0.14.7
+   Compiling serde_json v1.0.151
+   Compiling rmp v0.8.15
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling cpufeatures v0.2.17
+   Compiling cfg-if v1.0.5
+   Compiling shopify_function_wasm_api_core v0.2.0
+   Compiling signature v2.2.0
+   Compiling subtle v2.6.1
+   Compiling bumpalo v3.20.3
+   Compiling curve25519-dalek v4.1.3
+   Compiling bluejay-core v0.3.1
+   Compiling shopify_function_provider v2.0.1
+   Compiling bluejay-parser v0.3.1
+   Compiling serde v1.0.229
+   Compiling ed25519 v2.2.3
+   Compiling sha2 v0.10.9
+   Compiling rmp-serde v1.3.1
+   Compiling thiserror v2.0.21
+   Compiling ed25519-dalek v2.2.0
+   Compiling base64 v0.22.1
+   Compiling ryu v1.0.23
+   Compiling shopify_function_wasm_api v0.3.1
+   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
+   Compiling bluejay-validator v0.3.1
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling shopify_function_macro v2.2.0
+   Compiling shopify_function v2.2.0
+   Compiling m0-005-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/validation)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.03s
+     Running unittests src/main.rs (extensions/validation/target/debug/deps/m0_005_cart_validation-bfa3fc013143efc7)
+
+running 4 tests
+test tests::incomplete_tampered_and_unsigned_required_sets_reject ... ok
+test tests::complete_set_compares_observed_exact_subtotals ... ok
+test tests::cart_order_context_and_physical_claim_changes_fail_at_checkout ... ok
+test tests::stress_fixtures_validate_complete_set_and_measure_json ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+Building function m0-005-local-transform...   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling semver v1.0.28
+   Compiling zmij v1.0.23
+   Compiling heck v0.5.0
+   Compiling rustc_version v0.4.1
+   Compiling serde_json v1.0.151
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling logos-codegen v0.15.1
+   Compiling beef v0.5.2
+   Compiling typenum v1.20.1
+   Compiling generic-array v0.14.7
+   Compiling regex-syntax v0.8.11
+   Compiling fnv v1.0.7
+   Compiling syn v2.0.119
+   Compiling lazy_static v1.5.0
+   Compiling syn v3.0.6
+   Compiling either v1.18.0
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling itertools v0.14.0
+   Compiling strum_macros v0.27.2
+   Compiling logos-derive v0.15.1
+   Compiling enum-as-inner v0.6.1
+   Compiling paste v1.0.15
+   Compiling yansi v1.0.1
+   Compiling unicode-width v0.1.14
+   Compiling logos v0.15.1
+   Compiling ariadne v0.5.1
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling unicode-segmentation v1.13.3
+   Compiling seq-macro v0.3.6
+   Compiling digest v0.10.7
+   Compiling curve25519-dalek v4.1.3
+   Compiling cfg-if v1.0.5
+   Compiling thiserror v2.0.21
+   Compiling strum v0.27.2
+   Compiling bluejay-core v0.3.1
+   Compiling convert_case v0.8.0
+   Compiling thiserror-impl v2.0.21
+   Compiling bluejay-parser v0.3.1
+   Compiling signature v2.2.0
+   Compiling subtle v2.6.1
+   Compiling serde v1.0.229
+   Compiling ed25519 v2.2.3
+   Compiling shopify_function_wasm_api_core v0.2.0
+   Compiling bluejay-validator v0.3.1
+   Compiling sha2 v0.10.9
+   Compiling convert_case v0.11.0
+   Compiling serde_derive v1.0.229
+   Compiling ed25519-dalek v2.2.0
+   Compiling shopify_function_wasm_api v0.3.1
+   Compiling ryu v1.0.23
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling base64 v0.22.1
+   Compiling shopify_function_macro v2.2.0
+   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
+   Compiling shopify_function v2.2.0
+   Compiling m0-005-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/transform)
+    Finished `release` profile [optimized] target(s) in 18.69s
+╭─ success ────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Function built successfully.                                                │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling semver v1.0.28
+   Compiling zmij v1.0.23
+   Compiling rustc_version v0.4.1
+   Compiling heck v0.5.0
+   Compiling serde_json v1.0.151
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling logos-codegen v0.15.1
+   Compiling typenum v1.20.1
+   Compiling generic-array v0.14.7
+   Compiling lazy_static v1.5.0
+   Compiling beef v0.5.2
+   Compiling fnv v1.0.7
+   Compiling regex-syntax v0.8.11
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling itoa v1.0.18
+   Compiling either v1.18.0
+   Compiling memchr v2.8.3
+   Compiling itertools v0.14.0
+   Compiling strum_macros v0.27.2
+   Compiling logos-derive v0.15.1
+   Compiling enum-as-inner v0.6.1
+   Compiling yansi v1.0.1
+   Compiling unicode-width v0.1.14
+   Compiling paste v1.0.15
+   Compiling ariadne v0.5.1
+   Compiling logos v0.15.1
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling seq-macro v0.3.6
+   Compiling unicode-segmentation v1.13.3
+   Compiling digest v0.10.7
+   Compiling curve25519-dalek v4.1.3
+   Compiling cfg-if v1.0.5
+   Compiling thiserror v2.0.21
+   Compiling convert_case v0.8.0
+   Compiling strum v0.27.2
+   Compiling bluejay-core v0.3.1
+   Compiling thiserror-impl v2.0.21
+   Compiling bluejay-parser v0.3.1
+   Compiling serde v1.0.229
+   Compiling subtle v2.6.1
+   Compiling signature v2.2.0
+   Compiling ed25519 v2.2.3
+   Compiling shopify_function_wasm_api_core v0.2.0
+   Compiling sha2 v0.10.9
+   Compiling bluejay-validator v0.3.1
+   Compiling convert_case v0.11.0
+   Compiling serde_derive v1.0.229
+   Compiling ed25519-dalek v2.2.0
+   Compiling shopify_function_wasm_api v0.3.1
+   Compiling base64 v0.22.1
+   Compiling ryu v1.0.23
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling shopify_function_macro v2.2.0
+   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
+   Compiling shopify_function v2.2.0
+   Compiling m0-005-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/validation)
+    Finished `release` profile [optimized] target(s) in 17.36s
+╭─ success ────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Function built successfully.                                                │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+{
+  "mode": "smoke",
+  "limits": {
+    "binaryBytes": 256000,
+    "linearMemoryBytes": 10000000,
+    "stackBytes": 512000,
+    "instructions": 11000000,
+    "inputBytes": 128000,
+    "outputBytes": 20000,
+    "queryBytes": 3000,
+    "queryCost": 30
+  },
+  "rows": [
+    {
+      "target": "transform",
+      "caseName": "EUR91 exact allocated quote",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 1293,
+      "outputBytes": 632,
+      "queryBytes": 638,
+      "instructions": 2437796,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "EUR91 exact allocated quote",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1453,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 2430085,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "cart enumeration reversed, signed order reconstructed",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 1293,
+      "outputBytes": 632,
+      "queryBytes": 638,
+      "instructions": 2437796,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "cart enumeration reversed, signed order reconstructed",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1453,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 2430085,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "last member changed; whole statement fails",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 1293,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 277072,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "last member changed; whole statement fails",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1453,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 290031,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "observed Validation price differs",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 1293,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 277072,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "observed Validation price differs",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1453,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 241389,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "missing signed member",
+      "signedBuckets": 1,
+      "ordinaryLines": 0,
+      "physicalQuantity": 2,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 972,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 245691,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "missing signed member",
+      "signedBuckets": 1,
+      "ordinaryLines": 0,
+      "physicalQuantity": 2,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1075,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 255477,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "duplicate signed index",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 1293,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 276877,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "duplicate signed index",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1453,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 290019,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "header with no members",
+      "signedBuckets": 0,
+      "ordinaryLines": 0,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 652,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 198668,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "header with no members",
+      "signedBuckets": 0,
+      "ordinaryLines": 0,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 698,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 205677,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "members with no header",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 1077,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 245370,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "members with no header",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1237,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 258197,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "known required unsigned line",
+      "signedBuckets": 0,
+      "ordinaryLines": 2,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 1001,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 24022,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "known required unsigned line",
+      "signedBuckets": 0,
+      "ordinaryLines": 2,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1161,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 232469,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "optional unsigned ordinary control",
+      "signedBuckets": 0,
+      "ordinaryLines": 2,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 1071,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 24054,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "optional unsigned ordinary control",
+      "signedBuckets": 0,
+      "ordinaryLines": 2,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1231,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 44986,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "KNOWN_LIMIT missing policy unsigned allows",
+      "signedBuckets": 0,
+      "ordinaryLines": 2,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 969,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 22726,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": "Missing independent required-product policy can allow unsigned required goods",
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "KNOWN_LIMIT missing policy unsigned allows",
+      "signedBuckets": 0,
+      "ordinaryLines": 2,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1129,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 41408,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": "Missing independent required-product policy can allow unsigned required goods",
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    }
+  ]
+}
+{
+  "mode": "bench",
+  "limits": {
+    "binaryBytes": 256000,
+    "linearMemoryBytes": 10000000,
+    "stackBytes": 512000,
+    "instructions": 11000000,
+    "inputBytes": 128000,
+    "outputBytes": 20000,
+    "queryBytes": 3000,
+    "queryCost": 30
+  },
+  "rows": [
+    {
+      "target": "transform",
+      "caseName": "0 signed + 200 ordinary",
+      "signedBuckets": 0,
+      "ordinaryLines": 200,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 64035,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 1765507,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "0 signed + 200 ordinary",
+      "signedBuckets": 0,
+      "ordinaryLines": 200,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 75481,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 2991595,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "1 signed + 199 ordinary",
+      "signedBuckets": 1,
+      "ordinaryLines": 199,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 64289,
+      "outputBytes": 359,
+      "queryBytes": 638,
+      "instructions": 5593520,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "1 signed + 199 ordinary",
+      "signedBuckets": 1,
+      "ordinaryLines": 199,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 75735,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 5922165,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "3 signed + 197 ordinary",
+      "signedBuckets": 3,
+      "ordinaryLines": 197,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 64365,
+      "outputBytes": 1045,
+      "queryBytes": 638,
+      "instructions": 5662088,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "3 signed + 197 ordinary",
+      "signedBuckets": 3,
+      "ordinaryLines": 197,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 75811,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 5978440,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "4 signed + 196 ordinary",
+      "signedBuckets": 4,
+      "ordinaryLines": 196,
+      "physicalQuantity": 4,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 64403,
+      "outputBytes": 1388,
+      "queryBytes": 638,
+      "instructions": 5636599,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "4 signed + 196 ordinary",
+      "signedBuckets": 4,
+      "ordinaryLines": 196,
+      "physicalQuantity": 4,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 75849,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 5945218,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "10 signed + 190 ordinary",
+      "signedBuckets": 10,
+      "ordinaryLines": 190,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 64631,
+      "outputBytes": 3446,
+      "queryBytes": 638,
+      "instructions": 5775425,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "10 signed + 190 ordinary",
+      "signedBuckets": 10,
+      "ordinaryLines": 190,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 76077,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 6045299,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "32 signed + 168 ordinary",
+      "signedBuckets": 32,
+      "ordinaryLines": 168,
+      "physicalQuantity": 32,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 65467,
+      "outputBytes": 10992,
+      "queryBytes": 638,
+      "instructions": 6211092,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "32 signed + 168 ordinary",
+      "signedBuckets": 32,
+      "ordinaryLines": 168,
+      "physicalQuantity": 32,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 76913,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 6340269,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "64 signed + 136 ordinary",
+      "signedBuckets": 64,
+      "ordinaryLines": 136,
+      "physicalQuantity": 64,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 66683,
+      "outputBytes": 21968,
+      "queryBytes": 638,
+      "instructions": 6834793,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false,
+      "withinEngineeringHeadroom": false
+    },
+    {
+      "target": "validation",
+      "caseName": "64 signed + 136 ordinary",
+      "signedBuckets": 64,
+      "ordinaryLines": 136,
+      "physicalQuantity": 64,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 78129,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 6758426,
+      "memoryUsageKiB": 1472,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "10 isolated signed",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 4211,
+      "outputBytes": 3446,
+      "queryBytes": 638,
+      "instructions": 2706221,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "10 isolated signed",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 4827,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 2659136,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "32 isolated signed",
+      "signedBuckets": 32,
+      "ordinaryLines": 0,
+      "physicalQuantity": 32,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 12043,
+      "outputBytes": 10992,
+      "queryBytes": 638,
+      "instructions": 3498292,
+      "memoryUsageKiB": 1216,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "32 isolated signed",
+      "signedBuckets": 32,
+      "ordinaryLines": 0,
+      "physicalQuantity": 32,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 13913,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 3346435,
+      "memoryUsageKiB": 1216,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "64 isolated signed",
+      "signedBuckets": 64,
+      "ordinaryLines": 0,
+      "physicalQuantity": 64,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 23435,
+      "outputBytes": 21968,
+      "queryBytes": 638,
+      "instructions": 4638541,
+      "memoryUsageKiB": 1280,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false,
+      "withinEngineeringHeadroom": false
+    },
+    {
+      "target": "validation",
+      "caseName": "64 isolated signed",
+      "signedBuckets": 64,
+      "ordinaryLines": 0,
+      "physicalQuantity": 64,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 27129,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 4335033,
+      "memoryUsageKiB": 1344,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "500-unit two-group tier",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 500,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 1367,
+      "outputBytes": 702,
+      "queryBytes": 638,
+      "instructions": 2403564,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "500-unit two-group tier",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 500,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1531,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 2395775,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "10000 physical units in five 2000-unit buckets",
+      "signedBuckets": 5,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10000,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 2446,
+      "outputBytes": 1731,
+      "queryBytes": 638,
+      "instructions": 2526924,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "10000 physical units in five 2000-unit buckets",
+      "signedBuckets": 5,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10000,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 2792,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 2506147,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "EUR91 exact allocation",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 1293,
+      "outputBytes": 632,
+      "queryBytes": 638,
+      "instructions": 2437796,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "EUR91 exact allocation",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 1453,
+      "outputBytes": 17,
+      "queryBytes": 707,
+      "instructions": 2430085,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "first malformed member",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 4211,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 453572,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "first malformed member",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 4827,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 489128,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "first tampered member",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 4211,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 492103,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "first tampered member",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 4827,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 492727,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "last malformed member",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 4211,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 488321,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "last malformed member",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 4827,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 523940,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "last tampered member",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 4211,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 492103,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "last tampered member",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 4827,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 527539,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "duplicate member",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 4211,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 461034,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "duplicate member",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 4827,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 496608,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "missing member",
+      "signedBuckets": 9,
+      "ordinaryLines": 0,
+      "physicalQuantity": 9,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 3855,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 430086,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "missing member",
+      "signedBuckets": 9,
+      "ordinaryLines": 0,
+      "physicalQuantity": 9,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 4414,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 462443,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "over trusted bucket capacity",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 4210,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 455783,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "over trusted bucket capacity",
+      "signedBuckets": 10,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 4826,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 488354,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "transform",
+      "caseName": "over trusted physical quantity",
+      "signedBuckets": 5,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10000,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
+      "binaryBytes": 162584,
+      "inputBytes": 2445,
+      "outputBytes": 17,
+      "queryBytes": 638,
+      "instructions": 338134,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    },
+    {
+      "target": "validation",
+      "caseName": "over trusted physical quantity",
+      "signedBuckets": 5,
+      "ordinaryLines": 0,
+      "physicalQuantity": 10000,
+      "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
+      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
+      "binaryBytes": 163827,
+      "inputBytes": 2791,
+      "outputBytes": 131,
+      "queryBytes": 707,
+      "instructions": 361679,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true,
+      "withinEngineeringHeadroom": true
+    }
+  ]
+}
