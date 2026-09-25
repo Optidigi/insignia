@@ -1,0 +1,17 @@
+{
+  "observedAtUtc": "2026-09-25T15:34:35Z",
+  "source": "T3 Code active-turn host runtime_info and permissions instructions",
+  "modelSlug": "gpt-6-sol",
+  "reasoningEffort": "high",
+  "role": "substantive M0-004 orchestrator and integration owner",
+  "filesystemSandboxMode": "danger-full-access",
+  "approvalPolicy": "never",
+  "settingsChangedForThisSlice": false,
+  "sameLaunchRepositoryRead": {
+    "command": "git rev-parse HEAD",
+    "worktree": "/home/serveradmin/insignia-m0-004-worktree",
+    "exitCode": 0,
+    "stdout": "4591d102bb7368681622221253dbd4c997df1ad4"
+  },
+  "attestationLimit": "Host-reported client settings, not provider-private attestation; the previous M0-003R medium-effort report remains historical."
+}
