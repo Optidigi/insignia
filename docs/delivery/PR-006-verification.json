@@ -1,0 +1,106 @@
+{
+  "reviewDate": "2026-09-25",
+  "repository": "Optidigi/insignia",
+  "repositoryId": 1386102402,
+  "pr": 6,
+  "base": "a9398ebf8d069f3556c0b359be1372d94d45f82e",
+  "effectiveMergeBase": "a9398ebf8d069f3556c0b359be1372d94d45f82e",
+  "head": "16444b19823d044b1e5f4cf3a547ae465a3be3d0",
+  "verdict": "APPROVED_OBSERVED_DEVELOPMENT_LIFECYCLE_CHECKPOINT",
+  "nativeApproval": {
+    "attempted": true,
+    "posted": false,
+    "httpStatus": 403,
+    "message": "Resource not accessible by integration"
+  },
+  "ci": {
+    "run": 36147378618,
+    "job": 108111798307,
+    "conclusion": "success",
+    "actualJobLogRead": true,
+    "checkout": "90eb39ca7997de69650ab1a02d6637251aeca8ac",
+    "checkoutAndHeadTree": "3ea598ba513817fb3b573087e52256e58e75b69d",
+    "nativeRustTests": 2,
+    "wasmFixtures": 11,
+    "pythonTests": 15,
+    "manifestFiles": [
+      44,
+      16,
+      88
+    ],
+    "receiptCheckersIncluded": true
+  },
+  "architectureRecords": {
+    "implementation-plan.md": {
+      "bytes": 117918,
+      "sha256": "c0432288deb778c4d717871d6f771f95e401d00b6a3caf1b878155cbf0e5422d",
+      "gitBlob": "d3d7d9c155cdcdcc3b88aeaaa77eebb10d8a767d",
+      "matchesOriginalHandoff": true,
+      "matchesPublishedBlobAtReviewedHead": true
+    },
+    "decision-ledger.md": {
+      "bytes": 6287,
+      "sha256": "0c6c02bab83fb5032548c3d1be1f86ea1492ae3cfd26b6cacc8410f7d08737bb",
+      "gitBlob": "3544e054bb52c11713b2bc1c96cdf6d7a2264936",
+      "matchesOriginalHandoff": true,
+      "matchesPublishedBlobAtReviewedHead": true
+    }
+  },
+  "selectedArithmetic": {
+    "kind": "principal_derived_reconciliation_not_new_platform_evidence",
+    "newOrderUnits": [
+      4,
+      6,
+      3
+    ],
+    "newOrderUnitsTotal": 13,
+    "candidateRefundMinorUnits": [
+      3000,
+      14000
+    ],
+    "candidateRefundTotalMinorUnits": 17000,
+    "netUnreturnedUnits": {
+      "Small": 3,
+      "Medium": 2
+    },
+    "expectedFinalStock": {
+      "Small": {
+        "available": 5,
+        "committed": 2,
+        "on_hand": 7
+      },
+      "Medium": {
+        "available": 8,
+        "committed": 2,
+        "on_hand": 10
+      }
+    }
+  },
+  "acceptedNativeEvidence": "C/R/B PASS_OBSERVED_PROCEDURE only",
+  "immediateCaptureGap": "ACCEPTED_AS_LIMITATION_NOT_RECONSTRUCTED",
+  "historicalRootCause": "UNDETERMINED",
+  "publicAppQualification": "UNVERIFIED",
+  "G1": "IN_PROGRESS",
+  "runtimeDeviation": {
+    "recorded": "active orchestrator medium instead of requested high",
+    "nextAction": "use observable high-effort substantive route before M0-004",
+    "redoCompletedStagingRequired": false
+  },
+  "inspection": {
+    "changedPathInventory": 102,
+    "fixedRefComparisonRead": true,
+    "keyCodeAndReceiptsRead": true,
+    "all88FilesIndependentlyHashed": false,
+    "everyPngVisuallyReviewed": false,
+    "localCompleteSuiteRerun": false,
+    "liveShopifyOperations": false,
+    "gitDirectAccess": "DNS failure; GitHub connector used",
+    "remoteMergePerformed": false
+  },
+  "nextPackage": {
+    "id": "M0-004",
+    "scope": "local portions of G2/G3/G5",
+    "shopifyMutationsAuthorized": false,
+    "mergeRequiresOwnerDelegation": true
+  }
+}

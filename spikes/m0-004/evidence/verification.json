@@ -1,0 +1,87 @@
+{
+  "dateUtc": "2026-09-25",
+  "repository": "Optidigi/insignia",
+  "branch": "spike/m0-004-local-authorization",
+  "baseMergeCommit": "4591d102bb7368681622221253dbd4c997df1ad4",
+  "command": "cd spikes/m0-004 && ./scripts/check-local.sh",
+  "commandExit": 0,
+  "environment": {
+    "node": "24.21.0",
+    "pnpm": "12.6.0",
+    "rustc": "1.98.1",
+    "shopifyCli": "4.8.2",
+    "functionRunner": "9.2.2",
+    "apiVersion": "2026-07"
+  },
+  "testResults": {
+    "typescript": 57,
+    "rustCoreBehavior": 15,
+    "rustCoreCrossLanguage": 2,
+    "transformNative": 1,
+    "validationNative": 1,
+    "wasmSmokeRows": 7,
+    "wasmBenchmarkRows": 28,
+    "historicalM0001FixturesReused": 11
+  },
+  "sourceHashes": {
+    "docs/architecture/implementation-plan.md": "c0432288deb778c4d717871d6f771f95e401d00b6a3caf1b878155cbf0e5422d",
+    "docs/architecture/decision-ledger.md": "0c6c02bab83fb5032548c3d1be1f86ea1492ae3cfd26b6cacc8410f7d08737bb",
+    "spikes/m0-004/contract.md": "fcb6ed3d089490f3096224efdcbb96e96eddf0e2962b302192cb3a6d41744f6e",
+    "spikes/m0-004/package.json": "965dc1d1dc7ebd12db72ad1dee607a17a70ca24012307bcc6925ff04f812e6ea",
+    "spikes/m0-004/pnpm-lock.yaml": "7ddf77f987acf66c859186781dbd92f6bf17604def0fa3fed0216003efe96b11",
+    "spikes/m0-004/rust/authorization/Cargo.lock": "7207ac2ce6e2eae551066efdf554bbfb61ce96054fbad8e916c0654773f836fa",
+    "spikes/m0-004/extensions/transform/Cargo.lock": "e0d6d5d4384811b907f93708180c89142d74ff0c3d13fc2302a0e14a20fbb614",
+    "spikes/m0-004/extensions/validation/Cargo.lock": "1dbb7eb03e9d50885ceebba356667b532bc8607bf84910e3c994c8abdf6c79c5",
+    "spikes/m0-004/fixtures/vectors.json": "5b1d289f0e5b6e58839c8065c6301e2dd49ed3936e7740b7013104886810eb56",
+    "spikes/m0-004/fixtures/targets/transform-valid.json": "02e2185ae5a52ad9950155898b4e03adeec0352db913745a190e859bf871704e",
+    "spikes/m0-004/fixtures/targets/validation-valid.json": "6211b65fd41df3cd34435672afdd361f1a62b77459bcb5b7dba6442239e261b9",
+    "spikes/m0-004/extensions/transform/schema.graphql": "6e8851bc6c53bb8dae6620b2a98082aac10f88a5015b7cc2b57a9a49dd2e1aa4",
+    "spikes/m0-004/extensions/validation/schema.graphql": "4a782ed2a026b1f62a3c3466e0d9ddcc6b2e77e62a38feddfc524249fcf026f4",
+    "spikes/m0-004/extensions/transform/src/cart_transform_run.graphql": "8c2119b4d99439137e7e303a4a996b735ce057cfc7851a3512681b99d279bc33",
+    "spikes/m0-004/extensions/validation/src/cart_validations_generate_run.graphql": "2f91f8a2e83cd4740270e3bf19ab690993e2715d7f173f348a5095a8880636e6",
+    "spikes/m0-004/ts/authorization.ts": "7143ff23dcaeac0017a4983b10443f60a622db33bb5d8acf3460d41926dd3992",
+    "spikes/m0-004/ts/allocation.ts": "375edf46c76ca9b80e7d1ed5301497305f321b0a6de3f8a058fcc0a777c84b95",
+    "spikes/m0-004/ts/verify-set.ts": "3dd360804bcfcdf899a4dc8bfeed444d6f0cc27a205163efd7772cfafe2a76b1",
+    "spikes/m0-004/rust/authorization/src/lib.rs": "cc9a593f18f015a8ef03de667de1d6bcc3742a6c1185005751684f5fe117fe00",
+    "spikes/m0-004/extensions/transform/src/main.rs": "f83adc899101c0f1937bdfee596c3bcc5d3077ebf274c39d735ceb5281da58ea",
+    "spikes/m0-004/extensions/validation/src/main.rs": "cd7c3f4cdd94ed2462e3221c8a580915221ad673eaac3a33aba33476e2bcdde8",
+    "spikes/m0-004/scripts/target-runner.mjs": "df160ae1e4982d606ed9ceb70bcc8c531c0a16bf731840bc41739efce6c892b5",
+    "spikes/m0-004/scripts/check-local.sh": "add3890b51a4bb2619706a7faeb9d1c35fd78c7104c913a75ec4f0c296daea1e",
+    "spikes/m0-004/ts/issue-allocation.ts": "d42bc688306da7359d8782c3f7ed28256c551d36328377e4b94a350d11b24c07"
+  },
+  "cliBuiltWasm": {
+    "transform": {
+      "path": "spikes/m0-004/extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm",
+      "bytes": 156148,
+      "sha256": "2621117ad81b4466309a6977933eaa39e21629d06cb1db076f9677c603e2884a"
+    },
+    "validation": {
+      "path": "spikes/m0-004/extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm",
+      "bytes": 157018,
+      "sha256": "12c628d765d1166f4ce1f2abb79e6b0420b6f3842ee2ee5665e5c5ca020e9e9b"
+    }
+  },
+  "runnerSmokeSha256": "6e1aa68ced2ab627d1c75ef1459fe396c626f444db1b4c9990db598a88e9a7ff",
+  "runnerBenchmarkSha256": "21f9de2b2ba4328ae388a79dedb121683eaa5b2cac8ffca6e13ad22c5038d44b",
+  "scope": "off-store synthetic only; no merchant calls or mutations",
+  "unknowns": [
+    "stack peak",
+    "numeric query cost",
+    "live Validation pre-discount child amount semantics",
+    "real cart token transport",
+    "per-key rollout validity windows",
+    "historical issuance day absent from candidate payload",
+    "required-product policy projection and live rollout"
+  ],
+  "historicalM0001FixtureReceipt": {
+    "command": "cd spikes/m0-001 && PATH=<project-local Rust cargo bin>:$PWD/node_modules/.bin:$PATH RUSTUP_HOME=<project-local rustup> CARGO_HOME=<project-local cargo> RUSTUP_TOOLCHAIN=1.98.1 CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER=<verified cc-zig wrapper> SHOPIFY_CLI_NO_ANALYTICS=1 corepack pnpm test",
+    "exitCode": 0,
+    "testFilesPassed": 1,
+    "testsPassed": 11,
+    "testsFailed": 0,
+    "stdoutLogSha256": "13a4fd398d910b7ecdf18b3673ea27bbf467e6039c96e746eda48a9471eedc10",
+    "fixtureTestSourceSha256": "4e72e266e5e574592f1afc3111c255c6fdeb88aaed4183a03f6097dbe55cd8ed",
+    "environment": "local, off-store, no merchant service",
+    "stdoutLogPath": "spikes/m0-004/evidence/historical-m0-001-test.log"
+  }
+}

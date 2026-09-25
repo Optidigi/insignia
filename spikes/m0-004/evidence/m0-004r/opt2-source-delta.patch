@@ -1,0 +1,108 @@
+--- a/spikes/m0-004/extensions/transform/src/main.rs
++++ b/spikes/m0-004/extensions/transform/src/main.rs
+@@ -73,6 +73,14 @@
+ 
+ #[shopify_function]
+ fn cart_transform_run(input: schema::run::CartTransformRunInput) -> Result<Output> {
++    if !input
++        .cart()
++        .lines()
++        .iter()
++        .any(|line| line.auth().is_some())
++    {
++        return Ok(empty());
++    }
+     let Some(raw_config) = input.shop().public_config().map(|m| m.value()) else {
+         return Ok(empty());
+     };
+@@ -90,9 +98,10 @@
+         return Ok(empty());
+     };
+ 
+-    let mut lines = Vec::with_capacity(input.cart().lines().len());
+-    let mut line_ids = Vec::with_capacity(input.cart().lines().len());
+-    let mut variant_ids = Vec::with_capacity(input.cart().lines().len());
++    let signed_capacity = input.cart().lines().len().min(config.max_buckets as usize);
++    let mut lines = Vec::with_capacity(signed_capacity);
++    let mut line_ids = Vec::with_capacity(signed_capacity);
++    let mut variant_ids = Vec::with_capacity(signed_capacity);
+     let mut currency: Option<[u8; 3]> = None;
+     for line in input.cart().lines() {
+         let schema::run::cart_transform_run_input::cart::lines::Merchandise::ProductVariant(
+@@ -233,6 +242,12 @@
+         let output = cart_transform_run(generated).unwrap();
+         output.serialize(&mut context).unwrap();
+         context.finalize_output_and_return().unwrap()
++    }
++
++    fn corrupt_signature(token: &str) -> String {
++        let mut bytes = token.as_bytes().to_vec();
++        bytes[155] = if bytes[155] == b'A' { b'B' } else { b'A' };
++        String::from_utf8(bytes).unwrap()
+     }
+ 
+     #[test]
+@@ -260,6 +275,19 @@
+         let mut damaged = input;
+         damaged["cart"]["lines"][1]["auth"]["value"] = "bad".into();
+         assert_eq!(run(damaged)["operations"].as_array().unwrap().len(), 0);
++        for index in [0, 1] {
++            let mut bad_signature = fixture();
++            let token = bad_signature["cart"]["lines"][index]["auth"]["value"]
++                .as_str()
++                .unwrap()
++                .to_owned();
++            bad_signature["cart"]["lines"][index]["auth"]["value"] =
++                corrupt_signature(&token).into();
++            assert_eq!(
++                run(bad_signature)["operations"].as_array().unwrap().len(),
++                0
++            );
++        }
+         let mut missing_policy = fixture();
+         missing_policy["cart"]["lines"][0]["merchandise"]["product"]["policy"] =
+             serde_json::Value::Null;
+--- a/spikes/m0-004/extensions/validation/src/main.rs
++++ b/spikes/m0-004/extensions/validation/src/main.rs
+@@ -66,7 +66,7 @@
+         return Ok(reject());
+     };
+ 
+-    let mut lines = Vec::with_capacity(input.cart().lines().len());
++    let mut lines = Vec::with_capacity(input.cart().lines().len().min(config.max_buckets as usize));
+     let mut currency: Option<[u8; 3]> = None;
+     for line in input.cart().lines() {
+         let schema::run::input::cart::lines::Merchandise::ProductVariant(variant) =
+@@ -204,6 +204,12 @@
+         context.finalize_output_and_return().unwrap()
+     }
+ 
++    fn corrupt_signature(token: &str) -> String {
++        let mut bytes = token.as_bytes().to_vec();
++        bytes[155] = if bytes[155] == b'A' { b'B' } else { b'A' };
++        String::from_utf8(bytes).unwrap()
++    }
++
+     #[test]
+     fn schema_valid_synthetic_projection_checks_price_and_signature() {
+         let input = fixture();
+@@ -225,6 +231,19 @@
+             run(bad_signature)["operations"][0]["validationAdd"]["errors"][0]["target"],
+             "$.cart"
+         );
++        for index in [0, 1] {
++            let mut bad_signature = fixture();
++            let token = bad_signature["cart"]["lines"][index]["auth"]["value"]
++                .as_str()
++                .unwrap()
++                .to_owned();
++            bad_signature["cart"]["lines"][index]["auth"]["value"] =
++                corrupt_signature(&token).into();
++            assert_eq!(
++                run(bad_signature)["operations"][0]["validationAdd"]["errors"][0]["target"],
++                "$.cart"
++            );
++        }
+ 
+         let mut removed = input;
+         removed["cart"]["lines"].as_array_mut().unwrap().remove(1);

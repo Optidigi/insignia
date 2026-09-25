@@ -1,0 +1,17 @@
+api_version = "2026-07"
+
+[[extensions]]
+name = "M0-004 local validation"
+handle = "m0-004-local-validation"
+type = "function"
+uid = "b62be0ad-0b38-4a59-8b2b-63d312103002"
+description = "Local authorization harness only"
+
+  [[extensions.targeting]]
+  target = "cart.validations.generate.run"
+  input_query = "src/cart_validations_generate_run.graphql"
+  export = "cart_validations_generate_run"
+
+  [extensions.build]
+  command = "cargo build --target=wasm32-unknown-unknown --release"
+  path = "target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm"

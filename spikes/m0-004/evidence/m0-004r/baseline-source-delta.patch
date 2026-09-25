@@ -1,0 +1,42 @@
+--- a/spikes/m0-004/rust/authorization/src/lib.rs
++++ b/spikes/m0-004/rust/authorization/src/lib.rs
+@@ -251,7 +251,9 @@
+                 if c.market == 0 && !expected.allow_no_market {
+                     return Err(Error::Context);
+                 }
+-                if expected.current_day > c.valid_through_day {
++                if expected.current_day > c.valid_through_day
++                    || c.valid_through_day - expected.current_day > 2
++                {
+                     return Err(Error::Expired);
+                 }
+                 if c.count > expected.max_buckets
+@@ -471,6 +473,7 @@
+     {
+         return Err(Error::Context);
+     }
++    let generation = parse_hex(&parsed.generation_hex)?;
+     let mut keys = Vec::with_capacity(parsed.keys.len());
+     for k in parsed.keys {
+         if keys
+@@ -479,13 +482,15 @@
+         {
+             return Err(Error::Context);
+         }
+-        keys.push(VerificationKey {
+-            id: k.id,
+-            bytes: parse_hex(&k.public_hex)?,
+-        });
++        let public_bytes = parse_hex(&k.public_hex)?;
++        let key = VerifyingKey::from_bytes(&public_bytes).map_err(|_| Error::Signature)?;
++        if key.is_weak() {
++            return Err(Error::Signature);
++        }
++        keys.push(VerificationKey { id: k.id, bytes: public_bytes });
+     }
+     Ok(PublicConfig {
+-        generation: parse_hex(&parsed.generation_hex)?,
++        generation,
+         epoch: parsed.epoch,
+         max_buckets: parsed.max_buckets,
+         max_physical_quantity: parsed.max_physical_quantity,

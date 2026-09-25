@@ -7,3 +7,8 @@ spikes/m0-001/.env.*
 !spikes/m0-001/.env.example
 spikes/m0-001/**/__pycache__/
 spikes/m0-001/**/*.pyc
+
+# M0-004 local dependencies and Function build outputs
+spikes/m0-004/node_modules/
+spikes/m0-004/**/target/
+spikes/m0-004/.shopify/

@@ -1,0 +1,13 @@
+Building function m0-004-local-transform...    Finished `release` profile [optimized] target(s) in 0.04s
+╭─ success ────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Function built successfully.                                                │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Building function m0-004-local-validation...    Finished `release` profile [optimized] target(s) in 0.04s
+╭─ success ────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Function built successfully.                                                │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
