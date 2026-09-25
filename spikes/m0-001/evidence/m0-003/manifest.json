@@ -12,7 +12,7 @@
     "checkScript": "./scripts/check-local.sh",
     "nativeRustTests": 2,
     "wasmFixtures": 11,
-    "pythonGuardAndManifestTests": 5,
+    "pythonGuardAndManifestTests": 7,
     "historicalM0002ReceiptAssertions": 36,
     "m0003BaselineAssertions": 19
   },
@@ -85,8 +85,8 @@
   "captureTimeProvenance": "localFileBirthUtc is this host filesystem birth time, not Shopify server action time or a signed receipt. Browser probe has its own observedAtUtc. No outgoing native fulfillment POST was captured.",
   "receiptFiles": {
     "README.md": {
-      "sha256": "91ea8a15095f646b14ddca01d0e3ff83dc746b294eed813adfdf36f5813482e0",
-      "bytes": 9254,
+      "sha256": "4f4b6e27b514b606a28cd982d8d3acb387514ac30f34d6e2620b9a7a1fe7f061",
+      "bytes": 9301,
       "kind": "operator_evidence_index",
       "localFileBirthUtc": "2026-09-25T00:38:41Z"
     },

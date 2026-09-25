@@ -61,6 +61,30 @@ class FulfillmentGuardTests(unittest.TestCase):
         self.assertEqual(result.returncode, 2)
         self.assertIn("invalid identity format", json.loads(result.stdout)["reasons"])
 
+    def test_two_target_units_are_rejected_for_this_slice(self):
+        form = json.loads((FIXTURES / "coherent-control-form.json").read_text())
+        form["intent"][0]["quantity"] = 2
+        form["rows"][0]["effectiveQuantity"] = 2
+        form["rows"][0]["inputValue"] = "2"
+        form["aggregateSelectedCount"] = 2
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT), "--form", "-"],
+            input=json.dumps(form), capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("exactly one target unit required", json.loads(result.stdout)["reasons"])
+
+    def test_checked_zero_quantity_bystander_is_rejected(self):
+        form = json.loads((FIXTURES / "coherent-control-form.json").read_text())
+        form["rows"][1]["checked"] = True
+        form["rows"][1]["ariaChecked"] = "true"
+        result = subprocess.run(
+            [sys.executable, str(SCRIPT), "--form", "-"],
+            input=json.dumps(form), capture_output=True, text=True, check=False,
+        )
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("checked non-target row", json.loads(result.stdout)["reasons"])
+
 
 if __name__ == "__main__":
     unittest.main()

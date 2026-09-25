@@ -49,6 +49,8 @@ def guard(form):
         if key in intended:
             reasons.append("duplicate intent identity")
         intended[key] = line["quantity"]
+    if len(intended) != 1 or list(intended.values()) != [1]:
+        reasons.append("exactly one target unit required")
     observed = {}
     for line in rows:
         if not isinstance(line, dict) or not valid_identity(line_key(line)) or not positive_int(line.get("effectiveQuantity")):
@@ -71,6 +73,8 @@ def guard(form):
             reasons.append("unknown control state")
         elif line["indeterminate"] or line["ariaChecked"] != str(line["checked"]).lower():
             reasons.append("inconsistent control state")
+        if line.get("checked") is True and key not in intended:
+            reasons.append("checked non-target row")
         if quantity > 0:
             selected.append({"fulfillmentOrderLineItemId": key[0], "lineItemId": key[1], "quantity": quantity})
             if key not in intended:

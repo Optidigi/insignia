@@ -16,6 +16,4 @@ python3 -B -m unittest discover -s tests -v
 python3 -B scripts/check-m0-002-evidence.py >/dev/null
 python3 -B scripts/verify_evidence_manifest.py evidence/m0-002/manifest.json
 python3 -B scripts/check-m0-003-evidence.py >/dev/null
-if [[ -f evidence/m0-003/manifest.json ]]; then
-  python3 -B scripts/verify_evidence_manifest.py evidence/m0-003/manifest.json
-fi
+python3 -B scripts/verify_evidence_manifest.py evidence/m0-003/manifest.json
