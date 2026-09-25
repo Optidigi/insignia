@@ -1,0 +1,26 @@
+{
+  "at": "2026-09-24T23:46:53.137Z",
+  "fulfillmentOrder": "gid://shopify/FulfillmentOrder/8330797252766",
+  "lines": [
+    {
+      "marker": "plain Small",
+      "requestedQuantity": "1",
+      "selected": false
+    },
+    {
+      "marker": "marked Small",
+      "requestedQuantity": "1",
+      "selected": true
+    },
+    {
+      "marker": "marked Medium",
+      "requestedQuantity": null,
+      "selected": false
+    }
+  ],
+  "location": "Shop location",
+  "order": "#1001",
+  "provenance": "native Admin fulfillment form DOM projection before submit",
+  "selectionLabel": "2 items selected",
+  "sendNotification": false
+}

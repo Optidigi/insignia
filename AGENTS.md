@@ -4,7 +4,7 @@
 
 Read `docs/architecture/decision-ledger.md`, `docs/delivery/state.md` and the currently authorized slice prompt. Before executing or delegating a slice, read `docs/delivery/operating-model.md`. For affected architecture, read the relevant sections of `docs/architecture/implementation-plan.md` before changing code. The detailed plan is a reference, not an always-loaded instruction blob.
 
-The user owns product decisions. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project. The local orchestrator is sol-6-high. Implement only the authorized slice; return every PR for principal review. The current authorization is **M0-001** in `docs/delivery/prompts/M0-001-same-variant-dev-lifecycle.md`, following [the principal's attributed review of PR #2](docs/delivery/PR-002-principal-review.md) and the user's exact-PR merge and staging-envelope delegation. M0-001 gathers partial G1 development-store evidence; G2–G8 remain NOT_RUN.
+The user owns product decisions. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project. The local orchestrator is sol-6-high. Implement only the authorized slice; return every PR for principal review. The current authorization is **M0-002** in `docs/delivery/prompts/M0-002-real-cart-order-lifecycle.md`, following [the principal's attributed review of PR #3](docs/delivery/PR-003-principal-review.md) and the user's exact-PR merge and bounded staging delegation. M0-002 gathers G1 development-store evidence; G1 remains IN_PROGRESS and G2–G8 remain NOT_RUN. Its native partial fulfillment produced an extra unchecked line; preserve the failure and stop dependent lifecycle actions pending principal review.
 
 ## Authority and scope
 

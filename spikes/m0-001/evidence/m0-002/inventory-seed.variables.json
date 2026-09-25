@@ -1,0 +1,22 @@
+{
+  "key": "insignia-m0-002-fixture-seed-20260924-1",
+  "input": {
+    "name": "available",
+    "reason": "correction",
+    "referenceDocumentUri": "gid://insignia/M0002FixtureSeed/20260924-1",
+    "changes": [
+      {
+        "delta": 12,
+        "changeFromQuantity": 0,
+        "inventoryItemId": "gid://shopify/InventoryItem/52644294131870",
+        "locationId": "gid://shopify/Location/89465290910"
+      },
+      {
+        "delta": 12,
+        "changeFromQuantity": 0,
+        "inventoryItemId": "gid://shopify/InventoryItem/52644294951070",
+        "locationId": "gid://shopify/Location/89465290910"
+      }
+    ]
+  }
+}

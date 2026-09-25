@@ -1,0 +1,30 @@
+{
+  "addError": null,
+  "addStatus": 200,
+  "at": "2026-09-24T23:36:37.353Z",
+  "cartStatus": 200,
+  "currency": "USD",
+  "emptyAfterRemoval": true,
+  "item_count": 3,
+  "items": [
+    {
+      "final_line_price": 9000,
+      "final_price": 3000,
+      "has_components": true,
+      "line_price": 9000,
+      "original_line_price": 9000,
+      "original_price": 3000,
+      "price": 3000,
+      "properties": {
+        "_insignia_m0_001": "m0-001:m0-002-A-S"
+      },
+      "quantity": 3,
+      "sku": "INS-M0-001-BLK-S",
+      "variant_id": 50529053343902
+    }
+  ],
+  "operation": "remove marked Small by current key, re-add quantity 3",
+  "provenance": "storefront Ajax change.js/add.js/cart.js browser response projection",
+  "removeStatus": 200,
+  "total_price": 9000
+}

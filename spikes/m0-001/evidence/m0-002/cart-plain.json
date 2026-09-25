@@ -1,0 +1,21 @@
+{
+  "at": "2026-09-24T23:35:54.057Z",
+  "currency": "USD",
+  "httpStatus": 200,
+  "item_count": 1,
+  "items": [
+    {
+      "final_line_price": 2000,
+      "final_price": 2000,
+      "line_price": 2000,
+      "price": 2000,
+      "properties": {},
+      "quantity": 1,
+      "sku": "INS-M0-001-BLK-S",
+      "variant_id": 50529053343902
+    }
+  ],
+  "operation": "plain Small quantity 1",
+  "provenance": "storefront Ajax cart.js browser response projection",
+  "total_price": 2000
+}

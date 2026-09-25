@@ -1,0 +1,12 @@
+{
+  "block": true,
+  "handle": "m0-001-same-variant",
+  "metafields": [
+    {
+      "namespace": "insignia_m0_001",
+      "key": "fixture",
+      "type": "json",
+      "value": "{\"allowedVariantIds\":[\"gid://shopify/ProductVariant/50529053343902\",\"gid://shopify/ProductVariant/50529054163102\"],\"unitPrice\":\"30.00\",\"currency\":\"USD\"}"
+    }
+  ]
+}

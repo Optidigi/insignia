@@ -1,0 +1,26 @@
+{
+  "cartTransforms": {
+    "nodes": [
+      {
+        "id": "gid://shopify/CartTransform/143130782",
+        "functionId": "01a0d5c4-ef9f-71bb-9d4e-aa3165dfa3ad",
+        "blockOnFailure": true,
+        "metafield": {
+          "id": "gid://shopify/Metafield/70423713644702",
+          "type": "json",
+          "jsonValue": {
+            "allowedVariantIds": [
+              "gid://shopify/ProductVariant/50529053343902",
+              "gid://shopify/ProductVariant/50529054163102"
+            ],
+            "unitPrice": "30.00",
+            "currency": "USD"
+          }
+        }
+      }
+    ],
+    "pageInfo": {
+      "hasNextPage": false
+    }
+  }
+}

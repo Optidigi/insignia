@@ -1,0 +1,7 @@
+{
+  "at": "2026-09-24T23:48:09.957Z",
+  "provenance": "native Admin order UI visible-text projection after partial fulfillment; buyer fields omitted",
+  "title": "insignia-staging · Orders · #1001 · Shopify",
+  "fulfillmentSection": "PaidPartially fulfilled\nYour payment gateway was in test mode when this order was created.\nBuy shipping label\nStandard\nFulfill by Monday, 28 September at 13:00\nDeliver by 1 October–5 October\nShop location\nINSIGNIA M0-001 fixture garment - do not buy\n\nBlack / Small\n\nSKU\nINS-M0-001-BLK-S\n\nUnit price\n$30,00\n\n×\n\n2\n\nTotal\n$60,00\n\n_insignia_m0_001: m0-001:m0-002-A-SPart of: INSIGNIA M0-001 fixture garment - do not buy\nINSIGNIA M0-001 fixture garment - do not buy\n\nBlack / Medium\n\nSKU\nINS-M0-001-BLK-M\n\nUnit price\n$30,00\n\n×\n\n2\n\nTotal\n$60,00\n\n_insignia_m0_001: m0-001:m0-002-A-MPart of: INSIGNIA M0-001 fixture garment - do not buy\nAdd tracking#1001-F1\n24 September 2026\nDeliver by 1 October–5 October\nShop location\nINSIGNIA M0-001 fixture garment - do not buy\n\nBlack / Small\n\nSKU\nINS-M0-001-BLK-S\n\nUnit price\n$20,00\n\n×\n\n1\n\nTotal\n$20,00\n\nINSIGNIA M0-001 fixture garment - do not buy\n\nBlack / Small\n\nSKU\nINS-M0-001-BLK-S\n\nUnit price\n$30,00\n\n×\n\n1\n\nTotal\n$30,00\n\n_insignia_m0_001: m0-001:m0-002-A-SPart of: INSIGNIA M0-001 fixture garment - do not buy\n",
+  "timelineEvent": "You marked 2 items as fulfilled from Shop location."
+}
