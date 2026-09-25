@@ -80,7 +80,8 @@ export function verifySet(lines: readonly PhysicalLine[], expected: ExpectedCont
     const claim = decodeAndVerifyToken(line.token, expected.keys);
     if (claim.generationHex !== expected.generationHex || claim.epoch !== expected.epoch ||
         claim.currency !== expected.currency || claim.country !== expected.country ||
-        claim.marketId !== expected.marketId || claim.validThroughDay < expected.shopLocalDay) {
+        claim.marketId !== expected.marketId || claim.validThroughDay < expected.shopLocalDay ||
+        claim.validThroughDay - expected.shopLocalDay > 2) {
       throw new Error('authorization disagrees with trusted current context');
     }
     if (claim.lineCount > expected.maxBuckets || seen.has(claim.lineIndex)) {

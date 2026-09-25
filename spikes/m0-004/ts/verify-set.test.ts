@@ -67,6 +67,36 @@ describe('pure complete-set verifier with harness-supplied independent context',
     expect(() => verifySet(accepted(), { ...context, shopLocalDay: 20800 })).not.toThrow();
   });
 
+  it('accepts only the fixed E-2 through E shop-local validity interval', () => {
+    const one: Claims = { ...base, lineCount: 1, lineIndex: 0, quantity: 1,
+      unitMinor: '100', totalQuantity: 1, totalMinor: '100' };
+    const signed = (claim: Claims, issuanceDay: number): PhysicalLine => ({
+      variantId: claim.variantId, quantity: claim.quantity, observedUnitMinor: claim.unitMinor,
+      token: issueToken(claim, key, issuanceDay), marked: true,
+      requiresAuthorization: true, hasSellingPlan: false,
+    });
+    const normal = signed(one, 20800);
+    for (const day of [20800, 20801, 20802]) {
+      expect(verifySet([normal], { ...context, shopLocalDay: day }).accepted).toBe(true);
+    }
+    for (const day of [20799, 20803]) {
+      expect(() => verifySet([normal], { ...context, shopLocalDay: day })).toThrow();
+    }
+    const future = { ...one, validThroughDay: 20850 };
+    expect(() => verifySet([signed(future, 20848)], { ...context, shopLocalDay: 20800 })).toThrow();
+    const earliest = { ...one, validThroughDay: 2 };
+    for (const day of [0, 1, 2]) {
+      expect(verifySet([signed(earliest, 0)], { ...context, shopLocalDay: day }).accepted).toBe(true);
+    }
+    expect(() => verifySet([signed(earliest, 0)], { ...context, shopLocalDay: 3 })).toThrow();
+    const latest = { ...one, validThroughDay: 0xffffffff };
+    for (const day of [0xfffffffd, 0xfffffffe, 0xffffffff]) {
+      expect(verifySet([signed(latest, 0xfffffffd)], { ...context, shopLocalDay: day }).accepted).toBe(true);
+    }
+    expect(() => verifySet([signed(latest, 0xfffffffd)], { ...context, shopLocalDay: 0xfffffffc })).toThrow();
+    expect(() => verifySet([normal], { ...context, shopLocalDay: 0x100000000 })).toThrow();
+  });
+
   it('allows separate complete sets during key overlap but rejects mixed-key members', () => {
     const rotatedFirst = { ...base, keyId: 8, setHex: '44'.repeat(16) };
     const rotatedSecond = { ...second, keyId: 8, setHex: '44'.repeat(16) };

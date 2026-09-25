@@ -90,6 +90,102 @@
       "reason": "magic"
     },
     {
+      "name": "highbit_magic_mask_01",
+      "token": "yVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMmjPPPyFj6CSrWCipYewjSKbMTfHTzBJPT9e3fG1d_NQo-NEtISH8rNgttPCAky6cNhXPwAm1q-M42y4OEbLODw",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_02",
+      "token": "SdNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMC-tRpyWgGBEGNdbjyIhsJ31RhCGow_sacnBjfACPBAawtV1v_sbzY29uRVbm2AsTHuQITJMSpJl2bxrork6BDw",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_03",
+      "token": "ydNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMmpafZnOedH-pwyKKEEwapu2S_6EkHWRFTvyd6Ipqm8zlSV_lrQ_xwPEdag9EX4p9numYFaHdu-Gi8Ih5lui-CQ",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_04",
+      "token": "SVPHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOM8A4aVFASTgoc1q71M56QXQTGM6xhAw3_9MIK2J8z6FBVKm4LCeylaKni2GV4l6Gnuq7Xf7C2NsqPBdXkOQSnBw",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_05",
+      "token": "yVPHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMgbaGHA8mLnQhHm86uvkjhgpiIKu8bdiuk-rJitkBWbM6E9VpDV6W3G_m1LtOhHs_qQ_wdn06UwidO9wVqiRkAA",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_06",
+      "token": "SdPHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMiopXGv4ppMiq_3N09S7z1Uc9nJj0s4autMOQKSAf70SputF60ZpDgjJKCvbfnU8GRovHHmtbqgkLFeCUKbtlDg",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_07",
+      "token": "ydPHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMKnd4O6gMes7yFDzipk8F5IMgImqec52z0xXUqwTIyDqvOOyH0och9YNKB3MkYqMKB4goJPGQD6P_bRZ2LpomDQ",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_08",
+      "token": "SVNHsQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMAzSqwKaVsrdn4L1CmqHvqe9dT6Wk79Rp0NtO4ubWTYcnp7yhZ7OHLMQFjA--GF9PE4ZWNnZ4pglzaddYXh1dCw",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_09",
+      "token": "yVNHsQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMWoG6RddJ_6ZFwvknTrUkwRu5K9qjQW9MOniHrU8Rekbhs63hnl3ybVQIyYJ6a5MqIeDLXieBfrF4cnoibPInBQ",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_0a",
+      "token": "SdNHsQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMcrKTo-TCLO0nu0lIeWhyTlNJAGmWnyjJX2bLO8yoE9UwknNr5Qa8ZWx6aNwjjdbEUILISY8xa0eBKA93lVRVDA",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_0b",
+      "token": "ydNHsQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMj7Ler6td7DPUJxVsXudqTtvfP0yG-sKl9n1kyFFVcyS6jAlqd8gxdBuTSg1SJbg6wOnn7UggnAKQ_G7vZcsnDA",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_0c",
+      "token": "SVPHsQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMqS_D27BoeiUWzV3tA5zDWxgHjt44yh3rbDe6rKZSomtLTIRl3Q7y97hGviQXVTpN82Ut2McqkFKRcXVylpisAg",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_0d",
+      "token": "yVPHsQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMuD4jP2UuxMH5btAdmknrUJOybpKhLogLs8ZM-0n-DDCIwWWLaBEy1qgnZbKNA-9eE0ViSz2oxO6pDQrSa3-VDA",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_0e",
+      "token": "SdPHsQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMW_QKUdimQ4-AzohrbMG5JEKQLnKNQOgCKdtVrWyEijH_0QM1Tzc6yu-qUDkzl6oitW0nskHJ7xLLDbMfzgdmCA",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_mask_0f",
+      "token": "ydPHsQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMb8ZFEb0XU9nV-W39ShiGR4RLsYgPVpBCTK2ZX1IOg1183er9YSMr0ECbX0ZjZW7gKHxOZ44nQ7ng1XE0qMQMCg",
+      "expectedAccept": false,
+      "reason": "raw magic"
+    },
+    {
+      "name": "highbit_magic_unresigned",
+      "token": "yVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "signature control"
+    },
+    {
       "name": "wrong_version",
       "token": "SVNHMQIAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMdBKbb9efsBpDz-EpZniE0-rnchQrqnZjQCahKuGho34oUD-wNCRJQSXvypANLJ1_IPEPcWdj_F7iv4XQpfkFAA",
       "expectedAccept": false,
@@ -184,6 +280,25 @@
       "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBJifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
       "expectedAccept": false,
       "reason": "signature"
+    },
+    {
+      "name": "weak_identity_key_r_identity_s_zero",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "publicKeyHex": "0100000000000000000000000000000000000000000000000000000000000000",
+      "expectedAccept": false,
+      "reason": "strict weak-key profile"
+    },
+    {
+      "name": "normal_key_rejects_identity_signature",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+      "expectedAccept": false,
+      "reason": "normal-key negative control"
+    },
+    {
+      "name": "noncanonical_signature_scalar",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlft0_VcGmMSWNac96Le-d4UAAAAAAAAAAAAAAAAAAAAEA",
+      "expectedAccept": false,
+      "reason": "noncanonical S scalar"
     },
     {
       "name": "truncated",

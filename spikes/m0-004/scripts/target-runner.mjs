@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
+import { sign } from 'node:crypto';
 import { readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   getFunctionInfo, loadInputQuery, loadSchema, runFunction, validateTestAssets,
 } from '@shopify/shopify-function-test-helpers';
-import { issueToken, privateKeyFromSeed } from '../ts/authorization.ts';
+import { decodePayload, issueToken, privateKeyFromSeed, SIGNING_PREFIX } from '../ts/authorization.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const spike = path.resolve(here, '..');
@@ -53,6 +54,48 @@ function signedInput(target, n, ordinaryCount = 0, quantityPerBucket = 1) {
   return input;
 }
 
+function ordinaryInput(target, count = 200) {
+  const input = signedInput(target, 1, count - 1);
+  input.cart.lines[0].auth = null;
+  input.cart.lines[0].merchandise.product.policy = { value: 'optional' };
+  return input;
+}
+
+function withPublicCapacity(input, changes) {
+  const config = JSON.parse(input.shop.publicConfig.value);
+  input.shop.publicConfig.value = JSON.stringify({ ...config, ...changes });
+  return input;
+}
+
+function withFutureExpiry(input, expiryDay) {
+  const line = input.cart.lines[0];
+  const payload = Buffer.from(line.auth.value, 'base64url').subarray(0, 114);
+  const claim = decodePayload(payload);
+  line.auth.value = issueToken({ ...claim, validThroughDay: expiryDay }, signingKey, expiryDay - 2);
+  return input;
+}
+
+function withHighbitSignedMagic(input) {
+  const line = input.cart.lines[0];
+  const payload = Buffer.from(line.auth.value, 'base64url').subarray(0, 114);
+  payload[0] |= 0x80;
+  const signature = sign(null, Buffer.concat([SIGNING_PREFIX, payload]), signingKey);
+  line.auth.value = Buffer.concat([payload, signature]).toString('base64url');
+  return input;
+}
+
+function withIdentityKeyForgery(input) {
+  const line = input.cart.lines[0];
+  const payload = Buffer.from(line.auth.value, 'base64url').subarray(0, 114);
+  const identity = Buffer.concat([Buffer.from([1]), Buffer.alloc(31)]);
+  const forgedSignature = Buffer.concat([identity, Buffer.alloc(32)]);
+  line.auth.value = Buffer.concat([payload, forgedSignature]).toString('base64url');
+  const config = JSON.parse(input.shop.publicConfig.value);
+  config.keys[0].publicHex = identity.toString('hex');
+  input.shop.publicConfig.value = JSON.stringify(config);
+  return input;
+}
+
 function expectedTransform(input) {
   return { operations: input.cart.lines.filter(line => line.auth).map(line => ({
     lineExpand: {
@@ -79,7 +122,9 @@ async function prepare(target) {
   };
 }
 
-async function execute(prepared, input, expectedOutput, { assertOutput = true, caseName = 'complete' } = {}) {
+async function execute(prepared, input, expectedOutput, {
+  assertOutput = true, caseName = 'complete', knownLimitation = null,
+} = {}) {
   const fixture = { target: prepared.targetName, export: prepared.run.export, input, expectedOutput };
   const validation = await validateTestAssets({ schema: prepared.schema, fixture, inputQueryAST: prepared.query });
   assert.deepEqual(validation.inputQuery.errors, [], 'schema-invalid input query');
@@ -107,7 +152,7 @@ async function execute(prepared, input, expectedOutput, { assertOutput = true, c
     binaryBytes, inputBytes, outputBytes, instructions,
     memoryUsageKiB,
     stackPeak: null, queryCost: null,
-    runnerError: actual.error,
+    runnerError: actual.error, knownLimitation,
     withinMeasuredReferenceLimits: instructions !== null && outputBytes !== null && memoryUsageKiB !== null &&
       binaryBytes <= LIMIT.binaryBytes && inputBytes <= LIMIT.inputBytes &&
       outputBytes <= LIMIT.outputBytes && instructions <= LIMIT.instructions &&
@@ -158,6 +203,27 @@ if (mode === 'smoke') {
   const transformBad = structuredClone(baseT);
   transformBad.cart.lines.at(-1).auth.value = badSignature.cart.lines.at(-1).auth.value;
   rows.push(await execute(transform, transformBad, { operations: [] }, { caseName: 'invalid signature at last member' }));
+  const unsigned = structuredClone(baseV);
+  for (const line of unsigned.cart.lines) line.auth = null;
+  const missingPolicy = structuredClone(unsigned);
+  for (const line of missingPolicy.cart.lines) line.merchandise.product.policy = null;
+  rows.push(await execute(validation, missingPolicy, { operations: [] }, {
+    caseName: 'KNOWN_LIMIT_missing_policy_unsigned_allows',
+    knownLimitation: 'Missing independent required-product identity/policy can allow an unsigned required product; not live enforcement evidence',
+  }));
+  const optionalPlain = structuredClone(unsigned);
+  for (const line of optionalPlain.cart.lines) line.merchandise.product.policy = { value: 'optional' };
+  rows.push(await execute(validation, optionalPlain, { operations: [] }, { caseName: 'ordinary optional unsigned control' }));
+  rows.push(await execute(validation, unsigned, rejectOutput(), { caseName: 'known required unsigned control' }));
+  for (const target of [transform, validation]) {
+    const expectedReject = target.target === 'transform' ? { operations: [] } : rejectOutput();
+    rows.push(await execute(target, withFutureExpiry(signedInput(target.target, 1), 20850), expectedReject,
+      { caseName: 'future-dated valid signature outside E-2 through E' }));
+    rows.push(await execute(target, withHighbitSignedMagic(signedInput(target.target, 1)), expectedReject,
+      { caseName: 'independently signed highbit magic rejection' }));
+    rows.push(await execute(target, withIdentityKeyForgery(signedInput(target.target, 1)), expectedReject,
+      { caseName: 'identity-key R-identity S-zero forgery rejection' }));
+  }
 } else {
   for (const n of [1, 2, 3, 4, 10, 32, 64]) {
     const t = signedInput('transform', n);
@@ -193,6 +259,28 @@ if (mode === 'smoke') {
   for (const target of [transform, validation]) {
     const input = signedInput(target.target, 5, 0, 2000);
     rows.push(await execute(target, input, target.target === 'transform' ? expectedTransform(input) : { operations: [] }, { caseName: '10000 physical units in five schema-legal 2000-quantity buckets' }));
+  }
+  for (const target of [transform, validation]) {
+    const expectedReject = target.target === 'transform' ? { operations: [] } : rejectOutput();
+    rows.push(await execute(target, ordinaryInput(target.target), { operations: [] }, { caseName: 'zero signed with 200 ordinary lines' }));
+    const firstBadSignature = signedInput(target.target, 10);
+    const firstBytes = Buffer.from(firstBadSignature.cart.lines[0].auth.value, 'base64url');
+    firstBytes[114] ^= 1;
+    firstBadSignature.cart.lines[0].auth.value = firstBytes.toString('base64url');
+    rows.push(await execute(target, firstBadSignature, expectedReject, { caseName: 'invalid signature at first member' }));
+    const missing = signedInput(target.target, 10);
+    missing.cart.lines.pop();
+    rows.push(await execute(target, missing, expectedReject, { caseName: 'missing tenth member' }));
+    const duplicate = signedInput(target.target, 10);
+    duplicate.cart.lines[1].auth.value = duplicate.cart.lines[0].auth.value;
+    rows.push(await execute(target, duplicate, expectedReject, { caseName: 'duplicate first bucket index' }));
+    const malformed = signedInput(target.target, 10);
+    malformed.cart.lines[0].auth.value = `+${malformed.cart.lines[0].auth.value.slice(1)}`;
+    rows.push(await execute(target, malformed, expectedReject, { caseName: 'malformed token at first member' }));
+    rows.push(await execute(target, withPublicCapacity(signedInput(target.target, 10), { maxBuckets: 4 }), expectedReject,
+      { caseName: 'ten signed buckets exceed trusted bucket cap four' }));
+    rows.push(await execute(target, withPublicCapacity(signedInput(target.target, 5, 0, 2000), { maxPhysicalQuantity: 9999 }), expectedReject,
+      { caseName: '10000 units exceed trusted physical cap 9999' }));
   }
 }
 console.log(JSON.stringify({ mode, limits: LIMIT, rows }, null, 2));

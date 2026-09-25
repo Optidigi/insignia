@@ -4,6 +4,7 @@ export const PAYLOAD_BYTES = 114;
 export const TOKEN_BYTES = 178;
 export const TOKEN_CHARACTERS = 238;
 export const SIGNING_PREFIX = Buffer.from('Insignia\0CartAuthorization\0v1\0', 'ascii');
+const MAGIC = Buffer.from([0x49, 0x53, 0x47, 0x31]);
 const U64_MAX = (1n << 64n) - 1n;
 
 // This versioned mathematical table is for local vectors, not a statement of
@@ -114,7 +115,7 @@ export function encodePayload(value: Claims): Buffer {
 
 export function decodePayload(payload: Uint8Array): Claims {
   const b = Buffer.from(payload);
-  if (b.length !== PAYLOAD_BYTES || b.toString('ascii', 0, 4) !== 'ISG1') throw new Error('bad payload length/magic');
+  if (b.length !== PAYLOAD_BYTES || !b.subarray(0, 4).equals(MAGIC)) throw new Error('bad payload length/magic');
   if (b.readUInt8(4) !== 1 || b.readUInt8(5) !== 0) throw new Error('unsupported version/flags');
   if (![...b.subarray(84, 87), ...b.subarray(88, 90)].every(byte => byte >= 65 && byte <= 90)) {
     throw new Error('currency/country must contain raw uppercase ASCII bytes');

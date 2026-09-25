@@ -78,6 +78,17 @@ def flip(name, offset, value, reason, resign=False):
 
 
 flip("wrong_magic", 0, ord("X"), "magic", True)
+# Every nonempty high-bit mask over ISG1 is a distinct noncanonical header.
+# Sign each malformed payload independently to test parsing before signature.
+for mask in range(1, 16):
+    highbit_magic = bytearray(raw0)
+    for offset in range(4):
+        if mask & (1 << offset):
+            highbit_magic[offset] |= 0x80
+    bad(f"highbit_magic_mask_{mask:02x}", bytes(highbit_magic), "raw magic", True)
+highbit_unresigned = bytearray(raw0)
+highbit_unresigned[0] |= 0x80
+bad("highbit_magic_unresigned", bytes(highbit_unresigned), "signature control")
 flip("wrong_version", 4, 2, "version", True)
 flip("reserved_flag", 5, 1, "flags", True)
 flip("unknown_key", 7, 8, "key", True)
@@ -99,6 +110,19 @@ changed_sig = bytearray(sig0)
 changed_sig[0] ^= 1
 invalid.append(dict(name="invalid_signature", token=b64(raw0 + changed_sig),
                     expectedAccept=False, reason="signature"))
+identity = b"\x01" + b"\x00" * 31
+identity_r_zero_s = identity + b"\x00" * 32
+invalid.append(dict(name="weak_identity_key_r_identity_s_zero",
+                    token=b64(raw0 + identity_r_zero_s),
+                    publicKeyHex=identity.hex(), expectedAccept=False,
+                    reason="strict weak-key profile"))
+invalid.append(dict(name="normal_key_rejects_identity_signature",
+                    token=b64(raw0 + identity_r_zero_s),
+                    expectedAccept=False, reason="normal-key negative control"))
+order_l = bytes.fromhex("edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010")
+invalid.append(dict(name="noncanonical_signature_scalar",
+                    token=b64(raw0 + sig0[:32] + order_l),
+                    expectedAccept=False, reason="noncanonical S scalar"))
 invalid.append(dict(name="truncated", token=token0[:-2], expectedAccept=False, reason="length"))
 invalid.append(dict(name="padding", token=token0 + "=", expectedAccept=False, reason="padding"))
 invalid.append(dict(name="invalid_alphabet", token="+" + token0[1:], expectedAccept=False, reason="alphabet"))

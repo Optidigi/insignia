@@ -8,6 +8,7 @@ export SHOPIFY_CLI_NO_ANALYTICS=1
 corepack pnpm install --frozen-lockfile
 export PATH="$spike_dir/node_modules/.bin:$PATH"
 corepack pnpm check:ts
+node scripts/probe-strict-profile.mjs
 
 for crate in rust/authorization extensions/transform extensions/validation; do
   cargo fmt --manifest-path "$crate/Cargo.toml" --all -- --check
