@@ -1,0 +1,17 @@
+{
+  "observedAtUtc": "2026-09-25T12:48:50.321Z",
+  "source": "T3 preview_evaluate read-only native form projection immediately before the 12:49:17Z fulfillment; transcribed from tool output after the action",
+  "store": "insignia-staging",
+  "orderNumericId": "7185278173342",
+  "selectionSummary": "1 item selected",
+  "summaryIndeterminate": true,
+  "location": "Shop location",
+  "notificationChecked": false,
+  "rows": [
+    {"marker": "M0-003R-R-20260925-plain-small", "checked": false, "effectiveQuantity": 0, "collapsedDisplay": "×\n\n1"},
+    {"marker": "m0-001:m0-003r-R-S-20260925", "checked": true, "effectiveQuantity": 1, "collapsedDisplay": null},
+    {"marker": "m0-001:m0-003r-R-M-20260925", "checked": false, "effectiveQuantity": 0, "collapsedDisplay": "×\n\n2"}
+  ],
+  "apiContext": "order-R-immediate-pre-submit.json",
+  "croppedScreenshot": "candidate-R-pre-submit-crop.png"
+}

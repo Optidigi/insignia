@@ -12,10 +12,10 @@
   "newPurchasedUnits": 13,
   "receiptFiles": {
     "README.md": {
-      "sha256": "56836905bb417786f3648d6e79eba9c14c91e22f614c6eaed9264fae8dd28e8d",
-      "bytes": 8697,
+      "sha256": "9601364e0bc4e878c6a4d30931308d4a35cf966673a0c019c5fe30d022729707",
+      "bytes": 9424,
       "kind": "evidence_index",
-      "localFileModifiedUtc": "2026-09-25T13:31:40.714373Z"
+      "localFileModifiedUtc": "2026-09-25T13:46:21.254790Z"
     },
     "after-first-pay-click-orders.json": {
       "sha256": "923c8f05daa607efbe52e4617bed1ea961836114bcde45323bb1da288cd01af6",
@@ -75,7 +75,13 @@
       "sha256": "069081ab3bc768103769e93e6698f54a1a1b135103abaf9a817c1adba44d7fde",
       "bytes": 823,
       "kind": "native_or_storefront_projection",
-      "localFileModifiedUtc": "2026-09-25T13:35:09.857669Z"
+      "localFileModifiedUtc": "2026-09-25T13:45:44.014405Z"
+    },
+    "candidate-R-immediate-pre-submit.json": {
+      "sha256": "893db95d87e70eba9ef32e6e28452780ac75115e561b0ca27c60219099d30dcc",
+      "bytes": 898,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T13:41:59.496075Z"
     },
     "candidate-R-one-refund-form.json": {
       "sha256": "4dc0ca145a1e592dd32eb432d144a174e096ccfa45a2a93f3ecd799a3bbf031b",
@@ -153,7 +159,7 @@
       "sha256": "651b7333d87e38768c5224244664c2918f556f9c6fee9821a863619ae52e5c07",
       "bytes": 576,
       "kind": "native_or_storefront_projection",
-      "localFileModifiedUtc": "2026-09-25T13:35:09.802668Z"
+      "localFileModifiedUtc": "2026-09-25T13:45:43.952403Z"
     },
     "control-C-pre-submit-crop.png": {
       "sha256": "f5388dbb6a19650e60639066826208097b9b21fbdff4d26dcddec59ee6e43525",
@@ -166,6 +172,18 @@
       "bytes": 921,
       "kind": "native_or_storefront_projection",
       "localFileModifiedUtc": "2026-09-25T12:24:21.333613Z"
+    },
+    "fixture-post-cleanup-crop.png": {
+      "sha256": "14b59286cde0a2966fc5dacb10ddc36b63b3b661f13fa03bf34b7ba171dd05e2",
+      "bytes": 26886,
+      "kind": "cropped_native_browser_screenshot",
+      "localFileModifiedUtc": "2026-09-25T13:43:42.621145Z"
+    },
+    "fixture-post-cleanup-ui.json": {
+      "sha256": "a9366a19c10faf5ec8d6220ebda77478be39aad620b8238ed2ae7ec62b4d84ef",
+      "bytes": 483,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T13:44:01.032336Z"
     },
     "fulfillment-C-after-partial.json": {
       "sha256": "919a5f07cda12d5e35e0e4d8b1cc0298e05964411f525374a029889f11bfb7fb",
@@ -196,6 +214,18 @@
       "bytes": 4302,
       "kind": "direct_shopify_cli_api_response",
       "localFileModifiedUtc": "2026-09-25T13:12:12.589668Z"
+    },
+    "order-B-cancellation-readback.json": {
+      "sha256": "f22b0049602131106d2ad29cb4a5a76a57f4fa98015be239dbd9d92a6c987fe5",
+      "bytes": 366,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:42:25.893348Z"
+    },
+    "order-B-cancellation.graphql": {
+      "sha256": "ded6787593f08267b1747c6c255f2df6809b1fab25f95a4e36ffd4c0d2bc38b1",
+      "bytes": 210,
+      "kind": "executed_graphql_request",
+      "localFileModifiedUtc": "2026-09-25T13:41:59.497075Z"
     },
     "order-B.variables.json": {
       "sha256": "479e695ac3cd56198e1809b0734b343bc555b9fd5981512dc6358fa2c42b7f29",
@@ -272,7 +302,7 @@
     "order-R-immediate-pre-submit.json": {
       "sha256": "771fda1bdc7a33ea633eddb87a66944d4605ceff398b8af3b92eed76e22bd04e",
       "bytes": 8542,
-      "kind": "direct_shopify_cli_api_response",
+      "kind": "native_or_storefront_projection",
       "localFileModifiedUtc": "2026-09-25T12:49:01.992643Z"
     },
     "order-R.variables.json": {

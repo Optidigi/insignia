@@ -40,6 +40,11 @@ class NativeSelectionGuardTest(unittest.TestCase):
         order["order"]["fulfillmentOrders"]["nodes"][0]["lineItems"]["nodes"].pop()
         self.assertFalse(check(self.form, order, TARGET)["allowed"])
 
+    def test_paginated_api_inventory_rejected(self):
+        order = copy.deepcopy(self.order)
+        order["order"]["lineItems"]["pageInfo"]["hasNextPage"] = True
+        self.assertFalse(check(self.form, order, TARGET)["allowed"])
+
     def test_expanded_candidate_maps_all_physical_children(self):
         form = json.loads((ROOT / "candidate-R-form.json").read_text())
         order = json.loads((ROOT / "order-R-before-partial.json").read_text())

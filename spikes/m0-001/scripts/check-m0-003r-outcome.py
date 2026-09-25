@@ -2,6 +2,7 @@
 """Reconcile M0-003R's native actions against direct Shopify API receipts."""
 
 import json
+from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -101,6 +102,15 @@ assert rt["lineItemGroup"] and rm["lineItemGroup"] and rp["lineItemGroup"] is No
 assert rt["lineItemGroup"]["quantity"] == 3 and rm["lineItemGroup"]["quantity"] == 2
 assert read("candidate-R-guard.json")["allowed"] is True
 assert [(x["lineItemId"], x["effectiveQuantity"]) for x in read("candidate-R-guard.json")["resolved"]] == [(rp["id"], 0), (rt["id"], 1), (rm["id"], 0)]
+immediate = read("candidate-R-immediate-pre-submit.json")
+assert immediate["selectionSummary"] == "1 item selected" and immediate["notificationChecked"] is False
+assert immediate["location"] == "Shop location"
+assert [(x["marker"], x["checked"], x["effectiveQuantity"]) for x in immediate["rows"]] == [
+    ("M0-003R-R-20260925-plain-small", False, 0),
+    ("m0-001:m0-003r-R-S-20260925", True, 1),
+    ("m0-001:m0-003r-R-M-20260925", False, 0),
+]
+assert datetime.fromisoformat(immediate["observedAtUtc"].replace("Z", "+00:00")) < datetime.fromisoformat(order("fulfillment-R-after-partial.json")["fulfillments"][0]["createdAt"].replace("Z", "+00:00"))
 assert fulfillment_multiset("fulfillment-R-after-partial.json") == [("gid://shopify/Fulfillment/6512343908510", [(rt["id"], 1)])]
 assert [(line_by_marker(r1, marker)["unfulfilledQuantity"]) for marker in ("M0-003R-R-20260925-plain-small", "m0-001:m0-003r-R-S-20260925", "m0-001:m0-003r-R-M-20260925")] == [1, 2, 2]
 assert sorted(fulfillment_multiset("fulfillment-R-after-remainder.json")) == sorted([
@@ -127,6 +137,9 @@ assert money(b1["totalRefundedSet"]) == Decimal("90") and b1["displayFinancialSt
 assert b1["lineItems"]["nodes"][0]["unfulfilledQuantity"] == 0
 assert b1["fulfillmentOrders"]["nodes"][0]["status"] == "CLOSED"
 assert b1["fulfillmentOrders"]["nodes"][0]["lineItems"]["nodes"][0]["remainingQuantity"] == 0
+cancel = order("order-B-cancellation-readback.json")
+assert cancel["id"] == b0["id"] and cancel["cancelReason"] == "OTHER" and cancel["cancelledAt"]
+assert cancel["displayFinancialStatus"] == "REFUNDED" and money(cancel["totalRefundedSet"]) == Decimal("90")
 bs0, bs1 = stock("stock-B-accepted.json"), stock("stock-B-after-cancel.json")
 assert bs1[SMALL]["available"] == bs0[SMALL]["available"] + 3
 assert bs1[SMALL]["committed"] == bs0[SMALL]["committed"] - 3
@@ -149,6 +162,10 @@ assert read("transform-delete-response.json")["cartTransformDelete"] == {"delete
 assert read("versions-before.json")["versions"] == read("versions-after.json")["versions"]
 assert (ROOT / "control-C-pre-submit-crop.png").read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 assert (ROOT / "candidate-R-pre-submit-crop.png").read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
+ui = read("fixture-post-cleanup-ui.json")
+assert ui["store"] == "insignia-staging" and ui["productNumericId"] == "10294344482974"
+assert ui["archived"] is True and ui["publishingText"] == "This product is not published anywhere" and ui["unsavedChanges"] is False
+assert (ROOT / "fixture-post-cleanup-crop.png").read_bytes().startswith(b"\x89PNG\r\n\x1a\n")
 outcome = read("outcome.json")
 assert outcome["nativeWorkflowOutcome"] == "PASS_OBSERVED_PROCEDURE"
 assert outcome["requestCapture"] == "UNAVAILABLE_NOT_REQUIRED_FOR_THIS_TEST"

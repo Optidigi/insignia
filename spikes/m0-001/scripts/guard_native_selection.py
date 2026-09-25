@@ -15,6 +15,10 @@ def check(form, receipt, target_marker):
     order = receipt.get("order") or {}
     if form.get("store") != "insignia-staging" or form.get("orderNumericId") != order.get("id", "").rsplit("/", 1)[-1]:
         errors.append("store or order identity mismatch")
+    if order.get("test") is not True or order.get("displayFinancialStatus") != "PAID":
+        errors.append("order is not a paid test order")
+    if order.get("lineItems", {}).get("pageInfo", {}).get("hasNextPage") is not False:
+        errors.append("order line inventory paginated or unknown")
     if form.get("sectionTitle") != "Mark as fulfilled" or form.get("locationText") != "Shop location":
         errors.append("native form or location mismatch")
     if form.get("customerNotificationChecked") is not False:
@@ -32,6 +36,8 @@ def check(form, receipt, target_marker):
     if len(fos) != 1 or fos[0].get("assignedLocation", {}).get("location", {}).get("id") != "gid://shopify/Location/89465290910":
         errors.append("fulfillment order or location mismatch")
     for fo in fos:
+        if fo.get("lineItems", {}).get("pageInfo", {}).get("hasNextPage") is not False:
+            errors.append("fulfillment line inventory paginated or unknown")
         for fol in fo.get("lineItems", {}).get("nodes", []):
             lid = fol.get("lineItem", {}).get("id")
             if lid in fol_by_line:
