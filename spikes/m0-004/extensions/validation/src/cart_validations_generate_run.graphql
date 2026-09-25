@@ -14,7 +14,7 @@ query Input {
         __typename
         ... on ProductVariant {
           id
-          product { policy: metafield(namespace: "insignia_m0_004", key: "policy") { value } }
+          product { policy: metafield(key: "m0_004_policy") { value } }
         }
       }
     }
@@ -22,6 +22,6 @@ query Input {
   localization { country { isoCode } market { id } }
   shop {
     localTime { date }
-    publicConfig: metafield(namespace: "insignia_m0_004", key: "public_config") { value }
+    publicConfig: metafield(key: "m0_004_public_config") { value }
   }
 }
