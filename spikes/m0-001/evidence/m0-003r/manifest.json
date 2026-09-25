@@ -12,10 +12,10 @@
   "newPurchasedUnits": 13,
   "receiptFiles": {
     "README.md": {
-      "sha256": "37bcedd32f36bc9f50cc1dfa1047b3a72235be84a937b98c756d42f99d24d6e2",
-      "bytes": 9497,
+      "sha256": "d16432a6ee9ec39829c80ef92ae5dd2254b5089a83a8bfc9bad7e9d01040cec9",
+      "bytes": 9766,
       "kind": "evidence_index",
-      "localFileModifiedUtc": "2026-09-25T14:01:13.386013Z"
+      "localFileModifiedUtc": "2026-09-25T14:09:57.184364Z"
     },
     "after-first-pay-click-orders.json": {
       "sha256": "923c8f05daa607efbe52e4617bed1ea961836114bcde45323bb1da288cd01af6",
@@ -336,10 +336,10 @@
       "localFileModifiedUtc": "2026-09-25T11:34:47.447435Z"
     },
     "outcome.json": {
-      "sha256": "3c1c1e478e930ac56fdc207359c2a38da768329a8fe5767ac26f706c4577e8b7",
-      "bytes": 2760,
+      "sha256": "c87374ed83e0727e3b9605f3315fcea21038ffbc0584856f5e5029c673665862",
+      "bytes": 2920,
       "kind": "local_runtime_or_outcome_projection",
-      "localFileModifiedUtc": "2026-09-25T13:28:35.007334Z"
+      "localFileModifiedUtc": "2026-09-25T14:06:43.138382Z"
     },
     "post-active-pre-publish.json": {
       "sha256": "45c59d530d9bc3236645a4c4fa2d3b74f3629593084ca516dc8d6ca64b4bd82c",
@@ -394,6 +394,12 @@
       "bytes": 2719,
       "kind": "local_runtime_or_outcome_projection",
       "localFileModifiedUtc": "2026-09-25T11:45:22.523270Z"
+    },
+    "runtime-execution.json": {
+      "sha256": "2f8cd777637361418a0f610f07153ce15d8b1eab839a301f5fa45c1b3bd4f490",
+      "bytes": 852,
+      "kind": "local_runtime_or_outcome_projection",
+      "localFileModifiedUtc": "2026-09-25T14:05:02.942358Z"
     },
     "runtime.json": {
       "sha256": "1f1a3bf9c0035d686c97677edc39674d977875505bd4d7319bff124f01b56311",
