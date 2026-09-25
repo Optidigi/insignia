@@ -1,0 +1,87 @@
+{
+  "record_date": "2026-09-25",
+  "principal": "ChatGPT, Insignia Rewrite Project",
+  "repository": "Optidigi/insignia",
+  "repository_id": 1386102402,
+  "pr": 3,
+  "base_sha": "0f87be149247ea6720984f2cefdc557423001661",
+  "head_sha": "a64f5939f9f9871e274868d4d9c10ed3dbbd890b",
+  "effective_merge_base_sha": "0f87be149247ea6720984f2cefdc557423001661",
+  "observed_pr_state": "open",
+  "observed_merged": false,
+  "observed_mergeable": true,
+  "verdict": "APPROVED",
+  "approved_scope": "Partial M0-001 harness and bounded activation checkpoint, not completed lifecycle gate",
+  "ci": {
+    "run_id": 36068575630,
+    "job_id": 107863966407,
+    "conclusion": "success",
+    "associated_head_sha": "a64f5939f9f9871e274868d4d9c10ed3dbbd890b",
+    "actual_checkout_sha": "f1872b8db4ed5d50b870fcc3d41a080f40c67780",
+    "checkout_parents": [
+      "0f87be149247ea6720984f2cefdc557423001661",
+      "a64f5939f9f9871e274868d4d9c10ed3dbbd890b"
+    ],
+    "checkout_and_head_tree_sha": "ffc86a794e54bc02f080859e164a666e424d6406",
+    "native_tests_observed_in_logs": 2,
+    "wasm_tests_observed_in_logs": 11,
+    "job_logs_read": true,
+    "independently_rerun_by_principal": false
+  },
+  "canonical_record_checks": {
+    "implementation-plan.md": {
+      "sha256_computed": "c0432288deb778c4d717871d6f771f95e401d00b6a3caf1b878155cbf0e5422d",
+      "git_blob_computed": "d3d7d9c155cdcdcc3b88aeaaa77eebb10d8a767d",
+      "git_blob_observed_at_reviewed_head": "d3d7d9c155cdcdcc3b88aeaaa77eebb10d8a767d",
+      "matches_v1_1_archive": true,
+      "archive_member": "insignia-handoff/docs/architecture/implementation-plan.md",
+      "bytes": 117918
+    },
+    "decision-ledger.md": {
+      "sha256_computed": "0c6c02bab83fb5032548c3d1be1f86ea1492ae3cfd26b6cacc8410f7d08737bb",
+      "git_blob_computed": "3544e054bb52c11713b2bc1c96cdf6d7a2264936",
+      "git_blob_observed_at_reviewed_head": "3544e054bb52c11713b2bc1c96cdf6d7a2264936",
+      "matches_v1_1_archive": true,
+      "archive_member": "insignia-handoff/docs/architecture/decision-ledger.md",
+      "bytes": 6287
+    }
+  },
+  "scope": {
+    "changed_files": 39,
+    "commits_ahead_of_base": 6,
+    "entire_change_inventory_read": true,
+    "hand_authored_core_code_read": true,
+    "representative_fixtures_read": true,
+    "every_generated_schema_or_dependency_line_audited": false
+  },
+  "native_review": {
+    "attempted": true,
+    "event": "APPROVE",
+    "commit_id": "a64f5939f9f9871e274868d4d9c10ed3dbbd890b",
+    "posted": false,
+    "http_status": 403,
+    "message": "Resource not accessible by integration"
+  },
+  "principal_actions": {
+    "repository_edits": false,
+    "merge": false,
+    "shopify_mutations": false,
+    "local_rust_wasm_execution": false
+  },
+  "access_limitations": [
+    "Direct Git access in principal runtime failed DNS; used GitHub connector.",
+    "Principal did not operate staging/shared browser.",
+    "Activation transcript is reconstructed, not a platform audit log.",
+    "CI logs read, not independently rerun.",
+    "No remote uploaded Wasm hash was verified."
+  ],
+  "next_slice": "M0-002",
+  "gate_state": {
+    "G1": "IN_PROGRESS",
+    "G2-G8": "NOT_RUN"
+  },
+  "owner_update": {
+    "browser": "Owner/local agent report shared staging Admin authenticated; must recheck before use",
+    "designated_location": "gid://shopify/Location/89465290910"
+  }
+}

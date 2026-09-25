@@ -1,0 +1,32 @@
+{
+  "inventoryAdjustQuantities": {
+    "inventoryAdjustmentGroup": {
+      "createdAt": "2026-09-24T23:32:18Z",
+      "reason": "correction",
+      "referenceDocumentUri": "gid://insignia/M0002FixtureSeed/20260924-1",
+      "changes": [
+        {
+          "name": "available",
+          "delta": 12,
+          "quantityAfterChange": null
+        },
+        {
+          "name": "available",
+          "delta": 12,
+          "quantityAfterChange": null
+        },
+        {
+          "name": "on_hand",
+          "delta": 12,
+          "quantityAfterChange": null
+        },
+        {
+          "name": "on_hand",
+          "delta": 12,
+          "quantityAfterChange": null
+        }
+      ]
+    },
+    "userErrors": []
+  }
+}

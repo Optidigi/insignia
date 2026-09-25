@@ -1,0 +1,9 @@
+mutation M0002FixtureSeed($input: InventoryAdjustQuantitiesInput!, $key: String!) {
+  inventoryAdjustQuantities(input: $input) @idempotent(key: $key) {
+    inventoryAdjustmentGroup {
+      createdAt reason referenceDocumentUri
+      changes { name delta quantityAfterChange }
+    }
+    userErrors { code field message }
+  }
+}

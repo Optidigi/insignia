@@ -1,0 +1,14 @@
+[
+  {
+    "versionId": "gid://shopify/Version/1143112728577",
+    "versionTag": "insignia-2",
+    "status": "active",
+    "createdAt": "2026-09-24 19:21:28"
+  },
+  {
+    "versionId": "gid://shopify/Version/1143112335361",
+    "versionTag": "insignia-1",
+    "status": "inactive",
+    "createdAt": "2026-09-24 19:21:12"
+  }
+]

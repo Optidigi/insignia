@@ -1,0 +1,9 @@
+mutation M0002CreateTransform($block: Boolean!, $handle: String!, $metafields: [MetafieldInput!]) {
+  cartTransformCreate(blockOnFailure: $block, functionHandle: $handle, metafields: $metafields) {
+    cartTransform {
+      id functionId blockOnFailure
+      metafield(namespace: "insignia_m0_001", key: "fixture") { id type jsonValue }
+    }
+    userErrors { field message }
+  }
+}

@@ -1,0 +1,275 @@
+[
+  {
+    "sourceFile": "20260924_233542_924Z_extensions_m0-001-same-variant_bdaf8f.json",
+    "sourceSha256": "9821ec17a74482684addeb1bffc20708a6bff67dbde5881701d076748d42acd2",
+    "timestamp": "2026-09-24T23:35:42.924296Z",
+    "status": "success",
+    "shopId": 78935261342,
+    "apiClientId": 427859050497,
+    "functionHandle": "m0-001-same-variant",
+    "fuelConsumed": 22804,
+    "inputLines": [
+      {
+        "cartLineIdSha256": "10194eeded7e6781834cd3389b55477c7190c1e1a38b0e5e71c42aa1acc8de26",
+        "quantity": 1,
+        "marker": null,
+        "currency": "USD",
+        "merchandiseType": "ProductVariant",
+        "variantId": "gid://shopify/ProductVariant/50529053343902"
+      }
+    ],
+    "outputOperations": []
+  },
+  {
+    "sourceFile": "20260924_233610_504Z_extensions_m0-001-same-variant_d6e3e6.json",
+    "sourceSha256": "bf4abe21f61a2ea7bdda8e4901e893ab0ebd3decebf3e603cd605b852ea91077",
+    "timestamp": "2026-09-24T23:36:10.504123Z",
+    "status": "success",
+    "shopId": 78935261342,
+    "apiClientId": 427859050497,
+    "functionHandle": "m0-001-same-variant",
+    "fuelConsumed": 45517,
+    "inputLines": [
+      {
+        "cartLineIdSha256": "5359dc73da6ee7b3c4fd136a9773c499488638afc3fca83bc3078b7035d58395",
+        "quantity": 1,
+        "marker": "m0-001:m0-002-A-S",
+        "currency": "USD",
+        "merchandiseType": "ProductVariant",
+        "variantId": "gid://shopify/ProductVariant/50529053343902"
+      }
+    ],
+    "outputOperations": [
+      {
+        "cartLineIdSha256": "5359dc73da6ee7b3c4fd136a9773c499488638afc3fca83bc3078b7035d58395",
+        "expandedCartItems": [
+          {
+            "attributes": [
+              {
+                "key": "_insignia_m0_001",
+                "value": "m0-001:m0-002-A-S"
+              }
+            ],
+            "merchandiseId": "gid://shopify/ProductVariant/50529053343902",
+            "price": {
+              "adjustment": {
+                "fixedPricePerUnit": {
+                  "amount": "30.0"
+                }
+              }
+            },
+            "quantity": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "sourceFile": "20260924_233621_364Z_extensions_m0-001-same-variant_22c91f.json",
+    "sourceSha256": "56815d4cfde411f4175fc6409864f25d84c4a87467e3a18b5cefc421c1c6ce57",
+    "timestamp": "2026-09-24T23:36:21.364425Z",
+    "status": "success",
+    "shopId": 78935261342,
+    "apiClientId": 427859050497,
+    "functionHandle": "m0-001-same-variant",
+    "fuelConsumed": 45517,
+    "inputLines": [
+      {
+        "cartLineIdSha256": "5359dc73da6ee7b3c4fd136a9773c499488638afc3fca83bc3078b7035d58395",
+        "quantity": 3,
+        "marker": "m0-001:m0-002-A-S",
+        "currency": "USD",
+        "merchandiseType": "ProductVariant",
+        "variantId": "gid://shopify/ProductVariant/50529053343902"
+      }
+    ],
+    "outputOperations": [
+      {
+        "cartLineIdSha256": "5359dc73da6ee7b3c4fd136a9773c499488638afc3fca83bc3078b7035d58395",
+        "expandedCartItems": [
+          {
+            "attributes": [
+              {
+                "key": "_insignia_m0_001",
+                "value": "m0-001:m0-002-A-S"
+              }
+            ],
+            "merchandiseId": "gid://shopify/ProductVariant/50529053343902",
+            "price": {
+              "adjustment": {
+                "fixedPricePerUnit": {
+                  "amount": "30.0"
+                }
+              }
+            },
+            "quantity": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "sourceFile": "20260924_233650_416Z_extensions_m0-001-same-variant_1250a9.json",
+    "sourceSha256": "ea656178554d06e4de84c1a7990f94a27a0153df44f1b003702f0aedd4b54a56",
+    "timestamp": "2026-09-24T23:36:50.416350Z",
+    "status": "success",
+    "shopId": 78935261342,
+    "apiClientId": 427859050497,
+    "functionHandle": "m0-001-same-variant",
+    "fuelConsumed": 80823,
+    "inputLines": [
+      {
+        "cartLineIdSha256": "eaa3a99dcd0da0e52cb83690920ccfd026a657e9c99ce791ccc29d9f5ebf388d",
+        "quantity": 1,
+        "marker": null,
+        "currency": "USD",
+        "merchandiseType": "ProductVariant",
+        "variantId": "gid://shopify/ProductVariant/50529053343902"
+      },
+      {
+        "cartLineIdSha256": "07fd5913a5ec977936ebdaeb7ccdeada9d5c5659904c0da57bb7a05ce5d914b9",
+        "quantity": 2,
+        "marker": "m0-001:m0-002-A-M",
+        "currency": "USD",
+        "merchandiseType": "ProductVariant",
+        "variantId": "gid://shopify/ProductVariant/50529054163102"
+      },
+      {
+        "cartLineIdSha256": "4cfbb3937beefe180c1021a2d573b7ed1eb48ef281714fbcf2abef95ab9b3735",
+        "quantity": 3,
+        "marker": "m0-001:m0-002-A-S",
+        "currency": "USD",
+        "merchandiseType": "ProductVariant",
+        "variantId": "gid://shopify/ProductVariant/50529053343902"
+      }
+    ],
+    "outputOperations": [
+      {
+        "cartLineIdSha256": "07fd5913a5ec977936ebdaeb7ccdeada9d5c5659904c0da57bb7a05ce5d914b9",
+        "expandedCartItems": [
+          {
+            "attributes": [
+              {
+                "key": "_insignia_m0_001",
+                "value": "m0-001:m0-002-A-M"
+              }
+            ],
+            "merchandiseId": "gid://shopify/ProductVariant/50529054163102",
+            "price": {
+              "adjustment": {
+                "fixedPricePerUnit": {
+                  "amount": "30.0"
+                }
+              }
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "cartLineIdSha256": "4cfbb3937beefe180c1021a2d573b7ed1eb48ef281714fbcf2abef95ab9b3735",
+        "expandedCartItems": [
+          {
+            "attributes": [
+              {
+                "key": "_insignia_m0_001",
+                "value": "m0-001:m0-002-A-S"
+              }
+            ],
+            "merchandiseId": "gid://shopify/ProductVariant/50529053343902",
+            "price": {
+              "adjustment": {
+                "fixedPricePerUnit": {
+                  "amount": "30.0"
+                }
+              }
+            },
+            "quantity": 1
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "sourceFile": "20260924_234139_690Z_extensions_m0-001-same-variant_b59791.json",
+    "sourceSha256": "7b5765a3eedeb423addebf9a255ad7425ad7796a689e0a51b05674d5b4e468fa",
+    "timestamp": "2026-09-24T23:41:39.690975Z",
+    "status": "success",
+    "shopId": 78935261342,
+    "apiClientId": 427859050497,
+    "functionHandle": "m0-001-same-variant",
+    "fuelConsumed": 80823,
+    "inputLines": [
+      {
+        "cartLineIdSha256": "eaa3a99dcd0da0e52cb83690920ccfd026a657e9c99ce791ccc29d9f5ebf388d",
+        "quantity": 1,
+        "marker": null,
+        "currency": "USD",
+        "merchandiseType": "ProductVariant",
+        "variantId": "gid://shopify/ProductVariant/50529053343902"
+      },
+      {
+        "cartLineIdSha256": "07fd5913a5ec977936ebdaeb7ccdeada9d5c5659904c0da57bb7a05ce5d914b9",
+        "quantity": 2,
+        "marker": "m0-001:m0-002-A-M",
+        "currency": "USD",
+        "merchandiseType": "ProductVariant",
+        "variantId": "gid://shopify/ProductVariant/50529054163102"
+      },
+      {
+        "cartLineIdSha256": "4cfbb3937beefe180c1021a2d573b7ed1eb48ef281714fbcf2abef95ab9b3735",
+        "quantity": 3,
+        "marker": "m0-001:m0-002-A-S",
+        "currency": "USD",
+        "merchandiseType": "ProductVariant",
+        "variantId": "gid://shopify/ProductVariant/50529053343902"
+      }
+    ],
+    "outputOperations": [
+      {
+        "cartLineIdSha256": "07fd5913a5ec977936ebdaeb7ccdeada9d5c5659904c0da57bb7a05ce5d914b9",
+        "expandedCartItems": [
+          {
+            "attributes": [
+              {
+                "key": "_insignia_m0_001",
+                "value": "m0-001:m0-002-A-M"
+              }
+            ],
+            "merchandiseId": "gid://shopify/ProductVariant/50529054163102",
+            "price": {
+              "adjustment": {
+                "fixedPricePerUnit": {
+                  "amount": "30.0"
+                }
+              }
+            },
+            "quantity": 1
+          }
+        ]
+      },
+      {
+        "cartLineIdSha256": "4cfbb3937beefe180c1021a2d573b7ed1eb48ef281714fbcf2abef95ab9b3735",
+        "expandedCartItems": [
+          {
+            "attributes": [
+              {
+                "key": "_insignia_m0_001",
+                "value": "m0-001:m0-002-A-S"
+              }
+            ],
+            "merchandiseId": "gid://shopify/ProductVariant/50529053343902",
+            "price": {
+              "adjustment": {
+                "fixedPricePerUnit": {
+                  "amount": "30.0"
+                }
+              }
+            },
+            "quantity": 1
+          }
+        ]
+      }
+    ]
+  }
+]

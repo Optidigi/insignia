@@ -1,0 +1,72 @@
+{
+  "order": {
+    "id": "gid://shopify/Order/7184619962526",
+    "name": "#1001",
+    "displayFulfillmentStatus": "PARTIALLY_FULFILLED",
+    "fulfillments": [
+      {
+        "id": "gid://shopify/Fulfillment/6511606562974",
+        "name": "#1001-F1",
+        "createdAt": "2026-09-24T23:46:59Z",
+        "status": "SUCCESS",
+        "totalQuantity": 2,
+        "location": {
+          "id": "gid://shopify/Location/89465290910",
+          "name": "Shop location"
+        },
+        "fulfillmentLineItems": {
+          "nodes": [
+            {
+              "id": "gid://shopify/FulfillmentLineItem/14712334909598",
+              "quantity": 1,
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16953568723102",
+                "sku": "INS-M0-001-BLK-S",
+                "quantity": 1,
+                "unfulfilledQuantity": 0,
+                "originalUnitPriceSet": {
+                  "shopMoney": {
+                    "amount": "20.0",
+                    "currencyCode": "USD"
+                  }
+                },
+                "customAttributes": [],
+                "lineItemGroup": null
+              }
+            },
+            {
+              "id": "gid://shopify/FulfillmentLineItem/14712334942366",
+              "quantity": 1,
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16953568788638",
+                "sku": "INS-M0-001-BLK-S",
+                "quantity": 3,
+                "unfulfilledQuantity": 2,
+                "originalUnitPriceSet": {
+                  "shopMoney": {
+                    "amount": "30.0",
+                    "currencyCode": "USD"
+                  }
+                },
+                "customAttributes": [
+                  {
+                    "key": "_insignia_m0_001",
+                    "value": "m0-001:m0-002-A-S"
+                  }
+                ],
+                "lineItemGroup": {
+                  "id": "gid://shopify/LineItemGroup/17090642078",
+                  "quantity": 3,
+                  "variantId": "gid://shopify/ProductVariant/50529053343902"
+                }
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      }
+    ]
+  }
+}
