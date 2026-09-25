@@ -1,0 +1,91 @@
+{
+  "date": "2026-09-25",
+  "repository": "Optidigi/insignia",
+  "pr": 7,
+  "verdict": "CHANGES_REQUESTED",
+  "base": "4591d102bb7368681622221253dbd4c997df1ad4",
+  "effectiveMergeBase": "4591d102bb7368681622221253dbd4c997df1ad4",
+  "head": "d5e18b9a1dec9492f76b8a006f4b62ffc9c1dfae",
+  "remoteStateObserved": {
+    "open": true,
+    "merged": false,
+    "mergeable": true,
+    "changedFiles": 58,
+    "commits": 9
+  },
+  "ciInspected": {
+    "run": 36162870630,
+    "job": 108163453936,
+    "result": "success",
+    "checkout": "6118cc813d6e11034eee14946c7c204e5880da6f",
+    "checkoutLogNamesReviewedBaseAndHead": true,
+    "executions": [
+      "57 TypeScript tests",
+      "15 Rust core behavior tests",
+      "2 Rust cross-language tests",
+      "1 native Transform target test",
+      "1 native Validation target test",
+      "2 CLI-processed Wasm builds",
+      "7 smoke rows",
+      "28 benchmark rows including exceeded limits"
+    ]
+  },
+  "independentlyExecutedHere": {
+    "runtime": {
+      "node": "v22.16.0",
+      "openssl": "3.0.16",
+      "pinnedNode24Executed": false,
+      "rustCrateExecuted": false
+    },
+    "sourceSnapshot": {
+      "path": "authorization.ts",
+      "repositoryPath": "spikes/m0-004/ts/authorization.ts",
+      "bytes": 7870,
+      "gitBlob": "b888e023840887bdafb46eb43b4c434798a7498f",
+      "blobMatchesFetchedHeadFile": true
+    },
+    "magic": {
+      "script": "reproduce-magic.mjs",
+      "result": "magic-reproduction.json",
+      "acceptedDeliberatelyResignedNoncanonicalHeaders": 15,
+      "unresignedTamperingRejected": true
+    },
+    "weakKey": {
+      "script": "reproduce-weak-key.mjs",
+      "result": "weak-key-reproduction.json",
+      "identityRegistryKeyAcceptsIdentitySignature": true,
+      "normalRegistryKeyRejectsIdenticalFakeSignature": true,
+      "requiresRegistryToAdmitWeakKey": true,
+      "pinnedRuntimeConfirmationRequired": true
+    }
+  },
+  "architecture": {
+    "planGitBlob": "d3d7d9c155cdcdcc3b88aeaaa77eebb10d8a767d",
+    "ledgerGitBlob": "3544e054bb52c11713b2bc1c96cdf6d7a2264936",
+    "unchangedInCompare": true,
+    "validationMethod": "fetched head blob identities match previously approved identities; neither file appears in current comparison; full byte re-download not claimed"
+  },
+  "nativeReviewSubmission": {
+    "action": "REQUEST_CHANGES",
+    "head": "d5e18b9a1dec9492f76b8a006f4b62ffc9c1dfae",
+    "posted": false,
+    "httpStatus": 403,
+    "message": "Resource not accessible by integration"
+  },
+  "notExecuted": [
+    "merchant API/browser/staging operation",
+    "full Rust/Wasm rebuild",
+    "independent replay of every resource row",
+    "full local checkout",
+    "independent verification of every evidence artifact hash",
+    "merge",
+    "deployment"
+  ],
+  "capacityDisposition": "submitted measurements accepted as negative local evidence; no supported product capacity or gate pass",
+  "nextTask": "M0-004R on existing PR #7; no merge authority",
+  "publicSources": [
+    "https://nodejs.org/docs/latest-v24.x/api/buffer.html",
+    "https://docs.rs/ed25519-dalek/2.2.0/ed25519_dalek/struct.VerifyingKey.html",
+    "https://shopify.dev/docs/api/functions/2026-07"
+  ]
+}

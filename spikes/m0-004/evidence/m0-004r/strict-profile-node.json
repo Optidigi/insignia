@@ -1,0 +1,28 @@
+{
+  "runtime": {
+    "node": "v24.21.0",
+    "openssl": "3.5.8"
+  },
+  "profile": "Observed pinned Node/OpenSSL rejection for the named identity-key, normal-key and noncanonical-S cases; no claim of general hostile-key equivalence",
+  "identityPublicKeyHex": "0100000000000000000000000000000000000000000000000000000000000000",
+  "forgedSignatureHex": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "normalPublicKeyHex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+  "normalSignedControlAccepted": true,
+  "cases": [
+    {
+      "name": "weak_identity_key_r_identity_s_zero",
+      "accepted": false,
+      "rejection": "invalid signature"
+    },
+    {
+      "name": "normal_key_rejects_identity_signature",
+      "accepted": false,
+      "rejection": "invalid signature"
+    },
+    {
+      "name": "noncanonical_signature_scalar",
+      "accepted": false,
+      "rejection": "invalid signature"
+    }
+  ]
+}
