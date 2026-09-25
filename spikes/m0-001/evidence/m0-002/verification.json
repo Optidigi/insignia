@@ -21,7 +21,7 @@
     "owned transform activated",
     "test-only order A",
     "order merchandise",
-    "order has three real-variant lines",
+    "order has three owned real-variant lines",
     "marked line groups retained",
     "fulfillment assigned to Shop location",
     "after-order-A.json: single Shop location for INS-M0-001-BLK-S",

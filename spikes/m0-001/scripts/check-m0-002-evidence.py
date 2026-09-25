@@ -61,10 +61,10 @@ order = read("order-A-accepted.json")["order"]
 check("test-only order A", order["id"] == "gid://shopify/Order/7184619962526" and order["name"] == "#1001" and order["test"] is True and order["paymentGatewayNames"] == ["bogus"] and order["displayFinancialStatus"] == "PAID")
 check("order merchandise", order["subtotalPriceSet"]["shopMoney"]["amount"] in ("170.0", "170.00") and order["totalTaxSet"]["shopMoney"]["amount"] in ("0.0", "0.00") and order["totalShippingPriceSet"]["shopMoney"]["amount"] in ("0.0", "0.00"))
 lines = order["lineItems"]["nodes"]
-check("order has three real-variant lines", len(lines) == 3 and sorted((x["sku"], x["quantity"], x["originalUnitPriceSet"]["shopMoney"]["amount"]) for x in lines) == sorted([
-    ("INS-M0-001-BLK-S", 1, "20.0"),
-    ("INS-M0-001-BLK-S", 3, "30.0"),
-    ("INS-M0-001-BLK-M", 2, "30.0"),
+check("order has three owned real-variant lines", len(lines) == 3 and sorted((x["sku"], x["variant"]["id"], x["quantity"], x["originalUnitPriceSet"]["shopMoney"]["amount"]) for x in lines) == sorted([
+    ("INS-M0-001-BLK-S", "gid://shopify/ProductVariant/50529053343902", 1, "20.0"),
+    ("INS-M0-001-BLK-S", "gid://shopify/ProductVariant/50529053343902", 3, "30.0"),
+    ("INS-M0-001-BLK-M", "gid://shopify/ProductVariant/50529054163102", 2, "30.0"),
 ]))
 check("marked line groups retained", sum(x["lineItemGroup"] is not None for x in lines) == 2 and sum(x["lineItemGroup"] is None for x in lines) == 1)
 check("fulfillment assigned to Shop location", all(x["assignedLocation"]["location"]["id"] == "gid://shopify/Location/89465290910" for x in order["fulfillmentOrders"]["nodes"]))

@@ -34,8 +34,8 @@ API version `2026-07`, Shopify CLI `4.8.2`, staging Basic development store and 
 
 ## Local pre-review
 
-Spec review: sequential fresh read-only fixed-ref review pending final candidate commit.
-Correctness review: sequential fresh read-only fixed-ref review pending final candidate commit.
+Spec review: a fresh sequential read-only `gpt-6-sol`/`high` session read the required instructions and reviewed fixed base `523efa4e0248cb2c64ed846e0b37af0067f01d9c` against candidate `455dbabe4c7afb6dfa557d9297c193b96c85bc15`. It found missing local receipt capture times and one misclassified local checker output. Both are corrected in the follow-up commit; the final fixed-ref review result belongs in PR metadata.
+Correctness review: the same read-only session found that the automated checker did not compare order variant GIDs. It now checks both owned variant GIDs. This was a sequential local review, not independent principal review.
 Unresolved findings: native Admin partial fulfillment line-identity/quantity mismatch; no workaround was applied. Distribution and ordinary public-app/non-Plus qualification remain unverified.
 
 ## Compatibility and safety

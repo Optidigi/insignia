@@ -46,7 +46,12 @@
     "productPublished": "2026-09-24T23:31:07Z",
     "previewReady": "2026-09-24T23:34:09Z",
     "orderACreated": "2026-09-24T23:41:41Z",
-    "nativePartialFulfillment": "2026-09-24T23:46:59Z"
+    "nativePartialFulfillment": "2026-09-24T23:46:59Z",
+    "baselineLocalFileBirth": "2026-09-24T23:26:40Z",
+    "seedResponseLocalFileBirth": "2026-09-24T23:32:18Z",
+    "transformCreateResponseLocalFileBirth": "2026-09-24T23:35:13Z",
+    "transformDeleteResponseLocalFileBirth": "2026-09-24T23:49:28Z",
+    "postCleanupReadLocalFileBirth": "2026-09-24T23:52:05Z"
   },
   "matrix": {
     "plain": "PASS",
@@ -76,224 +81,269 @@
   },
   "receiptFiles": {
     "README.md": {
-      "sha256": "f0cadf235f1b1e94ec8826050dfd3a3d461c613f1120731f0ffd563e27478c28",
-      "bytes": 10151,
-      "kind": "executed_graphql_or_documentation"
+      "sha256": "3c9641383bfea081174e292b409d3b0f0da02ed05adac44c128d2376d75cf24c",
+      "bytes": 10394,
+      "kind": "operator_documentation",
+      "localFileBirthUtc": "2026-09-24T23:56:19Z"
     },
     "after-order-A.json": {
       "sha256": "863de4291b9d1ae5f504a7d48f1f7d6f82a1c419578b346e1e254815dd600ee0",
       "bytes": 6042,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:44:12Z"
     },
     "after-partial-A.json": {
       "sha256": "8583281ca3631f1f634be54c219f14297bf9afb4c96fad520e1e04301bedbc75",
       "bytes": 6042,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:47:37Z"
     },
     "after-seed.json": {
       "sha256": "6ef2e1528e7d7175f83001bbdb5080d770f873949c459aa15324d1ba925e6d0c",
       "bytes": 5295,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:32:31Z"
     },
     "baseline.graphql": {
       "sha256": "91c91ddb9ce7fc7b28f397be8253c7fb8a8a6324d74c6b5e4fe70f4a153af893",
       "bytes": 1062,
-      "kind": "executed_graphql_or_documentation"
+      "kind": "executed_graphql_request",
+      "localFileBirthUtc": "2026-09-24T23:26:32Z"
     },
     "baseline.json": {
       "sha256": "4c843aef2906d76ec61a3def1a53171bf6177088a53155cb702223c5a884187a",
       "bytes": 5293,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:26:40Z"
     },
     "before-order-A.json": {
       "sha256": "a40252652ee6e816c70a34fd777446e62845b84f56b50d819ad8cb8aa569f1ca",
       "bytes": 6043,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:38:46Z"
     },
     "cart-marked-qty1.json": {
       "sha256": "0b24f534393de4cabaad15ab9a6fdd41f64f25fe016bb4662a008953daae309c",
       "bytes": 1757,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "browser_ajax_or_dom_projection",
+      "localFileBirthUtc": "2026-09-24T23:36:10Z"
     },
     "cart-marked-qty3.json": {
       "sha256": "3b2e4cdb1b0671a6cda7a58dccca4c253a862e03b1087421c03d19041ca6a513",
       "bytes": 719,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "browser_ajax_or_dom_projection",
+      "localFileBirthUtc": "2026-09-24T23:36:21Z"
     },
     "cart-mixed-A.json": {
       "sha256": "77269c09046d64e605cc141d788cfd338081b528f8d349eea822db3fc640f0db",
       "bytes": 1428,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "browser_ajax_or_dom_projection",
+      "localFileBirthUtc": "2026-09-24T23:36:50Z"
     },
     "cart-mixed-A.png": {
       "sha256": "e9f745d3d67fb183f331113101e0665865b56e0460fee8a22e6fe599e7719385",
       "bytes": 91084,
-      "kind": "native_ui_screenshot"
+      "kind": "native_ui_screenshot",
+      "localFileBirthUtc": "2026-09-24T23:37:07Z"
     },
     "cart-plain.json": {
       "sha256": "a884ceadc82fc3c202a59ea26678bb5fdd146cdce145a36ef982f0900cafa4e9",
       "bytes": 484,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "browser_ajax_or_dom_projection",
+      "localFileBirthUtc": "2026-09-24T23:35:54Z"
     },
     "cart-readd.json": {
       "sha256": "c0e7959f8fc80b4c4be33c7a4904bca566cfff241839df55e2bc2335ee9649ce",
       "bytes": 774,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "browser_ajax_or_dom_projection",
+      "localFileBirthUtc": "2026-09-24T23:36:37Z"
     },
     "checkout-A-before-address.json": {
       "sha256": "ff0cdae3d9eb39e51992e5a9852461baa3f553922ee0e05ce90330b2656f8037",
       "bytes": 2737,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "browser_ajax_or_dom_projection",
+      "localFileBirthUtc": "2026-09-24T23:37:34Z"
     },
     "checkout-A-prepayment.json": {
       "sha256": "751061a5ff71c8178dd89bb880b44d96085764f0f6dc807e65c8d8569745fbfb",
       "bytes": 1542,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "browser_ajax_or_dom_projection",
+      "localFileBirthUtc": "2026-09-24T23:38:53Z"
     },
     "fulfillment-A-after-ui.json": {
       "sha256": "67d436d191250b1c1b7a80be5c657ab17e0011b90115ed8751e0b90024e7bf8c",
       "bytes": 1450,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "browser_ajax_or_dom_projection",
+      "localFileBirthUtc": "2026-09-24T23:48:09Z"
     },
     "fulfillment-A-partial-ui-before.json": {
       "sha256": "7b8cda1d208ce08d02e0e43528516ad7662b44277f9def4a449fba1824056e2a",
       "bytes": 627,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "browser_ajax_or_dom_projection",
+      "localFileBirthUtc": "2026-09-24T23:46:53Z"
     },
     "fulfillment-A-response.json": {
       "sha256": "59a12e8943f55fba7592dc997d622795cabc864b9f713bf1b70fec0ce5d049b0",
       "bytes": 2236,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:48:00Z"
     },
     "fulfillment-A.graphql": {
       "sha256": "f3d41ed0461b48e13bbe2769696bee41484ad7334da1c9b11f243ffd01837fee",
       "bytes": 582,
-      "kind": "executed_graphql_or_documentation"
+      "kind": "executed_graphql_request",
+      "localFileBirthUtc": "2026-09-24T23:47:50Z"
     },
     "function-runs-projected.json": {
       "sha256": "d164f023f92e5d481024458f46358dc5f3474187da62d430bfcf81b897dbe408",
       "bytes": 8714,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "deterministic_redacted_function_log_projection",
+      "localFileBirthUtc": "2026-09-24T23:53:01Z"
     },
     "inventory-seed-response.json": {
       "sha256": "c7b4456ff70d8ba0ad143fc31bd6c26caa473599a8970cb836160f3c19b9bf0b",
       "bytes": 725,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:32:18Z"
     },
     "inventory-seed.graphql": {
       "sha256": "63ae5e41012fc82934121546fc4b1eb232d158a957c49e326cdfeb7aad82b389",
       "bytes": 326,
-      "kind": "executed_graphql_or_documentation"
+      "kind": "executed_graphql_request",
+      "localFileBirthUtc": "2026-09-24T23:32:09Z"
     },
     "inventory-seed.variables.json": {
       "sha256": "a1875711793191315eedeb41ca967117007e18123b6412de4f52270ddcd0cf5d",
       "bytes": 628,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:32:09Z"
     },
     "order-A-accepted.json": {
       "sha256": "2cb2b3a1903023937f46d111d865cf9a8036a511788b336445521ee2d431efc4",
       "bytes": 8086,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:42:50Z"
     },
     "order-A-after-partial.json": {
       "sha256": "63a19776043e209d42e0d70ecdb607088bd61706501b5557f4f45493bebf67a3",
       "bytes": 8101,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:47:24Z"
     },
     "order-A-confirmation-search.json": {
       "sha256": "226d8882876d7cc0b54e380d3b755948b36b9ed635fe0fc72fc5145b8c9640a6",
       "bytes": 89,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:42:31Z"
     },
     "order-A-confirmation.graphql": {
       "sha256": "4dc811dcb11392a65b76d264a78706e1cdf7d5e214bec222430df75201725ebf",
       "bytes": 1571,
-      "kind": "executed_graphql_or_documentation"
+      "kind": "executed_graphql_request",
+      "localFileBirthUtc": "2026-09-24T23:42:40Z"
     },
     "order-A.variables.json": {
       "sha256": "8487ec93acf13cb4abeb5ae38102b0c2370edd19af62e9f5e492d16276f9338f",
       "bytes": 48,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:43:46Z"
     },
     "order-state.graphql": {
       "sha256": "e05e0845d18580baaa8dbcb9cfabe618dae6a314a786f7fb2fde8725a0bfcd98",
       "bytes": 1604,
-      "kind": "executed_graphql_or_documentation"
+      "kind": "executed_graphql_request",
+      "localFileBirthUtc": "2026-09-24T23:43:46Z"
     },
     "post-cleanup.json": {
       "sha256": "3790896c2a9e77a2e8d7af4517467aba8149112c849259a131706eddb622c3f1",
       "bytes": 5423,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:52:05Z"
     },
     "preview-readback.graphql": {
       "sha256": "08227b775bc7041229275e3f9c7504990f1d8953a8e2e7b5168e1466c69a365b",
       "bytes": 322,
-      "kind": "executed_graphql_or_documentation"
+      "kind": "executed_graphql_request",
+      "localFileBirthUtc": "2026-09-24T23:34:44Z"
     },
     "preview-readback.json": {
       "sha256": "d0f0c783d019569962231c9c0504649a688bae0ba37f202abfb3349cdab825c4",
       "bytes": 1147,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:34:53Z"
     },
     "product-publish-readback.json": {
       "sha256": "19c6d1721c19d48f8fc3095d548d16f049dc6a87f8aec5a1a9acce13c700948c",
       "bytes": 131,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:31:17Z"
     },
     "product-unarchive-readback.json": {
       "sha256": "84801837f70f4ee2a661199f650145c0e6c52a55a460ca315fa81489c1c8be83",
       "bytes": 130,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:28:40Z"
     },
     "publication-readback.json": {
       "sha256": "a78a76f0d1baa4ff8e3735ee660fc492c69c772a2eeba767a4ca88e7d417f27b",
       "bytes": 199,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:31:58Z"
     },
     "transform-create-response.json": {
       "sha256": "f5e9db74383a9fcd82069da2c4d84098375f2e312667d33592baf6336593979d",
       "bytes": 593,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:35:13Z"
     },
     "transform-create.graphql": {
       "sha256": "fee312dbcf250dfa3d98e14f43c0d17521fed1e608102471050c5be7a34b0f0a",
       "bytes": 382,
-      "kind": "executed_graphql_or_documentation"
+      "kind": "executed_graphql_request",
+      "localFileBirthUtc": "2026-09-24T23:35:04Z"
     },
     "transform-create.variables.json": {
       "sha256": "fd28eb7184a3579928b694df3e82cbee6156eab9d21dc43082f554c225c8f13c",
       "bytes": 358,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:35:04Z"
     },
     "transform-delete-response.json": {
       "sha256": "299052515019edfbfcbb659944f2d32f9b3b8d281cfee0a2e9977fecf1691b53",
       "bytes": 113,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:49:28Z"
     },
     "transform-delete.graphql": {
       "sha256": "f90c387232db77a3e047195666205f27449ffa8c293bc72696f51ced47d13fc0",
       "bytes": 133,
-      "kind": "executed_graphql_or_documentation"
+      "kind": "executed_graphql_request",
+      "localFileBirthUtc": "2026-09-24T23:49:17Z"
     },
     "transform-delete.variables.json": {
       "sha256": "3a1c83e8fb48bbac948e3511bd29c115ca5051530999a223888625e5e70f4cf5",
       "bytes": 52,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:49:17Z"
     },
     "transform-readback.json": {
       "sha256": "e29ceacee6fc6ab2e48ee44fe58d43696d4023c35464d3571b5574cf356d915b",
       "bytes": 656,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:35:23Z"
     },
     "verification.json": {
-      "sha256": "f8a2cd627a4a4ce89afba10f3365bd2a72702e413dd979335e5bce5ab1b9d5e4",
-      "bytes": 1574,
-      "kind": "direct_api_or_browser_projection"
+      "sha256": "c43ee701242ab15732d2b59d5076ab6b6b45cfc17b04601408f8d4ddf6d02d98",
+      "bytes": 1580,
+      "kind": "local_consistency_check",
+      "localFileBirthUtc": "2026-09-24T23:55:07Z"
     },
     "versions-after.json": {
       "sha256": "7229ff5d6c88292ea33774daa5d7ab1aefafee99b7154b184e1b11a2e8b3034f",
       "bytes": 325,
-      "kind": "direct_api_or_browser_projection"
+      "kind": "direct_shopify_cli_api_response",
+      "localFileBirthUtc": "2026-09-24T23:53:25Z"
     }
-  }
+  },
+  "captureTimeProvenance": "localFileBirthUtc is this host filesystem birth time, not a Shopify server event time or signed receipt; server createdAt is retained separately in order/fulfillment API responses."
 }
