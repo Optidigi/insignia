@@ -36,6 +36,7 @@ jobs:
       - name: Record source-bound CI result and artifact hashes
         working-directory: spikes/m0-005
         run: |
+          export PATH="$PWD/node_modules/.bin:$PATH"
           git rev-parse HEAD
           echo "PR head: ${{ github.event.pull_request.head.sha }}"
           node scripts/capture-manifest.mjs > evidence/ci-manifest.json
