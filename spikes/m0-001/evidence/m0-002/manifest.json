@@ -215,7 +215,7 @@
     "inventory-seed.variables.json": {
       "sha256": "a1875711793191315eedeb41ca967117007e18123b6412de4f52270ddcd0cf5d",
       "bytes": 628,
-      "kind": "direct_shopify_cli_api_response",
+      "kind": "executed_graphql_variables_input",
       "localFileBirthUtc": "2026-09-24T23:32:09Z"
     },
     "order-A-accepted.json": {
@@ -245,7 +245,7 @@
     "order-A.variables.json": {
       "sha256": "8487ec93acf13cb4abeb5ae38102b0c2370edd19af62e9f5e492d16276f9338f",
       "bytes": 48,
-      "kind": "direct_shopify_cli_api_response",
+      "kind": "executed_graphql_variables_input",
       "localFileBirthUtc": "2026-09-24T23:43:46Z"
     },
     "order-state.graphql": {
@@ -305,7 +305,7 @@
     "transform-create.variables.json": {
       "sha256": "fd28eb7184a3579928b694df3e82cbee6156eab9d21dc43082f554c225c8f13c",
       "bytes": 358,
-      "kind": "direct_shopify_cli_api_response",
+      "kind": "executed_graphql_variables_input",
       "localFileBirthUtc": "2026-09-24T23:35:04Z"
     },
     "transform-delete-response.json": {
@@ -323,7 +323,7 @@
     "transform-delete.variables.json": {
       "sha256": "3a1c83e8fb48bbac948e3511bd29c115ca5051530999a223888625e5e70f4cf5",
       "bytes": 52,
-      "kind": "direct_shopify_cli_api_response",
+      "kind": "executed_graphql_variables_input",
       "localFileBirthUtc": "2026-09-24T23:49:17Z"
     },
     "transform-readback.json": {
