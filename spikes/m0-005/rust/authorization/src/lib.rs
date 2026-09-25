@@ -138,6 +138,16 @@ struct PublicConfigJson {
 struct PublicKeyJson {
     id: u16,
     public_hex: String,
+    #[serde(default)]
+    revoked: bool,
+    #[serde(default)]
+    first_day: u32,
+    #[serde(default = "last_possible_day")]
+    last_day: u32,
+}
+
+fn last_possible_day() -> u32 {
+    u32::MAX
 }
 
 /// Synthetic app-owned config projection. A target must source this independently from the token.
@@ -169,7 +179,13 @@ pub fn parse_public_config(value: &str) -> Result<PublicConfig, Error> {
         {
             return Err(Error::Context);
         }
-        keys.push(VerificationKey::new(k.id, parse_hex(&k.public_hex)?)?);
+        keys.push(VerificationKey::new_with_admission(
+            k.id,
+            parse_hex(&k.public_hex)?,
+            k.revoked,
+            k.first_day,
+            k.last_day,
+        )?);
     }
     Ok(PublicConfig {
         generation,

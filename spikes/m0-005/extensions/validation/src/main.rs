@@ -307,4 +307,21 @@ mod tests {
         repair["cart"]["lines"][1]["member"]["value"] = "bad".into();
         assert!(accepted(repair));
     }
+
+    #[test]
+    fn revoked_and_out_of_window_public_keys_reject_checkout() {
+        for (field, value) in [
+            ("revoked", serde_json::json!(true)),
+            ("firstDay", serde_json::json!(20803)),
+            ("lastDay", serde_json::json!(20801)),
+        ] {
+            let mut input = fixture();
+            let mut config: serde_json::Value =
+                serde_json::from_str(input["shop"]["publicConfig"]["value"].as_str().unwrap())
+                    .unwrap();
+            config["keys"][0][field] = value;
+            input["shop"]["publicConfig"]["value"] = config.to_string().into();
+            assert!(!accepted(input), "{field}");
+        }
+    }
 }

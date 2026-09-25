@@ -19,5 +19,13 @@ done
 # rather than a direct Cargo Wasm build that the local Function runner cannot use.
 shopify app function build --path "$spike_dir/extensions/transform"
 shopify app function build --path "$spike_dir/extensions/validation"
-node scripts/target-runner.mjs smoke
-node scripts/target-runner.mjs bench
+if [[ -n "${M0_005_CAPTURE_DIR:-}" ]]; then
+  mkdir -p "$M0_005_CAPTURE_DIR"
+  for mode in smoke bench; do
+    M0_005_CASE_EXPORT="$M0_005_CAPTURE_DIR/cases-$mode.jsonl" \
+      node scripts/target-runner.mjs "$mode" >"$M0_005_CAPTURE_DIR/$mode.json"
+  done
+else
+  node scripts/target-runner.mjs smoke
+  node scripts/target-runner.mjs bench
+fi

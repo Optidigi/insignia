@@ -331,6 +331,49 @@ fn fifteen_independently_signed_high_bit_magic_variants_reject() {
 }
 
 #[test]
+fn noncanonical_public_point_and_revoked_or_out_of_window_keys_reject() {
+    // y = p + 3 is a noncanonical encoding of the ordinary y = 3 point.
+    // Dalek decompression may accept it; canonical recompression must not.
+    let mut noncanonical = [0xff; 32];
+    noncanonical[0] = 0xf0;
+    noncanonical[31] = 0x7f;
+    assert_eq!(
+        VerificationKey::new(7, noncanonical).err(),
+        Some(Error::Signature)
+    );
+
+    let (envelope, members, key) = fixture();
+    let raw = key.bytes();
+    let revoked = [VerificationKey::new_with_admission(7, raw, true, 0, u32::MAX).unwrap()];
+    assert_eq!(
+        verify_set(Some(&envelope), &lines(&members), &expected(&revoked), true).err(),
+        Some(Error::UnknownKey)
+    );
+    let early = [VerificationKey::new_with_admission(7, raw, false, 20804, 20810).unwrap()];
+    assert_eq!(
+        verify_set(Some(&envelope), &lines(&members), &expected(&early), true).err(),
+        Some(Error::UnknownKey)
+    );
+    let expired = [VerificationKey::new_with_admission(7, raw, false, 0, 20802).unwrap()];
+    assert_eq!(
+        verify_set(Some(&envelope), &lines(&members), &expected(&expired), true).err(),
+        Some(Error::UnknownKey)
+    );
+    let boundary = [VerificationKey::new_with_admission(7, raw, false, 20803, 20803).unwrap()];
+    assert!(verify_set(
+        Some(&envelope),
+        &lines(&members),
+        &expected(&boundary),
+        true
+    )
+    .is_ok());
+    assert_eq!(
+        VerificationKey::new_with_admission(7, raw, false, 2, 1).err(),
+        Some(Error::Context)
+    );
+}
+
+#[test]
 fn independent_context_keys_date_and_physical_economics_reject() {
     let (envelope, members, key) = fixture();
     let keys = [key];

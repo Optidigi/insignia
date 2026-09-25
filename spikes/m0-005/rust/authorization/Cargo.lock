@@ -121,6 +121,7 @@ name = "insignia-m0-005-authorization"
 version = "0.1.0"
 dependencies = [
  "base64",
+ "curve25519-dalek",
  "ed25519-dalek",
  "serde",
  "serde_json",

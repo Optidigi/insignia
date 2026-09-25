@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
 import { createHash, createPrivateKey, sign } from 'node:crypto';
-import { readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   getFunctionInfo, loadInputQuery, loadSchema, runFunction, validateTestAssets,
 } from '@shopify/shopify-function-test-helpers';
+import { allocateGroups } from '../../m0-004/ts/allocation.ts';
 
 const spike = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const fixture = JSON.parse(readFileSync(path.join(spike, 'fixtures/vectors.json')));
@@ -21,9 +22,12 @@ const LIMIT = {
   instructions: 11_000_000, inputBytes: 128_000, outputBytes: 20_000,
   queryBytes: 3_000, queryCost: 30,
 };
+const expectedPrices = new WeakMap();
 
 function jsonFixture(target) {
-  return JSON.parse(readFileSync(path.join(spike, 'fixtures/targets', `${target}-valid.json`)));
+  const input = JSON.parse(readFileSync(path.join(spike, 'fixtures/targets', `${target}-valid.json`)));
+  expectedPrices.set(input, new Map(input.cart.lines.map((line, i) => [line.id, [3033n, 3034n][i]])));
+  return input;
 }
 function decimal(minor, exponent = 2) {
   const value = BigInt(minor);
@@ -84,6 +88,7 @@ function signedInput(target, specs, ordinaryCount = 0, setOptions) {
     }
     return line;
   });
+  expectedPrices.set(input, new Map(specs.map((spec, i) => [cartLineId(i), BigInt(spec.unitMinor)])));
   for (let i = 0; i < ordinaryCount; i++) {
     const line = structuredClone(template);
     line.id = cartLineId(specs.length + i);
@@ -114,14 +119,17 @@ function configChange(input, changes) {
   return input;
 }
 function expectedTransform(input) {
+  const prices = expectedPrices.get(input);
+  assert.ok(prices, 'independent expected price map missing');
   return { operations: input.cart.lines.filter(line => line.member).map(line => {
-    const raw = Buffer.from(line.member.value, 'base64url');
+    const unitMinor = prices.get(line.id);
+    assert.notEqual(unitMinor, undefined, `independent price missing for ${line.id}`);
     return { lineExpand: {
       cartLineId: line.id,
       expandedCartItems: [{
         merchandiseId: line.merchandise.id, quantity: 1,
         attributes: [{ key: '_insignia_member_v2', value: line.member.value }],
-        price: { adjustment: { fixedPricePerUnit: { amount: decimal(raw.readBigUInt64BE(14)) } } },
+        price: { adjustment: { fixedPricePerUnit: { amount: decimal(unitMinor) } } },
       }],
     } };
   }) };
@@ -146,6 +154,11 @@ async function execute(prepared, input, expectedOutput, caseName, knownLimitatio
   assert.deepEqual(validation.inputQuery.errors, [], `${caseName}: schema-invalid query`);
   assert.deepEqual(validation.inputFixture.errors, [], `${caseName}: schema-invalid input`);
   assert.deepEqual(validation.outputFixture.errors, [], `${caseName}: schema-invalid expected output`);
+  const caseFixture = { target: prepared.target, caseName, input, expectedOutput, knownLimitation };
+  const inputSha256 = createHash('sha256').update(JSON.stringify(input)).digest('hex');
+  const expectedOutputSha256 = createHash('sha256').update(JSON.stringify(expectedOutput)).digest('hex');
+  const caseFixtureSha256 = createHash('sha256').update(JSON.stringify(caseFixture)).digest('hex');
+  caseFixtures.push(caseFixture);
   const actual = await runFunction(f, prepared.info.functionRunnerPath, prepared.info.wasmPath,
     prepared.run.inputQueryPath, prepared.info.schemaPath);
   assert.equal(actual.error, null, `${caseName}: ${actual.error}`);
@@ -158,7 +171,8 @@ async function execute(prepared, input, expectedOutput, caseName, knownLimitatio
   const memoryUsageKiB = actual.metadata?.memoryUsageKiB ?? null;
   const signed = input.cart.lines.filter(line => line.member);
   return {
-    target: prepared.target, caseName, signedBuckets: signed.length,
+    target: prepared.target, caseName, caseFixtureSha256, inputSha256, expectedOutputSha256,
+    signedBuckets: signed.length,
     ordinaryLines: input.cart.lines.length - signed.length,
     physicalQuantity: signed.reduce((sum, line) => sum + line.quantity, 0),
     provenance: 'schema-valid synthetic projection; live carrier and child price semantics unverified',
@@ -179,6 +193,21 @@ const mode = process.argv[2] || 'smoke';
 assert.ok(mode === 'smoke' || mode === 'bench');
 const targets = [await prepare('transform'), await prepare('validation')];
 const rows = [];
+const caseFixtures = [];
+function tierSpecs() {
+  const allocation = allocateGroups([
+    { groupId: 'shirts', setupMinor: '3500', variants: [
+      { variantId: '9007199254740993', quantity: 250, acceptedBaseUnitMinor: '2300' },
+    ] },
+    { groupId: 'hoodies', setupMinor: '5000', variants: [
+      { variantId: '9007199254740994', quantity: 250, acceptedBaseUnitMinor: '3500' },
+    ] },
+  ]);
+  assert.equal(allocation.totalQuantity, 500);
+  assert.equal(allocation.totalMinor, '1458500');
+  assert.deepEqual(allocation.buckets.map(b => b.unitMinor), ['2314', '3520']);
+  return allocation.buckets.map(b => ({ variant: b.variantId, quantity: b.quantity, unitMinor: b.unitMinor }));
+}
 async function both(name, make, expect = 'positive', knownLimitation = null) {
   for (const target of targets) {
     const input = make(target.target);
@@ -238,10 +267,7 @@ if (mode === 'smoke') {
   for (const n of [10, 32, 64]) {
     await both(`${n} isolated signed`, target => signedInput(target, defaultSpecs(n)));
   }
-  await both('500-unit two-group tier', target => signedInput(target, [
-    { variant: '9007199254740993', quantity: 250, unitMinor: '2314' },
-    { variant: '9007199254740994', quantity: 250, unitMinor: '3520' },
-  ]));
+  await both('500-unit two-group tier', target => signedInput(target, tierSpecs()));
   await both('10000 physical units in five 2000-unit buckets', target =>
     signedInput(target, defaultSpecs(5, 2000)));
   await both('EUR91 exact allocation', target => jsonFixture(target));
@@ -269,5 +295,9 @@ if (mode === 'smoke') {
     configChange(signedInput(target, defaultSpecs(10)), { maxBuckets: 4 }), 'reject');
   await both('over trusted physical quantity', target =>
     configChange(signedInput(target, defaultSpecs(5, 2000)), { maxPhysicalQuantity: 9999 }), 'reject');
+}
+if (process.env.M0_005_CASE_EXPORT) {
+  writeFileSync(process.env.M0_005_CASE_EXPORT,
+    `${caseFixtures.map(value => JSON.stringify(value)).join('\n')}\n`);
 }
 console.log(JSON.stringify({ mode, limits: LIMIT, rows }, null, 2));

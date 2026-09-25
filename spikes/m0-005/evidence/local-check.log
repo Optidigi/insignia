@@ -1,46 +1,37 @@
 ✓ Lockfile passes supply-chain policies (verified 3h ago)
 Lockfile is up to date, resolution step is skipped
-Done in 21ms using pnpm v12.6.0
+Done in 26ms using pnpm v12.6.0
 $ tsc --noEmit && node --test ts/*.test.ts
-✔ v2 canonical literal bytes and complete signed acceptance (4.659305ms)
-✔ complete cart is independent of enumeration and permits ordinary optional lines (1.141137ms)
-✔ issuer rejects noncanonical records, broken totals, and improper expiry (0.623623ms)
-✔ every marked physical member is bound to the full message and observed economics (1.356011ms)
-✔ independent context and key admission fail closed (2.450737ms)
-✔ rejects malformed carriers and fifteen raw high-bit header mutations (1.501628ms)
-✔ distinct signed equivalent statements accept; mixed quote, set and member data reject (2.924379ms)
-✔ existing M0-004 allocator conserves the EUR 91 quote (1.484276ms)
-✔ 10,000 units in five allocation buckets need no per-unit records (1.054678ms)
-✔ old per-line tokens, noncanonical tail bits and noncanonical Ed25519 S reject (0.791423ms)
-✔ rejects weak, expired, and not-yet-admitted verification keys (2.151511ms)
-✔ day-zero and u32-max issuance retain inclusive E-2..E validity (3.487773ms)
-✔ shared Python, TypeScript and Rust golden carrier bytes agree (0.629603ms)
-✔ all fifteen independently signed high-bit magic variants reject at header stage (2.9198ms)
-✔ large but bounded totals and removed 500-unit tier reject (1.076872ms)
-✔ 10, 32 and 64 complete buckets coexist with ordinary products; capacity is explicit (4.201159ms)
-✔ known required unsigned product denies, while absent required policy is a negative capability (0.264985ms)
-✔ no-market must be expressly enabled from independent context (0.728214ms)
-ℹ tests 18
+✔ canonical Python, TypeScript and Rust golden carriers agree exactly (2.573441ms)
+✔ ordinary Ed25519 signature binds every header and member byte (1.335874ms)
+✔ all fifteen independently signed high-bit raw magic variants reject decoding (4.640963ms)
+✔ v2 framing rejects old magic, unknown version, flags and lengths (0.571374ms)
+✔ issuer rejects reordered, missing, duplicate, overflow and inconsistent totals (0.982636ms)
+✔ new quote or renewal set identity changes signed statement (0.750783ms)
+✔ existing exact-money allocator conserves the €91 non-divisible setup (0.945848ms)
+✔ 500-unit two-group tier is allocated, signed and conserved independently (0.521087ms)
+✔ 10,000 units in five buckets use bounded records without per-unit materialization (0.616289ms)
+✔ shop-local issuance day bounds include day zero and maximum u32 (0.786837ms)
+ℹ tests 10
 ℹ suites 0
-ℹ pass 18
+ℹ pass 10
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 196.928439
+ℹ duration_ms 163.105835
     Checking insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
-   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.33s
-     Running unittests src/lib.rs (rust/authorization/target/debug/deps/insignia_m0_005_authorization-e61c56a199b227cb)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.43s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running unittests src/lib.rs (rust/authorization/target/debug/deps/insignia_m0_005_authorization-f314414fd2749db1)
 
 running 0 tests
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-     Running tests/whole_quote.rs (rust/authorization/target/debug/deps/whole_quote-73d201e037af16e0)
+     Running tests/whole_quote.rs (rust/authorization/target/debug/deps/whole_quote-6143a2d4cb7f0fe5)
 
-running 12 tests
+running 13 tests
 test canonical_carriers_reject_length_padding_alphabet_and_tail_bits ... ok
 test complete_ordered_set_verifies_once_and_matches_observed_price ... ok
 test compensated_price_mutations_cannot_preserve_authorization_by_preserving_total ... ok
@@ -48,13 +39,14 @@ test every_header_byte_class_is_signed_and_structural_header_is_strict ... ok
 test last_member_change_invalidates_everything ... ok
 test independent_context_keys_date_and_physical_economics_reject ... ok
 test missing_duplicate_unsigned_and_extra_members_fail_closed ... ok
-test shared_python_typescript_rust_golden_vector_agrees ... ok
 test member_from_a_different_signed_quote_cannot_mix_with_original_envelope ... ok
+test shared_python_typescript_rust_golden_vector_agrees ... ok
 test signature_and_arithmetic_profiles_reject_mutations ... ok
+test noncanonical_public_point_and_revoked_or_out_of_window_keys_reject ... ok
 test large_complete_quantity_and_500_unit_tier_cannot_be_partially_reused ... ok
 test fifteen_independently_signed_high_bit_magic_variants_reject ... ok
 
-test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.31s
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.35s
 
    Doc-tests insignia_m0_005_authorization
 
@@ -62,378 +54,48 @@ running 0 tests
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
-   Compiling proc-macro2 v1.0.107
-   Compiling unicode-ident v1.0.26
-   Compiling quote v1.0.47
-   Compiling semver v1.0.28
-   Compiling zmij v1.0.23
-   Compiling heck v0.5.0
-   Compiling rustc_version v0.4.1
-   Compiling serde_json v1.0.151
-   Compiling version_check v0.9.5
-   Compiling serde_core v1.0.229
-   Compiling logos-codegen v0.15.1
-   Compiling fnv v1.0.7
-   Compiling generic-array v0.14.7
-    Checking typenum v1.20.1
-   Compiling regex-syntax v0.8.11
-   Compiling syn v2.0.119
-   Compiling syn v3.0.6
-   Compiling beef v0.5.2
-   Compiling lazy_static v1.5.0
-   Compiling autocfg v1.5.1
-   Compiling num-traits v0.2.19
-   Compiling either v1.18.0
-   Compiling memchr v2.8.3
-   Compiling itoa v1.0.18
-   Compiling itertools v0.14.0
-   Compiling strum_macros v0.27.2
-   Compiling enum-as-inner v0.6.1
-   Compiling logos-derive v0.15.1
-   Compiling serde v1.0.229
-   Compiling yansi v1.0.1
-   Compiling unicode-width v0.1.14
-   Compiling paste v1.0.15
-   Compiling ariadne v0.5.1
-   Compiling strum v0.27.2
-   Compiling bluejay-core v0.3.1
-   Compiling logos v0.15.1
-   Compiling serde_derive v1.0.229
-    Checking crypto-common v0.1.7
-    Checking block-buffer v0.10.4
-   Compiling unicode-segmentation v1.13.3
-   Compiling seq-macro v0.3.6
-    Checking rmp v0.8.15
-    Checking digest v0.10.7
-   Compiling bluejay-parser v0.3.1
-   Compiling curve25519-dalek v4.1.3
-    Checking cfg-if v1.0.5
-   Compiling thiserror v2.0.21
-    Checking cpufeatures v0.2.17
-    Checking shopify_function_wasm_api_core v0.2.0
-   Compiling convert_case v0.8.0
-   Compiling curve25519-dalek-derive v0.1.1
-   Compiling bluejay-validator v0.3.1
-   Compiling thiserror-impl v2.0.21
-    Checking signature v2.2.0
-    Checking subtle v2.6.1
-    Checking bumpalo v3.20.3
-    Checking shopify_function_provider v2.0.1
-    Checking ed25519 v2.2.3
-    Checking sha2 v0.10.9
-   Compiling convert_case v0.11.0
-    Checking ed25519-dalek v2.2.0
-    Checking rmp-serde v1.3.1
-    Checking base64 v0.22.1
-    Checking ryu v1.0.23
     Checking insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
-   Compiling bluejay-typegen-codegen v0.3.1
-    Checking shopify_function_wasm_api v0.3.1
-   Compiling shopify_function_macro v2.2.0
-    Checking shopify_function v2.2.0
     Checking m0-005-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/transform)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.38s
-   Compiling zmij v1.0.23
-   Compiling memchr v2.8.3
-   Compiling itoa v1.0.18
-   Compiling strum v0.27.2
-   Compiling typenum v1.20.1
-   Compiling serde_core v1.0.229
-   Compiling num-traits v0.2.19
-   Compiling generic-array v0.14.7
-   Compiling serde_json v1.0.151
-   Compiling rmp v0.8.15
-   Compiling block-buffer v0.10.4
-   Compiling crypto-common v0.1.7
-   Compiling digest v0.10.7
-   Compiling cfg-if v1.0.5
-   Compiling cpufeatures v0.2.17
-   Compiling shopify_function_wasm_api_core v0.2.0
-   Compiling subtle v2.6.1
-   Compiling bumpalo v3.20.3
-   Compiling signature v2.2.0
-   Compiling bluejay-core v0.3.1
-   Compiling bluejay-parser v0.3.1
-   Compiling shopify_function_provider v2.0.1
-   Compiling ed25519 v2.2.3
-   Compiling curve25519-dalek v4.1.3
-   Compiling serde v1.0.229
-   Compiling rmp-serde v1.3.1
-   Compiling sha2 v0.10.9
-   Compiling bluejay-validator v0.3.1
-   Compiling thiserror v2.0.21
-   Compiling ed25519-dalek v2.2.0
-   Compiling shopify_function_wasm_api v0.3.1
-   Compiling ryu v1.0.23
-   Compiling base64 v0.22.1
-   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
-   Compiling bluejay-typegen-codegen v0.3.1
-   Compiling shopify_function_macro v2.2.0
-   Compiling shopify_function v2.2.0
-   Compiling m0-005-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/transform)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.72s
-     Running unittests src/main.rs (extensions/transform/target/debug/deps/m0_005_cart_transform-3bef210396d53e1a)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.71s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/main.rs (extensions/transform/target/debug/deps/m0_005_cart_transform-7fc30c8389273e57)
 
-running 4 tests
+running 5 tests
 test tests::no_partial_expansion_for_incomplete_or_tampered_set ... ok
+test tests::revoked_and_out_of_window_public_keys_emit_no_price_operation ... ok
 test tests::complete_set_sets_both_prices_and_copies_compact_member ... ok
 test tests::context_physical_line_policy_and_cart_order_are_enforced ... ok
 test tests::full_output_size_includes_real_ids_attribute_names_values_and_prices ... ok
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
 
-   Compiling proc-macro2 v1.0.107
-   Compiling unicode-ident v1.0.26
-   Compiling quote v1.0.47
-   Compiling semver v1.0.28
-   Compiling heck v0.5.0
-   Compiling rustc_version v0.4.1
-   Compiling zmij v1.0.23
-   Compiling serde_json v1.0.151
-   Compiling version_check v0.9.5
-   Compiling serde_core v1.0.229
-   Compiling logos-codegen v0.15.1
-    Checking typenum v1.20.1
-   Compiling regex-syntax v0.8.11
-   Compiling generic-array v0.14.7
-   Compiling syn v2.0.119
-   Compiling syn v3.0.6
-   Compiling fnv v1.0.7
-   Compiling lazy_static v1.5.0
-   Compiling beef v0.5.2
-   Compiling autocfg v1.5.1
-   Compiling num-traits v0.2.19
-   Compiling itoa v1.0.18
-   Compiling either v1.18.0
-   Compiling memchr v2.8.3
-   Compiling itertools v0.14.0
-   Compiling strum_macros v0.27.2
-   Compiling logos-derive v0.15.1
-   Compiling enum-as-inner v0.6.1
-   Compiling serde v1.0.229
-   Compiling yansi v1.0.1
-   Compiling unicode-width v0.1.14
-   Compiling paste v1.0.15
-   Compiling ariadne v0.5.1
-   Compiling logos v0.15.1
-   Compiling serde_derive v1.0.229
-    Checking crypto-common v0.1.7
-    Checking block-buffer v0.10.4
-   Compiling seq-macro v0.3.6
-   Compiling strum v0.27.2
-   Compiling bluejay-core v0.3.1
-   Compiling unicode-segmentation v1.13.3
-   Compiling bluejay-parser v0.3.1
-    Checking digest v0.10.7
-    Checking rmp v0.8.15
-   Compiling curve25519-dalek v4.1.3
-    Checking cfg-if v1.0.5
-   Compiling thiserror v2.0.21
-    Checking cpufeatures v0.2.17
-   Compiling convert_case v0.8.0
-    Checking shopify_function_wasm_api_core v0.2.0
-   Compiling curve25519-dalek-derive v0.1.1
-   Compiling bluejay-validator v0.3.1
-   Compiling thiserror-impl v2.0.21
-    Checking subtle v2.6.1
-    Checking signature v2.2.0
-    Checking bumpalo v3.20.3
-    Checking shopify_function_provider v2.0.1
-    Checking ed25519 v2.2.3
-    Checking rmp-serde v1.3.1
-    Checking sha2 v0.10.9
-   Compiling convert_case v0.11.0
-    Checking ed25519-dalek v2.2.0
-    Checking shopify_function_wasm_api v0.3.1
-    Checking ryu v1.0.23
-    Checking base64 v0.22.1
     Checking insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
-   Compiling bluejay-typegen-codegen v0.3.1
-   Compiling shopify_function_macro v2.2.0
-    Checking shopify_function v2.2.0
     Checking m0-005-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/validation)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 16.12s
-   Compiling zmij v1.0.23
-   Compiling itoa v1.0.18
-   Compiling memchr v2.8.3
-   Compiling strum v0.27.2
-   Compiling typenum v1.20.1
-   Compiling serde_core v1.0.229
-   Compiling num-traits v0.2.19
-   Compiling generic-array v0.14.7
-   Compiling serde_json v1.0.151
-   Compiling rmp v0.8.15
-   Compiling crypto-common v0.1.7
-   Compiling block-buffer v0.10.4
-   Compiling digest v0.10.7
-   Compiling cpufeatures v0.2.17
-   Compiling cfg-if v1.0.5
-   Compiling shopify_function_wasm_api_core v0.2.0
-   Compiling signature v2.2.0
-   Compiling subtle v2.6.1
-   Compiling bumpalo v3.20.3
-   Compiling curve25519-dalek v4.1.3
-   Compiling bluejay-core v0.3.1
-   Compiling shopify_function_provider v2.0.1
-   Compiling bluejay-parser v0.3.1
-   Compiling serde v1.0.229
-   Compiling ed25519 v2.2.3
-   Compiling sha2 v0.10.9
-   Compiling rmp-serde v1.3.1
-   Compiling thiserror v2.0.21
-   Compiling ed25519-dalek v2.2.0
-   Compiling base64 v0.22.1
-   Compiling ryu v1.0.23
-   Compiling shopify_function_wasm_api v0.3.1
-   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
-   Compiling bluejay-validator v0.3.1
-   Compiling bluejay-typegen-codegen v0.3.1
-   Compiling shopify_function_macro v2.2.0
-   Compiling shopify_function v2.2.0
-   Compiling m0-005-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/validation)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.03s
-     Running unittests src/main.rs (extensions/validation/target/debug/deps/m0_005_cart_validation-bfa3fc013143efc7)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.75s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/main.rs (extensions/validation/target/debug/deps/m0_005_cart_validation-8fba45dbfe8c7e6c)
 
-running 4 tests
+running 5 tests
 test tests::incomplete_tampered_and_unsigned_required_sets_reject ... ok
+test tests::revoked_and_out_of_window_public_keys_reject_checkout ... ok
 test tests::complete_set_compares_observed_exact_subtotals ... ok
 test tests::cart_order_context_and_physical_claim_changes_fail_at_checkout ... ok
 test tests::stress_fixtures_validate_complete_set_and_measure_json ... ok
 
-test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
 
-Building function m0-005-local-transform...   Compiling proc-macro2 v1.0.107
-   Compiling unicode-ident v1.0.26
-   Compiling quote v1.0.47
-   Compiling semver v1.0.28
-   Compiling zmij v1.0.23
-   Compiling heck v0.5.0
-   Compiling rustc_version v0.4.1
-   Compiling serde_json v1.0.151
-   Compiling version_check v0.9.5
-   Compiling serde_core v1.0.229
-   Compiling logos-codegen v0.15.1
-   Compiling beef v0.5.2
-   Compiling typenum v1.20.1
-   Compiling generic-array v0.14.7
-   Compiling regex-syntax v0.8.11
-   Compiling fnv v1.0.7
-   Compiling syn v2.0.119
-   Compiling lazy_static v1.5.0
-   Compiling syn v3.0.6
-   Compiling either v1.18.0
-   Compiling memchr v2.8.3
-   Compiling itoa v1.0.18
-   Compiling itertools v0.14.0
-   Compiling strum_macros v0.27.2
-   Compiling logos-derive v0.15.1
-   Compiling enum-as-inner v0.6.1
-   Compiling paste v1.0.15
-   Compiling yansi v1.0.1
-   Compiling unicode-width v0.1.14
-   Compiling logos v0.15.1
-   Compiling ariadne v0.5.1
-   Compiling block-buffer v0.10.4
-   Compiling crypto-common v0.1.7
-   Compiling unicode-segmentation v1.13.3
-   Compiling seq-macro v0.3.6
-   Compiling digest v0.10.7
-   Compiling curve25519-dalek v4.1.3
-   Compiling cfg-if v1.0.5
-   Compiling thiserror v2.0.21
-   Compiling strum v0.27.2
-   Compiling bluejay-core v0.3.1
-   Compiling convert_case v0.8.0
-   Compiling thiserror-impl v2.0.21
-   Compiling bluejay-parser v0.3.1
-   Compiling signature v2.2.0
-   Compiling subtle v2.6.1
-   Compiling serde v1.0.229
-   Compiling ed25519 v2.2.3
-   Compiling shopify_function_wasm_api_core v0.2.0
-   Compiling bluejay-validator v0.3.1
-   Compiling sha2 v0.10.9
-   Compiling convert_case v0.11.0
-   Compiling serde_derive v1.0.229
-   Compiling ed25519-dalek v2.2.0
-   Compiling shopify_function_wasm_api v0.3.1
-   Compiling ryu v1.0.23
-   Compiling bluejay-typegen-codegen v0.3.1
-   Compiling base64 v0.22.1
-   Compiling shopify_function_macro v2.2.0
-   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
-   Compiling shopify_function v2.2.0
+Building function m0-005-local-transform...   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
    Compiling m0-005-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/transform)
-    Finished `release` profile [optimized] target(s) in 18.69s
+    Finished `release` profile [optimized] target(s) in 3.01s
 ╭─ success ────────────────────────────────────────────────────────────────────╮
 │                                                                              │
 │  Function built successfully.                                                │
 │                                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 
-Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
-   Compiling quote v1.0.47
-   Compiling unicode-ident v1.0.26
-   Compiling semver v1.0.28
-   Compiling zmij v1.0.23
-   Compiling rustc_version v0.4.1
-   Compiling heck v0.5.0
-   Compiling serde_json v1.0.151
-   Compiling version_check v0.9.5
-   Compiling serde_core v1.0.229
-   Compiling logos-codegen v0.15.1
-   Compiling typenum v1.20.1
-   Compiling generic-array v0.14.7
-   Compiling lazy_static v1.5.0
-   Compiling beef v0.5.2
-   Compiling fnv v1.0.7
-   Compiling regex-syntax v0.8.11
-   Compiling syn v2.0.119
-   Compiling syn v3.0.6
-   Compiling itoa v1.0.18
-   Compiling either v1.18.0
-   Compiling memchr v2.8.3
-   Compiling itertools v0.14.0
-   Compiling strum_macros v0.27.2
-   Compiling logos-derive v0.15.1
-   Compiling enum-as-inner v0.6.1
-   Compiling yansi v1.0.1
-   Compiling unicode-width v0.1.14
-   Compiling paste v1.0.15
-   Compiling ariadne v0.5.1
-   Compiling logos v0.15.1
-   Compiling block-buffer v0.10.4
-   Compiling crypto-common v0.1.7
-   Compiling seq-macro v0.3.6
-   Compiling unicode-segmentation v1.13.3
-   Compiling digest v0.10.7
-   Compiling curve25519-dalek v4.1.3
-   Compiling cfg-if v1.0.5
-   Compiling thiserror v2.0.21
-   Compiling convert_case v0.8.0
-   Compiling strum v0.27.2
-   Compiling bluejay-core v0.3.1
-   Compiling thiserror-impl v2.0.21
-   Compiling bluejay-parser v0.3.1
-   Compiling serde v1.0.229
-   Compiling subtle v2.6.1
-   Compiling signature v2.2.0
-   Compiling ed25519 v2.2.3
-   Compiling shopify_function_wasm_api_core v0.2.0
-   Compiling sha2 v0.10.9
-   Compiling bluejay-validator v0.3.1
-   Compiling convert_case v0.11.0
-   Compiling serde_derive v1.0.229
-   Compiling ed25519-dalek v2.2.0
-   Compiling shopify_function_wasm_api v0.3.1
-   Compiling base64 v0.22.1
-   Compiling ryu v1.0.23
-   Compiling bluejay-typegen-codegen v0.3.1
-   Compiling shopify_function_macro v2.2.0
-   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
-   Compiling shopify_function v2.2.0
+Building function m0-005-local-validation...   Compiling insignia-m0-005-authorization v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/rust/authorization)
    Compiling m0-005-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/extensions/validation)
-    Finished `release` profile [optimized] target(s) in 17.36s
+    Finished `release` profile [optimized] target(s) in 3.02s
 ╭─ success ────────────────────────────────────────────────────────────────────╮
 │                                                                              │
 │  Function built successfully.                                                │
@@ -456,16 +118,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "EUR91 exact allocated quote",
+      "caseFixtureSha256": "3fcbf596bfc297407293b3b433c233ec6ba1f0c08534db93bdc09fe4bcdcb1cd",
+      "inputSha256": "b29adff1f0ad0647e4faf728c4556392bd46a54c819b294ec424ac20ddeaae94",
+      "expectedOutputSha256": "de56ed1fd14347defad34b8acfd2899ccf3aa3d0053a083fe493f5ca811640e7",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 1293,
       "outputBytes": 632,
       "queryBytes": 638,
-      "instructions": 2437796,
+      "instructions": 2715534,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -477,16 +142,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "EUR91 exact allocated quote",
+      "caseFixtureSha256": "bb19b699b6788b3baf75bbbc5444b7f1975204323c51983071dc38d27b51e90f",
+      "inputSha256": "1c5f0b0124cd33eb081395ad397789fe6899dc38a6146a35e3d4e2fc23474d72",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1453,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 2430085,
+      "instructions": 2707732,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -498,16 +166,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "cart enumeration reversed, signed order reconstructed",
+      "caseFixtureSha256": "26fbf25b175e386b2a50ab2d638a6ccc545793cc9a4e971f87d2f3662690a983",
+      "inputSha256": "cbaaea0c6d91007d20317c8e9a9e0bc13155bee91487baa655d0623a16cd55da",
+      "expectedOutputSha256": "5fcf5eabe5fdfde89f554c30669c45510aa191898b26c80dbe4f3505d968b2a3",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 1293,
       "outputBytes": 632,
       "queryBytes": 638,
-      "instructions": 2437796,
+      "instructions": 2715534,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -519,16 +190,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "cart enumeration reversed, signed order reconstructed",
+      "caseFixtureSha256": "b2e1df0ed11700d5ecb7438a84ae0ee2aa4580db2ba107d5d0dc99557ded1ead",
+      "inputSha256": "30271d15c97f62baf4c8984a34d4fb82099de27e8390056306df5c09ca087289",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1453,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 2430085,
+      "instructions": 2707732,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -540,16 +214,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "last member changed; whole statement fails",
+      "caseFixtureSha256": "65d5b2c16e80d2bd30427c84745ac273f15371d84aeb472695c891d6e87cf71a",
+      "inputSha256": "ca3787be1cd6581f9f308c83900d6ac2b3d1e6d89fc9602dfd0f5ff6658a4b42",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 1293,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 277072,
+      "instructions": 554753,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -561,16 +238,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "last member changed; whole statement fails",
+      "caseFixtureSha256": "6cda7b05e090e6e7848a63a0a304b6dd53051b8247e2427a0dc0a56a61b02084",
+      "inputSha256": "d793cef611e6413d42e1038370dd4b66927c9972a8ee94d1d545cb21a74f31ed",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1453,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 290031,
+      "instructions": 567705,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -582,16 +262,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "observed Validation price differs",
+      "caseFixtureSha256": "4c38e4669fff2b9cdbf4bf340bccdaa3c1b3d144332b8a93047bfed773b2b068",
+      "inputSha256": "7dbc659e43b75ccfebb4a24342048f2c9833ba5745fc042aba7c74bae90235a5",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 1293,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 277072,
+      "instructions": 554753,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -603,16 +286,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "observed Validation price differs",
+      "caseFixtureSha256": "29895f3161ebe0ea5acc5afc577ff3abeaa4aeb489f4a861abb40d6f131d592d",
+      "inputSha256": "8d2453f438ec2b9d4555b285aae39154dc59acf3824b50be52e5878ce200f39e",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1453,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 241389,
+      "instructions": 519065,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -624,16 +310,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "missing signed member",
+      "caseFixtureSha256": "733dcd502a5fac80721d1e5115986d03413753a82cdabf1a354d80cf7a03b009",
+      "inputSha256": "a2c83c04d12230121ef3f0b0235bc61930c0c9b3a0f99171e735b244cc813e91",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 1,
       "ordinaryLines": 0,
       "physicalQuantity": 2,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 972,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 245691,
+      "instructions": 523360,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -645,16 +334,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "missing signed member",
+      "caseFixtureSha256": "ca69a0f590b5dc06d75a0d025272c2e2768bb55b47f67ef3e64053404afcbfe0",
+      "inputSha256": "15f36a2c5339a98930768a0048d277dfd517d0937eae5f099f1c4af96967d4fb",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 1,
       "ordinaryLines": 0,
       "physicalQuantity": 2,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1075,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 255477,
+      "instructions": 533159,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -666,16 +358,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "duplicate signed index",
+      "caseFixtureSha256": "7464447c126a428f13fa3cf7a9e3d4c31c19306240b29abe72c0a50f4112efba",
+      "inputSha256": "a9167bcf63dbb557d916cbc516ab8ef633618e3c62ca2b4718ead0a094a6991b",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 1293,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 276877,
+      "instructions": 554558,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -687,16 +382,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "duplicate signed index",
+      "caseFixtureSha256": "07dd9e3205fd625b551577bc9bf6ceec169dfcc5321abf4b091100088eb4e6bf",
+      "inputSha256": "a66d8565ff62d248c9fff18192315a16d5417015c1caaec5ffdae0dbef0aaf8d",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1453,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 290019,
+      "instructions": 567693,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -708,16 +406,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "header with no members",
+      "caseFixtureSha256": "b079e593eeeb018288d6614251dc723f0b95520a77123736078c2635a0f733b9",
+      "inputSha256": "15a4993e3fe10ec6c8d358a4596cb473270d737894c2eccabbfc421fcfc6f0ef",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 0,
       "ordinaryLines": 0,
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 652,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 198668,
+      "instructions": 476360,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -729,16 +430,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "header with no members",
+      "caseFixtureSha256": "489fe9d727f62784227fe29f9b097027dcde1aa6bae0dfad62fb936d855d0076",
+      "inputSha256": "4a21c206d9c84c543d8513cb97716e01740b2f80c826027ca8ebe8c0eb5e420b",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 0,
       "ordinaryLines": 0,
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 698,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 205677,
+      "instructions": 483235,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -750,16 +454,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "members with no header",
+      "caseFixtureSha256": "844bc6b543652210d9f6b82462b9c4840b314701be73db42fd2a6dccaa5de68c",
+      "inputSha256": "f9c88812bbc57a3a798c7654984fa55212cf170d2f6ebd314a214f0322aeff6e",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 1077,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 245370,
+      "instructions": 522983,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -771,16 +478,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "members with no header",
+      "caseFixtureSha256": "40ee432794c673ca6835920d8afc78d4cf089545efc0319e9576577cadfd5c64",
+      "inputSha256": "a58a6aa70c25d7131292eb02c123d9eb6120606253bd1da6639774d6e8c6fa3e",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1237,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 258197,
+      "instructions": 535876,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -792,12 +502,15 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "known required unsigned line",
+      "caseFixtureSha256": "3f2e8cb51bc475d8587fe6c4f4eacb464e5d05a5afcda69dd3a54cd3eb7f0733",
+      "inputSha256": "b482f6f99e447027afc2ed0757f2c33188663fc4c4a97b103d4748a33e24e5f8",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 0,
       "ordinaryLines": 2,
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 1001,
       "outputBytes": 17,
       "queryBytes": 638,
@@ -813,16 +526,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "known required unsigned line",
+      "caseFixtureSha256": "f8394b3203ad986e7b502bea801df0cbc2b7f58a39cbbccb0836314ec54d9e94",
+      "inputSha256": "446a8d07216156c3a07046dd6f656fc1a28891d9b0c01ee43fd1bb3077585f35",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 0,
       "ordinaryLines": 2,
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1161,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 232469,
+      "instructions": 510229,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -834,12 +550,15 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "optional unsigned ordinary control",
+      "caseFixtureSha256": "d4ce1324b6bc855f9c1945fe7f97f7f25aeaffd501f858baac14a869462fcd27",
+      "inputSha256": "829e3e4f60aa044e3bf3dd7b1811d540e93ea6da3eb9ae2e4a64fd204feac2a1",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 0,
       "ordinaryLines": 2,
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 1071,
       "outputBytes": 17,
       "queryBytes": 638,
@@ -855,12 +574,15 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "optional unsigned ordinary control",
+      "caseFixtureSha256": "b420d0420bb05ea0b387990a4230ba2018f522ec29b6433f4989a575af022b7a",
+      "inputSha256": "891f2a85889243f8dd82d944153b1c537799b780c927428943f24f9fcb968c11",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 0,
       "ordinaryLines": 2,
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1231,
       "outputBytes": 17,
       "queryBytes": 707,
@@ -876,12 +598,15 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "KNOWN_LIMIT missing policy unsigned allows",
+      "caseFixtureSha256": "4159eec69f838783e676d722abb7f4ef489d18d5a43566d5bcf4306470add848",
+      "inputSha256": "fa4b04b60491859fd3c03874b942f611dc11e689ea95fa74c637e9d6e9f565cd",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 0,
       "ordinaryLines": 2,
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 969,
       "outputBytes": 17,
       "queryBytes": 638,
@@ -897,12 +622,15 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "KNOWN_LIMIT missing policy unsigned allows",
+      "caseFixtureSha256": "1a88d87d140f1e5642a942402c1fedd400b03f4ac78dd4655810b8b4a8534f3e",
+      "inputSha256": "e6653c36ab3c62343503eb5ed9bdc9e04ee1442f3b36fd38e6be21201646321b",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 0,
       "ordinaryLines": 2,
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1129,
       "outputBytes": 17,
       "queryBytes": 707,
@@ -933,12 +661,15 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "0 signed + 200 ordinary",
+      "caseFixtureSha256": "5414b2ed3eb07ac3d26b66903f8320c7a53c6e75c8308f782de37a4a24f35d34",
+      "inputSha256": "d25e4f401027826bcc71d4b9c51fe310304eb3a1ec9f00a8743becaa0ea671a2",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 0,
       "ordinaryLines": 200,
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 64035,
       "outputBytes": 17,
       "queryBytes": 638,
@@ -954,12 +685,15 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "0 signed + 200 ordinary",
+      "caseFixtureSha256": "d18ce95f7035cadc0bf7bd0f12db950befdaa3efacd7e8760ce24b6855664ad7",
+      "inputSha256": "d9c7c07aba185daad00a62eb0d9154ebade2fb48cdb9f236106a308ee929d1e6",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 0,
       "ordinaryLines": 200,
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 75481,
       "outputBytes": 17,
       "queryBytes": 707,
@@ -975,16 +709,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "1 signed + 199 ordinary",
+      "caseFixtureSha256": "5b245079d7f8d0389346ff1ac037488a2885b6cf88f7acf4bdd839b1ce36c3dd",
+      "inputSha256": "e4ef0b2aebba94ace292b4002d7bd5751126e5e9845f2070dfc6233655a43d62",
+      "expectedOutputSha256": "1c6fe85000f8bae28ade47ccebbf735eca2819b237a3bda8a9764d4d133b23d1",
       "signedBuckets": 1,
       "ordinaryLines": 199,
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 64289,
       "outputBytes": 359,
       "queryBytes": 638,
-      "instructions": 5593520,
+      "instructions": 5871261,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -996,16 +733,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "1 signed + 199 ordinary",
+      "caseFixtureSha256": "a9f0c9b207c1ba07ffab629dfbbb08f9d78f571a895f09537f5ee651bbbd0261",
+      "inputSha256": "e5ee71d1942e40eb7f75699e49e040c49283ecbf0d9397f5dd51220b41dc5993",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 1,
       "ordinaryLines": 199,
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 75735,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 5922165,
+      "instructions": 6199829,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -1017,16 +757,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "3 signed + 197 ordinary",
+      "caseFixtureSha256": "1f0db2998fef0d858ca3e53bf25ae69a010538442b39e1ab7a3afe100010b7a3",
+      "inputSha256": "6f040cc395700a312eecec58fc979116c722ab4dffb3c8c24aed167a699b9f0d",
+      "expectedOutputSha256": "3132442992be6b4927571e1472ad640aca09dd0c87d0cfac9df0c27371ae4d66",
       "signedBuckets": 3,
       "ordinaryLines": 197,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 64365,
       "outputBytes": 1045,
       "queryBytes": 638,
-      "instructions": 5662088,
+      "instructions": 5939824,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -1038,16 +781,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "3 signed + 197 ordinary",
+      "caseFixtureSha256": "7174075d5537eba6a8299c889792b15b7ca9368152161490e8a266bbf57fec8a",
+      "inputSha256": "e674bcc8a532e870b9586149b4051aa2938b2e6c4a176e2cc7dd84bfa2b403c6",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 3,
       "ordinaryLines": 197,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 75811,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 5978440,
+      "instructions": 6256099,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -1059,16 +805,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "4 signed + 196 ordinary",
+      "caseFixtureSha256": "6fda3d7c1d6748fdac0544b494438282f835f94500d844240bce7598419e1c0a",
+      "inputSha256": "6afec4b359be26ac7cf689c98636fd0cabe10f60e460a6c783badc901a0caf22",
+      "expectedOutputSha256": "6a51e30aa0ccf2bb1b6b600aa9d838b6160ce0ab025f7304aaad10625e04311b",
       "signedBuckets": 4,
       "ordinaryLines": 196,
       "physicalQuantity": 4,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 64403,
       "outputBytes": 1388,
       "queryBytes": 638,
-      "instructions": 5636599,
+      "instructions": 5914340,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -1080,16 +829,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "4 signed + 196 ordinary",
+      "caseFixtureSha256": "3707bc8dac65eca51ecbeda01eb98347fcfbf64ddf6650042c7ea290cc2f0c7a",
+      "inputSha256": "fcf0ef4de6408708551c8692f663d52cc777f201e5336c001b85e6d0ca5a4d40",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 4,
       "ordinaryLines": 196,
       "physicalQuantity": 4,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 75849,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 5945218,
+      "instructions": 6222877,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -1101,16 +853,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "10 signed + 190 ordinary",
+      "caseFixtureSha256": "e3e42452cc1030faf84c50812accfe51b16f463207bd152dbcbc9cb6ed81eace",
+      "inputSha256": "d3ab4769ed49245cd86aac2ec334dd1f2e49e1433b647da75178038e937aca2b",
+      "expectedOutputSha256": "ae5b6341d148d283b832ebc2f62a6409809d29102ecc43dcbcc9c6f0e1b7c00c",
       "signedBuckets": 10,
       "ordinaryLines": 190,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 64631,
       "outputBytes": 3446,
       "queryBytes": 638,
-      "instructions": 5775425,
+      "instructions": 6053161,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -1122,16 +877,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "10 signed + 190 ordinary",
+      "caseFixtureSha256": "bcda1ac06881ac4481d3b249b22296af8679ec885416d00e176e64e372e572d0",
+      "inputSha256": "2e0515acbf1acd4fca16606ab3c85d70563d645fdb118085d98e0f21f50889f4",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 10,
       "ordinaryLines": 190,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 76077,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 6045299,
+      "instructions": 6322958,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -1143,16 +901,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "32 signed + 168 ordinary",
+      "caseFixtureSha256": "ef026c57f75efa6d839290244901536563000bd5a7323ae4942ff2dae3a46e62",
+      "inputSha256": "f8e53cf69613feec82988b466a47064f4b2ef0100f03be9460af7bdce0a133b1",
+      "expectedOutputSha256": "917e5ade84e4f05f29bd30deb983f63fa1e057dc561ff39acb915a28155345e4",
       "signedBuckets": 32,
       "ordinaryLines": 168,
       "physicalQuantity": 32,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 65467,
       "outputBytes": 10992,
       "queryBytes": 638,
-      "instructions": 6211092,
+      "instructions": 6488828,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -1164,16 +925,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "32 signed + 168 ordinary",
+      "caseFixtureSha256": "0ea04d816336cb29451792bff7745a205ea8e2d0f5555f2044d1108b0dcdafb8",
+      "inputSha256": "08d816a440acda8f6840b5e488c93f5a67a0f231b4ba2af3df3fa3cc3460eec1",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 32,
       "ordinaryLines": 168,
       "physicalQuantity": 32,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 76913,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 6340269,
+      "instructions": 6617928,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -1185,16 +949,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "64 signed + 136 ordinary",
+      "caseFixtureSha256": "3a836ff7f60e47dacf58547a43a62b6ee85b7a5c2fd458297ab9192a22e7556d",
+      "inputSha256": "b25c8a215f4fa699453ddbf28e2aa3786a1a10e70d14dd094d655bcfed1578f4",
+      "expectedOutputSha256": "eefa92ed35e6b5085511bb1b4fe9a26d21992ecf28258386843a66063c64e0a6",
       "signedBuckets": 64,
       "ordinaryLines": 136,
       "physicalQuantity": 64,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 66683,
       "outputBytes": 21968,
       "queryBytes": 638,
-      "instructions": 6834793,
+      "instructions": 7112504,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -1206,16 +973,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "64 signed + 136 ordinary",
+      "caseFixtureSha256": "2d330851ae339447c755bb9e8583b7bf911f0346345df97074513a7d214cd112",
+      "inputSha256": "7873c058ddc072d03cd9a881f450d2e308327be57c59b9e5b5afe8bf3e7a2e36",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 64,
       "ordinaryLines": 136,
       "physicalQuantity": 64,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 78129,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 6758426,
+      "instructions": 7036085,
       "memoryUsageKiB": 1472,
       "stackPeak": null,
       "queryCost": null,
@@ -1227,16 +997,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "10 isolated signed",
+      "caseFixtureSha256": "e45bcdfd9d1b1150dc342a8a7a806d532075226f16c48249ed27e5ea00ffd03e",
+      "inputSha256": "a06c905980556da425a3d128aef4c50d8c3b78d92539a15672b71bdfe24d5023",
+      "expectedOutputSha256": "ae5b6341d148d283b832ebc2f62a6409809d29102ecc43dcbcc9c6f0e1b7c00c",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 4211,
       "outputBytes": 3446,
       "queryBytes": 638,
-      "instructions": 2706221,
+      "instructions": 2983864,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1248,16 +1021,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "10 isolated signed",
+      "caseFixtureSha256": "66ab0168707817b45e907176b37f7d703834118aba2716df9a03f2316dae8a15",
+      "inputSha256": "23e8f91c1e29d5c11e0f645b272c7f456f041f8c54a7f70980bef75ed9be6d30",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 4827,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 2659136,
+      "instructions": 2936800,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1269,16 +1045,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "32 isolated signed",
+      "caseFixtureSha256": "50dd551cfcfcf1c1429d49c19daa4b2d26e4c6cc6cf7adf50f98a4e742662336",
+      "inputSha256": "5f07d35b1b1732aafa1ffb751746c248b57143cccc3e87cb0f9303e94fe98f7e",
+      "expectedOutputSha256": "917e5ade84e4f05f29bd30deb983f63fa1e057dc561ff39acb915a28155345e4",
       "signedBuckets": 32,
       "ordinaryLines": 0,
       "physicalQuantity": 32,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 12043,
       "outputBytes": 10992,
       "queryBytes": 638,
-      "instructions": 3498292,
+      "instructions": 3776019,
       "memoryUsageKiB": 1216,
       "stackPeak": null,
       "queryCost": null,
@@ -1290,16 +1069,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "32 isolated signed",
+      "caseFixtureSha256": "fdb4095fc25869a8125cf3957aff1bf389d0687d055b278ac30c7196cf9e82e4",
+      "inputSha256": "c5317a38627bda0c16f0cf5bb9664037aa4717560e5a2fb6cb944cbafecc369a",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 32,
       "ordinaryLines": 0,
       "physicalQuantity": 32,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 13913,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 3346435,
+      "instructions": 3624099,
       "memoryUsageKiB": 1216,
       "stackPeak": null,
       "queryCost": null,
@@ -1311,16 +1093,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "64 isolated signed",
+      "caseFixtureSha256": "6f02e76240f83e183eda8439cbccf26a20d7ea225aacb4bcf52cd2fe78e77892",
+      "inputSha256": "49920a2692f7c046b2b45da23080e37272eba5d487a166120e2a18a870cd6a4e",
+      "expectedOutputSha256": "eefa92ed35e6b5085511bb1b4fe9a26d21992ecf28258386843a66063c64e0a6",
       "signedBuckets": 64,
       "ordinaryLines": 0,
       "physicalQuantity": 64,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 23435,
       "outputBytes": 21968,
       "queryBytes": 638,
-      "instructions": 4638541,
+      "instructions": 4916252,
       "memoryUsageKiB": 1280,
       "stackPeak": null,
       "queryCost": null,
@@ -1332,16 +1117,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "64 isolated signed",
+      "caseFixtureSha256": "da8cbe1825813386b4c609662b8de3886f4ea66feb9337bbfb49099dbab3d55e",
+      "inputSha256": "2ca18d2de4960475ec426b0b72a2ea45eb941379f29b90f14a7abe30cde5a2aa",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 64,
       "ordinaryLines": 0,
       "physicalQuantity": 64,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 27129,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 4335033,
+      "instructions": 4612697,
       "memoryUsageKiB": 1344,
       "stackPeak": null,
       "queryCost": null,
@@ -1353,16 +1141,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "500-unit two-group tier",
+      "caseFixtureSha256": "32791a536f81f670953e2259d10ef3ed9ed7151ff316a04ff661802b71f16792",
+      "inputSha256": "f58ff7844a5058d439d002cc8fe1fd2205729055548fadb15ad84ac696cbddce",
+      "expectedOutputSha256": "8d7df1176075de55d7e39999d9e898bccfc18a12dbfe558cd9b00b1e5ad4a93c",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 500,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 1367,
       "outputBytes": 702,
       "queryBytes": 638,
-      "instructions": 2403564,
+      "instructions": 2681345,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1374,16 +1165,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "500-unit two-group tier",
+      "caseFixtureSha256": "7a88b61054bce4b76efedef2e276c7708fb5cc65fd5d10fda2bacefd17e76b9c",
+      "inputSha256": "9921fe09149d2e6fa411e1c8497f1dfe5120a36cedcd9409fe19b00c9d4f8d7d",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 500,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1531,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 2395775,
+      "instructions": 2673426,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1395,16 +1189,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "10000 physical units in five 2000-unit buckets",
+      "caseFixtureSha256": "9ef4f8605498e9646a629f62b6900608ab141ee759a03b353463710ae56ce4d6",
+      "inputSha256": "c8c9daaabb3685cc72b2c727222529680cd380139ced503ee883ef3d219271f7",
+      "expectedOutputSha256": "ead2161584d5ba652e6871234ca40a07e3f8cf6b0d02043df434012bfe215df6",
       "signedBuckets": 5,
       "ordinaryLines": 0,
       "physicalQuantity": 10000,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 2446,
       "outputBytes": 1731,
       "queryBytes": 638,
-      "instructions": 2526924,
+      "instructions": 2804544,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1416,16 +1213,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "10000 physical units in five 2000-unit buckets",
+      "caseFixtureSha256": "ddd6c261333a26fac19feaeac3a0d945d106797b9416c1cac0d3882812c36efd",
+      "inputSha256": "a34b74ac1342f5f1587cbe5d510d2d74847ca635b048786b816430d6e3cd84df",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 5,
       "ordinaryLines": 0,
       "physicalQuantity": 10000,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 2792,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 2506147,
+      "instructions": 2783811,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1437,16 +1237,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "EUR91 exact allocation",
+      "caseFixtureSha256": "9ee7511b12da279c05d4a3a6cfcfa8728c57762d8c92aee6cc512b1d7a80be30",
+      "inputSha256": "b29adff1f0ad0647e4faf728c4556392bd46a54c819b294ec424ac20ddeaae94",
+      "expectedOutputSha256": "de56ed1fd14347defad34b8acfd2899ccf3aa3d0053a083fe493f5ca811640e7",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 1293,
       "outputBytes": 632,
       "queryBytes": 638,
-      "instructions": 2437796,
+      "instructions": 2715534,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1458,16 +1261,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "EUR91 exact allocation",
+      "caseFixtureSha256": "9a1b270eca02dcb89a3498ae2be93997a0d018e8a8ffe5dc94fca7f304240343",
+      "inputSha256": "1c5f0b0124cd33eb081395ad397789fe6899dc38a6146a35e3d4e2fc23474d72",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 2,
       "ordinaryLines": 0,
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 1453,
       "outputBytes": 17,
       "queryBytes": 707,
-      "instructions": 2430085,
+      "instructions": 2707732,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1479,16 +1285,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "first malformed member",
+      "caseFixtureSha256": "84890bfb02b2fec82e61a42f4ec07c11c52445434043fd8ae481951c092355cc",
+      "inputSha256": "03a8bbc6f3f69458a73ce37befcaba9052eec78741543b4e7d2057f36960c6ee",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 4211,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 453572,
+      "instructions": 731171,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1500,16 +1309,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "first malformed member",
+      "caseFixtureSha256": "6b60b2224d702cd3da9fc4567e70465d1a19d052f8fe574ee027dcc3bba51d72",
+      "inputSha256": "5375ae85680b7e6f0656afd575396e2b460d57a31e2ab4a45c50961e6e2fc837",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 4827,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 489128,
+      "instructions": 766743,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1521,16 +1333,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "first tampered member",
+      "caseFixtureSha256": "2f40371867594e36d9b5c4197606ea9949763e1672d9c8defe8c2b1c5a489cc7",
+      "inputSha256": "6ef778142cfcb7f437383bf0ea687f4e5e70c1700300b261a90ad3e3d4c631cf",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 4211,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 492103,
+      "instructions": 769702,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1542,16 +1357,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "first tampered member",
+      "caseFixtureSha256": "e423e2ce111398c1638e4db98108b0842bfced1f70f90ba2bac6507d91aa1a94",
+      "inputSha256": "943cfa7dbd3826b3c3421e479f66f58986623bf450c1f79f59648a6e255ec7f5",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 4827,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 492727,
+      "instructions": 770342,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1563,16 +1381,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "last malformed member",
+      "caseFixtureSha256": "f5fc7e4ca9c3af0e51af853c92d8a866f022230a3189fd4345521099e9520d1f",
+      "inputSha256": "22a49dbb45045a99f677cd0b0c39c127d465785be19524f7e737ac4245acfa8f",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 4211,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 488321,
+      "instructions": 765920,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1584,16 +1405,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "last malformed member",
+      "caseFixtureSha256": "fba73297c85819430bec96602704c619d680fe68c898c25cabaac6ba686dc21d",
+      "inputSha256": "519a99b9877f040187ef5173a69b8ea0d2d8a70959bb226f57e179c9c497e6ca",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 4827,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 523940,
+      "instructions": 801555,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1605,16 +1429,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "last tampered member",
+      "caseFixtureSha256": "b46be7bbcd5c0b49732e5ca6479bb936fa023720c7e4e6efb7e1bcf23f95aa13",
+      "inputSha256": "bcb67f62243c88b88333e78ea953bcca8dca4aeea49cff4487df5930cd12cd49",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 4211,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 492103,
+      "instructions": 769702,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1626,16 +1453,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "last tampered member",
+      "caseFixtureSha256": "d5942a3893984b6508323b4c2c4a722d30b9be4413d57a10f4ca75da108c40fd",
+      "inputSha256": "0996fef8ebe75ad629b0ad0cb366e03451e3b3f26a2cdf9bbac3fcbe5469d4ea",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 4827,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 527539,
+      "instructions": 805154,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1647,16 +1477,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "duplicate member",
+      "caseFixtureSha256": "17d1fcbb823e8fc02c309ee22a93ae8885668b2364afc9b6c3b51a4f2eda086d",
+      "inputSha256": "b93e92184a35292a072f3840894b895dea9e00b4f09d143e96cc8222d8d8d36e",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 4211,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 461034,
+      "instructions": 738633,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1668,16 +1501,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "duplicate member",
+      "caseFixtureSha256": "8e4ead3f1b289eb911efb4d40e668ffe6f82f5731e89c6d6fa4fd311cb809af9",
+      "inputSha256": "861cb6bd9e35748c6516b6c6b7b51625db4ed87ae563bdb094c887cbec2577d8",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 4827,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 496608,
+      "instructions": 774223,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1689,16 +1525,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "missing member",
+      "caseFixtureSha256": "e7769cd83eed7d4ac4ba07b6df89abfea7ada1469fb626a5fd9b1397eb46c676",
+      "inputSha256": "d7e3ba0e963871dd16ad196452410e7c2d247e2c5100512ef760594af9aa372d",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 9,
       "ordinaryLines": 0,
       "physicalQuantity": 9,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 3855,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 430086,
+      "instructions": 707820,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1710,16 +1549,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "missing member",
+      "caseFixtureSha256": "d4dfd97ecb915a0385a9b196c650b7f928f680574220e2804c811f2e9f37187f",
+      "inputSha256": "8c62e87f31093c2017aa90f212d383fbaace087ebdfd8b8f1ea37ee01c9a97b1",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 9,
       "ordinaryLines": 0,
       "physicalQuantity": 9,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 4414,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 462443,
+      "instructions": 740058,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1731,16 +1573,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "over trusted bucket capacity",
+      "caseFixtureSha256": "c651fe33feb62e82d6896a787ab183ba992b2dcf8f85385dac09ab9244490354",
+      "inputSha256": "b70a9420aa11976abfb4b92cf761752c2de103ea99c68d174f1929f926516c9f",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 4210,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 455783,
+      "instructions": 733364,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1752,16 +1597,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "over trusted bucket capacity",
+      "caseFixtureSha256": "0df9e8b71614945dfed1cf0723eb7f41e8255026ed6bcb916a8362b1ae508ee0",
+      "inputSha256": "d8381b63859634f33af94e5f580b7415622b1f5ecf54d07d7ad932d350e83b83",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 10,
       "ordinaryLines": 0,
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 4826,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 488354,
+      "instructions": 766116,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1773,16 +1621,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "transform",
       "caseName": "over trusted physical quantity",
+      "caseFixtureSha256": "2621b12fe50fc3b1bac01e7728c9699717bbb0bdfa8ee9cd5ee4794ad65f89c0",
+      "inputSha256": "d697fbdeaa17094a20b48f2f2bf0e09e09a14b3ad31c2cd5261095f247a7a572",
+      "expectedOutputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
       "signedBuckets": 5,
       "ordinaryLines": 0,
       "physicalQuantity": 10000,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "fb5e5c489e61f80569346b3c34ffa944aad2619a2256f364b37b6e0e95e00e78",
-      "binaryBytes": 162584,
+      "wasmSha256": "3cec616854c63b6346ee0c0404bb3df7e698e82c953d79328077f33a6ef4aa0b",
+      "binaryBytes": 163880,
       "inputBytes": 2445,
       "outputBytes": 17,
       "queryBytes": 638,
-      "instructions": 338134,
+      "instructions": 615715,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1794,16 +1645,19 @@ Building function m0-005-local-validation...   Compiling proc-macro2 v1.0.107
     {
       "target": "validation",
       "caseName": "over trusted physical quantity",
+      "caseFixtureSha256": "29405301f0a08d1cd482e57bc11fcff22f5f7ef121b3e320c2cbfb5e0493c305",
+      "inputSha256": "fd7a58414057905ccde17fb895767c0c1f0ab54ed934272363656fb7b9356785",
+      "expectedOutputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
       "signedBuckets": 5,
       "ordinaryLines": 0,
       "physicalQuantity": 10000,
       "provenance": "schema-valid synthetic projection; live carrier and child price semantics unverified",
-      "wasmSha256": "334b4e808b79d36d57a553b4dd8e0aa18aa497f8120d198077f500602114975e",
-      "binaryBytes": 163827,
+      "wasmSha256": "0b13fc88ffab21bdc9e34407f27e3bf1cf9a4ec87d8af3c7fe8433c62952bf67",
+      "binaryBytes": 165114,
       "inputBytes": 2791,
       "outputBytes": 131,
       "queryBytes": 707,
-      "instructions": 361679,
+      "instructions": 639294,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,

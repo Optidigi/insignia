@@ -1,5 +1,5 @@
-import { sign, verify, type KeyObject } from 'node:crypto';
-import { allocateGroups, parseMinor, type AcceptedGroup } from '../../m0-004/ts/allocation.ts';
+import { sign, type KeyObject } from 'node:crypto';
+import { allocateGroups, type AcceptedGroup } from '../../m0-004/ts/allocation.ts';
 import { CURRENCY_EXPONENT_V1, decimalU64 } from '../../m0-004/ts/authorization.ts';
 
 export const DOMAIN = Buffer.from('Insignia\0WholeQuoteAuthorization\0v2\0', 'ascii');
@@ -8,40 +8,12 @@ export const MEMBER_BYTES = 22;
 export const ENVELOPE_CHARACTERS = 208;
 const U32 = 0xffffffff;
 const U64 = (1n << 64n) - 1n;
-const ED_ORDER = BigInt('0x1000000000000000000000000000000014def9dea2f79cd65812631a5cf5d3ed');
-const FIELD = (1n << 255n) - 19n;
-// Canonical compressed eight-torsion encodings, as checked against dalek's
-// EIGHT_TORSION constants: https://docs.rs/brine-ed25519/latest/src/brine_ed25519/lib.rs.html
-const WEAK_POINTS = new Set([
-  `01${'00'.repeat(31)}`,
-  'c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac037a',
-  `${'00'.repeat(31)}80`,
-  '26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc05',
-  `ec${'ff'.repeat(30)}7f`,
-  '26e8958fc2b227b045c3f489f2ef98f0d5dfac05d3c63339b13802886d53fc85',
-  '00'.repeat(32),
-  'c7176a703d4dd84fba3c0b760d10670f2a2053fa2c39ccc64ec7fd7792ac03fa',
-]);
-
 export interface Header {
   keyId: number; generationHex: string; epoch: number; quoteHex: string; setHex: string;
   count: number; currency: string; exponent: number; country: string; marketId: string;
   validThroughDay: number; totalQuantity: number; totalMinor: string;
 }
 export interface Member { index: number; variantId: string; quantity: number; unitMinor: string }
-export interface PhysicalLine {
-  variantId: string; quantity: number; observedSubtotal?: string | undefined; member?: string | undefined;
-  marked: boolean; requiresAuthorization: boolean; hasSellingPlan: boolean;
-}
-export interface VerificationKey { publicKey: KeyObject; revoked: boolean; firstDay: number; lastDay: number }
-export interface TrustedContext {
-  generationHex: string; epoch: number; currency: string; exponent: number; country: string;
-  marketId: string; allowNoMarket: boolean; shopLocalDay: number; maxBuckets: number;
-  maxPhysicalQuantity: number; keys: ReadonlyMap<number, VerificationKey>;
-}
-export interface PhysicalCart { envelope?: string | undefined; lines: readonly PhysicalLine[] }
-export interface SetDecision { accepted: true; bucketCount: number; totalQuantity: number; totalMinor: string }
-
 function uint(n: number, max: number, name: string): number {
   if (!Number.isSafeInteger(n) || n < 0 || n > max) throw new Error(`${name}: invalid unsigned integer`);
   return n;
@@ -115,14 +87,6 @@ export function decodeMember(bytes: Uint8Array): Member {
   return checkMember({ index: b.readUInt16BE(0), variantId: b.readBigUInt64BE(2).toString(),
     quantity: b.readUInt32BE(10), unitMinor: b.readBigUInt64BE(14).toString() });
 }
-function carrier(value: string, chars: number, bytes: number): Buffer {
-  if (typeof value !== 'string' || value.length !== chars || !/^[A-Za-z0-9_-]+$/.test(value)) {
-    throw new Error('bad carrier alphabet/length');
-  }
-  const b = Buffer.from(value, 'base64url');
-  if (b.length !== bytes || b.toString('base64url') !== value) throw new Error('noncanonical base64url');
-  return b;
-}
 function checkSet(header: Header, members: readonly Member[]): void {
   if (members.length !== header.count) throw new Error('incomplete set');
   let quantity = 0n, amount = 0n;
@@ -162,103 +126,4 @@ export function issueAllocatedQuote(
   }));
   const issued = issueWholeQuote(header, members, key, issuanceDay);
   return { header, members, envelope: issued.envelope, carriers: issued.members };
-}
-function littleEndian(bytes: Uint8Array): bigint {
-  let n = 0n;
-  for (let i = bytes.length - 1; i >= 0; i--) n = (n << 8n) | BigInt(bytes[i]!);
-  return n;
-}
-function canonicalPoint(bytes: Uint8Array): boolean {
-  if (bytes.length !== 32) return false;
-  const y = Uint8Array.from(bytes); y[31] = y[31]! & 0x7f;
-  const value = littleEndian(y);
-  // x=0 has no odd encoding; the sign bit would be an alternate point spelling.
-  return value < FIELD && !(bytes[31]! >= 128 && (value === 1n || value === FIELD - 1n));
-}
-function admittedKey(entry: VerificationKey, currentDay: number): KeyObject {
-  uint(entry.firstDay, U32, 'key first day'); uint(entry.lastDay, U32, 'key last day');
-  if (typeof entry.revoked !== 'boolean' || entry.firstDay > entry.lastDay ||
-      entry.revoked || currentDay < entry.firstDay || currentDay > entry.lastDay) throw new Error('key not admitted');
-  if (entry.publicKey.asymmetricKeyType !== 'ed25519') throw new Error('wrong key type');
-  const der = entry.publicKey.export({ format: 'der', type: 'spki' });
-  const prefix = Buffer.from('302a300506032b6570032100', 'hex');
-  if (!Buffer.isBuffer(der) || der.length !== 44 || !der.subarray(0, 12).equals(prefix)) throw new Error('bad key encoding');
-  const raw = der.subarray(12);
-  if (!canonicalPoint(raw) || WEAK_POINTS.has(raw.toString('hex'))) throw new Error('weak/noncanonical key');
-  return entry.publicKey;
-}
-function strictSignature(signature: Uint8Array): void {
-  if (signature.length !== 64 || !canonicalPoint(signature.subarray(0, 32)) ||
-      WEAK_POINTS.has(Buffer.from(signature.subarray(0, 32)).toString('hex')) ||
-      littleEndian(signature.subarray(32)) >= ED_ORDER) throw new Error('noncanonical signature');
-}
-function checkedContext(t: TrustedContext): void {
-  uuid(t.generationHex, 'trusted generation'); uint(t.epoch, U32, 'trusted epoch');
-  uint(t.shopLocalDay, U32, 'trusted day'); uint(t.maxBuckets, 0xffff, 'bucket limit');
-  uint(t.maxPhysicalQuantity, U32, 'quantity limit');
-  if (typeof t.currency !== 'string' || !/^[A-Z]{3}$/.test(t.currency) ||
-      CURRENCY_EXPONENT_V1[t.currency] !== t.exponent || typeof t.country !== 'string' ||
-      !/^[A-Z]{2}$/.test(t.country)) throw new Error('bad trusted currency/country');
-  decimalU64(t.marketId, 'trusted market ID');
-  if (typeof t.allowNoMarket !== 'boolean' || !(t.keys instanceof Map)) throw new Error('invalid trusted admission config');
-  if (t.marketId === '0' && !t.allowNoMarket) throw new Error('no-market context not admitted');
-}
-function checkedPhysicalLine(line: PhysicalLine): void {
-  positiveU64(line.variantId, 'observed variant ID'); uint(line.quantity, U32, 'observed quantity');
-  if (line.quantity === 0 || typeof line.marked !== 'boolean' ||
-      typeof line.requiresAuthorization !== 'boolean' || typeof line.hasSellingPlan !== 'boolean') {
-    throw new Error('invalid physical line');
-  }
-}
-
-/** Each adapter supplies independent context and normalized physical lines. */
-export function verifyCompleteQuote(cart: PhysicalCart, trusted: TrustedContext): SetDecision {
-  checkedContext(trusted);
-  if (!Array.isArray(cart.lines)) throw new Error('physical lines unavailable');
-  if (cart.envelope === undefined) {
-    for (const line of cart.lines) {
-      checkedPhysicalLine(line);
-      if (line.marked || line.member !== undefined || line.requiresAuthorization) {
-        throw new Error('unsigned required/marked line');
-      }
-    }
-    return { accepted: true, bucketCount: 0, totalQuantity: 0, totalMinor: '0' };
-  }
-  const envelope = carrier(cart.envelope, ENVELOPE_CHARACTERS, HEADER_BYTES + 64);
-  const header = decodeHeader(envelope.subarray(0, HEADER_BYTES));
-  if (header.count > trusted.maxBuckets || header.totalQuantity > trusted.maxPhysicalQuantity) throw new Error('capacity exceeded');
-  if (header.generationHex !== trusted.generationHex || header.epoch !== trusted.epoch ||
-      header.currency !== trusted.currency || header.exponent !== trusted.exponent ||
-      header.country !== trusted.country || header.marketId !== trusted.marketId ||
-      trusted.shopLocalDay > header.validThroughDay || header.validThroughDay - trusted.shopLocalDay > 2) {
-    throw new Error('independent context mismatch');
-  }
-  const records: (Buffer | undefined)[] = Array.from({ length: header.count });
-  const members: (Member | undefined)[] = Array.from({ length: header.count });
-  let count = 0;
-  for (const line of cart.lines) {
-    checkedPhysicalLine(line);
-    if (line.member === undefined) {
-      if (line.marked || line.requiresAuthorization) throw new Error('unsigned required/marked line');
-      continue;
-    }
-    if (!line.marked || line.hasSellingPlan || line.observedSubtotal === undefined) throw new Error('invalid marked line');
-    const record = carrier(line.member, 30, MEMBER_BYTES), member = decodeMember(record);
-    if (member.index >= header.count || records[member.index] !== undefined) throw new Error('extra/duplicate member index');
-    if (member.variantId !== line.variantId || member.quantity !== line.quantity) throw new Error('physical identity/quantity mismatch');
-    if (parseMinor(line.observedSubtotal, header.exponent) !== BigInt(member.quantity) * decimalU64(member.unitMinor, 'unit minor')) {
-      throw new Error('observed price mismatch');
-    }
-    records[member.index] = record; members[member.index] = member; count++;
-  }
-  if (count !== header.count || records.some(x => x === undefined)) throw new Error('missing member');
-  checkSet(header, members as Member[]);
-  const entry = trusted.keys.get(header.keyId);
-  if (!entry) throw new Error('unknown key ID');
-  const key = admittedKey(entry, trusted.shopLocalDay), signature = envelope.subarray(HEADER_BYTES);
-  strictSignature(signature);
-  if (!verify(null, Buffer.concat([DOMAIN, envelope.subarray(0, HEADER_BYTES), ...records as Buffer[]]), key, signature)) {
-    throw new Error('invalid whole-quote signature');
-  }
-  return { accepted: true, bucketCount: count, totalQuantity: header.totalQuantity, totalMinor: header.totalMinor };
 }

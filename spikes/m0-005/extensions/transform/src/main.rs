@@ -354,4 +354,24 @@ mod tests {
             assert!(run(bad)["operations"].as_array().unwrap().is_empty());
         }
     }
+
+    #[test]
+    fn revoked_and_out_of_window_public_keys_emit_no_price_operation() {
+        for (field, value) in [
+            ("revoked", serde_json::json!(true)),
+            ("firstDay", serde_json::json!(20803)),
+            ("lastDay", serde_json::json!(20801)),
+        ] {
+            let mut input = fixture();
+            let mut config: serde_json::Value =
+                serde_json::from_str(input["shop"]["publicConfig"]["value"].as_str().unwrap())
+                    .unwrap();
+            config["keys"][0][field] = value;
+            input["shop"]["publicConfig"]["value"] = config.to_string().into();
+            assert!(
+                run(input)["operations"].as_array().unwrap().is_empty(),
+                "{field}"
+            );
+        }
+    }
 }

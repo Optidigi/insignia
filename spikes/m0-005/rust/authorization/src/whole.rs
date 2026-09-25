@@ -1,4 +1,5 @@
 use base64::{engine::general_purpose::URL_SAFE_NO_PAD, Engine};
+use curve25519_dalek::edwards::CompressedEdwardsY;
 use ed25519_dalek::{Signature, VerifyingKey};
 
 pub const DOMAIN: &[u8] = b"Insignia\0WholeQuoteAuthorization\0v2\0";
@@ -139,20 +140,53 @@ pub fn decode_member(value: &str) -> Result<Member, Error> {
 pub struct VerificationKey {
     id: u16,
     parsed: VerifyingKey,
+    revoked: bool,
+    first_day: u32,
+    last_day: u32,
 }
 impl VerificationKey {
     pub fn new(id: u16, bytes: [u8; 32]) -> Result<Self, Error> {
+        Self::new_with_admission(id, bytes, false, 0, u32::MAX)
+    }
+
+    pub fn new_with_admission(
+        id: u16,
+        bytes: [u8; 32],
+        revoked: bool,
+        first_day: u32,
+        last_day: u32,
+    ) -> Result<Self, Error> {
+        if first_day > last_day {
+            return Err(Error::Context);
+        }
+        // Dalek decompression can accept a noncanonical compressed y. Require the
+        // maintained curve primitive's canonical re-encoding before key admission.
+        let point = CompressedEdwardsY(bytes)
+            .decompress()
+            .ok_or(Error::Signature)?;
+        if point.compress().to_bytes() != bytes {
+            return Err(Error::Signature);
+        }
         let parsed = VerifyingKey::from_bytes(&bytes).map_err(|_| Error::Signature)?;
         if parsed.is_weak() {
             return Err(Error::Signature);
         }
-        Ok(Self { id, parsed })
+        Ok(Self {
+            id,
+            parsed,
+            revoked,
+            first_day,
+            last_day,
+        })
     }
     pub fn id(&self) -> u16 {
         self.id
     }
     pub fn bytes(&self) -> [u8; 32] {
         self.parsed.to_bytes()
+    }
+    pub fn admitted(&self, day: u32) -> bool {
+        !self.revoked && self.first_day <= day && day <= self.last_day
     }
 }
 
@@ -272,6 +306,9 @@ pub fn verify_set(
         .iter()
         .find(|k| k.id == h.key_id)
         .ok_or(Error::UnknownKey)?;
+    if !key.admitted(expected.current_day) {
+        return Err(Error::UnknownKey);
+    }
     let mut message = Vec::with_capacity(DOMAIN.len() + HEADER_LEN + MEMBER_LEN * ordered.len());
     message.extend_from_slice(DOMAIN);
     message.extend_from_slice(&h.raw);
