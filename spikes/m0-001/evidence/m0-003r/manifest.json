@@ -1,0 +1,69 @@
+{
+  "slice": "M0-003R-v1.1",
+  "repository": "Optidigi/insignia",
+  "sourceBaseCommit": "a9398ebf8d069f3556c0b359be1372d94d45f82e",
+  "captureMode": "NATIVE_UI_PLUS_PUBLIC_API_RECEIPTS",
+  "result": "PRECONDITION_ONLY_PENDING_TEST_GATEWAY",
+  "sourceFunctionUnchanged": true,
+  "localWasmSha256": "5db1b7838409ef4a2a85dbd1ba976e1abb15f32c267a87ab4c006e7d6bac8d1e",
+  "remoteBinaryHash": "UNAVAILABLE",
+  "protectedOrder": "gid://shopify/Order/7184619962526",
+  "newSuccessfulOrderCount": 0,
+  "newPurchasedUnits": 0,
+  "receiptFiles": {
+    "README.md": {
+      "sha256": "866160c6699b90a702c6661827ead5ce6c7538295127dae78493c2f9bb9b2c29",
+      "bytes": 5448,
+      "kind": "evidence_index",
+      "localFileModifiedUtc": "2026-09-25T11:36:55.482608Z"
+    },
+    "baseline.json": {
+      "sha256": "3790896c2a9e77a2e8d7af4517467aba8149112c849259a131706eddb622c3f1",
+      "bytes": 5423,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T11:32:39.430832Z"
+    },
+    "order-inventory.graphql": {
+      "sha256": "0a2cedd5e8d54b36ade42c388751bd32da7904b7f550e4d67e7fead0f0404584",
+      "bytes": 217,
+      "kind": "executed_graphql_request",
+      "localFileModifiedUtc": "2026-09-25T11:34:43.351398Z"
+    },
+    "order-inventory.json": {
+      "sha256": "923c8f05daa607efbe52e4617bed1ea961836114bcde45323bb1da288cd01af6",
+      "bytes": 468,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T11:34:47.447435Z"
+    },
+    "protected-fulfillment.json": {
+      "sha256": "59a12e8943f55fba7592dc997d622795cabc864b9f713bf1b70fec0ce5d049b0",
+      "bytes": 2236,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T11:32:39.433894Z"
+    },
+    "protected-order.json": {
+      "sha256": "63a19776043e209d42e0d70ecdb607088bd61706501b5557f4f45493bebf67a3",
+      "bytes": 8101,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T11:32:39.432374Z"
+    },
+    "readiness.json": {
+      "sha256": "6e55fa715a28a033e4aa08e492b82b2cf6d91c2d74a8d6a812fc1e2db45fccbe",
+      "bytes": 2110,
+      "kind": "api_and_native_browser_readiness_projection",
+      "localFileModifiedUtc": "2026-09-25T11:34:27.264736Z"
+    },
+    "runtime.json": {
+      "sha256": "1f1a3bf9c0035d686c97677edc39674d977875505bd4d7319bff124f01b56311",
+      "bytes": 1065,
+      "kind": "local_runtime_smoke_report",
+      "localFileModifiedUtc": "2026-09-25T11:35:50.358791Z"
+    },
+    "versions-before.json": {
+      "sha256": "7c96d9dde078ab70cf7080d1976b32d7c21649ecb14e65adc3960d40697ae378",
+      "bytes": 426,
+      "kind": "sanitized_shopify_cli_version_projection",
+      "localFileModifiedUtc": "2026-09-25T11:36:23.792247Z"
+    }
+  }
+}

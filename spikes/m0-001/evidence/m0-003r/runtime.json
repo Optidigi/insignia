@@ -1,0 +1,29 @@
+{
+  "observedAtUtc": "2026-09-25T11:35:00Z",
+  "host": "codex-cli 0.156.1",
+  "orchestratorAlias": "sol-6-high",
+  "clientLaunch": {
+    "model": "gpt-6-sol",
+    "reasoningEffort": "high",
+    "source": "explicit CLI flags; project .codex/config.toml alone remains unverified as an effective load source",
+    "sandbox": "read-only for smoke",
+    "approval": "never",
+    "apps": false,
+    "plugins": false,
+    "multiAgent": true
+  },
+  "nativeSmoke": {
+    "requested": "one child read AGENTS.md and .agents/skills/code-review/SKILL.md, join, report write boundary",
+    "result": "FAILED_NO_CHILD",
+    "reportedError": "no thread with id (twice)",
+    "directParentReads": [
+      "AGENTS.md",
+      ".agents/skills/code-review/SKILL.md"
+    ],
+    "childPermissionVerified": false,
+    "stagingAccessDelegated": false
+  },
+  "fallback": "Previously verified PF-002 fresh, explicit gpt-6-sol/high restricted sequential session; to be used for final independent fixed-ref reviews",
+  "globalSettingsChanged": false,
+  "projectLocalRoleConfigChanged": false
+}

@@ -1,0 +1,18 @@
+{
+  "orders": {
+    "nodes": [
+      {
+        "id": "gid://shopify/Order/7184619962526",
+        "name": "#1001",
+        "createdAt": "2026-09-24T23:41:41Z",
+        "test": true,
+        "displayFinancialStatus": "PAID",
+        "displayFulfillmentStatus": "PARTIALLY_FULFILLED"
+      }
+    ],
+    "pageInfo": {
+      "hasNextPage": false,
+      "endCursor": "eyJsYXN0X2lkIjo3MTg0NjE5OTYyNTI2LCJsYXN0X3ZhbHVlIjoiMjAyNi0wOS0yNCAyMzo0MTo0MS45MTI2NjAifQ=="
+    }
+  }
+}

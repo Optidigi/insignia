@@ -17,3 +17,5 @@ python3 -B scripts/check-m0-002-evidence.py >/dev/null
 python3 -B scripts/verify_evidence_manifest.py evidence/m0-002/manifest.json
 python3 -B scripts/check-m0-003-evidence.py >/dev/null
 python3 -B scripts/verify_evidence_manifest.py evidence/m0-003/manifest.json
+python3 -B scripts/check-m0-003r-evidence.py >/dev/null
+python3 -B scripts/verify_evidence_manifest.py evidence/m0-003r/manifest.json

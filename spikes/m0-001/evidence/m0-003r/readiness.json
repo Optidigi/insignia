@@ -1,0 +1,64 @@
+{
+  "observedAtUtc": "2026-09-25T11:32:53Z",
+  "captureMode": "NATIVE_UI_PLUS_PUBLIC_API_RECEIPTS",
+  "api": {
+    "tool": "Shopify CLI 4.8.2 app execute",
+    "version": "2026-07",
+    "shop": "insignia-staging.myshopify.com",
+    "clientId": "942e6668fd1177524c0fc48b104b0ac3",
+    "queries": [
+      "../m0-003/baseline.graphql",
+      "../m0-003/order-state.graphql",
+      "../m0-003/fulfillment-state.graphql"
+    ],
+    "returnedErrors": false,
+    "historicalBaselineEquality": {
+      "baseline.json": {
+        "matchesPriorExactly": true,
+        "sha256": "3790896c2a9e77a2e8d7af4517467aba8149112c849259a131706eddb622c3f1"
+      },
+      "protected-order.json": {
+        "matchesPriorExactly": true,
+        "sha256": "63a19776043e209d42e0d70ecdb607088bd61706501b5557f4f45493bebf67a3"
+      },
+      "protected-fulfillment.json": {
+        "matchesPriorExactly": true,
+        "sha256": "59a12e8943f55fba7592dc997d622795cabc864b9f713bf1b70fec0ce5d049b0"
+      }
+    }
+  },
+  "browser": {
+    "tool": "T3 collaborative preview",
+    "tab": "tab_2",
+    "authenticatedAdmin": true,
+    "paymentSettingsPath": "/store/insignia-staging/settings/payments",
+    "visibleTestProviderPrompt": "Activate the test payment provider, or set your payment provider to test mode. Learn more about testing in development stores.",
+    "visibleBogusGateway": false,
+    "interpretation": "CURRENT_TEST_GATEWAY_NOT_ESTABLISHED",
+    "storefrontPasswordCheck": {
+      "unauthenticatedProductFinalPath": "/password",
+      "status": 200
+    }
+  },
+  "protectedOrder": "gid://shopify/Order/7184619962526",
+  "protectedFulfillment": "gid://shopify/Fulfillment/6511606562974",
+  "fixtureStatus": "ARCHIVED",
+  "cartTransformCount": 0,
+  "stockAtShopLocation": {
+    "small": {
+      "available": 8,
+      "committed": 2,
+      "onHand": 10
+    },
+    "medium": {
+      "available": 10,
+      "committed": 2,
+      "onHand": 12
+    }
+  },
+  "newOrders": 0,
+  "stagingMutations": 0,
+  "requestCapture": "UNAVAILABLE_NOT_REQUIRED_FOR_THIS_TEST",
+  "historicalRootCause": "UNDETERMINED",
+  "gateStatus": "G1_IN_PROGRESS"
+}
