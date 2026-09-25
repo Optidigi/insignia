@@ -1,0 +1,23 @@
+query CartTransformRunInput {
+  cart {
+    lines {
+      id
+      quantity
+      auth: attribute(key: "_insignia_auth") { value }
+      cost { amountPerQuantity { currencyCode } }
+      sellingPlanAllocation { sellingPlan { id } }
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          id
+          product { policy: metafield(namespace: "insignia_m0_004", key: "policy") { value } }
+        }
+      }
+    }
+  }
+  localization { country { isoCode } market { id } }
+  shop {
+    localTime { date }
+    publicConfig: metafield(namespace: "insignia_m0_004", key: "public_config") { value }
+  }
+}
