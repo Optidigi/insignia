@@ -31,3 +31,8 @@ jobs:
       - name: Run off-store package check
         working-directory: spikes/m0-004
         run: ./scripts/check-local.sh
+      - name: Record built Function hashes
+        working-directory: spikes/m0-004
+        run: |
+          git rev-parse HEAD
+          sha256sum extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm
