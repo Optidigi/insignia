@@ -5,3 +5,5 @@ spikes/m0-001/extensions/*/target/
 spikes/m0-001/.env
 spikes/m0-001/.env.*
 !spikes/m0-001/.env.example
+spikes/m0-001/**/__pycache__/
+spikes/m0-001/**/*.pyc

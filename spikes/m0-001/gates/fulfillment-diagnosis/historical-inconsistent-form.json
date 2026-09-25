@@ -1,0 +1,44 @@
+{
+  "source": "derived regression input: M0-002 recorded selected flags/quantities/aggregate plus direct order line mapping; disabled, indeterminate, ariaChecked and inputValue are synthetic test fields because original DOM did not capture them; not an original request or full native form capture",
+  "fulfillmentOrderId": "gid://shopify/FulfillmentOrder/8330797252766",
+  "intent": [
+    {
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17215047303326",
+      "lineItemId": "gid://shopify/LineItem/16953568788638",
+      "quantity": 1
+    }
+  ],
+  "rows": [
+    {
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17215047270558",
+      "lineItemId": "gid://shopify/LineItem/16953568723102",
+      "effectiveQuantity": 1,
+      "checked": false,
+      "disabled": false,
+      "indeterminate": false,
+      "ariaChecked": "false",
+      "inputValue": "1"
+    },
+    {
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17215047303326",
+      "lineItemId": "gid://shopify/LineItem/16953568788638",
+      "effectiveQuantity": 1,
+      "checked": true,
+      "disabled": false,
+      "indeterminate": false,
+      "ariaChecked": "true",
+      "inputValue": "1"
+    },
+    {
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17215047336094",
+      "lineItemId": "gid://shopify/LineItem/16953568755870",
+      "effectiveQuantity": 0,
+      "checked": false,
+      "disabled": false,
+      "indeterminate": false,
+      "ariaChecked": "false",
+      "inputValue": "0"
+    }
+  ],
+  "aggregateSelectedCount": 2
+}

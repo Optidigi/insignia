@@ -1,0 +1,21 @@
+query M0002FulfillmentA($id: ID!) {
+  order(id: $id) {
+    id name displayFulfillmentStatus
+    fulfillments(first: 10) {
+      id name createdAt status totalQuantity
+      location { id name }
+      fulfillmentLineItems(first: 20) {
+        nodes {
+          id quantity
+          lineItem {
+            id sku quantity unfulfilledQuantity
+            originalUnitPriceSet { shopMoney { amount currencyCode } }
+            customAttributes { key value }
+            lineItemGroup { id quantity variantId }
+          }
+        }
+        pageInfo { hasNextPage }
+      }
+    }
+  }
+}

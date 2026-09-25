@@ -1,0 +1,34 @@
+{
+  "source": "synthetic one-target control contract; not a live Shopify capture",
+  "fulfillmentOrderId": "gid://shopify/FulfillmentOrder/301",
+  "intent": [
+    {
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/101",
+      "lineItemId": "gid://shopify/LineItem/201",
+      "quantity": 1
+    }
+  ],
+  "rows": [
+    {
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/101",
+      "lineItemId": "gid://shopify/LineItem/201",
+      "effectiveQuantity": 1,
+      "checked": true,
+      "disabled": false,
+      "indeterminate": false,
+      "ariaChecked": "true",
+      "inputValue": "1"
+    },
+    {
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/102",
+      "lineItemId": "gid://shopify/LineItem/202",
+      "effectiveQuantity": 0,
+      "checked": false,
+      "disabled": false,
+      "indeterminate": false,
+      "ariaChecked": "false",
+      "inputValue": "0"
+    }
+  ],
+  "aggregateSelectedCount": 1
+}

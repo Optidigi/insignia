@@ -1,0 +1,25 @@
+{
+  "result": "PASS_READ_ONLY_BASELINE_PRESERVED",
+  "checkCount": 19,
+  "checks": [
+    "named USD shop",
+    "protected installation",
+    "nine expected scopes",
+    "no conflicting transform",
+    "owned archived fixture",
+    "exact fixture variants",
+    "single designated location INS-M0-001-BLK-S",
+    "catalog controls INS-M0-001-BLK-S",
+    "single designated location INS-M0-001-BLK-M",
+    "catalog controls INS-M0-001-BLK-M",
+    "protected small commitments",
+    "protected medium commitments",
+    "protected test order unchanged",
+    "protected fulfillment order location",
+    "protected remaining lines",
+    "historical fulfillment unchanged",
+    "post-check shop and fixture unchanged",
+    "post-check protected order unchanged",
+    "post-check historical fulfillment unchanged"
+  ]
+}
