@@ -2,7 +2,9 @@
 """Fail closed on a projected native fulfillment form before any submit click.
 
 This checks a *read-only projection*. A passing form does not authorize a
-mutation: the actual outgoing native request must also be captured and matched.
+mutation. M0-003R permits an owner-authorized native action when fresh actual
+control semantics, line identity and quantity reconcile; request capture is
+optional supplementary evidence. This synthetic guard is not a live adapter.
 """
 
 import argparse

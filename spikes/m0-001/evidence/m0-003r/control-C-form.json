@@ -1,0 +1,47 @@
+{
+  "capturedAt": "2026-09-25T12:16:47.270Z",
+  "source": "Shopify native Admin order #1002 fulfillment form; read-only DOM projection",
+  "store": "insignia-staging",
+  "orderNumericId": "7185244651678",
+  "sectionTitle": "Mark as fulfilled",
+  "locationText": "Shop location",
+  "selectionSummary": {
+    "label": "1 item selected",
+    "checked": false,
+    "indeterminate": true,
+    "shadowInputAriaChecked": "mixed"
+  },
+  "rows": [
+    {
+      "marker": "M0-003R-C-20260925-bystander",
+      "variantLabel": "Black / Small",
+      "sku": "INS-M0-001-BLK-S",
+      "checkboxChecked": false,
+      "checkboxIndeterminate": false,
+      "checkboxDisabled": false,
+      "shadowInputChecked": false,
+      "quantityInput": null,
+      "collapsedQuantityDisplay": "×\n\n1",
+      "selectedClass": false
+    },
+    {
+      "marker": "M0-003R-C-20260925-target",
+      "variantLabel": "Black / Small",
+      "sku": "INS-M0-001-BLK-S",
+      "checkboxChecked": true,
+      "checkboxIndeterminate": false,
+      "checkboxDisabled": false,
+      "shadowInputChecked": true,
+      "quantityInput": {
+        "value": "1",
+        "min": "1",
+        "max": "3",
+        "valid": true,
+        "ariaInvalid": "false"
+      },
+      "collapsedQuantityDisplay": null,
+      "selectedClass": true
+    }
+  ],
+  "customerNotificationChecked": false
+}

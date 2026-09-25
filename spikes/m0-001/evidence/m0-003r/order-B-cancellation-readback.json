@@ -1,0 +1,16 @@
+{
+  "order": {
+    "id": "gid://shopify/Order/7185312874654",
+    "name": "#1004",
+    "cancelledAt": "2026-09-25T13:11:42Z",
+    "cancelReason": "OTHER",
+    "displayFinancialStatus": "REFUNDED",
+    "displayFulfillmentStatus": "UNFULFILLED",
+    "totalRefundedSet": {
+      "shopMoney": {
+        "amount": "90.0",
+        "currencyCode": "USD"
+      }
+    }
+  }
+}

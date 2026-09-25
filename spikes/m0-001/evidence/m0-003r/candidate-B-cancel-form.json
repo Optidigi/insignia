@@ -1,0 +1,12 @@
+{
+  "at": "2026-09-25T13:11:03.801Z",
+  "source": "native Admin order #1004 cancellation dialog read-only DOM and visual observation; buyer details omitted",
+  "store": "insignia-staging",
+  "orderNumericId": "7185312874654",
+  "before": {"test": true, "financialStatus": "PAID", "fulfillmentStatus": "UNFULFILLED", "units": 3, "totalUsd": "90.00", "location": "Shop location"},
+  "paymentChoice": "Original payment method; refund $90.00 USD through (For Testing) Bogus Gateway",
+  "reason": "OTHER",
+  "restockInventoryChecked": true,
+  "sendNotificationChecked": false,
+  "action": "Cancel order"
+}

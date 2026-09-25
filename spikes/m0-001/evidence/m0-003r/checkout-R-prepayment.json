@@ -1,0 +1,18 @@
+{
+  "at": "2026-09-25T12:35:34.587Z",
+  "captureMode": "native checkout visible-text projection; checkout URL and buyer details omitted",
+  "host": "insignia-staging.myshopify.com",
+  "case": "R",
+  "lines": [
+    {"marker": "M0-003R-R-20260925-plain-small", "variant": "Black / Small", "quantity": 1, "unitPriceUsd": "20.00", "lineTotalUsd": "20.00"},
+    {"marker": "M0-003R-R-20260925-marked-medium", "variant": "Black / Medium", "quantity": 2, "unitPriceUsd": "30.00", "lineTotalUsd": "60.00"},
+    {"marker": "M0-003R-R-20260925-marked-small", "variant": "Black / Small", "quantity": 3, "unitPriceUsd": "30.00", "lineTotalUsd": "90.00"}
+  ],
+  "subtotal": "Subtotal · 6 items / $170.00",
+  "shipping": "Standard / FREE",
+  "total": "USD $170.00",
+  "paymentRoute": "built-in simulated gateway instructions visible; approved test value 1",
+  "requiredAddressFieldsPresentAndValid": true,
+  "shippingZone": "NY",
+  "payButtonPresent": true
+}

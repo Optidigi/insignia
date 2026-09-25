@@ -1,0 +1,94 @@
+{
+  "order": {
+    "id": "gid://shopify/Order/7185278173342",
+    "name": "#1003",
+    "refunds": [
+      {
+        "id": "gid://shopify/Refund/1017067667614",
+        "createdAt": "2026-09-25T12:52:58Z",
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "30.0",
+            "currencyCode": "USD"
+          }
+        },
+        "refundLineItems": {
+          "nodes": [
+            {
+              "quantity": 1,
+              "restockType": "RETURN",
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16954830782622"
+              },
+              "subtotalSet": {
+                "shopMoney": {
+                  "amount": "30.0",
+                  "currencyCode": "USD"
+                }
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      },
+      {
+        "id": "gid://shopify/Refund/1017068486814",
+        "createdAt": "2026-09-25T12:55:32Z",
+        "totalRefundedSet": {
+          "shopMoney": {
+            "amount": "140.0",
+            "currencyCode": "USD"
+          }
+        },
+        "refundLineItems": {
+          "nodes": [
+            {
+              "quantity": 1,
+              "restockType": "NO_RESTOCK",
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16954830717086"
+              },
+              "subtotalSet": {
+                "shopMoney": {
+                  "amount": "20.0",
+                  "currencyCode": "USD"
+                }
+              }
+            },
+            {
+              "quantity": 2,
+              "restockType": "NO_RESTOCK",
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16954830782622"
+              },
+              "subtotalSet": {
+                "shopMoney": {
+                  "amount": "60.0",
+                  "currencyCode": "USD"
+                }
+              }
+            },
+            {
+              "quantity": 2,
+              "restockType": "NO_RESTOCK",
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16954830749854"
+              },
+              "subtotalSet": {
+                "shopMoney": {
+                  "amount": "60.0",
+                  "currencyCode": "USD"
+                }
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "slice": "M0-003R-v1.1",
+  "shop": "insignia-staging.myshopify.com",
+  "app": "insignia",
+  "location": "gid://shopify/Location/89465290910",
+  "testGateway": "BUILT_IN_TEST_GATEWAY_ACTIVE_BEFORE_AND_AFTER_RELOAD_NO_MUTATION",
+  "nativeWorkflowOutcome": "PASS_OBSERVED_PROCEDURE",
+  "requestCapture": "UNAVAILABLE_NOT_REQUIRED_FOR_THIS_TEST",
+  "historicalRootCause": "UNDETERMINED",
+  "publicAppQualification": "UNVERIFIED",
+  "gateStatus": "G1_IN_PROGRESS",
+  "newSuccessfulOrders": 3,
+  "newPurchasedUnits": 13,
+  "caseC": {
+    "order": "gid://shopify/Order/7185244651678",
+    "name": "#1002",
+    "plainDuplicateVariantUnits": 4,
+    "paidUsd": "80.00",
+    "partialFulfillment": "EXACT_ONE_TARGET_ONLY",
+    "refundUsd": "80.00",
+    "stockAfterRefund": "RESTORED_TO_PRE_ORDER_WITH_PROTECTED_COMMITMENTS"
+  },
+  "caseR": {
+    "order": "gid://shopify/Order/7185278173342",
+    "name": "#1003",
+    "expandedMarkedSmall": 3,
+    "expandedMarkedMedium": 2,
+    "plainSmall": 1,
+    "paidUsd": "170.00",
+    "partialFulfillment": "EXACT_ONE_MARKED_SMALL_ONLY",
+    "remainderFulfillment": "EXACT_FIVE_REMAINING_UNITS",
+    "oneMarkedSmallRefundUsd": "30.00",
+    "oneMarkedSmallRestockUnits": 1,
+    "finalRefundWithoutRestockUsd": "140.00",
+    "totalRefundedUsd": "170.00"
+  },
+  "caseB": {
+    "order": "gid://shopify/Order/7185312874654",
+    "name": "#1004",
+    "expandedMarkedSmall": 3,
+    "paidUsd": "90.00",
+    "beforeCancellation": "ENTIRELY_UNFULFILLED",
+    "nativeCancellationReason": "OTHER",
+    "refundUsd": "90.00",
+    "restockedUnits": 3,
+    "fulfillmentOrderAfter": "CLOSED"
+  },
+  "residue": {
+    "testOrders": ["#1002 REFUNDED", "#1003 REFUNDED", "#1004 CANCELED_AND_REFUNDED"],
+    "successfulFulfillments": ["gid://shopify/Fulfillment/6512308158622", "gid://shopify/Fulfillment/6512343908510", "gid://shopify/Fulfillment/6512345579678"],
+    "fixtureStatus": "ARCHIVED_UNPUBLISHED",
+    "ownedCartTransformCount": 0,
+    "ownedDevPreview": "STOPPED_AND_CLEANED",
+    "smallStockAtShopLocation": {"available": 5, "committed": 2, "onHand": 7},
+    "mediumStockAtShopLocation": {"available": 8, "committed": 2, "onHand": 10},
+    "protectedOrderUnchanged": true,
+    "protectedFulfillmentUnchanged": true,
+    "storefrontPasswordRedirect": "/password",
+    "activeAppVersionUnchanged": true,
+    "remainingProtectedCommitments": "two Small and two Medium units on order #1001"
+  },
+  "limits": [
+    "No native Admin request body captured; this result does not identify the old incident cause.",
+    "The immediate R native projection omitted raw input presence/value, limits/validity and shadow properties. A retrospective extract of the original host event retains the target value 1 and implies presence, but not limits/validity or shadow state. Principal must adjudicate the remaining evidence gap.",
+    "This is one observed native procedure on one Basic development store, not ordinary public-app qualification.",
+    "Native Codex child-role smoke failed before spawn; independent restricted sequential reviews are used.",
+    "The active T3 chat host reports gpt-6-sol at medium effort although sol-6-high was requested; restricted reviewer CLI launches requested gpt-6-sol/high."
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "at": "2026-09-25T12:50:22.180Z",
+  "source": "native Admin #1003 unfulfilled section read-only projection",
+  "shopLocation": "gid://shopify/Location/89465290910",
+  "fulfillmentOrderId": "gid://shopify/FulfillmentOrder/8331532370078",
+  "summary": "5 items selected",
+  "notificationChecked": false,
+  "rows": [
+    {"marker": "M0-003R-R-20260925-plain-small", "lineItemId": "gid://shopify/LineItem/16954830717086", "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17216319619230", "checked": true, "quantity": 1, "remainingBefore": 1},
+    {"marker": "m0-001:m0-003r-R-S-20260925", "lineItemId": "gid://shopify/LineItem/16954830782622", "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17216319651998", "checked": true, "quantity": 2, "remainingBefore": 2},
+    {"marker": "m0-001:m0-003r-R-M-20260925", "lineItemId": "gid://shopify/LineItem/16954830749854", "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17216319684766", "checked": true, "quantity": 2, "remainingBefore": 2}
+  ]
+}

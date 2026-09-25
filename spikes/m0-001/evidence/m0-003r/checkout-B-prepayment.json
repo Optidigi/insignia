@@ -1,0 +1,11 @@
+{
+  "captureMode": "native checkout visible-text projection; checkout URL and buyer details omitted",
+  "host": "insignia-staging.myshopify.com",
+  "case": "B",
+  "line": {"marker": "M0-003R-B-20260925-marked-small", "variant": "Black / Small", "quantity": 3, "unitPriceUsd": "30.00", "lineTotalUsd": "90.00"},
+  "subtotal": "USD $90.00",
+  "shipping": "Standard / FREE",
+  "total": "USD $90.00",
+  "paymentRoute": "built-in simulated gateway instructions visible; approved test value 1",
+  "payButtonPresent": true
+}

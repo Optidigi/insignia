@@ -1,0 +1,17 @@
+query M0003RRefunds($id: ID!) {
+  order(id: $id) {
+    id name
+    refunds(first: 10) {
+      id createdAt
+      totalRefundedSet { shopMoney { amount currencyCode } }
+      refundLineItems(first: 20) {
+        nodes {
+          quantity restockType
+          lineItem { id }
+          subtotalSet { shopMoney { amount currencyCode } }
+        }
+        pageInfo { hasNextPage }
+      }
+    }
+  }
+}

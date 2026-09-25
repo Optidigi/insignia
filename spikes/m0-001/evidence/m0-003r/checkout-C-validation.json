@@ -1,0 +1,15 @@
+{
+  "case": "C",
+  "observation": "First Pay now click surfaced required-field validation despite populated DOM inputs; no order was created. Native click/end/insert/backspace/tab on the synthetic contact/address controls cleared aria-invalid. The retained direct order inventory still contained only #1001. No payment request or successful order is claimed from that click.",
+  "checkoutSecretRetained": false,
+  "firstClickFieldsWithAriaInvalid": [
+    "email",
+    "firstName",
+    "lastName",
+    "address1",
+    "city"
+  ],
+  "afterNativeKeyboardCorrectionAriaInvalid": null,
+  "readback": "after-first-pay-click-orders.json",
+  "buyerValuesRetained": false
+}

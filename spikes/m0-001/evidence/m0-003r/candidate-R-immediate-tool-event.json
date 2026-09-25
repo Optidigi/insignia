@@ -1,0 +1,38 @@
+{
+  "provenance": "sanitized extraction of original T3 host tool event after the native action",
+  "sourceSessionId": "01a0d465-b5c0-7b22-bc4c-4662c3307c5d",
+  "sourceEventId": "exec-8a1bf252-6020-422e-8a05-0a5b5199141b",
+  "sourceEventCompletedAtUtc": "2026-09-25T12:48:50.377Z",
+  "extractedAtUtc": "2026-09-25T14:20:17.463570Z",
+  "tool": "preview_evaluate",
+  "status": "completed",
+  "resultValue": {
+    "at": "2026-09-25T12:48:50.321Z",
+    "location": true,
+    "notify": false,
+    "order": "7185278173342",
+    "rows": [
+      {
+        "checked": false,
+        "collapsed": "\u00d7\n\n1",
+        "marker": "M0-003R-R-20260925-plain-small",
+        "quantity": 0
+      },
+      {
+        "checked": true,
+        "collapsed": null,
+        "marker": "m0-001:m0-003r-R-S-20260925",
+        "quantity": "1"
+      },
+      {
+        "checked": false,
+        "collapsed": "\u00d7\n\n2",
+        "marker": "m0-001:m0-003r-R-M-20260925",
+        "quantity": 0
+      }
+    ],
+    "store": "insignia-staging",
+    "summary": "1 item selected",
+    "summaryIndeterminate": true
+  }
+}

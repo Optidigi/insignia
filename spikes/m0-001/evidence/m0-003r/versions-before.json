@@ -1,0 +1,16 @@
+{
+  "source": "Shopify CLI 4.8.2 app versions list --json",
+  "projection": "versionId/versionTag/status only; createdBy and message omitted",
+  "versions": [
+    {
+      "versionId": "gid://shopify/Version/1143112728577",
+      "versionTag": "insignia-2",
+      "status": "active"
+    },
+    {
+      "versionId": "gid://shopify/Version/1143112335361",
+      "versionTag": "insignia-1",
+      "status": "inactive"
+    }
+  ]
+}

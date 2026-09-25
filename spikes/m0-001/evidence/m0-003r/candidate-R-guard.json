@@ -1,0 +1,25 @@
+{
+  "allowed": true,
+  "errors": [],
+  "resolved": [
+    {
+      "effectiveQuantity": 0,
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17216319619230",
+      "lineItemId": "gid://shopify/LineItem/16954830717086",
+      "marker": "M0-003R-R-20260925-plain-small"
+    },
+    {
+      "effectiveQuantity": 1,
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17216319651998",
+      "lineItemId": "gid://shopify/LineItem/16954830782622",
+      "marker": "m0-001:m0-003r-R-S-20260925"
+    },
+    {
+      "effectiveQuantity": 0,
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17216319684766",
+      "lineItemId": "gid://shopify/LineItem/16954830749854",
+      "marker": "m0-001:m0-003r-R-M-20260925"
+    }
+  ],
+  "submissionAuthorized": false
+}

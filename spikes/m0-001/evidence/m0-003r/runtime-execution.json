@@ -1,0 +1,13 @@
+{
+  "recordedAtUtc": "2026-09-25T14:04:38Z",
+  "source": "T3 Code host runtime information exposed to the active chat and explicit local Codex CLI launch arguments",
+  "requestedOrchestratorProfile": "sol-6-high",
+  "activeChatHostReportedModel": "gpt-6-sol",
+  "activeChatHostReportedReasoningEffort": "medium",
+  "restrictedReviewerLaunchRequestedModel": "gpt-6-sol",
+  "restrictedReviewerLaunchRequestedReasoningEffort": "high",
+  "restrictedReviewerLaunchRequestedSandbox": "read-only",
+  "restrictedReviewerAppsAndPlugins": "disabled by per-launch flags",
+  "providerPrivateAttestation": "not available",
+  "interpretation": "The active T3 chat did not expose the requested high-effort orchestrator configuration; no model/effort substitution is claimed as equivalent. Reviewers were separately launched with explicit high-effort client flags."
+}

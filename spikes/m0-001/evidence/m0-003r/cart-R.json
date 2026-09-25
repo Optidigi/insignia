@@ -1,0 +1,14 @@
+{
+  "at": "2026-09-25T12:27:09.930Z",
+  "captureMode": "native-storefront-public-Ajax-cart-projection",
+  "host": "insignia-staging.myshopify.com",
+  "addStatus": 200,
+  "addError": null,
+  "item_count": 6,
+  "total_price": 17000,
+  "items": [
+    {"variant_id": 50529053343902, "sku": "INS-M0-001-BLK-S", "quantity": 1, "price": 2000, "final_price": 2000, "final_line_price": 2000, "has_components": false, "properties": {"Insignia diagnostic": "M0-003R-R-20260925-plain-small"}},
+    {"variant_id": 50529054163102, "sku": "INS-M0-001-BLK-M", "quantity": 2, "price": 3000, "final_price": 3000, "final_line_price": 6000, "has_components": true, "properties": {"Insignia diagnostic": "M0-003R-R-20260925-marked-medium", "_insignia_m0_001": "m0-001:m0-003r-R-M-20260925"}},
+    {"variant_id": 50529053343902, "sku": "INS-M0-001-BLK-S", "quantity": 3, "price": 3000, "final_price": 3000, "final_line_price": 9000, "has_components": true, "properties": {"Insignia diagnostic": "M0-003R-R-20260925-marked-small", "_insignia_m0_001": "m0-001:m0-003r-R-S-20260925"}}
+  ]
+}

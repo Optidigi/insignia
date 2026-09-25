@@ -1,0 +1,149 @@
+{
+  "order": {
+    "id": "gid://shopify/Order/7185278173342",
+    "name": "#1003",
+    "displayFulfillmentStatus": "FULFILLED",
+    "fulfillments": [
+      {
+        "id": "gid://shopify/Fulfillment/6512345579678",
+        "name": "#1003-F2",
+        "createdAt": "2026-09-25T12:50:44Z",
+        "status": "SUCCESS",
+        "totalQuantity": 5,
+        "location": {
+          "id": "gid://shopify/Location/89465290910",
+          "name": "Shop location"
+        },
+        "fulfillmentLineItems": {
+          "nodes": [
+            {
+              "id": "gid://shopify/FulfillmentLineItem/14713693601950",
+              "quantity": 1,
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16954830717086",
+                "sku": "INS-M0-001-BLK-S",
+                "quantity": 1,
+                "unfulfilledQuantity": 0,
+                "originalUnitPriceSet": {
+                  "shopMoney": {
+                    "amount": "20.0",
+                    "currencyCode": "USD"
+                  }
+                },
+                "customAttributes": [
+                  {
+                    "key": "Insignia diagnostic",
+                    "value": "M0-003R-R-20260925-plain-small"
+                  }
+                ],
+                "lineItemGroup": null
+              }
+            },
+            {
+              "id": "gid://shopify/FulfillmentLineItem/14713693634718",
+              "quantity": 2,
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16954830782622",
+                "sku": "INS-M0-001-BLK-S",
+                "quantity": 3,
+                "unfulfilledQuantity": 0,
+                "originalUnitPriceSet": {
+                  "shopMoney": {
+                    "amount": "30.0",
+                    "currencyCode": "USD"
+                  }
+                },
+                "customAttributes": [
+                  {
+                    "key": "_insignia_m0_001",
+                    "value": "m0-001:m0-003r-R-S-20260925"
+                  }
+                ],
+                "lineItemGroup": {
+                  "id": "gid://shopify/LineItemGroup/32510673054",
+                  "quantity": 3,
+                  "variantId": "gid://shopify/ProductVariant/50529053343902"
+                }
+              }
+            },
+            {
+              "id": "gid://shopify/FulfillmentLineItem/14713693667486",
+              "quantity": 2,
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16954830749854",
+                "sku": "INS-M0-001-BLK-M",
+                "quantity": 2,
+                "unfulfilledQuantity": 0,
+                "originalUnitPriceSet": {
+                  "shopMoney": {
+                    "amount": "30.0",
+                    "currencyCode": "USD"
+                  }
+                },
+                "customAttributes": [
+                  {
+                    "key": "_insignia_m0_001",
+                    "value": "m0-001:m0-003r-R-M-20260925"
+                  }
+                ],
+                "lineItemGroup": {
+                  "id": "gid://shopify/LineItemGroup/32510640286",
+                  "quantity": 2,
+                  "variantId": "gid://shopify/ProductVariant/50529054163102"
+                }
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      },
+      {
+        "id": "gid://shopify/Fulfillment/6512343908510",
+        "name": "#1003-F1",
+        "createdAt": "2026-09-25T12:49:17Z",
+        "status": "SUCCESS",
+        "totalQuantity": 1,
+        "location": {
+          "id": "gid://shopify/Location/89465290910",
+          "name": "Shop location"
+        },
+        "fulfillmentLineItems": {
+          "nodes": [
+            {
+              "id": "gid://shopify/FulfillmentLineItem/14713690718366",
+              "quantity": 1,
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16954830782622",
+                "sku": "INS-M0-001-BLK-S",
+                "quantity": 3,
+                "unfulfilledQuantity": 0,
+                "originalUnitPriceSet": {
+                  "shopMoney": {
+                    "amount": "30.0",
+                    "currencyCode": "USD"
+                  }
+                },
+                "customAttributes": [
+                  {
+                    "key": "_insignia_m0_001",
+                    "value": "m0-001:m0-003r-R-S-20260925"
+                  }
+                ],
+                "lineItemGroup": {
+                  "id": "gid://shopify/LineItemGroup/32510673054",
+                  "quantity": 3,
+                  "variantId": "gid://shopify/ProductVariant/50529053343902"
+                }
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      }
+    ]
+  }
+}

@@ -73,7 +73,7 @@ Give each test run isolated local database/schema, R2 test prefix, ports and tem
 
 Blocked work records the blocking reason without advancing its state. A merged PR and a passed development gate are different facts.
 
-1. **Authorize.** The principal supplies a slice brief: outcome, baseline refs, prerequisites, allowed paths/resources, non-goals, invariants, tests, evidence and stop conditions. Only PF-001 is authorized in this handoff.
+1. **Authorize.** The principal supplies a slice brief: outcome, baseline refs, prerequisites, allowed paths/resources, non-goals, invariants, tests, evidence and stop conditions. The current authorization is named in `docs/delivery/state.md` and the active prompt reached from `AGENTS.md`.
 2. **Read.** Orchestrator verifies current branch/base and working-tree state; reads the ledger, operating model, active slice and relevant plan sections. Resolve existing facts from files/tools before asking questions.
 3. **Contract/test.** Define the narrow boundary and observable invariant. For behavior use a failing test, then minimum implementation, then refactor. For a platform spike write pass/failure criteria before probing it. An intentionally failing guard test must fail for the expected reason.
 4. **Implement.** Add the domain/application/adapter path needed for the use case, including the new application's SQL migration and retention/idempotency work where relevant. Keep speculative abstractions and legacy import work out.
