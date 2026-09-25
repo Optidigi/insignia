@@ -1,0 +1,73 @@
+{
+  "dateUtc": "2026-09-25",
+  "repository": "Optidigi/insignia",
+  "branch": "spike/m0-004-local-authorization",
+  "baseMergeCommit": "4591d102bb7368681622221253dbd4c997df1ad4",
+  "command": "cd spikes/m0-004 && ./scripts/check-local.sh",
+  "commandExit": 0,
+  "environment": {
+    "node": "24.21.0",
+    "pnpm": "12.6.0",
+    "rustc": "1.98.1",
+    "shopifyCli": "4.8.2",
+    "functionRunner": "9.2.2",
+    "apiVersion": "2026-07"
+  },
+  "testResults": {
+    "typescript": 51,
+    "rustCoreBehavior": 11,
+    "rustCoreCrossLanguage": 1,
+    "transformNative": 1,
+    "validationNative": 1,
+    "wasmSmokeRows": 7,
+    "wasmBenchmarkRows": 28,
+    "historicalM0001FixturesReused": 11
+  },
+  "sourceHashes": {
+    "docs/architecture/implementation-plan.md": "c0432288deb778c4d717871d6f771f95e401d00b6a3caf1b878155cbf0e5422d",
+    "docs/architecture/decision-ledger.md": "0c6c02bab83fb5032548c3d1be1f86ea1492ae3cfd26b6cacc8410f7d08737bb",
+    "spikes/m0-004/contract.md": "200678511803bea503f2daab2194b018c4fe7a285847b8275732172a9135aa3a",
+    "spikes/m0-004/package.json": "965dc1d1dc7ebd12db72ad1dee607a17a70ca24012307bcc6925ff04f812e6ea",
+    "spikes/m0-004/pnpm-lock.yaml": "7ddf77f987acf66c859186781dbd92f6bf17604def0fa3fed0216003efe96b11",
+    "spikes/m0-004/rust/authorization/Cargo.lock": "7207ac2ce6e2eae551066efdf554bbfb61ce96054fbad8e916c0654773f836fa",
+    "spikes/m0-004/extensions/transform/Cargo.lock": "e0d6d5d4384811b907f93708180c89142d74ff0c3d13fc2302a0e14a20fbb614",
+    "spikes/m0-004/extensions/validation/Cargo.lock": "1dbb7eb03e9d50885ceebba356667b532bc8607bf84910e3c994c8abdf6c79c5",
+    "spikes/m0-004/fixtures/vectors.json": "50c2b0fd2d40eb4b1db2aec041f0fb9acff56cefac7560709b81afd827207daf",
+    "spikes/m0-004/fixtures/targets/transform-valid.json": "7b7009278492e24ec64492a462dc06a5c97973fbd67859c31a5bf5d6e0a08db4",
+    "spikes/m0-004/fixtures/targets/validation-valid.json": "0606202959480371bf516346249e837bd1d5192db334eec823d535600e9aed9d",
+    "spikes/m0-004/extensions/transform/schema.graphql": "6e8851bc6c53bb8dae6620b2a98082aac10f88a5015b7cc2b57a9a49dd2e1aa4",
+    "spikes/m0-004/extensions/validation/schema.graphql": "4a782ed2a026b1f62a3c3466e0d9ddcc6b2e77e62a38feddfc524249fcf026f4",
+    "spikes/m0-004/extensions/transform/src/cart_transform_run.graphql": "8c2119b4d99439137e7e303a4a996b735ce057cfc7851a3512681b99d279bc33",
+    "spikes/m0-004/extensions/validation/src/cart_validations_generate_run.graphql": "2f91f8a2e83cd4740270e3bf19ab690993e2715d7f173f348a5095a8880636e6",
+    "spikes/m0-004/ts/authorization.ts": "f61ba126c3cbcd70bae2ca98cd92ed7102f298fcfbd17707db88376972ffa81c",
+    "spikes/m0-004/ts/allocation.ts": "375edf46c76ca9b80e7d1ed5301497305f321b0a6de3f8a058fcc0a777c84b95",
+    "spikes/m0-004/ts/verify-set.ts": "ba9838bd043297bec5fa8206cde9dba96676bb08013962b9a3543abb7f54daaf",
+    "spikes/m0-004/rust/authorization/src/lib.rs": "18b31fa0294643ec2a461d17a545f49710cfd35bc64377879e8922796c369669",
+    "spikes/m0-004/extensions/transform/src/main.rs": "b965bb9e1332cd770119b6a46401c3aa5b519f195cd2db7368511148097cc99b",
+    "spikes/m0-004/extensions/validation/src/main.rs": "02ec9b56f61a7a153e01a9b91eff32f5fe9a5c26e7d7f5c1c0b3683eedf3fd42",
+    "spikes/m0-004/scripts/target-runner.mjs": "e5e63dc29cf2b8371202afe3c1483788d7d30cfcf6f0528e21bd9e3cdb619ee4",
+    "spikes/m0-004/scripts/check-local.sh": "add3890b51a4bb2619706a7faeb9d1c35fd78c7104c913a75ec4f0c296daea1e"
+  },
+  "cliBuiltWasm": {
+    "transform": {
+      "path": "spikes/m0-004/extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm",
+      "bytes": 154780,
+      "sha256": "d38da5266217c3cfe9038ce1bf3c3d96ce82b8c9d1cb526c142878cf4bacb66c"
+    },
+    "validation": {
+      "path": "spikes/m0-004/extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm",
+      "bytes": 155735,
+      "sha256": "3ebdb2cb826cbf0c216e87048b683a04a5d6ff1e387db58b845beea71da31a1f"
+    }
+  },
+  "runnerSmokeSha256": "c2c35640a71d22ebd3a30b5c61606b98c32af4cdbd1376be601e5e8d813cb5b1",
+  "runnerBenchmarkSha256": "4496d316f960fb8638018f6ce122d842e9f0b9820d8d78713460b2197d4a0214",
+  "scope": "off-store synthetic only; no merchant calls or mutations",
+  "unknowns": [
+    "stack peak",
+    "numeric query cost",
+    "live Validation pre-discount child amount semantics",
+    "real cart token transport",
+    "per-key rollout validity windows"
+  ]
+}

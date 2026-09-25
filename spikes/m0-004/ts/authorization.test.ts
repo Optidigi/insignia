@@ -57,4 +57,13 @@ describe('candidate authorization bytes', () => {
     expect(() => encodePayload({ ...claims, variantId: Number(claims.variantId) as unknown as string })).toThrow();
     expect(() => encodePayload({ ...claims, totalMinor: '18446744073709551616' })).toThrow();
   });
+
+  it('rejects a weak key and noncanonical Ed25519 S scalar', () => {
+    const original = Buffer.from(issueToken(claims, privateKeyFromSeed(seedHex)), 'base64url');
+    const weak = new Map([[7, publicKeyFromHex('00'.repeat(32))]]);
+    expect(() => decodeAndVerifyToken(original.toString('base64url'), weak)).toThrow();
+    const orderL = Buffer.from('edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010', 'hex');
+    orderL.copy(original, 114 + 32);
+    expect(() => decodeAndVerifyToken(original.toString('base64url'), new Map([[7, publicKeyFromHex(publicHex)]]))).toThrow();
+  });
 });

@@ -14,3 +14,5 @@ Only the orchestrator owns shared files. The Rust writer does not use merchant c
 ## Status boundary
 
 G1 remains IN_PROGRESS with the principal's limited C/R/B acceptance and immediate-R capture gap. This package may move only local G2/G3/G5 evidence to IN_PROGRESS. No protocol freeze, public-app qualification, live G6 enforcement or M1 readiness follows from local results.
+
+The [local evidence](evidence/README.md) records a real complete-target instruction-budget failure: the optimized candidate reaches only four isolated signed buckets under the 11M reference limit, and three signed buckets with 197 ordinary lines exceed it. That is an architecture/capacity issue for principal review, not a passed product capacity. The pure authorization/exact-money behavior and both schema-valid synthetic Function paths remain useful reusable work. No Shopify resource was changed.
