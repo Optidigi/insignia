@@ -66,6 +66,7 @@ fn context<'a>(keys: &'a [VerificationKey]) -> ExpectedContext<'a> {
         market: 77,
         current_day: 20_000,
         max_buckets: 64,
+        max_physical_quantity: 10_000,
         allow_no_market: false,
         keys,
     }
@@ -276,6 +277,70 @@ fn five_schema_legal_2000_unit_buckets_sum_10000_without_unit_objects() {
         .collect();
     let k = keys();
     assert_eq!(verify_set(&lines, &context(&k), true).unwrap().len(), 5);
+}
+
+#[test]
+fn trusted_physical_quantity_capacity_rejects_10001_even_when_signed_totals_match() {
+    let t = token(claims(0, 1, 10_001, 1000, 10_001, 10_001_000));
+    let k = keys();
+    assert_eq!(
+        verify_set(&[line(&t, 111, 10_001, Some(1000))], &context(&k), true),
+        Err(Error::Line)
+    );
+}
+
+#[test]
+fn key_rotation_accepts_separate_sets_but_rejects_mixed_keys_within_one_set() {
+    let first = claims(0, 2, 1, 1000, 2, 2000);
+    let mut second = claims(1, 2, 1, 1000, 2, 2000);
+    second.key_id = 10;
+    let old = token(first);
+    let mixed = token(second);
+    let old_key = keys()[0];
+    let rotated_keys = [
+        old_key,
+        VerificationKey {
+            id: 10,
+            bytes: old_key.bytes,
+        },
+    ];
+    let e = context(&rotated_keys);
+    assert_eq!(
+        verify_set(
+            &[
+                line(&old, 111, 1, Some(1000)),
+                line(&mixed, 112, 1, Some(1000))
+            ],
+            &e,
+            true
+        ),
+        Err(Error::Context)
+    );
+    let mut new_first = first;
+    new_first.key_id = 10;
+    new_first.set = [4; 16];
+    second.set = [4; 16];
+    let new_a = token(new_first);
+    let new_b = token(second);
+    assert!(verify_set(
+        &[
+            line(&new_a, 111, 1, Some(1000)),
+            line(&new_b, 112, 1, Some(1000))
+        ],
+        &e,
+        true
+    )
+    .is_ok());
+    let old_b = token(claims(1, 2, 1, 1000, 2, 2000));
+    assert!(verify_set(
+        &[
+            line(&old, 111, 1, Some(1000)),
+            line(&old_b, 112, 1, Some(1000))
+        ],
+        &e,
+        true
+    )
+    .is_ok());
 }
 
 #[test]

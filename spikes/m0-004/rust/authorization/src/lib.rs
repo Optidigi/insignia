@@ -205,6 +205,7 @@ pub struct ExpectedContext<'a> {
     pub market: u64,
     pub current_day: u32,
     pub max_buckets: u16,
+    pub max_physical_quantity: u32,
     pub allow_no_market: bool,
     pub keys: &'a [VerificationKey],
 }
@@ -275,7 +276,8 @@ pub fn verify_set(
     let mut quantity = 0u32;
     let mut total = 0u64;
     for c in &members {
-        if c.quote != first.quote
+        if c.key_id != first.key_id
+            || c.quote != first.quote
             || c.set != first.set
             || c.count != first.count
             || c.valid_through_day != first.valid_through_day
@@ -290,6 +292,9 @@ pub fn verify_set(
         }
         *slot = true;
         quantity = quantity.checked_add(c.quantity).ok_or(Error::Overflow)?;
+        if quantity > expected.max_physical_quantity {
+            return Err(Error::Line);
+        }
         total = total
             .checked_add(
                 c.unit_minor
@@ -430,6 +435,7 @@ struct PublicConfigJson {
     generation_hex: String,
     epoch: u32,
     max_buckets: u16,
+    max_physical_quantity: u32,
     allow_no_market: bool,
     keys: Vec<PublicKeyJson>,
 }
@@ -446,6 +452,7 @@ pub struct PublicConfig {
     pub generation: [u8; 16],
     pub epoch: u32,
     pub max_buckets: u16,
+    pub max_physical_quantity: u32,
     pub allow_no_market: bool,
     pub keys: Vec<VerificationKey>,
 }
@@ -454,6 +461,7 @@ pub fn parse_public_config(value: &str) -> Result<PublicConfig, Error> {
     let parsed: PublicConfigJson = serde_json::from_str(value).map_err(|_| Error::Encoding)?;
     if parsed.max_buckets == 0
         || parsed.max_buckets > 200
+        || parsed.max_physical_quantity == 0
         || parsed.keys.is_empty()
         || parsed.keys.len() > 4
     {
@@ -476,6 +484,7 @@ pub fn parse_public_config(value: &str) -> Result<PublicConfig, Error> {
         generation: parse_hex(&parsed.generation_hex)?,
         epoch: parsed.epoch,
         max_buckets: parsed.max_buckets,
+        max_physical_quantity: parsed.max_physical_quantity,
         allow_no_market: parsed.allow_no_market,
         keys,
     })

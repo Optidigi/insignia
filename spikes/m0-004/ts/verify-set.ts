@@ -11,6 +11,7 @@ export interface ExpectedContext {
   currency: string;
   country: string;
   marketId: string;
+  allowNoMarket: boolean;
   shopLocalDay: number;
   maxBuckets: number;
   maxPhysicalQuantity: number;
@@ -23,6 +24,7 @@ export interface PhysicalLine {
   quantity: number;
   observedUnitMinor?: string | undefined;
   token?: string | undefined;
+  marked: boolean;
   requiresAuthorization: boolean;
   hasSellingPlan: boolean;
 }
@@ -39,7 +41,7 @@ function bounded(value: number, ceiling: number, name: string): void {
 }
 
 function sameSet(a: Claims, b: Claims): boolean {
-  return a.quoteHex === b.quoteHex && a.setHex === b.setHex &&
+  return a.keyId === b.keyId && a.quoteHex === b.quoteHex && a.setHex === b.setHex &&
     a.generationHex === b.generationHex && a.epoch === b.epoch &&
     a.lineCount === b.lineCount && a.currency === b.currency &&
     a.exponent === b.exponent && a.country === b.country &&
@@ -57,6 +59,7 @@ export function verifySet(lines: readonly PhysicalLine[], expected: ExpectedCont
     throw new Error('invalid trusted context');
   }
   decimalU64(expected.marketId, 'expected market ID');
+  if (expected.marketId === '0' && !expected.allowNoMarket) throw new Error('no-market context is not enabled');
 
   let first: Claims | undefined;
   let quantity = 0n;
@@ -67,9 +70,10 @@ export function verifySet(lines: readonly PhysicalLine[], expected: ExpectedCont
     bounded(line.quantity, U32_MAX, 'observed quantity');
     if (line.quantity === 0) throw new Error('zero physical line quantity');
     if (line.token === undefined) {
-      if (line.requiresAuthorization) throw new Error('required product has no authorization');
+      if (line.requiresAuthorization || line.marked) throw new Error('required or marked product has no authorization');
       continue;
     }
+    if (!line.marked) throw new Error('token on an unmarked line');
     if (line.hasSellingPlan) throw new Error('authorized customization has selling plan');
     if (line.observedUnitMinor === undefined) throw new Error('independent observed price unavailable');
     const observedPrice = decimalU64(line.observedUnitMinor, 'independent observed unit price');

@@ -158,6 +158,7 @@ fn cart_transform_run(input: schema::run::CartTransformRunInput) -> Result<Outpu
         market,
         current_day: today,
         max_buckets: config.max_buckets,
+        max_physical_quantity: config.max_physical_quantity,
         allow_no_market: config.allow_no_market,
         keys: &config.keys,
     };

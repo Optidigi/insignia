@@ -90,6 +90,11 @@ flip("tampered_currency", 84, ord("U"), "signature")
 flip("tampered_exponent", 87, 3, "currency/exponent", True)
 flip("tampered_country", 88, ord("F"), "signature")
 flip("tampered_market", 97, 43, "signature")
+flip("nonascii_currency", 84, 0xC5, "raw ASCII", True)
+flip("nonascii_country", 88, 0xC4, "raw ASCII", True)
+zero_variant = bytearray(raw0)
+zero_variant[64:72] = b"\x00" * 8
+bad("zero_variant", bytes(zero_variant), "positive GID suffix", True)
 changed_sig = bytearray(sig0)
 changed_sig[0] ^= 1
 invalid.append(dict(name="invalid_signature", token=b64(raw0 + changed_sig),

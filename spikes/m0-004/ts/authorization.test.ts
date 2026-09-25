@@ -46,7 +46,7 @@ describe('candidate authorization bytes', () => {
   });
 
   it('signs a canonical 238-character token and verifies with the public key', () => {
-    const token = issueToken(claims, privateKeyFromSeed(seedHex));
+    const token = issueToken(claims, privateKeyFromSeed(seedHex), 20798);
     expect(token).toHaveLength(238);
     expect(token).toMatch(/^[A-Za-z0-9_-]+$/);
     expect(decodeAndVerifyToken(token, new Map([[7, publicKeyFromHex(publicHex)]]))).toEqual(claims);
@@ -59,11 +59,19 @@ describe('candidate authorization bytes', () => {
   });
 
   it('rejects a weak key and noncanonical Ed25519 S scalar', () => {
-    const original = Buffer.from(issueToken(claims, privateKeyFromSeed(seedHex)), 'base64url');
+    const original = Buffer.from(issueToken(claims, privateKeyFromSeed(seedHex), 20798), 'base64url');
     const weak = new Map([[7, publicKeyFromHex('00'.repeat(32))]]);
     expect(() => decodeAndVerifyToken(original.toString('base64url'), weak)).toThrow();
     const orderL = Buffer.from('edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010', 'hex');
     orderL.copy(original, 114 + 32);
     expect(() => decodeAndVerifyToken(original.toString('base64url'), new Map([[7, publicKeyFromHex(publicHex)]]))).toThrow();
+  });
+
+  it('bounds issuance to three shop-local calendar days and rejects zero variant IDs', () => {
+    const key = privateKeyFromSeed(seedHex);
+    expect(() => issueToken({ ...claims, validThroughDay: 0xffffffff }, key, 20800)).toThrow();
+    expect(() => issueToken({ ...claims, validThroughDay: 20801 }, key, 20800)).toThrow();
+    expect(() => issueToken(claims, key, 0xffffffff)).toThrow();
+    expect(() => issueToken({ ...claims, variantId: '0' }, key, 20798)).toThrow();
   });
 });

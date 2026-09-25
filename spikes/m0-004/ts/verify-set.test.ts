@@ -15,7 +15,7 @@ const base: Claims = {
   validThroughDay: 20802, totalQuantity: 3, totalMinor: '9100',
 };
 const second: Claims = { ...base, lineIndex: 1, quantity: 1, unitMinor: '3034' };
-const token = (claim: Claims) => issueToken(claim, key);
+const token = (claim: Claims) => issueToken(claim, key, 20800);
 const tamperSignature = (value: string): string => {
   const bytes = Buffer.from(value, 'base64url');
   bytes[114] = bytes[114]! ^ 1;
@@ -23,11 +23,11 @@ const tamperSignature = (value: string): string => {
 };
 const line = (claim: Claims, overrides: Partial<PhysicalLine> = {}): PhysicalLine => ({
   variantId: claim.variantId, quantity: claim.quantity, observedUnitMinor: claim.unitMinor,
-  token: token(claim), requiresAuthorization: true, hasSellingPlan: false, ...overrides,
+  token: token(claim), marked: true, requiresAuthorization: true, hasSellingPlan: false, ...overrides,
 });
 const context: ExpectedContext = {
   generationHex: base.generationHex, epoch: base.epoch, currency: 'EUR',
-  country: 'DE', marketId: '42', shopLocalDay: 20802, maxBuckets: 64,
+  country: 'DE', marketId: '42', allowNoMarket: false, shopLocalDay: 20802, maxBuckets: 64,
   maxPhysicalQuantity: 10_000, keys: new Map([[7, publicKeyFromHex(publicKey)]]),
 };
 const accepted = () => [line(base), line(second)];
@@ -36,7 +36,7 @@ describe('pure complete-set verifier with harness-supplied independent context',
   it('accepts a complete set in either order with ordinary optional products', () => {
     expect(verifySet(accepted(), context)).toEqual({ accepted: true, bucketCount: 2, totalQuantity: 3, totalMinor: '9100' });
     expect(verifySet([...accepted().reverse(), {
-      variantId: '9', quantity: 1, observedUnitMinor: '100', requiresAuthorization: false, hasSellingPlan: false,
+      variantId: '9', quantity: 1, observedUnitMinor: '100', marked: false, requiresAuthorization: false, hasSellingPlan: false,
     }], context)).toEqual({ accepted: true, bucketCount: 2, totalQuantity: 3, totalMinor: '9100' });
   });
 
@@ -67,11 +67,17 @@ describe('pure complete-set verifier with harness-supplied independent context',
     expect(() => verifySet(accepted(), { ...context, shopLocalDay: 20800 })).not.toThrow();
   });
 
-  it('allows overlapping trusted verification keys and rejects unknown rotation keys', () => {
-    const rotated = { ...second, keyId: 8 };
-    const lines = [line(base), line(second, { token: issueToken(rotated, privateKeyFromSeed(rotationSeed)) })];
-    expect(() => verifySet(lines, { ...context, keys: new Map([...context.keys, [8, publicKeyFromHex(rotationPublic)]]) })).not.toThrow();
-    expect(() => verifySet(lines, context)).toThrow();
+  it('allows separate complete sets during key overlap but rejects mixed-key members', () => {
+    const rotatedFirst = { ...base, keyId: 8, setHex: '44'.repeat(16) };
+    const rotatedSecond = { ...second, keyId: 8, setHex: '44'.repeat(16) };
+    const keys = new Map([...context.keys, [8, publicKeyFromHex(rotationPublic)]]);
+    const rotatedLines = [rotatedFirst, rotatedSecond].map(claim => line(claim, {
+      token: issueToken(claim, privateKeyFromSeed(rotationSeed), 20800),
+    }));
+    expect(() => verifySet(accepted(), { ...context, keys })).not.toThrow();
+    expect(() => verifySet(rotatedLines, { ...context, keys })).not.toThrow();
+    expect(() => verifySet(rotatedLines, context)).toThrow();
+    expect(() => verifySet([line(base), line(second, { token: issueToken({ ...second, keyId: 8 }, privateKeyFromSeed(rotationSeed), 20800) })], { ...context, keys })).toThrow();
   });
 
   it('rejects a 500-unit quote after an entire group is removed', () => {
@@ -84,9 +90,19 @@ describe('pure complete-set verifier with harness-supplied independent context',
   });
 
   it('rejects a required plain product, but permits a plain-only optional cart', () => {
-    const plain = { variantId: '9', quantity: 1, observedUnitMinor: '100', requiresAuthorization: false, hasSellingPlan: false };
+    const plain = { variantId: '9', quantity: 1, observedUnitMinor: '100', marked: false, requiresAuthorization: false, hasSellingPlan: false };
     expect(verifySet([plain], context)).toEqual({ accepted: true, bucketCount: 0, totalQuantity: 0, totalMinor: '0' });
     expect(() => verifySet([{ ...plain, requiresAuthorization: true }], context)).toThrow();
+    expect(() => verifySet([{ ...plain, marked: true }], context)).toThrow();
+    expect(() => verifySet([line(base, { marked: false }), line(second)], context)).toThrow();
+  });
+
+  it('requires an explicitly supported no-market context', () => {
+    const zeroMarket = { ...base, lineCount: 1, lineIndex: 0, quantity: 1, unitMinor: '100',
+      totalQuantity: 1, totalMinor: '100', marketId: '0' };
+    const actual = [line(zeroMarket)];
+    expect(() => verifySet(actual, { ...context, marketId: '0' })).toThrow();
+    expect(() => verifySet(actual, { ...context, marketId: '0', allowNoMarket: true })).not.toThrow();
   });
 
   it('rejects changed common totals and integer overflow without floating arithmetic', () => {

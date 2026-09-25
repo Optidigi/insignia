@@ -67,7 +67,7 @@ function checkedClaims(value: Claims): Claims {
   unsigned(value.lineIndex, 0xffff, 'lineIndex');
   unsigned(value.lineCount, 0xffff, 'lineCount');
   if (value.lineCount === 0 || value.lineIndex >= value.lineCount) throw new Error('invalid bucket index/count');
-  decimalU64(value.variantId, 'variantId');
+  if (decimalU64(value.variantId, 'variantId') === 0n) throw new Error('zero variant ID');
   unsigned(value.quantity, 0xffffffff, 'quantity');
   if (value.quantity === 0) throw new Error('zero bucket quantity');
   decimalU64(value.unitMinor, 'unitMinor');
@@ -116,6 +116,9 @@ export function decodePayload(payload: Uint8Array): Claims {
   const b = Buffer.from(payload);
   if (b.length !== PAYLOAD_BYTES || b.toString('ascii', 0, 4) !== 'ISG1') throw new Error('bad payload length/magic');
   if (b.readUInt8(4) !== 1 || b.readUInt8(5) !== 0) throw new Error('unsupported version/flags');
+  if (![...b.subarray(84, 87), ...b.subarray(88, 90)].every(byte => byte >= 65 && byte <= 90)) {
+    throw new Error('currency/country must contain raw uppercase ASCII bytes');
+  }
   const value: Claims = {
     keyId: b.readUInt16BE(6),
     generationHex: b.subarray(8, 24).toString('hex'),
@@ -155,7 +158,11 @@ export function publicKeyFromHex(publicHex: string): KeyObject {
   return createPublicKey({ key: spki, format: 'der', type: 'spki' });
 }
 
-export function issueToken(claims: Claims, key: KeyObject): string {
+export function issueToken(claims: Claims, key: KeyObject, issuanceDay: number): string {
+  unsigned(issuanceDay, 0xffffffff - 2, 'issuanceDay');
+  if (claims.validThroughDay !== issuanceDay + 2) {
+    throw new Error('authorization must expire at issuance day D+2');
+  }
   const payload = encodePayload(claims);
   const signature = sign(null, Buffer.concat([SIGNING_PREFIX, payload]), key);
   if (signature.length !== 64) throw new Error('unexpected signature length');

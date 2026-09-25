@@ -162,6 +162,24 @@
       "reason": "signature"
     },
     {
+      "name": "nonascii_currency",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZxVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMNaL4morU9PHn1ZsT7KMvUm9ExEef-ymBMcP76QU02VNKjYRr69aAhi1BHtjpKNFkpxocbqfAjmgKrZhNEgX4AQ",
+      "expectedAccept": false,
+      "reason": "raw ASCII"
+    },
+    {
+      "name": "nonascii_country",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAsRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMyPJlEKSxL0IpymxoCV-QHjCWKcL3EtdaMKju9uPGUqrQg1ifZPgOd09E2P7jGm0Co1n97LThRzAjYcgm0iMQBA",
+      "expectedAccept": false,
+      "reason": "raw ASCII"
+    },
+    {
+      "name": "zero_variant",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAAAAAAAAAAAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMkyz30bU0EhlRbGu-uztJ0mJl8xDgH6IwmQi8A91SSt9gqM2j49V_K_JTaiNEsHtMT83z0lFgaK90DPUQHUJ2DA",
+      "expectedAccept": false,
+      "reason": "positive GID suffix"
+    },
+    {
       "name": "invalid_signature",
       "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBJifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
       "expectedAccept": false,

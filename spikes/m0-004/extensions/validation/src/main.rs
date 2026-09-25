@@ -149,6 +149,7 @@ fn cart_validations_generate_run(
         market,
         current_day: today,
         max_buckets: config.max_buckets,
+        max_physical_quantity: config.max_physical_quantity,
         allow_no_market: config.allow_no_market,
         keys: &config.keys,
     };

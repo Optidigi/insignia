@@ -1,5 +1,6 @@
 use insignia_m0_004_authorization::{
-    decode_token, encode_payload, parse_hex, verify_signature, Claims, VerificationKey,
+    decode_token, encode_payload, parse_hex, verify_set, verify_signature, Claims, ExpectedContext,
+    PhysicalLine, VerificationKey,
 };
 use serde_json::Value;
 use std::path::PathBuf;
@@ -81,4 +82,43 @@ fn independent_python_crypto_vectors_match_rust_bytes_and_strict_verification() 
         let result = decode_token(text(item, "token")).and_then(|a| verify_signature(&a, &[key]));
         assert!(result.is_err(), "{} must reject", text(item, "name"));
     }
+}
+
+#[test]
+fn independent_eur91_vectors_form_one_exact_complete_set() {
+    let corpus = corpus();
+    let valid = corpus["valid"].as_array().unwrap();
+    let key = VerificationKey {
+        id: 7,
+        bytes: parse_hex(text(&corpus, "publicKeyHex")).unwrap(),
+    };
+    let expected = ExpectedContext {
+        generation: [0x11; 16],
+        epoch: 4,
+        currency: *b"EUR",
+        country: *b"DE",
+        market: 42,
+        current_day: 20_802,
+        max_buckets: 2,
+        max_physical_quantity: 3,
+        allow_no_market: false,
+        keys: std::slice::from_ref(&key),
+    };
+    let lines: Vec<_> = valid[..2]
+        .iter()
+        .map(|v| {
+            let c = &v["claims"];
+            PhysicalLine {
+                token: Some(text(v, "token")),
+                variant: u64_str(c, "variantId"),
+                quantity: c["quantity"].as_u64().unwrap().try_into().unwrap(),
+                observed_unit_minor: Some(u64_str(c, "unitMinor")),
+                required: true,
+                marked: true,
+                selling_plan: false,
+            }
+        })
+        .collect();
+    assert_eq!(verify_set(&lines, &expected, true).unwrap().len(), 2);
+    assert!(verify_set(&lines[..1], &expected, true).is_err());
 }

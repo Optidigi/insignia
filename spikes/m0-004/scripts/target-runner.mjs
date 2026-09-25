@@ -36,7 +36,7 @@ function signedInput(target, n, ordinaryCount = 0, quantityPerBucket = 1) {
     const line = structuredClone(source);
     line.id = `gid://shopify/CartLine/${i + 1}`;
     line.quantity = quantityPerBucket;
-    line.auth = { value: issueToken({ ...base, lineIndex: i }, signingKey) };
+    line.auth = { value: issueToken({ ...base, lineIndex: i }, signingKey, 20800) };
     if (target === 'validation') line.cost.subtotalAmount.amount = `${quantityPerBucket * 30}.00`;
     return line;
   });
