@@ -1,0 +1,19 @@
+{
+  "allowed": true,
+  "errors": [],
+  "resolved": [
+    {
+      "effectiveQuantity": 0,
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17216259260574",
+      "lineItemId": "gid://shopify/LineItem/16954770489502",
+      "marker": "M0-003R-C-20260925-bystander"
+    },
+    {
+      "effectiveQuantity": 1,
+      "fulfillmentOrderLineItemId": "gid://shopify/FulfillmentOrderLineItem/17216259293342",
+      "lineItemId": "gid://shopify/LineItem/16954770522270",
+      "marker": "M0-003R-C-20260925-target"
+    }
+  ],
+  "submissionAuthorized": false
+}

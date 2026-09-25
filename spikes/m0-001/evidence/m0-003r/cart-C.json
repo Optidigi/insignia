@@ -1,0 +1,30 @@
+{
+  "captureMode": "native-storefront-public-Ajax-cart-projection",
+  "observedAtUtc": "2026-09-25 12:00:08 UTC",
+  "store": "insignia-staging.myshopify.com",
+  "case": "C",
+  "item_count": 4,
+  "items": [
+    {
+      "final_price": 2000,
+      "price": 2000,
+      "product_title": "INSIGNIA M0-001 fixture garment - do not buy",
+      "properties": {
+        "Insignia diagnostic": "M0-003R-C-20260925-bystander"
+      },
+      "quantity": 1,
+      "variant_id": "50529053343902"
+    },
+    {
+      "final_price": 2000,
+      "price": 2000,
+      "product_title": "INSIGNIA M0-001 fixture garment - do not buy",
+      "properties": {
+        "Insignia diagnostic": "M0-003R-C-20260925-target"
+      },
+      "quantity": 3,
+      "variant_id": "50529053343902"
+    }
+  ],
+  "total_price": 8000
+}

@@ -1,0 +1,20 @@
+{
+  "capturedAt": "2026-09-25T12:24:10.806Z",
+  "source": "native Admin refund form read-only projection",
+  "store": "insignia-staging",
+  "orderNumericId": "7185244651678",
+  "quantities": [
+    {"section": "UNFULFILLED", "marker": "M0-003R-C-20260925-bystander", "value": "1", "max": "1", "valid": true},
+    {"section": "UNFULFILLED", "marker": "M0-003R-C-20260925-target", "value": "2", "max": "2", "valid": true},
+    {"section": "FULFILLED", "marker": "M0-003R-C-20260925-target", "value": "1", "max": "1", "valid": true}
+  ],
+  "summary": "Items subtotal (4) / $80,00; Refund total $80,00",
+  "refundMethod": "(For Testing) Bogus Gateway",
+  "refundAvailable": "$80,00 available for refund",
+  "refundButtonText": "Refund $80,00",
+  "restock": [
+    {"label": "Restock items", "checked": true},
+    {"label": "Restock item at:", "checked": true, "location": "Shop location"}
+  ],
+  "notificationChecked": false
+}

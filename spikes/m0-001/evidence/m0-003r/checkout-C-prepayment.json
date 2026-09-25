@@ -1,0 +1,15 @@
+{
+  "observedAtUtc": "2026-09-25 12:05:29 UTC",
+  "provenance": "T3 shared native checkout visible-text projection; buyer fields and checkout URL omitted",
+  "shop": "insignia-staging.myshopify.com",
+  "case": "C",
+  "shippingAndPayment": "Shipping method\nChoose a shipping method\n\nStandard\n\nThu, Oct 1–Mon, Oct 5\n\nFREE\n\nExpress\n\nTue, Sep 29–Wed, Sep 30\n\n$15.00\nPayment\n\nAll transactions are secure and encrypted.\n\nCredit card\nTesting instruction\n\nUse these values to test your checkout:\n\n1 to simulate an approved transaction\n2 to simulate a declined transaction\n3 to simulate a gateway failure\n\nUse any future expiration date and any 3-digit security code.\n\nGet support\nCard number\nExpiration date (MM / YY)\nSecurity code\nName on card\nUse shipping address as billing address\n",
+  "orderSummary": "Order summary\nShopping cart\nProduct image\nDescription\nQuantity\nPrice\nQuantity\n1\n\nINSIGNIA M0-001 fixture garment - do not buy\n\nBlack / Small\n\nInsignia diagnostic: M0-003R-C-20260925-bystander\n1\n$20.00\nQuantity\n3\n\nINSIGNIA M0-001 fixture garment - do not buy\n\nBlack / Small\n\nInsignia diagnostic: M0-003R-C-20260925-target\n3\n$60.00\nScroll for more items\nDiscount code or gift card\nDiscount code or gift card\nApply\nSubmit\nBack to finalize order\nCost summary\nItem\nValue\nSubtotal · 4 items\n$80.00\nShipping\nFREE\nTotal\nUSD\n$80.00\n",
+  "expected": {
+    "itemCount": 4,
+    "merchandiseUsd": "80.00",
+    "shippingUsd": "0.00",
+    "totalUsd": "80.00",
+    "testProvider": "Test payment gateway"
+  }
+}

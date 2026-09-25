@@ -1,0 +1,204 @@
+{
+  "order": {
+    "id": "gid://shopify/Order/7185244651678",
+    "name": "#1002",
+    "confirmationNumber": "68WKT5QQ0",
+    "createdAt": "2026-09-25T12:08:31Z",
+    "test": true,
+    "displayFinancialStatus": "PAID",
+    "displayFulfillmentStatus": "UNFULFILLED",
+    "paymentGatewayNames": [
+      "bogus"
+    ],
+    "currencyCode": "USD",
+    "subtotalPriceSet": {
+      "shopMoney": {
+        "amount": "80.0",
+        "currencyCode": "USD"
+      }
+    },
+    "currentSubtotalPriceSet": {
+      "shopMoney": {
+        "amount": "80.0",
+        "currencyCode": "USD"
+      }
+    },
+    "totalPriceSet": {
+      "shopMoney": {
+        "amount": "80.0",
+        "currencyCode": "USD"
+      }
+    },
+    "currentTotalPriceSet": {
+      "shopMoney": {
+        "amount": "80.0",
+        "currencyCode": "USD"
+      }
+    },
+    "totalTaxSet": {
+      "shopMoney": {
+        "amount": "0.0",
+        "currencyCode": "USD"
+      }
+    },
+    "totalShippingPriceSet": {
+      "shopMoney": {
+        "amount": "0.0",
+        "currencyCode": "USD"
+      }
+    },
+    "totalRefundedSet": {
+      "shopMoney": {
+        "amount": "0.0",
+        "currencyCode": "USD"
+      }
+    },
+    "lineItems": {
+      "nodes": [
+        {
+          "id": "gid://shopify/LineItem/16954770489502",
+          "sku": "INS-M0-001-BLK-S",
+          "quantity": 1,
+          "currentQuantity": 1,
+          "refundableQuantity": 1,
+          "unfulfilledQuantity": 1,
+          "restockable": true,
+          "merchantEditable": true,
+          "title": "INSIGNIA M0-001 fixture garment - do not buy",
+          "variantTitle": "Black / Small",
+          "product": {
+            "id": "gid://shopify/Product/10294344482974"
+          },
+          "variant": {
+            "id": "gid://shopify/ProductVariant/50529053343902"
+          },
+          "originalUnitPriceSet": {
+            "shopMoney": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "discountedUnitPriceSet": {
+            "shopMoney": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "originalTotalSet": {
+            "shopMoney": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "discountedTotalSet": {
+            "shopMoney": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "customAttributes": [
+            {
+              "key": "Insignia diagnostic",
+              "value": "M0-003R-C-20260925-bystander"
+            }
+          ],
+          "lineItemGroup": null
+        },
+        {
+          "id": "gid://shopify/LineItem/16954770522270",
+          "sku": "INS-M0-001-BLK-S",
+          "quantity": 3,
+          "currentQuantity": 3,
+          "refundableQuantity": 3,
+          "unfulfilledQuantity": 3,
+          "restockable": true,
+          "merchantEditable": true,
+          "title": "INSIGNIA M0-001 fixture garment - do not buy",
+          "variantTitle": "Black / Small",
+          "product": {
+            "id": "gid://shopify/Product/10294344482974"
+          },
+          "variant": {
+            "id": "gid://shopify/ProductVariant/50529053343902"
+          },
+          "originalUnitPriceSet": {
+            "shopMoney": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "discountedUnitPriceSet": {
+            "shopMoney": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "originalTotalSet": {
+            "shopMoney": {
+              "amount": "60.0",
+              "currencyCode": "USD"
+            }
+          },
+          "discountedTotalSet": {
+            "shopMoney": {
+              "amount": "60.0",
+              "currencyCode": "USD"
+            }
+          },
+          "customAttributes": [
+            {
+              "key": "Insignia diagnostic",
+              "value": "M0-003R-C-20260925-target"
+            }
+          ],
+          "lineItemGroup": null
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false
+      }
+    },
+    "fulfillmentOrders": {
+      "nodes": [
+        {
+          "id": "gid://shopify/FulfillmentOrder/8331494981790",
+          "status": "OPEN",
+          "assignedLocation": {
+            "location": {
+              "id": "gid://shopify/Location/89465290910",
+              "name": "Shop location"
+            }
+          },
+          "lineItems": {
+            "nodes": [
+              {
+                "id": "gid://shopify/FulfillmentOrderLineItem/17216259260574",
+                "totalQuantity": 1,
+                "remainingQuantity": 1,
+                "lineItem": {
+                  "id": "gid://shopify/LineItem/16954770489502",
+                  "sku": "INS-M0-001-BLK-S"
+                }
+              },
+              {
+                "id": "gid://shopify/FulfillmentOrderLineItem/17216259293342",
+                "totalQuantity": 3,
+                "remainingQuantity": 3,
+                "lineItem": {
+                  "id": "gid://shopify/LineItem/16954770522270",
+                  "sku": "INS-M0-001-BLK-S"
+                }
+              }
+            ],
+            "pageInfo": {
+              "hasNextPage": false
+            }
+          }
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false
+      }
+    }
+  }
+}

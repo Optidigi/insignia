@@ -1,0 +1,15 @@
+{
+  "capturedAt": "2026-09-25T12:40:17.283Z",
+  "source": "Shopify native Admin order #1003 fulfillment form; read-only DOM projection",
+  "store": "insignia-staging",
+  "orderNumericId": "7185278173342",
+  "sectionTitle": "Mark as fulfilled",
+  "locationText": "Shop location",
+  "selectionSummary": {"label": "1 item selected", "checked": false, "indeterminate": true, "shadowInputAriaChecked": "mixed"},
+  "rows": [
+    {"marker": "M0-003R-R-20260925-plain-small", "variantLabel": "Black / Small", "sku": "INS-M0-001-BLK-S", "checkboxChecked": false, "checkboxIndeterminate": false, "checkboxDisabled": false, "shadowInputChecked": false, "quantityInput": null, "collapsedQuantityDisplay": "×\n\n1", "selectedClass": false, "groupPresentation": false},
+    {"marker": "m0-001:m0-003r-R-S-20260925", "variantLabel": "Black / Small", "sku": "INS-M0-001-BLK-S", "checkboxChecked": true, "checkboxIndeterminate": false, "checkboxDisabled": false, "shadowInputChecked": true, "quantityInput": {"value": "1", "min": "1", "max": "3", "valid": true, "ariaInvalid": "false"}, "collapsedQuantityDisplay": null, "selectedClass": true, "groupPresentation": true},
+    {"marker": "m0-001:m0-003r-R-M-20260925", "variantLabel": "Black / Medium", "sku": "INS-M0-001-BLK-M", "checkboxChecked": false, "checkboxIndeterminate": false, "checkboxDisabled": false, "shadowInputChecked": false, "quantityInput": null, "collapsedQuantityDisplay": "×\n\n2", "selectedClass": false, "groupPresentation": true}
+  ],
+  "customerNotificationChecked": false
+}

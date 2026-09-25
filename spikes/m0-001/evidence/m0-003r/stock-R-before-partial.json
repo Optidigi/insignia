@@ -1,0 +1,212 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/78935261342",
+    "myshopifyDomain": "insignia-staging.myshopify.com",
+    "currencyCode": "USD"
+  },
+  "currentAppInstallation": {
+    "id": "gid://shopify/AppInstallation/781307904158",
+    "accessScopes": [
+      {
+        "handle": "read_cart_transforms"
+      },
+      {
+        "handle": "read_locations"
+      },
+      {
+        "handle": "read_merchant_managed_fulfillment_orders"
+      },
+      {
+        "handle": "read_orders"
+      },
+      {
+        "handle": "write_cart_transforms"
+      },
+      {
+        "handle": "write_inventory"
+      },
+      {
+        "handle": "write_products"
+      },
+      {
+        "handle": "read_inventory"
+      },
+      {
+        "handle": "read_products"
+      }
+    ]
+  },
+  "cartTransforms": {
+    "nodes": [
+      {
+        "id": "gid://shopify/CartTransform/143294622",
+        "functionId": "01a0d863-6b4b-7b1b-b62e-6d9810a9668f",
+        "blockOnFailure": true,
+        "metafield": {
+          "id": "gid://shopify/Metafield/70430176706718",
+          "type": "json",
+          "jsonValue": {
+            "allowedVariantIds": [
+              "gid://shopify/ProductVariant/50529053343902",
+              "gid://shopify/ProductVariant/50529054163102"
+            ],
+            "unitPrice": "30.00",
+            "currency": "USD"
+          }
+        }
+      }
+    ],
+    "pageInfo": {
+      "hasNextPage": false,
+      "endCursor": "eyJsYXN0X2lkIjoxNDMyOTQ2MjIsImxhc3RfdmFsdWUiOiIxNDMyOTQ2MjIifQ=="
+    }
+  },
+  "productByHandle": {
+    "id": "gid://shopify/Product/10294344482974",
+    "handle": "insignia-m0-001-fixture-20260924",
+    "status": "ACTIVE",
+    "onlineStoreUrl": null,
+    "variants": {
+      "nodes": [
+        {
+          "id": "gid://shopify/ProductVariant/50529053343902",
+          "title": "Black / Small",
+          "sku": "INS-M0-001-BLK-S",
+          "price": "20.00",
+          "inventoryPolicy": "DENY",
+          "taxable": true,
+          "inventoryItem": {
+            "id": "gid://shopify/InventoryItem/52644294131870",
+            "sku": "INS-M0-001-BLK-S",
+            "tracked": true,
+            "requiresShipping": true,
+            "inventoryLevels": {
+              "nodes": [
+                {
+                  "location": {
+                    "id": "gid://shopify/Location/89465290910",
+                    "name": "Shop location"
+                  },
+                  "quantities": [
+                    {
+                      "name": "available",
+                      "quantity": 4
+                    },
+                    {
+                      "name": "committed",
+                      "quantity": 6
+                    },
+                    {
+                      "name": "on_hand",
+                      "quantity": 10
+                    },
+                    {
+                      "name": "reserved",
+                      "quantity": 0
+                    },
+                    {
+                      "name": "damaged",
+                      "quantity": 0
+                    },
+                    {
+                      "name": "safety_stock",
+                      "quantity": 0
+                    },
+                    {
+                      "name": "quality_control",
+                      "quantity": 0
+                    }
+                  ]
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "eyJsYXN0X2lkIjo1NzIxMTIzODk0MDgzMCwibGFzdF92YWx1ZSI6NTcyMTEyMzg5NDA4MzB9"
+              }
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/ProductVariant/50529054163102",
+          "title": "Black / Medium",
+          "sku": "INS-M0-001-BLK-M",
+          "price": "20.00",
+          "inventoryPolicy": "DENY",
+          "taxable": true,
+          "inventoryItem": {
+            "id": "gid://shopify/InventoryItem/52644294951070",
+            "sku": "INS-M0-001-BLK-M",
+            "tracked": true,
+            "requiresShipping": true,
+            "inventoryLevels": {
+              "nodes": [
+                {
+                  "location": {
+                    "id": "gid://shopify/Location/89465290910",
+                    "name": "Shop location"
+                  },
+                  "quantities": [
+                    {
+                      "name": "available",
+                      "quantity": 8
+                    },
+                    {
+                      "name": "committed",
+                      "quantity": 4
+                    },
+                    {
+                      "name": "on_hand",
+                      "quantity": 12
+                    },
+                    {
+                      "name": "reserved",
+                      "quantity": 0
+                    },
+                    {
+                      "name": "damaged",
+                      "quantity": 0
+                    },
+                    {
+                      "name": "safety_stock",
+                      "quantity": 0
+                    },
+                    {
+                      "name": "quality_control",
+                      "quantity": 0
+                    }
+                  ]
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "eyJsYXN0X2lkIjo1NzIxMTIzOTgyNTU2NiwibGFzdF92YWx1ZSI6NTcyMTEyMzk4MjU1NjZ9"
+              }
+            }
+          }
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": "eyJsYXN0X2lkIjo1MDUyOTA1NDE2MzEwMiwibGFzdF92YWx1ZSI6Mn0="
+      }
+    }
+  },
+  "locations": {
+    "nodes": [
+      {
+        "id": "gid://shopify/Location/89465323678",
+        "name": "My Custom Location",
+        "isActive": true
+      },
+      {
+        "id": "gid://shopify/Location/89465290910",
+        "name": "Shop location",
+        "isActive": true
+      }
+    ],
+    "pageInfo": {
+      "hasNextPage": false,
+      "endCursor": "eyJsYXN0X2lkIjo4OTQ2NTI5MDkxMCwibGFzdF92YWx1ZSI6IlNob3AgbG9jYXRpb24ifQ=="
+    }
+  }
+}

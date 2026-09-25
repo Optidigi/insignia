@@ -1,0 +1,50 @@
+{
+  "order": {
+    "id": "gid://shopify/Order/7185244651678",
+    "name": "#1002",
+    "displayFulfillmentStatus": "PARTIALLY_FULFILLED",
+    "fulfillments": [
+      {
+        "id": "gid://shopify/Fulfillment/6512308158622",
+        "name": "#1002-F1",
+        "createdAt": "2026-09-25T12:19:26Z",
+        "status": "SUCCESS",
+        "totalQuantity": 1,
+        "location": {
+          "id": "gid://shopify/Location/89465290910",
+          "name": "Shop location"
+        },
+        "fulfillmentLineItems": {
+          "nodes": [
+            {
+              "id": "gid://shopify/FulfillmentLineItem/14713628229790",
+              "quantity": 1,
+              "lineItem": {
+                "id": "gid://shopify/LineItem/16954770522270",
+                "sku": "INS-M0-001-BLK-S",
+                "quantity": 3,
+                "unfulfilledQuantity": 2,
+                "originalUnitPriceSet": {
+                  "shopMoney": {
+                    "amount": "20.0",
+                    "currencyCode": "USD"
+                  }
+                },
+                "customAttributes": [
+                  {
+                    "key": "Insignia diagnostic",
+                    "value": "M0-003R-C-20260925-target"
+                  }
+                ],
+                "lineItemGroup": null
+              }
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false
+          }
+        }
+      }
+    ]
+  }
+}

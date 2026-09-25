@@ -3,25 +3,283 @@
   "repository": "Optidigi/insignia",
   "sourceBaseCommit": "a9398ebf8d069f3556c0b359be1372d94d45f82e",
   "captureMode": "NATIVE_UI_PLUS_PUBLIC_API_RECEIPTS",
-  "result": "PRECONDITION_ONLY_PENDING_TEST_GATEWAY",
+  "result": "PASS_OBSERVED_PROCEDURE",
   "sourceFunctionUnchanged": true,
   "localWasmSha256": "5db1b7838409ef4a2a85dbd1ba976e1abb15f32c267a87ab4c006e7d6bac8d1e",
   "remoteBinaryHash": "UNAVAILABLE",
   "protectedOrder": "gid://shopify/Order/7184619962526",
-  "newSuccessfulOrderCount": 0,
-  "newPurchasedUnits": 0,
+  "newSuccessfulOrderCount": 3,
+  "newPurchasedUnits": 13,
   "receiptFiles": {
     "README.md": {
-      "sha256": "866160c6699b90a702c6661827ead5ce6c7538295127dae78493c2f9bb9b2c29",
-      "bytes": 5448,
+      "sha256": "56836905bb417786f3648d6e79eba9c14c91e22f614c6eaed9264fae8dd28e8d",
+      "bytes": 8697,
       "kind": "evidence_index",
-      "localFileModifiedUtc": "2026-09-25T11:36:55.482608Z"
+      "localFileModifiedUtc": "2026-09-25T13:31:40.714373Z"
+    },
+    "after-first-pay-click-orders.json": {
+      "sha256": "923c8f05daa607efbe52e4617bed1ea961836114bcde45323bb1da288cd01af6",
+      "bytes": 468,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:06:46.727224Z"
+    },
+    "after-order-B-inventory.json": {
+      "sha256": "ec58d7dc5ab3aaaa4b88437f7c70f96163226bdf640e7b28be8a3e4c00161d77",
+      "bytes": 1228,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:06:44.963938Z"
+    },
+    "after-order-C-inventory.json": {
+      "sha256": "c2040dfebbf8a7fbebef1c55cc9c15dfcd3245fdeacdb05058478f90aa35dd06",
+      "bytes": 720,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:09:07.790532Z"
+    },
+    "after-order-C-stock.json": {
+      "sha256": "a268755b4f8dadf81e4b17d9d0ed4e16c3203e01d48c6d38bd8354995b3cff4b",
+      "bytes": 6042,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:09:38.978821Z"
+    },
+    "after-order-R-inventory.json": {
+      "sha256": "a993653aa7caffa6ef1689004f36863dac056e0c23f4e57530700e6f7df082cc",
+      "bytes": 974,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:38:03.285328Z"
     },
     "baseline.json": {
       "sha256": "3790896c2a9e77a2e8d7af4517467aba8149112c849259a131706eddb622c3f1",
       "bytes": 5423,
       "kind": "direct_shopify_cli_api_response",
       "localFileModifiedUtc": "2026-09-25T11:32:39.430832Z"
+    },
+    "before-order-C.json": {
+      "sha256": "01c7538ede7b7d2121402f043c0b5c9d412424b88d4553f7909b58ddf08bf604",
+      "bytes": 6042,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:05:42.165626Z"
+    },
+    "candidate-B-cancel-form.json": {
+      "sha256": "bc6021eb5153ef6e197774e77a2bd770164654c6daf189f4946de0d78052c7b0",
+      "bytes": 601,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T13:11:29.733180Z"
+    },
+    "candidate-R-form.json": {
+      "sha256": "37c258dab70928da18af04c852a45bbd9735062a5b925b9d557ce6e59528d3a3",
+      "bytes": 1536,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:40:43.842070Z"
+    },
+    "candidate-R-guard.json": {
+      "sha256": "069081ab3bc768103769e93e6698f54a1a1b135103abaf9a817c1adba44d7fde",
+      "bytes": 823,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T13:35:09.857669Z"
+    },
+    "candidate-R-one-refund-form.json": {
+      "sha256": "4dc0ca145a1e592dd32eb432d144a174e096ccfa45a2a93f3ecd799a3bbf031b",
+      "bytes": 969,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:52:40.066082Z"
+    },
+    "candidate-R-pre-submit-crop.png": {
+      "sha256": "912e9850ac38c80e262b5ee04924933b98fdb85e84de1a2be266ec38079f2117",
+      "bytes": 91285,
+      "kind": "cropped_native_browser_screenshot",
+      "localFileModifiedUtc": "2026-09-25T12:48:35.711402Z"
+    },
+    "candidate-R-remainder-form.json": {
+      "sha256": "c43165aaafcd83ae121355946f7a1c6ca2300d7d5618c6d5aad83ee5e3fd3eff",
+      "bytes": 1055,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:50:36.696700Z"
+    },
+    "candidate-R-remainder-refund-form.json": {
+      "sha256": "ec681242ec55bb54e49fd0f36d9ba3076be958cc30c7bfd34db578c5bd800f61",
+      "bytes": 992,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:55:16.055829Z"
+    },
+    "cart-B.json": {
+      "sha256": "46d6a5ab6948758b7afe59a6a56f357524ffd031f79104b6087e5af8bb0e996d",
+      "bytes": 537,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:57:09.167096Z"
+    },
+    "cart-C.json": {
+      "sha256": "a5ff9d6318bb33e35dccdab3f8555a2bf8759fe7d84627937e6bfac2a4005f38",
+      "bytes": 797,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:00:08.985537Z"
+    },
+    "cart-R.json": {
+      "sha256": "7688c0ddcf1bc09bfc73598f56fb19b92ad3c607ab118e654f0a83d0c1d4e3ad",
+      "bytes": 1066,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:27:23.761493Z"
+    },
+    "checkout-B-prepayment.json": {
+      "sha256": "c2c8d1b8b2932827ca971ae7b751c89576cfdb70a1135949276d18b59a41327e",
+      "bytes": 518,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T13:05:07.799990Z"
+    },
+    "checkout-C-prepayment.json": {
+      "sha256": "fbf4e46454a168153337f10d3358d931fcfdf96d2cfd87e2a181186e6a10bc51",
+      "bytes": 1575,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:05:29.634509Z"
+    },
+    "checkout-C-validation.json": {
+      "sha256": "3f137218d04c48509c17b40070992590f86348b0f078c7655ac536edb2c3451a",
+      "bytes": 665,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:08:16.633543Z"
+    },
+    "checkout-R-prepayment.json": {
+      "sha256": "253febf53fa80b184f15f0f0653e69b8e5677d6cb56411c1cd3c8dd3e72886c5",
+      "bytes": 946,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:35:44.039432Z"
+    },
+    "control-C-form.json": {
+      "sha256": "4e607125198d88b069a233e548929f114f04eb2cdfceb94f67ded7ab525e56bd",
+      "bytes": 1342,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:17:26.219335Z"
+    },
+    "control-C-guard.json": {
+      "sha256": "651b7333d87e38768c5224244664c2918f556f9c6fee9821a863619ae52e5c07",
+      "bytes": 576,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T13:35:09.802668Z"
+    },
+    "control-C-pre-submit-crop.png": {
+      "sha256": "f5388dbb6a19650e60639066826208097b9b21fbdff4d26dcddec59ee6e43525",
+      "bytes": 78819,
+      "kind": "cropped_native_browser_screenshot",
+      "localFileModifiedUtc": "2026-09-25T12:19:03.496338Z"
+    },
+    "control-C-refund-form.json": {
+      "sha256": "f6e6225703ad36ffc8bec944519f0b74942f5fc92bd530a259568a5f9d9b0b46",
+      "bytes": 921,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T12:24:21.333613Z"
+    },
+    "fulfillment-C-after-partial.json": {
+      "sha256": "919a5f07cda12d5e35e0e4d8b1cc0298e05964411f525374a029889f11bfb7fb",
+      "bytes": 1430,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:19:49.953816Z"
+    },
+    "fulfillment-R-after-partial.json": {
+      "sha256": "620e75d17d45349acd8f22033acb5377068c6af0211da59dd1139d80c80f28ed",
+      "bytes": 1621,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:49:38.003042Z"
+    },
+    "fulfillment-R-after-remainder.json": {
+      "sha256": "794b9ce6f3ab8b824c6ebc77e17e80da6666c8099622caea08e8f13ea13b354c",
+      "bytes": 4836,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:51:10.225075Z"
+    },
+    "order-B-accepted.json": {
+      "sha256": "c722bcac15ab14ffbea1c716938780f552cf1e2402b3c2cec1d4aa9fb5eedd8f",
+      "bytes": 4295,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:07:12.074247Z"
+    },
+    "order-B-after-cancel.json": {
+      "sha256": "9ab5fc7eefb8481c477cea3bcd11eef9cb0382844b95bd3f3a3b5bfcfe9ddb6b",
+      "bytes": 4302,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:12:12.589668Z"
+    },
+    "order-B.variables.json": {
+      "sha256": "479e695ac3cd56198e1809b0734b343bc555b9fd5981512dc6358fa2c42b7f29",
+      "bytes": 43,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:06:55.879063Z"
+    },
+    "order-C-accepted.json": {
+      "sha256": "3609e185029dcd6ab579073da08eea40cdc3c4a7e0e2874c9e32d4abed9c28c5",
+      "bytes": 5420,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:09:38.320815Z"
+    },
+    "order-C-after-partial.json": {
+      "sha256": "bf6d9b2591f8165bbeb4c068ba87da0fcf1e7b8db2dee42bcdbb3efee993d1d9",
+      "bytes": 5435,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:19:49.969816Z"
+    },
+    "order-C-after-refund.json": {
+      "sha256": "f919dc018431a9424d5b2f9bf5e9f28cb3b528b4effe7b123fb489d51c10de0f",
+      "bytes": 5427,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:26:08.504717Z"
+    },
+    "order-C-before-partial.json": {
+      "sha256": "3609e185029dcd6ab579073da08eea40cdc3c4a7e0e2874c9e32d4abed9c28c5",
+      "bytes": 5420,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:15:51.051354Z"
+    },
+    "order-C.variables.json": {
+      "sha256": "4ce3d76a6dc846308ba76d060b051795616d51c3add4b549fc8de243f9fdee03",
+      "bytes": 48,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:09:23.489677Z"
+    },
+    "order-R-accepted.json": {
+      "sha256": "771fda1bdc7a33ea633eddb87a66944d4605ceff398b8af3b92eed76e22bd04e",
+      "bytes": 8542,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:38:32.618727Z"
+    },
+    "order-R-after-final-refund.json": {
+      "sha256": "b735ae06ac1b9ace84eaa078419dff70b85fe3e4ea19414cbe113a66d48cdcc8",
+      "bytes": 8550,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:56:00.730330Z"
+    },
+    "order-R-after-one-refund.json": {
+      "sha256": "7f56c92044ea8952181d50c92b584caf90974822ee82187be6dc25d1c80ade20",
+      "bytes": 8557,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:53:15.060474Z"
+    },
+    "order-R-after-partial.json": {
+      "sha256": "5a89aa02cd3560e7e771174c151956df5f57c670cd3f53d723b15bc8fe51fd9b",
+      "bytes": 8557,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:49:38.029043Z"
+    },
+    "order-R-after-remainder.json": {
+      "sha256": "229bd9e19de85f37dc0b2e97f82ca8aae99f3c93c557d1ddb94db8e35e272b26",
+      "bytes": 8542,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:51:10.342077Z"
+    },
+    "order-R-before-partial.json": {
+      "sha256": "771fda1bdc7a33ea633eddb87a66944d4605ceff398b8af3b92eed76e22bd04e",
+      "bytes": 8542,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:40:31.432956Z"
+    },
+    "order-R-immediate-pre-submit.json": {
+      "sha256": "771fda1bdc7a33ea633eddb87a66944d4605ceff398b8af3b92eed76e22bd04e",
+      "bytes": 8542,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:49:01.992643Z"
+    },
+    "order-R.variables.json": {
+      "sha256": "d6feb273615723994b5fe3bb20cdc9636a72fe3c1fb087ac903902dc90d4e512",
+      "bytes": 43,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:38:18.493535Z"
     },
     "order-inventory.graphql": {
       "sha256": "0a2cedd5e8d54b36ade42c388751bd32da7904b7f550e4d67e7fead0f0404584",
@@ -35,11 +293,53 @@
       "kind": "direct_shopify_cli_api_response",
       "localFileModifiedUtc": "2026-09-25T11:34:47.447435Z"
     },
+    "outcome.json": {
+      "sha256": "3c1c1e478e930ac56fdc207359c2a38da768329a8fe5767ac26f706c4577e8b7",
+      "bytes": 2760,
+      "kind": "local_runtime_or_outcome_projection",
+      "localFileModifiedUtc": "2026-09-25T13:28:35.007334Z"
+    },
+    "post-active-pre-publish.json": {
+      "sha256": "45c59d530d9bc3236645a4c4fa2d3b74f3629593084ca516dc8d6ca64b4bd82c",
+      "bytes": 5421,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T11:51:04.918482Z"
+    },
+    "post-cleanup.json": {
+      "sha256": "489f24c824253d7a679595cecfa0ea39a0f983f5fc3c86711a9eb510b0b6784a",
+      "bytes": 5421,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:20:26.555182Z"
+    },
+    "post-publication.json": {
+      "sha256": "45c59d530d9bc3236645a4c4fa2d3b74f3629593084ca516dc8d6ca64b4bd82c",
+      "bytes": 5421,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T11:57:57.841321Z"
+    },
+    "preview-readback.json": {
+      "sha256": "f5e4a1f25c2075bd55c38f08158abd9fbd3d214e13f7e5de5cc5a0ab5b7bbeb7",
+      "bytes": 1147,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T11:47:02.858231Z"
+    },
+    "protected-fulfillment-after.json": {
+      "sha256": "59a12e8943f55fba7592dc997d622795cabc864b9f713bf1b70fec0ce5d049b0",
+      "bytes": 2236,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:20:25.999176Z"
+    },
     "protected-fulfillment.json": {
       "sha256": "59a12e8943f55fba7592dc997d622795cabc864b9f713bf1b70fec0ce5d049b0",
       "bytes": 2236,
       "kind": "direct_shopify_cli_api_response",
       "localFileModifiedUtc": "2026-09-25T11:32:39.433894Z"
+    },
+    "protected-order-after.json": {
+      "sha256": "63a19776043e209d42e0d70ecdb607088bd61706501b5557f4f45493bebf67a3",
+      "bytes": 8101,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:20:26.047177Z"
     },
     "protected-order.json": {
       "sha256": "63a19776043e209d42e0d70ecdb607088bd61706501b5557f4f45493bebf67a3",
@@ -48,16 +348,130 @@
       "localFileModifiedUtc": "2026-09-25T11:32:39.432374Z"
     },
     "readiness.json": {
-      "sha256": "6e55fa715a28a033e4aa08e492b82b2cf6d91c2d74a8d6a812fc1e2db45fccbe",
-      "bytes": 2110,
-      "kind": "api_and_native_browser_readiness_projection",
-      "localFileModifiedUtc": "2026-09-25T11:34:27.264736Z"
+      "sha256": "a1716343695abbf1a9d8aa41bed77427c8835af28d63459b6ec8202791f4967c",
+      "bytes": 2719,
+      "kind": "local_runtime_or_outcome_projection",
+      "localFileModifiedUtc": "2026-09-25T11:45:22.523270Z"
     },
     "runtime.json": {
       "sha256": "1f1a3bf9c0035d686c97677edc39674d977875505bd4d7319bff124f01b56311",
       "bytes": 1065,
-      "kind": "local_runtime_smoke_report",
+      "kind": "local_runtime_or_outcome_projection",
       "localFileModifiedUtc": "2026-09-25T11:35:50.358791Z"
+    },
+    "stock-B-accepted.json": {
+      "sha256": "ad4d354e8ec79fdff8d1b42ae1194692fd71a016552670d5b42316789b3f2f90",
+      "bytes": 6040,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:07:13.195260Z"
+    },
+    "stock-B-after-cancel.json": {
+      "sha256": "ba40f8f603b711ee2495198695ede2fd0537e7bdabd4dc504c1f6f2886524307",
+      "bytes": 6040,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:12:12.249664Z"
+    },
+    "stock-C-after-partial.json": {
+      "sha256": "e0a2515c2dbd09d285e71640dc778984fefc0124ab197eb5d4b141df254b7ce8",
+      "bytes": 6041,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:19:49.928816Z"
+    },
+    "stock-C-after-refund.json": {
+      "sha256": "01c7538ede7b7d2121402f043c0b5c9d412424b88d4553f7909b58ddf08bf604",
+      "bytes": 6042,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:26:08.447717Z"
+    },
+    "stock-C-before-partial.json": {
+      "sha256": "a268755b4f8dadf81e4b17d9d0ed4e16c3203e01d48c6d38bd8354995b3cff4b",
+      "bytes": 6042,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:15:59.999447Z"
+    },
+    "stock-R-accepted.json": {
+      "sha256": "a44c3d9395687999cce63a1ae02af9b1361f46f3c1719147b26a2dc47b3fe80a",
+      "bytes": 6041,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:38:32.559727Z"
+    },
+    "stock-R-after-final-refund.json": {
+      "sha256": "ba40f8f603b711ee2495198695ede2fd0537e7bdabd4dc504c1f6f2886524307",
+      "bytes": 6040,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:56:00.719329Z"
+    },
+    "stock-R-after-one-refund.json": {
+      "sha256": "ba40f8f603b711ee2495198695ede2fd0537e7bdabd4dc504c1f6f2886524307",
+      "bytes": 6040,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:53:15.085474Z"
+    },
+    "stock-R-after-partial.json": {
+      "sha256": "a87e6f9e94da23a3fa11199663db2b72dfad6f320ddd519492b6ac3c0a9d84a6",
+      "bytes": 6040,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:49:38.215045Z"
+    },
+    "stock-R-after-remainder.json": {
+      "sha256": "20a9780a83119f68f622a618bc939cfa7d5067316cc8e03b1672e08bdd4d30df",
+      "bytes": 6040,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:51:09.635069Z"
+    },
+    "stock-R-before-partial.json": {
+      "sha256": "a44c3d9395687999cce63a1ae02af9b1361f46f3c1719147b26a2dc47b3fe80a",
+      "bytes": 6041,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T12:40:31.448956Z"
+    },
+    "transform-create-response.json": {
+      "sha256": "a4f8b72c163622b0212e107188ead687df6c62b7c90de60dcbcde00a7fcc1974",
+      "bytes": 593,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T11:58:12.499457Z"
+    },
+    "transform-create.graphql": {
+      "sha256": "fee312dbcf250dfa3d98e14f43c0d17521fed1e608102471050c5be7a34b0f0a",
+      "bytes": 382,
+      "kind": "executed_graphql_request",
+      "localFileModifiedUtc": "2026-09-25T11:58:08.693005Z"
+    },
+    "transform-create.variables.json": {
+      "sha256": "fd28eb7184a3579928b694df3e82cbee6156eab9d21dc43082f554c225c8f13c",
+      "bytes": 358,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T11:58:08.696319Z"
+    },
+    "transform-delete-response.json": {
+      "sha256": "63ecc042600fd4921c64692a55ad1ea8f72d086e96efa4d410c3f1c718f51c4c",
+      "bytes": 113,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T13:13:40.566670Z"
+    },
+    "transform-delete.graphql": {
+      "sha256": "50a7b2f7fbc2a7cdb7c5349735fbae31eab8f8e7e27c258a12b28fc10d69d3ad",
+      "bytes": 134,
+      "kind": "executed_graphql_request",
+      "localFileModifiedUtc": "2026-09-25T13:13:21.770456Z"
+    },
+    "transform-delete.variables.json": {
+      "sha256": "d699b0413ce2a1d0563c1acde3f290a3c59e3286c350531e140aa596948b55e7",
+      "bytes": 47,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T13:13:21.770456Z"
+    },
+    "transform-readback.json": {
+      "sha256": "01c7538ede7b7d2121402f043c0b5c9d412424b88d4553f7909b58ddf08bf604",
+      "bytes": 6042,
+      "kind": "native_or_storefront_projection",
+      "localFileModifiedUtc": "2026-09-25T11:58:29.946618Z"
+    },
+    "versions-after.json": {
+      "sha256": "7c96d9dde078ab70cf7080d1976b32d7c21649ecb14e65adc3960d40697ae378",
+      "bytes": 426,
+      "kind": "sanitized_shopify_cli_version_projection",
+      "localFileModifiedUtc": "2026-09-25T13:22:08.296781Z"
     },
     "versions-before.json": {
       "sha256": "7c96d9dde078ab70cf7080d1976b32d7c21649ecb14e65adc3960d40697ae378",

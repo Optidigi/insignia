@@ -34,11 +34,19 @@
     "paymentSettingsPath": "/store/insignia-staging/settings/payments",
     "visibleTestProviderPrompt": "Activate the test payment provider, or set your payment provider to test mode. Learn more about testing in development stores.",
     "visibleBogusGateway": false,
-    "interpretation": "CURRENT_TEST_GATEWAY_NOT_ESTABLISHED",
+    "interpretation": "BUILT_IN_TEST_GATEWAY_ACTIVE",
     "storefrontPasswordCheck": {
       "unauthenticatedProductFinalPath": "/password",
       "status": 200
-    }
+    },
+    "initialPaymentSummary": "General Payments page displayed activation banner but did not reveal active provider status",
+    "testGatewayDetailPath": "/store/insignia-staging/settings/payments/third-party-providers/24",
+    "testGatewayDetailTitle": "Test payment gateway",
+    "testGatewayDetailStatusBefore": "Active",
+    "testGatewayDetailStatusAfterFreshReload": "Active",
+    "testGatewayDescription": "Use to test Shopify checkout. No transaction fees will be charged.",
+    "testGatewayAction": "Deactivate",
+    "paymentSettingsMutationPerformed": false
   },
   "protectedOrder": "gid://shopify/Order/7184619962526",
   "protectedFulfillment": "gid://shopify/Fulfillment/6511606562974",
@@ -60,5 +68,6 @@
   "stagingMutations": 0,
   "requestCapture": "UNAVAILABLE_NOT_REQUIRED_FOR_THIS_TEST",
   "historicalRootCause": "UNDETERMINED",
-  "gateStatus": "G1_IN_PROGRESS"
+  "gateStatus": "G1_IN_PROGRESS",
+  "gatewayVerifiedAtUtc": "2026-09-25T11:44:55Z"
 }
