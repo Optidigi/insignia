@@ -33,6 +33,8 @@ def check(form, receipt, target_marker):
         lines[marker] = line
     fol_by_line = {}
     fos = order.get("fulfillmentOrders", {}).get("nodes", [])
+    if order.get("fulfillmentOrders", {}).get("pageInfo", {}).get("hasNextPage") is not False:
+        errors.append("fulfillment order inventory paginated or unknown")
     if len(fos) != 1 or fos[0].get("assignedLocation", {}).get("location", {}).get("id") != "gid://shopify/Location/89465290910":
         errors.append("fulfillment order or location mismatch")
     for fo in fos:

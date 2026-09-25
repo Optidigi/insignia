@@ -62,6 +62,7 @@ def assert_test_order(o, name, amount, units):
     assert sum(x["quantity"] for x in o["lineItems"]["nodes"]) == units
     assert o["lineItems"]["pageInfo"]["hasNextPage"] is False
     assert len(o["fulfillmentOrders"]["nodes"]) == 1
+    assert o["fulfillmentOrders"]["pageInfo"]["hasNextPage"] is False
     fo = o["fulfillmentOrders"]["nodes"][0]
     assert fo["assignedLocation"]["location"]["id"] == "gid://shopify/Location/89465290910"
     assert fo["lineItems"]["pageInfo"]["hasNextPage"] is False
@@ -103,6 +104,9 @@ assert rt["lineItemGroup"]["quantity"] == 3 and rm["lineItemGroup"]["quantity"] 
 assert read("candidate-R-guard.json")["allowed"] is True
 assert [(x["lineItemId"], x["effectiveQuantity"]) for x in read("candidate-R-guard.json")["resolved"]] == [(rp["id"], 0), (rt["id"], 1), (rm["id"], 0)]
 immediate = read("candidate-R-immediate-pre-submit.json")
+fresh_r = order("order-R-immediate-pre-submit.json")
+assert fresh_r == r0 and immediate["apiContext"] == "order-R-immediate-pre-submit.json"
+assert immediate["orderNumericId"] == r0["id"].rsplit("/", 1)[-1] and immediate["store"] == "insignia-staging"
 assert immediate["selectionSummary"] == "1 item selected" and immediate["notificationChecked"] is False
 assert immediate["location"] == "Shop location"
 assert [(x["marker"], x["checked"], x["effectiveQuantity"]) for x in immediate["rows"]] == [
@@ -110,6 +114,20 @@ assert [(x["marker"], x["checked"], x["effectiveQuantity"]) for x in immediate["
     ("m0-001:m0-003r-R-S-20260925", True, 1),
     ("m0-001:m0-003r-R-M-20260925", False, 0),
 ]
+fresh_fo = fresh_r["fulfillmentOrders"]["nodes"][0]
+assert fresh_r["lineItems"]["pageInfo"]["hasNextPage"] is False
+assert fresh_r["fulfillmentOrders"]["pageInfo"]["hasNextPage"] is False
+assert fresh_fo["lineItems"]["pageInfo"]["hasNextPage"] is False
+fresh_fol_by_line = {x["lineItem"]["id"]: x for x in fresh_fo["lineItems"]["nodes"]}
+guarded = {x["marker"]: x for x in read("candidate-R-guard.json")["resolved"]}
+assert len(fresh_fol_by_line) == len(immediate["rows"]) == len(guarded)
+for row in immediate["rows"]:
+    line = line_by_marker(fresh_r, row["marker"])
+    fol = fresh_fol_by_line[line["id"]]
+    assert guarded[row["marker"]]["lineItemId"] == line["id"]
+    assert guarded[row["marker"]]["fulfillmentOrderLineItemId"] == fol["id"]
+    assert guarded[row["marker"]]["effectiveQuantity"] == row["effectiveQuantity"]
+    assert 0 <= row["effectiveQuantity"] <= fol["remainingQuantity"] == line["unfulfilledQuantity"]
 assert datetime.fromisoformat(immediate["observedAtUtc"].replace("Z", "+00:00")) < datetime.fromisoformat(order("fulfillment-R-after-partial.json")["fulfillments"][0]["createdAt"].replace("Z", "+00:00"))
 assert fulfillment_multiset("fulfillment-R-after-partial.json") == [("gid://shopify/Fulfillment/6512343908510", [(rt["id"], 1)])]
 assert [(line_by_marker(r1, marker)["unfulfilledQuantity"]) for marker in ("M0-003R-R-20260925-plain-small", "m0-001:m0-003r-R-S-20260925", "m0-001:m0-003r-R-M-20260925")] == [1, 2, 2]
@@ -119,6 +137,25 @@ assert sorted(fulfillment_multiset("fulfillment-R-after-remainder.json")) == sor
 ])
 assert all(x["unfulfilledQuantity"] == 0 for x in r2["lineItems"]["nodes"])
 assert money(r3["totalRefundedSet"]) == Decimal("30") and line_by_marker(r3, "m0-001:m0-003r-R-S-20260925")["refundableQuantity"] == 2
+assert {x["id"]: x["refundableQuantity"] for x in r3["lineItems"]["nodes"]} == {
+    rp["id"]: 1, rt["id"]: 2, rm["id"]: 2,
+}
+assert all(x["unfulfilledQuantity"] == 0 for x in r3["lineItems"]["nodes"])
+refunds = read("order-R-refunds.json")["order"]
+assert refunds["id"] == r0["id"] and refunds["name"] == "#1003" and len(refunds["refunds"]) == 2
+one_refund, final_refund = sorted(refunds["refunds"], key=lambda x: x["createdAt"])
+assert money(one_refund["totalRefundedSet"]) == Decimal("30")
+assert one_refund["refundLineItems"]["pageInfo"]["hasNextPage"] is False
+assert [(x["lineItem"]["id"], x["quantity"], x["restockType"], money(x["subtotalSet"])) for x in one_refund["refundLineItems"]["nodes"]] == [
+    (rt["id"], 1, "RETURN", Decimal("30")),
+]
+assert money(final_refund["totalRefundedSet"]) == Decimal("140")
+assert final_refund["refundLineItems"]["pageInfo"]["hasNextPage"] is False
+assert sorted((x["lineItem"]["id"], x["quantity"], x["restockType"], money(x["subtotalSet"])) for x in final_refund["refundLineItems"]["nodes"]) == sorted([
+    (rp["id"], 1, "NO_RESTOCK", Decimal("20")),
+    (rt["id"], 2, "NO_RESTOCK", Decimal("60")),
+    (rm["id"], 2, "NO_RESTOCK", Decimal("60")),
+])
 before_one, after_one = stock("stock-R-after-remainder.json"), stock("stock-R-after-one-refund.json")
 assert after_one[SMALL]["available"] == before_one[SMALL]["available"] + 1
 assert after_one[SMALL]["on_hand"] == before_one[SMALL]["on_hand"] + 1

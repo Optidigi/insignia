@@ -12,10 +12,10 @@
   "newPurchasedUnits": 13,
   "receiptFiles": {
     "README.md": {
-      "sha256": "9601364e0bc4e878c6a4d30931308d4a35cf966673a0c019c5fe30d022729707",
-      "bytes": 9424,
+      "sha256": "37bcedd32f36bc9f50cc1dfa1047b3a72235be84a937b98c756d42f99d24d6e2",
+      "bytes": 9497,
       "kind": "evidence_index",
-      "localFileModifiedUtc": "2026-09-25T13:46:21.254790Z"
+      "localFileModifiedUtc": "2026-09-25T14:01:13.386013Z"
     },
     "after-first-pay-click-orders.json": {
       "sha256": "923c8f05daa607efbe52e4617bed1ea961836114bcde45323bb1da288cd01af6",
@@ -75,7 +75,7 @@
       "sha256": "069081ab3bc768103769e93e6698f54a1a1b135103abaf9a817c1adba44d7fde",
       "bytes": 823,
       "kind": "native_or_storefront_projection",
-      "localFileModifiedUtc": "2026-09-25T13:45:44.014405Z"
+      "localFileModifiedUtc": "2026-09-25T14:01:51.265400Z"
     },
     "candidate-R-immediate-pre-submit.json": {
       "sha256": "893db95d87e70eba9ef32e6e28452780ac75115e561b0ca27c60219099d30dcc",
@@ -159,7 +159,7 @@
       "sha256": "651b7333d87e38768c5224244664c2918f556f9c6fee9821a863619ae52e5c07",
       "bytes": 576,
       "kind": "native_or_storefront_projection",
-      "localFileModifiedUtc": "2026-09-25T13:45:43.952403Z"
+      "localFileModifiedUtc": "2026-09-25T14:01:51.208400Z"
     },
     "control-C-pre-submit-crop.png": {
       "sha256": "f5388dbb6a19650e60639066826208097b9b21fbdff4d26dcddec59ee6e43525",
@@ -304,6 +304,18 @@
       "bytes": 8542,
       "kind": "native_or_storefront_projection",
       "localFileModifiedUtc": "2026-09-25T12:49:01.992643Z"
+    },
+    "order-R-refunds.graphql": {
+      "sha256": "992a3a408d55cd96dd8b0c934a7b2baa79f6162d83e3803712e4412348300fc9",
+      "bytes": 399,
+      "kind": "executed_graphql_request",
+      "localFileModifiedUtc": "2026-09-25T13:53:57.823527Z"
+    },
+    "order-R-refunds.json": {
+      "sha256": "9e3ac77b67bc5d3a099c70f770d1d7fb917167da309d51d080873e58042e0b4e",
+      "bytes": 2421,
+      "kind": "direct_shopify_cli_api_response",
+      "localFileModifiedUtc": "2026-09-25T13:54:13.178686Z"
     },
     "order-R.variables.json": {
       "sha256": "d6feb273615723994b5fe3bb20cdc9636a72fe3c1fb087ac903902dc90d4e512",
