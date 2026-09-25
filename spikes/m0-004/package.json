@@ -1,0 +1,19 @@
+{
+  "name": "insignia-m0-004",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run ts",
+    "check:ts": "tsc --noEmit && vitest run ts"
+  },
+  "devDependencies": {
+    "@shopify/cli": "4.8.2",
+    "@shopify/shopify-function-test-helpers": "1.1.0",
+    "@types/node": "24.10.0",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

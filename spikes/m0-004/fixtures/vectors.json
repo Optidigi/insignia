@@ -1,0 +1,201 @@
+{
+  "provenance": "RFC 8032 test seed 1; synthetic Insignia claims; never merchant keys",
+  "publicKeyHex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+  "testSeedHex": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+  "valid": [
+    {
+      "name": "eur91_first",
+      "claims": {
+        "keyId": 7,
+        "generationHex": "11111111111111111111111111111111",
+        "epoch": 4,
+        "quoteHex": "22222222222222222222222222222222",
+        "setHex": "33333333333333333333333333333333",
+        "lineIndex": 0,
+        "lineCount": 2,
+        "variantId": "9007199254740993",
+        "quantity": 2,
+        "unitMinor": "3033",
+        "currency": "EUR",
+        "exponent": 2,
+        "country": "DE",
+        "marketId": "42",
+        "validThroughDay": 20802,
+        "totalQuantity": 3,
+        "totalMinor": "9100"
+      },
+      "payloadHex": "495347310100000711111111111111111111111111111111000000042222222222222222222222222222222233333333333333333333333333333333000000020020000000000001000000020000000000000bd9455552024445000000000000002a0000514200000003000000000000238c",
+      "signatureHex": "05989fc422dd4d6fa39f7820527ca7d24e267b684eca30950380bfbd93c4b657ea14fb84a571423b1683ad8e0ee688bbc94ea7c04870d121090bf8a1142b9100",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": true
+    },
+    {
+      "name": "eur91_remainder",
+      "claims": {
+        "keyId": 7,
+        "generationHex": "11111111111111111111111111111111",
+        "epoch": 4,
+        "quoteHex": "22222222222222222222222222222222",
+        "setHex": "33333333333333333333333333333333",
+        "lineIndex": 1,
+        "lineCount": 2,
+        "variantId": "9007199254740993",
+        "quantity": 1,
+        "unitMinor": "3034",
+        "currency": "EUR",
+        "exponent": 2,
+        "country": "DE",
+        "marketId": "42",
+        "validThroughDay": 20802,
+        "totalQuantity": 3,
+        "totalMinor": "9100"
+      },
+      "payloadHex": "495347310100000711111111111111111111111111111111000000042222222222222222222222222222222233333333333333333333333333333333000100020020000000000001000000010000000000000bda455552024445000000000000002a0000514200000003000000000000238c",
+      "signatureHex": "1fcb22871298e82ff740242679ff9d1d1b1e32fa53befe27940c205fd8cd624a33f5300aa6152a23a488495632fc386911a01019a7441c3f3a1f20d27e73fa00",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAEAAgAgAAAAAAABAAAAAQAAAAAAAAvaRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMH8sihxKY6C_3QCQmef-dHRseMvpTvv4nlAwgX9jNYkoz9TAKphUqI6SISVYy_DhpEaAQGadEHD86HyDSfnP6AA",
+      "expectedAccept": true
+    },
+    {
+      "name": "wide_u64",
+      "claims": {
+        "keyId": 7,
+        "generationHex": "11111111111111111111111111111111",
+        "epoch": 4,
+        "quoteHex": "44444444444444444444444444444444",
+        "setHex": "55555555555555555555555555555555",
+        "lineIndex": 0,
+        "lineCount": 1,
+        "variantId": "18446744073709551614",
+        "quantity": 1,
+        "unitMinor": "9007199254740993",
+        "currency": "EUR",
+        "exponent": 2,
+        "country": "DE",
+        "marketId": "42",
+        "validThroughDay": 20802,
+        "totalQuantity": 1,
+        "totalMinor": "9007199254740993"
+      },
+      "payloadHex": "49534731010000071111111111111111111111111111111100000004444444444444444444444444444444445555555555555555555555555555555500000001fffffffffffffffe000000010020000000000001455552024445000000000000002a00005142000000010020000000000001",
+      "signatureHex": "83f55cee28ca3a7425369fa9ac535bb79657b0463bb81ddfd4d1208aad497b759bf695b0a3da177c002eb0ebe5a6216cc4f716a872a48f2938acc4fab6eecb0f",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABERERERERERERERERERERERVVVVVVVVVVVVVVVVVVVVVAAAAAf_________-AAAAAQAgAAAAAAABRVVSAkRFAAAAAAAAACoAAFFCAAAAAQAgAAAAAAABg_Vc7ijKOnQlNp-prFNbt5ZXsEY7uB3f1NEgiq1Je3Wb9pWwo9oXfAAusOvlpiFsxPcWqHKkjyk4rMT6tu7LDw",
+      "expectedAccept": true
+    }
+  ],
+  "invalid": [
+    {
+      "name": "wrong_magic",
+      "token": "WFNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOM89_mlw9JG_ZubG8BJmaAD2azhkq45m85FTtCBQw09H9Vi7898hB3cS8dNamrqLGsDF5BV0Wkd6FgK7uc8AfrAg",
+      "expectedAccept": false,
+      "reason": "magic"
+    },
+    {
+      "name": "wrong_version",
+      "token": "SVNHMQIAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMdBKbb9efsBpDz-EpZniE0-rnchQrqnZjQCahKuGho34oUD-wNCRJQSXvypANLJ1_IPEPcWdj_F7iv4XQpfkFAA",
+      "expectedAccept": false,
+      "reason": "version"
+    },
+    {
+      "name": "reserved_flag",
+      "token": "SVNHMQEBAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMkLaNkFuIAU0TUdDBQLndqWLIIK-oNNv4bRw9fpABJDPQhoSjwRAKKOxT06AduXlTcnE-hYvGF95TDrbLGb87BA",
+      "expectedAccept": false,
+      "reason": "flags"
+    },
+    {
+      "name": "unknown_key",
+      "token": "SVNHMQEAAAgRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMz4P0LyjYwPzpv474L3O1gansOTQHwapI5zuDM0ZKXeD6q7WclBVTO36K8fcadn0zmStybfrNZC5Wa6DFQv_rBQ",
+      "expectedAccept": false,
+      "reason": "key"
+    },
+    {
+      "name": "tampered_generation",
+      "token": "SVNHMQEAAAcJERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "signature"
+    },
+    {
+      "name": "tampered_epoch",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABSIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "signature"
+    },
+    {
+      "name": "tampered_variant",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAACAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "signature"
+    },
+    {
+      "name": "tampered_quantity",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAwAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "signature"
+    },
+    {
+      "name": "tampered_price",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAsIRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "signature"
+    },
+    {
+      "name": "tampered_currency",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZVVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "signature"
+    },
+    {
+      "name": "tampered_exponent",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSA0RFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMd-VcNW5s0gR_fGOsv0CntEOrzK_d4icj0kyYT5_N8a0AeTMdKqFkXAcFN9FZBu0Pebk7DRJMe-ZwzGWapml3DA",
+      "expectedAccept": false,
+      "reason": "currency/exponent"
+    },
+    {
+      "name": "tampered_country",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkZFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "signature"
+    },
+    {
+      "name": "tampered_market",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACsAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "signature"
+    },
+    {
+      "name": "invalid_signature",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBJifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "signature"
+    },
+    {
+      "name": "truncated",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuR",
+      "expectedAccept": false,
+      "reason": "length"
+    },
+    {
+      "name": "padding",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA=",
+      "expectedAccept": false,
+      "reason": "padding"
+    },
+    {
+      "name": "invalid_alphabet",
+      "token": "+VNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAA",
+      "expectedAccept": false,
+      "reason": "alphabet"
+    },
+    {
+      "name": "noncanonical_tail",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAB",
+      "expectedAccept": false,
+      "reason": "canonical"
+    },
+    {
+      "name": "trailing_byte",
+      "token": "SVNHMQEAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAAAAgAgAAAAAAABAAAAAgAAAAAAAAvZRVVSAkRFAAAAAAAAACoAAFFCAAAAAwAAAAAAACOMBZifxCLdTW-jn3ggUnyn0k4me2hOyjCVA4C_vZPEtlfqFPuEpXFCOxaDrY4O5oi7yU6nwEhw0SEJC_ihFCuRAAA",
+      "expectedAccept": false,
+      "reason": "length"
+    }
+  ]
+}
