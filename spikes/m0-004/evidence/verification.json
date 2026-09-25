@@ -79,7 +79,7 @@
     "testFilesPassed": 1,
     "testsPassed": 11,
     "testsFailed": 0,
-    "stdoutLogSha256": "44a8715e31eaac7d2fd25ad3668a03f3a800c7edb2e104638bbeb050fb569ade",
+    "stdoutLogSha256": "13a4fd398d910b7ecdf18b3673ea27bbf467e6039c96e746eda48a9471eedc10",
     "fixtureTestSourceSha256": "4e72e266e5e574592f1afc3111c255c6fdeb88aaed4183a03f6097dbe55cd8ed",
     "environment": "local, off-store, no merchant service",
     "stdoutLogPath": "spikes/m0-004/evidence/historical-m0-001-test.log"

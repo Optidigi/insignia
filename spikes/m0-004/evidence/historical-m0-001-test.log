@@ -8,4 +8,3 @@ $ vitest run gates/nonplus-same-variant/function.test.js
       Tests  11 passed (11)
    Start at  16:40:42
    Duration  3.54s (transform 24ms, setup 0ms, collect 111ms, tests 3.18s, environment 0ms, prepare 72ms)
-
