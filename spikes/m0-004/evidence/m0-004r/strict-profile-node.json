@@ -8,6 +8,7 @@
   "forgedSignatureHex": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
   "normalPublicKeyHex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
   "normalSignedControlAccepted": true,
+  "noncanonicalScalarConstruction": "valid signature R and S+L",
   "cases": [
     {
       "name": "weak_identity_key_r_identity_s_zero",

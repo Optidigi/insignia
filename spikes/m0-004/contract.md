@@ -40,6 +40,8 @@ The signer requires an explicit trusted shop-local issuance day D and signs only
 
 The parser compares `ISG1` as four raw bytes. Independently signed high-bit variants remain invalid even if a text decoder would display the same ASCII characters. The local pinned Node 24.21.0/OpenSSL 3.5.8 verifier rejects the named identity public key with R=identity/S=0, a normal key rejects that forgery, and the RFC normal-key signature succeeds. Rust `ed25519-dalek` 2.2.0 uses strict verification. These executable cases define the tested profile; they do not establish equivalence for every adversarial Ed25519 key/signature on every runtime.
 
+The noncanonical-scalar regression preserves a valid signature's R and substitutes S+L; pinned Node and Rust reject it while accepting the original signature. Rust admits each trusted public key only after parsing and weak-key rejection, then reuses that parsed key for every signed member in the invocation. No candidate token or signing-domain bytes changed.
+
 The pure verifier accepts an explicit `ExpectedContext` and actual normalized lines in the local harness. The target adapters must prove every claimed mapping against their pinned generated GraphQL schema. A field absent from the schema stays `UNSUPPORTED`; no harness-supplied value is described as observed Shopify input. The validator must compare an independently observed pre-discount materialized amount, not a transform-written success marker or token claim. Ambiguous amount/context rejects or records a target blocker.
 
 ## Target input provenance and unresolved mapping

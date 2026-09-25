@@ -62,9 +62,19 @@ describe('candidate authorization bytes', () => {
     const original = Buffer.from(issueToken(claims, privateKeyFromSeed(seedHex), 20798), 'base64url');
     const weak = new Map([[7, publicKeyFromHex('00'.repeat(32))]]);
     expect(() => decodeAndVerifyToken(original.toString('base64url'), weak)).toThrow();
+    const normal = new Map([[7, publicKeyFromHex(publicHex)]]);
+    expect(() => decodeAndVerifyToken(original.toString('base64url'), normal)).not.toThrow();
     const orderL = Buffer.from('edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010', 'hex');
-    orderL.copy(original, 114 + 32);
-    expect(() => decodeAndVerifyToken(original.toString('base64url'), new Map([[7, publicKeyFromHex(publicHex)]]))).toThrow();
+    const originalR = Buffer.from(original.subarray(114, 146));
+    let carry = 0;
+    for (let i = 0; i < 32; i++) {
+      const sum = original[146 + i]! + orderL[i]! + carry;
+      original[146 + i] = sum & 0xff;
+      carry = sum >> 8;
+    }
+    expect(carry).toBe(0);
+    expect(original.subarray(114, 146)).toEqual(originalR);
+    expect(() => decodeAndVerifyToken(original.toString('base64url'), normal)).toThrow('invalid signature');
   });
 
   it('bounds issuance to three shop-local calendar days and rejects zero variant IDs', () => {

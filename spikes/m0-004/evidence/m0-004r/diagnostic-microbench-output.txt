@@ -1,0 +1,10 @@
+warning: linker stderr: ignoring deprecated linker optimization setting '1'
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `insignia-m0-004-authorization` (example "microbench") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.02s
+     Running `target/release/examples/microbench`
+key parse ns/op 4679
+strict verify ns/op 50230
+token decode ns/op 780

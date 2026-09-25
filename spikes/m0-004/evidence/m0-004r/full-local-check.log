@@ -1,20 +1,20 @@
-✓ Lockfile passes supply-chain policies (verified 1h ago)
+✓ Lockfile passes supply-chain policies (verified 2h ago)
 Lockfile is up to date, resolution step is skipped
-Done in 20ms using pnpm v12.6.0
+Done in 26ms using pnpm v12.6.0
 $ tsc --noEmit && vitest run ts
 
  RUN  v3.2.4 /home/serveradmin/insignia-m0-004-worktree/spikes/m0-004
 
- ✓ ts/vectors.test.ts (44 tests) 27ms
- ✓ ts/allocation.test.ts (6 tests) 47ms
- ✓ ts/verify-set.test.ts (21 tests) 67ms
- ✓ ts/authorization.test.ts (5 tests) 12ms
- ✓ ts/issue-allocation.test.ts (1 test) 8ms
+ ✓ ts/vectors.test.ts (44 tests) 39ms
+ ✓ ts/allocation.test.ts (6 tests) 63ms
+ ✓ ts/verify-set.test.ts (21 tests) 78ms
+ ✓ ts/authorization.test.ts (5 tests) 13ms
+ ✓ ts/issue-allocation.test.ts (1 test) 9ms
 
  Test Files  5 passed (5)
       Tests  77 passed (77)
-   Start at  17:42:23
-   Duration  670ms (transform 158ms, setup 0ms, collect 268ms, tests 161ms, environment 1ms, prepare 368ms)
+   Start at  18:06:02
+   Duration  758ms (transform 234ms, setup 0ms, collect 362ms, tests 202ms, environment 1ms, prepare 391ms)
 
 {
   "runtime": {
@@ -26,6 +26,7 @@ $ tsc --noEmit && vitest run ts
   "forgedSignatureHex": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
   "normalPublicKeyHex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
   "normalSignedControlAccepted": true,
+  "noncanonicalScalarConstruction": "valid signature R and S+L",
   "cases": [
     {
       "name": "weak_identity_key_r_identity_s_zero",
@@ -44,10 +45,8 @@ $ tsc --noEmit && vitest run ts
     }
   ]
 }
-    Checking insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.32s
-   Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.05s
      Running unittests src/lib.rs (rust/authorization/target/debug/deps/insignia_m0_004_authorization-0ead758d18d48795)
 
 running 0 tests
@@ -68,15 +67,15 @@ test shop_local_dates_have_calendar_not_elapsed_hour_boundaries ... ok
 test signature_and_key_failures_are_distinct ... ok
 test removing_a_group_cannot_preserve_the_signed_500_unit_tier ... ok
 test five_schema_legal_2000_unit_buckets_sum_10000_without_unit_objects ... ok
-test strict_ed25519_rejects_weak_key_and_noncanonical_signature_scalar ... ok
-test signed_arithmetic_overflow_is_rejected_even_with_valid_signature ... ok
 test strict_transport_rejects_wrong_length_padding_and_noncanonical_tail ... ok
 test key_rotation_accepts_separate_sets_but_rejects_mixed_keys_within_one_set ... ok
+test strict_ed25519_rejects_weak_key_and_noncanonical_signature_scalar ... ok
+test signed_arithmetic_overflow_is_rejected_even_with_valid_signature ... ok
 test trusted_physical_quantity_capacity_rejects_10001_even_when_signed_totals_match ... ok
 test structural_duplicate_rejects_before_signature_but_every_complete_member_is_verified ... ok
 test whole_set_accepts_only_current_day_in_expiry_minus_two_through_expiry ... ok
 
-test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.42s
 
      Running tests/cross_language.rs (rust/authorization/target/debug/deps/cross_language-c84e7997318f976e)
 
@@ -84,7 +83,7 @@ running 2 tests
 test independent_eur91_vectors_form_one_exact_complete_set ... ok
 test independent_python_crypto_vectors_match_rust_bytes_and_strict_verification ... ok
 
-test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
 
    Doc-tests insignia_m0_004_authorization
 
@@ -92,12 +91,116 @@ running 0 tests
 
 test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
 
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling semver v1.0.28
+   Compiling heck v0.5.0
+   Compiling zmij v1.0.23
+   Compiling rustc_version v0.4.1
+   Compiling serde_json v1.0.151
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling logos-codegen v0.15.1
+    Checking typenum v1.20.1
+   Compiling generic-array v0.14.7
+   Compiling fnv v1.0.7
+   Compiling autocfg v1.5.1
+   Compiling regex-syntax v0.8.11
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling beef v0.5.2
+   Compiling lazy_static v1.5.0
+   Compiling num-traits v0.2.19
+   Compiling itoa v1.0.18
+   Compiling either v1.18.0
+   Compiling memchr v2.8.3
+   Compiling itertools v0.14.0
+   Compiling strum_macros v0.27.2
+   Compiling logos-derive v0.15.1
+   Compiling enum-as-inner v0.6.1
+   Compiling yansi v1.0.1
+   Compiling serde v1.0.229
+   Compiling unicode-width v0.1.14
+   Compiling paste v1.0.15
+   Compiling ariadne v0.5.1
+   Compiling logos v0.15.1
+   Compiling serde_derive v1.0.229
+    Checking crypto-common v0.1.7
+   Compiling strum v0.27.2
+    Checking block-buffer v0.10.4
+   Compiling bluejay-core v0.3.1
+   Compiling unicode-segmentation v1.13.3
+   Compiling seq-macro v0.3.6
+   Compiling bluejay-parser v0.3.1
+    Checking digest v0.10.7
+    Checking rmp v0.8.15
+   Compiling curve25519-dalek v4.1.3
+    Checking cfg-if v1.0.5
+   Compiling thiserror v2.0.21
+    Checking cpufeatures v0.2.17
+    Checking shopify_function_wasm_api_core v0.2.0
+   Compiling convert_case v0.8.0
+   Compiling bluejay-validator v0.3.1
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling thiserror-impl v2.0.21
+    Checking bumpalo v3.20.3
+    Checking signature v2.2.0
+    Checking subtle v2.6.1
+    Checking rmp-serde v1.3.1
+    Checking ed25519 v2.2.3
+    Checking shopify_function_provider v2.0.1
+    Checking sha2 v0.10.9
+   Compiling convert_case v0.11.0
+    Checking shopify_function_wasm_api v0.3.1
+    Checking ed25519-dalek v2.2.0
+    Checking ryu v1.0.23
+    Checking base64 v0.22.1
     Checking insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling shopify_function_macro v2.2.0
+    Checking shopify_function v2.2.0
     Checking m0-004-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/transform)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.67s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 14.65s
+   Compiling memchr v2.8.3
+   Compiling zmij v1.0.23
+   Compiling itoa v1.0.18
+   Compiling strum v0.27.2
+   Compiling typenum v1.20.1
+   Compiling serde_core v1.0.229
+   Compiling num-traits v0.2.19
+   Compiling generic-array v0.14.7
+   Compiling serde_json v1.0.151
+   Compiling rmp v0.8.15
+   Compiling cfg-if v1.0.5
+   Compiling cpufeatures v0.2.17
+   Compiling shopify_function_wasm_api_core v0.2.0
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling subtle v2.6.1
+   Compiling digest v0.10.7
+   Compiling signature v2.2.0
+   Compiling bumpalo v3.20.3
+   Compiling sha2 v0.10.9
+   Compiling bluejay-core v0.3.1
+   Compiling shopify_function_provider v2.0.1
+   Compiling bluejay-parser v0.3.1
+   Compiling curve25519-dalek v4.1.3
+   Compiling serde v1.0.229
+   Compiling rmp-serde v1.3.1
+   Compiling ed25519 v2.2.3
+   Compiling thiserror v2.0.21
+   Compiling ed25519-dalek v2.2.0
+   Compiling ryu v1.0.23
+   Compiling shopify_function_wasm_api v0.3.1
+   Compiling bluejay-validator v0.3.1
+   Compiling base64 v0.22.1
    Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling shopify_function_macro v2.2.0
+   Compiling shopify_function v2.2.0
    Compiling m0-004-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/transform)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.05s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.40s
      Running unittests src/main.rs (extensions/transform/target/debug/deps/m0_004_cart_transform-e6439e5e09bca44f)
 
 running 1 test
@@ -105,12 +208,116 @@ test tests::signed_complete_set_expands_same_variant_once_with_exact_string_mone
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
 
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling semver v1.0.28
+   Compiling zmij v1.0.23
+   Compiling heck v0.5.0
+   Compiling rustc_version v0.4.1
+   Compiling serde_json v1.0.151
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling logos-codegen v0.15.1
+   Compiling generic-array v0.14.7
+   Compiling lazy_static v1.5.0
+   Compiling beef v0.5.2
+    Checking typenum v1.20.1
+   Compiling autocfg v1.5.1
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling regex-syntax v0.8.11
+   Compiling fnv v1.0.7
+   Compiling num-traits v0.2.19
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling either v1.18.0
+   Compiling itertools v0.14.0
+   Compiling strum_macros v0.27.2
+   Compiling enum-as-inner v0.6.1
+   Compiling logos-derive v0.15.1
+   Compiling yansi v1.0.1
+   Compiling paste v1.0.15
+   Compiling serde v1.0.229
+   Compiling unicode-width v0.1.14
+   Compiling ariadne v0.5.1
+   Compiling strum v0.27.2
+   Compiling bluejay-core v0.3.1
+   Compiling logos v0.15.1
+   Compiling serde_derive v1.0.229
+    Checking block-buffer v0.10.4
+    Checking crypto-common v0.1.7
+   Compiling seq-macro v0.3.6
+   Compiling unicode-segmentation v1.13.3
+   Compiling bluejay-parser v0.3.1
+    Checking digest v0.10.7
+    Checking rmp v0.8.15
+   Compiling curve25519-dalek v4.1.3
+    Checking cpufeatures v0.2.17
+   Compiling thiserror v2.0.21
+    Checking cfg-if v1.0.5
+    Checking shopify_function_wasm_api_core v0.2.0
+   Compiling convert_case v0.8.0
+   Compiling bluejay-validator v0.3.1
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling thiserror-impl v2.0.21
+    Checking subtle v2.6.1
+    Checking signature v2.2.0
+    Checking bumpalo v3.20.3
+    Checking shopify_function_provider v2.0.1
+    Checking ed25519 v2.2.3
+    Checking rmp-serde v1.3.1
+    Checking sha2 v0.10.9
+   Compiling convert_case v0.11.0
+    Checking ed25519-dalek v2.2.0
+   Compiling bluejay-typegen-codegen v0.3.1
+    Checking base64 v0.22.1
+    Checking shopify_function_wasm_api v0.3.1
+    Checking ryu v1.0.23
     Checking insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+   Compiling shopify_function_macro v2.2.0
+    Checking shopify_function v2.2.0
     Checking m0-004-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/validation)
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 13.74s
+   Compiling itoa v1.0.18
+   Compiling zmij v1.0.23
+   Compiling memchr v2.8.3
+   Compiling strum v0.27.2
+   Compiling typenum v1.20.1
+   Compiling serde_core v1.0.229
+   Compiling num-traits v0.2.19
+   Compiling serde_json v1.0.151
+   Compiling generic-array v0.14.7
+   Compiling rmp v0.8.15
+   Compiling cpufeatures v0.2.17
+   Compiling cfg-if v1.0.5
+   Compiling shopify_function_wasm_api_core v0.2.0
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling signature v2.2.0
+   Compiling digest v0.10.7
+   Compiling subtle v2.6.1
+   Compiling bumpalo v3.20.3
+   Compiling curve25519-dalek v4.1.3
+   Compiling bluejay-core v0.3.1
+   Compiling shopify_function_provider v2.0.1
+   Compiling bluejay-parser v0.3.1
+   Compiling serde v1.0.229
+   Compiling sha2 v0.10.9
+   Compiling rmp-serde v1.3.1
+   Compiling ed25519 v2.2.3
+   Compiling thiserror v2.0.21
+   Compiling ed25519-dalek v2.2.0
+   Compiling ryu v1.0.23
+   Compiling shopify_function_wasm_api v0.3.1
+   Compiling base64 v0.22.1
+   Compiling bluejay-validator v0.3.1
    Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling shopify_function_macro v2.2.0
+   Compiling shopify_function v2.2.0
    Compiling m0-004-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/validation)
-    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.86s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.73s
      Running unittests src/main.rs (extensions/validation/target/debug/deps/m0_004_cart_validation-00b5db8d70e87a07)
 
 running 1 test
@@ -118,18 +325,138 @@ test tests::schema_valid_synthetic_projection_checks_price_and_signature ... ok
 
 test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
 
-Building function m0-004-local-transform...   Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+Building function m0-004-local-transform...   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling semver v1.0.28
+   Compiling zmij v1.0.23
+   Compiling rustc_version v0.4.1
+   Compiling heck v0.5.0
+   Compiling serde_json v1.0.151
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling logos-codegen v0.15.1
+   Compiling generic-array v0.14.7
+   Compiling fnv v1.0.7
+   Compiling lazy_static v1.5.0
+   Compiling typenum v1.20.1
+   Compiling beef v0.5.2
+   Compiling regex-syntax v0.8.11
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling memchr v2.8.3
+   Compiling either v1.18.0
+   Compiling itoa v1.0.18
+   Compiling itertools v0.14.0
+   Compiling strum_macros v0.27.2
+   Compiling logos-derive v0.15.1
+   Compiling enum-as-inner v0.6.1
+   Compiling yansi v1.0.1
+   Compiling paste v1.0.15
+   Compiling unicode-width v0.1.14
+   Compiling logos v0.15.1
+   Compiling block-buffer v0.10.4
+   Compiling ariadne v0.5.1
+   Compiling crypto-common v0.1.7
+   Compiling unicode-segmentation v1.13.3
+   Compiling seq-macro v0.3.6
+   Compiling digest v0.10.7
+   Compiling curve25519-dalek v4.1.3
+   Compiling cfg-if v1.0.5
+   Compiling thiserror v2.0.21
+   Compiling convert_case v0.8.0
+   Compiling thiserror-impl v2.0.21
+   Compiling strum v0.27.2
+   Compiling bluejay-core v0.3.1
+   Compiling subtle v2.6.1
+   Compiling signature v2.2.0
+   Compiling bluejay-parser v0.3.1
+   Compiling serde v1.0.229
+   Compiling ed25519 v2.2.3
+   Compiling shopify_function_wasm_api_core v0.2.0
+   Compiling sha2 v0.10.9
+   Compiling convert_case v0.11.0
+   Compiling serde_derive v1.0.229
+   Compiling bluejay-validator v0.3.1
+   Compiling ed25519-dalek v2.2.0
+   Compiling shopify_function_wasm_api v0.3.1
+   Compiling base64 v0.22.1
+   Compiling ryu v1.0.23
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling shopify_function_macro v2.2.0
+   Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+   Compiling shopify_function v2.2.0
    Compiling m0-004-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/transform)
-    Finished `release` profile [optimized] target(s) in 2.53s
+    Finished `release` profile [optimized] target(s) in 18.70s
 ╭─ success ────────────────────────────────────────────────────────────────────╮
 │                                                                              │
 │  Function built successfully.                                                │
 │                                                                              │
 ╰──────────────────────────────────────────────────────────────────────────────╯
 
-Building function m0-004-local-validation...   Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+Building function m0-004-local-validation...   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling semver v1.0.28
+   Compiling zmij v1.0.23
+   Compiling heck v0.5.0
+   Compiling rustc_version v0.4.1
+   Compiling serde_json v1.0.151
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling logos-codegen v0.15.1
+   Compiling regex-syntax v0.8.11
+   Compiling generic-array v0.14.7
+   Compiling lazy_static v1.5.0
+   Compiling fnv v1.0.7
+   Compiling typenum v1.20.1
+   Compiling syn v2.0.119
+   Compiling beef v0.5.2
+   Compiling syn v3.0.6
+   Compiling either v1.18.0
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling itertools v0.14.0
+   Compiling strum_macros v0.27.2
+   Compiling logos-derive v0.15.1
+   Compiling enum-as-inner v0.6.1
+   Compiling unicode-width v0.1.14
+   Compiling paste v1.0.15
+   Compiling yansi v1.0.1
+   Compiling logos v0.15.1
+   Compiling block-buffer v0.10.4
+   Compiling ariadne v0.5.1
+   Compiling crypto-common v0.1.7
+   Compiling seq-macro v0.3.6
+   Compiling unicode-segmentation v1.13.3
+   Compiling digest v0.10.7
+   Compiling curve25519-dalek v4.1.3
+   Compiling thiserror v2.0.21
+   Compiling cfg-if v1.0.5
+   Compiling convert_case v0.8.0
+   Compiling strum v0.27.2
+   Compiling bluejay-core v0.3.1
+   Compiling thiserror-impl v2.0.21
+   Compiling subtle v2.6.1
+   Compiling serde v1.0.229
+   Compiling bluejay-parser v0.3.1
+   Compiling signature v2.2.0
+   Compiling ed25519 v2.2.3
+   Compiling shopify_function_wasm_api_core v0.2.0
+   Compiling sha2 v0.10.9
+   Compiling bluejay-validator v0.3.1
+   Compiling convert_case v0.11.0
+   Compiling serde_derive v1.0.229
+   Compiling ed25519-dalek v2.2.0
+   Compiling shopify_function_wasm_api v0.3.1
+   Compiling base64 v0.22.1
+   Compiling ryu v1.0.23
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling shopify_function_macro v2.2.0
+   Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+   Compiling shopify_function v2.2.0
    Compiling m0-004-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/validation)
-    Finished `release` profile [optimized] target(s) in 2.47s
+    Finished `release` profile [optimized] target(s) in 16.17s
 ╭─ success ────────────────────────────────────────────────────────────────────╮
 │                                                                              │
 │  Function built successfully.                                                │
@@ -157,10 +484,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 1476,
       "outputBytes": 1038,
-      "instructions": 4725677,
+      "instructions": 4560239,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -176,10 +503,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1636,
       "outputBytes": 17,
-      "instructions": 4717758,
+      "instructions": 4552016,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -195,10 +522,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1636,
       "outputBytes": 131,
-      "instructions": 240319,
+      "instructions": 240372,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -214,10 +541,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 2,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1052,
       "outputBytes": 131,
-      "instructions": 255794,
+      "instructions": 255943,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -233,10 +560,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 4,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1636,
       "outputBytes": 131,
-      "instructions": 306246,
+      "instructions": 306299,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -252,10 +579,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1636,
       "outputBytes": 131,
-      "instructions": 2730672,
+      "instructions": 2564932,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -271,10 +598,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 1476,
       "outputBytes": 17,
-      "instructions": 2717887,
+      "instructions": 2552351,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -290,7 +617,7 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1112,
       "outputBytes": 17,
       "instructions": 39914,
@@ -309,7 +636,7 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1144,
       "outputBytes": 17,
       "instructions": 43233,
@@ -328,10 +655,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1144,
       "outputBytes": 131,
-      "instructions": 231723,
+      "instructions": 231847,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -347,10 +674,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 949,
       "outputBytes": 17,
-      "instructions": 245003,
+      "instructions": 245053,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -366,10 +693,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 949,
       "outputBytes": 17,
-      "instructions": 244252,
+      "instructions": 244302,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -385,10 +712,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 949,
       "outputBytes": 17,
-      "instructions": 200027,
+      "instructions": 200045,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -404,10 +731,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1052,
       "outputBytes": 131,
-      "instructions": 254824,
+      "instructions": 254973,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -423,10 +750,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1052,
       "outputBytes": 131,
-      "instructions": 254073,
+      "instructions": 254222,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -442,10 +769,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1052,
       "outputBytes": 131,
-      "instructions": 208395,
+      "instructions": 208414,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -476,10 +803,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 949,
       "outputBytes": 527,
-      "instructions": 2519865,
+      "instructions": 2354122,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -495,10 +822,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1052,
       "outputBytes": 17,
-      "instructions": 2516442,
+      "instructions": 2350773,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -514,10 +841,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 2,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 1476,
       "outputBytes": 1038,
-      "instructions": 4736255,
+      "instructions": 4570817,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -533,10 +860,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 2,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 1636,
       "outputBytes": 17,
-      "instructions": 4728036,
+      "instructions": 4562294,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -552,10 +879,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 2003,
       "outputBytes": 1549,
-      "instructions": 6923148,
+      "instructions": 6757602,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -571,10 +898,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 2220,
       "outputBytes": 17,
-      "instructions": 6909484,
+      "instructions": 6743811,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -590,10 +917,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 4,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 2530,
       "outputBytes": 2060,
-      "instructions": 9094476,
+      "instructions": 8928863,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -609,10 +936,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 4,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 2804,
       "outputBytes": 17,
-      "instructions": 9075955,
+      "instructions": 8910280,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -628,10 +955,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 5693,
       "outputBytes": 5127,
-      "instructions": 22190719,
+      "instructions": 22024958,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -647,10 +974,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 6309,
       "outputBytes": 17,
-      "instructions": 22143047,
+      "instructions": 21977289,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -666,10 +993,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 32,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 17309,
       "outputBytes": 16391,
-      "instructions": 69918764,
+      "instructions": 69752934,
       "memoryUsageKiB": 1216,
       "stackPeak": null,
       "queryCost": null,
@@ -685,10 +1012,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 32,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 19179,
       "outputBytes": 17,
-      "instructions": 69765694,
+      "instructions": 69599892,
       "memoryUsageKiB": 1216,
       "stackPeak": null,
       "queryCost": null,
@@ -704,10 +1031,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 64,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 34205,
       "outputBytes": 32775,
-      "instructions": 139803398,
+      "instructions": 139637529,
       "memoryUsageKiB": 1280,
       "stackPeak": null,
       "queryCost": null,
@@ -723,10 +1050,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 64,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 37899,
       "outputBytes": 17,
-      "instructions": 139495893,
+      "instructions": 139330027,
       "memoryUsageKiB": 1344,
       "stackPeak": null,
       "queryCost": null,
@@ -742,10 +1069,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 54204,
       "outputBytes": 5127,
-      "instructions": 24975745,
+      "instructions": 24809959,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -761,10 +1088,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 65080,
       "outputBytes": 17,
-      "instructions": 25223428,
+      "instructions": 25057670,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -780,10 +1107,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 54573,
       "outputBytes": 527,
-      "instructions": 5599560,
+      "instructions": 5433817,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -799,10 +1126,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 1,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 66019,
       "outputBytes": 17,
-      "instructions": 5923342,
+      "instructions": 5757602,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -818,10 +1145,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 2,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 54832,
       "outputBytes": 1038,
-      "instructions": 7800353,
+      "instructions": 7634608,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -837,10 +1164,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 2,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 66278,
       "outputBytes": 17,
-      "instructions": 8117154,
+      "instructions": 7951412,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -856,10 +1183,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 55091,
       "outputBytes": 1549,
-      "instructions": 9971487,
+      "instructions": 9805740,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -875,10 +1202,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 3,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 66537,
       "outputBytes": 17,
-      "instructions": 10281252,
+      "instructions": 10115508,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -894,10 +1221,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 4,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 55350,
       "outputBytes": 2060,
-      "instructions": 12126953,
+      "instructions": 11961204,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -913,10 +1240,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 4,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 66796,
       "outputBytes": 17,
-      "instructions": 12430618,
+      "instructions": 12264872,
       "memoryUsageKiB": 1536,
       "stackPeak": null,
       "queryCost": null,
@@ -932,10 +1259,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 5693,
       "outputBytes": 17,
-      "instructions": 22095195,
+      "instructions": 21929434,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -951,10 +1278,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 6309,
       "outputBytes": 131,
-      "instructions": 22130275,
+      "instructions": 21964517,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -970,10 +1297,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10000,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 3072,
       "outputBytes": 2571,
-      "instructions": 11258266,
+      "instructions": 11092566,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -989,10 +1316,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10000,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 3418,
       "outputBytes": 17,
-      "instructions": 11236369,
+      "instructions": 11070692,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1008,7 +1335,7 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 54327,
       "outputBytes": 17,
       "instructions": 1725070,
@@ -1027,10 +1354,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 5693,
       "outputBytes": 17,
-      "instructions": 2955143,
+      "instructions": 2789400,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1046,10 +1373,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 9,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 5165,
       "outputBytes": 17,
-      "instructions": 626672,
+      "instructions": 626722,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1065,10 +1392,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 5693,
       "outputBytes": 17,
-      "instructions": 478430,
+      "instructions": 478480,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1084,10 +1411,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 5693,
       "outputBytes": 17,
-      "instructions": 429406,
+      "instructions": 429456,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1103,10 +1430,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 5692,
       "outputBytes": 17,
-      "instructions": 455527,
+      "instructions": 455944,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1122,10 +1449,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10000,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 573,
-      "binaryBytes": 156822,
+      "binaryBytes": 156805,
       "inputBytes": 3071,
       "outputBytes": 17,
-      "instructions": 436561,
+      "instructions": 436662,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1141,7 +1468,7 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 0,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 65773,
       "outputBytes": 17,
       "instructions": 2960316,
@@ -1160,10 +1487,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 6309,
       "outputBytes": 131,
-      "instructions": 2990223,
+      "instructions": 2824483,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1179,10 +1506,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 9,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 5724,
       "outputBytes": 131,
-      "instructions": 659203,
+      "instructions": 659256,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1198,10 +1525,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 6309,
       "outputBytes": 131,
-      "instructions": 513422,
+      "instructions": 513475,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1217,10 +1544,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 6309,
       "outputBytes": 131,
-      "instructions": 464376,
+      "instructions": 464429,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1236,10 +1563,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 6308,
       "outputBytes": 131,
-      "instructions": 489074,
+      "instructions": 489444,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,
@@ -1255,10 +1582,10 @@ Building function m0-004-local-validation...   Compiling insignia-m0-004-authori
       "physicalQuantity": 10000,
       "provenance": "schema-valid synthetic projection; not captured platform input",
       "queryBytes": 642,
-      "binaryBytes": 158177,
+      "binaryBytes": 158188,
       "inputBytes": 3417,
       "outputBytes": 131,
-      "instructions": 459134,
+      "instructions": 459258,
       "memoryUsageKiB": 1152,
       "stackPeak": null,
       "queryCost": null,

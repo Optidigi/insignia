@@ -1,0 +1,8 @@
+{
+  "runtime": "Rust 1.98.1 native, opt2 temporary snapshot",
+  "command": "cargo run --offline --locked --release --example microbench",
+  "exitCode": 0,
+  "sourceSha256": "45cd0e0748ce83a726bedf17432efb5f09fb37869b8a6e7da7e1155f8f700c3e",
+  "outputSha256": "019ea619e5a059728a5d0b48d957225a34cc38e41f5aa2d24e5a102f1a9bdf7a",
+  "note": "Diagnostic native timing only; complete CLI-built Wasm runner decides capacity."
+}

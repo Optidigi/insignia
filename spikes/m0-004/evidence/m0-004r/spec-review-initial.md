@@ -1,0 +1,7 @@
+## Spec findings
+
+- **Medium — trusted key parsed twice.** [lib.rs:508](/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization/src/lib.rs:508) parses every configured key, then [lib.rs:330](/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization/src/lib.rs:330) parses the selected key again during the same Function invocation. M0-004R requires parsing each key once; the [evidence claim](/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/evidence/m0-004r/README.md:39) overstates this optimization.
+
+- **Low — diagnostic timing lacks a retained result.** The [evidence report](/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/evidence/m0-004r/README.md:41) gives three native microbenchmark timings, but retains only the benchmark source and rerun instructions, with no captured output or exit status. Those timings cannot be audited from the packet. The complete Wasm measurements and failed-capacity conclusion remain separately recorded.
+
+I reviewed the full diff from `4591d102bb7368681622221253dbd4c997df1ad4` to local HEAD `752ad1270ec5296e5e3371f34eb6fbd541aaf727`, including code, fixtures, runner, hashes, measurements and packet claims. I found no further concrete spec defect. Checks were read-only; I inspected retained test logs rather than rerunning builds. The candidate is unpushed, so final-head CI and remote PR identity remain unverified. This is not principal approval.

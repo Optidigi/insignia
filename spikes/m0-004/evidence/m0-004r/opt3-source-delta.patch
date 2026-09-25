@@ -1,0 +1,75 @@
+--- a/spikes/m0-004/rust/authorization/src/lib.rs
++++ b/spikes/m0-004/rust/authorization/src/lib.rs
+@@ -182,8 +182,26 @@
+ 
+ #[derive(Clone, Copy)]
+ pub struct VerificationKey {
+-    pub id: u16,
+-    pub bytes: [u8; 32],
++    id: u16,
++    parsed: VerifyingKey,
++}
++
++impl VerificationKey {
++    pub fn new(id: u16, bytes: [u8; 32]) -> Result<Self, Error> {
++        let parsed = VerifyingKey::from_bytes(&bytes).map_err(|_| Error::Signature)?;
++        if parsed.is_weak() {
++            return Err(Error::Signature);
++        }
++        Ok(Self { id, parsed })
++    }
++
++    pub fn id(&self) -> u16 {
++        self.id
++    }
++
++    pub fn bytes(&self) -> [u8; 32] {
++        self.parsed.to_bytes()
++    }
+ }
+ 
+ pub fn verify_signature(auth: &SignedAuthorization, keys: &[VerificationKey]) -> Result<(), Error> {
+@@ -191,11 +209,7 @@
+         .iter()
+         .find(|k| k.id == auth.claims.key_id)
+         .ok_or(Error::UnknownKey)?;
+-    let verifying_key = VerifyingKey::from_bytes(&key.bytes).map_err(|_| Error::Signature)?;
+-    if verifying_key.is_weak() {
+-        return Err(Error::Signature);
+-    }
+-    verify_with_key(auth, &verifying_key)
++    verify_with_key(auth, &key.parsed)
+ }
+ 
+ fn verify_with_key(auth: &SignedAuthorization, verifying_key: &VerifyingKey) -> Result<(), Error> {
+@@ -327,12 +341,8 @@
+         .iter()
+         .find(|key| key.id == first.key_id)
+         .ok_or(Error::UnknownKey)?;
+-    let verifying_key = VerifyingKey::from_bytes(&key.bytes).map_err(|_| Error::Signature)?;
+-    if verifying_key.is_weak() {
+-        return Err(Error::Signature);
+-    }
+     for auth in &pending {
+-        verify_with_key(auth, &verifying_key)?;
++        verify_with_key(auth, &key.parsed)?;
+     }
+     Ok(pending.into_iter().map(|auth| auth.claims).collect())
+ }
+@@ -504,15 +514,7 @@
+         {
+             return Err(Error::Context);
+         }
+-        let public_bytes = parse_hex(&k.public_hex)?;
+-        let key = VerifyingKey::from_bytes(&public_bytes).map_err(|_| Error::Signature)?;
+-        if key.is_weak() {
+-            return Err(Error::Signature);
+-        }
+-        keys.push(VerificationKey {
+-            id: k.id,
+-            bytes: public_bytes,
+-        });
++        keys.push(VerificationKey::new(k.id, parse_hex(&k.public_hex)?)?);
+     }
+     Ok(PublicConfig {
+         generation,

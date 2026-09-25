@@ -78,17 +78,6 @@ def flip(name, offset, value, reason, resign=False):
 
 
 flip("wrong_magic", 0, ord("X"), "magic", True)
-# Every nonempty high-bit mask over ISG1 is a distinct noncanonical header.
-# Sign each malformed payload independently to test parsing before signature.
-for mask in range(1, 16):
-    highbit_magic = bytearray(raw0)
-    for offset in range(4):
-        if mask & (1 << offset):
-            highbit_magic[offset] |= 0x80
-    bad(f"highbit_magic_mask_{mask:02x}", bytes(highbit_magic), "raw magic", True)
-highbit_unresigned = bytearray(raw0)
-highbit_unresigned[0] |= 0x80
-bad("highbit_magic_unresigned", bytes(highbit_unresigned), "signature control")
 flip("wrong_version", 4, 2, "version", True)
 flip("reserved_flag", 5, 1, "flags", True)
 flip("unknown_key", 7, 8, "key", True)
@@ -110,19 +99,6 @@ changed_sig = bytearray(sig0)
 changed_sig[0] ^= 1
 invalid.append(dict(name="invalid_signature", token=b64(raw0 + changed_sig),
                     expectedAccept=False, reason="signature"))
-identity = b"\x01" + b"\x00" * 31
-identity_r_zero_s = identity + b"\x00" * 32
-invalid.append(dict(name="weak_identity_key_r_identity_s_zero",
-                    token=b64(raw0 + identity_r_zero_s),
-                    publicKeyHex=identity.hex(), expectedAccept=False,
-                    reason="strict weak-key profile"))
-invalid.append(dict(name="normal_key_rejects_identity_signature",
-                    token=b64(raw0 + identity_r_zero_s),
-                    expectedAccept=False, reason="normal-key negative control"))
-order_l = bytes.fromhex("edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010")
-invalid.append(dict(name="noncanonical_signature_scalar",
-                    token=b64(raw0 + sig0[:32] + order_l),
-                    expectedAccept=False, reason="noncanonical S scalar"))
 invalid.append(dict(name="truncated", token=token0[:-2], expectedAccept=False, reason="length"))
 invalid.append(dict(name="padding", token=token0 + "=", expectedAccept=False, reason="padding"))
 invalid.append(dict(name="invalid_alphabet", token="+" + token0[1:], expectedAccept=False, reason="alphabet"))
@@ -134,6 +110,35 @@ invalid.append(dict(name="noncanonical_tail", token=token0[:-1] + alphabet[tail 
                     expectedAccept=False, reason="canonical"))
 invalid.append(dict(name="trailing_byte", token=b64(raw0 + sig0 + b"\x00"),
                     expectedAccept=False, reason="length"))
+
+# Keep the original valid and invalid corpus byte-for-byte, then append all
+# M0-004R adversarial cases. Independently sign malformed headers so rejection
+# must occur at the parser even when the signature is otherwise valid.
+for mask in range(1, 16):
+    highbit_magic = bytearray(raw0)
+    for offset in range(4):
+        if mask & (1 << offset):
+            highbit_magic[offset] |= 0x80
+    bad(f"highbit_magic_mask_{mask:02x}", bytes(highbit_magic), "raw magic", True)
+highbit_unresigned = bytearray(raw0)
+highbit_unresigned[0] |= 0x80
+bad("highbit_magic_unresigned", bytes(highbit_unresigned), "signature control")
+identity = b"\x01" + b"\x00" * 31
+identity_r_zero_s = identity + b"\x00" * 32
+invalid.append(dict(name="weak_identity_key_r_identity_s_zero",
+                    token=b64(raw0 + identity_r_zero_s),
+                    publicKeyHex=identity.hex(), expectedAccept=False,
+                    reason="strict weak-key profile"))
+invalid.append(dict(name="normal_key_rejects_identity_signature",
+                    token=b64(raw0 + identity_r_zero_s),
+                    expectedAccept=False, reason="normal-key negative control"))
+order_l = bytes.fromhex("edd3f55c1a631258d69cf7a2def9de1400000000000000000000000000000010")
+assert len(order_l) == 32
+noncanonical_s = int.from_bytes(sig0[32:], "little") + int.from_bytes(order_l, "little")
+assert noncanonical_s < 1 << 256
+invalid.append(dict(name="noncanonical_signature_scalar",
+                    token=b64(raw0 + sig0[:32] + noncanonical_s.to_bytes(32, "little")),
+                    expectedAccept=False, reason="valid R with S+L noncanonical scalar"))
 
 out = dict(provenance="RFC 8032 test seed 1; synthetic Insignia claims; never merchant keys",
            publicKeyHex="d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",

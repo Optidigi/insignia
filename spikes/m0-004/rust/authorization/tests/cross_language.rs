@@ -49,10 +49,7 @@ fn claims(v: &Value) -> Claims {
 #[test]
 fn independent_python_crypto_vectors_match_rust_bytes_and_strict_verification() {
     let corpus = corpus();
-    let key = VerificationKey {
-        id: 7,
-        bytes: parse_hex(text(&corpus, "publicKeyHex")).unwrap(),
-    };
+    let key = VerificationKey::new(7, parse_hex(text(&corpus, "publicKeyHex")).unwrap()).unwrap();
     for item in corpus["valid"].as_array().unwrap() {
         let c = claims(&item["claims"]);
         let p = encode_payload(&c).unwrap();
@@ -79,17 +76,15 @@ fn independent_python_crypto_vectors_match_rust_bytes_and_strict_verification() 
         );
     }
     for item in corpus["invalid"].as_array().unwrap() {
-        let item_key = VerificationKey {
-            id: key.id,
-            bytes: item["publicKeyHex"]
-                .as_str()
-                .map(parse_hex)
-                .transpose()
-                .unwrap()
-                .unwrap_or(key.bytes),
-        };
-        let result =
-            decode_token(text(item, "token")).and_then(|a| verify_signature(&a, &[item_key]));
+        let item_bytes = item["publicKeyHex"]
+            .as_str()
+            .map(parse_hex)
+            .transpose()
+            .unwrap()
+            .unwrap_or(key.bytes());
+        let result = VerificationKey::new(key.id(), item_bytes).and_then(|item_key| {
+            decode_token(text(item, "token")).and_then(|a| verify_signature(&a, &[item_key]))
+        });
         assert!(result.is_err(), "{} must reject", text(item, "name"));
         if text(item, "name").starts_with("highbit_magic_mask_") {
             assert_eq!(
@@ -109,10 +104,7 @@ fn independent_python_crypto_vectors_match_rust_bytes_and_strict_verification() 
 fn independent_eur91_vectors_form_one_exact_complete_set() {
     let corpus = corpus();
     let valid = corpus["valid"].as_array().unwrap();
-    let key = VerificationKey {
-        id: 7,
-        bytes: parse_hex(text(&corpus, "publicKeyHex")).unwrap(),
-    };
+    let key = VerificationKey::new(7, parse_hex(text(&corpus, "publicKeyHex")).unwrap()).unwrap();
     let expected = ExpectedContext {
         generation: [0x11; 16],
         epoch: 4,

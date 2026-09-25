@@ -1,7 +1,7 @@
 {
   "provenance": "Synthetic off-store full CLI-built targets; complete 16 smoke/42 benchmark matrix using integrated parent runner; no merchant services",
   "reviewedHead": "d5e18b9a1dec9492f76b8a006f4b62ffc9c1dfae",
-  "sourceReconstruction": "Apply baseline, opt1, opt2 source deltas in order to the reviewed head. Only three listed Rust source files differ across variants. Final production source matches opt2 by SHA-256; binary bytes may vary by build path.",
+  "sourceReconstruction": "Apply baseline, opt1, opt2 and opt3 source deltas in order to the reviewed head for the three Rust source files. The current final production Rust source matches opt3 by SHA-256; binary bytes may vary by build path.",
   "finalRunnerSha256": "49aed9c2440814b9dda66bfc1ba5d4761e937aa77c44a8308a824d09e78fd4ad",
   "variants": {
     "baseline": {
@@ -69,23 +69,64 @@
     },
     "final": {
       "smokeRows": 16,
-      "benchmarkRows": 42,
+      "smokeSha256": "fcdbb42b337044d4b49ff64491fcf08a7a9e4373496246568307250c66f8c9e8",
       "runnerErrors": 0,
-      "smokeSha256": "296cd1142d7c690845fdcb7922343d9e7f48cf2ef0ac3e85e3bc423132de9d84",
-      "benchmarkSha256": "33f20beee466e1ad274a100bae2225d7569381ca6122c465fd2a44a603132216",
       "sourceSha256": {
-        "rust/authorization/src/lib.rs": "ce8e9520bf346df5939d24de88f68f9c23e200a8bda81a4a475280c2e8e5c74d",
+        "rust/authorization/src/lib.rs": "c8745b8ec5fdfdef89c1143068f140d7a82d33ce297bf7dc3665f9d8dcf72b29",
         "extensions/transform/src/main.rs": "fac80beafe0b6a14c567fa341152daa1ff2da3832ef42ab32fb989a1c9ed4b48",
         "extensions/validation/src/main.rs": "b8aaed2723bad53c245f637e4dc6817fb8439b79f0c1b884462ff50ced7e3ddf"
       },
       "buildSha256": {
-        "extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm": "19b9ab91fbbfdf7ec2711b4284f0490a0bce46ea216cd6100c5ffc09aba60308",
-        "extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm": "dd04bc204fa9dde805d834cf5107dc25bbd3ed1a807be1fc1858a641e3fa62e3"
+        "extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm": "5f51256b9383657988169189235c282dbb1983149399a4ba2dc7079c4c434ce0",
+        "extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm": "f746d3e61d0baf9b46fd1a001e078d194903b22df4834cd0257f8289cf1a2b23"
       },
+      "sourceDeltaSha256": "473cf15a736fa10772c284de6a40696bb2199e1785591e07a7e9b128f3f8f153",
       "binaryBytes": {
-        "transform": 156822,
-        "validation": 158177
-      }
+        "transform": 156805,
+        "validation": 158188
+      },
+      "benchmarkRows": 42,
+      "benchmarkSha256": "70a008df120b2aba576d9cab4e0b81261e3565a32d1ec42282700e34bcabaf20"
+    },
+    "opt3": {
+      "smokeRows": 16,
+      "smokeSha256": "fcdbb42b337044d4b49ff64491fcf08a7a9e4373496246568307250c66f8c9e8",
+      "runnerErrors": 0,
+      "sourceSha256": {
+        "rust/authorization/src/lib.rs": "c8745b8ec5fdfdef89c1143068f140d7a82d33ce297bf7dc3665f9d8dcf72b29",
+        "extensions/transform/src/main.rs": "fac80beafe0b6a14c567fa341152daa1ff2da3832ef42ab32fb989a1c9ed4b48",
+        "extensions/validation/src/main.rs": "b8aaed2723bad53c245f637e4dc6817fb8439b79f0c1b884462ff50ced7e3ddf"
+      },
+      "buildSha256": {
+        "extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm": "5f51256b9383657988169189235c282dbb1983149399a4ba2dc7079c4c434ce0",
+        "extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm": "f746d3e61d0baf9b46fd1a001e078d194903b22df4834cd0257f8289cf1a2b23"
+      },
+      "sourceDeltaSha256": "473cf15a736fa10772c284de6a40696bb2199e1785591e07a7e9b128f3f8f153",
+      "binaryBytes": {
+        "transform": 156805,
+        "validation": 158188
+      },
+      "benchmarkRows": 42,
+      "benchmarkSha256": "70a008df120b2aba576d9cab4e0b81261e3565a32d1ec42282700e34bcabaf20"
     }
+  },
+  "repeatBuildObservation": {
+    "classification": "Same opt3 source and runner, no additional optimization configuration; repeated CLI postprocessing on existing target artifacts",
+    "command": "shopify app function build --path extensions/transform; shopify app function build --path extensions/validation, using pinned project-local toolchain",
+    "exitCode": 0,
+    "smokeRows": 16,
+    "benchmarkRows": 42,
+    "runnerErrors": 0,
+    "buildSha256": {
+      "transform": "01325433a989cfe7ae83278a73b2da81f95ab1eda3187fa64e089b0ef494f1ae",
+      "validation": "db4b73989665dfcc7bdd4aebeeae802b0b65f2bee5a7101e98920dafa6eae10d"
+    },
+    "binaryBytes": {
+      "transform": 155996,
+      "validation": 157368
+    },
+    "smokeSha256": "38b932305a63ae108422e580a7f9e53924063a676875dc4bfa7b3ba63bca4aa0",
+    "benchmarkSha256": "8ae2a65129767d75da4617ae8410fa03fe3ff2977bdf9c9c5058df9ed7e15361",
+    "cliLogSha256": "215e9a10b26a5c2071260ec80c5ba9824dab211d23b1b776bca80f76a8fa812f"
   }
 }
