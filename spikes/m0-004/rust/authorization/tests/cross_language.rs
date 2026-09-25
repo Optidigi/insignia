@@ -1,6 +1,6 @@
 use insignia_m0_004_authorization::{
-    decode_token, encode_payload, parse_hex, verify_set, verify_signature, Claims, ExpectedContext,
-    PhysicalLine, VerificationKey,
+    decode_token, encode_payload, parse_hex, verify_set, verify_signature, Claims, Error,
+    ExpectedContext, PhysicalLine, VerificationKey,
 };
 use serde_json::Value;
 use std::path::PathBuf;
@@ -79,8 +79,29 @@ fn independent_python_crypto_vectors_match_rust_bytes_and_strict_verification() 
         );
     }
     for item in corpus["invalid"].as_array().unwrap() {
-        let result = decode_token(text(item, "token")).and_then(|a| verify_signature(&a, &[key]));
+        let item_key = VerificationKey {
+            id: key.id,
+            bytes: item["publicKeyHex"]
+                .as_str()
+                .map(parse_hex)
+                .transpose()
+                .unwrap()
+                .unwrap_or(key.bytes),
+        };
+        let result =
+            decode_token(text(item, "token")).and_then(|a| verify_signature(&a, &[item_key]));
         assert!(result.is_err(), "{} must reject", text(item, "name"));
+        if text(item, "name").starts_with("highbit_magic_mask_") {
+            assert_eq!(
+                result,
+                Err(Error::Header),
+                "{} parser stage",
+                text(item, "name")
+            );
+        }
+        if text(item, "name") == "weak_identity_key_r_identity_s_zero" {
+            assert_eq!(result, Err(Error::Signature), "weak key strict stage");
+        }
     }
 }
 

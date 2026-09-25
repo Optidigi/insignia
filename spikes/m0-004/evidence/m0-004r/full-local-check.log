@@ -1,0 +1,1270 @@
+✓ Lockfile passes supply-chain policies (verified 1h ago)
+Lockfile is up to date, resolution step is skipped
+Done in 20ms using pnpm v12.6.0
+$ tsc --noEmit && vitest run ts
+
+ RUN  v3.2.4 /home/serveradmin/insignia-m0-004-worktree/spikes/m0-004
+
+ ✓ ts/vectors.test.ts (44 tests) 27ms
+ ✓ ts/allocation.test.ts (6 tests) 47ms
+ ✓ ts/verify-set.test.ts (21 tests) 67ms
+ ✓ ts/authorization.test.ts (5 tests) 12ms
+ ✓ ts/issue-allocation.test.ts (1 test) 8ms
+
+ Test Files  5 passed (5)
+      Tests  77 passed (77)
+   Start at  17:42:23
+   Duration  670ms (transform 158ms, setup 0ms, collect 268ms, tests 161ms, environment 1ms, prepare 368ms)
+
+{
+  "runtime": {
+    "node": "v24.21.0",
+    "openssl": "3.5.8"
+  },
+  "profile": "Observed pinned Node/OpenSSL rejection for the named identity-key, normal-key and noncanonical-S cases; no claim of general hostile-key equivalence",
+  "identityPublicKeyHex": "0100000000000000000000000000000000000000000000000000000000000000",
+  "forgedSignatureHex": "01000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+  "normalPublicKeyHex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+  "normalSignedControlAccepted": true,
+  "cases": [
+    {
+      "name": "weak_identity_key_r_identity_s_zero",
+      "accepted": false,
+      "rejection": "invalid signature"
+    },
+    {
+      "name": "normal_key_rejects_identity_signature",
+      "accepted": false,
+      "rejection": "invalid signature"
+    },
+    {
+      "name": "noncanonical_signature_scalar",
+      "accepted": false,
+      "rejection": "invalid signature"
+    }
+  ]
+}
+    Checking insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.32s
+   Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.22s
+     Running unittests src/lib.rs (rust/authorization/target/debug/deps/insignia_m0_004_authorization-0ead758d18d48795)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/authorization.rs (rust/authorization/target/debug/deps/authorization-cac0e8f71dac3b2e)
+
+running 18 tests
+test codec_rejects_claims_larger_than_declared_quote ... ok
+test identity_key_identity_r_zero_s_is_rejected_by_pinned_strict_verifier_and_admission ... ok
+test independent_context_price_and_markers_fail_closed ... ok
+test money_is_lexical_checked_and_round_trips_without_float ... ok
+test non_ascii_hex_public_config_rejects_without_panic ... ok
+test payload_bytes_match_fixed_offsets_and_wide_integers ... ok
+test complete_set_is_reusable_and_order_independent_but_not_partial ... ok
+test shop_local_dates_have_calendar_not_elapsed_hour_boundaries ... ok
+test signature_and_key_failures_are_distinct ... ok
+test removing_a_group_cannot_preserve_the_signed_500_unit_tier ... ok
+test five_schema_legal_2000_unit_buckets_sum_10000_without_unit_objects ... ok
+test strict_ed25519_rejects_weak_key_and_noncanonical_signature_scalar ... ok
+test signed_arithmetic_overflow_is_rejected_even_with_valid_signature ... ok
+test strict_transport_rejects_wrong_length_padding_and_noncanonical_tail ... ok
+test key_rotation_accepts_separate_sets_but_rejects_mixed_keys_within_one_set ... ok
+test trusted_physical_quantity_capacity_rejects_10001_even_when_signed_totals_match ... ok
+test structural_duplicate_rejects_before_signature_but_every_complete_member_is_verified ... ok
+test whole_set_accepts_only_current_day_in_expiry_minus_two_through_expiry ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.39s
+
+     Running tests/cross_language.rs (rust/authorization/target/debug/deps/cross_language-c84e7997318f976e)
+
+running 2 tests
+test independent_eur91_vectors_form_one_exact_complete_set ... ok
+test independent_python_crypto_vectors_match_rust_bytes_and_strict_verification ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+   Doc-tests insignia_m0_004_authorization
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+    Checking insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+    Checking m0-004-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/transform)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.67s
+   Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+   Compiling m0-004-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/transform)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.05s
+     Running unittests src/main.rs (extensions/transform/target/debug/deps/m0_004_cart_transform-e6439e5e09bca44f)
+
+running 1 test
+test tests::signed_complete_set_expands_same_variant_once_with_exact_string_money ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+    Checking insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+    Checking m0-004-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/validation)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.48s
+   Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+   Compiling m0-004-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/validation)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.86s
+     Running unittests src/main.rs (extensions/validation/target/debug/deps/m0_004_cart_validation-00b5db8d70e87a07)
+
+running 1 test
+test tests::schema_valid_synthetic_projection_checks_price_and_signature ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+Building function m0-004-local-transform...   Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+   Compiling m0-004-cart-transform v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/transform)
+    Finished `release` profile [optimized] target(s) in 2.53s
+╭─ success ────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Function built successfully.                                                │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+Building function m0-004-local-validation...   Compiling insignia-m0-004-authorization v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/rust/authorization)
+   Compiling m0-004-cart-validation v0.1.0 (/home/serveradmin/insignia-m0-004-worktree/spikes/m0-004/extensions/validation)
+    Finished `release` profile [optimized] target(s) in 2.47s
+╭─ success ────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Function built successfully.                                                │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+{
+  "mode": "smoke",
+  "limits": {
+    "binaryBytes": 256000,
+    "linearMemoryBytes": 10000000,
+    "stackBytes": 512000,
+    "instructions": 11000000,
+    "inputBytes": 128000,
+    "outputBytes": 20000,
+    "queryBytes": 3000,
+    "queryCost": 30
+  },
+  "rows": [
+    {
+      "target": "transform",
+      "caseName": "complete",
+      "bucketCount": 2,
+      "ordinaryCount": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 1476,
+      "outputBytes": 1038,
+      "instructions": 4725677,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "complete",
+      "bucketCount": 2,
+      "ordinaryCount": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1636,
+      "outputBytes": 17,
+      "instructions": 4717758,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "complete",
+      "bucketCount": 2,
+      "ordinaryCount": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1636,
+      "outputBytes": 131,
+      "instructions": 240319,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "missing member",
+      "bucketCount": 1,
+      "ordinaryCount": 0,
+      "physicalQuantity": 2,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1052,
+      "outputBytes": 131,
+      "instructions": 255794,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "duplicate index",
+      "bucketCount": 2,
+      "ordinaryCount": 0,
+      "physicalQuantity": 4,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1636,
+      "outputBytes": 131,
+      "instructions": 306246,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "invalid signature at last member",
+      "bucketCount": 2,
+      "ordinaryCount": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1636,
+      "outputBytes": 131,
+      "instructions": 2730672,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "invalid signature at last member",
+      "bucketCount": 2,
+      "ordinaryCount": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 1476,
+      "outputBytes": 17,
+      "instructions": 2717887,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "KNOWN_LIMIT_missing_policy_unsigned_allows",
+      "bucketCount": 0,
+      "ordinaryCount": 2,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1112,
+      "outputBytes": 17,
+      "instructions": 39914,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": "Missing independent required-product identity/policy can allow an unsigned required product; not live enforcement evidence",
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "ordinary optional unsigned control",
+      "bucketCount": 0,
+      "ordinaryCount": 2,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1144,
+      "outputBytes": 17,
+      "instructions": 43233,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "known required unsigned control",
+      "bucketCount": 0,
+      "ordinaryCount": 2,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1144,
+      "outputBytes": 131,
+      "instructions": 231723,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "future-dated valid signature outside E-2 through E",
+      "bucketCount": 1,
+      "ordinaryCount": 0,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 949,
+      "outputBytes": 17,
+      "instructions": 245003,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "independently signed highbit magic rejection",
+      "bucketCount": 1,
+      "ordinaryCount": 0,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 949,
+      "outputBytes": 17,
+      "instructions": 244252,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "identity-key R-identity S-zero forgery rejection",
+      "bucketCount": 1,
+      "ordinaryCount": 0,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 949,
+      "outputBytes": 17,
+      "instructions": 200027,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "future-dated valid signature outside E-2 through E",
+      "bucketCount": 1,
+      "ordinaryCount": 0,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1052,
+      "outputBytes": 131,
+      "instructions": 254824,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "independently signed highbit magic rejection",
+      "bucketCount": 1,
+      "ordinaryCount": 0,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1052,
+      "outputBytes": 131,
+      "instructions": 254073,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "identity-key R-identity S-zero forgery rejection",
+      "bucketCount": 1,
+      "ordinaryCount": 0,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1052,
+      "outputBytes": 131,
+      "instructions": 208395,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    }
+  ]
+}
+{
+  "mode": "bench",
+  "limits": {
+    "binaryBytes": 256000,
+    "linearMemoryBytes": 10000000,
+    "stackBytes": 512000,
+    "instructions": 11000000,
+    "inputBytes": 128000,
+    "outputBytes": 20000,
+    "queryBytes": 3000,
+    "queryCost": 30
+  },
+  "rows": [
+    {
+      "target": "transform",
+      "caseName": "complete",
+      "bucketCount": 1,
+      "ordinaryCount": 0,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 949,
+      "outputBytes": 527,
+      "instructions": 2519865,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "complete",
+      "bucketCount": 1,
+      "ordinaryCount": 0,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1052,
+      "outputBytes": 17,
+      "instructions": 2516442,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "complete",
+      "bucketCount": 2,
+      "ordinaryCount": 0,
+      "physicalQuantity": 2,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 1476,
+      "outputBytes": 1038,
+      "instructions": 4736255,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "complete",
+      "bucketCount": 2,
+      "ordinaryCount": 0,
+      "physicalQuantity": 2,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 1636,
+      "outputBytes": 17,
+      "instructions": 4728036,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "complete",
+      "bucketCount": 3,
+      "ordinaryCount": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 2003,
+      "outputBytes": 1549,
+      "instructions": 6923148,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "complete",
+      "bucketCount": 3,
+      "ordinaryCount": 0,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 2220,
+      "outputBytes": 17,
+      "instructions": 6909484,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "complete",
+      "bucketCount": 4,
+      "ordinaryCount": 0,
+      "physicalQuantity": 4,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 2530,
+      "outputBytes": 2060,
+      "instructions": 9094476,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "complete",
+      "bucketCount": 4,
+      "ordinaryCount": 0,
+      "physicalQuantity": 4,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 2804,
+      "outputBytes": 17,
+      "instructions": 9075955,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "complete",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 5693,
+      "outputBytes": 5127,
+      "instructions": 22190719,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "validation",
+      "caseName": "complete",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 6309,
+      "outputBytes": 17,
+      "instructions": 22143047,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "transform",
+      "caseName": "complete",
+      "bucketCount": 32,
+      "ordinaryCount": 0,
+      "physicalQuantity": 32,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 17309,
+      "outputBytes": 16391,
+      "instructions": 69918764,
+      "memoryUsageKiB": 1216,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "validation",
+      "caseName": "complete",
+      "bucketCount": 32,
+      "ordinaryCount": 0,
+      "physicalQuantity": 32,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 19179,
+      "outputBytes": 17,
+      "instructions": 69765694,
+      "memoryUsageKiB": 1216,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "transform",
+      "caseName": "complete",
+      "bucketCount": 64,
+      "ordinaryCount": 0,
+      "physicalQuantity": 64,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 34205,
+      "outputBytes": 32775,
+      "instructions": 139803398,
+      "memoryUsageKiB": 1280,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "validation",
+      "caseName": "complete",
+      "bucketCount": 64,
+      "ordinaryCount": 0,
+      "physicalQuantity": 64,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 37899,
+      "outputBytes": 17,
+      "instructions": 139495893,
+      "memoryUsageKiB": 1344,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "transform",
+      "caseName": "complete",
+      "bucketCount": 10,
+      "ordinaryCount": 180,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 54204,
+      "outputBytes": 5127,
+      "instructions": 24975745,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "validation",
+      "caseName": "complete",
+      "bucketCount": 10,
+      "ordinaryCount": 180,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 65080,
+      "outputBytes": 17,
+      "instructions": 25223428,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "transform",
+      "caseName": "near-200-line ordinary coexistence",
+      "bucketCount": 1,
+      "ordinaryCount": 199,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 54573,
+      "outputBytes": 527,
+      "instructions": 5599560,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "near-200-line ordinary coexistence",
+      "bucketCount": 1,
+      "ordinaryCount": 199,
+      "physicalQuantity": 1,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 66019,
+      "outputBytes": 17,
+      "instructions": 5923342,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "near-200-line ordinary coexistence",
+      "bucketCount": 2,
+      "ordinaryCount": 198,
+      "physicalQuantity": 2,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 54832,
+      "outputBytes": 1038,
+      "instructions": 7800353,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "near-200-line ordinary coexistence",
+      "bucketCount": 2,
+      "ordinaryCount": 198,
+      "physicalQuantity": 2,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 66278,
+      "outputBytes": 17,
+      "instructions": 8117154,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "near-200-line ordinary coexistence",
+      "bucketCount": 3,
+      "ordinaryCount": 197,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 55091,
+      "outputBytes": 1549,
+      "instructions": 9971487,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "near-200-line ordinary coexistence",
+      "bucketCount": 3,
+      "ordinaryCount": 197,
+      "physicalQuantity": 3,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 66537,
+      "outputBytes": 17,
+      "instructions": 10281252,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "four buckets with near-200-line ordinary cart",
+      "bucketCount": 4,
+      "ordinaryCount": 196,
+      "physicalQuantity": 4,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 55350,
+      "outputBytes": 2060,
+      "instructions": 12126953,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "validation",
+      "caseName": "four buckets with near-200-line ordinary cart",
+      "bucketCount": 4,
+      "ordinaryCount": 196,
+      "physicalQuantity": 4,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 66796,
+      "outputBytes": 17,
+      "instructions": 12430618,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "transform",
+      "caseName": "invalid signature at tenth member",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 5693,
+      "outputBytes": 17,
+      "instructions": 22095195,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "validation",
+      "caseName": "invalid signature at tenth member",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 6309,
+      "outputBytes": 131,
+      "instructions": 22130275,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "transform",
+      "caseName": "10000 physical units in five schema-legal 2000-quantity buckets",
+      "bucketCount": 5,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10000,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 3072,
+      "outputBytes": 2571,
+      "instructions": 11258266,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "validation",
+      "caseName": "10000 physical units in five schema-legal 2000-quantity buckets",
+      "bucketCount": 5,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10000,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 3418,
+      "outputBytes": 17,
+      "instructions": 11236369,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": false
+    },
+    {
+      "target": "transform",
+      "caseName": "zero signed with 200 ordinary lines",
+      "bucketCount": 0,
+      "ordinaryCount": 200,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 54327,
+      "outputBytes": 17,
+      "instructions": 1725070,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "invalid signature at first member",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 5693,
+      "outputBytes": 17,
+      "instructions": 2955143,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "missing tenth member",
+      "bucketCount": 9,
+      "ordinaryCount": 0,
+      "physicalQuantity": 9,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 5165,
+      "outputBytes": 17,
+      "instructions": 626672,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "duplicate first bucket index",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 5693,
+      "outputBytes": 17,
+      "instructions": 478430,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "malformed token at first member",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 5693,
+      "outputBytes": 17,
+      "instructions": 429406,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "ten signed buckets exceed trusted bucket cap four",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 5692,
+      "outputBytes": 17,
+      "instructions": 455527,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "transform",
+      "caseName": "10000 units exceed trusted physical cap 9999",
+      "bucketCount": 5,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10000,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 573,
+      "binaryBytes": 156822,
+      "inputBytes": 3071,
+      "outputBytes": 17,
+      "instructions": 436561,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "zero signed with 200 ordinary lines",
+      "bucketCount": 0,
+      "ordinaryCount": 200,
+      "physicalQuantity": 0,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 65773,
+      "outputBytes": 17,
+      "instructions": 2960316,
+      "memoryUsageKiB": 1536,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "invalid signature at first member",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 6309,
+      "outputBytes": 131,
+      "instructions": 2990223,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "missing tenth member",
+      "bucketCount": 9,
+      "ordinaryCount": 0,
+      "physicalQuantity": 9,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 5724,
+      "outputBytes": 131,
+      "instructions": 659203,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "duplicate first bucket index",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 6309,
+      "outputBytes": 131,
+      "instructions": 513422,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "malformed token at first member",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 6309,
+      "outputBytes": 131,
+      "instructions": 464376,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "ten signed buckets exceed trusted bucket cap four",
+      "bucketCount": 10,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 6308,
+      "outputBytes": 131,
+      "instructions": 489074,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    },
+    {
+      "target": "validation",
+      "caseName": "10000 units exceed trusted physical cap 9999",
+      "bucketCount": 5,
+      "ordinaryCount": 0,
+      "physicalQuantity": 10000,
+      "provenance": "schema-valid synthetic projection; not captured platform input",
+      "queryBytes": 642,
+      "binaryBytes": 158177,
+      "inputBytes": 3417,
+      "outputBytes": 131,
+      "instructions": 459134,
+      "memoryUsageKiB": 1152,
+      "stackPeak": null,
+      "queryCost": null,
+      "runnerError": null,
+      "knownLimitation": null,
+      "withinMeasuredReferenceLimits": true
+    }
+  ]
+}

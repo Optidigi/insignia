@@ -1,6 +1,6 @@
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
-use ed25519_dalek::{Signer, SigningKey};
+use ed25519_dalek::{Signature, Signer, SigningKey, VerifyingKey};
 use insignia_m0_004_authorization::{
     decode_token, encode_payload, format_decimal_minor, parse_decimal_minor, verify_set, Claims,
     Error, ExpectedContext, PhysicalLine, VerificationKey, DOMAIN, PAYLOAD_LEN, TOKEN_CHARS,
@@ -218,6 +218,41 @@ fn signature_and_key_failures_are_distinct() {
 }
 
 #[test]
+fn structural_duplicate_rejects_before_signature_but_every_complete_member_is_verified() {
+    let first = token(claims(0, 2, 1, 3000, 2, 6000));
+    let second = token(claims(1, 2, 1, 3000, 2, 6000));
+    let mut tampered = URL_SAFE_NO_PAD.decode(&first).unwrap();
+    tampered[114] ^= 1;
+    let duplicate_bad_signature = URL_SAFE_NO_PAD.encode(tampered);
+    let k = keys();
+    assert_eq!(
+        verify_set(
+            &[
+                line(&first, 111, 1, Some(3000)),
+                line(&duplicate_bad_signature, 111, 1, Some(3000))
+            ],
+            &context(&k),
+            true
+        ),
+        Err(Error::Duplicate)
+    );
+    let mut last_bad = URL_SAFE_NO_PAD.decode(&second).unwrap();
+    last_bad[114] ^= 1;
+    let last_bad = URL_SAFE_NO_PAD.encode(last_bad);
+    assert_eq!(
+        verify_set(
+            &[
+                line(&first, 111, 1, Some(3000)),
+                line(&last_bad, 112, 1, Some(3000))
+            ],
+            &context(&k),
+            true
+        ),
+        Err(Error::Signature)
+    );
+}
+
+#[test]
 fn strict_ed25519_rejects_weak_key_and_noncanonical_signature_scalar() {
     let t = token(claims(0, 1, 1, 3000, 1, 3000));
     let weak = [VerificationKey {
@@ -242,6 +277,103 @@ fn strict_ed25519_rejects_weak_key_and_noncanonical_signature_scalar() {
         verify_set(&[line(&bad, 111, 1, Some(3000))], &context(&k), true),
         Err(Error::Signature)
     );
+}
+
+#[test]
+fn identity_key_identity_r_zero_s_is_rejected_by_pinned_strict_verifier_and_admission() {
+    let mut identity = [0; 32];
+    identity[0] = 1; // Ed25519 compressed identity point.
+    let key = VerifyingKey::from_bytes(&identity).unwrap();
+    assert!(key.is_weak());
+    let mut signature = [0; 64];
+    signature[0] = 1; // R = identity; S = zero.
+    let signature = Signature::from_bytes(&signature);
+    assert!(key
+        .verify_strict(b"pinned strict verifier probe", &signature)
+        .is_err());
+
+    let valid = token(claims(0, 1, 1, 3000, 1, 3000));
+    let normal = keys();
+    assert!(verify_set(&[line(&valid, 111, 1, Some(3000))], &context(&normal), true).is_ok());
+    let mut forged = URL_SAFE_NO_PAD.decode(&valid).unwrap();
+    forged[PAYLOAD_LEN..].copy_from_slice(&signature.to_bytes());
+    let forged = URL_SAFE_NO_PAD.encode(forged);
+    let weak = [VerificationKey {
+        id: 9,
+        bytes: identity,
+    }];
+    assert_eq!(
+        verify_set(&[line(&valid, 111, 1, Some(3000))], &context(&weak), true),
+        Err(Error::Signature)
+    );
+    assert_eq!(
+        verify_set(&[line(&forged, 111, 1, Some(3000))], &context(&weak), true),
+        Err(Error::Signature)
+    );
+    assert_eq!(
+        verify_set(
+            &[line(&forged, 111, 1, Some(3000))],
+            &context(&normal),
+            true
+        ),
+        Err(Error::Signature)
+    );
+    let config = format!(
+        "{{\"generationHex\":\"{}\",\"epoch\":4,\"maxBuckets\":1,\"maxPhysicalQuantity\":1,\"allowNoMarket\":false,\"keys\":[{{\"id\":9,\"publicHex\":\"{}\"}}]}}",
+        "01".repeat(16), hex_bytes(&identity)
+    );
+    assert!(insignia_m0_004_authorization::parse_public_config(&config).is_err());
+}
+
+fn hex_bytes(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+#[test]
+fn whole_set_accepts_only_current_day_in_expiry_minus_two_through_expiry() {
+    let mut c = claims(0, 1, 1, 3000, 1, 3000);
+    c.valid_through_day = 20_002;
+    let t = token(c);
+    let k = keys();
+    for (day, result) in [
+        (19_999, Err(Error::Expired)),
+        (20_000, Ok(())),
+        (20_001, Ok(())),
+        (20_002, Ok(())),
+        (20_003, Err(Error::Expired)),
+    ] {
+        let mut expected = context(&k);
+        expected.current_day = day;
+        assert_eq!(
+            verify_set(&[line(&t, 111, 1, Some(3000))], &expected, true).map(|_| ()),
+            result
+        );
+    }
+    c.valid_through_day = 30_000;
+    let future = token(c);
+    assert_eq!(
+        verify_set(&[line(&future, 111, 1, Some(3000))], &context(&k), true),
+        Err(Error::Expired)
+    );
+
+    for (expiry, day, result) in [
+        (0, 0, Ok(())),
+        (1, 0, Ok(())),
+        (2, 0, Ok(())),
+        (3, 0, Err(Error::Expired)),
+        (u32::MAX, u32::MAX - 2, Ok(())),
+        (u32::MAX, u32::MAX - 3, Err(Error::Expired)),
+        (u32::MAX - 1, u32::MAX, Err(Error::Expired)),
+    ] {
+        c.valid_through_day = expiry;
+        let boundary = token(c);
+        let mut expected = context(&k);
+        expected.current_day = day;
+        assert_eq!(
+            verify_set(&[line(&boundary, 111, 1, Some(3000))], &expected, true).map(|_| ()),
+            result
+        );
+    }
 }
 
 #[test]

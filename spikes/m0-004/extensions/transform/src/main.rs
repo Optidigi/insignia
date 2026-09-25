@@ -1,6 +1,6 @@
 use insignia_m0_004_authorization::{
-    decode_token, format_decimal_minor, parse_gid_suffix, parse_public_config,
-    parse_shop_local_day, verify_set, ExpectedContext, PhysicalLine,
+    format_decimal_minor, parse_gid_suffix, parse_public_config, parse_shop_local_day, verify_set,
+    ExpectedContext, PhysicalLine,
 };
 use shopify_function::prelude::*;
 use shopify_function::Result;
@@ -73,6 +73,14 @@ fn empty() -> Output {
 
 #[shopify_function]
 fn cart_transform_run(input: schema::run::CartTransformRunInput) -> Result<Output> {
+    if !input
+        .cart()
+        .lines()
+        .iter()
+        .any(|line| line.auth().is_some())
+    {
+        return Ok(empty());
+    }
     let Some(raw_config) = input.shop().public_config().map(|m| m.value()) else {
         return Ok(empty());
     };
@@ -90,9 +98,10 @@ fn cart_transform_run(input: schema::run::CartTransformRunInput) -> Result<Outpu
         return Ok(empty());
     };
 
-    let mut lines = Vec::with_capacity(input.cart().lines().len());
-    let mut line_ids = Vec::with_capacity(input.cart().lines().len());
-    let mut variant_ids = Vec::with_capacity(input.cart().lines().len());
+    let signed_capacity = input.cart().lines().len().min(config.max_buckets as usize);
+    let mut lines = Vec::with_capacity(signed_capacity);
+    let mut line_ids = Vec::with_capacity(signed_capacity);
+    let mut variant_ids = Vec::with_capacity(signed_capacity);
     let mut currency: Option<[u8; 3]> = None;
     for line in input.cart().lines() {
         let schema::run::cart_transform_run_input::cart::lines::Merchandise::ProductVariant(
@@ -120,6 +129,12 @@ fn cart_transform_run(input: schema::run::CartTransformRunInput) -> Result<Outpu
             Some("optional") | None => false,
             _ => return Ok(empty()),
         };
+        if !marked {
+            if required {
+                return Ok(empty());
+            }
+            continue;
+        }
         let token = line.auth().and_then(|a| a.value()).map(String::as_str);
         let code = line
             .cost()
@@ -166,14 +181,14 @@ fn cart_transform_run(input: schema::run::CartTransformRunInput) -> Result<Outpu
         return Ok(empty());
     };
     let mut operations = Vec::with_capacity(claims.len());
-    for (line, (line_id, variant_id)) in lines.iter().zip(line_ids.into_iter().zip(variant_ids)) {
+    for ((line, claim), (line_id, variant_id)) in lines
+        .iter()
+        .zip(&claims)
+        .zip(line_ids.into_iter().zip(variant_ids))
+    {
         let Some(token) = line.token else {
-            continue;
-        };
-        let Ok(auth) = decode_token(token) else {
             return Ok(empty());
         };
-        let claim = auth.claims;
         let Ok(amount) = format_decimal_minor(claim.unit_minor, claim.exponent) else {
             return Ok(empty());
         };
@@ -229,6 +244,12 @@ mod tests {
         context.finalize_output_and_return().unwrap()
     }
 
+    fn corrupt_signature(token: &str) -> String {
+        let mut bytes = token.as_bytes().to_vec();
+        bytes[155] = if bytes[155] == b'A' { b'B' } else { b'A' };
+        String::from_utf8(bytes).unwrap()
+    }
+
     #[test]
     fn signed_complete_set_expands_same_variant_once_with_exact_string_money() {
         let input = fixture();
@@ -254,6 +275,19 @@ mod tests {
         let mut damaged = input;
         damaged["cart"]["lines"][1]["auth"]["value"] = "bad".into();
         assert_eq!(run(damaged)["operations"].as_array().unwrap().len(), 0);
+        for index in [0, 1] {
+            let mut bad_signature = fixture();
+            let token = bad_signature["cart"]["lines"][index]["auth"]["value"]
+                .as_str()
+                .unwrap()
+                .to_owned();
+            bad_signature["cart"]["lines"][index]["auth"]["value"] =
+                corrupt_signature(&token).into();
+            assert_eq!(
+                run(bad_signature)["operations"].as_array().unwrap().len(),
+                0
+            );
+        }
         let mut missing_policy = fixture();
         missing_policy["cart"]["lines"][0]["merchandise"]["product"]["policy"] =
             serde_json::Value::Null;

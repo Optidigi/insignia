@@ -1,0 +1,10 @@
+$ vitest run gates/nonplus-same-variant/function.test.js
+
+ RUN  v3.2.4 /home/serveradmin/insignia-m0-004-worktree/spikes/m0-001
+
+ ✓ gates/nonplus-same-variant/function.test.js (11 tests) 3049ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  17:44:58
+   Duration  3.42s (transform 24ms, setup 0ms, collect 110ms, tests 3.05s, environment 0ms, prepare 70ms)

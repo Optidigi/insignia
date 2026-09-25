@@ -192,6 +192,13 @@ pub fn verify_signature(auth: &SignedAuthorization, keys: &[VerificationKey]) ->
         .find(|k| k.id == auth.claims.key_id)
         .ok_or(Error::UnknownKey)?;
     let verifying_key = VerifyingKey::from_bytes(&key.bytes).map_err(|_| Error::Signature)?;
+    if verifying_key.is_weak() {
+        return Err(Error::Signature);
+    }
+    verify_with_key(auth, &verifying_key)
+}
+
+fn verify_with_key(auth: &SignedAuthorization, verifying_key: &VerifyingKey) -> Result<(), Error> {
     let signature = Signature::from_bytes(&auth.signature);
     let mut message = [0; DOMAIN.len() + PAYLOAD_LEN];
     message[..DOMAIN.len()].copy_from_slice(DOMAIN);
@@ -230,7 +237,11 @@ pub fn verify_set(
     expected: &ExpectedContext<'_>,
     require_observed_price: bool,
 ) -> Result<Vec<Claims>, Error> {
-    let mut members = Vec::new();
+    let mut pending = Vec::new();
+    let mut first: Option<Claims> = None;
+    let mut seen = Vec::new();
+    let mut quantity = 0u32;
+    let mut total = 0u64;
     for line in lines {
         match line.token {
             None if line.required || line.marked => return Err(Error::Line),
@@ -238,7 +249,6 @@ pub fn verify_set(
             Some(_) if !line.marked || line.selling_plan => return Err(Error::Line),
             Some(token) => {
                 let auth = decode_token(token)?;
-                verify_signature(&auth, expected.keys)?;
                 let c = auth.claims;
                 if c.generation != expected.generation
                     || c.epoch != expected.epoch
@@ -251,7 +261,9 @@ pub fn verify_set(
                 if c.market == 0 && !expected.allow_no_market {
                     return Err(Error::Context);
                 }
-                if expected.current_day > c.valid_through_day {
+                if expected.current_day > c.valid_through_day
+                    || c.valid_through_day - expected.current_day > 2
+                {
                     return Err(Error::Expired);
                 }
                 if c.count > expected.max_buckets
@@ -265,52 +277,64 @@ pub fn verify_set(
                 {
                     return Err(Error::Line);
                 }
-                members.push(c);
+                if let Some(previous) = first {
+                    if c.key_id != previous.key_id
+                        || c.quote != previous.quote
+                        || c.set != previous.set
+                        || c.count != previous.count
+                        || c.valid_through_day != previous.valid_through_day
+                        || c.total_quantity != previous.total_quantity
+                        || c.total_minor != previous.total_minor
+                    {
+                        return Err(Error::Context);
+                    }
+                } else {
+                    first = Some(c);
+                    seen.resize(c.count as usize, false);
+                }
+                let slot = &mut seen[c.index as usize];
+                if *slot {
+                    return Err(Error::Duplicate);
+                }
+                *slot = true;
+                quantity = quantity.checked_add(c.quantity).ok_or(Error::Overflow)?;
+                if quantity > expected.max_physical_quantity {
+                    return Err(Error::Line);
+                }
+                total = total
+                    .checked_add(
+                        c.unit_minor
+                            .checked_mul(c.quantity.into())
+                            .ok_or(Error::Overflow)?,
+                    )
+                    .ok_or(Error::Overflow)?;
+                pending.push(auth);
             }
         }
     }
-    if members.is_empty() {
-        return Ok(members);
-    }
-    let first = members[0];
-    if members.len() != first.count as usize {
+    let Some(first) = first else {
+        return Ok(Vec::new());
+    };
+    if pending.len() != first.count as usize
+        || !seen.iter().all(|x| *x)
+        || quantity != first.total_quantity
+        || total != first.total_minor
+    {
         return Err(Error::Incomplete);
     }
-    let mut seen = vec![false; first.count as usize];
-    let mut quantity = 0u32;
-    let mut total = 0u64;
-    for c in &members {
-        if c.key_id != first.key_id
-            || c.quote != first.quote
-            || c.set != first.set
-            || c.count != first.count
-            || c.valid_through_day != first.valid_through_day
-            || c.total_quantity != first.total_quantity
-            || c.total_minor != first.total_minor
-        {
-            return Err(Error::Context);
-        }
-        let slot = &mut seen[c.index as usize];
-        if *slot {
-            return Err(Error::Duplicate);
-        }
-        *slot = true;
-        quantity = quantity.checked_add(c.quantity).ok_or(Error::Overflow)?;
-        if quantity > expected.max_physical_quantity {
-            return Err(Error::Line);
-        }
-        total = total
-            .checked_add(
-                c.unit_minor
-                    .checked_mul(c.quantity.into())
-                    .ok_or(Error::Overflow)?,
-            )
-            .ok_or(Error::Overflow)?;
+    let key = expected
+        .keys
+        .iter()
+        .find(|key| key.id == first.key_id)
+        .ok_or(Error::UnknownKey)?;
+    let verifying_key = VerifyingKey::from_bytes(&key.bytes).map_err(|_| Error::Signature)?;
+    if verifying_key.is_weak() {
+        return Err(Error::Signature);
     }
-    if !seen.iter().all(|x| *x) || quantity != first.total_quantity || total != first.total_minor {
-        return Err(Error::Incomplete);
+    for auth in &pending {
+        verify_with_key(auth, &verifying_key)?;
     }
-    Ok(members)
+    Ok(pending.into_iter().map(|auth| auth.claims).collect())
 }
 
 pub fn parse_decimal_minor(value: &str, exponent: u8) -> Result<u64, Error> {
@@ -471,6 +495,7 @@ pub fn parse_public_config(value: &str) -> Result<PublicConfig, Error> {
     {
         return Err(Error::Context);
     }
+    let generation = parse_hex(&parsed.generation_hex)?;
     let mut keys = Vec::with_capacity(parsed.keys.len());
     for k in parsed.keys {
         if keys
@@ -479,13 +504,18 @@ pub fn parse_public_config(value: &str) -> Result<PublicConfig, Error> {
         {
             return Err(Error::Context);
         }
+        let public_bytes = parse_hex(&k.public_hex)?;
+        let key = VerifyingKey::from_bytes(&public_bytes).map_err(|_| Error::Signature)?;
+        if key.is_weak() {
+            return Err(Error::Signature);
+        }
         keys.push(VerificationKey {
             id: k.id,
-            bytes: parse_hex(&k.public_hex)?,
+            bytes: public_bytes,
         });
     }
     Ok(PublicConfig {
-        generation: parse_hex(&parsed.generation_hex)?,
+        generation,
         epoch: parsed.epoch,
         max_buckets: parsed.max_buckets,
         max_physical_quantity: parsed.max_physical_quantity,

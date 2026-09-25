@@ -1,0 +1,91 @@
+{
+  "provenance": "Synthetic off-store full CLI-built targets; complete 16 smoke/42 benchmark matrix using integrated parent runner; no merchant services",
+  "reviewedHead": "d5e18b9a1dec9492f76b8a006f4b62ffc9c1dfae",
+  "sourceReconstruction": "Apply baseline, opt1, opt2 source deltas in order to the reviewed head. Only three listed Rust source files differ across variants. Final production source matches opt2 by SHA-256; binary bytes may vary by build path.",
+  "finalRunnerSha256": "49aed9c2440814b9dda66bfc1ba5d4761e937aa77c44a8308a824d09e78fd4ad",
+  "variants": {
+    "baseline": {
+      "smokeRows": 16,
+      "benchmarkRows": 42,
+      "runnerErrors": 0,
+      "smokeSha256": "ceead3b0f761f3f500ac0629b1f9163c88b4d401e2ad8a21c64c0a5226db3c2c",
+      "benchmarkSha256": "e9d26faeff4c62d7dcbda2c79cc4bc4f371b3212eae26313a6b7616daf0da515",
+      "sourceSha256": {
+        "rust/authorization/src/lib.rs": "bc11529782c040618c53ef253e0e61afa81e18e28dcac6679c5699fe9ed1ca3e",
+        "extensions/transform/src/main.rs": "f83adc899101c0f1937bdfee596c3bcc5d3077ebf274c39d735ceb5281da58ea",
+        "extensions/validation/src/main.rs": "cd7c3f4cdd94ed2462e3221c8a580915221ad673eaac3a33aba33476e2bcdde8"
+      },
+      "buildSha256": {
+        "extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm": "0ba78b44153e6e9d154611c8df12e869e551235a47ec852f9a0ce10df9a84fc4",
+        "extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm": "e8e3526777316fdf70c60107caca852d9fc6c48ea4dbbdb2dd920e2b656bf6c4"
+      },
+      "sourceDeltaSha256": "53a49ec4b0bed6593f55f3894aabc0dae77001c229d3e8a33d6ac44ebe7a9ad0",
+      "binaryBytes": {
+        "transform": 156188,
+        "validation": 157172
+      }
+    },
+    "opt1": {
+      "smokeRows": 16,
+      "benchmarkRows": 42,
+      "runnerErrors": 0,
+      "smokeSha256": "73257adefec1438a929e8edf3641f0948c9745634c215d39b3d8d7119925fa1d",
+      "benchmarkSha256": "0ea92efb0e4abc24ac2951f8ddf9e79c91cb87d48f58620137e6f78fedab5bd9",
+      "sourceSha256": {
+        "rust/authorization/src/lib.rs": "ce8e9520bf346df5939d24de88f68f9c23e200a8bda81a4a475280c2e8e5c74d",
+        "extensions/transform/src/main.rs": "de16a47754f88d58da3da074c8244f85fe0436ea967de7f97c1c26eab13ef620",
+        "extensions/validation/src/main.rs": "e39d0da184ce7c40c1b9adfa1045f60fa8ff19db5cba1ad2a0084856e4fa18bd"
+      },
+      "buildSha256": {
+        "extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm": "9a292d440013b4258cf44d5f6083e3f39858bb35997d0cd59912013eb90dda8d",
+        "extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm": "96f7016d18ab342c0a94c5ce59ed555774e7446c5d45e963c19344f71eecc696"
+      },
+      "sourceDeltaSha256": "281b8252e9cd7e78d4bca2708be611914a7dc7ea9719cf54effca8e5c9633b13",
+      "binaryBytes": {
+        "transform": 156794,
+        "validation": 158154
+      }
+    },
+    "opt2": {
+      "smokeRows": 16,
+      "benchmarkRows": 42,
+      "runnerErrors": 0,
+      "smokeSha256": "9cb46f0231aa3a83d5560f47106a32312f605cdfe6798f048c055fdd79199d8f",
+      "benchmarkSha256": "fa6f591e77bd55eb1134e69c0b06bd99d1c263e13fe35c9519f9a4a3a1066946",
+      "sourceSha256": {
+        "rust/authorization/src/lib.rs": "ce8e9520bf346df5939d24de88f68f9c23e200a8bda81a4a475280c2e8e5c74d",
+        "extensions/transform/src/main.rs": "fac80beafe0b6a14c567fa341152daa1ff2da3832ef42ab32fb989a1c9ed4b48",
+        "extensions/validation/src/main.rs": "b8aaed2723bad53c245f637e4dc6817fb8439b79f0c1b884462ff50ced7e3ddf"
+      },
+      "buildSha256": {
+        "extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm": "7434e710cd13a032fa965770897198d5f9da3c633c8abd5b907acef567e33634",
+        "extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm": "3a62b6e249076207b4739df7c42069e462575128310fdf3fb318229452048825"
+      },
+      "sourceDeltaSha256": "c4d4615f6111f86ac56c206dec7f3752cbe83b1d13668b7def79ee3e4d662cb1",
+      "binaryBytes": {
+        "transform": 156800,
+        "validation": 158144
+      }
+    },
+    "final": {
+      "smokeRows": 16,
+      "benchmarkRows": 42,
+      "runnerErrors": 0,
+      "smokeSha256": "296cd1142d7c690845fdcb7922343d9e7f48cf2ef0ac3e85e3bc423132de9d84",
+      "benchmarkSha256": "33f20beee466e1ad274a100bae2225d7569381ca6122c465fd2a44a603132216",
+      "sourceSha256": {
+        "rust/authorization/src/lib.rs": "ce8e9520bf346df5939d24de88f68f9c23e200a8bda81a4a475280c2e8e5c74d",
+        "extensions/transform/src/main.rs": "fac80beafe0b6a14c567fa341152daa1ff2da3832ef42ab32fb989a1c9ed4b48",
+        "extensions/validation/src/main.rs": "b8aaed2723bad53c245f637e4dc6817fb8439b79f0c1b884462ff50ced7e3ddf"
+      },
+      "buildSha256": {
+        "extensions/transform/target/wasm32-unknown-unknown/release/m0-004-cart-transform.wasm": "19b9ab91fbbfdf7ec2711b4284f0490a0bce46ea216cd6100c5ffc09aba60308",
+        "extensions/validation/target/wasm32-unknown-unknown/release/m0-004-cart-validation.wasm": "dd04bc204fa9dde805d834cf5107dc25bbd3ed1a807be1fc1858a641e3fa62e3"
+      },
+      "binaryBytes": {
+        "transform": 156822,
+        "validation": 158177
+      }
+    }
+  }
+}
