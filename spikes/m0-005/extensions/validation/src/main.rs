@@ -323,5 +323,14 @@ mod tests {
             input["shop"]["publicConfig"]["value"] = config.to_string().into();
             assert!(!accepted(input), "{field}");
         }
+        for field in ["revoked", "firstDay", "lastDay"] {
+            let mut input = fixture();
+            let mut config: serde_json::Value =
+                serde_json::from_str(input["shop"]["publicConfig"]["value"].as_str().unwrap())
+                    .unwrap();
+            config["keys"][0].as_object_mut().unwrap().remove(field);
+            input["shop"]["publicConfig"]["value"] = config.to_string().into();
+            assert!(!accepted(input), "{field} omitted");
+        }
     }
 }

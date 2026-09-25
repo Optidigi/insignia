@@ -246,6 +246,15 @@ if (mode === 'smoke') {
   await both('members with no header', target => {
     const x = jsonFixture(target); x.cart.quote = null; return x;
   }, 'reject');
+  for (const field of ['revoked', 'firstDay', 'lastDay']) {
+    await both(`${field} omitted from key registry`, target => {
+      const x = jsonFixture(target);
+      const config = JSON.parse(x.shop.publicConfig.value);
+      delete config.keys[0][field];
+      x.shop.publicConfig.value = JSON.stringify(config);
+      return x;
+    }, 'reject');
+  }
   await both('known required unsigned line', target => {
     const x = jsonFixture(target); x.cart.quote = null;
     for (const line of x.cart.lines) line.member = null;

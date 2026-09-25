@@ -37,7 +37,8 @@ assert all(len(m) == 30 for m in members)
 config = json.dumps({
     "generationHex": "11" * 16, "epoch": 4, "maxBuckets": 64,
     "maxPhysicalQuantity": 10000, "allowNoMarket": False,
-    "keys": [{"id": 7, "publicHex": public.hex()}],
+    "keys": [{"id": 7, "publicHex": public.hex(),
+              "revoked": False, "firstDay": 20800, "lastDay": 20804}],
 }, separators=(",", ":"))
 base = {
     "cart": {"quote": {"value": envelope}, "lines": []},

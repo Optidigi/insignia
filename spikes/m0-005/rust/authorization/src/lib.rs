@@ -138,16 +138,9 @@ struct PublicConfigJson {
 struct PublicKeyJson {
     id: u16,
     public_hex: String,
-    #[serde(default)]
     revoked: bool,
-    #[serde(default)]
     first_day: u32,
-    #[serde(default = "last_possible_day")]
     last_day: u32,
-}
-
-fn last_possible_day() -> u32 {
-    u32::MAX
 }
 
 /// Synthetic app-owned config projection. A target must source this independently from the token.
