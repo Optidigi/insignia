@@ -1,0 +1,56 @@
+name: M0-005 off-store whole-quote feasibility
+
+on:
+  pull_request:
+    paths:
+      - "spikes/m0-005/**"
+      - ".github/workflows/m0-005-local.yml"
+  push:
+    branches: [main]
+    paths:
+      - "spikes/m0-005/**"
+      - ".github/workflows/m0-005-local.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  local-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      RUSTUP_TOOLCHAIN: "1.98.1"
+      SHOPIFY_CLI_NO_ANALYTICS: "1"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24.21.0"
+      - name: Install pinned Rust and Wasm target
+        run: rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
+      - name: Run off-store package check
+        working-directory: spikes/m0-005
+        env:
+          M0_005_CAPTURE_DIR: evidence
+        run: ./scripts/check-local.sh
+      - name: Record source-bound CI result and artifact hashes
+        working-directory: spikes/m0-005
+        run: |
+          export PATH="$PWD/node_modules/.bin:$PATH"
+          git rev-parse HEAD
+          echo "PR head: ${{ github.event.pull_request.head.sha }}"
+          node scripts/capture-manifest.mjs > evidence/ci-manifest.json
+          sha256sum evidence/ci-manifest.json evidence/smoke.json evidence/bench.json evidence/cases-smoke.jsonl evidence/cases-bench.jsonl
+          sha256sum extensions/transform/target/wasm32-unknown-unknown/release/m0-005-cart-transform.wasm extensions/validation/target/wasm32-unknown-unknown/release/m0-005-cart-validation.wasm
+      - name: Retain off-store CI artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m0-005-offstore-${{ github.sha }}
+          path: |
+            spikes/m0-005/evidence/ci-manifest.json
+            spikes/m0-005/evidence/smoke.json
+            spikes/m0-005/evidence/bench.json
+            spikes/m0-005/evidence/cases-smoke.jsonl
+            spikes/m0-005/evidence/cases-bench.jsonl
+            spikes/m0-005/extensions/transform/target/wasm32-unknown-unknown/release/m0-005-cart-transform.wasm
+            spikes/m0-005/extensions/validation/target/wasm32-unknown-unknown/release/m0-005-cart-validation.wasm

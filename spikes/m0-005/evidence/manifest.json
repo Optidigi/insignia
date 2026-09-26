@@ -1,0 +1,124 @@
+{
+  "sourceRevisionAtMeasurement": "ff8ebd5f5907d79ba59157aa4e6c833e940c8217",
+  "sourceHashes": {
+    "spikes/m0-005/README.md": "099e3089d5591567a930ddc5fe964c49f741390fbe63e7ae916ee49a1b2eb878",
+    "spikes/m0-005/contract.md": "13eeba1dc22cf44092a1f276a3a3c01225162e9e262978136608c2cbe0295a3b",
+    "spikes/m0-005/draft-decision-proposal.md": "1cb98f6c281d598c4d5b38f106e9ba1f308c8084b28c24c54ce043256e7aa750",
+    "spikes/m0-005/extensions/.gitignore": "6ceff86dbfdd8af8b5a9edabce78a491b3336e76d37c046e38da8dc9768ccf66",
+    "spikes/m0-005/extensions/README.md": "baf54156f9994b0c53785004526df7bc840088a392859e27dee5643caa0f8275",
+    "spikes/m0-005/extensions/fixtures/generate.py": "9a9403c45f69f84940b1b9fa8fb9e862e22d77bfb5107c48b884adafc2e4b125",
+    "spikes/m0-005/extensions/fixtures/transform-10-signed-190-ordinary.json": "c064e20b0e2d34da69c11ccc0d6f85c60d3808a34cef63f287f9c20f2e5aa394",
+    "spikes/m0-005/extensions/fixtures/transform-32-signed-0-ordinary.json": "f0301cf3088114374d0000ee897bb2d7ff520dc0084a6b520e993aa9c5129a8d",
+    "spikes/m0-005/extensions/fixtures/transform-64-signed-0-ordinary.json": "a2645cabd84085bc7bf14e6c0ade2393e6bdd42dce72af694c1a24ac5300e0da",
+    "spikes/m0-005/extensions/fixtures/transform-valid.json": "10ea081c50238f79b2372be9bda0e6b70d9be824a9e1f79f434bdbb64d9bca95",
+    "spikes/m0-005/extensions/fixtures/validation-10-signed-190-ordinary.json": "b31b6799741f08bbd4d9dacde30c7bd59086edaedfba223f9c4f4684107caf1c",
+    "spikes/m0-005/extensions/fixtures/validation-32-signed-0-ordinary.json": "5d624450b52ee44ca97908eb72b38ccd0ea0aeff42b6c81a98c7faf888142c11",
+    "spikes/m0-005/extensions/fixtures/validation-64-signed-0-ordinary.json": "edede7d3ba6bc60f6dde036847083b1a4c11006d89071e4216cbbce006ea7e81",
+    "spikes/m0-005/extensions/fixtures/validation-valid.json": "9678c2bc4a7075f65c8661591d75ecb89cf24ecbe374853b99b919989a204a69",
+    "spikes/m0-005/extensions/transform/Cargo.lock": "6a32ab2c27e79a5daaaca99cf0ac082c8c65353029f6bb58a12561d35f9afae1",
+    "spikes/m0-005/extensions/transform/Cargo.toml": "8d107e8791a290cab9e9cbeb81a1d7b83b66549d65ce32aa2a9040d907014e90",
+    "spikes/m0-005/extensions/transform/schema.graphql": "6e8851bc6c53bb8dae6620b2a98082aac10f88a5015b7cc2b57a9a49dd2e1aa4",
+    "spikes/m0-005/extensions/transform/shopify.extension.toml": "6bcb4eab569f6bff79c68d6a6464ac3e2ba042db8091545e7043951dbd7cb32f",
+    "spikes/m0-005/extensions/transform/src/cart_transform_run.graphql": "bc7c2dd7da063ef3212afaa215aaf30f93cc86928104f112cff2d19cf53d999f",
+    "spikes/m0-005/extensions/transform/src/main.rs": "eaff3441804d2b4d95483b4c9b8302358ead87d7a91db0cb559ab35f25566df1",
+    "spikes/m0-005/extensions/validation/Cargo.lock": "a42cbceb5336110d8562ec17f383759d18347ce90dfe7239bf8558fc5b08d475",
+    "spikes/m0-005/extensions/validation/Cargo.toml": "ac8e56dba0a2e7e37c6fefb3a7c8e56dce2c7811ca37919c82117013a41aa4fd",
+    "spikes/m0-005/extensions/validation/schema.graphql": "4a782ed2a026b1f62a3c3466e0d9ddcc6b2e77e62a38feddfc524249fcf026f4",
+    "spikes/m0-005/extensions/validation/shopify.extension.toml": "eb881d3ced66aafa28a6e605ef7cdc458b2af049ff9c68da494fa74776ae1e65",
+    "spikes/m0-005/extensions/validation/src/cart_validations_generate_run.graphql": "8d877cc1cc48f434580568d41ec6fc46c60e6a1a89414635f59bc6a790c7270a",
+    "spikes/m0-005/extensions/validation/src/main.rs": "2db4f3b026460db6836e261ad98af674635c4e74f88ea7d3163e932070b3115a",
+    "spikes/m0-005/fixtures/check-vectors.py": "9ea7a53cf903d7755af75d19cc208976ed27ca2d11704a1ad9fef68bcd587c5b",
+    "spikes/m0-005/fixtures/targets/transform-valid.json": "daf2a65b5537f3aefec40e9cde62c1faee2f87e9c20af24620020ef7a27f4e28",
+    "spikes/m0-005/fixtures/targets/validation-valid.json": "67ca891d4d246d913202a0979c6ce9d69ece072f827743d9d2132980d8c5872a",
+    "spikes/m0-005/fixtures/vectors.json": "cf64d8d40780d2a65b225ac4c6f74bc593f4ea0aa26a620710b3b420c398e808",
+    "spikes/m0-005/package.json": "e4c117dea4155e9ef51493dec89204f84bba6a6e76dc856a0774b070594ef12e",
+    "spikes/m0-005/pnpm-lock.yaml": "7ddf77f987acf66c859186781dbd92f6bf17604def0fa3fed0216003efe96b11",
+    "spikes/m0-005/pnpm-workspace.yaml": "b1a4bc8f6df868c767fae15ea37fef701313e6541530645ab4d152114819e72c",
+    "spikes/m0-005/rust/.gitignore": "6ceff86dbfdd8af8b5a9edabce78a491b3336e76d37c046e38da8dc9768ccf66",
+    "spikes/m0-005/rust/authorization/Cargo.lock": "4dac4af6b759945b935edce7c9c633c53bed3c7a23518d16060845cbe906a44e",
+    "spikes/m0-005/rust/authorization/Cargo.toml": "6c4cf90d2be30afd34e6e644231e8dc3e8db0232a504a31f16d0bc8499dbb952",
+    "spikes/m0-005/rust/authorization/src/lib.rs": "1e3574e549d53e8267ec329c3454eb0c9b44b0264107ec977297e9948c12fe74",
+    "spikes/m0-005/rust/authorization/src/whole.rs": "b6068e42e331adce4e1e7a496a407c6178bedd51ef31b5d56298eb8725f93a65",
+    "spikes/m0-005/rust/authorization/tests/whole_quote.rs": "040e80126242bb4573f4edb9758fe011c49195250180e9881338444e63f76c4b",
+    "spikes/m0-005/scripts/capture-manifest.mjs": "98b2b919584717b42472b3f8015295a7729ea7b5eb01cd713468cb3347ffd0e5",
+    "spikes/m0-005/scripts/check-local.sh": "cbf9bdc7450360b390dc1a47af69e2c3f811aa0fa54be7f851a5e353909429cb",
+    "spikes/m0-005/scripts/target-runner.mjs": "76e3bb6d5d7947c0b874fc56c373b11d4ddfb6edae1ac6b7bf463f1a7c69e5ee",
+    "spikes/m0-005/shopify.app.toml": "f89035634a4d937a114219f29faa9fb1643912503aa68a3d434b902036247a94",
+    "spikes/m0-005/ts/whole-quote.test.ts": "86e282f6c9d466cae9425f87a886b56633a1904dc45c898aeb6c248f16a92f9c",
+    "spikes/m0-005/ts/whole-quote.ts": "7f788e95cb34605db199325b7f52968133a94718638cdd0a85ffdfc10101a724",
+    "spikes/m0-005/tsconfig.json": "9aa3d3e84522c398316b6ba7db53c2ee5aad3d1507288b24fd2718de2fd87460"
+  },
+  "artifacts": {
+    "transform": {
+      "path": "spikes/m0-005/extensions/transform/target/wasm32-unknown-unknown/release/m0-005-cart-transform.wasm",
+      "bytes": 163952,
+      "sha256": "5a09cb507ebd95ed78c2d70a9d7ba6b143a6c80ea36906b115665e2e81801c2a"
+    },
+    "validation": {
+      "path": "spikes/m0-005/extensions/validation/target/wasm32-unknown-unknown/release/m0-005-cart-validation.wasm",
+      "bytes": 165189,
+      "sha256": "f44aae83e2bdc15f6225a50fe4a15f9d759f28714eef2fb396c082a3d1f2aa17"
+    }
+  },
+  "runner": {
+    "path": "/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/node_modules/.pnpm/@shopify+cli@4.8.2/node_modules/@shopify/cli/bin/function-runner-9.2.2",
+    "bytes": 41102560,
+    "sha256": "728bedbcf86f57680051208f9056642c9dfb07766a21891624bf18f372e4c29b"
+  },
+  "resultFiles": {
+    "smoke": {
+      "rows": 28,
+      "bytes": 28798,
+      "sha256": "d753c9ef3cb4157785afe49140cc709eb4276a806936b9475391e8385f48053f",
+      "casesPath": "spikes/m0-005/evidence/cases-smoke.jsonl",
+      "casesBytes": 42009,
+      "casesSha256": "e90f9af1c3deafacd41968a9707692dd322b15733deba0844ee677e591a444cd"
+    },
+    "bench": {
+      "rows": 42,
+      "bytes": 42633,
+      "sha256": "8c89153c1c94f1690de9aaa828a457e39b3274f0f99f6037021eea9e617aad4b",
+      "casesPath": "spikes/m0-005/evidence/cases-bench.jsonl",
+      "casesBytes": 1239077,
+      "casesSha256": "9c2b1bc8029cc7f664a36a73e8866b9c4ad765a36f715a4def586f5bb357f86b"
+    }
+  },
+  "toolchain": {
+    "node": "v24.21.0",
+    "pnpm": "12.6.0",
+    "rustc": "rustc 1.98.1 (48a229cea 2026-09-01)",
+    "cargo": "cargo 1.98.1 (797e8a9bc 2026-08-05)",
+    "shopifyCliPackage": "4.8.2",
+    "testHelpersPackage": "1.1.0"
+  },
+  "toolHashes": {
+    "node": {
+      "path": "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node",
+      "sha256": "7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c"
+    },
+    "rustc": {
+      "path": "/home/serveradmin/insignia-pf001-tools/rust/rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/rustc",
+      "sha256": "859254978c0a0402c32f949f6de0d99aee73be8d15f45aac00ae1448aac51e74"
+    },
+    "cargo": {
+      "path": "/home/serveradmin/insignia-pf001-tools/rust/rustup/toolchains/1.98.1-x86_64-unknown-linux-gnu/bin/cargo",
+      "sha256": "da77c8b33849312255ccde3179198ada4c8deb370488d050286146b1d1b27e14"
+    },
+    "shopifyCliEntry": {
+      "path": "/home/serveradmin/insignia-m0-005-worktree/spikes/m0-005/node_modules/@shopify/cli/bin/run.js",
+      "sha256": "a594b0c862c5432e98b44f6ecdd94245907b2f7b43336a6205e62cd7698a1b9e"
+    },
+    "shopifyCliPackage": {
+      "sha256": "bba49a60a1d54ccb953fe1f44ceb3e2d71ced4536e32acca627478465a174567"
+    },
+    "linker": {
+      "path": "/home/serveradmin/insignia-pf002-rust-smoke/cc-zig",
+      "sha256": "c7616c091f814343988a4ec0d6f8695771066b5481f45038d2c2b5b96434b818"
+    },
+    "zig": {
+      "path": "/home/serveradmin/insignia-pf002-tools/zig/zig-x86_64-linux-0.16.0/zig",
+      "sha256": "2317bbb91798556d9d0f38aabdac23db83f0979b25f767259ae474546724087c"
+    }
+  },
+  "provenance": "cold local Shopify CLI build; synthetic schema-validated Function runner inputs"
+}

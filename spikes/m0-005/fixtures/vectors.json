@@ -1,0 +1,36 @@
+{
+  "provenance": "Synthetic RFC 8032 test seed; no merchant key or store data",
+  "domainUtf8Hex": "496e7369676e69610057686f6c6551756f7465417574686f72697a6174696f6e00763200",
+  "seedHex": "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60",
+  "publicHex": "d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a",
+  "headerHex": "4953473202000007111111111111111111111111111111110000000422222222222222222222222222222222333333333333333333333333333333330002455552024445000000000000002a0000514200000003000000000000238c",
+  "memberHex": [
+    "00000020000000000001000000020000000000000bd9",
+    "00010020000000000001000000010000000000000bda"
+  ],
+  "signatureHex": "8e8c8cda1b68b7521a95805e688608a6676a7f924d33f6cf7ce3342ba91b963b0f0842df42a9fafe3efda0e9c2b45ff1c6c8b234d12140b879b740489fa5470c",
+  "envelope": "SVNHMgIAAAcRERERERERERERERERERERAAAABCIiIiIiIiIiIiIiIiIiIiIzMzMzMzMzMzMzMzMzMzMzAAJFVVICREUAAAAAAAAAKgAAUUIAAAADAAAAAAAAI4yOjIzaG2i3UhqVgF5ohgimZ2p_kk0z9s984zQrqRuWOw8IQt9Cqfr-Pv2g6cK0X_HGyLI00SFAuHm3QEifpUcM",
+  "memberTokens": [
+    "AAAAIAAAAAAAAQAAAAIAAAAAAAAL2Q",
+    "AAEAIAAAAAAAAQAAAAEAAAAAAAAL2g"
+  ],
+  "expected": {
+    "keyId": 7,
+    "generationHex": "11111111111111111111111111111111",
+    "epoch": 4,
+    "quoteHex": "22222222222222222222222222222222",
+    "setHex": "33333333333333333333333333333333",
+    "count": 2,
+    "currency": "EUR",
+    "exponent": 2,
+    "country": "DE",
+    "marketId": "42",
+    "validThroughDay": 20802,
+    "totalQuantity": 3,
+    "totalMinor": "9100",
+    "members": [
+      { "index": 0, "variantId": "9007199254740993", "quantity": 2, "unitMinor": "3033" },
+      { "index": 1, "variantId": "9007199254740993", "quantity": 1, "unitMinor": "3034" }
+    ]
+  }
+}
