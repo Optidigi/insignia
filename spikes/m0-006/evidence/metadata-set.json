@@ -1,0 +1,29 @@
+{
+  "metafieldsSet": {
+    "metafields": [
+      {
+        "id": "gid://shopify/Metafield/190481750687902",
+        "namespace": "app--427859050497",
+        "key": "m0_006_public_config",
+        "type": "json",
+        "value": "{\"generationHex\":\"9688451a3fa04a7e8045ca4e07f0debd\",\"epoch\":1,\"maxBuckets\":10,\"maxPhysicalQuantity\":10,\"allowNoMarket\":false,\"keys\":[{\"id\":60006,\"publicHex\":\"000bf9acccb45f860cb411579686dac35a6a056d681ce3d747ca4f66cd748348\",\"revoked\":false,\"firstDay\":20722,\"lastDay\":20724}]}",
+        "compareDigest": "82aeaa1886ead2ffb12d2f8e08daccc1078aa1639754aae770f285416b1b7d96",
+        "owner": {
+          "__typename": "Shop"
+        }
+      },
+      {
+        "id": "gid://shopify/Metafield/190481750655134",
+        "namespace": "app--427859050497",
+        "key": "m0_006_policy",
+        "type": "single_line_text_field",
+        "value": "optional",
+        "compareDigest": "20a8c50c5ecf9241caed917954ec8fdea96818b4a48875bde931bed08d7ce483",
+        "owner": {
+          "__typename": "Product"
+        }
+      }
+    ],
+    "userErrors": []
+  }
+}

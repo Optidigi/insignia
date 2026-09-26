@@ -1,0 +1,17 @@
+api_version = "2026-07"
+
+[[extensions]]
+name = "M0-006 live prototype transform"
+handle = "m0-006-live-transform"
+type = "function"
+uid = "e3aa88de-06c0-46b5-ac92-ea2348636381"
+description = "Bounded staging authorization experiment only"
+
+  [[extensions.targeting]]
+  target = "cart.transform.run"
+  input_query = "src/cart_transform_run.graphql"
+  export = "cart_transform_run"
+
+  [extensions.build]
+  command = "cargo build --target=wasm32-unknown-unknown --release"
+  path = "target/wasm32-unknown-unknown/release/m0-006-cart-transform.wasm"

@@ -1,0 +1,17 @@
+api_version = "2026-07"
+
+[[extensions]]
+name = "M0-006 live prototype validation"
+handle = "m0-006-live-validation"
+type = "function"
+uid = "e3aa88de-06c0-46b5-ac92-ea2348636382"
+description = "Bounded staging authorization experiment only"
+
+  [[extensions.targeting]]
+  target = "cart.validations.generate.run"
+  input_query = "src/cart_validations_generate_run.graphql"
+  export = "cart_validations_generate_run"
+
+  [extensions.build]
+  command = "cargo build --target=wasm32-unknown-unknown --release"
+  path = "target/wasm32-unknown-unknown/release/m0-006-cart-validation.wasm"

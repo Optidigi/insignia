@@ -1,0 +1,8 @@
+{
+  "provenance": "Native insignia-staging Admin Discounts list after deleting the M0-006-owned code, 2026-09-26 UTC; original screenshot withheld because it showed unrelated merchant discount names",
+  "originalScreenshotSha256": "b21988f60b319246d604df9a362cfcad35066cda2b23c31d0ddda758bb1b5203",
+  "visibleDiscountCount": 5,
+  "ownedCode": "INSIGNIA-M0006-20260926",
+  "ownedCodePresent": false,
+  "limitation": "This is an operator-projected observation; the source screenshot is deliberately not in the public PR."
+}

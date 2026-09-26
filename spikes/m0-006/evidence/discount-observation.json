@@ -1,0 +1,15 @@
+{
+  "provenance": "Native insignia-staging guest checkout and cart, 2026-09-26 UTC; see the two captured PNGs and discount-checkout-validation.json",
+  "discountCode": "INSIGNIA-M0006-20260926",
+  "nativeAdminDiscountId": "1592041210014",
+  "scope": "10% product discount, fixture product only, both variants, one-time purchase, no combinations",
+  "signedPreDiscountMinor": 9100,
+  "observedLineDiscountMinor": [606, 303],
+  "observedDiscountMinor": 909,
+  "observedNetMerchandiseMinor": 8191,
+  "packageExpectedDiscountMinor": 910,
+  "packageExpectedNetMerchandiseMinor": 8190,
+  "validationInputMeaning": "The live subtotalAmount fields remained 60.66 and 30.34 after applying the code; checkout Validation returned no errors. The UI separately displayed discounted line totals 54.60 and 27.31.",
+  "orderBPaymentSubmitted": false,
+  "cleanup": "The owned code was deleted in native Admin; the discount list returned to its prior five entries."
+}

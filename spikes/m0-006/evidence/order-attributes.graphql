@@ -1,0 +1,7 @@
+query M0006OrderAttributes($id: ID!) {
+  order(id: $id) {
+    id name test
+    customAttributes { key value }
+    lineItems(first: 10) { nodes { id variant { id } quantity customAttributes { key value } } }
+  }
+}

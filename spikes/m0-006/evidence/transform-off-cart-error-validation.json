@@ -1,0 +1,67 @@
+{
+  "provenance": "Shopify CLI app dev Function log",
+  "sourceSha256": "60aa9d3c8e2b49ab0330f3299a383a4a9402703c6f07959f3ecb88899626dbc0",
+  "logTimestamp": "2026-09-26T11:48:20.860914Z",
+  "shopId": 78935261342,
+  "apiClientId": 427859050497,
+  "source": "m0-006-live-validation",
+  "status": "success",
+  "target": "cart.validations.generate.run",
+  "functionId": "01a0dd73-c92d-7c82-b5fe-9db76eafaeb5",
+  "inputBytes": 743,
+  "outputBytes": 13,
+  "fuelConsumed": 4667,
+  "input": {
+    "buyerJourney": {
+      "step": "CART_INTERACTION"
+    },
+    "cart": {
+      "quote": null,
+      "lines": [
+        {
+          "id": "gid://shopify/CartLine/0",
+          "quantity": 1,
+          "member": null,
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            },
+            "subtotalAmount": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/50529053343902",
+            "product": {
+              "policy": {
+                "value": "optional"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "localization": {
+      "country": {
+        "isoCode": "US"
+      },
+      "market": {
+        "id": "gid://shopify/Market/64217284766"
+      }
+    },
+    "shop": {
+      "localTime": {
+        "date": "2026-09-26"
+      },
+      "publicConfig": {
+        "value": "{\"generationHex\":\"9688451a3fa04a7e8045ca4e07f0debd\",\"epoch\":1,\"maxBuckets\":10,\"maxPhysicalQuantity\":10,\"allowNoMarket\":false,\"keys\":[{\"id\":60006,\"publicHex\":\"000bf9acccb45f860cb411579686dac35a6a056d681ce3d747ca4f66cd748348\",\"revoked\":false,\"firstDay\":20722,\"lastDay\":20724}]}"
+      }
+    }
+  },
+  "output": {
+    "operations": []
+  }
+}

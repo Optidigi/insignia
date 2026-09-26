@@ -1,0 +1,21 @@
+{
+  "provenance": "Filtered Shopify CLI 4.8.2 .shopify/dev-bundle/manifest.json and its two dist/index.wasm Function assets, generated 2026-09-26 11:22 UTC; network URLs and non-Function modules omitted",
+  "functions": [
+    {
+      "handle": "m0-006-live-validation",
+      "uid": "e3aa88de-06c0-46b5-ac92-ea2348636382",
+      "target": "cart.validations.generate.run",
+      "apiVersion": "2026-07",
+      "appKey": "942e6668fd1177524c0fc48b104b0ac3",
+      "sha256": "35e7095f038f62f20c8f12535b39095fbaa32f436d0d627eae153f2b778558ea"
+    },
+    {
+      "handle": "m0-006-live-transform",
+      "uid": "e3aa88de-06c0-46b5-ac92-ea2348636381",
+      "target": "cart.transform.run",
+      "apiVersion": "2026-07",
+      "appKey": "942e6668fd1177524c0fc48b104b0ac3",
+      "sha256": "9206c3d5d18cae8e94a1ad2f2f0209550ed5c884a30fca558918ade8b1572075"
+    }
+  ]
+}

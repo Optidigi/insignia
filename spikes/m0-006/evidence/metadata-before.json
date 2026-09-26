@@ -1,0 +1,11 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/78935261342",
+    "ianaTimezone": "America/New_York",
+    "publicConfig": null
+  },
+  "product": {
+    "id": "gid://shopify/Product/10294344482974",
+    "policy": null
+  }
+}

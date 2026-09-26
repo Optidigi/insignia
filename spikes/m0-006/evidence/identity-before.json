@@ -1,0 +1,11 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/78935261342",
+    "myshopifyDomain": "insignia-staging.myshopify.com",
+    "currencyCode": "USD"
+  },
+  "currentAppInstallation": {
+    "id": "gid://shopify/AppInstallation/781307904158",
+    "accessScopes": []
+  }
+}

@@ -1,0 +1,6 @@
+mutation M0006DeleteValidation($id: ID!) {
+  validationDelete(id: $id) {
+    deletedId
+    userErrors { field message }
+  }
+}

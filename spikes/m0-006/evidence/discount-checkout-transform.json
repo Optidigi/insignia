@@ -1,0 +1,135 @@
+{
+  "provenance": "Shopify CLI app dev Function log",
+  "sourceSha256": "1eeaf366e13b52b2d59faa612336deecacb4de9f3fab664b4aa4baa79344e2a2",
+  "logTimestamp": "2026-09-26T12:11:39.990020Z",
+  "shopId": 78935261342,
+  "apiClientId": 427859050497,
+  "source": "m0-006-live-transform",
+  "status": "success",
+  "target": "cart.transform.run",
+  "functionId": "01a0dd73-c92d-7e3d-9fce-0de90d2de0e6",
+  "inputBytes": 1255,
+  "outputBytes": 611,
+  "fuelConsumed": 2700503,
+  "input": {
+    "cart": {
+      "quote": {
+        "value": "SVNHMgIA6maWiEUaP6BKfoBFyk4H8N69AAAAAWjDuHYD7UVbj_CHHP_hRQAUMgRIx4BKPYMU1AeD6G5yAAJVU0QCVVMAAAAO86YAngAAUPQAAAADAAAAAAAAI4ztlvEI3mCE8lHeJLJxHkeP_tru-HXhby7Mdtqlgj1OaK7wCHuiaEb9rd5b8RkPGXB3i7oMSfAd_T9Amu97kSYO"
+      },
+      "lines": [
+        {
+          "id": "gid://shopify/CartLine/c6da0989-31a5-4b58-a1cd-9edf281a2dfc",
+          "quantity": 2,
+          "member": {
+            "value": "AAEAAC30tkaAngAAAAIAAAAAAAAL2Q"
+          },
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/50529053343902",
+            "product": {
+              "policy": {
+                "value": "optional"
+              }
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/CartLine/25e53805-4cad-4d0d-9c9f-ef61085f8a7d",
+          "quantity": 1,
+          "member": {
+            "value": "AAAAAC30tkaAngAAAAEAAAAAAAAL2g"
+          },
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/50529053343902",
+            "product": {
+              "policy": {
+                "value": "optional"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "localization": {
+      "country": {
+        "isoCode": "US"
+      },
+      "market": {
+        "id": "gid://shopify/Market/64217284766"
+      }
+    },
+    "shop": {
+      "localTime": {
+        "date": "2026-09-26"
+      },
+      "publicConfig": {
+        "value": "{\"generationHex\":\"9688451a3fa04a7e8045ca4e07f0debd\",\"epoch\":1,\"maxBuckets\":10,\"maxPhysicalQuantity\":10,\"allowNoMarket\":false,\"keys\":[{\"id\":60006,\"publicHex\":\"000bf9acccb45f860cb411579686dac35a6a056d681ce3d747ca4f66cd748348\",\"revoked\":false,\"firstDay\":20722,\"lastDay\":20724}]}"
+      }
+    }
+  },
+  "output": {
+    "operations": [
+      {
+        "lineExpand": {
+          "cartLineId": "gid://shopify/CartLine/c6da0989-31a5-4b58-a1cd-9edf281a2dfc",
+          "expandedCartItems": [
+            {
+              "merchandiseId": "gid://shopify/ProductVariant/50529053343902",
+              "quantity": 1,
+              "attributes": [
+                {
+                  "key": "_insignia_member_v2",
+                  "value": "AAEAAC30tkaAngAAAAIAAAAAAAAL2Q"
+                }
+              ],
+              "price": {
+                "adjustment": {
+                  "fixedPricePerUnit": {
+                    "amount": "30.33"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "lineExpand": {
+          "cartLineId": "gid://shopify/CartLine/25e53805-4cad-4d0d-9c9f-ef61085f8a7d",
+          "expandedCartItems": [
+            {
+              "merchandiseId": "gid://shopify/ProductVariant/50529053343902",
+              "quantity": 1,
+              "attributes": [
+                {
+                  "key": "_insignia_member_v2",
+                  "value": "AAAAAC30tkaAngAAAAEAAAAAAAAL2g"
+                }
+              ],
+              "price": {
+                "adjustment": {
+                  "fixedPricePerUnit": {
+                    "amount": "30.34"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

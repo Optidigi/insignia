@@ -1,0 +1,12 @@
+{
+  "metafields": [
+    {
+      "ownerId": "gid://shopify/Shop/78935261342",
+      "namespace": "$app",
+      "key": "m0_006_public_config",
+      "type": "json",
+      "value": "{\"generationHex\":\"9688451a3fa04a7e8045ca4e07f0debd\",\"epoch\":1,\"maxBuckets\":10,\"maxPhysicalQuantity\":10,\"allowNoMarket\":false,\"keys\":[{\"id\":60006,\"publicHex\":\"000bf9acccb45f860cb411579686dac35a6a056d681ce3d747ca4f66cd748348\",\"revoked\":true,\"firstDay\":20722,\"lastDay\":20724}]}",
+      "compareDigest": "82aeaa1886ead2ffb12d2f8e08daccc1078aa1639754aae770f285416b1b7d96"
+    }
+  ]
+}

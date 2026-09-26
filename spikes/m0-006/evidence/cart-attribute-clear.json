@@ -1,0 +1,20 @@
+{
+  "afterClear": {
+    "attributes": {
+      "_insignia_quote_v2": "m0-006-stale-attribute-probe"
+    },
+    "itemCount": 0
+  },
+  "clearStatus": 200,
+  "final": {
+    "attributes": {},
+    "itemCount": 0
+  },
+  "initial": {
+    "attributes": {},
+    "itemCount": 0
+  },
+  "provenance": "native guest storefront Ajax on insignia-staging after Function cleanup, 2026-09-26 UTC",
+  "removeStatus": 200,
+  "setStatus": 200
+}

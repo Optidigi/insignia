@@ -1,0 +1,283 @@
+{
+  "order": {
+    "id": "gid://shopify/Order/18908860842142",
+    "name": "#1005",
+    "confirmationNumber": "871QC5FW0",
+    "createdAt": "2026-09-26T12:03:57Z",
+    "test": true,
+    "displayFinancialStatus": "PAID",
+    "displayFulfillmentStatus": "UNFULFILLED",
+    "paymentGatewayNames": [
+      "bogus"
+    ],
+    "currencyCode": "USD",
+    "subtotalPriceSet": {
+      "shopMoney": {
+        "amount": "111.0",
+        "currencyCode": "USD"
+      }
+    },
+    "currentSubtotalPriceSet": {
+      "shopMoney": {
+        "amount": "111.0",
+        "currencyCode": "USD"
+      }
+    },
+    "totalPriceSet": {
+      "shopMoney": {
+        "amount": "111.0",
+        "currencyCode": "USD"
+      }
+    },
+    "currentTotalPriceSet": {
+      "shopMoney": {
+        "amount": "111.0",
+        "currencyCode": "USD"
+      }
+    },
+    "totalTaxSet": {
+      "shopMoney": {
+        "amount": "0.0",
+        "currencyCode": "USD"
+      }
+    },
+    "totalShippingPriceSet": {
+      "shopMoney": {
+        "amount": "0.0",
+        "currencyCode": "USD"
+      }
+    },
+    "totalRefundedSet": {
+      "shopMoney": {
+        "amount": "0.0",
+        "currencyCode": "USD"
+      }
+    },
+    "lineItems": {
+      "nodes": [
+        {
+          "id": "gid://shopify/LineItem/50731333353630",
+          "sku": "INS-M0-001-BLK-S",
+          "quantity": 2,
+          "currentQuantity": 2,
+          "refundableQuantity": 2,
+          "unfulfilledQuantity": 2,
+          "restockable": true,
+          "merchantEditable": true,
+          "title": "INSIGNIA M0-001 fixture garment - do not buy",
+          "variantTitle": "Black / Small",
+          "product": {
+            "id": "gid://shopify/Product/10294344482974"
+          },
+          "variant": {
+            "id": "gid://shopify/ProductVariant/50529053343902"
+          },
+          "originalUnitPriceSet": {
+            "shopMoney": {
+              "amount": "30.33",
+              "currencyCode": "USD"
+            }
+          },
+          "discountedUnitPriceSet": {
+            "shopMoney": {
+              "amount": "30.33",
+              "currencyCode": "USD"
+            }
+          },
+          "originalTotalSet": {
+            "shopMoney": {
+              "amount": "60.66",
+              "currencyCode": "USD"
+            }
+          },
+          "discountedTotalSet": {
+            "shopMoney": {
+              "amount": "60.66",
+              "currencyCode": "USD"
+            }
+          },
+          "customAttributes": [
+            {
+              "key": "_insignia_member_v2",
+              "value": "AAEAAC30tkaAngAAAAIAAAAAAAAL2Q"
+            }
+          ],
+          "lineItemGroup": {
+            "id": "gid://shopify/LineItemGroup/32574210206",
+            "productId": "gid://shopify/Product/10294344482974",
+            "variantId": "gid://shopify/ProductVariant/50529053343902",
+            "variantSku": "INS-M0-001-BLK-S",
+            "quantity": 2,
+            "title": "INSIGNIA M0-001 fixture garment - do not buy",
+            "customAttributes": [
+              {
+                "key": "_insignia_member_v2",
+                "value": "AAEAAC30tkaAngAAAAIAAAAAAAAL2Q"
+              }
+            ]
+          }
+        },
+        {
+          "id": "gid://shopify/LineItem/50731333386398",
+          "sku": "INS-M0-001-BLK-S",
+          "quantity": 1,
+          "currentQuantity": 1,
+          "refundableQuantity": 1,
+          "unfulfilledQuantity": 1,
+          "restockable": true,
+          "merchantEditable": true,
+          "title": "INSIGNIA M0-001 fixture garment - do not buy",
+          "variantTitle": "Black / Small",
+          "product": {
+            "id": "gid://shopify/Product/10294344482974"
+          },
+          "variant": {
+            "id": "gid://shopify/ProductVariant/50529053343902"
+          },
+          "originalUnitPriceSet": {
+            "shopMoney": {
+              "amount": "30.34",
+              "currencyCode": "USD"
+            }
+          },
+          "discountedUnitPriceSet": {
+            "shopMoney": {
+              "amount": "30.34",
+              "currencyCode": "USD"
+            }
+          },
+          "originalTotalSet": {
+            "shopMoney": {
+              "amount": "30.34",
+              "currencyCode": "USD"
+            }
+          },
+          "discountedTotalSet": {
+            "shopMoney": {
+              "amount": "30.34",
+              "currencyCode": "USD"
+            }
+          },
+          "customAttributes": [
+            {
+              "key": "_insignia_member_v2",
+              "value": "AAAAAC30tkaAngAAAAEAAAAAAAAL2g"
+            }
+          ],
+          "lineItemGroup": {
+            "id": "gid://shopify/LineItemGroup/32574242974",
+            "productId": "gid://shopify/Product/10294344482974",
+            "variantId": "gid://shopify/ProductVariant/50529053343902",
+            "variantSku": "INS-M0-001-BLK-S",
+            "quantity": 1,
+            "title": "INSIGNIA M0-001 fixture garment - do not buy",
+            "customAttributes": [
+              {
+                "key": "_insignia_member_v2",
+                "value": "AAAAAC30tkaAngAAAAEAAAAAAAAL2g"
+              }
+            ]
+          }
+        },
+        {
+          "id": "gid://shopify/LineItem/50731333419166",
+          "sku": "INS-M0-001-BLK-M",
+          "quantity": 1,
+          "currentQuantity": 1,
+          "refundableQuantity": 1,
+          "unfulfilledQuantity": 1,
+          "restockable": true,
+          "merchantEditable": true,
+          "title": "INSIGNIA M0-001 fixture garment - do not buy",
+          "variantTitle": "Black / Medium",
+          "product": {
+            "id": "gid://shopify/Product/10294344482974"
+          },
+          "variant": {
+            "id": "gid://shopify/ProductVariant/50529054163102"
+          },
+          "originalUnitPriceSet": {
+            "shopMoney": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "discountedUnitPriceSet": {
+            "shopMoney": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "originalTotalSet": {
+            "shopMoney": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "discountedTotalSet": {
+            "shopMoney": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "customAttributes": [],
+          "lineItemGroup": null
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false
+      }
+    },
+    "fulfillmentOrders": {
+      "nodes": [
+        {
+          "id": "gid://shopify/FulfillmentOrder/22122857627806",
+          "status": "OPEN",
+          "assignedLocation": {
+            "location": {
+              "id": "gid://shopify/Location/89465290910",
+              "name": "Shop location"
+            }
+          },
+          "lineItems": {
+            "nodes": [
+              {
+                "id": "gid://shopify/FulfillmentOrderLineItem/50762547429534",
+                "totalQuantity": 2,
+                "remainingQuantity": 2,
+                "lineItem": {
+                  "id": "gid://shopify/LineItem/50731333353630",
+                  "sku": "INS-M0-001-BLK-S"
+                }
+              },
+              {
+                "id": "gid://shopify/FulfillmentOrderLineItem/50762547462302",
+                "totalQuantity": 1,
+                "remainingQuantity": 1,
+                "lineItem": {
+                  "id": "gid://shopify/LineItem/50731333386398",
+                  "sku": "INS-M0-001-BLK-S"
+                }
+              },
+              {
+                "id": "gid://shopify/FulfillmentOrderLineItem/50762547495070",
+                "totalQuantity": 1,
+                "remainingQuantity": 1,
+                "lineItem": {
+                  "id": "gid://shopify/LineItem/50731333419166",
+                  "sku": "INS-M0-001-BLK-M"
+                }
+              }
+            ],
+            "pageInfo": {
+              "hasNextPage": false
+            }
+          }
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false
+      }
+    }
+  }
+}

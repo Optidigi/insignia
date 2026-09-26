@@ -1,0 +1,132 @@
+{
+  "provenance": "Shopify CLI app dev Function log",
+  "sourceSha256": "9d7efe2658d8fd621686c6c2ff7f951fca84569d99b2f7ad5c1977750cc3b6ad",
+  "logTimestamp": "2026-09-26T11:54:54.070222Z",
+  "shopId": 78935261342,
+  "apiClientId": 427859050497,
+  "source": "m0-006-live-validation",
+  "status": "success",
+  "target": "cart.validations.generate.run",
+  "functionId": "01a0dd73-c92d-7c82-b5fe-9db76eafaeb5",
+  "inputBytes": 1588,
+  "outputBytes": 113,
+  "fuelConsumed": 583387,
+  "input": {
+    "buyerJourney": {
+      "step": "CHECKOUT_INTERACTION"
+    },
+    "cart": {
+      "quote": {
+        "value": "SVNHMgIA6maWiEUaP6BKfoBFyk4H8N69AAAAAUNvqfVfzEpTrW3ar2jsRt1g_Fk94iNFAY5WLZQ7eVstAAJVU0QCVVMAAAAO86YAngAAUPQAAAADAAAAAAAAI4zhYqukdEfJqw_8-C81xdiifi8iP8Z4T3RBuGq_wtxmkRu7nB16ad7NqujSS6miNbffPhSBnYCiCCEutpZ5K3IA"
+      },
+      "lines": [
+        {
+          "id": "gid://shopify/CartLine/0",
+          "quantity": 2,
+          "member": {
+            "value": "AAEAAC30tkaAngAAAAIAAAAAAAAL2Q"
+          },
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            },
+            "subtotalAmount": {
+              "amount": "40.0",
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/50529053343902",
+            "product": {
+              "policy": {
+                "value": "optional"
+              }
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/CartLine/1",
+          "quantity": 1,
+          "member": {
+            "value": "AAAAAC30tkaAngAAAAEAAAAAAAAL2g"
+          },
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            },
+            "subtotalAmount": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/50529053343902",
+            "product": {
+              "policy": {
+                "value": "optional"
+              }
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/CartLine/2",
+          "quantity": 1,
+          "member": null,
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            },
+            "subtotalAmount": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/50529054163102",
+            "product": {
+              "policy": {
+                "value": "optional"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "localization": {
+      "country": {
+        "isoCode": "US"
+      },
+      "market": {
+        "id": "gid://shopify/Market/64217284766"
+      }
+    },
+    "shop": {
+      "localTime": {
+        "date": "2026-09-26"
+      },
+      "publicConfig": {
+        "value": "{\"generationHex\":\"9688451a3fa04a7e8045ca4e07f0debd\",\"epoch\":1,\"maxBuckets\":10,\"maxPhysicalQuantity\":10,\"allowNoMarket\":false,\"keys\":[{\"id\":60006,\"publicHex\":\"000bf9acccb45f860cb411579686dac35a6a056d681ce3d747ca4f66cd748348\",\"revoked\":true,\"firstDay\":20722,\"lastDay\":20724}]}"
+      }
+    }
+  },
+  "output": {
+    "operations": [
+      {
+        "validationAdd": {
+          "errors": [
+            {
+              "message": "Review your Insignia customization before checkout.",
+              "target": "$.cart"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
