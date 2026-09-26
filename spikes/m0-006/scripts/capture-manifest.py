@@ -6,6 +6,7 @@ import hashlib
 import json
 from pathlib import Path
 import sys
+import subprocess
 
 REPO = Path(__file__).resolve().parents[3]
 SPIKE = REPO / "spikes/m0-006"
@@ -74,8 +75,8 @@ def preview_identity():
     return {"encoded": raw, "executable": hashes(PREVIEW_BUNDLE_WASM)}
 
 
-if len(sys.argv) != 2 or sys.argv[1] not in {"write-live", "verify"}:
-    raise SystemExit("usage: capture-manifest.py write-live|verify")
+if len(sys.argv) != 2 or sys.argv[1] not in {"write-live", "verify", "verify-history"}:
+    raise SystemExit("usage: capture-manifest.py write-live|verify|verify-history")
 
 current = {
     "sourceSha256": mapping(source_paths()),
@@ -103,6 +104,27 @@ if sys.argv[1] == "write-live":
     })
     LIVE.write_text(json.dumps(current, indent=2, sort_keys=True) + "\n")
     print(relative(LIVE))
+elif sys.argv[1] == "verify-history":
+    # Successor M0-007 intentionally changes the Function adapters. Check the
+    # old manifest against its merged source and unchanged receipts, then
+    # report the current build separately instead of rewriting old evidence.
+    history = json.loads(subprocess.check_output(
+        [sys.executable, str(REPO / "spikes/m0-007/scripts/check-history.py")], cwd=REPO
+    ))
+    live = json.loads(LIVE.read_text())
+    if live["livePreviewBundleSha256"] != preview_identity():
+        raise SystemExit("retained preview bundle differs from frozen live hashes")
+    built = hashes(WASM)
+    print(json.dumps({
+        "provenance": "frozen M0-006 source/receipts plus current successor rebuild",
+        "history": history,
+        "livePreviewBundleSha256": live["livePreviewBundleSha256"],
+        "currentBuildWasmSha256": built,
+        "byteIdenticalToLivePreview": {
+            name: built[name] == live["livePreviewBundleSha256"]["executable"][name]
+            for name in built
+        },
+    }, indent=2, sort_keys=True))
 else:
     live = json.loads(LIVE.read_text())
     if live["livePreviewBundleSha256"] != preview_identity():
