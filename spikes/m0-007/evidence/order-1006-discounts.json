@@ -1,0 +1,80 @@
+{
+  "order": {
+    "id": "gid://shopify/Order/18909144252574",
+    "name": "#1006",
+    "test": true,
+    "paymentGatewayNames": [
+      "bogus"
+    ],
+    "discountCodes": [
+      "M0007-20260926-QUOTE"
+    ],
+    "currentSubtotalPriceSet": {
+      "shopMoney": {
+        "amount": "81.91",
+        "currencyCode": "USD"
+      }
+    },
+    "totalDiscountsSet": {
+      "shopMoney": {
+        "amount": "9.09",
+        "currencyCode": "USD"
+      }
+    },
+    "lineItems": {
+      "nodes": [
+        {
+          "id": "gid://shopify/LineItem/50731843387550",
+          "quantity": 2,
+          "originalTotalSet": {
+            "shopMoney": {
+              "amount": "60.66",
+              "currencyCode": "USD"
+            }
+          },
+          "discountAllocations": [
+            {
+              "allocatedAmountSet": {
+                "shopMoney": {
+                  "amount": "6.06",
+                  "currencyCode": "USD"
+                }
+              },
+              "discountApplication": {
+                "__typename": "DiscountCodeApplication",
+                "code": "M0007-20260926-QUOTE"
+              }
+            }
+          ]
+        },
+        {
+          "id": "gid://shopify/LineItem/50731843420318",
+          "quantity": 1,
+          "originalTotalSet": {
+            "shopMoney": {
+              "amount": "30.34",
+              "currencyCode": "USD"
+            }
+          },
+          "discountAllocations": [
+            {
+              "allocatedAmountSet": {
+                "shopMoney": {
+                  "amount": "3.03",
+                  "currencyCode": "USD"
+                }
+              },
+              "discountApplication": {
+                "__typename": "DiscountCodeApplication",
+                "code": "M0007-20260926-QUOTE"
+              }
+            }
+          ]
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false
+      }
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "provenance": "guest Ajax cart after future signed set",
+  "attributes": {
+    "_insignia_quote_v2": "SVNHMgIAG1ozOAdKJMFE4YUDii6C_LxvAAAAAVDVemSRfkA8tlytwRaapkSvlvRZoDxK64kPpuehuHhsAAJVU0QCVVMAAAAO86YAngAAUPUAAAADAAAAAAAAI4z-gYKtfOgAeGAfHGMrQZMZHKo7N7Ma-YI6C9EVr3mbCvrD7kAAmmIFTkSkRQvNoJVjRKh2UiwQOGRJWebxUG4H"
+  },
+  "itemCount": 3,
+  "items": [
+    {
+      "id": 50529053343902,
+      "key": "50529053343902:554d3563c2dff803b8fce696df0004a7",
+      "linePrice": 4000,
+      "price": 2000,
+      "properties": {
+        "_insignia_member_v2": "AAEAAC30tkaAngAAAAIAAAAAAAAL2Q"
+      },
+      "quantity": 2
+    },
+    {
+      "id": 50529053343902,
+      "key": "50529053343902:73aee5d01e1ae0ddaad93683d1713518",
+      "linePrice": 2000,
+      "price": 2000,
+      "properties": {
+        "_insignia_member_v2": "AAAAAC30tkaAngAAAAEAAAAAAAAL2g"
+      },
+      "quantity": 1
+    }
+  ]
+}

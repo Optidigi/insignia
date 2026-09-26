@@ -12,6 +12,7 @@ query CartTransformRunInput {
         ... on ProductVariant {
           id
           product {
+            id
             registration: metafield(key: "m0_007_registration") { value }
             policy: metafield(key: "m0_007_policy") { value }
           }

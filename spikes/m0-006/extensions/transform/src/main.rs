@@ -293,6 +293,16 @@ mod tests {
     }
 
     #[test]
+    fn signed_quote_with_only_illegible_policy_emits_no_price() {
+        let mut input = fixture();
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"]["value"] = "bad".into();
+        }
+        assert!(run(input)["operations"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
     fn unsigned_marker_removed_and_invalid_signature_emit_no_price() {
         let mut input = fixture();
         input["cart"]["quote"] = serde_json::Value::Null;

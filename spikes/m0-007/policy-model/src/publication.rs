@@ -53,6 +53,12 @@ pub enum Phase {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum FunctionTarget {
+    Transform,
+    Validation,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Error {
     Available,
     Stale,
@@ -69,6 +75,8 @@ pub struct Intent {
     pub phase: Phase,
     registration_digest: u64,
     policy_digest: u64,
+    transform_observed: bool,
+    validation_observed: bool,
 }
 
 impl Intent {
@@ -93,6 +101,8 @@ impl Intent {
             phase: Phase::Prepared,
             registration_digest: projection.registration.digest,
             policy_digest: projection.policy.digest,
+            transform_observed: false,
+            validation_observed: false,
         };
         match projection.registration.value.as_deref() {
             None if projection.policy.value.is_some() => return Err(Error::Conflict),
@@ -119,6 +129,21 @@ impl Intent {
                     revision: current,
                     state: "pending",
                 } if found == generation && current == revision => {
+                    if let Some(value) = projection.policy.value.as_deref() {
+                        if let Field::Parsed {
+                            generation: policy_generation,
+                            revision: policy_revision,
+                            state,
+                        } = parse_field(value)
+                        {
+                            if policy_generation == generation
+                                && policy_revision == revision
+                                && state != mode.as_str()
+                            {
+                                return Err(Error::Conflict);
+                            }
+                        }
+                    }
                     intent.phase = if projection.policy.value.as_deref()
                         == Some(intent.value(mode.as_str()).as_str())
                     {
@@ -181,11 +206,16 @@ impl Intent {
     /// Only a separately observed Function input can turn Admin readback into readiness.
     pub fn observe_function(
         &mut self,
+        target: FunctionTarget,
+        product_id: &str,
         registration: Option<&str>,
         policy: Option<&str>,
     ) -> Result<(), Error> {
-        if self.phase != Phase::ReadyWritten {
+        if self.phase != Phase::ReadyWritten && self.phase != Phase::ObservedReady {
             return Err(Error::Conflict);
+        }
+        if product_id != format!("gid://shopify/Product/{}", self.product_id) {
+            return Err(Error::InvalidReadback);
         }
         if registration != Some(self.value("ready").as_str())
             || policy != Some(self.value(self.mode.as_str()).as_str())
@@ -199,7 +229,13 @@ impl Intent {
         if classify(registration, policy, self.generation).plain != desired {
             return Err(Error::InvalidReadback);
         }
-        self.phase = Phase::ObservedReady;
+        match target {
+            FunctionTarget::Transform => self.transform_observed = true,
+            FunctionTarget::Validation => self.validation_observed = true,
+        }
+        if self.transform_observed && self.validation_observed {
+            self.phase = Phase::ObservedReady;
+        }
         Ok(())
     }
 }
@@ -217,7 +253,21 @@ mod tests {
         let registration = projection.registration.value.clone();
         let policy = projection.policy.value.clone();
         intent
-            .observe_function(registration.as_deref(), policy.as_deref())
+            .observe_function(
+                FunctionTarget::Transform,
+                "gid://shopify/Product/42",
+                registration.as_deref(),
+                policy.as_deref(),
+            )
+            .unwrap();
+        assert_eq!(intent.phase, Phase::ReadyWritten);
+        intent
+            .observe_function(
+                FunctionTarget::Validation,
+                "gid://shopify/Product/42",
+                registration.as_deref(),
+                policy.as_deref(),
+            )
             .unwrap();
         intent
     }
@@ -288,7 +338,20 @@ mod tests {
         let registration = projection.registration.value.clone();
         let policy = projection.policy.value.clone();
         retry
-            .observe_function(registration.as_deref(), policy.as_deref())
+            .observe_function(
+                FunctionTarget::Transform,
+                "gid://shopify/Product/42",
+                registration.as_deref(),
+                policy.as_deref(),
+            )
+            .unwrap();
+        retry
+            .observe_function(
+                FunctionTarget::Validation,
+                "gid://shopify/Product/42",
+                registration.as_deref(),
+                policy.as_deref(),
+            )
             .unwrap();
         assert_eq!(retry.phase, Phase::ObservedReady);
     }
@@ -309,5 +372,60 @@ mod tests {
             .plain,
             PlainPolicy::Uncertain
         );
+    }
+
+    #[test]
+    fn opposite_mode_at_same_revision_cannot_be_resumed_or_overwritten() {
+        let mut projection = ProductProjection::default();
+        let mut required = Intent::begin(42, G, 1, Mode::Required, &projection).unwrap();
+        required.advance(&mut projection).unwrap();
+        required.advance(&mut projection).unwrap();
+        assert!(matches!(
+            Intent::begin(42, G, 1, Mode::Optional, &projection),
+            Err(Error::Conflict)
+        ));
+        assert_eq!(
+            projection.policy.value.as_deref(),
+            Some(required.value("required").as_str())
+        );
+    }
+
+    #[test]
+    fn wrong_product_or_one_target_cannot_claim_ready() {
+        let mut projection = ProductProjection::default();
+        let mut intent = Intent::begin(42, G, 1, Mode::Required, &projection).unwrap();
+        intent.advance(&mut projection).unwrap();
+        intent.advance(&mut projection).unwrap();
+        intent.advance(&mut projection).unwrap();
+        let registration = projection.registration.value.as_deref();
+        let policy = projection.policy.value.as_deref();
+        assert_eq!(
+            intent.observe_function(
+                FunctionTarget::Transform,
+                "gid://shopify/Product/43",
+                registration,
+                policy
+            ),
+            Err(Error::InvalidReadback)
+        );
+        assert_eq!(intent.phase, Phase::ReadyWritten);
+        intent
+            .observe_function(
+                FunctionTarget::Transform,
+                "gid://shopify/Product/42",
+                registration,
+                policy,
+            )
+            .unwrap();
+        assert_eq!(intent.phase, Phase::ReadyWritten);
+        intent
+            .observe_function(
+                FunctionTarget::Validation,
+                "gid://shopify/Product/42",
+                registration,
+                policy,
+            )
+            .unwrap();
+        assert_eq!(intent.phase, Phase::ObservedReady);
     }
 }

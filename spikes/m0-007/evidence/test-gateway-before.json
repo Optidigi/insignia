@@ -1,0 +1,10 @@
+{
+  "observedAt": "2026-09-26 14:44 UTC",
+  "source": "Authenticated shared native Shopify Admin browser, Payments detail reloaded",
+  "shop": "insignia-staging.myshopify.com",
+  "provider": "Test payment gateway",
+  "state": "Active",
+  "availableAction": "Deactivate",
+  "approvedTransactionCode": "1",
+  "realPaymentSettingsChanged": false
+}

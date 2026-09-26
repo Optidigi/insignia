@@ -1,0 +1,21 @@
+m0-006-live-validation │ Building function m0-006-live-validation...
+
+[2K[1A[2K[G m0-006-live-transform │ Building function m0-006-live-transform...
+
+[2K[1A[2K[Gm0-006-live-validation │    Compiling m0-006-cart-validation v0.1.0
+(/home/serveradmin/insignia-m0-007-worktree/spikes/m0-006/extensions/validation)
+
+[2K[1A[2K[G m0-006-live-transform │    Compiling m0-006-cart-transform v0.1.0
+(/home/serveradmin/insignia-m0-007-worktree/spikes/m0-006/extensions/transform)
+
+[2K[1A[2K[Gm0-006-live-validation │     Finished `release` profile [optimized] target(s) in
+ 2.45s
+
+[2K[1A[2K[G m0-006-live-transform │     Finished `release` profile [optimized] target(s) in
+ 2.53s
+
+╭─ success ────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  insignia built!                                                             │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯

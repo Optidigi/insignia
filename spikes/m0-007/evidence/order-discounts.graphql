@@ -1,0 +1,19 @@
+query M0007OrderDiscounts($id: ID!) {
+  order(id: $id) {
+    id name test paymentGatewayNames
+    discountCodes
+    currentSubtotalPriceSet { shopMoney { amount currencyCode } }
+    totalDiscountsSet { shopMoney { amount currencyCode } }
+    lineItems(first: 20) {
+      nodes {
+        id quantity
+        originalTotalSet { shopMoney { amount currencyCode } }
+        discountAllocations {
+          allocatedAmountSet { shopMoney { amount currencyCode } }
+          discountApplication { __typename ... on DiscountCodeApplication { code } }
+        }
+      }
+      pageInfo { hasNextPage }
+    }
+  }
+}

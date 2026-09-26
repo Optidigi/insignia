@@ -1,0 +1,1 @@
+query M0007ProductsBefore { products(first: 50) { nodes { id handle status onlineStoreUrl } pageInfo { hasNextPage endCursor } } }

@@ -1,0 +1,6 @@
+mutation M0006DeleteOwnedMetadata($metafields: [MetafieldIdentifierInput!]!) {
+  metafieldsDelete(metafields: $metafields) {
+    deletedMetafields { ownerId namespace key }
+    userErrors { field message }
+  }
+}

@@ -329,6 +329,16 @@ mod tests {
     }
 
     #[test]
+    fn signed_quote_with_only_illegible_policy_rejects() {
+        let mut input = fixture();
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"]["value"] = "bad".into();
+        }
+        assert!(!accepted(input));
+    }
+
+    #[test]
     fn complete_set_compares_observed_exact_subtotals() {
         assert!(accepted(fixture()));
         let mut changed = fixture();
@@ -381,6 +391,31 @@ mod tests {
                 should_accept
             );
         }
+    }
+
+    #[test]
+    fn mixed_200_line_cart_blocks_damaged_managed_line_then_recovers() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../m0-007/fixtures/validation-10-signed-190-ordinary.json");
+        let mut input: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        input["cart"]["lines"][10]["merchandise"]["product"]["registration"]["value"] =
+            "11111111111111111111111111111111:2:pending".into();
+        input["cart"]["lines"][11]["merchandise"]["product"]["registration"] =
+            serde_json::Value::Null;
+        input["cart"]["lines"][11]["merchandise"]["product"]["policy"] = serde_json::Value::Null;
+        assert!(!accepted(input.clone()));
+        input["cart"]["lines"].as_array_mut().unwrap().remove(10);
+        assert!(
+            accepted(input.clone()),
+            "removing damaged line repairs mixed cart"
+        );
+        input["cart"]["lines"].as_array_mut().unwrap().drain(0..10);
+        input["cart"]["quote"] = serde_json::Value::Null;
+        assert!(
+            accepted(input),
+            "ordinary lines remain usable without Insignia quote"
+        );
     }
 
     #[test]

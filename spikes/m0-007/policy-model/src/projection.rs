@@ -37,6 +37,12 @@ pub fn classify(
             signed_allowed: false,
         };
     }
+    // A surviving field with no legible current-installation generation cannot
+    // authenticate even a historical signed offer. The signature still has to
+    // be checked by the quote verifier when this classification permits it.
+    let current_anchor = [r, p].iter().flatten().any(
+        |field| matches!(field, Field::Parsed { generation: found, .. } if *found == generation),
+    );
     let plain = match (r, p) {
         (
             Some(Field::Parsed {
@@ -66,7 +72,7 @@ pub fn classify(
     };
     Decision {
         plain,
-        signed_allowed: true,
+        signed_allowed: current_anchor,
     }
 }
 
@@ -179,6 +185,15 @@ mod tests {
             assert_eq!(decision.plain, PlainPolicy::WrongGeneration);
             assert!(!decision.signed_allowed);
         }
+    }
+
+    #[test]
+    fn illegible_lone_anchor_cannot_authorize_a_signed_quote() {
+        let decision = classify(Some("bad"), None, G);
+        assert_eq!(decision.plain, PlainPolicy::Uncertain);
+        assert!(!decision.signed_allowed);
+        assert!(!classify(None, Some("bad"), G).signed_allowed);
+        assert!(classify(Some(R), Some("bad"), G).signed_allowed);
     }
 
     #[test]
