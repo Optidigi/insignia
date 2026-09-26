@@ -1,0 +1,193 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/78935261342",
+    "myshopifyDomain": "insignia-staging.myshopify.com",
+    "currencyCode": "USD"
+  },
+  "currentAppInstallation": {
+    "id": "gid://shopify/AppInstallation/781307904158",
+    "accessScopes": [
+      {
+        "handle": "read_cart_transforms"
+      },
+      {
+        "handle": "read_locations"
+      },
+      {
+        "handle": "read_merchant_managed_fulfillment_orders"
+      },
+      {
+        "handle": "read_orders"
+      },
+      {
+        "handle": "read_validations"
+      },
+      {
+        "handle": "write_cart_transforms"
+      },
+      {
+        "handle": "write_inventory"
+      },
+      {
+        "handle": "write_products"
+      },
+      {
+        "handle": "write_validations"
+      },
+      {
+        "handle": "read_inventory"
+      },
+      {
+        "handle": "read_products"
+      }
+    ]
+  },
+  "cartTransforms": {
+    "nodes": [
+      {
+        "id": "gid://shopify/CartTransform/143556766",
+        "functionId": "01a0dd73-c92d-7e3d-9fce-0de90d2de0e6",
+        "blockOnFailure": true
+      }
+    ],
+    "pageInfo": {
+      "hasNextPage": false,
+      "endCursor": "eyJsYXN0X2lkIjoxNDM1NTY3NjYsImxhc3RfdmFsdWUiOiIxNDM1NTY3NjYifQ=="
+    }
+  },
+  "validations": {
+    "nodes": [
+      {
+        "id": "gid://shopify/Validation/143196318",
+        "title": "Insignia M0-006 temporary fixture validation",
+        "enabled": true,
+        "blockOnFailure": true,
+        "shopifyFunction": {
+          "id": "01a0dd73-c92d-7c82-b5fe-9db76eafaeb5",
+          "handle": "m0-006-live-validation",
+          "appKey": "942e6668fd1177524c0fc48b104b0ac3"
+        }
+      }
+    ],
+    "pageInfo": {
+      "hasNextPage": false,
+      "endCursor": "eyJsYXN0X2lkIjoxNDMxOTYzMTgsImxhc3RfdmFsdWUiOjE0MzE5NjMxOH0="
+    }
+  },
+  "productByHandle": {
+    "id": "gid://shopify/Product/10294344482974",
+    "handle": "insignia-m0-001-fixture-20260924",
+    "status": "ARCHIVED",
+    "onlineStoreUrl": null,
+    "variants": {
+      "nodes": [
+        {
+          "id": "gid://shopify/ProductVariant/50529053343902",
+          "title": "Black / Small",
+          "sku": "INS-M0-001-BLK-S",
+          "price": "20.00",
+          "inventoryPolicy": "DENY",
+          "taxable": true,
+          "inventoryItem": {
+            "id": "gid://shopify/InventoryItem/52644294131870",
+            "sku": "INS-M0-001-BLK-S",
+            "tracked": true,
+            "requiresShipping": true,
+            "inventoryLevels": {
+              "nodes": [
+                {
+                  "location": {
+                    "id": "gid://shopify/Location/89465290910",
+                    "name": "Shop location"
+                  },
+                  "quantities": [
+                    {
+                      "name": "available",
+                      "quantity": 5
+                    },
+                    {
+                      "name": "committed",
+                      "quantity": 2
+                    },
+                    {
+                      "name": "on_hand",
+                      "quantity": 7
+                    }
+                  ]
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "eyJsYXN0X2lkIjo1NzIxMTIzODk0MDgzMCwibGFzdF92YWx1ZSI6NTcyMTEyMzg5NDA4MzB9"
+              }
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/ProductVariant/50529054163102",
+          "title": "Black / Medium",
+          "sku": "INS-M0-001-BLK-M",
+          "price": "20.00",
+          "inventoryPolicy": "DENY",
+          "taxable": true,
+          "inventoryItem": {
+            "id": "gid://shopify/InventoryItem/52644294951070",
+            "sku": "INS-M0-001-BLK-M",
+            "tracked": true,
+            "requiresShipping": true,
+            "inventoryLevels": {
+              "nodes": [
+                {
+                  "location": {
+                    "id": "gid://shopify/Location/89465290910",
+                    "name": "Shop location"
+                  },
+                  "quantities": [
+                    {
+                      "name": "available",
+                      "quantity": 8
+                    },
+                    {
+                      "name": "committed",
+                      "quantity": 2
+                    },
+                    {
+                      "name": "on_hand",
+                      "quantity": 10
+                    }
+                  ]
+                }
+              ],
+              "pageInfo": {
+                "hasNextPage": false,
+                "endCursor": "eyJsYXN0X2lkIjo1NzIxMTIzOTgyNTU2NiwibGFzdF92YWx1ZSI6NTcyMTEyMzk4MjU1NjZ9"
+              }
+            }
+          }
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": "eyJsYXN0X2lkIjo1MDUyOTA1NDE2MzEwMiwibGFzdF92YWx1ZSI6Mn0="
+      }
+    }
+  },
+  "locations": {
+    "nodes": [
+      {
+        "id": "gid://shopify/Location/89465323678",
+        "name": "My Custom Location",
+        "isActive": true
+      },
+      {
+        "id": "gid://shopify/Location/89465290910",
+        "name": "Shop location",
+        "isActive": true
+      }
+    ],
+    "pageInfo": {
+      "hasNextPage": false,
+      "endCursor": "eyJsYXN0X2lkIjo4OTQ2NTI5MDkxMCwibGFzdF92YWx1ZSI6IlNob3AgbG9jYXRpb24ifQ=="
+    }
+  }
+}

@@ -1,0 +1,106 @@
+{
+  "provenance": "Shopify CLI app dev Function log",
+  "sourceSha256": "565ed46d3cc201f655fb3b530aa516714c08a674d1faefcf90bcb2f67845b0e0",
+  "logTimestamp": "2026-09-26T11:56:50.540902Z",
+  "shopId": 78935261342,
+  "apiClientId": 427859050497,
+  "source": "m0-006-live-transform",
+  "status": "success",
+  "target": "cart.transform.run",
+  "functionId": "01a0dd73-c92d-7e3d-9fce-0de90d2de0e6",
+  "inputBytes": 1522,
+  "outputBytes": 13,
+  "fuelConsumed": 573523,
+  "input": {
+    "cart": {
+      "quote": {
+        "value": "SVNHMgIA6maWiEUaP6BKfoBFyk4H8N69AAAAAXA4ZcfuVEHtpSvh1txHqmq9Xm4-kUBMd4vZ9HbPQ3fbAAJVU0QCVVMAAAAO86YAngAAUPQAAAADAAAAAAAAImCOPlvmBsarnIkEBIYJLHDid9bUAT9YKMs8knsQE6ZwfCSEEehxwn7slFBsE0AU68trkPderqLcQY59lADiBAwP"
+      },
+      "lines": [
+        {
+          "id": "gid://shopify/CartLine/e9c94be3-4a07-4a00-ac61-4682d7ca6b85",
+          "quantity": 2,
+          "member": {
+            "value": "AAEAAC30tkaAngAAAAIAAAAAAAAL2Q"
+          },
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/50529053343902",
+            "product": {
+              "policy": {
+                "value": "optional"
+              }
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/CartLine/65f4801a-2c42-4bdc-8513-486acd8471eb",
+          "quantity": 1,
+          "member": {
+            "value": "AAAAAC30tkaAngAAAAEAAAAAAAAL2g"
+          },
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/50529053343902",
+            "product": {
+              "policy": {
+                "value": "optional"
+              }
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/CartLine/05b29cae-f9fa-4e5b-96a7-51c9d77f8d19",
+          "quantity": 1,
+          "member": null,
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/50529054163102",
+            "product": {
+              "policy": {
+                "value": "optional"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "localization": {
+      "country": {
+        "isoCode": "US"
+      },
+      "market": {
+        "id": "gid://shopify/Market/64217284766"
+      }
+    },
+    "shop": {
+      "localTime": {
+        "date": "2026-09-26"
+      },
+      "publicConfig": {
+        "value": "{\"generationHex\":\"9688451a3fa04a7e8045ca4e07f0debd\",\"epoch\":1,\"maxBuckets\":10,\"maxPhysicalQuantity\":10,\"allowNoMarket\":false,\"keys\":[{\"id\":60006,\"publicHex\":\"000bf9acccb45f860cb411579686dac35a6a056d681ce3d747ca4f66cd748348\",\"revoked\":false,\"firstDay\":20722,\"lastDay\":20724}]}"
+      }
+    }
+  },
+  "output": {
+    "operations": []
+  }
+}

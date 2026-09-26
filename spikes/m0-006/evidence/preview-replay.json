@@ -1,0 +1,109 @@
+{
+  "provenance": "Off-store replay of retained Shopify CLI preview bundle assets with pinned Shopify function runner; synthetic fixtures only",
+  "rows": [
+    {
+      "target": "transform",
+      "caseName": "valid",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "wasmSha256": "f98e32af930b7e3cb27b9b48bed245515510bcdc141e5e0c43a68b3cf4296639",
+      "inputSha256": "772c59cd2264c9787b21d88b68ea6fe66271c9254f8600458fe0ec4162b01572",
+      "outputSha256": "5e58f0695a69087d1471dfa5dc165433fdd0b92b9d5bcb20cfbcc1e35f4d9e50",
+      "operationCount": 2,
+      "instructions": 2680517,
+      "memoryUsageKiB": 1152,
+      "outputBytes": 662
+    },
+    {
+      "target": "transform",
+      "caseName": "10-signed-190-ordinary",
+      "signedBuckets": 10,
+      "ordinaryLines": 190,
+      "wasmSha256": "f98e32af930b7e3cb27b9b48bed245515510bcdc141e5e0c43a68b3cf4296639",
+      "inputSha256": "be83c39ed7e42b88f33b14a2d9b8e6521b26e465deba0b517b69eb3693d9c821",
+      "outputSha256": "3681761deeec6e6fce779b25a199b19220e821843f755f7c696ef7c929a13722",
+      "operationCount": 10,
+      "instructions": 6350137,
+      "memoryUsageKiB": 1536,
+      "outputBytes": 3246
+    },
+    {
+      "target": "transform",
+      "caseName": "32-signed-0-ordinary",
+      "signedBuckets": 32,
+      "ordinaryLines": 0,
+      "wasmSha256": "f98e32af930b7e3cb27b9b48bed245515510bcdc141e5e0c43a68b3cf4296639",
+      "inputSha256": "e063b1fb2a3a5a3510e70e671c5d3ec57b89b9890b594571f2ee4a80bd4ee3d8",
+      "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+      "operationCount": 0,
+      "instructions": 1293491,
+      "memoryUsageKiB": 1216,
+      "outputBytes": 17
+    },
+    {
+      "target": "transform",
+      "caseName": "64-signed-0-ordinary",
+      "signedBuckets": 64,
+      "ordinaryLines": 0,
+      "wasmSha256": "f98e32af930b7e3cb27b9b48bed245515510bcdc141e5e0c43a68b3cf4296639",
+      "inputSha256": "ff522f2f15777ae61a8f0c3e26bb339b62defd0f5428fcc105703e3a3441223b",
+      "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+      "operationCount": 0,
+      "instructions": 2081125,
+      "memoryUsageKiB": 1344,
+      "outputBytes": 17
+    },
+    {
+      "target": "validation",
+      "caseName": "valid",
+      "signedBuckets": 2,
+      "ordinaryLines": 0,
+      "wasmSha256": "701582c4d750c8ce42abfff3d9627814459e522d1d0f225f466d242759e5b9fb",
+      "inputSha256": "a5ad27f20f9f3fdfdcf50f2a89a2abad1707b0384b8c3d900068a484f0dbc0f5",
+      "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+      "operationCount": 0,
+      "instructions": 2669227,
+      "memoryUsageKiB": 1152,
+      "outputBytes": 17
+    },
+    {
+      "target": "validation",
+      "caseName": "10-signed-190-ordinary",
+      "signedBuckets": 10,
+      "ordinaryLines": 190,
+      "wasmSha256": "701582c4d750c8ce42abfff3d9627814459e522d1d0f225f466d242759e5b9fb",
+      "inputSha256": "9dc0cfa93fd941775f39c3ad4b0c1e3e4bd6eb898f50130942ce5588251c551a",
+      "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+      "operationCount": 0,
+      "instructions": 6290093,
+      "memoryUsageKiB": 1536,
+      "outputBytes": 17
+    },
+    {
+      "target": "validation",
+      "caseName": "32-signed-0-ordinary",
+      "signedBuckets": 32,
+      "ordinaryLines": 0,
+      "wasmSha256": "701582c4d750c8ce42abfff3d9627814459e522d1d0f225f466d242759e5b9fb",
+      "inputSha256": "44481be9de2de0c34317706eba2b380e1da5343ea32fddec83ae8f7b1f2250cd",
+      "outputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
+      "operationCount": 1,
+      "instructions": 1336542,
+      "memoryUsageKiB": 1216,
+      "outputBytes": 131
+    },
+    {
+      "target": "validation",
+      "caseName": "64-signed-0-ordinary",
+      "signedBuckets": 64,
+      "ordinaryLines": 0,
+      "wasmSha256": "701582c4d750c8ce42abfff3d9627814459e522d1d0f225f466d242759e5b9fb",
+      "inputSha256": "9ef114054817969dba1d015df75ccc730d3719d8cd3c5ce1979f4faff8ff14f1",
+      "outputSha256": "ae2ae38ccf6541a36674d63149d99620a6d97957e2975fabc4bc6bf20d0ce5dc",
+      "operationCount": 1,
+      "instructions": 2159717,
+      "memoryUsageKiB": 1344,
+      "outputBytes": 131
+    }
+  ]
+}

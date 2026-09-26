@@ -1,0 +1,32 @@
+query M0006Baseline {
+  shop { id myshopifyDomain currencyCode }
+  currentAppInstallation { id accessScopes { handle } }
+  cartTransforms(first: 20) {
+    nodes { id functionId blockOnFailure }
+    pageInfo { hasNextPage endCursor }
+  }
+  validations(first: 20) {
+    nodes { id title enabled blockOnFailure shopifyFunction { id handle appKey } }
+    pageInfo { hasNextPage endCursor }
+  }
+  productByHandle(handle: "insignia-m0-001-fixture-20260924") {
+    id handle status onlineStoreUrl
+    variants(first: 20) {
+      nodes {
+        id title sku price inventoryPolicy taxable
+        inventoryItem {
+          id sku tracked requiresShipping
+          inventoryLevels(first: 20) {
+            nodes {
+              location { id name }
+              quantities(names: ["available", "committed", "on_hand"]) { name quantity }
+            }
+            pageInfo { hasNextPage endCursor }
+          }
+        }
+      }
+      pageInfo { hasNextPage endCursor }
+    }
+  }
+  locations(first: 20) { nodes { id name isActive } pageInfo { hasNextPage endCursor } }
+}

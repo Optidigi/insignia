@@ -1,0 +1,11 @@
+{
+  "observedAt": "2026-09-26 11:37:52 UTC",
+  "source": "Authenticated native Shopify Admin browser; page reloaded",
+  "store": "insignia-staging",
+  "route": "/store/insignia-staging/settings/payments/third-party-providers/24",
+  "provider": "Test payment gateway",
+  "state": "Active",
+  "availableAction": "Deactivate",
+  "testInstructions": "1 approved, 2 declined, 3 gateway failure",
+  "realProviderSettingsChanged": false
+}

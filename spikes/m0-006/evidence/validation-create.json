@@ -1,0 +1,16 @@
+{
+  "validationCreate": {
+    "validation": {
+      "id": "gid://shopify/Validation/143196318",
+      "title": "Insignia M0-006 temporary fixture validation",
+      "enabled": true,
+      "blockOnFailure": true,
+      "shopifyFunction": {
+        "id": "01a0dd73-c92d-7c82-b5fe-9db76eafaeb5",
+        "handle": "m0-006-live-validation",
+        "appKey": "942e6668fd1177524c0fc48b104b0ac3"
+      }
+    },
+    "userErrors": []
+  }
+}

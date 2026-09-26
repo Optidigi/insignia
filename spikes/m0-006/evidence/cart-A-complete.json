@@ -1,0 +1,43 @@
+{
+  "attributes": {
+    "_insignia_quote_v2": "SVNHMgIA6maWiEUaP6BKfoBFyk4H8N69AAAAAUNvqfVfzEpTrW3ar2jsRt1g_Fk94iNFAY5WLZQ7eVstAAJVU0QCVVMAAAAO86YAngAAUPQAAAADAAAAAAAAI4zhYqukdEfJqw_8-C81xdiifi8iP8Z4T3RBuGq_wtxmkRu7nB16ad7NqujSS6miNbffPhSBnYCiCCEutpZ5K3IA"
+  },
+  "item_count": 4,
+  "items": [
+    {
+      "final_line_price": 2000,
+      "final_price": 2000,
+      "id": 50529054163102,
+      "key": "50529054163102:8c197aadb62b511102541684517b5188",
+      "line_price": 2000,
+      "price": 2000,
+      "properties": {},
+      "quantity": 1
+    },
+    {
+      "final_line_price": 6066,
+      "final_price": 3033,
+      "id": 50529053343902,
+      "key": "50529053343902:554d3563c2dff803b8fce696df0004a7",
+      "line_price": 6066,
+      "price": 3033,
+      "properties": {
+        "_insignia_member_v2": "AAEAAC30tkaAngAAAAIAAAAAAAAL2Q"
+      },
+      "quantity": 2
+    },
+    {
+      "final_line_price": 3034,
+      "final_price": 3034,
+      "id": 50529053343902,
+      "key": "50529053343902:73aee5d01e1ae0ddaad93683d1713518",
+      "line_price": 3034,
+      "price": 3034,
+      "properties": {
+        "_insignia_member_v2": "AAAAAC30tkaAngAAAAEAAAAAAAAL2g"
+      },
+      "quantity": 1
+    }
+  ],
+  "status": 200
+}

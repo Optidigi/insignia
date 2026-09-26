@@ -1,0 +1,12 @@
+{
+  "metafields": [
+    {
+      "ownerId": "gid://shopify/Product/10294344482974",
+      "namespace": "$app",
+      "key": "m0_006_policy",
+      "type": "single_line_text_field",
+      "value": "required",
+      "compareDigest": "20a8c50c5ecf9241caed917954ec8fdea96818b4a48875bde931bed08d7ce483"
+    }
+  ]
+}

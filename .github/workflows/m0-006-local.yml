@@ -1,0 +1,54 @@
+name: M0-006 off-store live-receipt regression
+
+on:
+  pull_request:
+    paths:
+      - "spikes/m0-006/**"
+      - ".github/workflows/m0-006-local.yml"
+  push:
+    branches: [main]
+    paths:
+      - "spikes/m0-006/**"
+      - ".github/workflows/m0-006-local.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  local-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      RUSTUP_TOOLCHAIN: "1.98.1"
+      SHOPIFY_CLI_NO_ANALYTICS: "1"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24.21.0"
+      - name: Install pinned Rust and Wasm target
+        run: rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
+      - name: Install pinned local Shopify CLI
+        working-directory: spikes/m0-005
+        run: corepack pnpm install --frozen-lockfile
+      - name: Check retained receipts and both Function targets
+        working-directory: spikes/m0-006
+        run: |
+          export PATH="$GITHUB_WORKSPACE/spikes/m0-005/node_modules/.bin:$PATH"
+          ./scripts/check-local.sh
+      - name: Record final-head artifacts
+        working-directory: spikes/m0-006
+        run: |
+          git rev-parse HEAD
+          echo "PR head: ${{ github.event.pull_request.head.sha }}"
+          sha256sum evidence/ci-manifest.json
+          sha256sum extensions/transform/target/wasm32-unknown-unknown/release/m0-006-cart-transform.wasm
+          sha256sum extensions/validation/target/wasm32-unknown-unknown/release/m0-006-cart-validation.wasm
+      - name: Retain off-store CI artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m0-006-offstore-${{ github.sha }}
+          path: |
+            spikes/m0-006/evidence/ci-manifest.json
+            spikes/m0-006/extensions/transform/target/wasm32-unknown-unknown/release/m0-006-cart-transform.wasm
+            spikes/m0-006/extensions/validation/target/wasm32-unknown-unknown/release/m0-006-cart-validation.wasm

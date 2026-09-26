@@ -1,0 +1,69 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/78935261342",
+    "myshopifyDomain": "insignia-staging.myshopify.com",
+    "currencyCode": "USD"
+  },
+  "currentAppInstallation": {
+    "id": "gid://shopify/AppInstallation/781307904158",
+    "accessScopes": [
+      {
+        "handle": "read_cart_transforms"
+      },
+      {
+        "handle": "read_locations"
+      },
+      {
+        "handle": "read_merchant_managed_fulfillment_orders"
+      },
+      {
+        "handle": "read_orders"
+      },
+      {
+        "handle": "read_validations"
+      },
+      {
+        "handle": "write_cart_transforms"
+      },
+      {
+        "handle": "write_inventory"
+      },
+      {
+        "handle": "write_products"
+      },
+      {
+        "handle": "write_validations"
+      },
+      {
+        "handle": "read_inventory"
+      },
+      {
+        "handle": "read_products"
+      }
+    ]
+  },
+  "shopifyFunctions": {
+    "nodes": [
+      {
+        "id": "01a0dd73-c92d-7c82-b5fe-9db76eafaeb5",
+        "handle": "m0-006-live-validation",
+        "apiType": "cart_checkout_validation",
+        "apiVersion": "2026-07",
+        "appKey": "942e6668fd1177524c0fc48b104b0ac3"
+      },
+      {
+        "id": "01a0dd73-c92d-7e3d-9fce-0de90d2de0e6",
+        "handle": "m0-006-live-transform",
+        "apiType": "cart_transform",
+        "apiVersion": "2026-07",
+        "appKey": "942e6668fd1177524c0fc48b104b0ac3"
+      }
+    ]
+  },
+  "cartTransforms": {
+    "nodes": [],
+    "pageInfo": {
+      "hasNextPage": false
+    }
+  }
+}

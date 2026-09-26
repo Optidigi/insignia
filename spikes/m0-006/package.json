@@ -1,0 +1,7 @@
+{
+  "name": "insignia-m0-006-preview",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "packageManager": "pnpm@12.6.0"
+}

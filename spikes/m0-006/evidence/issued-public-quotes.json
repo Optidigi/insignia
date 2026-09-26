@@ -1,0 +1,121 @@
+{
+  "provenance": "fresh local Ed25519 issuer over live US/USD/date/market context; private key removed after cleanup",
+  "input": {
+    "shop": "insignia-staging.myshopify.com",
+    "smallVariantId": "50529053343902",
+    "shopLocalDate": "2026-09-26",
+    "country": "US",
+    "marketId": "64217284766",
+    "source": "both real M0-006 Function inputs from guest Small cart"
+  },
+  "orderA": {
+    "label": "A",
+    "header": {
+      "keyId": 60006,
+      "generationHex": "9688451a3fa04a7e8045ca4e07f0debd",
+      "epoch": 1,
+      "quoteHex": "436fa9f55fcc4a53ad6ddaaf68ec46dd",
+      "setHex": "60fc593de22345018e562d943b795b2d",
+      "currency": "USD",
+      "exponent": 2,
+      "country": "US",
+      "marketId": "64217284766",
+      "validThroughDay": 20724,
+      "count": 2,
+      "totalQuantity": 3,
+      "totalMinor": "9100"
+    },
+    "members": [
+      {
+        "index": 0,
+        "variantId": "50529053343902",
+        "quantity": 1,
+        "unitMinor": "3034"
+      },
+      {
+        "index": 1,
+        "variantId": "50529053343902",
+        "quantity": 2,
+        "unitMinor": "3033"
+      }
+    ],
+    "envelope": "SVNHMgIA6maWiEUaP6BKfoBFyk4H8N69AAAAAUNvqfVfzEpTrW3ar2jsRt1g_Fk94iNFAY5WLZQ7eVstAAJVU0QCVVMAAAAO86YAngAAUPQAAAADAAAAAAAAI4zhYqukdEfJqw_8-C81xdiifi8iP8Z4T3RBuGq_wtxmkRu7nB16ad7NqujSS6miNbffPhSBnYCiCCEutpZ5K3IA",
+    "carriers": [
+      "AAAAAC30tkaAngAAAAEAAAAAAAAL2g",
+      "AAEAAC30tkaAngAAAAIAAAAAAAAL2Q"
+    ]
+  },
+  "orderB": {
+    "label": "B",
+    "header": {
+      "keyId": 60006,
+      "generationHex": "9688451a3fa04a7e8045ca4e07f0debd",
+      "epoch": 1,
+      "quoteHex": "68c3b87603ed455b8ff0871cffe14500",
+      "setHex": "14320448c7804a3d8314d40783e86e72",
+      "currency": "USD",
+      "exponent": 2,
+      "country": "US",
+      "marketId": "64217284766",
+      "validThroughDay": 20724,
+      "count": 2,
+      "totalQuantity": 3,
+      "totalMinor": "9100"
+    },
+    "members": [
+      {
+        "index": 0,
+        "variantId": "50529053343902",
+        "quantity": 1,
+        "unitMinor": "3034"
+      },
+      {
+        "index": 1,
+        "variantId": "50529053343902",
+        "quantity": 2,
+        "unitMinor": "3033"
+      }
+    ],
+    "envelope": "SVNHMgIA6maWiEUaP6BKfoBFyk4H8N69AAAAAWjDuHYD7UVbj_CHHP_hRQAUMgRIx4BKPYMU1AeD6G5yAAJVU0QCVVMAAAAO86YAngAAUPQAAAADAAAAAAAAI4ztlvEI3mCE8lHeJLJxHkeP_tru-HXhby7Mdtqlgj1OaK7wCHuiaEb9rd5b8RkPGXB3i7oMSfAd_T9Amu97kSYO",
+    "carriers": [
+      "AAAAAC30tkaAngAAAAEAAAAAAAAL2g",
+      "AAEAAC30tkaAngAAAAIAAAAAAAAL2Q"
+    ]
+  },
+  "repair": {
+    "header": {
+      "keyId": 60006,
+      "generationHex": "9688451a3fa04a7e8045ca4e07f0debd",
+      "epoch": 1,
+      "quoteHex": "703865c7ee5441eda52be1d6dc47aa6a",
+      "setHex": "bd5e6e3e91404c778bd9f476cf4377db",
+      "currency": "USD",
+      "exponent": 2,
+      "country": "US",
+      "marketId": "64217284766",
+      "validThroughDay": 20724,
+      "count": 2,
+      "totalQuantity": 3,
+      "totalMinor": "8800"
+    },
+    "members": [
+      {
+        "index": 0,
+        "variantId": "50529053343902",
+        "quantity": 1,
+        "unitMinor": "2934"
+      },
+      {
+        "index": 1,
+        "variantId": "50529053343902",
+        "quantity": 2,
+        "unitMinor": "2933"
+      }
+    ],
+    "envelope": "SVNHMgIA6maWiEUaP6BKfoBFyk4H8N69AAAAAXA4ZcfuVEHtpSvh1txHqmq9Xm4-kUBMd4vZ9HbPQ3fbAAJVU0QCVVMAAAAO86YAngAAUPQAAAADAAAAAAAAImCOPlvmBsarnIkEBIYJLHDid9bUAT9YKMs8knsQE6ZwfCSEEehxwn7slFBsE0AU68trkPderqLcQY59lADiBAwP",
+    "carriers": [
+      "AAAAAC30tkaAngAAAAEAAAAAAAALdg",
+      "AAEAAC30tkaAngAAAAIAAAAAAAALdQ"
+    ]
+  }
+}
