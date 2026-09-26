@@ -1,0 +1,6 @@
+query M0003RExistingOrders {
+  orders(first: 10, sortKey: CREATED_AT, reverse: true) {
+    nodes { id name createdAt test displayFinancialStatus displayFulfillmentStatus }
+    pageInfo { hasNextPage endCursor }
+  }
+}

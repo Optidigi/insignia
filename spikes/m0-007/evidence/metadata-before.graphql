@@ -1,0 +1,17 @@
+query M0007MetadataBefore {
+  shop {
+    id ianaTimezone
+    publicConfig: metafield(key: "m0_007_public_config") {
+      id namespace key type value compareDigest owner { __typename }
+    }
+  }
+  product(id: "gid://shopify/Product/10294344482974") {
+    id
+    registration: metafield(key: "m0_007_registration") {
+      id namespace key type value compareDigest owner { __typename }
+    }
+    policy: metafield(key: "m0_007_policy") {
+      id namespace key type value compareDigest owner { __typename }
+    }
+  }
+}

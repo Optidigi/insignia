@@ -1,0 +1,42 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/78935261342",
+    "ianaTimezone": "America/New_York",
+    "publicConfig": {
+      "id": "gid://shopify/Metafield/190482985320606",
+      "namespace": "app--427859050497",
+      "key": "m0_007_public_config",
+      "type": "json",
+      "value": "{\"generationHex\":\"3338074a24c144e185038a2e82fcbc6f\",\"epoch\":1,\"maxBuckets\":10,\"maxPhysicalQuantity\":10,\"allowNoMarket\":false,\"keys\":[{\"id\":7001,\"publicHex\":\"327959381bbd215cc596d062e2fe1e234b4ecf27cf2bd8adf1b23e0f71c98cbe\",\"revoked\":false,\"firstDay\":20717,\"lastDay\":20724},{\"id\":7002,\"publicHex\":\"11d4a50daefc7a6c42d3fc96bbb30c2394e379b9e05b2d9f48e0f404e59200db\",\"revoked\":false,\"firstDay\":20723,\"lastDay\":20727},{\"id\":7003,\"publicHex\":\"fb30b717fb461896b63c4968e7098575441034a09c25c08ee777510f7c7789f9\",\"revoked\":false,\"firstDay\":20722,\"lastDay\":20724}]}",
+      "compareDigest": "59bbb50c4ad9345840da55a9b4d1d652a22ffab3e03a2baaee33e6e110546bf1",
+      "owner": {
+        "__typename": "Shop"
+      }
+    }
+  },
+  "product": {
+    "id": "gid://shopify/Product/10294344482974",
+    "registration": {
+      "id": "gid://shopify/Metafield/190482986696862",
+      "namespace": "app--427859050497",
+      "key": "m0_007_registration",
+      "type": "single_line_text_field",
+      "value": "3338074a24c144e185038a2e82fcbc6f:1:ready",
+      "compareDigest": "b2430f0d613c857858ebc8755d7e97de86af56d4b1daa45e7553aedb9167c73f",
+      "owner": {
+        "__typename": "Product"
+      }
+    },
+    "policy": {
+      "id": "gid://shopify/Metafield/190483046727838",
+      "namespace": "app--427859050497",
+      "key": "m0_007_policy",
+      "type": "single_line_text_field",
+      "value": "3338074a24c144e185038a2e82fcbc6f:2:optional",
+      "compareDigest": "2e44a204042b938cc212bb30bbe25ab4a4916b760ce4ebe1c9aa2b03b9d169f9",
+      "owner": {
+        "__typename": "Product"
+      }
+    }
+  }
+}

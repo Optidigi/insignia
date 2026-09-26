@@ -11,7 +11,11 @@ query CartTransformRunInput {
         __typename
         ... on ProductVariant {
           id
-          product { policy: metafield(key: "m0_006_policy") { value } }
+          product {
+            id
+            registration: metafield(key: "m0_007_registration") { value }
+            policy: metafield(key: "m0_007_policy") { value }
+          }
         }
       }
     }
@@ -19,6 +23,6 @@ query CartTransformRunInput {
   localization { country { isoCode } market { id } }
   shop {
     localTime { date }
-    publicConfig: metafield(key: "m0_006_public_config") { value }
+    publicConfig: metafield(key: "m0_007_public_config") { value }
   }
 }

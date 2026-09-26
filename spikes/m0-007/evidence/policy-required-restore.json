@@ -1,0 +1,18 @@
+{
+  "metafieldsSet": {
+    "metafields": [
+      {
+        "id": "gid://shopify/Metafield/190483046727838",
+        "namespace": "app--427859050497",
+        "key": "m0_007_policy",
+        "type": "single_line_text_field",
+        "value": "3338074a24c144e185038a2e82fcbc6f:1:required",
+        "compareDigest": "835c8bd5650fdd565dc1c9df3bc4bddab8739f0e66d5203ad814ea73bac26390",
+        "owner": {
+          "__typename": "Product"
+        }
+      }
+    ],
+    "userErrors": []
+  }
+}

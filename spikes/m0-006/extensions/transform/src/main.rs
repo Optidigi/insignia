@@ -5,6 +5,10 @@ use insignia_m0_005_authorization::{
 use shopify_function::prelude::*;
 use shopify_function::Result;
 
+#[path = "../../../../m0-007/policy-model/src/projection.rs"]
+mod product_policy;
+use product_policy::PlainPolicy;
+
 // This staging experiment admits at most ten customized buckets, regardless of
 // the app-owned registry value. The verifier still checks the signed count.
 const MAX_EXPERIMENT_BUCKETS: u16 = 10;
@@ -128,17 +132,20 @@ fn cart_transform_run(input: schema::run::CartTransformRunInput) -> Result<Outpu
             return Ok(empty());
         };
         let marked = line.member().is_some();
-        let policy = variant.product().policy().map(|p| p.value().as_str());
-        if marked && !matches!(policy, Some("required" | "optional")) {
+        let decision = product_policy::classify(
+            variant.product().registration().map(|m| m.value().as_str()),
+            variant.product().policy().map(|m| m.value().as_str()),
+            config.generation,
+        );
+        if !decision.signed_allowed {
             return Ok(empty());
         }
-        let required = match policy {
-            Some("required") => true,
-            Some("optional") | None => false,
-            _ => return Ok(empty()),
-        };
+        let required = decision.plain == PlainPolicy::Required;
         if !marked {
-            if required {
+            if matches!(
+                decision.plain,
+                PlainPolicy::Required | PlainPolicy::Uncertain
+            ) {
                 return Ok(empty());
             }
             continue;
@@ -231,7 +238,7 @@ mod tests {
         serde_json::from_slice(
             &std::fs::read(
                 std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                    .join("../fixtures/transform-valid.json"),
+                    .join("../../../m0-007/fixtures/transform-valid.json"),
             )
             .unwrap(),
         )
@@ -245,6 +252,67 @@ mod tests {
         let output = cart_transform_run(generated).unwrap();
         output.serialize(&mut context).unwrap();
         context.finalize_output_and_return().unwrap()
+    }
+
+    #[test]
+    fn signed_prices_survive_policy_revision_and_one_lost_anchor() {
+        let mut input = fixture();
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"]["value"] =
+                "11111111111111111111111111111111:2:ready".into();
+            line["merchandise"]["product"]["policy"]["value"] =
+                "11111111111111111111111111111111:2:optional".into();
+        }
+        assert_eq!(
+            run(input.clone())["operations"].as_array().unwrap().len(),
+            2
+        );
+        input["cart"]["lines"][0]["merchandise"]["product"]["policy"] = serde_json::Value::Null;
+        assert_eq!(
+            run(input.clone())["operations"].as_array().unwrap().len(),
+            2
+        );
+        input["cart"]["lines"][0]["merchandise"]["product"]["registration"]["value"] =
+            "22222222222222222222222222222222:2:ready".into();
+        assert!(run(input)["operations"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn signed_quote_with_no_product_anchors_still_requires_shop_keys() {
+        let mut input = fixture();
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"] = serde_json::Value::Null;
+        }
+        assert_eq!(
+            run(input.clone())["operations"].as_array().unwrap().len(),
+            2
+        );
+        input["shop"]["publicConfig"] = serde_json::Value::Null;
+        assert!(run(input)["operations"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn signed_quote_with_only_illegible_policy_emits_no_price() {
+        let mut input = fixture();
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"]["value"] = "bad".into();
+        }
+        assert!(run(input)["operations"].as_array().unwrap().is_empty());
+    }
+
+    #[test]
+    fn unsigned_marker_removed_and_invalid_signature_emit_no_price() {
+        let mut input = fixture();
+        input["cart"]["quote"] = serde_json::Value::Null;
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["member"] = serde_json::Value::Null;
+        }
+        assert!(run(input)["operations"].as_array().unwrap().is_empty());
+        let mut input = fixture();
+        input["cart"]["quote"]["value"] = "bad".into();
+        assert!(run(input)["operations"].as_array().unwrap().is_empty());
     }
 
     #[test]
@@ -298,7 +366,7 @@ mod tests {
             ("64-signed-0-ordinary", 0),
         ] {
             let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-                .join(format!("../fixtures/transform-{name}.json"));
+                .join(format!("../../../m0-007/fixtures/transform-{name}.json"));
             let input = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
             let output = run(input);
             let bytes = serde_json::to_vec(&output).unwrap();
@@ -355,7 +423,8 @@ mod tests {
             },
             {
                 let mut x = fixture();
-                x["cart"]["lines"][1]["merchandise"]["product"]["policy"] = serde_json::Value::Null;
+                x["cart"]["lines"][1]["merchandise"]["product"]["registration"] =
+                    serde_json::json!({"value":"22222222222222222222222222222222:1:ready"});
                 x
             },
             {

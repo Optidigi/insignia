@@ -1,0 +1,22 @@
+{
+  "metafieldsDelete": {
+    "deletedMetafields": [
+      {
+        "ownerId": "gid://shopify/Product/10294344482974",
+        "namespace": "app--427859050497",
+        "key": "m0_007_registration"
+      },
+      {
+        "ownerId": "gid://shopify/Product/10294344482974",
+        "namespace": "app--427859050497",
+        "key": "m0_007_policy"
+      },
+      {
+        "ownerId": "gid://shopify/Shop/78935261342",
+        "namespace": "app--427859050497",
+        "key": "m0_007_public_config"
+      }
+    ],
+    "userErrors": []
+  }
+}
