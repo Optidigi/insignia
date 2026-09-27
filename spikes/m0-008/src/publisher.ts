@@ -21,6 +21,8 @@ export interface PolicyTransport {
   read(intent: PublishIntent): Promise<RemoteState>;
   set(intent: PublishIntent, field: Field, value: string, compareDigest: Digest): Promise<WriteResult>;
 }
+/** Must be backed by trusted installation state; the local fake is synthetic. */
+export interface InstallationPort { currentGenerationHex(ownerId: string): Promise<string> }
 export type Check = { kind: 'established'; evidence: string } | { kind: 'pending'; prerequisite: string };
 /** Must cover every purchasing channel and carts already in flight, not just Admin status. */
 export interface AdmissionPort { check(intent: PublishIntent, previous: Previous): Promise<Check> }
@@ -104,12 +106,19 @@ export class Publisher {
   private readonly remote: PolicyTransport;
   private readonly admission: AdmissionPort;
   private readonly activation: ActivationPort;
-  constructor(journal: Journal, remote: PolicyTransport, admission: AdmissionPort, activation: ActivationPort) {
-    this.journal = journal; this.remote = remote; this.admission = admission; this.activation = activation;
+  private readonly installation: InstallationPort;
+  constructor(journal: Journal, remote: PolicyTransport, admission: AdmissionPort,
+    activation: ActivationPort, installation: InstallationPort) {
+    this.journal = journal; this.remote = remote; this.admission = admission;
+    this.activation = activation; this.installation = installation;
   }
 
   async start(intent: PublishIntent): Promise<StartResult> {
     if (!validIntent(intent)) return { kind: 'operator-action', reason: 'invalid publication identity or digest' };
+    try {
+      if (!await this.generationMatches(intent))
+        return { kind: 'operator-action', reason: 'publication installation generation is no longer current' };
+    } catch (e) { return this.errorResult(e); }
     const old = await this.journal.get(intent.operationId);
     if (old) return old.fingerprint === fingerprint(intent)
       ? { kind: 'replayed', phase: old.phase }
@@ -119,6 +128,10 @@ export class Publisher {
     let state: RemoteState;
     try { state = await this.remote.read(intent); }
     catch (e) { return this.errorResult(e); }
+    try {
+      if (!await this.generationMatches(intent))
+        return { kind: 'operator-action', reason: 'installation changed during publication preparation' };
+    } catch (e) { return this.errorResult(e); }
     const previous = prior(intent, state);
     if (previous === 'invalid') return { kind: 'operator-action', reason: 'partial, malformed, stale, or wrong-generation prior state' };
     if (open?.phase === 'active' && previous === null)
@@ -142,6 +155,10 @@ export class Publisher {
   async advance(operationId: string): Promise<StepResult> {
     const op = await this.journal.get(operationId);
     if (!op) return { kind: 'operator-action', reason: 'no durable operation intent' };
+    try {
+      if (!await this.generationMatches(op.intent))
+        return { kind: 'operator-action', reason: 'publication installation generation is no longer current' };
+    } catch (e) { return this.errorResult(e); }
     if (op.phase === 'active') return { kind: 'active', phase: 'active' };
     if (op.phase === 'retry-exhausted')
       return { kind: 'operator-action', reason: 'transport retry budget exhausted; operator reconciliation required' };
@@ -195,6 +212,8 @@ export class Publisher {
           if (stale) return stale;
           return { kind: 'activation-pending', prerequisite: gate.prerequisite };
         }
+        if (!await this.generationMatches(i))
+          return { kind: 'operator-action', reason: 'installation changed before activation' };
         op.phase = 'active'; op.activationEvidence = gate.evidence;
       }
       op.retries = 0;
@@ -215,12 +234,13 @@ export class Publisher {
     }
   }
 
-  /** Caller supplies the trusted current installation generation. This checks issuance eligibility only. */
-  async newQuoteAllowed(ownerId: string, revision: number, currentGenerationHex: string): Promise<boolean> {
-    if (!HEX.test(currentGenerationHex)) return false;
-    const op = await this.journal.currentFor(ownerId);
-    return op !== null && op.phase === 'active' && op.intent.revision === revision &&
-      op.intent.generationHex === currentGenerationHex && op.activationEvidence !== null;
+  /** This checks issuance eligibility only; the signer remains separate. */
+  async newQuoteAllowed(ownerId: string, revision: number): Promise<boolean> {
+    try {
+      const op = await this.journal.currentFor(ownerId);
+      return op !== null && op.phase === 'active' && op.intent.revision === revision &&
+        await this.generationMatches(op.intent) && op.activationEvidence !== null;
+    } catch { return false; }
   }
 
   private matchesPriorOrDesired(op: Operation, state: RemoteState, field: Field): boolean {
@@ -238,6 +258,8 @@ export class Publisher {
   private async ensure(i: PublishIntent, field: Field, desired: string, expected: Digest,
     observed: Cell | null): Promise<StepResult | null> {
     if (observed?.value === desired) return null; // uncertain prior write: exact read beats a blind replay
+    if (!await this.generationMatches(i))
+      return { kind: 'operator-action', reason: 'installation changed before external write' };
     if (!sameDigest(observed, expected)) return { kind: 'conflict', reason: `${field} compare digest changed` };
     const result = await this.remote.set(i, field, desired, expected);
     if (result.kind === 'user-errors') {
@@ -250,5 +272,9 @@ export class Publisher {
   private errorResult(error: unknown): { kind: 'operator-action'; reason: string } {
     return { kind: 'operator-action', reason: error instanceof TransportFault
       ? `${error.kind}: ${error.message}` : 'unexpected local adapter failure' };
+  }
+  private async generationMatches(intent: PublishIntent): Promise<boolean> {
+    const current = await this.installation.currentGenerationHex(intent.ownerId);
+    return HEX.test(current) && current === intent.generationHex;
   }
 }

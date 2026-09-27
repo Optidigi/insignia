@@ -1,5 +1,5 @@
 /** Deterministic remote states emitted by the TS publisher for the Rust consumer. */
-import { FakeActivation, FakeAdmission, FakeRemote, MemoryJournal } from './fakes.ts';
+import { FakeActivation, FakeAdmission, FakeInstallation, FakeRemote, MemoryJournal } from './fakes.ts';
 import { Publisher } from './publisher.ts';
 import type { Mode, PublishIntent, RemoteState } from './publisher.ts';
 
@@ -15,7 +15,7 @@ export async function consumerCases(): Promise<string> {
   const activation = new FakeActivation();
   admission.result = established;
   activation.result = established;
-  const publisher = new Publisher(journal, remote, admission, activation);
+  const publisher = new Publisher(journal, remote, admission, activation, new FakeInstallation(generationHex));
   const rows = ['case|registration|policy|plain|signed'];
   const capture = (name: string, plain: string, signed: boolean): void => {
     const { registration, policy } = remote.snapshot();

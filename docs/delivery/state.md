@@ -1,6 +1,6 @@
 # Insignia — current delivery state
 
-Updated: 27 September 2026 UTC, M0-008 local publication/recovery package in progress after PR #10's verified merge. This is an operational index, not decision authority.
+Updated: 27 September 2026 UTC, M0-008 local publication/recovery outcome prepared for principal review after PR #10's verified merge. This is an operational index, not decision authority.
 
 | Field | Current state |
 |---|---|
@@ -29,7 +29,7 @@ Updated: 27 September 2026 UTC, M0-008 local publication/recovery package in pro
 | M0-007 cleanup and residue | Exact owned Transform/Validation, three `$app` keys, temporary code, preview and ephemeral private keys removed; fixture archived/unpublished, password protected, guest cart clear. #1001–#1005 statuses unchanged. Shop location Small `5/2/7`, Medium `8/2/10` match start. #1006 remains as a refunded synthetic test record; no manual stock/refund adjustment or extra payment. Existing installation scopes unchanged. |
 | PR #10 approval and merge | External principal approval covered base/effective merge base `eaa386c90786e560d49f8311878c95d26cc3c7b8` and head `9941f68316316a3cad07885d6e78b067e6784fbd`, with passing final-head workflows `36266439061` and `36266439067`. Owner authorized a normal merge only. Remote `main` is merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`, with exact approved parents and head tree. No native approval was fabricated. |
 | Option A approval | [Approved decision](../architecture/OPTION-A-APPROVED.md) closes the A/B choice. Correctly published app-owned Shopify policy and correctly operating Function inputs are trusted; unexpected complete trusted-state loss/coherent rollback outside the supported contract may permit a plain purchase before detection. Application-driven unsafe publication remains a defect. Whole-quote v2 remains provisional. |
-| M0-008 local execution | Branch `spike/m0-008-publication-recovery` started from verified remote main `0f2c80a316228bd69fdd2ff272e967ff14647b2b`. One docs writer and one publisher writer have disjoint worktrees; the orchestrator owns integration, history/CI and handoff. No merchant-authenticated call or staging action belongs to this package. |
+| M0-008 local execution | [Review packet](review-packet-M0-008.md) and [publication contract](../../spikes/m0-008/publication-contract.md): branch `spike/m0-008-publication-recovery` started from verified remote main `0f2c80a316228bd69fdd2ff272e967ff14647b2b`. Two assigned writers used disjoint worktrees; the orchestrator integrated and fresh read-only Spec/security sessions reviewed. v1.2 Option A amendment, fake restartable publisher and 16-state cross-consumer fixture passed local checks. Admission, in-flight-cart drainage, durable journal and Function-projection activation remain unproven, so the default outcome is activation-pending. No merchant-authenticated call or staging action occurred. |
 | Next review | Return one M0-008 implementation/evidence PR for principal review. Production activation assumptions, publication acceptance, G7/G8 and other unaccepted gates remain explicit. No next-PR merge, protocol freeze, full gate pass, M1 or deployment is authorized. |
 
 The M0-001/M0-002 records remain historical. PostgreSQL, R2 and billing are later prerequisites outside this DB-free diagnostic slice.

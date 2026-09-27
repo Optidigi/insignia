@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { ActivationPort, AdmissionPort, Cell, Check, Digest, Field, Journal, Operation,
+import type { ActivationPort, AdmissionPort, Cell, Check, Digest, Field, InstallationPort, Journal, Operation,
   PolicyTransport, Previous, PublishIntent, RemoteState, WriteResult } from './publisher.ts';
 import { TransportFault } from './publisher.ts';
 
@@ -62,4 +62,10 @@ export class FakeAdmission implements AdmissionPort {
 export class FakeActivation implements ActivationPort {
   result: Check = { kind: 'pending', prerequisite: 'establish admission/Function projection boundary beyond Admin readback and samples' };
   async check(_intent: PublishIntent, _previous: Previous, _admin: RemoteState): Promise<Check> { return this.result; }
+}
+/** Synthetic current installation identity; production sourcing and rollover fencing remain open. */
+export class FakeInstallation implements InstallationPort {
+  generationHex: string;
+  constructor(generationHex: string) { this.generationHex = generationHex; }
+  async currentGenerationHex(_ownerId: string): Promise<string> { return this.generationHex; }
 }
