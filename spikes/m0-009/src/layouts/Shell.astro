@@ -1,0 +1,38 @@
+---
+import '../styles/app.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const apiKey = import.meta.env.PUBLIC_SHOPIFY_API_KEY;
+if (apiKey !== '942e6668fd1177524c0fc48b104b0ac3')
+  throw new Error('M0-009 public Shopify client ID build setting unavailable');
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="shopify-api-key" content={apiKey} />
+    <title>{title} · Insignia</title>
+    <script is:inline src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+    <script is:inline src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="app-brand">Insignia</div>
+        <nav aria-label="App pages" class="app-nav">
+          <a href="/">Overview</a>
+          <a href="/draft">Synthetic draft</a>
+        </nav>
+      </header>
+      <slot />
+    </div>
+    <script>import '../client/bootstrap';</script>
+  </body>
+</html>

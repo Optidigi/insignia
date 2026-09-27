@@ -1,0 +1,21 @@
+# Development-only web proof for the existing insignia app. Never deploy this config.
+client_id = "942e6668fd1177524c0fc48b104b0ac3"
+web_directories = ["web"]
+name = "insignia"
+application_url = "https://example.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2026-07"
+
+[access_scopes]
+# Existing explicit staging grant. Do not add or remove scopes in this proof.
+scopes = "read_cart_transforms,write_cart_transforms,write_products,write_inventory,read_locations,read_orders,read_merchant_managed_fulfillment_orders,read_validations,write_validations"
+optional_scopes = []
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = []

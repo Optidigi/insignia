@@ -1,0 +1,19 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #303030;
+  background: #f6f6f7;
+}
+
+body { margin: 0; }
+
+.app-shell { max-width: 68rem; margin: 0 auto; padding: 1.5rem; }
+.app-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.5rem; }
+.app-brand { font-size: 1.3rem; font-weight: 700; }
+.app-nav { display: flex; gap: 1rem; }
+.app-nav a { color: inherit; text-decoration: underline; text-underline-offset: 0.2rem; }
+.app-nav a:focus-visible { outline: 2px solid #005bd3; outline-offset: 3px; }
+#protected-content { min-height: 12rem; }
+.draft-editor { display: grid; gap: 1rem; max-width: 32rem; }
+.draft-feedback { min-height: 1.5rem; margin: 0; }
+.draft-feedback[data-tone="error"] { color: #b42318; }
+.draft-feedback[data-tone="success"] { color: #067647; }

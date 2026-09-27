@@ -1,0 +1,22 @@
+---
+import { getRuntime } from '../../server/runtime.ts';
+import { viewerTag } from '../../server/draft-api.ts';
+
+let result;
+try { result = await getRuntime().auth.authenticate(Astro.request); }
+catch { return new Response('Authentication temporarily unavailable', { status: 503 }); }
+if (!result.ok) return result.response;
+const { context } = result;
+---
+
+<s-page heading="Insignia readiness" data-viewer={viewerTag(context)}>
+  <s-section heading="Verified Admin context">
+    <s-paragraph>Shop: {context.shop}</s-paragraph>
+    <s-paragraph>Shop ID: {context.shopId}</s-paragraph>
+    <s-paragraph>Existing installation: {context.installationId}</s-paragraph>
+    <s-paragraph>Local synthetic edit: {context.canEdit ? 'permitted' : 'read only'}</s-paragraph>
+  </s-section>
+  <s-section heading="Scope of this proof">
+    <s-paragraph>This G7 page reads identity and permissions. It does not publish product policy or alter commerce resources.</s-paragraph>
+  </s-section>
+</s-page>

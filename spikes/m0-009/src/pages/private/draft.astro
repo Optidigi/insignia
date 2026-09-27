@@ -1,0 +1,22 @@
+---
+import { getRuntime } from '../../server/runtime.ts';
+import { viewerTag } from '../../server/draft-api.ts';
+
+let runtime;
+let result;
+try {
+  runtime = getRuntime();
+  result = await runtime.auth.authenticate(Astro.request);
+} catch { return new Response('Authentication temporarily unavailable', { status: 503 }); }
+if (!result.ok) return result.response;
+const { context } = result;
+const draft = runtime.drafts.get(context.shop, context.staffId);
+---
+
+<s-page heading="Synthetic draft" data-viewer={viewerTag(context)}>
+  <s-section heading="Local edit proof">
+    <s-paragraph>This label is held only in this server process. It does not write to Shopify.</s-paragraph>
+    <s-paragraph>Current label: {draft.label}</s-paragraph>
+    <div id="draft-editor" data-label={draft.label} data-version={draft.version} data-viewer={viewerTag(context)} data-can-edit={context.canEdit ? 'true' : 'false'}></div>
+  </s-section>
+</s-page>
