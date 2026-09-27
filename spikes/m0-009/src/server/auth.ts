@@ -39,6 +39,8 @@ export interface AuthContext {
   canEdit: boolean;
 }
 export type AuthResult = { ok: true; context: AuthContext } | { ok: false; response: Response };
+/** The verified ID token expired before its online exchange completed. */
+export class IdentityRefreshRequired extends Error {}
 interface Cached { grant: OnlineGrant; installation: InstallationRead; untilMs: number }
 
 const SHOP = /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/;
@@ -82,7 +84,11 @@ export class AuthService {
 
     let cached: Cached;
     try { cached = await this.online(match[1]!, identity, now); }
-    catch { return { ok: false, response: safeResponse(503, 'Authentication temporarily unavailable') }; }
+    catch (error) {
+      if (error instanceof IdentityRefreshRequired)
+        return { ok: false, response: safeResponse(401, 'Authentication required', true) };
+      return { ok: false, response: safeResponse(503, 'Authentication temporarily unavailable') };
+    }
     const { grant, installation } = cached;
     if (grant.shop !== identity.shop || grant.staffId !== identity.staffId ||
         !grant.accessToken || !Number.isFinite(grant.expiresAtMs) || grant.expiresAtMs <= now ||

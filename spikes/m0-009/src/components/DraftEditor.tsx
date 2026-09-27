@@ -3,9 +3,9 @@ import { useRef, useState } from 'preact/hooks';
 
 type Draft = { label: string; version: number };
 
-type Props = Draft & { canEdit: boolean };
+type Props = Draft & { canEdit: boolean; viewer: string };
 
-function DraftEditor({ label: initialLabel, version: initialVersion, canEdit }: Props) {
+function DraftEditor({ label: initialLabel, version: initialVersion, canEdit, viewer }: Props) {
   const [label, setLabel] = useState(initialLabel);
   const [savedLabel, setSavedLabel] = useState(initialLabel);
   const [version, setVersion] = useState(initialVersion);
@@ -13,8 +13,8 @@ function DraftEditor({ label: initialLabel, version: initialVersion, canEdit }: 
   const [fieldError, setFieldError] = useState('');
   const [feedback, setFeedback] = useState('');
   const [feedbackTone, setFeedbackTone] = useState<'error' | 'success' | ''>('');
-  const field = useRef<HTMLElement>(null);
   const saving = useRef(false);
+  const focusField = () => document.getElementById('synthetic-label')?.focus();
 
   const onFieldChange = (event: Event) => {
     const value = (event.currentTarget as HTMLElement & { value: string }).value;
@@ -29,7 +29,7 @@ function DraftEditor({ label: initialLabel, version: initialVersion, canEdit }: 
     const nextLabel = label.trim();
     if (nextLabel.length === 0 || Array.from(nextLabel).length > 80 || /\p{Cc}/u.test(nextLabel)) {
       setFieldError('Enter a label between 1 and 80 characters.');
-      field.current?.focus();
+      focusField();
       return;
     }
     if (nextLabel === savedLabel) {
@@ -48,7 +48,7 @@ function DraftEditor({ label: initialLabel, version: initialVersion, canEdit }: 
       const response = await fetch('/api/draft', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({ label: nextLabel, version }),
+        body: JSON.stringify({ label: nextLabel, version, viewer }),
         cache: 'no-store',
         redirect: 'error',
       });
@@ -57,7 +57,7 @@ function DraftEditor({ label: initialLabel, version: initialVersion, canEdit }: 
       if (response.status === 409) throw new Error('This draft changed. Reload the page before saving again.');
       if (response.status === 422) {
         setFieldError('Enter a valid label between 1 and 80 characters.');
-        field.current?.focus();
+        focusField();
         return;
       }
       if ((response.status !== 200 && response.status !== 201) ||
@@ -83,10 +83,10 @@ function DraftEditor({ label: initialLabel, version: initialVersion, canEdit }: 
   return (
     <form class="draft-editor" onSubmit={(event) => { event.preventDefault(); void save(); }}>
       <s-text-field
-        ref={field}
+        id="synthetic-label"
         label="Synthetic draft label"
         value={label}
-        error={fieldError || undefined}
+        error={fieldError}
         disabled={!canEdit || busy}
         onInput={onFieldChange}
         onChange={onFieldChange}
@@ -116,9 +116,10 @@ function isDraft(value: unknown): value is Draft {
 export function mountDraftEditor(root: HTMLElement): () => void {
   const version = Number(root.dataset.version);
   if (!Number.isSafeInteger(version) || version < 0 || root.dataset.label === undefined ||
+      !/^[0-9a-f]{64}$/.test(root.dataset.viewer ?? '') ||
       (root.dataset.canEdit !== 'true' && root.dataset.canEdit !== 'false')) {
     throw new Error('Invalid draft fragment');
   }
-  render(<DraftEditor label={root.dataset.label} version={version} canEdit={root.dataset.canEdit === 'true'} />, root);
+  render(<DraftEditor label={root.dataset.label} version={version} canEdit={root.dataset.canEdit === 'true'} viewer={root.dataset.viewer!} />, root);
   return () => render(null, root);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { AuthService } from '../src/server/auth.ts';
+import { AuthService, IdentityRefreshRequired } from '../src/server/auth.ts';
 import type { AuthPort, InstallationRead, OnlineGrant, VerifiedIdentity } from '../src/server/auth.ts';
 
 const alpha = 'alpha.myshopify.com';
@@ -112,5 +112,32 @@ describe('verified online identity boundary', () => {
     expect(results.every(r => r.ok)).toBe(true);
     expect(h.exchanges).toBe(1);
     expect(h.reads).toEqual([alpha]);
+  });
+
+  it('recovers with a fresh token after an exchange-time expiry and never retries generic outages', async () => {
+    const h = fixture();
+    h.add('old', alpha, 'allowed'); h.add('fresh', alpha, 'allowed');
+    const exchange = h.port.exchangeOnline;
+    h.port.exchangeOnline = async (token, identity) => {
+      if (token === 'old') throw new IdentityRefreshRequired();
+      return exchange(token, identity);
+    };
+    const old = await h.service.authenticate(request('old'));
+    expect(old.ok).toBe(false);
+    if (!old.ok) {
+      expect(old.response.status).toBe(401);
+      expect(old.response.headers.get('X-Shopify-Retry-Invalid-Session-Request')).toBe('1');
+    }
+    const recovered = await h.service.authenticate(request('fresh'));
+    expect(recovered.ok).toBe(true);
+    expect(h.exchanges).toBe(1);
+    h.port.exchangeOnline = async () => { throw new Error('network unavailable'); };
+    h.add('other-session', alpha, 'owner');
+    const outage = await h.service.authenticate(request('other-session'));
+    expect(outage.ok).toBe(false);
+    if (!outage.ok) {
+      expect(outage.response.status).toBe(503);
+      expect(outage.response.headers.has('X-Shopify-Retry-Invalid-Session-Request')).toBe(false);
+    }
   });
 });

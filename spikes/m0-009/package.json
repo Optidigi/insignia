@@ -6,9 +6,10 @@
   "packageManager": "pnpm@12.6.0",
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/require-public-id.mjs && astro build",
     "check": "astro check && tsc --noEmit -p tsconfig.server.json && vitest run",
     "test": "vitest run",
+    "smoke:built": "node scripts/smoke-built.mjs",
     "start": "node dist/server/entry.mjs"
   },
   "dependencies": {
