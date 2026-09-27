@@ -1,0 +1,103 @@
+{
+  "review_date": "2026-09-27",
+  "repository": "Optidigi/insignia",
+  "pr": 12,
+  "verdict": "APPROVED_BOUNDED_G7_CHECKPOINT",
+  "refs": {
+    "base": "85282155631d6ab8048d65a3d2ca8ab050c76c06",
+    "effective_merge_base": "85282155631d6ab8048d65a3d2ca8ab050c76c06",
+    "head": "5596c34a31ea603cd897ceea280192d09bc24c99",
+    "ci_synthetic_merge": "352333b9020a0850870cb695812c704b03f4ebcc",
+    "head_and_ci_tree": "99d1b2bb17c832907ce84ce9f35816d458340b3d",
+    "merge_parents_verified": true,
+    "tree_equality_verified": true
+  },
+  "github_inspection": {
+    "metadata_state": "open_unmerged_mergeable",
+    "changed_file_count": 36,
+    "compare_ahead_commits": 3,
+    "compare_behind_commits": 0,
+    "reviewed_sources": [
+      "docs/delivery/review-packet-M0-009.md",
+      "spikes/m0-009/evidence/README.md",
+      "spikes/m0-009/auth-navigation-contract.md",
+      "spikes/m0-009/src/server/auth.ts",
+      "spikes/m0-009/src/server/shopify-adapter.ts",
+      "spikes/m0-009/src/server/runtime.ts",
+      "spikes/m0-009/src/server/draft-api.ts",
+      "spikes/m0-009/src/client/bootstrap.ts",
+      "spikes/m0-009/src/components/DraftEditor.tsx",
+      "spikes/m0-009/src/layouts/Shell.astro",
+      "spikes/m0-009/src/middleware.ts",
+      "spikes/m0-009/src/pages/private/home.astro",
+      "spikes/m0-009/src/pages/private/draft.astro",
+      "spikes/m0-009/src/pages/api/draft.ts",
+      "spikes/m0-009/astro.config.mjs",
+      "spikes/m0-009/web/server.mjs",
+      "spikes/m0-009/shopify.app.toml",
+      "spikes/m0-009/scripts/smoke-built.mjs",
+      "spikes/m0-009/test/auth.test.ts",
+      "spikes/m0-009/test/draft-api.test.ts",
+      "spikes/m0-009/test/shopify-adapter.test.ts"
+    ],
+    "architecture_changes_in_fixed_ref_comparison": false
+  },
+  "ci": {
+    "embedded_run": 36341328223,
+    "embedded_job": 108681877703,
+    "embedded_log_inspected": true,
+    "publication_run": 36341328190,
+    "both_runs_head_associated_success": true,
+    "tests_in_embedded_log": 16,
+    "astro_diagnostics": {
+      "errors": 0,
+      "warnings": 0,
+      "hints": 0
+    },
+    "standalone_build": "PASS_CI",
+    "served_http_smoke": "PASS_CI_NOT_BROWSER_JAVASCRIPT",
+    "ci_reported_architecture_sha256": {
+      "implementation-plan.md": "8bb45ac9e2834bf047824a2e3dda4da7f76692bae685f6657da7b3ab03d0b145",
+      "decision-ledger.md": "97ebb79ddc53000c53c46218ba8c83a5ba2279720ed07ff50809706b4f1a800a"
+    },
+    "ci_artifact_downloaded": false
+  },
+  "live_evidence_scope": "sanitized_operator_report_not_independently_replayed",
+  "cleanup": {
+    "status": "PARTIAL_STOPPED_DEV_PREVIEW_RETAINED",
+    "effective_scope_count_reported": 11,
+    "explicit_scope_count_in_reviewed_toml": 9,
+    "current_shop_independently_inspected": false,
+    "direction": "hold_stopped_preview_no_clean_release_or_scope_cycling"
+  },
+  "native_review_submission": {
+    "action": "APPROVE",
+    "commit_id": "5596c34a31ea603cd897ceea280192d09bc24c99",
+    "http_status": 403,
+    "posted": false,
+    "message": "Resource not accessible by integration"
+  },
+  "independent_execution_limits": [
+    "Did not run TypeScript tests, install dependencies, build Astro or execute served smoke.",
+    "Did not operate a browser, exchange live tokens or query the current shop.",
+    "Did not download or independently scan a compiled client artifact.",
+    "No full browser integration test is implied by HTTP smoke or source inspection.",
+    "Did not refetch/hash every repository source or architecture document.",
+    "Did not modify repository files, merge, or mutate Shopify resources."
+  ],
+  "followups": [
+    "Explicit save timeout/cancellation and ambiguous-save recovery before editor reuse.",
+    "Bounded grant-cache retention, revocation and scope-refresh policy before production.",
+    "Executable browser lifecycle and outstanding live G7 matrix.",
+    "Permanent preview/released-configuration remedy under separate owner authority."
+  ],
+  "next_package": "M0-010_OFF_STORE_HYBRID_BILLING_LOCAL_PROOF",
+  "sources": [
+    "https://shopify.dev/docs/api/shopify-cli/app/app-dev-clean",
+    "https://shopify.dev/docs/apps/build/cli-for-apps/test-apps-locally",
+    "https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens",
+    "https://shopify.dev/docs/apps/launch/billing/shopify-app-pricing",
+    "https://shopify.dev/docs/api/app-events/latest",
+    "https://shopify.dev/docs/apps/build/app-events"
+  ]
+}
