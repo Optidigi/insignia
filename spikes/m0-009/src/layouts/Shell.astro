@@ -1,0 +1,36 @@
+---
+import '../styles/app.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+const apiKey = import.meta.env.PUBLIC_SHOPIFY_API_KEY ?? '';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <meta name="shopify-api-key" content={apiKey} />
+    <title>{title} · Insignia</title>
+    <script src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+    <script src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="app-header">
+        <div class="app-brand">Insignia</div>
+        <nav aria-label="App pages" class="app-nav">
+          <a href="/">Overview</a>
+          <a href="/draft">Synthetic draft</a>
+        </nav>
+      </header>
+      <slot />
+    </div>
+    <script>import '../client/bootstrap';</script>
+  </body>
+</html>
