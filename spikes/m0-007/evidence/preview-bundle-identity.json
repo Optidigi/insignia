@@ -1,0 +1,27 @@
+{
+  "source": "Shopify CLI 4.8.2 app dev bundle; filtered nonsecret Function modules",
+  "shop": "insignia-staging.myshopify.com",
+  "appClientId": "942e6668fd1177524c0fc48b104b0ac3",
+  "functions": [
+    {
+      "target": "transform",
+      "uid": "e3aa88de-06c0-46b5-ac92-ea2348636381",
+      "handle": "m0-006-live-transform",
+      "apiType": null,
+      "encodedSha256": "392d925ed390b02f08b749673282b8c7cbfc8bbd20ebbfa699c314d342c6781f",
+      "wasmSha256": "6e1a3e265b5b0cc3879a0cde2a850f9a219e94fc0d79c6b885249245c6f3a883",
+      "wasmBytes": 167722,
+      "byteEqualToContemporaneousBuild": true
+    },
+    {
+      "target": "validation",
+      "uid": "e3aa88de-06c0-46b5-ac92-ea2348636382",
+      "handle": "m0-006-live-validation",
+      "apiType": null,
+      "encodedSha256": "9094b6567dc735c8740146c0d018826ce150279a195e99f07ca5f8784c356175",
+      "wasmSha256": "549fa6cbb835227ecbfc061b36e1a62687ed180c4495e35707b8dc65e156284b",
+      "wasmBytes": 168885,
+      "byteEqualToContemporaneousBuild": true
+    }
+  ]
+}

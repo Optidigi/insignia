@@ -25,5 +25,9 @@ assert [{k: row[k] for k in stable} for row in actual] == [
     {k: row[k] for k in stable} for row in expected], 'retained preview replay changed'
 print(f'Preview bundle replay: {len(actual)} synthetic cases match retained evidence')
 PY
-python3 -B scripts/capture-manifest.py verify > evidence/ci-manifest.json
+if [[ -f ../m0-007/scripts/check-history.py ]]; then
+  python3 -B scripts/capture-manifest.py verify-history > evidence/ci-manifest.json
+else
+  python3 -B scripts/capture-manifest.py verify > evidence/ci-manifest.json
+fi
 cat evidence/ci-manifest.json

@@ -1,0 +1,6 @@
+mutation M0006CreateValidation($validation: ValidationCreateInput!) {
+  validationCreate(validation: $validation) {
+    validation { id title enabled blockOnFailure shopifyFunction { id handle appKey } }
+    userErrors { field message }
+  }
+}

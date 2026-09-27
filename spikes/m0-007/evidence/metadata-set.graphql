@@ -1,0 +1,6 @@
+mutation M0006SetMetadata($metafields: [MetafieldsSetInput!]!) {
+  metafieldsSet(metafields: $metafields) {
+    metafields { id namespace key type value compareDigest owner { __typename } }
+    userErrors { field message code }
+  }
+}

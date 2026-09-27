@@ -1,0 +1,66 @@
+name: M0-007 policy and Function boundary checks
+
+on:
+  pull_request:
+    paths:
+      - "spikes/m0-006/extensions/**"
+      - "spikes/m0-007/**"
+      - ".github/workflows/m0-007-local.yml"
+  push:
+    branches: [main]
+    paths:
+      - "spikes/m0-006/extensions/**"
+      - "spikes/m0-007/**"
+      - ".github/workflows/m0-007-local.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  local-proof:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    env:
+      RUSTUP_TOOLCHAIN: "1.98.1"
+      SHOPIFY_CLI_NO_ANALYTICS: "1"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0 # historical receipt comparison needs the verified PR #9 merge
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24.21.0"
+      - name: Install pinned Rust and Wasm target
+        run: rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
+      - name: Install pinned Function runner and Shopify CLI
+        working-directory: spikes/m0-005
+        run: corepack pnpm install --frozen-lockfile
+      - name: Check frozen history, policy, both Functions and retained cases
+        run: |
+          export PATH="$GITHUB_WORKSPACE/spikes/m0-005/node_modules/.bin:$PATH"
+          bash spikes/m0-007/scripts/check-local.sh
+      - name: Report final-head rebuilt hashes
+        run: |
+          git rev-parse HEAD
+          echo "PR head: ${{ github.event.pull_request.head.sha }}"
+          sha256sum spikes/m0-007/evidence/ci-manifest.json spikes/m0-007/evidence/ci-candidate-replay.json
+          sha256sum spikes/m0-007/evidence/ci-live-replay.json
+      - name: Retain exact case inputs, result manifest and rebuilt executables
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m0-007-offstore-${{ github.sha }}
+          path: |
+            spikes/m0-007/fixtures/*.json
+            spikes/m0-007/evidence/candidate-replay.json
+            spikes/m0-007/evidence/ci-candidate-replay.json
+            spikes/m0-007/evidence/ci-manifest.json
+            spikes/m0-007/evidence/live-replay.json
+            spikes/m0-007/evidence/ci-live-replay.json
+            spikes/m0-007/evidence/live-preview-transform.wasm
+            spikes/m0-007/evidence/live-preview-validation.wasm
+            spikes/m0-007/evidence/*-checkout-transform.json
+            spikes/m0-007/evidence/*-checkout-validation.json
+            spikes/m0-007/evidence/cart-repair-optional-transform.json
+            spikes/m0-007/evidence/cart-repair-optional-validation.json
+            spikes/m0-006/extensions/transform/target/wasm32-unknown-unknown/release/m0-006-cart-transform.wasm
+            spikes/m0-006/extensions/validation/target/wasm32-unknown-unknown/release/m0-006-cart-validation.wasm

@@ -1,0 +1,12 @@
+{
+  "metafields": [
+    {
+      "ownerId": "gid://shopify/Product/10294344482974",
+      "namespace": "$app",
+      "key": "m0_007_registration",
+      "type": "single_line_text_field",
+      "value": "3338074a24c144e185038a2e82fcbc6f:2:ready",
+      "compareDigest": "56502cf136503caf9db657b589f8c1184de4ccf5b90f1c9bd81f089e3e6d6b67"
+    }
+  ]
+}

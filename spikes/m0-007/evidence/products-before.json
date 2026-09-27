@@ -1,0 +1,118 @@
+{
+  "products": {
+    "nodes": [
+      {
+        "id": "gid://shopify/Product/8840734015646",
+        "handle": "the-inventory-not-tracked-snowboard",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734048414",
+        "handle": "gift-card",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734113950",
+        "handle": "the-compare-at-price-snowboard",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734146718",
+        "handle": "the-archived-snowboard",
+        "status": "ARCHIVED",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734179486",
+        "handle": "the-draft-snowboard",
+        "status": "DRAFT",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734212254",
+        "handle": "the-minimal-snowboard",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734245022",
+        "handle": "the-out-of-stock-snowboard",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734277790",
+        "handle": "the-collection-snowboard-hydrogen",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734310558",
+        "handle": "the-videographer-snowboard",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734343326",
+        "handle": "the-hidden-snowboard",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734376094",
+        "handle": "the-complete-snowboard",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734408862",
+        "handle": "selling-plans-ski-wax",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734605470",
+        "handle": "the-collection-snowboard-oxygen",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734638238",
+        "handle": "the-multi-location-snowboard",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734736542",
+        "handle": "the-multi-managed-snowboard",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734802078",
+        "handle": "the-3p-fulfilled-snowboard",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/8840734900382",
+        "handle": "the-collection-snowboard-liquid",
+        "status": "ACTIVE",
+        "onlineStoreUrl": null
+      },
+      {
+        "id": "gid://shopify/Product/10294344482974",
+        "handle": "insignia-m0-001-fixture-20260924",
+        "status": "ARCHIVED",
+        "onlineStoreUrl": null
+      }
+    ],
+    "pageInfo": {
+      "hasNextPage": false,
+      "endCursor": "eyJsYXN0X2lkIjoxMDI5NDM0NDQ4Mjk3NCwibGFzdF92YWx1ZSI6IjEwMjk0MzQ0NDgyOTc0In0="
+    }
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "review_date": "2026-09-26",
+  "repository": "Optidigi/insignia",
+  "pr": 9,
+  "base": "9f08c8ff6ee8a6a908b976c26f8435e4301308c5",
+  "effective_merge_base": "9f08c8ff6ee8a6a908b976c26f8435e4301308c5",
+  "head": "a0bfaa713839cb5ccc794e67e0085a51eb00f782",
+  "verdict": "APPROVED_BOUNDED_LIVE_PROTOTYPE",
+  "discount_adjudication": "PASS_OBSERVED_SHOPIFY_ROUNDING; historical principal expectation corrected; paid discounted order NOT_RUN",
+  "native_review": {
+    "attempted": "APPROVE",
+    "http_status": 403,
+    "posted": false
+  },
+  "ci": {
+    "run_id": 36242951216,
+    "job_id": 108406785674,
+    "artifact_id": 10906476791,
+    "synthetic_merge": "99748fef7a832bfbe0ee47e80f299a5a4b62a896",
+    "parents_verified": [
+      "9f08c8ff6ee8a6a908b976c26f8435e4301308c5",
+      "a0bfaa713839cb5ccc794e67e0085a51eb00f782"
+    ],
+    "head_and_merge_tree": "66c06174d024cc319d4a56b055858e3206db2ee7",
+    "actual_job_log_read": true,
+    "observed_checks": "6 native tests per Function; builds; eight synthetic retained-preview replays; reported 41 source/120 receipt manifest verification"
+  },
+  "independent_execution": {
+    "scope": "Local artifact digest/binary checks, independent verification of two explicitly transcribed authorization excerpts, exact discount arithmetic, planning-record blob checks. Not a whole-suite or remote re-execution.",
+    "archive_sha256": "966a038b3a48904c04d76334926ae170690ab26f3f9f8011692b31cf864c19f2",
+    "manifest_sha256": "487f01fc7c94bce14a3e3155f7c2c05ad39fcdff6d41b0b7e8ae3e6cfc6fd2e2",
+    "ci_binaries": [
+      {
+        "path": "extensions/transform/target/wasm32-unknown-unknown/release/m0-006-cart-transform.wasm",
+        "sha256": "dc414f900cf987f041991c8d219fc9a54d9766f68eba1b09cf5601338789a1ac",
+        "bytes": 163693
+      },
+      {
+        "path": "extensions/validation/target/wasm32-unknown-unknown/release/m0-006-cart-validation.wasm",
+        "sha256": "a133189929035b7abd166d04dcee6339c37e39d6553e1bc52fee7b63a6b26569",
+        "bytes": 164930
+      }
+    ],
+    "authorization_excerpts": [
+      {
+        "receipt_excerpt": "discount-checkout-validation.json",
+        "signature_valid": true,
+        "count": 2,
+        "quantity": 3,
+        "authorized_minor": 9100,
+        "observed_customized_subtotals": [
+          6066,
+          3034
+        ],
+        "observed_equals_signed_pre_discount": true,
+        "today": 20722,
+        "valid_through": 20724
+      },
+      {
+        "receipt_excerpt": "negative-transform-off-economic-validation.json",
+        "signature_valid": true,
+        "count": 2,
+        "quantity": 3,
+        "authorized_minor": 9100,
+        "observed_customized_subtotals": [
+          4000,
+          2000
+        ],
+        "observed_equals_signed_pre_discount": false,
+        "today": 20722,
+        "valid_through": 20724
+      }
+    ],
+    "discount": {
+      "line_minor": [
+        606,
+        303
+      ],
+      "total_minor": 909,
+      "net_minor": 8191
+    },
+    "planning_records": [
+      {
+        "file": "implementation-plan.md",
+        "git_blob": "d3d7d9c155cdcdcc3b88aeaaa77eebb10d8a767d",
+        "sha256": "c0432288deb778c4d717871d6f771f95e401d00b6a3caf1b878155cbf0e5422d"
+      },
+      {
+        "file": "decision-ledger.md",
+        "git_blob": "3544e054bb52c11713b2bc1c96cdf6d7a2264936",
+        "sha256": "0c6c02bab83fb5032548c3d1be1f86ea1492ae3cfd26b6cacc8410f7d08737bb"
+      }
+    ],
+    "limitations": [
+      "Did not execute Wasm or rebuild Rust/Node targets.",
+      "Did not download/recompute every one of 120 repository receipts or 41 source hashes.",
+      "Artifact holds rebuilt CI binaries, not retained remote-preview executables.",
+      "Raw remote logs are withheld; no remote execution-byte attestation.",
+      "Did not operate staging or inspect screenshot pixels."
+    ]
+  },
+  "review_axes": {
+    "spec": "No merge-blocking implementation defect; erroneous principal net-discount expectation superseded explicitly.",
+    "standards_security": "No additional merge-blocking defect in inspected adapters, issuer, projection and receipt checker; known policy gap blocks adoption."
+  },
+  "remote_actions": "Read-only repository/CI plus failed native review submission; no merge or Shopify operation.",
+  "pending": [
+    "Required-product missing-policy/publication guarantee",
+    "Live expiry and remaining cart repair",
+    "Remaining accelerated paths",
+    "Markets/tax/other discounts",
+    "Public-app/non-Plus qualification",
+    "Production capacity/adoption",
+    "Other M0 gates"
+  ],
+  "source_urls": [
+    "https://community.shopify.dev/t/inconsistent-cents-rounding-on-discounts-across-different-stores/28655/10",
+    "https://shopify.dev/docs/apps/build/metafields",
+    "https://shopify.dev/docs/api/admin-graphql/latest/payloads/MetafieldsSetPayload",
+    "https://shopify.dev/docs/api/ajax/reference/cart"
+  ]
+}

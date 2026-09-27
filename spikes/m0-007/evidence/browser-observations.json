@@ -1,0 +1,40 @@
+{
+  "source": "T3 collaborative browser, native staging Admin tab and password-unlocked guest storefront tab; operator transcription of visible state",
+  "shop": "insignia-staging.myshopify.com",
+  "app": "insignia",
+  "dateUtc": "2026-09-26",
+  "paymentProvider": {
+    "adminDetail": "Test payment gateway — Active; Deactivate available",
+    "checkout": "Test Payment Gateway, code 1 approved transaction",
+    "settingChanged": false
+  },
+  "cartRepair": {
+    "signedSmallLineKeysRemovedByKey": 2,
+    "orphanState": "one ordinary Medium item remained; _insignia_quote_v2 still present",
+    "repair": "cart/update.js cleared only _insignia_quote_v2",
+    "result": "ordinary Medium checkout displayed USD20.00 without validation error",
+    "emptyCartStaleEnvelope": "zero items with stale quote redirected /checkout to storefront home; quote then cleared",
+    "cartExpress": "cart page exposed Check out but no accelerated cart button; Product Buy Now historical carrier-loss result remains separate"
+  },
+  "discount": {
+    "adminId": "1592066343070",
+    "code": "M0007-20260926-QUOTE",
+    "type": "10% discount code, specific fixture product (both variants), one-time purchases, no combinations",
+    "nativeCheckout": "USD60.66 original less USD6.06; USD30.34 original less USD3.03; merchandise subtotal USD81.91 and savings USD9.09; free Standard shipping",
+    "finalAdmin": "owned discount deleted; Discounts list returned to five preceding entries"
+  },
+  "order": {
+    "name": "#1006",
+    "id": "gid://shopify/Order/18909144252574",
+    "confirmation": "0N55F6JLK",
+    "checkout": "one successful Bogus test payment of USD81.91, three Small units, zero shipping and tax",
+    "nativeCancellation": "Cancel order #1006, refund original Bogus payment USD81.91, Restock inventory checked, notification unchecked",
+    "postAction": "Refunded USD81.91, net payment USD0.00"
+  },
+  "cleanup": {
+    "productPublishing": "Online Store on before cleanup; Point of Sale and Shop off. Online Store alone set off, saved and reloaded; all three channels then off and Admin showed not published anywhere.",
+    "guestFixturePage": "404 Not Found after archive/unpublish",
+    "unauthenticatedStorefront": "HTTP 302 to /password persisted",
+    "guestCart": "zero items, no _insignia_quote_v2 after cleanup"
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "provenance": "Shopify CLI app dev Function log",
+  "sourceSha256": "2bc1874bfc0336cab09af1ff0bfcca4b96669eb77ce4d336110644f14d322d99",
+  "logTimestamp": "2026-09-26T15:26:14.505354Z",
+  "shopId": 78935261342,
+  "apiClientId": 427859050497,
+  "source": "m0-006-live-validation",
+  "status": "success",
+  "target": "cart.validations.generate.run",
+  "functionId": "01a0de3c-b88a-7b65-acf8-26b7b31d2e7b",
+  "inputBytes": 1165,
+  "outputBytes": 13,
+  "fuelConsumed": 1410756,
+  "input": {
+    "buyerJourney": {
+      "step": "CHECKOUT_INTERACTION"
+    },
+    "cart": {
+      "quote": null,
+      "lines": [
+        {
+          "id": "gid://shopify/CartLine/0",
+          "quantity": 1,
+          "member": null,
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            },
+            "subtotalAmount": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/50529054163102",
+            "product": {
+              "id": "gid://shopify/Product/10294344482974",
+              "registration": {
+                "value": "3338074a24c144e185038a2e82fcbc6f:4:ready"
+              },
+              "policy": {
+                "value": "3338074a24c144e185038a2e82fcbc6f:4:optional"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "localization": {
+      "country": {
+        "isoCode": "US"
+      },
+      "market": {
+        "id": "gid://shopify/Market/64217284766"
+      }
+    },
+    "shop": {
+      "localTime": {
+        "date": "2026-09-26"
+      },
+      "publicConfig": {
+        "value": "{\"generationHex\":\"3338074a24c144e185038a2e82fcbc6f\",\"epoch\":1,\"maxBuckets\":10,\"maxPhysicalQuantity\":10,\"allowNoMarket\":false,\"keys\":[{\"id\":7001,\"publicHex\":\"327959381bbd215cc596d062e2fe1e234b4ecf27cf2bd8adf1b23e0f71c98cbe\",\"revoked\":false,\"firstDay\":20717,\"lastDay\":20724},{\"id\":7002,\"publicHex\":\"11d4a50daefc7a6c42d3fc96bbb30c2394e379b9e05b2d9f48e0f404e59200db\",\"revoked\":false,\"firstDay\":20723,\"lastDay\":20727},{\"id\":7003,\"publicHex\":\"fb30b717fb461896b63c4968e7098575441034a09c25c08ee777510f7c7789f9\",\"revoked\":false,\"firstDay\":20722,\"lastDay\":20724}]}"
+      }
+    }
+  },
+  "output": {
+    "operations": []
+  }
+}

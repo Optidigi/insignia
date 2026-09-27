@@ -1,0 +1,11 @@
+query M0002PreviewReadback {
+  shop { id myshopifyDomain currencyCode }
+  currentAppInstallation { id accessScopes { handle } }
+  shopifyFunctions(first: 20) {
+    nodes { id handle apiType apiVersion appKey }
+  }
+  cartTransforms(first: 20) {
+    nodes { id functionId blockOnFailure }
+    pageInfo { hasNextPage }
+  }
+}

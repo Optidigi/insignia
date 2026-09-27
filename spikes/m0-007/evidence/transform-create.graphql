@@ -1,0 +1,6 @@
+mutation M0006CreateTransform($handle: String!) {
+  cartTransformCreate(blockOnFailure: true, functionHandle: $handle) {
+    cartTransform { id functionId blockOnFailure }
+    userErrors { field message }
+  }
+}
