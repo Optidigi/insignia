@@ -5,6 +5,7 @@ Source boundary: `spikes/m0-008/src/`, `spikes/m0-008/consumer-projection/` and 
 | Behavior | Test name / expected observation |
 |---|---|
 | Journal precedes side effects; first publication and quote embargo | `first managed publication journals before write...`: no remote write before journal, explicit null CAS, pending until activation, quote issuance false. |
+| Installation generation rollover | `new quote issuance rejects an active record from a prior installation generation`: an active stale-generation journal entry cannot issue under the caller's current generation. The production caller still needs a trusted current-generation source. |
 | Required→required, required→optional, optional→required | `required revisions and both policy directions...`: old effective boundary retained; both policy-mode changes refuse mutation without all-channel admission premise. |
 | Ambiguous mutation timeout, restart at boundaries | `ambiguous after-commit timeout...`, `journal snapshot resumes...`, `crash after remote write...`: exact re-read prevents blind duplicate write. |
 | Idempotency, competing operations, CAS/user errors, retry budget | `same operation replays...`, `mutation user errors...`, `stale prior digest...`: typed replay/conflict/operator action. |

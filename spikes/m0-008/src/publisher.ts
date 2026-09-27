@@ -215,10 +215,12 @@ export class Publisher {
     }
   }
 
-  /** This checks issuance eligibility, not quote authenticity or price; the signer remains separate. */
-  async newQuoteAllowed(ownerId: string, revision: number): Promise<boolean> {
+  /** Caller supplies the trusted current installation generation. This checks issuance eligibility only. */
+  async newQuoteAllowed(ownerId: string, revision: number, currentGenerationHex: string): Promise<boolean> {
+    if (!HEX.test(currentGenerationHex)) return false;
     const op = await this.journal.currentFor(ownerId);
-    return op !== null && op.phase === 'active' && op.intent.revision === revision && op.activationEvidence !== null;
+    return op !== null && op.phase === 'active' && op.intent.revision === revision &&
+      op.intent.generationHex === currentGenerationHex && op.activationEvidence !== null;
   }
 
   private matchesPriorOrDesired(op: Operation, state: RemoteState, field: Field): boolean {

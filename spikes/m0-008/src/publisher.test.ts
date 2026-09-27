@@ -25,7 +25,7 @@ async function activate(h: ReturnType<typeof harness>, i: PublishIntent) {
   h.admission.result = established; h.activation.result = established;
   assert.equal((await h.publisher.start(i)).kind, 'started');
   for (let n = 0; n < 4; n++) assert.ok(['pending', 'active'].includes((await h.publisher.advance(i.operationId)).kind));
-  assert.equal(await h.publisher.newQuoteAllowed(OWNER, i.revision), true);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, i.revision, GENERATION), true);
 }
 
 test('first managed publication journals before write and waits for both independent gates', async () => {
@@ -39,14 +39,22 @@ test('first managed publication journals before write and waits for both indepen
   assert.equal((await h.publisher.advance(i.operationId)).kind, 'pending');
   assert.equal(h.remote.snapshot().registration?.value, `${GENERATION}:1:pending`);
   assert.equal(h.remote.writes[0]?.compareDigest, null); // explicit create-if-absent
-  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1), false);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1, GENERATION), false);
   assert.equal((await h.publisher.advance(i.operationId)).kind, 'pending');
   assert.equal((await h.publisher.advance(i.operationId)).kind, 'pending');
   assert.equal((await h.publisher.advance(i.operationId)).kind, 'activation-pending');
-  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1), false);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1, GENERATION), false);
   h.activation.result = established;
   assert.equal((await h.publisher.advance(i.operationId)).kind, 'active');
-  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1), true);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1, GENERATION), true);
+});
+
+test('new quote issuance rejects an active record from a prior installation generation', async () => {
+  const h = harness();
+  await activate(h, intent('required', 1));
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1, GENERATION), true);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1, '2'.repeat(32)), false);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1, 'malformed'), false);
 });
 
 test('required revisions and both policy directions preserve old effective boundary until activation', async () => {
@@ -61,7 +69,7 @@ test('required revisions and both policy directions preserve old effective bound
     h.activation.result = { kind: 'pending', prerequisite: 'synthetic propagation boundary absent' };
     if (needsBarrier) h.admission.result = { kind: 'pending', prerequisite: 'all channels and carts' };
     assert.equal((await h.publisher.start(i)).kind, 'started');
-    assert.equal(await h.publisher.newQuoteAllowed(OWNER, rev), false);
+    assert.equal(await h.publisher.newQuoteAllowed(OWNER, rev, GENERATION), false);
     if (needsBarrier) {
       assert.equal((await h.publisher.advance(i.operationId)).kind, 'activation-pending');
       assert.deepEqual(h.remote.snapshot(), priorState);
@@ -69,7 +77,7 @@ test('required revisions and both policy directions preserve old effective bound
     }
     for (let n = 0; n < 3; n++) assert.equal((await h.publisher.advance(i.operationId)).kind, 'pending');
     assert.equal((await h.publisher.advance(i.operationId)).kind, 'activation-pending');
-    assert.equal(await h.publisher.newQuoteAllowed(OWNER, rev), false);
+    assert.equal(await h.publisher.newQuoteAllowed(OWNER, rev, GENERATION), false);
     h.activation.result = established;
     assert.equal((await h.publisher.advance(i.operationId)).kind, 'active');
   }
@@ -103,7 +111,7 @@ test('lost admission premise freezes subsequent writes and quote issuance', asyn
   assert.equal((await h.publisher.advance(i.operationId)).kind, 'activation-pending');
   assert.equal(h.remote.writes.length, 1);
   assert.equal(h.remote.snapshot().registration?.value, `${GENERATION}:1:pending`);
-  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1), false);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1, GENERATION), false);
 });
 
 test('journal snapshot resumes after every write/readback boundary without duplicate mutation', async () => {
@@ -216,7 +224,7 @@ test('stale activation-pending save cannot overwrite a concurrent active journal
   release.resolve();
   assert.equal((await staleStep).kind, 'conflict');
   assert.equal((await h.journal.get(i.operationId))?.phase, 'active');
-  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1), true);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1, GENERATION), true);
 });
 
 test('stale timeout save cannot overwrite a concurrent active journal decision', async () => {
@@ -248,7 +256,7 @@ test('saved activation-pending phase survives restart and never self-activates',
   h = harness(h.remote.snapshot(), h.journal.snapshot());
   h.admission.result = established;
   assert.equal((await h.publisher.advance(i.operationId)).kind, 'activation-pending');
-  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1), false);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1, GENERATION), false);
   h.activation.result = established;
   assert.equal((await h.publisher.advance(i.operationId)).kind, 'active');
 });
@@ -282,7 +290,7 @@ test('wrong-generation or missing exact ready pair after write prevents activati
   for (let n = 0; n < 3; n++) assert.equal((await h.publisher.advance(i.operationId)).kind, 'pending');
   h.remote.corrupt('policy', { value: `${'2'.repeat(32)}:1:required`, digest: 'c'.repeat(64) });
   assert.equal((await h.publisher.advance(i.operationId)).kind, 'operator-action');
-  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1), false);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1, GENERATION), false);
   h.remote.corrupt('policy', null);
   assert.equal((await h.publisher.advance(i.operationId)).kind, 'operator-action');
 });
@@ -309,7 +317,7 @@ test('complete loss and coherent rollback are explicit unsupported-fault fixture
     policy: { value: `${GENERATION}:1:optional`, digest: 'b'.repeat(64) } };
   assert.deepEqual(lost, { registration: null, policy: null });
   assert.equal(rollback.policy.value.endsWith(':optional'), true);
-  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 2), false);
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 2, GENERATION), false);
   h.remote.corrupt('registration', null); h.remote.corrupt('policy', null);
   assert.equal((await h.publisher.start(intent('optional', 1, h.remote.snapshot(), null, 'new-op'))).kind,
     'operator-action', 'journal knowledge must not normalize joint loss as unmanaged first publication');
