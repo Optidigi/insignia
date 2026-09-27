@@ -1,0 +1,62 @@
+name: M0-008 local publication and architecture checks
+
+on:
+  pull_request:
+    paths:
+      - "spikes/m0-008/**"
+      - "spikes/m0-007/scripts/check-history.py"
+      - "docs/architecture/**"
+      - "docs/delivery/state.md"
+      - "docs/delivery/prompts/M0-008-publication-contract-and-recovery.md"
+      - ".github/workflows/m0-008-local.yml"
+  push:
+    branches: [main]
+    paths:
+      - "spikes/m0-008/**"
+      - "spikes/m0-007/scripts/check-history.py"
+      - "docs/architecture/**"
+      - ".github/workflows/m0-008-local.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  publication-local:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      RUSTUP_TOOLCHAIN: "1.98.1"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0 # frozen v1.1 and M0-006 receipts use fixed prior refs
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "24.21.0"
+      - name: Install pinned local dependencies
+        working-directory: spikes/m0-008
+        run: corepack pnpm install --frozen-lockfile
+      - name: Verify archived and approved architecture bytes
+        run: |
+          python3 -B spikes/m0-007/scripts/check-history.py
+          python3 -B spikes/m0-006/scripts/check-evidence.py
+      - name: Test restartable publication and fake GraphQL transport
+        working-directory: spikes/m0-008
+        run: corepack pnpm check
+      - name: Check existing Rust consumer against publisher states
+        run: |
+          rustup toolchain install 1.98.1 --profile minimal --component rustfmt,clippy
+          cargo fmt --manifest-path spikes/m0-008/consumer-projection/Cargo.toml --all -- --check
+          cargo clippy --manifest-path spikes/m0-008/consumer-projection/Cargo.toml --all-targets --locked -- -D warnings
+          cargo test --manifest-path spikes/m0-008/consumer-projection/Cargo.toml --locked
+      - name: Bind results to final source
+        run: |
+          git rev-parse HEAD
+          echo "PR head: ${{ github.event.pull_request.head.sha }}"
+          sha256sum docs/architecture/implementation-plan.md docs/architecture/decision-ledger.md docs/architecture/OPTION-A-APPROVED.md
+          find spikes/m0-008 -type f -not -path '*/node_modules/*' -not -path '*/.pnpm/*' -not -path '*/target/*' -print0 | sort -z | xargs -0 sha256sum
+      - name: Retain source-bound consumer fixture
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m0-008-consumer-${{ github.sha }}
+          path: spikes/m0-008/fixtures/consumer-projection.tsv

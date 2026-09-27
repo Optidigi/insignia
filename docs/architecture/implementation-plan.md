@@ -1,12 +1,14 @@
 # Insignia — greenfield architecture and implementation plan
 
-**Record version:** 1.1 — 24 September 2026  
-**Status:** Product/architecture decision audit closed. Development gates NOT executed.  
-**Authority:** The user's pasted baseline, subsequent answers, and final approval of inactive-subscription/downgrade policy. No missing `plan.md` dependency remains.  
-**Delivery:** Versioned planning handoff with a local docs-only Git snapshot. No remote repository, Shopify store, billing configuration, or production resource has been modified. Preflight is authorized; user-local capabilities and G1–G8 are not yet verified.
+**Record version:** 1.2 — 27 September 2026
 
+**Status:** Product/architecture decision audit closed; Option A required-product trust boundary approved. No complete development gate accepted.
 
-**Execution governance:** Read `../delivery/operating-model.md` before implementing or delegating. Root `AGENTS.md` is the concise entry point. `../delivery/state.md` records current authorization; `../delivery/prompts/PF-001-preflight.md` is the first local prompt. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project; the local orchestrator is sol-6-high. Version 1.1 changes delivery governance only, not approved product requirements.
+**Authority:** The user's pasted baseline, subsequent answers, final inactive-subscription/downgrade approval, and [Option A approval](OPTION-A-APPROVED.md). No missing `plan.md` dependency remains.
+
+**Delivery:** Consult the maintained [delivery state](../delivery/state.md) for current authorization, evidence and gate status. The original v1.1 record remains available at the fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`.
+
+**Execution governance:** Read `../delivery/operating-model.md` before implementing or delegating. Root `AGENTS.md` is the concise entry point; `../delivery/state.md` records current authorization. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project; the local orchestrator is sol-6-high. Version 1.2 adds only the approved Option A boundary and directly necessary publication/status corrections; whole-quote v2 remains provisional.
 
 This document is intended to be sufficient context for implementation agents. A numbered source register follows section 17. `[S#]` references support external platform/library facts. Requirements and algorithms stated as Insignia decisions are design specifications, not claims of already-observed Shopify behavior.
 
@@ -27,7 +29,7 @@ V1 commercial customization supports Online Store one-time purchases, including 
 - **Product decision:** Approved in the conversation and summarized in section 17.
 - **Development hypothesis:** A candidate implementation that must pass an explicit gate before dependent work proceeds.
 
-No unresolved BLOCKER or USER DECISION remains from the decision audit. G1–G8 are DEVELOPMENT GATES. Algorithms, interfaces, retries and initial resource budgets below are IMPLEMENTATION DETAIL defaults. Host implementation and unfinished commercial values are DEFERRED as explicitly described. A failed gate that invalidates a locked decision must be reported with evidence; agents must not silently substitute another architecture.
+The original decision audit is closed, including the joint-loss A/B choice by approved Option A. G1–G8 are DEVELOPMENT GATES; production publication/activation and other unaccepted criteria remain outstanding. Algorithms, interfaces, retries and initial resource budgets below are IMPLEMENTATION DETAIL defaults. Host implementation and unfinished commercial values are DEFERRED as explicitly described. A failed gate that invalidates a locked decision must be reported with evidence; agents must not silently substitute another architecture.
 
 ### 0.3 Source reconciliation
 
@@ -99,7 +101,7 @@ Neither an unsigned hidden line property nor a Cart Transform marker is proof of
 
 ### 1.4 Main flows
 
-**Configure:** authenticate merchant → edit draft → validate domain/entitlements → publish immutable revision transactionally → reconcile storefront/Function product policy → expose publication readiness.
+**Configure:** authenticate merchant → edit draft → validate domain/entitlements → record immutable requested revision and publication operation → reconcile Shopify policy → activate only after the applicable readiness contract is satisfied. New quote issuance uses the effective activated revision, not a requested or merely acknowledged write.
 
 **Buy:** Theme App Extension → load public configuration through App Proxy → establish guest capability → upload/inspect artwork → build desired *complete customized-cart subset* → backend quote proposal → buyer accepts → immutable quote + signed authorization set → browser applies real variant lines → independent Shopify validation → checkout.
 
@@ -184,6 +186,8 @@ Pin exact tested package versions in lockfiles, a Node 24 patch, pnpm and Rust t
 **Placement/View/Step:** a placement belongs to a product view; a step is a merchant-defined decoration-size choice with scale/dimensions and prices. Garment S/M/L variants are not decoration steps. Support default images, variant/color image overrides, shared geometry and explicit variant overrides needed for the storefront.
 
 Publication validates IDs, references, geometry, complete step schedules, currency codes, pricing scope, feature entitlements and asset readiness. Missing *optional preview* does not prohibit publishing or purchasing. Missing production-critical rule/selection validity does.
+
+Option A trusts correctly published, access-controlled app-owned Shopify policy under its [approved fault boundary](OPTION-A-APPROVED.md). Merchant intent, a durable operation journal, Shopify mutation acknowledgement, exact Admin readback, Function observations and application activation are distinct states. An incomplete or ambiguous publication remains pending/error; it is not the effective policy. Preserve the previous effective policy, known management evidence and already accepted quote terms while resolving a transition. Production activation still requires a reviewed consistency/availability contract; a local model cannot prove platform-wide propagation.
 
 ### 3.2 Geometry
 
@@ -415,9 +419,9 @@ Approval is a release prerequisite for the promised older-order reconciliation p
 
 Create one Insignia Cart Transform and one independent validation using the current handle-based installation APIs. Enable validation explicitly and set both applicable `blockOnFailure` flags. Those settings address runtime failures; they do not prove operation-collision safety. [S3]
 
-Shop/product app-owned projections contain only what Functions need: installation generation, public key registry, epoch, protocol support, and required/optional product policy. No private keys, buyer artwork, detailed rules or quote JSON. Both Functions must read a compatible configuration version. Shopify is not a second quote database.
+Shop/product app-owned projections contain only what Functions need: installation generation, public key registry, epoch, protocol support, and required/optional product policy. No private keys, buyer artwork, detailed rules or quote JSON. Both Functions must read a compatible configuration version. Shopify is not a second quote database. App-controlled publication must preserve recognizable management evidence during an interrupted required-policy transition; a partial or malformed state remains detectable and rejects, rather than becoming optional by default. Option A accepts unexpected joint loss or coherent rollback of all trusted evidence *outside* the supported publication contract as a residual incident, not as normal publisher behavior.
 
-Publication sequencing favors safe denial over transient unsigned required purchases. Reconcile product-required policies before exposing the new configuration as ready to quote. When changing required→optional, do not permit the plain-purchase exception until the intended policy change has propagated. Billing cancellation/downgrade never clears required flags or keys merely to ease checkout.
+Publication sequencing favors safe denial over transient unsigned required purchases. A mutation acknowledgement and exact Admin readback establish only their respective facts; one sampled Function invocation, repeated Admin reads or a fixed delay do not prove that every future Function input has the new revision. For stricter transitions, account for the previous effective policy and in-flight carts before exposing a product or enabling new quote issuance. If the needed activation/availability precondition is unverified, retain an explicit activation-pending state and the prior effective policy. Any temporary change to product availability is a separate, merchant-facing operation requiring its own reviewed precondition and effect; it is not automatic archival permission. Billing cancellation/downgrade never clears required flags or keys merely to ease checkout.
 
 There is no generic Cart Transform operation fallback. Plus uses a verified `lineUpdate` adapter. Non-Plus uses the G1 candidate: expand to one child with the same real variant, child quantity one relative to its parent, and the authorized fixed unit price. A failed G1 reopens that mechanism instead of enabling fee products behind the scenes.
 
@@ -636,7 +640,7 @@ Check positive quantities, valid currency/exponent, nonnegative final amounts, b
 
 ### 10.3 Atomicity and external work
 
-Publish: compare draft CAS version → validate → insert revision → update published pointer → insert projection outbox event in one transaction. No Shopify network call inside the transaction.
+Publish intent: compare draft CAS version → validate → insert immutable requested revision and durable publication operation/outbox record in one transaction. Do not move the effective published pointer before the activation contract is satisfied. Shopify mutation and exact readback occur outside the transaction; an ambiguous response is reconciled by reading the exact desired state before retry or conflict classification. Activation separately advances the effective pointer only under the reviewed preconditions. The M0-008 in-memory journal tests model restart and ordering, not durable database transactions.
 
 Accept: compare proposal/current permitted inputs → insert quote/groups/buckets/set identity → insert idempotency result in one transaction. Generate/persist signatures against committed immutable claims; reissuing after a crash uses the same set identity/claims.
 
@@ -724,6 +728,7 @@ Post-order upload uses the same inspection pipeline. Once USABLE, an authenticat
 | Another transform changes/discards result | Independent validation rejects economic mismatch | No purchase at base price treated as a paid customization |
 | Expired authorization, unchanged economics | Renew only with current valid entitlement/resources | Original quote remains immutable |
 | Changed economics/context/config specification | Replacement quote and buyer review | Historical accepted offers valid until expiry unless security revoked |
+| Partial, ambiguous or conflicting policy publication | Keep the requested revision pending; preserve known management evidence and withhold new issuance from it until activation is justified | Previous effective policy and valid accepted quotes retain their historical terms; reconcile or require operator action without rewriting purchases |
 | Stale unaccepted session | Reload/revalidate current publication before authoritative price | Do not rewrite previously accepted quote records |
 | No entitlement or removed feature | Disable new issuance for affected configurations | Honor valid old offers; retain purchase/artwork access within retention |
 | Required product cannot be customized | Block rather than quietly sell it plain | Warn merchant; optional products can remain plain purchases |
@@ -760,7 +765,7 @@ Health endpoints separate process liveness, DB readiness, worker freshness and i
 
 ### 14.2 Gate register
 
-All gates begin **NOT RUN**. Each gate gets a test directory, machine-readable result manifest, captured evidence and a signed-off conclusion in `spikes/evidence/G#.md`. The plan's examples and source reads are not gate evidence.
+All gates began **NOT RUN**. The maintained [delivery evidence register](../delivery/state.md) records later partial observations and principal verdicts; no complete gate has been accepted. G7 and G8 remain required unexecuted gates. Each gate needs a test directory, machine-readable result manifest, captured evidence and a principal-adjudicated conclusion. The plan's examples and source reads are not gate evidence.
 
 | Gate | Prototype and executable acceptance | Failure and reopened boundary |
 |---|---|---|
@@ -769,7 +774,7 @@ All gates begin **NOT RUN**. Each gate gets a test directory, machine-readable r
 | **G3: TS↔Rust/transport** | `gates/authorization-vectors`: fixed layout/signatures, date/epoch/rotation, malicious encodings and cart/order value preservation. Set integrity and identical renewal semantics agree across implementations. | Reopen byte layout/codec/signature implementation; no production protocol freeze until all vectors pass. |
 | **G4: economics/context** | `gates/markets-discounts`: contextual base prices, currency override/FX freeze, country/market changes, Shopify percentage/fixed/automatic/combined discounts, tax-inclusive/exclusive contexts, shipping/duties isolation, supported accelerated paths, unrelated subscription lines. Include zero/three-decimal currencies only where Shopify supports the store context. Capture actual pre-discount verification field. | Reopen target normalization, supported contexts or materialization if observed prices cannot satisfy the approved contract. Never repair by re-converting an already presentment-priced token. |
 | **G5: allocation and exact scalar boundary** | `gates/rounding`: €91 example, many variants, setup zero/one minor unit, different base prices, native partial refunds, pathological decimal values and SDK serialization. Price buckets retain identities/prices, sums exact; no float rounding/tolerance acceptance. | Reopen exact scalar adapter or allocation/materialization shape. User-visible total may not drift by a cent as a “tolerance.” |
-| **G6: economic fail-closed plus repair** | `gates/enforcement`: conflicting transform apps, missing/discarded/altered operations, malformed/mixed/partial tokens, required-policy tampering, runtime failure, stale projections and direct/accelerated checkout. Prove no underpriced customized checkout. Prove removing/replacing invalid lines remains possible without a cart deadlock. | Reopen enforcement/repair boundary. This is an architecture-stopping failure, not an edge case to hide in UI. |
+| **G6: economic fail-closed plus repair** | `gates/enforcement`: conflicting transform apps, missing/discarded/altered operations, malformed/mixed/partial tokens, required-policy tampering, runtime failure, stale projections and direct/accelerated checkout. Prove no underpriced customized checkout within the approved Option A trust boundary, including detectable incomplete policy and a safe publication/activation path. Prove removing/replacing invalid lines remains possible without a cart deadlock. The accepted unexpected joint-loss/coherent-rollback residual is an incident, not a passed stronger guarantee. | Reopen enforcement/repair boundary. This is an architecture-stopping failure, not an edge case to hide in UI. |
 | **G7: embedded Astro admin** | `gates/embedded-admin`: cold launch, deep link, reload, cookie-blocked/mobile, expired identity tokens, staff authorization, mutation CSRF controls, private SSR/fragments, Polaris/Preact events/hydration, native refresh concurrency and production SDK bundling. | Adjust the narrow auth/navigation integration; reconsider Astro only on demonstrated fundamental incompatibility. No private-data bootstrap bypass. |
 | **G8: hybrid billing lifecycle** | `gates/hybrid-billing`: three test plans, allowance boundary, selected-plan 14-day free trial, first-paid event time, duplicate deliveries, refunds not reversing, plan changes/downgrade, cancellation, delayed/closed-period events, permanent billing idempotency and 202 processing failures. Verify actual meter/contract/Dev Dashboard outcomes, not just HTTP status. | Reopen billing adapter/meter representation/reconciliation mechanics. The subscription-plus-order business model stays locked unless platform evidence makes it impossible and the user approves a change. |
 
@@ -969,6 +974,8 @@ This section mirrors `decision-ledger.md`; update both in the same reviewed chan
 
 **Materialization/surfaces:** Plus lineUpdate; non-Plus same-real-variant one-child lineExpand is the intended gated mechanism. Online Store one-time purchases and supported accelerated paths. App Proxy for storefront/backend control; direct presigned R2 upload allowed. No paid customization with a selling plan. Required customization means required for all purchases; optional products may offer plain selling-plan purchases.
 
+**Required-product policy — approved Option A:** Within the supported enforcement conditions, v1 trusts correctly published, access-controlled app-owned Shopify policy and correctly operating Function inputs. Buyer-controlled markers are not policy authority. Reject unsigned or invalid authorization for identifiable required merchandise and detectable incomplete, malformed, pending, mismatched or wrong-installation policy; unrelated merchandise does not require a catalogue-wide authorization or outage. Unexpected complete loss or coherent rollback of *all* trusted product-policy evidence outside the supported publication contract may permit a formerly required unsigned plain purchase before detection. That residual risk is accepted as an incident to prevent, detect, contain and recover from; reconciliation cannot undo the purchase. Application-controlled unsafe publication remains a defect. The approved boundary and its limits are recorded in [OPTION-A-APPROVED.md](OPTION-A-APPROVED.md). Production publication, activation, reconciliation and gate evidence remain outstanding.
+
 **Artwork/orders:** Byte-exact private SVG/PNG/JPEG originals, verified before use, safe PNG/WebP previews, no arbitrary inline SVG. Merchant-controlled logo-later; merchant-only post-order attachment. Append-only replacements; PENDING_ARTWORK → READY → ARTWORK_LOCKED. Immutable order-time purchase facts. Shopify owns payment/fulfillment/refunds/returns/restock; no garment/customization refund split.
 
 **Billing/entitlements:** Three feature-differentiated plans, subscription + per-order usage and different included allowances. One qualifying paid order, not quantity/groups; refunds do not reverse usage. Fourteen-day live chosen-plan trial from activation, subscription and usage waived, no retrospective trial billing and no separate demo system. No active entitlement means no new issuance/renewal; valid old offers honored until expiry. Historical order/artwork access remains within retention. Downgrade-incompatible configs stop new quoting until adjusted/republished or entitlement restored. Required purchases do not silently become plain purchases.
@@ -981,7 +988,11 @@ This section mirrors `decision-ledger.md`; update both in the same reviewed chan
 
 G1 same-variant non-Plus lifecycle; G2 complete Ed25519/Wasm/resource capacity; G3 TS/Rust golden vectors and transport; G4 discounts/Markets/tax/accelerated behavior; G5 setup allocation/exact decimal serialization; G6 independent fail-closed enforcement plus cart repair; G7 embedded Astro authentication/Polaris/Preact; G8 hybrid billing/trial/allowance/plan-change/delivery lifecycle.
 
-**Current state: every gate NOT RUN.** This plan authorizes proceeding to gated implementation, not declaring those platform hypotheses proven.
+**Current state:** The maintained [delivery evidence register](../delivery/state.md) records partial observations, unresolved work and principal verdicts. No complete gate has been accepted; G7 and G8 remain required and unexecuted. Option A closes the joint-loss A/B owner decision but does not pass G6.
+
+### PROVISIONAL / NOT ADOPTED
+
+The whole-quote v2 candidate remains a prototype exception pending principal adoption. The older per-line signing decision above remains the approved architecture until then. Option A does not adopt v2, freeze the two-field policy representation, or establish a production activation procedure.
 
 ### DEFERRED
 
