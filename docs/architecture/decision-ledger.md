@@ -1,6 +1,6 @@
 # Insignia — authoritative decision ledger
 
-Version 1.1 — 24 September 2026. Derived from the approved conversation decisions. Companion: implementation-plan.md. Version 1.1 adds execution governance only; approved product decisions are unchanged. This is a planning record; no development gates have been executed.
+Version 1.2 — 27 September 2026. Companion: implementation-plan.md. This amendment records the owner's approved Option A required-product trust boundary. Version 1.1 remains verifiable at the fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`; the unrelated decisions below retain their prior wording. No complete development gate has been accepted.
 
 
 ### LOCKED
@@ -17,6 +17,8 @@ Version 1.1 — 24 September 2026. Derived from the approved conversation decisi
 
 **Materialization/surfaces:** Plus lineUpdate; non-Plus same-real-variant one-child lineExpand is the intended gated mechanism. Online Store one-time purchases and supported accelerated paths. App Proxy for storefront/backend control; direct presigned R2 upload allowed. No paid customization with a selling plan. Required customization means required for all purchases; optional products may offer plain selling-plan purchases.
 
+**Required-product policy — approved Option A:** Within the supported enforcement conditions, v1 trusts correctly published, access-controlled app-owned Shopify policy and correctly operating Function inputs. Buyer-controlled markers are not policy authority. Reject unsigned or invalid authorization for identifiable required merchandise and detectable incomplete, malformed, pending, mismatched or wrong-installation policy; unrelated merchandise does not require a catalogue-wide authorization or outage. Unexpected complete loss or coherent rollback of *all* trusted product-policy evidence outside the supported publication contract may permit a formerly required unsigned plain purchase before detection. That residual risk is accepted as an incident to prevent, detect, contain and recover from; reconciliation cannot undo the purchase. Application-controlled unsafe publication remains a defect. The approved boundary and its limits are recorded in [OPTION-A-APPROVED.md](OPTION-A-APPROVED.md). Production publication, activation, reconciliation and gate evidence remain outstanding.
+
 **Artwork/orders:** Byte-exact private SVG/PNG/JPEG originals, verified before use, safe PNG/WebP previews, no arbitrary inline SVG. Merchant-controlled logo-later; merchant-only post-order attachment. Append-only replacements; PENDING_ARTWORK → READY → ARTWORK_LOCKED. Immutable order-time purchase facts. Shopify owns payment/fulfillment/refunds/returns/restock; no garment/customization refund split.
 
 **Billing/entitlements:** Three feature-differentiated plans, subscription + per-order usage and different included allowances. One qualifying paid order, not quantity/groups; refunds do not reverse usage. Fourteen-day live chosen-plan trial from activation, subscription and usage waived, no retrospective trial billing and no separate demo system. No active entitlement means no new issuance/renewal; valid old offers honored until expiry. Historical order/artwork access remains within retention. Downgrade-incompatible configs stop new quoting until adjusted/republished or entitlement restored. Required purchases do not silently become plain purchases.
@@ -29,7 +31,11 @@ Version 1.1 — 24 September 2026. Derived from the approved conversation decisi
 
 G1 same-variant non-Plus lifecycle; G2 complete Ed25519/Wasm/resource capacity; G3 TS/Rust golden vectors and transport; G4 discounts/Markets/tax/accelerated behavior; G5 setup allocation/exact decimal serialization; G6 independent fail-closed enforcement plus cart repair; G7 embedded Astro authentication/Polaris/Preact; G8 hybrid billing/trial/allowance/plan-change/delivery lifecycle.
 
-**Current state: every gate NOT RUN.** This plan authorizes proceeding to gated implementation, not declaring those platform hypotheses proven.
+**Current state:** The maintained [delivery evidence register](../delivery/state.md) records partial observations, unresolved work and principal verdicts. No complete gate has been accepted; G7 and G8 remain required and unexecuted. Option A closes the joint-loss A/B owner decision but does not pass G6.
+
+### PROVISIONAL / NOT ADOPTED
+
+The whole-quote v2 candidate remains a prototype exception pending principal adoption. The older per-line signing decision above remains the approved architecture until then. Option A does not adopt v2, freeze the two-field policy representation, or establish a production activation procedure.
 
 ### DEFERRED
 
