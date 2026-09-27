@@ -114,6 +114,11 @@ export class Publisher {
   }
 
   async start(intent: PublishIntent): Promise<StartResult> {
+    try { return await this.startInner(intent); }
+    catch (e) { return this.errorResult(e); }
+  }
+
+  private async startInner(intent: PublishIntent): Promise<StartResult> {
     if (!validIntent(intent)) return { kind: 'operator-action', reason: 'invalid publication identity or digest' };
     try {
       if (!await this.generationMatches(intent))
@@ -153,6 +158,11 @@ export class Publisher {
   }
 
   async advance(operationId: string): Promise<StepResult> {
+    try { return await this.advanceInner(operationId); }
+    catch (e) { return this.errorResult(e); }
+  }
+
+  private async advanceInner(operationId: string): Promise<StepResult> {
     const op = await this.journal.get(operationId);
     if (!op) return { kind: 'operator-action', reason: 'no durable operation intent' };
     try {

@@ -9,6 +9,7 @@ Source boundary: `spikes/m0-008/src/`, `spikes/m0-008/consumer-projection/` and 
 | Required→required, required→optional, optional→required | `required revisions and both policy directions...`: old effective boundary retained; both policy-mode changes refuse mutation without all-channel admission premise. |
 | Ambiguous mutation timeout, restart at boundaries | `ambiguous after-commit timeout...`, `journal snapshot resumes...`, `crash after remote write...`: exact re-read prevents blind duplicate write. |
 | Idempotency, competing operations, CAS/user errors, retry budget | `same operation replays...`, `mutation user errors...`, `stale prior digest...`: typed replay/conflict/operator action. |
+| Journal outage | `journal failures return typed operator action...`: injected read failure before start or advance returns a typed hold and makes no remote write. |
 | Concurrent journal saves and terminal retry | `stale activation-pending...`, `stale timeout...`, `mutation user errors...`: versioned save cannot regress an active operation, and exhausted retry stays stopped after restart. |
 | Missing, partial, malformed, stale, wrong-installation readback | `missing, partial, malformed, stale and wrong-generation...`: no default optional interpretation or write through ambiguous state. |
 | Unsupported complete loss and coherent rollback | `complete loss and coherent rollback...`: preserved last active journal flags re-publication as incident; the Function limitation remains explicit. |

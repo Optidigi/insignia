@@ -89,6 +89,20 @@ test('installation rollover between admission and write prevents external mutati
   assert.equal(h.remote.writes.length, 0);
 });
 
+test('journal failures return typed operator action before any external write', async () => {
+  const i = intent('required', 1);
+  const onStart = harness();
+  onStart.journal.get = async () => { throw new Error('synthetic journal outage'); };
+  assert.equal((await onStart.publisher.start(i)).kind, 'operator-action');
+  assert.equal(onStart.remote.writes.length, 0);
+
+  const onAdvance = harness();
+  assert.equal((await onAdvance.publisher.start(i)).kind, 'started');
+  onAdvance.journal.get = async () => { throw new Error('synthetic journal outage'); };
+  assert.equal((await onAdvance.publisher.advance(i.operationId)).kind, 'operator-action');
+  assert.equal(onAdvance.remote.writes.length, 0);
+});
+
 test('required revisions and both policy directions preserve old effective boundary until activation', async () => {
   const h = harness();
   await activate(h, intent('required', 1));
