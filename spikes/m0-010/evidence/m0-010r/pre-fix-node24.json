@@ -1,0 +1,107 @@
+{
+  "runtime": "v24.21.0",
+  "mode": "full repository modules",
+  "networkOrProviderOperations": 0,
+  "R1": {
+    "observedAt": "2026-06-14T23:59:00.000Z",
+    "cancellationAt": "2026-06-15T00:00:00.000Z",
+    "cancelAtEndOfCycle": true,
+    "normalizedUntil": null,
+    "decisions": [
+      {
+        "now": "2026-06-14T23:59:30.000Z",
+        "decision": "ALLOW"
+      },
+      {
+        "now": "2026-06-15T00:00:00.000Z",
+        "decision": "ALLOW"
+      },
+      {
+        "now": "2026-06-15T00:01:00.000Z",
+        "decision": "ALLOW"
+      },
+      {
+        "now": "2026-06-15T00:05:00.000Z",
+        "decision": "PENDING_VERIFY"
+      }
+    ],
+    "explicitBoundaryControl": "PENDING_VERIFY"
+  },
+  "R2": {
+    "tariffResults": [
+      {
+        "tierIndex": 0,
+        "amount": "0.00",
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 0,
+        "amount": "1.00",
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 0,
+        "amount": "-1.00",
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 0,
+        "amount": "not-a-decimal",
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 0,
+        "amount": null,
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 0,
+        "amount": "(missing)",
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 1,
+        "amount": "0.00",
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 1,
+        "amount": "1.00",
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 1,
+        "amount": "-1.00",
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 1,
+        "amount": "not-a-decimal",
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 1,
+        "amount": null,
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      },
+      {
+        "tierIndex": 1,
+        "amount": "(missing)",
+        "result": "ACTIVE",
+        "normalizedIncludedUnits": 2
+      }
+    ],
+    "fractionalUnitRatePositiveControl": "ACTIVE"
+  }
+}

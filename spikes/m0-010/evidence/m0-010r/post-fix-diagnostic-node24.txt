@@ -1,0 +1,20 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
++ actual - expected
+
++ '2026-06-15T00:00:00.000Z'
+- null
+
+    at file:///home/serveradmin/insignia-m0-010-worktree/spikes/m0-010/evidence/m0-010r/principal-reproduce.mjs:49:8 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: '2026-06-15T00:00:00.000Z',
+  expected: null,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

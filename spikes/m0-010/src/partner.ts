@@ -60,6 +60,9 @@ function noErrors(body: unknown): RecordValue | null {
 function decimalAmount(value: unknown): boolean {
   return typeof value === 'string' && /^(?:0|[1-9]\d*)(?:\.\d{1,9})?$/.test(value);
 }
+function zeroDecimal(value: unknown): boolean {
+  return typeof value === 'string' && /^0(?:\.0{1,9})?$/.test(value);
+}
 
 export interface ActiveObservation {
   appId: string;
@@ -126,8 +129,9 @@ export function parseActiveSubscription(
   const second = record(tiers[1]);
   const band = first?.upTo;
   if (!Number.isSafeInteger(band) || typeof band !== 'number' || band < 1 ||
-      !(typeof first?.amountPerUnit === 'string' && /^0(?:\.0{1,9})?$/.test(first.amountPerUnit)) ||
-      second?.upTo !== null || !decimalAmount(second?.amountPerUnit))
+      !zeroDecimal(first?.amountPerUnit) || !zeroDecimal(first?.amount) ||
+      second?.upTo !== null || !decimalAmount(second?.amountPerUnit) ||
+      !zeroDecimal(second?.amount))
     return { kind: 'UNSUPPORTED_TARIFF' };
   const trialEndsAt = active.trialEndsAt;
   const cycle = record(active.currentBillingCycle);
@@ -141,11 +145,12 @@ export function parseActiveSubscription(
         Date.parse(exactTime(cycle.endTime)!) <= observedAtMs)))
     return { kind: 'UNKNOWN_CONTRACT' };
   const pending = active.pendingUpdate;
-  if (pending !== null && (!record(pending) || !Array.isArray(record(pending)?.items)))
+  const pendingItems = record(pending)?.items;
+  if (pending !== null && (!Array.isArray(pendingItems) || pendingItems.length === 0))
     return { kind: 'UNKNOWN_CONTRACT' };
   const pendingPlanHandles: string[] = [];
   if (pending !== null) {
-    for (const item of record(pending)!.items as unknown[]) {
+    for (const item of pendingItems as unknown[]) {
       const handle = record(item)?.handle;
       if (typeof handle !== 'string') return { kind: 'UNKNOWN_CONTRACT' };
       pendingPlanHandles.push(handle);
@@ -165,8 +170,10 @@ export function parseActiveSubscription(
 /** Current observation intentionally has no historical coverage before the read. */
 export function currentHistory(active: ActiveObservation): VerifiedHistory {
   const start = active.observedAt;
-  const until = active.pendingPlanHandles.length > 0
-    ? active.currentCycle?.until ?? active.trialEndsAt : null;
+  // A fresh observation cannot authorize through a known plan/trial/cancellation transition.
+  const until = active.trialEndsAt ??
+    (active.cancelAtEndOfCycle || active.pendingPlanHandles.length > 0
+      ? active.currentCycle?.until ?? null : null);
   const evidenceId = createHash('sha256').update(JSON.stringify(active)).digest('hex');
   return {
     source: 'PARTNER_API_2026_07', appId: active.appId, shopId: active.shopId,
