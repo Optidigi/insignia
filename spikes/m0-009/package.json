@@ -1,0 +1,28 @@
+{
+  "name": "insignia-m0-009-embedded-admin",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "check": "astro check && tsc --noEmit -p tsconfig.server.json && vitest run",
+    "test": "vitest run",
+    "start": "node dist/server/entry.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "11.1.6",
+    "@astrojs/preact": "6.0.5",
+    "@shopify/shopify-api": "15.0.0",
+    "astro": "7.3.5",
+    "preact": "10.29.8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.6",
+    "@shopify/polaris-types": "1.1.0",
+    "@types/node": "24.10.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.2"
+  }
+}
