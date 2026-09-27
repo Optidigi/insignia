@@ -11,7 +11,8 @@ const intent: PublishIntent = {
 };
 function field(key: string, value: string) {
   return { id: 'gid://shopify/Metafield/9', namespace: intent.namespace, key,
-    type: 'single_line_text_field', value, compareDigest: 'a'.repeat(64), owner: { __typename: 'Product' } };
+    type: 'single_line_text_field', value, compareDigest: 'a'.repeat(64),
+    owner: { __typename: 'Product', id: intent.ownerId } };
 }
 
 test('pinned 2026-07 product read maps owner, namespace, key, type and digest', async () => {
@@ -26,6 +27,7 @@ test('pinned 2026-07 product read maps owner, namespace, key, type and digest', 
   assert.equal(result.policy?.value, `${intent.generationHex}:1:required`);
   assert.equal(result.registration?.digest, 'a'.repeat(64));
   assert.equal(calls[0]?.query, READ_PRODUCT_POLICY);
+  assert.match(READ_PRODUCT_POLICY, /owner \{ __typename \.\.\. on Product \{ id \} \}/);
   assert.deepEqual(calls[0]?.variables, { ownerId: intent.ownerId, namespace: intent.namespace });
 });
 
@@ -53,10 +55,19 @@ test('wrong namespace, owner and malformed acknowledgement are rejected', async 
   for (const mutation of [
     (x: Record<string, unknown>) => ({ ...x, namespace: 'app--other' }),
     (x: Record<string, unknown>) => ({ ...x, owner: { __typename: 'Shop' } }),
+    (x: Record<string, unknown>) => ({ ...x, owner: { __typename: 'Product', id: 'gid://shopify/Product/43' } }),
     (x: Record<string, unknown>) => ({ ...x, value: 'different' })
   ]) {
     const client: GraphQLClient = { execute: async () => ({ data: { metafieldsSet: {
       metafields: [mutation(field('m0_007_policy', 'desired'))], userErrors: [] } } }) };
     await assert.rejects(() => new GraphQLPolicyTransport(client).set(intent, 'policy', 'desired', null));
   }
+});
+
+test('read rejects metafield owned by a different Product even when type and namespace match', async () => {
+  const wrong = { ...field('m0_007_registration', `${intent.generationHex}:1:ready`),
+    owner: { __typename: 'Product', id: 'gid://shopify/Product/43' } };
+  const client: GraphQLClient = { execute: async () => ({ data: { product: {
+    id: intent.ownerId, registration: wrong, policy: null } } }) };
+  await assert.rejects(() => new GraphQLPolicyTransport(client).read(intent), /owner\/namespace\/type\/digest mismatch/);
 });

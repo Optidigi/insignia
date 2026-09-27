@@ -23,9 +23,11 @@ export class MemoryJournal implements Journal {
     if (open && open.phase !== 'active') return false;
     this.records.set(record.intent.operationId, clone(record)); return true;
   }
-  async save(record: Operation): Promise<void> {
-    if (!this.records.has(record.intent.operationId)) throw new Error('journal record absent');
+  async save(record: Operation, expectedVersion: number): Promise<boolean> {
+    const current = this.records.get(record.intent.operationId);
+    if (!current || current.version !== expectedVersion || record.version !== expectedVersion + 1) return false;
     this.records.set(record.intent.operationId, clone(record));
+    return true;
   }
 }
 

@@ -2,7 +2,7 @@
 export type Mode = 'required' | 'optional';
 export type Field = 'registration' | 'policy';
 export type Digest = string | null;
-export type Phase = 'prepared' | 'pending-written' | 'policy-written' | 'ready-written' | 'activation-pending' | 'active';
+export type Phase = 'prepared' | 'pending-written' | 'policy-written' | 'ready-written' | 'activation-pending' | 'active' | 'retry-exhausted';
 
 export interface PublishIntent {
   operationId: string;
@@ -35,12 +35,14 @@ export interface Operation {
   phase: Phase;
   retries: number;
   activationEvidence: string | null;
+  version: number;
 }
 export interface Journal {
   get(operationId: string): Promise<Operation | null>;
   currentFor(ownerId: string): Promise<Operation | null>;
   insertIfAbsent(operation: Operation): Promise<boolean>;
-  save(operation: Operation): Promise<void>;
+  /** Compare-and-swap; false means another process advanced the journal. */
+  save(operation: Operation, expectedVersion: number): Promise<boolean>;
 }
 export type StartResult =
   | { kind: 'started' | 'replayed'; phase: Phase }
@@ -132,7 +134,7 @@ export class Publisher {
       !sameDigest(state.policy, intent.expectedPriorDigests.policy))
       return { kind: 'conflict', reason: 'revision or expected prior digest changed' };
     const operation: Operation = { intent, fingerprint: fingerprint(intent), previous,
-      phase: 'prepared', retries: 0, activationEvidence: null };
+      phase: 'prepared', retries: 0, activationEvidence: null, version: 0 };
     if (!await this.journal.insertIfAbsent(operation)) return { kind: 'conflict', reason: 'journal claim raced' };
     return { kind: 'started', phase: 'prepared' };
   }
@@ -141,6 +143,8 @@ export class Publisher {
     const op = await this.journal.get(operationId);
     if (!op) return { kind: 'operator-action', reason: 'no durable operation intent' };
     if (op.phase === 'active') return { kind: 'active', phase: 'active' };
+    if (op.phase === 'retry-exhausted')
+      return { kind: 'operator-action', reason: 'transport retry budget exhausted; operator reconciliation required' };
     const i = op.intent;
     try {
       if (needsAdmission(op.previous, i)) {
@@ -187,21 +191,25 @@ export class Publisher {
         const gate = await this.activation.check(i, op.previous, state);
         if (gate.kind === 'pending') {
           op.phase = 'activation-pending';
-          await this.journal.save(op);
+          const stale = await this.persist(op);
+          if (stale) return stale;
           return { kind: 'activation-pending', prerequisite: gate.prerequisite };
         }
         op.phase = 'active'; op.activationEvidence = gate.evidence;
       }
       op.retries = 0;
-      await this.journal.save(op);
+      const stale = await this.persist(op);
+      if (stale) return stale;
       return op.phase === 'active' ? { kind: 'active', phase: 'active' } : { kind: 'pending', phase: op.phase };
     } catch (e) {
       if (e instanceof TransportFault && (e.kind === 'timeout' || e.kind === 'network')) {
         op.retries += 1;
-        await this.journal.save(op);
-        return op.retries <= MAX_RETRIES
-          ? { kind: 'retry-later', reason: 'ambiguous transport; exact re-read required before retry', attempts: op.retries }
-          : { kind: 'operator-action', reason: 'transport retry budget exhausted; preserve journal and management evidence' };
+        if (op.retries > MAX_RETRIES) op.phase = 'retry-exhausted';
+        const stale = await this.persist(op);
+        if (stale) return stale;
+        return op.phase === 'retry-exhausted'
+          ? { kind: 'operator-action', reason: 'transport retry budget exhausted; preserve journal and management evidence' }
+          : { kind: 'retry-later', reason: 'ambiguous transport; exact re-read required before retry', attempts: op.retries };
       }
       return this.errorResult(e);
     }
@@ -218,6 +226,12 @@ export class Publisher {
     if (cell?.value === value(i, field === 'registration' ? 'pending' : i.mode)) return true;
     const expected = i.expectedPriorDigests[field];
     return sameDigest(cell, expected);
+  }
+  private async persist(op: Operation): Promise<{ kind: 'conflict'; reason: string } | null> {
+    const saved = await this.journal.save({ ...op, version: op.version + 1 }, op.version);
+    if (saved) return null;
+    const latest = await this.journal.get(op.intent.operationId);
+    return { kind: 'conflict', reason: `journal version changed; reload operation (current phase: ${latest?.phase ?? 'missing'})` };
   }
   private async ensure(i: PublishIntent, field: Field, desired: string, expected: Digest,
     observed: Cell | null): Promise<StepResult | null> {

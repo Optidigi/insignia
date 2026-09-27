@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { FakeActivation, FakeAdmission, FakeRemote, MemoryJournal } from './fakes.ts';
 import { Publisher } from './publisher.ts';
-import type { Cell, Mode, Operation, PublishIntent, RemoteState } from './publisher.ts';
+import type { ActivationPort, AdmissionPort, Cell, Mode, Operation, PublishIntent, RemoteState } from './publisher.ts';
+import { TransportFault } from './publisher.ts';
 
 const GENERATION = '11111111111111111111111111111111';
 const OWNER = 'gid://shopify/Product/42'; // synthetic only
@@ -131,7 +132,10 @@ test('crash after remote write but before journal save resumes from exact remote
     const before = h.journal.snapshot();
     const originalSave = h.journal.save.bind(h.journal);
     let fail = true;
-    h.journal.save = async record => { if (fail) { fail = false; throw new Error('synthetic process crash'); } await originalSave(record); };
+    h.journal.save = async (record, version) => {
+      if (fail) { fail = false; throw new Error('synthetic process crash'); }
+      return originalSave(record, version);
+    };
     assert.equal((await h.publisher.advance(i.operationId)).kind, 'operator-action');
     const resumed = harness(h.remote.snapshot(), before);
     resumed.admission.result = established; resumed.activation.result = established;
@@ -180,7 +184,73 @@ test('mutation user errors, stale CAS, and bounded timeout preserve journal and 
     h.remote.failNext = 'timeout-before';
     assert.equal((await h.publisher.advance(i.operationId)).kind, n < 4 ? 'retry-later' : 'operator-action');
   }
-  assert.equal((await h.journal.get(i.operationId))?.phase, 'prepared');
+  assert.equal((await h.journal.get(i.operationId))?.phase, 'retry-exhausted');
+  assert.equal((await h.publisher.advance(i.operationId)).kind, 'operator-action');
+  assert.equal(h.remote.writes.length, 0, 'fifth call must not retry the external write');
+  const restarted = harness(h.remote.snapshot(), h.journal.snapshot());
+  restarted.admission.result = established;
+  assert.equal((await restarted.publisher.advance(i.operationId)).kind, 'operator-action');
+  assert.equal(restarted.remote.writes.length, 0);
+});
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>(r => { resolve = r; });
+  return { promise, resolve };
+}
+
+test('stale activation-pending save cannot overwrite a concurrent active journal decision', async () => {
+  const h = harness(), i = intent('required', 1);
+  h.admission.result = established; h.activation.result = established;
+  await h.publisher.start(i);
+  for (let n = 0; n < 3; n++) await h.publisher.advance(i.operationId);
+  const entered = deferred<void>(), release = deferred<void>();
+  const slowActivation: ActivationPort = { check: async () => {
+    entered.resolve(); await release.promise;
+    return { kind: 'pending', prerequisite: 'stale synthetic observation' };
+  } };
+  const slow = new Publisher(h.journal, h.remote, h.admission, slowActivation);
+  const staleStep = slow.advance(i.operationId);
+  await entered.promise;
+  assert.equal((await h.publisher.advance(i.operationId)).kind, 'active');
+  release.resolve();
+  assert.equal((await staleStep).kind, 'conflict');
+  assert.equal((await h.journal.get(i.operationId))?.phase, 'active');
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1), true);
+});
+
+test('stale timeout save cannot overwrite a concurrent active journal decision', async () => {
+  const h = harness(), i = intent('required', 1);
+  h.admission.result = established; h.activation.result = established;
+  await h.publisher.start(i);
+  for (let n = 0; n < 3; n++) await h.publisher.advance(i.operationId);
+  const entered = deferred<void>(), release = deferred<void>();
+  const slowAdmission: AdmissionPort = { check: async () => {
+    entered.resolve(); await release.promise;
+    throw new TransportFault('timeout', 'synthetic stale check timeout');
+  } };
+  const slow = new Publisher(h.journal, h.remote, slowAdmission, h.activation);
+  const staleStep = slow.advance(i.operationId);
+  await entered.promise;
+  assert.equal((await h.publisher.advance(i.operationId)).kind, 'active');
+  release.resolve();
+  assert.equal((await staleStep).kind, 'conflict');
+  assert.equal((await h.journal.get(i.operationId))?.phase, 'active');
+});
+
+test('saved activation-pending phase survives restart and never self-activates', async () => {
+  let h = harness(); const i = intent('required', 1);
+  h.admission.result = established;
+  await h.publisher.start(i);
+  for (let n = 0; n < 3; n++) await h.publisher.advance(i.operationId);
+  assert.equal((await h.publisher.advance(i.operationId)).kind, 'activation-pending');
+  assert.equal((await h.journal.get(i.operationId))?.phase, 'activation-pending');
+  h = harness(h.remote.snapshot(), h.journal.snapshot());
+  h.admission.result = established;
+  assert.equal((await h.publisher.advance(i.operationId)).kind, 'activation-pending');
+  assert.equal(await h.publisher.newQuoteAllowed(OWNER, 1), false);
+  h.activation.result = established;
+  assert.equal((await h.publisher.advance(i.operationId)).kind, 'active');
 });
 
 test('missing, partial, malformed, stale and wrong-generation states cannot become optional', async () => {
