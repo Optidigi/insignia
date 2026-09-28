@@ -19,8 +19,8 @@ appears as `legacySubscriptionId` and matched the native approval redirect; no
 top-level subscription ID was invented.
 
 Immediately before the run, an authenticated **read-only** Partner 2026-07
-query returned the exact new app `gid://shopify/App/429028933633`, Optidigi
-org `4697030`, shop `gid://shopify/Shop/105501393179` /
+query scoped to Optidigi org `4697030` returned the exact new app
+`gid://shopify/App/429028933633` and shop `gid://shopify/Shop/105501393179` /
 `insignia-rewrite-dev.myshopify.com`, current cycle
 `2026-09-28T16:53:01Z..2026-10-28T16:53:01Z`, no trial, scheduled
 cancellation or pending update. Plan `insignia-dev-zero-20260928` was one

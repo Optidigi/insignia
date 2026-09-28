@@ -16,8 +16,9 @@ The register contains the exact synthetic event body/key/time, SHA-256,
 attempt status, sanitized HTTP status/request ID and metadata presence, and
 human-attested billing observations. A local secret-presence scan found neither
 the protected Partner token nor app client secret in it and found no bearer
-header. No session or credential is tracked here. The native log URLs and row
-IDs in `observation-rounds.md` identify the actual Dashboard entries; the
+header. No session or credential is tracked here. The row IDs in
+`observation-rounds.md` and full native log links in the delivery evidence
+narrative identify the actual Dashboard entries; the
 register's clean app Logs URL is a human attestation pointer, not an API-signed
 proof of the log content.
 
