@@ -5,13 +5,16 @@ const CLIENT_ID = '1443cf6d03d39edae7c101a943c5c684';
 const SHOP_ID = 'gid://shopify/Shop/105501393179';
 const METER = 'customized_order_paid';
 const MAX_TOKEN_BODY = 16 * 1024;
+const MAX_EVENT_RESPONSE_BODY = 16 * 1024;
 const MAX_EVENT_BODY = 4096;
 const REQUEST_TIMEOUT_MS = 10_000;
 const USE_WINDOW_MS = 30_000;
+const MAX_RETRY_AFTER_MS = 300_000;
 
 export type TokenMetadata = { scope: 'WRITE_PRESENT' | 'UNKNOWN'; expiry: 'PRESENT' | 'UNKNOWN' };
 export type ImmediateSendResult =
   | { kind: 'HTTP'; status: number; tokenMetadata: TokenMetadata;
+      responseSuccess: boolean | null; retryAfterMs: number | null;
       replay: boolean | null; requestId: string | null }
   | { kind: 'TOKEN_REJECTED' | 'GUARD_REJECTED' | 'USE_DEADLINE' |
       'TIMEOUT' | 'UNAVAILABLE' | 'UNSAFE_REDIRECT' | 'OVERSIZE_RESPONSE'; status?: number };
@@ -75,9 +78,9 @@ function unsafeRedirect(response: Response, url: string): boolean {
 }
 
 async function boundedJson(response: Response, controller: AbortController,
-  now: () => number, deadline: number): Promise<unknown> {
+  now: () => number, deadline: number, maxBytes: number): Promise<unknown> {
   const declared = response.headers.get('content-length');
-  if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > MAX_TOKEN_BODY))
+  if (declared !== null && (!/^\d+$/.test(declared) || Number(declared) > maxBytes))
     throw new Error('oversize');
   if (!response.body) throw new Error('empty');
   const reader = response.body.getReader();
@@ -88,7 +91,7 @@ async function boundedJson(response: Response, controller: AbortController,
       const next = await timed(reader.read(), controller, now, deadline);
       if (next.done) break;
       size += next.value.byteLength;
-      if (size > MAX_TOKEN_BODY) throw new Error('oversize');
+      if (size > maxBytes) throw new Error('oversize');
       chunks.push(next.value);
     }
   } catch (error) {
@@ -127,6 +130,16 @@ function safeHeader(value: string | null): string | null {
   return value !== null && /^[A-Za-z0-9_-]{1,128}$/.test(value) ? value : null;
 }
 
+function retryAfterMs(value: string | null): number | null {
+  if (value === null) return null;
+  let ms: number;
+  if (/^\d+$/.test(value)) ms = Number(value) * 1000;
+  else if (/^(?:Mon|Tue|Wed|Thu|Fri|Sat|Sun), \d{2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(value))
+    ms = Math.max(0, Date.parse(value) - Date.now());
+  else return null;
+  return Number.isSafeInteger(ms) && ms <= MAX_RETRY_AFTER_MS ? ms : null;
+}
+
 /** Acquires directly, verifies fresh terms, then consumes the bearer for at most one POST. */
 export async function sendWithImmediateUseToken(ports: ImmediateUsePorts): Promise<ImmediateSendResult> {
   if (ports.clientId !== CLIENT_ID || !ports.clientSecret ||
@@ -158,7 +171,7 @@ export async function sendWithImmediateUseToken(ports: ImmediateUsePorts): Promi
 
   let authPayload: unknown;
   try { authPayload = await boundedJson(auth, authController, now,
-    Math.min(useDeadline, start + timeout)); }
+    Math.min(useDeadline, start + timeout), MAX_TOKEN_BODY); }
   catch (error) {
     if (error instanceof Error && error.message === 'oversize') return { kind: 'OVERSIZE_RESPONSE' };
     return { kind: authController.signal.aborted ? 'TIMEOUT' : 'TOKEN_REJECTED' };
@@ -184,16 +197,31 @@ export async function sendWithImmediateUseToken(ports: ImmediateUsePorts): Promi
   if (remaining(now, deadline) <= 0) return { kind: 'USE_DEADLINE' };
 
   const eventController = new AbortController();
+  const eventDeadline = Math.min(deadline, now() + timeout);
   let eventResponse: Response;
   try {
     eventResponse = await timed(fetcher(ports.eventUrl, { method: 'POST', redirect: 'manual',
       signal: eventController.signal, headers: { 'Content-Type': 'application/json',
         Authorization: `Bearer ${acquired.token}` }, body: ports.eventBody }),
-    eventController, now, Math.min(deadline, now() + timeout));
+    eventController, now, eventDeadline);
   } catch { return { kind: eventController.signal.aborted ? 'TIMEOUT' : 'UNAVAILABLE' }; }
   if (unsafeRedirect(eventResponse, ports.eventUrl)) return { kind: 'UNSAFE_REDIRECT' };
+  let eventPayload: unknown;
+  try { eventPayload = await boundedJson(eventResponse, eventController, now,
+    eventDeadline, MAX_EVENT_RESPONSE_BODY); }
+  catch (error) {
+    if (error instanceof Error && error.message === 'oversize') return { kind: 'OVERSIZE_RESPONSE' };
+    if (eventController.signal.aborted) return { kind: 'TIMEOUT' };
+    if (error instanceof Error && (error.message === 'invalid-json' || error.message === 'empty'))
+      eventPayload = null;
+    else return { kind: 'UNAVAILABLE' };
+  }
+  const success = record(eventPayload)?.success;
   const replayHeader = eventResponse.headers.get('Idempotent-Replay');
   const replay = replayHeader === 'true' ? true : replayHeader === 'false' ? false : null;
   return { kind: 'HTTP', status: eventResponse.status, tokenMetadata: acquired.metadata,
+    responseSuccess: typeof success === 'boolean' ? success : null,
+    retryAfterMs: eventResponse.status === 429
+      ? retryAfterMs(eventResponse.headers.get('Retry-After')) : null,
     replay, requestId: safeHeader(eventResponse.headers.get('X-Request-ID')) };
 }

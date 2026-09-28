@@ -12,7 +12,8 @@ const BODY = JSON.stringify({ shop_id: 'gid://shopify/Shop/105501393179',
 const bearer = 'synthetic-bearer';
 
 function response(body: unknown, status = 200, headers?: HeadersInit): Response {
-  return new Response(JSON.stringify(body), { status, headers });
+  return new Response(JSON.stringify(body), { status,
+    ...(headers === undefined ? {} : { headers }) });
 }
 
 test('trusted direct acquisition sends once with a private bearer and unknown missing metadata', async () => {
@@ -21,7 +22,7 @@ test('trusted direct acquisition sends once with a private bearer and unknown mi
     calls.push({ url: String(url), init: init! });
     return calls.length === 1
       ? response({ access_token: bearer, token_type: 'Bearer' })
-      : response({ accepted: true }, 202);
+      : response({ success: true }, 202);
   };
   let verified = 0;
   const result = await sendWithImmediateUseToken({ clientId: CLIENT_ID, clientSecret: SECRET,
@@ -29,7 +30,8 @@ test('trusted direct acquisition sends once with a private bearer and unknown mi
     verifyAfterAcquire: async () => { verified++; return true; },
     beforeEventDispatch: async () => true });
   assert.deepEqual(result, { kind: 'HTTP', status: 202,
-    tokenMetadata: { scope: 'UNKNOWN', expiry: 'UNKNOWN' }, replay: null, requestId: null });
+    tokenMetadata: { scope: 'UNKNOWN', expiry: 'UNKNOWN' },
+    responseSuccess: true, retryAfterMs: null, replay: null, requestId: null });
   assert.equal(verified, 1);
   assert.deepEqual(calls.map(x => x.url), [AUTH_URL, EVENT_URL]);
   assert.equal(calls[0]?.init.redirect, 'manual');
@@ -99,7 +101,7 @@ test('supplied scope and expiry are retained only as presence and a shorter expi
   const first = await sendWithImmediateUseToken({ ...base, verifyAfterAcquire: async () => true });
   assert.deepEqual(first, { kind: 'HTTP', status: 202,
     tokenMetadata: { scope: 'WRITE_PRESENT', expiry: 'PRESENT' },
-    replay: null, requestId: null });
+    responseSuccess: null, retryAfterMs: null, replay: null, requestId: null });
   const second = await sendWithImmediateUseToken({ ...base,
     verifyAfterAcquire: async () => { tick += 1000; return true; } });
   assert.deepEqual(second, { kind: 'USE_DEADLINE' });
@@ -182,7 +184,7 @@ test('event redirect, failure status and stalled POST are sanitized after one at
       { kind: 'UNSAFE_REDIRECT' }],
     [response({ error: 'synthetic-secret' }, 403),
       { kind: 'HTTP', status: 403, tokenMetadata: { scope: 'UNKNOWN', expiry: 'UNKNOWN' },
-        replay: null, requestId: null }],
+        responseSuccess: null, retryAfterMs: null, replay: null, requestId: null }],
   ] as const) {
     let calls = 0;
     assert.deepEqual(await sendWithImmediateUseToken({ ...base,
@@ -227,4 +229,50 @@ test('durable pre-dispatch barrier runs after fresh verification and blocks fail
     } });
   assert.equal(sent.kind, 'HTTP');
   assert.deepEqual(order, ['auth', 'verify', 'barrier', 'event']);
+});
+
+test('event response carries literal success and bounded Retry-After without exposing body', async () => {
+  const cases = [
+    { eventResponse: response({ success: true, secret: 'never-return' }, 202),
+      status: 202, responseSuccess: true, retryAfterMs: null },
+    { eventResponse: response({ success: false }, 202),
+      status: 202, responseSuccess: false, retryAfterMs: null },
+    { eventResponse: new Response('{malformed', { status: 202 }),
+      status: 202, responseSuccess: null, retryAfterMs: null },
+    { eventResponse: response({ error: 'rate limited' }, 429, { 'Retry-After': '3' }),
+      status: 429, responseSuccess: null, retryAfterMs: 3000 },
+    { eventResponse: response({}, 429, { 'Retry-After': '999999999' }),
+      status: 429, responseSuccess: null, retryAfterMs: null },
+  ];
+  for (const item of cases) {
+    let calls = 0;
+    const result = await sendWithImmediateUseToken({ clientId: CLIENT_ID,
+      clientSecret: SECRET, eventUrl: EVENT_URL, eventBody: BODY,
+      verifyAfterAcquire: async () => true, beforeEventDispatch: async () => true,
+      fetch: async () => { calls++; return calls === 1
+        ? response({ access_token: bearer, token_type: 'Bearer' }) : item.eventResponse; } });
+    assert.deepEqual(result, { kind: 'HTTP', status: item.status,
+      tokenMetadata: { scope: 'UNKNOWN', expiry: 'UNKNOWN' },
+      responseSuccess: item.responseSuccess, retryAfterMs: item.retryAfterMs,
+      replay: null, requestId: null });
+    assert.equal(calls, 2);
+    assert.equal(JSON.stringify(result).includes('never-return'), false);
+  }
+});
+
+test('oversized or stalled event response body fails after one dispatched POST', async () => {
+  const eventResponses = [
+    new Response('x'.repeat(16 * 1024 + 1), { status: 202 }),
+    new Response(new ReadableStream({ start() { /* deliberately stalled */ } }), { status: 202 }),
+  ];
+  for (const [index, eventResponse] of eventResponses.entries()) {
+    let calls = 0;
+    const result = await sendWithImmediateUseToken({ clientId: CLIENT_ID,
+      clientSecret: SECRET, eventUrl: EVENT_URL, eventBody: BODY, timeoutMs: 5,
+      verifyAfterAcquire: async () => true, beforeEventDispatch: async () => true,
+      fetch: async () => { calls++; return calls === 1
+        ? response({ access_token: bearer, token_type: 'Bearer' }) : eventResponse; } });
+    assert.deepEqual(result, { kind: index === 0 ? 'OVERSIZE_RESPONSE' : 'TIMEOUT' });
+    assert.equal(calls, 2);
+  }
 });
