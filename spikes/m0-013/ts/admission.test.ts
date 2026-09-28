@@ -41,6 +41,21 @@ test('one extra bucket is rejected before signing; no partial quote is issued', 
   assert.deepEqual(outcome, { status: 'REJECT', reason: 'BUCKET_COUNT' });
 });
 
+test('source-bound 32 plus 168 evaluation admits the whole set and rejects bucket 33', () => {
+  const evaluated = { ...profile, id: 'local-32-plus-168-only', maxCustomizedBuckets: 32 };
+  const projected = { ...cart, ordinaryLines: 168,
+    transformInputUpperBytes: 92_522, validationInputUpperBytes: 103_968 };
+  const accepted = decideAdmission(groups(32), projected, evaluated);
+  assert.equal(accepted.status, 'ADMIT');
+  if (accepted.status === 'ADMIT') {
+    assert.equal(accepted.bounds.totalCartLines, 200);
+    assert.equal(accepted.allocation.buckets.length, 32);
+  }
+  assert.deepEqual(issueAdmittedQuote(groups(33), context, publicKey, 20802,
+    { ...projected, ordinaryLines: 167 }, evaluated),
+  { status: 'REJECT', reason: 'BUCKET_COUNT' });
+});
+
 test('unresolved managed lines and ordinary-cart growth invalidate admission', () => {
   assert.deepEqual(decideAdmission(groups(10), { ...cart, unresolvedManagedLines: 1 }, profile),
     { status: 'REJECT', reason: 'INCOMPLETE_CUSTOMIZED_SUBSET' });
@@ -75,6 +90,8 @@ test('the allocated bucket count, including setup remainder splits, is the admis
 });
 
 test('the output bound uses the maximum admitted GID and amount widths', () => {
+  assert.equal(transformOutputUpperBytes(32), 11_632); // Same serializer bound as Rust.
+  assert.ok(transformOutputUpperBytes(64) > 16_000);
   const maximal = [{ groupId: 'max', setupMinor: '0', variants: [{
     variantId: '18446744073709551615', quantity: 1,
     acceptedBaseUnitMinor: '18446744073709551615',
