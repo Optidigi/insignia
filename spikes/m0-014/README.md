@@ -14,6 +14,9 @@ unchanged; only the new app config, handles, UIDs and build command differ.
 `scripts/check-local.sh` checks source equality, canonical TS and native Rust,
 the retained 152-row replay and all 88 candidate rows against the pinned
 executables. This is local evidence, not a live cart or gate pass.
+`python3 -B scripts/check-live-setup.py` hashes and reconciles the saved
+Admin setup receipts offline, including the exact initial 272-unit stock,
+draft status, owned metadata and effective Function flags.
 
 ## Operator boundary
 

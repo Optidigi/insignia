@@ -62,6 +62,13 @@ runner** metrics, not live platform counters. Stack peak remains unknown.
 The first full-suite attempt failed because `cargo` was not on that shell's
 PATH; the explicit isolated Rust environment passed. Generated M0-013
 measurement files were restored to their tracked historical bytes.
+The first PR CI attempt also exposed an off-store configuration mistake:
+`shopify app config validate` with the real named config requested Shopify
+authentication on an unauthenticated runner. The suite now validates the
+named config locally with `tomllib` and builds Functions through a separate
+synthetic default config; the remote preview still uses the explicitly named
+new-app config. Local full-suite replay passed after this correction. The
+corrected CI head is pending.
 
 The fixture-only issuer uses actual real variant IDs and a trusted operator
 readback seam; its synthetic small case allocates `1 × 30.34 + 2 × 30.33 =
@@ -148,6 +155,10 @@ required B, while both products stayed DRAFT. The app-owned Cart Transform
 Fresh Admin readback shows the intended Function IDs, Transform
 `blockOnFailure:true`, Validation `enabled:true` and `blockOnFailure:true`.
 No live Function input projection or checkout has yet been observed.
+`python3 -B spikes/m0-014/scripts/check-live-setup.py` passed against 14
+hashed, nonsecret setup receipts, two Draft products, three variants, 272
+initial units and two owned Functions. This checker verifies saved receipt
+consistency; it does not attest Shopify independently.
 
 ## Live execution and residue
 

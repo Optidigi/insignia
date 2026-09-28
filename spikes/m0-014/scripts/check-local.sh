@@ -26,11 +26,11 @@ for crate in authorization transform validation; do
   cargo clippy --manifest-path "$manifest" --all-targets --locked -- -D warnings
   cargo test --manifest-path "$manifest" --locked
 done
-"$shopify" app config validate --path spikes/m0-014/rust --config m0-014-public
+python3 -B spikes/m0-014/scripts/check-config.py
 for target in transform validation; do
-  "$shopify" app function build --path "spikes/m0-014/rust/extensions/$target" --config m0-014-public
+  "$shopify" app function build --path "spikes/m0-014/rust/extensions/$target"
 done
-info="$("$shopify" app function info --path spikes/m0-014/rust/extensions/transform --config m0-014-public --json)"
+info="$("$shopify" app function info --path spikes/m0-014/rust/extensions/transform --json)"
 export M0_014_RUNNER="$(node -e 'const fs=require("node:fs");console.log(JSON.parse(fs.readFileSync(0,"utf8")).functionRunnerPath)' <<< "$info")"
 test -x "$M0_014_RUNNER"
 M0_013_RUNNER="$M0_014_RUNNER" node spikes/m0-013/scripts/measure-replay.mjs

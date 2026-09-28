@@ -41,6 +41,8 @@ jobs:
         run: bash spikes/m0-014/scripts/check-local.sh
       - name: Verify archived decisions and receipts
         run: python3 -B spikes/m0-007/scripts/check-history.py
+      - name: Verify saved bounded setup receipts without merchant access
+        run: python3 -B spikes/m0-014/scripts/check-live-setup.py
       - name: Bind candidate and architecture to the checked-out head
         if: always()
         run: |
