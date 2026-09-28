@@ -68,7 +68,9 @@ authentication on an unauthenticated runner. The suite now validates the
 named config locally with `tomllib` and builds Functions through a separate
 synthetic default config; the remote preview still uses the explicitly named
 new-app config. Local full-suite replay passed after this correction. The
-corrected CI head is pending.
+next CI attempt passed the Function suite but the historical fixed-ref check
+failed on a shallow checkout. The workflow now fetches full Git history for
+that fixed-ref check. The corrected final-head CI remains pending.
 
 The fixture-only issuer uses actual real variant IDs and a trusted operator
 readback seam; its synthetic small case allocates `1 × 30.34 + 2 × 30.33 =
