@@ -1,0 +1,148 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/105501393179",
+    "myshopifyDomain": "insignia-rewrite-dev.myshopify.com"
+  },
+  "nodes": [
+    {
+      "id": "gid://shopify/Product/10485042479387",
+      "handle": "m0-014-optional-20260928",
+      "status": "DRAFT",
+      "onlineStoreUrl": null,
+      "variants": {
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54061591232795",
+            "title": "Small",
+            "price": "20.00",
+            "inventoryPolicy": "DENY",
+            "inventoryItem": {
+              "id": "gid://shopify/InventoryItem/56144642015515",
+              "tracked": true,
+              "requiresShipping": true,
+              "inventoryLevels": {
+                "nodes": [
+                  {
+                    "location": {
+                      "id": "gid://shopify/Location/120998986011",
+                      "name": "Shop location"
+                    },
+                    "quantities": [
+                      {
+                        "name": "available",
+                        "quantity": 64
+                      },
+                      {
+                        "name": "committed",
+                        "quantity": 0
+                      },
+                      {
+                        "name": "on_hand",
+                        "quantity": 64
+                      }
+                    ]
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            }
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54061591265563",
+            "title": "Large",
+            "price": "20.00",
+            "inventoryPolicy": "DENY",
+            "inventoryItem": {
+              "id": "gid://shopify/InventoryItem/56144642048283",
+              "tracked": true,
+              "requiresShipping": true,
+              "inventoryLevels": {
+                "nodes": [
+                  {
+                    "location": {
+                      "id": "gid://shopify/Location/120998986011",
+                      "name": "Shop location"
+                    },
+                    "quantities": [
+                      {
+                        "name": "available",
+                        "quantity": 200
+                      },
+                      {
+                        "name": "committed",
+                        "quantity": 0
+                      },
+                      {
+                        "name": "on_hand",
+                        "quantity": 200
+                      }
+                    ]
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10485042839835",
+      "handle": "m0-014-required-20260928",
+      "status": "DRAFT",
+      "onlineStoreUrl": null,
+      "variants": {
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54061592281371",
+            "title": "Required",
+            "price": "20.00",
+            "inventoryPolicy": "DENY",
+            "inventoryItem": {
+              "id": "gid://shopify/InventoryItem/56144643064091",
+              "tracked": true,
+              "requiresShipping": true,
+              "inventoryLevels": {
+                "nodes": [
+                  {
+                    "location": {
+                      "id": "gid://shopify/Location/120998986011",
+                      "name": "Shop location"
+                    },
+                    "quantities": [
+                      {
+                        "name": "available",
+                        "quantity": 8
+                      },
+                      {
+                        "name": "committed",
+                        "quantity": 0
+                      },
+                      {
+                        "name": "on_hand",
+                        "quantity": 8
+                      }
+                    ]
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    }
+  ]
+}

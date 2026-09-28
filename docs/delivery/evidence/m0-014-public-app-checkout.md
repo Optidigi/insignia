@@ -1,9 +1,10 @@
 # M0-014 Public-app checkout proof — execution record
 
-Status: **LOCAL_PREPARATION / LIVE_CHECKOUT_NOT_RUN**. This record distinguishes
-direct reads and local replays from native store evidence. The single remote
-operator has made **no M0-014 Shopify mutation** so far; fixture, preview,
-Function activation, cart, order and lifecycle results remain pending.
+Status: **PREVIEW_AND_DRAFT_FIXTURES_READY / LIVE_CHECKOUT_NOT_RUN**. This record
+distinguishes direct reads, bounded setup, local replays and native checkout
+evidence. Two draft products, their single initial stock, app-owned policy,
+one development preview and two owned Functions have been created. Publication,
+cart, order and lifecycle tests remain pending.
 
 ## Reviewed input and merge
 
@@ -39,9 +40,15 @@ The new named development config targets client
 `shopify app config validate` passed. Local CLI Function builds with
 `wasm_opt=false` produced files with those exact hashes. Source, query,
 schema, Cargo manifest and capacity guard compare byte-identically to
-M0-013, apart from this isolated extension config. The CLI preview/upload
-path, Function IDs/version IDs and any platform-side hash are **not yet
-observed**.
+M0-013, apart from this isolated extension config. The [actual CLI preview
+bundle](../../../spikes/m0-014/evidence/preview-bundle-identity.json) contains
+base64 modules whose decoded executables match both reviewed hashes byte for
+byte. Admin readback binds the Transform Function ID
+`01a0e9cd-647d-76b2-bc74-3bad0579eeff` and Validation Function ID
+`01a0e9cd-647d-7e48-8e64-76e2ca69dcb9` to the exact app, handles and
+API `2026-07`. The preview's provider version GID and a platform-side binary
+hash are unavailable; the local bundle proves the CLI upload input, not
+independent Shopify storage bytes.
 
 `bash spikes/m0-014/scripts/check-local.sh`, with the established pinned
 Rust 1.98.1, Zig host linker, Node 24.21.0, pnpm 12.6.0 and Shopify CLI 4.8.2,
@@ -69,8 +76,9 @@ between the two Function captures. For the small case it emits the observed
 2-unit, 1-unit and ordinary line assignments; symlink routes into Git for
 private keys or signed output are rejected. The focused final Spec and security
 reviews found no remaining local code blocker before bounded setup. A fresh
-private key is generated outside Git only for the live run and deleted on
-cleanup. The captured-input provenance must be verified by the operator;
+private key was generated in an owner-only directory outside Git for this
+run; it must be deleted on cleanup. The captured-input provenance must be
+verified by the operator;
 the bridge itself cannot attest Shopify origin or later buyer cart edits.
 
 ## Direct read-only new-app state
@@ -91,20 +99,63 @@ before location setup. Shopify CLI listed only the existing initial active
 `insignia-1` released version; no M0-014 release was made.
 
 The T3 collaborative browser initially reported no desktop automation host.
-After the owner restarted the desktop app, it attached; shared tab `tab_1`
-opened the Admin URL and redirected to Shopify Log in. The owner was asked to
-sign in directly in the shared tab and keep credentials out of chat. Current
-authenticated Admin and storefront access are still pending. The prior
-Public/Draft Partner observation is historical;
-current distribution, Bogus provider, native cart/checkout and fulfillment
-remain unobserved until the browser is available.
+After the owner restarted it and signed in, the operator directly observed
+the exact Admin store and the Optidigi Partner app's **Draft** App Store review
+page. The Dev Dashboard's Distribution link leads to the App Store listing,
+consistent with the prior Public designation; no listing was submitted.
+The native Payments page showed an incomplete Shopify Payments setup and no
+active real provider. The operator opened Shopify's built-in **Test payment
+gateway**, whose detail says no transaction fees, activated it under the
+explicit M0-014 permission, and verified **Active** plus **Deactivate** after
+reload. No real-provider setting was changed. Admin Locations showed one
+active **Shop location**, URL ID `120998986011`. The browser disconnected
+after these reads; storefront, cart, checkout and fulfillment remain pending.
+
+## Bounded development setup
+
+The [direct setup receipts](../../../spikes/m0-014/evidence/) cover the
+fixed-target Admin reads, mutation results and readback. `shopify app dev
+--path spikes/m0-014/rust --config m0-014-public --store
+insignia-rewrite-dev.myshopify.com --no-update` reached Ready at
+20:55:48 UTC, preserved the released `insignia-1` version and original
+`https://example.com` app URL, and auto-granted only the nine config scopes
+within the prompt's ceiling. Readback returned the exact app/shop/installation,
+the two new Function handles above, one active Shop location
+`gid://shopify/Location/120998986011`, and no app-owned Cart Transform or
+Validation before activation. This app-scoped API cannot establish absence of
+another app's objects.
+
+An exact-handle preflight returned both intended handles and all `m0-014`
+tagged products absent. Two `productSet(synchronous:true)` calls created
+Product A `gid://shopify/Product/10485042479387` and Product B
+`gid://shopify/Product/10485042839835` as **DRAFT**, with exactly three real
+physical variants at USD 20.00. A's Small/Large IDs are
+`54061591232795` / `54061591265563`; B's required probe is
+`54061592281371`. Shopify reported tracked, shipping-required, oversell
+`DENY`, and one initial available/on-hand allocation of **64 / 200 / 8** at
+the designated Shop location, zero committed. The total **272** is exactly
+the authorized initial ceiling. No inventory compensation or reset has run.
+
+Before metadata, the app-owned shop config and both product anchors were null.
+One `metafieldsSet` with `compareDigest:null` created the 278-byte public
+config and four product anchors under namespace `app--429028933633`; the
+private Ed25519 key remains outside Git with directory mode 0700 and file
+mode 0600. Direct readback matched generation
+`4f8dd164cc8c48199a94cea5da11be4c`, key ID `60014`, optional A and
+required B, while both products stayed DRAFT. The app-owned Cart Transform
+`gid://shopify/CartTransform/190251291` and Validation
+`gid://shopify/Validation/203948315` were then created with zero user errors.
+Fresh Admin readback shows the intended Function IDs, Transform
+`blockOnFailure:true`, Validation `enabled:true` and `blockOnFailure:true`.
+No live Function input projection or checkout has yet been observed.
 
 ## Live execution and residue
 
 See [the resource manifest](../../../spikes/m0-014/evidence/resource-manifest.json)
-for the exact two-product/three-variant/one-location and one-order/four-unit
-ceilings and each pending case. No new M0-014 product, metadata, key, Function,
-preview, cart or order has been created at this checkpoint. The retained
-App Pricing draft, meter, subscription and M0-012 register were not used.
-Orders #1001–#1006 and legacy resources were not touched. No complete gate,
+for IDs, setup stock and each pending case. Both fixtures are **DRAFT and
+unpublished**; no cart, checkout or order was created. The active development
+preview, owned Functions, metadata, stock and private key are current setup
+residue requiring bounded completion or cleanup. The retained App Pricing
+draft, meter, subscription and M0-012 register were not used. Orders
+#1001–#1006 and legacy resources were not touched. No complete gate,
 protocol adoption or production activation is asserted.

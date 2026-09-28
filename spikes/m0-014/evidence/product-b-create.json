@@ -1,0 +1,62 @@
+{
+  "productSet": {
+    "product": {
+      "id": "gid://shopify/Product/10485042839835",
+      "handle": "m0-014-required-20260928",
+      "title": "M0-014 Required Checkout Probe",
+      "status": "DRAFT",
+      "tags": [
+        "insignia-prototype-test-only",
+        "m0-014"
+      ],
+      "variants": {
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54061592281371",
+            "title": "Required",
+            "price": "20.00",
+            "inventoryPolicy": "DENY",
+            "taxable": true,
+            "inventoryItem": {
+              "id": "gid://shopify/InventoryItem/56144643064091",
+              "tracked": true,
+              "requiresShipping": true,
+              "sku": "M0-014-REQUIRED",
+              "inventoryLevels": {
+                "nodes": [
+                  {
+                    "location": {
+                      "id": "gid://shopify/Location/120998986011",
+                      "name": "Shop location"
+                    },
+                    "quantities": [
+                      {
+                        "name": "available",
+                        "quantity": 8
+                      },
+                      {
+                        "name": "committed",
+                        "quantity": 0
+                      },
+                      {
+                        "name": "on_hand",
+                        "quantity": 8
+                      }
+                    ]
+                  }
+                ],
+                "pageInfo": {
+                  "hasNextPage": false
+                }
+              }
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false
+        }
+      }
+    },
+    "userErrors": []
+  }
+}

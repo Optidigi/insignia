@@ -1,0 +1,92 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/105501393179",
+    "myshopifyDomain": "insignia-rewrite-dev.myshopify.com",
+    "currencyCode": "USD",
+    "ianaTimezone": "America/New_York",
+    "publicConfig": null
+  },
+  "currentAppInstallation": {
+    "id": "gid://shopify/AppInstallation/1054356963611",
+    "app": {
+      "id": "gid://shopify/App/429028933633",
+      "apiKey": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "accessScopes": [
+      {
+        "handle": "read_cart_transforms"
+      },
+      {
+        "handle": "read_inventory"
+      },
+      {
+        "handle": "read_locations"
+      },
+      {
+        "handle": "read_products"
+      },
+      {
+        "handle": "read_validations"
+      },
+      {
+        "handle": "write_cart_transforms"
+      },
+      {
+        "handle": "write_inventory"
+      },
+      {
+        "handle": "write_products"
+      },
+      {
+        "handle": "write_validations"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "gid://shopify/Product/10485042479387",
+      "title": "M0-014 Optional Checkout Fixture",
+      "status": "DRAFT",
+      "tags": [
+        "insignia-prototype-test-only",
+        "m0-014"
+      ],
+      "variants": {
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54061591232795",
+            "title": "Small",
+            "price": "20.00"
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54061591265563",
+            "title": "Large",
+            "price": "20.00"
+          }
+        ]
+      },
+      "registration": null,
+      "policy": null
+    },
+    {
+      "id": "gid://shopify/Product/10485042839835",
+      "title": "M0-014 Required Checkout Probe",
+      "status": "DRAFT",
+      "tags": [
+        "insignia-prototype-test-only",
+        "m0-014"
+      ],
+      "variants": {
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54061592281371",
+            "title": "Required",
+            "price": "20.00"
+          }
+        ]
+      },
+      "registration": null,
+      "policy": null
+    }
+  ]
+}

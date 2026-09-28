@@ -1,0 +1,62 @@
+{
+  "metafieldsSet": {
+    "metafields": [
+      {
+        "id": "gid://shopify/Metafield/61853596844315",
+        "namespace": "app--429028933633",
+        "key": "m0_007_public_config",
+        "type": "json",
+        "value": "{\"generationHex\":\"4f8dd164cc8c48199a94cea5da11be4c\",\"epoch\":1,\"maxBuckets\":32,\"maxPhysicalQuantity\":10000,\"allowNoMarket\":false,\"keys\":[{\"id\":60014,\"publicHex\":\"34a94061e37f6e331406e38c190d37cf3cf90db5a9bbd080fa5f3de492b16bd3\",\"revoked\":false,\"firstDay\":20724,\"lastDay\":20726}]}",
+        "compareDigest": "fc8c4541b235a94fcd93ad694ea1c947f949ffd0af80d0a8e96586e61680996c",
+        "owner": {
+          "__typename": "Shop"
+        }
+      },
+      {
+        "id": "gid://shopify/Metafield/61853596811547",
+        "namespace": "app--429028933633",
+        "key": "m0_007_registration",
+        "type": "single_line_text_field",
+        "value": "4f8dd164cc8c48199a94cea5da11be4c:1:ready",
+        "compareDigest": "8db21de1e0a73fb1b4fc19489283b1cf4c11fdb30137648189feb7517ef14cc4",
+        "owner": {
+          "__typename": "Product"
+        }
+      },
+      {
+        "id": "gid://shopify/Metafield/61853596778779",
+        "namespace": "app--429028933633",
+        "key": "m0_007_policy",
+        "type": "single_line_text_field",
+        "value": "4f8dd164cc8c48199a94cea5da11be4c:1:optional",
+        "compareDigest": "fa891d922ce9bcc6e8350c6af370fa981f277e92506c437c2fd67d61f1dab644",
+        "owner": {
+          "__typename": "Product"
+        }
+      },
+      {
+        "id": "gid://shopify/Metafield/61853596746011",
+        "namespace": "app--429028933633",
+        "key": "m0_007_registration",
+        "type": "single_line_text_field",
+        "value": "4f8dd164cc8c48199a94cea5da11be4c:1:ready",
+        "compareDigest": "8db21de1e0a73fb1b4fc19489283b1cf4c11fdb30137648189feb7517ef14cc4",
+        "owner": {
+          "__typename": "Product"
+        }
+      },
+      {
+        "id": "gid://shopify/Metafield/61853596713243",
+        "namespace": "app--429028933633",
+        "key": "m0_007_policy",
+        "type": "single_line_text_field",
+        "value": "4f8dd164cc8c48199a94cea5da11be4c:1:required",
+        "compareDigest": "64c3b487c63ba689bfa1ebf9fd8ca461e42cd576a99667b0e7862e4d729ec9e3",
+        "owner": {
+          "__typename": "Product"
+        }
+      }
+    ],
+    "userErrors": []
+  }
+}

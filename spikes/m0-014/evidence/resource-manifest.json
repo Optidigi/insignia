@@ -1,6 +1,6 @@
 {
   "slice": "M0-014",
-  "status": "LOCAL_PREPARATION_AND_READ_ONLY_IDENTITY",
+  "status": "DRAFT_FIXTURES_POLICY_AND_OWNED_FUNCTIONS_ACTIVE; NO_PUBLICATION_OR_CART",
   "operatorCount": 1,
   "target": {
     "appGid": "gid://shopify/App/429028933633",
@@ -36,96 +36,165 @@
     ],
     "ownedPublicConfig": null,
     "productsWithM0014Tag": 0,
-    "locationQuery": "ACCESS_DENIED without read_locations"
+    "locationQuery": "PASS after approved development-scope auto-grant",
+    "shopifyTestPaymentGateway": "ACTIVE_AFTER_RELOAD; built-in Test payment gateway; no real provider was active or changed",
+    "partnerAppStoreListing": "Draft in Optidigi Partner app 429028933633; App Store distribution route; current Public designation consistent with listing",
+    "previewGrants": [
+      "read_cart_transforms",
+      "read_inventory",
+      "read_locations",
+      "read_products",
+      "read_validations",
+      "write_cart_transforms",
+      "write_inventory",
+      "write_products",
+      "write_validations"
+    ],
+    "activeLocation": {
+      "id": "gid://shopify/Location/120998986011",
+      "name": "Shop location",
+      "isActive": true
+    }
   },
   "newResources": {
-    "products": [],
-    "variants": [],
-    "locationGid": null,
-    "stockInitialized": false,
-    "transformGid": null,
-    "validationGid": null,
-    "publicKeyId": null,
-    "privateKeyCreated": false,
+    "products": [
+      {
+        "id": "gid://shopify/Product/10485042479387",
+        "handle": "m0-014-optional-20260928",
+        "status": "DRAFT",
+        "owner": "M0-014 optional fixture"
+      },
+      {
+        "id": "gid://shopify/Product/10485042839835",
+        "handle": "m0-014-required-20260928",
+        "status": "DRAFT",
+        "owner": "M0-014 required probe"
+      }
+    ],
+    "variants": [
+      {
+        "id": "gid://shopify/ProductVariant/54061591232795",
+        "productGid": "gid://shopify/Product/10485042479387",
+        "title": "Small",
+        "price": "20.00"
+      },
+      {
+        "id": "gid://shopify/ProductVariant/54061591265563",
+        "productGid": "gid://shopify/Product/10485042479387",
+        "title": "Large",
+        "price": "20.00"
+      },
+      {
+        "id": "gid://shopify/ProductVariant/54061592281371",
+        "productGid": "gid://shopify/Product/10485042839835",
+        "title": "Required",
+        "price": "20.00"
+      }
+    ],
+    "locationGid": "gid://shopify/Location/120998986011",
+    "stockInitialized": true,
+    "transformGid": "gid://shopify/CartTransform/190251291",
+    "validationGid": "gid://shopify/Validation/203948315",
+    "publicKeyId": 60014,
+    "privateKeyCreated": true,
     "temporaryPublication": false,
-    "previewState": "not started in this slice",
+    "previewState": "active, CLI ready; no released version",
     "variantStock": {
       "small": {
-        "variantGid": null,
-        "inventoryItemGid": null,
-        "locationGid": null,
-        "initialAvailable": null,
-        "lastObservedAvailable": null,
+        "variantGid": "gid://shopify/ProductVariant/54061591232795",
+        "inventoryItemGid": "gid://shopify/InventoryItem/56144642015515",
+        "locationGid": "gid://shopify/Location/120998986011",
+        "initialAvailable": 64,
+        "lastObservedAvailable": 64,
         "finalAvailable": null
       },
       "large": {
-        "variantGid": null,
-        "inventoryItemGid": null,
-        "locationGid": null,
-        "initialAvailable": null,
-        "lastObservedAvailable": null,
+        "variantGid": "gid://shopify/ProductVariant/54061591265563",
+        "inventoryItemGid": "gid://shopify/InventoryItem/56144642048283",
+        "locationGid": "gid://shopify/Location/120998986011",
+        "initialAvailable": 200,
+        "lastObservedAvailable": 200,
         "finalAvailable": null
       },
       "requiredProbe": {
-        "variantGid": null,
-        "inventoryItemGid": null,
-        "locationGid": null,
-        "initialAvailable": null,
-        "lastObservedAvailable": null,
+        "variantGid": "gid://shopify/ProductVariant/54061592281371",
+        "inventoryItemGid": "gid://shopify/InventoryItem/56144643064091",
+        "locationGid": "gid://shopify/Location/120998986011",
+        "initialAvailable": 8,
+        "lastObservedAvailable": 8,
         "finalAvailable": null
       }
     },
     "ownedMetadata": {
       "shopPublicConfig": {
         "original": null,
-        "createdGid": null,
-        "final": null
+        "createdGid": "gid://shopify/Metafield/61853596844315",
+        "final": null,
+        "compareDigest": "fc8c4541b235a94fcd93ad694ea1c947f949ffd0af80d0a8e96586e61680996c"
       },
       "productARegistration": {
         "original": null,
-        "createdGid": null,
-        "final": null
+        "createdGid": "gid://shopify/Metafield/61853596811547",
+        "final": null,
+        "compareDigest": "8db21de1e0a73fb1b4fc19489283b1cf4c11fdb30137648189feb7517ef14cc4"
       },
       "productAPolicy": {
         "original": null,
-        "createdGid": null,
-        "final": null
+        "createdGid": "gid://shopify/Metafield/61853596778779",
+        "final": null,
+        "compareDigest": "fa891d922ce9bcc6e8350c6af370fa981f277e92506c437c2fd67d61f1dab644"
       },
       "productBRegistration": {
         "original": null,
-        "createdGid": null,
-        "final": null
+        "createdGid": "gid://shopify/Metafield/61853596746011",
+        "final": null,
+        "compareDigest": "8db21de1e0a73fb1b4fc19489283b1cf4c11fdb30137648189feb7517ef14cc4"
       },
       "productBPolicy": {
         "original": null,
-        "createdGid": null,
-        "final": null
+        "createdGid": "gid://shopify/Metafield/61853596713243",
+        "final": null,
+        "compareDigest": "64c3b487c63ba689bfa1ebf9fd8ca461e42cd576a99667b0e7862e4d729ec9e3"
       }
     },
     "functions": {
       "transform": {
-        "functionGid": null,
+        "functionGid": "01a0e9cd-647d-76b2-bc74-3bad0579eeff",
         "versionGid": null,
-        "uploadedWasmSha256": null,
-        "effectiveBlockOnFailure": null,
+        "uploadedWasmSha256": "cebca846a17013a42dc590c18069ef5d9f0432452eb702d29bc46bbc1985590b",
+        "effectiveBlockOnFailure": true,
         "finalState": null
       },
       "validation": {
-        "functionGid": null,
+        "functionGid": "01a0e9cd-647d-7e48-8e64-76e2ca69dcb9",
         "versionGid": null,
-        "uploadedWasmSha256": null,
-        "effectiveEnable": null,
-        "effectiveBlockOnFailure": null,
+        "uploadedWasmSha256": "93148de17900a68732712ce687393ec920f903e55649115f23b9aa3b667a4ebd",
+        "effectiveEnable": true,
+        "effectiveBlockOnFailure": true,
         "finalState": null
       }
     },
     "preview": {
-      "id": null,
-      "startedAtUtc": null,
+      "id": "Shopify dev preview on exact installation; GraphQL version GID not exposed",
+      "startedAtUtc": "2026-09-28T20:55:48Z",
       "stoppedAtUtc": null,
       "finalHoldingState": null,
-      "developmentGrantDiff": null
-    }
+      "developmentGrantDiff": [
+        "read_cart_transforms",
+        "read_inventory",
+        "read_locations",
+        "read_validations",
+        "write_cart_transforms",
+        "write_inventory",
+        "write_validations"
+      ]
+    },
+    "keyGenerationHex": "4f8dd164cc8c48199a94cea5da11be4c",
+    "publicKeyHex": "34a94061e37f6e331406e38c190d37cf3cf90db5a9bbd080fa5f3de492b16bd3",
+    "keyValidityDays": [
+      20724,
+      20726
+    ]
   },
   "cases": {
     "smallPositive": "NOT_RUN",

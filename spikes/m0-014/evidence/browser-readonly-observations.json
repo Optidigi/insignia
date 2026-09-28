@@ -1,0 +1,18 @@
+{
+  "capturedBy": "single M0-014 Shopify operator through T3 collaborative browser; manual narrow visible-text projection, not provider-signed",
+  "observedAtUtc": "2026-09-28T21:04:04.483431+00:00",
+  "admin": {
+    "store": "insignia-rewrite-dev",
+    "home": "authenticated; dev previews (1), Insignia web preview from prior package",
+    "paymentsBefore": "Development-store banner said activate test payment provider; Shopify Payments showed Complete setup; no active real provider or additional provider listed",
+    "testProviderDetailBefore": "Test payment gateway; Use to test Shopify checkout; No transaction fees will be charged; Activate button",
+    "testProviderAfterSaveAndReload": "Active; Deactivate button; no real provider setting changed",
+    "location": "Shop location, Active, United States; Admin URL ended /locations/120998986011"
+  },
+  "partner": {
+    "organization": "Optidigi",
+    "app": "Insignia, resource 429028933633",
+    "distributionPage": "App Store review, Draft; no submission",
+    "devDashboard": "Distribution link Manage Shopify App Store listing"
+  }
+}

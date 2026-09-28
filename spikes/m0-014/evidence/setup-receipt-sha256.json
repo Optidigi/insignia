@@ -1,0 +1,16 @@
+{
+  "identity-before-preview.json": "8d60247a1efe94069b244bfc105d99bddd419d1d1c81895c86eb80e4df55f309",
+  "preview-readback-before-activation.json": "660ee9da6e4d1d3b8571a641aede8a5853ba7e3930724e526b09a992183fdf02",
+  "fixture-handle-preflight.json": "277d37e80bcb194d1714bf6674ccf18ca6a65bff8fb2c5798f10367f36a77c09",
+  "product-a-create.json": "cdc4623d42a75700e84ed5dc4d7eb858552115e740cb3300cd77da0239d2dc80",
+  "product-b-create.json": "ad28cf4db8154f3ec7c3e106900f9635d7d610f09aca28ac87ea9227c7e1d424",
+  "fixture-before-metadata.json": "3c1691776978317c0596c639b30993839ebffcda546d7895515cddbf0160e8d6",
+  "metadata-create.json": "fd5268ad63938a581030c739b5660cd1626a2313e5904feb56d9ac6020ed6902",
+  "fixture-after-metadata.json": "b52e6b5b42f26e730ce51e9d121988978c31e87bc650c584266001caaeb91e2b",
+  "transform-create.json": "c2e1a22ff74802ec25c8b617ee3f2869253f4a9bee0e4b83e9e0c68d78bf4720",
+  "validation-create.json": "97ceeef6639f5aae98e7860acafda15b5c54195416ad4ffecbb45a2e16d17483",
+  "functions-after-activation.json": "8c6c87e0638cc4ffdf3f63f140178ba5b08519419ff642bdf38d47adaab44f0b",
+  "browser-readonly-observations.json": "c718c4ad3de6d8b0c7b6466ff736bfaf8f8a3b30d75817d9dbd953139d0532b7",
+  "preview-bundle-identity.json": "bc576ff319a7f12ca0b9a58ac4c84bddfa71c7a32519d9573af18f947087add1",
+  "stock-before-cart.json": "da98af4cf3923d3375d4eee4ced80da7527177d894e7fe64b0d7905559e95d46"
+}
