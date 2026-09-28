@@ -43,11 +43,13 @@ function DraftEditor({ label: initialLabel, version: initialVersion, canEdit, vi
     setFieldError('');
     setFeedback('Saving synthetic draft…');
     setFeedbackTone('');
+    const traceId = crypto.randomUUID();
+    document.getElementById('draft-editor')?.setAttribute('data-save-trace', traceId);
     try {
       // App Bridge intercepts this same-origin request and adds the ID token.
       const response = await fetch('/api/draft', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Insignia-Trace': traceId },
         body: JSON.stringify({ label: nextLabel, version, viewer }),
         cache: 'no-store',
         redirect: 'error',

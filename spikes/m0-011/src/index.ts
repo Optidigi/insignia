@@ -92,7 +92,7 @@ export type AppEventsTokenAcquisition =
   | { kind: 'READY'; token: { value: string; expiresAt: string } }
   | { kind: 'ISSUED_INCOMPLETE'; tokenType: 'Bearer' | null;
       scope: 'write_global_api_app_events' | null; expiresInSeconds: number | null;
-      missing: Array<'scope' | 'expires_in'> }
+      missing: Array<'token_type' | 'scope' | 'expires_in'> }
   | { kind: 'REJECTED' };
 
 /** Fixed client-credentials exchange for a Dev Dashboard App Events API key. */
@@ -131,7 +131,8 @@ export class AppEventsTokenClient {
         !data.scope.split(/\s+/).includes('write_global_api_app_events')) ||
       data.expires_in !== undefined && (!Number.isSafeInteger(data.expires_in) ||
         Number(data.expires_in) < 31 || Number(data.expires_in) > 3600)) return { kind: 'REJECTED' };
-    const missing: Array<'scope' | 'expires_in'> = [];
+    const missing: Array<'token_type' | 'scope' | 'expires_in'> = [];
+    if (data.token_type === undefined) missing.push('token_type');
     if (data.scope === undefined) missing.push('scope');
     if (data.expires_in === undefined) missing.push('expires_in');
     if (missing.length) return { kind: 'ISSUED_INCOMPLETE',

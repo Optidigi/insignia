@@ -1,0 +1,180 @@
+{
+  "review": "PR-015",
+  "date": "2026-09-28",
+  "repo": "Optidigi/insignia",
+  "pr": 15,
+  "verdict": "APPROVED_LOCAL_SETUP_CHECKPOINT",
+  "base": "8294705b5caad98ae2537ba3cbba7a458ecb3e62",
+  "head": "f134a0dfc34460b78c48f1c88fd65e74c3b7fde4",
+  "mergeBase": "8294705b5caad98ae2537ba3cbba7a458ecb3e62",
+  "ciSyntheticMerge": "267b35b1588dcc40a5771441a30de28b33978eef",
+  "ciAndHeadTree": "16fded2419f0f20228144076e7f4b5624c4858e6",
+  "nativeReview": {
+    "action": "APPROVE",
+    "attempted": true,
+    "posted": false,
+    "httpStatus": 403,
+    "message": "Resource not accessible by integration"
+  },
+  "workflows": [
+    {
+      "id": 36424512011,
+      "conclusion": "success",
+      "scope": "metadata verified at supplied head"
+    },
+    {
+      "id": 36424512085,
+      "conclusion": "success",
+      "scope": "metadata verified at supplied head"
+    },
+    {
+      "id": 36424511907,
+      "conclusion": "success",
+      "scope": "metadata verified at supplied head"
+    },
+    {
+      "id": 36424511847,
+      "conclusion": "success",
+      "scope": "metadata verified at supplied head"
+    }
+  ],
+  "ciLogInspected": {
+    "runId": 36424512085,
+    "jobId": 108935064252,
+    "node": "24.21.0",
+    "tests": 20,
+    "bothClientBuildsAndSyntheticSmokesPassed": true
+  },
+  "independentExecution": {
+    "method": "Exact Git-blob-verified launcher executed in scratch layout with synthetic environment and a synthetic entry stub. No Astro server, Shopify SDK, browser or network executed.",
+    "runtime": "v22.16.0",
+    "repositoryRef": "f134a0dfc34460b78c48f1c88fd65e74c3b7fde4",
+    "sourceGitBlob": "cf66aacb974e92feea054d19c54d69f6794ac968",
+    "sourceSha256": "1592f2928b4f21e10dd1964499868b8f12b1281a932cffad461030753ca554cb",
+    "cases": [
+      {
+        "case": "valid new binding",
+        "expectedAllowsEntry": true,
+        "exitCode": 0,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": {
+          "entryReached": true,
+          "mode": "public-bootstrap",
+          "host": "127.0.0.1",
+          "origin": "https://synthetic-controlled.example"
+        }
+      },
+      {
+        "case": "wrong runtime client",
+        "expectedAllowsEntry": false,
+        "exitCode": 1,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": null
+      },
+      {
+        "case": "missing runtime client",
+        "expectedAllowsEntry": false,
+        "exitCode": 1,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": null
+      },
+      {
+        "case": "wrong build marker",
+        "expectedAllowsEntry": false,
+        "exitCode": 1,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": null
+      },
+      {
+        "case": "missing build marker",
+        "expectedAllowsEntry": false,
+        "exitCode": 1,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": null
+      },
+      {
+        "case": "missing secret",
+        "expectedAllowsEntry": false,
+        "exitCode": 1,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": null
+      },
+      {
+        "case": "missing app URL",
+        "expectedAllowsEntry": false,
+        "exitCode": 1,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": null
+      },
+      {
+        "case": "port zero",
+        "expectedAllowsEntry": false,
+        "exitCode": 1,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": null
+      },
+      {
+        "case": "port too high",
+        "expectedAllowsEntry": false,
+        "exitCode": 1,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": null
+      },
+      {
+        "case": "fractional port",
+        "expectedAllowsEntry": false,
+        "exitCode": 1,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": null
+      },
+      {
+        "case": "invalid port",
+        "expectedAllowsEntry": false,
+        "exitCode": 1,
+        "result": "PASS",
+        "syntheticSecretNotPrinted": true,
+        "entryObservation": null
+      }
+    ],
+    "caseCount": 11,
+    "passed": 11,
+    "networkRequests": 0,
+    "limits": [
+      "Node 22.16.0, not pinned Node 24.21.0",
+      "Does not exercise getRuntime, real built bundle, the CLI itself, actual live credentials or embedded staff token exchange."
+    ]
+  },
+  "architecture": {
+    "changedInPrDiff": false,
+    "planSha256ReportedByCi": "8bb45ac9e2834bf047824a2e3dda4da7f76692bae685f6657da7b3ab03d0b145",
+    "ledgerSha256ReportedByCi": "97ebb79ddc53000c53c46218ba8c83a5ba2279720ed07ff50809706b4f1a800a",
+    "historyCheckSource": "CI job; not independently rerun"
+  },
+  "shopifyOperationsByPrincipal": 0,
+  "repositoryMutationsByPrincipal": 0,
+  "limits": [
+    "No complete repository rebuild/test execution by principal",
+    "No live Shopify staff token exchange/browser action by principal",
+    "No direct local-server credential-file inspection",
+    "Operator report is not an independently captured Shopify audit log",
+    "No compiled artifact downloaded or independent full historical hash scan"
+  ],
+  "sources": {
+    "pr": "https://github.com/Optidigi/insignia/pull/15",
+    "head": "https://github.com/Optidigi/insignia/commit/f134a0dfc34460b78c48f1c88fd65e74c3b7fde4",
+    "registration": "https://shopify.dev/docs/apps/launch/distribution/revenue-share",
+    "partner": "https://shopify.dev/docs/api/partner/latest",
+    "events": "https://shopify.dev/docs/api/app-events/latest",
+    "oauth": "https://www.rfc-editor.org/rfc/rfc6749.html#section-5.1"
+  }
+}
