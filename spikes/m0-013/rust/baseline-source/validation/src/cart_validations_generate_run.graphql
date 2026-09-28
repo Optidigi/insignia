@@ -1,0 +1,32 @@
+query Input {
+  buyerJourney { step }
+  cart {
+    quote: attribute(key: "_insignia_quote_v2") { value }
+    lines {
+      id
+      quantity
+      member: attribute(key: "_insignia_member_v2") { value }
+      cost {
+        amountPerQuantity { currencyCode }
+        subtotalAmount { amount currencyCode }
+      }
+      sellingPlanAllocation { sellingPlan { id } }
+      merchandise {
+        __typename
+        ... on ProductVariant {
+          id
+          product {
+            id
+            registration: metafield(key: "m0_007_registration") { value }
+            policy: metafield(key: "m0_007_policy") { value }
+          }
+        }
+      }
+    }
+  }
+  localization { country { isoCode } market { id } }
+  shop {
+    localTime { date }
+    publicConfig: metafield(key: "m0_007_public_config") { value }
+  }
+}
