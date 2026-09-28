@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { CURRENCY_EXPONENT_V1 } from '../../m0-004/ts/authorization.ts';
+import { parseMinor } from '../../m0-004/ts/allocation.ts';
 import type { FixtureCase, FixtureContext, FixtureProjection } from './fixture.ts';
 
 type Json = Record<string, unknown>;
@@ -158,7 +159,9 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
       const lineId = text(line.id, 'CartLine ID');
       const suffix = lineId.startsWith('gid://shopify/CartLine/')
         ? lineId.slice('gid://shopify/CartLine/'.length) : '';
-      const numeric = /^[1-9][0-9]{0,19}$/.test(suffix);
+      // Native Validation uses zero-based indices while Transform uses UUIDs.
+      // The IDs address target-local operations; they are not quote members.
+      const numeric = /^(0|[1-9][0-9]{0,19})$/.test(suffix);
       const uuid = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/.test(suffix);
       if (!numeric && !uuid) throw new Error(`${label}: CartLine ID outside compiled grammar`);
       if (seenIds.has(lineId)) throw new Error(`${label}: duplicate CartLine ID`);
@@ -181,7 +184,8 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
           `${generationHex}:${epoch}:ready`) throw new Error(`${label}: product policy projection differs`);
       if (label === 'validation') {
         const subtotal = object(object(line.cost, 'cost').subtotalAmount, 'subtotal');
-        if (subtotal.currencyCode !== currency || subtotal.amount !== `${(q * 20).toFixed(2)}`) {
+        if (subtotal.currencyCode !== currency ||
+            parseMinor(text(subtotal.amount, 'subtotal amount'), 2) !== BigInt(q * 2_000)) {
           throw new Error('plain fixture price differs before signing');
         }
       } else if (object(object(line.cost, 'cost').amountPerQuantity, 'amountPerQuantity').currencyCode !== currency) {
@@ -191,10 +195,13 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
     if (totalQuantity !== expectedQuantity) throw new Error(`${label}: physical quantity mismatch`);
     captures.push(actualLines);
   }
-  // Member indices are line-bound. Both Functions must have captured the same
-  // plain cart before any envelope is signed; order is deliberately preserved.
-  if (JSON.stringify(captures[0]) !== JSON.stringify(captures[1])) {
-    throw new Error('Transform and Validation cart lines differ');
+  // Target-local CartLine IDs differ in native captures. Require the same
+  // ordered variant/quantity projection; each target was also independently
+  // checked against current policy, currency and (for Validation) base costs.
+  const economicRows = (lines: LineAssignment[]) => lines.map(
+    ({ variantGid, quantity, memberIndex }) => ({ variantGid, quantity, memberIndex }));
+  if (JSON.stringify(economicRows(captures[0]!)) !== JSON.stringify(economicRows(captures[1]!))) {
+    throw new Error('Transform and Validation ordered cart economics differ');
   }
   const assignments = captures[0]!;
   if (kind === 'small') {

@@ -1,0 +1,135 @@
+{
+  "provenance": "CLI app logs --json on exact public-app dev preview; raw events retained owner-only outside Git; hashes do not independently attest provider origin",
+  "entries": [
+    {
+      "source": "m0-014-public-transform",
+      "target": "cart.transform.run",
+      "status": "success",
+      "logTimestamp": "2026-09-28T21:43:48.167245Z",
+      "rawEventSha256": "66fef4b4accee81604f56f36fc4495baabdf82361150987347752635948c85fd",
+      "shopId": 105501393179,
+      "apiClientId": 429028933633,
+      "functionId": "01a0e9cd-647d-76b2-bc74-3bad0579eeff",
+      "reportedInputBytes": 1943,
+      "reportedOutputBytes": 611,
+      "reportedFuelConsumed": 2730005,
+      "buyerJourney": null,
+      "localization": {
+        "country": {
+          "isoCode": "US"
+        },
+        "market": {
+          "id": "gid://shopify/Market/106410115355"
+        }
+      },
+      "cartLineCount": 3,
+      "physicalQuantity": 4,
+      "quotePresent": true,
+      "memberCount": 2,
+      "lineIds": [
+        "gid://shopify/CartLine/0f8119dd-dedc-463b-9900-d9ce5306636c",
+        "gid://shopify/CartLine/30737747-972d-439d-a3ea-6cdb83449572",
+        "gid://shopify/CartLine/f07981bc-4b9d-48d3-a49e-4ad8de0355d1"
+      ],
+      "lineQuantities": [
+        1,
+        1,
+        2
+      ],
+      "lineBaseCostAmounts": [
+        {
+          "currencyCode": "USD"
+        },
+        {
+          "currencyCode": "USD"
+        },
+        {
+          "currencyCode": "USD"
+        }
+      ],
+      "outputOperationCount": 2,
+      "lineExpand": [
+        {
+          "cartLineId": "gid://shopify/CartLine/0f8119dd-dedc-463b-9900-d9ce5306636c",
+          "children": [
+            {
+              "variantId": "gid://shopify/ProductVariant/54061591232795",
+              "quantity": 1,
+              "fixedPricePerUnit": "30.34",
+              "attributeKeys": [
+                "_insignia_member_v2"
+              ]
+            }
+          ]
+        },
+        {
+          "cartLineId": "gid://shopify/CartLine/f07981bc-4b9d-48d3-a49e-4ad8de0355d1",
+          "children": [
+            {
+              "variantId": "gid://shopify/ProductVariant/54061591232795",
+              "quantity": 1,
+              "fixedPricePerUnit": "30.33",
+              "attributeKeys": [
+                "_insignia_member_v2"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "source": "m0-014-public-validation",
+      "target": "cart.validations.generate.run",
+      "status": "success",
+      "logTimestamp": "2026-09-28T21:43:48.247781Z",
+      "rawEventSha256": "181fb7af129c19fd91a6108bbaf113c146187c56df785f52c67b470341e804d1",
+      "shopId": 105501393179,
+      "apiClientId": 429028933633,
+      "functionId": "01a0e9cd-647d-7e48-8e64-76e2ca69dcb9",
+      "reportedInputBytes": 2008,
+      "reportedOutputBytes": 13,
+      "reportedFuelConsumed": 4853,
+      "buyerJourney": {
+        "step": "CART_INTERACTION"
+      },
+      "localization": {
+        "country": {
+          "isoCode": "US"
+        },
+        "market": {
+          "id": "gid://shopify/Market/106410115355"
+        }
+      },
+      "cartLineCount": 3,
+      "physicalQuantity": 4,
+      "quotePresent": true,
+      "memberCount": 2,
+      "lineIds": [
+        "gid://shopify/CartLine/0",
+        "gid://shopify/CartLine/1",
+        "gid://shopify/CartLine/2"
+      ],
+      "lineQuantities": [
+        1,
+        1,
+        2
+      ],
+      "lineBaseCostAmounts": [
+        {
+          "amount": "30.34",
+          "currencyCode": "USD"
+        },
+        {
+          "amount": "20.0",
+          "currencyCode": "USD"
+        },
+        {
+          "amount": "60.66",
+          "currencyCode": "USD"
+        }
+      ],
+      "outputOperationCount": 0,
+      "lineExpand": []
+    }
+  ]
+}

@@ -1,10 +1,11 @@
 # M0-014 Public-app checkout proof — execution record
 
-Status: **PREVIEW_AND_DRAFT_FIXTURES_READY / LIVE_CHECKOUT_NOT_RUN**. This record
-distinguishes direct reads, bounded setup, local replays and native checkout
-evidence. Two draft products, their single initial stock, app-owned policy,
-one development preview and two owned Functions have been created. Publication,
-cart, order and lifecycle tests remain pending.
+Status: **BLOCKED ON NATIVE VALIDATION CARTLINE GRAMMAR / CLEANED UP**. This
+record distinguishes direct reads, bounded setup, local replays and native
+checkout evidence. The owned fixtures were temporarily published and a native
+staff-preview cart reached both Functions. Checkout-step execution and payment
+did not occur. The material CartLine ID difference stopped dependent commerce;
+owned resources were cleaned up.
 
 ## Reviewed input and merge
 
@@ -70,7 +71,7 @@ synthetic default config; the remote preview still uses the explicitly named
 new-app config. Local full-suite replay passed after this correction. The
 next CI attempt passed the Function suite but the historical fixed-ref check
 failed on a shallow checkout. The workflow now fetches full Git history for
-that fixed-ref check. The corrected final-head CI remains pending.
+that fixed-ref check. The earlier pushed head passed eight applicable CI jobs. Final-head CI after this evidence update is checked separately.
 
 The fixture-only issuer uses actual real variant IDs and a trusted operator
 readback seam; its synthetic small case allocates `1 × 30.34 + 2 × 30.33 =
@@ -80,13 +81,18 @@ captured Function inputs and a fixed-target authenticated Admin read before
 issuing; it checks app/shop/installation, 2+1 active fixture variants,
 20.00 prices, policy/config/key consistency, presentment, line counts,
 quantities, existing carrier absence and conservative byte bounds. It now
-rejects duplicate CartLine IDs and any line-order/identity/quantity difference
-between the two Function captures. For the small case it emits the observed
+rejects duplicate CartLine IDs and compares ordered variant/quantity semantics
+within each Function target. Live Transform IDs are UUIDs while Validation IDs
+are zero-based numeric. A failing live-shaped regression corrected only the
+operator bridge to accept `/0` and compare exact cents across Shopify decimal
+spellings such as `20.0` and `20.00`. It cannot by itself distinguish
+same-variant, same-quantity lines by buyer intent; Ajax properties and
+post-marked cart readback were checked separately. For the small case it emits the observed
 2-unit, 1-unit and ordinary line assignments; symlink routes into Git for
 private keys or signed output are rejected. The focused final Spec and security
 reviews found no remaining local code blocker before bounded setup. A fresh
 private key was generated in an owner-only directory outside Git for this
-run; it must be deleted on cleanup. The captured-input provenance must be
+run; it was deleted on cleanup. The captured-input provenance must be
 verified by the operator;
 the bridge itself cannot attest Shopify origin or later buyer cart edits.
 
@@ -109,16 +115,18 @@ before location setup. Shopify CLI listed only the existing initial active
 
 The T3 collaborative browser initially reported no desktop automation host.
 After the owner restarted it and signed in, the operator directly observed
-the exact Admin store and the Optidigi Partner app's **Draft** App Store review
-page. The Dev Dashboard's Distribution link leads to the App Store listing,
-consistent with the prior Public designation; no listing was submitted.
+the exact Admin store and the Optidigi Partner app's **Shopify App Store
+listing / Draft** Distribution page. This is the current Public distribution
+route, still unsubmitted; no listing was submitted.
 The native Payments page showed an incomplete Shopify Payments setup and no
 active real provider. The operator opened Shopify's built-in **Test payment
 gateway**, whose detail says no transaction fees, activated it under the
 explicit M0-014 permission, and verified **Active** plus **Deactivate** after
 reload. No real-provider setting was changed. Admin Locations showed one
 active **Shop location**, URL ID `120998986011`. The browser disconnected
-after these reads; storefront, cart, checkout and fulfillment remain pending.
+after these reads, then reconnected after a desktop restart. The built-in test
+gateway was deactivated after the stopped run and the activation banner
+reappeared after reload; real provider settings were not changed.
 
 ## Bounded development setup
 
@@ -156,19 +164,61 @@ required B, while both products stayed DRAFT. The app-owned Cart Transform
 `gid://shopify/Validation/203948315` were then created with zero user errors.
 Fresh Admin readback shows the intended Function IDs, Transform
 `blockOnFailure:true`, Validation `enabled:true` and `blockOnFailure:true`.
-No live Function input projection or checkout has yet been observed.
+No live Function input projection had been observed at setup; the later staff-preview cart produced direct Function logs, without a checkout-step run.
 `python3 -B spikes/m0-014/scripts/check-live-setup.py` passed against 14
 hashed, nonsecret setup receipts, two Draft products, three variants, 272
 initial units and two owned Functions. This checker verifies saved receipt
 consistency; it does not attest Shopify independently.
 
-## Live execution and residue
+## Live execution, stop condition and cleanup
 
 See [the resource manifest](../../../spikes/m0-014/evidence/resource-manifest.json)
-for IDs, setup stock and each pending case. Both fixtures are **DRAFT and
-unpublished**; no cart, checkout or order was created. The active development
-preview, owned Functions, metadata, stock and private key are current setup
-residue requiring bounded completion or cleanup. The retained App Pricing
-draft, meter, subscription and M0-012 register were not used. Orders
-#1001–#1006 and legacy resources were not touched. No complete gate,
-protocol adoption or production activation is asserted.
+for exact IDs and final state. Native Admin set only the two fixtures Active,
+selected Online Store, and saved each. Exact-app GraphQL
+[readback](../../../spikes/m0-014/evidence/publication-readback.json) returned
+publication timestamps; `onlineStoreUrl` remained null. The password-protected
+storefront was not opened. A staff preview exposed the native product cart
+after changing only storefront localization to the active US market.
+
+The [Ajax cart readback](../../../spikes/m0-014/evidence/small-preview-cart.json)
+held three distinct Small lines and four physical units: one customized
+USD30.34, two customized USD30.33 each, and one ordinary USD20.00, totaling
+exactly **USD111.00 pre-discount**. The carrier was 208 characters with two
+30-character members. Native [Function logs](../../../spikes/m0-014/evidence/small-preview-functions.json)
+show Transform received three lines/four units/two marked lines and emitted
+two `lineExpand` operations (611 output bytes; 2,730,005 fuel). Validation
+received the signed cart and emitted no operations at `CART_INTERACTION`;
+the Function returns early at that step. This does **not** prove independent
+checkout acceptance. The staff-preview Checkout button led to the protected
+storefront password page; no checkout-step input was captured.
+
+The same native cart revealed Transform UUID CartLine IDs but Validation
+`gid://shopify/CartLine/0`, `/1`, `/2`, with a marked unit at `/0`. The pinned
+Rust Validation rejects a marked zero suffix. In a [local differential](../../../spikes/m0-014/evidence/small-validation-checkout-local-differential.json),
+the captured Validation input changed only to `CHECKOUT_COMPLETION`; the pinned
+Wasm returned a cart error (539,340 instructions). Remapping only the
+target-local suffixes 0/1/2 to 1/2/3 produced no operations (2,723,576
+instructions). This isolates the parser issue in a local replay; it is not a
+live checkout result. The prompt's material-input stop condition therefore
+halted 10+190/32+168 carts, negative checkout, Bogus payment, fulfillment
+and refunds. There was **no new order** and no purchased unit.
+
+The operator cleared the preview cart and orphan carrier and observed an Ajax
+readback with zero items and no quote; that response was not retained as a
+tracked artifact. Both fixtures were removed
+from Online Store and archived, with `onlineStoreUrl:null`; [final stock](../../../spikes/m0-014/evidence/cleanup-stock-readback.json)
+is 64/200/8 available and on-hand, zero committed, exactly matching initial
+stock without compensation or reset. All five owned metadata values and the
+exact owned Transform/Validation objects were deleted with zero user errors;
+[readback](../../../spikes/m0-014/evidence/cleanup-functions-readback.json)
+shows no active cartTransforms or validations for this installation. The
+preview process stopped without `app dev clean`; its record and nine approved
+development grants remain as a holding state, and the original released
+version is unchanged. The ephemeral private key was deleted outside Git.
+The built-in Test payment gateway was deactivated; after reload the native
+Payments page again showed its activation banner. No real provider changed.
+The retained App Pricing draft, meter, subscription and M0-012 register were
+not used. Orders #1001–#1006 and legacy resources were not touched. No
+complete gate, protocol adoption or production activation is asserted.
+A corrected Function candidate and separately authorized live run are needed
+for the remaining checkout/lifecycle proof.

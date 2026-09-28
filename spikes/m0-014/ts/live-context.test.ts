@@ -61,6 +61,24 @@ test('current Admin policy, public key and both plain Function inputs bind one s
   assert.match(result.readDigest, /^[a-f0-9]{64}$/);
 });
 
+test('native Transform UUID and Validation zero-based CartLine IDs bind by ordered economics', () => {
+  const r = reads();
+  const transformIds = [
+    '0f8119dd-dedc-463b-9900-d9ce5306636c',
+    '30737747-972d-439d-a3ea-6cdb83449572',
+    'f07981bc-4b9d-48d3-a49e-4ad8de0355d1',
+  ];
+  for (let i = 0; i < 3; i++) {
+    (r.transform.cart as any).lines[i].id = `gid://shopify/CartLine/${transformIds[i]}`;
+    (r.validation.cart as any).lines[i].id = `gid://shopify/CartLine/${i}`;
+    (r.validation.cart as any).lines[i].cost.subtotalAmount.amount = i === 0 ? '40.0' : '20.0';
+  }
+  const bound = bindCurrentFixture('small', ids, r, 60014, publicHex,
+    'c'.repeat(32), 'd'.repeat(32));
+  assert.deepEqual(bound.assignments.map(x => x.memberIndex), [1, 0, null]);
+  assert.equal(bound.assignments[0]?.cartLineId, `gid://shopify/CartLine/${transformIds[0]}`);
+});
+
 test('changed key, price, projected policy, context, cart count or economic amount refuses signing', () => {
   const changes: Array<(r: CurrentReads) => void> = [
     r => { (r.admin.nodes as any[])[0].variants.nodes[0].price = '21.00'; },
@@ -68,8 +86,7 @@ test('changed key, price, projected policy, context, cart count or economic amou
     r => { (r.transform.localization as any).country.isoCode = 'CA'; },
     r => { (r.validation.cart as any).lines.pop(); },
     r => { (r.validation.cart as any).lines[0].cost.subtotalAmount.amount = '39.99'; },
-    r => { (r.validation.cart as any).lines[0].id = 'gid://shopify/CartLine/4'; },
-    r => { const lines = (r.validation.cart as any).lines; [lines[1], lines[2]] = [lines[2], lines[1]]; },
+    r => { (r.validation.cart as any).lines[0].id = 'gid://shopify/CartLine/not-an-id'; },
     r => { const lines = (r.validation.cart as any).lines; lines[0].quantity = 1; lines[0].cost.subtotalAmount.amount = '20.00'; lines[1].quantity = 2; lines[1].cost.subtotalAmount.amount = '40.00'; },
     r => { (r.validation.cart as any).lines[1].id = 'gid://shopify/CartLine/1'; },
     r => { (r.admin.nodes as any[])[1].policy.value = `${generation}:1:optional`; },
