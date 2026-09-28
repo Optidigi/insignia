@@ -1,0 +1,55 @@
+✖ known cancellation, pending-plan and trial boundaries end current new-action authority (3.732635ms)
+✖ both tier flat amounts must be exact zero before provider data can authorize a new action (2.18656ms)
+✔ public application seam runs verified entitlement through fact, outbox, 202 and aggregate-only reconciliation (2.173787ms)
+✔ provider read failure retains a pending immutable paid fact until verified history returns (0.770327ms)
+✔ concurrent purchase qualification is one fact and later buyer lifecycle cannot reverse it (1.746786ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 3
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 160.853548
+
+✖ failing tests:
+
+test at test/application.test.ts:60:1
+✖ known cancellation, pending-plan and trial boundaries end current new-action authority (3.732635ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + null
+  - '2026-06-15T00:00:00.000Z'
+
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m0-010r-baseline/spikes/m0-010/test/application.test.ts:68:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: '2026-06-15T00:00:00.000Z',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at test/application.test.ts:76:1
+✖ both tier flat amounts must be exact zero before provider data can authorize a new action (2.18656ms)
+  AssertionError [ERR_ASSERTION]: tier 0, amount 1.00
+  + actual - expected
+
+  + 'ACTIVE'
+  - 'UNSUPPORTED_TARIFF'
+
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m0-010r-baseline/spikes/m0-010/test/application.test.ts:95:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 'ACTIVE',
+    expected: 'UNSUPPORTED_TARIFF',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

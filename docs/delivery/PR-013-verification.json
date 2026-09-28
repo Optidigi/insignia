@@ -1,0 +1,201 @@
+{
+  "reviewDate": "2026-09-28",
+  "verdict": "CHANGES_REQUESTED",
+  "repository": "Optidigi/insignia",
+  "pr": 13,
+  "base": "31484d328ec401a30994d073518b11eb67777433",
+  "head": "fc6159664a829962983a33cdfe5c415645aee29e",
+  "effectiveMergeBase": "31484d328ec401a30994d073518b11eb67777433",
+  "bindingEvidence": "head Git commit parent equals supplied base; PR metadata and changed filenames retrieved",
+  "syntheticMerge": "640a72759d3eed2920dad0f3ce0c13e5e02a07c3",
+  "syntheticParents": [
+    "31484d328ec401a30994d073518b11eb67777433",
+    "fc6159664a829962983a33cdfe5c415645aee29e"
+  ],
+  "headAndSyntheticTree": "c268f7f3cf9f4736d657e3d00964b38ac7a78a53",
+  "sameTreeVerified": true,
+  "applicableWorkflows": [
+    {
+      "id": 36352996565,
+      "conclusion": "success",
+      "actualJobLogRead": true,
+      "jobId": 108715124767
+    },
+    {
+      "id": 36352996508,
+      "conclusion": "success",
+      "actualJobLogRead": false
+    },
+    {
+      "id": 36352996523,
+      "conclusion": "success",
+      "actualJobLogRead": false
+    }
+  ],
+  "ciTests": {
+    "runtime": "Node 24.21.0",
+    "packageManager": "pnpm 12.6.0",
+    "strictTypes": true,
+    "testCount": 31,
+    "failed": 0
+  },
+  "sourceVerification": {
+    "partner.ts": {
+      "bytes": 11231,
+      "gitBlob": "520b4aecc07291bc550a064557758de0cd2177fc",
+      "expectedGitBlob": "520b4aecc07291bc550a064557758de0cd2177fc",
+      "exactMatch": true,
+      "sha256": "1f0d8f0318b7730f8d35090e2531ac929352beaa0f2775aefc42c5e244aa455a"
+    },
+    "time.ts": {
+      "bytes": 1325,
+      "gitBlob": "2b04172376778de7193738eb986f2843988146ef",
+      "expectedGitBlob": "2b04172376778de7193738eb986f2843988146ef",
+      "exactMatch": true,
+      "sha256": "676b2df74b5b7bc2e9d53199728aa20b24f939aadd2534e57e8957cb6fdbe25e"
+    }
+  },
+  "independentReproduction": {
+    "runtime": "v22.16.0",
+    "mode": "byte-identical partner/time plus disclosed entitlement excerpt",
+    "networkOrProviderOperations": 0,
+    "R1": {
+      "observedAt": "2026-06-14T23:59:00.000Z",
+      "cancellationAt": "2026-06-15T00:00:00.000Z",
+      "cancelAtEndOfCycle": true,
+      "normalizedUntil": null,
+      "decisions": [
+        {
+          "now": "2026-06-14T23:59:30.000Z",
+          "decision": "ALLOW"
+        },
+        {
+          "now": "2026-06-15T00:00:00.000Z",
+          "decision": "ALLOW"
+        },
+        {
+          "now": "2026-06-15T00:01:00.000Z",
+          "decision": "ALLOW"
+        },
+        {
+          "now": "2026-06-15T00:05:00.000Z",
+          "decision": "PENDING_VERIFY"
+        }
+      ],
+      "explicitBoundaryControl": "PENDING_VERIFY"
+    },
+    "R2": {
+      "tariffResults": [
+        {
+          "tierIndex": 0,
+          "amount": "0.00",
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 0,
+          "amount": "1.00",
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 0,
+          "amount": "-1.00",
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 0,
+          "amount": "not-a-decimal",
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 0,
+          "amount": null,
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 0,
+          "amount": "(missing)",
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 1,
+          "amount": "0.00",
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 1,
+          "amount": "1.00",
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 1,
+          "amount": "-1.00",
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 1,
+          "amount": "not-a-decimal",
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 1,
+          "amount": null,
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        },
+        {
+          "tierIndex": 1,
+          "amount": "(missing)",
+          "result": "ACTIVE",
+          "normalizedIncludedUnits": 2
+        }
+      ],
+      "fractionalUnitRatePositiveControl": "ACTIVE"
+    }
+  },
+  "workflowArtifacts": {
+    "billingRunList": [],
+    "downloaded": false
+  },
+  "nativeReview": {
+    "action": "REQUEST_CHANGES",
+    "status": 403,
+    "posted": false,
+    "error": "Resource not accessible by integration"
+  },
+  "architecture": {
+    "filesInChangedInventory": false,
+    "ciReportedPlanSha256": "8bb45ac9e2834bf047824a2e3dda4da7f76692bae685f6657da7b3ab03d0b145",
+    "ciReportedLedgerSha256": "97ebb79ddc53000c53c46218ba8c83a5ba2279720ed07ff50809706b4f1a800a",
+    "independentlyRehashedThisReview": false
+  },
+  "primarySources": [
+    "https://shopify.dev/docs/api/partner/latest/objects/ActiveSubscription",
+    "https://shopify.dev/docs/api/partner/latest/objects/PriceTier",
+    "https://shopify.dev/docs/api/app-events/latest/creating-events",
+    "https://shopify.dev/docs/api/app-events/latest"
+  ],
+  "limitations": [
+    "No complete repository suite executed in principal runtime; targeted Node 22.16.0 reproduction only.",
+    "The default reproducer uses complete byte-identical partner/time files plus explicitly reduced entitlement methods.",
+    "Node 24 complete repository reproduction is required from local agent before correction.",
+    "No browser, Shopify, Partner API, App Events or Dashboard operation performed.",
+    "No per-file source hash validation beyond partner.ts and time.ts; no independent hash of every historical receipt.",
+    "Raw-source request from container failed DNS resolution; GitHub connector supplied source."
+  ],
+  "actions": {
+    "repositoryContentsModified": false,
+    "prMerged": false,
+    "shopifyMutations": 0,
+    "localReviewFilesCreated": true
+  }
+}
