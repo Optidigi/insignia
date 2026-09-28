@@ -1,14 +1,14 @@
 # Insignia — greenfield architecture and implementation plan
 
-**Record version:** 1.2 — 27 September 2026
+**Record version:** 1.3 — 28 September 2026
 
 **Status:** Product/architecture decision audit closed; Option A required-product trust boundary approved. No complete development gate accepted.
 
 **Authority:** The user's pasted baseline, subsequent answers, final inactive-subscription/downgrade approval, and [Option A approval](OPTION-A-APPROVED.md). No missing `plan.md` dependency remains.
 
-**Delivery:** Consult the maintained [delivery state](../delivery/state.md) for current authorization, evidence and gate status. The original v1.1 record remains available at the fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`.
+**Delivery:** Consult the maintained [delivery state](../delivery/state.md) for current authorization, evidence and gate status. The original v1.1 record remains available at the fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`; approved v1.2 remains at the fixed PR #17 merge `662a78cd27507d8a2f1eaa976f1c644c93edd1be`.
 
-**Execution governance:** Read `../delivery/operating-model.md` before implementing or delegating. Root `AGENTS.md` is the concise entry point; `../delivery/state.md` records current authorization. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project; the local orchestrator is sol-6-high. Version 1.2 adds only the approved Option A boundary and directly necessary publication/status corrections; whole-quote v2 remains provisional.
+**Execution governance:** Read `../delivery/operating-model.md` before implementing or delegating. Root `AGENTS.md` is the concise entry point; `../delivery/state.md` records current authorization. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project; the local orchestrator is sol-6-high. Version 1.2 added the approved Option A boundary. Version 1.3 corrects gate/milestone sequencing only; whole-quote v2 remains provisional.
 
 This document is intended to be sufficient context for implementation agents. A numbered source register follows section 17. `[S#]` references support external platform/library facts. Requirements and algorithms stated as Insignia decisions are design specifications, not claims of already-observed Shopify behavior.
 
@@ -765,7 +765,7 @@ Health endpoints separate process liveness, DB readiness, worker freshness and i
 
 ### 14.2 Gate register
 
-All gates began **NOT RUN**. The maintained [delivery evidence register](../delivery/state.md) records later partial observations and principal verdicts; no complete gate has been accepted. G7 and G8 remain required unexecuted gates. Each gate needs a test directory, machine-readable result manifest, captured evidence and a principal-adjudicated conclusion. The plan's examples and source reads are not gate evidence.
+All gates began **NOT RUN**. The maintained [delivery evidence register](../delivery/state.md) records later partial observations and principal verdicts; no complete gate has been accepted. G7 and G8 have partial observed sub-results but remain incomplete. Each gate needs a test directory, machine-readable result manifest, captured evidence and a principal-adjudicated conclusion. The plan's examples and source reads are not gate evidence.
 
 | Gate | Prototype and executable acceptance | Failure and reopened boundary |
 |---|---|---|
@@ -780,6 +780,21 @@ All gates began **NOT RUN**. The maintained [delivery evidence register](../deli
 
 G8 is added because the approved hybrid/feature-tiered business model depends on provider billing lifecycle behavior beyond a flat subscription. It is not an excuse to reopen plan economics in every coding task.
 
+### 14.2.1 Gate evidence timing, approved v1.3 sequencing
+
+The criteria in the table above are unchanged. A principal-accepted **feasibility basis** establishes only a bounded platform/interface contract; it is not a complete gate PASS. A milestone may start only after its stated entry evidence and separate authorization. A feature may be accepted only after its owning milestone's remaining criteria pass. Every G1–G8 criterion for the supported shipping scope must pass again on the release candidate before merchant rollout. A changed deadline is recorded here rather than treated as a waived requirement.
+
+| Gate | M0/next-dependent entry evidence | Remaining owner and blocking point |
+| --- | --- | --- |
+| G1 | Bounded same-real-variant, exact-price, native lifecycle proof on the designated Public app/Basic dev context, with distribution limits recorded, before the M1 readiness decision. | M7/M8 complete supported quantities 1/3, variants/colors, large physical quantity, real IDs/prices, single inventory decrement, fulfillment/refund/restock, retained order properties and plain-variant coexistence before their checkout/purchase path is accepted; representative merchant qualification before rollout. |
+| G2 | Full-path local two-Function measurements and explicit candidate admission/headroom; principal accepts the capacity basis before M1. | M2/M4 integrate the measured boundary; M7 exercises the adopted supported profile, near-max ordinary coexistence and hostile bounded inputs, and preserves 1/10/32/64-and-larger stress acceptance or rejection outcomes, exact-money/Ed25519 binaries, resource ceilings and 10,000 physical units. M10 repeats resource evidence on the release build. No merchant cap is inferred from an evaluation case. |
+| G3 | Shared canonical TS/Rust vectors, complete statement verification and transport feasibility for the chosen candidate before protocol adoption and M1. | M2/M4 integrate and freeze an approved version; M7 proves supported cart/order preservation, malformed/mixed-set rejection and identical key/epoch/renewal behavior; M10 repeats on release artifacts. |
+| G4 | Representative pre-discount/context evidence and explicit supported-path contract before M4 normalization is frozen. | M7 completes contextual prices, market/country/FX changes, currency overrides, percentage/fixed/automatic/combined discounts, inclusive/exclusive tax, shipping/duties isolation, supported accelerated paths and unrelated subscription lines before checkout acceptance; M10 repeats supported release contexts, including zero/three-decimal currencies where supported. |
+| G5 | Exact allocation/scalar agreement plus measured full-target output for the chosen candidate before M1 capacity reliance. | M2/M4 integrate exact money and SDK scalar serialization; M7/M8 close the €91 example, many variants, zero/one-minor setup, differing base prices, pathological decimals and native partial refunds before purchase acceptance; M10 repeats. |
+| G6 | Public-app wrong-economics rejection and reviewed implementable Option A activation/consistency contract before M1 reliance or publication work. | M3 durable journal/installation fencing and M4/M5 readiness/activation; M7 proves independent fail-closed handling for conflicting apps, missing/altered operations, partial/mixed tokens, policy tampering, runtime failure, stale projections and direct/accelerated checkout, with invalid-line repair, before required-product publication is enabled or accepted. The approved unexpected joint-loss residual remains an incident to contain. |
+| G7 | Accepted real embedded identity/navigation/save feasibility supports an M1 foundation decision. | M5 closes cold/deep/reload, blocked-cookie/mobile/expired-token, staff authorization, CSRF/private-fragment, Polaris/Preact, native refresh concurrency, production bundle, grant-cache and ambiguous-save recovery before dependent admin functionality is accepted; M10 repeats supported browser coverage. |
+| G8 | Accepted real provider access/current effective-zero metering is route evidence only; trial/allowance/plan/cancellation provider contracts must be established before M4 entitlement rules are accepted. | M3 implements durable records, M8 supplies verified first-paid facts, M9 closes three-plan allowance/trial, duplicate/refund, plan transition/downgrade/cancellation, delayed/closed-period, permanent-key and 202-to-processing delivery/reconciliation against actual meter/contract/Dashboard evidence before billing acceptance; M10/M11 verify release-specific commercial terms. |
+
 Published Function resource ceilings at research time include a 256 kB binary and, for carts up to 200 lines, 11 million instructions, 128 kB input and 20 kB output. Measure against the current pinned platform and include input-query cost as well. A large garment quantity is not the same thing as a large signed-line count. [S4]
 
 ### 14.3 Release acceptance
@@ -792,22 +807,22 @@ Visual parity is currently unverified. Capture representative legacy storefront 
 
 **Predecessor:** Complete and review PF-001 documentation/tooling preflight before M0. Preflight does not scaffold the product or execute a development gate. The operating model groups M0–M11 into delivery phases without changing their prerequisites.
 
-Only the small scaffolding necessary for a spike precedes platform risk proof. The full workspace/domain/database/admin build does not precede the foundational pricing/authorization gates. G7/G8 can run in parallel with the pricing spike where independent.
+Only the small scaffolding necessary for a spike precedes platform risk proof. The full workspace/domain/database/admin build does not precede the foundational pricing/authorization evidence in section 14.2.1. G7/G8 can run in parallel with the pricing spike where independent. Entry evidence, feature acceptance and release acceptance are separate decisions; a partial gate observation does not authorize the next milestone.
 
 ### M0 — Platform, authorization, embedded-auth and billing proof
 
 **Goal:** Establish the locked mechanisms can meet their invariants before building the full app.  
 **Prerequisites:** This record; dedicated test-store/app access; current primary API schemas.  
 **Created:** Minimal spike harness, provisional TS/Rust codec, two Functions, small Astro/Polaris auth harness, billing client harness, evidence directories.  
-**Work:** Execute G1–G8 with fixed test configurations/prices and minimal persistence as needed. Capture actual parent/component/price inputs, full real-variant order lifecycle, encryption/rotation flow and billing lifecycle. Adopt the simplest proven normalization and a measured capacity.  
-**Tests:** Gate suites and reproducible merchant steps.  
-**Acceptance:** Gate results have build hashes and actual evidence; no blocking gate failed or remains claimed-but-unrun. Narrow adapter/protocol contracts recorded. Do not build the complete admin as a substitute for a gate.  
-**Commitment afterward:** Cart materialization and enforcement contracts are now foundations. Protocol is frozen only after G3/G5. No production data exists yet; a failed spike is cheap to discard.
+**Work:** Establish bounded feasibility and interface contracts for the original G1–G8 criteria using fixed test configurations/prices and minimal spike persistence. Capture actual parent/component/price inputs, representative public-app real-variant lifecycle and independent rejection, full-path resource measurements, embedded identity and provider contract/processing evidence. Record every remaining original criterion against its owning milestone in section 14.2.1.
+**Tests:** Source-bound spike suites and reproducible merchant steps where authorized; preserve failed and unrun rows.
+**Acceptance:** The principal accepts a bounded feasibility basis with build hashes, exact context, observed limits and no unresolved mechanism failure in the proposed M1 foundation. This is **not** a complete G1–G8 PASS. Narrow adapter/protocol contracts and later blocking criteria are explicit. Do not build the complete admin or production billing engine as a substitute for a spike.
+**Commitment afterward:** Cart materialization and enforcement have a reviewed basis, not final production acceptance. Freeze a protocol only after the selected G3/G5 evidence and separate principal adoption. No production data exists yet; a failed spike is cheap to discard.
 
 ### M1 — Workspace and enforced boundaries
 
 **Goal:** A reproducible development/CI foundation, not a platform framework.  
-**Prerequisites:** M0 contracts; known compatible versions.  
+**Prerequisites:** Principal-accepted M0 feasibility/contracts, including measured candidate capacity, public-app same-variant/economic-protection basis and known compatible versions; separate M1 authorization. Open original gate criteria remain assigned by section 14.2.1.
 **Created:** `apps/*`, package exports, Cargo workspace, pnpm lockfile, toolchain pin, minimal CI, dependency-cruiser rules.  
 **Work:** Strict TS, browser/server entry boundaries, lint/type/test/build, versioned Shopify extension builds, secret scanning and immutable CI artifacts. Migrate proven spike code into narrow owned modules instead of copying everything.  
 **Tests:** Import-rule negative fixtures, Node/Preact/Astro build, both Wasm builds, native Sharp smoke test in worker build image.  
@@ -837,21 +852,21 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 ### M4 — Shopify pricing, authorization and entitlement adapter
 
 **Goal:** Replace spike fixtures with production ports for safe quoting.  
-**Prerequisites:** M2–M3; successful M0 contract evidence.  
+**Prerequisites:** M2–M3; accepted M0 contract evidence and representative G4 context contract. Establish G8 provider trial/allowance/plan/cancellation contracts before accepting entitlement rules.
 **Created:** Catalog/context/FX adapters, server signer, key/Function reconciliation, subscription projections and feature-policy service.  
 **Work:** Batch contextual lookups, freshness checks, exact decimal boundary, known-currency matrix, publication-readiness projection, stable per-plan feature catalog structure and issuance authorization. Implement Shopify App Pricing contract reads early because publication and quote eligibility depend on them.  
 **Tests:** Provider contract fixtures, expired/rotated credentials, unavailable context/FX, desired/observed drift, no-entitlement/downgrade rules and key overlap.  
 **Acceptance:** A programmatic immutable accepted quote yields the same validated prices as the spike; missing entitlement/pricing/config blocks issuance without affecting old valid offers.  
-**Commitment afterward:** External adapter contracts, protocol v1 and feature identifiers; future incompatible change is explicit/versioned.
+**Commitment afterward:** External adapter contracts, the separately adopted versioned protocol and feature identifiers; future incompatible change is explicit/versioned.
 
 ### M5 — Shared visualizer and new admin configuration
 
 **Goal:** Merchant can configure, preview and publish a product.  
-**Prerequisites:** M2–M4 and G7.  
+**Prerequisites:** M2–M4 and accepted G7 embedded identity/navigation feasibility.
 **Created:** Visualizer package, page-local Preact editors, Astro routes and admin command endpoints.  
 **Work:** Pure geometry projection, direct Konva editor, variant/color images, price setup scopes/tier controls, copy-to-product, draft CAS and publish readiness. Capture storefront visual fixtures in parallel, without porting legacy backend.  
 **Tests:** Geometry roundtrips/contain-fit, UI→canvas/canvas→UI, server/browser scene agreement, concurrent editing, missing preview fallbacks, required-feature errors.  
-**Acceptance:** A merchant publishes a correct revision; changing the draft or defaults leaves historical revision/prices unchanged.  
+**Acceptance:** A merchant publishes a correct revision; changing the draft or defaults leaves historical revision/prices unchanged. G7 staff/session/browser/grant-cache/save-recovery criteria and Option A readiness/activation conditions are proved before the dependent admin/publication feature is accepted.
 **Commitment afterward:** Serialized config/geometry contracts and merchant workflow; old published versions need readers, not mutation.
 
 ### M6 — Secure artwork vertical slice
@@ -867,11 +882,11 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 ### M7 — Complete storefront quote/cart purchase slice
 
 **Goal:** A buyer customizes, reviews cart-wide economics and checks out safely.  
-**Prerequisites:** M4–M6; G1–G6.  
+**Prerequisites:** M4–M6 and accepted G1–G6 foundation contracts for the supported checkout path. Remaining G1–G6 criteria block M7 feature acceptance rather than the act of implementing the feature.
 **Created:** Theme block/embed, Custom Element/Shadow DOM, Preact state, App Proxy contracts, proposal/acceptance/cart-application use cases.  
 **Work:** Visual-reference flow, per-placement overrides/logo-later, size/color quantity vector, full-cart reprice, exact real-variant buckets, renewal, outside-cart mutation repair and accelerated checkout.  
 **Tests:** Playwright plus real-store acceptance, 500-tier removal, identical/different designs, split buckets, multi-tab race, discounts/Markets, pending/rejected files and required products.  
-**Acceptance:** Accepted pre-discount quote equals materialized total exactly; no unsupported path silently falls back to base-price customization; visual reference review passes.  
+**Acceptance:** Accepted pre-discount quote equals materialized total exactly; no unsupported path silently falls back to base-price customization; visual reference review passes. Remaining G1–G6 supported-context, resource, transport and enforcement criteria pass for this checkout path before it is accepted.
 **Commitment afterward:** Storefront API v1, signed cart contract and buyer review behavior; backward compatibility for issued offers becomes necessary on deployment.
 
 ### M8 — Purchase snapshots, artwork work and refunds
@@ -887,11 +902,11 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 ### M9 — Usage billing and subscription lifecycle
 
 **Goal:** Charge one eligible order once, with correct plan features/allowances/trial policy.  
-**Prerequisites:** M4 entitlement work, M8 paid facts, G8 and real commercial plan configuration before release.  
+**Prerequisites:** M4 entitlement work, M8 paid facts and principal-accepted G8 provider feasibility/contracts. Real commercial plan configuration remains due before paid release; full integrated G8 cannot be an entry requirement for the milestone that implements it.
 **Created:** Usage ledger/outbox sender, subscription/usage reconciliation, billing/admin disclosure.  
 **Work:** Three provider plans, included graduated meter band, trial waiver, occurred-at qualification, non-reversing refunds, cancellation/downgrade restrictions, 202 transport-vs-billing distinction and permanent idempotency.  
 **Tests:** Duplicate paid events/replayed quotes, 500-item single usage, allowance boundary, trial-end delayed webhook, plan switch, cancellation/old authorization, billing validation failure and closed period.  
-**Acceptance:** Actual provider evidence matches expected charges and entitlements; no trial back-billing or duplicate usage; processing uncertainty is visible, not hidden as success.  
+**Acceptance:** Actual provider evidence matches expected charges and entitlements; no trial back-billing or duplicate usage; processing uncertainty is visible, not hidden as success. All remaining original G8 lifecycle criteria pass at M9 exit, with release-specific terms reverified before paid rollout.
 **Commitment afterward:** Meter handle, qualification rules and actual merchant contract. Rates/feature changes need versioned disclosures and provider contract handling.
 
 ### M10 — Recovery, retention, security and release qualification
@@ -988,7 +1003,7 @@ This section mirrors `decision-ledger.md`; update both in the same reviewed chan
 
 G1 same-variant non-Plus lifecycle; G2 complete Ed25519/Wasm/resource capacity; G3 TS/Rust golden vectors and transport; G4 discounts/Markets/tax/accelerated behavior; G5 setup allocation/exact decimal serialization; G6 independent fail-closed enforcement plus cart repair; G7 embedded Astro authentication/Polaris/Preact; G8 hybrid billing/trial/allowance/plan-change/delivery lifecycle.
 
-**Current state:** The maintained [delivery evidence register](../delivery/state.md) records partial observations, unresolved work and principal verdicts. No complete gate has been accepted; G7 and G8 remain required and unexecuted. Option A closes the joint-loss A/B owner decision but does not pass G6.
+**Current state:** The maintained [delivery evidence register](../delivery/state.md) records partial observations, unresolved work and principal verdicts. No complete gate has been accepted; G7 and G8 have bounded observed sub-results but remain incomplete. Option A closes the joint-loss A/B owner decision but does not pass G6.
 
 ### PROVISIONAL / NOT ADOPTED
 

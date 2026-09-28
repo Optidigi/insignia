@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
-"""Verify frozen M0-006 evidence and the archived v1.1 architecture records.
+"""Verify frozen receipts plus v1.1/v1.2 archives and the authorized v1.3 record.
 
-The approved v1.2 decision amendment changes current plan/ledger bytes. Verify
-the old version at the fixed PR #10 merge, not by requiring current bytes to
-equal historical bytes or regenerating historical receipts.
+Each archived version is checked at its fixed merge. Current v1.3 hashes are
+explicit constants, never learned from the working files being checked.
 """
 
 from hashlib import sha256
@@ -14,6 +13,7 @@ import subprocess
 REPO = Path(__file__).resolve().parents[3]
 MERGE = "eaa386c90786e560d49f8311878c95d26cc3c7b8"
 V1_1_MERGE = "0f2c80a316228bd69fdd2ff272e967ff14647b2b"
+V1_2_MERGE = "662a78cd27507d8a2f1eaa976f1c644c93edd1be"
 MANIFEST = "spikes/m0-006/evidence/live-artifact-manifest.json"
 
 
@@ -23,6 +23,10 @@ def original(path):
 
 def v1_1(path):
     return subprocess.check_output(["git", "show", f"{V1_1_MERGE}:{path}"], cwd=REPO)
+
+
+def v1_2(path):
+    return subprocess.check_output(["git", "show", f"{V1_2_MERGE}:{path}"], cwd=REPO)
 
 
 def digest(data):
@@ -39,10 +43,17 @@ for path, expected in manifest["retainedReceiptSha256"].items():
 
 assert digest(v1_1("docs/architecture/implementation-plan.md")) == "c0432288deb778c4d717871d6f771f95e401d00b6a3caf1b878155cbf0e5422d"
 assert digest(v1_1("docs/architecture/decision-ledger.md")) == "0c6c02bab83fb5032548c3d1be1f86ea1492ae3cfd26b6cacc8410f7d08737bb"
-
-current_architecture = {
+v1_2_architecture = {
     "docs/architecture/implementation-plan.md": "8bb45ac9e2834bf047824a2e3dda4da7f76692bae685f6657da7b3ab03d0b145",
     "docs/architecture/decision-ledger.md": "97ebb79ddc53000c53c46218ba8c83a5ba2279720ed07ff50809706b4f1a800a",
+    "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+}
+for path, expected in v1_2_architecture.items():
+    assert digest(v1_2(path)) == expected, f"archived v1.2 architecture mismatch: {path}"
+
+current_architecture = {
+    "docs/architecture/implementation-plan.md": "66cf63bfdf1ede13c6cb7549e346565e44ff1a1f4ca0938efa6feb01d652bed0",
+    "docs/architecture/decision-ledger.md": "d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
 }
 for path, expected in current_architecture.items():
@@ -54,6 +65,8 @@ print(json.dumps({
     "unchangedReceiptCount": len(manifest["retainedReceiptSha256"]),
     "archivedArchitectureRef": V1_1_MERGE,
     "archivedArchitectureVerified": True,
-    "currentArchitectureVersion": "1.2",
+    "archivedV1_2Ref": V1_2_MERGE,
+    "archivedV1_2Sha256": v1_2_architecture,
+    "currentArchitectureVersion": "1.3",
     "currentArchitectureSha256": current_architecture,
 }, sort_keys=True))

@@ -1,0 +1,13 @@
+# Synthetic local build container. Never deploy or use with a merchant account.
+client_id = "00000000000000000000000000000013"
+application_url = "https://example.invalid"
+embedded = false
+name = "m0-013-local-capacity"
+[webhooks]
+api_version = "2026-07"
+[access_scopes]
+scopes = ""
+[auth]
+redirect_urls = []
+[build]
+automatically_update_urls_on_dev = false

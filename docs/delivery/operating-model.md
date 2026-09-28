@@ -27,13 +27,13 @@ Default slice size: one end-to-end use case or one well-defined spike question. 
 | Phase | Milestones | Exit condition |
 |---|---|---|
 | P0 — Preflight | PF-001, before M0 | Correct workspace, saved records, effective agent instructions, live tool probes, honest blockers, bootstrap PR reviewed |
-| P1 — Platform proofs | M0, G1–G8 | Accepted gate evidence and bounded contracts; no unproven mechanism promoted into the full product |
+| P1 — Platform proofs | M0, G1–G8 | Principal-accepted bounded feasibility and interface contracts for the next dependent milestone; original incomplete gate criteria stay assigned to later feature acceptance and release |
 | P2 — Foundation and economics | M1–M4 | Reproducible workspace, enforced boundaries, executable pricing, persistence and authenticated adapters |
 | P3 — Complete product flow | M5–M8 | Merchant publication → buyer customization → exact checkout → immutable purchase/artwork workflow |
 | P4 — Commercial and recovery | M9–M10 | Metering, entitlements, retention, reconciliation and fault behavior verified |
 | P5 — Production | M11 | Production design now authorized, recovery proven, controlled release approved |
 
-The full milestone dependency graph remains plan section 15. P1 may use only the minimal scaffolding necessary for spikes. P0 writes documents, project-local agent/tool configuration and harmless capability probes, not an application scaffold.
+The full milestone dependency graph and each unchanged G1–G8 criterion remain in plan sections 14.2.1 and 15. P1 may use only the minimal scaffolding necessary for spikes. A partial feasibility result is not a complete gate PASS or M1 authorization. P0 writes documents, project-local agent/tool configuration and harmless capability probes, not an application scaffold.
 
 ### Initial M0 slicing guide — not execution authorization
 

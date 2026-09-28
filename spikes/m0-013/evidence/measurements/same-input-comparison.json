@@ -1,0 +1,214 @@
+{
+  "runnerName": "function-runner-9.2.2",
+  "runnerSha256": "728bedbcf86f57680051208f9056642c9dfb07766a21891624bf18f372e4c29b",
+  "rows": [
+    {
+      "target": "transform",
+      "caseName": "valid-10-mixed-200",
+      "inputSha256": "90d44da5f41a5539951294d28700d8f3fc1d431cbc9da9f1a5665c3ee0d9632c",
+      "inputBytes": 91686,
+      "querySha256": "d848a97f2b862f0c93587f6a2b6aeee84a53bb5203324647b78d1e1124bfad97",
+      "sameOutput": true,
+      "executions": [
+        {
+          "run": "baseline",
+          "wasmSha256": "abe880ed04e6a9e48f65cbea6a04a75a62e9016a5d2de6d72a41db5636519a39",
+          "instructions": 7960647,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "04d8474db0c9c20da87c188d926240151418a6247e1f1afc1c5fca78ffe9b7e9",
+          "outputBytes": 3446
+        },
+        {
+          "run": "candidate",
+          "wasmSha256": "8b3340359faa12d7ae29bd0160bbc92a9a1ba497c01e90eef354dfb3ba3c2f21",
+          "instructions": 7978310,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "04d8474db0c9c20da87c188d926240151418a6247e1f1afc1c5fca78ffe9b7e9",
+          "outputBytes": 3446
+        }
+      ]
+    },
+    {
+      "target": "transform",
+      "caseName": "valid-32-mixed-200",
+      "inputSha256": "eb4e7815bb30b04f16fe1209901414a00b3a1cee63a21f3cdbfc34ce4e2a8d82",
+      "inputBytes": 92522,
+      "querySha256": "d848a97f2b862f0c93587f6a2b6aeee84a53bb5203324647b78d1e1124bfad97",
+      "sameOutput": true,
+      "executions": [
+        {
+          "run": "baseline",
+          "wasmSha256": "abe880ed04e6a9e48f65cbea6a04a75a62e9016a5d2de6d72a41db5636519a39",
+          "instructions": 8396848,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "7a92d79ef6a415cb97b01835daf12ad48f70e6695ac4f5109c82a47f76143093",
+          "outputBytes": 10992
+        },
+        {
+          "run": "candidate",
+          "wasmSha256": "8b3340359faa12d7ae29bd0160bbc92a9a1ba497c01e90eef354dfb3ba3c2f21",
+          "instructions": 8432228,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "7a92d79ef6a415cb97b01835daf12ad48f70e6695ac4f5109c82a47f76143093",
+          "outputBytes": 10992
+        }
+      ]
+    },
+    {
+      "target": "transform",
+      "caseName": "ordinary-200",
+      "inputSha256": "ddc6ec0f2340b51f0ad9b08390ad87916e2ab2d750763280239e3077887db2f2",
+      "inputBytes": 91090,
+      "querySha256": "d848a97f2b862f0c93587f6a2b6aeee84a53bb5203324647b78d1e1124bfad97",
+      "sameOutput": true,
+      "executions": [
+        {
+          "run": "baseline",
+          "wasmSha256": "abe880ed04e6a9e48f65cbea6a04a75a62e9016a5d2de6d72a41db5636519a39",
+          "instructions": 2071967,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+          "outputBytes": 17
+        },
+        {
+          "run": "candidate",
+          "wasmSha256": "8b3340359faa12d7ae29bd0160bbc92a9a1ba497c01e90eef354dfb3ba3c2f21",
+          "instructions": 2071987,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+          "outputBytes": 17
+        }
+      ]
+    },
+    {
+      "target": "transform",
+      "caseName": "physical-10000-five-buckets",
+      "inputSha256": "09a493ed121257e1b8c9e3dadd8b88af984baf0cd93b57934876b8fd2c941246",
+      "inputBytes": 3176,
+      "querySha256": "d848a97f2b862f0c93587f6a2b6aeee84a53bb5203324647b78d1e1124bfad97",
+      "sameOutput": true,
+      "executions": [
+        {
+          "run": "baseline",
+          "wasmSha256": "abe880ed04e6a9e48f65cbea6a04a75a62e9016a5d2de6d72a41db5636519a39",
+          "instructions": 2867878,
+          "linearMemoryKiB": 1152,
+          "outputSha256": "1a85f7291504f16f0e3c1a5d3830e890295a6948a85e8dcf3c8a003d6e4c0e63",
+          "outputBytes": 1731
+        },
+        {
+          "run": "candidate",
+          "wasmSha256": "8b3340359faa12d7ae29bd0160bbc92a9a1ba497c01e90eef354dfb3ba3c2f21",
+          "instructions": 2872882,
+          "linearMemoryKiB": 1152,
+          "outputSha256": "1a85f7291504f16f0e3c1a5d3830e890295a6948a85e8dcf3c8a003d6e4c0e63",
+          "outputBytes": 1731
+        }
+      ]
+    },
+    {
+      "target": "validation",
+      "caseName": "valid-10-mixed-200",
+      "inputSha256": "aee3b5c360e3087a0c4b49bcf95719b94d7a07e2a9a322c53e6c36d6051a3d44",
+      "inputBytes": 103132,
+      "querySha256": "c4a6a655dc813cd080bfded7567fd2538a65ae68e87eec0eb4326e794f2d1b97",
+      "sameOutput": true,
+      "executions": [
+        {
+          "run": "baseline",
+          "wasmSha256": "0eb20c0ecb42df06c7c1bc86ab0db627db180fc7dc5bbbf7ed04708495353339",
+          "instructions": 8233888,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+          "outputBytes": 17
+        },
+        {
+          "run": "candidate",
+          "wasmSha256": "dcef865ef27b014f5d77f30cc36372f67aa2d41e996d0fa78e49625e2a61bd30",
+          "instructions": 8253444,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+          "outputBytes": 17
+        }
+      ]
+    },
+    {
+      "target": "validation",
+      "caseName": "valid-32-mixed-200",
+      "inputSha256": "41b32894b2c232e9c86f51380987f6b6adbdc39462aee5610ccf9c8db3938b65",
+      "inputBytes": 103968,
+      "querySha256": "c4a6a655dc813cd080bfded7567fd2538a65ae68e87eec0eb4326e794f2d1b97",
+      "sameOutput": true,
+      "executions": [
+        {
+          "run": "baseline",
+          "wasmSha256": "0eb20c0ecb42df06c7c1bc86ab0db627db180fc7dc5bbbf7ed04708495353339",
+          "instructions": 8526863,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+          "outputBytes": 17
+        },
+        {
+          "run": "candidate",
+          "wasmSha256": "dcef865ef27b014f5d77f30cc36372f67aa2d41e996d0fa78e49625e2a61bd30",
+          "instructions": 8585447,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+          "outputBytes": 17
+        }
+      ]
+    },
+    {
+      "target": "validation",
+      "caseName": "ordinary-200",
+      "inputSha256": "98a2c1158b3ba5a3c58e476f961d2990c5c213ec383df019965ce487e3492d4e",
+      "inputBytes": 102536,
+      "querySha256": "c4a6a655dc813cd080bfded7567fd2538a65ae68e87eec0eb4326e794f2d1b97",
+      "sameOutput": true,
+      "executions": [
+        {
+          "run": "baseline",
+          "wasmSha256": "0eb20c0ecb42df06c7c1bc86ab0db627db180fc7dc5bbbf7ed04708495353339",
+          "instructions": 5952647,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+          "outputBytes": 17
+        },
+        {
+          "run": "candidate",
+          "wasmSha256": "dcef865ef27b014f5d77f30cc36372f67aa2d41e996d0fa78e49625e2a61bd30",
+          "instructions": 5954312,
+          "linearMemoryKiB": 1600,
+          "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+          "outputBytes": 17
+        }
+      ]
+    },
+    {
+      "target": "validation",
+      "caseName": "physical-10000-five-buckets",
+      "inputSha256": "95793fc982752adf8393225d7011e1dc7e44fb9b2899029280514ee0bebcb30f",
+      "inputBytes": 3522,
+      "querySha256": "c4a6a655dc813cd080bfded7567fd2538a65ae68e87eec0eb4326e794f2d1b97",
+      "sameOutput": true,
+      "executions": [
+        {
+          "run": "baseline",
+          "wasmSha256": "0eb20c0ecb42df06c7c1bc86ab0db627db180fc7dc5bbbf7ed04708495353339",
+          "instructions": 2847363,
+          "linearMemoryKiB": 1152,
+          "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+          "outputBytes": 17
+        },
+        {
+          "run": "candidate",
+          "wasmSha256": "dcef865ef27b014f5d77f30cc36372f67aa2d41e996d0fa78e49625e2a61bd30",
+          "instructions": 2856489,
+          "linearMemoryKiB": 1152,
+          "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+          "outputBytes": 17
+        }
+      ]
+    }
+  ]
+}

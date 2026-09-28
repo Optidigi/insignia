@@ -1,6 +1,6 @@
 # Insignia — authoritative decision ledger
 
-Version 1.2 — 27 September 2026. Companion: implementation-plan.md. This amendment records the owner's approved Option A required-product trust boundary. Version 1.1 remains verifiable at the fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`; the unrelated decisions below retain their prior wording. No complete development gate has been accepted.
+Version 1.3 — 28 September 2026. Companion: implementation-plan.md. Version 1.2 recorded the approved Option A required-product trust boundary and remains verifiable at the fixed PR #17 merge `662a78cd27507d8a2f1eaa976f1c644c93edd1be`; version 1.1 remains verifiable at the fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`. This v1.3 amendment changes gate/milestone sequencing only. No complete development gate has been accepted.
 
 
 ### LOCKED
@@ -27,11 +27,13 @@ Version 1.2 — 27 September 2026. Companion: implementation-plan.md. This amend
 
 **Delivery governance:** ChatGPT in the Insignia Rewrite Project is principal architect/reviewer; sol-6-high is the local orchestrator. Repository documents and SHA-bound PR verdicts preserve continuity. Preflight PF-001 precedes M0. One outcome per slice/PR; one writer by default, at most two independently authorized non-overlapping writers in separate worktrees; local read-only pre-review plus principal review of every PR. User retains merge/resource authority unless explicitly delegated for a reviewed change. No unattended monitoring is assumed. `../delivery/operating-model.md` controls the detailed execution method; later slices require recorded principal authorization.
 
+**Approved v1.3 gate sequencing:** M0 must establish principal-accepted bounded platform feasibility and stable, measured interface contracts before an explicit M1 readiness/authorization decision. A feasibility result is not a complete gate PASS. The original G1–G8 criteria remain required at their dependent feature-acceptance points in plan section 14.2.1 and all must pass again for the supported shipping scope before merchant rollout. G8 provider feasibility precedes M9; full integrated G8 is accepted at M9 exit, after M8 paid facts and durable M3 records exist. No known unsafe checkout, required-product publication or billing feature becomes usable from an earlier workspace milestone alone. This sequencing direction does not adopt v2, set a merchant capacity, pass a gate or start M1.
+
 ### DEVELOPMENT GATES
 
 G1 same-variant non-Plus lifecycle; G2 complete Ed25519/Wasm/resource capacity; G3 TS/Rust golden vectors and transport; G4 discounts/Markets/tax/accelerated behavior; G5 setup allocation/exact decimal serialization; G6 independent fail-closed enforcement plus cart repair; G7 embedded Astro authentication/Polaris/Preact; G8 hybrid billing/trial/allowance/plan-change/delivery lifecycle.
 
-**Current state:** The maintained [delivery evidence register](../delivery/state.md) records partial observations, unresolved work and principal verdicts. No complete gate has been accepted; G7 and G8 remain required and unexecuted. Option A closes the joint-loss A/B owner decision but does not pass G6.
+**Current state:** The maintained [delivery evidence register](../delivery/state.md) records partial observations, unresolved work and principal verdicts. No complete gate has been accepted; G7 and G8 have bounded observed sub-results but remain incomplete. Option A closes the joint-loss A/B owner decision but does not pass G6.
 
 ### PROVISIONAL / NOT ADOPTED
 
