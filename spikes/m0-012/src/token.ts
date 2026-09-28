@@ -23,6 +23,8 @@ export interface ImmediateUsePorts {
   eventBody: string;
   /** Fresh Partner verification after issuance. It receives no bearer. */
   verifyAfterAcquire(): Promise<boolean>;
+  /** Durable may-have-dispatched mark. It receives no bearer and must finish before POST. */
+  beforeEventDispatch(): Promise<boolean>;
   /** Synthetic test seam. Production callers omit this to use Node's TLS-verified fetch. */
   fetch?: typeof fetch;
   /** Synthetic test seam. Must be monotonic. */
@@ -172,6 +174,13 @@ export async function sendWithImmediateUseToken(ports: ImmediateUsePorts): Promi
   try { verified = await timed(ports.verifyAfterAcquire(), verifyController, now, deadline); }
   catch { return { kind: remaining(now, deadline) <= 0 ? 'USE_DEADLINE' : 'GUARD_REJECTED' }; }
   if (verified !== true) return { kind: 'GUARD_REJECTED' };
+  if (remaining(now, deadline) <= 0) return { kind: 'USE_DEADLINE' };
+
+  const barrierController = new AbortController();
+  let marked: boolean;
+  try { marked = await timed(ports.beforeEventDispatch(), barrierController, now, deadline); }
+  catch { return { kind: 'GUARD_REJECTED' }; }
+  if (marked !== true) return { kind: 'GUARD_REJECTED' };
   if (remaining(now, deadline) <= 0) return { kind: 'USE_DEADLINE' };
 
   const eventController = new AbortController();

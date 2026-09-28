@@ -25,7 +25,9 @@ test('trusted direct acquisition sends once with a private bearer and unknown mi
   };
   let verified = 0;
   const result = await sendWithImmediateUseToken({ clientId: CLIENT_ID, clientSecret: SECRET,
-    eventUrl: EVENT_URL, eventBody: BODY, fetch: fetcher, verifyAfterAcquire: async () => { verified++; return true; } });
+    eventUrl: EVENT_URL, eventBody: BODY, fetch: fetcher,
+    verifyAfterAcquire: async () => { verified++; return true; },
+    beforeEventDispatch: async () => true });
   assert.deepEqual(result, { kind: 'HTTP', status: 202,
     tokenMetadata: { scope: 'UNKNOWN', expiry: 'UNKNOWN' }, replay: null, requestId: null });
   assert.equal(verified, 1);
@@ -44,6 +46,7 @@ test('invalid identity, route and event cannot acquire a token', async () => {
   let calls = 0;
   const base = { clientId: CLIENT_ID, clientSecret: SECRET, eventUrl: EVENT_URL,
     eventBody: BODY, verifyAfterAcquire: async () => true,
+    beforeEventDispatch: async () => true,
     fetch: (async () => { calls++; throw new Error('unexpected fetch'); }) as typeof fetch };
   for (const override of [
     { clientId: 'another-app' },
@@ -76,6 +79,7 @@ test('explicit Bearer is required and contradictory supplied metadata rejects be
     const result = await sendWithImmediateUseToken({ clientId: CLIENT_ID, clientSecret: SECRET,
       eventUrl: EVENT_URL, eventBody: BODY,
       verifyAfterAcquire: async () => { verified++; return true; },
+      beforeEventDispatch: async () => true,
       fetch: async () => { calls++; return response(tokenBody); } });
     assert.deepEqual(result, { kind: 'TOKEN_REJECTED' });
     assert.equal(calls, 1);
@@ -87,7 +91,7 @@ test('supplied scope and expiry are retained only as presence and a shorter expi
   let tick = 100;
   let calls = 0;
   const base = { clientId: CLIENT_ID, clientSecret: SECRET, eventUrl: EVENT_URL,
-    eventBody: BODY, monotonicNow: () => tick,
+    eventBody: BODY, monotonicNow: () => tick, beforeEventDispatch: async () => true,
     fetch: (async () => { calls++; return calls % 2 === 1
       ? response({ access_token: bearer, token_type: 'Bearer',
         scope: 'write_global_api_app_events', expires_in: 1 })
@@ -106,7 +110,7 @@ test('30 second monotonic use deadline and failed fresh verification prevent eve
   let tick = 500;
   let calls = 0;
   const base = { clientId: CLIENT_ID, clientSecret: SECRET, eventUrl: EVENT_URL,
-    eventBody: BODY, monotonicNow: () => tick,
+    eventBody: BODY, monotonicNow: () => tick, beforeEventDispatch: async () => true,
     fetch: (async () => { calls++; return response({ access_token: bearer,
       token_type: 'Bearer' }); }) as typeof fetch };
   assert.deepEqual(await sendWithImmediateUseToken({ ...base,
@@ -130,7 +134,8 @@ test('each call acquires anew and each bearer reaches at most one event request'
     return response({}, 202);
   };
   const args = { clientId: CLIENT_ID, clientSecret: SECRET, eventUrl: EVENT_URL,
-    eventBody: BODY, fetch: fetcher, verifyAfterAcquire: async () => true };
+    eventBody: BODY, fetch: fetcher, verifyAfterAcquire: async () => true,
+    beforeEventDispatch: async () => true };
   assert.equal((await sendWithImmediateUseToken(args)).kind, 'HTTP');
   assert.equal((await sendWithImmediateUseToken(args)).kind, 'HTTP');
   assert.deepEqual(sequence, ['auth', 'Bearer bearer-1', 'auth', 'Bearer bearer-2']);
@@ -139,7 +144,8 @@ test('each call acquires anew and each bearer reaches at most one event request'
 test('auth redirect, oversized body and transport failures never dispatch an event', async () => {
   let calls = 0;
   const base = { clientId: CLIENT_ID, clientSecret: SECRET, eventUrl: EVENT_URL,
-    eventBody: BODY, verifyAfterAcquire: async () => true };
+    eventBody: BODY, verifyAfterAcquire: async () => true,
+    beforeEventDispatch: async () => true };
   assert.deepEqual(await sendWithImmediateUseToken({ ...base,
     fetch: async () => { calls++; return new Response(null, { status: 302,
       headers: { Location: 'https://elsewhere.invalid' } }); } }), { kind: 'UNSAFE_REDIRECT' });
@@ -158,6 +164,7 @@ test('stalled token acquisition aborts and does not start verification or event 
   const result = await sendWithImmediateUseToken({ clientId: CLIENT_ID,
     clientSecret: SECRET, eventUrl: EVENT_URL, eventBody: BODY, timeoutMs: 5,
     verifyAfterAcquire: async () => { verified = true; return true; },
+    beforeEventDispatch: async () => true,
     fetch: async (_url, init) => { calls++; signal = init?.signal ?? undefined;
       return new Promise<Response>(() => undefined); } });
   assert.deepEqual(result, { kind: 'TIMEOUT' });
@@ -168,7 +175,8 @@ test('stalled token acquisition aborts and does not start verification or event 
 
 test('event redirect, failure status and stalled POST are sanitized after one attempt', async () => {
   const base = { clientId: CLIENT_ID, clientSecret: SECRET, eventUrl: EVENT_URL,
-    eventBody: BODY, verifyAfterAcquire: async () => true };
+    eventBody: BODY, verifyAfterAcquire: async () => true,
+    beforeEventDispatch: async () => true };
   for (const [eventResponse, expected] of [
     [new Response(null, { status: 307, headers: { Location: 'https://elsewhere.invalid' } }),
       { kind: 'UNSAFE_REDIRECT' }],
@@ -189,4 +197,34 @@ test('event redirect, failure status and stalled POST are sanitized after one at
       : new Promise<Response>(() => undefined); } });
   assert.deepEqual(stalled, { kind: 'TIMEOUT' });
   assert.equal(calls, 2);
+});
+
+test('durable pre-dispatch barrier runs after fresh verification and blocks failed dispatch', async () => {
+  const order: string[] = [];
+  const base = { clientId: CLIENT_ID, clientSecret: SECRET, eventUrl: EVENT_URL,
+    eventBody: BODY, verifyAfterAcquire: async () => { order.push('verify'); return true; },
+    beforeEventDispatch: async () => { order.push('barrier'); return true; },
+    fetch: (async (url: string | URL | Request) => {
+      order.push(String(url) === AUTH_URL ? 'auth' : 'event');
+      return String(url) === AUTH_URL
+        ? response({ access_token: bearer, token_type: 'Bearer' }) : response({}, 202);
+    }) as typeof fetch };
+  const denied = await sendWithImmediateUseToken({ ...base,
+    beforeEventDispatch: async () => { order.push('barrier'); return false; } });
+  assert.deepEqual(denied, { kind: 'GUARD_REJECTED' });
+  assert.deepEqual(order, ['auth', 'verify', 'barrier']);
+  order.length = 0;
+  const failed = await sendWithImmediateUseToken({ ...base,
+    beforeEventDispatch: async () => { order.push('barrier'); throw Error('disk failure'); } });
+  assert.deepEqual(failed, { kind: 'GUARD_REJECTED' });
+  assert.deepEqual(order, ['auth', 'verify', 'barrier']);
+  order.length = 0;
+  const sent = await sendWithImmediateUseToken({ ...base,
+    beforeEventDispatch: async (...args: unknown[]) => {
+      assert.equal(args.length, 0);
+      order.push('barrier');
+      return true;
+    } });
+  assert.equal(sent.kind, 'HTTP');
+  assert.deepEqual(order, ['auth', 'verify', 'barrier', 'event']);
 });
