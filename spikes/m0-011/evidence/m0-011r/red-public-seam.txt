@@ -1,0 +1,31 @@
+✖ equivalent cycle spellings and reversed flat/meter items reach one unchanged synthetic POST on both reads (40.864559ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 180.150412
+✖ failing tests:
+test at test/provider-matching.test.ts:83:1
+✖ equivalent cycle spellings and reversed flat/meter items reach one unchanged synthetic POST on both reads (40.864559ms)
+  AssertionError [ERR_ASSERTION]: seconds on first read
+  + actual - expected
+    {
+  +   kind: 'GUARD_REJECTED'
+  -   kind: 'RECEIVED',
+  -   replay: null,
+  -   requestId: null,
+  -   status: 202
+    }
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m0-011-worktree/spikes/m0-011/test/provider-matching.test.ts:96:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: { kind: 'GUARD_REJECTED' },
+    expected: { kind: 'RECEIVED', status: 202, replay: null, requestId: null },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -6,6 +6,7 @@ import { encodeAppEvent, classifyAppEventResponse } from '../../m0-010/src/app-e
 import { PARTNER_ACTIVE_QUERY, PARTNER_HISTORY_QUERY, parseActiveSubscription, parseHistoryPage,
   type ActiveRead, type HistoricalStatusEvent } from '../../m0-010/src/partner.ts';
 import type { AppEvent } from '../../m0-010/src/index.ts';
+import { canonicalInstant } from '../../m0-010/src/time.ts';
 
 const PARTNER_ORIGIN = 'https://partners.shopify.com';
 const EVENT_URL = 'https://api.shopify.com/app/2026-07/events';
@@ -288,6 +289,7 @@ export class AppEventsClient {
     if (!m || !p.journal || !p.partner || !now || m.mode !== 'LIVE_ZERO_PRICE_TEST' ||
       m.appId !== p.appId || m.shopId !== p.shopId || m.shopId !== event.shop_id ||
       m.meterHandle !== event.event_handle || m.meterHandle !== 'customized_order_paid' ||
+      m.planHandle === m.meterHandle ||
       m.zeroPrice !== true || m.appGidVerified !== true ||
       m.meterVerified !== true || m.installationVerified !== true ||
       !/^[a-zA-Z0-9_-]{1,80}$/.test(m.runId) || !/^[a-zA-Z0-9_-]{1,80}$/.test(m.planHandle)) return false;
@@ -304,9 +306,16 @@ export class AppEventsClient {
       app?.id !== p.appId || shop?.id !== p.shopId ||
       active.billingPeriod !== 'EVERY_30_DAYS' || active.cancelAtEndOfCycle !== false ||
       active.trialEndsAt !== null || active.pendingUpdate !== null ||
-      cycle?.startTime !== m.cycleFrom || cycle?.endTime !== m.cycleUntil ||
+      canonicalInstant(cycle?.startTime) !== m.cycleFrom ||
+      canonicalInstant(cycle?.endTime) !== m.cycleUntil ||
       !Array.isArray(active.items) || active.items.length !== 2) return false;
-    const [flat, meter] = active.items.map(object);
+    const items = active.items.map(object);
+    const flats = items.filter(item => item?.handle === m.planHandle &&
+      object(item.price)?.__typename === 'FlatRatePrice');
+    const meters = items.filter(item => item?.handle === m.meterHandle &&
+      object(item.price)?.__typename === 'TieredPrice');
+    if (flats.length !== 1 || meters.length !== 1) return false;
+    const flat = flats[0], meter = meters[0];
     const flatPrice = object(flat?.price), meterPrice = object(meter?.price);
     if (flat?.handle !== m.planHandle || flatPrice?.__typename !== 'FlatRatePrice' ||
       flatPrice.active !== true || !zero(flatPrice.amount) ||

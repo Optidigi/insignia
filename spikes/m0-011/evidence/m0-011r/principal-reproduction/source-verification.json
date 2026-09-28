@@ -1,0 +1,12 @@
+{
+  "partner.ts": {
+    "git_blob": "654f3ce9b673bd05ff2a56408aa2c5ed7e2cd6f2",
+    "sha256": "8e451b303727200588c9b36110904c2f0e5a5c406cfe54fbee1643c077138c2b",
+    "origin": "Prior reviewed handoff; parser reused unchanged by M0-011"
+  },
+  "time.ts": {
+    "git_blob": "2b04172376778de7193738eb986f2843988146ef",
+    "sha256": "676b2df74b5b7bc2e9d53199728aa20b24f939aadd2534e57e8957cb6fdbe25e",
+    "origin": "Prior reviewed handoff; parser reused unchanged by M0-011"
+  }
+}

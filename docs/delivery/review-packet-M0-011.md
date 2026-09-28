@@ -50,6 +50,16 @@ The adapter adds no production billing engine, schema, commercial tariff or runt
 
 The owner/app organization administrator needs to identify the **existing app's Partner Dashboard listing** and expose its distribution, App Pricing method, private test plan/meter and existing subscription/consumer state for read-only inspection, then provide already approved Partner and App Events credentials through a secure local channel if they exist. If the prerequisites require distribution selection, a billing-mode switch, a new permanent API client, a shared-plan edit or replacing a subscription, a separate decision is required. No such action is implied by this PR.
 
-## Principal decision — principal completes externally
+## Principal decision on the original head
 
-Verdict: PENDING. Bound PR/base/head: PENDING final-head review. Gate result: NONE requested. Further authorization: NONE.
+The attributed external verdict on the original head is **CHANGES_REQUESTED**, as recorded below. No gate result was accepted. The corrected head still requires separate principal review.
+
+## M0-011R correction on the same PR — 28 September 2026
+
+The [attributed external PR #14 review](PR-014-principal-review.md) returned **CHANGES_REQUESTED** at base/effective merge base `88dca8ebb4aad6baa24922508335e14038abbc98`, head `15c4281a5d08fa509a03ac9bba47d9b5dd59889c`; [verification metadata](PR-014-verification.json) distinguishes its Node 22 parser/guard-excerpt reproduction from a complete client run. Native REQUEST_CHANGES failed HTTP 403, so no native review was posted. The owner authorized only the [M0-011R local correction](prompts/M0-011R-provider-contract-matching.md) on this open PR. The new head and final-head CI are recorded in the PR body after pushing, without changing the commit to record its own SHA.
+
+The [M0-011R evidence](../../spikes/m0-011/evidence/m0-011r/README.md) preserves the supplied diagnostic and Node 24 full-client pre-fix reproduction, a failing public-seam regression, the narrow correction and the corrected outcomes. The guard now compares validated canonical cycle instants and matches the exact two flat/meter items by unique expected handle and type. It retains exact zero-price, ordered graduated tiers, current-cycle, two-read, token, journal, destination and replay checks. Synthetic tests cover equivalent timestamp spellings and both item orders on each Partner read, plus changed dates/prices, invalid or missing dates, wrong identities, duplicates, extras, tier reversal and final-read attempt accounting.
+
+Pinned Node `v24.21.0`/pnpm `12.6.0`: frozen installs and strict checks passed for M0-010 (**34/34**) and M0-011 (**22/22**); the history/hash check and `git diff --check` passed. The supplied old-defect script exits 1 after the fix because its assertion expects the three defects to remain; its captured corrected scenario output shows all eight expected decisions agree. Fresh independent local Spec and Standards/security reviews found no remaining local correction issue. They inspected the working diff and ran the complete synthetic suites; neither made a provider call. Applicable final-head GitHub runs are reported in the PR body.
+
+The original M0-011 live-use blockers remain: public App Pricing eligibility, independently bound Partner App GID, isolated effective $0 contract, approved provider credentials and operator-wide attempt accounting. This correction did not acquire a token, submit an event or change Shopify resources. The v1.2 architecture, M0-010 parser and historical receipts, stopped preview/grants and protected orders #1001–#1006 remain untouched. Principal verdict on the corrected head is **PENDING**; no G8 pass or next-package authorization is implied.

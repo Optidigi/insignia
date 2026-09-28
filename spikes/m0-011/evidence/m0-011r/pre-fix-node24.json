@@ -1,0 +1,95 @@
+{
+  "runtime": "v24.21.0",
+  "mode": "complete_checkout_synthetic_clients",
+  "networkCalls": 0,
+  "scenarios": [
+    {
+      "name": "canonical_control",
+      "parser": "ACTIVE",
+      "expectedGuard": true,
+      "observedGuard": true,
+      "sendResult": {
+        "kind": "RECEIVED",
+        "status": 202,
+        "replay": null,
+        "requestId": null
+      },
+      "eventPosts": 1
+    },
+    {
+      "name": "whole_seconds_Z",
+      "parser": "ACTIVE",
+      "expectedGuard": true,
+      "observedGuard": false,
+      "sendResult": {
+        "kind": "GUARD_REJECTED"
+      },
+      "eventPosts": 0
+    },
+    {
+      "name": "equivalent_offset",
+      "parser": "ACTIVE",
+      "expectedGuard": true,
+      "observedGuard": false,
+      "sendResult": {
+        "kind": "GUARD_REJECTED"
+      },
+      "eventPosts": 0
+    },
+    {
+      "name": "reversed_items",
+      "parser": "ACTIVE",
+      "expectedGuard": true,
+      "observedGuard": false,
+      "sendResult": {
+        "kind": "GUARD_REJECTED"
+      },
+      "eventPosts": 0
+    },
+    {
+      "name": "different_cycle",
+      "parser": "ACTIVE",
+      "expectedGuard": false,
+      "observedGuard": false,
+      "sendResult": {
+        "kind": "GUARD_REJECTED"
+      },
+      "eventPosts": 0
+    },
+    {
+      "name": "nonzero_unit",
+      "parser": "ACTIVE",
+      "expectedGuard": false,
+      "observedGuard": false,
+      "sendResult": {
+        "kind": "GUARD_REJECTED"
+      },
+      "eventPosts": 0
+    },
+    {
+      "name": "nonzero_flat",
+      "parser": "UNSUPPORTED_TARIFF",
+      "expectedGuard": false,
+      "observedGuard": false,
+      "sendResult": {
+        "kind": "GUARD_REJECTED"
+      },
+      "eventPosts": 0
+    },
+    {
+      "name": "wrong_app",
+      "parser": "MISMATCH",
+      "expectedGuard": false,
+      "observedGuard": false,
+      "sendResult": {
+        "kind": "GUARD_REJECTED"
+      },
+      "eventPosts": 0
+    }
+  ],
+  "failedEquivalentRepresentations": [
+    "whole_seconds_Z",
+    "equivalent_offset",
+    "reversed_items"
+  ]
+}
