@@ -25,7 +25,7 @@ pub fn cart_line_id_ok(value: &str) -> bool {
     }
     !bytes.is_empty()
         && bytes.len() <= 20
-        && bytes[0] != b'0'
+        && (bytes == b"0" || bytes[0] != b'0')
         && bytes.iter().all(u8::is_ascii_digit)
 }
 
@@ -58,7 +58,11 @@ mod tests {
         assert!(!cart_line_id_ok(
             "gid://shopify/CartLine/00000000-0000-4000-8000-000000000001X"
         ));
-        assert!(!cart_line_id_ok("gid://shopify/CartLine/0"));
+        assert!(cart_line_id_ok("gid://shopify/CartLine/0"));
+        assert!(!cart_line_id_ok("gid://shopify/CartLine/00"));
+        assert!(!cart_line_id_ok("gid://shopify/CartLine/01"));
+        assert!(!cart_line_id_ok("gid://shopify/CartLine/"));
+        assert!(!cart_line_id_ok("gid://shopify/ProductVariant/0"));
         assert!(!cart_line_id_ok(
             "gid://shopify/CartLine/184467440737095516150"
         ));

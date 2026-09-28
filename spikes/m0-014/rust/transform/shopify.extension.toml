@@ -13,6 +13,6 @@ description = "Bounded new-app checkout proof only"
   export = "cart_transform_run"
 
   [extensions.build]
-  command = "bash ../../scripts/install-pinned-wasm.sh transform"
+  command = "bash ../../scripts/build-current-wasm.sh transform"
   path = "target/wasm32-unknown-unknown/release/m0-013-cart-transform.wasm"
   wasm_opt = false

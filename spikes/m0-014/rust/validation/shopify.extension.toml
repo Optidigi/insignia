@@ -13,6 +13,6 @@ description = "Bounded new-app checkout proof only"
   export = "cart_validations_generate_run"
 
   [extensions.build]
-  command = "bash ../../scripts/install-pinned-wasm.sh validation"
+  command = "bash ../../scripts/build-current-wasm.sh validation"
   path = "target/wasm32-unknown-unknown/release/m0-013-cart-validation.wasm"
   wasm_opt = false

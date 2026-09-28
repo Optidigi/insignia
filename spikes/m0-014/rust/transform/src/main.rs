@@ -363,6 +363,32 @@ mod tests {
     }
 
     #[test]
+    fn transform_accepts_canonical_zero_and_echoes_target_local_id() {
+        let mut input = fixture();
+        input["cart"]["lines"][0]["id"] = "gid://shopify/CartLine/0".into();
+        let output = run(input.clone());
+        let operations = output["operations"].as_array().unwrap();
+        assert_eq!(operations.len(), 2);
+        assert_eq!(
+            operations[0]["lineExpand"]["cartLineId"],
+            input["cart"]["lines"][0]["id"]
+        );
+        assert_eq!(
+            operations[0]["lineExpand"]["expandedCartItems"][0]["merchandiseId"],
+            input["cart"]["lines"][0]["merchandise"]["id"]
+        );
+        for bad_id in [
+            "gid://shopify/CartLine/00",
+            "gid://shopify/CartLine/01",
+            "gid://shopify/ProductVariant/0",
+        ] {
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["id"] = bad_id.into();
+            assert!(run(bad)["operations"].as_array().unwrap().is_empty());
+        }
+    }
+
+    #[test]
     fn no_partial_expansion_for_incomplete_or_tampered_set() {
         let mut input = fixture();
         input["cart"]["lines"].as_array_mut().unwrap().pop();

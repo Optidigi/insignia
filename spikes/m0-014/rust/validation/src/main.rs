@@ -239,6 +239,172 @@ mod tests {
         run(input)["operations"].as_array().unwrap().is_empty()
     }
 
+    fn checkout_steps() -> [&'static str; 2] {
+        ["CHECKOUT_INTERACTION", "CHECKOUT_COMPLETION"]
+    }
+
+    fn zero_based_fixture(step: &str) -> serde_json::Value {
+        let mut input = fixture();
+        input["buyerJourney"]["step"] = step.into();
+        input["cart"]["lines"][0]["id"] = "gid://shopify/CartLine/0".into();
+        input["cart"]["lines"][1]["id"] = "gid://shopify/CartLine/1".into();
+        input
+    }
+
+    fn captured_fixture(step: &str) -> serde_json::Value {
+        // Exact sanitized Function input from the stopped M0-014 CART_INTERACTION
+        // event; only the journey step is changed for this local checkout replay.
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../evidence/m0-014r/local/captured-validation.json");
+        let mut input: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        assert_eq!(input["buyerJourney"]["step"], "CART_INTERACTION");
+        assert_eq!(input["cart"]["lines"][0]["id"], "gid://shopify/CartLine/0");
+        input["buyerJourney"]["step"] = step.into();
+        input
+    }
+
+    #[test]
+    fn captured_zero_based_cart_validates_at_both_checkout_steps() {
+        for step in checkout_steps() {
+            let input = captured_fixture(step);
+            assert!(accepted(input.clone()), "captured complete quote at {step}");
+            let mut reordered = input;
+            reordered["cart"]["lines"].as_array_mut().unwrap().reverse();
+            assert!(accepted(reordered), "target-local ordering at {step}");
+        }
+    }
+
+    #[test]
+    fn captured_zero_based_cart_retains_independent_negative_controls() {
+        for step in checkout_steps() {
+            let input = captured_fixture(step);
+            let mut cases = Vec::new();
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["cost"]["subtotalAmount"]["amount"] = "30.35".into();
+            cases.push(("wrong pre-discount price", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][2]["quantity"] = 3.into();
+            cases.push(("wrong physical quantity", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["merchandise"]["id"] =
+                "gid://shopify/ProductVariant/54061591265563".into();
+            cases.push(("wrong real variant", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["member"] = serde_json::Value::Null;
+            cases.push(("missing member", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["member"]["value"] =
+                bad["cart"]["lines"][2]["member"]["value"].clone();
+            cases.push(("duplicate member", bad));
+            let mut bad = input.clone();
+            bad["cart"]["quote"]["value"] = "bad".into();
+            cases.push(("invalid signature", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"].as_array_mut().unwrap().remove(2);
+            cases.push(("missing marked line", bad));
+            let mut bad = input.clone();
+            bad["shop"]["publicConfig"] = serde_json::Value::Null;
+            cases.push(("missing independent key", bad));
+            let mut bad = input.clone();
+            bad["localization"]["market"]["id"] = "gid://shopify/Market/0".into();
+            cases.push(("wrong market", bad));
+            for (label, bad) in cases {
+                assert!(!accepted(bad), "{label} at {step}");
+            }
+
+            let mut unsigned_required = input.clone();
+            unsigned_required["cart"]["quote"] = serde_json::Value::Null;
+            for line in unsigned_required["cart"]["lines"].as_array_mut().unwrap() {
+                line["member"] = serde_json::Value::Null;
+            }
+            unsigned_required["cart"]["lines"][0]["merchandise"]["product"]["policy"]["value"] =
+                "4f8dd164cc8c48199a94cea5da11be4c:1:required".into();
+            assert!(!accepted(unsigned_required), "unsigned required at {step}");
+        }
+    }
+
+    #[test]
+    fn zero_based_cartline_preserves_complete_signed_checkout_at_both_steps() {
+        for step in checkout_steps() {
+            let input = zero_based_fixture(step);
+            assert!(accepted(input.clone()), "signed /0 at {step}");
+
+            let mut reordered = input.clone();
+            reordered["cart"]["lines"].as_array_mut().unwrap().reverse();
+            assert!(
+                accepted(reordered),
+                "line order is not signature authority at {step}"
+            );
+
+            for suffix in ["9007199254740991", "00000000-0000-4000-8000-000000000001"] {
+                let mut control = input.clone();
+                control["cart"]["lines"][0]["id"] =
+                    format!("gid://shopify/CartLine/{suffix}").into();
+                assert!(accepted(control), "{suffix} at {step}");
+            }
+
+            for bad_id in [
+                "gid://shopify/CartLine/00",
+                "gid://shopify/CartLine/01",
+                "gid://shopify/CartLine/",
+                "gid://shopify/ProductVariant/0",
+                "gid://shopify/CartLine/184467440737095516150",
+                "gid://shopify/CartLine/00000000-0000-4000-8000-000000000001X",
+            ] {
+                let mut bad = input.clone();
+                bad["cart"]["lines"][0]["id"] = bad_id.into();
+                assert!(!accepted(bad), "malformed {bad_id} at {step}");
+            }
+        }
+    }
+
+    #[test]
+    fn zero_based_cartline_does_not_bypass_economics_or_trust_at_checkout() {
+        for step in checkout_steps() {
+            let input = zero_based_fixture(step);
+            let mut cases = Vec::new();
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["cost"]["subtotalAmount"]["amount"] = "60.68".into();
+            cases.push(("observed exact price", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["quantity"] = 3.into();
+            cases.push(("physical quantity", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["merchandise"]["id"] =
+                "gid://shopify/ProductVariant/9007199254740994".into();
+            cases.push(("real variant", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["member"]["value"] = "bad".into();
+            cases.push(("invalid member", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["member"]["value"] =
+                bad["cart"]["lines"][1]["member"]["value"].clone();
+            cases.push(("duplicate member", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["member"] = serde_json::Value::Null;
+            cases.push(("missing member", bad));
+            let mut bad = input.clone();
+            bad["cart"]["quote"]["value"] = "bad".into();
+            cases.push(("invalid signature", bad));
+            let mut bad = input.clone();
+            bad["cart"]["quote"] = serde_json::Value::Null;
+            cases.push(("missing quote", bad));
+            let mut bad = input.clone();
+            bad["shop"]["publicConfig"] = serde_json::Value::Null;
+            cases.push(("missing key/config", bad));
+            let mut bad = input.clone();
+            bad["localization"]["country"]["isoCode"] = "US".into();
+            cases.push(("wrong context", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"].as_array_mut().unwrap().pop();
+            cases.push(("incomplete set", bad));
+            for (label, bad) in cases {
+                assert!(!accepted(bad), "{label} at {step}");
+            }
+        }
+    }
+
     fn plain(mut input: serde_json::Value) -> serde_json::Value {
         input["cart"]["quote"] = serde_json::Value::Null;
         for line in input["cart"]["lines"].as_array_mut().unwrap() {
