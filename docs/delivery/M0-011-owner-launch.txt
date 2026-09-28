@@ -1,0 +1,54 @@
+I explicitly authorize the normal merge of Optidigi/insignia PR #13
+and the attached M0-011 provider/no-charge transport package.
+
+Verify immediately before merging:
+- Target: main
+- Base/effective merge base:
+  31484d328ec401a30994d073518b11eb67777433
+- Approved head:
+  8bda74f1985762923580b5d1d92b56c4a0d7203f
+- PR-013R external principal approval and applicable passing workflows
+  36357971726, 36357971708 and 36357971684.
+
+Merge only that reviewed change normally. Keep its head fixed; no force
+push, protection bypass or fabricated native approval. Report changed refs.
+Verify the actual remote merge and branch from updated main.
+
+Execute one complete M0-011 outcome: current provider eligibility,
+secure local HTTP adapters/tests and, only after verified prerequisites,
+the bounded private-$0 billing transport/count test. Use the existing
+insignia app and insignia-staging.myshopify.com only.
+
+I authorize scoped authenticated provider/Dashboard reads with approved
+existing credentials and temporary access-token acquisition. If App Pricing
+is already available and isolation/no-charge conditions hold, I authorize
+configuration of its isolated private $0 test plan/meter, at most one NEW
+zero-price test subscription, THREE unique synthetic value:1 events and
+SIX event POST attempts total, including duplicates/retries, observation
+and cleanup of only newly created resources as specified in the prompt.
+Do not replace an existing subscription or edit a shared plan/meter.
+
+This does NOT authorize distribution selection, billing-mode switching,
+new permanent API credentials, nonzero prices, real merchant billing,
+public-plan publication, app versions, preview commands, Admin scope
+changes, orders, payments, product policy, Functions or inventory actions.
+Leave the stopped preview/grants and orders #1001–#1006 untouched.
+
+Resolve current App Events endpoint support explicitly. The prompt permits
+the documented unstable route for this prototype only, not silent production
+adoption or rewriting the historical 2026-07 evidence.
+
+If an app-level prerequisite or no-charge guarantee is unavailable, stop
+that live branch, complete independent local work and return the exact
+owner-only action. Do not restart general preflight or ask for already
+supplied resource designations. Never request secrets in chat.
+
+Use actual gpt-6-sol/high, at most two non-overlapping restricted writers,
+one integrator, one provider operator and fresh Spec/security reviews.
+Resolve ordinary tests/fixes/reviewer findings within this package.
+
+Return one integrated PR with exact refs, final-head CI, direct sanitized
+evidence, limits and cleanup state, then stop for principal review.
+This delegates PR #13's merge only—not the next PR, full G8 acceptance,
+v2 adoption, production publication, M1 or subsequent work. The principal
+retains project direction, architectural decisions and final PR/gate review.

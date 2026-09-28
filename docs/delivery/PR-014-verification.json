@@ -1,0 +1,72 @@
+{
+  "date": "2026-09-28",
+  "repository": "Optidigi/insignia",
+  "pr": 14,
+  "verdict": "CHANGES_REQUESTED",
+  "base": "88dca8ebb4aad6baa24922508335e14038abbc98",
+  "effective_merge_base": "88dca8ebb4aad6baa24922508335e14038abbc98",
+  "reviewed_head": "15c4281a5d08fa509a03ac9bba47d9b5dd59889c",
+  "ci_synthetic_merge": "062e43435b85829fe31390750258ddbbec212fb3",
+  "ci_and_head_tree": "e6aaa014b51fa4fb120b72ed429d85b47158ec05",
+  "ci_exact_parents_verified": true,
+  "ci_tree_equality_verified": true,
+  "changed_file_count": 16,
+  "architecture_files_in_changed_inventory": false,
+  "workflows": {
+    "36409783841": "success",
+    "36409783630": "success",
+    "36409783745": "success",
+    "36409783744": "success"
+  },
+  "inspected_actual_job_log": 108886992108,
+  "job_tests": {
+    "retained_billing": 34,
+    "new_adapters": 20
+  },
+  "independent_execution": {
+    "runtime": "v22.16.0",
+    "scope": "complete reused parser + disclosed guard-body excerpt",
+    "cases": 8,
+    "equivalent_forms_falsely_rejected": 3,
+    "network_calls": 0,
+    "full_client_executed": false,
+    "full_repository_suite_executed": false,
+    "parser_git_blob": "654f3ce9b673bd05ff2a56408aa2c5ed7e2cd6f2",
+    "guard_origin_git_blob": "44f7f7a84f367850f5a0b8e32dc678b445f2b19e"
+  },
+  "native_review": {
+    "action": "REQUEST_CHANGES",
+    "status": 403,
+    "posted": false,
+    "message": "Resource not accessible by integration"
+  },
+  "limitations": [
+    "No live Shopify/provider operation or audit performed",
+    "No independent rehash of all current repository files or documents",
+    "No complete Node 24 test run in principal runtime",
+    "Local reviewer success was reported evidence; no principal-side subagents were executed",
+    "Direct raw GitHub source download in container failed DNS; connector reads used"
+  ],
+  "authorization": {
+    "merge": false,
+    "live_billing": false,
+    "next_package": "M0-011R, only after owner forwards authorization",
+    "gate_pass": false,
+    "M1": false
+  },
+  "file_citation_sources": [
+    "turn421file0",
+    "turn423file0",
+    "turn424file0",
+    "turn425file0",
+    "turn426file0",
+    "turn427file0",
+    "turn428file0",
+    "turn429file0",
+    "turn430file0",
+    "turn434file0",
+    "turn437file0",
+    "turn438file0",
+    "turn439file0"
+  ]
+}

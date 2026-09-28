@@ -1,0 +1,76 @@
+{
+  "runtime": "v22.16.0",
+  "mode": "exact_parser_plus_disclosed_guard_excerpt",
+  "networkCalls": 0,
+  "scenarios": [
+    {
+      "name": "canonical_control",
+      "parser": "ACTIVE",
+      "expectedGuard": true,
+      "observedGuard": true,
+      "sendResult": null,
+      "eventPosts": null
+    },
+    {
+      "name": "whole_seconds_Z",
+      "parser": "ACTIVE",
+      "expectedGuard": true,
+      "observedGuard": false,
+      "sendResult": null,
+      "eventPosts": null
+    },
+    {
+      "name": "equivalent_offset",
+      "parser": "ACTIVE",
+      "expectedGuard": true,
+      "observedGuard": false,
+      "sendResult": null,
+      "eventPosts": null
+    },
+    {
+      "name": "reversed_items",
+      "parser": "ACTIVE",
+      "expectedGuard": true,
+      "observedGuard": false,
+      "sendResult": null,
+      "eventPosts": null
+    },
+    {
+      "name": "different_cycle",
+      "parser": "ACTIVE",
+      "expectedGuard": false,
+      "observedGuard": false,
+      "sendResult": null,
+      "eventPosts": null
+    },
+    {
+      "name": "nonzero_unit",
+      "parser": "ACTIVE",
+      "expectedGuard": false,
+      "observedGuard": false,
+      "sendResult": null,
+      "eventPosts": null
+    },
+    {
+      "name": "nonzero_flat",
+      "parser": "UNSUPPORTED_TARIFF",
+      "expectedGuard": false,
+      "observedGuard": false,
+      "sendResult": null,
+      "eventPosts": null
+    },
+    {
+      "name": "wrong_app",
+      "parser": "MISMATCH",
+      "expectedGuard": false,
+      "observedGuard": false,
+      "sendResult": null,
+      "eventPosts": null
+    }
+  ],
+  "failedEquivalentRepresentations": [
+    "whole_seconds_Z",
+    "equivalent_offset",
+    "reversed_items"
+  ]
+}

@@ -1,0 +1,31 @@
+I authorize the attached M0-011R LOCAL correction on EXISTING
+Optidigi/insignia PR #14. Principal verdict: CHANGES_REQUESTED.
+
+Reviewed base/effective merge base:
+88dca8ebb4aad6baa24922508335e14038abbc98
+Reviewed head:
+15c4281a5d08fa509a03ac9bba47d9b5dd59889c
+
+Verify current refs/worktree and preserve legitimate newer work.
+Do not merge, force-push or open a successor PR.
+
+Fix only the two provider-matching defects and necessary tests:
+- Compare validated cycle instants, not raw timestamp spelling.
+- Match the flat-plan and meter items by unique handle/type, not position.
+
+Reproduce and test through the complete PartnerClient -> AppEventsClient.send
+path on pinned Node 24 using synthetic fetch/credentials. Include both
+Partner reads, equivalent timestamp forms, reversed items, and rejection
+of genuinely changed dates/prices, duplicates, wrong identities and extras.
+Preserve exact zero-price, journal, endpoint and replay safeguards.
+
+Use actual gpt-6-sol/high and fresh Spec/security review; complete ordinary
+in-scope tests, fixes and reviewer corrections locally. No general preflight.
+
+This is LOCAL-ONLY: no provider/Shopify calls, token acquisition, events,
+plans, subscriptions, meters, preview commands, new credentials or staging
+changes. Leave v1.2 architecture, historical evidence, stopped preview/grants
+and orders #1001–#1006 untouched.
+
+Return updated PR #14 with R1/R2 closure, actual refs and final-head CI.
+Stop for principal review. No merge, gate pass, M1 or next package is authorized.
