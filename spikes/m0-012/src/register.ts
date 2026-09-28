@@ -16,7 +16,11 @@ type Outcome = { kind: 'HTTP'; status: number; responseSuccess?: boolean | null;
 type Attempt = { ordinal: number; state: 'RESERVED' | 'MAY_HAVE_SENT' | 'DONE';
   mayHaveSent: boolean;
   outcome?: Outcome };
-type Event = { body: string; sha256: string; timestamp: string; attempts: Attempt[] };
+export type BillingObservation = { kind: 'PROCESSED' | 'REPLAY_NO_DELTA';
+  observedAt: string; logReference: string | null; meterQuantity: number;
+  meterCost: string };
+type Event = { body: string; sha256: string; timestamp: string; attempts: Attempt[];
+  billingObservations: BillingObservation[] };
 export type RegisterState = { version: 1; runId: string; endpoint: string;
   sourceHash: string; createdAt: string; tokenReservations: number;
   postReservations: number; events: Record<string, Event> };
@@ -60,11 +64,12 @@ function validState(value: unknown): value is RegisterState {
   const ordinals = new Set<number>();
   for (const [key, raw] of Object.entries(events)) {
     const event = object(raw);
-    if (!event || typeof event.body !== 'string' || typeof event.sha256 !== 'string' ||
+      if (!event || typeof event.body !== 'string' || typeof event.sha256 !== 'string' ||
         digest(event.body) !== event.sha256 || eventIdentity(event.body)?.key !== key ||
         typeof event.timestamp !== 'string' ||
         eventIdentity(event.body)?.timestamp !== event.timestamp ||
-        !Array.isArray(event.attempts)) return false;
+        !Array.isArray(event.attempts) || !Array.isArray(event.billingObservations) ||
+        event.billingObservations.length > 2) return false;
     for (const attemptRaw of event.attempts) {
       const attempt = object(attemptRaw);
       if (!attempt || !Number.isSafeInteger(attempt.ordinal) ||
@@ -78,6 +83,17 @@ function validState(value: unknown): value is RegisterState {
           attempt.state === 'RESERVED' && attempt.mayHaveSent) return false;
       if (attempt.state === 'DONE' && !object(attempt.outcome)) return false;
     }
+    for (const observationRaw of event.billingObservations) {
+      const observation = object(observationRaw);
+      if (!observation || !['PROCESSED', 'REPLAY_NO_DELTA'].includes(String(observation.kind)) ||
+          typeof observation.observedAt !== 'string' ||
+          !Number.isFinite(Date.parse(observation.observedAt)) ||
+          !Number.isSafeInteger(observation.meterQuantity) ||
+          Number(observation.meterQuantity) < 0 || observation.meterCost !== '0.0' ||
+          !(observation.logReference === null ||
+            typeof observation.logReference === 'string' && observation.logReference.length <= 500))
+        return false;
+    }
   }
   return tokenCount === s.tokenReservations && postCount === s.postReservations &&
     Array.from({ length: tokenCount }, (_unused, i) => i + 1).every(n => ordinals.has(n));
@@ -87,7 +103,10 @@ function validState(value: unknown): value is RegisterState {
 export class RunRegister {
   private readonly active = new Set<string>();
   private readonly root: string;
-  constructor(root: string) { this.root = root; }
+  private readonly receiptPath: string;
+  constructor(root: string, receiptPath = `${root}.receipt.json`) {
+    this.root = root; this.receiptPath = receiptPath;
+  }
   private locator() { return join(this.root, 'locator.json'); }
   private statePath() { return join(this.root, 'register.json'); }
   private async locked<T>(work: () => Promise<T>): Promise<T | { kind: 'CONFLICT' }> {
@@ -101,9 +120,13 @@ export class RunRegister {
     finally { await lock.close(); await unlink(join(this.root, 'register.lock')); }
   }
   private async read(): Promise<RegisterState | null> {
+    const receipt = object(JSON.parse(await readFile(this.receiptPath, 'utf8')));
     const locator = object(JSON.parse(await readFile(this.locator(), 'utf8')));
     const state: unknown = JSON.parse(await readFile(this.statePath(), 'utf8'));
-    if (!locator || !validState(state) || locator.runId !== state.runId ||
+    if (!receipt || !locator || !validState(state) ||
+        receipt.runId !== state.runId || receipt.endpoint !== state.endpoint ||
+        receipt.sourceHash !== state.sourceHash || receipt.createdAt !== state.createdAt ||
+        locator.runId !== state.runId ||
         locator.endpoint !== state.endpoint || locator.sourceHash !== state.sourceHash ||
         locator.createdAt !== state.createdAt) return null;
     return state;
@@ -124,13 +147,16 @@ export class RunRegister {
           !/^[a-f0-9]{64}$/.test(meta.sourceHash) ||
           !Number.isFinite(Date.parse(meta.createdAt))) return { kind: 'CONFLICT' };
       // Even a partial prior initialization must never silently reset the run.
-      for (const path of [this.locator(), this.statePath()]) {
+      for (const path of [this.receiptPath, this.locator(), this.statePath()]) {
         try { await readFile(path); return { kind: 'CONFLICT' }; }
         catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT')
           return { kind: 'CONFLICT' }; }
       }
       const state: RegisterState = { version: 1, ...meta, tokenReservations: 0,
         postReservations: 0, events: {} };
+      // Separate operator-held receipt is written first. Losing the run directory
+      // cannot create a fresh budget while the independent receipt remains.
+      await this.durable(this.receiptPath, JSON.stringify(meta));
       await this.durable(this.locator(), JSON.stringify(meta));
       await this.durable(this.statePath(), JSON.stringify(state));
       return { kind: 'INITIALIZED' };
@@ -150,7 +176,7 @@ export class RunRegister {
       if (current) return { kind: current.body === body ? 'EXISTING' : 'CONFLICT' };
       if (Object.keys(state.events).length >= MAX_EVENTS) return { kind: 'LIMIT' };
       state.events[identity.key] = { body, sha256: digest(body),
-        timestamp: identity.timestamp, attempts: [] };
+        timestamp: identity.timestamp, attempts: [], billingObservations: [] };
       await this.durable(this.statePath(), JSON.stringify(state));
       return { kind: 'REGISTERED' };
     });
@@ -196,6 +222,34 @@ export class RunRegister {
       attempt.state = 'DONE'; attempt.outcome = outcome;
       await this.durable(this.statePath(), JSON.stringify(state));
       this.active.delete(`${key}:${ordinal}`);
+      return { kind: 'RECORDED' };
+    });
+  }
+
+  /** Human-reviewed native billing-log evidence, paired with a fresh meter read. */
+  async recordBillingObservation(key: string, observation: BillingObservation): Promise<Result> {
+    return this.locked(async () => {
+      const state = await this.read(), event = state?.events[key];
+      if (!state || !event || !Number.isFinite(Date.parse(observation.observedAt)) ||
+          !Number.isSafeInteger(observation.meterQuantity) ||
+          observation.meterQuantity < 0 || observation.meterCost !== '0.0' ||
+          event.billingObservations.some(x => x.kind === observation.kind) ||
+          event.billingObservations.length >= 2) return { kind: 'CONFLICT' };
+      const accepted = event.attempts.filter(a => a.state === 'DONE' &&
+        a.outcome?.kind === 'HTTP' && a.outcome.status === 202 &&
+        a.outcome.responseSuccess === true);
+      if (observation.kind === 'PROCESSED') {
+        if (accepted.length < 1 || !observation.logReference ||
+            !observation.logReference.startsWith(
+              'https://dev.shopify.com/dashboard/200969036/apps/429028933633/logs') ||
+            observation.logReference.length > 500)
+          return { kind: 'CONFLICT' };
+      } else if (observation.kind === 'REPLAY_NO_DELTA') {
+        if (accepted.length !== 2 || !event.billingObservations.some(x => x.kind === 'PROCESSED') ||
+            observation.logReference !== null) return { kind: 'CONFLICT' };
+      } else return { kind: 'CONFLICT' };
+      event.billingObservations.push(observation);
+      await this.durable(this.statePath(), JSON.stringify(state));
       return { kind: 'RECORDED' };
     });
   }

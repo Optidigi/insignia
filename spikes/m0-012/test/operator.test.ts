@@ -3,7 +3,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { initializeRun, executeAttempt } from '../src/operator.ts';
+import { initializeRun, executeAttempt, attestBilling } from '../src/operator.ts';
 import { RunRegister } from '../src/register.ts';
 
 const actual = JSON.parse(await readFile(new URL('../evidence/baseline/partner-active-after-approval.json', import.meta.url), 'utf8'));
@@ -39,6 +39,10 @@ async function fixture() {
   };
   return { root, calls, ports, setAlteredRead(n: number) { alteredRead = n; } };
 }
+async function cleanup(root: string) {
+  await rm(root, { recursive: true, force: true });
+  await rm(`${root}.receipt.json`, { force: true });
+}
 
 test('one real-profile synthetic attempt requires fresh reads on both sides of acquisition', async () => {
   const f = await fixture();
@@ -61,7 +65,7 @@ test('one real-profile synthetic attempt requires fresh reads on both sides of a
       assert.equal(state.state.postReservations, 1);
       assert.equal(Object.values(state.state.events)[0]?.attempts[0]?.state, 'DONE');
     }
-  } finally { await rm(f.root, { recursive: true, force: true }); }
+  } finally { await cleanup(f.root); }
 });
 
 test('changed final contract prevents event request and consumes acquisition safely', async () => {
@@ -82,7 +86,7 @@ test('changed final contract prevents event request and consumes acquisition saf
     }
     assert.deepEqual(await executeAttempt('E1', f.ports),
       { kind: 'STOP', reason: 'UNRESOLVED_ATTEMPT' });
-  } finally { await rm(f.root, { recursive: true, force: true }); }
+  } finally { await cleanup(f.root); }
 });
 
 test('post-acquisition wrong identity, nonzero terms and read errors never submit', async () => {
@@ -105,6 +109,44 @@ test('post-acquisition wrong identity, nonzero terms and read errors never submi
       assert.equal(result.kind, 'ATTEMPT');
       if (result.kind === 'ATTEMPT') assert.equal(result.outcome.kind, 'GUARD_REJECTED');
       assert.equal(f.calls.event, 0);
-    } finally { await rm(f.root, { recursive: true, force: true }); }
+    } finally { await cleanup(f.root); }
   }
+});
+
+test('native billing evidence gates exact replay and later distinct events', async () => {
+  const f = await fixture();
+  try {
+    let quantity = 0;
+    const original = f.ports.partnerFetch;
+    f.ports.partnerFetch = (async (url: URL | RequestInfo, options?: RequestInit) => {
+      const response = await original(url, options);
+      const body = await response.json();
+      body.data.activeSubscription.items[1].usage.quantity = quantity;
+      return new Response(JSON.stringify(body), { status: 200 });
+    }) as typeof fetch;
+    assert.equal((await initializeRun(f.ports)).kind, 'INITIALIZED');
+    assert.equal((await executeAttempt('E1', f.ports)).kind, 'ATTEMPT');
+    assert.deepEqual(await executeAttempt('E1', f.ports),
+      { kind: 'STOP', reason: 'BILLING_PROCESSING_NOT_PROVEN' });
+    assert.equal(f.calls.event, 1);
+    quantity = 1;
+    const log = 'https://dev.shopify.com/dashboard/200969036/apps/429028933633/logs/123';
+    assert.equal((await attestBilling('E1', 'processed', log, f.ports)).kind, 'ATTESTED');
+    assert.equal((await executeAttempt('E1', f.ports)).kind, 'ATTEMPT');
+    assert.equal(f.calls.bodies[0], f.calls.bodies[1]);
+    assert.deepEqual(await executeAttempt('E2', f.ports),
+      { kind: 'STOP', reason: 'BILLING_PROCESSING_NOT_PROVEN' });
+    assert.equal((await attestBilling('E1', 'replay', null, f.ports)).kind, 'ATTESTED');
+    assert.equal((await executeAttempt('E2', f.ports)).kind, 'ATTEMPT');
+    assert.deepEqual(await executeAttempt('E3', f.ports),
+      { kind: 'STOP', reason: 'BILLING_PROCESSING_NOT_PROVEN' });
+    quantity = 2;
+    assert.equal((await attestBilling('E2', 'processed', log, f.ports)).kind, 'ATTESTED');
+    assert.equal((await executeAttempt('E3', f.ports)).kind, 'ATTEMPT');
+    quantity = 3;
+    assert.equal((await attestBilling('E3', 'processed', log, f.ports)).kind, 'ATTESTED');
+    assert.equal(f.calls.auth, 4);
+    assert.equal(f.calls.event, 4);
+    assert.equal((await new RunRegister(f.root).inspect()).kind, 'READY');
+  } finally { await cleanup(f.root); }
 });

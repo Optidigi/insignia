@@ -19,6 +19,10 @@ async function fixture() {
     sourceHash: HASH, createdAt: '2026-09-28T17:00:00.000Z' });
   return { root, register };
 }
+async function cleanup(root: string) {
+  await rm(root, { recursive: true, force: true });
+  await rm(`${root}.receipt.json`, { force: true });
+}
 
 test('durable register survives restart; duplicate retains original bytes and consumes attempts', async () => {
   const { root, register } = await fixture();
@@ -43,7 +47,7 @@ test('durable register survives restart; duplicate retains original bytes and co
     assert.equal(duplicate.kind, 'RESERVED');
     assert.equal((await restarted.registerEvent(body('aa11', '2026-09-28T17:01:00.000Z'))).kind,
       'CONFLICT');
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally { await cleanup(root); }
 });
 
 test('lost or corrupt register cannot be initialized as a new run', async () => {
@@ -57,7 +61,7 @@ test('lost or corrupt register cannot be initialized as a new run', async () => 
       sourceHash: HASH, createdAt: '2026-09-28T17:00:00.000Z' })).kind, 'CONFLICT');
     await writeFile(join(root, 'register.json'), '{broken', { mode: 0o600 });
     assert.equal((await register.inspect()).kind, 'CONFLICT');
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally { await cleanup(root); }
 });
 
 test('three event keys, six acquisitions and six possible POSTs are independent ceilings', async () => {
@@ -85,7 +89,7 @@ test('three event keys, six acquisitions and six possible POSTs are independent 
       assert.equal(ready.state.tokenReservations, 6);
       assert.equal(ready.state.postReservations, 3);
     }
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally { await cleanup(root); }
 });
 
 test('an uncertain dispatch stays counted across process restart and blocks invented outcome', async () => {
@@ -105,7 +109,7 @@ test('an uncertain dispatch stays counted across process restart and blocks inve
     assert.equal(state.state.events.aa11?.attempts[0]?.state, 'MAY_HAVE_SENT');
     assert.equal((await restarted.recordOutcome('aa11', reserved.ordinal,
       { kind: 'HTTP', status: 202 })).kind, 'CONFLICT');
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally { await cleanup(root); }
 });
 
 test('held lock refuses concurrent mutation and leaves state intact', async () => {
@@ -115,5 +119,43 @@ test('held lock refuses concurrent mutation and leaves state intact', async () =
     assert.equal((await register.registerEvent(body('aa11'))).kind, 'CONFLICT');
     const raw = JSON.parse(await readFile(join(root, 'register.json'), 'utf8'));
     assert.deepEqual(raw.events, {});
-  } finally { await rm(root, { recursive: true, force: true }); }
+  } finally { await cleanup(root); }
+});
+
+test('independent operator receipt blocks budget reset after whole run directory is lost', async () => {
+  const { root, register } = await fixture();
+  try {
+    await register.registerEvent(body('aa11'));
+    const reserved = await register.reserveAcquisition('aa11', body('aa11'));
+    assert.equal(reserved.kind, 'RESERVED');
+    if (reserved.kind === 'RESERVED') await register.markMayDispatch('aa11', reserved.ordinal);
+    await rm(root, { recursive: true, force: true });
+    const restarted = new RunRegister(root);
+    assert.equal((await restarted.inspect()).kind, 'CONFLICT');
+    assert.equal((await restarted.initialize({ runId: 'm0-012-test', endpoint: ENDPOINT,
+      sourceHash: HASH, createdAt: '2026-09-28T17:00:00.000Z' })).kind, 'CONFLICT');
+    assert.equal((await restarted.registerEvent(body('bb22'))).kind, 'CONFLICT');
+  } finally { await cleanup(root); }
+});
+
+test('billing observations require successful original HTTP and native log reference', async () => {
+  const { root, register } = await fixture();
+  try {
+    await register.registerEvent(body('aa11'));
+    const observation = { kind: 'PROCESSED' as const,
+      observedAt: '2026-09-28T17:05:00Z',
+      logReference: 'https://dev.shopify.com/dashboard/200969036/apps/429028933633/logs/123',
+      meterQuantity: 1, meterCost: '0.0' };
+    assert.equal((await register.recordBillingObservation('aa11', observation)).kind, 'CONFLICT');
+    const reserved = await register.reserveAcquisition('aa11', body('aa11'));
+    assert.equal(reserved.kind, 'RESERVED');
+    if (reserved.kind !== 'RESERVED') return;
+    await register.markMayDispatch('aa11', reserved.ordinal);
+    await register.recordOutcome('aa11', reserved.ordinal,
+      { kind: 'HTTP', status: 202, responseSuccess: true });
+    assert.equal((await register.recordBillingObservation('aa11',
+      { ...observation, logReference: 'https://other.example/logs/123' })).kind, 'CONFLICT');
+    assert.equal((await register.recordBillingObservation('aa11', observation)).kind, 'RECORDED');
+    assert.equal((await register.recordBillingObservation('aa11', observation)).kind, 'CONFLICT');
+  } finally { await cleanup(root); }
 });

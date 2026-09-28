@@ -33,18 +33,27 @@ exception, while explicit Bearer type is required; a supplied contradiction
 rejects. The old strict token guard stays unchanged.
 
 The single fixed operator CLI is `node spikes/m0-012/src/operator.ts` with
-`read`, `init`, `inspect`, or `send E1|E2|E3`. Its private run locator and
-register live at `/home/serveradmin/.local/share/insignia-public-app/m0-012-run`.
+`read`, `init`, `inspect`, `send E1|E2|E3`, or `attest E1|E2|E3
+processed <native-log-URL>` / `attest E1 replay`. Its private register lives
+at `/home/serveradmin/.local/share/insignia-public-app/m0-012-run`; the
+independent operator receipt is
+`/home/serveradmin/insignia-pr16-review-handoff/M0-012-RUN-RECEIPT.json`.
 The CLI reads the two existing 0600 credential files as data, checks owner
 and directory mode, and prints only sanitized observations. `init` is
-single-use. It requires a clean fixed implementation commit and observed zero
-usage. The register fixes one source SHA, one endpoint and run ID, stores exact
-event bytes before acquisition, and counts uncertain dispatches. A lost or
-corrupt register or held lock blocks the run; do not reset it. Each `send`
+single-use. It requires a clean tracked worktree at a fixed implementation
+commit and observed zero usage. The register fixes one source SHA, one endpoint
+and run ID, stores exact event bytes before acquisition, and counts uncertain
+dispatches. A lost or corrupt register or held lock blocks the run; do not
+reset it. Each `send`
 call makes at most one token acquisition and one event POST. E1 duplicate
-reuses its exact key/body/time. E2/E3 only proceed after the expected Partner
-quantity; the remote operator must also verify an actual App Billing Event
-processing entry before advancing. No event is a real order assertion.
+reuses its exact key/body/time. The CLI requires a human-reviewed native App
+Billing Event processing reference plus fresh exact Partner quantity/cost
+before replaying E1 or sending later distinct events. After replay, `attest E1
+replay` records the unchanged meter quantity. A URL argument is only an
+operator attestation pointer; the CLI does not scrape or independently
+authenticate Dashboard content. If the native log cannot be inspected or
+correlated, the operator must not attest and later sends remain blocked. No
+event is a real order assertion.
 
 Local proof: `corepack pnpm install --frozen-lockfile && corepack pnpm check`
 under this directory. No credential, token, live POST, or browser is required
