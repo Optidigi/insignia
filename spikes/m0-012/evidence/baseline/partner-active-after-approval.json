@@ -1,0 +1,71 @@
+{
+  "apiVersion": "2026-07",
+  "body": {
+    "data": {
+      "activeSubscription": {
+        "app": {
+          "id": "gid://shopify/App/429028933633"
+        },
+        "billingPeriod": "EVERY_30_DAYS",
+        "cancelAtEndOfCycle": false,
+        "currentBillingCycle": {
+          "endTime": "2026-10-28T16:53:01Z",
+          "startTime": "2026-09-28T16:53:01Z"
+        },
+        "items": [
+          {
+            "description": "Insignia $0 Test",
+            "discount": null,
+            "handle": "insignia-dev-zero-20260928",
+            "price": {
+              "__typename": "FlatRatePrice",
+              "active": false,
+              "amount": "0.0",
+              "currency": "USD"
+            },
+            "usage": null
+          },
+          {
+            "description": "Test custom order",
+            "discount": null,
+            "handle": "customized_order_paid",
+            "price": {
+              "__typename": "TieredPrice",
+              "active": false,
+              "currency": "USD",
+              "tiers": [
+                {
+                  "amount": "0.0",
+                  "amountPerUnit": "0.0",
+                  "upTo": null
+                }
+              ],
+              "tiersMode": "VOLUME"
+            },
+            "usage": {
+              "cost": {
+                "amount": "0.0",
+                "currencyCode": "USD"
+              },
+              "quantity": 0.0
+            }
+          }
+        ],
+        "legacySubscriptionId": "gid://shopify/AppSubscription/38085427483",
+        "pendingUpdate": null,
+        "shop": {
+          "id": "gid://shopify/Shop/105501393179",
+          "myshopifyDomain": "insignia-rewrite-dev.myshopify.com"
+        },
+        "trialEndsAt": null
+      }
+    }
+  },
+  "httpStatus": 200,
+  "observedAt": "2026-09-28T16:53:10Z",
+  "organizationId": "4697030",
+  "requestVariables": {
+    "appId": "gid://shopify/App/429028933633",
+    "shopId": "gid://shopify/Shop/105501393179"
+  }
+}
