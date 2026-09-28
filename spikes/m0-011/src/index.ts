@@ -1,4 +1,4 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { mkdir, open, readFile, rename, rm } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +9,8 @@ import type { AppEvent } from '../../m0-010/src/index.ts';
 
 const PARTNER_ORIGIN = 'https://partners.shopify.com';
 const EVENT_URL = 'https://api.shopify.com/app/2026-07/events';
+const DESIGNATED_SHOP_ID = 'gid://shopify/Shop/78935261342';
+const RUN_JOURNAL_PATH = fileURLToPath(new URL('../.local-run/journal.json', import.meta.url));
 const MAX_BODY = 128 * 1024;
 const REQUEST_TIMEOUT_MS = 10_000;
 const MAX_PAGES = 20;
@@ -59,7 +61,7 @@ async function boundedFetch(fetcher: typeof fetch, url: string, init: RequestIni
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const response = await fetcher(url, { ...init, redirect: 'error', signal: controller.signal });
+    const response = await fetcher(url, { ...init, redirect: 'manual', signal: controller.signal });
     if (response.redirected || response.status >= 300 && response.status <= 399 ||
       response.url && response.url !== url)
       return { kind: 'UNSAFE_REDIRECT' };
@@ -128,6 +130,7 @@ export class PartnerClient {
   private readonly ports: BasePorts & { organizationId: string };
   constructor(ports: BasePorts & { organizationId: string }) {
     if (!validId(ports.appId, 'App') || !validId(ports.shopId, 'Shop') ||
+      ports.shopId !== DESIGNATED_SHOP_ID ||
       !/^[1-9]\d{0,19}$/.test(ports.organizationId) || ports.appId.length > 128 ||
       ports.shopId.length > 128 || !validTimeout(ports.timeoutMs)) throw new Error('Invalid Partner configuration');
     this.ports = ports;
@@ -199,15 +202,16 @@ export interface LiveManifest {
   mode: 'LIVE_ZERO_PRICE_TEST'; appId: string; shopId: string; meterHandle: 'customized_order_paid';
   planHandle: string; runId: string; approvedAt: string; observedAt: string;
   cycleFrom: string; cycleUntil: string; zeroPrice: true;
-  meterVerified: true; installationVerified: true;
+  appGidVerified: true; meterVerified: true; installationVerified: true;
 }
 interface JournalState { version: 1; runId: string; attempts: number;
   events: Record<string, { body: string; hash: string; attempts: number }> }
 export class FileRunJournal {
   readonly path: string;
-  constructor(path: string = fileURLToPath(new URL('../.local-run/journal.json', import.meta.url))) { this.path = path; }
+  constructor(path: string = RUN_JOURNAL_PATH) { this.path = path; }
   /** Reserve an attempt and fsync before the provider call. A held lock refuses concurrent sends. */
-  async reserve(runId: string, key: string, body: string): Promise<'RESERVED' | 'LIMIT' | 'CONFLICT'> {
+  async reserve(runId: string, key: string, body: string,
+    nowMs: number): Promise<'RESERVED' | 'LIMIT' | 'CONFLICT' | 'STALE_NEW'> {
     await mkdir(dirname(this.path), { recursive: true, mode: 0o700 });
     const lock = await open(`${this.path}.lock`, 'wx', 0o600).catch(() => null);
     if (!lock) return 'CONFLICT';
@@ -233,10 +237,21 @@ export class FileRunJournal {
       const hash = createHash('sha256').update(body).digest('hex');
       if (previous && (previous.body !== body || previous.hash !== hash ||
         !Number.isSafeInteger(previous.attempts) || previous.attempts < 1)) return 'CONFLICT';
+      if (!previous) {
+        let parsed: Record<string, unknown> | null = null;
+        try { parsed = object(JSON.parse(body) as unknown); } catch { /* Fail closed. */ }
+        if (!parsed || parsed.idempotency_key !== key) return 'CONFLICT';
+        try {
+          if (encodeAppEvent(parsed as unknown as AppEvent).body !== body) return 'CONFLICT';
+        } catch { return 'CONFLICT'; }
+        const occurred = instant(parsed?.timestamp);
+        if (!Number.isSafeInteger(nowMs) || occurred === null ||
+          occurred > nowMs || nowMs - occurred > 60_000) return 'STALE_NEW';
+      }
       if (state.attempts >= MAX_ATTEMPTS || (!previous && Object.keys(state.events).length >= MAX_UNIQUE_EVENTS)) return 'LIMIT';
       state.events[key] = { body, hash, attempts: (previous?.attempts ?? 0) + 1 };
       state.attempts++;
-      const temp = `${this.path}.${process.pid}.tmp`;
+      const temp = `${this.path}.${randomUUID()}.tmp`;
       const file = await open(temp, 'wx', 0o600);
       try { await file.writeFile(JSON.stringify(state)); await file.sync(); } finally { await file.close(); }
       await rename(temp, this.path);
@@ -250,16 +265,21 @@ export type EventSendResult =
   | { kind: 'DRY_RUN' | 'GUARD_REJECTED' | 'ATTEMPT_LIMIT' | 'JOURNAL_CONFLICT' |
       'AUTH_ERROR' | 'VALIDATION_ERROR' | 'CONFLICT' | 'RATE_LIMITED' | 'SERVER_ERROR' |
       'UNKNOWN_RESPONSE' | 'UNSUPPORTED_ENDPOINT' | 'TIMEOUT' | 'UNAVAILABLE' |
-      'UNSAFE_REDIRECT' | 'OVERSIZE_RESPONSE' }
-  | { kind: 'RECEIVED'; replay: boolean }
-  | { kind: 'RATE_LIMITED'; retryAfterMs: number };
+      'UNSAFE_REDIRECT' | 'OVERSIZE_RESPONSE'; status?: number }
+  | { kind: 'RECEIVED'; status: 202; replay: boolean | null; requestId: string | null }
+  | { kind: 'RATE_LIMITED'; status: 429; retryAfterMs: number };
 
 /** Test transport only. A provider receipt does not mean billing processing succeeded. */
 export class AppEventsClient {
   private readonly ports: BasePorts & { manifest?: LiveManifest; partner?: PartnerClient; journal?: FileRunJournal };
   constructor(ports: BasePorts & { manifest?: LiveManifest; partner?: PartnerClient; journal?: FileRunJournal }) {
     if (!validId(ports.appId, 'App') || !validId(ports.shopId, 'Shop') ||
+      ports.shopId !== DESIGNATED_SHOP_ID ||
       ports.appId.length > 128 || ports.shopId.length > 128 || !validTimeout(ports.timeoutMs)) throw new Error('Invalid App Events configuration');
+    // One fixed journal limits normal-run attempts while it remains intact. Temporary journals are
+    // usable only by Node's isolated synthetic test runner.
+    if (ports.manifest && ports.journal && ports.journal.path !== RUN_JOURNAL_PATH &&
+      process.env.NODE_TEST_CONTEXT !== 'child-v8') throw new Error('Noncanonical live journal');
     this.ports = ports;
   }
   private allowed(event: AppEvent, activeResponse: unknown, observedAt: string): boolean {
@@ -268,7 +288,8 @@ export class AppEventsClient {
     if (!m || !p.journal || !p.partner || !now || m.mode !== 'LIVE_ZERO_PRICE_TEST' ||
       m.appId !== p.appId || m.shopId !== p.shopId || m.shopId !== event.shop_id ||
       m.meterHandle !== event.event_handle || m.meterHandle !== 'customized_order_paid' ||
-      m.zeroPrice !== true || m.meterVerified !== true || m.installationVerified !== true ||
+      m.zeroPrice !== true || m.appGidVerified !== true ||
+      m.meterVerified !== true || m.installationVerified !== true ||
       !/^[a-zA-Z0-9_-]{1,80}$/.test(m.runId) || !/^[a-zA-Z0-9_-]{1,80}$/.test(m.planHandle)) return false;
     const observed = instant(observedAt), approved = instant(m.approvedAt);
     const from = instant(m.cycleFrom), until = instant(m.cycleUntil), at = instant(event.timestamp);
@@ -308,7 +329,8 @@ export class AppEventsClient {
     return !!m && !!p.partner && !!p.journal && m.mode === 'LIVE_ZERO_PRICE_TEST' &&
       m.appId === p.appId && m.shopId === p.shopId && event.shop_id === p.shopId &&
       event.event_handle === 'customized_order_paid' && m.meterHandle === event.event_handle &&
-      m.zeroPrice === true && m.meterVerified === true && m.installationVerified === true;
+      m.zeroPrice === true && m.appGidVerified === true &&
+      m.meterVerified === true && m.installationVerified === true;
   }
   async send(event: AppEvent): Promise<EventSendResult> {
     if (!this.ports.manifest) return { kind: 'DRY_RUN' };
@@ -323,26 +345,42 @@ export class AppEventsClient {
     if (observation.kind !== 'ACTIVE_ENVELOPE' ||
       !this.allowed(event, observation.body, observation.observedAt))
       return { kind: 'GUARD_REJECTED' };
-    const reserved = await this.ports.journal!.reserve(this.ports.manifest.runId, event.idempotency_key, body)
-      .catch(() => 'CONFLICT' as const);
-    if (reserved !== 'RESERVED') return { kind: reserved === 'LIMIT' ? 'ATTEMPT_LIMIT' : 'JOURNAL_CONFLICT' };
     let credential: Token;
     try { credential = await this.ports.credentials.appEvents(); } catch { return { kind: 'AUTH_ERROR' }; }
     const token = tokenValue(credential, Date.parse(this.ports.now()));
     if (!token) return { kind: 'AUTH_ERROR' };
+    const reserved = await this.ports.journal!.reserve(this.ports.manifest.runId,
+      event.idempotency_key, body, Date.parse(this.ports.now()))
+      .catch(() => 'CONFLICT' as const);
+    if (reserved !== 'RESERVED') return { kind: reserved === 'LIMIT' ? 'ATTEMPT_LIMIT' :
+      reserved === 'STALE_NEW' ? 'GUARD_REJECTED' : 'JOURNAL_CONFLICT' };
+    // The file fsync can delay a send. Re-read the effective contract after it,
+    // and refuse a stale token or an observation that ages before the POST.
+    const finalObservation = await this.ports.partner!.readLiveEnvelope(event.shop_id);
+    if (finalObservation.kind !== 'ACTIVE_ENVELOPE' ||
+      !this.allowed(event, finalObservation.body, finalObservation.observedAt) ||
+      !tokenValue(credential, Date.parse(this.ports.now()))) return { kind: 'GUARD_REJECTED' };
     const result = await boundedFetch(this.ports.fetch, EVENT_URL, { method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body },
       this.ports.timeoutMs);
     if (result.kind !== 'HTTP') return { kind: result.kind === 'AUTH_REQUIRED' ? 'AUTH_ERROR' :
       result.kind === 'MISMATCH' ? 'GUARD_REJECTED' : result.kind };
-    if (result.status === 404 || result.status === 410) return { kind: 'UNSUPPORTED_ENDPOINT' };
+    if (result.status === 404 || result.status === 410)
+      return { kind: 'UNSUPPORTED_ENDPOINT', status: result.status };
     const classified = classifyAppEventResponse(result.status, result.body,
       result.headers.get('Retry-After') ?? undefined, Date.parse(this.ports.now()));
     if (classified.kind === 'RATE_LIMITED')
-      return classified.retryAfterMs === undefined ? { kind: 'RATE_LIMITED' } :
-        { kind: 'RATE_LIMITED', retryAfterMs: classified.retryAfterMs };
-    if (classified.kind === 'RECEIVED')
-      return { kind: 'RECEIVED', replay: result.headers.get('Idempotent-Replay') === 'true' };
-    return { kind: classified.kind };
+      return classified.retryAfterMs === undefined ? { kind: 'RATE_LIMITED', status: 429 } :
+        { kind: 'RATE_LIMITED', status: 429, retryAfterMs: classified.retryAfterMs };
+    if (classified.kind === 'RECEIVED') {
+      const replayHeader = result.headers.get('Idempotent-Replay');
+      const rawRequestId = result.headers.get('X-Request-ID');
+      const requestId = rawRequestId && /^[A-Za-z0-9._:-]{1,128}$/.test(rawRequestId)
+        ? rawRequestId : null;
+      return { kind: 'RECEIVED', status: 202,
+        replay: replayHeader === 'true' ? true : replayHeader === 'false' ? false : null,
+        requestId };
+    }
+    return { kind: classified.kind, status: result.status };
   }
 }

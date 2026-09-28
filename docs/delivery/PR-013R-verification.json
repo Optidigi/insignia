@@ -1,0 +1,221 @@
+{
+  "reviewDate": "2026-09-28",
+  "repository": "Optidigi/insignia",
+  "pr": 13,
+  "verdict": "APPROVED",
+  "base": "31484d328ec401a30994d073518b11eb67777433",
+  "head": "8bda74f1985762923580b5d1d92b56c4a0d7203f",
+  "effectiveMergeBase": "31484d328ec401a30994d073518b11eb67777433",
+  "supersedesHead": "fc6159664a829962983a33cdfe5c415645aee29e",
+  "correctionCommitCount": 1,
+  "correctionFiles": 14,
+  "syntheticMerge": "0cc91dba0506b7bd1749e3d8a76d4270c22cb80c",
+  "syntheticParents": [
+    "31484d328ec401a30994d073518b11eb67777433",
+    "8bda74f1985762923580b5d1d92b56c4a0d7203f"
+  ],
+  "sameHeadAndMergeTree": "9f296daaa4521415af820a8815237ea31ee74a9d",
+  "workflows": [
+    {
+      "run": 36357971726,
+      "conclusion": "success",
+      "actualJobLogRead": true,
+      "job": 108729373546
+    },
+    {
+      "run": 36357971708,
+      "conclusion": "success",
+      "actualJobLogRead": false
+    },
+    {
+      "run": 36357971684,
+      "conclusion": "success",
+      "actualJobLogRead": false
+    }
+  ],
+  "ci": {
+    "node": "24.21.0",
+    "pnpm": "12.6.0",
+    "strictTypes": true,
+    "tests": 34,
+    "failures": 0,
+    "historyCheckPassed": true
+  },
+  "independentExecution": {
+    "runtime": "v22.16.0",
+    "mode": "Git-blob-matched parser/time plus disclosed unchanged entitlement excerpt",
+    "providerOperations": 0,
+    "result": "PASS",
+    "boundaries": [
+      {
+        "which": "cancellation",
+        "until": "2026-06-15T00:00:00.000Z",
+        "decisions": [
+          "ALLOW",
+          "PENDING_VERIFY",
+          "PENDING_VERIFY"
+        ]
+      },
+      {
+        "which": "pending-plan",
+        "until": "2026-06-15T00:00:00.000Z",
+        "decisions": [
+          "ALLOW",
+          "PENDING_VERIFY",
+          "PENDING_VERIFY"
+        ]
+      },
+      {
+        "which": "trial",
+        "until": "2026-06-15T00:00:00.000Z",
+        "decisions": [
+          "ALLOW",
+          "PENDING_VERIFY",
+          "PENDING_VERIFY"
+        ]
+      },
+      {
+        "which": "combined",
+        "until": "2026-06-15T00:00:00.000Z",
+        "decisions": [
+          "ALLOW",
+          "PENDING_VERIFY",
+          "PENDING_VERIFY"
+        ]
+      }
+    ],
+    "ordinaryRenewalControl": "ALLOW",
+    "emptyPendingUpdate": "UNKNOWN_CONTRACT",
+    "flatAmountCases": [
+      {
+        "tierIndex": 0,
+        "amount": "0",
+        "result": "ACTIVE"
+      },
+      {
+        "tierIndex": 0,
+        "amount": "0.0",
+        "result": "ACTIVE"
+      },
+      {
+        "tierIndex": 0,
+        "amount": "0.00",
+        "result": "ACTIVE"
+      },
+      {
+        "tierIndex": 0,
+        "amount": "0.000000000",
+        "result": "ACTIVE"
+      },
+      {
+        "tierIndex": 0,
+        "amount": "1.00",
+        "result": "UNSUPPORTED_TARIFF"
+      },
+      {
+        "tierIndex": 0,
+        "amount": "-1.00",
+        "result": "UNSUPPORTED_TARIFF"
+      },
+      {
+        "tierIndex": 0,
+        "amount": "not-a-decimal",
+        "result": "UNSUPPORTED_TARIFF"
+      },
+      {
+        "tierIndex": 0,
+        "amount": null,
+        "result": "UNSUPPORTED_TARIFF"
+      },
+      {
+        "tierIndex": 0,
+        "amount": "(missing)",
+        "result": "UNSUPPORTED_TARIFF"
+      },
+      {
+        "tierIndex": 1,
+        "amount": "0",
+        "result": "ACTIVE"
+      },
+      {
+        "tierIndex": 1,
+        "amount": "0.0",
+        "result": "ACTIVE"
+      },
+      {
+        "tierIndex": 1,
+        "amount": "0.00",
+        "result": "ACTIVE"
+      },
+      {
+        "tierIndex": 1,
+        "amount": "0.000000000",
+        "result": "ACTIVE"
+      },
+      {
+        "tierIndex": 1,
+        "amount": "1.00",
+        "result": "UNSUPPORTED_TARIFF"
+      },
+      {
+        "tierIndex": 1,
+        "amount": "-1.00",
+        "result": "UNSUPPORTED_TARIFF"
+      },
+      {
+        "tierIndex": 1,
+        "amount": "not-a-decimal",
+        "result": "UNSUPPORTED_TARIFF"
+      },
+      {
+        "tierIndex": 1,
+        "amount": null,
+        "result": "UNSUPPORTED_TARIFF"
+      },
+      {
+        "tierIndex": 1,
+        "amount": "(missing)",
+        "result": "UNSUPPORTED_TARIFF"
+      }
+    ]
+  },
+  "sourceIdentities": {
+    "partner.ts": {
+      "bytes": 11538,
+      "gitBlob": "654f3ce9b673bd05ff2a56408aa2c5ed7e2cd6f2",
+      "expectedGitBlob": "654f3ce9b673bd05ff2a56408aa2c5ed7e2cd6f2",
+      "match": true,
+      "sha256": "8e451b303727200588c9b36110904c2f0e5a5c406cfe54fbee1643c077138c2b"
+    },
+    "time.ts": {
+      "bytes": 1325,
+      "gitBlob": "2b04172376778de7193738eb986f2843988146ef",
+      "expectedGitBlob": "2b04172376778de7193738eb986f2843988146ef",
+      "match": true,
+      "sha256": "676b2df74b5b7bc2e9d53199728aa20b24f939aadd2534e57e8957cb6fdbe25e"
+    }
+  },
+  "nativeApproval": {
+    "attempted": true,
+    "posted": false,
+    "httpStatus": 403,
+    "message": "Resource not accessible by integration"
+  },
+  "knownLimits": [
+    "No complete local checkout build or pinned Node 24 execution by principal",
+    "Complete application regression execution is CI evidence",
+    "No live Shopify/Partner/App Events calls by principal",
+    "No independent rehash of all historical sources/receipts",
+    "App Events version support unresolved: current docs expose unstable, old encoder hardcodes 2026-07",
+    "No full G8 or production adoption accepted"
+  ],
+  "filesUnchangedByPrincipal": [
+    "repository files",
+    "staging resources",
+    "architecture plan and ledger"
+  ],
+  "currentArchitectureHashesFromCI": {
+    "plan": "8bb45ac9e2834bf047824a2e3dda4da7f76692bae685f6657da7b3ab03d0b145",
+    "ledger": "97ebb79ddc53000c53c46218ba8c83a5ba2279720ed07ff50809706b4f1a800a"
+  }
+}
