@@ -88,6 +88,13 @@ async function boundedFetch(fetcher: typeof fetch, url: string, init: RequestIni
   } finally { clearTimeout(timeout); }
 }
 
+export type AppEventsTokenAcquisition =
+  | { kind: 'READY'; token: { value: string; expiresAt: string } }
+  | { kind: 'ISSUED_INCOMPLETE'; tokenType: 'Bearer' | null;
+      scope: 'write_global_api_app_events' | null; expiresInSeconds: number | null;
+      missing: Array<'scope' | 'expires_in'> }
+  | { kind: 'REJECTED' };
+
 /** Fixed client-credentials exchange for a Dev Dashboard App Events API key. */
 export class AppEventsTokenClient {
   private readonly ports: { clientId: string; clientSecret: string; fetch: typeof fetch;
@@ -100,24 +107,39 @@ export class AppEventsTokenClient {
     this.ports = ports;
   }
   async getToken(): Promise<{ value: string; expiresAt: string } | null> {
+    const result = await this.acquire();
+    return result.kind === 'READY' ? result.token : null;
+  }
+  /** Reports issuance separately from send readiness. Incomplete results never expose the bearer. */
+  async acquire(): Promise<AppEventsTokenAcquisition> {
     const now = instant(this.ports.now());
-    if (now === null) return null;
+    if (now === null) return { kind: 'REJECTED' };
     const body = JSON.stringify({ client_id: this.ports.clientId,
       client_secret: this.ports.clientSecret, grant_type: 'client_credentials' });
-    if (Buffer.byteLength(body) > 8192) return null;
+    if (Buffer.byteLength(body) > 8192) return { kind: 'REJECTED' };
     const result = await boundedFetch(this.ports.fetch,
       'https://api.shopify.com/auth/access_token',
       { method: 'POST', headers: { 'Content-Type': 'application/json' }, body },
       this.ports.timeoutMs);
-    if (result.kind !== 'HTTP' || result.status !== 200) return null;
+    if (result.kind !== 'HTTP' || result.status !== 200) return { kind: 'REJECTED' };
     const data = object(result.body);
     if (!data || typeof data.access_token !== 'string' ||
       !/^[^\s]{1,8192}$/.test(data.access_token) ||
-      typeof data.scope !== 'string' ||
-      !data.scope.split(/\s+/).includes('write_global_api_app_events') ||
-      !Number.isSafeInteger(data.expires_in) || Number(data.expires_in) < 31 ||
-      Number(data.expires_in) > 3600) return null;
-    return { value: data.access_token, expiresAt: new Date(now + Number(data.expires_in) * 1000).toISOString() };
+      data.token_type !== undefined && (typeof data.token_type !== 'string' ||
+        !/^Bearer$/i.test(data.token_type)) ||
+      data.scope !== undefined && (typeof data.scope !== 'string' ||
+        !data.scope.split(/\s+/).includes('write_global_api_app_events')) ||
+      data.expires_in !== undefined && (!Number.isSafeInteger(data.expires_in) ||
+        Number(data.expires_in) < 31 || Number(data.expires_in) > 3600)) return { kind: 'REJECTED' };
+    const missing: Array<'scope' | 'expires_in'> = [];
+    if (data.scope === undefined) missing.push('scope');
+    if (data.expires_in === undefined) missing.push('expires_in');
+    if (missing.length) return { kind: 'ISSUED_INCOMPLETE',
+      tokenType: data.token_type === undefined ? null : 'Bearer',
+      scope: data.scope === undefined ? null : 'write_global_api_app_events',
+      expiresInSeconds: data.expires_in === undefined ? null : Number(data.expires_in), missing };
+    return { kind: 'READY', token: { value: data.access_token,
+      expiresAt: new Date(now + Number(data.expires_in) * 1000).toISOString() } };
   }
 }
 

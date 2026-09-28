@@ -256,6 +256,41 @@ test('App Events token exchange uses only fixed auth route and rejects missing s
   assert.equal(await client.getToken(), null);
 });
 
+test('App Events token receipt preserves absent metadata without exposing an unusable bearer', async () => {
+  let body: unknown = { access_token: eventToken, token_type: 'Bearer' };
+  const client = new AppEventsTokenClient({ clientId: 'fixture-client', clientSecret: 'fixture-secret', now: () => now,
+    fetch: async () => response(body) });
+  assert.deepEqual(await client.acquire(), {
+    kind: 'ISSUED_INCOMPLETE', tokenType: 'Bearer', scope: null, expiresInSeconds: null,
+    missing: ['scope', 'expires_in'] });
+  assert.equal(await client.getToken(), null);
+
+  body = { access_token: eventToken, token_type: 'Bearer', scope: 'write_global_api_app_events' };
+  assert.deepEqual(await client.acquire(), {
+    kind: 'ISSUED_INCOMPLETE', tokenType: 'Bearer', scope: 'write_global_api_app_events',
+    expiresInSeconds: null, missing: ['expires_in'] });
+  body = { access_token: eventToken, token_type: 'Bearer', expires_in: 3599 };
+  assert.deepEqual(await client.acquire(), {
+    kind: 'ISSUED_INCOMPLETE', tokenType: 'Bearer', scope: null,
+    expiresInSeconds: 3599, missing: ['scope'] });
+  assert.equal(await client.getToken(), null);
+});
+
+test('App Events token metadata contradictions are rejected and complete metadata remains usable', async () => {
+  let body: unknown = { access_token: eventToken, token_type: 'Bearer',
+    scope: 'read_global_api_app_events', expires_in: 3599 };
+  const client = new AppEventsTokenClient({ clientId: 'fixture-client', clientSecret: 'fixture-secret', now: () => now,
+    fetch: async () => response(body) });
+  assert.deepEqual(await client.acquire(), { kind: 'REJECTED' });
+  body = { access_token: eventToken, token_type: 'mac', scope: 'write_global_api_app_events', expires_in: 3599 };
+  assert.deepEqual(await client.acquire(), { kind: 'REJECTED' });
+  body = { access_token: eventToken, token_type: 'Bearer', scope: 'write_global_api_app_events', expires_in: '3599' };
+  assert.deepEqual(await client.acquire(), { kind: 'REJECTED' });
+  body = { access_token: eventToken, token_type: 'Bearer', scope: 'write_global_api_app_events', expires_in: 3599 };
+  assert.deepEqual(await client.acquire(), {
+    kind: 'READY', token: { value: eventToken, expiresAt: '2026-09-28T12:59:59.000Z' } });
+});
+
 test('internally consistent but undesignated shop identity is refused before any read or send', () => {
   const otherShop = 'gid://shopify/Shop/999';
   assert.throws(() => new PartnerClient({ appId, shopId: otherShop, organizationId: '12345',
