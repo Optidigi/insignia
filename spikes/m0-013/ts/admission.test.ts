@@ -56,6 +56,21 @@ test('source-bound 32 plus 168 evaluation admits the whole set and rejects bucke
   { status: 'REJECT', reason: 'BUCKET_COUNT' });
 });
 
+test('a caller cannot raise the profile above the compiled Function guards', () => {
+  const widerBuckets = { ...profile, maxCustomizedBuckets: 33,
+    maxTransformOutputBytes: 20_000 };
+  assert.deepEqual(issueAdmittedQuote(groups(33), context, publicKey, 20802,
+    { ...cart, ordinaryLines: 167 }, widerBuckets),
+  { status: 'REJECT', reason: 'INVALID_PROFILE' });
+  const widerPhysical = { ...profile, maxPhysicalQuantity: 10_001 };
+  assert.deepEqual(issueAdmittedQuote(groups(1, 10_001), context, publicKey, 20802,
+    { ...cart, ordinaryLines: 0 }, widerPhysical),
+  { status: 'REJECT', reason: 'INVALID_PROFILE' });
+  assert.deepEqual(decideAdmission(groups(1), cart,
+    { ...profile, maxTransformOutputBytes: 16_001 }),
+  { status: 'REJECT', reason: 'INVALID_PROFILE' });
+});
+
 test('unresolved managed lines and ordinary-cart growth invalidate admission', () => {
   assert.deepEqual(decideAdmission(groups(10), { ...cart, unresolvedManagedLines: 1 }, profile),
     { status: 'REJECT', reason: 'INCOMPLETE_CUSTOMIZED_SUBSET' });

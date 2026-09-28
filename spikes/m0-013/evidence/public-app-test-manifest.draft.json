@@ -1,0 +1,39 @@
+{
+  "status": "NOT_EXECUTED",
+  "authorization": "Separate principal and owner envelope required",
+  "provenance": {
+    "observationTimeUtc": null,
+    "operator": null,
+    "source": null,
+    "artifactSha256": null
+  },
+  "identity": {
+    "appGid": "gid://shopify/App/429028933633",
+    "shopGid": "gid://shopify/Shop/105501393179",
+    "storeDomain": "insignia-rewrite-dev.myshopify.com",
+    "publicDistributionAndPlanReadback": null
+  },
+  "candidate": {
+    "reviewedCommit": null,
+    "profileId": null,
+    "transformVersionId": null,
+    "transformWasmSha256": null,
+    "validationVersionId": null,
+    "validationWasmSha256": null,
+    "keyGenerationAndEpoch": null,
+    "policyRevisionAndReadback": null,
+    "publicationReadinessAndActivationReadback": null
+  },
+  "cartAndCheckout": {
+    "acceptedQuoteAndExactPrediscountMinor": null,
+    "actualFunctionInputsAndOutputs": null,
+    "ordinaryLineCoexistence": null,
+    "wrongEconomicsRejection": null,
+    "invalidLineRepair": null,
+    "carrierInOrder": null,
+    "nativeOrderAndLifecycleReceipts": null,
+    "resourceCountersIfExposed": null
+  },
+  "cleanupOrHoldingState": null,
+  "limitsAndFailures": []
+}

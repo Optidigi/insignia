@@ -115,7 +115,7 @@ formula or deployable merchant cap follows from 32+168. The principal can
 accept this as bounded local evidence while recording stack and live
 capacity/transport as precise unresolved boundaries, or request a further
 same-protocol measurement. The separately authorized public-app proof would
-use the [draft evidence manifest](../../spikes/m0-013/README.md); it was
+use the [draft evidence manifest](../../spikes/m0-013/evidence/public-app-test-manifest.draft.json); it was
 not executed here.
 
 ## v1.3 sequencing and verification
@@ -138,7 +138,29 @@ bash spikes/m0-013/scripts/check-local.sh
 
 The integration run passed: archived v1.1/v1.2 and current v1.3 hashes,
 41 frozen source and 120 receipt checks, M0-006 retained evidence,
-10 M0-005 TypeScript tests, 8 new admission tests, 13 authorization
+10 M0-005 TypeScript tests, 9 new admission tests, 13 authorization
 Rust tests, 18 Transform tests, 21 Validation tests, both CLI schema/builds,
 88/88 candidate rows, eight same-input comparisons and 152/152 retained
 row replays. The historical Order B $0.01 stop remains recorded.
+
+## Fresh local review dispositions
+
+The independent Spec reviewer found that the original public admission
+interface could accept a caller-supplied 33-bucket/10,001-unit profile
+above both compiled Function guards. A public-seam regression first went
+red by reaching the signer with an invalid private key, then went green
+after `validProfile` was restricted to the compiled 32-bucket,
+10,000-unit and 16,000-output-byte bounds. This prevents that particular
+sign-then-reject mismatch; the selected profile must still match the
+deployed Function configuration and current cart projection. The same
+review found missing fixed source-path/ref mapping; the measurement
+record now names the PR #17 fixed ref, original paths, local baseline
+patch and schema/query hashes.
+
+The independent Standards/security reviewer found a stale G7/G8
+“unexecuted” recap in the implementation plan despite accepted partial
+sub-results. The recap now says they are incomplete with bounded
+observations; the explicit current-v1.3 plan hash was updated while the
+archived v1.1/v1.2 checks were retained. The reviewer reported no other
+concrete security/correctness finding; duplication across independent
+Function targets was a non-blocking maintainability observation.

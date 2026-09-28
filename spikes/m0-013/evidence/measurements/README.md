@@ -1,5 +1,28 @@
 # M0-013 full-target capacity evidence
 
+## Fixed source map and local deltas
+
+All materialization origins below are at the verified PR #17 merge
+`662a78cd27507d8a2f1eaa976f1c644c93edd1be` (which retains the
+reviewed earlier spike files); the corresponding earlier source reviews
+are PR #8 for M0-005, PR #9 for M0-006 and PR #10 for M0-007.
+
+| Origin at fixed ref | M0-013 copy | Exact relation |
+| --- | --- | --- |
+| `spikes/m0-005/rust/authorization/src/{lib,whole}.rs` and `fixtures/vectors.json` | `rust/baseline-source/authorization`, `rust/authorization` | Verifier/wire bytes copied; the candidate retains strict complete-set Ed25519 verification. Local Cargo paths/package names only. |
+| `spikes/m0-006/extensions/{transform,validation}/src/main.rs` | `rust/baseline-source/{transform,validation}/src/main.rs` | Baseline changes the relative policy import and the inherited ten-bucket evaluation guard to 200 so 32/64 valid stress inputs actually execute. The patch is visible by `git diff --no-index` against either source; no economic/policy check was deleted. |
+| `spikes/m0-007/policy-model/src/projection.rs` | `rust/{baseline-source/,}policy/projection.rs` | Byte-identical SHA-256 `c3d56f4f60f74f00e1523a30fc057db580ba44631b0aaa9d757172f4d206bfc1`. |
+| `spikes/m0-006/extensions/{transform,validation}/src/*run.graphql` and `schema.graphql` with M0-007 policy selections | `rust/{transform,validation}` and `rust/baseline-source/{transform,validation}` | Byte-identical checked-in queries and schemas. |
+
+The candidate layers `rust/capacity.rs` and the measured guards onto the
+uncapped baseline in both Function `main.rs` files. The candidate's
+source hashes are listed in every `candidate/matrix.json` manifest;
+baseline's patch-bearing files and source hashes are retained beside its
+manifest. Transform/Validation schema SHA-256s are respectively
+`6e8851bc6c53bb8dae6620b2a98082aac10f88a5015b7cc2b57a9a49dd2e1aa4`
+and
+`4a782ed2a026b1f62a3c3466e0d9ddcc6b2e77e62a38feddfc524249fcf026f4`.
+
 Run `bash spikes/m0-013/scripts/measure-local.sh` from the repository. The command uses Rust 1.98.1, the pinned `@shopify/cli` 4.8.2 installed at `spikes/m0-005/node_modules`, local `shopify app function build/info` for both synthetic extensions, the CLI's Function runner 9.2.2, and trampoline 2.0.1. It then builds and measures both complete Wasm targets. CLI build is used for local schema/build validation and binary provisioning; the retained measured binaries are the subsequent clean Cargo release builds after the pinned trampoline, without an additional wasm-opt pass. No authenticated app operation is used. The absolute runner path is host-specific; the manifests bind its executable hash and version. The script remeasures the local candidate artifact and replays the retained baseline artifact, so CI results must be identified by their own manifest hashes if build paths change embedded Rust panic-location bytes.
 
 `baseline/matrix.json` records 64 rows against the uncapped evaluation source under `rust/baseline-source`. That source copies M0-006's two full Function adapters, M0-007's live policy projection/query/schema, and M0-005's strict v2 verifier. Its local patch changes the package paths/name and raises the inherited ten-bucket *evaluation* ceiling to the verifier's 200-line parser maximum. The baseline source hashes, raw Wasm hashes, and complete patch-bearing source files are retained. On this local checkout, rebuilding the baseline source with the shared `rust/authorization` path reproduced the retained raw Wasm SHA-256 exactly. The queries and schemas are byte-identical to the M0-007 candidate: Transform query SHA-256 `d848a97f2b862f0c93587f6aeee84a53bb5203324647b78d1e1124bfad97` (749 bytes), Validation `c4a6a655dc813cd080bfded7567fd2538a65ae68e87eec0eb4326e794f2d1b97` (818 bytes). Calculated query costs are 20 and 23 under the documented field-count method, not provider-returned measurements.

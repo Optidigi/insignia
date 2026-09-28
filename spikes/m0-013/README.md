@@ -57,7 +57,8 @@ proof.
 
 ## Later public-app evidence manifest (draft only)
 
-A separately authorized public-app proof would record: exact app/shop
+A separately authorized public-app proof would fill
+`evidence/public-app-test-manifest.draft.json`. It records: exact app/shop
 GIDs and distribution/store plan; released or dev Function version IDs
 and hashes; key generation/epoch; product/variant/policy generation and
 readback; candidate profile and projected versus actual cart input

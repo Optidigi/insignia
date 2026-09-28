@@ -52,7 +52,7 @@ for path, expected in v1_2_architecture.items():
     assert digest(v1_2(path)) == expected, f"archived v1.2 architecture mismatch: {path}"
 
 current_architecture = {
-    "docs/architecture/implementation-plan.md": "f6005c81235b70650f462666acdffc1b062a6bfd13f55a28ee903debab02c8f6",
+    "docs/architecture/implementation-plan.md": "66cf63bfdf1ede13c6cb7549e346565e44ff1a1f4ca0938efa6feb01d652bed0",
     "docs/architecture/decision-ledger.md": "d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
 }

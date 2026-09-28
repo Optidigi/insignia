@@ -36,8 +36,11 @@ const MAX_CART_LINE_SUFFIX_CHARS = 36; // UUID-shaped CartLine IDs occur in the 
 const MAX_AMOUNT_CHARS = 21; // u64 minor units at 0–3 supported exponent, including decimal point.
 const MEMBER_CHARS = 30; // unchanged v2 22-byte member record, unpadded base64url.
 const MAX_FUNCTION_LINES = 200;
+// These cannot exceed the guards compiled into both local M0-013 Functions.
+const MAX_FUNCTION_BUCKETS = 32;
+const MAX_FUNCTION_PHYSICAL_QUANTITY = 10_000;
 const PLATFORM_INPUT_BYTES = 128_000;
-const PLATFORM_OUTPUT_BYTES = 20_000;
+const FUNCTION_OUTPUT_BYTES = 16_000;
 
 const maxOperation = {
   lineExpand: {
@@ -62,16 +65,16 @@ export function transformOutputUpperBytes(buckets: number): number {
 function validProfile(p: CapacityProfile): boolean {
   return typeof p.id === 'string' && p.id.length > 0 &&
     Number.isSafeInteger(p.maxCustomizedBuckets) && p.maxCustomizedBuckets >= 1 &&
-    p.maxCustomizedBuckets <= MAX_FUNCTION_LINES &&
+    p.maxCustomizedBuckets <= MAX_FUNCTION_BUCKETS &&
     Number.isSafeInteger(p.maxCartLines) && p.maxCartLines >= 1 && p.maxCartLines <= MAX_FUNCTION_LINES &&
     Number.isSafeInteger(p.maxPhysicalQuantity) && p.maxPhysicalQuantity >= 1 &&
-    p.maxPhysicalQuantity <= 0xffffffff &&
+    p.maxPhysicalQuantity <= MAX_FUNCTION_PHYSICAL_QUANTITY &&
     Number.isSafeInteger(p.maxTransformInputBytes) && p.maxTransformInputBytes >= 1 &&
     p.maxTransformInputBytes <= PLATFORM_INPUT_BYTES &&
     Number.isSafeInteger(p.maxValidationInputBytes) && p.maxValidationInputBytes >= 1 &&
     p.maxValidationInputBytes <= PLATFORM_INPUT_BYTES &&
     Number.isSafeInteger(p.maxTransformOutputBytes) && p.maxTransformOutputBytes >= 1 &&
-    p.maxTransformOutputBytes <= PLATFORM_OUTPUT_BYTES;
+    p.maxTransformOutputBytes <= FUNCTION_OUTPUT_BYTES;
 }
 
 function nonnegative(value: number): boolean {
