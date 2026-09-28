@@ -63,7 +63,7 @@ function validState(value: unknown): value is RegisterState {
   const s = object(value), events = object(s?.events);
   if (!s || s.version !== 1 || typeof s.runId !== 'string' || !s.runId ||
       s.endpoint !== ENDPOINT || typeof s.sourceHash !== 'string' ||
-      !/^[a-f0-9]{64}$/.test(s.sourceHash) || typeof s.createdAt !== 'string' ||
+      !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(s.sourceHash) || typeof s.createdAt !== 'string' ||
       !Number.isFinite(Date.parse(s.createdAt)) || !events ||
       !Number.isSafeInteger(s.tokenReservations) || Number(s.tokenReservations) > MAX_ACQUISITIONS ||
       !Number.isSafeInteger(s.postReservations) || Number(s.postReservations) > MAX_POSTS ||
@@ -153,7 +153,7 @@ export class RunRegister {
     'postReservations' | 'events'>): Promise<Result> {
     return this.locked(async () => {
       if (meta.endpoint !== ENDPOINT || !meta.runId ||
-          !/^[a-f0-9]{64}$/.test(meta.sourceHash) ||
+          !/^(?:[a-f0-9]{40}|[a-f0-9]{64})$/.test(meta.sourceHash) ||
           !Number.isFinite(Date.parse(meta.createdAt))) return { kind: 'CONFLICT' };
       // Even a partial prior initialization must never silently reset the run.
       for (const path of [this.receiptPath, this.locator(), this.statePath()]) {

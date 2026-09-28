@@ -138,6 +138,17 @@ test('independent operator receipt blocks budget reset after whole run directory
   } finally { await cleanup(root); }
 });
 
+test('operator register accepts a full 40-character Git commit ID as source binding', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'insignia-git-source-'));
+  try {
+    const register = new RunRegister(root);
+    assert.equal((await register.initialize({ runId: 'm0-012-test', endpoint: ENDPOINT,
+      sourceHash: 'e9d9028f1418bbb1fcb311c0151b85cdd105cd5e',
+      createdAt: '2026-09-28T17:00:00.000Z' })).kind, 'INITIALIZED');
+    assert.equal((await register.inspect()).kind, 'READY');
+  } finally { await cleanup(root); }
+});
+
 test('billing observations require successful original HTTP and native log reference', async () => {
   const { root, register } = await fixture();
   try {
