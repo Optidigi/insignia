@@ -155,6 +155,9 @@ test('billing observations require successful original HTTP and native log refer
       { kind: 'HTTP', status: 202, responseSuccess: true });
     assert.equal((await register.recordBillingObservation('aa11',
       { ...observation, logReference: 'https://other.example/logs/123' })).kind, 'CONFLICT');
+    assert.equal((await register.recordBillingObservation('aa11',
+      { ...observation, logReference: `${observation.logReference}?token=do-not-store` })).kind,
+      'CONFLICT');
     assert.equal((await register.recordBillingObservation('aa11', observation)).kind, 'RECORDED');
     assert.equal((await register.recordBillingObservation('aa11', observation)).kind, 'CONFLICT');
   } finally { await cleanup(root); }

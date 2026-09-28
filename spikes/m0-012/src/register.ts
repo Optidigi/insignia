@@ -50,6 +50,15 @@ function eventIdentity(body: string): { key: string; timestamp: string } | null 
       Buffer.byteLength(body) > 4096) return null;
   return { key: data.idempotency_key, timestamp: data.timestamp };
 }
+function safeNativeLogReference(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.origin === 'https://dev.shopify.com' && !url.username && !url.password &&
+      !url.search && !url.hash &&
+      /^\/dashboard\/200969036\/apps\/429028933633\/logs(?:\/[^/?#]+)?$/.test(url.pathname) &&
+      value.length <= 500;
+  } catch { return false; }
+}
 function validState(value: unknown): value is RegisterState {
   const s = object(value), events = object(s?.events);
   if (!s || s.version !== 1 || typeof s.runId !== 'string' || !s.runId ||
@@ -240,9 +249,7 @@ export class RunRegister {
         a.outcome.responseSuccess === true);
       if (observation.kind === 'PROCESSED') {
         if (accepted.length < 1 || !observation.logReference ||
-            !observation.logReference.startsWith(
-              'https://dev.shopify.com/dashboard/200969036/apps/429028933633/logs') ||
-            observation.logReference.length > 500)
+            !safeNativeLogReference(observation.logReference))
           return { kind: 'CONFLICT' };
       } else if (observation.kind === 'REPLAY_NO_DELTA') {
         if (accepted.length !== 2 || !event.billingObservations.some(x => x.kind === 'PROCESSED') ||
