@@ -9,7 +9,8 @@ are PR #8 for M0-005, PR #9 for M0-006 and PR #10 for M0-007.
 
 | Origin at fixed ref | M0-013 copy | Exact relation |
 | --- | --- | --- |
-| `spikes/m0-005/rust/authorization/src/{lib,whole}.rs` and `fixtures/vectors.json` | `rust/baseline-source/authorization`, `rust/authorization` | Verifier/wire bytes copied; the candidate retains strict complete-set Ed25519 verification. Local Cargo paths/package names only. |
+| `spikes/m0-005/rust/authorization/src/{lib,whole}.rs` | `rust/baseline-source/authorization/src`, `rust/authorization/src` | Verifier/wire bytes copied; the candidate retains strict complete-set Ed25519 verification. Local Cargo paths/package names only. |
+| `spikes/m0-005/fixtures/vectors.json` | `rust/authorization/fixtures/vectors.json` | Byte-identical public test vectors, SHA-256 `cf64d8d40780d2a65b225ac4c6f74bc593f4ea0aa26a620710b3b420c398e808`. |
 | `spikes/m0-006/extensions/{transform,validation}/src/main.rs` | `rust/baseline-source/{transform,validation}/src/main.rs` | Baseline changes the relative policy import and the inherited ten-bucket evaluation guard to 200 so 32/64 valid stress inputs actually execute. The patch is visible by `git diff --no-index` against either source; no economic/policy check was deleted. |
 | `spikes/m0-007/policy-model/src/projection.rs` | `rust/{baseline-source/,}policy/projection.rs` | Byte-identical SHA-256 `c3d56f4f60f74f00e1523a30fc057db580ba44631b0aaa9d757172f4d206bfc1`. |
 | `spikes/m0-006/extensions/{transform,validation}/src/*run.graphql` and `schema.graphql` with M0-007 policy selections | `rust/{transform,validation}` and `rust/baseline-source/{transform,validation}` | Byte-identical checked-in queries and schemas. |

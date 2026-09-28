@@ -155,7 +155,9 @@ sign-then-reject mismatch; the selected profile must still match the
 deployed Function configuration and current cart projection. The same
 review found missing fixed source-path/ref mapping; the measurement
 record now names the PR #17 fixed ref, original paths, local baseline
-patch and schema/query hashes.
+patch and schema/query hashes. A final read-only recheck confirmed the
+guard correction and caught one test-vector path typo; the table now
+points to the byte-identical actual fixture.
 
 The independent Standards/security reviewer found a stale G7/G8
 “unexecuted” recap in the implementation plan despite accepted partial
