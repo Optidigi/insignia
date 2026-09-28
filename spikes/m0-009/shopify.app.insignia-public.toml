@@ -1,0 +1,24 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "1443cf6d03d39edae7c101a943c5c684"
+web_directories = ["web-public"]
+name = "Insignia"
+# Shopify's initial version had example.com before this package. `app dev`
+# supplies the temporary controlled HTTPS URL. Do not release this placeholder.
+application_url = "https://example.com"
+embedded = true
+
+[build]
+automatically_update_urls_on_dev = true
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_products"
+optional_scopes = [ ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ ]
+
+[webhooks]
+api_version = "2026-07"

@@ -7,7 +7,7 @@ interface Props {
 
 const { title } = Astro.props;
 const apiKey = import.meta.env.PUBLIC_SHOPIFY_API_KEY;
-if (apiKey !== '942e6668fd1177524c0fc48b104b0ac3')
+if (!['942e6668fd1177524c0fc48b104b0ac3', '1443cf6d03d39edae7c101a943c5c684'].includes(apiKey))
   throw new Error('M0-009 public Shopify client ID build setting unavailable');
 ---
 
