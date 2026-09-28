@@ -1,0 +1,112 @@
+{
+  "reviewDate": "2026-09-28",
+  "repository": "Optidigi/insignia",
+  "pr": 18,
+  "verdict": "APPROVED_BOUNDED_OFFSTORE_CHECKPOINT",
+  "base": "662a78cd27507d8a2f1eaa976f1c644c93edd1be",
+  "head": "72f47577ac8563923aff2bd277484c44392eb92c",
+  "headTree": "9c7c372ae6e9c4b1180d710f56a55edda909d03e",
+  "syntheticMerge": "010245e716c221dbe99ffae4da75a5bb522e7138",
+  "syntheticExactParentsAndHeadTreeVerified": true,
+  "prLastObservedState": "open_unmerged",
+  "nativeReview": {
+    "attempted": "APPROVE",
+    "status": 403,
+    "posted": false
+  },
+  "ci": {
+    "headAssociatedRunsSuccessful": [
+      36474207061,
+      36474206966,
+      36474207098,
+      36474207199,
+      36474207224,
+      36474207334,
+      36474207638
+    ],
+    "actualJobLogRead": 109103726011,
+    "node": "24.21.0",
+    "rust": "1.98.1",
+    "pnpm": "12.6.0",
+    "retainedTsTests": 10,
+    "newAdmissionTsTests": 9,
+    "rustVerifierTests": 13,
+    "transformTests": 18,
+    "validationTests": 21
+  },
+  "artifact": {
+    "id": 10993075828,
+    "runId": 36474207061,
+    "archiveSha256": "2257e3b87c9bcfc3dd0c42ca2c41da163bfd62eb90b2e3bdfc41982486b6c71e",
+    "archiveFiles": 468,
+    "matrixSha256": "191f8851790adb7f34f2476bd94fa3dd7c946faeb41eb7901239fbd4887dc7e8",
+    "binaryHashes": {
+      "transform": {
+        "sha256": "cebca846a17013a42dc590c18069ef5d9f0432452eb702d29bc46bbc1985590b",
+        "bytes": 179380,
+        "rawSha256": "e0466c5bb711fc702dfa4a422cb8b1ddafe08cd30165ae08c7386396457a90ec"
+      },
+      "validation": {
+        "sha256": "93148de17900a68732712ce687393ec920f903e55649115f23b9aa3b667a4ebd",
+        "bytes": 180858,
+        "rawSha256": "1786ff5a28469c3d27e095294bc64c8bb02f627a615a113285f8dacbea06ca47"
+      }
+    }
+  },
+  "independentExecution": {
+    "language": "Python",
+    "wasmExecuted": false,
+    "resourceMeasurementsRepeated": false,
+    "rowBindingsVerified": 152,
+    "signedAcceptedStatementsVerified": 58,
+    "ordinaryControls": 8,
+    "comparisonBindings": 8,
+    "retainedBaselineMismatches": [
+      {
+        "run": "baseline",
+        "target": "transform",
+        "case": "reject-oversized-cartline-id"
+      },
+      {
+        "run": "baseline",
+        "target": "validation",
+        "case": "reject-oversized-cartline-id"
+      }
+    ],
+    "scriptDevelopmentCorrections": [
+      "Handled the baseline manifest raw-Wasm hash being at top level rather than per-row.",
+      "Preserved the two baseline oversized-ID wrong-output counterexamples instead of requiring all historical expected and actual outputs to match."
+    ],
+    "results": "verification/artifact-results.json"
+  },
+  "architecture": {
+    "version": "1.3",
+    "planHashReportedByCi": "66cf63bfdf1ede13c6cb7549e346565e44ff1a1f4ca0938efa6feb01d652bed0",
+    "ledgerHashReportedByCi": "d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9",
+    "originalGateCriteriaPreservedInInspectedPatch": true,
+    "wholeQuoteV2Adopted": false,
+    "merchantCapacityAdopted": false,
+    "sequencingInterpretation": "M1 must not rely on an unproved activator. Implementable activation contract is due before publication reliance; production enablement remains blocked. Generic workspace construction does not require building the production publisher first."
+  },
+  "limits": [
+    "No local TypeScript/Rust build or test execution by the principal in this review.",
+    "No Wasm execution, instruction/memory/stack remeasurement, or Shopify actions by the principal.",
+    "Negative fixtures checked against retained expectations, not independently reimplemented for every rejection cause.",
+    "CI archive contains binaries and fixture/results, but not the source/query/schema/runner bytes.",
+    "Not all copied source or generated schema files independently hash-compared.",
+    "Input projections are synthetic; a repeated product ID carries differing policies in some mixed test fixtures. Live fixture must be catalogue-consistent.",
+    "Stack peak, combined worst-case field/key profiles, live transport and production activation remain unproven."
+  ],
+  "nextPackage": "M0-014-PUBLIC-APP-CHECKOUT.md",
+  "nextPackageRequiresOwnerAuthorization": true,
+  "performedRemoteMutations": [
+    "Native PR review submission attempted and rejected; no posted change."
+  ],
+  "sources": {
+    "pr": "https://github.com/Optidigi/insignia/pull/18",
+    "packet": "https://github.com/Optidigi/insignia/blob/72f47577ac8563923aff2bd277484c44392eb92c/docs/delivery/review-packet-M0-013.md",
+    "functionReference": "https://shopify.dev/docs/api/functions/2026-07",
+    "scopeReference": "https://shopify.dev/docs/api/usage/access-scopes",
+    "validationReference": "https://shopify.dev/docs/api/admin-graphql/latest/input-objects/ValidationCreateInput"
+  }
+}

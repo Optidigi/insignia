@@ -1,0 +1,57 @@
+# M0-014 Public-app checkout proof candidate
+
+This is the isolated development-only materialization of the reviewed M0-013
+candidate for [M0-014](../../docs/delivery/prompts/M0-014-PUBLIC-APP-CHECKOUT.md).
+The two checked-in `artifacts/*.wasm` files are byte-identical to the approved
+PR #18 CI candidate executables. The extension build script checks their
+SHA-256 values before copying them; `wasm_opt = false` prevents the CLI's
+additional local optimization. Before activation, the operator must also
+verify the actual CLI preview/upload path and Function/version identities.
+The platform-side hash remains unknown if Shopify does not expose it.
+
+`rust/` copies the M0-013 verifier, Function, query and schema sources
+unchanged; only the new app config, handles, UIDs and build command differ.
+`scripts/check-local.sh` checks source equality, canonical TS and native Rust,
+the retained 152-row replay and all 88 candidate rows against the pinned
+executables. This is local evidence, not a live cart or gate pass.
+
+## Operator boundary
+
+The single Shopify operator first records the exact installation, Basic dev
+store, Public/Draft app, scopes, existing preview/Function ownership,
+payment test mode and one available merchant-managed location. The live
+resource and test ledger is [the manifest](evidence/resource-manifest.json).
+Only two new products, three variants and one stock initialization at one
+location are in scope. The operator reads all existing `$app` projection
+keys before creating package-owned values. The preview must read back the
+owned Transform and Validation identifiers, `blockOnFailure: true` and
+Validation `enable: true` before any positive checkout. A changed or
+inaccessible current state stops the dependent step.
+
+`generate-ephemeral.mjs` creates a new protected key directory **outside Git**
+after the app/store/day check. Its public config is staged only under this
+app's owned metadata. `issue-current.mjs` uses the fixed-target authenticated
+Admin read, fresh operator-owned plain-cart Function captures, product policy,
+market/country/day, actual line/quantity counts and projected input byte
+bounds before calling the M0-013 whole-quote issuer. It rejects mismatch and
+writes the signed quote to a new mode-0600 file outside Git. A captured input
+is an operator observation; this helper cannot attest its Shopify origin.
+The operator must verify its actual preview source and inspect the resulting
+post-issuance Function input before checkout. No quote is issued from buyer
+supplied byte ceilings.
+
+The positive small cart has three customized Small units allocated as
+`1 × 30.34 + 2 × 30.33 = 91.00`, plus one plain Small at `20.00`:
+four physical units and `111.00` pre-discount merchandise. The 10+190 and
+32+168 cases are unpaid. Actual Shopify line counts, input/output and resource
+results must be recorded; merged lines never count as a 200-line result.
+The 33-bucket proposal is rejected before signing.
+
+The required Product B, economic wrong-price Transform removal/recreation,
+invalid-line repair, one Bogus order and native one-unit partial fulfillment
+and two calculated refund/restock steps follow the prompt's exact limits.
+Inspect the native fulfillment quantity before submitting. Stop on a bad
+selection or price rather than compensating through inventory or refunds.
+The cleanup order is: clear owned carts, unpublish/archive fixtures, then
+remove only owned policy/Functions, delete ephemeral private key and stop the
+preview. The final ledger must state any retained preview/grant holding state.

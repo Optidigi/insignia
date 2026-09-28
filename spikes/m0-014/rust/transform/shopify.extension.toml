@@ -1,0 +1,18 @@
+api_version = "2026-07"
+
+[[extensions]]
+name = "M0-014 public-app checkout transform"
+handle = "m0-014-public-transform"
+type = "function"
+uid = "a6c13d4d-8a2c-48d3-a948-70da11b8e014"
+description = "Bounded new-app checkout proof only"
+
+  [[extensions.targeting]]
+  target = "cart.transform.run"
+  input_query = "src/cart_transform_run.graphql"
+  export = "cart_transform_run"
+
+  [extensions.build]
+  command = "bash ../../scripts/install-pinned-wasm.sh transform"
+  path = "target/wasm32-unknown-unknown/release/m0-013-cart-transform.wasm"
+  wasm_opt = false

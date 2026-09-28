@@ -1,0 +1,190 @@
+{
+  "slice": "M0-014",
+  "status": "LOCAL_PREPARATION_AND_READ_ONLY_IDENTITY",
+  "operatorCount": 1,
+  "target": {
+    "appGid": "gid://shopify/App/429028933633",
+    "clientId": "1443cf6d03d39edae7c101a943c5c684",
+    "shopGid": "gid://shopify/Shop/105501393179",
+    "storeDomain": "insignia-rewrite-dev.myshopify.com",
+    "installationGid": "gid://shopify/AppInstallation/1054356963611"
+  },
+  "source": {
+    "pr18Merge": "7222a96ff2b0408d0fbfe0803835d24acfd463b7",
+    "pr18CiArtifactSha256": "2257e3b87c9bcfc3dd0c42ca2c41da163bfd62eb90b2e3bdfc41982486b6c71e",
+    "candidateTransformWasmSha256": "cebca846a17013a42dc590c18069ef5d9f0432452eb702d29bc46bbc1985590b",
+    "candidateValidationWasmSha256": "93148de17900a68732712ce687393ec920f903e55649115f23b9aa3b667a4ebd",
+    "cliOptimization": "disabled in isolated extension configs; actual preview/upload binding pending"
+  },
+  "limits": {
+    "newProducts": 2,
+    "newVariants": 3,
+    "initialSmallStockMax": 64,
+    "initialLargeStockMax": 200,
+    "initialRequiredProbeStockMax": 8,
+    "successfulBogusOrdersMax": 1,
+    "purchasedPhysicalUnitsMax": 4
+  },
+  "readOnlyObserved": {
+    "shopCurrency": "USD",
+    "shopTimezone": "America/New_York",
+    "shopPlan": "Basic App Development",
+    "partnerDevelopment": true,
+    "currentGrants": [
+      "read_products",
+      "write_products"
+    ],
+    "ownedPublicConfig": null,
+    "productsWithM0014Tag": 0,
+    "locationQuery": "ACCESS_DENIED without read_locations"
+  },
+  "newResources": {
+    "products": [],
+    "variants": [],
+    "locationGid": null,
+    "stockInitialized": false,
+    "transformGid": null,
+    "validationGid": null,
+    "publicKeyId": null,
+    "privateKeyCreated": false,
+    "temporaryPublication": false,
+    "previewState": "not started in this slice",
+    "variantStock": {
+      "small": {
+        "variantGid": null,
+        "inventoryItemGid": null,
+        "locationGid": null,
+        "initialAvailable": null,
+        "lastObservedAvailable": null,
+        "finalAvailable": null
+      },
+      "large": {
+        "variantGid": null,
+        "inventoryItemGid": null,
+        "locationGid": null,
+        "initialAvailable": null,
+        "lastObservedAvailable": null,
+        "finalAvailable": null
+      },
+      "requiredProbe": {
+        "variantGid": null,
+        "inventoryItemGid": null,
+        "locationGid": null,
+        "initialAvailable": null,
+        "lastObservedAvailable": null,
+        "finalAvailable": null
+      }
+    },
+    "ownedMetadata": {
+      "shopPublicConfig": {
+        "original": null,
+        "createdGid": null,
+        "final": null
+      },
+      "productARegistration": {
+        "original": null,
+        "createdGid": null,
+        "final": null
+      },
+      "productAPolicy": {
+        "original": null,
+        "createdGid": null,
+        "final": null
+      },
+      "productBRegistration": {
+        "original": null,
+        "createdGid": null,
+        "final": null
+      },
+      "productBPolicy": {
+        "original": null,
+        "createdGid": null,
+        "final": null
+      }
+    },
+    "functions": {
+      "transform": {
+        "functionGid": null,
+        "versionGid": null,
+        "uploadedWasmSha256": null,
+        "effectiveBlockOnFailure": null,
+        "finalState": null
+      },
+      "validation": {
+        "functionGid": null,
+        "versionGid": null,
+        "uploadedWasmSha256": null,
+        "effectiveEnable": null,
+        "effectiveBlockOnFailure": null,
+        "finalState": null
+      }
+    },
+    "preview": {
+      "id": null,
+      "startedAtUtc": null,
+      "stoppedAtUtc": null,
+      "finalHoldingState": null,
+      "developmentGrantDiff": null
+    }
+  },
+  "cases": {
+    "smallPositive": "NOT_RUN",
+    "wrongPrice": "NOT_RUN",
+    "requiredUnsigned": "NOT_RUN",
+    "invalidRepair": "NOT_RUN",
+    "tenPlusOneNinety": "NOT_RUN",
+    "thirtyTwoPlusOneSixtyEight": "NOT_RUN",
+    "bucketThirtyThreeAdmission": "LOCAL_PASS; live not run",
+    "bogusOrder": "NOT_RUN",
+    "partialFulfillment": "NOT_RUN",
+    "calculatedRefundRestock": "NOT_RUN"
+  },
+  "finalHoldingState": "PENDING",
+  "liveEvidence": {
+    "small": {
+      "transformInputSha256": null,
+      "validationInputSha256": null,
+      "actualCartLineCount": null,
+      "actualPhysicalQuantity": null,
+      "exactPrediscountMinor": null,
+      "wrongPriceRejection": null,
+      "repairResult": null
+    },
+    "stress10": {
+      "transformInputSha256": null,
+      "validationInputSha256": null,
+      "actualCartLineCount": null,
+      "actualPhysicalQuantity": null,
+      "outputBytes": null,
+      "runtimeCounters": null
+    },
+    "stress32": {
+      "transformInputSha256": null,
+      "validationInputSha256": null,
+      "actualCartLineCount": null,
+      "actualPhysicalQuantity": null,
+      "outputBytes": null,
+      "runtimeCounters": null
+    },
+    "order": {
+      "gid": null,
+      "number": null,
+      "paymentProvider": null,
+      "physicalQuantity": null,
+      "merchandiseMinor": null,
+      "inventoryCommitment": null,
+      "fulfillmentGid": null,
+      "fulfilledUnit": null,
+      "refundGids": [],
+      "refundMerchandiseMinor": null,
+      "finalState": null
+    },
+    "cleanup": {
+      "cartsCleared": null,
+      "fixturesUnpublished": null,
+      "ownedFunctionsRemoved": null,
+      "privateKeyDeleted": null,
+      "stockReconciled": null
+    }
+  }
+}

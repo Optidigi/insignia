@@ -1,0 +1,18 @@
+api_version = "2026-07"
+
+[[extensions]]
+name = "M0-014 public-app checkout validation"
+handle = "m0-014-public-validation"
+type = "function"
+uid = "9a273f32-3c33-4414-b503-98da092be014"
+description = "Bounded new-app checkout proof only"
+
+  [[extensions.targeting]]
+  target = "cart.validations.generate.run"
+  input_query = "src/cart_validations_generate_run.graphql"
+  export = "cart_validations_generate_run"
+
+  [extensions.build]
+  command = "bash ../../scripts/install-pinned-wasm.sh validation"
+  path = "target/wasm32-unknown-unknown/release/m0-013-cart-validation.wasm"
+  wasm_opt = false

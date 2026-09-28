@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+repo="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$repo"
+export SHOPIFY_CLI_NO_ANALYTICS=1
+shopify="$repo/spikes/m0-005/node_modules/.bin/shopify"
+
+# The code/schema/query copied for the live project are the reviewed M0-013 source.
+for part in authorization transform validation; do
+  diff -qr "spikes/m0-013/rust/$part/src" "spikes/m0-014/rust/$part/src"
+  cmp "spikes/m0-013/rust/$part/Cargo.toml" "spikes/m0-014/rust/$part/Cargo.toml"
+done
+for part in transform validation; do
+  cmp "spikes/m0-013/rust/$part/schema.graphql" "spikes/m0-014/rust/$part/schema.graphql"
+  cmp "spikes/m0-013/rust/$part/Cargo.lock" "spikes/m0-014/rust/$part/Cargo.lock"
+done
+cmp spikes/m0-013/rust/capacity.rs spikes/m0-014/rust/capacity.rs
+cmp spikes/m0-013/rust/policy/projection.rs spikes/m0-014/rust/policy/projection.rs
+
+(cd spikes/m0-014 && corepack pnpm check)
+(cd spikes/m0-005 && corepack pnpm check:ts)
+(cd spikes/m0-013 && corepack pnpm check:ts)
+for crate in authorization transform validation; do
+  manifest="spikes/m0-013/rust/$crate/Cargo.toml"
+  cargo fmt --manifest-path "$manifest" --all -- --check
+  cargo clippy --manifest-path "$manifest" --all-targets --locked -- -D warnings
+  cargo test --manifest-path "$manifest" --locked
+done
+"$shopify" app config validate --path spikes/m0-014/rust --config m0-014-public
+for target in transform validation; do
+  "$shopify" app function build --path "spikes/m0-014/rust/extensions/$target" --config m0-014-public
+done
+info="$("$shopify" app function info --path spikes/m0-014/rust/extensions/transform --config m0-014-public --json)"
+export M0_014_RUNNER="$(node -e 'const fs=require("node:fs");console.log(JSON.parse(fs.readFileSync(0,"utf8")).functionRunnerPath)' <<< "$info")"
+test -x "$M0_014_RUNNER"
+M0_013_RUNNER="$M0_014_RUNNER" node spikes/m0-013/scripts/measure-replay.mjs
+node spikes/m0-014/scripts/check-artifact.mjs

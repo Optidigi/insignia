@@ -1,0 +1,4 @@
+node_modules/
+rust/.shopify/
+rust/**/target/
+rust/extensions/**/dist/
