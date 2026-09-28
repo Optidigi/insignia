@@ -47,7 +47,13 @@ export function getRuntime(): Runtime {
   cached = {
     auth: new AuthService(port, {
       allowedShops, expectedInstallationId: installation,
-      appOrigin: origin.origin, now: () => Date.now()
+      appOrigin: origin.origin, now: () => Date.now(),
+      observe: mode === 'public-bootstrap' && process.env.INSIGNIA_PUBLIC_AUTH_TRACE === '1'
+        ? event => {
+          if (['/private/home', '/private/draft', '/api/draft'].includes(event.route))
+            console.info(JSON.stringify({ kind: 'insignia-public-auth', at: new Date().toISOString(), ...event }));
+        }
+        : undefined
     }),
     drafts: new DraftStore(), mode
   };

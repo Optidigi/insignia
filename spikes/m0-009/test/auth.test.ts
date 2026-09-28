@@ -140,4 +140,30 @@ describe('verified online identity boundary', () => {
       expect(outage.response.headers.has('X-Shopify-Retry-Invalid-Session-Request')).toBe(false);
     }
   });
+
+  it('correlates only a successful verified request with a safe public trace', async () => {
+    const h = fixture();
+    h.add('real-looking-private-token', alpha, 'allowed');
+    const observed: unknown[] = [];
+    const service = new AuthService(h.port, {
+      allowedShops: new Set([alpha]), expectedInstallationId: installationId,
+      appOrigin: 'https://app.example.test', now: () => now,
+      observe: event => observed.push(event)
+    });
+    const trace = '123e4567-e89b-42d3-a456-426614174000';
+    const valid = new Request('https://app.example.test/private/home', {
+      headers: { Authorization: 'Bearer real-looking-private-token', 'X-Insignia-Trace': trace }
+    });
+    expect((await service.authenticate(valid)).ok).toBe(true);
+    expect(observed).toEqual([{
+      traceId: trace, route: '/private/home', shopId: 'gid://shopify/Shop/1',
+      installationId, canEdit: true
+    }]);
+    expect(JSON.stringify(observed)).not.toContain('real-looking-private-token');
+    const invalid = new Request('https://app.example.test/private/home', {
+      headers: { Authorization: 'Bearer invalid', 'X-Insignia-Trace': trace }
+    });
+    expect((await service.authenticate(invalid)).ok).toBe(false);
+    expect(observed).toHaveLength(1);
+  });
 });

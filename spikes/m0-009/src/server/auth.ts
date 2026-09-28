@@ -29,6 +29,15 @@ export interface AuthConfig {
   expectedInstallationId: string;
   appOrigin: string;
   now: () => number;
+  observe?: ((event: AuthObservation) => void) | undefined;
+}
+/** Correlates a browser action after successful staff/installation authorization. */
+export interface AuthObservation {
+  traceId: string;
+  route: string;
+  shopId: string;
+  installationId: string;
+  canEdit: boolean;
 }
 export interface AuthContext {
   shop: string;
@@ -100,6 +109,13 @@ export class AuthService {
       grant.userScopes.includes(EDIT_SCOPE) && installation.grantedScopes.includes(EDIT_SCOPE);
     if (requireEdit && !canEdit)
       return { ok: false, response: safeResponse(403, 'Edit permission required') };
+    const traceId = request.headers.get('X-Insignia-Trace');
+    if (traceId && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(traceId)) {
+      try { this.config.observe?.({
+        traceId, route: new URL(request.url).pathname,
+        shopId: installation.shopId, installationId: installation.installationId, canEdit
+      }); } catch { /* Observation cannot change an authorization decision. */ }
+    }
     return { ok: true, context: {
       shop: identity.shop, staffId: identity.staffId, shopId: installation.shopId,
       installationId: installation.installationId,

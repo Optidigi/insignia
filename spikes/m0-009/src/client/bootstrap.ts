@@ -64,9 +64,11 @@ if (protectedContent) {
 
     const currentRequest = new AbortController();
     request = currentRequest;
+    const traceId = crypto.randomUUID();
+    root.dataset.authTrace = traceId;
     try {
       const response = await fetch(endpoint, {
-        headers: { Accept: 'text/html' },
+        headers: { Accept: 'text/html', 'X-Insignia-Trace': traceId },
         cache: 'no-store',
         redirect: 'error',
         signal: AbortSignal.any([currentRequest.signal, AbortSignal.timeout(10_000)]),
