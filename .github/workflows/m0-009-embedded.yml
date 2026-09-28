@@ -45,6 +45,14 @@ jobs:
         run: |
           corepack pnpm build
           corepack pnpm smoke:built
+      - name: Build new public-app configuration and test served output
+        working-directory: spikes/m0-009
+        env:
+          ASTRO_TELEMETRY_DISABLED: "1"
+          PUBLIC_SHOPIFY_API_KEY: "1443cf6d03d39edae7c101a943c5c684"
+        run: |
+          corepack pnpm build
+          corepack pnpm smoke:built
       - name: Bind result to source
         run: |
           git rev-parse HEAD

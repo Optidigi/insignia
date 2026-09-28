@@ -1,6 +1,7 @@
 import { AuthService } from './auth.ts';
 import { DraftStore } from './draft-api.ts';
 import { createShopifyAdapter } from './shopify-adapter.ts';
+import { PUBLIC_BOOTSTRAP_CLIENT_ID, PUBLIC_BOOTSTRAP_SHOP } from './public-bootstrap.ts';
 
 const LIVE_SHOP = 'insignia-staging.myshopify.com';
 const LIVE_CLIENT_ID = '942e6668fd1177524c0fc48b104b0ac3';
@@ -8,13 +9,13 @@ const LIVE_INSTALLATION = 'gid://shopify/AppInstallation/781307904158';
 const SYNTHETIC_SECRET = 'm0-009-synthetic-test-secret-only';
 const SYNTHETIC_INSTALLATION = 'gid://shopify/AppInstallation/99';
 
-interface Runtime { auth: AuthService; drafts: DraftStore; mode: 'live' | 'synthetic' }
+interface Runtime { auth: AuthService; drafts: DraftStore; mode: 'live' | 'synthetic' | 'public-bootstrap' }
 let cached: Runtime | undefined;
 
 export function getRuntime(): Runtime {
   if (cached) return cached;
   const mode = process.env.INSIGNIA_M0_009_MODE;
-  if (mode !== 'live' && mode !== 'synthetic') throw new Error('M0-009 mode unavailable');
+  if (mode !== 'live' && mode !== 'synthetic' && mode !== 'public-bootstrap') throw new Error('M0-009 mode unavailable');
   const originValue = process.env.INSIGNIA_APP_ORIGIN ?? process.env.SHOPIFY_APP_URL;
   if (!originValue) throw new Error('M0-009 app origin unavailable');
   const origin = new URL(originValue);
@@ -29,11 +30,16 @@ export function getRuntime(): Runtime {
 
   const apiKey = synthetic ? 'synthetic-key' : process.env.SHOPIFY_API_KEY;
   const apiSecret = synthetic ? SYNTHETIC_SECRET : process.env.SHOPIFY_API_SECRET;
-  if (!apiKey || !apiSecret || (!synthetic && apiKey !== LIVE_CLIENT_ID))
+  const expectedClient = mode === 'public-bootstrap' ? PUBLIC_BOOTSTRAP_CLIENT_ID : LIVE_CLIENT_ID;
+  if (!apiKey || !apiSecret || (!synthetic && apiKey !== expectedClient))
     throw new Error('M0-009 app credentials unavailable');
   const allowedShops = new Set(synthetic
-    ? ['alpha.myshopify.com', 'beta.myshopify.com'] : [LIVE_SHOP]);
-  const installation = synthetic ? SYNTHETIC_INSTALLATION : LIVE_INSTALLATION;
+    ? ['alpha.myshopify.com', 'beta.myshopify.com']
+    : [mode === 'public-bootstrap' ? PUBLIC_BOOTSTRAP_SHOP : LIVE_SHOP]);
+  const installation = synthetic ? SYNTHETIC_INSTALLATION
+    : mode === 'public-bootstrap' ? process.env.INSIGNIA_PUBLIC_INSTALLATION_ID : LIVE_INSTALLATION;
+  if (!installation || !/^gid:\/\/shopify\/AppInstallation\/[1-9][0-9]*$/.test(installation))
+    throw new Error('M0-009 installation binding unavailable');
   const port = createShopifyAdapter({
     apiKey, apiSecret, hostName: origin.host, allowedShops,
     synthetic, expectedInstallationId: installation
