@@ -1,0 +1,22 @@
+{
+  "reviewed_pr": 21,
+  "base": "911818301cc96d98f0b612259d1ba98dec8b9df4",
+  "head": "668772c2a9f1e05f36e6a2746d878ad2191a19a1",
+  "tree": "e07bae089155181b0f6c4840ea200d389156061c",
+  "synthetic_merge": "515132ec23d794afecd71a2baaee482ab3b1deae",
+  "synthetic_merge_parents": [
+    "911818301cc96d98f0b612259d1ba98dec8b9df4",
+    "668772c2a9f1e05f36e6a2746d878ad2191a19a1"
+  ],
+  "synthetic_merge_tree": "e07bae089155181b0f6c4840ea200d389156061c",
+  "foundation_run": 36568707934,
+  "artifact_id": 11032673795,
+  "artifact_zip_sha256": "273fbbe7d615e5ec50107addb402975bfeb83aaa22a576f7e7c9be937c39d348",
+  "artifact_files_in_zip_verified": 14,
+  "finding": {
+    "file": "packages/domain/src/pricing/evaluate.ts",
+    "current": "checkedMinor(baseMinor + unit.minor) before setup allocation",
+    "required": "signed intermediate; checked nonnegative final bucket after setup allocation"
+  },
+  "native_github_review": "HTTP 403; not posted"
+}
