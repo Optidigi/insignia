@@ -1,0 +1,40 @@
+{
+  "pr": 22,
+  "base": "3feb3e5563bc4bd07f60a0b299aefb99ce37ff37",
+  "approved_head": "403b589b8d4e76c3b10d34206de43207d6fbd2a4",
+  "approved_tree": "bcfa1e98ef1b7bcd68f997570ecc90af2ef512a8",
+  "synthetic_merge": "8ed3f732d381aca1b33a5fc5eed391a617311b96",
+  "synthetic_parents": [
+    "3feb3e5563bc4bd07f60a0b299aefb99ce37ff37",
+    "403b589b8d4e76c3b10d34206de43207d6fbd2a4"
+  ],
+  "synthetic_tree": "bcfa1e98ef1b7bcd68f997570ecc90af2ef512a8",
+  "workflow_runs": [
+    36604621975,
+    36604622097,
+    36604622112,
+    36604622038,
+    36604622007,
+    36604622049,
+    36604622173,
+    36604622095,
+    36604621981
+  ],
+  "postgres_ci": {
+    "version": "18.6",
+    "tests": "25/25",
+    "migration": "empty -> up -> repeated no-op -> down -> up passed"
+  },
+  "boundary_ci": {
+    "real_modules": 49,
+    "negative_source_fixtures": 16,
+    "database_api_compiler_rejections": 14,
+    "runtime_deep_import_rejections": 4,
+    "safe_root_import": "resolved + compile + runtime pass"
+  },
+  "foundation_artifact": {
+    "id": 11050253962,
+    "digest": "sha256:4ee20ffcefdb698930acc909cb3b0201a9adfc3fa3270cad0f382796699c0904"
+  },
+  "native_github_review": "HTTP 403; not posted"
+}

@@ -12,6 +12,7 @@ type Json = ColumnType<unknown, unknown, unknown>;
 export interface ShopsTable {
   shop_id: string;
   shop_domain: string;
+  shopify_shop_id: string | null;
   current_generation: GeneratedBigint;
   created_at: GeneratedTimestamp;
   updated_at: GeneratedTimestamp;
@@ -106,6 +107,37 @@ export interface InboxMessagesTable {
   erasure_state: Generated<'retained' | 'pending' | 'erased'>;
 }
 
+export interface ShopifyWebhookDeliveriesTable {
+  inbox_id: string;
+  shop_domain: string;
+  delivery_id: string;
+  topic: string;
+  api_version: string;
+  triggered_at: Timestamp;
+  event_id: string | null;
+  webhook_name: string | null;
+}
+
+export type CredentialState = 'active' | 'refresh-in-progress' | 'reauth-required' | 'revoked';
+
+export interface ShopCredentialsTable {
+  shop_id: string;
+  installation_generation: Bigint;
+  schema_version: Generated<number>;
+  credential_version: GeneratedBigint;
+  state: CredentialState;
+  access_expires_at: Timestamp;
+  refresh_expires_at: Timestamp;
+  scopes: string | null;
+  wrapping_key_id: string;
+  access_envelope: Json | null;
+  refresh_envelope: Json | null;
+  refresh_claim_id: string | null;
+  refresh_claim_until: NullableTimestamp;
+  created_at: GeneratedTimestamp;
+  updated_at: GeneratedTimestamp;
+}
+
 export interface OutboxEventsTable {
   id: string;
   shop_id: string;
@@ -137,6 +169,8 @@ export interface Database {
   publication_operations: PublicationOperationsTable;
   idempotency_records: IdempotencyRecordsTable;
   inbox_messages: InboxMessagesTable;
+  shopify_webhook_deliveries: ShopifyWebhookDeliveriesTable;
+  shop_credentials: ShopCredentialsTable;
   outbox_events: OutboxEventsTable;
 }
 

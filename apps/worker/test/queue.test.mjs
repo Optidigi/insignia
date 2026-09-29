@@ -33,6 +33,12 @@ function fakeBoss() {
       const job = jobs.get(options.id);
       return job?.name === name ? [job] : [];
     },
+    async retry(name, id) {
+      calls.push(['retry', name, id]);
+      const job = jobs.get(id);
+      if (job?.name === name && job.state === 'failed') job.state = 'retry';
+      return { affected: job?.state === 'retry' ? 1 : 0 };
+    },
     async work(name, options, handler) {
       calls.push(['work', name, options]);
       workers.set(name, handler);
@@ -82,7 +88,11 @@ test('null send without same persisted job is retryable, never an acknowledgemen
     inboxId: '01234567-89ab-4cde-8123-456789abcdef',
   };
   boss.jobs.get('01234567-89ab-4cde-8123-456789abcdef').state = 'failed';
-  await assert.rejects(queue.ensureWebhookEnqueued('01234567-89ab-4cde-8123-456789abcdef'), /not eligible/);
+  assert.deepEqual(await queue.ensureWebhookEnqueued('01234567-89ab-4cde-8123-456789abcdef'), {
+    inboxId: '01234567-89ab-4cde-8123-456789abcdef',
+    status: 'enqueued',
+  });
+  assert.equal(boss.jobs.get('01234567-89ab-4cde-8123-456789abcdef').state, 'retry');
 });
 
 test('workers pass IDs only to injected durable handlers; failed attempt retries safely', async () => {

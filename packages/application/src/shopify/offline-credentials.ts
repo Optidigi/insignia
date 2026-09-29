@@ -40,7 +40,12 @@ export interface OfflineCredentialLifecyclePort {
     credentialVersion: string;
     pair: ExpiringOfflineTokenPair;
   }): Promise<'replaced' | 'stale' | 'inactive'>;
-  releaseClaim(input: { shopId: string; installationGeneration: string; claimId: string }): Promise<void>;
+  releaseClaim(input: {
+    shopId: string;
+    installationGeneration: string;
+    claimId: string;
+    credentialVersion: string;
+  }): Promise<void>;
   markReauthRequired(input: {
     shopId: string;
     installationGeneration: string;

@@ -7,7 +7,10 @@ export const REFRESH_QUEUE = 'insignia.token-refresh.v1';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const RETRY_LIMIT = 5;
-type Boss = Pick<PgBoss, 'start' | 'stop' | 'createQueue' | 'send' | 'findJobs' | 'work' | 'offWork' | 'schemaVersion'>;
+type Boss = Pick<
+  PgBoss,
+  'start' | 'stop' | 'createQueue' | 'send' | 'findJobs' | 'retry' | 'work' | 'offWork' | 'schemaVersion'
+>;
 
 export interface JobContext {
   jobId: string;
@@ -17,7 +20,7 @@ export interface JobContext {
 
 export interface WorkerHandlers {
   /** Must commit business mutation and inbox processed marker in one durable transaction. */
-  processInbox(inboxId: string, context: JobContext): Promise<void>;
+  processInbox(inboxId: string, context: JobContext): Promise<undefined | 'deferred'>;
   /** Must durably mark terminal reauthorization before returning reauth_required. */
   refreshCredential(
     shopId: string,
@@ -36,6 +39,18 @@ export interface PgBossRuntimeOptions {
   credentialKeysReady?: boolean;
 }
 
+export interface PgBossRuntime {
+  start(): Promise<void>;
+  ensureWebhookEnqueued(inboxId: string): Promise<{ inboxId: string; status: 'enqueued' | 'already_enqueued' }>;
+  enqueueRefresh(shopId: string, installationGeneration: number): Promise<string>;
+  work(handlers: WorkerHandlers): Promise<void>;
+  stop(): Promise<void>;
+  schemaVersion(): ReturnType<Boss['schemaVersion']>;
+  checkDurableReady(): Promise<boolean>;
+  readonly durableReady: boolean;
+  readonly observability: Observability;
+}
+
 function assertUuid(value: string, label: string): void {
   if (typeof value !== 'string' || !UUID.test(value)) throw new Error(`Invalid ${label}`);
 }
@@ -52,7 +67,7 @@ function assertJobPayload(data: unknown, allowed: readonly string[]): asserts da
 }
 
 /** pg-boss owns its schema. Application dbmate migrations must never edit it. */
-export function createPgBossRuntime(options: PgBossRuntimeOptions) {
+export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntime {
   if (!options.boss && !options.connectionString) throw new Error('Missing worker database connection');
   const boss =
     options.boss ?? new PgBoss({ connectionString: options.connectionString, schema: options.schema ?? 'pgboss' });
@@ -117,9 +132,21 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions) {
     const job = existing[0];
     assertJobPayload(job.data, ['inboxId']);
     if (job.name !== WEBHOOK_QUEUE || job.data.inboxId !== inboxId) throw new Error('Queue job identity mismatch');
+    if (job.state === 'failed') {
+      await boss.retry(WEBHOOK_QUEUE, inboxId);
+      const retried = await boss.findJobs<{ inboxId: string }>(WEBHOOK_QUEUE, { id: inboxId });
+      if (
+        retried.length !== 1 ||
+        retried[0]?.id !== inboxId ||
+        retried[0]?.state !== 'retry' ||
+        retried[0]?.data.inboxId !== inboxId
+      )
+        throw new Error('Failed webhook job was not safely retried');
+      observability.metrics.queue('retry');
+      return { inboxId, status: 'enqueued' };
+    }
     if (!['created', 'retry', 'active', 'completed'].includes(job.state))
       throw new Error('Queue job is not eligible for acknowledged handoff');
-    observability.metrics.webhook('duplicate');
     return { inboxId, status: 'already_enqueued' };
   }
 
@@ -149,8 +176,12 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions) {
           assertJobPayload(job.data, ['inboxId']);
           if (job.data.inboxId !== job.id) throw new Error('Queue job identity mismatch');
           if (job.signal.aborted) throw new Error('Queue job attempt expired');
-          await handlers.processInbox(job.id, { jobId: job.id, attempt: job.retryCount, signal: job.signal });
-          observability.metrics.inbox('success');
+          const outcome = await handlers.processInbox(job.id, {
+            jobId: job.id,
+            attempt: job.retryCount,
+            signal: job.signal,
+          });
+          observability.metrics.inbox(outcome === 'deferred' ? 'deferred' : 'success');
           observability.logger.info('webhook_process_ok', { inboxId: job.id, attempt: job.retryCount });
         } catch (error) {
           observability.metrics.inbox('failure');
@@ -251,5 +282,3 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions) {
     observability,
   };
 }
-
-export type PgBossRuntime = ReturnType<typeof createPgBossRuntime>;

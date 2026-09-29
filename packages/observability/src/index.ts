@@ -58,7 +58,7 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
 }
 
 export type WebhookOutcome = 'received' | 'duplicate' | 'rejected' | 'enqueue_failure';
-export type InboxOutcome = 'success' | 'failure';
+export type InboxOutcome = 'success' | 'failure' | 'deferred';
 export type QueueOutcome = 'retry' | 'failure';
 export type RefreshOutcome = 'success' | 'transient' | 'reauth_required';
 export type ResolutionOutcome = 'resolved' | 'unresolved' | 'failed';
@@ -133,8 +133,8 @@ export function createObservability(options: { stream?: Writable; level?: 'debug
     registers: [registry],
   });
   const resolution = new Counter({
-    name: 'insignia_inbox_resolution_total',
-    help: 'Unresolved inbox resolution outcomes',
+    name: 'insignia_inbox_ingress_resolution_total',
+    help: 'Inbox resolution observed after accepted ingress',
     labelNames: ['outcome'],
     registers: [registry],
   });
@@ -149,7 +149,7 @@ export function createObservability(options: { stream?: Writable; level?: 'debug
       webhook.labels(checkedOutcome(['received', 'duplicate', 'rejected', 'enqueue_failure'], outcome)).inc();
     },
     inbox(outcome: InboxOutcome) {
-      inbox.labels(checkedOutcome(['success', 'failure'], outcome)).inc();
+      inbox.labels(checkedOutcome(['success', 'failure', 'deferred'], outcome)).inc();
     },
     queue(outcome: QueueOutcome) {
       queue.labels(checkedOutcome(['retry', 'failure'], outcome)).inc();

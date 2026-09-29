@@ -1,4 +1,5 @@
 /** This shape is produced only after raw-body HMAC verification by the Shopify adapter. */
+/** Only rawBody is authenticated by Shopify's HMAC; headers are routing hints. */
 export type VerifiedShopifyDelivery = {
   shopDomain: string;
   topic: string;

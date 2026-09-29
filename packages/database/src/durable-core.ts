@@ -2,10 +2,24 @@ import type { CommandRepository, InboxRepository, OutboxRepository, TransactionR
 import type { Transaction } from 'kysely';
 import type { Pool } from 'pg';
 import { createDatabase, type Database } from './client/database.js';
+import type { CredentialKeyRing } from './credentials/envelope.js';
 import { PgCommandRepository } from './repositories/command/pg-command-repository.js';
 import { type ConfigRecord, createConfigRepository, type RevisionRecord } from './repositories/config.js';
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
+import {
+  type ClaimIdentity,
+  type CredentialAcquire,
+  type CredentialIdentity,
+  createShopCredentialRepository,
+  type ExpiringOfflinePair,
+} from './repositories/shop-credentials.js';
+import {
+  createShopifyWebhookRepository,
+  type ShopifyWebhookReceipt,
+  type ShopifyWebhookState,
+  type VerifiedShopifyDelivery,
+} from './repositories/shopify-webhooks.js';
 import { createTenantRepository, type ShopRecord } from './repositories/tenant.js';
 
 const transactionBrand: unique symbol = Symbol('insignia durable transaction');
@@ -52,19 +66,55 @@ export interface DurableCore {
     getShop(shopId: string): Promise<ShopRecord | null>;
     createShop(
       transaction: DurableTransaction,
-      input: { shopId: string; shopDomain: string; externalInstallationId?: string },
+      input: { shopId: string; shopDomain: string; shopifyShopId?: string; externalInstallationId?: string },
     ): Promise<ShopRecord>;
     startInstallation(
       transaction: DurableTransaction,
       shopId: string,
       externalInstallationId?: string,
     ): Promise<string>;
+    deactivateCurrent(
+      transaction: DurableTransaction,
+      shopId: string,
+      expectedGeneration: string,
+    ): Promise<'deactivated' | 'already_inactive' | 'stale'>;
+  };
+  readonly webhooks: {
+    unresolvedBacklogCount(): Promise<number>;
+    pendingUninstallIds(limit: number): Promise<string[]>;
+    receive(input: VerifiedShopifyDelivery): Promise<ShopifyWebhookReceipt>;
+    getById(id: string): Promise<ShopifyWebhookState | null>;
+    processUninstall(id: string): Promise<'unverified' | 'already_processed' | 'unresolved' | 'stale' | 'not_found'>;
+  };
+  readonly credentials: {
+    install(input: CredentialIdentity & { pair: ExpiringOfflinePair }): Promise<string>;
+    acquire(
+      input: CredentialIdentity & { minimumRemainingMs: number; claimLeaseMs: number },
+    ): Promise<CredentialAcquire>;
+    replaceClaim(input: ClaimIdentity & { pair: ExpiringOfflinePair }): Promise<'replaced' | 'stale' | 'inactive'>;
+    releaseClaim(input: ClaimIdentity): Promise<boolean>;
+    markReauthRequired(input: ClaimIdentity): Promise<boolean>;
+    metadata(input: CredentialIdentity): Promise<
+      | {
+          shop_id: string;
+          installation_generation: string;
+          schema_version: number;
+          credential_version: string;
+          state: 'active' | 'refresh-in-progress' | 'reauth-required' | 'revoked';
+          access_expires_at: Date;
+          refresh_expires_at: Date;
+          scopes: string | null;
+          wrapping_key_id: string;
+          refresh_claim_until: Date | null;
+        }
+      | undefined
+    >;
   };
   close(): Promise<void>;
 }
 
 /** The caller supplies a dedicated pool; no raw database or executor escapes. */
-export function createDurableCore(pool: Pool): DurableCore {
+export function createDurableCore(pool: Pool, options: { credentialKeys?: CredentialKeyRing } = {}): DurableCore {
   const database = createDatabase(pool);
   const active = new WeakMap<DurableTransaction, Transaction<Database>>();
   const resolve = (handle: DurableTransaction): Transaction<Database> => {
@@ -77,6 +127,8 @@ export function createDurableCore(pool: Pool): DurableCore {
   const outbox = new PgOutboxRepository(database);
   const configs = createConfigRepository(database);
   const tenants = createTenantRepository(database);
+  const webhooks = createShopifyWebhookRepository(database);
+  const credentials = createShopCredentialRepository(database, options.credentialKeys);
   return {
     transactions: {
       run: (work) =>
@@ -120,7 +172,11 @@ export function createDurableCore(pool: Pool): DurableCore {
       createShop: async (handle, input) => tenants.createShop(resolve(handle), input),
       startInstallation: async (handle, shopId, externalId) =>
         tenants.startInstallation(resolve(handle), shopId, externalId),
+      deactivateCurrent: async (handle, shopId, generation) =>
+        tenants.deactivateCurrent(resolve(handle), shopId, generation),
     },
+    webhooks,
+    credentials,
     close: () => database.destroy(),
   };
 }

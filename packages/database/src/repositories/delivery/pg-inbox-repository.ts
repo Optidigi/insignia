@@ -60,9 +60,14 @@ export class PgInboxRepository implements InboxRepository<Transaction<Database>>
   ): Promise<InboxLockedMessage | null> {
     const shop = await transaction
       .selectFrom('shops')
-      .select('current_generation')
-      .where('shop_id', '=', shopId)
-      .forNoKeyUpdate()
+      .innerJoin('installation_generations as generation', (join) =>
+        join
+          .onRef('generation.shop_id', '=', 'shops.shop_id')
+          .onRef('generation.generation', '=', 'shops.current_generation'),
+      )
+      .select(['shops.current_generation', 'generation.deactivated_at'])
+      .where('shops.shop_id', '=', shopId)
+      .forNoKeyUpdate('shops')
       .executeTakeFirst();
     if (!shop) return null;
     const row = await transaction
@@ -74,6 +79,7 @@ export class PgInboxRepository implements InboxRepository<Transaction<Database>>
       .executeTakeFirst();
     if (!row) return null;
     if (row.installation_generation !== null && row.installation_generation !== shop.current_generation) return null;
+    if (row.installation_generation !== null && shop.deactivated_at !== null) return null;
     return {
       id: row.id,
       source: row.source,

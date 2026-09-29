@@ -3,7 +3,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto';
 /** Matches the durable inbox payload bound. The HTTP reader must enforce it while streaming too. */
 export const MAX_SHOPIFY_WEBHOOK_BODY_BYTES = 8 * 1024 * 1024;
 
-export type TrustedShopifyWebhook = {
+export type BodyVerifiedShopifyWebhook = {
   shopDomain: string;
   topic: string;
   apiVersion: string;
@@ -64,12 +64,12 @@ export function normalizeShopifyDomain(value: string): string {
   return normalized;
 }
 
-/** Authenticate exact raw bytes before returning any routing metadata as trusted. */
+/** Authenticate exact raw bytes; Shopify's routing headers are not covered by this HMAC. */
 export function verifyShopifyWebhook(
   rawBody: Uint8Array,
   inputHeaders: HeaderInput,
   clientSecretRing: readonly string[],
-): TrustedShopifyWebhook {
+): BodyVerifiedShopifyWebhook {
   if (
     !(rawBody instanceof Uint8Array) ||
     rawBody.byteLength > MAX_SHOPIFY_WEBHOOK_BODY_BYTES ||

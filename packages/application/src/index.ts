@@ -3,5 +3,4 @@ export * from './delivery/outbox.js';
 export * from './idempotency/command.js';
 export * from './shopify/ingress.js';
 export * from './shopify/offline-credentials.js';
-export * from './shopify/uninstall.js';
 export * from './transactions/transaction.js';
