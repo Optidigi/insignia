@@ -10,6 +10,6 @@
     "diagnostic": "node dist/main.js --diagnostic",
     "start": "node dist/main.js"
   },
-  "dependencies": { "sharp": "0.35.4" },
+  "dependencies": { "@insignia/observability": "workspace:*", "pg-boss": "12.35.0", "sharp": "0.35.4" },
   "devDependencies": { "@insignia/database": "workspace:*", "@types/node": "24.10.0", "typescript": "5.9.3" }
 }
