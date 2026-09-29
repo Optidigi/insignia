@@ -241,6 +241,9 @@ importers:
         specifier: 0.35.4
         version: 0.35.4(@types/node@24.10.0)
     devDependencies:
+      '@insignia/database':
+        specifier: workspace:*
+        version: link:../../packages/database
       '@types/node':
         specifier: 24.10.0
         version: 24.10.0

@@ -14,7 +14,18 @@ try {
     ['raw table map', ["import type { Database } from '@insignia/database';", 2305]],
     ['raw executor', ["import type { DatabaseExecutor } from '@insignia/database';", 2305]],
     ['raw runner', ["import { PgTransactionRunner } from '@insignia/database';", 2305]],
+    ['publication root export', ["import { stagePublicationIntent } from '@insignia/database';", 2305]],
     ['deep source', ["import { createDatabase } from '@insignia/database/src/client/database';", 2307]],
+    ['deep built output', ["import { createDatabase } from '@insignia/database/dist/client/database.js';", 2307]],
+    ['deep source root', ["import { createDurableCore } from '@insignia/database/src/index.js';", 2307]],
+    ['deep built root', ["import { createDurableCore } from '@insignia/database/dist/index.js';", 2307]],
+    [
+      'public publication facade',
+      [
+        "import { createDurableCore } from '@insignia/database'; declare const core: ReturnType<typeof createDurableCore>; core.publication;",
+        2339,
+      ],
+    ],
     [
       'callback insert',
       [
@@ -55,17 +66,23 @@ try {
       `${name} must fail for precisely the intended API reason: ${diagnostics.map((diagnostic) => ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n')).join('; ')}`,
     );
   }
-  const deepRuntime = spawnSync(
-    process.execPath,
-    ['--input-type=module', '-e', "import '@insignia/database/src/client/database'"],
-    {
+  const deepImports = [
+    '@insignia/database/src/client/database',
+    '@insignia/database/dist/client/database.js',
+    '@insignia/database/src/index.js',
+    '@insignia/database/dist/index.js',
+  ];
+  for (const specifier of deepImports) {
+    const result = spawnSync(process.execPath, ['--input-type=module', '-e', `import '${specifier}'`], {
       cwd: databasePackage,
       encoding: 'utf8',
-    },
+    });
+    assert.notEqual(result.status, 0, `${specifier} must not be importable`);
+    assert.match(result.stderr, /ERR_PACKAGE_PATH_NOT_EXPORTED/);
+  }
+  console.log(
+    `Database public API rejects ${probes.size} compiler probes and ${deepImports.length} runtime deep imports.`,
   );
-  assert.notEqual(deepRuntime.status, 0);
-  assert.match(deepRuntime.stderr, /ERR_PACKAGE_PATH_NOT_EXPORTED/);
-  console.log(`Database public API rejects ${probes.size} compiler probes and one runtime deep import.`);
 } finally {
   rmSync(temp, { recursive: true, force: true });
 }

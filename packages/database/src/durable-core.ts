@@ -6,8 +6,6 @@ import { PgCommandRepository } from './repositories/command/pg-command-repositor
 import { type ConfigRecord, createConfigRepository, type RevisionRecord } from './repositories/config.js';
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
-import type { PublicationOperation } from './repositories/publication.js';
-import { stagePublicationIntent } from './repositories/publication-intent.js';
 import { createTenantRepository, type ShopRecord } from './repositories/tenant.js';
 
 const transactionBrand: unique symbol = Symbol('insignia durable transaction');
@@ -61,21 +59,6 @@ export interface DurableCore {
       shopId: string,
       externalInstallationId?: string,
     ): Promise<string>;
-  };
-  /** Atomic publication intent has no executor parameter. */
-  readonly publication: {
-    stageIntent(input: {
-      shopId: string;
-      configId: string;
-      expectedDraftVersion: string;
-      revisionId: string;
-      operationId: string;
-      installationGeneration: string;
-      publishedValue: unknown;
-      expectedProjection: unknown;
-      occurredAt: Date;
-      purgeAfter: Date;
-    }): Promise<{ revision: RevisionRecord; operation: PublicationOperation; outboxEventId: string }>;
   };
   close(): Promise<void>;
 }
@@ -138,7 +121,6 @@ export function createDurableCore(pool: Pool): DurableCore {
       startInstallation: async (handle, shopId, externalId) =>
         tenants.startInstallation(resolve(handle), shopId, externalId),
     },
-    publication: { stageIntent: (input) => stagePublicationIntent(database, input) },
     close: () => database.destroy(),
   };
 }

@@ -152,7 +152,43 @@ const probes = [
     "import {createDatabase} from '../../database/dist/client/database.js'; export {createDatabase};",
     'database-internals-stay-in-adapter',
   ],
+  [
+    'apps/worker/src/__boundary_probe.ts',
+    "import {createDurableCore} from '../../../packages/database/src/index.js'; export {createDurableCore};",
+    'database-root-must-use-package',
+  ],
+  [
+    'apps/worker/src/__boundary_probe.ts',
+    "import {createDurableCore} from '../../../packages/database/dist/index.js'; export {createDurableCore};",
+    'database-root-must-use-package',
+  ],
 ];
+// A real server composition package may use only the database package root.
+const serverProbe = resolve(root, 'apps/worker/src/__boundary_probe.ts');
+assert.ok(!existsSync(serverProbe), 'refusing to overwrite server boundary fixture');
+try {
+  writeFileSync(serverProbe, "import {createDurableCore} from '@insignia/database'; export {createDurableCore};");
+  const result = JSON.parse(cruise([serverProbe], 'json'));
+  const edge = result.modules.find((module) => module.source === 'apps/worker/src/__boundary_probe.ts')
+    ?.dependencies[0];
+  assert.equal(edge?.module, '@insignia/database');
+  assert.equal(edge?.couldNotResolve, false, 'server root import must resolve, not pass as an unknown package');
+  assert.match(edge.resolved, /^packages\/database\/(src|dist)\/index\.(?:ts|js|d\.ts)$/);
+  assert.equal(result.summary.error, 0, 'safe database root import must pass the normal boundary rules');
+  run('corepack', ['pnpm', '--filter', '@insignia/worker', 'exec', 'tsc', '-p', 'tsconfig.json', '--noEmit']);
+  const runtime = spawnSync(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      "import {createDurableCore} from '@insignia/database'; if(typeof createDurableCore !== 'function') process.exit(1)",
+    ],
+    { cwd: resolve(root, 'apps/worker'), encoding: 'utf8' },
+  );
+  assert.equal(runtime.status, 0, `server runtime root import failed: ${runtime.stderr}`);
+} finally {
+  rmSync(serverProbe, { force: true });
+}
 for (const [path, source, rule, status = 1] of probes) {
   const file = resolve(root, path);
   assert.ok(!existsSync(file), `refusing to overwrite ${path}`);
