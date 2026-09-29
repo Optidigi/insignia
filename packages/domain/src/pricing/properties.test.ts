@@ -265,5 +265,10 @@ describe('pricing invariants', () => {
     expect(priceProposal(proposal).groups[0]?.customizationUnitMinor).toBe('2');
     proposal.effectiveAt = '2026-09-29T14:00:00.000Z';
     expect(() => priceProposal(proposal)).toThrow(/FX outside/);
+    proposal.effectiveAt = '2026-02-29T12:00:00.000Z';
+    expect(() => priceProposal(proposal)).toThrow(/valid fixed-width UTC/);
+    proposal.effectiveAt = '2026-09-29T12:00:00.000Z';
+    proposal.fx.asOf = '2026-13-01T11:00:00.000Z';
+    expect(() => priceProposal(proposal)).toThrow(/FX outside/);
   });
 });
