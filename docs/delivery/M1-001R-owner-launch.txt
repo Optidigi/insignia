@@ -1,0 +1,37 @@
+I authorize the attached M1-001R correction on EXISTING Optidigi/insignia
+PR #20. The principal verdict is CHANGES_REQUESTED.
+
+Reviewed base/effective merge base:
+a467afcce5f0324a13fd3bfe647d3543eae159a4
+Reviewed head:
+87a6f7557774a31ca6813ad865f028bb79b3af2e
+
+Verify current refs/worktree and preserve legitimate newer work.
+Keep this PR open; no merge, force-push or successor PR.
+
+Close the two findings in M1-001R-BOUNDARY-AND-UI-CHECKS.md:
+1. Add executable domain-purity protection for implicit clocks,
+   randomness and ambient network/environment APIs, not only imports.
+   Use scoped syntax-aware checks and appropriate compiler isolation;
+   demonstrate prohibited probes fail through the normal command while
+   deterministic operations and current money behavior remain valid.
+2. Make the built Astro/Preact interaction require actual Polaris
+   component registration/upgrade. Add a missing/blocked-library control
+   proving CSS fallback cannot satisfy the real-component test. Retain
+   the documented Polaris pin; no Admin authentication experiment.
+
+Reproduce with pinned tools; the principal's compiler probes used
+Node 22.16.0/TypeScript 5.8.3 and were not the complete root suite.
+
+Use established sol-6-high, bounded restricted work and fresh
+Spec/security reviews. Complete ordinary corrections within this package.
+Preserve v1.3, historical artifacts and current experimental Functions.
+
+Local source/tests, public dependencies/docs, localhost browser tests,
+CI and updates to this PR are authorized. No authenticated Shopify/provider
+calls, secret-file reads, previews, deployments, commerce, billing,
+credential/host-security changes or legacy actions.
+
+Return updated PR #20 with R1/R2 closure and final-head CI.
+Stop for principal review. M1 entry remains valid; M2 and merge are not
+authorized. No new preflight, platform spike or owner-side setup is needed.
