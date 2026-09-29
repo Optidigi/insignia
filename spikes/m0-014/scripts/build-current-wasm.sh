@@ -10,7 +10,6 @@ case "$mode" in record|verify) ;; *) exit 2 ;; esac
 
 cargo="${M0_014_CARGO:-cargo}"
 trampoline="$repo/spikes/m0-005/node_modules/.pnpm/@shopify+cli@4.8.2/node_modules/@shopify/cli/bin/shopify-function-trampoline-2.0.1"
-test -x "$trampoline"
 
 # A per-checkout Cargo build changes binary metadata even when path strings are
 # remapped. Build from one fixed scratch path and serialize its shared use.
@@ -19,6 +18,19 @@ build_root=/tmp/insignia-m0-014r-fixed-build
 mkdir -p "$build_root/spikes/m0-014/rust"
 exec 9>"$build_root/.build.lock"
 flock -x 9
+if [[ ! -x "$trampoline" ]]; then
+  # A clean pnpm install leaves CLI's lazy native download absent. Fetch the
+  # exact CLI 4.8.2 trampoline release and verify its executable bytes before
+  # source build or upload; Shopify CLI later uses this same path.
+  tmp_gz="$build_root/trampoline-2.0.1.gz"
+  tmp_bin="$build_root/trampoline-2.0.1"
+  curl -fLsS 'https://github.com/Shopify/shopify-function-wasm-api/releases/download/shopify_function_trampoline/v2.0.1/shopify-function-trampoline-x86_64-linux-v2.0.1.gz' -o "$tmp_gz"
+  gzip -dc "$tmp_gz" > "$tmp_bin"
+  echo "1b9e07e930353a21282820362e6d0fb475766f773d6ad27b79f295b9a628248c  $tmp_bin" | sha256sum -c -
+  install -m 0755 "$tmp_bin" "$trampoline"
+  rm -f "$tmp_gz" "$tmp_bin"
+fi
+echo "1b9e07e930353a21282820362e6d0fb475766f773d6ad27b79f295b9a628248c  $trampoline" | sha256sum -c -
 rsync -a --delete --exclude='target/' "$repo/spikes/m0-014/rust/" "$build_root/spikes/m0-014/rust/"
 unset CARGO_TARGET_DIR
 cargo_home="${CARGO_HOME:-$HOME/.cargo}"

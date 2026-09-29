@@ -15,7 +15,7 @@
     "rust/validation/schema.graphql": "4a782ed2a026b1f62a3c3466e0d9ddcc6b2e77e62a38feddfc524249fcf026f4",
     "rust/transform/shopify.extension.toml": "b8e093813a51bf465c74116601e9f56d218b76a974987ba879d051a2497fc525",
     "rust/validation/shopify.extension.toml": "29c4ced7482d3a1770e3ce71ca2bcc3f21f60e1bb91210a5a160184ea659daf8",
-    "scripts/build-current-wasm.sh": "b77720bcc49d7dbe1b1099f856de792bda0ba91fba90e22d8123939bd23dd9a4"
+    "scripts/build-current-wasm.sh": "df69ec2cff74851a9594ceca96cbe0d8671ed1d437894e646b13b720d182c43c"
   },
   "artifacts": {
     "transform": {

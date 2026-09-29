@@ -162,7 +162,7 @@
   "finalLocalCheck": {
     "command": "bash spikes/m0-014/scripts/check-local.sh with pinned project-local Rust 1.98.1, Node 24.21.0 and linker PATH",
     "exitCode": 0,
-    "ownerOnlyLogSha256": "c04191a9ab0bf09610e500bbb97ffffee772430e06bcbb905c36b865de69030b",
+    "ownerOnlyLogSha256": "200ef8769ac7f4e8c2b1d896145e744dc2e258fb96d2ecbcba51d4c56007f21d",
     "currentTsTests": 11,
     "currentWasmRows": 110,
     "currentCorrectedWasmRows": 109,
