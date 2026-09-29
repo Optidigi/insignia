@@ -1,0 +1,25 @@
+{
+  "name": "@insignia/web",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": { "node": "24.21.0" },
+  "scripts": {
+    "build": "astro check && astro build",
+    "test": "node --test test/*.test.mjs",
+    "start": "node dist/server/entry.mjs"
+  },
+  "dependencies": {
+    "@astrojs/node": "11.1.6",
+    "@astrojs/preact": "6.0.5",
+    "astro": "7.3.5",
+    "preact": "10.29.8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.6",
+    "@shopify/polaris-types": "1.1.0",
+    "@types/node": "24.10.0",
+    "playwright": "1.63.0",
+    "typescript": "5.9.3"
+  }
+}

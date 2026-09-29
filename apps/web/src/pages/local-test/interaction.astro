@@ -1,0 +1,24 @@
+---
+import LocalInteraction from '../../islands/LocalInteraction';
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>Local UI interaction test</title>
+    <script is:inline src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
+    <style is:global>
+      /* The local harness has no Admin host to upgrade Polaris elements. */
+      s-button { display: inline-block; padding: .5rem .75rem; border: 1px solid currentColor; cursor: pointer; }
+      output { display: block; margin-top: .5rem; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>Local UI interaction test</h1>
+      <p>Static test data only. No merchant identity or commands are available.</p>
+      <LocalInteraction client:load />
+    </main>
+  </body>
+</html>

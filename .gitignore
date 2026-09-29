@@ -24,3 +24,18 @@ spikes/m0-011/.local-run/
 # M0-012 dependencies and operator-owned run state
 spikes/m0-012/node_modules/
 spikes/m0-012/.local-run/
+
+# M1 workspace outputs; archived spike lockfiles remain tracked independently.
+node_modules/
+.pnpm-store/
+apps/*/dist/
+packages/*/dist/
+apps/*/.astro/
+apps/*/playwright-report/
+apps/*/test-results/
+extensions/insignia-theme/assets/insignia-storefront.js
+crates/*/target/
+target/
+extensions/insignia-cart-*/target/
+scripts/m1-functions/__pycache__/
+.m1-artifacts/

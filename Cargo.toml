@@ -1,0 +1,12 @@
+[workspace]
+members = [
+  "crates/cart-authorization",
+  "crates/cart-transform",
+  "crates/cart-validation",
+]
+resolver = "2"
+
+[profile.release]
+lto = true
+opt-level = 3
+strip = true

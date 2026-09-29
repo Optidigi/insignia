@@ -1,0 +1,8 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+allowBuilds:
+  esbuild: true
+
+# Archived spikes intentionally keep their own independent lockfiles.

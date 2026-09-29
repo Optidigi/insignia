@@ -1,0 +1,22 @@
+{
+  "name": "insignia-rewrite",
+  "private": true,
+  "version": "0.0.1",
+  "packageManager": "pnpm@12.6.0",
+  "engines": { "node": "24.21.0" },
+  "scripts": {
+    "build": "corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build",
+    "test:unit": "corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/worker test",
+    "test:browser": "corepack pnpm --filter @insignia/web test && corepack pnpm --filter @insignia/storefront test",
+    "check:boundaries": "node scripts/boundaries/check.mjs",
+    "check:secrets": "node scripts/boundaries/check-secrets.mjs",
+    "check:rust": "bash scripts/m1-functions/check.sh",
+    "check": "corepack pnpm build && corepack pnpm test:unit && corepack pnpm check:boundaries && corepack pnpm check:secrets && corepack pnpm check:rust && corepack pnpm test:browser && python3 -B spikes/m0-007/scripts/check-history.py && python3 -B spikes/m0-014/scripts/check-live-setup.py && python3 -B scripts/m1-functions/artifact-manifest.py"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.0",
+    "dependency-cruiser": "18.4.0",
+    "esbuild": "0.25.12",
+    "typescript": "5.9.3"
+  }
+}

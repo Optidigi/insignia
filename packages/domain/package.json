@@ -1,0 +1,21 @@
+{
+  "name": "@insignia/domain",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/money.d.ts",
+      "default": "./dist/money.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "5.0.2"
+  }
+}
