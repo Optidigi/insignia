@@ -169,9 +169,9 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
         .forUpdate()
         .executeTakeFirst();
       if (!row) return 'not_owned';
-      if (row.state === 'delivered') return 'already_delivered';
       if (row.installation_generation !== null && row.installation_generation !== shop.current_generation)
         return 'not_owned';
+      if (row.state === 'delivered') return 'already_delivered';
       if (row.state !== 'leased' || row.lease_owner !== leaseOwner || row.attempts !== expectedAttempt)
         return 'not_owned';
       const updated = await transaction
