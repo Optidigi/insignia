@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { InboxPayloadConflictError, newOutboxEvent, processInbox, receiveInbox } from '@insignia/application';
 import { sql } from 'kysely';
 import { describe, expect, it } from 'vitest';
+import { CONFIG_DRAFT_STORAGE_VERSION } from '../../src/repositories/config.js';
 import { PgInboxRepository } from '../../src/repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from '../../src/repositories/delivery/pg-outbox-repository.js';
 import { PgTransactionRunner } from '../../src/repositories/delivery/pg-transaction-runner.js';
@@ -158,6 +159,28 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
     }
   });
 
+  it('uses database time to decide whether an event is available', async () => {
+    const database = await openTestDatabase();
+    try {
+      const { shopId } = await createTestShop(database);
+      const outbox = new PgOutboxRepository(database);
+      const candidate = { ...event(shopId, randomUUID()), availableAt: new Date(Date.now() + 60_000) };
+      await new PgTransactionRunner(database).run((transaction) => outbox.add(transaction, candidate));
+      const claimedFuture = new Date(Date.now() + 120_000);
+      expect(
+        await outbox.claim(shopId, claimedFuture, randomUUID(), new Date(claimedFuture.getTime() + 30_000), 1),
+      ).toEqual([]);
+      await sql`update outbox_events set available_at = clock_timestamp() - interval '1 second' where id = ${candidate.id}`.execute(
+        database,
+      );
+      expect(
+        (await outbox.claim(shopId, new Date(), randomUUID(), new Date(Date.now() + 30_000), 1)).map((row) => row.id),
+      ).toEqual([candidate.id]);
+    } finally {
+      await database.destroy();
+    }
+  });
+
   it('fences installation-bound claims and acknowledgements after reinstall', async () => {
     const database = await openTestDatabase();
     try {
@@ -175,14 +198,39 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
       );
       expect(nextGeneration).toBe('2');
       expect(await outbox.acknowledge(shopId, oldEvent.id, oldOwner, 1)).toBe('not_owned');
+      const staleConfigId = randomUUID();
+      await expect(
+        transactions.run(async (transaction) => {
+          await transaction
+            .insertInto('product_configs')
+            .values({
+              shop_id: shopId,
+              config_id: staleConfigId,
+              external_product_id: staleConfigId,
+              draft_schema_version: CONFIG_DRAFT_STORAGE_VERSION,
+              draft_value: { label: 'must roll back' },
+              effective_revision_id: null,
+              effective_operation_id: null,
+            })
+            .execute();
+          await outbox.add(transaction, event(shopId, randomUUID(), generation));
+        }),
+      ).rejects.toThrow('stale installation generation');
+      expect(
+        await database
+          .selectFrom('product_configs')
+          .select('config_id')
+          .where('shop_id', '=', shopId)
+          .where('config_id', '=', staleConfigId)
+          .executeTakeFirst(),
+      ).toBeUndefined();
       const independentEvent = event(shopId, randomUUID(), null);
       const newEvent = event(shopId, randomUUID(), nextGeneration);
       await transactions.run(async (transaction) => {
         await outbox.add(transaction, independentEvent);
         await outbox.add(transaction, newEvent);
       });
-      const future = new Date(Date.now() + 60_000);
-      const claimed = await outbox.claim(shopId, future, randomUUID(), new Date(future.getTime() + 30_000), 10);
+      const claimed = await outbox.claim(shopId, new Date(), randomUUID(), new Date(Date.now() + 30_000), 10);
       expect(claimed.map((row) => row.id).sort()).toEqual([independentEvent.id, newEvent.id].sort());
       expect(claimed.map((row) => row.installationGeneration).sort()).toEqual([null, nextGeneration].sort());
     } finally {
@@ -200,7 +248,7 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
       const outboxEvent = event(shopId, randomUUID());
       await new PgTransactionRunner(left).run((transaction) => outboxLeft.add(transaction, outboxEvent));
       const now = new Date();
-      const firstLeaseUntil = new Date(now.getTime() + 1_000);
+      const firstLeaseUntil = new Date(now.getTime() + 30_000);
       const leftToken = randomUUID();
       const rightToken = randomUUID();
       const [leftClaim, rightClaim] = await Promise.all([
@@ -213,22 +261,20 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
       expect(firstAttempt).toBe(1);
       // Reuse the same owner to prove the attempt itself fences a stale acknowledgement.
       const recoveryToken = firstToken;
-      const recoveryTime = new Date(firstLeaseUntil.getTime() + 1);
-      const recovered = await outboxRight.claim(
-        shopId,
-        recoveryTime,
-        recoveryToken,
-        new Date(recoveryTime.getTime() + 30_000),
-        1,
+      const fakeFuture = new Date(firstLeaseUntil.getTime() + 60_000);
+      expect(
+        await outboxRight.claim(shopId, fakeFuture, recoveryToken, new Date(fakeFuture.getTime() + 30_000), 1),
+      ).toEqual([]);
+      await sql`update outbox_events set lease_until = clock_timestamp() - interval '1 second' where id = ${outboxEvent.id}`.execute(
+        left,
       );
+      const recovered = await outboxRight.claim(shopId, new Date(), recoveryToken, new Date(Date.now() + 30_000), 1);
       expect(recovered.map((row) => row.id)).toEqual([outboxEvent.id]);
       expect(recovered[0]?.attempts).toBe(2);
       expect(await outboxLeft.acknowledge(shopId, outboxEvent.id, firstToken, 1)).toBe('not_owned');
       expect(await outboxRight.acknowledge(shopId, outboxEvent.id, recoveryToken, 2)).toBe('acknowledged');
       expect(await outboxRight.acknowledge(shopId, outboxEvent.id, recoveryToken, 2)).toBe('already_delivered');
-      expect(
-        await outboxLeft.claim(shopId, recoveryTime, randomUUID(), new Date(recoveryTime.getTime() + 30_000), 1),
-      ).toEqual([]);
+      expect(await outboxLeft.claim(shopId, new Date(), randomUUID(), new Date(Date.now() + 30_000), 1)).toEqual([]);
     } finally {
       await Promise.all([left.destroy(), right.destroy()]);
     }

@@ -9,6 +9,16 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
 
   async add(transaction: Transaction<Database>, event: OutboxEvent): Promise<string> {
     const normalizedPayload = JSON.parse(canonicalJson(event.payload)) as unknown;
+    const shop = await transaction
+      .selectFrom('shops')
+      .select('current_generation')
+      .where('shop_id', '=', event.shopId)
+      .forNoKeyUpdate()
+      .executeTakeFirst();
+    if (!shop) throw new Error('Outbox shop does not exist');
+    if (event.installationGeneration !== null && event.installationGeneration !== shop.current_generation) {
+      throw new Error('Outbox event belongs to a stale installation generation');
+    }
     const inserted = await transaction
       .insertInto('outbox_events')
       .values({
@@ -72,7 +82,7 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
       limit < 1 ||
       limit > 100 ||
       !Number.isFinite(now.getTime()) ||
-      leaseUntil <= now
+      !Number.isFinite(leaseUntil.getTime())
     ) {
       throw new TypeError('Invalid outbox claim');
     }
@@ -81,9 +91,15 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
         .selectFrom('shops')
         .select('current_generation')
         .where('shop_id', '=', shopId)
-        .forUpdate()
+        .forNoKeyUpdate()
         .executeTakeFirst();
       if (!shop) return [];
+      const databaseTime = await sql<{ current_time: Date }>`select clock_timestamp() as current_time`.execute(
+        transaction,
+      );
+      const currentTime = databaseTime.rows[0]?.current_time;
+      if (!currentTime) throw new Error('Database clock was unavailable');
+      if (leaseUntil <= currentTime) throw new TypeError('Outbox lease deadline has passed');
       const selected = await transaction
         .selectFrom('outbox_events')
         .select('id')
@@ -94,17 +110,20 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
             expression('installation_generation', '=', shop.current_generation),
           ]),
         )
-        .where('available_at', '<=', now)
+        .where('available_at', '<=', sql<Date>`clock_timestamp()`)
         .where((expression) =>
           expression.or([
             expression('state', '=', 'pending'),
-            expression.and([expression('state', '=', 'leased'), expression('lease_until', '<=', now)]),
+            expression.and([
+              expression('state', '=', 'leased'),
+              expression('lease_until', '<=', sql<Date>`clock_timestamp()`),
+            ]),
           ]),
         )
         .orderBy('available_at', 'asc')
         .orderBy('id', 'asc')
         .limit(limit)
-        .forUpdate()
+        .forNoKeyUpdate()
         .skipLocked()
         .execute();
       if (selected.length === 0) return [];
@@ -158,7 +177,7 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
         .selectFrom('shops')
         .select('current_generation')
         .where('shop_id', '=', shopId)
-        .forUpdate()
+        .forNoKeyUpdate()
         .executeTakeFirst();
       if (!shop) return 'not_owned';
       const row = await transaction

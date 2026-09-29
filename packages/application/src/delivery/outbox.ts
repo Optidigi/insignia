@@ -24,6 +24,7 @@ export type ClaimedOutboxEvent = OutboxEvent & {
 
 export interface OutboxRepository<Tx> {
   add(transaction: Tx, event: OutboxEvent): Promise<string>;
+  /** `now` is caller metadata; PostgreSQL time determines eligibility. */
   claim(shopId: string, now: Date, leaseOwner: string, leaseUntil: Date, limit: number): Promise<ClaimedOutboxEvent[]>;
   acknowledge(
     shopId: string,
