@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { type Kysely, sql } from 'kysely';
 import { Pool } from 'pg';
 import { createDatabase, type Database, withTransaction } from '../../src/client/database.js';
+import { createDurableCore } from '../../src/index.js';
 import { createTenantRepository } from '../../src/repositories/tenant.js';
 
 export async function openTestDatabase(): Promise<Kysely<Database>> {
@@ -15,6 +16,12 @@ export async function openTestDatabase(): Promise<Kysely<Database>> {
     throw new Error(`PostgreSQL 18 required; server_version_num=${number}`);
   }
   return database;
+}
+
+export function openTestDurableCore() {
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error('DATABASE_URL is required for PostgreSQL integration tests');
+  return createDurableCore(new Pool({ connectionString, max: 8 }));
 }
 
 export async function createTestShop(database: Kysely<Database>): Promise<{ shopId: string; generation: string }> {

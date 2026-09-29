@@ -142,6 +142,16 @@ const probes = [
     "import {join} from 'node:path'; export {join};",
     'browser-no-node-builtins',
   ],
+  [
+    'packages/application/src/__boundary_probe.ts',
+    "import {createDatabase} from '../../database/src/client/database.js'; export {createDatabase};",
+    'database-internals-stay-in-adapter',
+  ],
+  [
+    'packages/application/src/__boundary_probe.ts',
+    "import {createDatabase} from '../../database/dist/client/database.js'; export {createDatabase};",
+    'database-internals-stay-in-adapter',
+  ],
 ];
 for (const [path, source, rule, status = 1] of probes) {
   const file = resolve(root, path);

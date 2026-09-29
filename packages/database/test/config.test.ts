@@ -12,9 +12,8 @@ import {
 } from '../src/repositories/config.js';
 import { PgOutboxRepository } from '../src/repositories/delivery/pg-outbox-repository.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
-import { stagePublicationIntent } from '../src/repositories/publication-intent.js';
 import { createTenantRepository } from '../src/repositories/tenant.js';
-import { createTestShop, openTestDatabase } from './support/postgres.js';
+import { createTestShop, openTestDatabase, openTestDurableCore } from './support/postgres.js';
 
 function published(shopId: string, productId: string, revisionId: string) {
   return {
@@ -303,95 +302,100 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PostgreSQL tenant and publica
   });
 
   test('publication intent commits revision, journal and outbox together after draft CAS', async () => {
-    const { shopId, generation } = await createTestShop(database);
-    const configId = randomUUID();
-    const productId = randomUUID();
-    const repo = createConfigRepositoryInternal(database);
-    await repo.createConfig({
-      shopId,
-      configId,
-      externalProductId: productId,
-      draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
-      draftValue: {},
-    });
-    const now = new Date();
-    const purgeAfter = new Date(now.getTime() + 60_000);
-    const revisionId = randomUUID();
-    const operationId = randomUUID();
-    const input = {
-      shopId,
-      configId,
-      expectedDraftVersion: '1',
-      revisionId,
-      operationId,
-      installationGeneration: generation,
-      publishedValue: published(shopId, productId, revisionId),
-      expectedProjection: { policy: 'optional', readiness: 'ready' },
-      occurredAt: now,
-      purgeAfter,
-    };
-    await expect(stagePublicationIntent(database, { ...input, expectedDraftVersion: '0' })).rejects.toThrow(
-      'draft version conflict',
-    );
-    expect(await repo.getRevision(shopId, revisionId)).toBeNull();
-
-    const collisionOperationId = randomUUID();
-    await withTransaction(database, async (transaction) => {
-      await new PgOutboxRepository(database).add(
-        transaction,
-        newOutboxEvent({
-          shopId,
-          installationGeneration: generation,
-          eventType: 'publication.requested',
-          schemaVersion: 1,
-          aggregateRef: 'another-config',
-          payload: { test: true },
-          businessKey: collisionOperationId,
-          occurredAt: now,
-          availableAt: now,
-          retentionClass: 'publication-intent',
-          purgeAfter,
-        }),
+    const core = openTestDurableCore();
+    try {
+      const { shopId, generation } = await createTestShop(database);
+      const configId = randomUUID();
+      const productId = randomUUID();
+      const repo = createConfigRepositoryInternal(database);
+      await repo.createConfig({
+        shopId,
+        configId,
+        externalProductId: productId,
+        draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+        draftValue: {},
+      });
+      const now = new Date();
+      const purgeAfter = new Date(now.getTime() + 60_000);
+      const revisionId = randomUUID();
+      const operationId = randomUUID();
+      const input = {
+        shopId,
+        configId,
+        expectedDraftVersion: '1',
+        revisionId,
+        operationId,
+        installationGeneration: generation,
+        publishedValue: published(shopId, productId, revisionId),
+        expectedProjection: { policy: 'optional', readiness: 'ready' },
+        occurredAt: now,
+        purgeAfter,
+      };
+      await expect(core.publication.stageIntent({ ...input, expectedDraftVersion: '0' })).rejects.toThrow(
+        'draft version conflict',
       );
-    });
-    const rolledBackRevision = randomUUID();
-    await expect(
-      stagePublicationIntent(database, {
-        ...input,
-        revisionId: rolledBackRevision,
-        operationId: collisionOperationId,
-        publishedValue: published(shopId, productId, rolledBackRevision),
-      }),
-    ).rejects.toThrow('Outbox business key conflicts');
-    expect(await repo.getRevision(shopId, rolledBackRevision)).toBeNull();
-    expect(
-      await database
-        .selectFrom('publication_operations')
-        .select('operation_id')
-        .where('shop_id', '=', shopId)
-        .where('operation_id', '=', collisionOperationId)
-        .executeTakeFirst(),
-    ).toBeUndefined();
-    expect((await repo.getConfig(shopId, configId))?.publicationSequence).toBe('0');
+      expect(await repo.getRevision(shopId, revisionId)).toBeNull();
 
-    const staged = await stagePublicationIntent(database, input);
-    expect(staged.revision.contentHash).toMatch(/^[a-f0-9]{64}$/);
-    expect(staged.operation.operationSequence).toBe('1');
-    const persisted = await database
-      .selectFrom('outbox_events')
-      .select(['id', 'installation_generation', 'business_key', 'payload'])
-      .where('shop_id', '=', shopId)
-      .where('id', '=', staged.outboxEventId)
-      .executeTakeFirstOrThrow();
-    expect(persisted.installation_generation).toBe(generation);
-    expect(persisted.business_key).toBe(operationId);
-    expect(persisted.payload).toMatchObject({
-      configId,
-      revisionId,
-      operationId,
-      expectedProjectionDigest: staged.operation.expectedProjectionDigest,
-    });
-    expect((await repo.getConfig(shopId, configId))?.effectiveRevisionId).toBeNull();
+      const collisionOperationId = randomUUID();
+      await withTransaction(database, async (transaction) => {
+        await new PgOutboxRepository(database).add(
+          transaction,
+          newOutboxEvent({
+            shopId,
+            installationGeneration: generation,
+            eventType: 'publication.requested',
+            schemaVersion: 1,
+            aggregateRef: 'another-config',
+            payload: { test: true },
+            businessKey: collisionOperationId,
+            occurredAt: now,
+            availableAt: now,
+            retentionClass: 'publication-intent',
+            purgeAfter,
+          }),
+        );
+      });
+      const rolledBackRevision = randomUUID();
+      await expect(
+        core.publication.stageIntent({
+          ...input,
+          revisionId: rolledBackRevision,
+          operationId: collisionOperationId,
+          publishedValue: published(shopId, productId, rolledBackRevision),
+        }),
+      ).rejects.toThrow('Outbox business key conflicts');
+      expect(await repo.getRevision(shopId, rolledBackRevision)).toBeNull();
+      expect(
+        await database
+          .selectFrom('publication_operations')
+          .select('operation_id')
+          .where('shop_id', '=', shopId)
+          .where('operation_id', '=', collisionOperationId)
+          .executeTakeFirst(),
+      ).toBeUndefined();
+      expect((await repo.getConfig(shopId, configId))?.publicationSequence).toBe('0');
+
+      const staged = await core.publication.stageIntent(input);
+      expect(staged.revision.contentHash).toMatch(/^[a-f0-9]{64}$/);
+      expect(staged.operation.operationSequence).toBe('1');
+      const persisted = await database
+        .selectFrom('outbox_events')
+        .select(['id', 'installation_generation', 'business_key', 'payload'])
+        .where('shop_id', '=', shopId)
+        .where('id', '=', staged.outboxEventId)
+        .executeTakeFirstOrThrow();
+      expect(persisted.installation_generation).toBe(generation);
+      expect(persisted.business_key).toBe(operationId);
+      expect(persisted.payload).toMatchObject({
+        configId,
+        revisionId,
+        operationId,
+        expectedProjectionDigest: staged.operation.expectedProjectionDigest,
+      });
+      expect((await repo.getConfig(shopId, configId))?.effectiveRevisionId).toBeNull();
+    } finally {
+      await core.close();
+    }
   });
 
   test('newer publication and reinstall fence delayed activation', async () => {

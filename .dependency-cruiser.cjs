@@ -26,6 +26,12 @@ module.exports = {
       to: { path: '^spikes/' },
     },
     {
+      name: 'database-internals-stay-in-adapter',
+      severity: 'error',
+      from: { path: '^(apps/|packages/(?!database/))' },
+      to: { path: '^packages/database/(src|dist)/' },
+    },
+    {
       name: 'shopify-sdk-only-in-adapter',
       severity: 'error',
       from: { pathNot: '^packages/shopify/' },
@@ -35,6 +41,6 @@ module.exports = {
   options: {
     tsPreCompilationDeps: true,
     doNotFollow: { path: 'node_modules' },
-    exclude: '(^|/)(node_modules|dist|\\.astro|test)(/|$)|\\.test\\.',
+    exclude: '(^|/)(node_modules|\\.astro|test)(/|$)|\\.test\\.',
   },
 };

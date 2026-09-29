@@ -14,7 +14,7 @@
     "test:vectors": "tsc -p scripts/m1-functions/tsconfig.json && node --test scripts/m1-functions/check-vector.test.ts",
     "test:browser": "corepack pnpm --filter @insignia/web test && corepack pnpm --filter @insignia/storefront test",
     "check:style": "biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/application/src packages/database/src packages/database/test scripts/boundaries scripts/m1-functions/check-vector.test.ts",
-    "check:boundaries": "node scripts/boundaries/check.mjs && node scripts/boundaries/check-domain-effects.mjs && node --test scripts/boundaries/domain-effects.test.mjs",
+    "check:boundaries": "node scripts/boundaries/check.mjs && node scripts/boundaries/check-database-api.mjs && node scripts/boundaries/check-domain-effects.mjs && node --test scripts/boundaries/domain-effects.test.mjs",
     "check:secrets": "node scripts/boundaries/check-secrets.mjs",
     "check:rust": "bash scripts/m1-functions/check.sh",
     "check": "corepack pnpm check:style && corepack pnpm build && corepack pnpm test:unit && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && python3 -B scripts/boundaries/check-cargo-workspace.py && corepack pnpm check:rust && corepack pnpm test:browser && python3 -B spikes/m0-007/scripts/check-history.py && python3 -B spikes/m0-014/scripts/check-live-setup.py && python3 -B scripts/m1-functions/artifact-manifest.py"

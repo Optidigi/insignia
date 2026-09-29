@@ -7,7 +7,7 @@ import { PgInboxRepository } from '../../src/repositories/delivery/pg-inbox-repo
 import { PgOutboxRepository } from '../../src/repositories/delivery/pg-outbox-repository.js';
 import { PgTransactionRunner } from '../../src/repositories/delivery/pg-transaction-runner.js';
 import { createTenantRepository } from '../../src/repositories/tenant.js';
-import { createTestShop, openTestDatabase } from '../support/postgres.js';
+import { createTestShop, openTestDatabase, openTestDurableCore } from '../support/postgres.js';
 
 function delivery(shopId: string, externalDeliveryId: string, body: string) {
   const receivedAt = new Date();
@@ -53,12 +53,11 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
 
   it('retains out-of-order deliveries, deduplicates exact replay and processes each business fact once', async () => {
     const database = await openTestDatabase();
+    const core = openTestDurableCore();
     try {
       const { shopId } = await createTestShop(database);
       const { shopId: otherShop } = await createTestShop(database);
-      const inbox = new PgInboxRepository(database);
-      const outbox = new PgOutboxRepository(database);
-      const transactions = new PgTransactionRunner(database);
+      const { inbox, outbox, transactions } = core;
       const newer = delivery(shopId, randomUUID(), '{"sequence":2}');
       const older = delivery(shopId, randomUUID(), '{"sequence":1}');
       const receipt2 = await receiveInbox(inbox, newer);
@@ -90,7 +89,7 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
       expect(claimed.map((row) => row.aggregateRef).sort()).toEqual([receipt1.id, receipt2.id].sort());
       expect(await outbox.claim(otherShop, new Date(), randomUUID(), new Date(Date.now() + 30_000), 10)).toEqual([]);
     } finally {
-      await database.destroy();
+      await Promise.all([core.close(), database.destroy()]);
     }
   });
 
@@ -280,47 +279,33 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
 
   it('fences installation-bound claims and acknowledgements after reinstall', async () => {
     const database = await openTestDatabase();
+    const core = openTestDurableCore();
     try {
       const { shopId, generation } = await createTestShop(database);
-      const outbox = new PgOutboxRepository(database);
-      const transactions = new PgTransactionRunner(database);
+      const { outbox, transactions, tenants, configs } = core;
       const oldEvent = event(shopId, randomUUID(), generation);
       await transactions.run((transaction) => outbox.add(transaction, oldEvent));
       const oldOwner = randomUUID();
       const oldClaim = await outbox.claim(shopId, new Date(), oldOwner, new Date(Date.now() + 30_000), 1);
       expect(oldClaim.map((row) => row.id)).toEqual([oldEvent.id]);
       expect(oldClaim[0]?.installationGeneration).toBe(generation);
-      const nextGeneration = await transactions.run((transaction) =>
-        createTenantRepository(transaction).startInstallation(transaction, shopId),
-      );
+      const nextGeneration = await transactions.run((transaction) => tenants.startInstallation(transaction, shopId));
       expect(nextGeneration).toBe('2');
       expect(await outbox.acknowledge(shopId, oldEvent.id, oldOwner, 1)).toBe('not_owned');
       const staleConfigId = randomUUID();
       await expect(
         transactions.run(async (transaction) => {
-          await transaction
-            .insertInto('product_configs')
-            .values({
-              shop_id: shopId,
-              config_id: staleConfigId,
-              external_product_id: staleConfigId,
-              draft_schema_version: CONFIG_DRAFT_STORAGE_VERSION,
-              draft_value: { label: 'must roll back' },
-              effective_revision_id: null,
-              effective_operation_id: null,
-            })
-            .execute();
+          await configs.createConfig(transaction, {
+            shopId,
+            configId: staleConfigId,
+            externalProductId: staleConfigId,
+            draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+            draftValue: { label: 'must roll back' },
+          });
           await outbox.add(transaction, event(shopId, randomUUID(), generation));
         }),
       ).rejects.toThrow('stale installation generation');
-      expect(
-        await database
-          .selectFrom('product_configs')
-          .select('config_id')
-          .where('shop_id', '=', shopId)
-          .where('config_id', '=', staleConfigId)
-          .executeTakeFirst(),
-      ).toBeUndefined();
+      expect(await configs.getConfig(shopId, staleConfigId)).toBeNull();
       const independentEvent = event(shopId, randomUUID(), null);
       const newEvent = event(shopId, randomUUID(), nextGeneration);
       await transactions.run(async (transaction) => {
@@ -331,7 +316,7 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
       expect(claimed.map((row) => row.id).sort()).toEqual([independentEvent.id, newEvent.id].sort());
       expect(claimed.map((row) => row.installationGeneration).sort()).toEqual([null, nextGeneration].sort());
     } finally {
-      await database.destroy();
+      await Promise.all([core.close(), database.destroy()]);
     }
   });
 
