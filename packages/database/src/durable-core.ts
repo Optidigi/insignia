@@ -64,6 +64,12 @@ export interface DurableCore {
   };
   readonly tenants: {
     getShop(shopId: string): Promise<ShopRecord | null>;
+    getActiveProviderScope(input: { shopId: string; installationGeneration: string }): Promise<{
+      shopId: string;
+      shopDomain: string;
+      shopifyShopId: string;
+      installationGeneration: string;
+    } | null>;
     createShop(
       transaction: DurableTransaction,
       input: { shopId: string; shopDomain: string; shopifyShopId?: string; externalInstallationId?: string },
@@ -171,6 +177,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
     },
     tenants: {
       getShop: (shopId) => tenants.getShop(shopId),
+      getActiveProviderScope: (input) => tenants.getActiveProviderScope(input),
       createShop: async (handle, input) => tenants.createShop(resolve(handle), input),
       startInstallation: async (handle, shopId, externalId) =>
         tenants.startInstallation(resolve(handle), shopId, externalId),

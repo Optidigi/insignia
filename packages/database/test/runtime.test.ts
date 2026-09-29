@@ -48,6 +48,35 @@ function pair(accessToken: string, refreshToken: string, accessMs = 60_000) {
 }
 
 describe('M3-002 PostgreSQL 18 runtime invariants', () => {
+  it('exposes provider shop identity only for the exact active installation generation', async () => {
+    const database = await openTestDatabase();
+    const core = createDurableCore(new Pool({ connectionString }), { credentialKeys: keys });
+    const shopId = randomUUID();
+    const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
+    const shopifyShopId = signedShopId(domain);
+    try {
+      await core.transactions.run((tx) => core.tenants.createShop(tx, { shopId, shopDomain: domain, shopifyShopId }));
+      expect(await core.tenants.getActiveProviderScope({ shopId, installationGeneration: '1' })).toEqual({
+        shopId,
+        shopDomain: domain,
+        shopifyShopId,
+        installationGeneration: '1',
+      });
+      expect(
+        await core.tenants.getActiveProviderScope({ shopId: randomUUID(), installationGeneration: '1' }),
+      ).toBeNull();
+      expect(await core.transactions.run((tx) => core.tenants.startInstallation(tx, shopId))).toBe('2');
+      expect(await core.tenants.getActiveProviderScope({ shopId, installationGeneration: '1' })).toBeNull();
+      expect(await core.tenants.getActiveProviderScope({ shopId, installationGeneration: '2' })).toMatchObject({
+        shopifyShopId,
+        installationGeneration: '2',
+      });
+      await core.transactions.run((tx) => core.tenants.deactivateCurrent(tx, shopId, '2'));
+      expect(await core.tenants.getActiveProviderScope({ shopId, installationGeneration: '2' })).toBeNull();
+    } finally {
+      await Promise.all([core.close(), database.destroy()]);
+    }
+  });
   it('keeps a Shopify delivery identity stable across preinstall resolution and concurrent replay', async () => {
     const database = await openTestDatabase();
     const core = createDurableCore(new Pool({ connectionString }), { credentialKeys: keys });
