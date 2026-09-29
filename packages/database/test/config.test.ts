@@ -123,21 +123,81 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PostgreSQL tenant and publica
   test('draft storage accepts only M3 versioned JSON objects on write and read', async () => {
     const { shopId } = await createTestShop(database);
     const repo = createConfigRepository(database);
-    await expect(repo.createConfig({ shopId, configId: randomUUID(), externalProductId: randomUUID(), draftSchemaVersion: 'm4-config-draft-v1', draftValue: {} })).rejects.toThrow('unsupported draft schema version');
+    await expect(
+      repo.createConfig({
+        shopId,
+        configId: randomUUID(),
+        externalProductId: randomUUID(),
+        draftSchemaVersion: 'm4-config-draft-v1',
+        draftValue: {},
+      }),
+    ).rejects.toThrow('unsupported draft schema version');
     for (const invalid of [[], null, 'text', 1]) {
-      await expect(repo.createConfig({ shopId, configId: randomUUID(), externalProductId: randomUUID(), draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION, draftValue: invalid })).rejects.toThrow('draft must be a JSON object');
+      await expect(
+        repo.createConfig({
+          shopId,
+          configId: randomUUID(),
+          externalProductId: randomUUID(),
+          draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+          draftValue: invalid,
+        }),
+      ).rejects.toThrow('draft must be a JSON object');
     }
-    await expect(repo.createConfig({ shopId, configId: randomUUID(), externalProductId: randomUUID(), draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION, draftValue: { value: undefined } })).rejects.toThrow('unsupported JSON value');
-    await expect(repo.createConfig({ shopId, configId: randomUUID(), externalProductId: randomUUID(), draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION, draftValue: { nested: [1, undefined] } })).rejects.toThrow('unsupported JSON value');
-    await expect(repo.createConfig({ shopId, configId: randomUUID(), externalProductId: randomUUID(), draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION, draftValue: { nested: new Array(1) } })).rejects.toThrow('sparse JSON array');
+    await expect(
+      repo.createConfig({
+        shopId,
+        configId: randomUUID(),
+        externalProductId: randomUUID(),
+        draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+        draftValue: { value: undefined },
+      }),
+    ).rejects.toThrow('unsupported JSON value');
+    await expect(
+      repo.createConfig({
+        shopId,
+        configId: randomUUID(),
+        externalProductId: randomUUID(),
+        draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+        draftValue: { nested: [1, undefined] },
+      }),
+    ).rejects.toThrow('unsupported JSON value');
+    await expect(
+      repo.createConfig({
+        shopId,
+        configId: randomUUID(),
+        externalProductId: randomUUID(),
+        draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+        draftValue: { nested: new Array(1) },
+      }),
+    ).rejects.toThrow('sparse JSON array');
     const configId = randomUUID();
     const productId = randomUUID();
-    await repo.createConfig({ shopId, configId, externalProductId: productId, draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION, draftValue: {} });
-    await expect(repo.updateDraft({ shopId, configId, expectedVersion: '1', schemaVersion: 'm4-config-draft-v1', draftValue: {} })).rejects.toThrow('unsupported draft schema version');
-    await expect(repo.updateDraft({ shopId, configId, expectedVersion: '1', schemaVersion: CONFIG_DRAFT_STORAGE_VERSION, draftValue: [] })).rejects.toThrow('draft must be a JSON object');
-    await sql`UPDATE product_configs SET draft_schema_version = 'm4-config-draft-v1' WHERE shop_id = ${shopId} AND config_id = ${configId}`.execute(database);
+    await repo.createConfig({
+      shopId,
+      configId,
+      externalProductId: productId,
+      draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+      draftValue: {},
+    });
+    await expect(
+      repo.updateDraft({ shopId, configId, expectedVersion: '1', schemaVersion: 'm4-config-draft-v1', draftValue: {} }),
+    ).rejects.toThrow('unsupported draft schema version');
+    await expect(
+      repo.updateDraft({
+        shopId,
+        configId,
+        expectedVersion: '1',
+        schemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+        draftValue: [],
+      }),
+    ).rejects.toThrow('draft must be a JSON object');
+    await sql`UPDATE product_configs SET draft_schema_version = 'm4-config-draft-v1' WHERE shop_id = ${shopId} AND config_id = ${configId}`.execute(
+      database,
+    );
     await expect(repo.getConfig(shopId, configId)).rejects.toThrow('unsupported draft schema version');
-    await sql`UPDATE product_configs SET draft_schema_version = ${CONFIG_DRAFT_STORAGE_VERSION}, draft_value = '[]'::jsonb WHERE shop_id = ${shopId} AND config_id = ${configId}`.execute(database);
+    await sql`UPDATE product_configs SET draft_schema_version = ${CONFIG_DRAFT_STORAGE_VERSION}, draft_value = '[]'::jsonb WHERE shop_id = ${shopId} AND config_id = ${configId}`.execute(
+      database,
+    );
     await expect(repo.getByProduct(shopId, productId)).rejects.toThrow('draft must be a JSON object');
   });
 
@@ -300,4 +360,10 @@ test('canonical JSON sorts object keys and preserves array order', () => {
     'e9d26fb0100c3f9ef569c38ced9811ec35059c3c999b8683fde59ed24e6e66e8',
   );
   expect(canonicalJson({ b: [1, 2], a: 1 })).not.toBe(canonicalJson({ b: [2, 1], a: 1 }));
+});
+
+test('canonical JSON rejects properties that would be silently omitted', () => {
+  const hidden = Object.defineProperty({ visible: 1 }, 'hidden', { value: 2 });
+  expect(() => canonicalJson(hidden)).toThrow('unsupported JSON object property');
+  expect(() => canonicalJson({ [Symbol('hidden')]: 2 })).toThrow('unsupported JSON object property');
 });

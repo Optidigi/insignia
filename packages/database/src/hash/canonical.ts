@@ -24,6 +24,7 @@ export function canonicalJson(value: unknown): string {
       if (Object.getPrototypeOf(part) !== Object.prototype && Object.getPrototypeOf(part) !== null)
         throw new TypeError('JSON object must be plain');
       const keys = Object.keys(part).sort();
+      if (Reflect.ownKeys(part).length !== keys.length) throw new TypeError('unsupported JSON object property');
       return `{${keys.map((key) => `${JSON.stringify(key)}:${serialize((part as Record<string, unknown>)[key])}`).join(',')}}`;
     } finally {
       ancestors.delete(part);

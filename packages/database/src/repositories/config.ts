@@ -6,8 +6,12 @@ export const CONFIG_DRAFT_STORAGE_VERSION = 'm3-config-draft-v1' as const;
 
 function validateDraftStorage(schemaVersion: string, draftValue: unknown): void {
   if (schemaVersion !== CONFIG_DRAFT_STORAGE_VERSION) throw new Error('unsupported draft schema version');
-  if (draftValue === null || typeof draftValue !== 'object' || Array.isArray(draftValue) ||
-    (Object.getPrototypeOf(draftValue) !== Object.prototype && Object.getPrototypeOf(draftValue) !== null))
+  if (
+    draftValue === null ||
+    typeof draftValue !== 'object' ||
+    Array.isArray(draftValue) ||
+    (Object.getPrototypeOf(draftValue) !== Object.prototype && Object.getPrototypeOf(draftValue) !== null)
+  )
     throw new Error('draft must be a JSON object');
   // M3 stores incomplete merchant drafts as raw JSON objects; publication validates the M2 DTO.
   canonicalJson(draftValue);

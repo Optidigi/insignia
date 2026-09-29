@@ -183,7 +183,7 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
         })
         .where('shop_id', '=', shopId)
         .where('id', '=', id)
-        .where('lease_until', '>', sql`clock_timestamp()`)
+        .where('lease_until', '>', sql<Date>`clock_timestamp()`)
         .returning('id')
         .executeTakeFirst();
       if (!updated) return 'not_owned';
