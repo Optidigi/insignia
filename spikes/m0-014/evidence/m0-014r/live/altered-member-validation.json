@@ -2,7 +2,7 @@
   "provenance": {
     "rawOwnerOnlyFilename": "20260929_010436_613Z_extensions_m0-014-public-validation_97e52d.json",
     "rawSha256": "bb65fbd6f1a198181bf5a2a6d8c46933e0930717a22db1dddbf2fbc94a651db1",
-    "sanitization": "retained only Function input/output, target, function ID, fuel and status; removed log envelope, store name and diagnostics"
+    "sanitization": "retained only Function input/output, target, function ID, fuel and status; removed log envelope, store name and diagnostics; redacted complete signed quote carrier; retained its SHA-256 and owner-only raw source hash"
   },
   "target": "cart.validations.generate.run",
   "functionId": "01a0e9cd-647d-7e48-8e64-76e2ca69dcb9",
@@ -14,7 +14,8 @@
     },
     "cart": {
       "quote": {
-        "value": "SVNHMgIA6m4QOr2JoOVM47Xii8zsOgobAAAAAf1cWGs1W0QegdTpua2T9HeBirSe6lxN26t3bseGUXzNAAJVU0QCVVMAAAAYxomBGwAAUPYAAAADAAAAAAAAI4wadpTwpCB6vMplOnOEoUpc0deebkj3JYNgXHwVGUq4sMdnNnrxs2yozuFkiCCKuM_cziyFoOpfH7hrjE1vMWwL"
+        "value": "[REDACTED_SIGNED_QUOTE]",
+        "redactedValueSha256": "e36909f2cd988f36f57370ed4949cf6182b11dff87db42681782c85bfdbc6180"
       },
       "lines": [
         {

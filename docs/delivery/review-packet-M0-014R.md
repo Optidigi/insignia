@@ -25,7 +25,7 @@ location were used. No billing or legacy staging resource was touched.
 
 | Criterion | Actual check | Result | Evidence |
 |---|---|---|---|
-| Canonical /0 with strict negative controls | Current M0-014 source, native Rust and 110-row final-Wasm matrix via spikes/m0-014/scripts/check-local.sh | PASS local | [R-run record](evidence/m0-014r-cartline-and-checkout.md), [matrix](../../spikes/m0-014/evidence/m0-014r/local/current-artifact-matrix.json) |
+| Canonical /0 with strict negative controls | Current M0-014 source, native Rust and 110-row R-run matrix via spikes/m0-014/scripts/check-local.sh | PASS local: 109 corrected-binary rows plus one historical old-binary rejection | [R-run record](evidence/m0-014r-cartline-and-checkout.md), [matrix](../../spikes/m0-014/evidence/m0-014r/local/current-artifact-matrix.json) |
 | Corrected uploaded inputs | Pinned CLI build; decoded dev bundle compared to final artifacts | PASS observed | [R-run record](evidence/m0-014r-cartline-and-checkout.md); platform storage hash unavailable |
 | Checkout amount and independent rejection | Shared normal storefront and direct Transform/Validation logs | PASS bounded live | [Sanitized log/hash index](../../spikes/m0-014/evidence/m0-014r/live/live-observations.json) |
 | Actual 200-line native carts | Ajax attempts on existing Large variant | BLOCKED | 51st Large returned HTTP 422 in both shapes; no 200-line checkout claim |
@@ -34,9 +34,12 @@ location were used. No billing or legacy staging resource was touched.
 
 The direct raw Shopify Function logs, diagnostic carts, API readbacks and
 operator register are outside Git with mode 0600. The tracked evidence
-contains selected sanitized direct Function inputs/outputs, Ajax role/member
+contains selected redacted direct Function inputs/outputs, Ajax role/member
 mapping, observations and SHA-256 pointers, with no raw session, credential
-or buyer contact detail. Actual CHECKOUT_COMPLETION Validation
+or buyer contact detail. Signed quote carriers in the earlier draft commit
+remain historical; the latest captures redact them and retain hashes.
+They expire after 2026-09-30; fixture/Function cleanup is verified.
+Actual CHECKOUT_COMPLETION Validation
 read CartLine /0, /1 and /2 and returned no errors. The original failed
 M0-014 receipt remains separate.
 
@@ -54,7 +57,10 @@ limit: coherent swapping of same-variant/one-unit roles in both captures
 can switch the member assignment before signing. A regression and the
 actual Ajax role/member mapping now record that limitation; neither the
 role nor this fixture test proves buyer intent independently. Exact signed
-member/economic verification is unchanged. Final-head CI and reviewer
+member/economic verification is unchanged. A later security review also
+found the live malformed-member rejection had a base-price mismatch, so it
+cannot isolate member enforcement; local negative controls do. Final-head
+CI and reviewer
 closure are reported in the PR body; local review is not principal approval.
 
 ## Compatibility and limits

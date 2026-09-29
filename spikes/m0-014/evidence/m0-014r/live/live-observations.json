@@ -75,7 +75,7 @@
   },
   "negativeAndRepair": {
     "wrongPrice": "removing only owned Transform repriced basket to $80.00; active Validation rejected at CHECKOUT_INTERACTION; Transform restored and $111.00 accepted",
-    "alteredMember": "invalid one member caused checkout rejection",
+    "alteredMember": "combined malformed member and $80.00 base-price mismatch rejected; live capture does not isolate member cause",
     "orphanRepair": "removed invalid customized lines and orphan quote; ordinary optional $20.00 checkout valid",
     "requiredUnsigned": "unsigned Required fixture rejected at CHECKOUT_INTERACTION"
   },
@@ -146,23 +146,26 @@
     "Shopify return-reason display discrepancy; direct return/refund/restock money and stock verified",
     "native refund flow after partial fulfillment gave restock of remaining unfulfilled items and auto archive, not an explicit Cancel order operation",
     "stopped development preview record and approved grants retained by design",
-    "fixture role assignment does not independently prove buyer intent for otherwise identical one-unit lines; operator cart-property observation is qualified evidence"
+    "fixture role assignment does not independently prove buyer intent for otherwise identical one-unit lines; operator cart-property observation is qualified evidence",
+    "Tracked direct captures redact complete signed quote carriers; earlier draft commit exposed them until their 2026-09-30 validity end; fixtures/Functions were removed and private key deleted. No historical rewrite or revocation is claimed."
   ],
   "trackedSanitizedDirectCaptures": {
-    "positive-interaction-validation.json": "ba338222d1b97aae3712269599a3099faf9a7ca4b83dca399fa5e134ed365866",
-    "wrong-price-validation.json": "db35715d98813762738f72e9b0baece279c420daacf3a8ea9797830906b0e4a4",
-    "altered-member-validation.json": "5746047c8027d6854e9044ef1354dc4909a882c6035fd8f979a5d88d08da782e",
+    "positive-interaction-validation.json": "c3fd39121be456c9ec7e0077344bec57c4133d817435d2aaa82bd47365398f0f",
+    "wrong-price-validation.json": "0ae4b49fba56b83066a14d5f5ce73f27eb6e91e65515b2805789268deba6ae21",
+    "altered-member-validation.json": "ef3e3e0bf1db8cf1ceb08f910a18443ae74144cd9306956b523fdc501a5acdaf",
     "required-unsigned-validation.json": "adc170a19aa388fa99863f58d34061dd94066094356d318c885859433330d7f7",
-    "purchase-transform.json": "0de9fd6c1b520c6d09346e5941a0c145351ad21af55e208cf282441bbd15dfa2",
-    "purchase-completion-validation.json": "f5a10ddef9aa1ff5cfa40a6276e910bf6a068635ce3e1f738e868b00df7d97d5",
+    "purchase-transform.json": "7ad7685d448eaa5192051831af8fbe61e04e40640b6b6100a71cfb5f920c5972",
+    "purchase-completion-validation.json": "0e596f7a778cbc9c80612594fd147bfc2d537c1f3a15dfe8ad4c9df9861f7947",
     "small-cart-role-member-mapping.json": "97e510d0271dbf4878a5a9d0f1925643e8f24413ac20fa2e7a5706fea521c5e3"
   },
   "roleMappingQualification": "The actual Ajax plain/signed cart and direct Function capture mapping is retained. Fixture roles are operator-assigned buyer-visible properties, not an independent trust anchor. A coherent swap of same-variant/same-quantity one-unit roles in both plain Function projections before signing is not detected by the binder; this does not establish a signature or exact-money bypass.",
   "finalLocalCheck": {
     "command": "bash spikes/m0-014/scripts/check-local.sh with pinned project-local Rust 1.98.1, Node 24.21.0 and linker PATH",
     "exitCode": 0,
-    "ownerOnlyLogSha256": "c772581fd5e0a941b2f6cfe6dc4463247171ac429310d91b4e228be47e0519d2",
+    "ownerOnlyLogSha256": "c04191a9ab0bf09610e500bbb97ffffee772430e06bcbb905c36b865de69030b",
     "currentTsTests": 11,
-    "currentWasmRows": 110
+    "currentWasmRows": 110,
+    "currentCorrectedWasmRows": 109,
+    "historicalOldBinaryRejectionRows": 1
   }
 }

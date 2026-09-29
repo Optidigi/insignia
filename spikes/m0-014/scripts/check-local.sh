@@ -24,6 +24,11 @@ for crate in authorization transform validation; do
   "$cargo" test --manifest-path "$manifest" --locked
 done
 python3 -B spikes/m0-014/scripts/check-config.py
+# Run the source build directly first so CI preserves its actual compiler or
+# artifact-comparison error; Shopify CLI otherwise collapses it to exit 1.
+for target in transform validation; do
+  bash spikes/m0-014/scripts/build-current-wasm.sh "$target"
+done
 for target in transform validation; do
   "$shopify" app function build --path "spikes/m0-014/rust/extensions/$target"
 done

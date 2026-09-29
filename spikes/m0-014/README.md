@@ -19,7 +19,8 @@ roles before signing without the binder detecting the intent swap; the actual
 Ajax cart mapping must be observed. The signature still binds the resulting
 member set, variant, quantity and exact money. `scripts/check-local.sh` checks canonical TS and
 native Rust, the retained 152-row replay, all 88 historical rows against
-pinned executables, and the current 110-row replay against corrected binaries.
+pinned executables, and the current 110-row replay: 109 rows against corrected
+binaries plus one historical old-binary rejection.
 The corrected artifact matrix is local evidence. The bounded native checkout,
 order/lifecycle and cleanup observations are in the
 [M0-014R evidence record](../../docs/delivery/evidence/m0-014r-cartline-and-checkout.md);

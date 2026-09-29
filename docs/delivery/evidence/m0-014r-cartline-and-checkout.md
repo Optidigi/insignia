@@ -44,7 +44,9 @@ trampoline 2.0.1, with `wasm_opt=false`. It builds M0-014 source in a fixed
 isolated scratch path and verifies rebuilt bytes against separate retained
 R artifacts. The original M0-013 source/binaries and M0-014 stopped-run
 artifacts remain intact. Source, queries/schema and build script hashes are
-bound in the [110-row current-artifact matrix](../../../spikes/m0-014/evidence/m0-014r/local/current-artifact-matrix.json).
+bound in the [110-row R-run matrix](../../../spikes/m0-014/evidence/m0-014r/local/current-artifact-matrix.json):
+109 rows use the corrected binaries and one separately named
+historical-zero-rejection row uses the old Validation binary.
 
 | Target | Raw SHA-256 / bytes | Final upload-input SHA-256 / bytes |
 |---|---|---|
@@ -66,8 +68,9 @@ failed all-200-role measurement is retained separately and is not labelled a
 passing matrix row. The corrected local suite passed with the established
 project-local Zig host linker and Node 24.21.0: 11 current TS tests; 13
 Authorization, 19 Transform and 25 Validation native Rust tests;
-fmt/clippy; 152 historical rows; 88 old pinned M0-014 rows; and 110 corrected
-artifact-bound rows. The latest role-projected artifacts accept captured
+fmt/clippy; 152 historical rows; 88 old pinned M0-014 rows; and the 110-row
+R-run matrix (109 corrected-artifact rows plus one old-binary rejection
+control). The latest role-projected artifacts accept captured
 Validation at both simulated checkout steps at 2,723,609 instructions and
 17 output bytes. The 10+190
 and 32+168 zero-based synthetic rows remain below the 8.8 million instruction
@@ -136,13 +139,19 @@ IDs. Native checkout showed USD111.00 pre-discount merchandise with free
 shipping; direct Validation at CHECKOUT_INTERACTION had zero errors. With
 only the owned Transform removed, native checkout recalculated to USD80.00
 and the still-active Validation rejected it. Restoring Transform restored
-USD111.00 and acceptance. An altered member also rejected; removing the
-invalid custom lines and orphan quote repaired the ordinary optional
+USD111.00 and acceptance. A cart with a malformed member also rejected,
+but it retained the USD80.00 base-price mismatch, so this live case does
+not isolate member enforcement. Removing the invalid custom lines and
+orphan quote repaired the ordinary optional
 USD20.00 checkout. An unsigned Required fixture line rejected at
 CHECKOUT_INTERACTION. Selected direct log hashes and observations are in the
 [sanitized R-run evidence](../../../spikes/m0-014/evidence/m0-014r/live/live-observations.json),
-which links tracked sanitized direct Function inputs/outputs and raw
-owner-only log hashes.
+which links tracked redacted direct Function inputs/outputs and raw
+owner-only log hashes. Complete signed quote carriers are redacted in the
+latest tracked captures; their SHA-256 values and raw source hashes remain.
+The earlier draft commit exposed carriers valid through 2026-09-30. The
+fixtures and Functions were removed, the private key deleted, and no
+historical rewrite or revocation is claimed.
 
 The single permitted Bogus purchase succeeded through normal checkout:
 rewrite-dev order gid://shopify/Order/7487119458587, displayed as #1001
