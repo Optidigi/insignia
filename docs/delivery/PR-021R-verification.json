@@ -1,0 +1,33 @@
+{
+  "pr": 21,
+  "base": "911818301cc96d98f0b612259d1ba98dec8b9df4",
+  "approved_head": "2765220037d581de2a710b2eab6e2a469352d61b",
+  "approved_tree": "40dffb60f7577d1f24052cdbd53604f01b4fc2b1",
+  "synthetic_merge": "89ac3787a27d2ccb83ed275dd02b9d5450b93e74",
+  "synthetic_parents": [
+    "911818301cc96d98f0b612259d1ba98dec8b9df4",
+    "2765220037d581de2a710b2eab6e2a469352d61b"
+  ],
+  "synthetic_tree": "40dffb60f7577d1f24052cdbd53604f01b4fc2b1",
+  "workflow_runs": [
+    36579073603,
+    36579073752,
+    36579073775,
+    36579073937,
+    36579073772,
+    36579073589,
+    36579073563,
+    36579073662
+  ],
+  "foundation_artifact_id": 11038711238,
+  "foundation_artifact_zip_sha256": "245ef564654c1322e820b6c2c44938048845b4b0fe670c8579644a63ac153ce4",
+  "packaged_manifest_entries_verified": 14,
+  "correction": {
+    "old_head": "668772c2a9f1e05f36e6a2746d878ad2191a19a1",
+    "new_tests": 3,
+    "focused_pricing_tests": "9/9",
+    "domain_tests": "26/26",
+    "contracts_tests": "6/6"
+  },
+  "native_github_review": "HTTP 403; not posted"
+}

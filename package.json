@@ -7,10 +7,13 @@
   "engines": { "node": "24.21.0" },
   "scripts": {
     "build": "corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build",
-    "test:unit": "corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/contracts test && corepack pnpm --filter @insignia/worker test",
+    "test:unit": "corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/contracts test && corepack pnpm --filter @insignia/application test && corepack pnpm --filter @insignia/worker test",
+    "db:migrate": "dbmate --no-dump-schema --migrations-dir packages/database/migrations up",
+    "test:database": "corepack pnpm --filter @insignia/database test",
+    "check:database": "corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database",
     "test:vectors": "tsc -p scripts/m1-functions/tsconfig.json && node --test scripts/m1-functions/check-vector.test.ts",
     "test:browser": "corepack pnpm --filter @insignia/web test && corepack pnpm --filter @insignia/storefront test",
-    "check:style": "biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src scripts/boundaries scripts/m1-functions/check-vector.test.ts",
+    "check:style": "biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/application/src packages/application/test packages/database/src packages/database/test scripts/boundaries scripts/m1-functions/check-vector.test.ts",
     "check:boundaries": "node scripts/boundaries/check.mjs && node scripts/boundaries/check-domain-effects.mjs && node --test scripts/boundaries/domain-effects.test.mjs",
     "check:secrets": "node scripts/boundaries/check-secrets.mjs",
     "check:rust": "bash scripts/m1-functions/check.sh",
@@ -19,6 +22,7 @@
   "devDependencies": {
     "@types/node": "24.10.0",
     "@biomejs/biome": "2.5.14",
+    "dbmate": "2.36.0",
     "dependency-cruiser": "18.4.0",
     "esbuild": "0.25.12",
     "typescript": "5.9.3"

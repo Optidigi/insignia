@@ -77,6 +77,8 @@ const manifests = [
   'apps/storefront/package.json',
   'apps/worker/package.json',
   'packages/domain/package.json',
+  'packages/application/package.json',
+  'packages/database/package.json',
 ];
 for (const manifest of manifests) {
   const parsed = JSON.parse(readFileSync(resolve(root, manifest), 'utf8'));
