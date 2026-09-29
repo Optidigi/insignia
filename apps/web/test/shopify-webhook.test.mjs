@@ -76,6 +76,29 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
     const replay = await fetch(endpoint, { method: 'POST', headers, body });
     assert.equal(replay.status, 200);
     assert.deepEqual(await replay.json(), { inboxId: receipt.inboxId, status: 'duplicate' });
+    const changedBody = Buffer.from(
+      JSON.stringify({ id: Number(shopifyShopId), myshopify_domain: domain, changed: true }),
+    );
+    for (const conflict of [
+      { headers: { ...headers, 'x-shopify-topic': 'shop/update' }, body },
+      {
+        headers: {
+          ...headers,
+          'x-shopify-triggered-at': new Date(Date.parse(headers['x-shopify-triggered-at']) + 1000).toISOString(),
+        },
+        body,
+      },
+      {
+        headers: {
+          ...headers,
+          'x-shopify-hmac-sha256': createHmac('sha256', secret).update(changedBody).digest('base64'),
+        },
+        body: changedBody,
+      },
+    ]) {
+      const response = await fetch(endpoint, { method: 'POST', ...conflict });
+      assert.equal(response.status, 503);
+    }
     const rows = await pool.query('select id, payload from inbox_messages where id = $1', [receipt.inboxId]);
     assert.equal(rows.rowCount, 1);
     assert.deepEqual(rows.rows[0].payload, body);
@@ -92,7 +115,7 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
     });
     assert.equal(metricsResponse.status, 200);
     const metrics = await metricsResponse.text();
-    assert.match(metrics, /insignia_webhook_total\{outcome="rejected"\} 1/);
+    assert.match(metrics, /insignia_webhook_total\{outcome="rejected"\} 4/);
     assert.match(metrics, /insignia_webhook_total\{outcome="received"\} 1/);
     assert.match(metrics, /insignia_webhook_total\{outcome="duplicate"\} 2/);
     const workerPort = port + 1000;
@@ -124,23 +147,23 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
       await delay(100);
     }
     assert.ok(workerReady, 'worker did not reach durable readiness');
-    let quarantined = false;
+    let completed = false;
     for (let i = 0; i < 100; i++) {
       const row = await pool.query('select state from inbox_messages where id = $1', [receipt.inboxId]);
       const generation = await pool.query(
         'select deactivated_at from installation_generations where shop_id = $1 and generation = 1',
         [shopId],
       );
-      if (row.rows[0]?.state === 'failed' && !generation.rows[0]?.deactivated_at) {
-        quarantined = true;
+      if (row.rows[0]?.state === 'processed' && generation.rows[0]?.deactivated_at) {
+        completed = true;
         break;
       }
       await delay(100);
     }
-    assert.ok(quarantined, 'worker did not quarantine the body-authentic but topic-unverifiable uninstall');
+    assert.ok(completed, 'worker did not atomically process the current authenticated uninstall');
     const completedReplay = await fetch(endpoint, { method: 'POST', headers, body });
     assert.equal(completedReplay.status, 200);
-    assert.deepEqual(await completedReplay.json(), { inboxId: receipt.inboxId, status: 'duplicate' });
+    assert.deepEqual(await completedReplay.json(), { inboxId: receipt.inboxId, status: 'processed' });
     assert.equal(
       (
         await pool.query('select count(*)::int as n from inbox_messages where external_delivery_id = $1', [

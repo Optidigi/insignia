@@ -84,7 +84,9 @@ export interface DurableCore {
     pendingUninstallIds(limit: number): Promise<string[]>;
     receive(input: VerifiedShopifyDelivery): Promise<ShopifyWebhookReceipt>;
     getById(id: string): Promise<ShopifyWebhookState | null>;
-    processUninstall(id: string): Promise<'unverified' | 'already_processed' | 'unresolved' | 'stale' | 'not_found'>;
+    processUninstall(
+      id: string,
+    ): Promise<'processed' | 'unverified' | 'already_processed' | 'unresolved' | 'stale' | 'not_found'>;
   };
   readonly credentials: {
     install(input: CredentialIdentity & { pair: ExpiringOfflinePair }): Promise<string>;

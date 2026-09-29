@@ -1,5 +1,7 @@
 # M3-002 local runtime review packet
 
+> Historical PR #23 reviewed-head packet. The principal's [M3-002R direction](PR-023-principal-review.md) accepted the controlled HTTPS ingress trust model, and the [M3-002R correction packet](review-packet-M3-002R.md) supersedes this packet's uninstall-authenticity blocker. The original findings and stopped result below remain as reviewed-head evidence.
+
 Status: implementation PR for principal review; **M3-002 acceptance blocked** on uninstall authenticity. All work in this packet is local/off-store and uses synthetic credentials and HTTP requests.
 
 ## Provenance and reviewed base

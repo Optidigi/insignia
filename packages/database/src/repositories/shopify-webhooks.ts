@@ -1,11 +1,12 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { type Kysely, sql, type Transaction } from 'kysely';
 import type { Database } from '../client/database.js';
+import { createTenantRepository } from './tenant.js';
 
 const WEBHOOK_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 const SHOP_DOMAIN = /^[a-z0-9][a-z0-9-]{0,61}\.myshopify\.com$/;
 
-/** The body must pass raw-byte HMAC; routing metadata remains unsigned. */
+/** The body must pass raw-byte HMAC at controlled ingress; bounded routing headers are trusted Shopify delivery metadata. */
 export type VerifiedShopifyDelivery = {
   shopDomain: string;
   topic: string;
@@ -61,7 +62,7 @@ function validate(input: VerifiedShopifyDelivery): void {
 /** Shopify signs the body, not the routing headers. Require a signed Shop id
  * before an uninstall may affect an installation. Domain can be null in
  * Shopify's Shop payload, but when present it must agree with the header. */
-function signedUninstallShop(body: Uint8Array, headerDomain: string): string {
+function signedUninstallShop(body: Uint8Array, headerDomain: string): { id: string; domainMatches: boolean } {
   let value: unknown;
   try {
     value = JSON.parse(Buffer.from(body).toString('utf8')) as unknown;
@@ -76,10 +77,10 @@ function signedUninstallShop(body: Uint8Array, headerDomain: string): string {
     throw new TypeError('Uninstall body has no valid signed Shop id');
   if (
     !Object.hasOwn(shop, 'myshopify_domain') ||
-    (shop.myshopify_domain !== null && shop.myshopify_domain !== headerDomain)
+    (shop.myshopify_domain !== null && typeof shop.myshopify_domain !== 'string')
   )
-    throw new TypeError('Uninstall body Shop domain conflicts with routing');
-  return id;
+    throw new TypeError('Uninstall body has no valid Shop domain');
+  return { id, domainMatches: shop.myshopify_domain === null || shop.myshopify_domain === headerDomain };
 }
 
 type Locked = {
@@ -158,12 +159,11 @@ async function resolveLocked(
     .executeTakeFirst();
   if (!current) return { shopId: null, generation: null, resolution: 'unresolved' };
   if (current.deactivated_at !== null) return { shopId: null, generation: null, resolution: 'stale' };
-  if (
-    locked.routing.topic === 'app/uninstalled' &&
-    (current.shopify_shop_id === null ||
-      current.shopify_shop_id !== signedUninstallShop(locked.inbox.payload, locked.routing.shop_domain))
-  )
-    return { shopId: null, generation: null, resolution: 'unverified' };
+  if (locked.routing.topic === 'app/uninstalled') {
+    const signed = signedUninstallShop(locked.inbox.payload, locked.routing.shop_domain);
+    if (current.shopify_shop_id === null || !signed.domainMatches || current.shopify_shop_id !== signed.id)
+      return { shopId: null, generation: null, resolution: 'unverified' };
+  }
   // First-install deliveries may precede local installation persistence. On
   // reinstall, a trigger timestamp before activation belongs to the old era.
   if (
@@ -328,7 +328,7 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
 
     async processUninstall(
       id: string,
-    ): Promise<'unverified' | 'already_processed' | 'unresolved' | 'stale' | 'not_found'> {
+    ): Promise<'processed' | 'unverified' | 'already_processed' | 'unresolved' | 'stale' | 'not_found'> {
       return database.transaction().execute(async (tx) => {
         const locked = await lockById(tx, id);
         if (!locked) return 'not_found';
@@ -351,20 +351,33 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
           await tx.updateTable('inbox_messages').set({ state: 'processed' }).where('id', '=', id).execute();
           return 'stale';
         }
-        // Shopify signs the body only. Even a matching signed Shop ID cannot
-        // authenticate the topic or the installation era in mutable headers.
-        // Retain the delivery as failed evidence; a separately authenticated
-        // lifecycle signal must perform the generation-scoped deactivation.
+        if (resolved.shopId === null || resolved.generation === null)
+          throw new Error('Resolved uninstall has no installation identity');
+        // The tenant row lock serializes deactivation with reinstall. Inbox
+        // completion and all installation fences commit in this transaction.
+        const deactivation = await createTenantRepository(tx).deactivateCurrent(
+          tx,
+          resolved.shopId,
+          resolved.generation,
+        );
+        if (deactivation === 'stale') {
+          await tx
+            .updateTable('inbox_messages')
+            .set({ state: 'processed' })
+            .where('id', '=', id)
+            .executeTakeFirstOrThrow();
+          return 'stale';
+        }
         await tx
           .updateTable('inbox_messages')
           .set((expression) => ({
-            state: 'failed',
-            last_error_class: 'unverified_uninstall_headers',
+            state: 'processed',
+            last_error_class: null,
             attempts: expression('attempts', '+', 1),
           }))
           .where('id', '=', id)
           .executeTakeFirstOrThrow();
-        return 'unverified';
+        return 'processed';
       });
     },
   };

@@ -1,0 +1,27 @@
+{
+  "pr": 23,
+  "base": "86c466a9709b67f85601596fb7656857cc20a9cc",
+  "reviewed_head": "ae12f3474a277165be68b2eeee226865976ba56e",
+  "reviewed_tree": "0e5398f9eddb6c03774e2f1edaebba7c9eb529bd",
+  "synthetic_merge": "7dfa39909f5aac77f821a2d28b38f357fc16e481",
+  "workflow_runs": [
+    36618321635,
+    36618321606,
+    36618321625,
+    36618321600,
+    36618321533,
+    36618321548,
+    36618321646,
+    36618321585,
+    36618321534,
+    36618321748
+  ],
+  "runtime_ci": {
+    "database_tests": "31/31",
+    "shopify_tests": "16/16",
+    "worker_tests": "14 passed",
+    "built_http_tests": "passed"
+  },
+  "principal_direction": "trust bounded Shopify routing headers as provider metadata after raw-body HMAC at controlled HTTPS ingress; retain signed Shop identity and generation fencing",
+  "native_github_review": "HTTP 403; not posted"
+}
