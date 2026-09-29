@@ -1,0 +1,76 @@
+name: M3-002 local runtime and ingress
+
+on:
+  pull_request:
+    paths:
+      - 'apps/web/**'
+      - 'apps/worker/**'
+      - 'packages/application/**'
+      - 'packages/database/**'
+      - 'packages/shopify/**'
+      - 'packages/observability/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/m3-runtime.yml'
+      - 'docs/delivery/**'
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'apps/worker/**'
+      - 'packages/application/**'
+      - 'packages/database/**'
+      - 'packages/shopify/**'
+      - 'packages/observability/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - '.github/workflows/m3-runtime.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  runtime:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: insignia_test
+          POSTGRES_PASSWORD: insignia_test
+          POSTGRES_DB: insignia_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U insignia_test -d insignia_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgres://insignia_test:insignia_test@localhost:5432/insignia_test?sslmode=disable
+      INSIGNIA_REQUIRE_POSTGRES_TEST: '1'
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '24.21.0'
+      - run: corepack pnpm install --frozen-lockfile
+      - run: corepack pnpm build
+      - run: corepack pnpm check:style
+      - run: corepack pnpm check:boundaries
+      - run: corepack pnpm check:secrets
+      - run: corepack pnpm check:database
+      - run: corepack pnpm --filter @insignia/shopify test
+      - run: corepack pnpm --filter @insignia/application test
+      - run: corepack pnpm --filter @insignia/observability test
+      - run: corepack pnpm --filter @insignia/worker test
+      - name: Built HTTP ingress with PostgreSQL and queue handoff
+        working-directory: apps/web
+        run: node --test test/shopify-webhook.test.mjs
+      - name: Rehearse disposable migration down and up
+        run: |
+          corepack pnpm exec dbmate --no-dump-schema --migrations-dir packages/database/migrations rollback
+          corepack pnpm db:migrate

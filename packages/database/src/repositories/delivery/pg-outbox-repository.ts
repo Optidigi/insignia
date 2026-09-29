@@ -19,13 +19,21 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
     const normalizedPayload = JSON.parse(canonicalPayload) as unknown;
     const shop = await transaction
       .selectFrom('shops')
-      .select('current_generation')
-      .where('shop_id', '=', event.shopId)
-      .forNoKeyUpdate()
+      .innerJoin('installation_generations as generation', (join) =>
+        join
+          .onRef('generation.shop_id', '=', 'shops.shop_id')
+          .onRef('generation.generation', '=', 'shops.current_generation'),
+      )
+      .select(['shops.current_generation', 'generation.deactivated_at'])
+      .where('shops.shop_id', '=', event.shopId)
+      .forNoKeyUpdate('shops')
       .executeTakeFirst();
     if (!shop) throw new Error('Outbox shop does not exist');
     if (event.installationGeneration !== null && event.installationGeneration !== shop.current_generation) {
       throw new Error('Outbox event belongs to a stale installation generation');
+    }
+    if (event.installationGeneration !== null && shop.deactivated_at !== null) {
+      throw new Error('Outbox event belongs to an inactive installation generation');
     }
     const inserted = await transaction
       .insertInto('outbox_events')
@@ -109,9 +117,14 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
     return this.database.transaction().execute(async (transaction) => {
       const shop = await transaction
         .selectFrom('shops')
-        .select('current_generation')
-        .where('shop_id', '=', shopId)
-        .forNoKeyUpdate()
+        .innerJoin('installation_generations as generation', (join) =>
+          join
+            .onRef('generation.shop_id', '=', 'shops.shop_id')
+            .onRef('generation.generation', '=', 'shops.current_generation'),
+        )
+        .select(['shops.current_generation', 'generation.deactivated_at'])
+        .where('shops.shop_id', '=', shopId)
+        .forNoKeyUpdate('shops')
         .executeTakeFirst();
       if (!shop) return [];
       const databaseTime = await sql<{ current_time: Date }>`select clock_timestamp() as current_time`.execute(
@@ -127,7 +140,9 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
         .where((expression) =>
           expression.or([
             expression('installation_generation', 'is', null),
-            expression('installation_generation', '=', shop.current_generation),
+            ...(shop.deactivated_at === null
+              ? [expression('installation_generation', '=', shop.current_generation)]
+              : []),
           ]),
         )
         .where('available_at', '<=', sql<Date>`clock_timestamp()`)
@@ -195,9 +210,14 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
     return this.database.transaction().execute(async (transaction) => {
       const shop = await transaction
         .selectFrom('shops')
-        .select('current_generation')
-        .where('shop_id', '=', shopId)
-        .forNoKeyUpdate()
+        .innerJoin('installation_generations as generation', (join) =>
+          join
+            .onRef('generation.shop_id', '=', 'shops.shop_id')
+            .onRef('generation.generation', '=', 'shops.current_generation'),
+        )
+        .select(['shops.current_generation', 'generation.deactivated_at'])
+        .where('shops.shop_id', '=', shopId)
+        .forNoKeyUpdate('shops')
         .executeTakeFirst();
       if (!shop) return 'not_owned';
       const row = await transaction
@@ -210,6 +230,7 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
       if (!row) return 'not_owned';
       if (row.installation_generation !== null && row.installation_generation !== shop.current_generation)
         return 'not_owned';
+      if (row.installation_generation !== null && shop.deactivated_at !== null) return 'not_owned';
       if (row.state === 'delivered') return 'already_delivered';
       if (row.state !== 'leased' || row.lease_owner !== leaseOwner || row.attempts !== expectedAttempt)
         return 'not_owned';

@@ -3,6 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/runtime.d.ts",
+      "default": "./dist/runtime.js"
+    }
+  },
   "engines": { "node": "24.21.0" },
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -10,6 +16,6 @@
     "diagnostic": "node dist/main.js --diagnostic",
     "start": "node dist/main.js"
   },
-  "dependencies": { "sharp": "0.35.4" },
-  "devDependencies": { "@insignia/database": "workspace:*", "@types/node": "24.10.0", "typescript": "5.9.3" }
+  "dependencies": { "@insignia/application": "workspace:*", "@insignia/database": "workspace:*", "@insignia/observability": "workspace:*", "@insignia/shopify": "workspace:*", "pg": "8.23.0", "pg-boss": "12.35.0", "sharp": "0.35.4" },
+  "devDependencies": { "@types/node": "24.10.0", "@types/pg": "8.23.1", "typescript": "5.9.3" }
 }

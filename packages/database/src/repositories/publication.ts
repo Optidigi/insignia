@@ -51,9 +51,14 @@ export function createPublicationRepository(transaction: Transaction<Database>) 
   async function lockedOperation(shopId: string, configId: string, operationId: string) {
     const shop = await transaction
       .selectFrom('shops')
-      .select('current_generation')
-      .where('shop_id', '=', shopId)
-      .forUpdate()
+      .innerJoin('installation_generations as installation', (join) =>
+        join
+          .onRef('installation.shop_id', '=', 'shops.shop_id')
+          .onRef('installation.generation', '=', 'shops.current_generation'),
+      )
+      .select(['shops.current_generation', 'installation.deactivated_at'])
+      .where('shops.shop_id', '=', shopId)
+      .forUpdate('shops')
       .executeTakeFirst();
     const config = await transaction
       .selectFrom('product_configs')
@@ -76,6 +81,7 @@ export function createPublicationRepository(transaction: Transaction<Database>) 
   function isCurrent(locked: Awaited<ReturnType<typeof lockedOperation>>): boolean {
     return Boolean(
       locked.shop &&
+        locked.shop.deactivated_at === null &&
         locked.config &&
         locked.operation &&
         locked.operation.installation_generation === locked.shop.current_generation &&
@@ -106,11 +112,17 @@ export function createPublicationRepository(transaction: Transaction<Database>) 
       const digest = sha256CanonicalJson(input.expectedProjection);
       const shop = await transaction
         .selectFrom('shops')
-        .select('current_generation')
-        .where('shop_id', '=', input.shopId)
-        .forUpdate()
+        .innerJoin('installation_generations as installation', (join) =>
+          join
+            .onRef('installation.shop_id', '=', 'shops.shop_id')
+            .onRef('installation.generation', '=', 'shops.current_generation'),
+        )
+        .select(['shops.current_generation', 'installation.deactivated_at'])
+        .where('shops.shop_id', '=', input.shopId)
+        .forUpdate('shops')
         .executeTakeFirstOrThrow();
       if (shop.current_generation !== input.installationGeneration) throw new Error('stale installation generation');
+      if (shop.deactivated_at !== null) throw new Error('inactive installation generation');
       const config = await transaction
         .selectFrom('product_configs')
         .select('publication_sequence')

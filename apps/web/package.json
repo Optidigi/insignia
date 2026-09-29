@@ -12,13 +12,20 @@
   "dependencies": {
     "@astrojs/node": "11.1.6",
     "@astrojs/preact": "6.0.5",
+    "@insignia/application": "workspace:*",
+    "@insignia/database": "workspace:*",
+    "@insignia/observability": "workspace:*",
+    "@insignia/shopify": "workspace:*",
+    "@insignia/worker": "workspace:*",
     "astro": "7.3.5",
+    "pg": "8.23.0",
     "preact": "10.29.8"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.6",
     "@shopify/polaris-types": "1.1.0",
     "@types/node": "24.10.0",
+    "@types/pg": "8.23.1",
     "playwright": "1.63.0",
     "typescript": "5.9.3"
   }
