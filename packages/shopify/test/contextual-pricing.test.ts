@@ -269,6 +269,36 @@ describe('resolveVariantContext', () => {
     expect(JSON.parse(init.body as string)).toMatchObject({ variables: { country: 'NL', ids: target.variantIds } });
   });
 
+  test('direct exported Admin transport rejects oversized or duplicate ID vectors before credential acquisition', async () => {
+    const acquire = vi.fn();
+    const fetchImpl = vi.fn();
+    const transport = createShopifyAdminGraphqlReadTransport({ credentials: { acquire }, fetchImpl });
+    const captured = vi.fn(async (_request: Parameters<typeof transport.execute>[0]) => response());
+    await resolveVariantContext(target, { transport: { execute: captured } });
+    const request = captured.mock.calls[0]?.[0];
+    if (!request) throw new Error('Missing synthetic request');
+    await expect(
+      transport.execute({
+        ...request,
+        variables: {
+          ...request.variables,
+          ids: Array.from({ length: 26 }, (_, i) => `gid://shopify/ProductVariant/${i + 1}`),
+        },
+      }),
+    ).rejects.toMatchObject({ kind: 'invalid_request' });
+    await expect(
+      transport.execute({
+        ...request,
+        variables: {
+          ...request.variables,
+          ids: ['gid://shopify/ProductVariant/1', 'gid://shopify/ProductVariant/1'],
+        },
+      }),
+    ).rejects.toMatchObject({ kind: 'invalid_request' });
+    expect(acquire).not.toHaveBeenCalled();
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
   test('uses an opaque M3 tenant ID and refuses an expiring token before HTTP', async () => {
     const fetchImpl = vi.fn();
     const transport = createShopifyAdminGraphqlReadTransport({

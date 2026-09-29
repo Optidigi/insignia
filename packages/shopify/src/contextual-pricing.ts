@@ -88,7 +88,7 @@ export interface AdminGraphqlReadTransport {
 
 export type AdminCredentialAcquire =
   | { kind: 'usable'; shopDomain: string; accessToken: string; accessExpiresAt: Date }
-  | { kind: 'missing' | 'inactive' | 'reauth_required' };
+  | { kind: 'missing' | 'inactive' | 'reauth_required' | 'temporarily_unavailable' };
 
 export interface AdminCredentialSource {
   acquire(input: { shopId: string; installationGeneration: string }): Promise<AdminCredentialAcquire>;
@@ -124,6 +124,17 @@ export function createShopifyAdminGraphqlReadTransport(config: {
       if (request.apiVersion !== CONTEXTUAL_PRICING_API_VERSION || request.query !== QUERY) {
         throw new ContextualPricingError('invalid_request');
       }
+      if (
+        !request.shopId ||
+        !/^[1-9][0-9]*$/.test(request.installationGeneration) ||
+        !Array.isArray(request.variables?.ids) ||
+        request.variables.ids.length < 1 ||
+        request.variables.ids.length > CONTEXTUAL_PRICING_BATCH_SIZE ||
+        !request.variables.ids.every((id) => /^gid:\/\/shopify\/ProductVariant\/[1-9][0-9]*$/.test(id)) ||
+        new Set(request.variables.ids).size !== request.variables.ids.length ||
+        !/^[A-Z]{2}$/.test(request.variables.country)
+      )
+        throw new ContextualPricingError('invalid_request');
       let credential: AdminCredentialAcquire;
       try {
         credential = await config.credentials.acquire({
@@ -136,6 +147,7 @@ export function createShopifyAdminGraphqlReadTransport(config: {
       if (credential.kind !== 'usable') {
         if (credential.kind === 'missing') throw new ContextualPricingError('credential_missing');
         if (credential.kind === 'inactive') throw new ContextualPricingError('credential_inactive');
+        if (credential.kind === 'temporarily_unavailable') throw new ContextualPricingError('provider_unavailable');
         throw new ContextualPricingError('reauth_required');
       }
       if (

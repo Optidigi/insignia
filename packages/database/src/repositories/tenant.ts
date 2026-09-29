@@ -25,6 +25,25 @@ function mapShop(row: {
 /** Mutations require an enclosing transaction so installation and shop state commit together. */
 export function createTenantRepository(executor: DatabaseExecutor) {
   return {
+    async getActiveProviderScope(input: { shopId: string; installationGeneration: string }) {
+      const row = await executor
+        .selectFrom('shops')
+        .innerJoin('installation_generations as i', (join) =>
+          join.onRef('i.shop_id', '=', 'shops.shop_id').onRef('i.generation', '=', 'shops.current_generation'),
+        )
+        .select(['shops.shop_id', 'shops.shop_domain', 'shops.shopify_shop_id', 'shops.current_generation'])
+        .where('shops.shop_id', '=', input.shopId)
+        .where('shops.current_generation', '=', input.installationGeneration)
+        .where('i.deactivated_at', 'is', null)
+        .executeTakeFirst();
+      if (!row?.shopify_shop_id) return null;
+      return {
+        shopId: row.shop_id,
+        shopDomain: row.shop_domain,
+        shopifyShopId: row.shopify_shop_id,
+        installationGeneration: row.current_generation,
+      };
+    },
     async getShop(shopId: string): Promise<ShopRecord | null> {
       const row = await executor
         .selectFrom('shops')

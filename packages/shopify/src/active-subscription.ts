@@ -1,4 +1,5 @@
 /** Shopify Partner API 2026-07 activeSubscription read contract; the access token is injected at runtime. */
+import { randomUUID } from 'node:crypto';
 export const PARTNER_API_VERSION = '2026-07' as const;
 export const ACTIVE_SUBSCRIPTION_SCHEMA_VERSION = 'm4-active-subscription-v1' as const;
 
@@ -100,9 +101,16 @@ function decimal(value: unknown): string {
   if (typeof value !== 'string' || !/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value) || value.length > 128) return malformed();
   return value;
 }
+const WIRE_NUMBER = Symbol('Partner JSON numeric token');
+type WireNumber = { readonly [WIRE_NUMBER]: string };
+function wireNumber(value: unknown): string {
+  if (!value || typeof value !== 'object' || !(WIRE_NUMBER in value)) return malformed();
+  const lexical = (value as WireNumber)[WIRE_NUMBER];
+  if (typeof lexical !== 'string') return malformed();
+  return lexical;
+}
 function floatDecimal(value: unknown): string {
-  if (typeof value !== 'string' || !value.startsWith('#number:')) return malformed();
-  const lexical = value.slice(8);
+  const lexical = wireNumber(value);
   const parts = lexical.match(/^(0|[1-9]\d*)(?:\.(\d+))?(?:[eE]([+-]?\d+))?$/);
   if (!parts || lexical.length > 128) return malformed();
   const integerPart = parts[1];
@@ -125,8 +133,9 @@ function optionalDecimal(value: unknown): string | null {
   return value == null ? null : decimal(value);
 }
 function integer(value: unknown): number {
-  if (typeof value !== 'string' || !/^#number:(?:0|[1-9]\d*)$/.test(value)) return malformed();
-  const number = Number(value.slice(8));
+  const lexical = wireNumber(value);
+  if (!/^(?:0|[1-9]\d*)$/.test(lexical)) return malformed();
+  const number = Number(lexical);
   if (!Number.isSafeInteger(number)) return malformed();
   return number;
 }
@@ -261,6 +270,10 @@ function distinctHandles(items: SubscriptionItem[]): void {
 /** Quote JSON numeric tokens so GraphQL Float values retain their exact wire representation. */
 function parseProviderJson(body: string): unknown {
   if (typeof body !== 'string' || body.length > 256 * 1024) return malformed();
+  const nonce = randomUUID();
+  const prefix = `__insignia_wire_${nonce}_`;
+  if (body.includes(prefix)) return malformed();
+  const numericTokens = new Map<string, string>();
   let result = '';
   let inString = false;
   let escaped = false;
@@ -277,12 +290,16 @@ function parseProviderJson(body: string): unknown {
     } else if (ch === '-' || /[0-9]/.test(ch)) {
       const match = body.slice(i).match(/^-?(?:0|[1-9]\d*)(?:\.\d+)?(?:[eE][+-]?\d+)?/);
       if (!match) return malformed();
-      result += `"#number:${match[0]}"`;
+      const marker = `${prefix}${numericTokens.size}__`;
+      numericTokens.set(marker, match[0]);
+      result += JSON.stringify(marker);
       i += match[0].length - 1;
     } else result += ch;
   }
   try {
-    return JSON.parse(result) as unknown;
+    return JSON.parse(result, (_key, value: unknown) =>
+      typeof value === 'string' && numericTokens.has(value) ? { [WIRE_NUMBER]: numericTokens.get(value) } : value,
+    ) as unknown;
   } catch {
     return malformed();
   }

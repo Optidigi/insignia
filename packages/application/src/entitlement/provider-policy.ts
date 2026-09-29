@@ -1,4 +1,5 @@
 /** Application policy for an observed, versioned subscription projection. Provider prices are not policy. */
+import type { ProviderTenantScopePort } from '../shopify/provider-scope.js';
 export type ProviderSubscriptionSnapshot = {
   schemaVersion: 'm4-active-subscription-v1';
   sourceApiVersion: '2026-07';
@@ -22,10 +23,11 @@ export type UnscopedProviderSubscriptionSnapshot = Omit<
 >;
 
 /** Bind a verified provider read to the authenticated M3 tenant/install before projection. */
-export function bindProviderSubscription(
+export async function bindProviderSubscription(
   snapshot: UnscopedProviderSubscriptionSnapshot,
   scope: { appId: string; shopId: string; tenantShopId: string; installationGeneration: string },
-): ProviderSubscriptionSnapshot {
+  tenants: ProviderTenantScopePort,
+): Promise<ProviderSubscriptionSnapshot> {
   if (
     snapshot.appId !== scope.appId ||
     snapshot.shopId !== scope.shopId ||
@@ -33,6 +35,17 @@ export function bindProviderSubscription(
     !/^[1-9][0-9]*$/.test(scope.installationGeneration)
   )
     throw new Error('Provider subscription identity mismatch');
+  const verified = await tenants.getActiveProviderScope({
+    shopId: scope.tenantShopId,
+    installationGeneration: scope.installationGeneration,
+  });
+  if (
+    !verified ||
+    verified.shopId !== scope.tenantShopId ||
+    verified.installationGeneration !== scope.installationGeneration ||
+    `gid://shopify/Shop/${verified.shopifyShopId}` !== scope.shopId
+  )
+    throw new Error('Provider subscription tenant identity mismatch');
   return { ...snapshot, tenantShopId: scope.tenantShopId, installationGeneration: scope.installationGeneration };
 }
 export type PlanFeaturePolicy = {
@@ -56,8 +69,8 @@ export type EntitlementProjection = {
   includedUsage: number | null;
   observedUsageQuantity: string | null;
   billableUsageAllowed: boolean;
-  /** M9 records WAIVE_TRIAL at the paid-order fact and never queues it for later delivery. */
-  qualifyingUsageDisposition: 'BILLABLE' | 'WAIVE_TRIAL' | 'DENY';
+  /** Current eligibility only. M9 must classify each order by its first full payment time. */
+  qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL' | 'DENY';
   scheduledCancellation: boolean;
   pendingProviderUpdate: ProviderSubscriptionSnapshot['pendingUpdate'];
   freshness: 'fresh' | 'stale' | 'missing';
@@ -190,6 +203,6 @@ export function projectEntitlement(
     includedUsage: plan.includedUsage,
     observedUsageQuantity: usage.usage?.quantity ?? null,
     billableUsageAllowed: paid,
-    qualifyingUsageDisposition: trial ? 'WAIVE_TRIAL' : 'BILLABLE',
+    qualifyingUsageDisposition: trial ? 'WAIVE_TRIAL' : 'REQUIRES_EVENT_TIME',
   };
 }

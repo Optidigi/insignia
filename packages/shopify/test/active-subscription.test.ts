@@ -138,6 +138,14 @@ describe('Partner activeSubscription normalization', () => {
     const result = await client(wire).read({ appId, shopId });
     expect(result.items.find((item) => item.handle === 'meter.orders')?.usage?.quantity).toBe('0.0000001');
   });
+  test('rejects provider strings that spoof numeric wire tokens', async () => {
+    for (const quantity of ['#number:3.25', '__insignia_wire_123_0__']) {
+      const body = response(
+        contract({ items: [{ ...tiered(), usage: { quantity, cost: { amount: '0.00', currencyCode: 'USD' } } }] }),
+      );
+      await expect(client(body).read({ appId, shopId })).rejects.toMatchObject({ kind: 'malformed_response' });
+    }
+  });
   test.each([
     [contract({ items: [flat('Same'), flat('Same')] }), 'malformed_response'],
     [contract({ items: [flat('Case'), flat('case')] }), null],

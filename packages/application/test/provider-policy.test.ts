@@ -70,15 +70,29 @@ const context = (now: Date) => ({
 });
 
 describe('provider entitlement policy', () => {
-  test('binds provider read to exact tenant and current installation', () => {
+  test('binds provider read only after M3 verifies exact active tenant, provider Shop ID and generation', async () => {
     const { tenantShopId: _tenant, installationGeneration: _generation, ...raw } = snapshot();
-    expect(bindProviderSubscription(raw, context(at))).toMatchObject({
+    const tenants = {
+      getActiveProviderScope: async () => ({
+        shopId: 'tenant-shop-1',
+        shopDomain: 'fixture.myshopify.com',
+        shopifyShopId: '456',
+        installationGeneration: '7',
+      }),
+    };
+    await expect(bindProviderSubscription(raw, context(at), tenants)).resolves.toMatchObject({
       tenantShopId: 'tenant-shop-1',
       installationGeneration: '7',
     });
-    expect(() => bindProviderSubscription(raw, { ...context(at), shopId: 'gid://shopify/Shop/999' })).toThrow(
+    await expect(
+      bindProviderSubscription(raw, { ...context(at), shopId: 'gid://shopify/Shop/999' }, tenants),
+    ).rejects.toThrow(/identity/);
+    await expect(bindProviderSubscription(raw, { ...context(at), tenantShopId: 'other' }, tenants)).rejects.toThrow(
       /identity/,
     );
+    await expect(
+      bindProviderSubscription(raw, context(at), { getActiveProviderScope: async () => null }),
+    ).rejects.toThrow(/identity/);
   });
   test('current configured plan grants features and reports Shopify usage separately from included allowance', () => {
     expect(projectEntitlement(snapshot(), config, context(at))).toMatchObject({
@@ -88,7 +102,7 @@ describe('provider entitlement policy', () => {
       includedUsage: 10,
       observedUsageQuantity: '4',
       billableUsageAllowed: true,
-      qualifyingUsageDisposition: 'BILLABLE',
+      qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME',
       scheduledCancellation: false,
       freshness: 'fresh',
     });
@@ -107,6 +121,8 @@ describe('provider entitlement policy', () => {
       qualifyingUsageDisposition: 'WAIVE_TRIAL',
     });
     expect(JSON.stringify(result)).not.toMatch(/retrocharge|backfill|queuedUsage/i);
+    // A later paid-state refresh must not turn the earlier paid-order fact into a billable event.
+    expect(projectEntitlement(snapshot(), config, context(at)).qualifyingUsageDisposition).toBe('REQUIRES_EVENT_TIME');
   });
   test('scheduled cancellation retains current grants; pending update never grants future features', () => {
     const result = projectEntitlement(
