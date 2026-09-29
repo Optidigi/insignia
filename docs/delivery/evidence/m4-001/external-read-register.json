@@ -91,6 +91,155 @@
         "pendingUpdate": null,
         "legacySubscriptionId": "gid://shopify/AppSubscription/38085427483"
       }
+    },
+    {
+      "id": "admin_auth-01",
+      "kind": "admin_auth",
+      "purpose": "own-organization client-credentials exchange for existing installed app; no scope request",
+      "apiVersion": "2026-07",
+      "endpoint": "https://insignia-rewrite-dev.myshopify.com/admin/oauth/access_token",
+      "reservedAt": "2026-09-29T20:43:01.001Z",
+      "outcome": "RESPONSE",
+      "completedAt": "2026-09-29T20:43:01.365Z",
+      "httpStatus": 200,
+      "requestId": "6dfc907f-3a40-4848-8486-52f3b732e96a-1790714581",
+      "scopeNames": [
+        "read_locations",
+        "write_cart_transforms",
+        "write_inventory",
+        "write_products",
+        "write_validations"
+      ],
+      "expiresInSeconds": 86399
+    },
+    {
+      "id": "admin_auth-02",
+      "kind": "admin_auth",
+      "purpose": "own-organization client-credentials exchange for existing installed app; no scope request",
+      "apiVersion": "2026-07",
+      "endpoint": "https://insignia-rewrite-dev.myshopify.com/admin/oauth/access_token",
+      "reservedAt": "2026-09-29T20:43:19.286Z",
+      "outcome": "RESPONSE",
+      "completedAt": "2026-09-29T20:43:19.826Z",
+      "httpStatus": 200,
+      "requestId": "d09bda19-5afc-45ee-829f-14f53fa18df5-1790714599",
+      "scopeNames": [
+        "read_locations",
+        "write_cart_transforms",
+        "write_inventory",
+        "write_products",
+        "write_validations"
+      ],
+      "expiresInSeconds": 86381
+    },
+    {
+      "id": "admin-01",
+      "kind": "admin",
+      "purpose": "discover bounded existing rewrite-dev product and variant IDs",
+      "apiVersion": "2026-07",
+      "endpoint": "https://insignia-rewrite-dev.myshopify.com/admin/api/2026-07/graphql.json",
+      "reservedAt": "2026-09-29T20:43:19.830Z",
+      "outcome": "RESPONSE",
+      "querySha256": "37a5674fb66f9f6f52b1b0ba3483d0387930d4e3b26e89d14d220a333fe4292f",
+      "completedAt": "2026-09-29T20:43:20.122Z",
+      "httpStatus": 200,
+      "responseSha256": "8773446c508e3271dfcac766598b8a09c23b14713519088688678bbffb7a78e8",
+      "responseBytes": 624,
+      "requestId": "de554a65-38cc-4530-96ce-08db6e7ea039-1790714599",
+      "topLevelKeys": [
+        "data",
+        "extensions"
+      ],
+      "sanitizedProducts": [
+        {
+          "id": "gid://shopify/Product/10485042479387",
+          "title": "M0-014 Optional Checkout Fixture",
+          "variants": [
+            {
+              "id": "gid://shopify/ProductVariant/54061591232795",
+              "title": "Small"
+            },
+            {
+              "id": "gid://shopify/ProductVariant/54061591265563",
+              "title": "Large"
+            }
+          ]
+        },
+        {
+          "id": "gid://shopify/Product/10485042839835",
+          "title": "M0-014 Required Checkout Probe",
+          "variants": [
+            {
+              "id": "gid://shopify/ProductVariant/54061592281371",
+              "title": "Required"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "admin-02",
+      "kind": "admin",
+      "purpose": "variant ownership plus NL/US/GB contextual final prices",
+      "apiVersion": "2026-07",
+      "endpoint": "https://insignia-rewrite-dev.myshopify.com/admin/api/2026-07/graphql.json",
+      "reservedAt": "2026-09-29T20:43:20.129Z",
+      "outcome": "RESPONSE",
+      "querySha256": "896d00692be69585b562682e3f632668d92ab4c3352ff98e16d029a7b6ca0f19",
+      "completedAt": "2026-09-29T20:43:20.523Z",
+      "httpStatus": 200,
+      "responseSha256": "eab61404949882641f756e8c89c64e03ef28c05143e5273ef2cae3925bf4f62c",
+      "responseBytes": 780,
+      "requestId": "37bcebe7-e0a1-4fc8-a17d-b32d028d2b72-1790714600",
+      "topLevelKeys": [
+        "data",
+        "extensions"
+      ],
+      "requestedProductId": "gid://shopify/Product/10485042479387",
+      "requestedVariantIds": [
+        "gid://shopify/ProductVariant/54061591232795",
+        "gid://shopify/ProductVariant/54061591265563"
+      ],
+      "sanitizedNodes": [
+        {
+          "id": "gid://shopify/ProductVariant/54061591232795",
+          "typename": "ProductVariant",
+          "productId": "gid://shopify/Product/10485042479387",
+          "countryPrices": {
+            "NL": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            },
+            "US": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            },
+            "GB": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/ProductVariant/54061591265563",
+          "typename": "ProductVariant",
+          "productId": "gid://shopify/Product/10485042479387",
+          "countryPrices": {
+            "NL": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            },
+            "US": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            },
+            "GB": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          }
+        }
+      ]
     }
   ]
 }

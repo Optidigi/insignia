@@ -1,0 +1,59 @@
+{
+  "sourceRawResponseSha256": "84c57414ca5199eb321a9883b86be130aa6f638e365e141e9d1ced2cb3269264",
+  "reconstructedFrom": "sanitized-live-partner-fixture.json",
+  "normalized": {
+    "schemaVersion": "m4-active-subscription-v1",
+    "sourceApiVersion": "2026-07",
+    "appId": "gid://shopify/App/429028933633",
+    "shopId": "gid://shopify/Shop/105501393179",
+    "observedAt": "2026-09-29T20:39:10.781Z",
+    "active": true,
+    "billingPeriod": "EVERY_30_DAYS",
+    "cancelAtEndOfCycle": false,
+    "trialEndsAt": null,
+    "currentBillingCycle": {
+      "startTime": "2026-09-28T16:53:01.000Z",
+      "endTime": "2026-10-28T16:53:01.000Z"
+    },
+    "items": [
+      {
+        "handle": "customized_order_paid",
+        "price": {
+          "kind": "tiered",
+          "providerTypename": "TieredPrice",
+          "active": false,
+          "currency": "USD",
+          "tiersMode": "VOLUME",
+          "tiers": [
+            {
+              "upTo": null,
+              "amountPerUnit": "0.0",
+              "amount": "0.0"
+            }
+          ]
+        },
+        "discount": null,
+        "usage": {
+          "quantity": "3.0",
+          "cost": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        }
+      },
+      {
+        "handle": "insignia-dev-zero-20260928",
+        "price": {
+          "kind": "flat",
+          "providerTypename": "FlatRatePrice",
+          "active": false,
+          "currency": "USD",
+          "amount": "0.0"
+        },
+        "discount": null,
+        "usage": null
+      }
+    ],
+    "pendingUpdate": null
+  }
+}

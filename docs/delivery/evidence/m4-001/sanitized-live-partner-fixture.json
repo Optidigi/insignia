@@ -1,0 +1,61 @@
+{
+  "data": {
+    "activeSubscription": {
+      "app": {
+        "id": "gid://shopify/App/429028933633"
+      },
+      "shop": {
+        "id": "gid://shopify/Shop/105501393179",
+        "myshopifyDomain": "insignia-rewrite-dev.myshopify.com"
+      },
+      "billingPeriod": "EVERY_30_DAYS",
+      "cancelAtEndOfCycle": false,
+      "trialEndsAt": null,
+      "currentBillingCycle": {
+        "startTime": "2026-09-28T16:53:01Z",
+        "endTime": "2026-10-28T16:53:01Z"
+      },
+      "items": [
+        {
+          "handle": "insignia-dev-zero-20260928",
+          "description": "Insignia $0 Test",
+          "price": {
+            "__typename": "FlatRatePrice",
+            "active": false,
+            "currency": "USD",
+            "amount": "0.0"
+          },
+          "discount": null,
+          "usage": null
+        },
+        {
+          "handle": "customized_order_paid",
+          "description": "Test custom order",
+          "price": {
+            "__typename": "TieredPrice",
+            "active": false,
+            "currency": "USD",
+            "tiersMode": "VOLUME",
+            "tiers": [
+              {
+                "upTo": null,
+                "amountPerUnit": "0.0",
+                "amount": "0.0"
+              }
+            ]
+          },
+          "discount": null,
+          "usage": {
+            "quantity": 3.0,
+            "cost": {
+              "amount": "0.0",
+              "currencyCode": "USD"
+            }
+          }
+        }
+      ],
+      "pendingUpdate": null,
+      "legacySubscriptionId": "gid://shopify/AppSubscription/38085427483"
+    }
+  }
+}
