@@ -1,0 +1,171 @@
+{
+  "provenance": {
+    "rawOwnerOnlyFilename": "20260929_011823_274Z_extensions_m0-014-public-transform_614433.json",
+    "rawSha256": "e35b1638ab700643f213030b65ad15e5d7b3de0a4ddc5d893b6df14eb711b136",
+    "sanitization": "retained only Function input/output, target, function ID, fuel and status; removed log envelope, store name and diagnostics"
+  },
+  "target": "cart.transform.run",
+  "functionId": "01a0e9cd-647d-76b2-bc74-3bad0579eeff",
+  "status": "success",
+  "fuelConsumed": 2755653,
+  "input": {
+    "cart": {
+      "quote": {
+        "value": "SVNHMgIA6m4QOr2JoOVM47Xii8zsOgobAAAAASiRM2hjgEihvfnS2EQsKjRv9jWTM5NPJKARxxercvOkAAJVU0QCVVMAAAAYxomBGwAAUPYAAAADAAAAAAAAI4x53dJ4sEk4DZgL5SN4SKHHstc7StoBNFEzZwLGCeX0pVBtb8srnr4cEgc5lUT0R-6K0kYkHxv-P_LgC7mUW14H"
+      },
+      "lines": [
+        {
+          "id": "gid://shopify/CartLine/3675c8bf-de18-4617-b2fb-5d2ecfd09e8c",
+          "quantity": 1,
+          "member": null,
+          "fixtureRole": null,
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/54061591232795",
+            "product": {
+              "id": "gid://shopify/Product/10485042479387",
+              "registration": {
+                "value": "103abd89a0e54ce3b5e28bccec3a0a1b:1:ready"
+              },
+              "policy": {
+                "value": "103abd89a0e54ce3b5e28bccec3a0a1b:1:optional"
+              }
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/CartLine/f0961daf-3c63-4f7d-a335-a1f1155e5edb",
+          "quantity": 2,
+          "member": {
+            "value": "AAEAADErMfEBGwAAAAIAAAAAAAAL2Q"
+          },
+          "fixtureRole": {
+            "value": "m0-014-small-custom-1"
+          },
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/54061591232795",
+            "product": {
+              "id": "gid://shopify/Product/10485042479387",
+              "registration": {
+                "value": "103abd89a0e54ce3b5e28bccec3a0a1b:1:ready"
+              },
+              "policy": {
+                "value": "103abd89a0e54ce3b5e28bccec3a0a1b:1:optional"
+              }
+            }
+          }
+        },
+        {
+          "id": "gid://shopify/CartLine/33e67f22-1e0a-4659-bcc0-4d3f3051191e",
+          "quantity": 1,
+          "member": {
+            "value": "AAAAADErMfEBGwAAAAEAAAAAAAAL2g"
+          },
+          "fixtureRole": {
+            "value": "m0-014-small-custom-0"
+          },
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/54061591232795",
+            "product": {
+              "id": "gid://shopify/Product/10485042479387",
+              "registration": {
+                "value": "103abd89a0e54ce3b5e28bccec3a0a1b:1:ready"
+              },
+              "policy": {
+                "value": "103abd89a0e54ce3b5e28bccec3a0a1b:1:optional"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "localization": {
+      "country": {
+        "isoCode": "US"
+      },
+      "market": {
+        "id": "gid://shopify/Market/106410115355"
+      }
+    },
+    "shop": {
+      "localTime": {
+        "date": "2026-09-28"
+      },
+      "publicConfig": {
+        "value": "{\"generationHex\":\"103abd89a0e54ce3b5e28bccec3a0a1b\",\"epoch\":1,\"maxBuckets\":32,\"maxPhysicalQuantity\":10000,\"allowNoMarket\":false,\"keys\":[{\"id\":60014,\"publicHex\":\"b3f848fd2c2c15b76d773b6607091e228cfe7c289579751f0d847a596bd306a9\",\"revoked\":false,\"firstDay\":20724,\"lastDay\":20726}]}"
+      }
+    }
+  },
+  "output": {
+    "operations": [
+      {
+        "lineExpand": {
+          "cartLineId": "gid://shopify/CartLine/f0961daf-3c63-4f7d-a335-a1f1155e5edb",
+          "expandedCartItems": [
+            {
+              "merchandiseId": "gid://shopify/ProductVariant/54061591232795",
+              "quantity": 1,
+              "attributes": [
+                {
+                  "key": "_insignia_member_v2",
+                  "value": "AAEAADErMfEBGwAAAAIAAAAAAAAL2Q"
+                }
+              ],
+              "price": {
+                "adjustment": {
+                  "fixedPricePerUnit": {
+                    "amount": "30.33"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "lineExpand": {
+          "cartLineId": "gid://shopify/CartLine/33e67f22-1e0a-4659-bcc0-4d3f3051191e",
+          "expandedCartItems": [
+            {
+              "merchandiseId": "gid://shopify/ProductVariant/54061591232795",
+              "quantity": 1,
+              "attributes": [
+                {
+                  "key": "_insignia_member_v2",
+                  "value": "AAAAADErMfEBGwAAAAEAAAAAAAAL2g"
+                }
+              ],
+              "price": {
+                "adjustment": {
+                  "fixedPricePerUnit": {
+                    "amount": "30.34"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

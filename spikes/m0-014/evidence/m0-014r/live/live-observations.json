@@ -15,7 +15,8 @@
   "previewBundle": {
     "transformWasmSha256": "28a6fb0dd8c4e4aef36a9f205496eca7633433f00e639143dd77afed581c9c60",
     "validationWasmSha256": "ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d",
-    "platformStorageHash": "unavailable through supported readback"
+    "platformStorageHash": "unavailable through supported readback",
+    "manifestSha256": "54f151fff557912a89b191ac39c8fa7cc80f7ab47f19cfdddba997d025804608"
   },
   "functionLogs": {
     "positive_interaction": {
@@ -144,6 +145,24 @@
     "platform-side uploaded Function version/storage hash unavailable",
     "Shopify return-reason display discrepancy; direct return/refund/restock money and stock verified",
     "native refund flow after partial fulfillment gave restock of remaining unfulfilled items and auto archive, not an explicit Cancel order operation",
-    "stopped development preview record and approved grants retained by design"
-  ]
+    "stopped development preview record and approved grants retained by design",
+    "fixture role assignment does not independently prove buyer intent for otherwise identical one-unit lines; operator cart-property observation is qualified evidence"
+  ],
+  "trackedSanitizedDirectCaptures": {
+    "positive-interaction-validation.json": "ba338222d1b97aae3712269599a3099faf9a7ca4b83dca399fa5e134ed365866",
+    "wrong-price-validation.json": "db35715d98813762738f72e9b0baece279c420daacf3a8ea9797830906b0e4a4",
+    "altered-member-validation.json": "5746047c8027d6854e9044ef1354dc4909a882c6035fd8f979a5d88d08da782e",
+    "required-unsigned-validation.json": "adc170a19aa388fa99863f58d34061dd94066094356d318c885859433330d7f7",
+    "purchase-transform.json": "0de9fd6c1b520c6d09346e5941a0c145351ad21af55e208cf282441bbd15dfa2",
+    "purchase-completion-validation.json": "f5a10ddef9aa1ff5cfa40a6276e910bf6a068635ce3e1f738e868b00df7d97d5",
+    "small-cart-role-member-mapping.json": "97e510d0271dbf4878a5a9d0f1925643e8f24413ac20fa2e7a5706fea521c5e3"
+  },
+  "roleMappingQualification": "The actual Ajax plain/signed cart and direct Function capture mapping is retained. Fixture roles are operator-assigned buyer-visible properties, not an independent trust anchor. A coherent swap of same-variant/same-quantity one-unit roles in both plain Function projections before signing is not detected by the binder; this does not establish a signature or exact-money bypass.",
+  "finalLocalCheck": {
+    "command": "bash spikes/m0-014/scripts/check-local.sh with pinned project-local Rust 1.98.1, Node 24.21.0 and linker PATH",
+    "exitCode": 0,
+    "ownerOnlyLogSha256": "c772581fd5e0a941b2f6cfe6dc4463247171ac429310d91b4e228be47e0519d2",
+    "currentTsTests": 11,
+    "currentWasmRows": 110
+  }
 }

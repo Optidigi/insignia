@@ -34,8 +34,9 @@ location were used. No billing or legacy staging resource was touched.
 
 The direct raw Shopify Function logs, diagnostic carts, API readbacks and
 operator register are outside Git with mode 0600. The tracked evidence
-contains sanitized observations and SHA-256 pointers, not raw sessions,
-credentials or buyer contact details. Actual CHECKOUT_COMPLETION Validation
+contains selected sanitized direct Function inputs/outputs, Ajax role/member
+mapping, observations and SHA-256 pointers, with no raw session, credential
+or buyer contact detail. Actual CHECKOUT_COMPLETION Validation
 read CartLine /0, /1 and /2 and returned no errors. The original failed
 M0-014 receipt remains separate.
 
@@ -45,8 +46,16 @@ Fresh restricted Spec and security reviews of the final pre-live source
 commit found no blocking implementation defect. Earlier positional-role and
 query-size findings were fixed and retested. The read-only Spec reviewer
 could not rerun path isolation under EROFS; the integrator ran the full
-check on the same source. Final evidence review and final-head CI must be
-reported in the PR body; neither local review is principal approval.
+check on the same source. A later fixed-head Spec reviewer found the live
+200-line and explicit CANCEL obligations unproved, and raw R-run receipts
+outside its sandbox; selected sanitized direct captures are now tracked.
+The fixed-head security reviewer found one medium fixture test-integrity
+limit: coherent swapping of same-variant/one-unit roles in both captures
+can switch the member assignment before signing. A regression and the
+actual Ajax role/member mapping now record that limitation; neither the
+role nor this fixture test proves buyer intent independently. Exact signed
+member/economic verification is unchanged. Final-head CI and reviewer
+closure are reported in the PR body; local review is not principal approval.
 
 ## Compatibility and limits
 

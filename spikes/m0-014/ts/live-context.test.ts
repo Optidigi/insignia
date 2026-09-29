@@ -82,6 +82,21 @@ test('native Transform UUID and Validation zero-based IDs bind by explicit role 
   assert.equal(bound.assignments[0]?.cartLineId, `gid://shopify/CartLine/${transformIds[0]}`);
 });
 
+test('coherent same-variant one-unit role swap is an operator-intent limit, not a signed identity proof', () => {
+  const r = reads();
+  for (const target of ['transform', 'validation'] as const) {
+    const lines = (r[target].cart as any).lines;
+    lines[1].fixtureRole = null;
+    lines[2].fixtureRole = { value: 'm0-014-small-custom-0' };
+  }
+  const bound = bindCurrentFixture('small', ids, r, 60014, publicHex,
+    'c'.repeat(32), 'd'.repeat(32));
+  assert.deepEqual(bound.assignments.map(x => [x.quantity, x.memberIndex]), [
+    [2, 1], [1, null], [1, 0],
+  ]);
+  assert.equal(bound.projection.ordinaryLines, 1);
+});
+
 test('changed key, price, projected policy, context, cart count or economic amount refuses signing', () => {
   const changes: Array<(r: CurrentReads) => void> = [
     r => { (r.admin.nodes as any[])[0].variants.nodes[0].price = '21.00'; },

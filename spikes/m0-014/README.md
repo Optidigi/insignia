@@ -13,8 +13,11 @@ platform-side hash remains unknown if Shopify does not expose it.
 `rust/` retains the M0-013 protocol and verifier while admitting canonical
 CartLine `/0`. Both Function queries additionally project a fixture-only role
 property so the current issuer can map actual intent across differing target
-IDs. The role is not a signed protocol field; actual variant, quantity and
-exact money remain verified. `scripts/check-local.sh` checks canonical TS and
+IDs. The role is not a signed protocol field or independent proof of buyer
+intent. Two otherwise identical one-unit lines can exchange operator-assigned
+roles before signing without the binder detecting the intent swap; the actual
+Ajax cart mapping must be observed. The signature still binds the resulting
+member set, variant, quantity and exact money. `scripts/check-local.sh` checks canonical TS and
 native Rust, the retained 152-row replay, all 88 historical rows against
 pinned executables, and the current 110-row replay against corrected binaries.
 The corrected artifact matrix is local evidence. The bounded native checkout,

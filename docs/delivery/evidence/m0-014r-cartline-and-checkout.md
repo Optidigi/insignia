@@ -64,7 +64,7 @@ role-projected 200-line rows pass at 8,086,040/8,361,970 instructions for
 10+190 and 8,554,214/8,708,703 for 32+168 (Transform/Validation). The
 failed all-200-role measurement is retained separately and is not labelled a
 passing matrix row. The corrected local suite passed with the established
-project-local Zig host linker and Node 24.21.0: 10 current TS tests; 13
+project-local Zig host linker and Node 24.21.0: 11 current TS tests; 13
 Authorization, 19 Transform and 25 Validation native Rust tests;
 fmt/clippy; 152 historical rows; 88 old pinned M0-014 rows; and 110 corrected
 artifact-bound rows. The latest role-projected artifacts accept captured
@@ -122,8 +122,16 @@ was changed.
 
 The normal password-protected storefront held one ordinary Small unit at
 USD20.00, two customized Small units at USD30.33 each, and one customized
-Small at USD30.34. Three cart lines represented four physical units.
-Transform emitted two lineExpand operations using its actual UUID CartLine
+Small at USD30.34. Three cart lines represented four physical units. The
+[sanitized actual Ajax before/after mapping](../../../spikes/m0-014/evidence/m0-014r/live/small-cart-role-member-mapping.json)
+shows each operator-assigned ordinary/customized role, probe, member and
+price. Roles are buyer-visible fixture properties, not an independent trust
+anchor: a coherent swap between otherwise identical one-unit lines in both
+plain Function captures before signing can change which receives member
+index 0. A regression records this accepted limitation. The observed cart
+mapping supports this run's operator intent, while the signature and
+Functions protect the resulting member set and money. Transform emitted two
+lineExpand operations using its actual UUID CartLine
 IDs. Native checkout showed USD111.00 pre-discount merchandise with free
 shipping; direct Validation at CHECKOUT_INTERACTION had zero errors. With
 only the owned Transform removed, native checkout recalculated to USD80.00
@@ -132,7 +140,9 @@ USD111.00 and acceptance. An altered member also rejected; removing the
 invalid custom lines and orphan quote repaired the ordinary optional
 USD20.00 checkout. An unsigned Required fixture line rejected at
 CHECKOUT_INTERACTION. Selected direct log hashes and observations are in the
-[sanitized R-run evidence](../../../spikes/m0-014/evidence/m0-014r/live/live-observations.json).
+[sanitized R-run evidence](../../../spikes/m0-014/evidence/m0-014r/live/live-observations.json),
+which links tracked sanitized direct Function inputs/outputs and raw
+owner-only log hashes.
 
 The single permitted Bogus purchase succeeded through normal checkout:
 rewrite-dev order gid://shopify/Order/7487119458587, displayed as #1001
@@ -141,7 +151,8 @@ paid, zero shipping/tax/discount. It is distinct from protected legacy
 staging order #1001. Native Admin read back the exact line amounts, quote
 and member properties. Direct CHECKOUT_COMPLETION Validation used actual
 CartLine IDs /0, /1 and /2, amounts 20.0, 60.66 and 30.34, and returned no
-errors. Its raw owner-only log SHA-256 is
+errors. Its [sanitized direct input/output](../../../spikes/m0-014/evidence/m0-014r/live/purchase-completion-validation.json)
+is tracked; raw owner-only log SHA-256 is
 5801b677bd272ee3fc286af261defe1f8ae0783475750670bb1822659f76e2f6.
 The preview bundle's final Transform/Validation Wasm hashes matched the
 locally tested upload-input artifacts above; platform-side storage hashes
@@ -166,9 +177,12 @@ Admin then showed exactly one USD30.33 customized unit in fulfillment
 Return selected only that fulfilled unit and created #1001-R1. Process and
 refund showed one unit, calculated USD30.33 on the original Bogus payment,
 and Restock at Shop location checked. The receipt showed Return closed,
-USD30.33 refunded and that unit restocked. The return reason displayed
-“Changed my mind” before submission but “Color” on readback; that unexpected
-reason-label discrepancy is preserved, with no cause asserted.
+USD30.33 refunded and that unit restocked. The T3 keyboard action failed on
+Shopify's custom reason selector, so the operator set its underlying native
+select to “Changed my mind” and dispatched change; the visible form showed
+that value before submission, but the return receipt showed “Color.” That
+reason-label discrepancy is preserved, with no cause asserted. It was not
+used as monetary or restock evidence.
 
 After partial fulfillment, the native menu had no Cancel order action. Its
 Refund route selected the three remaining unfulfilled units at USD20.00 +
