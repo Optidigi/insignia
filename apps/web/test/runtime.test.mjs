@@ -23,17 +23,23 @@ async function startServer() {
     stderr += chunk;
   });
   const base = `http://127.0.0.1:${port}`;
-  let live;
-  for (let i = 0; i < 100 && !live && child.exitCode === null; i++) {
-    try {
-      live = await fetch(`${base}/live`);
-    } catch {
-      await new Promise((resolve) => setTimeout(resolve, 50));
+  try {
+    let live;
+    for (let i = 0; i < 100 && !live && child.exitCode === null; i++) {
+      try {
+        live = await fetch(`${base}/live`);
+      } catch {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
     }
+    assert.ok(live, stderr);
+    assert.deepEqual(await live.json(), { status: 'live' });
+    return { base, child, exited };
+  } catch (error) {
+    child.kill('SIGTERM');
+    await exited;
+    throw error;
   }
-  assert.ok(live, stderr);
-  assert.deepEqual(await live.json(), { status: 'live' });
-  return { base, child, exited };
 }
 
 function captureDiagnostics(page) {

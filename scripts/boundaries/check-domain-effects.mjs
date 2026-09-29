@@ -1,31 +1,32 @@
 import assert from 'node:assert/strict';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync } from 'node:fs';
 import { relative, resolve } from 'node:path';
-import { inspectDomainSource } from './domain-effects.mjs';
+import { compiledDomainFiles, inspectDomainSource } from './domain-effects.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 const domain = resolve(root, 'packages/domain/src');
 assert.ok(existsSync(domain), 'production domain source must exist');
 
-function productionFiles(directory) {
-  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+function rejectJavaScript(directory) {
+  for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const path = resolve(directory, entry.name);
-    if (entry.isDirectory()) return productionFiles(path);
+    if (entry.isDirectory()) {
+      rejectJavaScript(path);
+      continue;
+    }
     if (entry.isFile() && /\.[cm]?jsx?$/.test(entry.name) && !/\.(test|spec)\.[cm]?jsx?$/.test(entry.name)) {
       throw new Error(`production domain source must be TypeScript: ${relative(root, path)}`);
     }
-    return entry.isFile() && /\.[cm]?tsx?$/.test(entry.name) && !/\.(test|spec)\.[cm]?tsx?$/.test(entry.name)
-      ? [path]
-      : [];
-  });
+  }
 }
 
-const files = productionFiles(domain);
+rejectJavaScript(domain);
+const files = compiledDomainFiles(resolve(root, 'packages/domain/tsconfig.json'), domain);
 assert.ok(files.length, 'domain source scan must be nonempty');
 let violations = 0;
-for (const path of files) {
-  const name = relative(root, path);
-  for (const diagnostic of inspectDomainSource(readFileSync(path, 'utf8'), name)) {
+for (const file of files) {
+  const name = relative(root, file.fileName);
+  for (const diagnostic of inspectDomainSource(file.text, name)) {
     console.error(`${name}:${diagnostic.line}:${diagnostic.column} ${diagnostic.rule}`);
     violations++;
   }

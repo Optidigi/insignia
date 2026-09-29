@@ -1,3 +1,4 @@
+import { dirname, sep } from 'node:path';
 import ts from 'typescript';
 
 // This is a scoped syntax check for production domain modules, not a JavaScript sandbox.
@@ -35,11 +36,17 @@ const ambientNames = new Set([
   'window',
 ]);
 
+function staticString(node) {
+  if (ts.isParenthesizedExpression(node) || ts.isAsExpression(node) || ts.isTypeAssertionExpression(node)) {
+    return staticString(node.expression);
+  }
+  if (ts.isStringLiteral(node) || ts.isNoSubstitutionTemplateLiteral(node)) return node.text;
+  return null;
+}
+
 function memberName(node) {
   if (ts.isPropertyAccessExpression(node)) return node.name.text;
-  if (ts.isElementAccessExpression(node) && ts.isStringLiteral(node.argumentExpression)) {
-    return node.argumentExpression.text;
-  }
+  if (ts.isElementAccessExpression(node)) return staticString(node.argumentExpression);
   return null;
 }
 
@@ -62,6 +69,7 @@ function isReference(node) {
   const parent = node.parent;
   if (ts.isPropertyAccessExpression(parent) && parent.name === node) return false;
   if (ts.isPropertyAssignment(parent) && parent.name === node) return false;
+  if (ts.isPropertySignature(parent) && parent.name === node) return false;
   if (ts.isMethodDeclaration(parent) && parent.name === node) return false;
   if (ts.isVariableDeclaration(parent) && parent.name === node) return false;
   if (ts.isFunctionDeclaration(parent) && parent.name === node) return false;
@@ -84,8 +92,18 @@ export function inspectDomainSource(source, filename = 'domain.ts') {
       const target = memberTarget(node);
       if (property === 'now' && isDateRoot(target)) report(node, 'domain-no-implicit-clock');
       if (property === 'random' && isMathRoot(target)) report(node, 'domain-no-implicit-random');
+      if (ts.isElementAccessExpression(node) && property === null && isMathRoot(target)) {
+        report(node, 'domain-no-dynamic-math');
+      }
+      if (ts.isElementAccessExpression(node) && property === null && isDateRoot(target)) {
+        report(node, 'domain-no-dynamic-date');
+      }
     }
-    if (ts.isNewExpression(node) && isDateRoot(node.expression) && !node.arguments?.length) {
+    if (
+      ts.isNewExpression(node) &&
+      isDateRoot(node.expression) &&
+      (!node.arguments?.length || node.arguments.some(ts.isSpreadElement))
+    ) {
       report(node, 'domain-no-implicit-clock');
     }
     if (ts.isCallExpression(node) && isDateRoot(node.expression)) {
@@ -131,4 +149,18 @@ export function inspectDomainSource(source, filename = 'domain.ts') {
   }
   visit(file);
   return diagnostics;
+}
+
+// Resolve the compiled program, including files pulled in through imports even when
+// their names match an excluded test pattern. The scanner must cover what ships.
+export function compiledDomainFiles(configPath, domainPath) {
+  const config = ts.readConfigFile(configPath, ts.sys.readFile);
+  if (config.error) throw new Error(ts.flattenDiagnosticMessageText(config.error.messageText, '\n'));
+  const parsed = ts.parseJsonConfigFileContent(config.config, ts.sys, dirname(configPath));
+  if (parsed.errors.length) {
+    throw new Error(parsed.errors.map((error) => ts.flattenDiagnosticMessageText(error.messageText, '\n')).join('\n'));
+  }
+  const program = ts.createProgram(parsed.fileNames, parsed.options);
+  const prefix = domainPath.endsWith(sep) ? domainPath : `${domainPath}${sep}`;
+  return program.getSourceFiles().filter((file) => !file.isDeclarationFile && file.fileName.startsWith(prefix));
 }
