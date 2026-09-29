@@ -109,6 +109,7 @@ export interface InboxMessagesTable {
 export interface OutboxEventsTable {
   id: string;
   shop_id: string;
+  installation_generation: NullableBigint;
   event_type: string;
   schema_version: number;
   aggregate_ref: string;

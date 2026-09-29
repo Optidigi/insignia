@@ -225,6 +225,7 @@ CREATE INDEX inbox_claimable_idx ON inbox_messages(state, lease_until, received_
 CREATE TABLE outbox_events (
   id uuid PRIMARY KEY,
   shop_id text NOT NULL REFERENCES shops(shop_id),
+  installation_generation bigint,
   event_type text NOT NULL CHECK (event_type <> ''),
   schema_version integer NOT NULL CHECK (schema_version > 0),
   aggregate_ref text NOT NULL CHECK (aggregate_ref <> ''),
@@ -242,6 +243,7 @@ CREATE TABLE outbox_events (
   purge_after timestamptz,
   erasure_state text NOT NULL DEFAULT 'retained' CHECK (erasure_state IN ('retained', 'pending', 'erased')),
   created_at timestamptz NOT NULL DEFAULT now(),
+  FOREIGN KEY (shop_id, installation_generation) REFERENCES installation_generations(shop_id, generation),
   CHECK ((lease_owner IS NULL) = (lease_until IS NULL))
 );
 CREATE UNIQUE INDEX outbox_business_key_unique ON outbox_events(shop_id, event_type, business_key)
