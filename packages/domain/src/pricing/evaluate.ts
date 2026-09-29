@@ -405,7 +405,10 @@ export function priceProposal(input: PricingInput): ProposalEconomics {
       const base = baseMap.get(`${group.productId}\u0000${variant.variantId}`);
       if (!base || base.currency !== presentment) fail('missing contextual presentment base');
       const baseMinor = parseMinor(base.minor, 0);
-      const beforeSetup = checkedMinor(baseMinor + unit.minor);
+      // A signed placement/step adjustment may make this intermediate negative.
+      // Only the allocated real-variant unit price must be nonnegative.
+      const beforeSetup = baseMinor + unit.minor;
+      if (beforeSetup < -U64_MAX || beforeSetup > U64_MAX) fail('intermediate unit amount overflows u64');
       baseTotal = checkedMinor(baseTotal + baseMinor * BigInt(variant.quantity));
       const extraCount = Number(extras < BigInt(variant.quantity) ? extras : BigInt(variant.quantity));
       extras -= BigInt(extraCount);
@@ -415,7 +418,8 @@ export function priceProposal(input: PricingInput): ProposalEconomics {
         [variant.quantity - extraCount, 0n, extraCount + 1],
       ] as const) {
         if (count === 0) continue;
-        const unitPrice = checkedMinor(beforeSetup + baseSetup + extra);
+        const unitPrice = beforeSetup + baseSetup + extra;
+        if (unitPrice < 0n || unitPrice > U64_MAX) fail('final allocated unit price out of u64 range');
         const lineTotal = checkedMinor(unitPrice * BigInt(count));
         groupTotal = checkedMinor(groupTotal + lineTotal);
         const bucket: PriceBucket = {

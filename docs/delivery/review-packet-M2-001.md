@@ -34,6 +34,14 @@ The integrated development branch passed focused `@insignia/domain` tests (23), 
 
 Fresh read-only Spec/correctness and Standards/security reviews inspected the integrated branch. Spec found early rejection of a valid signed adjustment, a matching signed-DTO mismatch and omitted production-option selections; these were fixed with focused regressions. Security found unbounded BigInt lexical inputs and malformed FX proposal DTO acceptance; both were bounded and tested. Their final-head dispositions are recorded in the PR body. No authenticated Shopify/provider call, token, secret-file read, preview, deployment, DB provisioning, commerce or billing mutation was performed.
 
+## M2-001R correction on existing PR #21
+
+The [attributed principal review](PR-021-principal-review.md) returned **CHANGES_REQUESTED** at base/effective merge base `911818301cc96d98f0b612259d1ba98dec8b9df4`, head `668772c2a9f1e05f36e6a2746d878ad2191a19a1`, tree `e07bae089155181b0f6c4840ea200d389156061c`. Its [fixed-ref verification](PR-021-verification.json) and [correction brief](prompts/M2-001R-SIGNED-ADJUSTMENT-ALLOCATION.md) are preserved byte-identically from the supplied handoff. Native GitHub REQUEST_CHANGES failed HTTP 403; the external verdict was not posted as a native review.
+
+The correction retains a signed `base + customizationUnit` intermediate until deterministic setup allocation has assigned each physical unit's share. Every final bucket price is then checked as nonnegative/u64-bounded, followed by the existing exact line, group and proposal conservation checks. No schema, identity, tier, FX, Function or architecture version changed.
+
+Three public `priceProposal` regressions were added before the production edit. `corepack pnpm --filter @insignia/domain exec vitest run src/pricing/evaluate.test.ts` exited **1**: all three new cases failed at the premature `checkedMinor(base + unit)` in `evaluate.ts:408` (the insufficient-rescue case rejected for the wrong, intermediate reason). After the narrow fix, the same command passed **9/9**; the complete domain suite passed **26/26** and formatting passed. The cases assert: (1) 1.00 base −1.50 adjustment +1.00 setup yields one 0.50 final unit; (2) two units with zero base, −0.01 adjustment and 0.03 setup yield 0.01 and 0.00 final buckets, exact 0.01 total; (3) −0.02 adjustment with the same two units/setup rejects because a final bucket is negative. The existing 200 seeded allocation cases and signed-adjustment/overflow checks remain in the domain suite. Final frozen-root/CI and fresh read-only review dispositions are in the PR body after the new exact head is known.
+
 ## Principal decision — reserved
 
 Verdict, gate acceptance, final reviewed refs and authorization for any later package remain with the principal. This packet is implementation evidence, not an approval or complete gate pass.

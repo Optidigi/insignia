@@ -111,6 +111,47 @@ function input(groups: CustomizationGroup[], configs: PublishedConfig[], base = 
 }
 
 describe('pure pricing proposal', () => {
+  const signedAdjustmentInput = (base: string, adjustment: string, setup: string, quantity: number) =>
+    input(
+      [group('shirt', [{ variantId: 'v', quantity }])],
+      [
+        config('shirt', [
+          fixed('signed-placement', 'unit', { kind: 'placement', placementId: 'front' }, adjustment),
+          fixed('setup-once', 'setup', { kind: 'general' }, setup),
+        ]),
+      ],
+      base,
+    );
+
+  it('accepts setup that rescues a negative intermediate for one unit', () => {
+    const result = priceProposal(signedAdjustmentInput('100', '-1.50', '1.00', 1));
+    expect(result.groups[0]?.customizationUnitMinor).toBe('-150');
+    expect(result.groups[0]?.setupMinor).toBe('100');
+    expect(result.lines.map((line) => [line.quantity, line.unitPriceMinor, line.lineTotalMinor])).toEqual([
+      [1, '50', '50'],
+    ]);
+    expect(result.totalMinor).toBe('50');
+  });
+
+  it('allocates an uneven setup before validating both final signed-adjustment buckets', () => {
+    const result = priceProposal(signedAdjustmentInput('0', '-0.01', '0.03', 2));
+    expect(
+      result.lines.map((line) => [line.quantity, line.unitOrdinalStart, line.setupPerUnitMinor, line.unitPriceMinor]),
+    ).toEqual([
+      [1, 1, '2', '1'],
+      [1, 2, '1', '0'],
+    ]);
+    expect(result.groups[0]?.totalMinor).toBe('1');
+    expect(result.totalMinor).toBe('1');
+    expect(result.lines.reduce((sum, line) => sum + BigInt(line.lineTotalMinor), 0n)).toBe(1n);
+  });
+
+  it('rejects when setup leaves a final signed-adjustment bucket negative', () => {
+    expect(() => priceProposal(signedAdjustmentInput('0', '-0.02', '0.03', 2))).toThrow(
+      /final allocated unit price out of u64 range/,
+    );
+  });
+
   it('A: charges general, method and placement setup once across real variants', () => {
     const rules = [
       fixed('setup-general', 'setup', { kind: 'general' }, '20.00'),
