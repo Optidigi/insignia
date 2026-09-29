@@ -18,12 +18,17 @@ The single outcome is a root pnpm/Cargo workspace with explicit package exports,
 | Exact synthetic TS/Rust/Function semantics | `corepack pnpm test:vectors`; `cargo fmt --all -- --check`; `cargo clippy --workspace --all-targets --locked -- -D warnings`; `cargo test --workspace --locked`; `bash scripts/m1-functions/check.sh` | PASS locally | One TS/Node byte/signature vector; 57 native Rust tests; 8 Transform and 18 Validation offline runner rows, including `/0`, exact price, corrupt/missing/duplicate/unsigned cases, repair, 32+168, 33 rejection and 10,000 units. |
 | Current-source Wasm and build provenance | `bash scripts/m1-functions/build-wasm.sh transform/validation`; `python3 -B scripts/m1-functions/artifact-manifest.py` | PASS locally | Transform raw/final SHA-256 `89fbfdd4…` / `ef6788a4…`; Validation raw/final `704db583…` / `e4247608…`; final sizes 179,505 / 181,047 bytes. Pinned public trampoline and runner checksums passed. The ignored generated manifest contains full hashes, sizes, source/query/schema and 24 required files. |
 | Historical integrity | `python3 -B spikes/m0-007/scripts/check-history.py`; `python3 -B spikes/m0-014/scripts/check-live-setup.py` | PASS | v1.3 plan/ledger hashes remain `b730c0dc…` / `d4297182…`; 120 unchanged historical receipts; 14 hashed live setup receipts. |
+| Archived Cargo isolation | `python3 -B scripts/boundaries/check-cargo-workspace.py`; `cargo fmt --manifest-path spikes/m0-008/consumer-projection/Cargo.toml --all -- --check` | PASS locally | Root Cargo excludes the whole archived `spikes` tree. All 20 historical manifests resolve as independent workspace roots; archived manifests and lockfiles remain unchanged. |
 
 The runner reported peak 6,835,169 Transform and 6,994,490 Validation instructions across these local rows. Stack telemetry remains unavailable. These are source/artifact measurements, not a merchant capacity commitment. The local Polaris-tag interaction uses visible fallback CSS because the Admin host does not upgrade the component in a standalone fixture; prior actual embedded Admin evidence stays qualified in its historical receipt. No Shopify/provider call was made for M1-001.
 
 ## Local pre-review and corrections
 
 Fresh read-only Spec and Standards/security reviews inspected initial integrated commit `ad1f6c7165f7bd8eb808ac08b94bc5f7fb4afa5b` against the verified base. Spec found incomplete Node-core coverage, hardcoded source roots, skipped test/fixture scans and absent JS/TS style checks. Security independently found the Node-core gap and an unqualified old state row. The correction adds a core-module rule with web-island/bundle controls, dynamic source discovery, separate test/fixture scans, pinned Biome checks and a dated historical state row. Ordinary local checks passed after correction; final rereview and final-head CI disposition are recorded in the PR body, which can identify the immutable final head.
+
+The first final-head CI run exposed Cargo's parent-workspace detection for archived spike crates. The root `exclude = ["spikes"]` boundary and the 20-manifest checker address that concrete failure without changing any spike source or lockfile. Final CI disposition remains in the PR body.
+
+The same CI run reached the historical integrity checker, which needs an archived merge ref unavailable in GitHub's default shallow checkout. The foundation workflow now fetches full Git history for that fixed-ref check. This changes CI checkout depth only; it does not rewrite the archived verifier or its reference.
 
 ## Compatibility and safety
 
