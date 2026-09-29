@@ -57,6 +57,7 @@ export interface LineAssignment {
   cartLineId: string;
   variantGid: string;
   quantity: number;
+  fixtureRole: string;
   memberIndex: number | null;
 }
 
@@ -129,6 +130,21 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
   const expectedCount = kind === 'small' ? 3 : 200;
   const expectedQuantity = kind === 'small' ? 4 : 200;
   const expectedVariant = kind === 'small' ? smallVariantGid : largeVariantGid;
+  // Fixture roles come from distinct, observed line properties in both
+  // Function inputs. Target-local CartLine IDs cannot be correlated across
+  // Transform and Validation, and equal quantities cannot identify intent.
+  const roleMember = new Map<string, { quantity: number; memberIndex: number | null }>();
+  if (kind === 'small') {
+    roleMember.set('m0-014-small-custom-0', { quantity: 1, memberIndex: 0 });
+    roleMember.set('m0-014-small-custom-1', { quantity: 2, memberIndex: 1 });
+    roleMember.set('m0-014-small-ordinary-0', { quantity: 1, memberIndex: null });
+  } else {
+    const customized = kind === 'stress10' ? 10 : kind === 'stress32' ? 32 : 33;
+    for (let i = 0; i < customized; i++) roleMember.set(`m0-014-large-customized-${i + 1}`,
+      { quantity: 1, memberIndex: i });
+    for (let i = 0; i < 200 - customized; i++) roleMember.set(`m0-014-large-ordinary-${i + 1}`,
+      { quantity: 1, memberIndex: null });
+  }
   const captures: LineAssignment[][] = [];
   for (const [label, input] of [['transform', reads.transform], ['validation', reads.validation]] as const) {
     const loc = object(input.localization, `${label}.localization`);
@@ -155,6 +171,7 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
     let totalQuantity = 0;
     const actualLines: LineAssignment[] = [];
     const seenIds = new Set<string>();
+    const seenRoles = new Set<string>();
     for (const line of lines) {
       const lineId = text(line.id, 'CartLine ID');
       const suffix = lineId.startsWith('gid://shopify/CartLine/')
@@ -174,9 +191,16 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
         throw new Error(`${label}: unsupported cart line`);
       }
       const q = line.quantity as number;
+      const role = text(object(line.fixtureRole, `${label}.fixtureRole`).value,
+        `${label}.fixtureRole.value`);
+      const intended = roleMember.get(role);
+      if (!intended || intended.quantity !== q || seenRoles.has(role)) {
+        throw new Error(`${label}: fixture role/quantity missing, duplicated or inconsistent`);
+      }
+      seenRoles.add(role);
       totalQuantity += q;
       actualLines.push({ cartLineId: lineId, variantGid: expectedVariant,
-        quantity: q, memberIndex: null });
+        quantity: q, fixtureRole: role, memberIndex: intended.memberIndex });
       const projectedPolicy = object(merchandise.product, 'product');
       if (text(object(projectedPolicy.policy, 'policy').value, 'policy') !==
           `${generationHex}:${epoch}:optional` ||
@@ -192,32 +216,20 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
         throw new Error('transform currency differs');
       }
     }
-    if (totalQuantity !== expectedQuantity) throw new Error(`${label}: physical quantity mismatch`);
+    if (totalQuantity !== expectedQuantity || seenRoles.size !== roleMember.size) {
+      throw new Error(`${label}: physical quantity or fixture role set mismatch`);
+    }
     captures.push(actualLines);
   }
-  // Target-local CartLine IDs differ in native captures. Require the same
-  // ordered variant/quantity projection; each target was also independently
-  // checked against current policy, currency and (for Validation) base costs.
+  // Compare by independently projected role, not CartLine ID or array position.
   const economicRows = (lines: LineAssignment[]) => lines.map(
-    ({ variantGid, quantity, memberIndex }) => ({ variantGid, quantity, memberIndex }));
+    ({ variantGid, quantity, fixtureRole, memberIndex }) =>
+      ({ variantGid, quantity, fixtureRole, memberIndex }))
+    .sort((left, right) => left.fixtureRole.localeCompare(right.fixtureRole));
   if (JSON.stringify(economicRows(captures[0]!)) !== JSON.stringify(economicRows(captures[1]!))) {
-    throw new Error('Transform and Validation ordered cart economics differ');
+    throw new Error('Transform and Validation fixture role economics differ');
   }
   const assignments = captures[0]!;
-  if (kind === 'small') {
-    if (assignments.filter(x => x.quantity === 2).length !== 1 ||
-        assignments.filter(x => x.quantity === 1).length !== 2) {
-      throw new Error('small cart must contain observed 2+1 customized and one ordinary unit');
-    }
-    assignments.find(x => x.quantity === 2)!.memberIndex = 1;
-    assignments.find(x => x.quantity === 1)!.memberIndex = 0;
-  } else {
-    if (assignments.some(x => x.quantity !== 1)) {
-      throw new Error('stress cart must contain 200 distinct one-unit lines');
-    }
-    const count = kind === 'stress10' ? 10 : kind === 'stress32' ? 32 : 33;
-    for (let index = 0; index < count; index++) assignments[index]!.memberIndex = index;
-  }
   const day = dateDay(shopLocalDate);
   const key = selected[0]!;
   if (typeof key.firstDay !== 'number' || typeof key.lastDay !== 'number' ||

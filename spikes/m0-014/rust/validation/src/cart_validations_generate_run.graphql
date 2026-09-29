@@ -6,6 +6,7 @@ query Input {
       id
       quantity
       member: attribute(key: "_insignia_member_v2") { value }
+      fixtureRole: attribute(key: "_insignia_fixture_role") { value }
       cost {
         amountPerQuantity { currencyCode }
         subtotalAmount { amount currencyCode }

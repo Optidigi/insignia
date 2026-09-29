@@ -2,18 +2,22 @@
 
 This is the isolated development-only materialization of the reviewed M0-013
 candidate for [M0-014](../../docs/delivery/prompts/M0-014-PUBLIC-APP-CHECKOUT.md).
-The two checked-in `artifacts/*.wasm` files are byte-identical to the approved
-PR #18 CI candidate executables. The extension build script checks their
-SHA-256 values before copying them; `wasm_opt = false` prevents the CLI's
-additional local optimization. Before activation, the operator must also
-verify the actual CLI preview/upload path and Function/version identities.
-The platform-side hash remains unknown if Shopify does not expose it.
+The two checked-in `artifacts/*.wasm` files retain the approved PR #18 CI
+candidate executables for historical replay. The M0-014R extension build
+compiles current M0-014 source and checks raw and trampolined upload bytes
+against separate `artifacts/m0-014r/` binaries. `wasm_opt = false` prevents
+further CLI optimization. Before activation, the operator must also verify
+the actual CLI preview/upload path and Function/version identities. The
+platform-side hash remains unknown if Shopify does not expose it.
 
-`rust/` copies the M0-013 verifier, Function, query and schema sources
-unchanged; only the new app config, handles, UIDs and build command differ.
-`scripts/check-local.sh` checks source equality, canonical TS and native Rust,
-the retained 152-row replay and all 88 candidate rows against the pinned
-executables. This is local evidence, not a live cart or gate pass.
+`rust/` retains the M0-013 protocol and verifier while admitting canonical
+CartLine `/0`. Both Function queries additionally project a fixture-only role
+property so the current issuer can map actual intent across differing target
+IDs. The role is not a signed protocol field; actual variant, quantity and
+exact money remain verified. `scripts/check-local.sh` checks canonical TS and
+native Rust, the retained 152-row replay, all 88 historical rows against
+pinned executables, and the current 106-row replay against corrected binaries.
+This is local evidence, not a live cart or gate pass.
 `python3 -B scripts/check-live-setup.py` hashes and reconciles the saved
 Admin setup receipts offline, including the exact initial 272-unit stock,
 draft status, owned metadata and effective Function flags.
@@ -35,8 +39,9 @@ inaccessible current state stops the dependent step.
 after the app/store/day check. Its public config is staged only under this
 app's owned metadata. `issue-current.mjs` uses the fixed-target authenticated
 Admin read, fresh operator-owned plain-cart Function captures, product policy,
-market/country/day, actual line/quantity counts and projected input byte
-bounds before calling the M0-013 whole-quote issuer. It rejects mismatch and
+market/country/day, actual line/quantity counts, distinct
+`_insignia_fixture_role` properties in both Function inputs and projected
+input byte bounds before calling the M0-013 whole-quote issuer. It rejects mismatch and
 writes the signed quote to a new mode-0600 file outside Git. A captured input
 is an operator observation; this helper cannot attest its Shopify origin.
 The operator must verify its actual preview source and inspect the resulting

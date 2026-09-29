@@ -19,6 +19,8 @@ const product = (id: string, policy: string, variants: Array<[string, string]>) 
 const ids = { productA: 'gid://shopify/Product/111', productB: 'gid://shopify/Product/222' };
 const line = (id: number, q: number, target: 'transform' | 'validation') => ({
   id: `gid://shopify/CartLine/${id}`, quantity: q, member: null, sellingPlanAllocation: null,
+  fixtureRole: { value: id === 1 ? 'm0-014-small-custom-1' :
+    id === 2 ? 'm0-014-small-custom-0' : 'm0-014-small-ordinary-0' },
   merchandise: { __typename: 'ProductVariant', id: 'gid://shopify/ProductVariant/1001',
     product: { id: ids.productA, policy: { value: `${generation}:1:optional` },
       registration: { value: `${generation}:1:ready` } } },
@@ -61,7 +63,7 @@ test('current Admin policy, public key and both plain Function inputs bind one s
   assert.match(result.readDigest, /^[a-f0-9]{64}$/);
 });
 
-test('native Transform UUID and Validation zero-based CartLine IDs bind by ordered economics', () => {
+test('native Transform UUID and Validation zero-based IDs bind by explicit role across reordering', () => {
   const r = reads();
   const transformIds = [
     '0f8119dd-dedc-463b-9900-d9ce5306636c',
@@ -73,6 +75,7 @@ test('native Transform UUID and Validation zero-based CartLine IDs bind by order
     (r.validation.cart as any).lines[i].id = `gid://shopify/CartLine/${i}`;
     (r.validation.cart as any).lines[i].cost.subtotalAmount.amount = i === 0 ? '40.0' : '20.0';
   }
+  (r.validation.cart as any).lines.reverse();
   const bound = bindCurrentFixture('small', ids, r, 60014, publicHex,
     'c'.repeat(32), 'd'.repeat(32));
   assert.deepEqual(bound.assignments.map(x => x.memberIndex), [1, 0, null]);
@@ -89,6 +92,9 @@ test('changed key, price, projected policy, context, cart count or economic amou
     r => { (r.validation.cart as any).lines[0].id = 'gid://shopify/CartLine/not-an-id'; },
     r => { const lines = (r.validation.cart as any).lines; lines[0].quantity = 1; lines[0].cost.subtotalAmount.amount = '20.00'; lines[1].quantity = 2; lines[1].cost.subtotalAmount.amount = '40.00'; },
     r => { (r.validation.cart as any).lines[1].id = 'gid://shopify/CartLine/1'; },
+    r => { (r.validation.cart as any).lines[1].fixtureRole.value = 'm0-014-small-ordinary-0'; },
+    r => { (r.transform.cart as any).lines[1].fixtureRole = null; },
+    r => { (r.transform.cart as any).lines[1].fixtureRole.value = 'm0-014-small-custom-1'; },
     r => { (r.admin.nodes as any[])[1].policy.value = `${generation}:1:optional`; },
   ];
   for (const change of changes) {
@@ -100,7 +106,7 @@ test('changed key, price, projected policy, context, cart count or economic amou
     'c'.repeat(32), 'd'.repeat(32)));
 });
 
-test('small fixture rejects wrong observed quantity grouping even with four physical units', () => {
+test('small fixture rejects role and quantity disagreement even with four physical units', () => {
   const r = reads();
   for (const [index, line] of (r.transform.cart as any).lines.entries()) {
     line.quantity = index === 0 ? 1 : index === 1 ? 1 : 2;
@@ -109,9 +115,29 @@ test('small fixture rejects wrong observed quantity grouping even with four phys
     line.quantity = index === 0 ? 1 : index === 1 ? 1 : 2;
     line.cost.subtotalAmount.amount = `${(line.quantity * 20).toFixed(2)}`;
   }
-  // The same 1+1+2 shape is valid, but its assignment must follow the
-  // observed quantity-two line, not the original synthetic line number.
-  const bound = bindCurrentFixture('small', ids, r, 60014, publicHex,
+  assert.throws(() => bindCurrentFixture('small', ids, r, 60014, publicHex,
+    'c'.repeat(32), 'd'.repeat(32)));
+});
+
+test('stress fixture binds 32 explicit member roles across 200 reordered one-unit lines', () => {
+  const r = reads();
+  for (const target of ['transform', 'validation'] as const) {
+    (r[target].cart as any).lines = Array.from({ length: 200 }, (_, index) => {
+      const item = line(index + 1, 1, target) as any;
+      item.merchandise.id = 'gid://shopify/ProductVariant/1002';
+      item.fixtureRole.value = index < 32 ? `m0-014-large-customized-${index + 1}` :
+        `m0-014-large-ordinary-${index - 31}`;
+      return item;
+    });
+  }
+  (r.validation.cart as any).lines.reverse();
+  const bound = bindCurrentFixture('stress32', ids, r, 60014, publicHex,
     'c'.repeat(32), 'd'.repeat(32));
-  assert.deepEqual(bound.assignments.map(x => x.memberIndex), [0, null, 1]);
+  assert.equal(bound.assignments.length, 200);
+  assert.deepEqual(bound.assignments.slice(0, 32).map(x => x.memberIndex),
+    Array.from({ length: 32 }, (_, index) => index));
+  assert.ok(bound.assignments.slice(32).every(x => x.memberIndex === null));
+  (r.validation.cart as any).lines[0].fixtureRole.value = 'm0-014-large-customized-1';
+  assert.throws(() => bindCurrentFixture('stress32', ids, r, 60014, publicHex,
+    'c'.repeat(32), 'd'.repeat(32)));
 });

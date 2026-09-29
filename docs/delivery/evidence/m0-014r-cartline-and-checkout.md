@@ -11,13 +11,21 @@ was posted. PR #19 remains draft and unmerged.
 
 ## Corrected local candidate
 
-The only Function behavior change is the CartLine-specific grammar in
+The only Function decision change is the CartLine-specific grammar in
 `spikes/m0-014/rust/capacity.rs`: canonical suffix `/0` joins the existing
 positive decimal and bounded UUID forms. Empty, leading-zero multi-digit,
 wrong-kind, malformed UUID and over-width values still reject. The target
 uses its actual CartLine ID; variant/market GID parsing, Ed25519, whole-set
 verification, member indices, exact money, policy and capacity are unchanged.
-Transform/Validation tests now exercise the full targets with a
+Both query projections now include the fixture-only
+`_insignia_fixture_role` line property. This is necessary because Transform
+and Validation expose different target-local IDs and equal-quantity lines do
+not identify buyer intent. The local issuer requires the exact distinct role
+set and quantity in both fresh inputs, compares roles independent of line
+order, and assigns members only by the observed role. The v2 wire and signed
+economics do not include the fixture property. Native pre/post cart role and
+member evidence remains to be collected. Transform/Validation tests now
+exercise the full targets with a
 [captured-input-derived fixture](../../../spikes/m0-014/evidence/m0-014r/local/captured-validation-provenance.json)
 at `CHECKOUT_INTERACTION` and `CHECKOUT_COMPLETION` and with negative economic,
 member, signature, key and context controls. The fixture preserves actual
@@ -37,15 +45,19 @@ bound in the [106-row current-artifact matrix](../../../spikes/m0-014/evidence/m
 
 | Target | Raw SHA-256 / bytes | Final upload-input SHA-256 / bytes |
 |---|---|---|
-| Transform | `35edec3e82f291530912b7bf338520cc1b90ac253006e400952e3753af2059d5` / 182,048 | `2a4f85c58a91df4d3536bf6811f46f2264827136d84d7181d42f63ecd9e1d176` / 179,121 |
-| Validation | `ee418455b52c5835968dc43479cf06bd367658a185fc055fe0bd44b01a73f16b` / 183,646 | `c0795b0ece75539dcb44abe27010e4a279a25d54daa3b16b22bd52b0e2f9103b` / 180,663 |
+| Transform | `ebbf181923906186c48cb701b0c48e95d5283f0ed6a6b5e5f64d4a36d9d27276` / 182,215 | `28a6fb0dd8c4e4aef36a9f205496eca7633433f00e639143dd77afed581c9c60` / 179,279 |
+| Validation | `acdecb609fc829515d35efd4e62c6e4ab6a31dab4c95d4771eaddbb43bb74f6b` / 183,813 | `ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d` / 180,821 |
 
-`bash spikes/m0-014/scripts/check-local.sh` passed with the established
-project-local Zig host linker and Node 24.21.0: 9 current TS tests; 13
+The first pre-review local pass used the earlier no-role query artifacts.
+The fresh Spec reviewer found positional role assignment; the binder/query
+and table above are the corrected second candidate. Its full local suite
+passed with the established project-local Zig host linker and Node 24.21.0:
+10 current TS tests; 13
 Authorization, 19 Transform and 25 Validation native Rust tests;
 fmt/clippy; 152 historical rows; 88 old pinned M0-014 rows; and 106 corrected
-artifact-bound rows. Corrected captured Validation accepts both simulated
-checkout steps at 2,723,570 instructions and 17 output bytes. The 10+190
+artifact-bound rows. The latest role-projected artifacts accept captured
+Validation at both simulated checkout steps at 2,723,609 instructions and
+17 output bytes. The 10+190
 and 32+168 zero-based synthetic rows remain below the 8.8 million instruction
 and 16,000-byte reference on both targets. Thirty-three buckets reject;
 10,000 physical units stay bounded. These are local runner measurements;
