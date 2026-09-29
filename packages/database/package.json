@@ -17,6 +17,7 @@
   "dependencies": {
     "@insignia/application": "workspace:*",
     "@insignia/contracts": "workspace:*",
+    "@insignia/domain": "workspace:*",
     "kysely": "0.29.6",
     "pg": "8.23.0"
   },

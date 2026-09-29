@@ -39,6 +39,10 @@ export class PgInboxRepository implements InboxRepository<Transaction<Database>>
       .where('source', '=', message.source)
       .where('external_delivery_id', '=', message.externalDeliveryId);
     query = message.shopId === null ? query.where('shop_id', 'is', null) : query.where('shop_id', '=', message.shopId);
+    query =
+      message.installationGeneration === null
+        ? query.where('installation_generation', 'is', null)
+        : query.where('installation_generation', '=', message.installationGeneration);
     const existing = await query.executeTakeFirst();
     if (
       !existing ||
@@ -55,6 +59,13 @@ export class PgInboxRepository implements InboxRepository<Transaction<Database>>
     shopId: string,
     id: string,
   ): Promise<InboxLockedMessage | null> {
+    const shop = await transaction
+      .selectFrom('shops')
+      .select('current_generation')
+      .where('shop_id', '=', shopId)
+      .forNoKeyUpdate()
+      .executeTakeFirst();
+    if (!shop) return null;
     const row = await transaction
       .selectFrom('inbox_messages')
       .selectAll()
@@ -63,6 +74,7 @@ export class PgInboxRepository implements InboxRepository<Transaction<Database>>
       .forUpdate()
       .executeTakeFirst();
     if (!row) return null;
+    if (row.installation_generation !== null && row.installation_generation !== shop.current_generation) return null;
     return {
       id: row.id,
       source: row.source,

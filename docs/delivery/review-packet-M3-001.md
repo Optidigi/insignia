@@ -1,0 +1,36 @@
+# Principal review packet — M3-001
+
+## Identity and scope
+
+Repository: `Optidigi/insignia`. Slice: [M3-001 PostgreSQL durable core](prompts/M3-001-POSTGRES-DURABLE-CORE.md). [External PR-021R approval](PR-021R-principal-review.md) covered base/effective merge base `911818301cc96d98f0b612259d1ba98dec8b9df4`, head `2765220037d581de2a710b2eab6e2a469352d61b` and tree `40dffb60f7577d1f24052cdbd53604f01b4fc2b1`; eight applicable workflows passed. The owner authorized its normal merge. Remote `main` merge `3feb3e5563bc4bd07f60a0b299aefb99ce37ff37` has those exact parents and tree. [PR #22](https://github.com/Optidigi/insignia/pull/22) branches from that merge. Its final head, effective merge base and final-head workflow links are recorded in the PR body after the last evidence commit.
+
+This PR implements the first M3 local durable core only. Architecture and decision ledger v1.3, M2 identity/pricing/schema rules, experimental Functions and historical receipts are unchanged. No Shopify or provider access, secrets, preview, deployment, commerce, billing, R2 or production resource was used. The principal reviews PR #22; its merge and later M3 work are not delegated.
+
+## Schema and application boundary
+
+The single dbmate SQL migration `20260929000100_durable_core.sql` creates eight tables: `shops`, `installation_generations`, `product_configs`, `config_revisions`, `publication_operations`, `idempotency_records`, `inbox_messages` and `outbox_events`. It adds tenant-qualified foreign keys, product uniqueness per shop, immutable revision and publication-transition triggers, generation/sequence activation guards, delivery dedupe indexes and payload retention metadata. The reversible down block is for disposable empty test databases; it deletes these new tables and their data. dbmate is the only application migration system; Kysely supplies typed queries and transactions through `pg`.
+
+Draft storage uses explicit `m3-config-draft-v1`, a plain JSON-object root and recursively JSON-safe values. Unknown versions reject on read/write. Published `m2-published-config-v1` revisions receive both transport and M2 domain-semantic validation, are canonicalized with sorted object keys and semantic array order, SHA-256 hashed over UTF-8 bytes excluding the root self-hash field, then made immutable by a database trigger. One ProductConfig per `(shop, external product)` and draft compare-and-swap are database-backed. An internal publication-intent transaction compares draft version and atomically writes the revision, requested operation and durable outbox event; failure rolls all three back.
+
+The local Option A journal distinguishes request, acknowledgement, exact observation, activation, failure and supersession. Its generation, operation-sequence, revision/config and projection guards prevent stale local activation. The repository stays internal to the database package because this slice has no reviewed projection builder derived from revision content; no production publisher or remote-propagation guarantee is claimed.
+
+Command idempotency and required outbox insertion share a transaction. A command rejects an event for another shop; installation-bound inbox/outbox work cannot process, enqueue or be claimed after a generation change. Explicitly installation-independent records carry null generation. Inbox dedupe uses installation plus delivery ID, preserves exact bytes and rejects conflicting replay. Outbox JSON is lossless-validated before insertion; claims use PostgreSQL clock time, row locks and persisted leases; acknowledgement checks owner, attempt, generation and live database lease. Payload rows record collection time, retention class, purge deadline and erasure state. The payload tables enforce 8 MiB size and 180-day deadline ceilings; permitted minimal economic/audit facts belong in separate storage. No purge worker, raw webhook ingress, credential refresh or pg-boss runtime is included.
+
+## Executed evidence
+
+| Criterion | Command or procedure | Result | Evidence |
+|---|---|---|---|
+| Frozen dependencies, build, style, boundary and secret checks | Dedicated `M3-001 PostgreSQL durable core` GitHub Actions job; existing foundation and other applicable jobs | PASS on code head; final-head links in PR body | Nine applicable workflow jobs on PR #22 |
+| Empty PostgreSQL 18 migration and repeat up | `corepack pnpm check:database` invokes `db:migrate` twice before tests | PASS | PostgreSQL 18.6 CI service; first up applies one migration, second up is a no-op |
+| Reversible disposable migration | `dbmate rollback`, then `db:migrate` | PASS | CI down/up rehearsal on disposable service |
+| Tenant/config, immutable hash, CAS, publication sequence/generation, command/inbox/outbox and races | `corepack pnpm test:database` under `DATABASE_URL` | PASS, 19/19 tests in three files | Actual independent PostgreSQL connections for CAS, command and claim races; workflow link in PR body |
+| Local build and style | `corepack pnpm build`, `corepack pnpm check:style`, `corepack pnpm check:boundaries` | PASS | Pinned Node/package worktree run |
+| Local database integration | `corepack pnpm --filter @insignia/database test` without `DATABASE_URL` | NOT_RUN locally | Host has no PostgreSQL 18 client/process/container runtime; expected missing-URL result is not database evidence |
+
+The first PostgreSQL CI attempt exposed a test-only mismatch in a negative revision-identity assertion; it was corrected before the green runs. Initial fresh read-only reviews then found cross-shop outbox acceptance, expired-lease acknowledgement, lossy payload normalization, stale-installation claims and overly broad draft storage. The same PR adds regression tests and fixes for each. A later integration pass also prevents caller-supplied future time from reclaiming a live lease and rejects stale-generation enqueue. Fresh rereviews then found non-atomic publication intent, omitted domain-semantic validation, old-generation inbox processing/dedupe, and unbounded payload size/retention. The final corrective pass adds the atomic internal seam, M2 semantic validation, generation-scoped inbox behavior, payload ceilings and real PostgreSQL regressions. Earlier failed findings remain attributed to their reviewed code head; later runs must re-prove the correction.
+
+## Review, limitations and principal decision
+
+Fresh read-only Spec/correctness and Standards/security rereviews use explicit `gpt-6-sol` / high CLI launches with effective read-only filesystem isolation and source/instruction reads. Their final dispositions and any remaining issues are recorded in the PR body. The two non-overlapping implementation writers used separate worktrees; the current native subagent execution profile did not enforce a hard sandbox on those writer sessions, so only the later read-only CLI reviews are described as sandbox-enforced. The integrator owns the final diff.
+
+This slice proves local database invariants, not remote Shopify policy propagation, live credential handling, worker delivery, retention deletion, a complete gate or production v2 adoption. No M3-001 PR merge, next M3 slice, M4 or launch is authorized. Principal verdict and any next authorization remain external to this packet.

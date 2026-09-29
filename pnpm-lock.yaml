@@ -288,6 +288,9 @@ importers:
       '@insignia/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@insignia/domain':
+        specifier: workspace:*
+        version: link:../domain
       kysely:
         specifier: 0.29.6
         version: 0.29.6

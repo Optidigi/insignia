@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { MAX_DURABLE_PAYLOAD_RETENTION_MS } from './inbox.js';
 
 export type OutboxEvent = {
   id: string;
@@ -45,8 +46,10 @@ export function newOutboxEvent(input: Omit<OutboxEvent, 'id'>): OutboxEvent {
     input.schemaVersion < 1 ||
     !Number.isFinite(input.occurredAt.getTime()) ||
     !Number.isFinite(input.availableAt.getTime()) ||
-    (input.purgeAfter !== null &&
-      (!Number.isFinite(input.purgeAfter.getTime()) || input.purgeAfter <= input.occurredAt))
+    input.purgeAfter === null ||
+    !Number.isFinite(input.purgeAfter.getTime()) ||
+    input.purgeAfter <= input.occurredAt ||
+    input.purgeAfter.getTime() - input.occurredAt.getTime() > MAX_DURABLE_PAYLOAD_RETENTION_MS
   ) {
     throw new TypeError('Outbox event is missing required metadata');
   }

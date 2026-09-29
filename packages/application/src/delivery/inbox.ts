@@ -17,6 +17,9 @@ export type InboxMessage = {
 export type InboxReceipt = { kind: 'received' | 'duplicate'; id: string };
 export type InboxLockedMessage = InboxMessage & { state: 'pending' | 'leased' | 'processed' | 'failed' };
 
+export const MAX_DURABLE_PAYLOAD_BYTES = 8 * 1024 * 1024;
+export const MAX_DURABLE_PAYLOAD_RETENTION_MS = 180 * 24 * 60 * 60 * 1000;
+
 export interface InboxRepository<Tx> {
   receive(message: InboxMessage): Promise<InboxReceipt | { kind: 'payload_conflict' }>;
   lockForProcessing(transaction: Tx, shopId: string, id: string): Promise<InboxLockedMessage | null>;
@@ -38,11 +41,13 @@ export async function receiveInbox<Tx>(
   if (
     !input.source ||
     !input.retentionClass ||
-    !input.payload ||
+    !(input.payload instanceof Uint8Array) ||
+    input.payload.byteLength > MAX_DURABLE_PAYLOAD_BYTES ||
     !Number.isFinite(input.receivedAt.getTime()) ||
     input.purgeAfter === null ||
     !Number.isFinite(input.purgeAfter.getTime()) ||
     input.purgeAfter <= input.receivedAt ||
+    input.purgeAfter.getTime() - input.receivedAt.getTime() > MAX_DURABLE_PAYLOAD_RETENTION_MS ||
     (input.installationGeneration !== null && input.shopId === null)
   ) {
     throw new TypeError('Inbox delivery is missing required metadata');

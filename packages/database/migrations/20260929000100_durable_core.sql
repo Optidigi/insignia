@@ -214,9 +214,11 @@ CREATE TABLE inbox_messages (
   erasure_state text NOT NULL DEFAULT 'retained' CHECK (erasure_state IN ('retained', 'pending', 'erased')),
   FOREIGN KEY (shop_id, installation_generation) REFERENCES installation_generations(shop_id, generation),
   CHECK (installation_generation IS NULL OR shop_id IS NOT NULL),
-  CHECK ((lease_owner IS NULL) = (lease_until IS NULL))
+  CHECK ((lease_owner IS NULL) = (lease_until IS NULL)),
+  CHECK (octet_length(payload) <= 8388608),
+  CHECK (purge_after IS NOT NULL AND purge_after > collected_at AND purge_after <= collected_at + interval '180 days')
 );
-CREATE UNIQUE INDEX inbox_tenant_delivery_unique ON inbox_messages(shop_id, source, external_delivery_id)
+CREATE UNIQUE INDEX inbox_tenant_delivery_unique ON inbox_messages(shop_id, installation_generation, source, external_delivery_id) NULLS NOT DISTINCT
   WHERE shop_id IS NOT NULL AND external_delivery_id IS NOT NULL;
 CREATE UNIQUE INDEX inbox_unresolved_delivery_unique ON inbox_messages(source, external_delivery_id)
   WHERE shop_id IS NULL AND external_delivery_id IS NOT NULL;
@@ -244,7 +246,9 @@ CREATE TABLE outbox_events (
   erasure_state text NOT NULL DEFAULT 'retained' CHECK (erasure_state IN ('retained', 'pending', 'erased')),
   created_at timestamptz NOT NULL DEFAULT now(),
   FOREIGN KEY (shop_id, installation_generation) REFERENCES installation_generations(shop_id, generation),
-  CHECK ((lease_owner IS NULL) = (lease_until IS NULL))
+  CHECK ((lease_owner IS NULL) = (lease_until IS NULL)),
+  CHECK (octet_length(payload::text) <= 8388608),
+  CHECK (purge_after IS NOT NULL AND purge_after > collected_at AND purge_after <= collected_at + interval '180 days')
 );
 CREATE UNIQUE INDEX outbox_business_key_unique ON outbox_events(shop_id, event_type, business_key)
   WHERE business_key IS NOT NULL;

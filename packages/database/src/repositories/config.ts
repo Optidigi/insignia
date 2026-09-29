@@ -1,4 +1,5 @@
 import { PublishedConfigSchema } from '@insignia/contracts';
+import { validatePublishedConfig } from '@insignia/domain';
 import type { DatabaseExecutor } from '../client/database.js';
 import { canonicalJson, revisionContentHash } from '../hash/canonical.js';
 
@@ -178,7 +179,7 @@ export function createConfigRepository(executor: DatabaseExecutor) {
       if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
         value = { ...(value as Record<string, unknown>), revisionContentHash: hash };
       }
-      const validated = PublishedConfigSchema.parse(value);
+      const validated = validatePublishedConfig(PublishedConfigSchema.parse(value));
       if (
         validated.version !== input.schemaVersion ||
         validated.shopId !== input.shopId ||
@@ -223,7 +224,7 @@ export function createConfigRepository(executor: DatabaseExecutor) {
       const revision = await getRevision(shopId, revisionId);
       if (!revision) return null;
       if (revision.schemaVersion !== 'm2-published-config-v1') throw new Error('unsupported published config version');
-      const value = PublishedConfigSchema.parse(revision.publishedValue);
+      const value = validatePublishedConfig(PublishedConfigSchema.parse(revision.publishedValue));
       const config = await executor
         .selectFrom('product_configs')
         .select('external_product_id')

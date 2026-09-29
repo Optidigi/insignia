@@ -94,6 +94,73 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
     }
   });
 
+  it('deduplicates delivery IDs within an installation and fences old-generation processing', async () => {
+    const database = await openTestDatabase();
+    try {
+      const { shopId, generation } = await createTestShop(database);
+      const inbox = new PgInboxRepository(database);
+      const transactions = new PgTransactionRunner(database);
+      const original = { ...delivery(shopId, randomUUID(), '{}'), installationGeneration: generation };
+      const first = await receiveInbox(inbox, original);
+      expect(await receiveInbox(inbox, original)).toEqual({ kind: 'duplicate', id: first.id });
+      const nextGeneration = await transactions.run((transaction) =>
+        createTenantRepository(transaction).startInstallation(transaction, shopId),
+      );
+      const second = await receiveInbox(inbox, { ...original, installationGeneration: nextGeneration });
+      expect(second.kind).toBe('received');
+      expect(second.id).not.toBe(first.id);
+      expect(await processInbox(transactions, inbox, shopId, first.id, async () => {})).toBe('not_found');
+      expect(await processInbox(transactions, inbox, shopId, second.id, async () => {})).toBe('processed');
+    } finally {
+      await database.destroy();
+    }
+  });
+
+  it('bounds raw and JSON payload size and retention at the durable boundary', async () => {
+    const database = await openTestDatabase();
+    try {
+      const { shopId } = await createTestShop(database);
+      const inbox = new PgInboxRepository(database);
+      const outbox = new PgOutboxRepository(database);
+      const transactions = new PgTransactionRunner(database);
+      const base = delivery(shopId, randomUUID(), '{}');
+      await expect(receiveInbox(inbox, { ...base, payload: Buffer.alloc(8 * 1024 * 1024 + 1) })).rejects.toThrow(
+        'required metadata',
+      );
+      await expect(
+        receiveInbox(inbox, { ...base, purgeAfter: new Date(base.receivedAt.getTime() + 181 * 24 * 60 * 60 * 1000) }),
+      ).rejects.toThrow('required metadata');
+      const receipt = await receiveInbox(inbox, base);
+      await expect(
+        sql`UPDATE inbox_messages SET purge_after = collected_at + interval '181 days' WHERE id = ${receipt.id}::uuid`.execute(
+          database,
+        ),
+      ).rejects.toThrow();
+      const oversized = { ...event(shopId, randomUUID()), payload: { text: 'x'.repeat(8 * 1024 * 1024 + 1) } };
+      await expect(transactions.run((transaction) => outbox.add(transaction, oversized))).rejects.toThrow(
+        'durable size limit',
+      );
+      const existing = event(shopId, randomUUID());
+      await transactions.run((transaction) => outbox.add(transaction, existing));
+      await expect(
+        transactions.run((transaction) =>
+          outbox.add(transaction, {
+            ...existing,
+            id: randomUUID(),
+            purgeAfter: new Date(existing.occurredAt.getTime() + 1),
+          }),
+        ),
+      ).rejects.toThrow('Outbox business key conflicts');
+      await expect(
+        sql`UPDATE outbox_events SET purge_after = collected_at + interval '181 days' WHERE id = ${existing.id}::uuid`.execute(
+          database,
+        ),
+      ).rejects.toThrow();
+    } finally {
+      await database.destroy();
+    }
+  });
+
   it('rolls back business outbox and inbox completion together', async () => {
     const database = await openTestDatabase();
     try {

@@ -1,5 +1,10 @@
 import { isDeepStrictEqual } from 'node:util';
-import type { ClaimedOutboxEvent, OutboxEvent, OutboxRepository } from '@insignia/application';
+import {
+  type ClaimedOutboxEvent,
+  MAX_DURABLE_PAYLOAD_BYTES,
+  type OutboxEvent,
+  type OutboxRepository,
+} from '@insignia/application';
 import { type Kysely, sql, type Transaction } from 'kysely';
 import type { Database } from '../../client/database.js';
 import { canonicalJson } from '../../hash/canonical.js';
@@ -8,7 +13,10 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
   constructor(private readonly database: Kysely<Database>) {}
 
   async add(transaction: Transaction<Database>, event: OutboxEvent): Promise<string> {
-    const normalizedPayload = JSON.parse(canonicalJson(event.payload)) as unknown;
+    const canonicalPayload = canonicalJson(event.payload);
+    if (Buffer.byteLength(canonicalPayload, 'utf8') > MAX_DURABLE_PAYLOAD_BYTES)
+      throw new TypeError('Outbox payload exceeds durable size limit');
+    const normalizedPayload = JSON.parse(canonicalPayload) as unknown;
     const shop = await transaction
       .selectFrom('shops')
       .select('current_generation')
@@ -50,7 +58,17 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
     if (event.businessKey === null) throw new Error('Outbox event ID collision');
     const existing = await transaction
       .selectFrom('outbox_events')
-      .select(['id', 'installation_generation', 'schema_version', 'aggregate_ref', 'payload', 'occurred_at'])
+      .select([
+        'id',
+        'installation_generation',
+        'schema_version',
+        'aggregate_ref',
+        'payload',
+        'occurred_at',
+        'available_at',
+        'retention_class',
+        'purge_after',
+      ])
       .where('shop_id', '=', event.shopId)
       .where('event_type', '=', event.eventType)
       .where('business_key', '=', event.businessKey)
@@ -61,6 +79,9 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
       existing.schema_version !== event.schemaVersion ||
       existing.aggregate_ref !== event.aggregateRef ||
       existing.occurred_at.getTime() !== event.occurredAt.getTime() ||
+      existing.available_at.getTime() !== event.availableAt.getTime() ||
+      existing.retention_class !== event.retentionClass ||
+      existing.purge_after?.getTime() !== event.purgeAfter?.getTime() ||
       !isDeepStrictEqual(existing.payload, normalizedPayload)
     ) {
       throw new Error('Outbox business key conflicts with another event');
