@@ -99,14 +99,17 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions) {
     }
   }
 
-  async function ensureWebhookEnqueued(inboxId: string): Promise<string> {
+  async function ensureWebhookEnqueued(inboxId: string): Promise<{
+    inboxId: string;
+    status: 'enqueued' | 'already_enqueued';
+  }> {
     requireStarted();
     assertUuid(inboxId, 'inbox ID');
     const data = { inboxId };
     const sent = await boss.send(WEBHOOK_QUEUE, data, { id: inboxId });
     if (sent === inboxId) {
       observability.logger.info('webhook_enqueued', { inboxId });
-      return inboxId;
+      return { inboxId, status: 'enqueued' };
     }
     if (sent !== null) throw new Error('Queue returned mismatched inbox job ID');
     const existing = await boss.findJobs<{ inboxId: string }>(WEBHOOK_QUEUE, { id: inboxId });
@@ -117,7 +120,7 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions) {
     if (!['created', 'retry', 'active', 'completed'].includes(job.state))
       throw new Error('Queue job is not eligible for acknowledged handoff');
     observability.metrics.webhook('duplicate');
-    return inboxId;
+    return { inboxId, status: 'already_enqueued' };
   }
 
   async function enqueueRefresh(shopId: string, installationGeneration: number): Promise<string> {

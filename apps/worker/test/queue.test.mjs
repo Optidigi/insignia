@@ -52,9 +52,9 @@ test('enqueue confirms exact inbox identity, including completed job replay', as
   const queue = createPgBossRuntime({ boss });
   const inboxId = randomUUID();
   await queue.start();
-  assert.equal(await queue.ensureWebhookEnqueued(inboxId), inboxId);
+  assert.deepEqual(await queue.ensureWebhookEnqueued(inboxId), { inboxId, status: 'enqueued' });
   boss.jobs.get(inboxId).state = 'completed';
-  assert.equal(await queue.ensureWebhookEnqueued(inboxId), inboxId);
+  assert.deepEqual(await queue.ensureWebhookEnqueued(inboxId), { inboxId, status: 'already_enqueued' });
   assert.ok(
     boss.calls.some(
       ([method, name, options]) => method === 'findJobs' && name === WEBHOOK_QUEUE && options.id === inboxId,

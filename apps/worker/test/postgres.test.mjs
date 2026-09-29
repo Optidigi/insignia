@@ -20,8 +20,8 @@ test('PostgreSQL pg-boss starts, retries, settles and replays after restart', {
   try {
     await queue.start();
     assert.equal(await queue.schemaVersion(), 43);
-    assert.equal(await queue.ensureWebhookEnqueued(inboxId), inboxId);
-    assert.equal(await queue.ensureWebhookEnqueued(inboxId), inboxId);
+    assert.deepEqual(await queue.ensureWebhookEnqueued(inboxId), { inboxId, status: 'enqueued' });
+    assert.deepEqual(await queue.ensureWebhookEnqueued(inboxId), { inboxId, status: 'already_enqueued' });
     await queue.work({
       async processInbox(id) {
         assert.equal(id, inboxId);
@@ -50,7 +50,7 @@ test('PostgreSQL pg-boss starts, retries, settles and replays after restart', {
   try {
     await restarted.start();
     assert.equal(await restarted.schemaVersion(), 43);
-    assert.equal(await restarted.ensureWebhookEnqueued(inboxId), inboxId);
+    assert.deepEqual(await restarted.ensureWebhookEnqueued(inboxId), { inboxId, status: 'already_enqueued' });
     const [existing] = await restartedBoss.findJobs(WEBHOOK_QUEUE, { id: inboxId });
     assert.equal(existing?.state, 'completed');
     assert.deepEqual(existing.data, { inboxId });
