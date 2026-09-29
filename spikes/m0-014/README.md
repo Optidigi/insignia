@@ -17,7 +17,11 @@ IDs. The role is not a signed protocol field; actual variant, quantity and
 exact money remain verified. `scripts/check-local.sh` checks canonical TS and
 native Rust, the retained 152-row replay, all 88 historical rows against
 pinned executables, and the current 110-row replay against corrected binaries.
-This is local evidence, not a live cart or gate pass.
+The corrected artifact matrix is local evidence. The bounded native checkout,
+order/lifecycle and cleanup observations are in the
+[M0-014R evidence record](../../docs/delivery/evidence/m0-014r-cartline-and-checkout.md);
+the exact 200-line live carts remain blocked by a 51st-Large-line HTTP 422.
+No complete gate pass or production capacity is claimed.
 `python3 -B scripts/check-live-setup.py` hashes and reconciles the saved
 Admin setup receipts offline, including the exact initial 272-unit stock,
 draft status, owned metadata and effective Function flags.

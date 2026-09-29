@@ -1,6 +1,7 @@
 # M0-014R CartLine correction and checkout continuation
 
-Status: **LOCAL_CORRECTION_VERIFIED; LIVE_CONTINUATION_PENDING**. This is the
+Status: **CORRECTION VERIFIED; BOUNDED LIVE CHECKOUT/LIFECYCLE OBSERVED;
+200-LINE LIVE CAPACITY BLOCKED**. This is the
 new R-run record. The [original stopped M0-014 record](m0-014-public-app-checkout.md)
 and its failed local checkout differential remain historical and unchanged.
 The [principal's PR #19 review](../PR-019-principal-review.md) is an external
@@ -26,7 +27,7 @@ lines, compares roles independent of line order, and assigns members only by
 the observed customized role. The v2 wire and signed economics do not include
 the fixture property. Ordinary lines keep distinct Ajax-only probe properties
 to prevent cart coalescing. Native pre/post cart role and member evidence
-remains to be collected. Transform/Validation tests now
+is summarized below. Transform/Validation tests now
 exercise the full targets with a
 [captured-input-derived fixture](../../../spikes/m0-014/evidence/m0-014r/local/captured-validation-provenance.json)
 at `CHECKOUT_INTERACTION` and `CHECKOUT_COMPLETION` and with negative economic,
@@ -73,7 +74,9 @@ and 32+168 zero-based synthetic rows remain below the 8.8 million instruction
 and 16,000-byte reference on both targets. Thirty-three buckets reject;
 10,000 physical units stay bounded. These are local runner measurements;
 stack peak remains unknown. CLI Function build repeated the exact final
-bytes, but platform-side uploaded storage hash/version GID is not yet known.
+bytes. The development preview bundle contained these exact final Wasm hashes;
+platform-side storage hash/version GID is unavailable through supported
+readback.
 
 ## Read-only live baseline before resumption
 
@@ -92,9 +95,112 @@ untracked readbacks are retained under
 `b8162d478cd023207fa9950f3183ee83e4dcc32871d159a1f8ccd595a186e721`,
 baseline SHA-256
 `16c23a106010358f1493b5e1ff5bd5d2ea7fd120bf59def76dc557100455490f`).
-These reads establish the starting state; no R-run Shopify mutation has
-occurred. The one-operator attempt register is outside Git with mode 0600.
+These reads establish the starting state. The one-operator attempt register is
+outside Git with mode 0600. The final pre-live clean source commit was
+9c4e16b9162dbc5f4079c3b3112e5d47aea6e4ff. Fresh restricted Spec and
+security reviews found no remaining blocking defect. The Spec reviewer could
+not rerun path isolation in its read-only EROFS sandbox; the integrator ran
+the full script successfully on the same commit. Earlier reviewer findings
+on positional role assignment and projected-field capacity were corrected.
+Local review does not replace principal approval.
 
-Fresh restricted Spec/security reviews and final clean source commit precede
-conditional live mutation. Remaining native cases, cleanup and final-head CI
-will be appended without relabeling this local result as checkout success.
+## Actual live checkout and enforcement
+
+Before activation, fixed-target reads confirmed the designated app/shop,
+nine existing grants and the 64/200/8 inventory baseline. The operator
+reused only the two existing products, three variants and Shop location. A
+fresh key ID 60014 and generation 103abd89a0e54ce3b5e28bccec3a0a1b were
+held outside Git. The two products were temporarily published, five exact
+app-owned config/policy/registration metafields were created, and owned
+Transform and Validation were enabled with blockOnFailure=true. The first
+Transform object, gid://shopify/CartTransform/190316827, was removed only for
+the wrong-price control. Replacement gid://shopify/CartTransform/190349595
+was read back before continuation; Validation
+gid://shopify/Validation/204046619 remained active. The built-in Test payment
+gateway was explicitly Active on its detail page; no real provider setting
+was changed.
+
+The normal password-protected storefront held one ordinary Small unit at
+USD20.00, two customized Small units at USD30.33 each, and one customized
+Small at USD30.34. Three cart lines represented four physical units.
+Transform emitted two lineExpand operations using its actual UUID CartLine
+IDs. Native checkout showed USD111.00 pre-discount merchandise with free
+shipping; direct Validation at CHECKOUT_INTERACTION had zero errors. With
+only the owned Transform removed, native checkout recalculated to USD80.00
+and the still-active Validation rejected it. Restoring Transform restored
+USD111.00 and acceptance. An altered member also rejected; removing the
+invalid custom lines and orphan quote repaired the ordinary optional
+USD20.00 checkout. An unsigned Required fixture line rejected at
+CHECKOUT_INTERACTION. Selected direct log hashes and observations are in the
+[sanitized R-run evidence](../../../spikes/m0-014/evidence/m0-014r/live/live-observations.json).
+
+The single permitted Bogus purchase succeeded through normal checkout:
+rewrite-dev order gid://shopify/Order/7487119458587, displayed as #1001
+**in this separate rewrite development store**, four Small units, USD111.00
+paid, zero shipping/tax/discount. It is distinct from protected legacy
+staging order #1001. Native Admin read back the exact line amounts, quote
+and member properties. Direct CHECKOUT_COMPLETION Validation used actual
+CartLine IDs /0, /1 and /2, amounts 20.0, 60.66 and 30.34, and returned no
+errors. Its raw owner-only log SHA-256 is
+5801b677bd272ee3fc286af261defe1f8ae0783475750670bb1822659f76e2f6.
+The preview bundle's final Transform/Validation Wasm hashes matched the
+locally tested upload-input artifacts above; platform-side storage hashes
+were unavailable.
+
+## Large-cart boundary and native lifecycle
+
+The unpaid 10+190 and 32+168 attempts could not reach 200 lines on the
+existing Large variant. Each accepted 50 distinct Large lines; a 51st Large
+returned HTTP 422 with “The maximum quantity of this item is already in
+your cart.” A 51st *total* line using the Small variant was accepted in the
+first diagnostic cart. Large stock still read 200 available/on-hand, zero
+committed, with inventory policy DENY. The cause is **undetermined**. No
+200-line live checkout, Function input or pricing claim is made; both
+diagnostic carts were cleared. The 200-line matrix above is local evidence.
+No variant or inventory workaround was used.
+
+For the small order, the native fulfillment form selected only the two-unit
+USD30.33 customized bucket, quantity one, and displayed “1 item selected.”
+Admin then showed exactly one USD30.33 customized unit in fulfillment
+#1001-F1 from Shop location, with the other three unfulfilled. A native
+Return selected only that fulfilled unit and created #1001-R1. Process and
+refund showed one unit, calculated USD30.33 on the original Bogus payment,
+and Restock at Shop location checked. The receipt showed Return closed,
+USD30.33 refunded and that unit restocked. The return reason displayed
+“Changed my mind” before submission but “Color” on readback; that unexpected
+reason-label discrepancy is preserved, with no cause asserted.
+
+After partial fulfillment, the native menu had no Cancel order action. Its
+Refund route selected the three remaining unfulfilled units at USD20.00 +
+USD30.33 + USD30.34, calculated USD80.67, with Restock items checked. Admin
+recorded three items refunded and three restocked at one location, then
+auto-archived the order. Final order readback: USD111.00 paid, USD30.33 +
+USD80.67 refunded, USD0.00 net, zero remaining items, Return closed. This
+observes native calculated refund and release of the three unfulfilled
+units; it is **not** labelled an explicit Cancel order/CANCEL event. A
+fixed-target Admin GraphQL inventory read showed Small 64, Large 200 and
+Required 8 available/on-hand, with zero committed at Shop location—the
+baseline quantities. No manual stock or refund adjustment occurred. The
+one-order/four-unit cumulative ceiling is exhausted.
+
+## Final resource state and limitations
+
+The guest Ajax cart returned zero items and no attributes. Both fixture
+products were ARCHIVED with publishedAt null. All five R-run app-owned
+metafields were deleted; final readback returned null
+config/registration/policy. The two exact owned active Function objects
+were deleted and current app-scoped lists were empty. The built-in test
+gateway was deactivated; after Admin reload its detail displayed
+“Reactivate.” The run's CLI preview stopped, the new private-key directory
+was deleted, and Shopify retained the stopped development-preview record
+and nine existing grants. No app dev clean was used. The fully refunded,
+archived rewrite-dev test order remains as an audit record. Legacy staging
+orders #1001–#1006 and billing resources were untouched.
+
+The [sanitized R-run evidence](../../../spikes/m0-014/evidence/m0-014r/live/live-observations.json)
+binds direct Function logs, owner-only readbacks, the operator register and
+the high-line diagnostics by SHA-256. Raw logs and Admin readbacks remain
+mode-0600 under /home/serveradmin/.local/share/insignia-m0-014r/ and are
+not in Git. Live 200-line capacity, platform storage hash and an explicit
+native CANCEL event remain limitations. No full gate pass, production
+protocol/capacity adoption, production publisher, M1 or PR merge is claimed.

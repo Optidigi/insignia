@@ -1,0 +1,149 @@
+{
+  "slice": "M0-014R",
+  "dateUtc": "2026-09-29",
+  "source": "T3 shared native storefront/Admin observation and owner-only Shopify CLI Function logs/API readbacks; raw files not tracked",
+  "identity": {
+    "appGid": "gid://shopify/App/429028933633",
+    "shopGid": "gid://shopify/Shop/105501393179",
+    "store": "insignia-rewrite-dev.myshopify.com",
+    "locationGid": "gid://shopify/Location/120998986011"
+  },
+  "finalUploadInputWasmSha256": {
+    "transform": "28a6fb0dd8c4e4aef36a9f205496eca7633433f00e639143dd77afed581c9c60",
+    "validation": "ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d"
+  },
+  "previewBundle": {
+    "transformWasmSha256": "28a6fb0dd8c4e4aef36a9f205496eca7633433f00e639143dd77afed581c9c60",
+    "validationWasmSha256": "ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d",
+    "platformStorageHash": "unavailable through supported readback"
+  },
+  "functionLogs": {
+    "positive_interaction": {
+      "filename": "20260929_010017_824Z_extensions_m0-014-public-validation_850e0d.json",
+      "sha256": "fa516c78094de06347daba88c0879a7d567994d10a53ce4d7f9c5cc465dbb7aa"
+    },
+    "wrong_price": {
+      "filename": "20260929_010240_972Z_extensions_m0-014-public-validation_47da99.json",
+      "sha256": "55a41770f98a07db2f621e43018ad98194eb145824f6a15a00e3d4742928b27b"
+    },
+    "restored_interaction": {
+      "filename": "20260929_010403_887Z_extensions_m0-014-public-validation_5d15d3.json",
+      "sha256": "8fd43dc0c370bfa196c82058b9e7791a8ab00cbdb6d8e9203d14233701edc4ce"
+    },
+    "altered_member": {
+      "filename": "20260929_010436_613Z_extensions_m0-014-public-validation_97e52d.json",
+      "sha256": "bb65fbd6f1a198181bf5a2a6d8c46933e0930717a22db1dddbf2fbc94a651db1"
+    },
+    "orphan_repair": {
+      "filename": "20260929_010541_685Z_extensions_m0-014-public-validation_c53fb8.json",
+      "sha256": "6c9a9f748e4b2b4ae81aaff518a0319d4045ab7cbb6bf50c539c7121742324d9"
+    },
+    "required_unsigned": {
+      "filename": "20260929_010638_477Z_extensions_m0-014-public-validation_081c27.json",
+      "sha256": "e931177b3d1d4138190845541aaa8adcf90db4f5f674f40a36fbab7830d35276"
+    },
+    "purchase_transform": {
+      "filename": "20260929_011823_274Z_extensions_m0-014-public-transform_614433.json",
+      "sha256": "e35b1638ab700643f213030b65ad15e5d7b3de0a4ddc5d893b6df14eb711b136"
+    },
+    "purchase_completion": {
+      "filename": "20260929_011823_574Z_extensions_m0-014-public-validation_b15760.json",
+      "sha256": "5801b677bd272ee3fc286af261defe1f8ae0783475750670bb1822659f76e2f6"
+    }
+  },
+  "smallCheckout": {
+    "nativeCartLineCount": 3,
+    "physicalUnits": 4,
+    "amountMinorByLine": [
+      2000,
+      6066,
+      3034
+    ],
+    "preDiscountMerchandiseMinor": 11100,
+    "shippingMinor": 0,
+    "discountMinor": 0,
+    "taxMinor": 0,
+    "currency": "USD",
+    "checkoutInteractionValidation": "success; zero errors",
+    "checkoutCompletionValidation": "success; zero errors; actual IDs CartLine/0,/1,/2",
+    "transform": "two lineExpand operations echo actual UUID IDs",
+    "orderGid": "gid://shopify/Order/7487119458587",
+    "displayNumber": "#1001 in new rewrite dev store; distinct from protected legacy staging #1001",
+    "payment": "one successful built-in Bogus test payment; $111.00",
+    "quantityCeilingUsed": 4
+  },
+  "negativeAndRepair": {
+    "wrongPrice": "removing only owned Transform repriced basket to $80.00; active Validation rejected at CHECKOUT_INTERACTION; Transform restored and $111.00 accepted",
+    "alteredMember": "invalid one member caused checkout rejection",
+    "orphanRepair": "removed invalid customized lines and orphan quote; ordinary optional $20.00 checkout valid",
+    "requiredUnsigned": "unsigned Required fixture rejected at CHECKOUT_INTERACTION"
+  },
+  "highLineActual": {
+    "10plus190": "50 distinct Large lines accepted, 51st Large HTTP 422 maximum quantity; 51st total line using Small variant accepted",
+    "32plus168": "50 distinct Large lines accepted, 51st Large HTTP 422 maximum quantity",
+    "largeInventoryAtStop": {
+      "available": 200,
+      "committed": 0,
+      "onHand": 200
+    },
+    "cause": "undetermined",
+    "checkoutAt200": "not executed",
+    "scope": "unpaid carts cleared; no inventory adjustment"
+  },
+  "lifecycle": {
+    "partialFulfillment": "one intended unit of 2x$30.33 customized bucket from Shop location; other three unfulfilled",
+    "return": "native #1001-R1, one fulfilled $30.33 unit, no shipping required; restocked Shop location; calculated Bogus refund $30.33",
+    "returnReasonDiscrepancy": "UI displayed Changed my mind before submit, return receipt displayed Color; no economic effect established",
+    "remaining": "native calculated Bogus refund $80.67 for unfulfilled $20.00+$30.33+$30.34; Restock items selected; Admin recorded 3 restocked at 1 location and auto archived order",
+    "finalPaymentMinor": 0,
+    "finalDisplayedItems": 0,
+    "finalInventory": {
+      "small": {
+        "available": 64,
+        "committed": 0,
+        "onHand": 64
+      },
+      "large": {
+        "available": 200,
+        "committed": 0,
+        "onHand": 200
+      },
+      "required": {
+        "available": 8,
+        "committed": 0,
+        "onHand": 8
+      }
+    },
+    "manualInventoryWrites": 0
+  },
+  "cleanup": {
+    "cartItemCount": 0,
+    "cartAttributes": {},
+    "products": "both ARCHIVED, publishedAt null",
+    "ownedMetafields": "five deleted; final readback null",
+    "activeCartTransforms": 0,
+    "activeValidations": 0,
+    "testGateway": "inactive; Reactivate visible after reload",
+    "cliPreview": "stopped; Shopify development preview record retained",
+    "freshPrivateKey": "deleted"
+  },
+  "ownerOnlyReadbacks": {
+    "operator-register.json": "a795cfe42741ef8ede922e82806dfee1369104e458567a3ceb84bed6524e3b97",
+    "post-lifecycle-stock.json": "36fae09bfeea1328cf02fd8a9c80c9ed1b84e582865b0c8c340862c3ed07b955",
+    "final-fixture-readback.json": "92850160da7ef0f30e5c7c495b4d0cf2db3b12565bd89c58cf4da89506c3953e",
+    "final-functions-readback.json": "660ee9da6e4d1d3b8571a641aede8a5853ba7e3930724e526b09a992183fdf02",
+    "final-stock-readback.json": "8b96bc216dfa8945d6cc3030a3460c9d153f1c07e5511a916a1795699ad43c06",
+    "stress10-51-diagnostic-summary.json": "48f290d4bf5e3837e1b98fb7fb0e85098e85719a027fcc6d90c427a3258615f0",
+    "stress32-50-diagnostic-summary.json": "57ba7aa64ed927f654c5b0fb133a38b9cecec480657fc17a23831ae3750c66cb",
+    "archive-fixtures-result.json": "2e6c6e33acc30d03e9b79a193ad9af9d980b5855b795ac9e70384e188c382749",
+    "delete-metadata-result.json": "e03701d81d63e1744cab2652add516c149d61413c1cca99ccbab243d0dcde749",
+    "delete-functions-result.json": "27c6a61d0daebd86d533aa2cdccb2a41caef81e8efcccd098d0d2368da3e1d3b"
+  },
+  "limitations": [
+    "actual 200-line carts blocked at 50 Large variant lines by HTTP 422; platform cause not proven",
+    "platform-side uploaded Function version/storage hash unavailable",
+    "Shopify return-reason display discrepancy; direct return/refund/restock money and stock verified",
+    "native refund flow after partial fulfillment gave restock of remaining unfulfilled items and auto archive, not an explicit Cancel order operation",
+    "stopped development preview record and approved grants retained by design"
+  ]
+}
