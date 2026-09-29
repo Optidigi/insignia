@@ -5,7 +5,11 @@ import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import type { Database } from '../src/client/database.js';
 import { withTransaction } from '../src/client/database.js';
 import { canonicalJson, revisionContentHash, sha256CanonicalJson } from '../src/hash/canonical.js';
-import { CONFIG_DRAFT_STORAGE_VERSION, createConfigRepository } from '../src/repositories/config.js';
+import {
+  CONFIG_DRAFT_STORAGE_VERSION,
+  createConfigRepository,
+  createConfigRepositoryInternal,
+} from '../src/repositories/config.js';
 import { PgOutboxRepository } from '../src/repositories/delivery/pg-outbox-repository.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
 import { stagePublicationIntent } from '../src/repositories/publication-intent.js';
@@ -42,7 +46,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PostgreSQL tenant and publica
     const aConfig = randomUUID();
     const bConfig = randomUUID();
     const revisionId = randomUUID();
-    const repository = createConfigRepository(database);
+    const repository = createConfigRepositoryInternal(database);
+    expect('createRevision' in createConfigRepository(database)).toBe(false);
     await repository.createConfig({
       shopId: a.shopId,
       configId: aConfig,
@@ -89,7 +94,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PostgreSQL tenant and publica
   test('independent connections racing one draft version produce one conflict', async () => {
     const { shopId } = await createTestShop(database);
     const configId = randomUUID();
-    const repo = createConfigRepository(database);
+    const repo = createConfigRepositoryInternal(database);
     await repo.createConfig({
       shopId,
       configId,
@@ -125,7 +130,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PostgreSQL tenant and publica
 
   test('draft storage accepts only M3 versioned JSON objects on write and read', async () => {
     const { shopId } = await createTestShop(database);
-    const repo = createConfigRepository(database);
+    const repo = createConfigRepositoryInternal(database);
     await expect(
       repo.createConfig({
         shopId,
@@ -209,7 +214,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PostgreSQL tenant and publica
     const configId = randomUUID();
     const productId = randomUUID();
     const revisionId = randomUUID();
-    const repo = createConfigRepository(database);
+    const repo = createConfigRepositoryInternal(database);
     await repo.createConfig({
       shopId,
       configId,
@@ -301,7 +306,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PostgreSQL tenant and publica
     const { shopId, generation } = await createTestShop(database);
     const configId = randomUUID();
     const productId = randomUUID();
-    const repo = createConfigRepository(database);
+    const repo = createConfigRepositoryInternal(database);
     await repo.createConfig({
       shopId,
       configId,
@@ -397,7 +402,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PostgreSQL tenant and publica
     const revisionB = randomUUID();
     const operationA = randomUUID();
     const operationB = randomUUID();
-    const repo = createConfigRepository(database);
+    const repo = createConfigRepositoryInternal(database);
     await repo.createConfig({
       shopId,
       configId,
@@ -460,6 +465,59 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PostgreSQL tenant and publica
     await withTransaction(database, async (tx) => {
       expect(await createPublicationRepository(tx).activate(shopId, configId, operationB)).toBe('stale');
     });
+  });
+
+  test('an already activated older operation cannot be restored by rewinding sequence and pointers', async () => {
+    const { shopId, generation } = await createTestShop(database);
+    const configId = randomUUID();
+    const productId = randomUUID();
+    const repo = createConfigRepositoryInternal(database);
+    await repo.createConfig({
+      shopId,
+      configId,
+      externalProductId: productId,
+      draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+      draftValue: {},
+    });
+    const rows = [
+      { revisionId: randomUUID(), operationId: randomUUID(), projection: { policy: 'optional' } },
+      { revisionId: randomUUID(), operationId: randomUUID(), projection: { policy: 'required' } },
+    ];
+    for (const row of rows) {
+      await repo.createRevision({
+        shopId,
+        configId,
+        revisionId: row.revisionId,
+        schemaVersion: 'm2-published-config-v1',
+        publishedValue: published(shopId, productId, row.revisionId),
+      });
+      await withTransaction(database, async (transaction) => {
+        const publication = createPublicationRepository(transaction);
+        await publication.request({
+          shopId,
+          configId,
+          operationId: row.operationId,
+          revisionId: row.revisionId,
+          installationGeneration: generation,
+          expectedProjection: row.projection,
+        });
+        expect(await publication.acknowledge(shopId, configId, row.operationId)).toBe('acknowledged');
+        expect(
+          await publication.observe({ shopId, configId, operationId: row.operationId, projection: row.projection }),
+        ).toBe('observed');
+        expect(await publication.activate(shopId, configId, row.operationId)).toBe('activated');
+      });
+    }
+    const older = rows[0];
+    const newer = rows[1];
+    if (!older || !newer) throw new Error('missing test operations');
+    expect((await repo.getConfig(shopId, configId))?.effectiveOperationId).toBe(newer.operationId);
+    await expect(
+      sql`UPDATE product_configs SET publication_sequence = 1, effective_revision_id = ${older.revisionId}, effective_operation_id = ${older.operationId} WHERE shop_id = ${shopId} AND config_id = ${configId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('publication sequence cannot decrease');
+    expect((await repo.getConfig(shopId, configId))?.effectiveOperationId).toBe(newer.operationId);
   });
 });
 

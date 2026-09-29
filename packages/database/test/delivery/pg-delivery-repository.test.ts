@@ -130,7 +130,27 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
       await expect(
         receiveInbox(inbox, { ...base, purgeAfter: new Date(base.receivedAt.getTime() + 181 * 24 * 60 * 60 * 1000) }),
       ).rejects.toThrow('required metadata');
+      const future = new Date('2099-01-01T00:00:00.000Z');
+      await expect(
+        receiveInbox(inbox, {
+          ...base,
+          externalDeliveryId: randomUUID(),
+          receivedAt: future,
+          purgeAfter: new Date(future.getTime() + 179 * 24 * 60 * 60 * 1000),
+        }),
+      ).rejects.toThrow();
       const receipt = await receiveInbox(inbox, base);
+      const collected = await database
+        .selectFrom('inbox_messages')
+        .select('collected_at')
+        .where('id', '=', receipt.id)
+        .executeTakeFirstOrThrow();
+      expect(collected.collected_at.getTime()).toBeLessThan(Date.now() + 5_000);
+      await expect(
+        sql`UPDATE inbox_messages SET collected_at = '2099-01-01'::timestamptz WHERE id = ${receipt.id}::uuid`.execute(
+          database,
+        ),
+      ).rejects.toThrow('payload collection time is immutable');
       await expect(
         sql`UPDATE inbox_messages SET purge_after = collected_at + interval '181 days' WHERE id = ${receipt.id}::uuid`.execute(
           database,
@@ -140,6 +160,16 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
       await expect(transactions.run((transaction) => outbox.add(transaction, oversized))).rejects.toThrow(
         'durable size limit',
       );
+      await expect(
+        transactions.run((transaction) =>
+          outbox.add(transaction, {
+            ...event(shopId, randomUUID()),
+            occurredAt: future,
+            availableAt: future,
+            purgeAfter: new Date(future.getTime() + 179 * 24 * 60 * 60 * 1000),
+          }),
+        ),
+      ).rejects.toThrow();
       const existing = event(shopId, randomUUID());
       await transactions.run((transaction) => outbox.add(transaction, existing));
       await expect(

@@ -65,7 +65,8 @@ function mapConfig(row: {
   };
 }
 
-export function createConfigRepository(executor: DatabaseExecutor) {
+/** Internal revision writer; package consumers receive the read/draft-only facade below. */
+export function createConfigRepositoryInternal(executor: DatabaseExecutor) {
   async function getRevision(shopId: string, revisionId: string): Promise<RevisionRecord | null> {
     const row = await executor
       .selectFrom('config_revisions')
@@ -242,5 +243,17 @@ export function createConfigRepository(executor: DatabaseExecutor) {
         throw new Error('invalid published revision content');
       return { ...revision, publishedValue: value };
     },
+  };
+}
+
+export function createConfigRepository(executor: DatabaseExecutor) {
+  const repository = createConfigRepositoryInternal(executor);
+  return {
+    createConfig: repository.createConfig,
+    getConfig: repository.getConfig,
+    getByProduct: repository.getByProduct,
+    updateDraft: repository.updateDraft,
+    getRevision: repository.getRevision,
+    getValidatedPublishedRevision: repository.getValidatedPublishedRevision,
   };
 }

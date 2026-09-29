@@ -39,7 +39,6 @@ export class PgOutboxRepository implements OutboxRepository<Transaction<Database
         payload: normalizedPayload,
         business_key: event.businessKey,
         occurred_at: event.occurredAt,
-        collected_at: event.occurredAt,
         available_at: event.availableAt,
         state: 'pending',
         attempts: 0,

@@ -1,7 +1,7 @@
 import { newOutboxEvent } from '@insignia/application';
 import type { Kysely } from 'kysely';
 import type { Database } from '../client/database.js';
-import { createConfigRepository } from './config.js';
+import { createConfigRepositoryInternal } from './config.js';
 import { PgOutboxRepository } from './delivery/pg-outbox-repository.js';
 import { createPublicationRepository } from './publication.js';
 
@@ -37,7 +37,7 @@ export function stagePublicationIntent(
       .forUpdate()
       .executeTakeFirstOrThrow();
     if (config.draft_version !== input.expectedDraftVersion) throw new Error('draft version conflict');
-    const revision = await createConfigRepository(transaction).createRevision({
+    const revision = await createConfigRepositoryInternal(transaction).createRevision({
       shopId: input.shopId,
       configId: input.configId,
       revisionId: input.revisionId,

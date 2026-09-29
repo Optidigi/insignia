@@ -95,7 +95,7 @@ export interface InboxMessagesTable {
   payload: Buffer;
   payload_sha256: string;
   received_at: Timestamp;
-  collected_at: Timestamp;
+  collected_at: GeneratedTimestamp;
   state: Generated<'pending' | 'leased' | 'processed' | 'failed'>;
   attempts: Generated<number>;
   last_error_class: Generated<string | null>;
@@ -116,7 +116,7 @@ export interface OutboxEventsTable {
   payload: Json;
   business_key: Generated<string | null>;
   occurred_at: Timestamp;
-  collected_at: Timestamp;
+  collected_at: GeneratedTimestamp;
   available_at: Timestamp;
   state: Generated<'pending' | 'leased' | 'delivered' | 'failed'>;
   attempts: Generated<number>;

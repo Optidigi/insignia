@@ -17,7 +17,6 @@ export class PgInboxRepository implements InboxRepository<Transaction<Database>>
         payload: Buffer.from(message.payload),
         payload_sha256: message.payloadSha256,
         received_at: message.receivedAt,
-        collected_at: message.receivedAt,
         state: 'pending',
         attempts: 0,
         last_error_class: null,

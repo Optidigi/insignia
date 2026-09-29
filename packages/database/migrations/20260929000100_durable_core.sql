@@ -113,6 +113,9 @@ CREATE FUNCTION enforce_effective_activation() RETURNS trigger LANGUAGE plpgsql 
 DECLARE op publication_operations%ROWTYPE;
 DECLARE current_installation bigint;
 BEGIN
+  IF NEW.publication_sequence < OLD.publication_sequence THEN
+    RAISE EXCEPTION 'publication sequence cannot decrease' USING ERRCODE = 'check_violation';
+  END IF;
   IF (OLD.effective_revision_id, OLD.effective_operation_id)
      IS DISTINCT FROM (NEW.effective_revision_id, NEW.effective_operation_id) THEN
     SELECT current_generation INTO current_installation FROM shops WHERE shop_id = NEW.shop_id;
@@ -203,7 +206,7 @@ CREATE TABLE inbox_messages (
   payload bytea NOT NULL,
   payload_sha256 text NOT NULL CHECK (payload_sha256 ~ '^[a-f0-9]{64}$'),
   received_at timestamptz NOT NULL,
-  collected_at timestamptz NOT NULL,
+  collected_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   state text NOT NULL DEFAULT 'pending' CHECK (state IN ('pending', 'leased', 'processed', 'failed')),
   attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
   last_error_class text,
@@ -234,7 +237,7 @@ CREATE TABLE outbox_events (
   payload jsonb NOT NULL,
   business_key text,
   occurred_at timestamptz NOT NULL,
-  collected_at timestamptz NOT NULL,
+  collected_at timestamptz NOT NULL DEFAULT clock_timestamp(),
   available_at timestamptz NOT NULL,
   state text NOT NULL DEFAULT 'pending' CHECK (state IN ('pending', 'leased', 'delivered', 'failed')),
   attempts integer NOT NULL DEFAULT 0 CHECK (attempts >= 0),
@@ -254,9 +257,25 @@ CREATE UNIQUE INDEX outbox_business_key_unique ON outbox_events(shop_id, event_t
   WHERE business_key IS NOT NULL;
 CREATE INDEX outbox_claimable_idx ON outbox_events(shop_id, state, available_at, lease_until);
 
+CREATE FUNCTION enforce_payload_collection_time() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    NEW.collected_at := clock_timestamp();
+  ELSIF NEW.collected_at IS DISTINCT FROM OLD.collected_at THEN
+    RAISE EXCEPTION 'payload collection time is immutable' USING ERRCODE = 'check_violation';
+  END IF;
+  RETURN NEW;
+END;
+$$;
+CREATE TRIGGER inbox_collection_guard BEFORE INSERT OR UPDATE ON inbox_messages
+  FOR EACH ROW EXECUTE FUNCTION enforce_payload_collection_time();
+CREATE TRIGGER outbox_collection_guard BEFORE INSERT OR UPDATE ON outbox_events
+  FOR EACH ROW EXECUTE FUNCTION enforce_payload_collection_time();
+
 -- migrate:down
 DROP TABLE outbox_events;
 DROP TABLE inbox_messages;
+DROP FUNCTION enforce_payload_collection_time();
 DROP TABLE idempotency_records;
 DROP TRIGGER product_configs_effective_guard ON product_configs;
 DROP FUNCTION enforce_effective_activation();
