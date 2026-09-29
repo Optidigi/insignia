@@ -198,6 +198,14 @@ export function inspectDomainImports(file, options, domainPath) {
       if (expression && ts.isStringLiteral(expression)) inspectSpecifier(node, expression.text);
       else report(node);
     }
+    if (ts.isImportTypeNode(node)) {
+      const argument = node.argument;
+      if (ts.isLiteralTypeNode(argument) && ts.isStringLiteral(argument.literal)) {
+        inspectSpecifier(node, argument.literal.text);
+      } else {
+        report(node);
+      }
+    }
     if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) report(node);
     ts.forEachChild(node, visit);
   }

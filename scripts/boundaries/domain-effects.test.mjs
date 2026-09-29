@@ -75,18 +75,19 @@ test('compiled graph includes an imported module with an excluded test-like file
     writeFileSync(join(source, 'main.ts'), "import { clock } from './helper.test.js'; export const value = clock();");
     writeFileSync(
       join(source, 'helper.test.ts'),
-      "import { readFileSync } from 'node:fs'; export function clock() { return Date.now(); }",
+      "import { readFileSync } from 'node:fs'; export type External = import('typescript').CompilerOptions; export function clock() { return Date.now(); }",
     );
     const files = compiledDomainFiles(join(directory, 'tsconfig.json'), source);
     const imported = files.find((file) => file.fileName.endsWith('helper.test.ts'));
     assert.ok(imported, 'imported test-like module must be scanned');
     assert.ok(inspectDomainSource(imported.text).some(({ rule }) => rule === 'domain-no-implicit-clock'));
-    assert.ok(
+    assert.equal(
       inspectDomainImports(
         imported,
         { module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext },
         source,
-      ).some(({ rule }) => rule === 'domain-no-external-import'),
+      ).filter(({ rule }) => rule === 'domain-no-external-import').length,
+      2,
     );
   } finally {
     rmSync(directory, { recursive: true, force: true });
