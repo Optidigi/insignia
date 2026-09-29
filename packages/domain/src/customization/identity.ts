@@ -12,6 +12,7 @@ export interface ProductionDesign {
 
 export interface CustomizationGroup {
   version: typeof CUSTOMIZATION_GROUP_VERSION;
+  shopId: string;
   productId: string;
   configRevisionId: string;
   revisionContentHash: string;
@@ -47,6 +48,7 @@ function uniqueBy<T>(items: T[], key: (item: T) => string, label: string): void 
 export function canonicalDesignIdentity(group: CustomizationGroup): string {
   if (!group || group.version !== CUSTOMIZATION_GROUP_VERSION)
     throw new Error('unsupported customization group version');
+  requireId(group.shopId, 'shop ID');
   requireId(group.productId, 'product ID');
   requireId(group.configRevisionId, 'revision ID');
   if (typeof group.revisionContentHash !== 'string' || !/^[a-f0-9]{64}$/.test(group.revisionContentHash))
@@ -75,6 +77,7 @@ export function canonicalDesignIdentity(group: CustomizationGroup): string {
     .sort((left, right) => compareId(left[0], right[0]));
   return JSON.stringify([
     DESIGN_IDENTITY_VERSION,
+    group.shopId,
     group.productId,
     group.configRevisionId,
     group.revisionContentHash,
@@ -113,14 +116,14 @@ export function normalizeCustomizationGroups(
   const configByKey = new Map<string, PublishedConfig>();
   for (const config of configs) {
     const checked = validatePublishedConfig(config);
-    const key = JSON.stringify([checked.productId, checked.revisionId]);
+    const key = JSON.stringify([checked.shopId, checked.productId, checked.revisionId]);
     if (configByKey.has(key)) throw new Error('duplicate published config identity');
     configByKey.set(key, checked);
   }
   const byIdentity = new Map<string, NormalizedCustomizationGroup>();
   for (const group of groups) {
     const canonicalIdentity = canonicalDesignIdentity(group);
-    const config = configByKey.get(JSON.stringify([group.productId, group.configRevisionId]));
+    const config = configByKey.get(JSON.stringify([group.shopId, group.productId, group.configRevisionId]));
     if (!config) throw new Error('missing published config for group');
     if (group.revisionContentHash !== config.revisionContentHash)
       throw new Error('published revision content hash mismatch');
@@ -156,6 +159,7 @@ export function normalizeCustomizationGroups(
     };
     byIdentity.set(canonicalIdentity, {
       version: CUSTOMIZATION_GROUP_VERSION,
+      shopId: group.shopId,
       productId: group.productId,
       configRevisionId: group.configRevisionId,
       revisionContentHash: group.revisionContentHash,

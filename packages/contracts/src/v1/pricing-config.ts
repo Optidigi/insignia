@@ -11,6 +11,7 @@ const decimal = z
 const positiveQuantity = z.number().int().positive().refine(Number.isSafeInteger);
 
 export const MoneyDtoSchema = z.strictObject({
+  version: z.literal('m2-money-v1'),
   currency,
   minor: z
     .string()
@@ -69,6 +70,7 @@ export const ArtworkChoiceSchema = z.discriminatedUnion('kind', [
 
 export const CustomizationGroupSchema = z.strictObject({
   version: z.literal('m2-customization-group-v1'),
+  shopId: id,
   productId: id,
   configRevisionId: id,
   revisionContentHash,

@@ -40,6 +40,7 @@ const back = design.placements[1] as (typeof design.placements)[number];
 
 const group = {
   version: 'm2-customization-group-v1' as const,
+  shopId: 'shop',
   productId: 'shirt',
   configRevisionId: 'rev-1',
   revisionContentHash: 'a'.repeat(64),
@@ -111,6 +112,17 @@ describe('canonical production identity and quantity vectors', () => {
       { variantId: 'black-l', quantity: 15 },
       { variantId: 'red-s', quantity: 10 },
     ]);
+  });
+
+  it('keeps tenant-scoped product and revision identities distinct', () => {
+    const otherShopGroup = { ...group, shopId: 'other-shop' };
+    const otherShopConfig = { ...config, shopId: 'other-shop' };
+    expect(canonicalDesignIdentity(otherShopGroup)).not.toBe(canonicalDesignIdentity(group));
+    expect(() => normalizeCustomizationGroups([otherShopGroup], [config])).toThrow();
+    const groups = normalizeCustomizationGroups([otherShopGroup, group], [config, otherShopConfig]);
+    expect(groups).toHaveLength(2);
+    expect(groups.map((item) => item.shopId)).toEqual(['other-shop', 'shop']);
+    expect(groups.every((item) => item.variants.length === 2)).toBe(true);
   });
 
   it('rejects unsupported references, versions, duplicate selections and quantity overflow', () => {
