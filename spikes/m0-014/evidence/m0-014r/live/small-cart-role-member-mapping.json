@@ -1,0 +1,58 @@
+{
+  "source": "normal-storefront Ajax cart.js operator captures; buyer properties are not a trusted authority",
+  "plainSourceSha256": "41bb2a152581b166a3402ca70f5bf99df98923854a3039e3509b81d7fdd95c92",
+  "signedSourceSha256": "207e0dcc676137c6eb08fbd21adbd27ced972bbadac613f32150da2ef7d9ba16",
+  "plainItems": [
+    {
+      "variantId": "54061591232795",
+      "quantity": 1,
+      "probe": "r-small-ordinary-0",
+      "role": null,
+      "member": null,
+      "finalPriceMinor": 2000
+    },
+    {
+      "variantId": "54061591232795",
+      "quantity": 2,
+      "probe": "r-small-c1",
+      "role": "m0-014-small-custom-1",
+      "member": null,
+      "finalPriceMinor": 2000
+    },
+    {
+      "variantId": "54061591232795",
+      "quantity": 1,
+      "probe": "r-small-c0",
+      "role": "m0-014-small-custom-0",
+      "member": null,
+      "finalPriceMinor": 2000
+    }
+  ],
+  "signedItems": [
+    {
+      "variantId": "54061591232795",
+      "quantity": 1,
+      "probe": "r-small-ordinary-0",
+      "role": null,
+      "member": null,
+      "finalPriceMinor": 2000
+    },
+    {
+      "variantId": "54061591232795",
+      "quantity": 2,
+      "probe": "r-small-c1",
+      "role": "m0-014-small-custom-1",
+      "member": "AAEAADErMfEBGwAAAAIAAAAAAAAL2Q",
+      "finalPriceMinor": 3033
+    },
+    {
+      "variantId": "54061591232795",
+      "quantity": 1,
+      "probe": "r-small-c0",
+      "role": "m0-014-small-custom-0",
+      "member": "AAAAADErMfEBGwAAAAEAAAAAAAAL2g",
+      "finalPriceMinor": 3034
+    }
+  ],
+  "note": "same-variant one-unit ordinary and customized rows are distinguished in this fixture by operator-assigned properties; a coherent swap of untrusted roles before signing is not independently detectable from the two Function projections alone"
+}

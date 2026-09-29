@@ -1,0 +1,80 @@
+{
+  "provenance": {
+    "rawOwnerOnlyFilename": "20260929_010638_477Z_extensions_m0-014-public-validation_081c27.json",
+    "rawSha256": "e931177b3d1d4138190845541aaa8adcf90db4f5f674f40a36fbab7830d35276",
+    "sanitization": "retained only Function input/output, target, function ID, fuel and status; removed log envelope, store name and diagnostics"
+  },
+  "target": "cart.validations.generate.run",
+  "functionId": "01a0e9cd-647d-7e48-8e64-76e2ca69dcb9",
+  "status": "success",
+  "fuelConsumed": 512516,
+  "input": {
+    "buyerJourney": {
+      "step": "CHECKOUT_INTERACTION"
+    },
+    "cart": {
+      "quote": null,
+      "lines": [
+        {
+          "id": "gid://shopify/CartLine/0",
+          "quantity": 1,
+          "member": null,
+          "fixtureRole": null,
+          "cost": {
+            "amountPerQuantity": {
+              "currencyCode": "USD"
+            },
+            "subtotalAmount": {
+              "amount": "20.0",
+              "currencyCode": "USD"
+            }
+          },
+          "sellingPlanAllocation": null,
+          "merchandise": {
+            "__typename": "ProductVariant",
+            "id": "gid://shopify/ProductVariant/54061592281371",
+            "product": {
+              "id": "gid://shopify/Product/10485042839835",
+              "registration": {
+                "value": "103abd89a0e54ce3b5e28bccec3a0a1b:1:ready"
+              },
+              "policy": {
+                "value": "103abd89a0e54ce3b5e28bccec3a0a1b:1:required"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "localization": {
+      "country": {
+        "isoCode": "US"
+      },
+      "market": {
+        "id": "gid://shopify/Market/106410115355"
+      }
+    },
+    "shop": {
+      "localTime": {
+        "date": "2026-09-28"
+      },
+      "publicConfig": {
+        "value": "{\"generationHex\":\"103abd89a0e54ce3b5e28bccec3a0a1b\",\"epoch\":1,\"maxBuckets\":32,\"maxPhysicalQuantity\":10000,\"allowNoMarket\":false,\"keys\":[{\"id\":60014,\"publicHex\":\"b3f848fd2c2c15b76d773b6607091e228cfe7c289579751f0d847a596bd306a9\",\"revoked\":false,\"firstDay\":20724,\"lastDay\":20726}]}"
+      }
+    }
+  },
+  "output": {
+    "operations": [
+      {
+        "validationAdd": {
+          "errors": [
+            {
+              "message": "Review your Insignia customization before checkout.",
+              "target": "$.cart"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

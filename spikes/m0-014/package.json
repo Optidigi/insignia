@@ -1,0 +1,14 @@
+{
+  "name": "insignia-m0-014-fixture-bridge",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "packageManager": "pnpm@12.6.0",
+  "scripts": {
+    "check": "tsc --noEmit && node --test ts/*.test.ts"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.0",
+    "typescript": "5.9.3"
+  }
+}

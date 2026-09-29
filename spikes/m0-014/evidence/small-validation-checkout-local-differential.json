@@ -1,0 +1,38 @@
+{
+  "classification": "LOCAL_DIFFERENTIAL_FROM_ACTUAL_SIGNED_CART_INPUT; NOT_LIVE_CHECKOUT",
+  "source": "exact-app CLI --json Validation CART_INTERACTION event at 2026-09-28T21:46:41.257422Z",
+  "rawSourceEventSha256": "50d1a82822aa63fa046af6fbc84e91a228000a6c80811ce19c45d7a6022ed9dd",
+  "pinnedValidationWasmSha256": "93148de17900a68732712ce687393ec920f903e55649115f23b9aa3b667a4ebd",
+  "fixedChanges": [
+    "buyerJourney.step CART_INTERACTION -> CHECKOUT_COMPLETION for both rows",
+    "control row additionally maps target-local CartLine suffixes 0,1,2 -> 1,2,3; signed quote, members, policy, prices and all other fields remain byte-equivalent after JSON parsing"
+  ],
+  "nativeIdShape": {
+    "inputSha256": "95a1cf5c96dc8c723ac9f7c411d04a57b2a01bdede4e5a2c2fdb23caa6ae8e5f",
+    "outputSha256": "61c920a65e1b5c7f56e7d33e1534e724ddb25bf34d749c19cd93a373ccfb912f",
+    "instructions": 539340,
+    "output": {
+      "operations": [
+        {
+          "validationAdd": {
+            "errors": [
+              {
+                "message": "Review your Insignia customization before checkout.",
+                "target": "$.cart"
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "oneBasedControl": {
+    "inputSha256": "15330300f00aa1b0264d93dc07ff1c7bae91680d9dcfd20035624bac64cb7e74",
+    "outputSha256": "df26ec6d3cbd5f2477d745406f6cad3f5f98c92b9bbe2b3878e1612d37788a2d",
+    "instructions": 2723576,
+    "output": {
+      "operations": []
+    }
+  },
+  "conclusion": "Pinned Validation rejects the captured native zero-based marked line, while the same signed cart with only one-based target-local IDs passes in local replay. No live checkout-step result is claimed."
+}

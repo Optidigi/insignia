@@ -1,0 +1,93 @@
+{
+  "review": "PR-019",
+  "date": "2026-09-29",
+  "verdict": "CHANGES_REQUESTED",
+  "repository": "Optidigi/insignia",
+  "pr": 19,
+  "binding": {
+    "base": "7222a96ff2b0408d0fbfe0803835d24acfd463b7",
+    "effective_merge_base": "owner/PR-reported same as base; CI synthetic merge confirms exact base/head parents",
+    "head": "317a4030032b565053b2a4b8032803246ba39ed7",
+    "head_tree": "d3eea0b9fe0421b8131a88cd36ed5af29375dc37",
+    "ci_synthetic_merge": "a18b4b3e064866dc72d72a8329e342c8b879517d",
+    "ci_tree_matches_head": true
+  },
+  "remote_review": {
+    "attempted": true,
+    "action": "REQUEST_CHANGES",
+    "commit_id": "317a4030032b565053b2a4b8032803246ba39ed7",
+    "posted": false,
+    "http_status": 403,
+    "message": "Resource not accessible by integration"
+  },
+  "ci": {
+    "head_associated_runs_all_success": true,
+    "runs": [
+      36491661129,
+      36491661005,
+      36491660957,
+      36491661008,
+      36491660980,
+      36491661091,
+      36491661047,
+      36491660962
+    ],
+    "actual_m0_014_run": 36491661005,
+    "inspected_job_log": 109161467815,
+    "qualification": "Other workflow conclusions checked; only M0-014 full job log read in this review."
+  },
+  "source_and_evidence_inspected": [
+    "docs/delivery/evidence/m0-014-public-app-checkout.md",
+    "spikes/m0-014/evidence/resource-manifest.json",
+    "spikes/m0-014/evidence/small-validation-checkout-local-differential.json",
+    "spikes/m0-014/evidence/small-preview-functions.json",
+    "spikes/m0-014/evidence/small-preview-cart.json",
+    "spikes/m0-014/rust/capacity.rs",
+    "spikes/m0-014/rust/validation/src/main.rs (lines 1-190)",
+    "spikes/m0-014/ts/live-context.ts",
+    "spikes/m0-014/ts/fixture.ts",
+    "spikes/m0-014/scripts/issue-current.mjs",
+    "spikes/m0-014/scripts/check-local.sh",
+    "docs/architecture/implementation-plan.md (PR clarification patch)",
+    ".agents/skills/writing-for-agents/SKILL.md",
+    "original M0-014 execution brief (mounted handoff copy)"
+  ],
+  "finding": {
+    "id": "R1",
+    "priority": "high",
+    "classification": "IMPLEMENTATION DETAIL",
+    "summary": "Frozen Rust CartLine grammar rejects native /0 while TS binder accepts it; checkout-step coverage and corrected-artifact build wiring required.",
+    "wire_change_required": false,
+    "product_decision_required": false
+  },
+  "independent_execution": {
+    "status": "PASS_SUMMARY_ARITHMETIC_ONLY",
+    "source_ref": "317a4030032b565053b2a4b8032803246ba39ed7",
+    "source_path": "spikes/m0-014/evidence/small-preview-cart.json",
+    "git_blob_sha1": "47cbe53ead08a07f2e2296cace707514ea932931",
+    "sha256": "e78ea5eb55d486340b1157679958a7d39a88633e8e0b9e3dd969af619626e198",
+    "cart_lines": 3,
+    "physical_units": 4,
+    "customized_minor": 9100,
+    "ordinary_minor": 2000,
+    "total_minor": 11100,
+    "qualifications": [
+      "Connector-transcribed source verified against exact Git blob.",
+      "This is a summarized preview receipt, not raw Shopify input.",
+      "No signature verification, Rust execution, Wasm replay or live request was performed."
+    ]
+  },
+  "not_performed": [
+    "No Rust or Wasm execution/rebuild in this review.",
+    "No fresh cryptographic check of live cart statements; source summary does not expose them.",
+    "No live Shopify/browser/provider operations.",
+    "No independent raw-input reconstruction/replay of the local differential.",
+    "No full audit of all changed-file bytes or historical receipt hashes.",
+    "No merge or tracked repository edit."
+  ],
+  "public_references": [
+    "https://shopify.dev/docs/api/functions/2026-07/cart-and-checkout-validation",
+    "https://spec.graphql.org/September2025/#sec-ID"
+  ],
+  "next_action": "Owner-authorized M0-014R within existing draft PR #19; local correction before conditional bounded live continuation."
+}

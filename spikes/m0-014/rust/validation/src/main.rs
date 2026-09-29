@@ -1,0 +1,701 @@
+use insignia_m0_005_authorization::{
+    parse_decimal_minor, parse_gid_suffix, parse_public_config, parse_shop_local_day, verify_set,
+    ExpectedContext, PhysicalLine,
+};
+use shopify_function::prelude::*;
+use shopify_function::Result;
+
+#[path = "../../policy/projection.rs"]
+mod product_policy;
+use product_policy::PlainPolicy;
+
+#[path = "../../capacity.rs"]
+mod capacity;
+
+#[typegen("schema.graphql")]
+mod schema {
+    #[query("src/cart_validations_generate_run.graphql", custom_scalar_overrides = {
+        "Input.cart.lines.cost.subtotalAmount.amount" => ::std::string::String,
+    })]
+    pub mod run {}
+}
+
+fn empty() -> schema::CartValidationsGenerateRunResult {
+    schema::CartValidationsGenerateRunResult { operations: vec![] }
+}
+fn reject() -> schema::CartValidationsGenerateRunResult {
+    schema::CartValidationsGenerateRunResult {
+        operations: vec![schema::Operation::ValidationAdd(
+            schema::ValidationAddOperation {
+                errors: vec![schema::ValidationError {
+                    message: "Review your Insignia customization before checkout.".into(),
+                    target: "$.cart".into(),
+                }],
+            },
+        )],
+    }
+}
+
+#[shopify_function]
+fn cart_validations_generate_run(
+    input: schema::run::Input,
+) -> Result<schema::CartValidationsGenerateRunResult> {
+    if input.buyer_journey().step() == Some(&schema::BuyerJourneyStep::CartInteraction) {
+        return Ok(empty()); // Leave cart repair available; checkout steps must pass below.
+    }
+    let relevant = input.cart().lines().iter().any(|line| {
+        line.member().is_some()
+            || match line.merchandise() {
+                schema::run::input::cart::lines::Merchandise::ProductVariant(variant) => {
+                    variant.product().registration().is_some()
+                        || variant.product().policy().is_some()
+                }
+                _ => false,
+            }
+    });
+    if !relevant && input.cart().quote().is_none() {
+        return Ok(empty());
+    }
+    let Some(raw_config) = input.shop().public_config().map(|m| m.value()) else {
+        return Ok(reject());
+    };
+    if raw_config.len() > capacity::MAX_CONFIG_BYTES {
+        return Ok(reject());
+    }
+    let Ok(config) = parse_public_config(raw_config) else {
+        return Ok(reject());
+    };
+    if config.max_buckets > capacity::MAX_BUCKETS
+        || config.max_physical_quantity > capacity::MAX_PHYSICAL_QUANTITY
+        || input.cart().lines().len() > capacity::MAX_CART_LINES
+        || capacity::output_upper_bound(config.max_buckets as usize)
+            .is_none_or(|n| n > capacity::MAX_OUTPUT_BYTES)
+    {
+        return Ok(reject());
+    }
+    let Ok(today) = parse_shop_local_day(input.shop().local_time().date()) else {
+        return Ok(reject());
+    };
+    let Ok(market) = parse_gid_suffix(input.localization().market().id(), "Market") else {
+        return Ok(reject());
+    };
+    let country = input.localization().country().iso_code().to_string();
+    let Ok(country) = <[u8; 2]>::try_from(country.as_bytes()) else {
+        return Ok(reject());
+    };
+
+    let mut lines = Vec::with_capacity(input.cart().lines().len().min(config.max_buckets as usize));
+    let mut currency: Option<[u8; 3]> = None;
+    for line in input.cart().lines() {
+        let schema::run::input::cart::lines::Merchandise::ProductVariant(variant) =
+            line.merchandise()
+        else {
+            if line.member().is_some() {
+                return Ok(reject());
+            }
+            continue;
+        };
+        let Ok(variant_num) = parse_gid_suffix(variant.id(), "ProductVariant") else {
+            return Ok(reject());
+        };
+        let Ok(quantity) = u32::try_from(*line.quantity()) else {
+            return Ok(reject());
+        };
+        if quantity == 0 {
+            return Ok(reject());
+        }
+        let decision = product_policy::classify(
+            variant.product().registration().map(|m| m.value().as_str()),
+            variant.product().policy().map(|m| m.value().as_str()),
+            config.generation,
+        );
+        if !decision.signed_allowed {
+            return Ok(reject());
+        }
+        let required = decision.plain == PlainPolicy::Required;
+        let marked = line.member().is_some();
+        if marked
+            && (!capacity::cart_line_id_ok(line.id())
+                || line.id().len() > capacity::MAX_CART_LINE_ID_BYTES
+                || variant.id().len() > capacity::MAX_VARIANT_ID_BYTES
+                || line
+                    .member()
+                    .and_then(|a| a.value())
+                    .is_none_or(|m| m.len() != capacity::MAX_MEMBER_BYTES))
+        {
+            return Ok(reject());
+        }
+        if !marked {
+            if matches!(
+                decision.plain,
+                PlainPolicy::Required | PlainPolicy::Uncertain
+            ) {
+                return Ok(reject());
+            }
+            continue;
+        }
+        let member = line.member().and_then(|a| a.value()).map(String::as_str);
+        let amount = line.cost().subtotal_amount();
+        if amount.amount().len() > capacity::MAX_AMOUNT_BYTES {
+            return Ok(reject());
+        }
+        let code = amount.currency_code().to_string();
+        let Ok(code) = <[u8; 3]>::try_from(code.as_bytes()) else {
+            return Ok(reject());
+        };
+        if marked {
+            if currency.is_some_and(|c| c != code) {
+                return Ok(reject());
+            }
+            currency = Some(code);
+        }
+        let observed_unit_minor = if marked {
+            let Some(exp) = insignia_m0_005_authorization::currency_exponent(code) else {
+                return Ok(reject());
+            };
+            let Ok(subtotal) = parse_decimal_minor(amount.amount(), exp) else {
+                return Ok(reject());
+            };
+            let Some(unit) = subtotal.checked_div(quantity.into()) else {
+                return Ok(reject());
+            };
+            if unit.checked_mul(quantity.into()) != Some(subtotal) {
+                return Ok(reject());
+            }
+            Some(unit)
+        } else {
+            None
+        };
+        lines.push(PhysicalLine {
+            member,
+            variant: variant_num,
+            quantity,
+            observed_unit_minor,
+            required,
+            marked,
+            selling_plan: line.selling_plan_allocation().is_some(),
+        });
+    }
+    if lines.is_empty() && input.cart().quote().is_none() {
+        return Ok(empty());
+    }
+    let Some(currency) = currency else {
+        return Ok(reject());
+    };
+    let expected = ExpectedContext {
+        generation: config.generation,
+        epoch: config.epoch,
+        currency,
+        country,
+        market,
+        current_day: today,
+        max_buckets: config.max_buckets,
+        max_physical_quantity: config.max_physical_quantity,
+        allow_no_market: config.allow_no_market,
+        keys: &config.keys,
+    };
+    let envelope = input
+        .cart()
+        .quote()
+        .and_then(|a| a.value())
+        .map(String::as_str);
+    Ok(if verify_set(envelope, &lines, &expected, true).is_ok() {
+        empty()
+    } else {
+        reject()
+    })
+}
+
+fn main() {
+    std::process::abort();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use shopify_function::wasm_api::{Context, Deserialize, Serialize};
+
+    fn fixture() -> serde_json::Value {
+        serde_json::from_slice(
+            &std::fs::read(
+                std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("../../../m0-007/fixtures/validation-valid.json"),
+            )
+            .unwrap(),
+        )
+        .unwrap()
+    }
+
+    fn run(input: serde_json::Value) -> serde_json::Value {
+        let mut context = Context::new_with_input(input);
+        let root = context.input_get().unwrap();
+        let generated = schema::run::Input::deserialize(&root).unwrap();
+        let output = cart_validations_generate_run(generated).unwrap();
+        output.serialize(&mut context).unwrap();
+        context.finalize_output_and_return().unwrap()
+    }
+
+    fn accepted(input: serde_json::Value) -> bool {
+        run(input)["operations"].as_array().unwrap().is_empty()
+    }
+
+    fn checkout_steps() -> [&'static str; 2] {
+        ["CHECKOUT_INTERACTION", "CHECKOUT_COMPLETION"]
+    }
+
+    fn zero_based_fixture(step: &str) -> serde_json::Value {
+        let mut input = fixture();
+        input["buyerJourney"]["step"] = step.into();
+        input["cart"]["lines"][0]["id"] = "gid://shopify/CartLine/0".into();
+        input["cart"]["lines"][1]["id"] = "gid://shopify/CartLine/1".into();
+        input
+    }
+
+    fn captured_fixture(step: &str) -> serde_json::Value {
+        // Exact sanitized Function input from the stopped M0-014 CART_INTERACTION
+        // event; only the journey step is changed for this local checkout replay.
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../evidence/m0-014r/local/captured-validation.json");
+        let mut input: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        assert_eq!(input["buyerJourney"]["step"], "CART_INTERACTION");
+        assert_eq!(input["cart"]["lines"][0]["id"], "gid://shopify/CartLine/0");
+        input["buyerJourney"]["step"] = step.into();
+        input
+    }
+
+    #[test]
+    fn captured_zero_based_cart_validates_at_both_checkout_steps() {
+        for step in checkout_steps() {
+            let input = captured_fixture(step);
+            assert!(accepted(input.clone()), "captured complete quote at {step}");
+            let mut reordered = input;
+            reordered["cart"]["lines"].as_array_mut().unwrap().reverse();
+            assert!(accepted(reordered), "target-local ordering at {step}");
+        }
+    }
+
+    #[test]
+    fn captured_zero_based_cart_retains_independent_negative_controls() {
+        for step in checkout_steps() {
+            let input = captured_fixture(step);
+            let mut cases = Vec::new();
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["cost"]["subtotalAmount"]["amount"] = "30.35".into();
+            cases.push(("wrong pre-discount price", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][2]["quantity"] = 3.into();
+            cases.push(("wrong physical quantity", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["merchandise"]["id"] =
+                "gid://shopify/ProductVariant/54061591265563".into();
+            cases.push(("wrong real variant", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["member"] = serde_json::Value::Null;
+            cases.push(("missing member", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["member"]["value"] =
+                bad["cart"]["lines"][2]["member"]["value"].clone();
+            cases.push(("duplicate member", bad));
+            let mut bad = input.clone();
+            bad["cart"]["quote"]["value"] = "bad".into();
+            cases.push(("invalid signature", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"].as_array_mut().unwrap().remove(2);
+            cases.push(("missing marked line", bad));
+            let mut bad = input.clone();
+            bad["shop"]["publicConfig"] = serde_json::Value::Null;
+            cases.push(("missing independent key", bad));
+            let mut bad = input.clone();
+            bad["localization"]["market"]["id"] = "gid://shopify/Market/0".into();
+            cases.push(("wrong market", bad));
+            for (label, bad) in cases {
+                assert!(!accepted(bad), "{label} at {step}");
+            }
+
+            let mut unsigned_required = input.clone();
+            unsigned_required["cart"]["quote"] = serde_json::Value::Null;
+            for line in unsigned_required["cart"]["lines"].as_array_mut().unwrap() {
+                line["member"] = serde_json::Value::Null;
+            }
+            unsigned_required["cart"]["lines"][0]["merchandise"]["product"]["policy"]["value"] =
+                "4f8dd164cc8c48199a94cea5da11be4c:1:required".into();
+            assert!(!accepted(unsigned_required), "unsigned required at {step}");
+        }
+    }
+
+    #[test]
+    fn zero_based_cartline_preserves_complete_signed_checkout_at_both_steps() {
+        for step in checkout_steps() {
+            let input = zero_based_fixture(step);
+            assert!(accepted(input.clone()), "signed /0 at {step}");
+
+            let mut reordered = input.clone();
+            reordered["cart"]["lines"].as_array_mut().unwrap().reverse();
+            assert!(
+                accepted(reordered),
+                "line order is not signature authority at {step}"
+            );
+
+            for suffix in ["9007199254740991", "00000000-0000-4000-8000-000000000001"] {
+                let mut control = input.clone();
+                control["cart"]["lines"][0]["id"] =
+                    format!("gid://shopify/CartLine/{suffix}").into();
+                assert!(accepted(control), "{suffix} at {step}");
+            }
+
+            for bad_id in [
+                "gid://shopify/CartLine/00",
+                "gid://shopify/CartLine/01",
+                "gid://shopify/CartLine/",
+                "gid://shopify/ProductVariant/0",
+                "gid://shopify/CartLine/184467440737095516150",
+                "gid://shopify/CartLine/00000000-0000-4000-8000-000000000001X",
+            ] {
+                let mut bad = input.clone();
+                bad["cart"]["lines"][0]["id"] = bad_id.into();
+                assert!(!accepted(bad), "malformed {bad_id} at {step}");
+            }
+        }
+    }
+
+    #[test]
+    fn zero_based_cartline_does_not_bypass_economics_or_trust_at_checkout() {
+        for step in checkout_steps() {
+            let input = zero_based_fixture(step);
+            let mut cases = Vec::new();
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["cost"]["subtotalAmount"]["amount"] = "60.68".into();
+            cases.push(("observed exact price", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["quantity"] = 3.into();
+            cases.push(("physical quantity", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["merchandise"]["id"] =
+                "gid://shopify/ProductVariant/9007199254740994".into();
+            cases.push(("real variant", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["member"]["value"] = "bad".into();
+            cases.push(("invalid member", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["member"]["value"] =
+                bad["cart"]["lines"][1]["member"]["value"].clone();
+            cases.push(("duplicate member", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"][0]["member"] = serde_json::Value::Null;
+            cases.push(("missing member", bad));
+            let mut bad = input.clone();
+            bad["cart"]["quote"]["value"] = "bad".into();
+            cases.push(("invalid signature", bad));
+            let mut bad = input.clone();
+            bad["cart"]["quote"] = serde_json::Value::Null;
+            cases.push(("missing quote", bad));
+            let mut bad = input.clone();
+            bad["shop"]["publicConfig"] = serde_json::Value::Null;
+            cases.push(("missing key/config", bad));
+            let mut bad = input.clone();
+            bad["localization"]["country"]["isoCode"] = "US".into();
+            cases.push(("wrong context", bad));
+            let mut bad = input.clone();
+            bad["cart"]["lines"].as_array_mut().unwrap().pop();
+            cases.push(("incomplete set", bad));
+            for (label, bad) in cases {
+                assert!(!accepted(bad), "{label} at {step}");
+            }
+        }
+    }
+
+    fn plain(mut input: serde_json::Value) -> serde_json::Value {
+        input["cart"]["quote"] = serde_json::Value::Null;
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["member"] = serde_json::Value::Null;
+        }
+        input
+    }
+
+    #[test]
+    fn buyer_marker_removal_cannot_turn_known_required_into_plain() {
+        assert!(!accepted(plain(fixture())));
+        let mut invalid = fixture();
+        invalid["cart"]["lines"][0]["member"]["value"] = "invalid".into();
+        assert!(!accepted(invalid));
+        assert!(accepted(fixture()));
+    }
+
+    #[test]
+    fn one_lost_anchor_blocks_plain_while_explicit_optional_and_unmanaged_pass() {
+        let mut base = plain(fixture());
+        for line in base["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["policy"] = serde_json::Value::Null;
+        }
+        assert!(!accepted(base.clone()), "registration exposes lost policy");
+        for line in base["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"] =
+                serde_json::json!({"value":"11111111111111111111111111111111:1:required"});
+        }
+        assert!(!accepted(base.clone()), "policy exposes lost registration");
+        for line in base["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"] =
+                serde_json::json!({"value":"11111111111111111111111111111111:1:ready"});
+            line["merchandise"]["product"]["policy"]["value"] =
+                "11111111111111111111111111111111:1:optional".into();
+        }
+        assert!(accepted(base.clone()), "explicit optional plain");
+        for line in base["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"] = serde_json::Value::Null;
+        }
+        assert!(accepted(base), "joint-loss is observationally unmanaged");
+    }
+
+    #[test]
+    fn malformed_stale_pending_and_wrong_generation_policy_fail_plain() {
+        let base = plain(fixture());
+        for (registration, policy) in [
+            ("bad", "11111111111111111111111111111111:1:optional"),
+            (
+                "11111111111111111111111111111111:2:ready",
+                "11111111111111111111111111111111:1:optional",
+            ),
+            (
+                "11111111111111111111111111111111:2:pending",
+                "11111111111111111111111111111111:2:optional",
+            ),
+            ("11111111111111111111111111111111:1:ready", "bad"),
+            (
+                "22222222222222222222222222222222:1:ready",
+                "11111111111111111111111111111111:1:optional",
+            ),
+        ] {
+            let mut input = base.clone();
+            for line in input["cart"]["lines"].as_array_mut().unwrap() {
+                line["merchandise"]["product"]["registration"]["value"] = registration.into();
+                line["merchandise"]["product"]["policy"]["value"] = policy.into();
+            }
+            assert!(!accepted(input), "{registration} / {policy}");
+        }
+    }
+
+    #[test]
+    fn signed_historical_quote_survives_same_generation_policy_revision() {
+        let mut input = fixture();
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"]["value"] =
+                "11111111111111111111111111111111:2:ready".into();
+            line["merchandise"]["product"]["policy"]["value"] =
+                "11111111111111111111111111111111:2:optional".into();
+        }
+        assert!(accepted(input.clone()));
+        input["cart"]["lines"][0]["merchandise"]["product"]["policy"] = serde_json::Value::Null;
+        assert!(
+            accepted(input.clone()),
+            "current-generation signed quote survives partial rollout"
+        );
+        input["cart"]["lines"][0]["merchandise"]["product"]["registration"]["value"] =
+            "22222222222222222222222222222222:2:ready".into();
+        assert!(
+            !accepted(input),
+            "old installation must not authorize signed terms"
+        );
+    }
+
+    #[test]
+    fn signed_quote_with_no_product_anchors_needs_healthy_shop_keys() {
+        let mut input = fixture();
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"] = serde_json::Value::Null;
+        }
+        assert!(
+            accepted(input.clone()),
+            "signature remains independently verified"
+        );
+        input["shop"]["publicConfig"] = serde_json::Value::Null;
+        assert!(!accepted(input));
+    }
+
+    #[test]
+    fn signed_quote_with_only_illegible_policy_rejects() {
+        let mut input = fixture();
+        for line in input["cart"]["lines"].as_array_mut().unwrap() {
+            line["merchandise"]["product"]["registration"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"]["value"] = "bad".into();
+        }
+        assert!(!accepted(input));
+    }
+
+    #[test]
+    fn complete_set_compares_observed_exact_subtotals() {
+        assert!(accepted(fixture()));
+        let mut changed = fixture();
+        changed["cart"]["lines"][1]["cost"]["subtotalAmount"]["amount"] = "30.35".into();
+        assert!(!accepted(changed));
+    }
+
+    #[test]
+    fn incomplete_tampered_and_unsigned_required_sets_reject() {
+        let mut missing = fixture();
+        missing["cart"]["lines"].as_array_mut().unwrap().pop();
+        assert!(!accepted(missing));
+        let mut tampered = fixture();
+        tampered["cart"]["lines"][1]["member"]["value"] = "bad".into();
+        assert!(!accepted(tampered));
+        let mut required = fixture();
+        required["cart"]["quote"] = serde_json::Value::Null;
+        for line in required["cart"]["lines"].as_array_mut().unwrap() {
+            line["member"] = serde_json::Value::Null;
+            line["auth"] = serde_json::json!({"value":"legacy-v1-token-is-not-upgraded"});
+        }
+        assert!(!accepted(required));
+        let mut ordinary = fixture();
+        ordinary["cart"]["quote"] = serde_json::Value::Null;
+        for line in ordinary["cart"]["lines"].as_array_mut().unwrap() {
+            line["member"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["policy"] = serde_json::Value::Null;
+            line["merchandise"]["product"]["registration"] = serde_json::Value::Null;
+        }
+        assert!(accepted(ordinary)); // Missing policy remains a named negative capability.
+    }
+
+    #[test]
+    fn ten_bucket_set_validates_and_oversized_sets_reject() {
+        for (name, should_accept) in [
+            ("10-signed-190-ordinary", true),
+            ("32-signed-0-ordinary", false),
+            ("64-signed-0-ordinary", false),
+        ] {
+            let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join(format!("../../../m0-007/fixtures/validation-{name}.json"));
+            let input = serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+            let output = run(input);
+            std::eprintln!(
+                "validation {name}: {} complete JSON output bytes",
+                serde_json::to_vec(&output).unwrap().len()
+            );
+            assert_eq!(
+                output["operations"].as_array().unwrap().is_empty(),
+                should_accept
+            );
+        }
+    }
+
+    #[test]
+    fn mixed_200_line_cart_blocks_damaged_managed_line_then_recovers() {
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../m0-007/fixtures/validation-10-signed-190-ordinary.json");
+        let mut input: serde_json::Value =
+            serde_json::from_slice(&std::fs::read(path).unwrap()).unwrap();
+        input["cart"]["lines"][10]["merchandise"]["product"]["registration"]["value"] =
+            "11111111111111111111111111111111:2:pending".into();
+        input["cart"]["lines"][11]["merchandise"]["product"]["registration"] =
+            serde_json::Value::Null;
+        input["cart"]["lines"][11]["merchandise"]["product"]["policy"] = serde_json::Value::Null;
+        assert!(!accepted(input.clone()));
+        input["cart"]["lines"].as_array_mut().unwrap().remove(10);
+        assert!(
+            accepted(input.clone()),
+            "removing damaged line repairs mixed cart"
+        );
+        input["cart"]["lines"].as_array_mut().unwrap().drain(0..10);
+        input["cart"]["quote"] = serde_json::Value::Null;
+        assert!(
+            accepted(input),
+            "ordinary lines remain usable without Insignia quote"
+        );
+    }
+
+    #[test]
+    fn untrusted_config_cannot_raise_experiment_ceiling() {
+        let mut input = fixture();
+        let mut config: serde_json::Value =
+            serde_json::from_str(input["shop"]["publicConfig"]["value"].as_str().unwrap()).unwrap();
+        config["maxBuckets"] = 33.into();
+        input["shop"]["publicConfig"]["value"] = config.to_string().into();
+        assert!(!accepted(input));
+    }
+
+    #[test]
+    fn cart_order_context_and_physical_claim_changes_fail_at_checkout() {
+        let mut reordered = fixture();
+        reordered["cart"]["lines"].as_array_mut().unwrap().reverse();
+        assert!(accepted(reordered));
+        for bad in [
+            {
+                let mut x = fixture();
+                x["cart"]["lines"][1]["quantity"] = 2.into();
+                x
+            },
+            {
+                let mut x = fixture();
+                x["cart"]["lines"][1]["merchandise"]["id"] =
+                    "gid://shopify/ProductVariant/9007199254740994".into();
+                x
+            },
+            {
+                let mut x = fixture();
+                x["localization"]["country"]["isoCode"] = "US".into();
+                x
+            },
+            {
+                let mut x = fixture();
+                x["localization"]["market"]["id"] = "gid://shopify/Market/43".into();
+                x
+            },
+            {
+                let mut x = fixture();
+                x["shop"]["localTime"]["date"] = "2026-12-18".into();
+                x
+            },
+            {
+                let mut x = fixture();
+                x["cart"]["lines"][1]["merchandise"]["product"]["registration"] =
+                    serde_json::json!({"value":"22222222222222222222222222222222:1:ready"});
+                x
+            },
+            {
+                let mut x = fixture();
+                x["cart"]["quote"] = serde_json::Value::Null;
+                x
+            },
+            {
+                let mut x = fixture();
+                x["cart"]["lines"][1]["sellingPlanAllocation"] =
+                    serde_json::json!({"sellingPlan":{"id":"gid://shopify/SellingPlan/1"}});
+                x
+            },
+        ] {
+            assert!(!accepted(bad));
+        }
+        let mut repair = fixture();
+        repair["buyerJourney"]["step"] = "CART_INTERACTION".into();
+        repair["cart"]["lines"][1]["member"]["value"] = "bad".into();
+        assert!(accepted(repair));
+    }
+
+    #[test]
+    fn revoked_and_out_of_window_public_keys_reject_checkout() {
+        for (field, value) in [
+            ("revoked", serde_json::json!(true)),
+            ("firstDay", serde_json::json!(20803)),
+            ("lastDay", serde_json::json!(20801)),
+        ] {
+            let mut input = fixture();
+            let mut config: serde_json::Value =
+                serde_json::from_str(input["shop"]["publicConfig"]["value"].as_str().unwrap())
+                    .unwrap();
+            config["keys"][0][field] = value;
+            input["shop"]["publicConfig"]["value"] = config.to_string().into();
+            assert!(!accepted(input), "{field}");
+        }
+        for field in ["revoked", "firstDay", "lastDay"] {
+            let mut input = fixture();
+            let mut config: serde_json::Value =
+                serde_json::from_str(input["shop"]["publicConfig"]["value"].as_str().unwrap())
+                    .unwrap();
+            config["keys"][0].as_object_mut().unwrap().remove(field);
+            input["shop"]["publicConfig"]["value"] = config.to_string().into();
+            assert!(!accepted(input), "{field} omitted");
+        }
+    }
+}

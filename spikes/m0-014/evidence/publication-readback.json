@@ -1,0 +1,22 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/105501393179",
+    "myshopifyDomain": "insignia-rewrite-dev.myshopify.com"
+  },
+  "nodes": [
+    {
+      "id": "gid://shopify/Product/10485042479387",
+      "handle": "m0-014-optional-20260928",
+      "status": "ACTIVE",
+      "onlineStoreUrl": null,
+      "publishedAt": "2026-09-28T21:23:36Z"
+    },
+    {
+      "id": "gid://shopify/Product/10485042839835",
+      "handle": "m0-014-required-20260928",
+      "status": "ACTIVE",
+      "onlineStoreUrl": null,
+      "publishedAt": "2026-09-28T21:23:47Z"
+    }
+  ]
+}

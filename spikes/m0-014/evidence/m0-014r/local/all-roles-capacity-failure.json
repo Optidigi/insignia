@@ -1,0 +1,55 @@
+{
+  "classification": "PRESERVED_FAILED_SYNTHETIC_CAPACITY_VARIANT; NOT_LIVE_CART",
+  "construction": "From retained M0-013 full target valid N+ordinary inputs, set first CartLine ID to canonical /0 and add fixtureRole on ALL 200 lines: customized i=1..N, ordinary i=1..200-N.",
+  "runnerSha256": "728bedbcf86f57680051208f9056642c9dfb07766a21891624bf18f372e4c29b",
+  "rows": [
+    {
+      "target": "transform",
+      "case": "all-200-role-10+190",
+      "baselineInputSha256": "90d44da5f41a5539951294d28700d8f3fc1d431cbc9da9f1a5665c3ee0d9632c",
+      "inputSha256": "a3371c0b50b178e180cad359346af8bfb0c3bdc37584f6d2a32b72ae72226697",
+      "inputBytes": 101944,
+      "finalWasmSha256": "28a6fb0dd8c4e4aef36a9f205496eca7633433f00e639143dd77afed581c9c60",
+      "instructions": 8209160,
+      "outputBytes": 3411,
+      "evaluationInstructionTarget": 8800000,
+      "passesEvaluationInstructionTarget": true
+    },
+    {
+      "target": "validation",
+      "case": "all-200-role-10+190",
+      "baselineInputSha256": "aee3b5c360e3087a0c4b49bcf95719b94d7a07e2a9a322c53e6c36d6051a3d44",
+      "inputSha256": "a5edb5be679f6d0126afb32b11ab58ab35aa797ae66dea9cddf2cb97475ae1b1",
+      "inputBytes": 113390,
+      "finalWasmSha256": "ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d",
+      "instructions": 8485564,
+      "outputBytes": 17,
+      "evaluationInstructionTarget": 8800000,
+      "passesEvaluationInstructionTarget": true
+    },
+    {
+      "target": "transform",
+      "case": "all-200-role-32+168",
+      "baselineInputSha256": "eb4e7815bb30b04f16fe1209901414a00b3a1cee63a21f3cdbfc34ce4e2a8d82",
+      "inputSha256": "d59704ded0063b9629dac0a45d2924e973c3fc7d880b1c169174e12745f3057f",
+      "inputBytes": 102802,
+      "finalWasmSha256": "28a6fb0dd8c4e4aef36a9f205496eca7633433f00e639143dd77afed581c9c60",
+      "instructions": 8663418,
+      "outputBytes": 10957,
+      "evaluationInstructionTarget": 8800000,
+      "passesEvaluationInstructionTarget": true
+    },
+    {
+      "target": "validation",
+      "case": "all-200-role-32+168",
+      "baselineInputSha256": "41b32894b2c232e9c86f51380987f6b6adbdc39462aee5610ccf9c8db3938b65",
+      "inputSha256": "0edd2bc9f14d3b988f23746e8b16383e2454bedba9b37bf5e9890c0e0c52cafe",
+      "inputBytes": 114248,
+      "finalWasmSha256": "ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d",
+      "instructions": 8817567,
+      "outputBytes": 17,
+      "evaluationInstructionTarget": 8800000,
+      "passesEvaluationInstructionTarget": false
+    }
+  ]
+}

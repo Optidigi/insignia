@@ -1,0 +1,61 @@
+{
+  "source": "Shopify CLI 4.8.2 app dev local bundle and pinned Admin GraphQL 2026-07 readback, 2026-09-28 UTC",
+  "appGid": "gid://shopify/App/429028933633",
+  "shopGid": "gid://shopify/Shop/105501393179",
+  "installationGid": "gid://shopify/AppInstallation/1054356963611",
+  "bundleArchiveSha256": "0728f7157e3521337fd4b40d3587b60e7a372d39841414bbca34bafa6fca65de",
+  "bundleManifestSha256": "637cc73beda36bfb68f26685d2c0770794214050a0832adaa745d07d77fb639b",
+  "functions": [
+    {
+      "handle": "m0-014-public-transform",
+      "uid": "a6c13d4d-8a2c-48d3-a948-70da11b8e014",
+      "target": "cart.transform.run",
+      "functionId": "01a0e9cd-647d-76b2-bc74-3bad0579eeff",
+      "appKey": "1443cf6d03d39edae7c101a943c5c684",
+      "apiVersion": "2026-07",
+      "bundleEncodedBytes": 239176,
+      "bundleEncodedSha256": "963d9978c65bdf3dac995e6903fdd5c2e370c86953a1028da7ea0c8c458b48de",
+      "decodedWasmBytes": 179380,
+      "decodedWasmSha256": "cebca846a17013a42dc590c18069ef5d9f0432452eb702d29bc46bbc1985590b",
+      "matchesPinnedCandidate": true,
+      "bundleInputQuerySha256": "d848a97f2b862f0c93587f6a2b6aeee84a53bb5203324647b78d1e1124bfad97"
+    },
+    {
+      "handle": "m0-014-public-validation",
+      "uid": "9a273f32-3c33-4414-b503-98da092be014",
+      "target": "cart.validations.generate.run",
+      "functionId": "01a0e9cd-647d-7e48-8e64-76e2ca69dcb9",
+      "appKey": "1443cf6d03d39edae7c101a943c5c684",
+      "apiVersion": "2026-07",
+      "bundleEncodedBytes": 241144,
+      "bundleEncodedSha256": "cf2e07d7ea2063985e5e59f65f561face9741c4653f985edab9568344b9881ac",
+      "decodedWasmBytes": 180858,
+      "decodedWasmSha256": "93148de17900a68732712ce687393ec920f903e55649115f23b9aa3b667a4ebd",
+      "matchesPinnedCandidate": true,
+      "bundleInputQuerySha256": "c4a6a655dc813cd080bfded7567fd2538a65ae68e87eec0eb4326e794f2d1b97"
+    }
+  ],
+  "cartTransformsBeforeActivation": [],
+  "validationsBeforeActivation": [],
+  "locations": [
+    {
+      "id": "gid://shopify/Location/120998986011",
+      "name": "Shop location",
+      "isActive": true
+    }
+  ],
+  "grants": [
+    "read_cart_transforms",
+    "read_inventory",
+    "read_locations",
+    "read_products",
+    "read_validations",
+    "write_cart_transforms",
+    "write_inventory",
+    "write_products",
+    "write_validations"
+  ],
+  "releasedVersion": "insignia-1 active; no new release",
+  "platformSideWasmHash": "UNAVAILABLE_NOT_ATTESTED",
+  "previewVersionGid": "NOT_EXPOSED"
+}

@@ -1,0 +1,137 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/105501393179",
+    "myshopifyDomain": "insignia-rewrite-dev.myshopify.com",
+    "currencyCode": "USD",
+    "ianaTimezone": "America/New_York",
+    "publicConfig": {
+      "id": "gid://shopify/Metafield/61853596844315",
+      "namespace": "app--429028933633",
+      "key": "m0_007_public_config",
+      "type": "json",
+      "value": "{\"generationHex\":\"4f8dd164cc8c48199a94cea5da11be4c\",\"epoch\":1,\"maxBuckets\":32,\"maxPhysicalQuantity\":10000,\"allowNoMarket\":false,\"keys\":[{\"id\":60014,\"publicHex\":\"34a94061e37f6e331406e38c190d37cf3cf90db5a9bbd080fa5f3de492b16bd3\",\"revoked\":false,\"firstDay\":20724,\"lastDay\":20726}]}",
+      "owner": {
+        "__typename": "Shop"
+      }
+    }
+  },
+  "currentAppInstallation": {
+    "id": "gid://shopify/AppInstallation/1054356963611",
+    "app": {
+      "id": "gid://shopify/App/429028933633",
+      "apiKey": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "accessScopes": [
+      {
+        "handle": "read_cart_transforms"
+      },
+      {
+        "handle": "read_inventory"
+      },
+      {
+        "handle": "read_locations"
+      },
+      {
+        "handle": "read_products"
+      },
+      {
+        "handle": "read_validations"
+      },
+      {
+        "handle": "write_cart_transforms"
+      },
+      {
+        "handle": "write_inventory"
+      },
+      {
+        "handle": "write_products"
+      },
+      {
+        "handle": "write_validations"
+      }
+    ]
+  },
+  "nodes": [
+    {
+      "id": "gid://shopify/Product/10485042479387",
+      "title": "M0-014 Optional Checkout Fixture",
+      "status": "DRAFT",
+      "tags": [
+        "insignia-prototype-test-only",
+        "m0-014"
+      ],
+      "variants": {
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54061591232795",
+            "title": "Small",
+            "price": "20.00"
+          },
+          {
+            "id": "gid://shopify/ProductVariant/54061591265563",
+            "title": "Large",
+            "price": "20.00"
+          }
+        ]
+      },
+      "registration": {
+        "id": "gid://shopify/Metafield/61853596811547",
+        "namespace": "app--429028933633",
+        "key": "m0_007_registration",
+        "type": "single_line_text_field",
+        "value": "4f8dd164cc8c48199a94cea5da11be4c:1:ready",
+        "owner": {
+          "__typename": "Product"
+        }
+      },
+      "policy": {
+        "id": "gid://shopify/Metafield/61853596778779",
+        "namespace": "app--429028933633",
+        "key": "m0_007_policy",
+        "type": "single_line_text_field",
+        "value": "4f8dd164cc8c48199a94cea5da11be4c:1:optional",
+        "owner": {
+          "__typename": "Product"
+        }
+      }
+    },
+    {
+      "id": "gid://shopify/Product/10485042839835",
+      "title": "M0-014 Required Checkout Probe",
+      "status": "DRAFT",
+      "tags": [
+        "insignia-prototype-test-only",
+        "m0-014"
+      ],
+      "variants": {
+        "nodes": [
+          {
+            "id": "gid://shopify/ProductVariant/54061592281371",
+            "title": "Required",
+            "price": "20.00"
+          }
+        ]
+      },
+      "registration": {
+        "id": "gid://shopify/Metafield/61853596746011",
+        "namespace": "app--429028933633",
+        "key": "m0_007_registration",
+        "type": "single_line_text_field",
+        "value": "4f8dd164cc8c48199a94cea5da11be4c:1:ready",
+        "owner": {
+          "__typename": "Product"
+        }
+      },
+      "policy": {
+        "id": "gid://shopify/Metafield/61853596713243",
+        "namespace": "app--429028933633",
+        "key": "m0_007_policy",
+        "type": "single_line_text_field",
+        "value": "4f8dd164cc8c48199a94cea5da11be4c:1:required",
+        "owner": {
+          "__typename": "Product"
+        }
+      }
+    }
+  ]
+}

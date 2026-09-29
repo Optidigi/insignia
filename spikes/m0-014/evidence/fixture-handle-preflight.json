@@ -1,0 +1,10 @@
+{
+  "a": null,
+  "b": null,
+  "products": {
+    "nodes": [],
+    "pageInfo": {
+      "hasNextPage": false
+    }
+  }
+}

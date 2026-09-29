@@ -1,0 +1,32 @@
+{
+  "metafieldsDelete": {
+    "deletedMetafields": [
+      {
+        "ownerId": "gid://shopify/Shop/105501393179",
+        "namespace": "app--429028933633",
+        "key": "m0_007_public_config"
+      },
+      {
+        "ownerId": "gid://shopify/Product/10485042479387",
+        "namespace": "app--429028933633",
+        "key": "m0_007_registration"
+      },
+      {
+        "ownerId": "gid://shopify/Product/10485042479387",
+        "namespace": "app--429028933633",
+        "key": "m0_007_policy"
+      },
+      {
+        "ownerId": "gid://shopify/Product/10485042839835",
+        "namespace": "app--429028933633",
+        "key": "m0_007_registration"
+      },
+      {
+        "ownerId": "gid://shopify/Product/10485042839835",
+        "namespace": "app--429028933633",
+        "key": "m0_007_policy"
+      }
+    ],
+    "userErrors": []
+  }
+}

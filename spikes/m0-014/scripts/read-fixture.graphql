@@ -1,0 +1,31 @@
+query M0014ReadFixture($productIds: [ID!]!) {
+  shop {
+    id
+    myshopifyDomain
+    currencyCode
+    ianaTimezone
+    publicConfig: metafield(namespace: "$app", key: "m0_007_public_config") {
+      id namespace key type value owner { __typename }
+    }
+  }
+  currentAppInstallation {
+    id
+    app { id apiKey }
+    accessScopes { handle }
+  }
+  nodes(ids: $productIds) {
+    ... on Product {
+      id
+      title
+      status
+      tags
+      variants(first: 5) { nodes { id title price } }
+      registration: metafield(namespace: "$app", key: "m0_007_registration") {
+        id namespace key type value owner { __typename }
+      }
+      policy: metafield(namespace: "$app", key: "m0_007_policy") {
+        id namespace key type value owner { __typename }
+      }
+    }
+  }
+}

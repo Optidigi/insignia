@@ -1,0 +1,18 @@
+# Synthetic local Function-build container. Never deploy or preview this config.
+# Remote M0-014 operations must pass --config m0-014-public explicitly.
+client_id = "00000000000000000000000000000014"
+application_url = "https://example.invalid"
+embedded = false
+name = "m0-014-local-only"
+
+[webhooks]
+api_version = "2026-07"
+
+[access_scopes]
+scopes = ""
+
+[auth]
+redirect_urls = []
+
+[build]
+automatically_update_urls_on_dev = false

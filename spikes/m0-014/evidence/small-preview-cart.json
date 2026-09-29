@@ -1,0 +1,36 @@
+{
+  "cartTotalMinor": 11100,
+  "currency": "USD",
+  "httpStatus": 200,
+  "itemCount": 4,
+  "items": [
+    {
+      "linePriceMinor": 3034,
+      "memberPresent": true,
+      "probeLabel": "custom-one",
+      "quantity": 1,
+      "unitPriceMinor": 3034,
+      "variantId": 54061591232795
+    },
+    {
+      "linePriceMinor": 2000,
+      "memberPresent": false,
+      "probeLabel": "ordinary-one",
+      "quantity": 1,
+      "unitPriceMinor": 2000,
+      "variantId": 54061591232795
+    },
+    {
+      "linePriceMinor": 6066,
+      "memberPresent": true,
+      "probeLabel": "custom-two",
+      "quantity": 2,
+      "unitPriceMinor": 3033,
+      "variantId": 54061591232795
+    }
+  ],
+  "qualifiedAs": "unpaid preview cart, not normal storefront checkout",
+  "quoteLength": 208,
+  "quoteSha256": "d2208d55c682074c72c6050768b55bb008ffea646119f500d86d888b10adf9d2",
+  "source": "Shopify staff product-preview domain /cart.js"
+}

@@ -1,0 +1,300 @@
+{
+  "slice": "M0-014",
+  "status": "BLOCKED_ON_NATIVE_VALIDATION_ZERO_BASED_CARTLINE; OWNED_RESOURCES_CLEANED",
+  "operatorCount": 1,
+  "target": {
+    "appGid": "gid://shopify/App/429028933633",
+    "clientId": "1443cf6d03d39edae7c101a943c5c684",
+    "shopGid": "gid://shopify/Shop/105501393179",
+    "storeDomain": "insignia-rewrite-dev.myshopify.com",
+    "installationGid": "gid://shopify/AppInstallation/1054356963611"
+  },
+  "source": {
+    "pr18Merge": "7222a96ff2b0408d0fbfe0803835d24acfd463b7",
+    "pr18CiArtifactSha256": "2257e3b87c9bcfc3dd0c42ca2c41da163bfd62eb90b2e3bdfc41982486b6c71e",
+    "candidateTransformWasmSha256": "cebca846a17013a42dc590c18069ef5d9f0432452eb702d29bc46bbc1985590b",
+    "candidateValidationWasmSha256": "93148de17900a68732712ce687393ec920f903e55649115f23b9aa3b667a4ebd",
+    "cliOptimization": "disabled in isolated extension configs; decoded CLI preview bundle matches pinned CI Wasm for both app-bound Function IDs; platform storage hash/version GID unavailable"
+  },
+  "limits": {
+    "newProducts": 2,
+    "newVariants": 3,
+    "initialSmallStockMax": 64,
+    "initialLargeStockMax": 200,
+    "initialRequiredProbeStockMax": 8,
+    "successfulBogusOrdersMax": 1,
+    "purchasedPhysicalUnitsMax": 4
+  },
+  "readOnlyObserved": {
+    "shopCurrency": "USD",
+    "shopTimezone": "America/New_York",
+    "shopPlan": "Basic App Development",
+    "partnerDevelopment": true,
+    "currentGrants": [
+      "read_products",
+      "write_products"
+    ],
+    "ownedPublicConfig": null,
+    "productsWithM0014Tag": 0,
+    "locationQuery": "PASS after approved development-scope auto-grant",
+    "shopifyTestPaymentGateway": "Activated built-in Test payment gateway for bounded run; deactivated afterward; after reload activation banner returned; no real provider changed",
+    "partnerAppStoreListing": "Optidigi Partner Distribution page for app 429028933633 explicitly shows Shopify App Store listing, Draft; no submission",
+    "previewGrants": [
+      "read_cart_transforms",
+      "read_inventory",
+      "read_locations",
+      "read_products",
+      "read_validations",
+      "write_cart_transforms",
+      "write_inventory",
+      "write_products",
+      "write_validations"
+    ],
+    "activeLocation": {
+      "id": "gid://shopify/Location/120998986011",
+      "name": "Shop location",
+      "isActive": true
+    }
+  },
+  "newResources": {
+    "products": [
+      {
+        "id": "gid://shopify/Product/10485042479387",
+        "handle": "m0-014-optional-20260928",
+        "status": "ARCHIVED",
+        "owner": "M0-014 optional fixture"
+      },
+      {
+        "id": "gid://shopify/Product/10485042839835",
+        "handle": "m0-014-required-20260928",
+        "status": "ARCHIVED",
+        "owner": "M0-014 required probe"
+      }
+    ],
+    "variants": [
+      {
+        "id": "gid://shopify/ProductVariant/54061591232795",
+        "productGid": "gid://shopify/Product/10485042479387",
+        "title": "Small",
+        "price": "20.00"
+      },
+      {
+        "id": "gid://shopify/ProductVariant/54061591265563",
+        "productGid": "gid://shopify/Product/10485042479387",
+        "title": "Large",
+        "price": "20.00"
+      },
+      {
+        "id": "gid://shopify/ProductVariant/54061592281371",
+        "productGid": "gid://shopify/Product/10485042839835",
+        "title": "Required",
+        "price": "20.00"
+      }
+    ],
+    "locationGid": "gid://shopify/Location/120998986011",
+    "stockInitialized": true,
+    "transformGid": "gid://shopify/CartTransform/190251291",
+    "validationGid": "gid://shopify/Validation/203948315",
+    "publicKeyId": 60014,
+    "privateKeyCreated": true,
+    "temporaryPublication": false,
+    "previewState": "stopped CLI process; preview record and approved development grants retained; no released version",
+    "variantStock": {
+      "small": {
+        "variantGid": "gid://shopify/ProductVariant/54061591232795",
+        "inventoryItemGid": "gid://shopify/InventoryItem/56144642015515",
+        "locationGid": "gid://shopify/Location/120998986011",
+        "initialAvailable": 64,
+        "lastObservedAvailable": 64,
+        "finalAvailable": 64,
+        "finalCommitted": 0,
+        "finalOnHand": 64
+      },
+      "large": {
+        "variantGid": "gid://shopify/ProductVariant/54061591265563",
+        "inventoryItemGid": "gid://shopify/InventoryItem/56144642048283",
+        "locationGid": "gid://shopify/Location/120998986011",
+        "initialAvailable": 200,
+        "lastObservedAvailable": 200,
+        "finalAvailable": 200,
+        "finalCommitted": 0,
+        "finalOnHand": 200
+      },
+      "requiredProbe": {
+        "variantGid": "gid://shopify/ProductVariant/54061592281371",
+        "inventoryItemGid": "gid://shopify/InventoryItem/56144643064091",
+        "locationGid": "gid://shopify/Location/120998986011",
+        "initialAvailable": 8,
+        "lastObservedAvailable": 8,
+        "finalAvailable": 8,
+        "finalCommitted": 0,
+        "finalOnHand": 8
+      }
+    },
+    "ownedMetadata": {
+      "shopPublicConfig": {
+        "original": null,
+        "createdGid": "gid://shopify/Metafield/61853596844315",
+        "final": null,
+        "compareDigest": "fc8c4541b235a94fcd93ad694ea1c947f949ffd0af80d0a8e96586e61680996c"
+      },
+      "productARegistration": {
+        "original": null,
+        "createdGid": "gid://shopify/Metafield/61853596811547",
+        "final": null,
+        "compareDigest": "8db21de1e0a73fb1b4fc19489283b1cf4c11fdb30137648189feb7517ef14cc4"
+      },
+      "productAPolicy": {
+        "original": null,
+        "createdGid": "gid://shopify/Metafield/61853596778779",
+        "final": null,
+        "compareDigest": "fa891d922ce9bcc6e8350c6af370fa981f277e92506c437c2fd67d61f1dab644"
+      },
+      "productBRegistration": {
+        "original": null,
+        "createdGid": "gid://shopify/Metafield/61853596746011",
+        "final": null,
+        "compareDigest": "8db21de1e0a73fb1b4fc19489283b1cf4c11fdb30137648189feb7517ef14cc4"
+      },
+      "productBPolicy": {
+        "original": null,
+        "createdGid": "gid://shopify/Metafield/61853596713243",
+        "final": null,
+        "compareDigest": "64c3b487c63ba689bfa1ebf9fd8ca461e42cd576a99667b0e7862e4d729ec9e3"
+      }
+    },
+    "functions": {
+      "transform": {
+        "functionGid": "01a0e9cd-647d-76b2-bc74-3bad0579eeff",
+        "versionGid": null,
+        "uploadedWasmSha256": "cebca846a17013a42dc590c18069ef5d9f0432452eb702d29bc46bbc1985590b",
+        "effectiveBlockOnFailure": true,
+        "finalState": "owned active shop object deleted; app preview Function ID remains in stopped preview record"
+      },
+      "validation": {
+        "functionGid": "01a0e9cd-647d-7e48-8e64-76e2ca69dcb9",
+        "versionGid": null,
+        "uploadedWasmSha256": "93148de17900a68732712ce687393ec920f903e55649115f23b9aa3b667a4ebd",
+        "effectiveEnable": true,
+        "effectiveBlockOnFailure": true,
+        "finalState": "owned active shop object deleted; app preview Function ID remains in stopped preview record"
+      }
+    },
+    "preview": {
+      "id": "Shopify dev preview on exact installation; GraphQL version GID not exposed",
+      "startedAtUtc": "2026-09-28T20:55:48Z",
+      "stoppedAtUtc": null,
+      "finalHoldingState": "stopped preview record and nine approved development grants retained; app dev clean not run",
+      "developmentGrantDiff": [
+        "read_cart_transforms",
+        "read_inventory",
+        "read_locations",
+        "read_validations",
+        "write_cart_transforms",
+        "write_inventory",
+        "write_validations"
+      ],
+      "stopEvidence": "SIGINT to owned app-dev and app-logs processes; ps showed neither process running; exact provider stop timestamp unavailable"
+    },
+    "keyGenerationHex": "4f8dd164cc8c48199a94cea5da11be4c",
+    "publicKeyHex": "34a94061e37f6e331406e38c190d37cf3cf90db5a9bbd080fa5f3de492b16bd3",
+    "keyValidityDays": [
+      20724,
+      20726
+    ],
+    "publicationReadback": {
+      "source": "Admin GraphQL 2026-07 through exact app installation after native Admin save",
+      "shopGid": "gid://shopify/Shop/105501393179",
+      "products": [
+        {
+          "id": "gid://shopify/Product/10485042479387",
+          "handle": "m0-014-optional-20260928",
+          "status": "ACTIVE",
+          "onlineStoreUrl": null,
+          "publishedAt": "2026-09-28T21:23:36Z"
+        },
+        {
+          "id": "gid://shopify/Product/10485042839835",
+          "handle": "m0-014-required-20260928",
+          "status": "ACTIVE",
+          "onlineStoreUrl": null,
+          "publishedAt": "2026-09-28T21:23:47Z"
+        }
+      ],
+      "qualification": "Historical temporary publication; staff preview product cart loaded in US market; protected storefront buyer visibility not independently confirmed; both products subsequently unpublished and archived"
+    },
+    "cleanupReadbacks": {
+      "stock": "cleanup-stock-readback.json",
+      "fixtures": "cleanup-fixture-readback.json",
+      "metadata": "cleanup-fixture-readback.json",
+      "functions": "cleanup-functions-readback.json",
+      "unpublication": "unpublication-readback.json"
+    },
+    "privateKeyFinalState": "deleted outside Git after stop; owner-only directory absent"
+  },
+  "cases": {
+    "smallPositive": "NATIVE_CART_MATERIALIZED; CHECKOUT_NOT_RUN; LOCAL_ZERO_ID_DIFFERENTIAL_REJECTS",
+    "wrongPrice": "NOT_RUN_STOP_CONDITION",
+    "requiredUnsigned": "NOT_RUN_STOP_CONDITION",
+    "invalidRepair": "NOT_RUN_STOP_CONDITION",
+    "tenPlusOneNinety": "NOT_RUN_STOP_CONDITION",
+    "thirtyTwoPlusOneSixtyEight": "NOT_RUN_STOP_CONDITION",
+    "bucketThirtyThreeAdmission": "LOCAL_PASS; live not run",
+    "bogusOrder": "NONE",
+    "partialFulfillment": "NOT_RUN_NO_ORDER",
+    "calculatedRefundRestock": "NOT_RUN_NO_ORDER"
+  },
+  "finalHoldingState": "Products archived/unpublished; metadata and active shop Functions deleted; cart cleared; stock initial; test gateway deactivated; CLI stopped; preview record and nine approved grants retained",
+  "liveEvidence": {
+    "small": {
+      "actualCartLineCount": 3,
+      "actualPhysicalQuantity": 4,
+      "exactPrediscountMinor": 11100,
+      "wrongPriceRejection": null,
+      "repairResult": null,
+      "transformOutputBytes": 611,
+      "transformFuelConsumed": 2730005,
+      "validationBuyerJourney": "CART_INTERACTION; returns early, not checkout acceptance",
+      "localCheckoutDifferential": "small-validation-checkout-local-differential.json",
+      "transformRawEventSha256": "66fef4b4accee81604f56f36fc4495baabdf82361150987347752635948c85fd",
+      "validationRawEventSha256": "181fb7af129c19fd91a6108bbaf113c146187c56df785f52c67b470341e804d1"
+    },
+    "stress10": {
+      "transformInputSha256": null,
+      "validationInputSha256": null,
+      "actualCartLineCount": null,
+      "actualPhysicalQuantity": null,
+      "outputBytes": null,
+      "runtimeCounters": null
+    },
+    "stress32": {
+      "transformInputSha256": null,
+      "validationInputSha256": null,
+      "actualCartLineCount": null,
+      "actualPhysicalQuantity": null,
+      "outputBytes": null,
+      "runtimeCounters": null
+    },
+    "order": {
+      "gid": null,
+      "number": null,
+      "paymentProvider": null,
+      "physicalQuantity": null,
+      "merchandiseMinor": null,
+      "inventoryCommitment": null,
+      "fulfillmentGid": null,
+      "fulfilledUnit": null,
+      "refundGids": [],
+      "refundMerchandiseMinor": null,
+      "finalState": null
+    },
+    "cleanup": {
+      "cartsCleared": "operator-observed Ajax readback: zero items and empty orphan quote; no retained sanitized response artifact",
+      "fixturesUnpublished": true,
+      "ownedFunctionsRemoved": true,
+      "privateKeyDeleted": true,
+      "stockReconciled": true,
+      "testGatewayDeactivated": true
+    }
+  }
+}
