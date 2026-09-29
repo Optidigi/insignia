@@ -10,6 +10,7 @@ describe('exact nonnegative money', () => {
 
   it('rejects fractions, signs and overflow rather than rounding', () => {
     expect(() => parseMinor('1.001', 2)).toThrow();
+    expect(() => parseMinor('1.000', 2)).toThrow();
     expect(() => parseMinor('-1.00', 2)).toThrow();
     expect(() => parseMinor('18446744073709551616', 0)).toThrow();
   });
