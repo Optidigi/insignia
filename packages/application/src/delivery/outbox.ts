@@ -3,6 +3,8 @@ import { randomUUID } from 'node:crypto';
 export type OutboxEvent = {
   id: string;
   shopId: string;
+  /** Null means the event is deliberately independent of an installation. */
+  installationGeneration: string | null;
   eventType: string;
   schemaVersion: number;
   aggregateRef: string;
@@ -34,6 +36,7 @@ export interface OutboxRepository<Tx> {
 export function newOutboxEvent(input: Omit<OutboxEvent, 'id'>): OutboxEvent {
   if (
     !input.shopId ||
+    (input.installationGeneration !== null && !/^[1-9][0-9]*$/.test(input.installationGeneration)) ||
     !input.eventType ||
     !input.aggregateRef ||
     !input.retentionClass ||

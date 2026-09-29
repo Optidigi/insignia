@@ -25,6 +25,13 @@ export class CommandDigestConflictError extends Error {
   }
 }
 
+export class CommandOutboxTenantMismatchError extends Error {
+  constructor() {
+    super('Command and required outbox event belong to different shops');
+    this.name = 'CommandOutboxTenantMismatchError';
+  }
+}
+
 export async function executeCommand<Tx>(
   transactions: TransactionRunner<Tx>,
   commands: CommandRepository<Tx>,
@@ -55,6 +62,7 @@ export function executeCommandWithOutbox<Tx>(
 ): Promise<{ kind: 'executed' | 'replayed'; resultRef: string }> {
   return executeCommand(transactions, commands, identity, async (transaction) => {
     const result = await mutate(transaction);
+    if (result.event.shopId !== identity.shopId) throw new CommandOutboxTenantMismatchError();
     await outbox.add(transaction, result.event);
     return result.resultRef;
   });

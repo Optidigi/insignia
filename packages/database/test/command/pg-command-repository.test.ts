@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import {
   CommandDigestConflictError,
+  CommandOutboxTenantMismatchError,
   executeCommand,
   executeCommandWithOutbox,
   newOutboxEvent,
 } from '@insignia/application';
 import { describe, expect, it } from 'vitest';
 import { PgCommandRepository } from '../../src/repositories/command/pg-command-repository.js';
+import { CONFIG_DRAFT_STORAGE_VERSION } from '../../src/repositories/config.js';
 import { PgOutboxRepository } from '../../src/repositories/delivery/pg-outbox-repository.js';
 import { PgTransactionRunner } from '../../src/repositories/delivery/pg-transaction-runner.js';
 import { createTestShop, openTestDatabase } from '../support/postgres.js';
@@ -18,6 +20,7 @@ function event(shopId: string, businessKey: string) {
   const now = new Date();
   return newOutboxEvent({
     shopId,
+    installationGeneration: null,
     eventType: 'synthetic.business-committed',
     schemaVersion: 1,
     aggregateRef: businessKey,
@@ -120,7 +123,7 @@ describe('durable commands on PostgreSQL 18', () => {
               shop_id: shopId,
               config_id: identity.key,
               external_product_id: identity.key,
-              draft_schema_version: 'synthetic-test',
+              draft_schema_version: CONFIG_DRAFT_STORAGE_VERSION,
               draft_value: { label: 'rollback probe' },
               effective_revision_id: null,
               effective_operation_id: null,
@@ -146,7 +149,7 @@ describe('durable commands on PostgreSQL 18', () => {
             shop_id: shopId,
             config_id: identity.key,
             external_product_id: identity.key,
-            draft_schema_version: 'synthetic-test',
+            draft_schema_version: CONFIG_DRAFT_STORAGE_VERSION,
             draft_value: { label: 'committed probe' },
             effective_revision_id: null,
             effective_operation_id: null,
@@ -166,6 +169,55 @@ describe('durable commands on PostgreSQL 18', () => {
       ).toEqual({ config_id: identity.key });
       expect(
         (await outbox.claim(shopId, new Date(), randomUUID(), new Date(Date.now() + 30_000), 10)).map((row) => row.id),
+      ).toEqual([retried.resultRef]);
+    } finally {
+      await database.destroy();
+    }
+  });
+
+  it('rolls back a business mutation when its required outbox event names another shop', async () => {
+    const database = await openTestDatabase();
+    try {
+      const { shopId: shopA } = await createTestShop(database);
+      const { shopId: shopB } = await createTestShop(database);
+      const transactions = new PgTransactionRunner(database);
+      const commands = new PgCommandRepository();
+      const outbox = new PgOutboxRepository(database);
+      const identity = { shopId: shopA, namespace: 'test.tenant-outbox', key: randomUUID(), requestDigest: digestA };
+      await expect(
+        executeCommandWithOutbox(transactions, commands, outbox, identity, async (transaction) => {
+          await transaction
+            .insertInto('product_configs')
+            .values({
+              shop_id: shopA,
+              config_id: identity.key,
+              external_product_id: identity.key,
+              draft_schema_version: CONFIG_DRAFT_STORAGE_VERSION,
+              draft_value: { label: 'must roll back' },
+              effective_revision_id: null,
+              effective_operation_id: null,
+            })
+            .execute();
+          const wrongShopEvent = event(shopB, identity.key);
+          return { resultRef: wrongShopEvent.id, event: wrongShopEvent };
+        }),
+      ).rejects.toBeInstanceOf(CommandOutboxTenantMismatchError);
+      expect(
+        await database
+          .selectFrom('product_configs')
+          .select('config_id')
+          .where('shop_id', '=', shopA)
+          .where('config_id', '=', identity.key)
+          .executeTakeFirst(),
+      ).toBeUndefined();
+      expect(await outbox.claim(shopB, new Date(), randomUUID(), new Date(Date.now() + 30_000), 1)).toEqual([]);
+      const retried = await executeCommandWithOutbox(transactions, commands, outbox, identity, async () => {
+        const correctEvent = event(shopA, identity.key);
+        return { resultRef: correctEvent.id, event: correctEvent };
+      });
+      expect(retried.kind).toBe('executed');
+      expect(
+        (await outbox.claim(shopA, new Date(), randomUUID(), new Date(Date.now() + 30_000), 1)).map((row) => row.id),
       ).toEqual([retried.resultRef]);
     } finally {
       await database.destroy();

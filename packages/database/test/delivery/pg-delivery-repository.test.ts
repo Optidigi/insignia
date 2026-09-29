@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { PgInboxRepository } from '../../src/repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from '../../src/repositories/delivery/pg-outbox-repository.js';
 import { PgTransactionRunner } from '../../src/repositories/delivery/pg-transaction-runner.js';
+import { createTenantRepository } from '../../src/repositories/tenant.js';
 import { createTestShop, openTestDatabase } from '../support/postgres.js';
 
 function delivery(shopId: string, externalDeliveryId: string, body: string) {
@@ -21,10 +22,11 @@ function delivery(shopId: string, externalDeliveryId: string, body: string) {
   };
 }
 
-function event(shopId: string, businessKey: string) {
+function event(shopId: string, businessKey: string, installationGeneration: string | null = null) {
   const now = new Date();
   return newOutboxEvent({
     shopId,
+    installationGeneration,
     eventType: 'synthetic.processed',
     schemaVersion: 1,
     aggregateRef: businessKey,
@@ -112,6 +114,77 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
         }),
       ).toBe('processed');
       expect(await outbox.claim(shopId, new Date(), randomUUID(), new Date(Date.now() + 30_000), 10)).toHaveLength(1);
+    } finally {
+      await database.destroy();
+    }
+  });
+
+  it('rejects outbox payloads that JSON serialization would silently alter', async () => {
+    const database = await openTestDatabase();
+    try {
+      const { shopId } = await createTestShop(database);
+      const outbox = new PgOutboxRepository(database);
+      const transactions = new PgTransactionRunner(database);
+      for (const payload of [{ amount: Number.NaN }, { omitted: undefined }, [undefined], { limit: Infinity }]) {
+        const candidate = { ...event(shopId, randomUUID()), payload };
+        await expect(transactions.run((transaction) => outbox.add(transaction, candidate))).rejects.toBeInstanceOf(
+          TypeError,
+        );
+      }
+      expect(await outbox.claim(shopId, new Date(), randomUUID(), new Date(Date.now() + 30_000), 10)).toEqual([]);
+    } finally {
+      await database.destroy();
+    }
+  });
+
+  it('denies acknowledgement after the database lease deadline even before a new claim', async () => {
+    const database = await openTestDatabase();
+    try {
+      const { shopId } = await createTestShop(database);
+      const outbox = new PgOutboxRepository(database);
+      const outboxEvent = event(shopId, randomUUID());
+      await new PgTransactionRunner(database).run((transaction) => outbox.add(transaction, outboxEvent));
+      const owner = randomUUID();
+      const claimed = await outbox.claim(shopId, new Date(), owner, new Date(Date.now() + 30_000), 1);
+      expect(claimed.map((row) => row.id)).toEqual([outboxEvent.id]);
+      await sql`update outbox_events set lease_until = clock_timestamp() - interval '1 second' where id = ${outboxEvent.id}`.execute(
+        database,
+      );
+      expect(await outbox.acknowledge(shopId, outboxEvent.id, owner, 1)).toBe('not_owned');
+      const recovered = await outbox.claim(shopId, new Date(), randomUUID(), new Date(Date.now() + 30_000), 1);
+      expect(recovered[0]?.attempts).toBe(2);
+    } finally {
+      await database.destroy();
+    }
+  });
+
+  it('fences installation-bound claims and acknowledgements after reinstall', async () => {
+    const database = await openTestDatabase();
+    try {
+      const { shopId, generation } = await createTestShop(database);
+      const outbox = new PgOutboxRepository(database);
+      const transactions = new PgTransactionRunner(database);
+      const oldEvent = event(shopId, randomUUID(), generation);
+      await transactions.run((transaction) => outbox.add(transaction, oldEvent));
+      const oldOwner = randomUUID();
+      const oldClaim = await outbox.claim(shopId, new Date(), oldOwner, new Date(Date.now() + 30_000), 1);
+      expect(oldClaim.map((row) => row.id)).toEqual([oldEvent.id]);
+      expect(oldClaim[0]?.installationGeneration).toBe(generation);
+      const nextGeneration = await transactions.run((transaction) =>
+        createTenantRepository(transaction).startInstallation(transaction, shopId),
+      );
+      expect(nextGeneration).toBe('2');
+      expect(await outbox.acknowledge(shopId, oldEvent.id, oldOwner, 1)).toBe('not_owned');
+      const independentEvent = event(shopId, randomUUID(), null);
+      const newEvent = event(shopId, randomUUID(), nextGeneration);
+      await transactions.run(async (transaction) => {
+        await outbox.add(transaction, independentEvent);
+        await outbox.add(transaction, newEvent);
+      });
+      const future = new Date(Date.now() + 60_000);
+      const claimed = await outbox.claim(shopId, future, randomUUID(), new Date(future.getTime() + 30_000), 10);
+      expect(claimed.map((row) => row.id).sort()).toEqual([independentEvent.id, newEvent.id].sort());
+      expect(claimed.map((row) => row.installationGeneration).sort()).toEqual([null, nextGeneration].sort());
     } finally {
       await database.destroy();
     }
