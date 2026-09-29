@@ -186,7 +186,7 @@ export function inspectDomainImports(file, options, domainPath) {
   }
   function inspectSpecifier(node, specifier) {
     const resolved = ts.resolveModuleName(specifier, file.fileName, options, ts.sys).resolvedModule?.resolvedFileName;
-    if (!resolved || !resolved.startsWith(prefix)) report(node);
+    if (!resolved?.startsWith(prefix)) report(node);
   }
   function visit(node) {
     if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
