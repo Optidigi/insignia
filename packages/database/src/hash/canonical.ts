@@ -2,19 +2,34 @@ import { createHash } from 'node:crypto';
 
 /** Object keys sort lexicographically by JavaScript code unit; array order remains semantic. */
 export function canonicalJson(value: unknown): string {
-  if (value === null || typeof value === 'string' || typeof value === 'boolean') return JSON.stringify(value);
-  if (typeof value === 'number') {
-    if (!Number.isFinite(value)) throw new TypeError('non-finite number in JSON value');
-    return JSON.stringify(value);
+  const ancestors = new WeakSet<object>();
+  function serialize(part: unknown): string {
+    if (part === null || typeof part === 'string' || typeof part === 'boolean') return JSON.stringify(part);
+    if (typeof part === 'number') {
+      if (!Number.isFinite(part)) throw new TypeError('non-finite number in JSON value');
+      return JSON.stringify(part);
+    }
+    if (typeof part !== 'object') throw new TypeError('unsupported JSON value');
+    if (ancestors.has(part)) throw new TypeError('cyclic JSON value');
+    ancestors.add(part);
+    try {
+      if (Array.isArray(part)) {
+        const items: string[] = [];
+        for (let index = 0; index < part.length; index++) {
+          if (!Object.hasOwn(part, index)) throw new TypeError('sparse JSON array');
+          items.push(serialize(part[index]));
+        }
+        return `[${items.join(',')}]`;
+      }
+      if (Object.getPrototypeOf(part) !== Object.prototype && Object.getPrototypeOf(part) !== null)
+        throw new TypeError('JSON object must be plain');
+      const keys = Object.keys(part).sort();
+      return `{${keys.map((key) => `${JSON.stringify(key)}:${serialize((part as Record<string, unknown>)[key])}`).join(',')}}`;
+    } finally {
+      ancestors.delete(part);
+    }
   }
-  if (Array.isArray(value)) return `[${value.map((part) => canonicalJson(part)).join(',')}]`;
-  if (typeof value === 'object') {
-    if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null)
-      throw new TypeError('JSON object must be plain');
-    const keys = Object.keys(value).sort();
-    return `{${keys.map((key) => `${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`).join(',')}}`;
-  }
-  throw new TypeError('unsupported JSON value');
+  return serialize(value);
 }
 
 export function sha256CanonicalJson(value: unknown): string {

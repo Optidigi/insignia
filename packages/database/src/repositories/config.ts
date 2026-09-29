@@ -2,11 +2,14 @@ import { PublishedConfigSchema } from '@insignia/contracts';
 import type { DatabaseExecutor } from '../client/database.js';
 import { canonicalJson, revisionContentHash } from '../hash/canonical.js';
 
-const VERSION_PATTERN = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*-v[1-9][0-9]*$/;
+export const CONFIG_DRAFT_STORAGE_VERSION = 'm3-config-draft-v1' as const;
 
 function validateDraftStorage(schemaVersion: string, draftValue: unknown): void {
-  if (!VERSION_PATTERN.test(schemaVersion)) throw new Error('invalid draft schema version');
-  // No M2 draft DTO exists. Keep the versioned value raw for an application reader.
+  if (schemaVersion !== CONFIG_DRAFT_STORAGE_VERSION) throw new Error('unsupported draft schema version');
+  if (draftValue === null || typeof draftValue !== 'object' || Array.isArray(draftValue) ||
+    (Object.getPrototypeOf(draftValue) !== Object.prototype && Object.getPrototypeOf(draftValue) !== null))
+    throw new Error('draft must be a JSON object');
+  // M3 stores incomplete merchant drafts as raw JSON objects; publication validates the M2 DTO.
   canonicalJson(draftValue);
 }
 
@@ -43,6 +46,7 @@ function mapConfig(row: {
   effective_operation_id: string | null;
   publication_sequence: string;
 }): ConfigRecord {
+  validateDraftStorage(row.draft_schema_version, row.draft_value);
   return {
     shopId: row.shop_id,
     configId: row.config_id,
