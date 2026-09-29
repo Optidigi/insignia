@@ -2,22 +2,32 @@
 module.exports = {
   forbidden: [
     {
-      name: 'domain-is-pure', severity: 'error',
+      name: 'domain-is-pure',
+      severity: 'error',
       from: { path: '^packages/domain/src/' },
       to: { pathNot: '^packages/domain/src/' },
     },
     {
-      name: 'browser-does-not-import-server', severity: 'error',
+      name: 'browser-does-not-import-server',
+      severity: 'error',
       from: { path: '^(apps/storefront/src/|apps/web/src/islands/|packages/contracts/src/)' },
-      to: { path: '^(apps/worker/|packages/(shopify|artwork|database|observability|signer)/|(?:node:)?(?:fs|http|https|net|crypto|child_process)$)' },
+      to: { path: '^(apps/worker/|packages/(shopify|artwork|database|observability|signer)/)' },
     },
     {
-      name: 'runtime-does-not-import-spikes', severity: 'error',
+      name: 'browser-no-node-builtins',
+      severity: 'error',
+      from: { path: '^(apps/storefront/src/|apps/web/src/islands/|packages/contracts/src/)' },
+      to: { dependencyTypes: ['core'] },
+    },
+    {
+      name: 'runtime-does-not-import-spikes',
+      severity: 'error',
       from: { path: '^(apps|packages)/' },
       to: { path: '^spikes/' },
     },
     {
-      name: 'shopify-sdk-only-in-adapter', severity: 'error',
+      name: 'shopify-sdk-only-in-adapter',
+      severity: 'error',
       from: { pathNot: '^packages/shopify/' },
       to: { path: '(^|/)@shopify/shopify-api(/|$)' },
     },

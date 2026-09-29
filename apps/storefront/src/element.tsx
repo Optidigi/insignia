@@ -8,11 +8,18 @@ function LocalPreview({ host }: { host: HTMLElement }) {
   return (
     <section aria-label="Insignia local preview">
       <p>Local storefront interaction test. No cart or pricing actions.</p>
-      <button type="button" onClick={() => {
-        const next = count + 1;
-        setCount(next);
-        host.dispatchEvent(new CustomEvent('insignia-local-change', { detail: { count: next }, bubbles: false, composed: false }));
-      }}>Count locally</button>
+      <button
+        type="button"
+        onClick={() => {
+          const next = count + 1;
+          setCount(next);
+          host.dispatchEvent(
+            new CustomEvent('insignia-local-change', { detail: { count: next }, bubbles: false, composed: false }),
+          );
+        }}
+      >
+        Count locally
+      </button>
       <output aria-live="polite">{count}</output>
     </section>
   );

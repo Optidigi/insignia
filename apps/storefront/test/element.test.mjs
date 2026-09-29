@@ -5,16 +5,30 @@ import { chromium } from 'playwright';
 
 test('custom element mounts, unmounts, and contains DOM, state and events', async () => {
   const port = 45000 + Math.floor(Math.random() * 1000);
-  const child = spawn(new URL('../node_modules/.bin/vite', import.meta.url).pathname, ['--host', '127.0.0.1', '--port', String(port), '--strictPort']);
-  const exited = new Promise(resolve => child.once('close', resolve));
+  const child = spawn(new URL('../node_modules/.bin/vite', import.meta.url).pathname, [
+    '--host',
+    '127.0.0.1',
+    '--port',
+    String(port),
+    '--strictPort',
+  ]);
+  const exited = new Promise((resolve) => child.once('close', resolve));
   let stderr = '';
-  child.on('error', error => { stderr += error.message; });
-  child.stderr.setEncoding('utf8').on('data', chunk => { stderr += chunk; });
+  child.on('error', (error) => {
+    stderr += error.message;
+  });
+  child.stderr.setEncoding('utf8').on('data', (chunk) => {
+    stderr += chunk;
+  });
   let browser;
   try {
     let ready = false;
     for (let i = 0; i < 100 && !ready && child.exitCode === null; i++) {
-      try { ready = (await fetch(`http://127.0.0.1:${port}`)).ok; } catch { await new Promise(resolve => setTimeout(resolve, 50)); }
+      try {
+        ready = (await fetch(`http://127.0.0.1:${port}`)).ok;
+      } catch {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+      }
     }
     assert.ok(ready, stderr);
     browser = await chromium.launch({ headless: true });

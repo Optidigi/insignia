@@ -12,7 +12,7 @@ if (process.argv.includes('--diagnostic')) {
     }
     response.writeHead(404).end();
   });
-  const portArgument = process.argv.find(value => value.startsWith('--port='));
+  const portArgument = process.argv.find((value) => value.startsWith('--port='));
   const port = portArgument ? Number(portArgument.slice('--port='.length)) : 4301;
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Invalid local port');
   server.listen(port, '127.0.0.1', () => {
@@ -25,7 +25,9 @@ if (process.argv.includes('--diagnostic')) {
     process.on(signal, () => {
       if (stopping) return;
       stopping = true;
-      server.close(error => { process.exitCode = error ? 1 : 0; });
+      server.close((error) => {
+        process.exitCode = error ? 1 : 0;
+      });
     });
   }
 }
