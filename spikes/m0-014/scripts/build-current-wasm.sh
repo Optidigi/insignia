@@ -9,9 +9,7 @@ case "$target" in transform|validation) ;; *) exit 2 ;; esac
 case "$mode" in record|verify) ;; *) exit 2 ;; esac
 
 cargo="${M0_014_CARGO:-cargo}"
-cli="${M0_014_SHOPIFY_CLI:-$repo/spikes/m0-005/node_modules/.bin/shopify}"
-cli_bin="$(dirname "$(realpath "$cli")")"
-trampoline="$cli_bin/shopify-function-trampoline-2.0.1"
+trampoline="$repo/spikes/m0-005/node_modules/.pnpm/@shopify+cli@4.8.2/node_modules/@shopify/cli/bin/shopify-function-trampoline-2.0.1"
 test -x "$trampoline"
 
 # A per-checkout Cargo build changes binary metadata even when path strings are
