@@ -1,0 +1,46 @@
+I explicitly authorize marking Optidigi/insignia PR #19 ready for review,
+its normal merge at the exact approved refs, and the attached M1-001
+workspace/boundary package under the principal's M1 entry decision.
+
+Immediately before merging verify:
+- Target: main
+- Base/effective merge base: 7222a96ff2b0408d0fbfe0803835d24acfd463b7
+- Approved head: f267b7b3bfae0090060d4f25aafa23e4c2d3cfb7
+- Approved tree: 0c80fe0c6b585648f2a3678ef80cf9b543bb0ed2
+- PR-019R external principal approval and all eight successful head workflows:
+  36515244026, 36515244035, 36515244064, 36515244019,
+  36515244031, 36515244006, 36515244058, 36515244063.
+  Verify their actual workflow names; the old PR body swapped two labels.
+
+Keep the reviewed head unchanged. Mark-ready is metadata only. Use a
+repository-permitted normal merge; no force-push, protection bypass or
+fabricated native approval. Report changed refs/blockers. Verify the actual
+remote merge parents/tree, then branch from updated main.
+This delegates PR #19's merge only, not the M1 PR.
+
+Execute M1-001-WORKSPACE-AND-BOUNDARIES.md as ONE integrated implementation PR:
+root pnpm/Cargo workspaces, minimal web/storefront/worker surfaces, explicit
+package exports, executable dependency/browser-server boundaries,
+current-source candidate Function builds, tests and artifact-bound CI.
+This is the first foundation milestone, not more M0 commissioning.
+
+Use actual sol-6-high, up to two non-overlapping restricted writers,
+one integrator and fresh Spec/security reviews. Resolve ordinary local
+implementation/test/review findings within this package. No general preflight.
+
+Preserve v1.3 architecture and historical evidence. The entry decision
+accepts bounded feasibility, not complete gates, production v2 adoption,
+a 32-bucket merchant limit or live 200-line success. Carry later acceptance
+obligations into the existing state/register with their owning milestones.
+Do not promote fixture-role signing or old live credentials/quotes to runtime.
+
+Local code, public dependencies/docs, local browser tests, CI and one PR are
+authorized. No authenticated Shopify/provider calls, secret-file reads,
+previews, deployments, add-to-cart setting changes, new cart/order/payment,
+refund/fulfillment, billing event/subscription, credential or legacy changes.
+The exhausted four-unit test budget does not reopen. Leave the retained
+billing fixture, old orders and both development preview holding states alone.
+
+Return the M1 implementation PR with actual refs, passing final-head checks,
+qualified results and review dispositions. Stop for principal review.
+No next-PR merge, M2, completed G1-G8 claim or public launch is authorized.

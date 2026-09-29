@@ -1,0 +1,17 @@
+api_version = "2026-07"
+
+[[extensions]]
+name = "Insignia experimental-v2 cart validation"
+handle = "insignia-experimental-v2-validation"
+type = "function"
+description = "Local preproduction candidate only"
+
+  [[extensions.targeting]]
+  target = "cart.validations.generate.run"
+  input_query = "src/cart_validations_generate_run.graphql"
+  export = "cart_validations_generate_run"
+
+  [extensions.build]
+  command = "bash ../../scripts/m1-functions/build-wasm.sh validation"
+  path = "target/cart-validation.wasm"
+  wasm_opt = false
