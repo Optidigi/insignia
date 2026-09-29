@@ -1,0 +1,96 @@
+{
+  "schemaVersion": "m4-external-read-register-v1",
+  "createdAt": "2026-09-29T20:39:09.924Z",
+  "limits": {
+    "admin": 20,
+    "partner": 10
+  },
+  "requests": [
+    {
+      "id": "partner-01",
+      "kind": "partner",
+      "purpose": "designated app/shop activeSubscription only",
+      "apiVersion": "2026-07",
+      "endpoint": "https://partners.shopify.com/4697030/api/2026-07/graphql.json",
+      "querySha256": "c339706cb2353560c4b29acb1f85a2b8264d1e25f0924c6d4fd83fef6c4a1bc8",
+      "reservedAt": "2026-09-29T20:39:09.924Z",
+      "outcome": "RESPONSE",
+      "completedAt": "2026-09-29T20:39:10.781Z",
+      "httpStatus": 200,
+      "responseSha256": "84c57414ca5199eb321a9883b86be130aa6f638e365e141e9d1ced2cb3269264",
+      "responseBytes": 944,
+      "requestId": "a0aca454-bfc9-4959-a45c-4e26978a1ddc-1790714350",
+      "topLevelKeys": [
+        "data"
+      ],
+      "activeSubscriptionShape": [
+        "app",
+        "billingPeriod",
+        "cancelAtEndOfCycle",
+        "currentBillingCycle",
+        "items",
+        "legacySubscriptionId",
+        "pendingUpdate",
+        "shop",
+        "trialEndsAt"
+      ],
+      "sanitizedContract": {
+        "app": {
+          "id": "gid://shopify/App/429028933633"
+        },
+        "shop": {
+          "id": "gid://shopify/Shop/105501393179",
+          "myshopifyDomain": "insignia-rewrite-dev.myshopify.com"
+        },
+        "billingPeriod": "EVERY_30_DAYS",
+        "cancelAtEndOfCycle": false,
+        "trialEndsAt": null,
+        "currentBillingCycle": {
+          "startTime": "2026-09-28T16:53:01Z",
+          "endTime": "2026-10-28T16:53:01Z"
+        },
+        "items": [
+          {
+            "handle": "insignia-dev-zero-20260928",
+            "description": "Insignia $0 Test",
+            "price": {
+              "__typename": "FlatRatePrice",
+              "active": false,
+              "currency": "USD",
+              "amount": "0.0"
+            },
+            "discount": null,
+            "usage": null
+          },
+          {
+            "handle": "customized_order_paid",
+            "description": "Test custom order",
+            "price": {
+              "__typename": "TieredPrice",
+              "active": false,
+              "currency": "USD",
+              "tiersMode": "VOLUME",
+              "tiers": [
+                {
+                  "upTo": null,
+                  "amountPerUnit": "0.0",
+                  "amount": "0.0"
+                }
+              ]
+            },
+            "discount": null,
+            "usage": {
+              "quantity": 3.0,
+              "cost": {
+                "amount": "0.0",
+                "currencyCode": "USD"
+              }
+            }
+          }
+        ],
+        "pendingUpdate": null,
+        "legacySubscriptionId": "gid://shopify/AppSubscription/38085427483"
+      }
+    }
+  ]
+}
