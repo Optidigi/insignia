@@ -67,10 +67,19 @@ function isMathRoot(node) {
 
 function isReference(node) {
   const parent = node.parent;
+  for (let ancestor = parent; ancestor; ancestor = ancestor.parent) {
+    if (ts.isTypeNode(ancestor)) return false;
+    if (ts.isExpression(ancestor) || ts.isStatement(ancestor)) break;
+  }
   if (ts.isPropertyAccessExpression(parent) && parent.name === node) return false;
   if (ts.isPropertyAssignment(parent) && parent.name === node) return false;
   if (ts.isPropertySignature(parent) && parent.name === node) return false;
+  if (ts.isPropertyDeclaration(parent) && parent.name === node) return false;
+  if (ts.isMethodSignature(parent) && parent.name === node) return false;
   if (ts.isMethodDeclaration(parent) && parent.name === node) return false;
+  if (ts.isTypeParameterDeclaration(parent) && parent.name === node) return false;
+  if (ts.isTypeAliasDeclaration(parent) && parent.name === node) return false;
+  if (ts.isInterfaceDeclaration(parent) && parent.name === node) return false;
   if (ts.isVariableDeclaration(parent) && parent.name === node) return false;
   if (ts.isFunctionDeclaration(parent) && parent.name === node) return false;
   if (ts.isParameter(parent) && parent.name === node) return false;
@@ -163,4 +172,35 @@ export function compiledDomainFiles(configPath, domainPath) {
   const program = ts.createProgram(parsed.fileNames, parsed.options);
   const prefix = domainPath.endsWith(sep) ? domainPath : `${domainPath}${sep}`;
   return program.getSourceFiles().filter((file) => !file.isDeclarationFile && file.fileName.startsWith(prefix));
+}
+
+// The dependency-cruiser graph excludes test-named files. A production import can
+// still pull one into the TypeScript program, so validate every compiled module's
+// own static edges here as well. This includes type-only imports and re-exports.
+export function inspectDomainImports(file, options, domainPath) {
+  const prefix = domainPath.endsWith(sep) ? domainPath : `${domainPath}${sep}`;
+  const diagnostics = [];
+  function report(node) {
+    const at = file.getLineAndCharacterOfPosition(node.getStart(file));
+    diagnostics.push({ rule: 'domain-no-external-import', line: at.line + 1, column: at.character + 1 });
+  }
+  function inspectSpecifier(node, specifier) {
+    const resolved = ts.resolveModuleName(specifier, file.fileName, options, ts.sys).resolvedModule?.resolvedFileName;
+    if (!resolved || !resolved.startsWith(prefix)) report(node);
+  }
+  function visit(node) {
+    if ((ts.isImportDeclaration(node) || ts.isExportDeclaration(node)) && node.moduleSpecifier) {
+      if (ts.isStringLiteral(node.moduleSpecifier)) inspectSpecifier(node, node.moduleSpecifier.text);
+      else report(node);
+    }
+    if (ts.isImportEqualsDeclaration(node) && ts.isExternalModuleReference(node.moduleReference)) {
+      const expression = node.moduleReference.expression;
+      if (expression && ts.isStringLiteral(expression)) inspectSpecifier(node, expression.text);
+      else report(node);
+    }
+    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) report(node);
+    ts.forEachChild(node, visit);
+  }
+  visit(file);
+  return diagnostics;
 }

@@ -3,7 +3,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { compiledDomainFiles, inspectDomainSource } from './domain-effects.mjs';
+import ts from 'typescript';
+import { compiledDomainFiles, inspectDomainImports, inspectDomainSource } from './domain-effects.mjs';
 
 const rejected = [
   ['Date.now', 'export function helper() { return Date.now(); }', 'domain-no-implicit-clock'],
@@ -50,6 +51,12 @@ test('deterministic numeric and explicit-value operations stay allowed', () => {
 
 test('type-only properties are not ambient API references', () => {
   assert.deepEqual(inspectDomainSource('export type Shape = { fetch: string; Date: string; Math: number };'), []);
+  assert.deepEqual(inspectDomainSource('export interface Shape { createdAt: Date; fetch(input: string): Math; }'), []);
+  assert.deepEqual(
+    inspectDomainSource('export function explicit(input: string): Date { return new Date(input); }'),
+    [],
+  );
+  assert.deepEqual(inspectDomainSource('export class Shape { fetch = "value"; }'), []);
 });
 
 test('compiled graph includes an imported module with an excluded test-like filename', () => {
@@ -66,11 +73,21 @@ test('compiled graph includes an imported module with an excluded test-like file
       }),
     );
     writeFileSync(join(source, 'main.ts'), "import { clock } from './helper.test.js'; export const value = clock();");
-    writeFileSync(join(source, 'helper.test.ts'), 'export function clock() { return Date.now(); }');
+    writeFileSync(
+      join(source, 'helper.test.ts'),
+      "import { readFileSync } from 'node:fs'; export function clock() { return Date.now(); }",
+    );
     const files = compiledDomainFiles(join(directory, 'tsconfig.json'), source);
     const imported = files.find((file) => file.fileName.endsWith('helper.test.ts'));
     assert.ok(imported, 'imported test-like module must be scanned');
     assert.ok(inspectDomainSource(imported.text).some(({ rule }) => rule === 'domain-no-implicit-clock'));
+    assert.ok(
+      inspectDomainImports(
+        imported,
+        { module: ts.ModuleKind.NodeNext, moduleResolution: ts.ModuleResolutionKind.NodeNext },
+        source,
+      ).some(({ rule }) => rule === 'domain-no-external-import'),
+    );
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
