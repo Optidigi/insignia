@@ -95,6 +95,32 @@ const probes = [
     'domain-is-pure',
   ],
   [
+    'packages/domain/src/__boundary_probe.ts',
+    "import type {Shopify} from '@shopify/shopify-api'; export type Probe = Shopify;",
+    'shopify-sdk-only-in-adapter',
+    2,
+  ],
+  [
+    'packages/domain/src/__boundary_probe.ts',
+    "import type {AstroGlobal} from 'astro'; export type Probe = AstroGlobal;",
+    'domain-is-pure',
+  ],
+  [
+    'packages/domain/src/__boundary_probe.ts',
+    "import type {JSX} from 'preact'; export type Probe = JSX;",
+    'domain-is-pure',
+  ],
+  [
+    'packages/domain/src/__boundary_probe.ts',
+    "import type {Stage} from 'konva/lib/Stage'; export type Probe = Stage;",
+    'domain-is-pure',
+  ],
+  [
+    'packages/domain/src/__boundary_probe.ts',
+    "import type {Pool} from 'pg'; export type Probe = Pool;",
+    'domain-is-pure',
+  ],
+  [
     'apps/storefront/src/__boundary_probe.ts',
     "import {syntheticDerivative} from '../../worker/src/diagnostic.js'; export {syntheticDerivative};",
     'browser-does-not-import-server',
@@ -115,12 +141,12 @@ const probes = [
     'browser-no-node-builtins',
   ],
 ];
-for (const [path, source, rule] of probes) {
+for (const [path, source, rule, status = 1] of probes) {
   const file = resolve(root, path);
   assert.ok(!existsSync(file), `refusing to overwrite ${path}`);
   try {
     writeFileSync(file, source);
-    assert.match(cruise([file], 'err', 1), new RegExp(rule));
+    assert.match(cruise([file], 'err', status), new RegExp(rule));
   } finally {
     rmSync(file, { force: true });
   }
@@ -200,5 +226,5 @@ assert.notEqual(deepImport.status, 0, 'private package source import must fail')
 assert.match(deepImport.stderr, /ERR_PACKAGE_PATH_NOT_EXPORTED/);
 
 console.log(
-  `Boundary checks passed: ${graph.modules.length} real modules, ${browser.length} browser modules, 7 negative source fixtures, 2 rejected browser bundles and exports.`,
+  `Boundary checks passed: ${graph.modules.length} real modules, ${browser.length} browser modules, ${probes.length + 2} negative source fixtures, 2 rejected browser bundles and exports.`,
 );
