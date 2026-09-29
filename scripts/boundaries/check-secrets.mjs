@@ -28,6 +28,7 @@ for (const path of [
   'apps/storefront/src',
   'apps/worker/src',
   'packages/domain/src',
+  'packages/contracts/src',
   'crates/cart-authorization/src',
   'crates/cart-transform/src',
   'crates/cart-validation/src',
