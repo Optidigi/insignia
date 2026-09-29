@@ -192,22 +192,24 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PostgreSQL tenant and publica
         publishedValue: value,
       }),
     ).rejects.toThrow('unsupported published config version');
+    const wrongShopRevisionId = randomUUID();
     await expect(
       repo.createRevision({
         shopId,
         configId,
-        revisionId: randomUUID(),
+        revisionId: wrongShopRevisionId,
         schemaVersion: 'm2-published-config-v1',
-        publishedValue: { ...value, shopId: randomUUID() },
+        publishedValue: { ...value, shopId: randomUUID(), revisionId: wrongShopRevisionId },
       }),
     ).rejects.toThrow('published config identity mismatch');
+    const wrongProductRevisionId = randomUUID();
     await expect(
       repo.createRevision({
         shopId,
         configId,
-        revisionId: randomUUID(),
+        revisionId: wrongProductRevisionId,
         schemaVersion: 'm2-published-config-v1',
-        publishedValue: { ...value, productId: randomUUID() },
+        publishedValue: { ...value, productId: randomUUID(), revisionId: wrongProductRevisionId },
       }),
     ).rejects.toThrow('published product identity mismatch');
     const futureRevisionId = randomUUID();
