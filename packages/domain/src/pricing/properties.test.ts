@@ -212,14 +212,21 @@ describe('pricing invariants', () => {
     expect(garment.groups[0]?.unitComponents[2]?.resolvedMinor).toBe('-50');
   });
 
-  it('rejects negative aggregate customization and bounded arithmetic overflow', () => {
+  it('accepts signed adjustments only when each final contextual variant price stays nonnegative', () => {
     const negative: PricingRule = {
       id: 'negative',
       role: 'unit',
       scope: { kind: 'placement', placementId: 'a' },
       rate: { kind: 'fixed', amount: amount('-1.00') },
     };
-    expect(() => priceProposal(input([group([{ variantId: 'a', quantity: 1 }])], [negative]))).toThrow();
+    const accepted = priceProposal(input([group([{ variantId: 'a', quantity: 1 }])], [negative]));
+    expect(accepted.groups[0]?.customizationUnitMinor).toBe('-100');
+    expect(accepted.lines[0]?.unitPriceMinor).toBe('1900');
+    const belowZero = input([group([{ variantId: 'a', quantity: 1 }])], [negative], [{ variantId: 'a', minor: '50' }]);
+    expect(() => priceProposal(belowZero)).toThrow(/range/);
+  });
+
+  it('rejects bounded arithmetic overflow and invalid physical quantity', () => {
     const overflow = input(
       [group([{ variantId: 'a', quantity: 2 }])],
       [],

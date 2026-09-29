@@ -340,8 +340,11 @@ function resolveComponents(
       resolution: resolved.resolution,
     });
   }
-  if (minor < 0n) fail('negative aggregate customization amount');
-  checkedMinor(minor);
+  // Signed placement/step adjustments can make the customization subtotal
+  // negative. The final price for each actual variant is checked after its
+  // contextual base is added. Setup remains nonnegative.
+  if (role === 'setup' && minor < 0n) fail('negative setup amount');
+  if (minor > U64_MAX || minor < -U64_MAX) fail('aggregate customization amount overflows u64');
   return { components, minor };
 }
 function freezeDeep<T>(value: T): T {
