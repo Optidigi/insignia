@@ -1,0 +1,66 @@
+{
+  "classification": "MINIMIZED_ACTUAL_CAPTURE_DERIVED_INPUT; LOCAL_REPLAY_ONLY; NOT_NATIVE_CHECKOUT",
+  "source": {
+    "kind": "owner-held exact-app Shopify CLI Function log JSONL, line 15",
+    "eventTimestampUtc": "2026-09-28T21:46:41.257422Z",
+    "rawSourceEventSha256": "50d1a82822aa63fa046af6fbc84e91a228000a6c80811ce19c45d7a6022ed9dd",
+    "reportedInputBytes": 2008,
+    "reportedBuyerJourney": "CART_INTERACTION",
+    "shopId": 105501393179,
+    "apiClientId": 429028933633
+  },
+  "extraction": "Retained payload.input object only; omitted log envelope, Function output, timing and unrelated fields. JSON pretty-print changes serialization bytes but preserves every input value. No credentials, private key, browser/session field or authorization header exists in retained input.",
+  "retainedValues": {
+    "quoteSha256": "d2208d55c682074c72c6050768b55bb008ffea646119f500d86d888b10adf9d2",
+    "publicConfigSha256": "2cfbfe326a7cc021c9a03381bf7ca14f1fa90c07cecb558b182636310d745647",
+    "memberSha256": [
+      "c1c12ea9c33865c6e76b25b660122b1e3ccc1fecf4077087f2a51e2be57dc14a",
+      "74746221af9dcd4dd7e232b932f253716371552dcbe634d59af433509a52e617"
+    ],
+    "lineIds": [
+      "gid://shopify/CartLine/0",
+      "gid://shopify/CartLine/1",
+      "gid://shopify/CartLine/2"
+    ],
+    "lineQuantities": [
+      1,
+      1,
+      2
+    ],
+    "lineAmounts": [
+      "30.34",
+      "20.0",
+      "60.66"
+    ],
+    "marketId": "gid://shopify/Market/106410115355",
+    "country": "US",
+    "currency": "USD",
+    "shopLocalDate": "2026-09-28"
+  },
+  "fixtures": [
+    {
+      "path": "captured-validation.json",
+      "sha256": "8fe4184237d0d7349783d2d68791b54749517271385e2d9601df56f3546b26b2",
+      "buyerJourneyStep": "CART_INTERACTION",
+      "derivation": "payload.input with no value changes"
+    },
+    {
+      "path": "captured-validation-checkout-completion.json",
+      "sha256": "efd0d0c8dffaa2f1b0c738e40b73116adc695bc8818dc612c3b112332a70c21c",
+      "buyerJourneyStep": "CHECKOUT_COMPLETION",
+      "derivation": "payload.input; buyerJourney.step changed from CART_INTERACTION only"
+    },
+    {
+      "path": "captured-validation-checkout-interaction.json",
+      "sha256": "5e3acc0fcb5a760a4e3f63a0251b92b3178c1a6b2c595823820e69cc44629256",
+      "buyerJourneyStep": "CHECKOUT_INTERACTION",
+      "derivation": "payload.input; buyerJourney.step changed from CART_INTERACTION only"
+    }
+  ],
+  "priorStoppedRun": {
+    "receiptPath": "spikes/m0-014/evidence/small-validation-checkout-local-differential.json",
+    "receiptSha256": "6543a694a0c6240ff6748378e6ad988e4a2dcc2712da5902f712918b22c507e2",
+    "operatorCheckoutReplayInputSha256": "95a1cf5c96dc8c723ac9f7c411d04a57b2a01bdede4e5a2c2fdb23caa6ae8e5f",
+    "operatorReplayEqualsSourceInputExceptJourney": true
+  }
+}

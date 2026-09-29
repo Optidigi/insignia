@@ -1,0 +1,116 @@
+{
+  "buyerJourney": {
+    "step": "CHECKOUT_INTERACTION"
+  },
+  "cart": {
+    "quote": {
+      "value": "SVNHMgIA6m5PjdFkzIxIGZqUzqXaEb5MAAAAAR7FXt5k3kIRm5bDBz4cJVGqBntSI1dM17PyjTvi0BTQAAJVU0QCVVMAAAAYxomBGwAAUPYAAAADAAAAAAAAI4yP27oN1loFRaVgSU_DrlYMWQw6EzdUfAyE1szL3_wX0uhMCQpbQiArsLLGQKV8bgsgkNl-pXx-u_vRj7vDs6QD"
+    },
+    "lines": [
+      {
+        "id": "gid://shopify/CartLine/0",
+        "quantity": 1,
+        "member": {
+          "value": "AAAAADErMfEBGwAAAAEAAAAAAAAL2g"
+        },
+        "cost": {
+          "amountPerQuantity": {
+            "currencyCode": "USD"
+          },
+          "subtotalAmount": {
+            "amount": "30.34",
+            "currencyCode": "USD"
+          }
+        },
+        "sellingPlanAllocation": null,
+        "merchandise": {
+          "__typename": "ProductVariant",
+          "id": "gid://shopify/ProductVariant/54061591232795",
+          "product": {
+            "id": "gid://shopify/Product/10485042479387",
+            "registration": {
+              "value": "4f8dd164cc8c48199a94cea5da11be4c:1:ready"
+            },
+            "policy": {
+              "value": "4f8dd164cc8c48199a94cea5da11be4c:1:optional"
+            }
+          }
+        }
+      },
+      {
+        "id": "gid://shopify/CartLine/1",
+        "quantity": 1,
+        "member": null,
+        "cost": {
+          "amountPerQuantity": {
+            "currencyCode": "USD"
+          },
+          "subtotalAmount": {
+            "amount": "20.0",
+            "currencyCode": "USD"
+          }
+        },
+        "sellingPlanAllocation": null,
+        "merchandise": {
+          "__typename": "ProductVariant",
+          "id": "gid://shopify/ProductVariant/54061591232795",
+          "product": {
+            "id": "gid://shopify/Product/10485042479387",
+            "registration": {
+              "value": "4f8dd164cc8c48199a94cea5da11be4c:1:ready"
+            },
+            "policy": {
+              "value": "4f8dd164cc8c48199a94cea5da11be4c:1:optional"
+            }
+          }
+        }
+      },
+      {
+        "id": "gid://shopify/CartLine/2",
+        "quantity": 2,
+        "member": {
+          "value": "AAEAADErMfEBGwAAAAIAAAAAAAAL2Q"
+        },
+        "cost": {
+          "amountPerQuantity": {
+            "currencyCode": "USD"
+          },
+          "subtotalAmount": {
+            "amount": "60.66",
+            "currencyCode": "USD"
+          }
+        },
+        "sellingPlanAllocation": null,
+        "merchandise": {
+          "__typename": "ProductVariant",
+          "id": "gid://shopify/ProductVariant/54061591232795",
+          "product": {
+            "id": "gid://shopify/Product/10485042479387",
+            "registration": {
+              "value": "4f8dd164cc8c48199a94cea5da11be4c:1:ready"
+            },
+            "policy": {
+              "value": "4f8dd164cc8c48199a94cea5da11be4c:1:optional"
+            }
+          }
+        }
+      }
+    ]
+  },
+  "localization": {
+    "country": {
+      "isoCode": "US"
+    },
+    "market": {
+      "id": "gid://shopify/Market/106410115355"
+    }
+  },
+  "shop": {
+    "localTime": {
+      "date": "2026-09-28"
+    },
+    "publicConfig": {
+      "value": "{\"generationHex\":\"4f8dd164cc8c48199a94cea5da11be4c\",\"epoch\":1,\"maxBuckets\":32,\"maxPhysicalQuantity\":10000,\"allowNoMarket\":false,\"keys\":[{\"id\":60014,\"publicHex\":\"34a94061e37f6e331406e38c190d37cf3cf90db5a9bbd080fa5f3de492b16bd3\",\"revoked\":false,\"firstDay\":20724,\"lastDay\":20726}]}"
+    }
+  }
+}

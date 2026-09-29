@@ -35,6 +35,10 @@ for kind, uid, target, digest in (
     assert len(entry["targeting"]) == 1
     assert entry["targeting"][0]["target"] == target
     assert entry["build"]["wasm_opt"] is False
-    assert entry["build"]["command"] == f"bash ../../scripts/install-pinned-wasm.sh {kind}"
+    assert entry["build"]["command"] == f"bash ../../scripts/build-current-wasm.sh {kind}"
+    assert entry["build"]["path"] == (
+        f"target/wasm32-unknown-unknown/release/m0-013-cart-{kind}.wasm")
     assert hashlib.sha256((root / f"artifacts/{kind}.wasm").read_bytes()).hexdigest() == digest
-print("M0-014 fixed local config and pinned artifacts: PASS")
+    assert (root / f"artifacts/m0-014r/{kind}.wasm").is_file()
+    assert (root / f"artifacts/m0-014r/{kind}.raw.wasm").is_file()
+print("M0-014R current build routes and historical pinned artifacts: PASS")
