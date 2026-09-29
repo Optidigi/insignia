@@ -147,7 +147,7 @@
     "native refund flow after partial fulfillment gave restock of remaining unfulfilled items and auto archive, not an explicit Cancel order operation",
     "stopped development preview record and approved grants retained by design",
     "fixture role assignment does not independently prove buyer intent for otherwise identical one-unit lines; operator cart-property observation is qualified evidence",
-    "Tracked direct captures redact complete signed quote carriers; earlier draft commit exposed them until their 2026-09-30 validity end; fixtures/Functions were removed and private key deleted. No historical rewrite or revocation is claimed."
+    "Tracked direct captures redact complete signed quote carriers; the current captured-input local replay fixtures retain the original stopped-run quote and earlier draft commits exposed live carriers through their 2026-09-30 validity end; fixtures/Functions were removed and private key deleted. No historical rewrite or revocation is claimed."
   ],
   "trackedSanitizedDirectCaptures": {
     "positive-interaction-validation.json": "c3fd39121be456c9ec7e0077344bec57c4133d817435d2aaa82bd47365398f0f",

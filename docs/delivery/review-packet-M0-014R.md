@@ -36,9 +36,12 @@ The direct raw Shopify Function logs, diagnostic carts, API readbacks and
 operator register are outside Git with mode 0600. The tracked evidence
 contains selected redacted direct Function inputs/outputs, Ajax role/member
 mapping, observations and SHA-256 pointers, with no raw session, credential
-or buyer contact detail. Signed quote carriers in the earlier draft commit
-remain historical; the latest captures redact them and retain hashes.
-They expire after 2026-09-30; fixture/Function cleanup is verified.
+or buyer contact detail. The current captured-input local replay fixtures
+retain the original stopped-run quote for an exact differential, while the
+latest direct live captures redact theirs and retain hashes. Earlier draft
+commits also exposed carriers. Their key validity ends after 2026-09-30;
+fixture/Function cleanup is verified. No history rewrite or revocation is
+claimed.
 Actual CHECKOUT_COMPLETION Validation
 read CartLine /0, /1 and /2 and returned no errors. The original failed
 M0-014 receipt remains separate.

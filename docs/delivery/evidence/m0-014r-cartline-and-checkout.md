@@ -149,9 +149,11 @@ CHECKOUT_INTERACTION. Selected direct log hashes and observations are in the
 which links tracked redacted direct Function inputs/outputs and raw
 owner-only log hashes. Complete signed quote carriers are redacted in the
 latest tracked captures; their SHA-256 values and raw source hashes remain.
-The earlier draft commit exposed carriers valid through 2026-09-30. The
-fixtures and Functions were removed, the private key deleted, and no
-historical rewrite or revocation is claimed.
+The captured-input local replay fixtures in the current tree retain the
+original stopped-run signed quote to reproduce its exact differential;
+earlier draft commits also exposed live signed carriers. Those keys report
+validity through 2026-09-30. The fixtures and Functions were removed and
+the private keys deleted. No historical rewrite or revocation is claimed.
 
 The single permitted Bogus purchase succeeded through normal checkout:
 rewrite-dev order gid://shopify/Order/7487119458587, displayed as #1001
