@@ -57,3 +57,7 @@ jobs:
       - run: corepack pnpm check:boundaries
       - run: corepack pnpm check:secrets
       - run: corepack pnpm check:database
+      - name: Rehearse disposable down and up
+        run: |
+          corepack pnpm exec dbmate --no-dump-schema --migrations-dir packages/database/migrations rollback
+          corepack pnpm db:migrate
