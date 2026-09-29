@@ -177,7 +177,7 @@ describe('durable inbox and outbox on PostgreSQL 18', () => {
           outbox.add(transaction, {
             ...existing,
             id: randomUUID(),
-            purgeAfter: new Date(existing.occurredAt.getTime() + 1),
+            purgeAfter: new Date(existing.occurredAt.getTime() + 30_000),
           }),
         ),
       ).rejects.toThrow('Outbox business key conflicts');
