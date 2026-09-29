@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
-import { Kysely, sql } from 'kysely';
+import { type Kysely, sql } from 'kysely';
 import { Pool } from 'pg';
-import { createDatabase, withTransaction, type Database } from '../../src/client/database.js';
+import { createDatabase, type Database, withTransaction } from '../../src/client/database.js';
 import { createTenantRepository } from '../../src/repositories/tenant.js';
 
 export async function openTestDatabase(): Promise<Kysely<Database>> {
