@@ -126,6 +126,9 @@ describe('canonical production identity and quantity vectors', () => {
   });
 
   it('rejects unsupported references, versions, duplicate selections and quantity overflow', () => {
+    expect(() => normalizeCustomizationGroups([{ ...group, design: { ...design, options: [] } }], [config])).toThrow(
+      /incomplete production option/,
+    );
     expect(() => normalizeCustomizationGroups([{ ...group, configRevisionId: 'unknown' }], [config])).toThrow();
     expect(() => normalizeCustomizationGroups([{ ...group, revisionContentHash: 'b'.repeat(64) }], [config])).toThrow();
     expect(() => normalizeCustomizationGroups([{ ...group, version: 'future' as never }], [config])).toThrow();

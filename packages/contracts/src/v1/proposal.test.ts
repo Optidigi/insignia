@@ -75,4 +75,30 @@ describe('versioned quote proposal transport', () => {
       false,
     );
   });
+
+  it('carries signed customization adjustments and rejects malformed FX evidence', () => {
+    const adjusted = {
+      ...proposal,
+      totalMinor: '135',
+      groups: [{ ...proposal.groups[0], customizationUnitMinor: '-100', totalMinor: '135' }],
+      lines: [{ ...proposal.lines[0], unitPriceMinor: '135', lineTotalMinor: '135' }],
+    };
+    expect(QuoteProposalSchema.safeParse(adjusted).success).toBe(true);
+    expect(
+      QuoteProposalSchema.safeParse({
+        ...proposal,
+        fx: {
+          version: 'm2-fx-resolution-v1',
+          fromCurrency: 'EUR',
+          toCurrency: 'USD',
+          rateDecimal: 'bogus',
+          sourceId: 'synthetic',
+          rateVersion: '1',
+          asOf: 'today',
+          validUntil: 'tomorrow',
+        },
+      }).success,
+    ).toBe(false);
+    expect(QuoteProposalSchema.safeParse({ ...proposal, effectiveAt: '2026-02-29T12:00:00.000Z' }).success).toBe(false);
+  });
 });

@@ -11,7 +11,7 @@ function scaleFor(exponent: number): bigint {
 
 export function parseMinor(lexical: string, exponent: number): bigint {
   const scale = scaleFor(exponent);
-  if (typeof lexical !== 'string' || !/^(0|[1-9][0-9]*)(?:\.([0-9]+))?$/.test(lexical)) {
+  if (typeof lexical !== 'string' || lexical.length > 25 || !/^(0|[1-9][0-9]*)(?:\.([0-9]+))?$/.test(lexical)) {
     throw new Error('invalid nonnegative lexical decimal');
   }
   const [whole, fraction = ''] = lexical.split('.');
@@ -29,7 +29,7 @@ export function checkedMinor(amount: bigint): bigint {
 }
 
 export function parseSignedMinor(lexical: string, exponent: number): bigint {
-  if (typeof lexical !== 'string' || !/^-?(0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(lexical)) {
+  if (typeof lexical !== 'string' || lexical.length > 26 || !/^-?(0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(lexical)) {
     throw new Error('invalid signed lexical decimal');
   }
   const negative = lexical.startsWith('-');
@@ -43,7 +43,7 @@ export interface DecimalRational {
 }
 
 export function parsePositiveDecimalRational(lexical: string): DecimalRational {
-  if (typeof lexical !== 'string' || !/^(0|[1-9][0-9]*)(?:\.[0-9]+)?$/.test(lexical)) {
+  if (typeof lexical !== 'string' || lexical.length > 64 || !/^(0|[1-9][0-9]*)(?:\.[0-9]{1,18})?$/.test(lexical)) {
     throw new Error('invalid positive decimal rate');
   }
   const [whole, fraction = ''] = lexical.split('.');

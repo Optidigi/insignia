@@ -91,6 +91,9 @@ export const canonicalCustomizationKey = canonicalDesignIdentity;
 function validateSelection(group: CustomizationGroup, config: PublishedConfig): void {
   const placements = new Map(config.placements.map((item) => [item.id, item]));
   const options = new Map(config.productionOptions.map((item) => [item.id, item]));
+  // Every published production option is an explicit identity choice. A
+  // merchant-defined "none" value may represent an optional selection.
+  if (group.design.options.length !== options.size) throw new Error('incomplete production option selection');
   for (const selection of group.design.placements) {
     const placement = placements.get(selection.placementId);
     if (
