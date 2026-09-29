@@ -1,0 +1,57 @@
+import { randomUUID } from 'node:crypto';
+import { MAX_DURABLE_PAYLOAD_RETENTION_MS } from './inbox.js';
+
+export type OutboxEvent = {
+  id: string;
+  shopId: string;
+  /** Null means the event is deliberately independent of an installation. */
+  installationGeneration: string | null;
+  eventType: string;
+  schemaVersion: number;
+  aggregateRef: string;
+  payload: unknown;
+  businessKey: string | null;
+  occurredAt: Date;
+  availableAt: Date;
+  retentionClass: string;
+  purgeAfter: Date | null;
+};
+
+export type ClaimedOutboxEvent = OutboxEvent & {
+  attempts: number;
+  leaseOwner: string;
+  leaseUntil: Date;
+};
+
+export interface OutboxRepository<Tx> {
+  add(transaction: Tx, event: OutboxEvent): Promise<string>;
+  /** `now` is caller metadata; PostgreSQL time determines eligibility. */
+  claim(shopId: string, now: Date, leaseOwner: string, leaseUntil: Date, limit: number): Promise<ClaimedOutboxEvent[]>;
+  acknowledge(
+    shopId: string,
+    id: string,
+    leaseOwner: string,
+    expectedAttempt: number,
+  ): Promise<'acknowledged' | 'already_delivered' | 'not_owned'>;
+}
+
+export function newOutboxEvent(input: Omit<OutboxEvent, 'id'>): OutboxEvent {
+  if (
+    !input.shopId ||
+    (input.installationGeneration !== null && !/^[1-9][0-9]*$/.test(input.installationGeneration)) ||
+    !input.eventType ||
+    !input.aggregateRef ||
+    !input.retentionClass ||
+    !Number.isInteger(input.schemaVersion) ||
+    input.schemaVersion < 1 ||
+    !Number.isFinite(input.occurredAt.getTime()) ||
+    !Number.isFinite(input.availableAt.getTime()) ||
+    input.purgeAfter === null ||
+    !Number.isFinite(input.purgeAfter.getTime()) ||
+    input.purgeAfter <= input.occurredAt ||
+    input.purgeAfter.getTime() - input.occurredAt.getTime() > MAX_DURABLE_PAYLOAD_RETENTION_MS
+  ) {
+    throw new TypeError('Outbox event is missing required metadata');
+  }
+  return { ...input, id: randomUUID() };
+}

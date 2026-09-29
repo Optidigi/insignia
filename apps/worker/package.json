@@ -11,5 +11,5 @@
     "start": "node dist/main.js"
   },
   "dependencies": { "sharp": "0.35.4" },
-  "devDependencies": { "@types/node": "24.10.0", "typescript": "5.9.3" }
+  "devDependencies": { "@insignia/database": "workspace:*", "@types/node": "24.10.0", "typescript": "5.9.3" }
 }
