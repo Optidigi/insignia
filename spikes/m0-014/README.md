@@ -16,7 +16,7 @@ property so the current issuer can map actual intent across differing target
 IDs. The role is not a signed protocol field; actual variant, quantity and
 exact money remain verified. `scripts/check-local.sh` checks canonical TS and
 native Rust, the retained 152-row replay, all 88 historical rows against
-pinned executables, and the current 106-row replay against corrected binaries.
+pinned executables, and the current 110-row replay against corrected binaries.
 This is local evidence, not a live cart or gate pass.
 `python3 -B scripts/check-live-setup.py` hashes and reconciles the saved
 Admin setup receipts offline, including the exact initial 272-unit stock,
@@ -28,8 +28,10 @@ The single Shopify operator first records the exact installation, Basic dev
 store, Public/Draft app, scopes, existing preview/Function ownership,
 payment test mode and one available merchant-managed location. The live
 resource and test ledger is [the manifest](evidence/resource-manifest.json).
-Only two new products, three variants and one stock initialization at one
-location are in scope. The operator reads all existing `$app` projection
+M0-014R reuses only products `10485042479387` / `10485042839835`, their
+three existing variants and Shop location `120998986011`; no new product,
+variant, location or manual inventory write is authorized. The operator reads
+all existing `$app` projection
 keys before creating package-owned values. The preview must read back the
 owned Transform and Validation identifiers, `blockOnFailure: true` and
 Validation `enable: true` before any positive checkout. A changed or
@@ -40,8 +42,10 @@ after the app/store/day check. Its public config is staged only under this
 app's owned metadata. `issue-current.mjs` uses the fixed-target authenticated
 Admin read, fresh operator-owned plain-cart Function captures, product policy,
 market/country/day, actual line/quantity counts, distinct
-`_insignia_fixture_role` properties in both Function inputs and projected
-input byte bounds before calling the M0-013 whole-quote issuer. It rejects mismatch and
+`_insignia_fixture_role` properties on customized lines in both Function
+inputs, null roles on ordinary lines, and projected input byte bounds before
+calling the M0-013 whole-quote issuer. Ordinary lines retain unique Ajax-only
+fixture probe properties to prevent Shopify coalescing. It rejects mismatch and
 writes the signed quote to a new mode-0600 file outside Git. A captured input
 is an operator observation; this helper cannot attest its Shopify origin.
 The operator must verify its actual preview source and inspect the resulting

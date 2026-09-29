@@ -57,7 +57,7 @@ export interface LineAssignment {
   cartLineId: string;
   variantGid: string;
   quantity: number;
-  fixtureRole: string;
+  fixtureRole: string | null;
   memberIndex: number | null;
 }
 
@@ -137,13 +137,10 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
   if (kind === 'small') {
     roleMember.set('m0-014-small-custom-0', { quantity: 1, memberIndex: 0 });
     roleMember.set('m0-014-small-custom-1', { quantity: 2, memberIndex: 1 });
-    roleMember.set('m0-014-small-ordinary-0', { quantity: 1, memberIndex: null });
   } else {
     const customized = kind === 'stress10' ? 10 : kind === 'stress32' ? 32 : 33;
     for (let i = 0; i < customized; i++) roleMember.set(`m0-014-large-customized-${i + 1}`,
       { quantity: 1, memberIndex: i });
-    for (let i = 0; i < 200 - customized; i++) roleMember.set(`m0-014-large-ordinary-${i + 1}`,
-      { quantity: 1, memberIndex: null });
   }
   const captures: LineAssignment[][] = [];
   for (const [label, input] of [['transform', reads.transform], ['validation', reads.validation]] as const) {
@@ -172,6 +169,7 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
     const actualLines: LineAssignment[] = [];
     const seenIds = new Set<string>();
     const seenRoles = new Set<string>();
+    let ordinaryCount = 0;
     for (const line of lines) {
       const lineId = text(line.id, 'CartLine ID');
       const suffix = lineId.startsWith('gid://shopify/CartLine/')
@@ -191,16 +189,24 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
         throw new Error(`${label}: unsupported cart line`);
       }
       const q = line.quantity as number;
-      const role = text(object(line.fixtureRole, `${label}.fixtureRole`).value,
-        `${label}.fixtureRole.value`);
-      const intended = roleMember.get(role);
-      if (!intended || intended.quantity !== q || seenRoles.has(role)) {
-        throw new Error(`${label}: fixture role/quantity missing, duplicated or inconsistent`);
+      const role = line.fixtureRole === null ? null :
+        text(object(line.fixtureRole, `${label}.fixtureRole`).value,
+          `${label}.fixtureRole.value`);
+      let memberIndex: number | null = null;
+      if (role === null) {
+        if (q !== 1) throw new Error(`${label}: ordinary fixture quantity inconsistent`);
+        ordinaryCount++;
+      } else {
+        const intended = roleMember.get(role);
+        if (!intended || intended.quantity !== q || seenRoles.has(role)) {
+          throw new Error(`${label}: fixture role/quantity missing, duplicated or inconsistent`);
+        }
+        seenRoles.add(role);
+        memberIndex = intended.memberIndex;
       }
-      seenRoles.add(role);
       totalQuantity += q;
       actualLines.push({ cartLineId: lineId, variantGid: expectedVariant,
-        quantity: q, fixtureRole: role, memberIndex: intended.memberIndex });
+        quantity: q, fixtureRole: role, memberIndex });
       const projectedPolicy = object(merchandise.product, 'product');
       if (text(object(projectedPolicy.policy, 'policy').value, 'policy') !==
           `${generationHex}:${epoch}:optional` ||
@@ -216,7 +222,8 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
         throw new Error('transform currency differs');
       }
     }
-    if (totalQuantity !== expectedQuantity || seenRoles.size !== roleMember.size) {
+    if (totalQuantity !== expectedQuantity || seenRoles.size !== roleMember.size ||
+        ordinaryCount !== expectedCount - roleMember.size) {
       throw new Error(`${label}: physical quantity or fixture role set mismatch`);
     }
     captures.push(actualLines);
@@ -225,7 +232,7 @@ export function bindCurrentFixture(kind: FixtureCase, ids: FixtureIds,
   const economicRows = (lines: LineAssignment[]) => lines.map(
     ({ variantGid, quantity, fixtureRole, memberIndex }) =>
       ({ variantGid, quantity, fixtureRole, memberIndex }))
-    .sort((left, right) => left.fixtureRole.localeCompare(right.fixtureRole));
+    .sort((left, right) => (left.fixtureRole ?? '').localeCompare(right.fixtureRole ?? ''));
   if (JSON.stringify(economicRows(captures[0]!)) !== JSON.stringify(economicRows(captures[1]!))) {
     throw new Error('Transform and Validation fixture role economics differ');
   }

@@ -50,7 +50,8 @@ function run(target, name, input, expected, binary = wasm(target)) {
   else assert.deepEqual(actual.output, expected, `${target}/${name} output changed`);
   const output = Buffer.from(JSON.stringify(actual.output));
   if (['valid-10-mixed-200', 'valid-32-mixed-200',
-    'zero-based-10-mixed-200', 'zero-based-32-mixed-200'].includes(name)) {
+    'zero-based-10-mixed-200', 'zero-based-32-mixed-200',
+    'role-projected-10-mixed-200', 'role-projected-32-mixed-200'].includes(name)) {
     assert.ok(actual.instructions <= 8_800_000, `${target}/${name} instruction ceiling`);
     assert.ok(output.length <= 16_000, `${target}/${name} output ceiling`);
   }
@@ -135,6 +136,20 @@ for (const [short, oldName, operations] of [
     assert.equal(input.cart.lines.length, 200);
     input.cart.lines[0].id = 'gid://shopify/CartLine/0';
     run(target, `zero-based-${short}-mixed-200`, input, target === 'validation'
+      ? 'accept' : output => {
+        assert.equal(output.operations.length, operations);
+        assert.equal(output.operations[0].lineExpand.cartLineId, 'gid://shopify/CartLine/0');
+      });
+    // The historical rows predate the fixture-only role query. Project a
+    // distinct role on every customized line and null on ordinary lines,
+    // without changing signed bytes. Ordinary lines keep separate Ajax-only
+    // probe properties to avoid Shopify cart coalescing; the Function does not
+    // need those properties for member assignment.
+    input.cart.lines.forEach((line, index) => {
+      line.fixtureRole = index < operations
+        ? { value: `m0-014-large-customized-${index + 1}` } : null;
+    });
+    run(target, `role-projected-${short}-mixed-200`, input, target === 'validation'
       ? 'accept' : output => {
         assert.equal(output.operations.length, operations);
         assert.equal(output.operations[0].lineExpand.cartLineId, 'gid://shopify/CartLine/0');

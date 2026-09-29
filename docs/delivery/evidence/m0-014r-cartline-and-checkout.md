@@ -20,11 +20,13 @@ verification, member indices, exact money, policy and capacity are unchanged.
 Both query projections now include the fixture-only
 `_insignia_fixture_role` line property. This is necessary because Transform
 and Validation expose different target-local IDs and equal-quantity lines do
-not identify buyer intent. The local issuer requires the exact distinct role
-set and quantity in both fresh inputs, compares roles independent of line
-order, and assigns members only by the observed role. The v2 wire and signed
-economics do not include the fixture property. Native pre/post cart role and
-member evidence remains to be collected. Transform/Validation tests now
+not identify buyer intent. The local issuer requires the exact distinct
+customized role set and quantity in both fresh inputs, null roles on ordinary
+lines, compares roles independent of line order, and assigns members only by
+the observed customized role. The v2 wire and signed economics do not include
+the fixture property. Ordinary lines keep distinct Ajax-only probe properties
+to prevent cart coalescing. Native pre/post cart role and member evidence
+remains to be collected. Transform/Validation tests now
 exercise the full targets with a
 [captured-input-derived fixture](../../../spikes/m0-014/evidence/m0-014r/local/captured-validation-provenance.json)
 at `CHECKOUT_INTERACTION` and `CHECKOUT_COMPLETION` and with negative economic,
@@ -41,7 +43,7 @@ trampoline 2.0.1, with `wasm_opt=false`. It builds M0-014 source in a fixed
 isolated scratch path and verifies rebuilt bytes against separate retained
 R artifacts. The original M0-013 source/binaries and M0-014 stopped-run
 artifacts remain intact. Source, queries/schema and build script hashes are
-bound in the [106-row current-artifact matrix](../../../spikes/m0-014/evidence/m0-014r/local/current-artifact-matrix.json).
+bound in the [110-row current-artifact matrix](../../../spikes/m0-014/evidence/m0-014r/local/current-artifact-matrix.json).
 
 | Target | Raw SHA-256 / bytes | Final upload-input SHA-256 / bytes |
 |---|---|---|
@@ -49,12 +51,21 @@ bound in the [106-row current-artifact matrix](../../../spikes/m0-014/evidence/m
 | Validation | `acdecb609fc829515d35efd4e62c6e4ab6a31dab4c95d4771eaddbb43bb74f6b` / 183,813 | `ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d` / 180,821 |
 
 The first pre-review local pass used the earlier no-role query artifacts.
-The fresh Spec reviewer found positional role assignment; the binder/query
-and table above are the corrected second candidate. Its full local suite
-passed with the established project-local Zig host linker and Node 24.21.0:
-10 current TS tests; 13
+The first fresh Spec/security reviewers found positional role assignment;
+the binder/query and table above are the corrected second candidate. The
+second review found that 200-line replays omitted the new projected field.
+A [preserved synthetic all-200-role run](../../../spikes/m0-014/evidence/m0-014r/local/all-roles-capacity-failure.json)
+exceeded the 8.8 million instruction evaluation target in Validation at
+32+168 (8,817,567). The issuer now projects roles
+only on customized lines and requires null roles on ordinary lines; this
+preserves member mapping while avoiding unnecessary query data. Four new
+role-projected 200-line rows pass at 8,086,040/8,361,970 instructions for
+10+190 and 8,554,214/8,708,703 for 32+168 (Transform/Validation). The
+failed all-200-role measurement is retained separately and is not labelled a
+passing matrix row. The corrected local suite passed with the established
+project-local Zig host linker and Node 24.21.0: 10 current TS tests; 13
 Authorization, 19 Transform and 25 Validation native Rust tests;
-fmt/clippy; 152 historical rows; 88 old pinned M0-014 rows; and 106 corrected
+fmt/clippy; 152 historical rows; 88 old pinned M0-014 rows; and 110 corrected
 artifact-bound rows. The latest role-projected artifacts accept captured
 Validation at both simulated checkout steps at 2,723,609 instructions and
 17 output bytes. The 10+190

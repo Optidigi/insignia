@@ -1167,6 +1167,17 @@
       "linearMemoryKiB": 1600
     },
     {
+      "target": "transform",
+      "name": "role-projected-10-mixed-200",
+      "binarySha256": "28a6fb0dd8c4e4aef36a9f205496eca7633433f00e639143dd77afed581c9c60",
+      "inputSha256": "c168770d59b1dafba628828cb6cf9aab473fe8e8433a650358c6e35843892a6f",
+      "outputSha256": "97113f989c8a0c2515fe3143cdf8983d692a6dd33ead222025d7373a0332bf50",
+      "inputBytes": 95782,
+      "outputBytes": 3411,
+      "instructions": 8086040,
+      "linearMemoryKiB": 1600
+    },
+    {
       "target": "validation",
       "name": "zero-based-10-mixed-200",
       "binarySha256": "ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d",
@@ -1176,6 +1187,17 @@
       "outputBytes": 17,
       "instructions": 8255657,
       "linearMemoryKiB": 1600
+    },
+    {
+      "target": "validation",
+      "name": "role-projected-10-mixed-200",
+      "binarySha256": "ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d",
+      "inputSha256": "e773f5c4471fab820d2dccd6ece9ed29c7b8c87ad61ca032b946c819a2e44d9d",
+      "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+      "inputBytes": 107228,
+      "outputBytes": 17,
+      "instructions": 8361970,
+      "linearMemoryKiB": 1920
     },
     {
       "target": "transform",
@@ -1189,6 +1211,17 @@
       "linearMemoryKiB": 1600
     },
     {
+      "target": "transform",
+      "name": "role-projected-32-mixed-200",
+      "binarySha256": "28a6fb0dd8c4e4aef36a9f205496eca7633433f00e639143dd77afed581c9c60",
+      "inputSha256": "05c8bd1f460639145160e65f6ea195752e61f58e3ef15109c72c785f21696831",
+      "outputSha256": "22649e03247bf9fcc3d6e9e36f94a8c55e197f60684a5d1d318198cde03b1925",
+      "inputBytes": 97366,
+      "outputBytes": 10957,
+      "instructions": 8554214,
+      "linearMemoryKiB": 1600
+    },
+    {
       "target": "validation",
       "name": "zero-based-32-mixed-200",
       "binarySha256": "ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d",
@@ -1198,6 +1231,17 @@
       "outputBytes": 17,
       "instructions": 8587660,
       "linearMemoryKiB": 1600
+    },
+    {
+      "target": "validation",
+      "name": "role-projected-32-mixed-200",
+      "binarySha256": "ead48e5c78d694f860758504eb3dd8ac11c871d71b45e0b8b44dee83be359e5d",
+      "inputSha256": "37eb9e3a682ba8cea452944c828f60ffe488b2af6975ec9b998060d1b008f59e",
+      "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+      "inputBytes": 108812,
+      "outputBytes": 17,
+      "instructions": 8708703,
+      "linearMemoryKiB": 1920
     }
   ]
 }

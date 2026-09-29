@@ -19,8 +19,8 @@ const product = (id: string, policy: string, variants: Array<[string, string]>) 
 const ids = { productA: 'gid://shopify/Product/111', productB: 'gid://shopify/Product/222' };
 const line = (id: number, q: number, target: 'transform' | 'validation') => ({
   id: `gid://shopify/CartLine/${id}`, quantity: q, member: null, sellingPlanAllocation: null,
-  fixtureRole: { value: id === 1 ? 'm0-014-small-custom-1' :
-    id === 2 ? 'm0-014-small-custom-0' : 'm0-014-small-ordinary-0' },
+  fixtureRole: id === 3 ? null : { value: id === 1 ? 'm0-014-small-custom-1' :
+    'm0-014-small-custom-0' },
   merchandise: { __typename: 'ProductVariant', id: 'gid://shopify/ProductVariant/1001',
     product: { id: ids.productA, policy: { value: `${generation}:1:optional` },
       registration: { value: `${generation}:1:ready` } } },
@@ -92,7 +92,7 @@ test('changed key, price, projected policy, context, cart count or economic amou
     r => { (r.validation.cart as any).lines[0].id = 'gid://shopify/CartLine/not-an-id'; },
     r => { const lines = (r.validation.cart as any).lines; lines[0].quantity = 1; lines[0].cost.subtotalAmount.amount = '20.00'; lines[1].quantity = 2; lines[1].cost.subtotalAmount.amount = '40.00'; },
     r => { (r.validation.cart as any).lines[1].id = 'gid://shopify/CartLine/1'; },
-    r => { (r.validation.cart as any).lines[1].fixtureRole.value = 'm0-014-small-ordinary-0'; },
+    r => { (r.validation.cart as any).lines[1].fixtureRole.value = 'm0-014-small-custom-1'; },
     r => { (r.transform.cart as any).lines[1].fixtureRole = null; },
     r => { (r.transform.cart as any).lines[1].fixtureRole.value = 'm0-014-small-custom-1'; },
     r => { (r.admin.nodes as any[])[1].policy.value = `${generation}:1:optional`; },
@@ -125,8 +125,7 @@ test('stress fixture binds 32 explicit member roles across 200 reordered one-uni
     (r[target].cart as any).lines = Array.from({ length: 200 }, (_, index) => {
       const item = line(index + 1, 1, target) as any;
       item.merchandise.id = 'gid://shopify/ProductVariant/1002';
-      item.fixtureRole.value = index < 32 ? `m0-014-large-customized-${index + 1}` :
-        `m0-014-large-ordinary-${index - 31}`;
+      item.fixtureRole = index < 32 ? { value: `m0-014-large-customized-${index + 1}` } : null;
       return item;
     });
   }
@@ -137,7 +136,7 @@ test('stress fixture binds 32 explicit member roles across 200 reordered one-uni
   assert.deepEqual(bound.assignments.slice(0, 32).map(x => x.memberIndex),
     Array.from({ length: 32 }, (_, index) => index));
   assert.ok(bound.assignments.slice(32).every(x => x.memberIndex === null));
-  (r.validation.cart as any).lines[0].fixtureRole.value = 'm0-014-large-customized-1';
+  (r.validation.cart as any).lines[0].fixtureRole = { value: 'm0-014-large-customized-1' };
   assert.throws(() => bindCurrentFixture('stress32', ids, r, 60014, publicHex,
     'c'.repeat(32), 'd'.repeat(32)));
 });
