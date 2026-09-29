@@ -17,7 +17,7 @@ export const MoneyDtoSchema = z.strictObject({
     .string()
     .max(20)
     .regex(/^(0|[1-9][0-9]*)$/)
-    .refine((value) => BigInt(value) <= (1n << 64n) - 1n),
+    .refine((value) => /^(0|[1-9][0-9]*)$/.test(value) && BigInt(value) <= (1n << 64n) - 1n),
 });
 
 export const ComponentAmountSchema = z.strictObject({
