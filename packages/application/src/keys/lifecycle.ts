@@ -35,6 +35,7 @@ export interface SigningKeyStore {
   activate(scope: KeyScope, keyId: number): Promise<void>;
   revoke(scope: KeyScope, keyId: number, commandKey: string, reason: string): Promise<void>;
   destroy(scope: KeyScope, keyId: number): Promise<void>;
+  destroyInactiveInstallationKeys(shopId: string, installationGeneration: string): Promise<number>;
   incrementEpoch(input: { scope: KeyScope; commandKey: string; requestDigest: string }): Promise<number>;
 }
 
@@ -94,6 +95,9 @@ export class SigningKeyLifecycle {
   async destroy(scope: KeyScope, keyId: number): Promise<void> {
     // The durable store enforces a conservative UTC/timezone destruction window.
     await this.store.destroy(scope, keyId);
+  }
+  async destroyInactiveInstallationKeys(shopId: string, installationGeneration: string): Promise<number> {
+    return this.store.destroyInactiveInstallationKeys(shopId, installationGeneration);
   }
   async incrementEpoch(input: { scope: KeyScope; commandKey: string; requestDigest: string }): Promise<number> {
     return this.store.incrementEpoch(input);

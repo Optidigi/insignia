@@ -223,6 +223,22 @@ export class PgSigningKeyRepository {
     });
   }
 
+  /** Deactivation itself invalidates all authorizations from that installation. */
+  async destroyInactiveInstallationKeys(shopId: string, installationGeneration: string): Promise<number> {
+    return this.database.transaction().execute(async (tx) => {
+      const status = await sql<{ deactivated_at: Date | null }>`
+        SELECT i.deactivated_at FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id
+        WHERE s.shop_id=${shopId} AND i.generation=${installationGeneration}::bigint
+        FOR UPDATE OF s, i`.execute(tx);
+      if (!status.rows[0]?.deactivated_at) throw new Error('Installation remains active');
+      const result = await sql`UPDATE signing_keys SET state='destroyed', private_envelope=NULL,
+        wrapping_key_id=NULL, destroyed_at=clock_timestamp()
+        WHERE shop_id=${shopId} AND installation_generation=${installationGeneration}::bigint
+          AND state <> 'destroyed'`.execute(tx);
+      return Number(result.numAffectedRows ?? 0n);
+    });
+  }
+
   async incrementEpoch(input: { scope: Scope; commandKey: string; requestDigest: string }): Promise<number> {
     if (!input.commandKey || input.commandKey.length > 128 || !/^[0-9a-f]{64}$/.test(input.requestDigest))
       throw new TypeError('Invalid epoch command');

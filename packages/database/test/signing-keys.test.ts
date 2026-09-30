@@ -45,10 +45,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
       expect((await store.list(nextScope)).find((key) => key.keyId === 8)?.state).toBe('revoked');
       await lifecycle.destroy(nextScope, 7);
       expect((await store.list(nextScope)).find((key) => key.keyId === 7)?.privateEnvelope).toBeNull();
+      await expect(lifecycle.destroyInactiveInstallationKeys(shopId, '1')).rejects.toThrow();
       await db.transaction().execute(async (tx) => {
         await createTenantRepository(tx).startInstallation(tx, shopId);
       });
       await expect(lifecycle.desiredPublicConfig(nextScope)).rejects.toThrow();
+      expect(await lifecycle.destroyInactiveInstallationKeys(shopId, '1')).toBe(1);
+      const oldPrivate = await sql<{ private_envelope: unknown }>`SELECT private_envelope FROM signing_keys
+        WHERE shop_id=${shopId} AND installation_generation=1 AND key_id=8`.execute(db);
+      expect(oldPrivate.rows[0]?.private_envelope).toBeNull();
     } finally {
       await db.destroy();
     }
