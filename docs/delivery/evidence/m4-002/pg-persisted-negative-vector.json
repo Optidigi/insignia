@@ -1,15 +1,15 @@
 {
   "schemaVersion": "m4-002-pg-persisted-vector-v1",
   "provenance": "synthetic PostgreSQL 18 accepted-quote test; exact persisted carriers and signed allocation verified",
-  "quoteId": "e97688b5-812e-4649-9cc0-b0bc209d0ed1",
-  "setId": "64a8be37-ab6a-49d0-862b-5c2c6e38679d",
-  "quoteSha256": "71a28c0394ae36c2f10026ab2cd957809210416ad5ec899903b21e46351df34e",
+  "quoteId": "dc2be543-a6c3-4ff2-864d-31a3e616462f",
+  "setId": "a200c550-4bb5-43eb-a81f-db642c38840a",
+  "quoteSha256": "0ea38e0e00e04f588946bf96df13e8cb3ff589c1c95b009f08e895c54fd3afd2",
   "quote": {
     "schemaVersion": "m4-accepted-quote-v1",
-    "quoteId": "e97688b5-812e-4649-9cc0-b0bc209d0ed1",
-    "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
+    "quoteId": "dc2be543-a6c3-4ff2-864d-31a3e616462f",
+    "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
     "installationGeneration": "1",
-    "authorizationGeneration": "bb85bfe6-9907-4540-b650-df8134cff712",
+    "authorizationGeneration": "b60e4145-474a-47c4-a09e-c4800c6b2224",
     "authorizationEpoch": 0,
     "acceptedAt": "2026-11-01T05:30:00.000Z",
     "acceptedDate": "2026-11-01",
@@ -27,10 +27,10 @@
     "qualifyingUsageDisposition": "WAIVE_TRIAL",
     "physicalGroups": [
       {
-        "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
-        "configRevisionId": "08f9ecd4-8c2a-4666-8ff8-fcb3dc892f3d",
-        "revisionContentHash": "2acb03e5dbd7ad24e578456ef2981286086a8ff8b31e0f32cb216bf497992b67",
-        "canonicalIdentitySha256": "84f8c777ff6588e955edeee0cb7cfd293dc164e2323c2aa5b59b9aeede793f34",
+        "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+        "configRevisionId": "edb2835e-3f26-458d-8760-4eb59dea5097",
+        "revisionContentHash": "7de94598c38e879b44fdd281a06969742950b17191cda31f571633c7388c3fb2",
+        "canonicalIdentitySha256": "35717b5988fbd6e7a1616b143000f46d546a61c7f94a1fc490899c3b896a56b7",
         "variants": [
           {
             "variantId": "700",
@@ -39,20 +39,28 @@
         ]
       }
     ],
+    "artworkChecks": [
+      {
+        "choiceSha256": "e4c04a61908db61c66955e801f4f297c272c4eb7ec7db9a675cfab5f6680a16b",
+        "kind": "revision",
+        "lastFullyUsableLocalDay": 20760,
+        "observedAt": "2026-11-01T05:30:00.000Z"
+      }
+    ],
     "effectiveRevisions": [
       {
-        "configId": "6d9511d4-cae9-491b-aa22-97a9d25aeb85",
-        "operationId": "93c98b5a-39e3-4468-b4f4-1f787a4bb142",
-        "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
-        "revisionId": "08f9ecd4-8c2a-4666-8ff8-fcb3dc892f3d",
-        "contentHash": "2acb03e5dbd7ad24e578456ef2981286086a8ff8b31e0f32cb216bf497992b67"
+        "configId": "444b8cfb-58e7-4863-ad33-aa3811bcce26",
+        "operationId": "6d96e5f8-a0de-4224-93c9-d4fc17496707",
+        "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+        "revisionId": "edb2835e-3f26-458d-8760-4eb59dea5097",
+        "contentHash": "7de94598c38e879b44fdd281a06969742950b17191cda31f571633c7388c3fb2"
       }
     ],
     "catalogSnapshots": [
       {
-        "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
+        "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
         "installationGeneration": "1",
-        "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
+        "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
         "variantId": "700",
         "productIdVerified": true,
         "context": {
@@ -71,7 +79,7 @@
     "fxSnapshot": null,
     "economics": {
       "version": "m4-quote-economics-v1",
-      "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
+      "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
       "pricingEngineVersion": "m2-pricing-v1",
       "roundingPolicy": "m2-half-even-v1",
       "currency": {
@@ -88,10 +96,10 @@
       "totalMinor": "1",
       "groups": [
         {
-          "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
-          "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
-          "configRevisionId": "08f9ecd4-8c2a-4666-8ff8-fcb3dc892f3d",
-          "revisionContentHash": "2acb03e5dbd7ad24e578456ef2981286086a8ff8b31e0f32cb216bf497992b67",
+          "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
+          "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+          "configRevisionId": "edb2835e-3f26-458d-8760-4eb59dea5097",
+          "revisionContentHash": "7de94598c38e879b44fdd281a06969742950b17191cda31f571633c7388c3fb2",
           "quantity": 2,
           "setupComponents": [
             {
@@ -149,7 +157,7 @@
               ]
             }
           ],
-          "canonicalIdentitySha256": "84f8c777ff6588e955edeee0cb7cfd293dc164e2323c2aa5b59b9aeede793f34"
+          "canonicalIdentitySha256": "35717b5988fbd6e7a1616b143000f46d546a61c7f94a1fc490899c3b896a56b7"
         }
       ],
       "lines": [
@@ -162,11 +170,11 @@
           "unitPriceMinor": "1",
           "lineTotalMinor": "1",
           "lineIndex": 0,
-          "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
-          "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
-          "configRevisionId": "08f9ecd4-8c2a-4666-8ff8-fcb3dc892f3d",
-          "revisionContentHash": "2acb03e5dbd7ad24e578456ef2981286086a8ff8b31e0f32cb216bf497992b67",
-          "canonicalIdentitySha256": "84f8c777ff6588e955edeee0cb7cfd293dc164e2323c2aa5b59b9aeede793f34"
+          "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
+          "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+          "configRevisionId": "edb2835e-3f26-458d-8760-4eb59dea5097",
+          "revisionContentHash": "7de94598c38e879b44fdd281a06969742950b17191cda31f571633c7388c3fb2",
+          "canonicalIdentitySha256": "35717b5988fbd6e7a1616b143000f46d546a61c7f94a1fc490899c3b896a56b7"
         },
         {
           "variantId": "700",
@@ -177,11 +185,11 @@
           "unitPriceMinor": "0",
           "lineTotalMinor": "0",
           "lineIndex": 1,
-          "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
-          "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
-          "configRevisionId": "08f9ecd4-8c2a-4666-8ff8-fcb3dc892f3d",
-          "revisionContentHash": "2acb03e5dbd7ad24e578456ef2981286086a8ff8b31e0f32cb216bf497992b67",
-          "canonicalIdentitySha256": "84f8c777ff6588e955edeee0cb7cfd293dc164e2323c2aa5b59b9aeede793f34"
+          "shopId": "6a5e9e92-8b75-43f4-b601-eb742c2c79b6",
+          "productId": "1ab54fd5-48fd-4542-a57f-9593a351c9ec",
+          "configRevisionId": "edb2835e-3f26-458d-8760-4eb59dea5097",
+          "revisionContentHash": "7de94598c38e879b44fdd281a06969742950b17191cda31f571633c7388c3fb2",
+          "canonicalIdentitySha256": "35717b5988fbd6e7a1616b143000f46d546a61c7f94a1fc490899c3b896a56b7"
         }
       ]
     }
@@ -196,10 +204,10 @@
     "name": "pg_persisted_negative_adjustment",
     "header": {
       "keyId": 7,
-      "generationHex": "bb85bfe699074540b650df8134cff712",
+      "generationHex": "b60e4145474a47c4a09ec4800c6b2224",
       "epoch": 0,
-      "quoteHex": "e97688b5812e46499cc0b0bc209d0ed1",
-      "setHex": "64a8be37ab6a49d0862b5c2c6e38679d",
+      "quoteHex": "dc2be543a6c34ff2864d31a3e616462f",
+      "setHex": "a200c5504bb543eba81fdb642c38840a",
       "count": 2,
       "currency": "USD",
       "exponent": 2,
@@ -223,12 +231,12 @@
         "unitMinor": "0"
       }
     ],
-    "envelope": "SVNHMgIAAAe7hb_mmQdFQLZQ34E0z_cSAAAAAOl2iLWBLkZJnMCwvCCdDtFkqL43q2pJ0IYrXCxuOGedAAJVU0QCVVMAAAAAAAAAKgAAURgAAAACAAAAAAAAAAHmss6oR-gXGPN9XsuURFvk5dQeoSsaFV4RJCko12rRPDsl6nlH-8nPuLgcV_6JwJCBfvyNm_J4tlPP_wvIwdII",
+    "envelope": "SVNHMgIAAAe2DkFFR0pHxKCexIAMayIkAAAAANwr5UOmw0_yhk0xo-YWRi-iAMVQS7VD66gf22QsOIQKAAJVU0QCVVMAAAAAAAAAKgAAURgAAAACAAAAAAAAAAE1mBDnBX4DRebjlnFe_34jBQq7SVguI9pgVg9wS-xzSgnB4lVPy12qWwr5dwr3PgnX4BLI2ETcJZRzxVC74rwM",
     "memberCarriers": [
       "AAAAAAAAAAACvAAAAAEAAAAAAAAAAQ",
       "AAEAAAAAAAACvAAAAAEAAAAAAAAAAA"
     ],
-    "publicHex": "2ef8d872ddb90282174e176d112f22ed53e51d72749acb5dd865ea8c1efae96a",
+    "publicHex": "e830a613ff89f3b105931df5b5459f8b2b19c2cf64d8300861092694d421e46d",
     "ordinaryLines": 0,
     "acceptedDate": "2026-11-01",
     "firstValidDay": 20758,

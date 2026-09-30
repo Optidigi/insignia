@@ -61,6 +61,7 @@ test('server composition binds trusted provider reads to one signed immutable qu
   let contextReads = 0;
   let catalogReads = 0;
   let subscriptionReads = 0;
+  let artworkReads = 0;
   let signatures = 0;
   const core = {
     tenants: {
@@ -158,6 +159,23 @@ test('server composition binds trusted provider reads to one signed immutable qu
         };
       },
     },
+    artwork: {
+      readUsability: async (input) => {
+        artworkReads++;
+        assert.equal(input.shopId, 'shop');
+        assert.equal(input.installationGeneration, '1');
+        assert.equal(input.shopTimezone, 'America/New_York');
+        assert.deepEqual(input.choices, [{ kind: 'revision', id: 'art' }]);
+        return input.choices.map((choice) => ({
+          ...choice,
+          shopId: input.shopId,
+          installationGeneration: input.installationGeneration,
+          status: 'usable',
+          lastFullyUsableLocalDay: 20760,
+          observedAt: now.toISOString(),
+        }));
+      },
+    },
     signing: {
       keyId: 7,
       signer: {
@@ -223,5 +241,5 @@ test('server composition binds trusted provider reads to one signed immutable qu
   else assert.equal(readFileSync(evidencePath, 'utf8'), serialized);
   assert.equal(signatures, 1);
   assert.deepEqual(await acceptQuote(request, ports), result);
-  assert.deepEqual([contextReads, catalogReads, subscriptionReads, signatures], [1, 1, 2, 1]);
+  assert.deepEqual([contextReads, catalogReads, subscriptionReads, artworkReads, signatures], [1, 1, 2, 2, 1]);
 });

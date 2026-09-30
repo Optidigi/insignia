@@ -131,22 +131,23 @@ export class PgAcceptedQuoteRepository {
   async findCompleted<T extends StoredResult = StoredResult>(
     input: Omit<AcceptanceInput, 'effectiveRevisions'>,
   ): Promise<T | null> {
-    const found = await sql<{
-      request_digest: string;
-      authorization_generation: string;
-      authorization_epoch: string;
-      current_authorization_generation: string;
-      current_authorization_epoch: string;
-      quote_value: unknown;
-      set_id: string;
-      key_id: string;
-      public_key_fingerprint: string;
-      first_valid_day: number;
-      last_valid_day: number;
-      valid_through_day: number;
-      envelope_carrier: string;
-      member_carriers: unknown;
-    }>`
+    return this.database.transaction().execute(async (transaction) => {
+      const found = await sql<{
+        request_digest: string;
+        authorization_generation: string;
+        authorization_epoch: string;
+        current_authorization_generation: string;
+        current_authorization_epoch: string;
+        quote_value: unknown;
+        set_id: string;
+        key_id: string;
+        public_key_fingerprint: string;
+        first_valid_day: number;
+        last_valid_day: number;
+        valid_through_day: number;
+        envelope_carrier: string;
+        member_carriers: unknown;
+      }>`
       SELECT q.request_digest, q.authorization_generation::text, q.authorization_epoch::text,
         i.authorization_generation::text AS current_authorization_generation,
         i.authorization_epoch::text AS current_authorization_epoch,
@@ -159,30 +160,31 @@ export class PgAcceptedQuoteRepository {
       JOIN installation_generations i ON i.shop_id = s.shop_id AND i.generation = s.current_generation
       WHERE q.shop_id = ${input.shopId} AND q.installation_generation = ${input.installationGeneration}::bigint
         AND i.deactivated_at IS NULL AND q.idempotency_key = ${input.idempotencyKey}
-      ORDER BY a.created_at ASC LIMIT 1`.execute(this.database);
-    const row = found.rows[0];
-    if (!row) return null;
-    if (
-      row.authorization_generation !== input.authorizationGeneration ||
-      row.authorization_epoch !== String(input.authorizationEpoch) ||
-      row.current_authorization_generation !== input.authorizationGeneration ||
-      row.current_authorization_epoch !== String(input.authorizationEpoch)
-    )
-      throw new Error('idempotency key belongs to revoked authorization identity');
-    if (row.request_digest !== input.requestDigest) throw new Error('idempotency digest conflict');
-    return {
-      quote: row.quote_value,
-      authorization: {
-        setId: row.set_id,
-        keyId: row.key_id,
-        publicKeyFingerprint: row.public_key_fingerprint,
-        firstValidDay: row.first_valid_day,
-        lastValidDay: row.last_valid_day,
-        validThroughDay: row.valid_through_day,
-        envelopeCarrier: row.envelope_carrier,
-        members: row.member_carriers,
-      },
-    } as T;
+      ORDER BY a.created_at ASC LIMIT 1 FOR SHARE OF s, i`.execute(transaction);
+      const row = found.rows[0];
+      if (!row) return null;
+      if (
+        row.authorization_generation !== input.authorizationGeneration ||
+        row.authorization_epoch !== String(input.authorizationEpoch) ||
+        row.current_authorization_generation !== input.authorizationGeneration ||
+        row.current_authorization_epoch !== String(input.authorizationEpoch)
+      )
+        throw new Error('idempotency key belongs to revoked authorization identity');
+      if (row.request_digest !== input.requestDigest) throw new Error('idempotency digest conflict');
+      return {
+        quote: row.quote_value,
+        authorization: {
+          setId: row.set_id,
+          keyId: row.key_id,
+          publicKeyFingerprint: row.public_key_fingerprint,
+          firstValidDay: row.first_valid_day,
+          lastValidDay: row.last_valid_day,
+          validThroughDay: row.valid_through_day,
+          envelopeCarrier: row.envelope_carrier,
+          members: row.member_carriers,
+        },
+      } as T;
+    });
   }
 
   async getEffective(shopId: string, productId: string) {

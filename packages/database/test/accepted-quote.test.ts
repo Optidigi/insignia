@@ -238,11 +238,76 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     await expect(
       sql`DELETE FROM quote_authorization_sets WHERE set_id = ${setId}::uuid`.execute(database),
     ).rejects.toThrow();
-    await sql`UPDATE installation_generations SET authorization_epoch = ${value.authorizationEpoch + 1}
-      WHERE shop_id = ${value.shopId} AND generation = ${value.generation}::bigint`.execute(database);
+    const blockerPool = new Pool({ connectionString: process.env.DATABASE_URL });
+    const blocker = await blockerPool.connect();
+    const directQuote = { ...quote, quoteId: randomUUID() };
+    let replay: Promise<unknown> | undefined;
+    let directInsert: Promise<unknown> | undefined;
+    try {
+      await blocker.query('BEGIN');
+      await blocker.query(
+        'SELECT authorization_epoch FROM installation_generations WHERE shop_id = $1 AND generation = $2::bigint FOR UPDATE',
+        [value.shopId, value.generation],
+      );
+      replay = repo.findCompleted(input);
+      void replay.catch(() => {});
+      directInsert = sql`
+        /* m4_002_direct_guard_race */
+        INSERT INTO accepted_quotes (quote_id, shop_id, installation_generation, authorization_generation,
+          authorization_epoch, idempotency_key, request_digest, schema_version, accepted_at, accepted_date,
+          accepted_day, valid_through_day, country, market_id, shop_currency, shop_timezone,
+          presentment_currency, presentment_exponent, policy_version, recognized_policy_id,
+          trial, qualifying_usage_disposition, customized_quantity, total_minor, quote_value)
+        VALUES (${directQuote.quoteId}::uuid, ${directQuote.shopId}, ${directQuote.installationGeneration}::bigint,
+          ${directQuote.authorizationGeneration}::uuid, ${directQuote.authorizationEpoch}::bigint,
+          'direct-race', ${'d'.repeat(64)}, ${directQuote.schemaVersion}, ${directQuote.acceptedAt}::timestamptz,
+          ${directQuote.acceptedDate}::date, ${directQuote.acceptedDay}, ${directQuote.validThroughDay},
+          ${directQuote.country}, ${directQuote.marketId}::numeric, ${directQuote.shopCurrency},
+          ${directQuote.shopTimezone}, ${directQuote.presentmentCurrency}, ${directQuote.presentmentExponent},
+          ${directQuote.policyVersion}, ${directQuote.recognizedPolicyId}, ${directQuote.trial},
+          ${directQuote.qualifyingUsageDisposition}, ${directQuote.economics.customizedQuantity},
+          ${directQuote.economics.totalMinor}::numeric, ${JSON.stringify(directQuote)}::jsonb)`.execute(database);
+      void directInsert.catch(() => {});
+      // Observe both queries waiting on the installation row; no timing guess is used
+      // to claim serialization. The epoch update then wins before either reads the row.
+      let waiting = false;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const activity = await sql<{ n: string }>`
+          SELECT count(*)::text AS n FROM pg_stat_activity
+          WHERE datname = current_database() AND wait_event_type = 'Lock'
+            AND (query LIKE '%FOR SHARE OF s, i%' OR query LIKE '%m4_002_direct_guard_race%')`.execute(database);
+        if (Number(activity.rows[0]?.n) >= 2) {
+          waiting = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      expect(waiting).toBe(true);
+      await blocker.query(
+        'UPDATE installation_generations SET authorization_epoch = $1 WHERE shop_id = $2 AND generation = $3::bigint',
+        [value.authorizationEpoch + 1, value.shopId, value.generation],
+      );
+      await blocker.query('COMMIT');
+      await expect(replay).rejects.toThrow(/revoked authorization identity/);
+      await expect(directInsert).rejects.toThrow(/installation fence/);
+    } finally {
+      await blocker.query('ROLLBACK');
+      blocker.release();
+      await blockerPool.end();
+    }
     // A caller may have read the old tenant epoch before a revocation. The replay query
     // must compare with the current installation row, not just that stale caller value.
     await expect(repo.findCompleted(input)).rejects.toThrow(/revoked authorization identity/);
+    await expect(
+      sql`INSERT INTO quote_authorization_sets (set_id, quote_id, shop_id, installation_generation,
+        authorization_generation, authorization_epoch, key_id, public_key_fingerprint,
+        first_valid_day, last_valid_day, valid_through_day, envelope_carrier, member_carriers)
+      VALUES (${randomUUID()}::uuid, ${quoteId}::uuid, ${value.shopId}, ${value.generation}::bigint,
+        ${value.authorizationGeneration}::uuid, ${value.authorizationEpoch}::bigint,
+        ${authorization.keyId}, ${authorization.publicKeyFingerprint}, ${authorization.firstValidDay},
+        ${authorization.lastValidDay}, ${authorization.validThroughDay}, ${authorization.envelopeCarrier},
+        ${JSON.stringify(authorization.members)}::jsonb)`.execute(database),
+    ).rejects.toThrow(/installation fence/);
     await expect(repo.accept(input, async () => ({ quote, authorization }))).rejects.toThrow(
       /installation authorization fence/,
     );
@@ -334,6 +399,27 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         }),
       },
       publication: { getEffective: core.acceptedQuotes.getEffective },
+      artwork: {
+        readUsability: async (input: {
+          shopId: string;
+          installationGeneration: string;
+          shopTimezone: string;
+          choices: readonly { kind: 'revision' | 'deferred'; id: string }[];
+        }) => {
+          expect(input.shopId).toBe(value.shopId);
+          expect(input.installationGeneration).toBe(value.generation);
+          expect(input.shopTimezone).toBe('America/New_York');
+          expect(input.choices).toEqual([{ kind: 'revision', id: 'art' }]);
+          return input.choices.map((choice) => ({
+            ...choice,
+            shopId: input.shopId,
+            installationGeneration: input.installationGeneration,
+            status: 'usable' as const,
+            lastFullyUsableLocalDay: 20760,
+            observedAt: now.toISOString(),
+          }));
+        },
+      },
       catalog: {
         resolveVariantContext: async () => [
           {

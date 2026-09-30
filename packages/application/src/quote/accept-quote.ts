@@ -35,6 +35,23 @@ export type ShopQuoteContext = {
   currency: string;
   timezone: string;
 };
+export type QuoteArtworkChoice = { kind: 'revision' | 'deferred'; id: string };
+export type QuoteArtworkStatus = QuoteArtworkChoice & {
+  shopId: string;
+  installationGeneration: string;
+  status: 'usable' | 'unavailable';
+  /** Last complete shop-local civil day before deletion/expiry, derived by the trusted artwork store. */
+  lastFullyUsableLocalDay: number;
+  observedAt: string;
+};
+export interface QuoteArtworkPort {
+  readUsability(input: {
+    shopId: string;
+    installationGeneration: string;
+    shopTimezone: string;
+    choices: readonly QuoteArtworkChoice[];
+  }): Promise<readonly QuoteArtworkStatus[]>;
+}
 export type EffectiveQuoteRevision = { config: PublishedConfig; configId: string; operationId: string };
 export type QuoteEntitlement = {
   active: boolean;
@@ -89,6 +106,12 @@ export type AcceptedQuote = {
     revisionContentHash: string;
     canonicalIdentitySha256: string;
     variants: readonly { variantId: string; quantity: number }[];
+  }[];
+  artworkChecks: readonly {
+    choiceSha256: string;
+    kind: QuoteArtworkChoice['kind'];
+    lastFullyUsableLocalDay: number;
+    observedAt: string;
   }[];
   effectiveRevisions: readonly {
     configId: string;
@@ -153,6 +176,7 @@ export interface QuoteAuthorityPorts {
   shop: { getContext(tenant: ActiveQuoteTenant): Promise<ShopQuoteContext> };
   entitlement: { getFresh(tenant: ActiveQuoteTenant): Promise<QuoteEntitlement> };
   publication: { getEffective(shopId: string, productId: string): Promise<EffectiveQuoteRevision | null> };
+  artwork: QuoteArtworkPort;
   catalog: CatalogContextPort;
   currency: { exponent(code: string): number | null };
   fx: CustomizationFxProvider;
@@ -195,6 +219,28 @@ export function normalizeMarketId(value: string): string {
   if (!/^[1-9][0-9]*$/.test(numeric) || BigInt(numeric) > (1n << 64n) - 1n)
     throw new Error('invalid desired Market ID');
   return numeric;
+}
+
+// ISO 3166-1 alpha-2 snapshot: IANA tzdb iso3166.tab, whose country-code
+// column cites ISO/TC 46 N1127 (2024-02-29). The source file SHA-256 is
+// 837c80785080c8433fd9d4ea87e78f161ac7a40389301c5153d4f90198baeb2a.
+// Keep this finite: Shopify's CountryCode transport is a context input, not
+// a reason to admit reserved or unknown two-letter values into a signed quote.
+const ISO_COUNTRIES = new Set(
+  `AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ
+BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR
+CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR
+GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU
+ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ
+LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ
+MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF
+PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI
+SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR
+TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS YE YT ZA ZM ZW`.split(/\s+/),
+);
+
+export function isIsoCountry(value: unknown): value is string {
+  return typeof value === 'string' && ISO_COUNTRIES.has(value);
 }
 
 /** Civil day ordinal is independent of server timezone and elapsed 24-hour periods. */
@@ -290,6 +336,64 @@ function acceptedEconomics(value: ProposalEconomics): AcceptedQuoteEconomics {
   };
 }
 
+function artworkChoices(groups: readonly CustomizationGroup[]): QuoteArtworkChoice[] {
+  const choices = new Map<string, QuoteArtworkChoice>();
+  for (const group of groups) {
+    for (const placement of group.design.placements) {
+      const { artwork } = placement;
+      const id = artwork.kind === 'revision' ? artwork.revisionId : artwork.intentId;
+      choices.set(`${artwork.kind}:${id}`, { kind: artwork.kind, id });
+      if (choices.size > 256) throw new Error('artwork candidate capacity exceeded');
+    }
+  }
+  return [...choices.values()].sort((a, b) => `${a.kind}:${a.id}`.localeCompare(`${b.kind}:${b.id}`));
+}
+
+async function usableArtwork(
+  port: QuoteArtworkPort,
+  request: QuoteRequest,
+  timezone: string,
+  choices: readonly QuoteArtworkChoice[],
+  throughDay: number,
+  now: Date,
+): Promise<AcceptedQuote['artworkChecks']> {
+  const result = await port.readUsability({
+    shopId: request.shopId,
+    installationGeneration: request.installationGeneration,
+    shopTimezone: timezone,
+    choices,
+  });
+  if (!Array.isArray(result) || result.length !== choices.length)
+    throw new Error('complete artwork usability required');
+  const checks: AcceptedQuote['artworkChecks'][number][] = [];
+  for (const [index, choice] of choices.entries()) {
+    const item = result[index];
+    const observed = item && new Date(item.observedAt).getTime();
+    if (
+      !item ||
+      item.shopId !== request.shopId ||
+      item.installationGeneration !== request.installationGeneration ||
+      item.kind !== choice.kind ||
+      item.id !== choice.id ||
+      item.status !== 'usable' ||
+      !Number.isSafeInteger(item.lastFullyUsableLocalDay) ||
+      item.lastFullyUsableLocalDay < throughDay ||
+      !/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(item.observedAt) ||
+      !Number.isFinite(observed) ||
+      observed > now.getTime() ||
+      now.getTime() - observed > 5 * 60 * 1000
+    )
+      throw new Error('artwork unavailable through complete quote window');
+    checks.push({
+      choiceSha256: identityDigest(`${choice.kind}:${choice.id}`),
+      kind: choice.kind,
+      lastFullyUsableLocalDay: item.lastFullyUsableLocalDay,
+      observedAt: item.observedAt,
+    });
+  }
+  return checks;
+}
+
 function validAuthorization(quote: AcceptedQuote, set: QuoteAuthorizationSet): void {
   if (
     !set.setId ||
@@ -313,7 +417,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     !/^[1-9][0-9]*$/.test(request.installationGeneration) ||
     !request.idempotencyKey ||
     request.idempotencyKey.length > 128 ||
-    !/^[A-Z]{2}$/.test(request.country) ||
+    !isIsoCountry(request.country) ||
     !Array.isArray(request.groups) ||
     request.groups.length === 0
   )
@@ -498,6 +602,15 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
   ports.authorization.admit({ economics, capacity: request.capacity });
   const acceptedInstant = ports.clock();
   const day = localDay(acceptedInstant, shop.timezone);
+  const choices = artworkChoices(groups);
+  const artworkChecks = await usableArtwork(
+    ports.artwork,
+    request,
+    shop.timezone,
+    choices,
+    day.ordinal + 2,
+    acceptedInstant,
+  );
   const quote: AcceptedQuote = {
     schemaVersion: 'm4-accepted-quote-v1',
     quoteId: ports.ids.quoteId(),
@@ -526,6 +639,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
       canonicalIdentitySha256: identityDigest(group.canonicalIdentity),
       variants: group.variants.map((variant) => ({ variantId: variant.variantId, quantity: variant.quantity })),
     })),
+    artworkChecks,
     effectiveRevisions: revisions.map(({ config, configId, operationId }) => ({
       configId,
       operationId,
@@ -548,6 +662,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
       effectiveRevisions: quote.effectiveRevisions,
     },
     async () => {
+      await usableArtwork(ports.artwork, request, shop.timezone, choices, quote.validThroughDay, ports.clock());
       const current = requireTenant(
         await ports.tenant.getActive(request.shopId, request.installationGeneration),
         request,
@@ -568,6 +683,15 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
         currentEntitlement.qualifyingUsageDisposition !== entitlement.qualifyingUsageDisposition
       )
         throw new Error('entitlement changed during quote acceptance');
+      const finalTenant = requireTenant(
+        await ports.tenant.getActive(request.shopId, request.installationGeneration),
+        request,
+      );
+      if (
+        finalTenant.authorizationGeneration !== tenant.authorizationGeneration ||
+        finalTenant.authorizationEpoch !== tenant.authorizationEpoch
+      )
+        throw new Error('installation authorization identity changed');
       for (const product of products) {
         const snapshots = catalogSnapshots.filter((snapshot) => snapshot.productId === product);
         await resolveFreshCatalogContext(

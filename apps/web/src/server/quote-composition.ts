@@ -4,6 +4,7 @@ import {
   type CustomizationFxProvider,
   type EntitlementPolicyConfig,
   projectEntitlement,
+  type QuoteArtworkPort,
   type QuoteAuthorityPorts,
 } from '@insignia/application';
 import {
@@ -57,6 +58,7 @@ export function createQuoteAuthorityPorts(input: {
   readSubscription: (target: { appId: string; shopId: string }) => Promise<ActiveSubscriptionSnapshot>;
   credentials: AdminCredentialSource;
   catalogTransport: AdminGraphqlReadTransport;
+  artwork?: QuoteArtworkPort;
   fx?: CustomizationFxProvider;
   signing: { keyId: number; signer: AuthorizationSigner };
   clock?: () => Date;
@@ -146,6 +148,11 @@ export function createQuoteAuthorityPorts(input: {
       },
     },
     currency: { exponent: (code) => currencyExponent(code) ?? null },
+    artwork: input.artwork ?? {
+      readUsability: async () => {
+        throw new Error('trusted artwork usability authority is not configured');
+      },
+    },
     fx: input.fx ?? {
       resolve: async () => {
         throw new Error('approved FX source is not configured');

@@ -3,7 +3,7 @@
   "sourceVectorsSha256": "7f0046b88183b79cbccc305c883aab0483a6cda1eddb191297e2295c35ac1eda",
   "runnerSha256": "728bedbcf86f57680051208f9056642c9dfb07766a21891624bf18f372e4c29b",
   "fullReplayRowCount": 230,
-  "fullReplaySha256": "4dafbf68d3870c1d9d2c681c034145ffddfc5afe22a861929809d1df9188ee97",
+  "fullReplaySha256": "425985c64ab83ef9d1af3f141fe39451a2fdc82ab9760bbee902836f1736d8e9",
   "stackStatus": "not measured: pinned runner exposes linear memory only",
   "selectedFinalWasmRows": [
     {
@@ -161,9 +161,9 @@
       "inputBytes": 1672,
       "outputBytes": 604,
       "transformOutputUpperBytes": 742,
-      "inputSha256": "934bb1015a5656483661030ace9fefc59b70ce15daa4f2cac96e4e661c717581",
+      "inputSha256": "cb15b3e6b4a22bfabd0e7a9e8d5ed4d94d6e7f2acb6a25d5d2b9dd79e06f7024",
       "outputSha256": "9d21a41bd5e3020fffaac5afbdc5465bc9782b29f604ad64e7d264d938e61a7c",
-      "instructions": 2683077,
+      "instructions": 2740965,
       "linearMemoryKiB": 1152,
       "wasmSha256": "76e890cf702a6bc182e8ca8b55942260f33a5bc5e072d42c2f104a72161a4ddb",
       "wasmBytes": 181570,
@@ -329,9 +329,9 @@
       "inputBytes": 1750,
       "outputBytes": 17,
       "transformOutputUpperBytes": null,
-      "inputSha256": "37ee58130d61e7f958325d1f0999c6bdbf86f6f8c20c69782bd45cbcc38efe55",
+      "inputSha256": "851cedb4d74df3480240e99829c26127240739bbd9d99d79b952b10ad267edd0",
       "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
-      "instructions": 2674970,
+      "instructions": 2732858,
       "linearMemoryKiB": 1152,
       "wasmSha256": "51cd4867fa5c8181eac421c65e3e7fd210662213c3705ffe5cfc8c8d4a085207",
       "wasmBytes": 183160,
@@ -357,6 +357,6 @@
       "linearMemoryKiB": 1536
     }
   },
-  "acceptedQuoteExampleSha256": "ee3543ec0ad1b7fe84d87b2443942cbcaaa156a2f0a56f3116e550214c294764",
-  "pgPersistedQuoteVectorSha256": "a2ac3be2f0afd28f64a4d6dc3f144e65b8f2d9edb8867ef6533eb4216a7ce5dc"
+  "acceptedQuoteExampleSha256": "cd9a835ef95787bfd7d7dd4b712f98017b0559dc6a4ccfce198c1f80cc5ad490",
+  "pgPersistedQuoteVectorSha256": "5c0f68f0833c1cdbc5894988a238de268cfea266972234c875117fffe7d466a3"
 }

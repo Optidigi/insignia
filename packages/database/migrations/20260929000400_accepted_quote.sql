@@ -72,7 +72,7 @@ BEGIN
     INTO active_generation, current_authorization, current_epoch
     FROM shops s JOIN installation_generations i
       ON i.shop_id = s.shop_id AND i.generation = s.current_generation
-    WHERE s.shop_id = NEW.shop_id AND i.deactivated_at IS NULL FOR UPDATE OF s;
+    WHERE s.shop_id = NEW.shop_id AND i.deactivated_at IS NULL FOR UPDATE OF s, i;
   IF NOT FOUND OR active_generation IS DISTINCT FROM NEW.installation_generation OR
      current_authorization IS DISTINCT FROM NEW.authorization_generation OR
      current_epoch IS DISTINCT FROM NEW.authorization_epoch THEN
@@ -134,9 +134,21 @@ CREATE TRIGGER accepted_quotes_insert_guard BEFORE INSERT ON accepted_quotes
 
 CREATE FUNCTION enforce_quote_authorization_insert() RETURNS trigger LANGUAGE plpgsql AS $$
 DECLARE quote accepted_quotes%ROWTYPE;
+DECLARE current_authorization uuid;
+DECLARE current_epoch bigint;
 DECLARE member jsonb;
 DECLARE member_ordinal bigint;
 BEGIN
+  SELECT i.authorization_generation, i.authorization_epoch
+    INTO current_authorization, current_epoch
+    FROM shops s JOIN installation_generations i
+      ON i.shop_id = s.shop_id AND i.generation = s.current_generation
+    WHERE s.shop_id = NEW.shop_id AND s.current_generation = NEW.installation_generation
+      AND i.deactivated_at IS NULL FOR UPDATE OF s, i;
+  IF NOT FOUND OR current_authorization IS DISTINCT FROM NEW.authorization_generation OR
+     current_epoch IS DISTINCT FROM NEW.authorization_epoch THEN
+    RAISE EXCEPTION 'authorization set installation fence failed' USING ERRCODE = 'check_violation';
+  END IF;
   SELECT * INTO quote FROM accepted_quotes WHERE quote_id = NEW.quote_id AND shop_id = NEW.shop_id
     AND installation_generation = NEW.installation_generation;
   IF NOT FOUND OR quote.authorization_generation <> NEW.authorization_generation OR

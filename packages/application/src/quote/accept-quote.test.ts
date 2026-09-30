@@ -84,6 +84,18 @@ function fixture() {
       })),
     },
     publication: { getEffective: vi.fn(async () => ({ config, configId: 'cfg', operationId: 'op' })) },
+    artwork: {
+      readUsability: vi.fn(async (input) =>
+        input.choices.map((choice) => ({
+          ...choice,
+          shopId: input.shopId,
+          installationGeneration: input.installationGeneration,
+          status: 'usable' as const,
+          lastFullyUsableLocalDay: 20760,
+          observedAt: now.toISOString(),
+        })),
+      ),
+    },
     catalog: {
       resolveVariantContext: vi.fn(async () => [
         {
@@ -134,6 +146,40 @@ function fixture() {
 }
 
 describe('acceptQuote', () => {
+  it('admits ISO country codes and rejects reserved two-letter claims before provider reads', async () => {
+    for (const country of ['XX', 'ZZ', 'XK', 'us']) {
+      const { ports } = fixture();
+      await expect(acceptQuote({ ...request, country }, ports)).rejects.toThrow(/invalid quote request/);
+      expect(ports.tenant.getActive).not.toHaveBeenCalled();
+    }
+    const { ports } = fixture();
+    const accepted = await acceptQuote(
+      { ...request, country: 'GB' },
+      {
+        ...ports,
+        catalog: {
+          resolveVariantContext: async () => [
+            {
+              shopId: 'shop',
+              installationGeneration: '1',
+              productId: 'product',
+              variantId: 'variant',
+              productIdVerified: true,
+              context: { country: 'GB' },
+              amount: '10.00',
+              currencyCode: 'USD',
+              sourceApiVersion: '2026-07',
+              observedAt: '2026-11-01T05:29:00.000Z',
+              freshUntil: '2026-11-01T05:34:00.000Z',
+              correlation: { requestId: 'synthetic' },
+            },
+          ],
+        },
+      },
+    );
+    expect(accepted.quote.country).toBe('GB');
+  });
+
   it('uses civil dates across New York daylight-saving transitions', () => {
     expect(localDay(new Date('2026-03-08T06:30:00.000Z'), 'America/New_York')).toEqual({
       date: '2026-03-08',
@@ -165,6 +211,8 @@ describe('acceptQuote', () => {
     expect(result.quote.acceptedDate).toBe('2026-11-01');
     expect(result.quote.validThroughDay - result.quote.acceptedDay).toBe(2);
     expect(result.quote.marketId).toBe('42');
+    expect(result.quote.artworkChecks).toHaveLength(1);
+    expect(result.quote.artworkChecks[0]?.choiceSha256).toMatch(/^[0-9a-f]{64}$/);
     expect(saved).toHaveLength(1);
     expect(ports.fx.resolve).not.toHaveBeenCalled();
   });
@@ -178,6 +226,62 @@ describe('acceptQuote', () => {
     expect(again).toEqual(first);
     expect(ports.entitlement.getFresh).toHaveBeenCalledTimes(2);
     expect(ports.authorization.issue).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects artwork that expires during D+2 or belongs to another installation before signing', async () => {
+    const { ports, saved } = fixture();
+    vi.mocked(ports.artwork.readUsability).mockImplementationOnce(async (input) =>
+      input.choices.map((choice) => ({
+        ...choice,
+        shopId: input.shopId,
+        installationGeneration: input.installationGeneration,
+        status: 'usable' as const,
+        lastFullyUsableLocalDay: 20759,
+        observedAt: now.toISOString(),
+      })),
+    );
+    await expect(acceptQuote(request, ports)).rejects.toThrow(/artwork unavailable/);
+    vi.mocked(ports.artwork.readUsability).mockImplementationOnce(async (input) =>
+      input.choices.map((choice) => ({
+        ...choice,
+        shopId: input.shopId,
+        installationGeneration: '999',
+        status: 'usable' as const,
+        lastFullyUsableLocalDay: 20760,
+        observedAt: now.toISOString(),
+      })),
+    );
+    await expect(acceptQuote(request, ports)).rejects.toThrow(/artwork unavailable/);
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(saved).toHaveLength(0);
+  });
+
+  it('rechecks artwork inside acceptance and refuses a newly shortened lifetime', async () => {
+    const { ports, saved } = fixture();
+    vi.mocked(ports.artwork.readUsability)
+      .mockImplementationOnce(async (input) =>
+        input.choices.map((choice) => ({
+          ...choice,
+          shopId: input.shopId,
+          installationGeneration: input.installationGeneration,
+          status: 'usable' as const,
+          lastFullyUsableLocalDay: 20760,
+          observedAt: now.toISOString(),
+        })),
+      )
+      .mockImplementationOnce(async (input) =>
+        input.choices.map((choice) => ({
+          ...choice,
+          shopId: input.shopId,
+          installationGeneration: input.installationGeneration,
+          status: 'unavailable' as const,
+          lastFullyUsableLocalDay: 20759,
+          observedAt: now.toISOString(),
+        })),
+      );
+    await expect(acceptQuote(request, ports)).rejects.toThrow(/artwork unavailable/);
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(saved).toHaveLength(0);
   });
 
   it('rechecks tenant and entitlement after contextual provider reads, before issuing', async () => {

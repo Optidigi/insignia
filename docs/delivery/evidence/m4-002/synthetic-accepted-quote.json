@@ -37,6 +37,14 @@
         ]
       }
     ],
+    "artworkChecks": [
+      {
+        "choiceSha256": "e4c04a61908db61c66955e801f4f297c272c4eb7ec7db9a675cfab5f6680a16b",
+        "kind": "revision",
+        "lastFullyUsableLocalDay": 20760,
+        "observedAt": "2026-11-01T05:30:00.000Z"
+      }
+    ],
     "effectiveRevisions": [
       {
         "configId": "cfg",
