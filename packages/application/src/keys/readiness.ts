@@ -1,7 +1,18 @@
+import {
+  assertProductionFunctionArtifactReady,
+  type ExpectedFunctionBuild,
+  type ExpectedFunctionBuildPort,
+  type FunctionObjectObservation,
+  type TrustedFunctionArtifactEvidencePort,
+} from './artifact-attestation.js';
 import type { KeyScope } from './crypto.js';
 import { type PublicConfig, requireIssuanceReady } from './public-config.js';
 
 export type FunctionPresence = 'present' | 'missing' | 'duplicate' | 'drift' | 'unknown';
+export type FunctionArtifactReadinessPorts = {
+  expectedBuild: ExpectedFunctionBuildPort;
+  trustedEvidence: TrustedFunctionArtifactEvidencePort;
+};
 export type QuoteIssuanceReadinessInput = {
   scope: KeyScope;
   selectedKeyId: number;
@@ -13,13 +24,19 @@ export type QuoteIssuanceReadinessInput = {
   functions: {
     transform: FunctionPresence;
     validation: FunctionPresence;
-    runtimeIdentity: 'verified' | 'unverifiable';
+    observation?: FunctionObjectObservation | null;
   };
   effectiveRevision: boolean;
+  artifact?: {
+    appClientId: string;
+    expectedBuild: ExpectedFunctionBuild | null;
+    attestation: unknown;
+  };
 };
 
 /** Fail closed immediately before signing; a Shopify Admin readback is only observation, not propagation proof. */
 export function assertQuoteIssuanceReady(input: QuoteIssuanceReadinessInput): void {
+  if (!input.artifact) throw new Error('Function artifact evidence missing');
   const { scope, desired, observed } = input;
   if (
     desired.scope.shopId !== scope.shopId ||
@@ -39,11 +56,19 @@ export function assertQuoteIssuanceReady(input: QuoteIssuanceReadinessInput): vo
     observed.value !== desired.value
   )
     throw new Error('Public Function config unobserved or drifted');
-  if (
-    input.functions.transform !== 'present' ||
-    input.functions.validation !== 'present' ||
-    input.functions.runtimeIdentity !== 'verified'
-  )
+  if (input.functions.transform !== 'present' || input.functions.validation !== 'present')
     throw new Error('Required Function pair not ready');
   if (!input.effectiveRevision) throw new Error('ProductConfig revision is not active');
+  assertProductionFunctionArtifactReady({
+    scope: {
+      shopId: scope.shopId,
+      installationGeneration: scope.installationGeneration,
+      appClientId: input.artifact.appClientId,
+    },
+    expectedBuild: input.artifact.expectedBuild,
+    attestation: input.artifact.attestation,
+    observation: input.functions.observation,
+    now: input.now,
+    maxObservationAgeMs: input.maxObservationAgeMs,
+  });
 }
