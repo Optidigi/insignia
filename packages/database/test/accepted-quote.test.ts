@@ -243,6 +243,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     const directQuote = { ...quote, quoteId: randomUUID() };
     let replay: Promise<unknown> | undefined;
     let directInsert: Promise<unknown> | undefined;
+    let directSetInsert: Promise<unknown> | undefined;
     try {
       await blocker.query('BEGIN');
       await blocker.query(
@@ -268,15 +269,27 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
           ${directQuote.qualifyingUsageDisposition}, ${directQuote.economics.customizedQuantity},
           ${directQuote.economics.totalMinor}::numeric, ${JSON.stringify(directQuote)}::jsonb)`.execute(database);
       void directInsert.catch(() => {});
-      // Observe both queries waiting on the installation row; no timing guess is used
-      // to claim serialization. The epoch update then wins before either reads the row.
+      directSetInsert = sql`
+        /* m4_002_set_guard_race */
+        INSERT INTO quote_authorization_sets (set_id, quote_id, shop_id, installation_generation,
+          authorization_generation, authorization_epoch, key_id, public_key_fingerprint,
+          first_valid_day, last_valid_day, valid_through_day, envelope_carrier, member_carriers)
+        VALUES (${randomUUID()}::uuid, ${quoteId}::uuid, ${value.shopId}, ${value.generation}::bigint,
+          ${value.authorizationGeneration}::uuid, ${value.authorizationEpoch}::bigint,
+          ${authorization.keyId}, ${authorization.publicKeyFingerprint}, ${authorization.firstValidDay},
+          ${authorization.lastValidDay}, ${authorization.validThroughDay}, ${authorization.envelopeCarrier},
+          ${JSON.stringify(authorization.members)}::jsonb)`.execute(database);
+      void directSetInsert.catch(() => {});
+      // Observe all three queries waiting on the installation row. The epoch update
+      // then wins before replay or either direct insert can read the current row.
       let waiting = false;
       for (let attempt = 0; attempt < 100; attempt++) {
         const activity = await sql<{ n: string }>`
           SELECT count(*)::text AS n FROM pg_stat_activity
           WHERE datname = current_database() AND wait_event_type = 'Lock'
-            AND (query LIKE '%FOR SHARE OF s, i%' OR query LIKE '%m4_002_direct_guard_race%')`.execute(database);
-        if (Number(activity.rows[0]?.n) >= 2) {
+            AND (query LIKE '%FOR SHARE OF s, i%' OR query LIKE '%m4_002_direct_guard_race%'
+              OR query LIKE '%m4_002_set_guard_race%')`.execute(database);
+        if (Number(activity.rows[0]?.n) >= 3) {
           waiting = true;
           break;
         }
@@ -290,6 +303,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
       await blocker.query('COMMIT');
       await expect(replay).rejects.toThrow(/revoked authorization identity/);
       await expect(directInsert).rejects.toThrow(/installation fence/);
+      await expect(directSetInsert).rejects.toThrow(/installation fence/);
     } finally {
       await blocker.query('ROLLBACK');
       blocker.release();
