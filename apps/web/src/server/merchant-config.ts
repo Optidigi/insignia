@@ -13,6 +13,11 @@ type Outcome =
   | { kind: 'accepted'; state: ReturnType<typeof state>; revisionId: string }
   | { kind: 'conflict' | 'invalid' | 'forbidden'; message: string };
 type Publication = Pick<ReturnType<DurableCore['productionPublications']['create']>, 'prepare' | 'advance'>;
+const targetOccupied = (error: unknown) =>
+  !!error &&
+  typeof error === 'object' &&
+  (error as { code?: string; constraint?: string }).code === '23505' &&
+  (error as { constraint?: string }).constraint === 'product_configs_shop_id_external_product_id_key';
 
 function productNumber(gid: string): string {
   const match = /^gid:\/\/shopify\/Product\/([1-9][0-9]*)$/.exec(gid);
@@ -46,12 +51,16 @@ function validatedDraft(value: unknown, actor: Actor, productId: string): Mercha
     ['steps', geometry.steps.map((item) => item.id)],
     ['views', geometry.views.map((item) => item.id)],
     ['options', draft.productionOptions.map((item) => item.id)],
-    ['values', draft.productionOptions.flatMap((item) => item.allowedValueIds)],
     ['prices', draft.pricingRules.map((item) => item.id)],
   ] as const;
   for (const [kind, ids] of references)
     if (Object.keys(draft.labels?.[kind] ?? {}).some((id) => !ids.includes(id)))
       throw new Error('Draft label references an unknown configuration choice');
+  for (const [optionId, valueLabels] of Object.entries(draft.labels?.values ?? {})) {
+    const option = draft.productionOptions.find((item) => item.id === optionId);
+    if (!option || Object.keys(valueLabels).some((id) => !option.allowedValueIds.includes(id)))
+      throw new Error('Draft value label references an unknown option choice');
+  }
   return { ...draft, geometry };
 }
 function cloneForProduct(source: MerchantDraft, targetConfigId: string): MerchantDraft {
@@ -75,7 +84,6 @@ function cloneForProduct(source: MerchantDraft, targetConfigId: string): Merchan
         ['steps', steps],
         ['views', views],
         ['options', options],
-        ['values', values],
         ['prices', prices],
       ] as const
     ).map(([kind, ids]) => [
@@ -87,6 +95,18 @@ function cloneForProduct(source: MerchantDraft, targetConfigId: string): Merchan
         }),
       ),
     ]),
+  ) as NonNullable<MerchantDraft['labels']>;
+  labels.values = Object.fromEntries(
+    source.productionOptions.flatMap((option) => {
+      const oldLabels = source.labels?.values?.[option.id];
+      const remapped = Object.fromEntries(
+        option.allowedValueIds.flatMap((id) => {
+          const label = oldLabels?.[id];
+          return label ? [[values.get(id)!, label]] : [];
+        }),
+      );
+      return Object.keys(remapped).length ? [[options.get(option.id)!, remapped]] : [];
+    }),
   );
   const renamed = {
     ...source,
@@ -206,7 +226,10 @@ export function createMerchantConfigService(input: {
       let eligibility: { allowed: boolean; reason: string | null };
       try {
         const draft = validatedDraft(config.draftValue, actor, productId);
-        eligibility = await input.eligibility(actor, draft);
+        eligibility =
+          draft.shopCurrency !== (await input.catalog.shopCurrency(actor))
+            ? { allowed: false, reason: 'Shop currency changed. Reload and review the draft.' }
+            : await input.eligibility(actor, draft);
       } catch {
         eligibility = { allowed: false, reason: 'Draft or entitlement unavailable' };
       }
@@ -243,37 +266,46 @@ export function createMerchantConfigService(input: {
     async create(actor: Actor, productId: string, key: string): Promise<Outcome> {
       await product(actor, productId);
       const currency = await input.catalog.shopCurrency(actor);
-      const result = await executeCommand(
-        core.transactions,
-        core.commands,
-        command(actor, 'm5-create-config', key, { productId }),
-        async (tx) => {
-          await currentLocked(actor, tx);
-          const id = randomUUID();
-          const draft: MerchantDraft = {
-            version: 'm5-merchant-draft-v1',
-            mode: 'optional',
-            shopCurrency: currency,
-            methods: [],
-            placements: [],
-            productionOptions: [],
-            pricingRules: [],
-            geometry: {
-              version: GEOMETRY_VERSION,
-              views: [{ id: 'front', variantImages: [], placements: [] }],
-              steps: [],
-            },
-          };
-          await core.configs.createConfig(tx, {
-            shopId: actor.tenantShopId,
-            configId: id,
-            externalProductId: productNumber(productId),
-            draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
-            draftValue: draft,
-          });
-          return id;
-        },
-      );
+      let result: { kind: 'executed' | 'replayed'; resultRef: string };
+      try {
+        result = await executeCommand(
+          core.transactions,
+          core.commands,
+          command(actor, 'm5-create-config', key, { productId }),
+          async (tx) => {
+            await currentLocked(actor, tx);
+            if (await core.configs.getByProductForUpdate(tx, actor.tenantShopId, productNumber(productId)))
+              return 'occupied';
+            const id = randomUUID();
+            const draft: MerchantDraft = {
+              version: 'm5-merchant-draft-v1',
+              mode: 'optional',
+              shopCurrency: currency,
+              methods: [],
+              placements: [],
+              productionOptions: [],
+              pricingRules: [],
+              geometry: {
+                version: GEOMETRY_VERSION,
+                views: [{ id: 'front', variantImages: [], placements: [] }],
+                steps: [],
+              },
+            };
+            await core.configs.createConfig(tx, {
+              shopId: actor.tenantShopId,
+              configId: id,
+              externalProductId: productNumber(productId),
+              draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+              draftValue: draft,
+            });
+            return id;
+          },
+        );
+      } catch (error) {
+        if (targetOccupied(error)) return { kind: 'conflict', message: 'Product already has a configuration' };
+        throw error;
+      }
+      if (result.resultRef === 'occupied') return { kind: 'conflict', message: 'Product already has a configuration' };
       return { kind: 'created', configId: result.resultRef };
     },
     async save(
@@ -293,6 +325,7 @@ export function createMerchantConfigService(input: {
       } catch {
         return { kind: 'invalid', message: 'Draft does not satisfy M2 configuration and geometry contracts' };
       }
+      const shopCurrency = await input.catalog.shopCurrency(actor);
       const result = await executeCommand(
         core.transactions,
         core.commands,
@@ -304,6 +337,7 @@ export function createMerchantConfigService(input: {
         }),
         async (tx) => {
           await currentLocked(actor, tx);
+          if (draft.shopCurrency !== shopCurrency) return 'currency';
           const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
           if (!config || config.externalProductId !== productNumber(productId)) return 'conflict';
           const updated = await core.configs.updateDraft(tx, {
@@ -318,43 +352,55 @@ export function createMerchantConfigService(input: {
       );
       return result.resultRef === 'conflict'
         ? { kind: 'conflict', message: 'Draft changed. Reload and review the current version.' }
-        : { kind: 'saved', draftVersion: result.resultRef.slice('saved:'.length) };
+        : result.resultRef === 'currency'
+          ? { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' }
+          : { kind: 'saved', draftVersion: result.resultRef.slice('saved:'.length) };
     },
     async copy(actor: Actor, sourceProductId: string, targetProductId: string, key: string): Promise<Outcome> {
       await product(actor, sourceProductId);
       await product(actor, targetProductId);
       if (sourceProductId === targetProductId) return { kind: 'invalid', message: 'Copy target must differ' };
-      const result = await executeCommand(
-        core.transactions,
-        core.commands,
-        command(actor, 'm5-copy-config', key, { sourceProductId, targetProductId }),
-        async (tx) => {
-          await currentLocked(actor, tx);
-          const source = await core.configs.getByProductForUpdate(
-            tx,
-            actor.tenantShopId,
-            productNumber(sourceProductId),
-          );
-          if (!source) return 'missing';
-          let draft: MerchantDraft;
-          try {
-            draft = validatedDraft(source.draftValue, actor, sourceProductId);
-          } catch {
-            return 'invalid';
-          }
-          const id = randomUUID();
-          const targetDraft = cloneForProduct(draft, id);
-          validatedDraft(targetDraft, actor, targetProductId);
-          await core.configs.createConfig(tx, {
-            shopId: actor.tenantShopId,
-            configId: id,
-            externalProductId: productNumber(targetProductId),
-            draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
-            draftValue: targetDraft,
-          });
-          return id;
-        },
-      );
+      let result: { kind: 'executed' | 'replayed'; resultRef: string };
+      try {
+        result = await executeCommand(
+          core.transactions,
+          core.commands,
+          command(actor, 'm5-copy-config', key, { sourceProductId, targetProductId }),
+          async (tx) => {
+            await currentLocked(actor, tx);
+            if (await core.configs.getByProductForUpdate(tx, actor.tenantShopId, productNumber(targetProductId)))
+              return 'occupied';
+            const source = await core.configs.getByProductForUpdate(
+              tx,
+              actor.tenantShopId,
+              productNumber(sourceProductId),
+            );
+            if (!source) return 'missing';
+            let draft: MerchantDraft;
+            try {
+              draft = validatedDraft(source.draftValue, actor, sourceProductId);
+            } catch {
+              return 'invalid';
+            }
+            const id = randomUUID();
+            const targetDraft = cloneForProduct(draft, id);
+            validatedDraft(targetDraft, actor, targetProductId);
+            await core.configs.createConfig(tx, {
+              shopId: actor.tenantShopId,
+              configId: id,
+              externalProductId: productNumber(targetProductId),
+              draftSchemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+              draftValue: targetDraft,
+            });
+            return id;
+          },
+        );
+      } catch (error) {
+        if (targetOccupied(error)) return { kind: 'conflict', message: 'Target product already has a configuration' };
+        throw error;
+      }
+      if (result.resultRef === 'occupied')
+        return { kind: 'conflict', message: 'Target product already has a configuration' };
       if (result.resultRef === 'missing') return { kind: 'invalid', message: 'Source configuration does not exist' };
       if (result.resultRef === 'invalid')
         return { kind: 'invalid', message: 'Source draft needs review before copying' };
@@ -380,6 +426,9 @@ export function createMerchantConfigService(input: {
         return { kind: 'conflict', message: 'Idempotency key was used for another request' };
       let resultRef = prior?.status === 'completed' ? prior.resultRef : null;
       if (!resultRef) {
+        const priorProgress = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
+        if (priorProgress && priorProgress.phase !== 'active')
+          return { kind: 'conflict', message: 'A publication request is already in progress' };
         const before = await core.configs.getConfig(actor.tenantShopId, data.configId);
         if (
           !before ||
@@ -393,6 +442,9 @@ export function createMerchantConfigService(input: {
         } catch {
           return { kind: 'invalid', message: 'Draft does not satisfy M2 configuration and geometry contracts' };
         }
+        const shopCurrency = await input.catalog.shopCurrency(actor);
+        if (snapshot.shopCurrency !== shopCurrency)
+          return { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' };
         const eligibility = await input
           .eligibility(actor, snapshot)
           .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
@@ -408,6 +460,7 @@ export function createMerchantConfigService(input: {
           )
             return 'conflict';
           const draft = validatedDraft(config.draftValue, actor, productId);
+          if (draft.shopCurrency !== shopCurrency) return 'currency';
           const geometry = draft.geometry as GeometryV1;
           if (geometry.views.length === 0 || draft.placements.length === 0 || draft.methods.length === 0)
             return 'invalid';
@@ -420,6 +473,7 @@ export function createMerchantConfigService(input: {
             revisionId,
             publishedValue: content,
             geometry: { version: GEOMETRY_VERSION, value: geometry },
+            presentation: { version: 'm5-presentation-v1', labels: draft.labels ?? {} },
             mode: draft.mode,
             createdByRef: actor.staffId,
           });
@@ -430,13 +484,19 @@ export function createMerchantConfigService(input: {
       if (resultRef === 'conflict') return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
       if (resultRef === 'invalid')
         return { kind: 'invalid', message: 'At least one view, placement and method is required' };
+      if (resultRef === 'currency')
+        return { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' };
       const [revisionId, mode] = resultRef.split(':');
       if (!revisionId || (mode !== 'required' && mode !== 'optional'))
         throw new Error('Invalid durable publish result');
       const existing = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
-      if (existing && existing.operationId !== revisionId)
+      if (existing && existing.operationId !== revisionId && existing.phase !== 'active')
         return { kind: 'conflict', message: 'A newer publication request exists' };
-      if (existing && ['active', 'activation-pending', 'conflict', 'operator-hold'].includes(existing.phase)) {
+      if (
+        existing &&
+        existing.operationId === revisionId &&
+        ['active', 'activation-pending', 'conflict', 'operator-hold'].includes(existing.phase)
+      ) {
         const recorded = await core.configs.getConfig(actor.tenantShopId, data.configId);
         return {
           kind: 'accepted',
@@ -451,6 +511,8 @@ export function createMerchantConfigService(input: {
       if (!revision || revision.configId !== data.configId || !geometry || geometry.mode !== mode)
         throw new Error('Immutable publication revision unavailable');
       const published = PublishedConfigSchema.parse(revision.publishedValue);
+      if (published.shopCurrency !== (await input.catalog.shopCurrency(actor)))
+        return { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' };
       const immutableDraft = MerchantDraftSchema.parse({
         version: 'm5-merchant-draft-v1',
         mode,
@@ -476,10 +538,12 @@ export function createMerchantConfigService(input: {
         mode,
       });
       let phase: string = prepared.phase;
-      for (let attempt = 0; attempt < 6; attempt++) {
+      let unchanged = 0;
+      for (let attempt = 0; attempt < 16; attempt++) {
         const advanced = await publication.advance(actor.tenantShopId, data.configId, prepared.operationId);
+        unchanged = advanced.phase === phase ? unchanged + 1 : 0;
         phase = advanced.phase;
-        if (advanced.kind !== 'PENDING') break;
+        if (advanced.kind !== 'PENDING' || unchanged >= 2) break;
       }
       return { kind: 'accepted', revisionId, state: state(phase, null, revisionId) };
     },

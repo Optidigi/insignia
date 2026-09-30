@@ -20,32 +20,55 @@ const numberOf = (id: string) => /^gid:\/\/shopify\/(?:Product|ProductVariant)\/
 const endpoint = (id: string) => `/api/admin/products/${encodeURIComponent(id)}/config`;
 const freshId = (prefix: string) => `${prefix}_${crypto.randomUUID().replaceAll('-', '').slice(0, 12)}`;
 const defaultRect = () => ({ centerX: 0.5, centerY: 0.5, width: 0.3, height: 0.3 });
+const publicationStorageKey = (productId: string) => `insignia:m5:publish:${productId}`;
+function readPublicationRequest(productId: string): PendingRequest | null {
+  try {
+    return JSON.parse(sessionStorage.getItem(publicationStorageKey(productId)) ?? 'null') as PendingRequest | null;
+  } catch {
+    return null;
+  }
+}
+function writePublicationRequest(productId: string, request: PendingRequest): void {
+  try {
+    sessionStorage.setItem(publicationStorageKey(productId), JSON.stringify(request));
+  } catch {
+    // Deterministic command keys still recover when embedded storage is unavailable.
+  }
+}
+function clearPublicationRequest(productId: string): void {
+  try {
+    sessionStorage.removeItem(publicationStorageKey(productId));
+  } catch {
+    // Storage is optional for the signed bearer transport.
+  }
+}
 let tokenRequest: Promise<string> | null = null;
+async function browserDeadline<T>(task: (signal: AbortSignal) => Promise<T>): Promise<T> {
+  const controller = new AbortController();
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_resolve, reject) => {
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(new Error('Admin request timed out'));
+    }, 10_000);
+  });
+  try {
+    return await Promise.race([task(controller.signal), timeout]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
 function sessionToken(): Promise<string> {
   const bridge = (window as unknown as { shopify?: { idToken?: () => Promise<string> } }).shopify;
-  if (!bridge?.idToken) return Promise.reject(new Error('Open this page from Shopify Admin to verify your session.'));
+  const tokenGetter = bridge?.idToken?.bind(bridge);
+  if (!tokenGetter) return Promise.reject(new Error('Open this page from Shopify Admin to verify your session.'));
   if (!tokenRequest)
-    tokenRequest = bridge.idToken().finally(() => {
+    tokenRequest = browserDeadline(() => tokenGetter()).finally(() => {
       tokenRequest = null;
     });
   return tokenRequest;
 }
 
-async function authenticatedFetch(path: string, init: RequestInit = {}): Promise<Response> {
-  const send = async () =>
-    fetch(path, {
-      ...init,
-      headers: {
-        ...Object.fromEntries(new Headers(init.headers).entries()),
-        Authorization: 'Bearer ' + (await sessionToken()),
-      },
-      cache: 'no-store',
-      redirect: 'error',
-    });
-  let response = await send();
-  if (response.status === 401) response = await send();
-  return response;
-}
 async function jsonResponse<T>(response: Response): Promise<T> {
   const body = (await response.json().catch(() => ({}))) as T & { error?: string; message?: string };
   if (!response.ok)
@@ -53,6 +76,24 @@ async function jsonResponse<T>(response: Response): Promise<T> {
       status: response.status,
     });
   return body;
+}
+async function authenticatedJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  return browserDeadline(async (signal) => {
+    const send = async () =>
+      fetch(path, {
+        ...init,
+        headers: {
+          ...Object.fromEntries(new Headers(init.headers).entries()),
+          Authorization: 'Bearer ' + (await sessionToken()),
+        },
+        cache: 'no-store',
+        redirect: 'error',
+        signal,
+      });
+    let response = await send();
+    if (response.status === 401) response = await send();
+    return jsonResponse<T>(response);
+  });
 }
 function isDraft(value: unknown): value is MerchantDraft {
   if (!value || typeof value !== 'object') return false;
@@ -76,8 +117,11 @@ function currencyAmount() {
 function snapshotDraft(value: MerchantDraft): MerchantDraft {
   const copy = structuredClone(value);
   if (copy.labels)
-    for (const group of Object.values(copy.labels))
+    for (const group of Object.values({ ...copy.labels, values: undefined }))
       if (group) for (const [id, label] of Object.entries(group)) group[id] = label.trim();
+  if (copy.labels?.values)
+    for (const group of Object.values(copy.labels.values))
+      for (const [id, label] of Object.entries(group)) group[id] = label.trim();
   return copy;
 }
 type PricingRule = MerchantDraft['pricingRules'][number];
@@ -164,11 +208,16 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   const [previewStatus, setPreviewStatus] = useState('');
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const pending = useRef<PendingRequest | null>(null);
+  const publicationPending = useRef<PendingRequest | null>(null);
   const requestId = useRef(0);
   const busyRef = useRef(false);
+  const saveStateRef = useRef(saveState);
   const visualizerRef = useRef<Visualizer | null>(null);
+  const projectRef = useRef(project);
   busyRef.current = busy;
+  saveStateRef.current = saveState;
   editorRef.current = editor;
+  projectRef.current = project;
 
   async function load(cursor: string | null = null, search = query) {
     const seq = ++requestId.current;
@@ -183,15 +232,27 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       if (mode === 'picker') {
         const params = new URLSearchParams({ q: search });
         if (cursor) params.set('cursor', cursor);
-        const data = await jsonResponse<List>(await authenticatedFetch(`/api/admin/products?${params}`));
+        const data = await authenticatedJson<List>(`/api/admin/products?${params}`);
         if (seq === requestId.current) {
           setList(data);
           setStatus('');
         }
       } else {
         if (!productId || !/^[1-9][0-9]*$/.test(productId)) throw new Error('Invalid product link');
-        const data = await jsonResponse<ConfigView>(await authenticatedFetch(endpoint(productId)));
+        const data = await authenticatedJson<ConfigView>(endpoint(productId));
         if (seq === requestId.current) {
+          const terminal = ['REMOTE_READY_ACTIVATION_PENDING', 'ACTIVE', 'CONFLICT', 'OPERATOR_HOLD'];
+          if (data.config && !terminal.includes(data.config.publication.state)) {
+            const stored = readPublicationRequest(productId);
+            const body = stored?.body as { action?: string; configId?: string } | undefined;
+            publicationPending.current =
+              stored?.method === 'POST' && body?.action === 'publish' && body.configId === data.config.configId
+                ? stored
+                : null;
+          } else {
+            publicationPending.current = null;
+            clearPublicationRequest(productId);
+          }
           setView(data);
           const value = data.config && isDraft(data.config.draft) ? data.config.draft : null;
           setDraft(value);
@@ -222,7 +283,13 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       setEditor(null);
     };
     const visible = () => {
-      if (!document.hidden) void load(null, '');
+      if (
+        !document.hidden &&
+        !busyRef.current &&
+        !pending.current &&
+        !['dirty', 'saving', 'ambiguous', 'conflict'].includes(saveStateRef.current)
+      )
+        void load(null, '');
     };
     window.addEventListener('pagehide', clear);
     document.addEventListener('visibilitychange', visible);
@@ -320,7 +387,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         renderer.setMode('edit-placement');
         visualizerRef.current = renderer;
         const current = editorRef.current;
-        if (current) renderer.update(project(current));
+        if (current) renderer.update(projectRef.current(current));
       })
       .catch(() => {
         if (!cancelled) setPreviewStatus('Visual preview unavailable.');
@@ -352,13 +419,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
 
   async function send(request: PendingRequest) {
     if (!productId) throw new Error('Product link unavailable');
-    return jsonResponse<Record<string, unknown>>(
-      await authenticatedFetch(endpoint(productId), {
-        method: request.method,
-        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': request.key },
-        body: JSON.stringify(request.body),
-      }),
-    );
+    return authenticatedJson<Record<string, unknown>>(endpoint(productId), {
+      method: request.method,
+      headers: { 'Content-Type': 'application/json', 'Idempotency-Key': request.key },
+      body: JSON.stringify(request.body),
+    });
   }
   async function create() {
     setBusy(true);
@@ -406,9 +471,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         return;
       }
       const body = request.body as { draftVersion: string; draft: MerchantDraft };
-      const result = await authenticatedFetch(endpoint(productId!))
-        .then(jsonResponse<ConfigView>)
-        .catch(() => null);
+      const result = await authenticatedJson<ConfigView>(endpoint(productId!)).catch(() => null);
       if (
         result?.config &&
         result.config.draftVersion !== body.draftVersion &&
@@ -434,17 +497,34 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     }
   }
   async function publish() {
-    if (!view?.config || !['clean', 'saved'].includes(saveState)) return;
-    setBusy(true);
-    try {
-      await send({
+    if (!productId || !view?.config || !['clean', 'saved'].includes(saveState)) return;
+    const request =
+      publicationPending.current ??
+      ({
         method: 'POST',
         body: { action: 'publish', configId: view.config.configId, draftVersion: view.config.draftVersion },
-        key: crypto.randomUUID(),
-      });
+        key: `m5pub_${view.config.configId}_${view.config.draftVersion}`,
+      } satisfies PendingRequest);
+    publicationPending.current = request;
+    writePublicationRequest(productId, request);
+    setBusy(true);
+    try {
+      let phase = '';
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const result = await send(request);
+        phase = String(result.state ?? '');
+        if (!['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(phase)) break;
+      }
       await load();
+      if (['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(phase))
+        setStatus('Publication is pending. Continue the same request when ready.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Publication request failed');
+      await load().catch(() => {});
+      setStatus(
+        error instanceof Error
+          ? `${error.message}. Continue the same publication request after checking its current state.`
+          : 'Publication result is uncertain. Continue the same request.',
+      );
     } finally {
       setBusy(false);
     }
@@ -477,7 +557,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     selectedGeometry?.variantOverrides?.find((item) => item.variantId === editor?.variantId)?.rect ??
     selectedGeometry?.rect;
   const selectedStep = geometry?.steps.find((item) => item.id === editor?.selectedStepId);
-  type LabelKind = keyof NonNullable<MerchantDraft['labels']>;
+  type LabelKind = Exclude<keyof NonNullable<MerchantDraft['labels']>, 'values'>;
   const labelFor = (kind: LabelKind, id: string) => draft?.labels?.[kind]?.[id] ?? '';
   const setLabel = (kind: LabelKind, id: string, value: string) => {
     if (!draft) return;
@@ -486,6 +566,19 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     if (value.trim()) group[id] = value;
     else delete group[id];
     labels[kind] = group;
+    change({ ...draft, labels });
+  };
+  const valueLabel = (optionId: string, valueId: string) => draft?.labels?.values?.[optionId]?.[valueId] ?? '';
+  const setValueLabel = (optionId: string, valueId: string, value: string) => {
+    if (!draft) return;
+    const labels = { ...draft.labels };
+    const values = { ...labels.values };
+    const group = { ...values[optionId] };
+    if (value.trim()) group[valueId] = value;
+    else delete group[valueId];
+    if (Object.keys(group).length) values[optionId] = group;
+    else delete values[optionId];
+    labels.values = values;
     change({ ...draft, labels });
   };
   const setPlacement = (
@@ -638,6 +731,12 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                       ))}
                     </select>
                   </label>
+                  {view.product.variantsTruncated && (
+                    <p role="alert">
+                      This product has more than 500 variants. Only the first 500 are available here; review the full
+                      catalog before saving variant-specific geometry.
+                    </p>
+                  )}
                   <button
                     type="button"
                     disabled={!selectedImage || !imageSize}
@@ -876,8 +975,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                           Value {id} name
                           <input
                             maxLength={80}
-                            value={labelFor('values', id)}
-                            onInput={(event) => setLabel('values', id, event.currentTarget.value)}
+                            value={valueLabel(item.id, id)}
+                            onInput={(event) => setValueLabel(item.id, id, event.currentTarget.value)}
                           />
                         </label>
                       ))}{' '}
@@ -1352,7 +1451,10 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   disabled={busy || !view.config.publishEligibility.allowed || !['clean', 'saved'].includes(saveState)}
                   onClick={() => void publish()}
                 >
-                  Request publication
+                  {publicationPending.current ||
+                  ['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(view.config.publication.state)
+                    ? 'Continue publication'
+                    : 'Request publication'}
                 </s-button>
               </s-section>
               <s-section heading="Copy to another product">

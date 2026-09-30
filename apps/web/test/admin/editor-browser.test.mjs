@@ -160,6 +160,7 @@ test('real browser editor syncs typed view, variant and step controls with direc
         )
         .digest('hex');
     const frontPixels = await pixels(2);
+    const initialImagePixels = await pixels(0);
     const viewSelect = page.locator('select').nth(1);
     await viewSelect.selectOption('back-view');
     assert.equal(await viewSelect.inputValue(), 'back-view');
@@ -167,6 +168,7 @@ test('real browser editor syncs typed view, variant and step controls with direc
     assert.notEqual(await pixels(2), frontPixels, 'View must change Konva placement pixels');
     await viewSelect.selectOption('front-view');
     await page.waitForTimeout(100);
+    assert.equal(await pixels(0), initialImagePixels, 'Cached image must remain in the initial and reprojected canvas');
     const variantSelect = page.locator('select').nth(2);
     await variantSelect.selectOption('variant_11');
     assert.equal(await variantSelect.inputValue(), 'variant_11');
@@ -338,8 +340,16 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
     await page.getByText('Draft version 3').waitFor();
     mode = 'uncertain';
     await page.getByLabel('Customization mode').selectOption('optional');
+    const beforeHiddenRead = readCalls;
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(100);
+    assert.equal(readCalls, beforeHiddenRead, 'Returning to a dirty editor must not discard unsaved work');
+    assert.equal(await page.getByLabel('Customization mode').inputValue(), 'optional');
     await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
     await page.getByText('Save result is uncertain. Retry the exact request or reload.').waitFor();
+    await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+    await page.waitForTimeout(100);
+    assert.equal(await page.locator('s-button').filter({ hasText: 'Retry exact save' }).count(), 1);
     mode = 'retry';
     await page.locator('s-button').filter({ hasText: 'Retry exact save' }).click();
     await page.getByText('Draft saved.').waitFor();
@@ -376,6 +386,120 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
         .evaluate((button) => button.shadowRoot),
       null,
     );
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('interrupted publication resumes the identical request after reload and reaches a durable phase', {
+  timeout: 30000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-publish-token' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let phase = 'DRAFT';
+    let writes = 0;
+    let firstKey;
+    let firstBody;
+    await page.route('**/api/admin/products/111/config', (route) => {
+      const request = route.request();
+      assert.equal(request.headers().authorization, 'Bearer synthetic-publish-token');
+      if (request.method() === 'GET') {
+        const view = response(draft());
+        view.config.publishEligibility = { allowed: true, reason: null };
+        view.config.publication.state = phase;
+        view.config.publication.revisionId = phase === 'DRAFT' ? null : 'same-immutable-revision';
+        return route.fulfill({ json: view });
+      }
+      assert.equal(request.method(), 'POST');
+      const body = request.postDataJSON();
+      assert.equal(body.action, 'publish');
+      const key = request.headers()['idempotency-key'];
+      if (!firstKey) {
+        firstKey = key;
+        firstBody = body;
+      } else {
+        assert.equal(key, firstKey);
+        assert.deepEqual(body, firstBody);
+      }
+      writes++;
+      if (writes === 1) {
+        phase = 'PUBLISH_REQUESTED';
+        return route.abort('failed');
+      }
+      phase = writes === 2 ? 'REMOTE_PENDING' : 'REMOTE_READY_ACTIVATION_PENDING';
+      return route.fulfill({
+        status: 202,
+        json: { kind: 'accepted', state: phase, revisionId: 'same-immutable-revision' },
+      });
+    });
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.getByText('Draft version 1').waitFor();
+    await page.locator('s-button').filter({ hasText: 'Request publication' }).click();
+    await page.getByText(/Continue the same publication request/).waitFor();
+    assert.equal(writes, 1);
+    await page.reload();
+    await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
+    await page.getByText('Remote ready; activation pending').waitFor();
+    assert.equal(writes, 3);
+    assert.equal(await page.evaluate(() => sessionStorage.getItem('insignia:m5:publish:111')), null);
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('publication retry uses the deterministic key when embedded storage is denied', { timeout: 20000 }, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-storage-denied-token' };
+      Object.defineProperty(window, 'sessionStorage', {
+        configurable: true,
+        get: () => {
+          throw new Error('storage denied');
+        },
+      });
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let state = 'PUBLISH_REQUESTED';
+    let observedKey;
+    await page.route('**/api/admin/products/111/config', (route) => {
+      if (route.request().method() === 'GET') {
+        const view = response(draft());
+        view.config.publishEligibility = { allowed: true, reason: null };
+        view.config.publication.state = state;
+        view.config.publication.revisionId = 'same-immutable-revision';
+        return route.fulfill({ json: view });
+      }
+      observedKey = route.request().headers()['idempotency-key'];
+      state = 'REMOTE_READY_ACTIVATION_PENDING';
+      return route.fulfill({ status: 202, json: { kind: 'accepted', state, revisionId: 'same-immutable-revision' } });
+    });
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
+    await page.getByText('Remote ready; activation pending').waitFor();
+    assert.equal(observedKey, 'm5pub_config-1_1');
   } finally {
     await browser?.close();
     server.child.kill('SIGTERM');
@@ -532,7 +656,11 @@ test('empty merchant draft can be configured through typed controls and pass M2 
     await page.getByText('Draft saved.').waitFor();
     assert.ok(saved.draft.methods.length === 1 && saved.draft.placements.length === 1);
     assert.deepEqual(
-      new Set(Object.values(saved.draft.labels).flatMap(Object.values)),
+      new Set(
+        Object.entries(saved.draft.labels).flatMap(([kind, group]) =>
+          kind === 'values' ? Object.values(group).flatMap(Object.values) : Object.values(group),
+        ),
+      ),
       new Set(['Screen print', 'Front chest', 'Small', 'Thread color', 'Navy']),
     );
     assert.doesNotThrow(() =>

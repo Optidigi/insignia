@@ -1,6 +1,8 @@
 /** Shopify SDK boundary for an embedded staff session. Tokens stay server side. */
 import '@shopify/shopify-api/adapters/node';
+import { AsyncLocalStorage } from 'node:async_hooks';
 import { ApiVersion, HttpResponseError, InvalidJwtError, RequestedTokenType, shopifyApi } from '@shopify/shopify-api';
+import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
 import { withAdminDeadline } from './admin-deadline.js';
 
 export type VerifiedStaffIdentity = {
@@ -24,6 +26,13 @@ export type AdminInstallationRead = {
   grantedScopes: string[];
 };
 const shopDomain = /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/;
+const onlineExchangeSignal = new AsyncLocalStorage<AbortSignal>();
+/** Preserve the SDK's fetch implementation, adding the request's abort signal only inside token exchange. */
+export function deadlineAwareOnlineFetch(baseFetch: typeof fetch): typeof fetch {
+  return (url, options) => baseFetch(url, { ...options, signal: onlineExchangeSignal.getStore() ?? options?.signal });
+}
+const nodeSdkFetch = abstractFetch;
+setAbstractFetchFunc(deadlineAwareOnlineFetch(nodeSdkFetch));
 const installationQuery = `query M5001StaffInstallation {
   shop { id myshopifyDomain }
   currentAppInstallation { id accessScopes { handle } }
@@ -95,16 +104,18 @@ export function createAdminOnlineIdentity(input: {
       let session: OnlineSession;
       try {
         session = await withAdminDeadline(
-          async () =>
-            input.exchangeOnlineImpl
-              ? input.exchangeOnlineImpl(token, identity)
-              : (
-                  await api.auth.tokenExchange({
-                    shop: identity.shop,
-                    sessionToken: token,
-                    requestedTokenType: RequestedTokenType.OnlineAccessToken,
-                  })
-                ).session,
+          async (signal) =>
+            onlineExchangeSignal.run(signal, async () =>
+              input.exchangeOnlineImpl
+                ? input.exchangeOnlineImpl(token, identity)
+                : (
+                    await api.auth.tokenExchange({
+                      shop: identity.shop,
+                      sessionToken: token,
+                      requestedTokenType: RequestedTokenType.OnlineAccessToken,
+                    })
+                  ).session,
+            ),
           'Online token exchange',
         );
       } catch (error) {

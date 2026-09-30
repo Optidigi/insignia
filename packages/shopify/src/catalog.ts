@@ -9,7 +9,12 @@ export type CatalogProduct = {
   title: string;
   status: 'ACTIVE' | 'ARCHIVED' | 'DRAFT';
   image: { url: string; alt: string | null } | null;
-  variants: { id: string; title: string; image: { url: string; alt: string | null } | null }[];
+  variants: {
+    id: string;
+    title: string;
+    selectedOptions: { name: string; value: string }[];
+    image: { url: string; alt: string | null } | null;
+  }[];
   variantsTruncated: boolean;
 };
 
@@ -19,18 +24,25 @@ type RawProduct = {
   title: string;
   status: string;
   featuredMedia: { preview: { image: RawImage } | null } | null;
-  variants: { nodes: { id: string; title: string; image: RawImage }[]; pageInfo: { hasNextPage: boolean } };
+  variants: {
+    nodes: { id: string; title: string; selectedOptions?: { name: string; value: string }[]; image: RawImage }[];
+    pageInfo: { hasNextPage: boolean; endCursor?: string | null };
+  };
 };
 
-const fields = `id title status featuredMedia { preview { image { url altText } } }
-  variants(first: 8) { nodes { id title image { url altText } } pageInfo { hasNextPage } }`;
+const productFields = 'id title status featuredMedia { preview { image { url altText } } }';
+const listFields = `${productFields}
+  variants(first: 8) { nodes { id title selectedOptions { name value } image { url altText } } pageInfo { hasNextPage } }`;
 const listQuery = `query M5001Products($first: Int!, $after: String, $search: String) {
   products(first: $first, after: $after, query: $search, sortKey: TITLE) {
-    nodes { ${fields} }
+    nodes { ${listFields} }
     pageInfo { hasNextPage endCursor }
   }
 }`;
-const detailQuery = `query M5001Product($id: ID!) { product(id: $id) { ${fields} } }`;
+const detailQuery = `query M5001Product($id: ID!, $after: String) { product(id: $id) {
+  ${productFields}
+  variants(first: 100, after: $after) { nodes { id title selectedOptions { name value } image { url altText } } pageInfo { hasNextPage endCursor } }
+} }`;
 const currencyQuery = 'query M5001ShopCurrency { shop { currencyCode } }';
 const productGid = /^gid:\/\/shopify\/Product\/[1-9][0-9]*$/;
 const variantGid = /^gid:\/\/shopify\/ProductVariant\/[1-9][0-9]*$/;
@@ -46,7 +58,7 @@ function image(value: RawImage): { url: string; alt: string | null } | null {
   return { url: value.url, alt: value.altText === null ? null : String(value.altText) };
 }
 
-function project(value: RawProduct): CatalogProduct {
+function project(value: RawProduct, maxVariants = 8): CatalogProduct {
   if (
     !value ||
     !productGid.test(value.id) ||
@@ -54,7 +66,7 @@ function project(value: RawProduct): CatalogProduct {
     !['ACTIVE', 'ARCHIVED', 'DRAFT'].includes(value.status) ||
     !value.variants ||
     !Array.isArray(value.variants.nodes) ||
-    value.variants.nodes.length > 8 ||
+    value.variants.nodes.length > maxVariants ||
     typeof value.variants.pageInfo?.hasNextPage !== 'boolean'
   )
     throw new Error('Invalid catalog product');
@@ -67,7 +79,21 @@ function project(value: RawProduct): CatalogProduct {
     image: image(value.featuredMedia?.preview?.image ?? null),
     variants: value.variants.nodes.map((variant) => {
       if (!variantGid.test(variant.id) || typeof variant.title !== 'string') throw new Error('Invalid catalog variant');
-      return { id: variant.id, title: variant.title, image: image(variant.image) };
+      const selectedOptions = variant.selectedOptions ?? [];
+      if (
+        !Array.isArray(selectedOptions) ||
+        selectedOptions.length > 10 ||
+        selectedOptions.some(
+          (item) =>
+            !item ||
+            typeof item.name !== 'string' ||
+            typeof item.value !== 'string' ||
+            item.name.length > 200 ||
+            item.value.length > 200,
+        )
+      )
+        throw new Error('Invalid catalog variant options');
+      return { id: variant.id, title: variant.title, selectedOptions, image: image(variant.image) };
     }),
     variantsTruncated: value.variants.pageInfo.hasNextPage,
   };
@@ -104,7 +130,7 @@ export function createCatalogReader(transport: CatalogTransport) {
             response.products.pageInfo.endCursor.length > 512))
       )
         throw new Error('Invalid catalog response');
-      const products = response.products.nodes.map(project);
+      const products = response.products.nodes.map((item) => project(item));
       if (new Set(products.map((item) => item.id)).size !== products.length)
         throw new Error('Duplicate catalog product identity');
       return {
@@ -114,11 +140,40 @@ export function createCatalogReader(transport: CatalogTransport) {
     },
     async get(productId: string): Promise<CatalogProduct | null> {
       if (!productGid.test(productId)) throw new Error('Invalid product ID');
-      const response = await transport.read<{ product: RawProduct | null }>('detail', { id: productId });
-      if (!response || !Object.hasOwn(response, 'product')) throw new Error('Invalid catalog response');
-      if (!response.product) return null;
-      const product = project(response.product);
-      if (product.id !== productId) throw new Error('Catalog product identity mismatch');
+      let after: string | null = null;
+      let product: CatalogProduct | null = null;
+      const seenVariants = new Set<string>();
+      const seenCursors = new Set<string>();
+      for (let page = 0; page < 5; page++) {
+        const response: { product: RawProduct | null } = await transport.read<{ product: RawProduct | null }>(
+          'detail',
+          { id: productId, after },
+        );
+        if (!response || !Object.hasOwn(response, 'product')) throw new Error('Invalid catalog response');
+        if (!response.product) {
+          if (page > 0) throw new Error('Catalog product disappeared during pagination');
+          return null;
+        }
+        const slice = project(response.product, 100);
+        if (slice.id !== productId || (product && (slice.title !== product.title || slice.status !== product.status)))
+          throw new Error('Catalog product identity mismatch');
+        if (!product) product = { ...slice, variants: [] };
+        for (const variant of slice.variants) {
+          if (seenVariants.has(variant.id)) throw new Error('Duplicate catalog variant identity');
+          seenVariants.add(variant.id);
+          product.variants.push(variant);
+        }
+        if (!slice.variantsTruncated) {
+          product.variantsTruncated = false;
+          return product;
+        }
+        const cursor: string | null | undefined = response.product.variants.pageInfo.endCursor;
+        if (!cursor || cursor.length > 512 || seenCursors.has(cursor)) throw new Error('Invalid variant pagination');
+        seenCursors.add(cursor);
+        after = cursor;
+      }
+      if (!product) throw new Error('Catalog product missing');
+      product.variantsTruncated = true;
       return product;
     },
   };

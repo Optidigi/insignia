@@ -8,6 +8,7 @@ import type {
   SigningKeyStore,
   TransactionRunner,
 } from '@insignia/application';
+import { type MerchantPresentation, MerchantPresentationSchema } from '@insignia/contracts';
 import { type GeometryV1, validateGeometry, validateGeometryBridge } from '@insignia/visualizer/geometry';
 import type { Transaction } from 'kysely';
 import { sql } from 'kysely';
@@ -118,6 +119,7 @@ export interface DurableCore {
         revisionId: string;
         publishedValue: unknown;
         geometry: { version: string; value: unknown };
+        presentation: unknown;
         mode: 'required' | 'optional';
         createdByRef: string;
       },
@@ -131,6 +133,7 @@ export interface DurableCore {
       contentHash: string;
       mode: 'required' | 'optional';
     } | null>;
+    getRevisionPresentation(shopId: string, revisionId: string): Promise<MerchantPresentation | null>;
     getCurrentPublication(
       shopId: string,
       configId: string,
@@ -314,10 +317,38 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           input.geometry.value as GeometryV1,
           revision.publishedValue as Parameters<typeof validateGeometryBridge>[1],
         );
+        const presentation = MerchantPresentationSchema.parse(input.presentation);
+        const published = revision.publishedValue as {
+          methods: { id: string }[];
+          placements: { id: string }[];
+          productionOptions: { id: string; allowedValueIds: string[] }[];
+          pricingRules: { id: string }[];
+        };
+        const geometry = input.geometry.value as GeometryV1;
+        const references = {
+          methods: published.methods.map((item) => item.id),
+          placements: published.placements.map((item) => item.id),
+          steps: geometry.steps.map((item) => item.id),
+          views: geometry.views.map((item) => item.id),
+          options: published.productionOptions.map((item) => item.id),
+          prices: published.pricingRules.map((item) => item.id),
+        };
+        for (const kind of Object.keys(references) as (keyof typeof references)[])
+          if (Object.keys(presentation.labels[kind] ?? {}).some((id) => !references[kind].includes(id)))
+            throw new Error('Presentation label references an unknown choice');
+        for (const [optionId, valueLabels] of Object.entries(presentation.labels.values ?? {})) {
+          const option = published.productionOptions.find((item) => item.id === optionId);
+          if (!option || Object.keys(valueLabels).some((id) => !option.allowedValueIds.includes(id)))
+            throw new Error('Presentation value label references an unknown choice');
+        }
         await sql`INSERT INTO config_revision_geometry
           (shop_id, config_id, revision_id, schema_version, mode, geometry_value, content_hash)
           VALUES (${input.shopId}, ${input.configId}, ${input.revisionId}, ${input.geometry.version}, ${input.mode},
             ${JSON.stringify(input.geometry.value)}::jsonb, ${sha256CanonicalJson(input.geometry.value)})`.execute(tx);
+        await sql`INSERT INTO config_revision_presentation
+          (shop_id, config_id, revision_id, schema_version, presentation_value, content_hash)
+          VALUES (${input.shopId}, ${input.configId}, ${input.revisionId}, ${presentation.version},
+            ${JSON.stringify(presentation)}::jsonb, ${sha256CanonicalJson(presentation)})`.execute(tx);
         return revision;
       },
       getRevisionGeometry: async (shopId, revisionId) => {
@@ -347,6 +378,19 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           contentHash: row.content_hash,
           mode: row.mode,
         };
+      },
+      getRevisionPresentation: async (shopId, revisionId) => {
+        const rows = await sql<{ schema_version: string; presentation_value: unknown; content_hash: string }>`
+          SELECT schema_version, presentation_value, content_hash FROM config_revision_presentation
+          WHERE shop_id=${shopId} AND revision_id=${revisionId}`.execute(database);
+        const row = rows.rows[0];
+        if (!row) return null;
+        if (
+          row.schema_version !== 'm5-presentation-v1' ||
+          sha256CanonicalJson(row.presentation_value) !== row.content_hash
+        )
+          throw new Error('Revision presentation mismatch');
+        return MerchantPresentationSchema.parse(row.presentation_value);
       },
       getCurrentPublication: async (shopId, configId) => {
         const rows = await sql<{

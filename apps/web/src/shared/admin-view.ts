@@ -10,6 +10,7 @@ export interface CatalogProduct {
     imageUrl: string | null;
     selectedOptions: { name: string; value: string }[];
   }[];
+  variantsTruncated?: boolean;
 }
 
 export type PublicationState =

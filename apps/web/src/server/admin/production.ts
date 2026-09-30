@@ -27,8 +27,9 @@ function project(value: ShopifyCatalogProduct): CatalogProduct {
       id: item.id,
       title: item.title,
       imageUrl: item.image?.url ?? null,
-      selectedOptions: [],
+      selectedOptions: item.selectedOptions,
     })),
+    variantsTruncated: value.variantsTruncated,
   };
 }
 function required(env: NodeJS.ProcessEnv, key: string): string {

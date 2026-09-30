@@ -16,6 +16,23 @@ const labelMap = z.record(
     ),
 );
 
+export const MerchantLabelsSchema = z.strictObject({
+  methods: labelMap.optional(),
+  placements: labelMap.optional(),
+  steps: labelMap.optional(),
+  views: labelMap.optional(),
+  options: labelMap.optional(),
+  // A value ID is only unique within its option in the M2 contract.
+  values: z.record(z.string().regex(/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/), labelMap).optional(),
+  prices: labelMap.optional(),
+});
+
+export const MerchantPresentationSchema = z.strictObject({
+  version: z.literal('m5-presentation-v1'),
+  labels: MerchantLabelsSchema,
+});
+export type MerchantPresentation = z.infer<typeof MerchantPresentationSchema>;
+
 /** Merchant input omits tenant, product and revision authority; the server binds those. */
 export const MerchantDraftSchema = z.strictObject({
   version: z.literal('m5-merchant-draft-v1'),
@@ -26,17 +43,7 @@ export const MerchantDraftSchema = z.strictObject({
   productionOptions: PublishedConfigSchema.shape.productionOptions,
   pricingRules: PublishedConfigSchema.shape.pricingRules,
   // Editor presentation only. Published M2 economics use stable IDs, not these labels.
-  labels: z
-    .strictObject({
-      methods: labelMap.optional(),
-      placements: labelMap.optional(),
-      steps: labelMap.optional(),
-      views: labelMap.optional(),
-      options: labelMap.optional(),
-      values: labelMap.optional(),
-      prices: labelMap.optional(),
-    })
-    .optional(),
+  labels: MerchantLabelsSchema.optional(),
   geometry: z.unknown(),
 });
 

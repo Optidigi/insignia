@@ -1,7 +1,7 @@
 import { createHmac } from 'node:crypto';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
 import { describe, expect, it } from 'vitest';
-import { createAdminOnlineIdentity } from '../src/admin-online-identity.js';
+import { createAdminOnlineIdentity, deadlineAwareOnlineFetch } from '../src/admin-online-identity.js';
 
 const key = 'synthetic-m5-client';
 const secret = 'synthetic-m5-secret-only';
@@ -31,21 +31,24 @@ describe('production Shopify online staff adapter with synthetic transport', () 
   it('uses the actual pinned SDK token exchange with a synthetic HTTP response', async () => {
     const original = abstractFetch;
     let calls = 0;
-    setAbstractFetchFunc(async (url, init) => {
-      calls++;
-      expect(String(url)).toBe(`https://${shop}/admin/oauth/access_token`);
-      const body = JSON.parse(String(init?.body));
-      expect(body.client_id).toBe(key);
-      expect(body.requested_token_type).toBe('urn:shopify:params:oauth:token-type:online-access-token');
-      expect(body.subject_token).toBe(signed);
-      return Response.json({
-        access_token: 'synthetic-real-sdk-grant',
-        scope: 'read_products,write_products',
-        expires_in: 3600,
-        associated_user_scope: 'read_products,write_products',
-        associated_user: { id: 23 },
-      });
-    });
+    setAbstractFetchFunc(
+      deadlineAwareOnlineFetch(async (url, init) => {
+        calls++;
+        expect(init?.signal).toBeInstanceOf(AbortSignal);
+        expect(String(url)).toBe(`https://${shop}/admin/oauth/access_token`);
+        const body = JSON.parse(String(init?.body));
+        expect(body.client_id).toBe(key);
+        expect(body.requested_token_type).toBe('urn:shopify:params:oauth:token-type:online-access-token');
+        expect(body.subject_token).toBe(signed);
+        return Response.json({
+          access_token: 'synthetic-real-sdk-grant',
+          scope: 'read_products,write_products',
+          expires_in: 3600,
+          associated_user_scope: 'read_products,write_products',
+          associated_user: { id: 23 },
+        });
+      }),
+    );
     const signed = token();
     try {
       const provider = createAdminOnlineIdentity({ apiKey: key, apiSecret: secret, hostName: 'example.test' });

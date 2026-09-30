@@ -9,6 +9,7 @@ const database = process.env.DATABASE_URL;
 const productA = 'gid://shopify/Product/111';
 const productB = 'gid://shopify/Product/222';
 const productC = 'gid://shopify/Product/333';
+const productD = 'gid://shopify/Product/444';
 const sharedId = 's'.repeat(128);
 function baseDraft() {
   return {
@@ -17,15 +18,18 @@ function baseDraft() {
     shopCurrency: 'USD',
     methods: [{ id: sharedId }],
     placements: [{ id: sharedId, allowedMethodIds: [sharedId], allowedStepIds: [sharedId], logoLaterAllowed: true }],
-    productionOptions: [{ id: sharedId, allowedValueIds: [sharedId] }],
+    productionOptions: [
+      { id: sharedId, allowedValueIds: [sharedId] },
+      { id: 'second-option', allowedValueIds: [sharedId] },
+    ],
     pricingRules: [],
     labels: {
       methods: { [sharedId]: 'Screen print' },
       placements: { [sharedId]: 'Front chest' },
       steps: { [sharedId]: 'Small' },
       views: { 'front-view': 'Front image' },
-      options: { [sharedId]: 'Thread color' },
-      values: { [sharedId]: 'Navy' },
+      options: { [sharedId]: 'Thread color', 'second-option': 'Ink color' },
+      values: { [sharedId]: { [sharedId]: 'Navy thread' }, 'second-option': { [sharedId]: 'Navy ink' } },
     },
     geometry: {
       version: 'm5-geometry-v1',
@@ -84,6 +88,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     }),
   );
   let paused = false;
+  let currentCurrency = 'USD';
   let release;
   let entered;
   const enteredPromise = new Promise((resolve) => {
@@ -100,10 +105,10 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
           entered();
           await gate;
         }
-        return [productA, productB, productC].includes(id) ? item(id) : null;
+        return [productA, productB, productC, productD].includes(id) ? item(id) : null;
       },
       async shopCurrency() {
-        return 'USD';
+        return currentCurrency;
       },
     },
     async eligibility() {
@@ -124,6 +129,12 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     const created = await service.create(staff, productA, 'create-key-01');
     assert.equal(created.kind, 'created');
     assert.deepEqual(await service.create(staff, productA, 'create-key-01'), created);
+    assert.equal((await service.create(staff, productA, 'create-key-02')).kind, 'conflict');
+    const concurrent = await Promise.all([
+      service.create(staff, productD, 'create-concurrent-01'),
+      service.create(staff, productD, 'create-concurrent-02'),
+    ]);
+    assert.deepEqual(concurrent.map((item) => item.kind).sort(), ['conflict', 'created']);
     const draft = baseDraft();
     const saved = await service.save(staff, productA, {
       configId: created.configId,
@@ -165,8 +176,32 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
       ).kind,
       'invalid',
     );
+    currentCurrency = 'EUR';
+    assert.equal(
+      (
+        await service.save(staff, productA, {
+          configId: created.configId,
+          draftVersion: '2',
+          draft,
+          idempotencyKey: 'save-wrong-currency',
+        })
+      ).kind,
+      'invalid',
+    );
+    assert.equal(
+      (
+        await service.publish(staff, productA, {
+          configId: created.configId,
+          draftVersion: '2',
+          idempotencyKey: 'publish-wrong-currency',
+        })
+      ).kind,
+      'invalid',
+    );
+    currentCurrency = 'USD';
     const copy = await service.copy(staff, productA, productB, 'copy-key-01');
     assert.equal(copy.kind, 'created');
+    assert.equal((await service.copy(staff, productA, productB, 'copy-key-02')).kind, 'conflict');
     const copied = (await service.read(staff, productB)).config;
     assert.notEqual(copied.configId, created.configId);
     assert.notEqual(copied.draft.placements[0].id, draft.placements[0].id);
@@ -175,7 +210,18 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     assert.equal(copied.draft.labels.placements[copied.draft.placements[0].id], 'Front chest');
     assert.equal(copied.draft.labels.steps[copied.draft.geometry.steps[0].id], 'Small');
     assert.equal(copied.draft.labels.options[copied.draft.productionOptions[0].id], 'Thread color');
-    assert.equal(copied.draft.labels.values[copied.draft.productionOptions[0].allowedValueIds[0]], 'Navy');
+    assert.equal(
+      copied.draft.labels.values[copied.draft.productionOptions[0].id][
+        copied.draft.productionOptions[0].allowedValueIds[0]
+      ],
+      'Navy thread',
+    );
+    assert.equal(
+      copied.draft.labels.values[copied.draft.productionOptions[1].id][
+        copied.draft.productionOptions[1].allowedValueIds[0]
+      ],
+      'Navy ink',
+    );
     assert.equal(copied.draft.labels.methods[sharedId], undefined);
     assert.deepEqual(copied.draft.geometry.views[0].placements[0].variantOverrides, []);
     assert.equal(copied.draft.geometry.views[0].image, undefined);
@@ -201,6 +247,10 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     assert.equal(published.kind, 'accepted');
     assert.equal(published.state, 'REMOTE_READY_ACTIVATION_PENDING');
     const geometry = await core.configs.getRevisionGeometry(shopId, published.revisionId);
+    const presentation = await core.configs.getRevisionPresentation(shopId, published.revisionId);
+    assert.equal(presentation.version, 'm5-presentation-v1');
+    assert.equal(presentation.labels.methods[sharedId], 'Screen print');
+    assert.equal(presentation.labels.values['second-option'][sharedId], 'Navy ink');
     assert.equal(geometry.mode, 'required');
     assert.equal(geometry.value.views[0].image.revisionId, 'product_111');
     assert.equal(
@@ -216,6 +266,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
           revisionId: randomUUID(),
           publishedValue: { ...revision.publishedValue, revisionId: randomUUID() },
           geometry: { version: 'm5-geometry-v1', value: invalid.geometry },
+          presentation: { version: 'm5-presentation-v1', labels: invalid.labels ?? {} },
           mode: 'required',
           createdByRef: 'staff-1',
         }),
@@ -233,13 +284,16 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
       ).kind,
       'saved',
     );
-    const newer = await service.publish(staff, productA, {
-      configId: created.configId,
-      draftVersion: '4',
-      idempotencyKey: 'publish-key-02',
-    });
     const sql = new Pool({ connectionString: database });
     try {
+      await assert.rejects(
+        sql.query('UPDATE config_revision_presentation SET presentation_value=$1 WHERE shop_id=$2 AND revision_id=$3', [
+          { version: 'm5-presentation-v1', labels: {} },
+          shopId,
+          published.revisionId,
+        ]),
+        /immutable/,
+      );
       const digest = '0'.repeat(64);
       await sql.query(
         'INSERT INTO publication_operations (shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,expected_projection,expected_projection_digest,status,acknowledged_at,observed_at,observed_projection,observed_projection_digest,activated_at) VALUES ($1,$2,$3,$4,1,1,$5,$6,$7,now(),now(),$5,$6,now())',
@@ -253,6 +307,12 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
         'UPDATE product_configs SET effective_revision_id=$1,effective_operation_id=$2,publication_sequence=1 WHERE shop_id=$3 AND config_id=$4',
         [published.revisionId, published.revisionId, shopId, created.configId],
       );
+      const newer = await service.publish(staff, productA, {
+        configId: created.configId,
+        draftVersion: '4',
+        idempotencyKey: 'publish-key-02',
+      });
+      assert.equal(newer.kind, 'accepted', 'an active older operation permits a newer revision');
       await sql.query(
         'INSERT INTO publication_operations (shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,expected_projection,expected_projection_digest) VALUES ($1,$2,$3,$4,1,2,$5,$6)',
         [shopId, created.configId, newer.revisionId, newer.revisionId, {}, digest],

@@ -41,4 +41,41 @@ describe('bounded Admin catalog reader', () => {
     await expect(reader.list({ first: 21 })).rejects.toThrow('pagination');
     await expect(reader.get('https://example.test')).rejects.toThrow('Invalid product ID');
   });
+
+  it('loads a ninth variant through bounded detail pagination and rejects repeated cursors', async () => {
+    const first = Array.from({ length: 8 }, (_, index) => ({
+      id: `gid://shopify/ProductVariant/${index + 1}`,
+      title: `Synthetic ${index + 1}`,
+      image: null,
+    }));
+    const calls: unknown[] = [];
+    const reader = createCatalogReader({
+      async read<T>(_operation: 'list' | 'detail' | 'currency', variables: Record<string, unknown>): Promise<T> {
+        calls.push(variables.after);
+        return {
+          product: {
+            ...product,
+            variants: variables.after
+              ? {
+                  nodes: [{ id: 'gid://shopify/ProductVariant/9', title: 'Ninth', image: null }],
+                  pageInfo: { hasNextPage: false, endCursor: null },
+                }
+              : { nodes: first, pageInfo: { hasNextPage: true, endCursor: 'cursor-1' } },
+          },
+        } as T;
+      },
+    });
+    const detail = await reader.get(id);
+    expect(detail?.variants).toHaveLength(9);
+    expect(detail?.variantsTruncated).toBe(false);
+    expect(calls).toEqual([null, 'cursor-1']);
+    const repeated = createCatalogReader({
+      async read<T>(): Promise<T> {
+        return {
+          product: { ...product, variants: { nodes: [], pageInfo: { hasNextPage: true, endCursor: 'repeat' } } },
+        } as T;
+      },
+    });
+    await expect(repeated.get(id)).rejects.toThrow('pagination');
+  });
 });
