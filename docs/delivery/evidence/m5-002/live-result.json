@@ -1,0 +1,36 @@
+{
+  "previewTarget": {
+    "app": "429028933633",
+    "shop": "insignia-rewrite-dev.myshopify.com"
+  },
+  "launches": [
+    {
+      "result": "build aborted before new preview",
+      "remoteAfter": "old M0-014 stopped preview unchanged",
+      "cause": "missing scoped native linker"
+    },
+    {
+      "result": "one active M5-002 preview; cleaned",
+      "ownedHandles": [
+        "insignia-experimental-v2-transform",
+        "insignia-experimental-v2-validation"
+      ]
+    }
+  ],
+  "liveSource": "dd880d36c9b653d83ec84ccddf7c202585b06408 plus CLI-only generated extension UIDs",
+  "coldLaunch": "FAIL: static shell present; built Astro hydration runtime rejected by unchanged CSP under CLI NODE_ENV=development",
+  "hydrationHashObserved": "SHXg3YtOAVshUMT3f+eElYDgbV0kaujWj8DSaXSS4Vs=",
+  "coldSessionText": "Verifying Shopify Admin session... was SSR text, not authenticated proof",
+  "diagnosticProviderAttempts": 0,
+  "diagnosticLocalTenantSeeds": 0,
+  "localSaveConflictRecoveryLive": "NOT_RUN",
+  "ownedFunctionIdQueryObservation": "NOT_RUN",
+  "browserLimitations": [
+    "main-frame snapshots exclude iframe text/diagnostics",
+    "iframe locator clicks returned client automation error; coordinate click works",
+    "no third-party-cookie policy controls exposed",
+    "resize changes CSS viewport, not mobile UA"
+  ],
+  "localCorrection": "built-runtime.mjs enforces production mode for built output, no CSP relaxation; complete-server red/green regression passed",
+  "correctedLiveRerun": "NOT_RUN: one successful temporary preview limit retained; unused read allowance not used for another preview"
+}

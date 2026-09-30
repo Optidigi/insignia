@@ -1,0 +1,12 @@
+{
+  "merged": true,
+  "merge_sha": "28e69864ebb9796504861a541363880cc86a82f8",
+  "parents": [
+    "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
+    "506f2b39e5713563dc4f5b2beed3937489985bd7"
+  ],
+  "tree": "5ef7c9337177da96b6589589c8468a3c823f389e",
+  "remote_main": "28e69864ebb9796504861a541363880cc86a82f8",
+  "timestamp": "2026-09-30T22:10:43.934386+00:00",
+  "external_principal_verdict": "PR-027R APPROVED; not native GitHub approval"
+}

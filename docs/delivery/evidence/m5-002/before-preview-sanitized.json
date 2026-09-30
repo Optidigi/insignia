@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "observedDate": "2026-09-30",
+  "appId": "gid://shopify/App/429028933633",
+  "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+  "devOrganization": "200969036",
+  "organizationLabel": "Optidigi",
+  "shop": "insignia-rewrite-dev.myshopify.com",
+  "shopId": "gid://shopify/Shop/105501393179",
+  "installationId": "gid://shopify/AppInstallation/1054356963611",
+  "identitySource": "Fixed CLI Admin query M5002Prestate; actual response identity-before.json",
+  "scopes": ["read_cart_transforms", "read_inventory", "read_locations", "read_products", "read_validations", "write_cart_transforms", "write_inventory", "write_products", "write_validations"],
+  "releasedVersion": {"label": "insignia-1", "resource": "1146748534785", "status": "Active", "applicationUrl": "https://example.com", "scopesInDashboard": "none listed", "embedded": true, "apiVersion": "2026-07"},
+  "existingPreview": {"observedInNativeAdmin": true, "handles": ["m0-014-public-transform", "m0-014-public-validation"], "localShopifyDevProcessRunning": false, "tunnelWebsocket": "DNS resolution failure", "attribution": "Prior authorized M0-014R stopped preview, matching historical holding-state record. No unrelated current local operator found."},
+  "cleanupQualification": "M5-002 explicitly authorizes app dev clean and released-version restoration. Empty released scopes may remove retained development grants. Record actual result; no unauthorized re-preview to repair it.",
+  "credentialFileCheck": {"serverEnvUid": 1000, "serverEnvGid": 1000, "mode": "0600", "isSymlink": false, "contentsExported": false}
+}

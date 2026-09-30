@@ -1,0 +1,15 @@
+$ node --test scripts/m5-002/read-register.test.mjs scripts/m5-002/built-runtime.test.mjs
+✔ complete built server reproduces CLI development-mode CSP rejection (294.465383ms)
+✔ actual launcher runtime preparation admits built hydration without widening CSP (211.91793ms)
+✔ actual launcher register reserves durably before synthetic fetch, serializes and denies extra attempts (94.232177ms)
+✔ exact SDK online exchange is counted per attempt; mutations, wrong targets and other token/event routes never send (1.720297ms)
+✔ ambiguous or inflated history stops before any send (0.514245ms)
+✔ one-shot loss applies only after a committed local save and never changes transport counts (1.563697ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 592.192019

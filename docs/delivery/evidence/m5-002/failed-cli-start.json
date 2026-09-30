@@ -1,0 +1,10 @@
+{
+  "result": "aborted before M5 preview creation",
+  "cause": "Scoped native linker was absent from initial CLI environment; cc not found",
+  "cliExit": 1,
+  "diagnosticCallsSent": 0,
+  "nativeAdminAfterAbort": "old M0-014 stopped preview still visible, Tuesday20:42; same handles",
+  "ownerProcessesAfterAbort": "none; listener ports closed",
+  "ownedLockRecovery": "known terminated owner and unchanged durable counts verified; remove only this operator.lock",
+  "generatedMetadata": "CLI appended two extension UIDs; no Function source/schema/Wasm change"
+}

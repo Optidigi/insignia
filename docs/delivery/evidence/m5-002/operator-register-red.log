@@ -1,0 +1,27 @@
+✖ actual launcher register reserves durably before synthetic fetch, serializes and denies extra attempts (3.56133ms)
+✖ exact SDK online exchange is counted per attempt; mutations, wrong targets and other token/event routes never send (0.861706ms)
+✔ ambiguous or inflated history stops before any send (0.874695ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 1
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 78.685572
+
+✖ failing tests:
+
+test at scripts/m5-002/read-register.test.mjs:16:1
+✖ actual launcher register reserves durably before synthetic fetch, serializes and denies extra attempts (3.56133ms)
+  ReferenceError: fsyncSync is not defined
+      at reserve (file:///home/serveradmin/insignia-m5-002-worktree/scripts/m5-002/read-register.mjs:19:77)
+      at guardedFetch (file:///home/serveradmin/insignia-m5-002-worktree/scripts/m5-002/read-register.mjs:31:7)
+      at file:///home/serveradmin/insignia-m5-002-worktree/scripts/m5-002/read-register.mjs:40:40
+
+test at scripts/m5-002/read-register.test.mjs:25:1
+✖ exact SDK online exchange is counted per attempt; mutations, wrong targets and other token/event routes never send (0.861706ms)
+  ReferenceError: fsyncSync is not defined
+      at reserve (file:///home/serveradmin/insignia-m5-002-worktree/scripts/m5-002/read-register.mjs:19:77)
+      at guardedFetch (file:///home/serveradmin/insignia-m5-002-worktree/scripts/m5-002/read-register.mjs:28:7)
+      at file:///home/serveradmin/insignia-m5-002-worktree/scripts/m5-002/read-register.mjs:40:40

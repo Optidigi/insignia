@@ -1,0 +1,25 @@
+{
+  "sourceCommit": "dd880d36c9b653d83ec84ccddf7c202585b06408",
+  "workingTreeDifference": "CLI appended two extension UIDs; Function source/schema unchanged",
+  "cliOptimization": "wasm_opt=false; actual CLI source build hashes equal pre-launch hashes",
+  "artifacts": {
+    "extensions/insignia-cart-transform/target/cart-transform.wasm": {
+      "sha256": "76e890cf702a6bc182e8ca8b55942260f33a5bc5e072d42c2f104a72161a4ddb",
+      "bytes": 181570
+    },
+    "extensions/insignia-cart-validation/target/cart-validation.wasm": {
+      "sha256": "51cd4867fa5c8181eac421c65e3e7fd210662213c3705ffe5cfc8c8d4a085207",
+      "bytes": 183160
+    },
+    "extensions/insignia-cart-transform/src/cart_transform_run.graphql": {
+      "sha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
+      "bytes": 764
+    },
+    "extensions/insignia-cart-validation/src/cart_validations_generate_run.graphql": {
+      "sha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
+      "bytes": 833
+    }
+  },
+  "wasmIdentityQualification": "ShopifyFunction does not return uploaded Wasm hash; CLI build/upload observation is not release evidence",
+  "ownedFunctionObservation": "native dev console showed two expected handles; authenticated Function ID/query observation was NOT_RUN because hydration failed"
+}

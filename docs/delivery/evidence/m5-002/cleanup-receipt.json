@@ -1,0 +1,16 @@
+{
+  "date": "2026-09-30T23:36:23.027142+00:00",
+  "cliCleanExit": 0,
+  "nativeAdminPreviewHeadingAbsent": true,
+  "activeReleasedVersionLabel": "insignia-1",
+  "activeReleasedVersionResource": "1146748534785",
+  "nativeVersionsPage": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions",
+  "currentInstallationAndScopes": "identity-after.json; exact same IDs and nine scope handles as before",
+  "ownedProcessesAfterStop": "none",
+  "holdingState": "released version restored; prior M0-014 preview on this app/store was superseded and cleaned under current explicit permission; unrelated previews untouched",
+  "nativeReleasedVersionPage": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/1146748534785",
+  "applicationUrlAfter": "https://example.com",
+  "embeddedAfter": true,
+  "apiVersionAfter": "2026-07",
+  "scopesInReleasedDashboard": "none listed (distinct from retained actual installation grants)"
+}

@@ -1,0 +1,56 @@
+╭─ info ───────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Using shopify.app.m5-002.toml for default values:                           │
+│                                                                              │
+│    • Org:             Optidigi                                               │
+│    • App:             Insignia                                               │
+│    • Dev store:       insignia-rewrite-dev.myshopify.com                     │
+│    • Update URLs:     Yes                                                    │
+│                                                                              │
+│   You can pass `--reset` to your command to reset your app configuration.    │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+Preview URL: https://admin.shopify.com/store/insignia-rewrite-dev/apps/1443cf6d03d39edae7c101a943c5c684?[query redacted]
+GraphiQL URL (Admin API): http://localhost:3457/graphiql?[query redacted]
+Preparing dev preview on insignia-rewrite-dev.myshopify.comProxy server started on port 40147 GraphiQL server started on port 3457Building function insignia-experimental-v2-transform...Building function insignia-experimental-v2-validation.../home/serveradmin/insignia-m5-002-worktree/crates/cart-transform/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+/home/serveradmin/insignia-m5-002-worktree/crates/cart-validation/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling semver v1.0.28
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling semver v1.0.28
+23:17:26 [@astrojs/node] Server listening on http://127.0.0.1:40301
+   Compiling zmij v1.0.23
+error: linker `cc` not found
+  |
+  = note: No such file or directory (os error 2)
+
+error: could not compile `quote` (build script) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+   Compiling zmij v1.0.23
+error: could not compile `proc-macro2` (build script) due to 1 previous error
+error: linker `cc` not found
+  |
+  = note: No such file or directory (os error 2)
+
+error: could not compile `quote` (build script) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `proc-macro2` (build script) due to 1 previous error
+error: could not compile `zmij` (build script) due to 1 previous error
+error: could not compile `zmij` (build script) due to 1 previous error
+Build step "Build Function" failed: Failed to build function.Build step "Build Function" failed: Failed to build function.❌ Error└  Build error. Please review your code and try again.└  Build error. Please review your code and try again.╭─ error ──────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Dev preview aborted, build errors detected in extensions:                   │
+│  insignia-experimental-v2-transform,insignia-experimental-v2-validation      │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+

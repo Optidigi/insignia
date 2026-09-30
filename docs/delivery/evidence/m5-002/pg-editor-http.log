@@ -1,0 +1,36 @@
+✔ overlapping distinct-key M5 creates serialize before the command FK lock upgrade (166.773595ms)
+✔ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (161.925763ms)
+✔ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (360.646071ms)
+✔ actual M4 prepare/advance over immutable M5 revision reports ready, conflict and hold truthfully (520.534679ms)
+✔ diagnostic preview requires accounting and HTTPS before any provider access (400.215076ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: synthetic-preview.myshopify.com, isOnline: true}
+✔ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (603.731732ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: m0aa71e8101d54941b258bfbe15fe8af4.myshopify.com, isOnline: true}
+✔ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (354.746733ms)
+✔ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (1340.310826ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7772.679404

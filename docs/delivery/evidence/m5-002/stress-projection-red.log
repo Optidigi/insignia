@@ -1,0 +1,20 @@
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":1,"saveMode":"dirty","publishMode":"success","observation":{"ownerVersion":"2","selectedPlacement":"front","numericInputValue":"0.6","projectedGeometry":null,"publicationMetadata":"{\"state\":\"PUBLISH_REQUESTED\",\"revisionId\":\"original-immutable-revision\",\"sourceDraftVersion\":\"1\"}"}}
+✖ publication success preserves dirty local edits and exact save recovery [1/1] (5770.824567ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6213.139273
+
+✖ failing tests:
+
+test at apps/web/test/admin/editor-browser.test.mjs:984:7
+✖ publication success preserves dirty local edits and exact save recovery [1/1] (5770.824567ms)
+  page.waitForFunction: Timeout 5000ms exceeded.
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-002-worktree/apps/web/test/admin/editor-browser.test.mjs:1075:22) {
+    name: 'TimeoutError',
+    log: []
+  }
