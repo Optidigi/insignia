@@ -308,8 +308,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
         await sql`UPDATE m4_publication_progress SET phase='active', version=version+1,
           activation_evidence='synthetic-admission-only'
           WHERE shop_id=${f.shopId} AND config_id=${f.configId} AND operation_id=${operationId}`.execute(tx);
+      });
+      expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({
+        kind: 'OPERATOR_HOLD',
+        phase: 'active',
+      });
+      await database.transaction().execute(async (tx) => {
         expect(await createPublicationRepository(tx).activate(f.shopId, f.configId, operationId)).toBe('activated');
       });
+      expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({ kind: 'ACTIVE', phase: 'active' });
     };
     await publishAndActivate('optional');
     const registration = remote.cells.get('registration');

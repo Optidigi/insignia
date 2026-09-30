@@ -493,10 +493,44 @@ export class PgProductionPublication {
       };
       if (progress.phase === 'conflict') return { kind: 'CONFLICT', phase: progress.phase };
       if (progress.phase === 'operator-hold') return { kind: 'OPERATOR_HOLD', phase: progress.phase };
-      if (progress.phase === 'active')
-        return (await this.current(stored, tx))
+      if (progress.phase === 'active') {
+        if (!(await this.current(stored, tx))) return { kind: 'OPERATOR_HOLD', phase: 'active' };
+        const activated = await sql<{ status: string; effective_operation_id: string | null }>`
+          SELECT o.status, c.effective_operation_id FROM publication_operations o
+          JOIN product_configs c ON c.shop_id=o.shop_id AND c.config_id=o.config_id
+          WHERE o.shop_id=${shopId} AND o.config_id=${configId} AND o.operation_id=${operationId}`.execute(tx);
+        if (activated.rows[0]?.status !== 'activated' || activated.rows[0]?.effective_operation_id !== operationId)
+          return { kind: 'OPERATOR_HOLD', phase: 'active' };
+        const expectedActive = projection(operation.expectedProjection);
+        const observedActive = await this.observe(
+          {
+            shopId,
+            installationGeneration: operation.installationGeneration,
+            shopifyShopId: expectedActive.shopifyShopId,
+            appId: this.appId,
+          },
+          expectedActive.productId,
+        );
+        const tenant = {
+          shopId,
+          installationGeneration: operation.installationGeneration,
+          shopifyShopId: expectedActive.shopifyShopId,
+          appId: this.appId,
+        };
+        return exact(
+          observedActive.publicConfig,
+          this.target(tenant, 'public_config', expectedActive.productId),
+          expectedActive.publicConfig,
+        ) &&
+          exact(
+            observedActive.registration,
+            this.target(tenant, 'registration', expectedActive.productId),
+            expectedActive.registrationReady,
+          ) &&
+          exact(observedActive.policy, this.target(tenant, 'policy', expectedActive.productId), expectedActive.policy)
           ? { kind: 'ACTIVE', phase: 'active' }
           : { kind: 'OPERATOR_HOLD', phase: 'active' };
+      }
       if (!(await this.current(stored, tx))) return hold(null);
       const expected = projection(operation.expectedProjection);
       const tenant: Tenant = {
