@@ -4,6 +4,7 @@ name = "Insignia"
 application_url = "https://example.com"
 embedded = true
 web_directories = ["scripts/m5-002"]
+extension_directories = ["extensions/insignia-cart-transform", "extensions/insignia-cart-validation"]
 [build]
 automatically_update_urls_on_dev = true
 [access_scopes]
