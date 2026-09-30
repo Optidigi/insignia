@@ -164,7 +164,8 @@ export function createDiagnosticPreviewServices(env: NodeJS.ProcessEnv): AdminSe
           })();
           await bootstrap;
           const tenant = await core.tenants.getShopByDomain(shop);
-          if (!tenant) throw new Error('Diagnostic tenant missing');
+          if (!tenant || tenant.shopifyShopId !== shopId.split('/').at(-1))
+            throw new Error('Diagnostic tenant identity mismatch');
           const current = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
           if (!current?.active || current.externalInstallationId !== provider.installationId) {
             cache.clear();
