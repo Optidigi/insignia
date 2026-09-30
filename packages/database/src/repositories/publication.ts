@@ -265,6 +265,17 @@ export function createPublicationRepository(transaction: Transaction<Database>) 
         SELECT phase, activation_evidence FROM m4_publication_progress
         WHERE shop_id=${shopId} AND config_id=${configId} AND operation_id=${operationId}
         FOR UPDATE`.execute(transaction);
+      // Historical M3 journal fixtures have no M4 progress row. The M4 projection
+      // cannot use that compatibility seam, even if an internal caller skipped
+      // the production publisher when requesting its intent.
+      if (
+        !m4.rows[0] &&
+        typeof locked.operation.expected_projection === 'object' &&
+        locked.operation.expected_projection !== null &&
+        'version' in locked.operation.expected_projection &&
+        locked.operation.expected_projection.version === 'm4-publication-v1'
+      )
+        return 'stale';
       if (m4.rows[0] && (m4.rows[0].phase !== 'active' || !m4.rows[0].activation_evidence)) return 'stale';
       if (locked.operation.status === 'activated') {
         return locked.config.effective_operation_id === operationId ? 'activated' : 'stale';

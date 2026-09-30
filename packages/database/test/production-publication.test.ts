@@ -105,6 +105,28 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     return { shopId, configId, revisionId, generation, authorizationGeneration, productId };
   }
 
+  it('rejects an M4-shaped legacy journal activation without M4 progress evidence', async () => {
+    const f = await fixture();
+    const operationId = randomUUID();
+    const projection = { version: 'm4-publication-v1', synthetic: true };
+    await database.transaction().execute(async (tx) => {
+      const journal = createPublicationRepository(tx);
+      await journal.request({
+        shopId: f.shopId,
+        configId: f.configId,
+        operationId,
+        revisionId: f.revisionId,
+        installationGeneration: f.generation,
+        expectedProjection: projection,
+      });
+      expect(await journal.acknowledge(f.shopId, f.configId, operationId)).toBe('acknowledged');
+      expect(await journal.observe({ shopId: f.shopId, configId: f.configId, operationId, projection })).toBe(
+        'observed',
+      );
+      expect(await journal.activate(f.shopId, f.configId, operationId)).toBe('stale');
+    });
+  });
+
   it('journals before writes, resumes ambiguous writes and stops after exact remote ready', async () => {
     const f = await fixture();
     const remote = new FakeRemote();

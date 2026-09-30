@@ -493,8 +493,11 @@ export class PgProductionPublication {
       };
       if (progress.phase === 'conflict') return { kind: 'CONFLICT', phase: progress.phase };
       if (progress.phase === 'operator-hold') return { kind: 'OPERATOR_HOLD', phase: progress.phase };
+      if (progress.phase === 'active')
+        return (await this.current(stored, tx))
+          ? { kind: 'ACTIVE', phase: 'active' }
+          : { kind: 'OPERATOR_HOLD', phase: 'active' };
       if (!(await this.current(stored, tx))) return hold(null);
-      if (progress.phase === 'active') return { kind: 'ACTIVE', phase: progress.phase };
       const expected = projection(operation.expectedProjection);
       const tenant: Tenant = {
         shopId,
