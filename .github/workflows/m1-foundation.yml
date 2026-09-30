@@ -15,6 +15,7 @@ on:
       - 'Cargo.toml'
       - 'Cargo.lock'
       - 'rust-toolchain.toml'
+      - 'scripts/m5-002/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -33,6 +34,7 @@ on:
       - 'scripts/m4-002/**'
       - 'biome.json'
       - 'Cargo.toml'
+      - 'scripts/m5-002/**'
       - 'package.json'
       - '.github/workflows/m1-foundation.yml'
 
@@ -60,7 +62,7 @@ jobs:
       - name: Build and check actual workspace
         run: corepack pnpm check
       - name: M5 publication geometry stress (40 cases, no retries)
-        run: corepack pnpm test:m5-stress
+        run: corepack pnpm test:m5-operator && corepack pnpm test:m5-stress && corepack pnpm test:m5-renderer-control
       - name: Bind current source and build outputs
         run: python3 -B scripts/m1-functions/artifact-manifest.py
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

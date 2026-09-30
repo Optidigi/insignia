@@ -431,7 +431,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         renderer.setMode('edit-placement');
         visualizerRef.current = renderer;
         const current = editorRef.current;
-        if (current) renderer.update(projectRef.current(current));
+        if (current) updateRenderer(current);
       })
       .catch(() => {
         if (!cancelled) setPreviewStatus('Visual preview unavailable.');
@@ -459,8 +459,16 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     }
     return projectScene(current, viewport, images);
   }
+  function updateRenderer(current: EditorState) {
+    const renderer = visualizerRef.current;
+    const element = document.getElementById('insignia-visualizer');
+    if (!renderer || !element) return;
+    const scene = projectRef.current(current);
+    renderer.update(scene);
+    element.setAttribute('data-projected-geometry', JSON.stringify(scene));
+  }
   useEffect(() => {
-    if (editor && visualizerRef.current) visualizerRef.current.update(project(editor));
+    if (editor) updateRenderer(editor);
   }, [editor, view?.product]);
 
   async function send(request: PendingRequest) {
@@ -1101,7 +1109,6 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     id="insignia-visualizer"
                     data-editor-version={editor.version}
                     data-selected-placement={editor.selectedPlacementId ?? ''}
-                    data-projected-geometry={JSON.stringify(project)}
                     data-publication-state={JSON.stringify({
                       state: view.config.publication.state,
                       revisionId: view.config.publication.revisionId,

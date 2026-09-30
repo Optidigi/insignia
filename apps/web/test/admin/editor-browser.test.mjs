@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { mkdir, readFile } from 'node:fs/promises';
+import { mkdir, readdir, readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { crc32, deflateSync } from 'node:zlib';
 import { currencyExponent } from '@insignia/cart-authorization';
@@ -113,21 +113,26 @@ function response(config) {
   };
 }
 async function startServer() {
-  const port = 45000 + Math.floor(Math.random() * 1000);
   const child = spawn(process.execPath, [new URL('../../dist/server/entry.mjs', import.meta.url).pathname], {
-    env: { ...process.env, HOST: '127.0.0.1', PORT: String(port) },
+    env: { ...process.env, HOST: '127.0.0.1', PORT: '0' },
   });
   const exited = new Promise((resolve) => child.once('close', resolve));
-  const base = 'http://127.0.0.1:' + port;
+  let diagnostics = '';
+  for (const stream of [child.stdout, child.stderr])
+    stream.on('data', (chunk) => {
+      diagnostics = (diagnostics + chunk.toString()).slice(-8192);
+    });
+  let base;
   for (let i = 0; i < 100 && child.exitCode === null; i++) {
     try {
-      if ((await fetch(base + '/live')).ok) return { base, child, exited };
+      base = diagnostics.match(/http:\/\/127\.0\.0\.1:\d+/)?.[0];
+      if (base && (await fetch(base + '/live')).ok) return { base, child, exited };
     } catch {}
     await new Promise((resolve) => setTimeout(resolve, 50));
   }
   child.kill('SIGTERM');
   await exited;
-  throw new Error('Web server did not start');
+  throw new Error('Web server did not start: ' + diagnostics);
 }
 test('editor-generated fixed, override and tier defaults price through unchanged M2 in zero/two/three exponent currencies', {
   timeout: 60000,
@@ -1001,6 +1006,20 @@ for (let iteration = 1; iteration <= stressIterations; iteration++) {
           await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
             route.fulfill({ body: '', contentType: 'text/javascript' }),
           );
+          if (process.env.M5_STRESS_BLOCK_VISUALIZER === '1') {
+            const directory = new URL('../../dist/client/_astro/', import.meta.url);
+            let blocked = 0;
+            for (const name of await readdir(directory)) {
+              if (
+                name.endsWith('.js') &&
+                /as createVisualizer[,}]/.test(await readFile(new URL(name, directory), 'utf8'))
+              ) {
+                blocked++;
+                await page.route('**/_astro/' + name, (route) => route.abort('failed'));
+              }
+            }
+            assert.equal(blocked, 1, 'Control must block the actual built renderer module');
+          }
           let current = draft();
           current.labels = { methods: { print: 'Saved name' } };
           let version = '2';
@@ -1071,9 +1090,29 @@ for (let iteration = 1; iteration <= stressIterations; iteration++) {
           await page.evaluate(
             () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
           );
+          await page.getByText('Preview: ready', { exact: true }).waitFor();
+          await page.waitForFunction(() => {
+            const preview = document.querySelector('#insignia-visualizer');
+            const raw = preview?.getAttribute('data-projected-geometry');
+            if (!raw || preview.querySelectorAll('canvas').length !== 3) return false;
+            const scene = JSON.parse(raw);
+            const placement = scene.placements.find((item) => item.id === 'front');
+            if (
+              !placement ||
+              !scene.contentRect ||
+              scene.version !== Number(preview.getAttribute('data-editor-version'))
+            )
+              return false;
+            const centerX =
+              (placement.bounds.x - scene.contentRect.x + placement.bounds.width / 2) / scene.contentRect.width;
+            return Math.abs(centerX - 0.6) < 1e-12;
+          });
           const pixels = await page
             .locator('#insignia-visualizer canvas')
             .evaluateAll((nodes) => nodes.map((canvas) => canvas.toDataURL()));
+          assert.equal(pixels.length, 3, 'Konva must have constructed all three layers');
+          const sceneBefore = await page.locator('#insignia-visualizer').getAttribute('data-projected-geometry');
+          assert.ok(sceneBefore && JSON.parse(sceneBefore).placements.length > 0);
           await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
           if (publishMode === 'success') await page.getByText('Remote ready; activation pending').waitFor();
           else await page.getByText(/Continue the same publication request after checking/).waitFor();
@@ -1086,6 +1125,7 @@ for (let iteration = 1; iteration <= stressIterations; iteration++) {
               .evaluateAll((nodes) => nodes.map((canvas) => canvas.toDataURL())),
             pixels,
           );
+          assert.equal(await page.locator('#insignia-visualizer').getAttribute('data-projected-geometry'), sceneBefore);
           assert.equal(publications.length, 1);
           const action = saveMode === 'ambiguous' ? 'Retry exact save' : 'Save draft';
           await page.locator('s-button').filter({ hasText: action }).click();

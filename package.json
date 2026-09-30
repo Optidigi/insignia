@@ -4,7 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "packageManager": "pnpm@12.6.0",
-  "engines": { "node": "24.21.0" },
+  "engines": {
+    "node": "24.21.0"
+  },
   "scripts": {
     "build": "corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build",
     "test:unit": "corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/contracts test && corepack pnpm --filter @insignia/visualizer test && corepack pnpm --filter @insignia/cart-authorization test && corepack pnpm --filter @insignia/application test && corepack pnpm --filter @insignia/shopify test && corepack pnpm --filter @insignia/observability test && corepack pnpm --filter @insignia/worker test",
@@ -12,13 +14,15 @@
     "test:database": "corepack pnpm --filter @insignia/database test",
     "check:database": "corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database",
     "test:vectors": "tsc -p scripts/m1-functions/tsconfig.json && node --test scripts/m1-functions/check-vector.test.ts",
+    "test:m5-operator": "node --test scripts/m5-002/read-register.test.mjs",
     "test:m5-stress": "M5_PUBLICATION_STRESS_ITERATIONS=10 corepack pnpm --filter @insignia/web exec node --test --test-name-pattern=\"publication (success|failed) preserves\" test/admin/editor-browser.test.mjs",
     "test:browser": "corepack pnpm --filter @insignia/web test && corepack pnpm --filter @insignia/storefront test",
-    "check:style": "biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts",
+    "check:style": "biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002",
     "check:boundaries": "node scripts/boundaries/check.mjs && node scripts/boundaries/check-database-api.mjs && node scripts/boundaries/check-domain-effects.mjs && node --test scripts/boundaries/domain-effects.test.mjs",
     "check:secrets": "node scripts/boundaries/check-secrets.mjs",
     "check:rust": "bash scripts/m1-functions/check.sh",
-    "check": "corepack pnpm check:style && corepack pnpm build && corepack pnpm test:unit && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && python3 -B scripts/boundaries/check-cargo-workspace.py && corepack pnpm check:rust && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 python3 -B scripts/m4-002/replay-production-vectors.py && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/m4-003/replay-public-config.mjs && corepack pnpm test:browser && python3 -B spikes/m0-007/scripts/check-history.py && python3 -B spikes/m0-014/scripts/check-live-setup.py && python3 -B scripts/m1-functions/artifact-manifest.py"
+    "check": "corepack pnpm check:style && corepack pnpm build && corepack pnpm test:unit && corepack pnpm test:m5-operator && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && python3 -B scripts/boundaries/check-cargo-workspace.py && corepack pnpm check:rust && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 python3 -B scripts/m4-002/replay-production-vectors.py && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/m4-003/replay-public-config.mjs && corepack pnpm test:browser && python3 -B spikes/m0-007/scripts/check-history.py && python3 -B spikes/m0-014/scripts/check-live-setup.py && python3 -B scripts/m1-functions/artifact-manifest.py",
+    "test:m5-renderer-control": "node scripts/m5-002/missing-renderer-control.mjs"
   },
   "devDependencies": {
     "@types/node": "24.10.0",
