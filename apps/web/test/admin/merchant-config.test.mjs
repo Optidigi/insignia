@@ -267,6 +267,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
           publishedValue: { ...revision.publishedValue, revisionId: randomUUID() },
           geometry: { version: 'm5-geometry-v1', value: invalid.geometry },
           presentation: { version: 'm5-presentation-v1', labels: invalid.labels ?? {} },
+          sourceDraftVersion: '3',
           mode: 'required',
           createdByRef: 'staff-1',
         }),
@@ -325,10 +326,26 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
         shopId,
         created.configId,
       ]);
+      assert.equal(
+        (
+          await service.save(staff, productA, {
+            configId: created.configId,
+            draftVersion: '4',
+            draft: {
+              ...newerDraft,
+              labels: { ...newerDraft.labels, methods: { ...newerDraft.labels?.methods, [sharedId]: 'New name' } },
+            },
+            idempotencyKey: 'save-key-after-publish',
+          })
+        ).kind,
+        'saved',
+      );
       const observed = (await service.read(staff, productA)).config.publication;
       assert.equal(observed.state, 'PUBLISH_REQUESTED');
       assert.equal(observed.revisionId, newer.revisionId);
       assert.equal(observed.activeRevisionId, published.revisionId);
+      assert.equal(observed.sourceDraftVersion, '4');
+      assert.equal((await service.read(staff, productA)).config.draftVersion, '5');
     } finally {
       await sql.end();
     }

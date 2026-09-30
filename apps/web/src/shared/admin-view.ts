@@ -28,9 +28,11 @@ export interface ConfigView {
     configId: string;
     draftVersion: string;
     draft: unknown;
+    currentShopCurrency: string | null;
     publication: {
       state: PublicationState;
       revisionId: string | null;
+      sourceDraftVersion: string | null;
       activeRevisionId?: string | null;
       reason: string | null;
       requiresAllChannelHold: boolean | null;

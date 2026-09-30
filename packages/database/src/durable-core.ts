@@ -120,6 +120,7 @@ export interface DurableCore {
         publishedValue: unknown;
         geometry: { version: string; value: unknown };
         presentation: unknown;
+        sourceDraftVersion: string;
         mode: 'required' | 'optional';
         createdByRef: string;
       },
@@ -141,6 +142,7 @@ export interface DurableCore {
       operationId: string;
       revisionId: string;
       phase: string;
+      sourceDraftVersion: string | null;
       mode: 'required' | 'optional';
       priorMode: 'required' | 'optional' | null;
       status: string;
@@ -301,6 +303,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
         if (
           input.geometry.version !== 'm5-geometry-v1' ||
           !input.createdByRef ||
+          !/^[1-9][0-9]*$/.test(input.sourceDraftVersion) ||
           (input.mode !== 'required' && input.mode !== 'optional')
         )
           throw new Error('Revision geometry, mode and actor required');
@@ -346,9 +349,11 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           VALUES (${input.shopId}, ${input.configId}, ${input.revisionId}, ${input.geometry.version}, ${input.mode},
             ${JSON.stringify(input.geometry.value)}::jsonb, ${sha256CanonicalJson(input.geometry.value)})`.execute(tx);
         await sql`INSERT INTO config_revision_presentation
-          (shop_id, config_id, revision_id, schema_version, presentation_value, content_hash)
+          (shop_id, config_id, revision_id, schema_version, presentation_value, content_hash, source_draft_version)
           VALUES (${input.shopId}, ${input.configId}, ${input.revisionId}, ${presentation.version},
-            ${JSON.stringify(presentation)}::jsonb, ${sha256CanonicalJson(presentation)})`.execute(tx);
+            ${JSON.stringify(presentation)}::jsonb, ${sha256CanonicalJson(presentation)}, ${input.sourceDraftVersion}::bigint)`.execute(
+          tx,
+        );
         return revision;
       },
       getRevisionGeometry: async (shopId, revisionId) => {
@@ -397,12 +402,16 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           operation_id: string;
           revision_id: string;
           phase: string;
+          source_draft_version: string | null;
           mode: 'required' | 'optional';
           prior_mode: 'required' | 'optional' | null;
           status: string;
-        }>`SELECT o.operation_id, o.revision_id, p.phase, p.mode, p.prior_mode, o.status
+        }>`SELECT o.operation_id, o.revision_id, p.phase, p.mode, p.prior_mode, o.status,
+          rp.source_draft_version::text
           FROM publication_operations o JOIN m4_publication_progress p
           USING (shop_id, config_id, operation_id)
+          LEFT JOIN config_revision_presentation rp
+            ON rp.shop_id=o.shop_id AND rp.config_id=o.config_id AND rp.revision_id=o.revision_id
           WHERE o.shop_id=${shopId} AND o.config_id=${configId}
           ORDER BY o.operation_sequence DESC LIMIT 1`.execute(database);
         const row = rows.rows[0];
@@ -411,6 +420,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
               operationId: row.operation_id,
               revisionId: row.revision_id,
               phase: row.phase,
+              sourceDraftVersion: row.source_draft_version,
               mode: row.mode,
               priorMode: row.prior_mode,
               status: row.status,

@@ -224,11 +224,13 @@ export function createMerchantConfigService(input: {
       if (!config) return { product: item, config: null };
       const progress = await core.configs.getCurrentPublication(actor.tenantShopId, config.configId);
       let eligibility: { allowed: boolean; reason: string | null };
+      let currentShopCurrency: string | null = null;
       try {
+        currentShopCurrency = await input.catalog.shopCurrency(actor);
         const draft = validatedDraft(config.draftValue, actor, productId);
         eligibility =
-          draft.shopCurrency !== (await input.catalog.shopCurrency(actor))
-            ? { allowed: false, reason: 'Shop currency changed. Reload and review the draft.' }
+          draft.shopCurrency !== currentShopCurrency
+            ? { allowed: false, reason: 'Shop currency changed. Review amounts and adopt the current shop currency.' }
             : await input.eligibility(actor, draft);
       } catch {
         eligibility = { allowed: false, reason: 'Draft or entitlement unavailable' };
@@ -244,9 +246,11 @@ export function createMerchantConfigService(input: {
           configId: config.configId,
           draftVersion: config.draftVersion,
           draft: config.draftValue,
+          currentShopCurrency,
           publication: {
             state: publicationState,
             revisionId: progress?.revisionId ?? config.effectiveRevisionId,
+            sourceDraftVersion: progress?.sourceDraftVersion ?? null,
             activeRevisionId: config.effectiveRevisionId,
             reason:
               publicationState === 'REMOTE_READY_ACTIVATION_PENDING'
@@ -474,6 +478,7 @@ export function createMerchantConfigService(input: {
             publishedValue: content,
             geometry: { version: GEOMETRY_VERSION, value: geometry },
             presentation: { version: 'm5-presentation-v1', labels: draft.labels ?? {} },
+            sourceDraftVersion: data.draftVersion,
             mode: draft.mode,
             createdByRef: actor.staffId,
           });

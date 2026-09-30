@@ -70,7 +70,17 @@ function sessionToken(): Promise<string> {
 }
 
 async function jsonResponse<T>(response: Response): Promise<T> {
-  const body = (await response.json().catch(() => ({}))) as T & { error?: string; message?: string };
+  let body: T & { error?: string; message?: string };
+  try {
+    body = (await response.json()) as T & { error?: string; message?: string };
+  } catch {
+    if (response.ok) throw new Error('Invalid successful Admin response');
+    throw Object.assign(new Error(`Request failed (${response.status})`), { status: response.status });
+  }
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    if (response.ok) throw new Error('Invalid successful Admin response');
+    throw Object.assign(new Error(`Request failed (${response.status})`), { status: response.status });
+  }
   if (!response.ok)
     throw Object.assign(new Error(body.message ?? body.error ?? `Request failed (${response.status})`), {
       status: response.status,
@@ -456,6 +466,13 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     setBusy(true);
     try {
       const response = await send(request);
+      if (
+        response.kind !== 'saved' ||
+        typeof response.draftVersion !== 'string' ||
+        !/^[1-9][0-9]*$/.test(response.draftVersion) ||
+        BigInt(response.draftVersion) <= BigInt(view.config.draftVersion)
+      )
+        throw new Error('Invalid successful save response');
       const saved = (request.body as { draft: MerchantDraft }).draft;
       setView({ ...view, config: { ...view.config, draft: saved, draftVersion: String(response.draftVersion) } });
       setDraft(saved);
@@ -498,12 +515,18 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   }
   async function publish() {
     if (!productId || !view?.config || !['clean', 'saved'].includes(saveState)) return;
+    const open = ['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(view.config.publication.state);
+    const sourceVersion = open ? view.config.publication.sourceDraftVersion : view.config.draftVersion;
+    if (!publicationPending.current && !sourceVersion) {
+      setStatus('The original publication request cannot be recovered. Contact an operator before retrying.');
+      return;
+    }
     const request =
       publicationPending.current ??
       ({
         method: 'POST',
-        body: { action: 'publish', configId: view.config.configId, draftVersion: view.config.draftVersion },
-        key: `m5pub_${view.config.configId}_${view.config.draftVersion}`,
+        body: { action: 'publish', configId: view.config.configId, draftVersion: sourceVersion },
+        key: `m5pub_${view.config.configId}_${sourceVersion}`,
       } satisfies PendingRequest);
     publicationPending.current = request;
     writePublicationRequest(productId, request);
@@ -653,7 +676,24 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                       <option value="required">Required for all purchases</option>
                     </select>
                   </label>
-                  <p>Shop currency: {draft.shopCurrency}</p>
+                  <p>Draft shop currency: {draft.shopCurrency}</p>
+                  {view.config.currentShopCurrency && view.config.currentShopCurrency !== draft.shopCurrency && (
+                    <div role="alert">
+                      <p>
+                        Current shop currency: {view.config.currentShopCurrency}. Existing amounts are not converted.
+                        Review every price before saving or publishing.
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const currency = view.config?.currentShopCurrency;
+                          if (currency) change({ ...draft, shopCurrency: currency });
+                        }}
+                      >
+                        Use current shop currency
+                      </button>
+                    </div>
+                  )}
                   <h3>Decoration methods</h3>
                   {draft.methods.map((method) => (
                     <p key={method.id}>

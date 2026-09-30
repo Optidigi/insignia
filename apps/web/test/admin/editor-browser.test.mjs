@@ -68,9 +68,11 @@ function response(config) {
       configId: 'config-1',
       draftVersion: '1',
       draft: config,
+      currentShopCurrency: 'USD',
       publication: {
         state: 'DRAFT',
         revisionId: null,
+        sourceDraftVersion: null,
         activeRevisionId: null,
         reason: null,
         requiresAllChannelHold: null,
@@ -252,6 +254,58 @@ test('real browser editor syncs typed view, variant and step controls with direc
   }
 });
 
+test('merchant explicitly adopts changed shop currency and reviews unchanged typed amount', {
+  timeout: 25000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-currency-token' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let saved;
+    await page.route('**/api/admin/products/111/config', (route) => {
+      if (route.request().method() === 'GET') {
+        const value = draft();
+        value.pricingRules = [
+          {
+            id: 'setup-price',
+            role: 'setup',
+            scope: { kind: 'general' },
+            rate: { kind: 'fixed', amount: { shopDecimal: '4.500', presentmentOverrides: [] } },
+          },
+        ];
+        const view = response(value);
+        view.config.currentShopCurrency = 'EUR';
+        view.config.publishEligibility = { allowed: false, reason: 'Shop currency changed' };
+        return route.fulfill({ json: view });
+      }
+      saved = route.request().postDataJSON();
+      return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
+    });
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.getByText('Current shop currency: EUR', { exact: false }).waitFor();
+    assert.equal(await page.getByLabel('Shop amount (USD)').inputValue(), '4.500');
+    await page.getByRole('button', { name: 'Use current shop currency' }).click();
+    assert.equal(await page.getByLabel('Shop amount (EUR)').inputValue(), '4.500');
+    await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await page.getByText('Draft saved.').waitFor();
+    assert.equal(saved.draft.shopCurrency, 'EUR');
+    assert.equal(saved.draft.pricingRules[0].rate.amount.shopDecimal, '4.500');
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
 test('mobile deep link, cookie-free reload, interrupted save, stale conflict, and missing Polaris control', {
   timeout: 45000,
 }, async () => {
@@ -312,6 +366,18 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
         version = '4';
         return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
       }
+      if (mode === 'malformed') {
+        uncertainKey = request.headers()['idempotency-key'];
+        uncertainBody = body;
+        return route.fulfill({ status: 200, body: '{bad-json', contentType: 'application/json' });
+      }
+      if (mode === 'malformed-retry') {
+        assert.equal(request.headers()['idempotency-key'], uncertainKey);
+        assert.deepEqual(body, uncertainBody);
+        current = body.draft;
+        version = '5';
+        return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
+      }
       if (mode === 'denied') return route.fulfill({ status: 403, json: { message: 'Synthetic permission denied' } });
       if (mode === 'invalid') return route.fulfill({ status: 422, json: { message: 'Synthetic draft invalid' } });
       current = { ...draft(), mode: 'required' };
@@ -364,6 +430,14 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
     await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
     await page.getByText('Synthetic draft invalid').waitFor();
     assert.equal(await page.locator('s-button').filter({ hasText: 'Retry exact save' }).count(), 0);
+    mode = 'malformed';
+    await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await page.getByText('Save result is uncertain. Retry the exact request or reload.').waitFor();
+    assert.equal(await page.getByText('Draft version 4').count(), 1);
+    mode = 'malformed-retry';
+    await page.locator('s-button').filter({ hasText: 'Retry exact save' }).click();
+    await page.getByText('Draft saved.').waitFor();
+    await page.getByText('Draft version 5').waitFor();
     assert.ok(readCalls >= 4 && tokenCalls >= 5);
     assert.deepEqual(await context.cookies(), []);
 
@@ -462,7 +536,9 @@ test('interrupted publication resumes the identical request after reload and rea
   }
 });
 
-test('publication retry uses the deterministic key when embedded storage is denied', { timeout: 20000 }, async () => {
+test('publication retry keeps the original version after a newer draft edit when embedded storage is denied', {
+  timeout: 30000,
+}, async () => {
   const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
   const server = await startServer();
   let browser;
@@ -484,22 +560,36 @@ test('publication retry uses the deterministic key when embedded storage is deni
     );
     let state = 'PUBLISH_REQUESTED';
     let observedKey;
+    let writes = 0;
     await page.route('**/api/admin/products/111/config', (route) => {
       if (route.request().method() === 'GET') {
         const view = response(draft());
+        view.config.draftVersion = '2';
         view.config.publishEligibility = { allowed: true, reason: null };
         view.config.publication.state = state;
         view.config.publication.revisionId = 'same-immutable-revision';
+        view.config.publication.sourceDraftVersion = '1';
         return route.fulfill({ json: view });
       }
-      observedKey = route.request().headers()['idempotency-key'];
+      const key = route.request().headers()['idempotency-key'];
+      const body = route.request().postDataJSON();
+      assert.equal(key, 'm5pub_config-1_1');
+      assert.equal(body.draftVersion, '1');
+      observedKey = key;
+      writes++;
+      if (writes === 1) return route.abort('failed');
       state = 'REMOTE_READY_ACTIVATION_PENDING';
       return route.fulfill({ status: 202, json: { kind: 'accepted', state, revisionId: 'same-immutable-revision' } });
     });
     await page.goto(server.base + '/admin/products/111/config');
     await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
+    await page.getByText(/Continue the same publication request/).waitFor();
+    await page.reload();
+    await page.getByText('Draft version 2').waitFor();
+    await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
     await page.getByText('Remote ready; activation pending').waitFor();
     assert.equal(observedKey, 'm5pub_config-1_1');
+    assert.equal(writes, 2);
   } finally {
     await browser?.close();
     server.child.kill('SIGTERM');
