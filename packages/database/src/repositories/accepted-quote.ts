@@ -1,3 +1,10 @@
+import { createHash, createPublicKey, verify } from 'node:crypto';
+import {
+  checkCompleteSet,
+  decodeEnvelope,
+  decodeMemberCarrier,
+  wholeQuoteSignBytes,
+} from '@insignia/cart-authorization';
 import { type Kysely, sql } from 'kysely';
 import type { Database } from '../client/database.js';
 import { createConfigRepository } from './config.js';
@@ -43,12 +50,18 @@ type StoredResult = {
     economics: {
       customizedQuantity: number;
       totalMinor: string;
-      lines: readonly { lineIndex: number; quantity: number; unitPriceMinor: string; lineTotalMinor: string }[];
+      lines: readonly {
+        lineIndex: number;
+        variantId: string;
+        quantity: number;
+        unitPriceMinor: string;
+        lineTotalMinor: string;
+      }[];
     };
   };
   authorization: {
     setId: string;
-    keyId: string;
+    keyId: number;
     publicKeyFingerprint: string;
     firstValidDay: number;
     lastValidDay: number;
@@ -57,6 +70,24 @@ type StoredResult = {
     members: readonly { lineIndex: number; carrier: string }[];
   };
 };
+
+async function assertReplayKeyUsable(
+  transaction: Kysely<Database>,
+  input: Omit<AcceptanceInput, 'effectiveRevisions'>,
+  keyId: number,
+  fingerprint: string,
+): Promise<void> {
+  const key = await sql<{ state: string; public_key_fingerprint: string }>`
+    SELECT state, public_key_fingerprint FROM signing_keys
+    WHERE shop_id=${input.shopId} AND installation_generation=${input.installationGeneration}::bigint
+      AND authorization_generation=${input.authorizationGeneration}::uuid AND key_id=${keyId}`.execute(transaction);
+  if (
+    !key.rows[0] ||
+    !['active', 'retiring'].includes(key.rows[0].state) ||
+    key.rows[0].public_key_fingerprint !== fingerprint
+  )
+    throw new Error('idempotency key belongs to revoked signing key');
+}
 
 function validateEconomicConservation(value: StoredResult): void {
   const { economics } = value.quote;
@@ -95,6 +126,94 @@ function validateEconomicConservation(value: StoredResult): void {
     value.authorization.members.some((member, index) => member.lineIndex !== index || !member.carrier)
   )
     throw new Error('accepted quote authorization is incomplete or nonconserving');
+}
+
+function uuidHex(value: string): string {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value))
+    throw new Error('invalid authorization UUID');
+  return value.replaceAll('-', '').toLowerCase();
+}
+
+/** Compare every persisted v2 claim to the immutable economic row before INSERT. */
+function validateAuthorizationMetadata(value: StoredResult): void {
+  const { quote, authorization } = value;
+  if (!Number.isSafeInteger(authorization.keyId) || authorization.keyId < 1 || authorization.keyId > 65535)
+    throw new Error('authorization key ID is not numeric u16');
+  const { header } = decodeEnvelope(authorization.envelopeCarrier);
+  const members = authorization.members.map(({ lineIndex, carrier }, index) => {
+    if (lineIndex !== index) throw new Error('authorization member order mismatch');
+    return decodeMemberCarrier(carrier);
+  });
+  checkCompleteSet(header, members);
+  if (
+    header.keyId !== authorization.keyId ||
+    header.generationHex !== uuidHex(quote.authorizationGeneration) ||
+    header.epoch !== quote.authorizationEpoch ||
+    header.quoteHex !== uuidHex(quote.quoteId) ||
+    header.setHex !== uuidHex(authorization.setId) ||
+    header.count !== quote.economics.lines.length ||
+    header.currency !== quote.presentmentCurrency ||
+    header.exponent !== quote.presentmentExponent ||
+    header.country !== quote.country ||
+    header.marketId !== quote.marketId ||
+    header.validThroughDay !== quote.validThroughDay ||
+    header.totalQuantity !== quote.economics.customizedQuantity ||
+    header.totalMinor !== quote.economics.totalMinor ||
+    authorization.firstValidDay > quote.acceptedDay ||
+    authorization.lastValidDay < quote.validThroughDay ||
+    authorization.validThroughDay !== quote.validThroughDay
+  )
+    throw new Error('persisted authorization header does not match immutable quote');
+  for (const [index, member] of members.entries()) {
+    const line = quote.economics.lines[index];
+    if (
+      !line ||
+      member.index !== index ||
+      member.variantId !== line.variantId ||
+      member.quantity !== line.quantity ||
+      member.unitMinor !== line.unitPriceMinor
+    )
+      throw new Error('persisted authorization member does not match immutable quote');
+  }
+}
+
+async function assertNewAuthorizationKey(transaction: Kysely<Database>, value: StoredResult): Promise<void> {
+  const { quote, authorization } = value;
+  const found = await sql<{
+    public_key: Buffer;
+    public_key_fingerprint: string;
+    state: string;
+    first_valid_day: number;
+    last_valid_day: number;
+  }>`SELECT public_key, public_key_fingerprint, state, first_valid_day, last_valid_day
+    FROM signing_keys WHERE shop_id=${quote.shopId}
+      AND installation_generation=${quote.installationGeneration}::bigint
+      AND authorization_generation=${quote.authorizationGeneration}::uuid
+      AND key_id=${authorization.keyId} FOR SHARE`.execute(transaction);
+  const key = found.rows[0];
+  if (
+    key?.state !== 'active' ||
+    key.public_key.length !== 32 ||
+    key.first_valid_day > quote.acceptedDay ||
+    key.last_valid_day < quote.validThroughDay ||
+    key.first_valid_day !== authorization.firstValidDay ||
+    key.last_valid_day !== authorization.lastValidDay ||
+    key.public_key_fingerprint !== authorization.publicKeyFingerprint ||
+    createHash('sha256').update(key.public_key).digest('hex') !== key.public_key_fingerprint
+  )
+    throw new Error('authorization signer does not match active durable key');
+  const { header, signature } = decodeEnvelope(authorization.envelopeCarrier);
+  const members = authorization.members.map(({ carrier }) => decodeMemberCarrier(carrier));
+  const spki = Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), key.public_key]);
+  if (
+    !verify(
+      null,
+      wholeQuoteSignBytes(header, members),
+      createPublicKey({ key: spki, format: 'der', type: 'spki' }),
+      signature,
+    )
+  )
+    throw new Error('authorization signature does not match active durable key');
 }
 
 /** Opaque PostgreSQL facade for the application quote service. The shop row lock serializes
@@ -140,7 +259,7 @@ export class PgAcceptedQuoteRepository {
         current_authorization_epoch: string;
         quote_value: unknown;
         set_id: string;
-        key_id: string;
+        key_id: number;
         public_key_fingerprint: string;
         first_valid_day: number;
         last_valid_day: number;
@@ -171,6 +290,7 @@ export class PgAcceptedQuoteRepository {
       )
         throw new Error('idempotency key belongs to revoked authorization identity');
       if (row.request_digest !== input.requestDigest) throw new Error('idempotency digest conflict');
+      await assertReplayKeyUsable(transaction, input, row.key_id, row.public_key_fingerprint);
       return {
         quote: row.quote_value,
         authorization: {
@@ -243,7 +363,7 @@ export class PgAcceptedQuoteRepository {
         authorization_epoch: string;
         quote_value: unknown;
         set_id: string;
-        key_id: string;
+        key_id: number;
         public_key_fingerprint: string;
         first_valid_day: number;
         last_valid_day: number;
@@ -267,6 +387,7 @@ export class PgAcceptedQuoteRepository {
         )
           throw new Error('idempotency key belongs to revoked authorization identity');
         if (row.request_digest !== input.requestDigest) throw new Error('idempotency digest conflict');
+        await assertReplayKeyUsable(transaction, input, row.key_id, row.public_key_fingerprint);
         return {
           quote: row.quote_value,
           authorization: {
@@ -303,6 +424,8 @@ export class PgAcceptedQuoteRepository {
 
       const result = await commit();
       validateEconomicConservation(result);
+      validateAuthorizationMetadata(result);
+      await assertNewAuthorizationKey(transaction, result);
       const { quote, authorization } = result;
       if (
         quote.shopId !== input.shopId ||

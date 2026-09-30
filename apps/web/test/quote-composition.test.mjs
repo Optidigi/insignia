@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { acceptQuote } from '@insignia/application';
 import { decodeEnvelope, decodeMemberCarrier, wholeQuoteSignBytes } from '@insignia/cart-authorization';
@@ -191,6 +191,8 @@ test('server composition binds trusted provider reads to one signed immutable qu
         },
       },
     },
+    // This isolated composition fixture explicitly supplies synthetic readiness.
+    readiness: { assertReady: async () => {} },
   });
   const request = {
     shopId: 'shop',
@@ -236,9 +238,11 @@ test('server composition binds trusted provider reads to one signed immutable qu
     },
   };
   const evidencePath = new URL('../../../docs/delivery/evidence/m4-002/synthetic-accepted-quote.json', import.meta.url);
-  const serialized = `${JSON.stringify(example, null, 2)}\n`;
-  if (process.env.M4_QUOTE_EVIDENCE_OUTPUT) writeFileSync(evidencePath, serialized);
-  else assert.equal(readFileSync(evidencePath, 'utf8'), serialized);
+  const historical = JSON.parse(readFileSync(evidencePath, 'utf8'));
+  // The M4-002 evidence is frozen with a text key ID; v1.4 uses numeric u16 metadata.
+  assert.equal(historical.authorization.keyId, '7');
+  historical.authorization.keyId = 7;
+  assert.deepEqual(historical, example);
   assert.equal(signatures, 1);
   assert.deepEqual(await acceptQuote(request, ports), result);
   assert.deepEqual([contextReads, catalogReads, subscriptionReads, artworkReads, signatures], [1, 1, 2, 2, 1]);

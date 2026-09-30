@@ -16,7 +16,8 @@
   },
   "dependencies": {
     "@insignia/contracts": "workspace:*",
-    "@insignia/domain": "workspace:*"
+    "@insignia/domain": "workspace:*",
+    "@noble/curves": "2.4.0"
   },
   "devDependencies": {
     "@types/node": "24.10.0",

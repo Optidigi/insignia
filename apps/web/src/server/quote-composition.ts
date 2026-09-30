@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import {
+  type AcceptedQuote,
   bindProviderSubscription,
   type CustomizationFxProvider,
   type EntitlementPolicyConfig,
@@ -61,6 +62,7 @@ export function createQuoteAuthorityPorts(input: {
   artwork?: QuoteArtworkPort;
   fx?: CustomizationFxProvider;
   signing: { keyId: number; signer: AuthorizationSigner };
+  readiness: { assertReady(input: { quote: AcceptedQuote }): Promise<void> };
   clock?: () => Date;
   ids?: { quoteId(): string; setId(): string };
   fetchImpl?: typeof fetch;
@@ -158,6 +160,7 @@ export function createQuoteAuthorityPorts(input: {
         throw new Error('approved FX source is not configured');
       },
     },
+    readiness: input.readiness,
     authorization: {
       admit({ economics, capacity }) {
         const members = membersFor({ economics });
@@ -187,10 +190,10 @@ export function createQuoteAuthorityPorts(input: {
         const signed = await issueWholeQuote(header, members, quote.acceptedDay, input.signing.signer);
         return {
           setId,
-          keyId: String(signed.keyId),
+          keyId: signed.keyId,
           publicKeyFingerprint: signed.publicKeyFingerprint,
-          firstValidDay: quote.acceptedDay,
-          lastValidDay: quote.validThroughDay,
+          firstValidDay: signed.firstValidDay,
+          lastValidDay: signed.lastValidDay,
           validThroughDay: quote.validThroughDay,
           envelopeCarrier: signed.envelope,
           members: signed.members.map((carrier, lineIndex) => ({ lineIndex, carrier })),

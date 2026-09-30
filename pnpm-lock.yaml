@@ -301,6 +301,9 @@ importers:
       '@insignia/domain':
         specifier: workspace:*
         version: link:../domain
+      '@noble/curves':
+        specifier: 2.4.0
+        version: 2.4.0
     devDependencies:
       '@types/node':
         specifier: 24.10.0
@@ -339,6 +342,9 @@ importers:
       '@insignia/application':
         specifier: workspace:*
         version: link:../application
+      '@insignia/cart-authorization':
+        specifier: workspace:*
+        version: link:../cart-authorization
       '@insignia/contracts':
         specifier: workspace:*
         version: link:../contracts
@@ -352,9 +358,6 @@ importers:
         specifier: 8.23.0
         version: 8.23.0
     devDependencies:
-      '@insignia/cart-authorization':
-        specifier: workspace:*
-        version: link:../cart-authorization
       '@types/node':
         specifier: 24.10.0
         version: 24.10.0
@@ -1309,6 +1312,14 @@ packages:
     peerDependencies:
       '@emnapi/core': ^1.7.1 || ^2.0.0-alpha.4
       '@emnapi/runtime': ^1.7.1 || ^2.0.0-alpha.4
+
+  '@noble/curves@2.4.0':
+    resolution: {integrity: sha512-P4/62zrgfH33CneE3Dn4WhJVA22YUU0eR51wKIan4NVRvwsA0YnPTwWGpNbpuacSujmSFLvyzpyuR30+fbq2Ew==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/hashes@2.4.0':
+    resolution: {integrity: sha512-X5XaVWZIBCT7HHZGm5I7ZQXDwLG+bGXuSrMQAW+7Zvl87h1kmc1ZB1VSRJcpUfoUrGQp4Fkoxm5kZ+Ms+aW+eA==}
+    engines: {node: '>= 20.19.0'}
 
   '@opentelemetry/api@1.9.1':
     resolution: {integrity: sha512-gLyJlPHPZYdAk1JENA9LeHejZe1Ti77/pTeFm/nMXmQH/HFZlcS/O2XJB+L8fkbrNSqhdtlvjBVjxwUYanNH5Q==}
@@ -3878,6 +3889,12 @@ snapshots:
       '@emnapi/core': 1.11.3
       '@emnapi/runtime': 1.11.3
       '@tybys/wasm-util': 0.10.4
+
+  '@noble/curves@2.4.0':
+    dependencies:
+      '@noble/hashes': 2.4.0
+
+  '@noble/hashes@2.4.0': {}
 
   '@opentelemetry/api@1.9.1': {}
 

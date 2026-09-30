@@ -6,6 +6,8 @@ import {
   currencyExponent,
   decodeEnvelope,
   decodeMemberCarrier,
+  encodeHeader,
+  encodeMember,
   issueWholeQuote,
   wholeQuoteSignBytes,
 } from '@insignia/cart-authorization';
@@ -110,6 +112,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     const authorizationGeneration = identity.rows[0]?.authorization_generation;
     const authorizationEpoch = Number(identity.rows[0]?.authorization_epoch);
     if (!authorizationGeneration || !Number.isInteger(authorizationEpoch)) throw new Error('missing 000300 identity');
+    const keys = generateKeyPairSync('ed25519');
+    const publicKey = keys.publicKey.export({ format: 'der', type: 'spki' }).subarray(-32);
+    const publicKeyFingerprint = createHash('sha256').update(publicKey).digest('hex');
+    await sql`INSERT INTO signing_keys (shop_id, installation_generation, authorization_generation, key_id,
+      public_key, public_key_fingerprint, private_envelope, wrapping_key_id, state, first_valid_day, last_valid_day)
+      VALUES (${shopId}, ${generation}::bigint, ${authorizationGeneration}::uuid, 7,
+        ${publicKey}, ${publicKeyFingerprint}, '{"v":1}'::jsonb, 'synthetic', 'active', 20000, 21000)`.execute(
+      database,
+    );
     return {
       shopId,
       shopifyShopId,
@@ -121,6 +132,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
       contentHash: revision.contentHash,
       authorizationGeneration,
       authorizationEpoch,
+      keys,
+      publicKeyFingerprint,
     };
   }
 
@@ -164,23 +177,45 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         customizedQuantity: 2,
         totalMinor: '2001',
         lines: [
-          { lineIndex: 0, quantity: 1, unitPriceMinor: '1001', lineTotalMinor: '1001' },
-          { lineIndex: 1, quantity: 1, unitPriceMinor: '1000', lineTotalMinor: '1000' },
+          { lineIndex: 0, variantId: '1', quantity: 1, unitPriceMinor: '1001', lineTotalMinor: '1001' },
+          { lineIndex: 1, variantId: '2', quantity: 1, unitPriceMinor: '1000', lineTotalMinor: '1000' },
         ],
       },
     };
+    const signedHeader = {
+      keyId: 7,
+      generationHex: value.authorizationGeneration.replaceAll('-', ''),
+      epoch: value.authorizationEpoch,
+      quoteHex: quoteId.replaceAll('-', ''),
+      setHex: setId.replaceAll('-', ''),
+      count: 2,
+      currency: 'USD',
+      exponent: 2,
+      country: 'US',
+      marketId: '42',
+      validThroughDay: acceptedDay + 2,
+      totalQuantity: 2,
+      totalMinor: '2001',
+    };
+    const signedMembers = [
+      { index: 0, variantId: '1', quantity: 1, unitMinor: '1001' },
+      { index: 1, variantId: '2', quantity: 1, unitMinor: '1000' },
+    ];
     const authorization = {
       setId,
-      keyId: 'synthetic-key',
-      publicKeyFingerprint: 'synthetic',
-      firstValidDay: acceptedDay,
-      lastValidDay: acceptedDay + 30,
+      keyId: 7,
+      publicKeyFingerprint: value.publicKeyFingerprint,
+      firstValidDay: 20000,
+      lastValidDay: 21000,
       validThroughDay: acceptedDay + 2,
-      envelopeCarrier: 'envelope',
-      members: [
-        { lineIndex: 0, carrier: 'first' },
-        { lineIndex: 1, carrier: 'second' },
-      ],
+      envelopeCarrier: Buffer.concat([
+        encodeHeader(signedHeader),
+        sign(null, wholeQuoteSignBytes(signedHeader, signedMembers), value.keys.privateKey),
+      ]).toString('base64url'),
+      members: signedMembers.map((member, lineIndex) => ({
+        lineIndex,
+        carrier: encodeMember(member).toString('base64url'),
+      })),
     };
     const input = {
       shopId: value.shopId,
@@ -223,6 +258,65 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     expect(signed).toBe(1);
     expect(results[0]).toEqual(results[1]);
     expect(await repo.findCompleted(input)).toEqual(results[0]);
+    const wrongKey = generateKeyPairSync('ed25519');
+    await expect(
+      repo.accept({ ...input, idempotencyKey: 'wrong-signer' }, async () => ({
+        quote,
+        authorization: {
+          ...authorization,
+          envelopeCarrier: Buffer.concat([
+            encodeHeader(signedHeader),
+            sign(null, wholeQuoteSignBytes(signedHeader, signedMembers), wrongKey.privateKey),
+          ]).toString('base64url'),
+        },
+      })),
+    ).rejects.toThrow(/signature does not match active durable key/);
+    await expect(
+      repo.accept({ ...input, idempotencyKey: 'wrong-fingerprint' }, async () => ({
+        quote,
+        authorization: { ...authorization, publicKeyFingerprint: 'a'.repeat(64) },
+      })),
+    ).rejects.toThrow(/signer does not match active durable key/);
+    await sql`UPDATE signing_keys SET state='retiring', retired_at=clock_timestamp()
+      WHERE shop_id=${value.shopId} AND key_id=7`.execute(database);
+    expect(await repo.findCompleted(input)).toEqual(results[0]);
+    await sql`UPDATE signing_keys SET state='revoked', revoked_at=clock_timestamp(),
+      revocation_command_key='emergency-test', revocation_reason='test'
+      WHERE shop_id=${value.shopId} AND key_id=7`.execute(database);
+    await expect(repo.findCompleted(input)).rejects.toThrow(/revoked signing key/);
+    await expect(repo.accept(input, async () => ({ quote, authorization }))).rejects.toThrow(/revoked signing key/);
+    // Restore only this isolated fixture to exercise the separate epoch race below.
+    await sql`UPDATE signing_keys SET state='retiring', revoked_at=NULL,
+      revocation_command_key=NULL, revocation_reason=NULL
+      WHERE shop_id=${value.shopId} AND key_id=7`.execute(database);
+    await expect(
+      repo.accept({ ...input, idempotencyKey: 'wrong-set-metadata' }, async () => ({
+        quote: { ...quote, quoteId: randomUUID() },
+        authorization,
+      })),
+    ).rejects.toThrow(/header does not match immutable quote/);
+    await expect(
+      repo.accept({ ...input, idempotencyKey: 'wrong-member-metadata' }, async () => ({
+        quote: { ...quote, quoteId: randomUUID() },
+        authorization: {
+          ...authorization,
+          envelopeCarrier: Buffer.concat([
+            encodeHeader({
+              ...decodeEnvelope(authorization.envelopeCarrier).header,
+              quoteHex: randomUUID().replaceAll('-', ''),
+            }),
+            Buffer.alloc(64),
+          ]).toString('base64url'),
+          members: [
+            ...(authorization.members[0] ? [authorization.members[0]] : []),
+            {
+              lineIndex: 1,
+              carrier: encodeMember({ index: 1, variantId: '2', quantity: 1, unitMinor: '999' }).toString('base64url'),
+            },
+          ],
+        },
+      })),
+    ).rejects.toThrow(/set total mismatch|member does not match/);
     await expect(
       repo.accept({ ...input, requestDigest: 'b'.repeat(64) }, async () => ({ quote, authorization })),
     ).rejects.toThrow(/idempotency digest conflict/);
@@ -372,7 +466,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     const value = await effectiveFixture();
     const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
     const now = new Date('2026-11-01T05:30:00.000Z');
-    const keys = generateKeyPairSync('ed25519');
+    const keys = value.keys;
     const group = {
       version: 'm2-customization-group-v1' as const,
       shopId: value.shopId,
@@ -484,6 +578,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
           throw new Error('unexpected FX read');
         },
       },
+      // This isolated persistence fixture deliberately supplies synthetic READY evidence.
+      readiness: { assertReady: async () => {} },
       authorization: {
         admit: ({
           economics,
@@ -551,9 +647,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
                 signatures++;
                 return {
                   keyId: input.keyId,
-                  publicKeyFingerprint: 'synthetic',
-                  firstValidDay: input.issuanceDay,
-                  lastValidDay: input.validThroughDay,
+                  publicKeyFingerprint: value.publicKeyFingerprint,
+                  firstValidDay: 20000,
+                  lastValidDay: 21000,
                   signature: sign(null, input.message, keys.privateKey),
                 };
               },
@@ -561,10 +657,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
           );
           return {
             setId,
-            keyId: String(issued.keyId),
+            keyId: issued.keyId,
             publicKeyFingerprint: issued.publicKeyFingerprint,
-            firstValidDay: quote.acceptedDay,
-            lastValidDay: quote.validThroughDay,
+            firstValidDay: 20000,
+            lastValidDay: 21000,
             validThroughDay: quote.validThroughDay,
             envelopeCarrier: issued.envelope,
             members: issued.members.map((carrier, lineIndex) => ({ lineIndex, carrier })),

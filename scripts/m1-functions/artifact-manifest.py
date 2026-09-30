@@ -21,6 +21,8 @@ required = [
     'packages/shopify/src/shop-context.ts',
     'apps/web/src/server/quote-composition.ts',
     'scripts/m4-002/replay-production-vectors.py',
+    'scripts/m4-003/replay-public-config.mjs',
+    'packages/application/src/keys/public-config.ts',
     'crates/cart-transform/src/main.rs',
     'crates/cart-validation/src/main.rs',
     'extensions/insignia-cart-transform/schema.graphql',
@@ -37,6 +39,7 @@ required = [
     'apps/worker/dist/main.js',
     '.m1-artifacts/replay.json',
     '.m4-002-artifacts/production-vectors-replay.json',
+    '.m1-artifacts/m4-003-public-config-replay.json',
     'packages/cart-authorization/fixtures/currency-matrix-v1.json',
     'packages/cart-authorization/fixtures/whole-quote-v2.json',
 ]
