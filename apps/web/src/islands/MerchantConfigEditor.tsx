@@ -134,6 +134,24 @@ function snapshotDraft(value: MerchantDraft): MerchantDraft {
       for (const [id, label] of Object.entries(group)) group[id] = label.trim();
   return copy;
 }
+function removeChoiceLabels(
+  labels: MerchantDraft['labels'],
+  kind: 'methods' | 'options' | 'prices',
+  id: string,
+): MerchantDraft['labels'] {
+  if (!labels) return labels;
+  const next = { ...labels };
+  if (labels[kind]) {
+    const group = { ...labels[kind] };
+    delete group[id];
+    next[kind] = group;
+  }
+  if (kind === 'options' && labels.values) {
+    next.values = { ...labels.values };
+    delete next.values[id];
+  }
+  return next;
+}
 type PricingRule = MerchantDraft['pricingRules'][number];
 type PricingScope = PricingRule['scope'];
 function coherentRule(rule: PricingRule, role: PricingRule['role'], scope: PricingScope): PricingRule {
@@ -426,17 +444,19 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       pixelRatio: Math.max(1, devicePixelRatio || 1),
     };
     const images: Record<string, string> = {};
-    if (selectedImage && imageSize) {
-      const selected = current.geometry.views.find((item) => item.id === current.viewId);
-      const image =
-        selected?.variantImages.find((item) => item.variantId === current.variantId)?.image ?? selected?.image;
-      if (image) images[image.revisionId] = selectedImage;
+    const product = view?.product;
+    if (product) {
+      if (product.imageUrl) images[`product_${numberOf(product.id)}`] = product.imageUrl;
+      for (const variant of product.variants) {
+        const url = variant.imageUrl ?? product.imageUrl;
+        if (url) images[`variant_${numberOf(variant.id)}`] = url;
+      }
     }
     return projectScene(current, viewport, images);
   }
   useEffect(() => {
     if (editor && visualizerRef.current) visualizerRef.current.update(project(editor));
-  }, [editor, selectedImage, imageSize]);
+  }, [editor, view?.product]);
 
   async function send(request: PendingRequest) {
     if (!productId) throw new Error('Product link unavailable');
@@ -458,7 +478,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     }
   }
   async function save(retry = false) {
-    if (!view?.config || !draft || (!retry && (saveState !== 'dirty' || advancedError))) return;
+    if (!productId || !view?.config || !draft || (!retry && (saveState !== 'dirty' || advancedError))) return;
     const request =
       retry && pending.current
         ? pending.current
@@ -485,11 +505,41 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       )
         throw new Error('Invalid successful save response');
       const saved = (request.body as { draft: MerchantDraft }).draft;
-      setView({ ...view, config: { ...view.config, draft: saved, draftVersion: String(response.draftVersion) } });
+      const savedVersion = response.draftVersion;
+      setView({
+        ...view,
+        config: {
+          ...view.config,
+          draft: saved,
+          draftVersion: savedVersion,
+          publishEligibility: {
+            allowed: false,
+            reason: 'Publication eligibility has not been verified for this saved draft. Reload before publishing.',
+          },
+        },
+      });
       setDraft(saved);
       setSaveState('saved');
       setStatus('Draft saved.');
       pending.current = null;
+      try {
+        const refreshed = await authenticatedJson<ConfigView>(endpoint(productId));
+        const config = refreshed.config;
+        if (
+          refreshed.product.id !== view.product.id ||
+          !config ||
+          config.configId !== view.config.configId ||
+          config.installationGeneration !== view.config.installationGeneration ||
+          config.draftVersion !== savedVersion ||
+          canonical(config.draft) !== canonical(JSON.parse(JSON.stringify(saved))) ||
+          typeof config.publishEligibility?.allowed !== 'boolean' ||
+          !(config.publishEligibility.reason === null || typeof config.publishEligibility.reason === 'string')
+        )
+          throw new Error('Publication eligibility does not match the saved draft');
+        setView(refreshed);
+      } catch {
+        setStatus('Draft saved. Publication eligibility could not be verified. Reload before publishing.');
+      }
     } catch (error) {
       const status = (error as { status?: number })?.status;
       if (status && status >= 400 && status < 500 && status !== 409) {
@@ -499,7 +549,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         return;
       }
       const body = request.body as { draftVersion: string; draft: MerchantDraft };
-      const result = await authenticatedJson<ConfigView>(endpoint(productId!)).catch(() => null);
+      const result = await authenticatedJson<ConfigView>(endpoint(productId)).catch(() => null);
       if (
         result?.config &&
         result.config.draftVersion !== body.draftVersion &&
@@ -725,7 +775,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                       <button
                         type="button"
                         onClick={() =>
-                          change({ ...draft, methods: draft.methods.filter((item) => item.id !== method.id) })
+                          change({
+                            ...draft,
+                            methods: draft.methods.filter((item) => item.id !== method.id),
+                            labels: removeChoiceLabels(draft.labels, 'methods', method.id),
+                          })
                         }
                       >
                         Remove
@@ -1042,6 +1096,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                           change({
                             ...draft,
                             productionOptions: draft.productionOptions.filter((option) => option.id !== item.id),
+                            labels: removeChoiceLabels(draft.labels, 'options', item.id),
                           })
                         }
                       >
@@ -1403,7 +1458,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                         <button
                           type="button"
                           onClick={() =>
-                            change({ ...draft, pricingRules: draft.pricingRules.filter((item) => item.id !== rule.id) })
+                            change({
+                              ...draft,
+                              pricingRules: draft.pricingRules.filter((item) => item.id !== rule.id),
+                              labels: removeChoiceLabels(draft.labels, 'prices', rule.id),
+                            })
                           }
                         >
                           Remove price

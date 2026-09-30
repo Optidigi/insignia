@@ -6,6 +6,7 @@ import { CONFIG_DRAFT_STORAGE_VERSION, createConfigRepositoryInternal } from '..
 import { PgProductionPublication } from '../src/repositories/production-publication.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
 import { PgSigningKeyRepository } from '../src/repositories/signing-keys.js';
+import { createTenantRepository } from '../src/repositories/tenant.js';
 import { createTestShop, openTestDatabase } from './support/postgres.js';
 
 type Field = 'public_config' | 'registration' | 'policy';
@@ -273,6 +274,45 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     const rows = await sql<{ operation_id: string }>`SELECT operation_id FROM publication_operations
       WHERE shop_id=${f.shopId} AND operation_id=${operationId}`.execute(database);
     expect(rows.rows).toHaveLength(1);
+  });
+
+  it('allows a new installation intent without deleting the old prepared journal', async () => {
+    const f = await fixture();
+    const remote = new FakeRemote();
+    const publisher = new PgProductionPublication(database, remote, '101');
+    const oldOperation = randomUUID();
+    await publisher.prepare({ ...f, operationId: oldOperation, mode: 'required' });
+    const generation = await database
+      .transaction()
+      .execute((tx) => createTenantRepository(tx).startInstallation(tx, f.shopId, 'synthetic-reinstalled'));
+    await sql`INSERT INTO signing_keys (shop_id, installation_generation, authorization_generation,
+      key_id, public_key, public_key_fingerprint, private_envelope, wrapping_key_id, state,
+      first_valid_day, last_valid_day)
+      SELECT key.shop_id, ${generation}::bigint, installation.authorization_generation,
+        key.key_id, key.public_key, key.public_key_fingerprint, key.private_envelope,
+        key.wrapping_key_id, 'pending', key.first_valid_day, key.last_valid_day
+      FROM signing_keys key JOIN installation_generations installation ON installation.shop_id=key.shop_id
+      WHERE key.shop_id=${f.shopId} AND key.installation_generation=${f.generation}::bigint
+        AND installation.generation=${generation}::bigint`.execute(database);
+    const newOperation = randomUUID();
+    expect(await publisher.prepare({ ...f, operationId: newOperation, mode: 'required' })).toEqual({
+      operationId: newOperation,
+      phase: 'prepared',
+    });
+    await expect(publisher.prepare({ ...f, operationId: randomUUID(), mode: 'required' })).rejects.toThrow(
+      'Another publication is pending',
+    );
+    expect(await publisher.advance(f.shopId, f.configId, newOperation)).toEqual({
+      kind: 'ADMISSION_PENDING',
+      phase: 'prepared',
+    });
+    expect(remote.writes).toEqual([]);
+    const preserved = await sql<{ generation: string; phase: string; status: string }>`
+      SELECT operation.installation_generation::text AS generation, progress.phase, operation.status
+      FROM publication_operations operation JOIN m4_publication_progress progress
+        USING (shop_id, config_id, operation_id)
+      WHERE operation.shop_id=${f.shopId} AND operation.operation_id=${oldOperation}`.execute(database);
+    expect(preserved.rows[0]).toEqual({ generation: f.generation, phase: 'prepared', status: 'superseded' });
   });
 
   it('recovers after a write timeout at every durable remote stage', async () => {

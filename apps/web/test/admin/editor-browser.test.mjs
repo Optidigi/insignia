@@ -3,6 +3,7 @@ import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
 import { test } from 'node:test';
+import { crc32, deflateSync } from 'node:zlib';
 import { validatePublishedConfig } from '@insignia/domain';
 import { chromium } from 'playwright';
 
@@ -13,6 +14,32 @@ const png =
 const id = 'gid://shopify/Product/111';
 const variant = 'gid://shopify/ProductVariant/11';
 const rect = { centerX: 0.5, centerY: 0.5, width: 0.3, height: 0.3 };
+function solidPng(width, height, color) {
+  const chunk = (name, data) => {
+    const type = Buffer.from(name);
+    const size = Buffer.alloc(4);
+    size.writeUInt32BE(data.length);
+    const checksum = Buffer.alloc(4);
+    checksum.writeUInt32BE(crc32(Buffer.concat([type, data])));
+    return Buffer.concat([size, type, data, checksum]);
+  };
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 2;
+  const rows = Buffer.alloc(height * (1 + width * 3));
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) rows.set(color, y * (1 + width * 3) + 1 + x * 3);
+  return (
+    'data:image/png;base64,' +
+    Buffer.concat([
+      Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+      chunk('IHDR', header),
+      chunk('IDAT', deflateSync(rows)),
+      chunk('IEND', Buffer.alloc(0)),
+    ]).toString('base64')
+  );
+}
 function draft() {
   return {
     version: 'm5-merchant-draft-v1',
@@ -134,14 +161,20 @@ test('real browser editor syncs typed view, variant and step controls with direc
     );
     let saved;
     let current = draft();
+    let version = '1';
     await page.route('**/api/admin/products/111/config', async (route) => {
       const request = route.request();
       if (request.headers().authorization !== 'Bearer synthetic-staff-token')
         return route.fulfill({ status: 401, json: { error: 'Missing synthetic staff token' } });
-      if (request.method() === 'GET') return route.fulfill({ json: response(current) });
+      if (request.method() === 'GET') {
+        const value = response(current);
+        value.config.draftVersion = version;
+        return route.fulfill({ json: value });
+      }
       if (request.method() !== 'PUT') return route.fulfill({ status: 405 });
       saved = request.postDataJSON();
       current = saved.draft;
+      version = '2';
       return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
     });
     const opened = await page.goto(server.base + '/admin/products/111/config');
@@ -256,10 +289,225 @@ test('real browser editor syncs typed view, variant and step controls with direc
   }
 });
 
-test('merchant explicitly adopts changed shop currency and reviews unchanged typed amount', {
+test('removing named choices drops only their labels including nested option value labels before save', {
   timeout: 25000,
 }, async () => {
   const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  assert.equal(createHash('sha256').update(source).digest('hex'), polarisSha);
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-removal-token' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let current = draft();
+    let version = '1';
+    let saved;
+    await page.route('**/api/admin/products/111/config', (route) => {
+      const request = route.request();
+      assert.equal(request.headers().authorization, 'Bearer synthetic-removal-token');
+      if (request.method() === 'GET') {
+        const value = response(current);
+        value.config.draftVersion = version;
+        return route.fulfill({ json: value });
+      }
+      assert.equal(request.method(), 'PUT');
+      saved = request.postDataJSON();
+      current = saved.draft;
+      version = '2';
+      return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
+    });
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.getByText('Draft version 1').waitFor();
+    await page.waitForFunction(() => document.querySelector('#insignia-visualizer canvas'));
+    await page.getByLabel('Method name').fill('Keep print');
+    await page.getByRole('button', { name: 'Add method', exact: true }).click();
+    await page.getByLabel('Method name').last().fill('Remove unused method');
+    await page
+      .getByLabel('Method name')
+      .last()
+      .locator('..')
+      .locator('..')
+      .getByRole('button', { name: 'Remove', exact: true })
+      .click();
+    await page.getByRole('button', { name: 'Add production option' }).click();
+    await page.getByLabel('Option name').fill('Remove thread');
+    await page.getByLabel(/^Value .* name$/).fill('Remove navy');
+    await page.getByRole('button', { name: 'Add production option' }).click();
+    await page.getByLabel('Option name').last().fill('Keep finish');
+    await page
+      .getByLabel(/^Value .* name$/)
+      .last()
+      .fill('Keep matte');
+    await page
+      .getByLabel('Option name')
+      .first()
+      .locator('..')
+      .locator('..')
+      .getByRole('button', { name: 'Remove', exact: true })
+      .click();
+    await page.getByRole('button', { name: 'Add fixed price' }).click();
+    await page.getByLabel('Price name').fill('Keep setup');
+    await page.getByRole('button', { name: 'Add fixed price' }).click();
+    await page.getByLabel('Price name').last().fill('Remove setup');
+    await page.getByRole('button', { name: 'Remove price', exact: true }).last().click();
+    await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await page.getByText('Draft saved.').waitFor();
+    assert.deepEqual(saved.draft.labels.methods, { print: 'Keep print' });
+    const option = saved.draft.productionOptions[0];
+    assert.deepEqual(saved.draft.labels.options, { [option.id]: 'Keep finish' });
+    assert.deepEqual(saved.draft.labels.values, { [option.id]: { [option.allowedValueIds[0]]: 'Keep matte' } });
+    assert.deepEqual(saved.draft.labels.prices, { [saved.draft.pricingRules[0].id]: 'Keep setup' });
+    assert.doesNotThrow(() =>
+      validatePublishedConfig({
+        version: 'm2-published-config-v1',
+        shopId: 'shop_1',
+        productId: 'product_111',
+        revisionId: 'revision_1',
+        revisionContentHash: 'a'.repeat(64),
+        shopCurrency: saved.draft.shopCurrency,
+        methods: saved.draft.methods,
+        placements: saved.draft.placements,
+        productionOptions: saved.draft.productionOptions,
+        pricingRules: saved.draft.pricingRules,
+      }),
+    );
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('variant without a saved image override retains the portrait default until explicit landscape adoption', {
+  timeout: 25000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  assert.equal(createHash('sha256').update(source).digest('hex'), polarisSha);
+  const portrait = solidPng(40, 80, [220, 30, 30]);
+  const landscape = solidPng(80, 40, [30, 60, 220]);
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage({ viewport: { width: 1120, height: 900 } });
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-image-token' };
+    });
+    page.setDefaultTimeout(5000);
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let current = draft();
+    current.geometry.views[0].image = { revisionId: 'product_111', width: 40, height: 80 };
+    current.geometry.views[0].variantImages = [];
+    let version = '1';
+    const saved = [];
+    await page.route('**/api/admin/products/111/config', (route) => {
+      const request = route.request();
+      assert.equal(request.headers().authorization, 'Bearer synthetic-image-token');
+      if (request.method() === 'GET') {
+        const value = response(current);
+        value.config.draftVersion = version;
+        value.product.imageUrl = portrait;
+        value.product.variants[0].imageUrl = landscape;
+        return route.fulfill({ json: value });
+      }
+      assert.equal(request.method(), 'PUT');
+      saved.push(request.postDataJSON());
+      current = saved.at(-1).draft;
+      version = String(Number(version) + 1);
+      return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
+    });
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.getByText('Draft version 1').waitFor();
+    const waitForColor = (red, blue) =>
+      page.waitForFunction(
+        ({ red, blue }) => {
+          const canvas = document.querySelector('#insignia-visualizer canvas');
+          const pixel = canvas?.getContext('2d')?.getImageData(canvas.width / 2, canvas.height / 2, 1, 1).data;
+          return pixel?.[0] === red && pixel?.[2] === blue;
+        },
+        { red, blue },
+        { timeout: 5000 },
+      );
+    await waitForColor(220, 30);
+    const canvas = page.locator('#insignia-visualizer canvas').first();
+    const portraitPixels = await canvas.evaluate((element) => element.toDataURL());
+    await page.getByLabel('Product variant').selectOption('variant_11');
+    await page.waitForFunction(
+      () =>
+        ![...document.querySelectorAll('button')].find(
+          (button) => button.textContent.trim() === 'Use selected product image',
+        )?.disabled,
+    );
+    await page.getByLabel('Customization mode').selectOption('required');
+    await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await page.getByText('Draft saved.').waitFor();
+    assert.equal(
+      await canvas.evaluate((element) => element.toDataURL()),
+      portraitPixels,
+      'Selecting an unconfigured variant must keep the saved portrait background',
+    );
+    assert.deepEqual(saved[0].draft.geometry.views[0].image, { revisionId: 'product_111', width: 40, height: 80 });
+    assert.deepEqual(saved[0].draft.geometry.views[0].variantImages, []);
+    await page.getByRole('button', { name: 'Use selected product image' }).click();
+    await waitForColor(30, 220);
+    assert.notEqual(await canvas.evaluate((element) => element.toDataURL()), portraitPixels);
+    const bounds = await canvas.evaluate((element) => {
+      const { width, height } = element;
+      const data = element.getContext('2d').getImageData(0, 0, width, height).data;
+      let left = width;
+      let right = -1;
+      let top = height;
+      let bottom = -1;
+      for (let y = 0; y < height; y++)
+        for (let x = 0; x < width; x++) {
+          const offset = (y * width + x) * 4;
+          if (data[offset] === 30 && data[offset + 1] === 60 && data[offset + 2] === 220) {
+            left = Math.min(left, x);
+            right = Math.max(right, x);
+            top = Math.min(top, y);
+            bottom = Math.max(bottom, y);
+          }
+        }
+      return { width: right - left + 1, height: bottom - top + 1 };
+    });
+    assert.ok(
+      Math.abs(bounds.width / bounds.height - 2) < 0.02,
+      'Adopted landscape must render with its exact aspect ratio',
+    );
+    await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await page.getByText('Draft version 3').waitFor();
+    assert.deepEqual(saved[1].draft.geometry.views[0].image, { revisionId: 'product_111', width: 40, height: 80 });
+    assert.deepEqual(saved[1].draft.geometry.views[0].variantImages, [
+      { variantId: 'variant_11', image: { revisionId: 'variant_11', width: 80, height: 40 } },
+    ]);
+    assert.ok(
+      !JSON.stringify(saved[1].draft.geometry).includes('data:image'),
+      'Image URLs stay outside persisted geometry',
+    );
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('merchant currency adoption refreshes saved publication eligibility and later failed or stale reads fail closed', {
+  timeout: 25000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  assert.equal(createHash('sha256').update(source).digest('hex'), polarisSha);
   const server = await startServer();
   let browser;
   try {
@@ -269,31 +517,49 @@ test('merchant explicitly adopts changed shop currency and reviews unchanged typ
       window.shopify = { idToken: async () => 'synthetic-currency-token' };
     });
     await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
     await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
       route.fulfill({ body: '', contentType: 'text/javascript' }),
     );
     let saved;
+    let current = draft();
+    current.pricingRules = [
+      {
+        id: 'setup-price',
+        role: 'setup',
+        scope: { kind: 'general' },
+        rate: { kind: 'fixed', amount: { shopDecimal: '4.500', presentmentOverrides: [] } },
+      },
+    ];
+    let version = '1';
+    let readCalls = 0;
+    let refresh = 'current';
     await page.route('**/api/admin/products/111/config', (route) => {
+      assert.equal(route.request().headers().authorization, 'Bearer synthetic-currency-token');
       if (route.request().method() === 'GET') {
-        const value = draft();
-        value.pricingRules = [
-          {
-            id: 'setup-price',
-            role: 'setup',
-            scope: { kind: 'general' },
-            rate: { kind: 'fixed', amount: { shopDecimal: '4.500', presentmentOverrides: [] } },
-          },
-        ];
-        const view = response(value);
+        readCalls++;
+        if (refresh === 'failed')
+          return route.fulfill({ status: 503, json: { message: 'Synthetic read unavailable' } });
+        const view = response(current);
+        view.config.draftVersion = refresh === 'stale' ? '2' : version;
         view.config.currentShopCurrency = 'EUR';
-        view.config.publishEligibility = { allowed: false, reason: 'Shop currency changed' };
+        view.config.publishEligibility =
+          current.shopCurrency === 'EUR'
+            ? { allowed: true, reason: null }
+            : { allowed: false, reason: 'Shop currency changed' };
         return route.fulfill({ json: view });
       }
+      assert.equal(route.request().method(), 'PUT');
       saved = route.request().postDataJSON();
-      return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
+      assert.equal(saved.draftVersion, version);
+      current = saved.draft;
+      version = String(Number(version) + 1);
+      return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
     });
     await page.goto(server.base + '/admin/products/111/config');
     await page.getByText('Current shop currency: EUR', { exact: false }).waitFor();
+    const publicationButton = page.locator('s-button').filter({ hasText: 'Request publication' });
+    assert.equal(await publicationButton.evaluate((button) => button.disabled), true);
     assert.equal(await page.getByLabel('Shop amount (USD)').inputValue(), '4.500');
     await page.getByRole('button', { name: 'Use current shop currency' }).click();
     assert.equal(await page.getByLabel('Shop amount (EUR)').inputValue(), '4.500');
@@ -301,6 +567,31 @@ test('merchant explicitly adopts changed shop currency and reviews unchanged typ
     await page.getByText('Draft saved.').waitFor();
     assert.equal(saved.draft.shopCurrency, 'EUR');
     assert.equal(saved.draft.pricingRules[0].rate.amount.shopDecimal, '4.500');
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll('s-button')].some(
+          (button) => button.textContent.trim() === 'Request publication' && !button.disabled,
+        ),
+      null,
+      { timeout: 5000 },
+    );
+    assert.equal(readCalls, 2, 'Eligibility must come from the authoritative saved-version read');
+    assert.equal(await page.getByText('Shop currency changed', { exact: true }).count(), 0);
+    for (const outcome of ['failed', 'stale']) {
+      refresh = outcome;
+      await page.getByLabel('Shop amount (EUR)').fill(outcome === 'failed' ? '5.000' : '6.000');
+      await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+      await page
+        .getByText('Draft saved. Publication eligibility could not be verified. Reload before publishing.')
+        .waitFor();
+      await page.getByText(`Draft version ${outcome === 'failed' ? '3' : '4'} · saved`).waitFor();
+      assert.equal(await publicationButton.evaluate((button) => button.disabled), true);
+      assert.equal(await page.locator('s-button').filter({ hasText: 'Retry exact save' }).count(), 0);
+      assert.equal(await page.locator('s-button').filter({ hasText: 'Review latest saved draft' }).count(), 0);
+      assert.equal(await page.getByLabel('Shop amount (EUR)').inputValue(), outcome === 'failed' ? '5.000' : '6.000');
+      assert.equal(await page.locator('fieldset').evaluate((element) => element.disabled), false);
+    }
+    assert.equal(readCalls, 4);
   } finally {
     await browser?.close();
     server.child.kill('SIGTERM');
@@ -776,7 +1067,9 @@ test('concurrent editor refreshes share one App Bridge identity request', { time
         return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
       }
       reads++;
-      return route.fulfill({ json: response(colon) });
+      const value = response(saved?.draft ?? colon);
+      value.config.draftVersion = saved ? '2' : '1';
+      return route.fulfill({ json: value });
     });
     await page.goto(`${server.base}/admin/products/111/config`);
     await page.waitForFunction(() => window.__tokenCalls === 1);
@@ -857,7 +1150,9 @@ test('empty merchant draft can be configured through typed controls and pass M2 
         saved = route.request().postDataJSON();
         return route.fulfill({ json: { kind: 'saved', draftVersion: '2' } });
       }
-      return route.fulfill({ json: response(empty) });
+      const value = response(saved?.draft ?? empty);
+      value.config.draftVersion = saved ? '2' : '1';
+      return route.fulfill({ json: value });
     });
     await page.goto(`${server.base}/admin/products/111/config`);
     await page.getByText('Draft version 1').waitFor();

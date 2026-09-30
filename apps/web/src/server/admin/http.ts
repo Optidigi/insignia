@@ -1,3 +1,4 @@
+import { CommandDigestConflictError } from '@insignia/application';
 import type { AdminActor, AdminServices, CommandOutcome } from './contracts.js';
 
 export type AdminRoute = { kind: 'list' } | { kind: 'config'; productId: string };
@@ -194,7 +195,9 @@ export async function handleAdminRequest(
         }),
       );
     return adminJson(422, { error: 'Invalid command' });
-  } catch {
+  } catch (error) {
+    if (error instanceof CommandDigestConflictError)
+      return adminJson(409, { kind: 'conflict', message: 'Command key was used for a different request' });
     return adminJson(503, { error: 'Admin service unavailable' });
   }
 }

@@ -196,3 +196,25 @@ test('unwired admin backend serves no private catalog data', async () => {
   assert.equal(response.status, 503);
   assert.doesNotMatch(await response.text(), /Synthetic shirt|gid:\/\/shopify\/Product/);
 });
+
+test('unknown durable command failures remain unavailable without leaking details', async () => {
+  const h = deps({
+    configs: {
+      save: async () => {
+        throw new Error('synthetic internal diagnostic');
+      },
+    },
+  });
+  const response = await handleAdminRequest(
+    request('/api/admin/products/10485042479387/config', 'PUT', {
+      action: 'save',
+      configId: 'config-1',
+      draftVersion: '1',
+      draft: { version: 'm5-merchant-draft-v1' },
+    }),
+    h.services,
+    { kind: 'config', productId },
+  );
+  assert.equal(response.status, 503);
+  assert.deepEqual(await response.json(), { error: 'Admin service unavailable' });
+});

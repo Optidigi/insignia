@@ -106,3 +106,7 @@ The new draft, geometry and presentation values are independently versioned. M2 
 Principal verdict: **unset**. Gate adjudication: **unset**. Authorization for M5 merge, activation or next slice: **none**. The principal must bind any decision to the actual final repository/PR/base/head.
 
 Optional live preview, final exact-head CI, and final review dispositions are recorded in the PR body after the last commit. No M5 merge, publication/key/FX/Function activation, deployment, commercial catalog, artwork/R2, M6/M7, full gate declaration, or launch is requested. Principal review and next direction remain pending.
+
+## Owner-authorized execution-model correction
+
+The external principal verdict at `ec8e5ea` is **CHANGES_REQUESTED** for execution-model compliance; the earlier unset verdict and gpt-6-sol review records above describe the original submission. See the [GPT-6.1-sol/high full-source correction record](evidence/m5-001-model-correction/README.md) and [attributed external review](PR-027-principal-review.md). Fresh required-model reviews found four material correctness issues and one nonblocking HTTP classification issue; they were corrected on this same PR. Corrected exact-head rereviews and CI are recorded in the PR handoff comment and do not replace principal authority.

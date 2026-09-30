@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
+import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
 
 const database = process.env.DATABASE_URL;
@@ -157,6 +158,37 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
       }),
       saved,
     );
+    const origin = 'https://synthetic-admin.example.test';
+    const services = {
+      appOrigin: origin,
+      authenticate: async () => staff,
+      catalog: { get: async (_actor, id) => (id === productA ? item(id) : null) },
+      configs: service,
+    };
+    const saveThroughHttp = (value) =>
+      handleAdminRequest(
+        new Request(origin + '/api/admin/products/111/config', {
+          method: 'PUT',
+          headers: {
+            Authorization: 'Bearer synthetic',
+            Origin: origin,
+            'Content-Type': 'application/json',
+            'Idempotency-Key': 'save-key-01',
+          },
+          body: JSON.stringify({ action: 'save', configId: created.configId, draftVersion: '1', draft: value }),
+        }),
+        services,
+        { kind: 'config', productId: productA },
+      );
+    assert.equal((await saveThroughHttp(draft)).status, 200, 'exact durable request replays through HTTP');
+    const changedKeyBody = structuredClone(draft);
+    changedKeyBody.labels.methods[sharedId] = 'Different valid name';
+    const keyConflict = await saveThroughHttp(changedKeyBody);
+    assert.equal(keyConflict.status, 409, 'different valid body with the same command key is a conflict');
+    assert.equal((await keyConflict.json()).kind, 'conflict');
+    const unchanged = (await service.read(staff, productA)).config;
+    assert.equal(unchanged.draftVersion, '2');
+    assert.equal(unchanged.draft.labels.methods[sharedId], 'Screen print');
     assert.equal(
       (
         await service.save(staff, productA, {
