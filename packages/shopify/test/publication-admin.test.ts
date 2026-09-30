@@ -155,6 +155,30 @@ describe('2026-07 app-owned publication Admin adapter', () => {
     }
   });
 
+  test('a mutation acknowledgement with a different value is held before readback', async () => {
+    const execute = vi.fn(async () => ({
+      status: 200,
+      body: {
+        data: {
+          metafieldsSet: {
+            metafields: [metafield('insignia_registration_v2', '11111111111111111111111111111111:1:ready')],
+            userErrors: [],
+          },
+        },
+      },
+    }));
+    await expect(
+      createPublicationAdminAdapter({ transport: { execute } }).set({
+        ...tenant,
+        field: 'registration',
+        productId,
+        value,
+        compareDigest: null,
+      }),
+    ).rejects.toMatchObject({ kind: 'readback_mismatch' });
+    expect(execute).toHaveBeenCalledTimes(1);
+  });
+
   test('HTTP transport fences stale credentials and never sends arbitrary query', async () => {
     const fetchImpl = vi.fn(async () => {
       throw new Error('should not call');

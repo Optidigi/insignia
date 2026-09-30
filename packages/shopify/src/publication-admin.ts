@@ -268,10 +268,12 @@ export function createPublicationAdminAdapter(config: { transport: PublicationAd
         if (errors.length) {
           const codes = errors.map((entry: unknown) => record(entry)?.code);
           if (codes.includes('STALE_OBJECT') || codes.includes('INVALID_COMPARE_DIGEST')) fail('cas_conflict');
+          if (codes.includes('APP_NOT_AUTHORIZED')) fail('forbidden');
           fail('user_error');
         }
         if (fields.length !== 1) fail('provider_shape');
         acknowledged = observed(fields[0], input, ownerId);
+        if (acknowledged.value !== input.value) fail('readback_mismatch');
       } catch (error) {
         if (
           !(error instanceof PublicationAdminError) ||
