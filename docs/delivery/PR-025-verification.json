@@ -1,0 +1,42 @@
+{
+  "pr": 25,
+  "base": "2d1dc61035d53a3afae5869d96341a5d40d25939",
+  "approved_head": "a040689213e9bed5f8590e5e100ea3390236f6bf",
+  "approved_tree": "92d5a54d4a658125e4fa7e90d50e9f0546cc8176",
+  "synthetic_merge": "c736cb38d238f65bbd93307f6207d4b29ed7488e",
+  "workflow_runs": [
+    36657978474,
+    36657978546,
+    36657978470,
+    36657978478,
+    36657978549,
+    36657978446,
+    36657978555,
+    36657978404,
+    36657978501,
+    36657978590
+  ],
+  "function_resources": {
+    "transform": {
+      "sha256": "76e890cf702a6bc182e8ca8b55942260f33a5bc5e072d42c2f104a72161a4ddb",
+      "bytes": 181570,
+      "instructions_32_168": 6960857,
+      "input_32_168": 75086,
+      "output_32_168": 9479
+    },
+    "validation": {
+      "sha256": "51cd4867fa5c8181eac421c65e3e7fd210662213c3705ffe5cfc8c8d4a085207",
+      "bytes": 183160,
+      "instructions_32_168": 6890824,
+      "input_32_168": 78532,
+      "output_32_168": 17
+    },
+    "stack": "unmeasured",
+    "query_costs": [
+      20,
+      23
+    ]
+  },
+  "protocol_decision": "whole-quote v2 adopted for production implementation; capacity/deployment not adopted",
+  "native_github_review": "HTTP 403; not posted"
+}

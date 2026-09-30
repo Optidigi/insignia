@@ -6,6 +6,7 @@ import {
   createPublicKey,
   randomBytes,
 } from 'node:crypto';
+import { ed25519 } from '@noble/curves/ed25519.js';
 
 export type KeyScope = {
   shopId: string;
@@ -16,42 +17,11 @@ export type KeyScope = {
 export type SigningKeyRing = { currentKeyId: string; keys: Readonly<Record<string, Uint8Array>> };
 export type SigningEnvelope = { v: 1; kid: string; nonce: string; ciphertext: string; tag: string };
 
-const P = (1n << 255n) - 19n;
-const mod = (n: bigint) => ((n % P) + P) % P;
-function pow(base: bigint, exponent: bigint): bigint {
-  let result = 1n;
-  for (let n = exponent, x = mod(base); n > 0n; n >>= 1n, x = mod(x * x)) if (n & 1n) result = mod(result * x);
-  return result;
-}
-const D = mod(-121665n * pow(121666n, P - 2n));
-const SQRT_MINUS_ONE = pow(2n, (P - 1n) / 4n);
-type Point = { x: bigint; y: bigint };
-function add(a: Point, b: Point): Point {
-  const xy = mod(D * a.x * b.x * a.y * b.y);
-  return {
-    x: mod((a.x * b.y + a.y * b.x) * pow(mod(1n + xy), P - 2n)),
-    y: mod((a.y * b.y + a.x * b.x) * pow(mod(1n - xy), P - 2n)),
-  };
-}
-
-/** Mirror the Rust verifier's canonical decompression and weak-point admission. */
+/** Strict canonical decode and weak-point rejection via the maintained curve library. */
 export function admitPublicKey(value: Uint8Array): Buffer {
   if (value.byteLength !== 32) throw new TypeError('Invalid Ed25519 public key');
-  const bytes = Buffer.from(value);
-  const sign = bytes.readUInt8(31) >> 7;
-  bytes.writeUInt8(bytes.readUInt8(31) & 0x7f, 31);
-  let y = 0n;
-  for (let i = 31; i >= 0; i--) y = (y << 8n) + BigInt(bytes.readUInt8(i));
-  if (y >= P) throw new TypeError('Noncanonical Ed25519 public key');
-  const y2 = mod(y * y);
-  const x2 = mod((y2 - 1n) * pow(mod(D * y2 + 1n), P - 2n));
-  let x = pow(x2, (P + 3n) / 8n);
-  if (mod(x * x) !== x2) x = mod(x * SQRT_MINUS_ONE);
-  if (mod(x * x) !== x2 || (x === 0n && sign === 1)) throw new TypeError('Invalid Ed25519 public key');
-  if (Number(x & 1n) !== sign) x = mod(-x);
-  let point = { x, y };
-  for (let i = 0; i < 3; i++) point = add(point, point);
-  if (point.x === 0n && point.y === 1n) throw new TypeError('Weak Ed25519 public key');
+  const point = ed25519.Point.fromBytes(value, false);
+  if (point.isSmallOrder()) throw new TypeError('Weak Ed25519 public key');
   return Buffer.from(value);
 }
 

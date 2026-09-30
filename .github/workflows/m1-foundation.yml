@@ -71,6 +71,7 @@ jobs:
             .m1-artifacts/manifest.json
             .m1-artifacts/replay.json
             .m4-002-artifacts/production-vectors-replay.json
+            .m1-artifacts/m4-003-public-config-replay.json
             extensions/insignia-cart-transform/target/cart-transform.raw.wasm
             extensions/insignia-cart-transform/target/cart-transform.wasm
             extensions/insignia-cart-validation/target/cart-validation.raw.wasm

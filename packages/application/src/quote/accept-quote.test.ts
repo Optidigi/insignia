@@ -116,11 +116,12 @@ function fixture() {
     },
     currency: { exponent: () => 2 },
     fx: { resolve: vi.fn() },
+    readiness: { assertReady: vi.fn(async () => {}) },
     authorization: {
       admit: vi.fn(),
       issue: vi.fn(async ({ quote }) => ({
         setId: '22222222-2222-4222-8222-222222222222',
-        keyId: 'key-1',
+        keyId: 7,
         publicKeyFingerprint: 'synthetic',
         firstValidDay: quote.acceptedDay,
         lastValidDay: quote.validThroughDay + 30,
@@ -531,7 +532,7 @@ describe('acceptQuote', () => {
     const { ports, saved } = fixture();
     vi.mocked(ports.authorization.issue).mockImplementationOnce(async ({ quote }) => ({
       setId: '22222222-2222-4222-8222-222222222222',
-      keyId: 'key-1',
+      keyId: 7,
       publicKeyFingerprint: 'synthetic',
       firstValidDay: quote.acceptedDay,
       lastValidDay: quote.validThroughDay,
@@ -547,7 +548,7 @@ describe('acceptQuote', () => {
     const { ports, saved } = fixture();
     vi.mocked(ports.authorization.issue).mockImplementationOnce(async ({ quote }) => ({
       setId: '22222222-2222-4222-8222-222222222222',
-      keyId: 'key-1',
+      keyId: 7,
       publicKeyFingerprint: 'synthetic',
       firstValidDay: quote.acceptedDay,
       lastValidDay: quote.validThroughDay - 1,

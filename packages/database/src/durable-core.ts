@@ -5,6 +5,7 @@ import type {
   InboxRepository,
   OutboxRepository,
   QuoteAcceptanceStore,
+  SigningKeyStore,
   TransactionRunner,
 } from '@insignia/application';
 import type { Transaction } from 'kysely';
@@ -16,6 +17,7 @@ import { PgCommandRepository } from './repositories/command/pg-command-repositor
 import { type ConfigRecord, createConfigRepository, type RevisionRecord } from './repositories/config.js';
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
+import { PgProductionPublication, type ProductionPublicationRemote } from './repositories/production-publication.js';
 import {
   type ClaimIdentity,
   type CredentialAcquire,
@@ -29,6 +31,7 @@ import {
   type ShopifyWebhookState,
   type VerifiedShopifyDelivery,
 } from './repositories/shopify-webhooks.js';
+import { PgSigningKeyRepository } from './repositories/signing-keys.js';
 import { type ActiveAuthorizationScope, createTenantRepository, type ShopRecord } from './repositories/tenant.js';
 
 const transactionBrand: unique symbol = Symbol('insignia durable transaction');
@@ -45,6 +48,20 @@ export type ConfigInput = {
 };
 
 export interface DurableCore {
+  readonly signingKeys: SigningKeyStore;
+  readonly productionPublications: {
+    create(input: {
+      appId: string;
+      remote: ProductionPublicationRemote;
+      admission?: {
+        established(input: {
+          productId: string;
+          priorMode: 'required' | 'optional' | null;
+          nextMode: 'required' | 'optional';
+        }): Promise<boolean>;
+      };
+    }): Pick<PgProductionPublication, 'prepare' | 'advance'>;
+  };
   readonly acceptedQuotes: QuoteAcceptanceStore & {
     getEffective(shopId: string, productId: string): Promise<EffectiveQuoteRevision | null>;
   };
@@ -152,6 +169,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   };
   const commands = new PgCommandRepository();
   const acceptedQuotes = new PgAcceptedQuoteRepository(database);
+  const signingKeys = new PgSigningKeyRepository(database);
   const inbox = new PgInboxRepository(database);
   const outbox = new PgOutboxRepository(database);
   const configs = createConfigRepository(database);
@@ -159,6 +177,10 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   const webhooks = createShopifyWebhookRepository(database);
   const credentials = createShopCredentialRepository(database, options.credentialKeys);
   return {
+    signingKeys,
+    productionPublications: {
+      create: ({ appId, remote, admission }) => new PgProductionPublication(database, remote, appId, admission),
+    },
     acceptedQuotes: {
       getEffective: (shopId, productId) => acceptedQuotes.getEffective(shopId, productId),
       findCompleted: (input) => acceptedQuotes.findCompleted<AcceptedQuoteResult>(input),

@@ -10,7 +10,11 @@ export type QuoteIssuanceReadinessInput = {
   observed: { value: string; observedAt: Date };
   now: Date;
   maxObservationAgeMs: number;
-  functions: { transform: FunctionPresence; validation: FunctionPresence };
+  functions: {
+    transform: FunctionPresence;
+    validation: FunctionPresence;
+    runtimeIdentity: 'verified' | 'unverifiable';
+  };
   effectiveRevision: boolean;
 };
 
@@ -35,7 +39,11 @@ export function assertQuoteIssuanceReady(input: QuoteIssuanceReadinessInput): vo
     observed.value !== desired.value
   )
     throw new Error('Public Function config unobserved or drifted');
-  if (input.functions.transform !== 'present' || input.functions.validation !== 'present')
+  if (
+    input.functions.transform !== 'present' ||
+    input.functions.validation !== 'present' ||
+    input.functions.runtimeIdentity !== 'verified'
+  )
     throw new Error('Required Function pair not ready');
   if (!input.effectiveRevision) throw new Error('ProductConfig revision is not active');
 }

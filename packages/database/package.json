@@ -16,13 +16,13 @@
   },
   "dependencies": {
     "@insignia/application": "workspace:*",
+    "@insignia/cart-authorization": "workspace:*",
     "@insignia/contracts": "workspace:*",
     "@insignia/domain": "workspace:*",
     "kysely": "0.29.6",
     "pg": "8.23.0"
   },
   "devDependencies": {
-    "@insignia/cart-authorization": "workspace:*",
     "@types/node": "24.10.0",
     "@types/pg": "8.23.1",
     "typescript": "5.9.3",

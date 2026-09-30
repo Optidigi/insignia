@@ -1,14 +1,14 @@
 # Insignia — greenfield architecture and implementation plan
 
-**Record version:** 1.3 — 28 September 2026
+**Record version:** 1.4 — 30 September 2026
 
 **Status:** Product/architecture decision audit closed; Option A required-product trust boundary approved. No complete development gate accepted.
 
-**Authority:** The user's pasted baseline, subsequent answers, final inactive-subscription/downgrade approval, and [Option A approval](OPTION-A-APPROVED.md). No missing `plan.md` dependency remains.
+**Authority:** The user's pasted baseline, subsequent answers, final inactive-subscription/downgrade approval, [Option A approval](OPTION-A-APPROVED.md), and [whole-quote v2 adoption](WHOLE-QUOTE-V2-ADOPTED.md). No missing `plan.md` dependency remains.
 
-**Delivery:** Consult the maintained [delivery state](../delivery/state.md) for current authorization, evidence and gate status. The original v1.1 record remains available at the fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`; approved v1.2 remains at the fixed PR #17 merge `662a78cd27507d8a2f1eaa976f1c644c93edd1be`.
+**Delivery:** Consult the maintained [delivery state](../delivery/state.md) for current authorization, evidence and gate status. The v1.3 record remains available at fixed PR #25 merge `4209bb16a09cff95d5cbbc1bbcb082e8c1fa8899` with plan SHA-256 `b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d` and ledger SHA-256 `d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9`. The original v1.1 record remains at fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`; approved v1.2 remains at fixed PR #17 merge `662a78cd27507d8a2f1eaa976f1c644c93edd1be`.
 
-**Execution governance:** Read `../delivery/operating-model.md` before implementing or delegating. Root `AGENTS.md` is the concise entry point; `../delivery/state.md` records current authorization. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project; the local orchestrator is sol-6-high. Version 1.2 added the approved Option A boundary. Version 1.3 corrects gate/milestone sequencing only; whole-quote v2 remains provisional.
+**Execution governance:** Read `../delivery/operating-model.md` before implementing or delegating. Root `AGENTS.md` is the concise entry point; `../delivery/state.md` records current authorization. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project; the local orchestrator is sol-6-high. Version 1.2 added the approved Option A boundary, version 1.3 corrected gate/milestone sequencing, and version 1.4 adopts whole-quote v2 for production implementation. This does not establish merchant capacity or authorize deployment.
 
 This document is intended to be sufficient context for implementation agents. A numbered source register follows section 17. `[S#]` references support external platform/library facts. Requirements and algorithms stated as Insignia decisions are design specifications, not claims of already-observed Shopify behavior.
 
@@ -223,7 +223,7 @@ Exactly recognized identical groups in the same cart may aggregate. Separate unk
 
 **QuoteLine:** one materialized price bucket for one real variant of one group. One logical variant quantity may become two price buckets because of setup allocation. Line index is quote-global. Do not charge setup again for the split.
 
-**AuthorizationSet:** a distinct signed issue/renewal of one accepted quote with its own ID, key ID, expiry, epoch and protocol version. A set contains one token per QuoteLine. One cart cannot combine authorizations from different sets.
+**AuthorizationSet:** a distinct signed issue/renewal of one accepted quote with its own ID, numeric u16 key ID, expiry, epoch and protocol version. A v2 set contains one shared envelope and one member carrier per physical QuoteLine. One cart cannot combine authorizations from different sets.
 
 ### 3.6 Purchased customizations
 
@@ -326,11 +326,11 @@ Keep the per-rule setup breakdown at group level. Allocate the aggregate setup o
 
 ### 5.1 Scope and status
 
-Protocol v1 below is a concrete candidate for G2/G3/G5. Freeze its bytes only after those gates. Tokens are signed, not encrypted: “opaque” means the buyer UI treats them as opaque, not that the claims are secret. No artwork, buyer PII, price rules, JSON or JWT in cart authorization.
+The historical per-line v1 proposal below is retained for decision provenance only. [Whole-quote v2](WHOLE-QUOTE-V2-ADOPTED.md) is the adopted production implementation contract; there is no per-line runtime fallback. Tokens are signed, not encrypted: “opaque” means the buyer UI treats them as opaque, not that the claims are secret. No artwork, buyer PII, price rules, JSON or JWT in cart authorization.
 
-Use Ed25519, one keypair per installation/shop, and one token per materialization QuoteLine. Store private keys encrypted using authenticated encryption and a wrapping-key version held outside PostgreSQL. Candidate implementation: Node crypto signer and a maintained Rust Ed25519 verifier with strict verification and minimal features; never implement curve arithmetic manually. Both Functions verify signatures independently.
+Use Ed25519, installation-scoped keys, and one shared v2 envelope plus a member carrier per physical line. Store private keys encrypted using authenticated encryption and a wrapping-key version held outside PostgreSQL. Use the Node crypto signer and maintained Rust Ed25519 verifier with strict verification; never implement curve arithmetic manually. Both Functions verify complete sets independently.
 
-### 5.2 Candidate binary layout
+### 5.2 Historical v1 candidate binary layout
 
 All integers are unsigned, fixed width, big-endian. Currency exponent is explicit and checked against the supported versioned table. UUIDs are raw 16 bytes, not strings. Shopify GID suffixes are checked u64 values in the adapter only.
 
@@ -780,7 +780,7 @@ All gates began **NOT RUN**. The maintained [delivery evidence register](../deli
 
 G8 is added because the approved hybrid/feature-tiered business model depends on provider billing lifecycle behavior beyond a flat subscription. It is not an excuse to reopen plan economics in every coding task.
 
-### 14.2.1 Gate evidence timing, approved v1.3 sequencing
+### 14.2.1 Gate evidence timing, approved v1.3 sequencing retained in v1.4
 
 The criteria in the table above are unchanged. A principal-accepted **feasibility basis** establishes only a bounded platform/interface contract; it is not a complete gate PASS. A milestone may start only after its stated entry evidence and separate authorization. A feature may be accepted only after its owning milestone's remaining criteria pass. Every G1–G8 criterion for the supported shipping scope must pass again on the release candidate before merchant rollout. A changed deadline is recorded here rather than treated as a waived requirement.
 
@@ -985,7 +985,7 @@ This section mirrors `decision-ledger.md`; update both in the same reviewed chan
 
 **Pricing/identity:** Product/revision-bound customization groups aggregate compatible size/color variants. Different production design means different group. Merchant-configurable setup and unit components for method/placement/decoration step; general setup supported. Applicable setup charged once per group regardless of quantity or materialization splitting. Method unit multiplicity configurable. All-units customization unit tiers use total customized physical quantity across every group/product; unrelated plain items excluded. Reprice/reaccept complete customized subset on material changes. Exact accepted total after deterministic unit allocation; real variants, no synthetic fee architecture.
 
-**Checkout economics/security:** Customized accepted merchandise price is pre-discount; Shopify discounts act afterward on the whole price, with normal variant tax treatment. Contextual garment prices; shop-currency customization/automatic FX with explicit currency overrides and frozen accepted presentment values. Immutable accepted quotes. Per-shop Ed25519, compact binary/no JWT cart tokens, one token per quote line, offline verification, three shop-local calendar days, bounded reusable complete offer. Renew unchanged economics/context; otherwise review. Independent economic validation, fail closed.
+**Checkout economics/security:** Customized accepted merchandise price is pre-discount; Shopify discounts act afterward on the whole price, with normal variant tax treatment. Contextual garment prices; shop-currency customization/automatic FX with explicit currency overrides and frozen accepted presentment values. Immutable accepted quotes. Installation-scoped Ed25519, compact binary/no JWT whole-quote v2 authorization, one shared envelope and one member carrier per physical line, offline complete-set verification, three shop-local calendar days, bounded reusable complete offer. Renew unchanged economics/context; otherwise review. Independent economic validation, fail closed. The v2 bytes and carrier semantics are frozen by the [principal adoption decision](WHOLE-QUOTE-V2-ADOPTED.md); an incompatible change needs a new protocol version and principal decision. There is no per-line runtime fallback.
 
 **Materialization/surfaces:** Plus lineUpdate; non-Plus same-real-variant one-child lineExpand is the intended gated mechanism. Online Store one-time purchases and supported accelerated paths. App Proxy for storefront/backend control; direct presigned R2 upload allowed. No paid customization with a selling plan. Required customization means required for all purchases; optional products may offer plain selling-plan purchases.
 
@@ -1005,9 +1005,9 @@ G1 same-variant non-Plus lifecycle; G2 complete Ed25519/Wasm/resource capacity; 
 
 **Current state:** The maintained [delivery evidence register](../delivery/state.md) records partial observations, unresolved work and principal verdicts. No complete gate has been accepted; G7 and G8 have bounded observed sub-results but remain incomplete. Option A closes the joint-loss A/B owner decision but does not pass G6.
 
-### PROVISIONAL / NOT ADOPTED
+### ADOPTED PROTOCOL / UNQUALIFIED DEPLOYMENT
 
-The whole-quote v2 candidate remains a prototype exception pending principal adoption. The older per-line signing decision above remains the approved architecture until then. Option A does not adopt v2, freeze the two-field policy representation, or establish a production activation procedure.
+Whole-quote v2 is the single production implementation protocol. Its domain `Insignia\0WholeQuoteAuthorization\0v2\0`, `ISG2` magic, version 2, flags 0, 92-byte header, 22-byte ordered member record, shared `_insignia_quote_v2` and per-physical-line `_insignia_member_v2` carriers, exact Ed25519 message and canonical unpadded base64url are frozen. The current 32-bucket, 200-line, 10,000-physical-unit profile and 16,000-byte Transform output target are engineering admission guards, not a universal merchant capacity. Stack peak remains unmeasured against Shopify's 512 kB stack limit; full supported-profile/live qualification and all original G1–G8 criteria remain at their existing blocking points. Protocol adoption does not authorize Function deployment, production key/FX activation, merchant publication or launch.
 
 ### DEFERRED
 

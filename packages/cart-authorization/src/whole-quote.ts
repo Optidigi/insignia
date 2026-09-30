@@ -191,7 +191,14 @@ export async function issueWholeQuote(
   members: readonly Member[],
   issuanceDay: number,
   signer: AuthorizationSigner,
-): Promise<{ envelope: string; members: string[]; keyId: number; publicKeyFingerprint: string }> {
+): Promise<{
+  envelope: string;
+  members: string[];
+  keyId: number;
+  publicKeyFingerprint: string;
+  firstValidDay: number;
+  lastValidDay: number;
+}> {
   unsigned(issuanceDay, U32 - 2, 'issuance day');
   if (h.validThroughDay !== issuanceDay + 2) throw new Error('expiry must be D+2');
   checkCompleteSet(h, members);
@@ -226,6 +233,8 @@ export async function issueWholeQuote(
     members: records.map((b) => b.toString('base64url')),
     keyId: result.keyId,
     publicKeyFingerprint: result.publicKeyFingerprint,
+    firstValidDay: result.firstValidDay,
+    lastValidDay: result.lastValidDay,
   };
 }
 /** Adapter for an injected private-key provider; no key storage or key generation. */

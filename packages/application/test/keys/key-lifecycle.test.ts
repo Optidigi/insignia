@@ -63,12 +63,19 @@ describe('signing key boundary', () => {
       observed: { value: desired.value, observedAt: new Date('2026-09-30T10:00:00Z') },
       now: new Date('2026-09-30T10:00:01Z'),
       maxObservationAgeMs: 30000,
-      functions: { transform: 'present' as const, validation: 'present' as const },
+      functions: {
+        transform: 'present' as const,
+        validation: 'present' as const,
+        runtimeIdentity: 'verified' as const,
+      },
       effectiveRevision: true,
     };
     expect(() => assertQuoteIssuanceReady(ready)).not.toThrow();
     expect(() => assertQuoteIssuanceReady({ ...ready, observed: { ...ready.observed, value: '{}' } })).toThrow();
     expect(() => assertQuoteIssuanceReady({ ...ready, now: new Date('2026-09-30T10:01:00Z') })).toThrow();
+    expect(() =>
+      assertQuoteIssuanceReady({ ...ready, functions: { ...ready.functions, runtimeIdentity: 'unverifiable' } }),
+    ).toThrow();
     expect(() =>
       assertQuoteIssuanceReady({ ...ready, functions: { ...ready.functions, validation: 'unknown' } }),
     ).toThrow();

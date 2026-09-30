@@ -126,7 +126,7 @@ export type AcceptedQuote = {
 };
 export type QuoteAuthorizationSet = {
   setId: string;
-  keyId: string;
+  keyId: number;
   publicKeyFingerprint: string;
   /** Signer key validity, covering the fixed offer window. */
   firstValidDay: number;
@@ -180,6 +180,8 @@ export interface QuoteAuthorityPorts {
   catalog: CatalogContextPort;
   currency: { exponent(code: string): number | null };
   fx: CustomizationFxProvider;
+  /** Trusted publication/key/Function observation, checked in the serialized signing window. */
+  readiness: { assertReady(input: { quote: AcceptedQuote }): Promise<void> };
   authorization: CartAuthorizationPort;
   store: QuoteAcceptanceStore;
 }
@@ -397,7 +399,9 @@ async function usableArtwork(
 function validAuthorization(quote: AcceptedQuote, set: QuoteAuthorizationSet): void {
   if (
     !set.setId ||
-    !set.keyId ||
+    !Number.isSafeInteger(set.keyId) ||
+    set.keyId < 1 ||
+    set.keyId > 65535 ||
     !set.publicKeyFingerprint ||
     !set.envelopeCarrier ||
     set.firstValidDay > quote.acceptedDay ||
@@ -715,6 +719,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
           now: ports.clock().toISOString(),
           maxAgeMs: 5 * 60 * 1000,
         });
+      await ports.readiness.assertReady({ quote });
       const authorization = await ports.authorization.issue({ quote });
       validAuthorization(quote, authorization);
       return { quote, authorization };
