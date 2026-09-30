@@ -851,6 +851,127 @@ test('interrupted publication resumes the identical request after reload and rea
   }
 });
 
+for (const saveMode of ['dirty', 'ambiguous']) {
+  for (const publishMode of ['success', 'failed']) {
+    test(`publication ${publishMode} preserves ${saveMode} local edits and exact save recovery`, {
+      timeout: 25000,
+    }, async () => {
+      const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+      assert.equal(createHash('sha256').update(source).digest('hex'), polarisSha);
+      const server = await startServer();
+      let browser;
+      try {
+        browser = await chromium.launch({ headless: true });
+        const page = await browser.newPage();
+        page.setDefaultTimeout(5000);
+        await page.addInitScript(() => {
+          window.shopify = { idToken: async () => 'synthetic-preserved-edit-token' };
+        });
+        await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+        await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+        await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+          route.fulfill({ body: '', contentType: 'text/javascript' }),
+        );
+        let current = draft();
+        current.labels = { methods: { print: 'Saved name' } };
+        let version = '2';
+        let phase = 'PUBLISH_REQUESTED';
+        let lostCommittedSaveRead = false;
+        const saves = [];
+        const publications = [];
+        await page.route('**/api/admin/products/111/config', (route) => {
+          const request = route.request();
+          assert.equal(request.headers().authorization, 'Bearer synthetic-preserved-edit-token');
+          if (request.method() === 'GET') {
+            if (lostCommittedSaveRead) {
+              lostCommittedSaveRead = false;
+              return route.fulfill({ status: 503, json: { error: 'Synthetic recovery read unavailable' } });
+            }
+            const view = response(current);
+            view.config.draftVersion = version;
+            view.config.publishEligibility = { allowed: true, reason: null };
+            view.config.publication = {
+              ...view.config.publication,
+              state: phase,
+              revisionId: 'original-immutable-revision',
+              sourceDraftVersion: '1',
+              requestKey: 'original-publication-key',
+            };
+            return route.fulfill({ json: view });
+          }
+          const key = request.headers()['idempotency-key'];
+          const body = request.postDataJSON();
+          if (request.method() === 'POST') {
+            publications.push({ key, body });
+            assert.equal(key, 'original-publication-key');
+            assert.deepEqual(body, { action: 'publish', configId: 'config-1', draftVersion: '1' });
+            if (publishMode === 'failed') return route.abort('failed');
+            phase = 'REMOTE_READY_ACTIVATION_PENDING';
+            return route.fulfill({
+              status: 202,
+              json: { kind: 'accepted', state: phase, revisionId: 'original-immutable-revision' },
+            });
+          }
+          assert.equal(request.method(), 'PUT');
+          saves.push({ key, body });
+          if (saveMode === 'ambiguous' && saves.length === 1) {
+            if (publishMode === 'success') {
+              current = body.draft;
+              version = '3';
+              lostCommittedSaveRead = true;
+            }
+            return route.abort('failed');
+          }
+          if (saveMode === 'ambiguous') assert.deepEqual(saves[1], saves[0], 'Retry preserves the exact save key/body');
+          assert.equal(body.draftVersion, '2', 'Publication refresh must not change the save CAS base');
+          current = body.draft;
+          version = '3';
+          return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
+        });
+        await page.goto(server.base + '/admin/products/111/config');
+        await page.getByText('Draft version 2').waitFor();
+        await page.getByLabel('Method name').fill('Unsaved name');
+        await page.getByLabel('Placement').first().selectOption('front');
+        await page.getByLabel('centerX', { exact: true }).fill('0.6');
+        await page.getByLabel('centerX', { exact: true }).press('Tab');
+        if (saveMode === 'ambiguous') {
+          await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+          await page.locator('s-button').filter({ hasText: 'Retry exact save' }).waitFor();
+        }
+        await page.evaluate(
+          () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+        );
+        const pixels = await page
+          .locator('#insignia-visualizer canvas')
+          .evaluateAll((nodes) => nodes.map((canvas) => canvas.toDataURL()));
+        await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
+        if (publishMode === 'success') await page.getByText('Remote ready; activation pending').waitFor();
+        else await page.getByText(/Continue the same publication request after checking/).waitFor();
+        assert.equal(await page.getByLabel('Method name').inputValue(), 'Unsaved name');
+        await page.getByText(`Draft version 2 · ${saveMode}`).waitFor();
+        assert.equal(await page.getByLabel('centerX', { exact: true }).inputValue(), '0.6');
+        assert.deepEqual(
+          await page
+            .locator('#insignia-visualizer canvas')
+            .evaluateAll((nodes) => nodes.map((canvas) => canvas.toDataURL())),
+          pixels,
+        );
+        assert.equal(publications.length, 1);
+        const action = saveMode === 'ambiguous' ? 'Retry exact save' : 'Save draft';
+        await page.locator('s-button').filter({ hasText: action }).click();
+        await page.getByText('Draft version 3 · saved').waitFor();
+        assert.equal(saves.at(-1).body.draft.labels.methods.print, 'Unsaved name');
+        assert.equal(saves.at(-1).body.draft.geometry.views[0].placements[0].rect.centerX, 0.6);
+        assert.equal(saves.length, saveMode === 'ambiguous' ? 2 : 1);
+      } finally {
+        await browser?.close();
+        server.child.kill('SIGTERM');
+        await server.exited;
+      }
+    });
+  }
+}
+
 test('publication retry keeps the original version after a newer draft edit when embedded storage is denied', {
   timeout: 30000,
 }, async () => {
