@@ -8,6 +8,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import subprocess
 import tempfile
 
@@ -31,6 +32,67 @@ def sha(value):
 def money(minor):
     amount = int(minor)
     return f'{amount // 100}.{amount % 100:02d}'
+
+
+def calculated_query_cost(document):
+    """Current Shopify Function field-cost table; refuse unsupported query grammar/field costs.
+
+    https://shopify.dev/docs/api/functions/latest#input-query-limits
+    Container and Metafield child fields cost zero, ordinary leaves one, a field
+    returning a Metafield costs three, and __typename costs zero.
+    """
+    source = re.sub(r'#[^\n]*', '', document)
+    pattern = re.compile(r'"(?:\\.|[^"\\])*"|\.\.\.|[A-Za-z_][A-Za-z_0-9]*|[{}():,\[\]!$]')
+    matches = list(pattern.finditer(source))
+    cursor = 0
+    tokens = []
+    for match in matches:
+        assert source[cursor:match.start()].isspace() or cursor == match.start(), 'unsupported query token'
+        tokens.append(match.group())
+        cursor = match.end()
+    assert source[cursor:].isspace() or cursor == len(source), 'unsupported query suffix'
+    assert tokens[:2] in (['query', 'CartTransformRunInput'], ['query', 'Input'])
+    index = tokens.index('{')
+
+    def selection(parent=None):
+        nonlocal index
+        assert tokens[index] == '{'
+        index += 1
+        cost = 0
+        while tokens[index] != '}':
+            if tokens[index] == '...':
+                assert tokens[index + 1] == 'on'
+                index += 3  # inline fragment type
+                cost += selection(parent)
+                continue
+            name = tokens[index]
+            index += 1
+            if tokens[index] == ':':
+                name = tokens[index + 1]
+                index += 2
+            assert re.fullmatch(r'[A-Za-z_][A-Za-z_0-9]*', name)
+            assert name not in {'hasAnyTag', 'hasTags', 'inAnyCollection', 'inCollections', 'metaobject', 'field'}, (
+                'field with special cost needs an explicit parser rule', name)
+            if tokens[index] == '(':
+                depth = 0
+                while True:
+                    token = tokens[index]
+                    index += 1
+                    if token == '(':
+                        depth += 1
+                    elif token == ')':
+                        depth -= 1
+                        if depth == 0:
+                            break
+            children = tokens[index] == '{'
+            child_cost = selection(name) if children else 0
+            cost += 3 if name == 'metafield' else 0 if name == '__typename' or parent == 'metafield' else child_cost if children else 1
+        index += 1
+        return cost
+
+    total = selection()
+    assert index == len(tokens) and total <= 30
+    return total
 
 
 def make_input(target, case, vectors):
@@ -150,8 +212,8 @@ def run(target, name, payload, expected_count, case=None):
         'linearMemoryKiB': result['memory_usage'],
         'wasmSha256': sha(wasm.read_bytes()), 'wasmBytes': wasm.stat().st_size,
         'querySha256': sha(query.read_bytes()), 'queryBytes': query.stat().st_size,
-        'queryCostEstimate': 20 if target == 'transform' else 23,
-        'queryCostStatus': 'unverified static estimate for pinned query; runner does not report query cost',
+        'calculatedQueryCost': calculated_query_cost(query.read_text()),
+        'queryCostStatus': 'calculated from current Shopify Function field-cost table; not runner-measured',
         'stackBytes': None, 'stackStatus': 'unmeasured: pinned runner exposes linear memory, not stack peak',
     }
 
