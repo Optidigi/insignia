@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { prepareBuiltPreviewRuntime } from './built-runtime.mjs';
 import { createDiagnosticObserver } from './diagnostic-observer.mjs';
 import { createPreviewOperator } from './read-register.mjs';
 
@@ -31,4 +32,5 @@ for (const [kind, path] of [
     .digest('hex');
 process.env.HOST = '127.0.0.1';
 process.env.DATABASE_URL = 'postgresql://insignia_test@127.0.0.1:55432/insignia_m5002_diagnostic?sslmode=disable';
+prepareBuiltPreviewRuntime(process.env);
 await import('../../apps/web/dist/server/entry.mjs');
