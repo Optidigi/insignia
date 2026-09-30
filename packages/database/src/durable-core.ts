@@ -13,7 +13,7 @@ import { type GeometryV1, validateGeometry, validateGeometryBridge } from '@insi
 import type { Transaction } from 'kysely';
 import { sql } from 'kysely';
 import type { Pool } from 'pg';
-import { createDatabase, type Database } from './client/database.js';
+import { createDatabase, type Database, type DatabaseExecutor } from './client/database.js';
 import type { CredentialKeyRing } from './credentials/envelope.js';
 import { sha256CanonicalJson } from './hash/canonical.js';
 import { PgAcceptedQuoteRepository } from './repositories/accepted-quote.js';
@@ -153,6 +153,22 @@ export interface DurableCore {
       priorMode: 'required' | 'optional' | null;
       status: string;
     } | null>;
+    getCurrentPublicationInTransaction(
+      transaction: DurableTransaction,
+      shopId: string,
+      configId: string,
+    ): ReturnType<DurableCore['configs']['getCurrentPublication']>;
+    setCurrentPublicationPointer(
+      transaction: DurableTransaction,
+      input: {
+        shopId: string;
+        configId: string;
+        revisionId: string;
+        installationGeneration: string;
+        sourceDraftVersion: string;
+        idempotencyKey: string;
+      },
+    ): Promise<void>;
   };
   readonly tenants: {
     getShop(shopId: string): Promise<ShopRecord | null>;
@@ -245,6 +261,82 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   const tenants = createTenantRepository(database);
   const webhooks = createShopifyWebhookRepository(database);
   const credentials = createShopCredentialRepository(database, options.credentialKeys);
+  async function currentPublication(executor: DatabaseExecutor, shopId: string, configId: string) {
+    const pointer = await sql<{
+      revision_id: string;
+      source_draft_version: string;
+      idempotency_key: string;
+      mode: 'required' | 'optional';
+      operation_id: string | null;
+      phase: string | null;
+      prior_mode: 'required' | 'optional' | null;
+      status: string | null;
+    }>`SELECT pointer.revision_id, pointer.source_draft_version::text,
+        pointer.idempotency_key, geometry.mode, operation.operation_id,
+        progress.phase, progress.prior_mode, operation.status
+      FROM m5_current_publication_pointer pointer
+      JOIN shops shop ON shop.shop_id=pointer.shop_id
+        AND shop.current_generation=pointer.installation_generation
+      JOIN config_revision_geometry geometry
+        ON geometry.shop_id=pointer.shop_id AND geometry.config_id=pointer.config_id
+        AND geometry.revision_id=pointer.revision_id
+      LEFT JOIN publication_operations operation
+        ON operation.shop_id=pointer.shop_id AND operation.config_id=pointer.config_id
+        AND operation.operation_id=pointer.revision_id AND operation.revision_id=pointer.revision_id
+      LEFT JOIN m4_publication_progress progress
+        ON progress.shop_id=operation.shop_id AND progress.config_id=operation.config_id
+        AND progress.operation_id=operation.operation_id
+      WHERE pointer.shop_id=${shopId} AND pointer.config_id=${configId}`.execute(executor);
+    const selected = pointer.rows[0];
+    if (selected) {
+      if (selected.operation_id && !selected.phase) throw new Error('Publication progress missing');
+      return {
+        operationId: selected.revision_id,
+        revisionId: selected.revision_id,
+        phase: selected.phase ?? 'intent',
+        sourceDraftVersion: selected.source_draft_version,
+        requestKey: selected.idempotency_key,
+        mode: selected.mode,
+        priorMode: selected.prior_mode,
+        status: selected.status ?? 'intent',
+      };
+    }
+    const historical = await sql<{
+      operation_id: string;
+      revision_id: string;
+      phase: string;
+      mode: 'required' | 'optional';
+      prior_mode: 'required' | 'optional' | null;
+      status: string;
+      source_draft_version: string | null;
+    }>`SELECT operation.operation_id, operation.revision_id,
+        progress.phase, progress.mode, progress.prior_mode, operation.status,
+        presentation.source_draft_version::text
+      FROM publication_operations operation
+      JOIN m4_publication_progress progress
+        ON progress.shop_id=operation.shop_id AND progress.config_id=operation.config_id
+        AND progress.operation_id=operation.operation_id
+      LEFT JOIN config_revision_presentation presentation
+        ON presentation.shop_id=operation.shop_id AND presentation.config_id=operation.config_id
+        AND presentation.revision_id=operation.revision_id
+      WHERE operation.shop_id=${shopId} AND operation.config_id=${configId}
+        AND operation.installation_generation=(
+          SELECT current_generation FROM shops WHERE shop_id=${shopId})
+      ORDER BY operation.operation_sequence DESC LIMIT 1`.execute(executor);
+    const row = historical.rows[0];
+    return row
+      ? {
+          operationId: row.operation_id,
+          revisionId: row.revision_id,
+          phase: row.phase,
+          sourceDraftVersion: row.source_draft_version,
+          requestKey: null,
+          mode: row.mode,
+          priorMode: row.prior_mode,
+          status: row.status,
+        }
+      : null;
+  }
   return {
     signingKeys,
     productionPublications: {
@@ -415,68 +507,20 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           ? { draftVersion: rows.rows[0].draft_version, installationGeneration: rows.rows[0].installation_generation }
           : null;
       },
-      getCurrentPublication: async (shopId, configId) => {
-        const rows = await sql<{
-          operation_id: string;
-          revision_id: string;
-          phase: string;
-          source_draft_version: string | null;
-          request_key: string | null;
-          mode: 'required' | 'optional';
-          prior_mode: 'required' | 'optional' | null;
-          status: string;
-        }>`WITH candidates AS (
-          SELECT o.operation_id, o.revision_id, p.phase, p.mode, p.prior_mode, o.status,
-            rp.source_draft_version::text, i.idempotency_key AS request_key,
-            r.created_at, o.operation_sequence
-          FROM publication_operations o
-          JOIN m4_publication_progress p USING (shop_id, config_id, operation_id)
-          JOIN shops current_shop
-            ON current_shop.shop_id=o.shop_id AND current_shop.current_generation=o.installation_generation
-          JOIN config_revisions r ON r.shop_id=o.shop_id AND r.config_id=o.config_id AND r.revision_id=o.revision_id
-          LEFT JOIN config_revision_presentation rp
-            ON rp.shop_id=o.shop_id AND rp.config_id=o.config_id AND rp.revision_id=o.revision_id
-          LEFT JOIN LATERAL (
-            SELECT idempotency_key FROM idempotency_records i
-            WHERE i.shop_id=o.shop_id AND i.namespace='m5-publish-config' AND i.status='completed'
-              AND i.result_ref=o.revision_id || ':' || p.mode
-            ORDER BY i.completed_at DESC LIMIT 1
-          ) i ON true
-          WHERE o.shop_id=${shopId} AND o.config_id=${configId}
-          UNION ALL
-          SELECT r.revision_id AS operation_id, r.revision_id, 'intent'::text AS phase,
-            g.mode, NULL::text AS prior_mode, 'intent'::text AS status,
-            rp.source_draft_version::text, i.idempotency_key AS request_key,
-            r.created_at, NULL::bigint AS operation_sequence
-          FROM config_revisions r
-          JOIN config_revision_geometry g
-            ON g.shop_id=r.shop_id AND g.config_id=r.config_id AND g.revision_id=r.revision_id
-          JOIN config_revision_presentation rp
-            ON rp.shop_id=r.shop_id AND rp.config_id=r.config_id AND rp.revision_id=r.revision_id
-          JOIN shops s ON s.shop_id=r.shop_id AND s.current_generation=rp.source_installation_generation
-          JOIN idempotency_records i ON i.shop_id=r.shop_id AND i.namespace='m5-publish-config'
-            AND i.status='completed' AND i.result_ref=r.revision_id || ':' || g.mode
-          WHERE r.shop_id=${shopId} AND r.config_id=${configId}
-            AND NOT EXISTS (
-              SELECT 1 FROM publication_operations o
-              WHERE o.shop_id=r.shop_id AND o.config_id=r.config_id AND o.revision_id=r.revision_id
-            )
-        ) SELECT operation_id, revision_id, phase, mode, prior_mode, status,
-          source_draft_version, request_key FROM candidates
-        ORDER BY created_at DESC, operation_sequence DESC NULLS LAST LIMIT 1`.execute(database);
-        const row = rows.rows[0];
-        return row
-          ? {
-              operationId: row.operation_id,
-              revisionId: row.revision_id,
-              phase: row.phase,
-              sourceDraftVersion: row.source_draft_version,
-              requestKey: row.request_key,
-              mode: row.mode,
-              priorMode: row.prior_mode,
-              status: row.status,
-            }
-          : null;
+      getCurrentPublication: (shopId, configId) => currentPublication(database, shopId, configId),
+      getCurrentPublicationInTransaction: async (handle, shopId, configId) =>
+        currentPublication(resolve(handle), shopId, configId),
+      setCurrentPublicationPointer: async (handle, input) => {
+        await sql`INSERT INTO m5_current_publication_pointer
+          (shop_id, config_id, revision_id, installation_generation, source_draft_version, idempotency_key)
+          VALUES (${input.shopId}, ${input.configId}, ${input.revisionId},
+            ${input.installationGeneration}::bigint, ${input.sourceDraftVersion}::bigint, ${input.idempotencyKey})
+          ON CONFLICT (shop_id, config_id) DO UPDATE SET
+            revision_id=EXCLUDED.revision_id,
+            installation_generation=EXCLUDED.installation_generation,
+            source_draft_version=EXCLUDED.source_draft_version,
+            idempotency_key=EXCLUDED.idempotency_key,
+            updated_at=now()`.execute(resolve(handle));
       },
     },
     tenants: {

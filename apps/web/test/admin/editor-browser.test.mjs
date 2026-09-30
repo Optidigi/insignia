@@ -66,6 +66,7 @@ function response(config) {
     },
     config: {
       configId: 'config-1',
+      installationGeneration: '1',
       draftVersion: '1',
       draft: config,
       currentShopCurrency: 'USD',
@@ -517,7 +518,7 @@ test('interrupted publication resumes the identical request after reload and rea
         view.config.publication.state = phase;
         view.config.publication.revisionId = phase === 'DRAFT' ? null : 'same-immutable-revision';
         view.config.publication.sourceDraftVersion = phase === 'DRAFT' ? null : '1';
-        view.config.publication.requestKey = phase === 'DRAFT' ? null : 'm5pub_config-1_1';
+        view.config.publication.requestKey = phase === 'DRAFT' ? null : 'm5pub_config-1_1_1';
         return route.fulfill({ json: view });
       }
       assert.equal(request.method(), 'POST');
@@ -592,12 +593,12 @@ test('publication retry keeps the original version after a newer draft edit when
         view.config.publication.state = state;
         view.config.publication.revisionId = 'same-immutable-revision';
         view.config.publication.sourceDraftVersion = '1';
-        view.config.publication.requestKey = 'm5pub_config-1_1';
+        view.config.publication.requestKey = 'm5pub_config-1_1_1';
         return route.fulfill({ json: view });
       }
       const key = route.request().headers()['idempotency-key'];
       const body = route.request().postDataJSON();
-      assert.equal(key, 'm5pub_config-1_1');
+      assert.equal(key, 'm5pub_config-1_1_1');
       assert.equal(body.draftVersion, '1');
       observedKey = key;
       writes++;
@@ -612,7 +613,7 @@ test('publication retry keeps the original version after a newer draft edit when
     await page.getByText('Draft version 2').waitFor();
     await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
     await page.getByText('Remote ready; activation pending').waitFor();
-    assert.equal(observedKey, 'm5pub_config-1_1');
+    assert.equal(observedKey, 'm5pub_config-1_1_1');
     assert.equal(writes, 2);
   } finally {
     await browser?.close();
@@ -664,6 +665,7 @@ test('stale stored publication is replaced by the current immutable intent despi
           method: 'POST',
           body: { action: 'publish', configId: 'config-1', draftVersion: '1' },
           key: 'm5pub_config-1_1',
+          installationGeneration: '1',
         }),
       ),
     );
@@ -672,6 +674,64 @@ test('stale stored publication is replaced by the current immutable intent despi
     await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
     await page.getByText('Remote ready; activation pending').waitFor();
     assert.equal(writes, 1);
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('reinstalled Admin discards prior-generation browser request and publishes with a new key', {
+  timeout: 25000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-reinstall-token' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let received;
+    let phase = 'DRAFT';
+    await page.route('**/api/admin/products/111/config', (route) => {
+      if (route.request().method() === 'GET') {
+        const view = response(draft());
+        view.config.installationGeneration = '2';
+        view.config.publishEligibility = { allowed: true, reason: null };
+        view.config.publication.state = phase;
+        return route.fulfill({ json: view });
+      }
+      received = {
+        key: route.request().headers()['idempotency-key'],
+        body: route.request().postDataJSON(),
+      };
+      phase = 'REMOTE_READY_ACTIVATION_PENDING';
+      return route.fulfill({ status: 202, json: { kind: 'accepted', state: phase, revisionId: 'new-revision' } });
+    });
+    await page.goto(server.base + '/live');
+    await page.evaluate(() =>
+      sessionStorage.setItem(
+        'insignia:m5:publish:111',
+        JSON.stringify({
+          method: 'POST',
+          body: { action: 'publish', configId: 'config-1', draftVersion: '1' },
+          key: 'm5pub_config-1_1_1',
+          installationGeneration: '1',
+        }),
+      ),
+    );
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.getByText('Draft version 1').waitFor();
+    await page.locator('s-button').filter({ hasText: 'Request publication' }).click();
+    await page.getByText('Remote ready; activation pending').waitFor();
+    assert.equal(received.key, 'm5pub_config-1_2_1');
+    assert.deepEqual(received.body, { action: 'publish', configId: 'config-1', draftVersion: '1' });
   } finally {
     await browser?.close();
     server.child.kill('SIGTERM');

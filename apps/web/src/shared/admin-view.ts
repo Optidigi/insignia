@@ -26,6 +26,7 @@ export interface ConfigView {
   product: CatalogProduct;
   config: null | {
     configId: string;
+    installationGeneration: string;
     draftVersion: string;
     draft: unknown;
     currentShopCurrency: string | null;

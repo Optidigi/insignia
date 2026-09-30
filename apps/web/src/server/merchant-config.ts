@@ -244,6 +244,7 @@ export function createMerchantConfigService(input: {
         product: item,
         config: {
           configId: config.configId,
+          installationGeneration: actor.installationGeneration,
           draftVersion: config.draftVersion,
           draft: config.draftValue,
           currentShopCurrency,
@@ -464,6 +465,13 @@ export function createMerchantConfigService(input: {
             config.draftVersion !== data.draftVersion
           )
             return 'conflict';
+          // The config row serializes different command keys for the same draft.
+          const currentPublication = await core.configs.getCurrentPublicationInTransaction(
+            tx,
+            actor.tenantShopId,
+            data.configId,
+          );
+          if (currentPublication && currentPublication.phase !== 'active') return 'open';
           const draft = validatedDraft(config.draftValue, actor, productId);
           if (draft.shopCurrency !== shopCurrency) return 'currency';
           const geometry = draft.geometry as GeometryV1;
@@ -484,11 +492,20 @@ export function createMerchantConfigService(input: {
             mode: draft.mode,
             createdByRef: actor.staffId,
           });
+          await core.configs.setCurrentPublicationPointer(tx, {
+            shopId: actor.tenantShopId,
+            configId: data.configId,
+            revisionId,
+            installationGeneration: actor.installationGeneration,
+            sourceDraftVersion: data.draftVersion,
+            idempotencyKey: data.idempotencyKey,
+          });
           return `${revisionId}:${draft.mode}`;
         });
         resultRef = result.resultRef;
       }
       if (resultRef === 'conflict') return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
+      if (resultRef === 'open') return { kind: 'conflict', message: 'A publication request is already in progress' };
       if (resultRef === 'invalid')
         return { kind: 'invalid', message: 'At least one view, placement and method is required' };
       if (resultRef === 'currency')

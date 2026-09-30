@@ -15,7 +15,7 @@ import type { CatalogProduct, ConfigView } from '../shared/admin-view.js';
 type Props = { mode: 'picker' | 'config'; productId?: string };
 type List = { products: CatalogProduct[]; nextCursor: string | null };
 type SaveState = 'clean' | 'dirty' | 'saving' | 'saved' | 'conflict' | 'ambiguous';
-type PendingRequest = { method: 'POST' | 'PUT'; body: object; key: string };
+type PendingRequest = { method: 'POST' | 'PUT'; body: object; key: string; installationGeneration?: string };
 const numberOf = (id: string) => /^gid:\/\/shopify\/(?:Product|ProductVariant)\/([1-9][0-9]*)$/.exec(id)?.[1];
 const endpoint = (id: string) => `/api/admin/products/${encodeURIComponent(id)}/config`;
 const freshId = (prefix: string) => `${prefix}_${crypto.randomUUID().replaceAll('-', '').slice(0, 12)}`;
@@ -264,6 +264,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
               stored?.method === 'POST' &&
               body?.action === 'publish' &&
               body.configId === data.config.configId &&
+              stored.installationGeneration === data.config.installationGeneration &&
               typeof body.draftVersion === 'string' &&
               serverMatches
                 ? stored
@@ -537,10 +538,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       ({
         method: 'POST',
         body: { action: 'publish', configId: view.config.configId, draftVersion: sourceVersion },
+        installationGeneration: view.config.installationGeneration,
         key:
           open && view.config.publication.requestKey
             ? view.config.publication.requestKey
-            : `m5pub_${view.config.configId}_${sourceVersion}`,
+            : `m5pub_${view.config.configId}_${view.config.installationGeneration}_${sourceVersion}`,
       } satisfies PendingRequest);
     publicationPending.current = request;
     writePublicationRequest(productId, request);

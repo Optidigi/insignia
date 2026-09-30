@@ -230,6 +230,52 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     assert.equal(copied.draft.labels.methods[sharedId], undefined);
     assert.deepEqual(copied.draft.geometry.views[0].placements[0].variantOverrides, []);
     assert.equal(copied.draft.geometry.views[0].image, undefined);
+    const competing = await Promise.all([
+      service.publish(staff, productB, {
+        configId: copy.configId,
+        draftVersion: '1',
+        idempotencyKey: 'publish-copy-race-01',
+      }),
+      service.publish(staff, productB, {
+        configId: copy.configId,
+        draftVersion: '1',
+        idempotencyKey: 'publish-copy-race-02',
+      }),
+    ]);
+    assert.deepEqual(competing.map((result) => result.kind).sort(), ['accepted', 'conflict']);
+    const winningKey = competing[0].kind === 'accepted' ? 'publish-copy-race-01' : 'publish-copy-race-02';
+    const winningRevision = competing.find((result) => result.kind === 'accepted').revisionId;
+    const copyIntent = await core.configs.getCurrentPublication(shopId, copy.configId);
+    assert.equal(copyIntent.revisionId, winningRevision);
+    assert.equal(copyIntent.requestKey, winningKey);
+    const copyHistory = new Pool({ connectionString: database });
+    try {
+      const count = await copyHistory.query(
+        'SELECT count(*)::int AS count FROM config_revisions WHERE shop_id=$1 AND config_id=$2',
+        [shopId, copy.configId],
+      );
+      assert.equal(count.rows[0].count, 1, 'different publish keys must commit only one immutable intent');
+      // Retained synthetic history exercises the keyed current pointer without altering old rows.
+      await copyHistory.query(
+        `INSERT INTO config_revisions
+          (shop_id, config_id, revision_id, schema_version, published_value, content_hash, created_by_ref)
+          SELECT shop_id, config_id, 'retained-history-' || n::text || '-' || $3,
+            schema_version, published_value, content_hash, created_by_ref
+          FROM config_revisions CROSS JOIN generate_series(1, 128) AS n
+          WHERE shop_id=$1 AND config_id=$2 AND revision_id=$3`,
+        [shopId, copy.configId, winningRevision],
+      );
+      assert.equal((await core.configs.getCurrentPublication(shopId, copy.configId)).revisionId, winningRevision);
+    } finally {
+      await copyHistory.end();
+    }
+    const recovered = await service.publish(staff, productB, {
+      configId: copy.configId,
+      draftVersion: '1',
+      idempotencyKey: winningKey,
+    });
+    assert.equal(recovered.kind, 'accepted');
+    assert.equal(recovered.revisionId, winningRevision, 'same key must recover original immutable intent');
     const changed = { ...draft, mode: 'required' };
     assert.equal(
       (
