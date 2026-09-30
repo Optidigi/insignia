@@ -1,8 +1,17 @@
-import type { CommandRepository, InboxRepository, OutboxRepository, TransactionRunner } from '@insignia/application';
+import type {
+  AcceptedQuoteResult,
+  CommandRepository,
+  EffectiveQuoteRevision,
+  InboxRepository,
+  OutboxRepository,
+  QuoteAcceptanceStore,
+  TransactionRunner,
+} from '@insignia/application';
 import type { Transaction } from 'kysely';
 import type { Pool } from 'pg';
 import { createDatabase, type Database } from './client/database.js';
 import type { CredentialKeyRing } from './credentials/envelope.js';
+import { PgAcceptedQuoteRepository } from './repositories/accepted-quote.js';
 import { PgCommandRepository } from './repositories/command/pg-command-repository.js';
 import { type ConfigRecord, createConfigRepository, type RevisionRecord } from './repositories/config.js';
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
@@ -20,7 +29,7 @@ import {
   type ShopifyWebhookState,
   type VerifiedShopifyDelivery,
 } from './repositories/shopify-webhooks.js';
-import { createTenantRepository, type ShopRecord } from './repositories/tenant.js';
+import { type ActiveAuthorizationScope, createTenantRepository, type ShopRecord } from './repositories/tenant.js';
 
 const transactionBrand: unique symbol = Symbol('insignia durable transaction');
 
@@ -36,6 +45,9 @@ export type ConfigInput = {
 };
 
 export interface DurableCore {
+  readonly acceptedQuotes: QuoteAcceptanceStore & {
+    getEffective(shopId: string, productId: string): Promise<EffectiveQuoteRevision | null>;
+  };
   readonly transactions: TransactionRunner<DurableTransaction>;
   readonly commands: CommandRepository<DurableTransaction>;
   readonly inbox: InboxRepository<DurableTransaction>;
@@ -64,6 +76,14 @@ export interface DurableCore {
   };
   readonly tenants: {
     getShop(shopId: string): Promise<ShopRecord | null>;
+    getActiveAuthorizationScope(input: {
+      shopId: string;
+      installationGeneration: string;
+    }): Promise<ActiveAuthorizationScope | null>;
+    lockActiveAuthorizationScope(
+      transaction: DurableTransaction,
+      input: { shopId: string; installationGeneration: string },
+    ): Promise<ActiveAuthorizationScope | null>;
     getActiveProviderScope(input: { shopId: string; installationGeneration: string }): Promise<{
       shopId: string;
       shopDomain: string;
@@ -131,6 +151,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
     return transaction;
   };
   const commands = new PgCommandRepository();
+  const acceptedQuotes = new PgAcceptedQuoteRepository(database);
   const inbox = new PgInboxRepository(database);
   const outbox = new PgOutboxRepository(database);
   const configs = createConfigRepository(database);
@@ -138,6 +159,11 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   const webhooks = createShopifyWebhookRepository(database);
   const credentials = createShopCredentialRepository(database, options.credentialKeys);
   return {
+    acceptedQuotes: {
+      getEffective: (shopId, productId) => acceptedQuotes.getEffective(shopId, productId),
+      findCompleted: (input) => acceptedQuotes.findCompleted<AcceptedQuoteResult>(input),
+      accept: (input, commit) => acceptedQuotes.accept<AcceptedQuoteResult>(input, commit),
+    },
     transactions: {
       run: (work) =>
         database.transaction().execute(async (transaction) => {
@@ -177,6 +203,9 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
     },
     tenants: {
       getShop: (shopId) => tenants.getShop(shopId),
+      getActiveAuthorizationScope: (input) => tenants.getActiveAuthorizationScope(input),
+      lockActiveAuthorizationScope: (handle, input) =>
+        createTenantRepository(resolve(handle)).lockActiveAuthorizationScope(input),
       getActiveProviderScope: (input) => tenants.getActiveProviderScope(input),
       createShop: async (handle, input) => tenants.createShop(resolve(handle), input),
       startInstallation: async (handle, shopId, externalId) =>

@@ -1,0 +1,52 @@
+/** Candidate v1 admission matrix. Unknown and nonstandard/digital codes fail closed. */
+export const CURRENCY_MATRIX_VERSION = 'candidate-currency-exponents-v1' as const;
+export const CURRENCY_EXPONENTS = Object.freeze({
+  AED: 2,
+  AUD: 2,
+  BRL: 2,
+  CAD: 2,
+  CHF: 2,
+  CNY: 2,
+  CZK: 2,
+  DKK: 2,
+  EUR: 2,
+  GBP: 2,
+  HKD: 2,
+  HUF: 2,
+  IDR: 2,
+  ILS: 2,
+  INR: 2,
+  MXN: 2,
+  MYR: 2,
+  NOK: 2,
+  NZD: 2,
+  PHP: 2,
+  PLN: 2,
+  RON: 2,
+  RUB: 2,
+  SAR: 2,
+  SEK: 2,
+  SGD: 2,
+  THB: 2,
+  TRY: 2,
+  TWD: 2,
+  UAH: 2,
+  USD: 2,
+  ZAR: 2,
+  CLP: 0,
+  ISK: 0,
+  JPY: 0,
+  KRW: 0,
+  PYG: 0,
+  VND: 0,
+  BHD: 3,
+  JOD: 3,
+  KWD: 3,
+  OMR: 3,
+  TND: 3,
+} as const);
+export function currencyExponent(code: string): number | undefined {
+  return Object.hasOwn(CURRENCY_EXPONENTS, code)
+    ? CURRENCY_EXPONENTS[code as keyof typeof CURRENCY_EXPONENTS]
+    : undefined;
+}

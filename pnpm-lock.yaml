@@ -215,6 +215,9 @@ importers:
       '@insignia/application':
         specifier: workspace:*
         version: link:../../packages/application
+      '@insignia/cart-authorization':
+        specifier: workspace:*
+        version: link:../../packages/cart-authorization
       '@insignia/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -309,6 +312,15 @@ importers:
         specifier: 5.0.2
         version: 5.0.2(@opentelemetry/api@1.9.1)(@types/node@24.10.0)(vite@8.3.1(@types/node@24.10.0)(esbuild@0.28.2)(yaml@2.9.1))
 
+  packages/cart-authorization:
+    devDependencies:
+      '@types/node':
+        specifier: 24.10.0
+        version: 24.10.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+
   packages/contracts:
     dependencies:
       zod:
@@ -340,6 +352,9 @@ importers:
         specifier: 8.23.0
         version: 8.23.0
     devDependencies:
+      '@insignia/cart-authorization':
+        specifier: workspace:*
+        version: link:../cart-authorization
       '@types/node':
         specifier: 24.10.0
         version: 24.10.0

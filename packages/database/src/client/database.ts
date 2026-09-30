@@ -21,6 +21,8 @@ export interface ShopsTable {
 export interface InstallationGenerationsTable {
   shop_id: string;
   generation: Bigint;
+  authorization_generation: Generated<string>;
+  authorization_epoch: GeneratedBigint;
   external_installation_id: string | null;
   created_at: GeneratedTimestamp;
   activated_at: GeneratedTimestamp;

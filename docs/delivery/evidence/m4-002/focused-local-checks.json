@@ -1,0 +1,53 @@
+{
+  "schemaVersion": "m4-002-focused-local-checks-v1",
+  "reviewedProductionSourceHead": "13a771e0888278032090b07e1bf253cb70b15104",
+  "worktreeHeadAtExecution": "a6bbb0ee7ba8693b713076b375b81f1fc6fa4e09",
+  "environment": {
+    "node": "24.21.0",
+    "pnpm": "12.6.0",
+    "postgresql": "18.6",
+    "database": "isolated synthetic insignia_m4002_final on local port 55432; DSN omitted"
+  },
+  "checks": [
+    {
+      "name": "application",
+      "command": "corepack pnpm --filter @insignia/application test",
+      "startedAtUtc": "2026-09-30T02:00:41+00:00",
+      "exitCode": 0,
+      "outputSha256": "3e630400a148577aed78609ab095dd9f168fe797697fe9c9db8e0304e087f98b",
+      "output": "\n RUN  v5.0.2 /home/serveradmin/insignia-m4-002-worktree/packages/application\n\n\n Test Files  8 passed (8)\n      Tests  46 passed (46)\n   Start at  02:00:42\n   Duration  727ms (transform 53%, import 21%, tests 21%, worker 5%)\n\n$ vitest run\n"
+    },
+    {
+      "name": "postgresql",
+      "command": "corepack pnpm --filter @insignia/database test",
+      "startedAtUtc": "2026-09-30T02:00:42+00:00",
+      "exitCode": 0,
+      "outputSha256": "aebfea2398a2ec31823fc41a2cd4b8b1e605ae0963198b44fb434882e3119fbe",
+      "output": "\n RUN  v5.0.2 /home/serveradmin/insignia-m4-002-worktree/packages/database\n\n\n Test Files  6 passed (6)\n      Tests  39 passed (39)\n   Start at  02:00:43\n   Duration  2.11s (tests 51%, import 33%, transform 14%, worker 1%)\n\n$ vitest run\n"
+    },
+    {
+      "name": "history",
+      "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+      "startedAtUtc": "2026-09-30T02:00:45+00:00",
+      "exitCode": 0,
+      "outputSha256": "fd4fcabf3f50d3c877d7a73268ed4615ff4801f08a308da1c32fab8700e84f2e",
+      "output": "{\"archivedArchitectureRef\": \"0f2c80a316228bd69fdd2ff272e967ff14647b2b\", \"archivedArchitectureVerified\": true, \"archivedV1_2Ref\": \"662a78cd27507d8a2f1eaa976f1c644c93edd1be\", \"archivedV1_2Sha256\": {\"docs/architecture/OPTION-A-APPROVED.md\": \"321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209\", \"docs/architecture/decision-ledger.md\": \"97ebb79ddc53000c53c46218ba8c83a5ba2279720ed07ff50809706b4f1a800a\", \"docs/architecture/implementation-plan.md\": \"8bb45ac9e2834bf047824a2e3dda4da7f76692bae685f6657da7b3ab03d0b145\"}, \"currentArchitectureSha256\": {\"docs/architecture/OPTION-A-APPROVED.md\": \"321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209\", \"docs/architecture/decision-ledger.md\": \"d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9\", \"docs/architecture/implementation-plan.md\": \"b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d\"}, \"currentArchitectureVersion\": \"1.3\", \"historicalMerge\": \"eaa386c90786e560d49f8311878c95d26cc3c7b8\", \"manifestSha256\": \"c2d017f70c4e781d174695c27b9a8c3295666c105af598d8caed6ce9a18160e8\", \"oldSourceCount\": 41, \"unchangedReceiptCount\": 120}\n"
+    },
+    {
+      "name": "live_setup_history",
+      "command": "python3 -B spikes/m0-014/scripts/check-live-setup.py",
+      "startedAtUtc": "2026-09-30T02:00:45+00:00",
+      "exitCode": 0,
+      "outputSha256": "d2b7a37a3fd2bff770333f0aba3af833b8a9754e68be47dc0ed81b2332622633",
+      "output": "{\"draftProducts\": 2, \"hashedSetupReceipts\": 14, \"initialUnits\": 272, \"ownedFunctions\": 2, \"status\": \"PASS\", \"variants\": 3}\n"
+    },
+    {
+      "name": "artifact_manifest",
+      "command": "python3 -B scripts/m1-functions/artifact-manifest.py",
+      "startedAtUtc": "2026-09-30T02:00:45+00:00",
+      "exitCode": 0,
+      "outputSha256": "db4b2b373d19de2dbcf546147e3ea67e02054c2d8cbe8d7c4b9254d3f2d733f4",
+      "output": "39 required files hashed: .m1-artifacts/manifest.json\n"
+    }
+  ]
+}

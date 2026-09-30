@@ -38,4 +38,6 @@ crates/*/target/
 target/
 extensions/insignia-cart-*/target/
 scripts/m1-functions/__pycache__/
+scripts/m4-002/__pycache__/
 .m1-artifacts/
+.m4-002-artifacts/

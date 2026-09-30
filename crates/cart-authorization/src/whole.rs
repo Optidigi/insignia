@@ -72,12 +72,15 @@ fn canonical<const N: usize>(value: &str, chars: usize) -> Result<[u8; N], Error
     raw.try_into().map_err(|_| Error::Encoding)
 }
 
+pub const CURRENCY_MATRIX_VERSION: &str = "candidate-currency-exponents-v1";
 pub fn currency_exponent(code: [u8; 3]) -> Option<u8> {
-    // Bounded local test table, not an assertion about Shopify market coverage.
     match &code {
-        b"USD" | b"EUR" => Some(2),
-        b"JPY" => Some(0),
-        b"KWD" => Some(3),
+        b"CLP" | b"ISK" | b"JPY" | b"KRW" | b"PYG" | b"VND" => Some(0),
+        b"AED" | b"AUD" | b"BRL" | b"CAD" | b"CHF" | b"CNY" | b"CZK" | b"DKK" | b"EUR" | b"GBP"
+        | b"HKD" | b"HUF" | b"IDR" | b"ILS" | b"INR" | b"MXN" | b"MYR" | b"NOK" | b"NZD"
+        | b"PHP" | b"PLN" | b"RON" | b"RUB" | b"SAR" | b"SEK" | b"SGD" | b"THB" | b"TRY"
+        | b"TWD" | b"UAH" | b"USD" | b"ZAR" => Some(2),
+        b"BHD" | b"JOD" | b"KWD" | b"OMR" | b"TND" => Some(3),
         _ => None,
     }
 }
@@ -190,6 +193,7 @@ impl VerificationKey {
     }
 }
 
+#[derive(Clone, Copy)]
 pub struct ExpectedContext<'a> {
     pub generation: [u8; 16],
     pub epoch: u32,

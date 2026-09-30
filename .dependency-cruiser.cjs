@@ -11,7 +11,7 @@ module.exports = {
       name: 'browser-does-not-import-server',
       severity: 'error',
       from: { path: '^(apps/storefront/src/|apps/web/src/islands/|packages/contracts/src/)' },
-      to: { path: '^(apps/worker/|packages/(shopify|artwork|database|observability|signer)/)' },
+      to: { path: '^(apps/worker/|packages/(shopify|artwork|database|observability|signer|cart-authorization)/)' },
     },
     {
       name: 'browser-no-node-builtins',

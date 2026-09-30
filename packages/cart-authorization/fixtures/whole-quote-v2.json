@@ -1,0 +1,989 @@
+{
+  "rejections": [
+    {
+      "name": "thirty_three_presign",
+      "reason": "BUCKET_COUNT",
+      "ordinaryLines": 0,
+      "header": {
+        "keyId": 7,
+        "generationHex": "11111111111141118111111111111111",
+        "epoch": 4,
+        "quoteHex": "00000001000040008000000000000001",
+        "setHex": "00000001000040008000000000000002",
+        "count": 33,
+        "currency": "EUR",
+        "exponent": 2,
+        "country": "DE",
+        "marketId": "42",
+        "validThroughDay": 20802,
+        "totalQuantity": 33,
+        "totalMinor": "3300"
+      },
+      "members": [
+        {
+          "index": 0,
+          "variantId": "700",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 1,
+          "variantId": "701",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 2,
+          "variantId": "702",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 3,
+          "variantId": "703",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 4,
+          "variantId": "704",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 5,
+          "variantId": "705",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 6,
+          "variantId": "706",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 7,
+          "variantId": "707",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 8,
+          "variantId": "708",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 9,
+          "variantId": "709",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 10,
+          "variantId": "710",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 11,
+          "variantId": "711",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 12,
+          "variantId": "712",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 13,
+          "variantId": "713",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 14,
+          "variantId": "714",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 15,
+          "variantId": "715",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 16,
+          "variantId": "716",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 17,
+          "variantId": "717",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 18,
+          "variantId": "718",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 19,
+          "variantId": "719",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 20,
+          "variantId": "720",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 21,
+          "variantId": "721",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 22,
+          "variantId": "722",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 23,
+          "variantId": "723",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 24,
+          "variantId": "724",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 25,
+          "variantId": "725",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 26,
+          "variantId": "726",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 27,
+          "variantId": "727",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 28,
+          "variantId": "728",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 29,
+          "variantId": "729",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 30,
+          "variantId": "730",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 31,
+          "variantId": "731",
+          "quantity": 1,
+          "unitMinor": "100"
+        },
+        {
+          "index": 32,
+          "variantId": "732",
+          "quantity": 1,
+          "unitMinor": "100"
+        }
+      ]
+    }
+  ],
+  "version": "whole-quote-v2-candidate-v1",
+  "provenance": "Derived synthetic fixture; deterministic key material is constructed only in generator memory",
+  "publicHex": "adfbbd7cae566a1455000265ec1b128bf69866dd4d24203c071d1bb02736fd4a",
+  "cases": [
+    {
+      "name": "one_bucket",
+      "ordinaryLines": 0,
+      "header": {
+        "keyId": 7,
+        "generationHex": "11111111111141118111111111111111",
+        "epoch": 4,
+        "quoteHex": "00000001000040008000000000000001",
+        "setHex": "00000001000040008000000000000002",
+        "count": 1,
+        "currency": "EUR",
+        "exponent": 2,
+        "country": "DE",
+        "marketId": "42",
+        "validThroughDay": 20802,
+        "totalQuantity": 1,
+        "totalMinor": "1999"
+      },
+      "members": [
+        {
+          "index": 0,
+          "variantId": "101",
+          "quantity": 1,
+          "unitMinor": "1999"
+        }
+      ],
+      "groupRevisionAssociation": [
+        {
+          "group": "shirt",
+          "revision": "r1"
+        }
+      ],
+      "envelope": "SVNHMgIAAAcRERERERFBEYERERERERERAAAABAAAAAEAAEAAgAAAAAAAAAEAAAABAABAAIAAAAAAAAACAAFFVVICREUAAAAAAAAAKgAAUUIAAAABAAAAAAAAB89mihEKO_rzUEPDwv2lu3koJcDlCCkjU7u5_fXePJfsdFu_Q7zL3LXZXrPW3WNOdg-N2qlGepDPzs4HIVIRvDEN",
+      "memberCarriers": [
+        "AAAAAAAAAAAAZQAAAAEAAAAAAAAHzw"
+      ]
+    },
+    {
+      "name": "ten_plus_190",
+      "ordinaryLines": 190,
+      "header": {
+        "keyId": 7,
+        "generationHex": "11111111111141118111111111111111",
+        "epoch": 4,
+        "quoteHex": "00000002000040008000000000000001",
+        "setHex": "00000002000040008000000000000002",
+        "count": 10,
+        "currency": "EUR",
+        "exponent": 2,
+        "country": "DE",
+        "marketId": "42",
+        "validThroughDay": 20802,
+        "totalQuantity": 10,
+        "totalMinor": "10045"
+      },
+      "members": [
+        {
+          "index": 0,
+          "variantId": "100",
+          "quantity": 1,
+          "unitMinor": "1000"
+        },
+        {
+          "index": 1,
+          "variantId": "101",
+          "quantity": 1,
+          "unitMinor": "1001"
+        },
+        {
+          "index": 2,
+          "variantId": "102",
+          "quantity": 1,
+          "unitMinor": "1002"
+        },
+        {
+          "index": 3,
+          "variantId": "103",
+          "quantity": 1,
+          "unitMinor": "1003"
+        },
+        {
+          "index": 4,
+          "variantId": "104",
+          "quantity": 1,
+          "unitMinor": "1004"
+        },
+        {
+          "index": 5,
+          "variantId": "105",
+          "quantity": 1,
+          "unitMinor": "1005"
+        },
+        {
+          "index": 6,
+          "variantId": "106",
+          "quantity": 1,
+          "unitMinor": "1006"
+        },
+        {
+          "index": 7,
+          "variantId": "107",
+          "quantity": 1,
+          "unitMinor": "1007"
+        },
+        {
+          "index": 8,
+          "variantId": "108",
+          "quantity": 1,
+          "unitMinor": "1008"
+        },
+        {
+          "index": 9,
+          "variantId": "109",
+          "quantity": 1,
+          "unitMinor": "1009"
+        }
+      ],
+      "groupRevisionAssociation": [
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        }
+      ],
+      "envelope": "SVNHMgIAAAcRERERERFBEYERERERERERAAAABAAAAAIAAEAAgAAAAAAAAAEAAAACAABAAIAAAAAAAAACAApFVVICREUAAAAAAAAAKgAAUUIAAAAKAAAAAAAAJz0qaKp7YI49Goe1kENsEEp3eSt5n0lePbG7KvjFor4NWATe-V9KgQHZQIHf5zYIFV2cltt2kySYyPv4NvChfcEP",
+      "memberCarriers": [
+        "AAAAAAAAAAAAZAAAAAEAAAAAAAAD6A",
+        "AAEAAAAAAAAAZQAAAAEAAAAAAAAD6Q",
+        "AAIAAAAAAAAAZgAAAAEAAAAAAAAD6g",
+        "AAMAAAAAAAAAZwAAAAEAAAAAAAAD6w",
+        "AAQAAAAAAAAAaAAAAAEAAAAAAAAD7A",
+        "AAUAAAAAAAAAaQAAAAEAAAAAAAAD7Q",
+        "AAYAAAAAAAAAagAAAAEAAAAAAAAD7g",
+        "AAcAAAAAAAAAawAAAAEAAAAAAAAD7w",
+        "AAgAAAAAAAAAbAAAAAEAAAAAAAAD8A",
+        "AAkAAAAAAAAAbQAAAAEAAAAAAAAD8Q"
+      ]
+    },
+    {
+      "name": "thirty_two_plus_168",
+      "ordinaryLines": 168,
+      "header": {
+        "keyId": 7,
+        "generationHex": "11111111111141118111111111111111",
+        "epoch": 4,
+        "quoteHex": "00000003000040008000000000000001",
+        "setHex": "00000003000040008000000000000002",
+        "count": 32,
+        "currency": "EUR",
+        "exponent": 2,
+        "country": "DE",
+        "marketId": "42",
+        "validThroughDay": 20802,
+        "totalQuantity": 32,
+        "totalMinor": "64496"
+      },
+      "members": [
+        {
+          "index": 0,
+          "variantId": "200",
+          "quantity": 1,
+          "unitMinor": "2000"
+        },
+        {
+          "index": 1,
+          "variantId": "201",
+          "quantity": 1,
+          "unitMinor": "2001"
+        },
+        {
+          "index": 2,
+          "variantId": "202",
+          "quantity": 1,
+          "unitMinor": "2002"
+        },
+        {
+          "index": 3,
+          "variantId": "203",
+          "quantity": 1,
+          "unitMinor": "2003"
+        },
+        {
+          "index": 4,
+          "variantId": "204",
+          "quantity": 1,
+          "unitMinor": "2004"
+        },
+        {
+          "index": 5,
+          "variantId": "205",
+          "quantity": 1,
+          "unitMinor": "2005"
+        },
+        {
+          "index": 6,
+          "variantId": "206",
+          "quantity": 1,
+          "unitMinor": "2006"
+        },
+        {
+          "index": 7,
+          "variantId": "207",
+          "quantity": 1,
+          "unitMinor": "2007"
+        },
+        {
+          "index": 8,
+          "variantId": "208",
+          "quantity": 1,
+          "unitMinor": "2008"
+        },
+        {
+          "index": 9,
+          "variantId": "209",
+          "quantity": 1,
+          "unitMinor": "2009"
+        },
+        {
+          "index": 10,
+          "variantId": "210",
+          "quantity": 1,
+          "unitMinor": "2010"
+        },
+        {
+          "index": 11,
+          "variantId": "211",
+          "quantity": 1,
+          "unitMinor": "2011"
+        },
+        {
+          "index": 12,
+          "variantId": "212",
+          "quantity": 1,
+          "unitMinor": "2012"
+        },
+        {
+          "index": 13,
+          "variantId": "213",
+          "quantity": 1,
+          "unitMinor": "2013"
+        },
+        {
+          "index": 14,
+          "variantId": "214",
+          "quantity": 1,
+          "unitMinor": "2014"
+        },
+        {
+          "index": 15,
+          "variantId": "215",
+          "quantity": 1,
+          "unitMinor": "2015"
+        },
+        {
+          "index": 16,
+          "variantId": "216",
+          "quantity": 1,
+          "unitMinor": "2016"
+        },
+        {
+          "index": 17,
+          "variantId": "217",
+          "quantity": 1,
+          "unitMinor": "2017"
+        },
+        {
+          "index": 18,
+          "variantId": "218",
+          "quantity": 1,
+          "unitMinor": "2018"
+        },
+        {
+          "index": 19,
+          "variantId": "219",
+          "quantity": 1,
+          "unitMinor": "2019"
+        },
+        {
+          "index": 20,
+          "variantId": "220",
+          "quantity": 1,
+          "unitMinor": "2020"
+        },
+        {
+          "index": 21,
+          "variantId": "221",
+          "quantity": 1,
+          "unitMinor": "2021"
+        },
+        {
+          "index": 22,
+          "variantId": "222",
+          "quantity": 1,
+          "unitMinor": "2022"
+        },
+        {
+          "index": 23,
+          "variantId": "223",
+          "quantity": 1,
+          "unitMinor": "2023"
+        },
+        {
+          "index": 24,
+          "variantId": "224",
+          "quantity": 1,
+          "unitMinor": "2024"
+        },
+        {
+          "index": 25,
+          "variantId": "225",
+          "quantity": 1,
+          "unitMinor": "2025"
+        },
+        {
+          "index": 26,
+          "variantId": "226",
+          "quantity": 1,
+          "unitMinor": "2026"
+        },
+        {
+          "index": 27,
+          "variantId": "227",
+          "quantity": 1,
+          "unitMinor": "2027"
+        },
+        {
+          "index": 28,
+          "variantId": "228",
+          "quantity": 1,
+          "unitMinor": "2028"
+        },
+        {
+          "index": 29,
+          "variantId": "229",
+          "quantity": 1,
+          "unitMinor": "2029"
+        },
+        {
+          "index": 30,
+          "variantId": "230",
+          "quantity": 1,
+          "unitMinor": "2030"
+        },
+        {
+          "index": 31,
+          "variantId": "231",
+          "quantity": 1,
+          "unitMinor": "2031"
+        }
+      ],
+      "groupRevisionAssociation": [
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "shirt",
+          "revision": "r1"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r2"
+        }
+      ],
+      "envelope": "SVNHMgIAAAcRERERERFBEYERERERERERAAAABAAAAAMAAEAAgAAAAAAAAAEAAAADAABAAIAAAAAAAAACACBFVVICREUAAAAAAAAAKgAAUUIAAAAgAAAAAAAA-_ASqyxngosBXFhic2oBaq8S8bGvUKVDi-D4sfGDmhN6bLGcEZxAD4l2RjhOviF7FSs9iPgYvjjC0v9oZy4rGrMD",
+      "memberCarriers": [
+        "AAAAAAAAAAAAyAAAAAEAAAAAAAAH0A",
+        "AAEAAAAAAAAAyQAAAAEAAAAAAAAH0Q",
+        "AAIAAAAAAAAAygAAAAEAAAAAAAAH0g",
+        "AAMAAAAAAAAAywAAAAEAAAAAAAAH0w",
+        "AAQAAAAAAAAAzAAAAAEAAAAAAAAH1A",
+        "AAUAAAAAAAAAzQAAAAEAAAAAAAAH1Q",
+        "AAYAAAAAAAAAzgAAAAEAAAAAAAAH1g",
+        "AAcAAAAAAAAAzwAAAAEAAAAAAAAH1w",
+        "AAgAAAAAAAAA0AAAAAEAAAAAAAAH2A",
+        "AAkAAAAAAAAA0QAAAAEAAAAAAAAH2Q",
+        "AAoAAAAAAAAA0gAAAAEAAAAAAAAH2g",
+        "AAsAAAAAAAAA0wAAAAEAAAAAAAAH2w",
+        "AAwAAAAAAAAA1AAAAAEAAAAAAAAH3A",
+        "AA0AAAAAAAAA1QAAAAEAAAAAAAAH3Q",
+        "AA4AAAAAAAAA1gAAAAEAAAAAAAAH3g",
+        "AA8AAAAAAAAA1wAAAAEAAAAAAAAH3w",
+        "ABAAAAAAAAAA2AAAAAEAAAAAAAAH4A",
+        "ABEAAAAAAAAA2QAAAAEAAAAAAAAH4Q",
+        "ABIAAAAAAAAA2gAAAAEAAAAAAAAH4g",
+        "ABMAAAAAAAAA2wAAAAEAAAAAAAAH4w",
+        "ABQAAAAAAAAA3AAAAAEAAAAAAAAH5A",
+        "ABUAAAAAAAAA3QAAAAEAAAAAAAAH5Q",
+        "ABYAAAAAAAAA3gAAAAEAAAAAAAAH5g",
+        "ABcAAAAAAAAA3wAAAAEAAAAAAAAH5w",
+        "ABgAAAAAAAAA4AAAAAEAAAAAAAAH6A",
+        "ABkAAAAAAAAA4QAAAAEAAAAAAAAH6Q",
+        "ABoAAAAAAAAA4gAAAAEAAAAAAAAH6g",
+        "ABsAAAAAAAAA4wAAAAEAAAAAAAAH6w",
+        "ABwAAAAAAAAA5AAAAAEAAAAAAAAH7A",
+        "AB0AAAAAAAAA5QAAAAEAAAAAAAAH7Q",
+        "AB4AAAAAAAAA5gAAAAEAAAAAAAAH7g",
+        "AB8AAAAAAAAA5wAAAAEAAAAAAAAH7w"
+      ]
+    },
+    {
+      "name": "ten_thousand_five_buckets",
+      "ordinaryLines": 0,
+      "header": {
+        "keyId": 7,
+        "generationHex": "11111111111141118111111111111111",
+        "epoch": 4,
+        "quoteHex": "00000004000040008000000000000001",
+        "setHex": "00000004000040008000000000000002",
+        "count": 5,
+        "currency": "EUR",
+        "exponent": 2,
+        "country": "DE",
+        "marketId": "42",
+        "validThroughDay": 20802,
+        "totalQuantity": 10000,
+        "totalMinor": "1000000"
+      },
+      "members": [
+        {
+          "index": 0,
+          "variantId": "300",
+          "quantity": 2000,
+          "unitMinor": "100"
+        },
+        {
+          "index": 1,
+          "variantId": "301",
+          "quantity": 2000,
+          "unitMinor": "100"
+        },
+        {
+          "index": 2,
+          "variantId": "302",
+          "quantity": 2000,
+          "unitMinor": "100"
+        },
+        {
+          "index": 3,
+          "variantId": "303",
+          "quantity": 2000,
+          "unitMinor": "100"
+        },
+        {
+          "index": 4,
+          "variantId": "304",
+          "quantity": 2000,
+          "unitMinor": "100"
+        }
+      ],
+      "groupRevisionAssociation": [
+        {
+          "group": "group-0",
+          "revision": "r3"
+        },
+        {
+          "group": "group-1",
+          "revision": "r3"
+        },
+        {
+          "group": "group-2",
+          "revision": "r3"
+        },
+        {
+          "group": "group-3",
+          "revision": "r3"
+        },
+        {
+          "group": "group-4",
+          "revision": "r3"
+        }
+      ],
+      "envelope": "SVNHMgIAAAcRERERERFBEYERERERERERAAAABAAAAAQAAEAAgAAAAAAAAAEAAAAEAABAAIAAAAAAAAACAAVFVVICREUAAAAAAAAAKgAAUUIAACcQAAAAAAAPQkCehkvGnlRZHLSJg_K1hUmHJjJzqRxwRnClVIieqUIIkYfj7AUTGjbcQKP2DTauEUjcqYSiOUOlBjfY1MW3YFgM",
+      "memberCarriers": [
+        "AAAAAAAAAAABLAAAB9AAAAAAAAAAZA",
+        "AAEAAAAAAAABLQAAB9AAAAAAAAAAZA",
+        "AAIAAAAAAAABLgAAB9AAAAAAAAAAZA",
+        "AAMAAAAAAAABLwAAB9AAAAAAAAAAZA",
+        "AAQAAAAAAAABMAAAB9AAAAAAAAAAZA"
+      ]
+    },
+    {
+      "name": "multi_product_revision",
+      "ordinaryLines": 3,
+      "header": {
+        "keyId": 7,
+        "generationHex": "11111111111141118111111111111111",
+        "epoch": 4,
+        "quoteHex": "00000005000040008000000000000001",
+        "setHex": "00000005000040008000000000000002",
+        "count": 4,
+        "currency": "EUR",
+        "exponent": 2,
+        "country": "DE",
+        "marketId": "42",
+        "validThroughDay": 20802,
+        "totalQuantity": 10,
+        "totalMinor": "20300"
+      },
+      "members": [
+        {
+          "index": 0,
+          "variantId": "401",
+          "quantity": 2,
+          "unitMinor": "2500"
+        },
+        {
+          "index": 1,
+          "variantId": "402",
+          "quantity": 3,
+          "unitMinor": "2700"
+        },
+        {
+          "index": 2,
+          "variantId": "501",
+          "quantity": 1,
+          "unitMinor": "3200"
+        },
+        {
+          "index": 3,
+          "variantId": "601",
+          "quantity": 4,
+          "unitMinor": "1000"
+        }
+      ],
+      "groupRevisionAssociation": [
+        {
+          "group": "shirt-red",
+          "revision": "r5"
+        },
+        {
+          "group": "shirt-blue",
+          "revision": "r5"
+        },
+        {
+          "group": "hoodie",
+          "revision": "r9"
+        },
+        {
+          "group": "hat",
+          "revision": "r2"
+        }
+      ],
+      "envelope": "SVNHMgIAAAcRERERERFBEYERERERERERAAAABAAAAAUAAEAAgAAAAAAAAAEAAAAFAABAAIAAAAAAAAACAARFVVICREUAAAAAAAAAKgAAUUIAAAAKAAAAAAAAT0zxZ2zKZwogFFZVpwnH4eSG0ppOqV_vOOnDIMRiVNoVFDZ5sN37uPQMkaOvAN4dMpRGxuOh8jQc0w52Ra-5w5YP",
+      "memberCarriers": [
+        "AAAAAAAAAAABkQAAAAIAAAAAAAAJxA",
+        "AAEAAAAAAAABkgAAAAMAAAAAAAAKjA",
+        "AAIAAAAAAAAB9QAAAAEAAAAAAAAMgA",
+        "AAMAAAAAAAACWQAAAAQAAAAAAAAD6A"
+      ]
+    },
+    {
+      "name": "setup_remainder",
+      "ordinaryLines": 0,
+      "header": {
+        "keyId": 7,
+        "generationHex": "11111111111141118111111111111111",
+        "epoch": 4,
+        "quoteHex": "00000006000040008000000000000001",
+        "setHex": "00000006000040008000000000000002",
+        "count": 2,
+        "currency": "EUR",
+        "exponent": 2,
+        "country": "DE",
+        "marketId": "42",
+        "validThroughDay": 20802,
+        "totalQuantity": 3,
+        "totalMinor": "9100"
+      },
+      "members": [
+        {
+          "index": 0,
+          "variantId": "9007199254740993",
+          "quantity": 1,
+          "unitMinor": "3034"
+        },
+        {
+          "index": 1,
+          "variantId": "9007199254740993",
+          "quantity": 2,
+          "unitMinor": "3033"
+        }
+      ],
+      "groupRevisionAssociation": [
+        {
+          "group": "design",
+          "revision": "r1"
+        },
+        {
+          "group": "design",
+          "revision": "r1"
+        }
+      ],
+      "envelope": "SVNHMgIAAAcRERERERFBEYERERERERERAAAABAAAAAYAAEAAgAAAAAAAAAEAAAAGAABAAIAAAAAAAAACAAJFVVICREUAAAAAAAAAKgAAUUIAAAADAAAAAAAAI4wdHEHGzESuV-E2oUS0iGGo-F4PCO8ShawaO0IJ30yhxb2vglDfvuTXpqq4RvUc0ZtOvsFKAHIebHbdknqtpb8P",
+      "memberCarriers": [
+        "AAAAIAAAAAAAAQAAAAEAAAAAAAAL2g",
+        "AAEAIAAAAAAAAQAAAAIAAAAAAAAL2Q"
+      ]
+    }
+  ],
+  "adversarial": [
+    "33 buckets rejected before signing",
+    "changed country or market",
+    "changed currency or exponent",
+    "changed generation or epoch",
+    "revoked or out-of-window key",
+    "missing, duplicate, misindexed member",
+    "wrong variant, quantity or pre-discount unit price",
+    "selling-plan conflict"
+  ]
+}
