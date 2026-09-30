@@ -1,4 +1,4 @@
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { sql } from 'kysely';
 import { describe, expect, it } from 'vitest';
 import { SigningKeyLifecycle } from '../../application/src/keys/lifecycle.js';
@@ -10,8 +10,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
   it('encrypts raw seed and fences rotation, epoch, and reinstall', async () => {
     const db = await openTestDatabase();
     const shopId = randomUUID();
-    const seed = Buffer.alloc(32, 0x42);
-    const ring = { currentKeyId: 'test-wrap', keys: { 'test-wrap': Buffer.alloc(32, 0x6a) } };
+    const seed = randomBytes(32);
+    const ring = { currentKeyId: 'test-wrap', keys: { 'test-wrap': randomBytes(32) } };
     try {
       await db.transaction().execute(async (tx) => {
         await createTenantRepository(tx).createShop(tx, {
@@ -71,7 +71,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
         });
       });
       const store = new PgSigningKeyRepository(db);
-      const ring = { currentKeyId: 'test-wrap', keys: { 'test-wrap': Buffer.alloc(32, 0x6a) } };
+      const ring = { currentKeyId: 'test-wrap', keys: { 'test-wrap': randomBytes(32) } };
       const lifecycle = new SigningKeyLifecycle(store, ring);
       const scope = await store.getActiveScope(shopId, '1');
       if (!scope) throw new Error('Test installation missing');
