@@ -14,10 +14,6 @@ import { createAdminAuthenticator } from './auth.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
 import { createPreviewGrantCache } from './preview-grant.js';
 
-const client = '1443cf6d03d39edae7c101a943c5c684';
-const shop = 'insignia-rewrite-dev.myshopify.com';
-const shopId = 'gid://shopify/Shop/105501393179';
-const retained = 'gid://shopify/Product/10485042479387';
 function project(value: ProviderProduct): CatalogProduct {
   return {
     id: value.id,
@@ -34,11 +30,18 @@ function project(value: ProviderProduct): CatalogProduct {
   };
 }
 export function createDiagnosticPreviewServices(env: NodeJS.ProcessEnv): AdminServices & { close(): Promise<void> } {
+  const client = env.SHOPIFY_CLIENT_ID ?? '';
+  const shop = env.INSIGNIA_M5_002_SHOP ?? '';
+  const shopId = env.INSIGNIA_M5_002_SHOP_ID ?? '';
+  const retained = env.INSIGNIA_M5_002_PRODUCT_ID ?? '';
   if (
     env.INSIGNIA_M5_002_DIAGNOSTIC !== '1' ||
     !globalThis.__insigniaM5002Reserve ||
     !globalThis.__insigniaM5002Observe ||
-    env.SHOPIFY_CLIENT_ID !== client ||
+    !/^([0-9a-f]{32})$/.test(client) ||
+    !/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(shop) ||
+    !/^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/.test(shopId) ||
+    !/^gid:\/\/shopify\/Product\/[1-9][0-9]*$/.test(retained) ||
     !env.SHOPIFY_CLIENT_SECRET ||
     !env.DATABASE_URL ||
     !env.APP_URL ||
@@ -52,7 +55,6 @@ export function createDiagnosticPreviewServices(env: NodeJS.ProcessEnv): AdminSe
     hostName: new URL(env.APP_URL).host,
   });
   const cache = createPreviewGrantCache(async (token, identity) => {
-    globalThis.__insigniaM5002Reserve?.('adminAuth');
     return sdk.exchangeOnline(token, identity);
   });
   const grants = new WeakMap<AdminActor, OnlineStaffGrant>();
@@ -155,7 +157,7 @@ export function createDiagnosticPreviewServices(env: NodeJS.ProcessEnv): AdminSe
                 core.tenants.createShop(tx, {
                   shopId: randomUUID(),
                   shopDomain: shop,
-                  shopifyShopId: '105501393179',
+                  shopifyShopId: shopId.split('/').at(-1)!,
                   externalInstallationId: provider.installationId,
                 }),
               );

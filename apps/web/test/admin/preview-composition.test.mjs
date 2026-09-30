@@ -8,10 +8,10 @@ import { build } from 'esbuild';
 import { Pool } from 'pg';
 
 const database = process.env.DATABASE_URL;
-const client = '1443cf6d03d39edae7c101a943c5c684',
+const client = '22222222222222222222222222222222',
   secret = 'synthetic-m5002-secret',
-  shop = 'insignia-rewrite-dev.myshopify.com',
-  product = 'gid://shopify/Product/10485042479387';
+  shop = 'synthetic-preview.myshopify.com',
+  product = 'gid://shopify/Product/555';
 function token() {
   const now = Math.floor(Date.now() / 1000);
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
@@ -47,6 +47,9 @@ test('diagnostic preview requires accounting and HTTPS before any provider acces
     () =>
       createDiagnosticPreviewServices({
         INSIGNIA_M5_002_DIAGNOSTIC: '1',
+        INSIGNIA_M5_002_SHOP: shop,
+        INSIGNIA_M5_002_SHOP_ID: 'gid://shopify/Shop/501',
+        INSIGNIA_M5_002_PRODUCT_ID: product,
         SHOPIFY_CLIENT_ID: client,
         SHOPIFY_CLIENT_SECRET: secret,
         DATABASE_URL: 'synthetic',
@@ -124,9 +127,9 @@ test('live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous r
       if (query.includes('currentAppInstallation'))
         return Response.json({
           data: {
-            shop: { id: 'gid://shopify/Shop/105501393179', myshopifyDomain: shop },
+            shop: { id: 'gid://shopify/Shop/501', myshopifyDomain: shop },
             currentAppInstallation: {
-              id: active ? 'gid://shopify/AppInstallation/1054356963611' : 'gid://shopify/AppInstallation/999',
+              id: active ? 'gid://shopify/AppInstallation/61' : 'gid://shopify/AppInstallation/999',
               accessScopes: [{ handle: 'read_products' }, { handle: 'write_products' }],
             },
           },
@@ -142,7 +145,7 @@ test('live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous r
             variants: {
               nodes: [
                 {
-                  id: 'gid://shopify/ProductVariant/54061591232795',
+                  id: 'gid://shopify/ProductVariant/551',
                   title: 'Small',
                   selectedOptions: [{ name: 'Size', value: 'Small' }],
                   image: null,
@@ -156,13 +159,16 @@ test('live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous r
     };
     services = createDiagnosticPreviewServices({
       INSIGNIA_M5_002_DIAGNOSTIC: '1',
+      INSIGNIA_M5_002_SHOP: shop,
+      INSIGNIA_M5_002_SHOP_ID: 'gid://shopify/Shop/501',
+      INSIGNIA_M5_002_PRODUCT_ID: product,
       SHOPIFY_CLIENT_ID: client,
       SHOPIFY_CLIENT_SECRET: secret,
       DATABASE_URL: dbUrl.href,
       APP_URL: 'https://synthetic.example.test',
     });
     const jwt = token();
-    const req = new Request('https://synthetic.example.test/api/admin/products/10485042479387/config', {
+    const req = new Request('https://synthetic.example.test/api/admin/products/555/config', {
       headers: { Authorization: `Bearer ${jwt}` },
     });
     const actor = await services.authenticate(req);
