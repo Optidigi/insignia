@@ -41,3 +41,7 @@ scripts/m1-functions/__pycache__/
 scripts/m4-002/__pycache__/
 .m1-artifacts/
 .m4-002-artifacts/
+
+# M5-002 serialized operator state; never evidence or credentials
+.m5-002-local/
+.shopify/

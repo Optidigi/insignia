@@ -1099,6 +1099,14 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   <div
                     role="img"
                     id="insignia-visualizer"
+                    data-editor-version={editor.version}
+                    data-selected-placement={editor.selectedPlacementId ?? ''}
+                    data-projected-geometry={JSON.stringify(project)}
+                    data-publication-state={JSON.stringify({
+                      state: view.config.publication.state,
+                      revisionId: view.config.publication.revisionId,
+                      sourceDraftVersion: view.config.publication.sourceDraftVersion,
+                    })}
                     style="width:100%;height:420px"
                     aria-label="Product placement preview"
                   ></div>

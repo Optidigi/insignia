@@ -4,7 +4,7 @@
 
 Read `docs/architecture/decision-ledger.md`, `docs/delivery/state.md` and the currently authorized slice prompt. Before executing or delegating a slice, read `docs/delivery/operating-model.md`. For affected architecture, read the relevant sections of `docs/architecture/implementation-plan.md` before changing code. The detailed plan is a reference, not an always-loaded instruction blob.
 
-The user owns product decisions. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project. The local orchestrator is sol-6-high. Implement only the authorized slice; return every PR for principal review. The owner-authorized normal PR #26 merge `f8fff36fca749c6b2b6666550e48c7e347b6d65f` has the exact approved parents and tree. [M5-001 admin, visualizer and publication workflow](docs/delivery/prompts/M5-001-ADMIN-VISUALIZER-PUBLICATION.md) is the current authorized slice. Return its integrated PR for principal review; do not merge it or advance activation, M6 or launch.
+The user owns product decisions. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project. For the current slice the orchestrator, every writer and each fresh local reviewer must use actual GPT-6.1-sol/high, superseding older model labels. Owner-authorized normal PR #27 merge `28e69864ebb9796504861a541363880cc86a82f8` preserves its exact approved parents and tree. [M5-002 embedded G7 and artifact attestation](docs/delivery/prompts/M5-002-EMBEDDED-G7-ARTIFACT-ATTESTATION.md) is the authorized slice. Return one integrated PR for principal review and stop.
 
 ## Authority and scope
 

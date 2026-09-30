@@ -1,0 +1,14 @@
+# M5-002 isolated development preview only. Never deploy or release this configuration.
+client_id = "1443cf6d03d39edae7c101a943c5c684"
+name = "Insignia"
+application_url = "https://example.com"
+embedded = true
+web_directories = ["scripts/m5-002"]
+[build]
+automatically_update_urls_on_dev = true
+[access_scopes]
+scopes = "read_products,write_products,read_cart_transforms,write_cart_transforms,read_validations,write_validations,read_inventory,write_inventory,read_locations"
+[auth]
+redirect_urls = []
+[webhooks]
+api_version = "2026-07"

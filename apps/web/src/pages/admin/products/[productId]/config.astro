@@ -23,6 +23,7 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
     <script is:inline src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
   </head>
   <body>
+    {process.env.INSIGNIA_M5_002_DIAGNOSTIC === '1' && <p role="status">Development preview: draft saves are local. Publication is disabled.</p>}
     <MerchantConfigEditor mode="config" productId={productId} client:load />
   </body>
 </html>
