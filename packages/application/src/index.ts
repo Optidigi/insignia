@@ -4,6 +4,7 @@ export * from './entitlement/provider-policy.js';
 export * from './idempotency/command.js';
 export * from './pricing/catalog-context.js';
 export * from './pricing/customization-fx.js';
+export * from './quote/accept-quote.js';
 export * from './shopify/admin-credential-bridge.js';
 export * from './shopify/ingress.js';
 export * from './shopify/offline-credentials.js';

@@ -8,6 +8,50 @@ export interface ShopRecord {
   currentGeneration: string;
 }
 
+export interface ActiveAuthorizationScope {
+  shopId: string;
+  shopDomain: string;
+  shopifyShopId: string;
+  installationGeneration: string;
+  authorizationGeneration: string;
+  authorizationEpoch: number;
+}
+
+async function readAuthorizationScope(
+  executor: DatabaseExecutor,
+  input: { shopId: string; installationGeneration: string },
+  lock: boolean,
+): Promise<ActiveAuthorizationScope | null> {
+  const query = executor
+    .selectFrom('shops')
+    .innerJoin('installation_generations as i', (join) =>
+      join.onRef('i.shop_id', '=', 'shops.shop_id').onRef('i.generation', '=', 'shops.current_generation'),
+    )
+    .select([
+      'shops.shop_id',
+      'shops.shop_domain',
+      'shops.shopify_shop_id',
+      'shops.current_generation',
+      'i.authorization_generation',
+      'i.authorization_epoch',
+    ])
+    .where('shops.shop_id', '=', input.shopId)
+    .where('shops.current_generation', '=', input.installationGeneration)
+    .where('i.deactivated_at', 'is', null);
+  const row = await (lock ? query.forUpdate() : query).executeTakeFirst();
+  if (!row?.shopify_shop_id) return null;
+  const epoch = Number(row.authorization_epoch);
+  if (!Number.isSafeInteger(epoch) || epoch < 0 || epoch > 0xffff_ffff) throw new Error('Invalid authorization epoch');
+  return {
+    shopId: row.shop_id,
+    shopDomain: row.shop_domain,
+    shopifyShopId: row.shopify_shop_id,
+    installationGeneration: row.current_generation,
+    authorizationGeneration: row.authorization_generation,
+    authorizationEpoch: epoch,
+  };
+}
+
 function mapShop(row: {
   shop_id: string;
   shop_domain: string;
@@ -25,6 +69,18 @@ function mapShop(row: {
 /** Mutations require an enclosing transaction so installation and shop state commit together. */
 export function createTenantRepository(executor: DatabaseExecutor) {
   return {
+    async getActiveAuthorizationScope(input: {
+      shopId: string;
+      installationGeneration: string;
+    }): Promise<ActiveAuthorizationScope | null> {
+      return readAuthorizationScope(executor, input, false);
+    },
+    async lockActiveAuthorizationScope(input: {
+      shopId: string;
+      installationGeneration: string;
+    }): Promise<ActiveAuthorizationScope | null> {
+      return readAuthorizationScope(executor, input, true);
+    },
     async getActiveProviderScope(input: { shopId: string; installationGeneration: string }) {
       const row = await executor
         .selectFrom('shops')

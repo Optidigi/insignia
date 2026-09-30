@@ -20,4 +20,4 @@ export {
   type ShopifyWebhookState,
   type VerifiedShopifyDelivery,
 } from './repositories/shopify-webhooks.js';
-export type { ShopRecord } from './repositories/tenant.js';
+export type { ActiveAuthorizationScope, ShopRecord } from './repositories/tenant.js';

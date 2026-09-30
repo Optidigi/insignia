@@ -54,7 +54,7 @@ const browser = [...bySource.keys()].filter(
 assert.ok(browser.length >= 3, 'browser entry graph must be nonempty');
 const builtins = new Set(builtinModules.map((name) => name.replace(/^node:/, '')));
 const banned =
-  /^(?:apps\/worker|packages\/(?:shopify|artwork|database|observability|signer))\/|(?:^|\/)@shopify\/shopify-api(?:\/|$)|^spikes\//;
+  /^(?:apps\/worker|packages\/(?:shopify|artwork|database|observability|signer|cart-authorization))\/|(?:^|\/)@shopify\/shopify-api(?:\/|$)|^spikes\//;
 for (const entry of browser) {
   const seen = new Set();
   const todo = [entry];
@@ -77,6 +77,7 @@ const manifests = [
   'apps/storefront/package.json',
   'apps/worker/package.json',
   'packages/domain/package.json',
+  'packages/cart-authorization/package.json',
   'packages/application/package.json',
   'packages/database/package.json',
 ];

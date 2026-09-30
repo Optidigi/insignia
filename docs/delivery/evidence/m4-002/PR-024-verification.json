@@ -1,0 +1,59 @@
+{
+  "pr": 24,
+  "base": "b2bf6003da27645b2f182e9d22a6e791e4163a06",
+  "approved_head": "78c32da34018d6aadf056afb0c3dc391356e7764",
+  "approved_tree": "284ace7587db052fae5a95d4fedc606fbf4b930b",
+  "synthetic_merge": "46fe6bf5a8924b436cf81d30d2d30d002c844117",
+  "synthetic_parents": [
+    "b2bf6003da27645b2f182e9d22a6e791e4163a06",
+    "78c32da34018d6aadf056afb0c3dc391356e7764"
+  ],
+  "synthetic_tree": "284ace7587db052fae5a95d4fedc606fbf4b930b",
+  "pr23_merge": {
+    "sha": "b2bf6003da27645b2f182e9d22a6e791e4163a06",
+    "parents": [
+      "86c466a9709b67f85601596fb7656857cc20a9cc",
+      "96b44f7001d32952383804fd7ca1d8eb3588c7c8"
+    ],
+    "tree": "ac4d53f6df0a71731077479fac588da720501c33"
+  },
+  "final_head_workflows": [
+    36632017712,
+    36632017492,
+    36632017569,
+    36632017515,
+    36632017657,
+    36632017622,
+    36632017535,
+    36632017651,
+    36632017404,
+    36632017973
+  ],
+  "final_head_tests": {
+    "shopify": "64/64",
+    "application": "25/25",
+    "database": "36/36",
+    "worker": "15/15 reported; exact-head workflow green"
+  },
+  "external_reads": {
+    "admin_graphql": "2/20",
+    "partner_graphql": "1/10",
+    "admin_auth_exchanges": 2
+  },
+  "live_context": {
+    "countries": ["NL", "US", "GB"],
+    "prices": "20.0 USD for both retained optional fixture variants in all contexts",
+    "qualification": "does not prove divergent/fixed-local Markets pricing"
+  },
+  "live_subscription": {
+    "billingPeriod": "EVERY_30_DAYS",
+    "trialEndsAt": null,
+    "cancelAtEndOfCycle": false,
+    "pendingUpdate": null,
+    "usageQuantity": "3.0",
+    "effectiveCost": "0.0 USD",
+    "priceActiveFlags": [false, false]
+  },
+  "native_github_review": "HTTP 403; not posted",
+  "m4_status": "M4-001 accepted; M4 remains IN_PROGRESS"
+}

@@ -1,0 +1,210 @@
+{
+  "schemaVersion": "m4-002-synthetic-quote-example-v1",
+  "context": "synthetic provider, synthetic plan, ephemeral test key; no live quote or Shopify write",
+  "publicKeyHex": "eb9a06a11965e72bd0679c4ed6675b9b26983ba9dff34426d87f0ff39ff04726",
+  "quote": {
+    "schemaVersion": "m4-accepted-quote-v1",
+    "quoteId": "22222222-2222-4222-8222-222222222222",
+    "shopId": "shop",
+    "installationGeneration": "1",
+    "authorizationGeneration": "11111111-1111-4111-8111-111111111111",
+    "authorizationEpoch": 4,
+    "acceptedAt": "2026-11-01T05:30:00.000Z",
+    "acceptedDate": "2026-11-01",
+    "acceptedDay": 20758,
+    "validThroughDay": 20760,
+    "country": "US",
+    "marketId": "42",
+    "shopCurrency": "USD",
+    "shopTimezone": "America/New_York",
+    "presentmentCurrency": "USD",
+    "presentmentExponent": 2,
+    "policyVersion": "synthetic-v1",
+    "recognizedPolicyId": "synthetic",
+    "trial": true,
+    "qualifyingUsageDisposition": "WAIVE_TRIAL",
+    "desiredGroups": [
+      {
+        "version": "m2-customization-group-v1",
+        "shopId": "shop",
+        "productId": "42",
+        "configRevisionId": "revision",
+        "revisionContentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "design": {
+          "placements": [
+            {
+              "placementId": "front",
+              "methodId": "method",
+              "stepId": "step",
+              "artwork": {
+                "kind": "revision",
+                "revisionId": "art"
+              }
+            }
+          ],
+          "options": []
+        },
+        "variants": [
+          {
+            "variantId": "700",
+            "quantity": 2
+          }
+        ]
+      }
+    ],
+    "effectiveRevisions": [
+      {
+        "configId": "cfg",
+        "operationId": "op",
+        "productId": "42",
+        "revisionId": "revision",
+        "contentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    ],
+    "catalogSnapshots": [
+      {
+        "shopId": "shop",
+        "installationGeneration": "1",
+        "productId": "42",
+        "variantId": "700",
+        "productIdVerified": true,
+        "context": {
+          "country": "US"
+        },
+        "amount": "10.00",
+        "currencyCode": "USD",
+        "sourceApiVersion": "2026-07",
+        "observedAt": "2026-11-01T05:30:00.000Z",
+        "freshUntil": "2026-11-01T05:35:00.000Z",
+        "correlation": {
+          "requestId": null
+        }
+      }
+    ],
+    "fxSnapshot": null,
+    "economics": {
+      "version": "m2-proposal-economics-v1",
+      "shopId": "shop",
+      "pricingEngineVersion": "m2-pricing-v1",
+      "roundingPolicy": "m2-half-even-v1",
+      "currency": {
+        "version": "m2-currency-resolution-v1",
+        "presentmentCurrency": "USD",
+        "exponents": {
+          "USD": 2
+        }
+      },
+      "fx": null,
+      "effectiveAt": "2026-11-01T05:30:00.000Z",
+      "marketContext": "US:42",
+      "customizedQuantity": 2,
+      "totalMinor": "2001",
+      "groups": [
+        {
+          "canonicalIdentity": "[\"m2-design-identity-v1\",\"shop\",\"42\",\"revision\",\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",[[\"front\",\"method\",\"step\",\"revision\",\"art\"]],[]]",
+          "shopId": "shop",
+          "productId": "42",
+          "configRevisionId": "revision",
+          "revisionContentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "quantity": 2,
+          "setupComponents": [
+            {
+              "ruleId": "setup",
+              "applicabilityKey": "general",
+              "role": "setup",
+              "selectedMinQuantity": null,
+              "multiplicity": 1,
+              "sourceDecimal": "0.01",
+              "resolvedMinor": "1",
+              "resolution": "shop-currency"
+            }
+          ],
+          "unitComponents": [],
+          "setupMinor": "1",
+          "customizationUnitMinor": "0",
+          "baseTotalMinor": "2000",
+          "totalMinor": "2001",
+          "variants": [
+            {
+              "variantId": "700",
+              "quantity": 2,
+              "contextualBaseMinor": "1000",
+              "contextId": "US:42:2026-11-01T05:30:00.000Z:",
+              "buckets": [
+                {
+                  "variantId": "700",
+                  "quantity": 1,
+                  "unitOrdinalStart": 1,
+                  "unitOrdinalEnd": 1,
+                  "setupPerUnitMinor": "1",
+                  "unitPriceMinor": "1001",
+                  "lineTotalMinor": "1001"
+                },
+                {
+                  "variantId": "700",
+                  "quantity": 1,
+                  "unitOrdinalStart": 2,
+                  "unitOrdinalEnd": 2,
+                  "setupPerUnitMinor": "0",
+                  "unitPriceMinor": "1000",
+                  "lineTotalMinor": "1000"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "lines": [
+        {
+          "variantId": "700",
+          "quantity": 1,
+          "unitOrdinalStart": 1,
+          "unitOrdinalEnd": 1,
+          "setupPerUnitMinor": "1",
+          "unitPriceMinor": "1001",
+          "lineTotalMinor": "1001",
+          "lineIndex": 0,
+          "canonicalIdentity": "[\"m2-design-identity-v1\",\"shop\",\"42\",\"revision\",\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",[[\"front\",\"method\",\"step\",\"revision\",\"art\"]],[]]",
+          "shopId": "shop",
+          "productId": "42",
+          "configRevisionId": "revision",
+          "revisionContentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        },
+        {
+          "variantId": "700",
+          "quantity": 1,
+          "unitOrdinalStart": 2,
+          "unitOrdinalEnd": 2,
+          "setupPerUnitMinor": "0",
+          "unitPriceMinor": "1000",
+          "lineTotalMinor": "1000",
+          "lineIndex": 1,
+          "canonicalIdentity": "[\"m2-design-identity-v1\",\"shop\",\"42\",\"revision\",\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",[[\"front\",\"method\",\"step\",\"revision\",\"art\"]],[]]",
+          "shopId": "shop",
+          "productId": "42",
+          "configRevisionId": "revision",
+          "revisionContentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        }
+      ]
+    }
+  },
+  "authorization": {
+    "setId": "33333333-3333-4333-8333-333333333333",
+    "keyId": "7",
+    "publicKeyFingerprint": "synthetic",
+    "firstValidDay": 20758,
+    "lastValidDay": 20760,
+    "validThroughDay": 20760,
+    "envelopeCarrier": "SVNHMgIAAAcRERERERFBEYERERERERERAAAABCIiIiIiIkIigiIiIiIiIiIzMzMzMzNDM4MzMzMzMzMzAAJVU0QCVVMAAAAAAAAAKgAAURgAAAACAAAAAAAAB9GMRatncFd_PAjS5N6bWMEZ3VTTl9Acr3gl5ApE5A8uN-Z7OBB13-raXbBcwTMtNPEbuzf7Niji4ZQYl8TavxgP",
+    "members": [
+      {
+        "lineIndex": 0,
+        "carrier": "AAAAAAAAAAACvAAAAAEAAAAAAAAD6Q"
+      },
+      {
+        "lineIndex": 1,
+        "carrier": "AAEAAAAAAAACvAAAAAEAAAAAAAAD6A"
+      }
+    ]
+  }
+}

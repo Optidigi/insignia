@@ -13,6 +13,7 @@
     "@astrojs/node": "11.1.6",
     "@astrojs/preact": "6.0.5",
     "@insignia/application": "workspace:*",
+    "@insignia/cart-authorization": "workspace:*",
     "@insignia/database": "workspace:*",
     "@insignia/observability": "workspace:*",
     "@insignia/shopify": "workspace:*",

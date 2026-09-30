@@ -9,6 +9,18 @@ required = [
     'Cargo.lock', 'pnpm-lock.yaml',
     'crates/cart-authorization/src/lib.rs',
     'crates/cart-authorization/src/whole.rs',
+    'crates/cart-authorization/tests/production_vectors.rs',
+    'crates/cart-authorization/tests/currency_matrix.rs',
+    'packages/cart-authorization/src/whole-quote.ts',
+    'packages/cart-authorization/src/admission.ts',
+    'packages/cart-authorization/src/currency.ts',
+    'packages/application/src/quote/accept-quote.ts',
+    'packages/database/migrations/20260929000300_authorization_generation.sql',
+    'packages/database/migrations/20260929000400_accepted_quote.sql',
+    'packages/shopify/src/open-exchange-rates.ts',
+    'packages/shopify/src/shop-context.ts',
+    'apps/web/src/server/quote-composition.ts',
+    'scripts/m4-002/replay-production-vectors.py',
     'crates/cart-transform/src/main.rs',
     'crates/cart-validation/src/main.rs',
     'extensions/insignia-cart-transform/schema.graphql',
@@ -24,6 +36,9 @@ required = [
     'apps/web/dist/server/entry.mjs',
     'apps/worker/dist/main.js',
     '.m1-artifacts/replay.json',
+    '.m4-002-artifacts/production-vectors-replay.json',
+    'packages/cart-authorization/fixtures/currency-matrix-v1.json',
+    'packages/cart-authorization/fixtures/whole-quote-v2.json',
 ]
 for pattern in ['apps/web/dist/client/**/*.js']:
     matches = sorted(root.glob(pattern))

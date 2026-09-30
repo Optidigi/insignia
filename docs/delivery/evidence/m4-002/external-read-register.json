@@ -1,0 +1,123 @@
+{
+  "createdAt": "2026-09-30T00:23:26.100568Z",
+  "limits": {
+    "admin": 3,
+    "admin_auth": 2,
+    "partner": 1
+  },
+  "requests": [
+    {
+      "apiVersion": "2026-07",
+      "completedAt": "2026-09-30T00:23:26.421235Z",
+      "endpoint": "https://insignia-rewrite-dev.myshopify.com/admin/oauth/access_token",
+      "expiresInSeconds": 86399,
+      "httpStatus": 200,
+      "id": "admin_auth-01",
+      "kind": "admin_auth",
+      "outcome": "RESPONSE",
+      "purpose": "existing-scope own-organization client credentials",
+      "requestId": "59fb867c-6c17-4bc3-95d1-565975517b74-1790727806",
+      "reservedAt": "2026-09-30T00:23:26.103277Z",
+      "responseBytes": 172,
+      "responseSha256": "6f3abb7194ee9d0a42d0249fef023858beaaeafd1ab6190ec9bb845f800bef4b",
+      "scopeNames": [
+        "read_locations",
+        "write_cart_transforms",
+        "write_inventory",
+        "write_products",
+        "write_validations"
+      ]
+    },
+    {
+      "apiVersion": "2026-07",
+      "completedAt": "2026-09-30T00:23:26.686351Z",
+      "endpoint": "https://insignia-rewrite-dev.myshopify.com/admin/api/2026-07/graphql.json",
+      "httpStatus": 200,
+      "id": "admin-01",
+      "kind": "admin",
+      "outcome": "RESPONSE",
+      "purpose": "exact shop id/currencyCode/ianaTimezone context",
+      "querySha256": "b758e7a0a0c578e09c3138677706ade9586ddb751008d14d2c3f529fcfbe3f1f",
+      "requestId": "e3c2fd43-5b81-4a3c-957a-3d8d229a3b40-1790727806",
+      "reservedAt": "2026-09-30T00:23:26.424000Z",
+      "responseBytes": 271,
+      "responseSha256": "b8afbdc3c5cc7ea93f49f1b0b2f7f5826d91620c8ae9777da35dbfff57978a0c",
+      "sanitizedShopContext": {
+        "currencyCode": "USD",
+        "ianaTimezone": "America/New_York",
+        "id": "gid://shopify/Shop/105501393179",
+        "observedAt": "2026-09-30T00:23:26.686327Z"
+      },
+      "topLevelKeys": [
+        "data",
+        "extensions"
+      ]
+    },
+    {
+      "apiVersion": "2026-07",
+      "completedAt": "2026-09-30T00:23:27.428614Z",
+      "endpoint": "https://partners.shopify.com/4697030/api/2026-07/graphql.json",
+      "httpStatus": 200,
+      "id": "partner-01",
+      "kind": "partner",
+      "outcome": "RESPONSE",
+      "purpose": "exact app/shop activeSubscription",
+      "querySha256": "2c85d8b542c533db64f58da8829b4492859efef750fd71e15e4869ed60590305",
+      "requestId": "01a0efb1-df48-7e98-baad-dd85fd893d85-1790727806",
+      "reservedAt": "2026-09-30T00:23:26.689107Z",
+      "responseBytes": 755,
+      "responseSha256": "2b029b7875222c6405dbc03a56b90dadbf60a03bac58f739995c4cecd8e07d20",
+      "sanitizedContract": {
+        "appId": "gid://shopify/App/429028933633",
+        "billingPeriod": "EVERY_30_DAYS",
+        "cancelAtEndOfCycle": false,
+        "currentBillingCycle": {
+          "endTime": "2026-10-28T16:53:01Z",
+          "startTime": "2026-09-28T16:53:01Z"
+        },
+        "items": [
+          {
+            "handle": "insignia-dev-zero-20260928",
+            "price": {
+              "__typename": "FlatRatePrice",
+              "active": false,
+              "amount": "0.0",
+              "currency": "USD"
+            },
+            "usage": null
+          },
+          {
+            "handle": "customized_order_paid",
+            "price": {
+              "__typename": "TieredPrice",
+              "active": false,
+              "currency": "USD",
+              "tiers": [
+                {
+                  "amount": "0.0",
+                  "amountPerUnit": "0.0",
+                  "upTo": null
+                }
+              ],
+              "tiersMode": "VOLUME"
+            },
+            "usage": {
+              "cost": {
+                "amount": "0.0",
+                "currencyCode": "USD"
+              },
+              "quantity": 3.0
+            }
+          }
+        ],
+        "pendingUpdate": null,
+        "shopId": "gid://shopify/Shop/105501393179",
+        "trialEndsAt": null
+      },
+      "topLevelKeys": [
+        "data"
+      ]
+    }
+  ],
+  "schemaVersion": "m4-002-external-read-register-v1"
+}

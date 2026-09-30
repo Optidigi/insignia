@@ -9,6 +9,7 @@ on:
       - 'extensions/insignia-*/**'
       - 'scripts/boundaries/**'
       - 'scripts/m1-functions/**'
+      - 'scripts/m4-002/**'
       - '.dependency-cruiser.cjs'
       - 'biome.json'
       - 'Cargo.toml'
@@ -29,6 +30,7 @@ on:
       - 'extensions/insignia-*/**'
       - 'scripts/boundaries/**'
       - 'scripts/m1-functions/**'
+      - 'scripts/m4-002/**'
       - 'biome.json'
       - 'Cargo.toml'
       - 'package.json'
@@ -68,6 +70,7 @@ jobs:
           path: |
             .m1-artifacts/manifest.json
             .m1-artifacts/replay.json
+            .m4-002-artifacts/production-vectors-replay.json
             extensions/insignia-cart-transform/target/cart-transform.raw.wasm
             extensions/insignia-cart-transform/target/cart-transform.wasm
             extensions/insignia-cart-validation/target/cart-validation.raw.wasm
