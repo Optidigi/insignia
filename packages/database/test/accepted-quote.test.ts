@@ -250,6 +250,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         'SELECT authorization_epoch FROM installation_generations WHERE shop_id = $1 AND generation = $2::bigint FOR UPDATE',
         [value.shopId, value.generation],
       );
+      const blockerPid = (await blocker.query<{ pid: number }>('SELECT pg_backend_pid() AS pid')).rows[0]?.pid;
+      if (blockerPid === undefined || !Number.isInteger(blockerPid)) throw new Error('missing blocker backend PID');
       replay = repo.findCompleted(input);
       void replay.catch(() => {});
       directInsert = sql`
@@ -280,16 +282,40 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
           ${authorization.lastValidDay}, ${authorization.validThroughDay}, ${authorization.envelopeCarrier},
           ${JSON.stringify(authorization.members)}::jsonb)`.execute(database);
       void directSetInsert.catch(() => {});
-      // Observe all three queries waiting on the installation row. The epoch update
-      // then wins before replay or either direct insert can read the current row.
+      // Observe each query waiting in the blocker chain ending at our row holder.
+      // The epoch update then wins before replay or either insert reads that row.
       let waiting = false;
       for (let attempt = 0; attempt < 100; attempt++) {
-        const activity = await sql<{ n: string }>`
-          SELECT count(*)::text AS n FROM pg_stat_activity
-          WHERE datname = current_database() AND wait_event_type = 'Lock'
-            AND (query LIKE '%FOR SHARE OF s, i%' OR query LIKE '%m4_002_direct_guard_race%'
-              OR query LIKE '%m4_002_set_guard_race%')`.execute(database);
-        if (Number(activity.rows[0]?.n) >= 3) {
+        const activity = await sql<{
+          pid: number;
+          blockers: number[];
+          replay: boolean;
+          quote: boolean;
+          authorization_set: boolean;
+        }>`
+          SELECT pid, pg_blocking_pids(pid) AS blockers,
+            query LIKE '%FOR SHARE OF s, i%' AS replay,
+            query LIKE '%m4_002_direct_guard_race%' AS quote,
+            query LIKE '%m4_002_set_guard_race%' AS authorization_set
+          FROM pg_stat_activity
+          WHERE datname = current_database() AND wait_event_type = 'Lock'`.execute(database);
+        const rows = activity.rows;
+        const byPid = new Map(rows.map((row) => [row.pid, row]));
+        const reachesHolder = (pid: number, seen = new Set<number>()): boolean => {
+          if (pid === blockerPid) return true;
+          if (seen.has(pid)) return false;
+          seen.add(pid);
+          return byPid.get(pid)?.blockers.some((next) => reachesHolder(next, seen)) ?? false;
+        };
+        const replayWaiters = rows.filter((row) => row.replay);
+        const quoteWaiters = rows.filter((row) => row.quote);
+        const setWaiters = rows.filter((row) => row.authorization_set);
+        if (
+          replayWaiters.length === 1 &&
+          quoteWaiters.length === 1 &&
+          setWaiters.length === 1 &&
+          [replayWaiters[0], quoteWaiters[0], setWaiters[0]].every((row) => row !== undefined && reachesHolder(row.pid))
+        ) {
           waiting = true;
           break;
         }
