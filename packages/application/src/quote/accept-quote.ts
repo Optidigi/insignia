@@ -340,13 +340,13 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     )
       throw new Error('invalid quote group');
     requestedVariants += entry.group.variants.length;
+    if (requestedVariants > 32) throw new Error('candidate capacity exceeded before provider reads');
     for (const variant of entry.group.variants) {
       if (!variant || !Number.isSafeInteger(variant.quantity) || variant.quantity < 1)
         throw new Error('invalid quote physical quantity');
       requestedQuantity += variant.quantity;
     }
-    if (requestedVariants > 32 || requestedQuantity > 10000)
-      throw new Error('candidate capacity exceeded before provider reads');
+    if (requestedQuantity > 10000) throw new Error('candidate capacity exceeded before provider reads');
   }
   boundedRequestBytes(request);
   const marketId = normalizeMarketId(request.marketId);

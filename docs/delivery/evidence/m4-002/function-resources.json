@@ -2,8 +2,8 @@
   "schemaVersion": "m4-002-function-resources-v1",
   "sourceVectorsSha256": "7f0046b88183b79cbccc305c883aab0483a6cda1eddb191297e2295c35ac1eda",
   "runnerSha256": "728bedbcf86f57680051208f9056642c9dfb07766a21891624bf18f372e4c29b",
-  "fullReplayRowCount": 201,
-  "fullReplaySha256": "9737e72657b363dc6ba8b39ef2e948a4e7b745f3637e697236d0235fcf284de0",
+  "fullReplayRowCount": 230,
+  "fullReplaySha256": "358fb197602cb3d17a63328066341856a7029173707e6d85e37e9481c404eeb8",
   "stackStatus": "not measured: pinned runner exposes linear memory only",
   "selectedFinalWasmRows": [
     {
@@ -22,7 +22,8 @@
       "wasmBytes": 181570,
       "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
       "queryBytes": 764,
-      "calculatedQueryCost": 20,
+      "queryCostEstimate": 20,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -42,7 +43,8 @@
       "wasmBytes": 181570,
       "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
       "queryBytes": 764,
-      "calculatedQueryCost": 20,
+      "queryCostEstimate": 20,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -62,7 +64,8 @@
       "wasmBytes": 181570,
       "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
       "queryBytes": 764,
-      "calculatedQueryCost": 20,
+      "queryCostEstimate": 20,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -82,7 +85,8 @@
       "wasmBytes": 181570,
       "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
       "queryBytes": 764,
-      "calculatedQueryCost": 20,
+      "queryCostEstimate": 20,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -102,7 +106,8 @@
       "wasmBytes": 181570,
       "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
       "queryBytes": 764,
-      "calculatedQueryCost": 20,
+      "queryCostEstimate": 20,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -122,7 +127,8 @@
       "wasmBytes": 181570,
       "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
       "queryBytes": 764,
-      "calculatedQueryCost": 20,
+      "queryCostEstimate": 20,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -142,7 +148,29 @@
       "wasmBytes": 181570,
       "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
       "queryBytes": 764,
-      "calculatedQueryCost": 20,
+      "queryCostEstimate": 20,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
+      "stackBytes": null,
+      "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
+    },
+    {
+      "target": "transform",
+      "case": "pg_persisted_negative_adjustment",
+      "expectedOperations": 2,
+      "actualOperations": 2,
+      "inputBytes": 1672,
+      "outputBytes": 604,
+      "transformOutputUpperBytes": 742,
+      "inputSha256": "934bb1015a5656483661030ace9fefc59b70ce15daa4f2cac96e4e661c717581",
+      "outputSha256": "9d21a41bd5e3020fffaac5afbdc5465bc9782b29f604ad64e7d264d938e61a7c",
+      "instructions": 2683077,
+      "linearMemoryKiB": 1152,
+      "wasmSha256": "76e890cf702a6bc182e8ca8b55942260f33a5bc5e072d42c2f104a72161a4ddb",
+      "wasmBytes": 181570,
+      "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
+      "queryBytes": 764,
+      "queryCostEstimate": 20,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -162,7 +190,8 @@
       "wasmBytes": 183160,
       "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
       "queryBytes": 833,
-      "calculatedQueryCost": 23,
+      "queryCostEstimate": 23,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -182,7 +211,8 @@
       "wasmBytes": 183160,
       "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
       "queryBytes": 833,
-      "calculatedQueryCost": 23,
+      "queryCostEstimate": 23,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -202,7 +232,8 @@
       "wasmBytes": 183160,
       "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
       "queryBytes": 833,
-      "calculatedQueryCost": 23,
+      "queryCostEstimate": 23,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -222,7 +253,8 @@
       "wasmBytes": 183160,
       "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
       "queryBytes": 833,
-      "calculatedQueryCost": 23,
+      "queryCostEstimate": 23,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -242,7 +274,8 @@
       "wasmBytes": 183160,
       "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
       "queryBytes": 833,
-      "calculatedQueryCost": 23,
+      "queryCostEstimate": 23,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -262,7 +295,8 @@
       "wasmBytes": 183160,
       "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
       "queryBytes": 833,
-      "calculatedQueryCost": 23,
+      "queryCostEstimate": 23,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     },
@@ -282,7 +316,29 @@
       "wasmBytes": 183160,
       "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
       "queryBytes": 833,
-      "calculatedQueryCost": 23,
+      "queryCostEstimate": 23,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
+      "stackBytes": null,
+      "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
+    },
+    {
+      "target": "validation",
+      "case": "pg_persisted_negative_adjustment",
+      "expectedOperations": 0,
+      "actualOperations": 0,
+      "inputBytes": 1750,
+      "outputBytes": 17,
+      "transformOutputUpperBytes": null,
+      "inputSha256": "37ee58130d61e7f958325d1f0999c6bdbf86f6f8c20c69782bd45cbcc38efe55",
+      "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+      "instructions": 2674970,
+      "linearMemoryKiB": 1152,
+      "wasmSha256": "51cd4867fa5c8181eac421c65e3e7fd210662213c3705ffe5cfc8c8d4a085207",
+      "wasmBytes": 183160,
+      "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
+      "queryBytes": 833,
+      "queryCostEstimate": 23,
+      "queryCostStatus": "unverified static estimate for pinned query; runner does not report query cost",
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     }
@@ -301,5 +357,6 @@
       "linearMemoryKiB": 1536
     }
   },
-  "acceptedQuoteExampleSha256": "ee3543ec0ad1b7fe84d87b2443942cbcaaa156a2f0a56f3116e550214c294764"
+  "acceptedQuoteExampleSha256": "ee3543ec0ad1b7fe84d87b2443942cbcaaa156a2f0a56f3116e550214c294764",
+  "pgPersistedQuoteVectorSha256": "a2ac3be2f0afd28f64a4d6dc3f144e65b8f2d9edb8867ef6533eb4216a7ce5dc"
 }

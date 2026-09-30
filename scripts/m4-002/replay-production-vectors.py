@@ -14,6 +14,7 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 VECTORS = ROOT / 'packages/cart-authorization/fixtures/whole-quote-v2.json'
 ACCEPTED_EXAMPLE = ROOT / 'docs/delivery/evidence/m4-002/synthetic-accepted-quote.json'
+PERSISTED_PG = ROOT / 'docs/delivery/evidence/m4-002/pg-persisted-negative-vector.json'
 RUNNER = Path(os.environ['M1_FUNCTION_RUNNER'])
 OUT = ROOT / '.m4-002-artifacts'
 OUT.mkdir(exist_ok=True)
@@ -86,7 +87,7 @@ def make_input(target, case, vectors):
     return template
 
 
-def run(target, name, payload, expected_count):
+def run(target, name, payload, expected_count, case=None):
     extension = ROOT / f'extensions/insignia-cart-{target}'
     wasm = extension / f'target/cart-{target}.wasm'
     query = extension / 'src' / (
@@ -107,6 +108,33 @@ def run(target, name, payload, expected_count):
     output = result['output']
     actual_count = len(output['operations'])
     assert actual_count == expected_count, (target, name, actual_count, expected_count)
+    if target == 'transform' and expected_count:
+        assert case is not None
+        by_carrier = dict(zip(case['memberCarriers'], case['members'], strict=True))
+        expected = {}
+        for line in payload['cart']['lines']:
+            carrier = (line.get('member') or {}).get('value')
+            if carrier is None:
+                continue
+            member = by_carrier[carrier]
+            expected[line['id']] = {
+                'merchandiseId': f"gid://shopify/ProductVariant/{member['variantId']}",
+                'quantity': 1,
+                'attributes': [{'key': '_insignia_member_v2', 'value': carrier}],
+                'amount': money(member['unitMinor']),
+            }
+        actual = {}
+        for operation in output['operations']:
+            expanded = operation['lineExpand']
+            assert len(expanded['expandedCartItems']) == 1, (target, name)
+            item = expanded['expandedCartItems'][0]
+            actual[expanded['cartLineId']] = {
+                'merchandiseId': item['merchandiseId'],
+                'quantity': item['quantity'],
+                'attributes': item['attributes'],
+                'amount': item['price']['adjustment']['fixedPricePerUnit']['amount'],
+            }
+        assert actual == expected, (target, name, actual, expected)
     output_bytes = len(compact(output))
     # Mirrors the checked Rust and production TypeScript maxima: 36-character UUID CartLine
     # suffix, 20-digit variant suffix, 30-byte member carrier and 21-byte amount.
@@ -122,7 +150,8 @@ def run(target, name, payload, expected_count):
         'linearMemoryKiB': result['memory_usage'],
         'wasmSha256': sha(wasm.read_bytes()), 'wasmBytes': wasm.stat().st_size,
         'querySha256': sha(query.read_bytes()), 'queryBytes': query.stat().st_size,
-        'calculatedQueryCost': 20 if target == 'transform' else 23,
+        'queryCostEstimate': 20 if target == 'transform' else 23,
+        'queryCostStatus': 'unverified static estimate for pinned query; runner does not report query cost',
         'stackBytes': None, 'stackStatus': 'unmeasured: pinned runner exposes linear memory, not stack peak',
     }
 
@@ -137,15 +166,26 @@ assert all('canonicalIdentity' not in item and len(item['canonicalIdentitySha256
            for kind in ('groups', 'lines') for item in accepted_example['quote']['economics'][kind])
 assert '"art"' not in json.dumps(accepted_example['quote'])
 accepted_case = dict(accepted_example['functionVector'], publicHex=accepted_example['publicKeyHex'])
+persisted_pg = json.loads(PERSISTED_PG.read_text())
+assert persisted_pg['schemaVersion'] == 'm4-002-pg-persisted-vector-v1'
+assert persisted_pg['quoteSha256'] == sha(compact(persisted_pg['quote']))
+assert persisted_pg['quoteEconomicsVersion'] == persisted_pg['quote']['economics']['version'] == 'm4-quote-economics-v1'
+assert persisted_pg['totalMinor'] == persisted_pg['quote']['economics']['totalMinor'] == '1'
+assert persisted_pg['lineUnitMinor'] == [line['unitPriceMinor'] for line in persisted_pg['quote']['economics']['lines']] == ['1', '0']
+assert persisted_pg['functionVector']['header']['quoteHex'] == persisted_pg['quoteId'].replace('-', '')
+assert persisted_pg['functionVector']['header']['setHex'] == persisted_pg['setId'].replace('-', '')
+assert [member['unitMinor'] for member in persisted_pg['functionVector']['members']] == persisted_pg['lineUnitMinor']
+assert '"art"' not in json.dumps(persisted_pg['quote'])
+persisted_case = persisted_pg['functionVector']
 rows = []
 for target in ('transform', 'validation'):
-    for case in [*vectors['cases'], accepted_case]:
+    for case in [*vectors['cases'], accepted_case, persisted_case]:
         base = make_input(target, case, vectors)
         count = len(case['members'])
-        rows.append(run(target, case['name'], base, count if target == 'transform' else 0))
+        rows.append(run(target, case['name'], base, count if target == 'transform' else 0, case))
         reordered = copy.deepcopy(base)
         reordered['cart']['lines'].reverse()
-        rows.append(run(target, case['name'] + '-reordered', reordered, count if target == 'transform' else 0))
+        rows.append(run(target, case['name'] + '-reordered', reordered, count if target == 'transform' else 0, case))
         alterations = {
             'country': lambda x: x['localization']['country'].__setitem__(
                 'isoCode', 'DE' if case['header']['country'] == 'US' else 'US'),
@@ -158,7 +198,8 @@ for target in ('transform', 'validation'):
             'generation': lambda x: x['shop']['publicConfig'].__setitem__('value',
                 x['shop']['publicConfig']['value'].replace(case['header']['generationHex'], '00' * 16)),
             'epoch': lambda x: x['shop']['publicConfig'].__setitem__('value',
-                x['shop']['publicConfig']['value'].replace('"epoch":4', '"epoch":5')),
+                x['shop']['publicConfig']['value'].replace(
+                    f'"epoch":{case["header"]["epoch"]}', f'"epoch":{case["header"]["epoch"] + 1}')),
             'missing-member': lambda x: x['cart']['lines'][0].__setitem__('member', None),
             'wrong-variant': lambda x: x['cart']['lines'][0]['merchandise'].__setitem__('id', 'gid://shopify/ProductVariant/999999'),
             'wrong-quantity': lambda x: x['cart']['lines'][0].__setitem__('quantity', x['cart']['lines'][0]['quantity'] + 1),
@@ -187,6 +228,7 @@ for target in ('transform', 'validation'):
 
 manifest = {'version': 1, 'sourceVectorsSha256': sha(VECTORS.read_bytes()),
             'acceptedQuoteExampleSha256': sha(ACCEPTED_EXAMPLE.read_bytes()),
+            'pgPersistedQuoteVectorSha256': sha(PERSISTED_PG.read_bytes()),
             'runnerSha256': sha(RUNNER.read_bytes()), 'rows': rows}
 (OUT / 'production-vectors-replay.json').write_text(json.dumps(manifest, indent=2) + '\n')
 print(json.dumps({'rows': len(rows), 'positive': sum('-' not in row['case'] for row in rows),

@@ -472,6 +472,16 @@ describe('acceptQuote', () => {
 
   it('bounds nested buyer JSON and Market text before provider reads', async () => {
     const { ports } = fixture();
+    const oversizedVariants = new Array(100_000);
+    Object.defineProperty(oversizedVariants, 0, {
+      enumerable: true,
+      get() {
+        throw new Error('oversized variants were iterated');
+      },
+    });
+    await expect(
+      acceptQuote({ ...request, groups: [{ group: { ...group, variants: oversizedVariants } }] }, ports),
+    ).rejects.toThrow(/candidate capacity exceeded/);
     await expect(acceptQuote({ ...request, marketId: '9'.repeat(256) }, ports)).rejects.toThrow(
       /invalid desired Market ID/,
     );

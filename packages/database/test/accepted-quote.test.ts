@@ -1,4 +1,5 @@
-import { generateKeyPairSync, randomUUID, sign, verify } from 'node:crypto';
+import { createHash, generateKeyPairSync, randomUUID, sign, verify } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { acceptQuote } from '@insignia/application';
 import {
   admitCandidate,
@@ -468,6 +469,33 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
       expect(persisted.rows[0]?.member_carriers).toEqual(accepted.authorization.members);
       expect(await acceptQuote(request, ports)).toEqual(accepted);
       expect(signatures).toBe(1);
+      if (process.env.M4_PERSISTED_VECTOR_OUTPUT) {
+        const vector = {
+          schemaVersion: 'm4-002-pg-persisted-vector-v1',
+          provenance:
+            'synthetic PostgreSQL 18 accepted-quote test; exact persisted carriers and signed allocation verified',
+          quoteId: accepted.quote.quoteId,
+          setId: accepted.authorization.setId,
+          quoteSha256: createHash('sha256').update(JSON.stringify(accepted.quote)).digest('hex'),
+          quote: accepted.quote,
+          quoteEconomicsVersion: accepted.quote.economics.version,
+          totalMinor: accepted.quote.economics.totalMinor,
+          lineUnitMinor: accepted.quote.economics.lines.map((line) => line.unitPriceMinor),
+          functionVector: {
+            name: 'pg_persisted_negative_adjustment',
+            header: envelope.header,
+            members,
+            envelope: accepted.authorization.envelopeCarrier,
+            memberCarriers: accepted.authorization.members.map((member) => member.carrier),
+            publicHex: keys.publicKey.export({ format: 'der', type: 'spki' }).subarray(-32).toString('hex'),
+            ordinaryLines: 0,
+            acceptedDate: accepted.quote.acceptedDate,
+            firstValidDay: accepted.authorization.firstValidDay,
+            lastValidDay: accepted.authorization.lastValidDay,
+          },
+        };
+        writeFileSync(process.env.M4_PERSISTED_VECTOR_OUTPUT, `${JSON.stringify(vector, null, 2)}\n`);
+      }
     } finally {
       await core.close();
     }

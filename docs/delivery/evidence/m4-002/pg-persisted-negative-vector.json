@@ -1,0 +1,237 @@
+{
+  "schemaVersion": "m4-002-pg-persisted-vector-v1",
+  "provenance": "synthetic PostgreSQL 18 accepted-quote test; exact persisted carriers and signed allocation verified",
+  "quoteId": "e97688b5-812e-4649-9cc0-b0bc209d0ed1",
+  "setId": "64a8be37-ab6a-49d0-862b-5c2c6e38679d",
+  "quoteSha256": "71a28c0394ae36c2f10026ab2cd957809210416ad5ec899903b21e46351df34e",
+  "quote": {
+    "schemaVersion": "m4-accepted-quote-v1",
+    "quoteId": "e97688b5-812e-4649-9cc0-b0bc209d0ed1",
+    "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
+    "installationGeneration": "1",
+    "authorizationGeneration": "bb85bfe6-9907-4540-b650-df8134cff712",
+    "authorizationEpoch": 0,
+    "acceptedAt": "2026-11-01T05:30:00.000Z",
+    "acceptedDate": "2026-11-01",
+    "acceptedDay": 20758,
+    "validThroughDay": 20760,
+    "country": "US",
+    "marketId": "42",
+    "shopCurrency": "USD",
+    "shopTimezone": "America/New_York",
+    "presentmentCurrency": "USD",
+    "presentmentExponent": 2,
+    "policyVersion": "synthetic-v1",
+    "recognizedPolicyId": "synthetic",
+    "trial": true,
+    "qualifyingUsageDisposition": "WAIVE_TRIAL",
+    "physicalGroups": [
+      {
+        "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
+        "configRevisionId": "08f9ecd4-8c2a-4666-8ff8-fcb3dc892f3d",
+        "revisionContentHash": "2acb03e5dbd7ad24e578456ef2981286086a8ff8b31e0f32cb216bf497992b67",
+        "canonicalIdentitySha256": "84f8c777ff6588e955edeee0cb7cfd293dc164e2323c2aa5b59b9aeede793f34",
+        "variants": [
+          {
+            "variantId": "700",
+            "quantity": 2
+          }
+        ]
+      }
+    ],
+    "effectiveRevisions": [
+      {
+        "configId": "6d9511d4-cae9-491b-aa22-97a9d25aeb85",
+        "operationId": "93c98b5a-39e3-4468-b4f4-1f787a4bb142",
+        "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
+        "revisionId": "08f9ecd4-8c2a-4666-8ff8-fcb3dc892f3d",
+        "contentHash": "2acb03e5dbd7ad24e578456ef2981286086a8ff8b31e0f32cb216bf497992b67"
+      }
+    ],
+    "catalogSnapshots": [
+      {
+        "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
+        "installationGeneration": "1",
+        "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
+        "variantId": "700",
+        "productIdVerified": true,
+        "context": {
+          "country": "US"
+        },
+        "amount": "0.00",
+        "currencyCode": "USD",
+        "sourceApiVersion": "2026-07",
+        "observedAt": "2026-11-01T05:30:00.000Z",
+        "freshUntil": "2026-11-01T05:35:00.000Z",
+        "correlation": {
+          "requestId": null
+        }
+      }
+    ],
+    "fxSnapshot": null,
+    "economics": {
+      "version": "m4-quote-economics-v1",
+      "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
+      "pricingEngineVersion": "m2-pricing-v1",
+      "roundingPolicy": "m2-half-even-v1",
+      "currency": {
+        "version": "m2-currency-resolution-v1",
+        "presentmentCurrency": "USD",
+        "exponents": {
+          "USD": 2
+        }
+      },
+      "fx": null,
+      "effectiveAt": "2026-11-01T05:30:00.000Z",
+      "marketContext": "US:42",
+      "customizedQuantity": 2,
+      "totalMinor": "1",
+      "groups": [
+        {
+          "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
+          "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
+          "configRevisionId": "08f9ecd4-8c2a-4666-8ff8-fcb3dc892f3d",
+          "revisionContentHash": "2acb03e5dbd7ad24e578456ef2981286086a8ff8b31e0f32cb216bf497992b67",
+          "quantity": 2,
+          "setupComponents": [
+            {
+              "ruleId": "setup",
+              "applicabilityKey": "general",
+              "role": "setup",
+              "selectedMinQuantity": null,
+              "multiplicity": 1,
+              "sourceDecimal": "0.03",
+              "resolvedMinor": "3",
+              "resolution": "shop-currency"
+            }
+          ],
+          "unitComponents": [
+            {
+              "ruleId": "negative-placement",
+              "applicabilityKey": "placement:front",
+              "role": "unit",
+              "selectedMinQuantity": null,
+              "multiplicity": 1,
+              "sourceDecimal": "-0.01",
+              "resolvedMinor": "-1",
+              "resolution": "shop-currency"
+            }
+          ],
+          "setupMinor": "3",
+          "customizationUnitMinor": "-1",
+          "baseTotalMinor": "0",
+          "totalMinor": "1",
+          "variants": [
+            {
+              "variantId": "700",
+              "quantity": 2,
+              "contextualBaseMinor": "0",
+              "contextId": "US:42:2026-11-01T05:30:00.000Z:",
+              "buckets": [
+                {
+                  "variantId": "700",
+                  "quantity": 1,
+                  "unitOrdinalStart": 1,
+                  "unitOrdinalEnd": 1,
+                  "setupPerUnitMinor": "2",
+                  "unitPriceMinor": "1",
+                  "lineTotalMinor": "1"
+                },
+                {
+                  "variantId": "700",
+                  "quantity": 1,
+                  "unitOrdinalStart": 2,
+                  "unitOrdinalEnd": 2,
+                  "setupPerUnitMinor": "1",
+                  "unitPriceMinor": "0",
+                  "lineTotalMinor": "0"
+                }
+              ]
+            }
+          ],
+          "canonicalIdentitySha256": "84f8c777ff6588e955edeee0cb7cfd293dc164e2323c2aa5b59b9aeede793f34"
+        }
+      ],
+      "lines": [
+        {
+          "variantId": "700",
+          "quantity": 1,
+          "unitOrdinalStart": 1,
+          "unitOrdinalEnd": 1,
+          "setupPerUnitMinor": "2",
+          "unitPriceMinor": "1",
+          "lineTotalMinor": "1",
+          "lineIndex": 0,
+          "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
+          "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
+          "configRevisionId": "08f9ecd4-8c2a-4666-8ff8-fcb3dc892f3d",
+          "revisionContentHash": "2acb03e5dbd7ad24e578456ef2981286086a8ff8b31e0f32cb216bf497992b67",
+          "canonicalIdentitySha256": "84f8c777ff6588e955edeee0cb7cfd293dc164e2323c2aa5b59b9aeede793f34"
+        },
+        {
+          "variantId": "700",
+          "quantity": 1,
+          "unitOrdinalStart": 2,
+          "unitOrdinalEnd": 2,
+          "setupPerUnitMinor": "1",
+          "unitPriceMinor": "0",
+          "lineTotalMinor": "0",
+          "lineIndex": 1,
+          "shopId": "656975ef-1dcf-40ea-b900-ced93270fee7",
+          "productId": "99cb83c6-8c58-4427-865e-e3a4fcabad62",
+          "configRevisionId": "08f9ecd4-8c2a-4666-8ff8-fcb3dc892f3d",
+          "revisionContentHash": "2acb03e5dbd7ad24e578456ef2981286086a8ff8b31e0f32cb216bf497992b67",
+          "canonicalIdentitySha256": "84f8c777ff6588e955edeee0cb7cfd293dc164e2323c2aa5b59b9aeede793f34"
+        }
+      ]
+    }
+  },
+  "quoteEconomicsVersion": "m4-quote-economics-v1",
+  "totalMinor": "1",
+  "lineUnitMinor": [
+    "1",
+    "0"
+  ],
+  "functionVector": {
+    "name": "pg_persisted_negative_adjustment",
+    "header": {
+      "keyId": 7,
+      "generationHex": "bb85bfe699074540b650df8134cff712",
+      "epoch": 0,
+      "quoteHex": "e97688b5812e46499cc0b0bc209d0ed1",
+      "setHex": "64a8be37ab6a49d0862b5c2c6e38679d",
+      "count": 2,
+      "currency": "USD",
+      "exponent": 2,
+      "country": "US",
+      "marketId": "42",
+      "validThroughDay": 20760,
+      "totalQuantity": 2,
+      "totalMinor": "1"
+    },
+    "members": [
+      {
+        "index": 0,
+        "variantId": "700",
+        "quantity": 1,
+        "unitMinor": "1"
+      },
+      {
+        "index": 1,
+        "variantId": "700",
+        "quantity": 1,
+        "unitMinor": "0"
+      }
+    ],
+    "envelope": "SVNHMgIAAAe7hb_mmQdFQLZQ34E0z_cSAAAAAOl2iLWBLkZJnMCwvCCdDtFkqL43q2pJ0IYrXCxuOGedAAJVU0QCVVMAAAAAAAAAKgAAURgAAAACAAAAAAAAAAHmss6oR-gXGPN9XsuURFvk5dQeoSsaFV4RJCko12rRPDsl6nlH-8nPuLgcV_6JwJCBfvyNm_J4tlPP_wvIwdII",
+    "memberCarriers": [
+      "AAAAAAAAAAACvAAAAAEAAAAAAAAAAQ",
+      "AAEAAAAAAAACvAAAAAEAAAAAAAAAAA"
+    ],
+    "publicHex": "2ef8d872ddb90282174e176d112f22ed53e51d72749acb5dd865ea8c1efae96a",
+    "ordinaryLines": 0,
+    "acceptedDate": "2026-11-01",
+    "firstValidDay": 20758,
+    "lastValidDay": 20760
+  }
+}
