@@ -133,6 +133,8 @@ export class PgAcceptedQuoteRepository {
   ): Promise<T | null> {
     const found = await sql<{
       request_digest: string;
+      authorization_generation: string;
+      authorization_epoch: string;
       quote_value: unknown;
       set_id: string;
       key_id: string;
@@ -143,7 +145,8 @@ export class PgAcceptedQuoteRepository {
       envelope_carrier: string;
       member_carriers: unknown;
     }>`
-      SELECT q.request_digest, q.quote_value, a.set_id::text, a.key_id,
+      SELECT q.request_digest, q.authorization_generation::text, q.authorization_epoch::text,
+        q.quote_value, a.set_id::text, a.key_id,
         a.public_key_fingerprint, a.first_valid_day, a.last_valid_day, a.valid_through_day,
         a.envelope_carrier, a.member_carriers
       FROM accepted_quotes q
@@ -151,12 +154,15 @@ export class PgAcceptedQuoteRepository {
       JOIN shops s ON s.shop_id = q.shop_id AND s.current_generation = q.installation_generation
       JOIN installation_generations i ON i.shop_id = s.shop_id AND i.generation = s.current_generation
       WHERE q.shop_id = ${input.shopId} AND q.installation_generation = ${input.installationGeneration}::bigint
-        AND q.authorization_generation = ${input.authorizationGeneration}::uuid
-        AND q.authorization_epoch = ${input.authorizationEpoch}::bigint
         AND i.deactivated_at IS NULL AND q.idempotency_key = ${input.idempotencyKey}
       ORDER BY a.created_at ASC LIMIT 1`.execute(this.database);
     const row = found.rows[0];
     if (!row) return null;
+    if (
+      row.authorization_generation !== input.authorizationGeneration ||
+      row.authorization_epoch !== String(input.authorizationEpoch)
+    )
+      throw new Error('idempotency key belongs to revoked authorization identity');
     if (row.request_digest !== input.requestDigest) throw new Error('idempotency digest conflict');
     return {
       quote: row.quote_value,
@@ -225,6 +231,8 @@ export class PgAcceptedQuoteRepository {
 
       const previous = await sql<{
         request_digest: string;
+        authorization_generation: string;
+        authorization_epoch: string;
         quote_value: unknown;
         set_id: string;
         key_id: string;
@@ -235,7 +243,8 @@ export class PgAcceptedQuoteRepository {
         envelope_carrier: string;
         member_carriers: unknown;
       }>`
-        SELECT q.request_digest, q.quote_value, a.set_id::text, a.key_id,
+        SELECT q.request_digest, q.authorization_generation::text, q.authorization_epoch::text,
+          q.quote_value, a.set_id::text, a.key_id,
           a.public_key_fingerprint, a.first_valid_day, a.last_valid_day, a.valid_through_day,
           a.envelope_carrier, a.member_carriers
         FROM accepted_quotes q JOIN quote_authorization_sets a ON a.quote_id = q.quote_id
@@ -244,6 +253,11 @@ export class PgAcceptedQuoteRepository {
         ORDER BY a.created_at ASC LIMIT 1`.execute(transaction);
       if (previous.rows[0]) {
         const row = previous.rows[0];
+        if (
+          row.authorization_generation !== input.authorizationGeneration ||
+          row.authorization_epoch !== String(input.authorizationEpoch)
+        )
+          throw new Error('idempotency key belongs to revoked authorization identity');
         if (row.request_digest !== input.requestDigest) throw new Error('idempotency digest conflict');
         return {
           quote: row.quote_value,

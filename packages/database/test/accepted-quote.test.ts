@@ -1,8 +1,19 @@
-import { randomUUID } from 'node:crypto';
+import { generateKeyPairSync, randomUUID, sign, verify } from 'node:crypto';
+import { acceptQuote } from '@insignia/application';
+import {
+  admitCandidate,
+  currencyExponent,
+  decodeEnvelope,
+  decodeMemberCarrier,
+  issueWholeQuote,
+  wholeQuoteSignBytes,
+} from '@insignia/cart-authorization';
 import { type Kysely, sql } from 'kysely';
+import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../src/client/database.js';
 import { withTransaction } from '../src/client/database.js';
+import { createDurableCore } from '../src/durable-core.js';
 import { PgAcceptedQuoteRepository } from '../src/repositories/accepted-quote.js';
 import { CONFIG_DRAFT_STORAGE_VERSION, createConfigRepositoryInternal } from '../src/repositories/config.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
@@ -44,10 +55,23 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         productId,
         revisionId,
         shopCurrency: 'USD',
-        methods: [],
-        placements: [],
+        methods: [{ id: 'method' }],
+        placements: [{ id: 'front', allowedMethodIds: ['method'], allowedStepIds: ['step'], logoLaterAllowed: false }],
         productionOptions: [],
-        pricingRules: [],
+        pricingRules: [
+          {
+            id: 'negative-placement',
+            scope: { kind: 'placement', placementId: 'front' },
+            role: 'unit',
+            rate: { kind: 'fixed', amount: { shopDecimal: '-0.01', presentmentOverrides: [] } },
+          },
+          {
+            id: 'setup',
+            scope: { kind: 'general' },
+            role: 'setup',
+            rate: { kind: 'fixed', amount: { shopDecimal: '0.03', presentmentOverrides: [] } },
+          },
+        ],
       },
     });
     const operationId = randomUUID();
@@ -206,11 +230,231 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     await expect(
       sql`DELETE FROM quote_authorization_sets WHERE set_id = ${setId}::uuid`.execute(database),
     ).rejects.toThrow();
+    await sql`UPDATE installation_generations SET authorization_epoch = ${value.authorizationEpoch + 1}
+      WHERE shop_id = ${value.shopId} AND generation = ${value.generation}::bigint`.execute(database);
+    const advanced = { ...input, authorizationEpoch: value.authorizationEpoch + 1 };
+    await expect(repo.findCompleted(advanced)).rejects.toThrow(/revoked authorization identity/);
+    await expect(
+      repo.accept(advanced, async () => {
+        signed++;
+        return { quote, authorization };
+      }),
+    ).rejects.toThrow(/revoked authorization identity/);
+    expect(signed).toBe(1);
     await withTransaction(database, async (transaction) => {
       await createTenantRepository(transaction).startInstallation(transaction, value.shopId);
     });
     await expect(
       repo.accept({ ...input, idempotencyKey: 'after-reinstall' }, async () => ({ quote, authorization })),
     ).rejects.toThrow(/inactive tenant/);
+  });
+
+  it('prices a signed negative adjustment, signs its full allocation, and persists the exact carriers', async () => {
+    const value = await effectiveFixture();
+    const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    const now = new Date('2026-11-01T05:30:00.000Z');
+    const keys = generateKeyPairSync('ed25519');
+    const group = {
+      version: 'm2-customization-group-v1' as const,
+      shopId: value.shopId,
+      productId: value.productId,
+      configRevisionId: value.revisionId,
+      revisionContentHash: value.contentHash,
+      design: {
+        placements: [
+          {
+            placementId: 'front',
+            methodId: 'method',
+            stepId: 'step',
+            artwork: { kind: 'revision' as const, revisionId: 'art' },
+          },
+        ],
+        options: [],
+      },
+      variants: [{ variantId: '700', quantity: 2 }],
+    };
+    const request = {
+      shopId: value.shopId,
+      installationGeneration: value.generation,
+      idempotencyKey: randomUUID(),
+      country: 'US',
+      marketId: '42',
+      groups: [{ group }],
+      capacity: { ordinaryLineCount: 0, inputBytes: 1000 },
+    };
+    let signatures = 0;
+    const ports = {
+      clock: () => now,
+      ids: { quoteId: randomUUID },
+      tenant: {
+        getActive: async (shopId: string, installationGeneration: string) => {
+          const scope = await core.tenants.getActiveAuthorizationScope({ shopId, installationGeneration });
+          return (
+            scope && {
+              shopId: scope.shopId,
+              installationGeneration: scope.installationGeneration,
+              shopifyShopGid: `gid://shopify/Shop/${scope.shopifyShopId}`,
+              authorizationGeneration: scope.authorizationGeneration,
+              authorizationEpoch: scope.authorizationEpoch,
+            }
+          );
+        },
+      },
+      shop: {
+        getContext: async () => ({
+          shopId: value.shopId,
+          installationGeneration: value.generation,
+          shopifyShopGid: `gid://shopify/Shop/${value.shopifyShopId}`,
+          currency: 'USD',
+          timezone: 'America/New_York',
+        }),
+      },
+      entitlement: {
+        getFresh: async () => ({
+          active: true,
+          freshness: 'fresh' as const,
+          recognizedPolicyId: 'synthetic',
+          policyVersion: 'synthetic-v1',
+          trial: true,
+          qualifyingUsageDisposition: 'WAIVE_TRIAL' as const,
+        }),
+      },
+      publication: { getEffective: core.acceptedQuotes.getEffective },
+      catalog: {
+        resolveVariantContext: async () => [
+          {
+            shopId: value.shopId,
+            installationGeneration: value.generation,
+            productId: value.productId,
+            variantId: '700',
+            productIdVerified: true as const,
+            context: { country: 'US' },
+            amount: '0.00',
+            currencyCode: 'USD',
+            sourceApiVersion: '2026-07',
+            observedAt: now.toISOString(),
+            freshUntil: new Date(now.getTime() + 300000).toISOString(),
+            correlation: { requestId: null },
+          },
+        ],
+      },
+      currency: { exponent: (code: string) => currencyExponent(code) ?? null },
+      fx: {
+        resolve: async () => {
+          throw new Error('unexpected FX read');
+        },
+      },
+      authorization: {
+        admit: ({
+          economics,
+          capacity,
+        }: {
+          economics: { lines: { lineIndex: number; variantId: string; quantity: number; unitPriceMinor: string }[] };
+          capacity: { ordinaryLineCount: number };
+        }) => {
+          const members = economics.lines.map((line) => ({
+            index: line.lineIndex,
+            variantId: line.variantId,
+            quantity: line.quantity,
+            unitMinor: line.unitPriceMinor,
+          }));
+          const decision = admitCandidate(members, { ordinaryLineHint: capacity.ordinaryLineCount });
+          if (decision.status !== 'ADMIT') throw new Error(`candidate rejected: ${decision.reason}`);
+        },
+        issue: async ({
+          quote,
+        }: {
+          quote: {
+            quoteId: string;
+            authorizationGeneration: string;
+            authorizationEpoch: number;
+            acceptedDay: number;
+            validThroughDay: number;
+            presentmentCurrency: string;
+            presentmentExponent: number;
+            country: string;
+            marketId: string;
+            economics: {
+              lines: { lineIndex: number; variantId: string; quantity: number; unitPriceMinor: string }[];
+              customizedQuantity: number;
+              totalMinor: string;
+            };
+          };
+        }) => {
+          const setId = randomUUID();
+          const members = quote.economics.lines.map((line) => ({
+            index: line.lineIndex,
+            variantId: line.variantId,
+            quantity: line.quantity,
+            unitMinor: line.unitPriceMinor,
+          }));
+          const issued = await issueWholeQuote(
+            {
+              keyId: 7,
+              generationHex: quote.authorizationGeneration.replaceAll('-', ''),
+              epoch: quote.authorizationEpoch,
+              quoteHex: quote.quoteId.replaceAll('-', ''),
+              setHex: setId.replaceAll('-', ''),
+              count: members.length,
+              currency: quote.presentmentCurrency,
+              exponent: quote.presentmentExponent,
+              country: quote.country,
+              marketId: quote.marketId,
+              validThroughDay: quote.validThroughDay,
+              totalQuantity: quote.economics.customizedQuantity,
+              totalMinor: quote.economics.totalMinor,
+            },
+            members,
+            quote.acceptedDay,
+            {
+              signWholeQuote: async (input) => {
+                signatures++;
+                return {
+                  keyId: input.keyId,
+                  publicKeyFingerprint: 'synthetic',
+                  firstValidDay: input.issuanceDay,
+                  lastValidDay: input.validThroughDay,
+                  signature: sign(null, input.message, keys.privateKey),
+                };
+              },
+            },
+          );
+          return {
+            setId,
+            keyId: String(issued.keyId),
+            publicKeyFingerprint: issued.publicKeyFingerprint,
+            firstValidDay: quote.acceptedDay,
+            lastValidDay: quote.validThroughDay,
+            validThroughDay: quote.validThroughDay,
+            envelopeCarrier: issued.envelope,
+            members: issued.members.map((carrier, lineIndex) => ({ lineIndex, carrier })),
+          };
+        },
+      },
+      store: core.acceptedQuotes,
+    };
+    try {
+      const accepted = await acceptQuote(request, ports);
+      expect(accepted.quote.economics.groups[0]?.customizationUnitMinor).toBe('-1');
+      expect(accepted.quote.economics.totalMinor).toBe('1');
+      expect(accepted.quote.economics.lines.map((line) => line.unitPriceMinor)).toEqual(['1', '0']);
+      const envelope = decodeEnvelope(accepted.authorization.envelopeCarrier);
+      const members = accepted.authorization.members.map((item) => decodeMemberCarrier(item.carrier));
+      expect(verify(null, wholeQuoteSignBytes(envelope.header, members), keys.publicKey, envelope.signature)).toBe(
+        true,
+      );
+      const persisted = await sql<{ quote_value: unknown; envelope_carrier: string; member_carriers: unknown }>`
+        SELECT q.quote_value, a.envelope_carrier, a.member_carriers FROM accepted_quotes q
+        JOIN quote_authorization_sets a ON a.quote_id = q.quote_id
+        WHERE q.quote_id = ${accepted.quote.quoteId}::uuid`.execute(database);
+      expect(persisted.rows).toHaveLength(1);
+      expect(persisted.rows[0]?.quote_value).toEqual(accepted.quote);
+      expect(persisted.rows[0]?.envelope_carrier).toBe(accepted.authorization.envelopeCarrier);
+      expect(persisted.rows[0]?.member_carriers).toEqual(accepted.authorization.members);
+      expect(await acceptQuote(request, ports)).toEqual(accepted);
+      expect(signatures).toBe(1);
+    } finally {
+      await core.close();
+    }
   });
 });

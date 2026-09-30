@@ -2,8 +2,8 @@
   "schemaVersion": "m4-002-function-resources-v1",
   "sourceVectorsSha256": "7f0046b88183b79cbccc305c883aab0483a6cda1eddb191297e2295c35ac1eda",
   "runnerSha256": "728bedbcf86f57680051208f9056642c9dfb07766a21891624bf18f372e4c29b",
-  "fullReplayRowCount": 172,
-  "fullReplaySha256": "dd1aac13fc48dcea4d8cb7cdc1a17dfe7401664bc960d7fea75a245b4203431b",
+  "fullReplayRowCount": 201,
+  "fullReplaySha256": "c0e1a29ed92835e34b87626b0e22491537dd757f6908695e23612b837acbdd67",
   "stackStatus": "not measured: pinned runner exposes linear memory only",
   "selectedFinalWasmRows": [
     {
@@ -117,6 +117,26 @@
       "inputSha256": "1f2d1a9ee96a6519324433f2be75b62fa060dd80b68f4aec41102e8c29cdb85e",
       "outputSha256": "64f2b314d38c6954afd858186372a32d5c061832da80a783eb5f9cddb84cc747",
       "instructions": 2712322,
+      "linearMemoryKiB": 1152,
+      "wasmSha256": "76e890cf702a6bc182e8ca8b55942260f33a5bc5e072d42c2f104a72161a4ddb",
+      "wasmBytes": 181570,
+      "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
+      "queryBytes": 764,
+      "calculatedQueryCost": 20,
+      "stackBytes": null,
+      "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
+    },
+    {
+      "target": "transform",
+      "case": "accepted_negative_adjustment",
+      "expectedOperations": 2,
+      "actualOperations": 2,
+      "inputBytes": 1672,
+      "outputBytes": 604,
+      "transformOutputUpperBytes": 742,
+      "inputSha256": "627bdd0629545b4c0902799f7bfa28c5251b0d292014afc585cbd0e11e986cec",
+      "outputSha256": "9d21a41bd5e3020fffaac5afbdc5465bc9782b29f604ad64e7d264d938e61a7c",
+      "instructions": 2714005,
       "linearMemoryKiB": 1152,
       "wasmSha256": "76e890cf702a6bc182e8ca8b55942260f33a5bc5e072d42c2f104a72161a4ddb",
       "wasmBytes": 181570,
@@ -245,6 +265,26 @@
       "calculatedQueryCost": 23,
       "stackBytes": null,
       "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
+    },
+    {
+      "target": "validation",
+      "case": "accepted_negative_adjustment",
+      "expectedOperations": 0,
+      "actualOperations": 0,
+      "inputBytes": 1750,
+      "outputBytes": 17,
+      "transformOutputUpperBytes": null,
+      "inputSha256": "feb7c8cb612fe8f00a0e622739ea817006ab1c45dcd18ab3f90baf5b1db17e63",
+      "outputSha256": "ba008b3ff2e64fd0f721e62a4159d1068da4c3f8ca432bf40a0414c167013059",
+      "instructions": 2705898,
+      "linearMemoryKiB": 1152,
+      "wasmSha256": "51cd4867fa5c8181eac421c65e3e7fd210662213c3705ffe5cfc8c8d4a085207",
+      "wasmBytes": 183160,
+      "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
+      "queryBytes": 833,
+      "calculatedQueryCost": 23,
+      "stackBytes": null,
+      "stackStatus": "unmeasured: pinned runner exposes linear memory, not stack peak"
     }
   ],
   "maxObservedByTarget": {
@@ -260,5 +300,6 @@
       "outputBytes": 131,
       "linearMemoryKiB": 1536
     }
-  }
+  },
+  "acceptedQuoteExampleSha256": "334fb44d87716c61000675a98fde9c9552037bd0a1c15ce988470e4095f9b97b"
 }

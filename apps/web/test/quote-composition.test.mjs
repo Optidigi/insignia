@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
-import { generateKeyPairSync, sign, verify } from 'node:crypto';
-import { writeFileSync } from 'node:fs';
+import { createHash, createPrivateKey, createPublicKey, sign, verify } from 'node:crypto';
+import { readFileSync, writeFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { acceptQuote } from '@insignia/application';
 import { decodeEnvelope, decodeMemberCarrier, wholeQuoteSignBytes } from '@insignia/cart-authorization';
@@ -11,7 +11,13 @@ test('server composition binds trusted provider reads to one signed immutable qu
   const hash = 'a'.repeat(64);
   const productId = '42';
   const variantId = '700';
-  const { privateKey, publicKey } = generateKeyPairSync('ed25519');
+  const syntheticSeed = createHash('sha256').update('m4-002-accepted-negative-adjustment-test-v1').digest();
+  const privateKey = createPrivateKey({
+    key: Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), syntheticSeed]),
+    format: 'der',
+    type: 'pkcs8',
+  });
+  const publicKey = createPublicKey(privateKey);
   const config = {
     version: 'm2-published-config-v1',
     shopId: 'shop',
@@ -24,10 +30,16 @@ test('server composition binds trusted provider reads to one signed immutable qu
     productionOptions: [],
     pricingRules: [
       {
+        id: 'negative-placement',
+        scope: { kind: 'placement', placementId: 'front' },
+        role: 'unit',
+        rate: { kind: 'fixed', amount: { shopDecimal: '-0.01', presentmentOverrides: [] } },
+      },
+      {
         id: 'setup',
         scope: { kind: 'general' },
         role: 'setup',
-        rate: { kind: 'fixed', amount: { shopDecimal: '0.01', presentmentOverrides: [] } },
+        rate: { kind: 'fixed', amount: { shopDecimal: '0.03', presentmentOverrides: [] } },
       },
     ],
   };
@@ -138,7 +150,7 @@ test('server composition binds trusted provider reads to one signed immutable qu
                   __typename: 'ProductVariant',
                   id: `gid://shopify/ProductVariant/${variantId}`,
                   product: { id: `gid://shopify/Product/${productId}` },
-                  contextualPricing: { price: { amount: '10.00', currencyCode: 'USD' } },
+                  contextualPricing: { price: { amount: '0.00', currencyCode: 'USD' } },
                 },
               ],
             },
@@ -172,7 +184,12 @@ test('server composition binds trusted provider reads to one signed immutable qu
     capacity: { ordinaryLineCount: 0, inputBytes: 1000 },
   };
   const result = await acceptQuote(request, ports);
-  assert.equal(result.quote.economics.totalMinor, '2001');
+  assert.equal(result.quote.economics.totalMinor, '1');
+  assert.equal(result.quote.economics.groups[0].customizationUnitMinor, '-1');
+  assert.deepEqual(
+    result.quote.economics.lines.map((line) => line.unitPriceMinor),
+    ['1', '0'],
+  );
   assert.equal(result.quote.acceptedDate, '2026-11-01');
   assert.equal(result.quote.validThroughDay - result.quote.acceptedDay, 2);
   const envelope = decodeEnvelope(result.authorization.envelopeCarrier);
@@ -180,22 +197,28 @@ test('server composition binds trusted provider reads to one signed immutable qu
   assert.equal(envelope.header.marketId, '42');
   assert.equal(envelope.header.generationHex, '11111111111141118111111111111111');
   assert.ok(verify(null, wholeQuoteSignBytes(envelope.header, members), publicKey, envelope.signature));
-  if (process.env.M4_QUOTE_EVIDENCE_OUTPUT) {
-    writeFileSync(
-      process.env.M4_QUOTE_EVIDENCE_OUTPUT,
-      `${JSON.stringify(
-        {
-          schemaVersion: 'm4-002-synthetic-quote-example-v1',
-          context: 'synthetic provider, synthetic plan, ephemeral test key; no live quote or Shopify write',
-          publicKeyHex: publicKey.export({ format: 'der', type: 'spki' }).subarray(-32).toString('hex'),
-          quote: result.quote,
-          authorization: result.authorization,
-        },
-        null,
-        2,
-      )}\n`,
-    );
-  }
+  const example = {
+    schemaVersion: 'm4-002-synthetic-quote-example-v1',
+    context: 'synthetic provider, synthetic plan, deterministic synthetic test key; no live quote or Shopify write',
+    publicKeyHex: publicKey.export({ format: 'der', type: 'spki' }).subarray(-32).toString('hex'),
+    quote: result.quote,
+    authorization: result.authorization,
+    functionVector: {
+      name: 'accepted_negative_adjustment',
+      header: envelope.header,
+      members,
+      envelope: result.authorization.envelopeCarrier,
+      memberCarriers: result.authorization.members.map((item) => item.carrier),
+      ordinaryLines: 0,
+      acceptedDate: result.quote.acceptedDate,
+      firstValidDay: result.authorization.firstValidDay,
+      lastValidDay: result.authorization.lastValidDay,
+    },
+  };
+  const evidencePath = new URL('../../../docs/delivery/evidence/m4-002/synthetic-accepted-quote.json', import.meta.url);
+  const serialized = `${JSON.stringify(example, null, 2)}\n`;
+  if (process.env.M4_QUOTE_EVIDENCE_OUTPUT) writeFileSync(evidencePath, serialized);
+  else assert.equal(readFileSync(evidencePath, 'utf8'), serialized);
   assert.equal(signatures, 1);
   assert.deepEqual(await acceptQuote(request, ports), result);
   assert.deepEqual([contextReads, catalogReads, subscriptionReads, signatures], [1, 1, 2, 1]);

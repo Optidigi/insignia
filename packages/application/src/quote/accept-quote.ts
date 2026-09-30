@@ -74,7 +74,13 @@ export type AcceptedQuote = {
   recognizedPolicyId: string;
   trial: boolean;
   qualifyingUsageDisposition: 'REQUIRES_EVENT_TIME' | 'WAIVE_TRIAL';
-  desiredGroups: readonly CustomizationGroup[];
+  physicalGroups: readonly {
+    productId: string;
+    configRevisionId: string;
+    revisionContentHash: string;
+    canonicalIdentitySha256: string;
+    variants: readonly { variantId: string; quantity: number }[];
+  }[];
   effectiveRevisions: readonly {
     configId: string;
     operationId: string;
@@ -241,8 +247,42 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     request.groups.length === 0
   )
     throw new Error('invalid quote request');
+  if (
+    request.groups.length > 32 ||
+    !request.capacity ||
+    !Number.isSafeInteger(request.capacity.ordinaryLineCount) ||
+    request.capacity.ordinaryLineCount < 0 ||
+    request.capacity.ordinaryLineCount > 200 ||
+    !Number.isSafeInteger(request.capacity.inputBytes) ||
+    request.capacity.inputBytes < 0 ||
+    request.capacity.inputBytes > 128_000
+  )
+    throw new Error('candidate capacity exceeded before provider reads');
+  let requestedVariants = 0;
+  let requestedQuantity = 0;
+  for (const entry of request.groups) {
+    if (
+      !entry?.group ||
+      typeof entry.group.productId !== 'string' ||
+      !Array.isArray(entry.group.variants) ||
+      entry.group.variants.length === 0
+    )
+      throw new Error('invalid quote group');
+    requestedVariants += entry.group.variants.length;
+    for (const variant of entry.group.variants) {
+      if (!variant || !Number.isSafeInteger(variant.quantity) || variant.quantity < 1)
+        throw new Error('invalid quote physical quantity');
+      requestedQuantity += variant.quantity;
+    }
+    if (requestedVariants > 32 || requestedQuantity > 10000)
+      throw new Error('candidate capacity exceeded before provider reads');
+  }
+  const requestGroupsJson = JSON.stringify(request.groups);
+  if (!requestGroupsJson || Buffer.byteLength(requestGroupsJson, 'utf8') > 128_000)
+    throw new Error('candidate request bytes exceeded before provider reads');
   const marketId = normalizeMarketId(request.marketId);
-  if (request.groups.some((entry) => entry.sellingPlanId)) throw new Error('paid customization with selling plan');
+  if (request.groups.some((entry) => entry.sellingPlanId !== undefined && entry.sellingPlanId !== null))
+    throw new Error('paid customization with selling plan');
   const requestDigest = createHash('sha256')
     .update(canonical({ ...request, marketId }))
     .digest('hex');
@@ -410,7 +450,13 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     recognizedPolicyId: entitlement.recognizedPolicyId,
     trial: entitlement.trial,
     qualifyingUsageDisposition: entitlement.qualifyingUsageDisposition,
-    desiredGroups: groups,
+    physicalGroups: economics.groups.map((group) => ({
+      productId: group.productId,
+      configRevisionId: group.configRevisionId,
+      revisionContentHash: group.revisionContentHash,
+      canonicalIdentitySha256: createHash('sha256').update(group.canonicalIdentity).digest('hex'),
+      variants: group.variants.map((variant) => ({ variantId: variant.variantId, quantity: variant.quantity })),
+    })),
     effectiveRevisions: revisions.map(({ config, configId, operationId }) => ({
       configId,
       operationId,

@@ -250,6 +250,29 @@ describe('acceptQuote', () => {
     expect(ports.tenant.getActive).not.toHaveBeenCalled();
   });
 
+  it('bounds untrusted subsets before provider reads and stores only normalized physical groups', async () => {
+    const { ports } = fixture();
+    await expect(acceptQuote({ ...request, groups: Array(33).fill({ group }) }, ports)).rejects.toThrow(
+      /capacity exceeded before provider reads/,
+    );
+    expect(ports.tenant.getActive).not.toHaveBeenCalled();
+    await expect(acceptQuote({ ...request, groups: [{ group, sellingPlanId: '' }] }, ports)).rejects.toThrow(
+      /selling plan/,
+    );
+    expect(ports.tenant.getActive).not.toHaveBeenCalled();
+    const withIgnoredPayload = {
+      ...group,
+      ignoredBuyerPayload: 'PII-SENTINEL-DO-NOT-PERSIST',
+      design: { ...group.design, ignoredBuyerPayload: 'PII-SENTINEL-DO-NOT-PERSIST' },
+    };
+    const accepted = await acceptQuote({ ...request, groups: [{ group: withIgnoredPayload }] }, ports);
+    expect(accepted.quote.physicalGroups).toEqual([
+      expect.objectContaining({ productId: 'product', variants: [{ variantId: 'variant', quantity: 2 }] }),
+    ]);
+    expect(JSON.stringify(accepted.quote)).not.toContain('PII-SENTINEL-DO-NOT-PERSIST');
+    expect('desiredGroups' in accepted.quote).toBe(false);
+  });
+
   it('fails closed without a configured FX rate for cross-currency customization', async () => {
     const { ports, saved } = fixture();
     vi.mocked(ports.catalog.resolveVariantContext).mockResolvedValueOnce([

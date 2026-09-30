@@ -1,7 +1,7 @@
 {
   "schemaVersion": "m4-002-synthetic-quote-example-v1",
-  "context": "synthetic provider, synthetic plan, ephemeral test key; no live quote or Shopify write",
-  "publicKeyHex": "eb9a06a11965e72bd0679c4ed6675b9b26983ba9dff34426d87f0ff39ff04726",
+  "context": "synthetic provider, synthetic plan, deterministic synthetic test key; no live quote or Shopify write",
+  "publicKeyHex": "c4e4f23af31c948279bbe92bd2c1a10b85b2bf5acee072d096fd63ef31541082",
   "quote": {
     "schemaVersion": "m4-accepted-quote-v1",
     "quoteId": "22222222-2222-4222-8222-222222222222",
@@ -23,27 +23,12 @@
     "recognizedPolicyId": "synthetic",
     "trial": true,
     "qualifyingUsageDisposition": "WAIVE_TRIAL",
-    "desiredGroups": [
+    "physicalGroups": [
       {
-        "version": "m2-customization-group-v1",
-        "shopId": "shop",
         "productId": "42",
         "configRevisionId": "revision",
         "revisionContentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-        "design": {
-          "placements": [
-            {
-              "placementId": "front",
-              "methodId": "method",
-              "stepId": "step",
-              "artwork": {
-                "kind": "revision",
-                "revisionId": "art"
-              }
-            }
-          ],
-          "options": []
-        },
+        "canonicalIdentitySha256": "85b664e4d4d8e3beaabb4be05c5276973e5972ce76ff1eb1e10c85915732c55c",
         "variants": [
           {
             "variantId": "700",
@@ -71,7 +56,7 @@
         "context": {
           "country": "US"
         },
-        "amount": "10.00",
+        "amount": "0.00",
         "currencyCode": "USD",
         "sourceApiVersion": "2026-07",
         "observedAt": "2026-11-01T05:30:00.000Z",
@@ -98,7 +83,7 @@
       "effectiveAt": "2026-11-01T05:30:00.000Z",
       "marketContext": "US:42",
       "customizedQuantity": 2,
-      "totalMinor": "2001",
+      "totalMinor": "1",
       "groups": [
         {
           "canonicalIdentity": "[\"m2-design-identity-v1\",\"shop\",\"42\",\"revision\",\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",[[\"front\",\"method\",\"step\",\"revision\",\"art\"]],[]]",
@@ -114,21 +99,32 @@
               "role": "setup",
               "selectedMinQuantity": null,
               "multiplicity": 1,
-              "sourceDecimal": "0.01",
-              "resolvedMinor": "1",
+              "sourceDecimal": "0.03",
+              "resolvedMinor": "3",
               "resolution": "shop-currency"
             }
           ],
-          "unitComponents": [],
-          "setupMinor": "1",
-          "customizationUnitMinor": "0",
-          "baseTotalMinor": "2000",
-          "totalMinor": "2001",
+          "unitComponents": [
+            {
+              "ruleId": "negative-placement",
+              "applicabilityKey": "placement:front",
+              "role": "unit",
+              "selectedMinQuantity": null,
+              "multiplicity": 1,
+              "sourceDecimal": "-0.01",
+              "resolvedMinor": "-1",
+              "resolution": "shop-currency"
+            }
+          ],
+          "setupMinor": "3",
+          "customizationUnitMinor": "-1",
+          "baseTotalMinor": "0",
+          "totalMinor": "1",
           "variants": [
             {
               "variantId": "700",
               "quantity": 2,
-              "contextualBaseMinor": "1000",
+              "contextualBaseMinor": "0",
               "contextId": "US:42:2026-11-01T05:30:00.000Z:",
               "buckets": [
                 {
@@ -136,18 +132,18 @@
                   "quantity": 1,
                   "unitOrdinalStart": 1,
                   "unitOrdinalEnd": 1,
-                  "setupPerUnitMinor": "1",
-                  "unitPriceMinor": "1001",
-                  "lineTotalMinor": "1001"
+                  "setupPerUnitMinor": "2",
+                  "unitPriceMinor": "1",
+                  "lineTotalMinor": "1"
                 },
                 {
                   "variantId": "700",
                   "quantity": 1,
                   "unitOrdinalStart": 2,
                   "unitOrdinalEnd": 2,
-                  "setupPerUnitMinor": "0",
-                  "unitPriceMinor": "1000",
-                  "lineTotalMinor": "1000"
+                  "setupPerUnitMinor": "1",
+                  "unitPriceMinor": "0",
+                  "lineTotalMinor": "0"
                 }
               ]
             }
@@ -160,9 +156,9 @@
           "quantity": 1,
           "unitOrdinalStart": 1,
           "unitOrdinalEnd": 1,
-          "setupPerUnitMinor": "1",
-          "unitPriceMinor": "1001",
-          "lineTotalMinor": "1001",
+          "setupPerUnitMinor": "2",
+          "unitPriceMinor": "1",
+          "lineTotalMinor": "1",
           "lineIndex": 0,
           "canonicalIdentity": "[\"m2-design-identity-v1\",\"shop\",\"42\",\"revision\",\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",[[\"front\",\"method\",\"step\",\"revision\",\"art\"]],[]]",
           "shopId": "shop",
@@ -175,9 +171,9 @@
           "quantity": 1,
           "unitOrdinalStart": 2,
           "unitOrdinalEnd": 2,
-          "setupPerUnitMinor": "0",
-          "unitPriceMinor": "1000",
-          "lineTotalMinor": "1000",
+          "setupPerUnitMinor": "1",
+          "unitPriceMinor": "0",
+          "lineTotalMinor": "0",
           "lineIndex": 1,
           "canonicalIdentity": "[\"m2-design-identity-v1\",\"shop\",\"42\",\"revision\",\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",[[\"front\",\"method\",\"step\",\"revision\",\"art\"]],[]]",
           "shopId": "shop",
@@ -195,16 +191,57 @@
     "firstValidDay": 20758,
     "lastValidDay": 20760,
     "validThroughDay": 20760,
-    "envelopeCarrier": "SVNHMgIAAAcRERERERFBEYERERERERERAAAABCIiIiIiIkIigiIiIiIiIiIzMzMzMzNDM4MzMzMzMzMzAAJVU0QCVVMAAAAAAAAAKgAAURgAAAACAAAAAAAAB9GMRatncFd_PAjS5N6bWMEZ3VTTl9Acr3gl5ApE5A8uN-Z7OBB13-raXbBcwTMtNPEbuzf7Niji4ZQYl8TavxgP",
+    "envelopeCarrier": "SVNHMgIAAAcRERERERFBEYERERERERERAAAABCIiIiIiIkIigiIiIiIiIiIzMzMzMzNDM4MzMzMzMzMzAAJVU0QCVVMAAAAAAAAAKgAAURgAAAACAAAAAAAAAAFM11fnUXkdD4AvHAvl4BmI5V_mYKesnC3IEj9tpk69aKNnJYIMR7im_ePnrdg3W3ZwSqoVrf4zGbeoEoXRHlED",
     "members": [
       {
         "lineIndex": 0,
-        "carrier": "AAAAAAAAAAACvAAAAAEAAAAAAAAD6Q"
+        "carrier": "AAAAAAAAAAACvAAAAAEAAAAAAAAAAQ"
       },
       {
         "lineIndex": 1,
-        "carrier": "AAEAAAAAAAACvAAAAAEAAAAAAAAD6A"
+        "carrier": "AAEAAAAAAAACvAAAAAEAAAAAAAAAAA"
       }
     ]
+  },
+  "functionVector": {
+    "name": "accepted_negative_adjustment",
+    "header": {
+      "keyId": 7,
+      "generationHex": "11111111111141118111111111111111",
+      "epoch": 4,
+      "quoteHex": "22222222222242228222222222222222",
+      "setHex": "33333333333343338333333333333333",
+      "count": 2,
+      "currency": "USD",
+      "exponent": 2,
+      "country": "US",
+      "marketId": "42",
+      "validThroughDay": 20760,
+      "totalQuantity": 2,
+      "totalMinor": "1"
+    },
+    "members": [
+      {
+        "index": 0,
+        "variantId": "700",
+        "quantity": 1,
+        "unitMinor": "1"
+      },
+      {
+        "index": 1,
+        "variantId": "700",
+        "quantity": 1,
+        "unitMinor": "0"
+      }
+    ],
+    "envelope": "SVNHMgIAAAcRERERERFBEYERERERERERAAAABCIiIiIiIkIigiIiIiIiIiIzMzMzMzNDM4MzMzMzMzMzAAJVU0QCVVMAAAAAAAAAKgAAURgAAAACAAAAAAAAAAFM11fnUXkdD4AvHAvl4BmI5V_mYKesnC3IEj9tpk69aKNnJYIMR7im_ePnrdg3W3ZwSqoVrf4zGbeoEoXRHlED",
+    "memberCarriers": [
+      "AAAAAAAAAAACvAAAAAEAAAAAAAAAAQ",
+      "AAEAAAAAAAACvAAAAAEAAAAAAAAAAA"
+    ],
+    "ordinaryLines": 0,
+    "acceptedDate": "2026-11-01",
+    "firstValidDay": 20758,
+    "lastValidDay": 20760
   }
 }

@@ -13,6 +13,7 @@ import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 VECTORS = ROOT / 'packages/cart-authorization/fixtures/whole-quote-v2.json'
+ACCEPTED_EXAMPLE = ROOT / 'docs/delivery/evidence/m4-002/synthetic-accepted-quote.json'
 RUNNER = Path(os.environ['M1_FUNCTION_RUNNER'])
 OUT = ROOT / '.m4-002-artifacts'
 OUT.mkdir(exist_ok=True)
@@ -40,11 +41,12 @@ def make_input(target, case, vectors):
     config['maxBuckets'] = 32
     config['maxPhysicalQuantity'] = 10000
     config['keys'] = [{
-        'id': header['keyId'], 'publicHex': vectors['publicHex'],
-        'revoked': False, 'firstDay': 20800, 'lastDay': 20802,
+        'id': header['keyId'], 'publicHex': case.get('publicHex', vectors['publicHex']),
+        'revoked': False, 'firstDay': case.get('firstValidDay', 20800),
+        'lastDay': case.get('lastValidDay', 20802),
     }]
     template['shop']['publicConfig']['value'] = json.dumps(config, separators=(',', ':'))
-    template['shop']['localTime']['date'] = '2026-12-13'
+    template['shop']['localTime']['date'] = case.get('acceptedDate', '2026-12-13')
     template['localization']['country']['isoCode'] = header['country']
     template['localization']['market']['id'] = f"gid://shopify/Market/{header['marketId']}"
     template['cart']['quote'] = {'value': case['envelope']}
@@ -127,9 +129,13 @@ def run(target, name, payload, expected_count):
 
 vectors = json.loads(VECTORS.read_text())
 assert vectors['version'] == 'whole-quote-v2-candidate-v1'
+accepted_example = json.loads(ACCEPTED_EXAMPLE.read_text())
+assert accepted_example['quote']['economics']['groups'][0]['customizationUnitMinor'] == '-1'
+assert [line['unitPriceMinor'] for line in accepted_example['quote']['economics']['lines']] == ['1', '0']
+accepted_case = dict(accepted_example['functionVector'], publicHex=accepted_example['publicKeyHex'])
 rows = []
 for target in ('transform', 'validation'):
-    for case in vectors['cases']:
+    for case in [*vectors['cases'], accepted_case]:
         base = make_input(target, case, vectors)
         count = len(case['members'])
         rows.append(run(target, case['name'], base, count if target == 'transform' else 0))
@@ -137,12 +143,14 @@ for target in ('transform', 'validation'):
         reordered['cart']['lines'].reverse()
         rows.append(run(target, case['name'] + '-reordered', reordered, count if target == 'transform' else 0))
         alterations = {
-            'country': lambda x: x['localization']['country'].__setitem__('isoCode', 'US'),
+            'country': lambda x: x['localization']['country'].__setitem__(
+                'isoCode', 'DE' if case['header']['country'] == 'US' else 'US'),
             'market': lambda x: x['localization']['market'].__setitem__('id', 'gid://shopify/Market/43'),
             'currency': lambda x: x['cart']['lines'][0]['cost'].__setitem__(
                 'amountPerQuantity' if target == 'transform' else 'subtotalAmount',
-                {'currencyCode': 'USD'} if target == 'transform' else {
-                    **x['cart']['lines'][0]['cost']['subtotalAmount'], 'currencyCode': 'USD'}),
+                {'currencyCode': 'EUR' if case['header']['currency'] == 'USD' else 'USD'} if target == 'transform' else {
+                    **x['cart']['lines'][0]['cost']['subtotalAmount'],
+                    'currencyCode': 'EUR' if case['header']['currency'] == 'USD' else 'USD'}),
             'generation': lambda x: x['shop']['publicConfig'].__setitem__('value',
                 x['shop']['publicConfig']['value'].replace(case['header']['generationHex'], '00' * 16)),
             'epoch': lambda x: x['shop']['publicConfig'].__setitem__('value',
@@ -157,7 +165,7 @@ for target in ('transform', 'validation'):
             alterations['duplicate-member'] = lambda x: x['cart']['lines'][1].__setitem__(
                 'member', copy.deepcopy(x['cart']['lines'][0]['member']))
         if target == 'validation':
-            alterations['wrong-price'] = lambda x: x['cart']['lines'][0]['cost']['subtotalAmount'].__setitem__('amount', '0.01')
+            alterations['wrong-price'] = lambda x: x['cart']['lines'][0]['cost']['subtotalAmount'].__setitem__('amount', '9.99')
         for label, mutate in alterations.items():
             changed = copy.deepcopy(base)
             mutate(changed)
@@ -169,11 +177,13 @@ for target in ('transform', 'validation'):
         rows.append(run(target, case['name'] + '-revoked', changed, 0 if target == 'transform' else 1))
         changed = copy.deepcopy(base)
         config = json.loads(changed['shop']['publicConfig']['value'])
-        config['keys'][0]['lastDay'] = 20799
+        config['keys'][0]['lastDay'] = case.get('firstValidDay', 20800) - 1
         changed['shop']['publicConfig']['value'] = json.dumps(config, separators=(',', ':'))
         rows.append(run(target, case['name'] + '-key-out-of-window', changed, 0 if target == 'transform' else 1))
 
-manifest = {'version': 1, 'sourceVectorsSha256': sha(VECTORS.read_bytes()), 'runnerSha256': sha(RUNNER.read_bytes()), 'rows': rows}
+manifest = {'version': 1, 'sourceVectorsSha256': sha(VECTORS.read_bytes()),
+            'acceptedQuoteExampleSha256': sha(ACCEPTED_EXAMPLE.read_bytes()),
+            'runnerSha256': sha(RUNNER.read_bytes()), 'rows': rows}
 (OUT / 'production-vectors-replay.json').write_text(json.dumps(manifest, indent=2) + '\n')
 print(json.dumps({'rows': len(rows), 'positive': sum('-' not in row['case'] for row in rows),
                   'vectorsSha256': manifest['sourceVectorsSha256'],
