@@ -155,6 +155,12 @@ export class PgSigningKeyRepository {
       throw new TypeError('Invalid pending signing key');
     await this.database.transaction().execute(async (tx) => {
       sameScope(await lockScope(tx, input.scope.shopId, input.scope.installationGeneration), input.scope);
+      const capacity = await sql<{ count: string }>`SELECT count(*)::text AS count FROM signing_keys
+        WHERE shop_id=${input.scope.shopId}
+          AND installation_generation=${input.scope.installationGeneration}::bigint
+          AND authorization_generation=${input.scope.authorizationGeneration}::uuid
+          AND state <> 'destroyed'`.execute(tx);
+      if (Number(capacity.rows[0]?.count) >= 4) throw new Error('Function public config signing key capacity reached');
       await sql`INSERT INTO signing_keys (shop_id, installation_generation, authorization_generation, key_id,
         public_key, public_key_fingerprint, private_envelope, wrapping_key_id, state, first_valid_day, last_valid_day)
         VALUES (${input.scope.shopId}, ${input.scope.installationGeneration}::bigint, ${input.scope.authorizationGeneration}::uuid,

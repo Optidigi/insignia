@@ -88,4 +88,33 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
       await db.destroy();
     }
   });
+
+  it('rejects a fifth non-destroyed key before public config becomes unpublishable', async () => {
+    const db = await openTestDatabase();
+    const shopId = randomUUID();
+    try {
+      await db.transaction().execute(async (tx) => {
+        await createTenantRepository(tx).createShop(tx, {
+          shopId,
+          shopDomain: `${shopId}.myshopify.com`,
+          shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 1n).toString(),
+        });
+      });
+      const store = new PgSigningKeyRepository(db);
+      const scope = await store.getActiveScope(shopId, '1');
+      if (!scope) throw new Error('Test installation missing');
+      const lifecycle = new SigningKeyLifecycle(store, {
+        currentKeyId: 'test-wrap',
+        keys: { 'test-wrap': randomBytes(32) },
+      });
+      for (let keyId = 1; keyId <= 4; keyId++)
+        await lifecycle.createPending({ scope, keyId, firstDay: 100, lastDay: 104 });
+      await expect(lifecycle.createPending({ scope, keyId: 5, firstDay: 100, lastDay: 104 })).rejects.toThrow(
+        /capacity reached/,
+      );
+      expect(await store.list(scope)).toHaveLength(4);
+    } finally {
+      await db.destroy();
+    }
+  });
 });

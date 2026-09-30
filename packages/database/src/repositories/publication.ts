@@ -1,4 +1,4 @@
-import type { Transaction } from 'kysely';
+import { sql, type Transaction } from 'kysely';
 import type { Database, PublicationStatus } from '../client/database.js';
 import { canonicalJson, sha256CanonicalJson } from '../hash/canonical.js';
 
@@ -258,6 +258,14 @@ export function createPublicationRepository(transaction: Transaction<Database>) 
     async activate(shopId: string, configId: string, operationId: string): Promise<'activated' | 'stale'> {
       const locked = await lockedOperation(shopId, configId, operationId);
       if (!isCurrent(locked) || !locked.operation || !locked.config) return 'stale';
+      // M4's exact remote readback is only an activation candidate. The M3 journal
+      // must not turn it into an effective quote revision before a separate,
+      // durable activation decision has recorded its evidence.
+      const m4 = await sql<{ phase: string; activation_evidence: string | null }>`
+        SELECT phase, activation_evidence FROM m4_publication_progress
+        WHERE shop_id=${shopId} AND config_id=${configId} AND operation_id=${operationId}
+        FOR UPDATE`.execute(transaction);
+      if (m4.rows[0] && (m4.rows[0].phase !== 'active' || !m4.rows[0].activation_evidence)) return 'stale';
       if (locked.operation.status === 'activated') {
         return locked.config.effective_operation_id === operationId ? 'activated' : 'stale';
       }

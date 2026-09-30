@@ -1,4 +1,10 @@
-import { checkCompleteSet, decodeEnvelope, decodeMemberCarrier } from '@insignia/cart-authorization';
+import { createHash, createPublicKey, verify } from 'node:crypto';
+import {
+  checkCompleteSet,
+  decodeEnvelope,
+  decodeMemberCarrier,
+  wholeQuoteSignBytes,
+} from '@insignia/cart-authorization';
 import { type Kysely, sql } from 'kysely';
 import type { Database } from '../client/database.js';
 import { createConfigRepository } from './config.js';
@@ -169,6 +175,45 @@ function validateAuthorizationMetadata(value: StoredResult): void {
     )
       throw new Error('persisted authorization member does not match immutable quote');
   }
+}
+
+async function assertNewAuthorizationKey(transaction: Kysely<Database>, value: StoredResult): Promise<void> {
+  const { quote, authorization } = value;
+  const found = await sql<{
+    public_key: Buffer;
+    public_key_fingerprint: string;
+    state: string;
+    first_valid_day: number;
+    last_valid_day: number;
+  }>`SELECT public_key, public_key_fingerprint, state, first_valid_day, last_valid_day
+    FROM signing_keys WHERE shop_id=${quote.shopId}
+      AND installation_generation=${quote.installationGeneration}::bigint
+      AND authorization_generation=${quote.authorizationGeneration}::uuid
+      AND key_id=${authorization.keyId} FOR SHARE`.execute(transaction);
+  const key = found.rows[0];
+  if (
+    key?.state !== 'active' ||
+    key.public_key.length !== 32 ||
+    key.first_valid_day > quote.acceptedDay ||
+    key.last_valid_day < quote.validThroughDay ||
+    key.first_valid_day !== authorization.firstValidDay ||
+    key.last_valid_day !== authorization.lastValidDay ||
+    key.public_key_fingerprint !== authorization.publicKeyFingerprint ||
+    createHash('sha256').update(key.public_key).digest('hex') !== key.public_key_fingerprint
+  )
+    throw new Error('authorization signer does not match active durable key');
+  const { header, signature } = decodeEnvelope(authorization.envelopeCarrier);
+  const members = authorization.members.map(({ carrier }) => decodeMemberCarrier(carrier));
+  const spki = Buffer.concat([Buffer.from('302a300506032b6570032100', 'hex'), key.public_key]);
+  if (
+    !verify(
+      null,
+      wholeQuoteSignBytes(header, members),
+      createPublicKey({ key: spki, format: 'der', type: 'spki' }),
+      signature,
+    )
+  )
+    throw new Error('authorization signature does not match active durable key');
 }
 
 /** Opaque PostgreSQL facade for the application quote service. The shop row lock serializes
@@ -380,6 +425,7 @@ export class PgAcceptedQuoteRepository {
       const result = await commit();
       validateEconomicConservation(result);
       validateAuthorizationMetadata(result);
+      await assertNewAuthorizationKey(transaction, result);
       const { quote, authorization } = result;
       if (
         quote.shopId !== input.shopId ||

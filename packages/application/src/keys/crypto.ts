@@ -27,12 +27,13 @@ export function admitPublicKey(value: Uint8Array): Buffer {
 
 export function publicKeyFromSeed(seed: Uint8Array): Buffer {
   if (seed.byteLength !== 32) throw new TypeError('Ed25519 seed must be 32 bytes');
-  const privateKey = createPrivateKey({
-    key: Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), Buffer.from(seed)]),
-    format: 'der',
-    type: 'pkcs8',
-  });
-  return admitPublicKey(createPublicKey(privateKey).export({ format: 'der', type: 'spki' }).subarray(-32));
+  const pkcs8 = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), Buffer.from(seed)]);
+  try {
+    const privateKey = createPrivateKey({ key: pkcs8, format: 'der', type: 'pkcs8' });
+    return admitPublicKey(createPublicKey(privateKey).export({ format: 'der', type: 'spki' }).subarray(-32));
+  } finally {
+    pkcs8.fill(0);
+  }
 }
 
 export function publicKeyFingerprint(publicKey: Uint8Array): string {
@@ -67,16 +68,21 @@ export function sealSigningSeed(
   const kid = ring?.currentKeyId;
   if (!kid) throw new Error('Signing wrapping key unavailable');
   const nonce = randomBytes(12);
-  const cipher = createCipheriv('aes-256-gcm', wrappingKey(ring, kid), nonce);
-  cipher.setAAD(aad(scope, keyId));
-  const ciphertext = Buffer.concat([cipher.update(seed), cipher.final()]);
-  return {
-    v: 1,
-    kid,
-    nonce: nonce.toString('base64url'),
-    ciphertext: ciphertext.toString('base64url'),
-    tag: cipher.getAuthTag().toString('base64url'),
-  };
+  const key = wrappingKey(ring, kid);
+  try {
+    const cipher = createCipheriv('aes-256-gcm', key, nonce);
+    cipher.setAAD(aad(scope, keyId));
+    const ciphertext = Buffer.concat([cipher.update(seed), cipher.final()]);
+    return {
+      v: 1,
+      kid,
+      nonce: nonce.toString('base64url'),
+      ciphertext: ciphertext.toString('base64url'),
+      tag: cipher.getAuthTag().toString('base64url'),
+    };
+  } finally {
+    key.fill(0);
+  }
 }
 export function openSigningSeed(
   ring: SigningKeyRing | undefined,
@@ -106,5 +112,7 @@ export function openSigningSeed(
     return Buffer.concat([decipher.update(ciphertext), decipher.final()]);
   } catch {
     throw new Error('Signing envelope authentication failed');
+  } finally {
+    key.fill(0);
   }
 }

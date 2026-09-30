@@ -205,7 +205,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     remote.cells.set('registration', { ...pending, value: 'competing-publication', compareDigest: 'b'.repeat(64) });
     expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({
       kind: 'OPERATOR_HOLD',
-      phase: 'policy-written',
+      phase: 'operator-hold',
     });
     expect(remote.cells.get('registration')?.value).toBe('competing-publication');
     expect(remote.writes).toEqual(['public_config', 'registration', 'policy']);
@@ -222,9 +222,17 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
       WHERE shop_id=${f.shopId} AND key_id=7`.execute(database);
     expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({
       kind: 'OPERATOR_HOLD',
-      phase: 'prepared',
+      phase: 'operator-hold',
     });
     expect(remote.writes).toEqual([]);
+    const held = await sql<{ phase: string }>`SELECT phase FROM m4_publication_progress
+      WHERE shop_id=${f.shopId} AND operation_id=${operationId}`.execute(database);
+    expect(held.rows[0]?.phase).toBe('operator-hold');
+    const replacement = randomUUID();
+    expect(await publisher.prepare({ ...f, operationId: replacement, mode: 'optional' })).toMatchObject({
+      operationId: replacement,
+      phase: 'prepared',
+    });
   });
 
   it('returns one journal when the same publication command races', async () => {
@@ -274,10 +282,11 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
       await publisher.prepare({ ...f, operationId, mode });
       for (let i = 0; i < 5; i++) await publisher.advance(f.shopId, f.configId, operationId);
       await database.transaction().execute(async (tx) => {
-        expect(await createPublicationRepository(tx).activate(f.shopId, f.configId, operationId)).toBe('activated');
+        expect(await createPublicationRepository(tx).activate(f.shopId, f.configId, operationId)).toBe('stale');
         await sql`UPDATE m4_publication_progress SET phase='active', version=version+1,
           activation_evidence='synthetic-admission-only'
           WHERE shop_id=${f.shopId} AND config_id=${f.configId} AND operation_id=${operationId}`.execute(tx);
+        expect(await createPublicationRepository(tx).activate(f.shopId, f.configId, operationId)).toBe('activated');
       });
     };
     await publishAndActivate('optional');
@@ -329,7 +338,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     expect(revoked).toBe(true);
     expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({
       kind: 'OPERATOR_HOLD',
-      phase: 'shop-config-written',
+      phase: 'operator-hold',
     });
     expect(remote.writes).toEqual(['public_config']);
   });

@@ -182,41 +182,40 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         ],
       },
     };
+    const signedHeader = {
+      keyId: 7,
+      generationHex: value.authorizationGeneration.replaceAll('-', ''),
+      epoch: value.authorizationEpoch,
+      quoteHex: quoteId.replaceAll('-', ''),
+      setHex: setId.replaceAll('-', ''),
+      count: 2,
+      currency: 'USD',
+      exponent: 2,
+      country: 'US',
+      marketId: '42',
+      validThroughDay: acceptedDay + 2,
+      totalQuantity: 2,
+      totalMinor: '2001',
+    };
+    const signedMembers = [
+      { index: 0, variantId: '1', quantity: 1, unitMinor: '1001' },
+      { index: 1, variantId: '2', quantity: 1, unitMinor: '1000' },
+    ];
     const authorization = {
       setId,
       keyId: 7,
       publicKeyFingerprint: value.publicKeyFingerprint,
-      firstValidDay: acceptedDay,
-      lastValidDay: acceptedDay + 30,
+      firstValidDay: 20000,
+      lastValidDay: 21000,
       validThroughDay: acceptedDay + 2,
       envelopeCarrier: Buffer.concat([
-        encodeHeader({
-          keyId: 7,
-          generationHex: value.authorizationGeneration.replaceAll('-', ''),
-          epoch: value.authorizationEpoch,
-          quoteHex: quoteId.replaceAll('-', ''),
-          setHex: setId.replaceAll('-', ''),
-          count: 2,
-          currency: 'USD',
-          exponent: 2,
-          country: 'US',
-          marketId: '42',
-          validThroughDay: acceptedDay + 2,
-          totalQuantity: 2,
-          totalMinor: '2001',
-        }),
-        Buffer.alloc(64),
+        encodeHeader(signedHeader),
+        sign(null, wholeQuoteSignBytes(signedHeader, signedMembers), value.keys.privateKey),
       ]).toString('base64url'),
-      members: [
-        {
-          lineIndex: 0,
-          carrier: encodeMember({ index: 0, variantId: '1', quantity: 1, unitMinor: '1001' }).toString('base64url'),
-        },
-        {
-          lineIndex: 1,
-          carrier: encodeMember({ index: 1, variantId: '2', quantity: 1, unitMinor: '1000' }).toString('base64url'),
-        },
-      ],
+      members: signedMembers.map((member, lineIndex) => ({
+        lineIndex,
+        carrier: encodeMember(member).toString('base64url'),
+      })),
     };
     const input = {
       shopId: value.shopId,
@@ -259,6 +258,25 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     expect(signed).toBe(1);
     expect(results[0]).toEqual(results[1]);
     expect(await repo.findCompleted(input)).toEqual(results[0]);
+    const wrongKey = generateKeyPairSync('ed25519');
+    await expect(
+      repo.accept({ ...input, idempotencyKey: 'wrong-signer' }, async () => ({
+        quote,
+        authorization: {
+          ...authorization,
+          envelopeCarrier: Buffer.concat([
+            encodeHeader(signedHeader),
+            sign(null, wholeQuoteSignBytes(signedHeader, signedMembers), wrongKey.privateKey),
+          ]).toString('base64url'),
+        },
+      })),
+    ).rejects.toThrow(/signature does not match active durable key/);
+    await expect(
+      repo.accept({ ...input, idempotencyKey: 'wrong-fingerprint' }, async () => ({
+        quote,
+        authorization: { ...authorization, publicKeyFingerprint: 'a'.repeat(64) },
+      })),
+    ).rejects.toThrow(/signer does not match active durable key/);
     await sql`UPDATE signing_keys SET state='retiring', retired_at=clock_timestamp()
       WHERE shop_id=${value.shopId} AND key_id=7`.execute(database);
     expect(await repo.findCompleted(input)).toEqual(results[0]);
@@ -630,8 +648,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
                 return {
                   keyId: input.keyId,
                   publicKeyFingerprint: value.publicKeyFingerprint,
-                  firstValidDay: input.issuanceDay,
-                  lastValidDay: input.validThroughDay,
+                  firstValidDay: 20000,
+                  lastValidDay: 21000,
                   signature: sign(null, input.message, keys.privateKey),
                 };
               },
@@ -641,8 +659,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
             setId,
             keyId: issued.keyId,
             publicKeyFingerprint: issued.publicKeyFingerprint,
-            firstValidDay: quote.acceptedDay,
-            lastValidDay: quote.validThroughDay,
+            firstValidDay: 20000,
+            lastValidDay: 21000,
             validThroughDay: quote.validThroughDay,
             envelopeCarrier: issued.envelope,
             members: issued.members.map((carrier, lineIndex) => ({ lineIndex, carrier })),

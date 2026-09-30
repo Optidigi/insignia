@@ -486,9 +486,14 @@ export class PgProductionPublication {
       const stored = await this.load(shopId, configId, operationId, tx);
       if (!stored) return { kind: 'OPERATOR_HOLD', phase: 'operator-hold' };
       const { operation, progress } = stored;
+      const hold = async (observed: unknown): Promise<PublicationAdvanceResult> => {
+        if (!(await this.save(stored, 'operator-hold', observed, 0, tx)))
+          return { kind: 'CONFLICT', phase: progress.phase };
+        return { kind: 'OPERATOR_HOLD', phase: 'operator-hold' };
+      };
       if (progress.phase === 'conflict') return { kind: 'CONFLICT', phase: progress.phase };
       if (progress.phase === 'operator-hold') return { kind: 'OPERATOR_HOLD', phase: progress.phase };
-      if (!(await this.current(stored, tx))) return { kind: 'OPERATOR_HOLD', phase: progress.phase };
+      if (!(await this.current(stored, tx))) return hold(null);
       if (progress.phase === 'active') return { kind: 'ACTIVE', phase: progress.phase };
       const expected = projection(operation.expectedProjection);
       const tenant: Tenant = {
@@ -550,9 +555,9 @@ export class PgProductionPublication {
           !exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationReady) ||
           !exact(remote.policy, this.target(tenant, 'policy', productId), expected.policy)
         )
-          return { kind: 'OPERATOR_HOLD', phase: progress.phase };
+          return hold(remote);
         if (progress.phase === 'ready-written') {
-          if (!(await this.current(stored, tx))) return { kind: 'OPERATOR_HOLD', phase: progress.phase };
+          if (!(await this.current(stored, tx))) return hold(remote);
           const journal = createPublicationRepository(tx);
           const acknowledged = await journal.acknowledge(shopId, configId, operationId);
           if (acknowledged !== 'acknowledged') throw new Error('M3 publication acknowledgement stale');
@@ -569,7 +574,7 @@ export class PgProductionPublication {
         desired.field === 'policy' &&
         !exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationPending)
       )
-        return { kind: 'OPERATOR_HOLD', phase: progress.phase };
+        return hold(remote);
       if (
         desired.field === 'registration' &&
         progress.phase === 'policy-written' &&
@@ -577,13 +582,13 @@ export class PgProductionPublication {
           (!exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationPending) &&
             !exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationReady)))
       )
-        return { kind: 'OPERATOR_HOLD', phase: progress.phase };
+        return hold(remote);
       if (!exact(actual, target, desired.value)) {
         if ((actual?.compareDigest ?? null) !== desired.prior) {
           await this.save(stored, 'conflict', remote, 0, tx);
           return { kind: 'CONFLICT', phase: 'conflict' };
         }
-        if (!(await this.current(stored, tx))) return { kind: 'OPERATOR_HOLD', phase: progress.phase };
+        if (!(await this.current(stored, tx))) return hold(remote);
         try {
           const written = await this.remote.set({ ...target, value: desired.value, compareDigest: desired.prior });
           if (!exact(written.observed, target, desired.value)) throw new Error('Exact Admin readback failed');
@@ -613,7 +618,7 @@ export class PgProductionPublication {
           : desired.field === 'registration'
             ? readback.registration
             : readback.policy;
-      if (!exact(done, target, desired.value)) return { kind: 'OPERATOR_HOLD', phase: progress.phase };
+      if (!exact(done, target, desired.value)) return hold(readback);
       if (!(await this.save(stored, desired.next, readback, 0, tx))) return { kind: 'CONFLICT', phase: progress.phase };
       return { kind: 'PENDING', phase: desired.next };
     });
