@@ -185,6 +185,8 @@ test('server composition binds trusted provider reads to one signed immutable qu
   };
   const result = await acceptQuote(request, ports);
   assert.equal(result.quote.economics.totalMinor, '1');
+  assert.equal(result.quote.economics.groups[0].canonicalIdentitySha256.length, 64);
+  assert.ok(!JSON.stringify(result.quote).includes('"art"'));
   assert.equal(result.quote.economics.groups[0].customizationUnitMinor, '-1');
   assert.deepEqual(
     result.quote.economics.lines.map((line) => line.unitPriceMinor),

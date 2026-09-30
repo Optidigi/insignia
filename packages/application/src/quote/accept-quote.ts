@@ -53,6 +53,15 @@ export type QuoteRequest = {
   groups: readonly { group: CustomizationGroup; sellingPlanId?: string | null }[];
   capacity: { ordinaryLineCount: number; inputBytes: number };
 };
+export type AcceptedQuoteEconomics = Omit<ProposalEconomics, 'version' | 'groups' | 'lines'> & {
+  version: 'm4-quote-economics-v1';
+  groups: readonly (Omit<ProposalEconomics['groups'][number], 'canonicalIdentity'> & {
+    canonicalIdentitySha256: string;
+  })[];
+  lines: readonly (Omit<ProposalEconomics['lines'][number], 'canonicalIdentity'> & {
+    canonicalIdentitySha256: string;
+  })[];
+};
 export type AcceptedQuote = {
   schemaVersion: 'm4-accepted-quote-v1';
   quoteId: string;
@@ -90,7 +99,7 @@ export type AcceptedQuote = {
   }[];
   catalogSnapshots: readonly CatalogVariantContextSnapshot[];
   fxSnapshot: CustomizationFxSnapshot | null;
-  economics: ProposalEconomics;
+  economics: AcceptedQuoteEconomics;
 };
 export type QuoteAuthorizationSet = {
   setId: string;
@@ -181,6 +190,7 @@ function requireEntitlement(value: QuoteEntitlement): asserts value is QuoteEnti
 }
 
 export function normalizeMarketId(value: string): string {
+  if (typeof value !== 'string' || value.length > 64) throw new Error('invalid desired Market ID');
   const numeric = value.startsWith('gid://shopify/Market/') ? value.slice('gid://shopify/Market/'.length) : value;
   if (!/^[1-9][0-9]*$/.test(numeric) || BigInt(numeric) > (1n << 64n) - 1n)
     throw new Error('invalid desired Market ID');
@@ -217,6 +227,67 @@ function canonical(value: unknown): string {
       .map(([key, item]) => `${JSON.stringify(key)}:${canonical(item)}`)
       .join(',')}}`;
   return JSON.stringify(value);
+}
+
+/** Bound hostile nested JSON before canonicalizing or reading any provider. */
+function boundedRequestBytes(value: unknown): number {
+  const stack: { value: unknown; depth: number }[] = [{ value, depth: 0 }];
+  let nodes = 0;
+  let bytes = 0;
+  while (stack.length > 0) {
+    const entry = stack.pop();
+    if (!entry) break;
+    if (++nodes > 4096 || entry.depth > 16)
+      throw new Error('candidate request complexity exceeded before provider reads');
+    const item = entry.value;
+    if (typeof item === 'string') {
+      if (item.length > 128_000) throw new Error('candidate request bytes exceeded before provider reads');
+      bytes += Buffer.byteLength(item, 'utf8') + 2;
+    } else if (item === null || typeof item === 'boolean' || typeof item === 'number') {
+      if (typeof item === 'number' && !Number.isFinite(item)) throw new Error('invalid candidate request number');
+      bytes += 24;
+    } else if (typeof item === 'object') {
+      bytes += 2;
+      if (Array.isArray(item)) {
+        if (item.length > 4096) throw new Error('candidate request complexity exceeded before provider reads');
+        for (const child of item) stack.push({ value: child, depth: entry.depth + 1 });
+        bytes += item.length;
+      } else {
+        let keys = 0;
+        for (const key in item) {
+          if (!Object.hasOwn(item, key)) continue;
+          if (++keys > 64) throw new Error('candidate request complexity exceeded before provider reads');
+          if (key.length > 128_000) throw new Error('candidate request bytes exceeded before provider reads');
+          bytes += Buffer.byteLength(key, 'utf8') + 3;
+          stack.push({ value: (item as Record<string, unknown>)[key], depth: entry.depth + 1 });
+        }
+      }
+    } else {
+      throw new Error('invalid candidate request value');
+    }
+    if (bytes > 128_000) throw new Error('candidate request bytes exceeded before provider reads');
+  }
+  return bytes;
+}
+
+function identityDigest(value: string): string {
+  return createHash('sha256').update(value).digest('hex');
+}
+
+/** Keep the priced monetary breakdown and bucket order without retaining an artwork-linked identity. */
+function acceptedEconomics(value: ProposalEconomics): AcceptedQuoteEconomics {
+  return {
+    ...value,
+    version: 'm4-quote-economics-v1',
+    groups: value.groups.map(({ canonicalIdentity, ...group }) => ({
+      ...group,
+      canonicalIdentitySha256: identityDigest(canonicalIdentity),
+    })),
+    lines: value.lines.map(({ canonicalIdentity, ...line }) => ({
+      ...line,
+      canonicalIdentitySha256: identityDigest(canonicalIdentity),
+    })),
+  };
 }
 
 function validAuthorization(quote: AcceptedQuote, set: QuoteAuthorizationSet): void {
@@ -277,9 +348,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     if (requestedVariants > 32 || requestedQuantity > 10000)
       throw new Error('candidate capacity exceeded before provider reads');
   }
-  const requestGroupsJson = JSON.stringify(request.groups);
-  if (!requestGroupsJson || Buffer.byteLength(requestGroupsJson, 'utf8') > 128_000)
-    throw new Error('candidate request bytes exceeded before provider reads');
+  boundedRequestBytes(request);
   const marketId = normalizeMarketId(request.marketId);
   if (request.groups.some((entry) => entry.sellingPlanId !== undefined && entry.sellingPlanId !== null))
     throw new Error('paid customization with selling plan');
@@ -454,7 +523,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
       productId: group.productId,
       configRevisionId: group.configRevisionId,
       revisionContentHash: group.revisionContentHash,
-      canonicalIdentitySha256: createHash('sha256').update(group.canonicalIdentity).digest('hex'),
+      canonicalIdentitySha256: identityDigest(group.canonicalIdentity),
       variants: group.variants.map((variant) => ({ variantId: variant.variantId, quantity: variant.quantity })),
     })),
     effectiveRevisions: revisions.map(({ config, configId, operationId }) => ({
@@ -466,7 +535,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     })),
     catalogSnapshots,
     fxSnapshot,
-    economics,
+    economics: acceptedEconomics(economics),
   };
   return ports.store.accept(
     {

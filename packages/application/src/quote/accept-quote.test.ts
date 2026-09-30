@@ -157,6 +157,11 @@ describe('acceptQuote', () => {
     const result = await acceptQuote(request, ports);
     expect(result.quote.economics.totalMinor).toBe('2001');
     expect(result.quote.economics.lines.map((line) => line.unitPriceMinor)).toEqual(['1001', '1000']);
+    expect(result.quote.economics.groups[0]?.canonicalIdentitySha256).toMatch(/^[0-9a-f]{64}$/);
+    expect(result.quote.economics.lines[0]?.canonicalIdentitySha256).toBe(
+      result.quote.economics.groups[0]?.canonicalIdentitySha256,
+    );
+    expect(JSON.stringify(result.quote.economics)).not.toContain('canonicalIdentity"');
     expect(result.quote.acceptedDate).toBe('2026-11-01');
     expect(result.quote.validThroughDay - result.quote.acceptedDay).toBe(2);
     expect(result.quote.marketId).toBe('42');
@@ -463,5 +468,30 @@ describe('acceptQuote', () => {
       ),
     ).rejects.toThrow(/candidate capacity/);
     expect(ports.authorization.issue).not.toHaveBeenCalled();
+  });
+
+  it('bounds nested buyer JSON and Market text before provider reads', async () => {
+    const { ports } = fixture();
+    await expect(acceptQuote({ ...request, marketId: '9'.repeat(256) }, ports)).rejects.toThrow(
+      /invalid desired Market ID/,
+    );
+    await expect(
+      acceptQuote(
+        {
+          ...request,
+          groups: [{ group: { ...group, design: { ...group.design, ignoredArtwork: 'x'.repeat(128_001) } } }],
+        },
+        ports,
+      ),
+    ).rejects.toThrow(/candidate request bytes exceeded/);
+    let nested: unknown = 'bottom';
+    for (let depth = 0; depth < 20; depth++) nested = { next: nested };
+    await expect(
+      acceptQuote(
+        { ...request, groups: [{ group: { ...group, design: { ...group.design, ignoredArtwork: nested } } }] },
+        ports,
+      ),
+    ).rejects.toThrow(/candidate request complexity exceeded/);
+    expect(ports.tenant.getActive).not.toHaveBeenCalled();
   });
 });

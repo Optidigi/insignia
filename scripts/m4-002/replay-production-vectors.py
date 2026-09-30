@@ -132,6 +132,10 @@ assert vectors['version'] == 'whole-quote-v2-candidate-v1'
 accepted_example = json.loads(ACCEPTED_EXAMPLE.read_text())
 assert accepted_example['quote']['economics']['groups'][0]['customizationUnitMinor'] == '-1'
 assert [line['unitPriceMinor'] for line in accepted_example['quote']['economics']['lines']] == ['1', '0']
+assert accepted_example['quote']['economics']['version'] == 'm4-quote-economics-v1'
+assert all('canonicalIdentity' not in item and len(item['canonicalIdentitySha256']) == 64
+           for kind in ('groups', 'lines') for item in accepted_example['quote']['economics'][kind])
+assert '"art"' not in json.dumps(accepted_example['quote'])
 accepted_case = dict(accepted_example['functionVector'], publicHex=accepted_example['publicKeyHex'])
 rows = []
 for target in ('transform', 'validation'):

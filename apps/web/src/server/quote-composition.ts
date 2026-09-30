@@ -1,6 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import {
-  type AcceptedQuote,
   bindProviderSubscription,
   type CustomizationFxProvider,
   type EntitlementPolicyConfig,
@@ -36,7 +35,9 @@ function uuidHex(uuid: string): string {
   return uuid.replaceAll('-', '').toLowerCase();
 }
 
-function membersFor(quote: Pick<AcceptedQuote, 'economics'>): Member[] {
+function membersFor(quote: {
+  economics: { lines: readonly { lineIndex: number; variantId: string; quantity: number; unitPriceMinor: string }[] };
+}): Member[] {
   return quote.economics.lines.map((line, index) => {
     if (line.lineIndex !== index) throw new Error('M2 lines are not quote-global ordered');
     return {

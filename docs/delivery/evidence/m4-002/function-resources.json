@@ -3,7 +3,7 @@
   "sourceVectorsSha256": "7f0046b88183b79cbccc305c883aab0483a6cda1eddb191297e2295c35ac1eda",
   "runnerSha256": "728bedbcf86f57680051208f9056642c9dfb07766a21891624bf18f372e4c29b",
   "fullReplayRowCount": 201,
-  "fullReplaySha256": "c0e1a29ed92835e34b87626b0e22491537dd757f6908695e23612b837acbdd67",
+  "fullReplaySha256": "9737e72657b363dc6ba8b39ef2e948a4e7b745f3637e697236d0235fcf284de0",
   "stackStatus": "not measured: pinned runner exposes linear memory only",
   "selectedFinalWasmRows": [
     {
@@ -301,5 +301,5 @@
       "linearMemoryKiB": 1536
     }
   },
-  "acceptedQuoteExampleSha256": "334fb44d87716c61000675a98fde9c9552037bd0a1c15ce988470e4095f9b97b"
+  "acceptedQuoteExampleSha256": "ee3543ec0ad1b7fe84d87b2443942cbcaaa156a2f0a56f3116e550214c294764"
 }

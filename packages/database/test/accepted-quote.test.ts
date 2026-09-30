@@ -462,6 +462,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
         WHERE q.quote_id = ${accepted.quote.quoteId}::uuid`.execute(database);
       expect(persisted.rows).toHaveLength(1);
       expect(persisted.rows[0]?.quote_value).toEqual(accepted.quote);
+      expect(accepted.quote.economics.version).toBe('m4-quote-economics-v1');
+      expect(JSON.stringify(persisted.rows[0]?.quote_value)).not.toContain('"art"');
       expect(persisted.rows[0]?.envelope_carrier).toBe(accepted.authorization.envelopeCarrier);
       expect(persisted.rows[0]?.member_carriers).toEqual(accepted.authorization.members);
       expect(await acceptQuote(request, ports)).toEqual(accepted);

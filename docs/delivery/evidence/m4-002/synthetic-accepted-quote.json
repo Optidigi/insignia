@@ -68,7 +68,7 @@
     ],
     "fxSnapshot": null,
     "economics": {
-      "version": "m2-proposal-economics-v1",
+      "version": "m4-quote-economics-v1",
       "shopId": "shop",
       "pricingEngineVersion": "m2-pricing-v1",
       "roundingPolicy": "m2-half-even-v1",
@@ -86,7 +86,6 @@
       "totalMinor": "1",
       "groups": [
         {
-          "canonicalIdentity": "[\"m2-design-identity-v1\",\"shop\",\"42\",\"revision\",\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",[[\"front\",\"method\",\"step\",\"revision\",\"art\"]],[]]",
           "shopId": "shop",
           "productId": "42",
           "configRevisionId": "revision",
@@ -147,7 +146,8 @@
                 }
               ]
             }
-          ]
+          ],
+          "canonicalIdentitySha256": "85b664e4d4d8e3beaabb4be05c5276973e5972ce76ff1eb1e10c85915732c55c"
         }
       ],
       "lines": [
@@ -160,11 +160,11 @@
           "unitPriceMinor": "1",
           "lineTotalMinor": "1",
           "lineIndex": 0,
-          "canonicalIdentity": "[\"m2-design-identity-v1\",\"shop\",\"42\",\"revision\",\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",[[\"front\",\"method\",\"step\",\"revision\",\"art\"]],[]]",
           "shopId": "shop",
           "productId": "42",
           "configRevisionId": "revision",
-          "revisionContentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "revisionContentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "canonicalIdentitySha256": "85b664e4d4d8e3beaabb4be05c5276973e5972ce76ff1eb1e10c85915732c55c"
         },
         {
           "variantId": "700",
@@ -175,11 +175,11 @@
           "unitPriceMinor": "0",
           "lineTotalMinor": "0",
           "lineIndex": 1,
-          "canonicalIdentity": "[\"m2-design-identity-v1\",\"shop\",\"42\",\"revision\",\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",[[\"front\",\"method\",\"step\",\"revision\",\"art\"]],[]]",
           "shopId": "shop",
           "productId": "42",
           "configRevisionId": "revision",
-          "revisionContentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+          "revisionContentHash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "canonicalIdentitySha256": "85b664e4d4d8e3beaabb4be05c5276973e5972ce76ff1eb1e10c85915732c55c"
         }
       ]
     }
