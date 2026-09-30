@@ -19,6 +19,7 @@
     "@insignia/cart-authorization": "workspace:*",
     "@insignia/contracts": "workspace:*",
     "@insignia/domain": "workspace:*",
+    "@insignia/visualizer": "workspace:*",
     "kysely": "0.29.6",
     "pg": "8.23.0"
   },

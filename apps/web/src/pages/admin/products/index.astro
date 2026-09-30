@@ -1,0 +1,26 @@
+---
+import MerchantConfigEditor from '../../../islands/MerchantConfigEditor';
+import '../../../styles/admin-editor.css';
+
+const apiKey = import.meta.env.PUBLIC_SHOPIFY_API_KEY;
+const csp =
+  "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' https: data:; connect-src 'self'; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'";
+Astro.response.headers.set('Cache-Control', 'private, no-store');
+Astro.response.headers.set('Content-Security-Policy', csp);
+Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    {apiKey && <meta name="shopify-api-key" content={apiKey} />}
+    <title>Products · Insignia</title>
+    <script is:inline src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
+    <script is:inline src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>
+  </head>
+  <body>
+    <MerchantConfigEditor mode="picker" client:load />
+  </body>
+</html>

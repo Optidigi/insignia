@@ -17,6 +17,7 @@ assert.ok(
     entries.includes('apps/storefront/src') &&
     entries.includes('packages/domain/src'),
 );
+assert.ok(entries.includes('packages/visualizer/src'), 'visualizer source graph must be checked');
 const depcruise = ['pnpm', 'exec', 'depcruise', '--config', '.dependency-cruiser.cjs'];
 
 function run(command, args, expected = 0) {
@@ -35,8 +36,23 @@ const graph = JSON.parse(cruise(entries, 'json'));
 assert.ok(graph.modules.length >= 8, 'real source graph must be nonempty');
 
 const bySource = new Map(graph.modules.map((module) => [module.source, module]));
+const konvaImport = /\b(?:from\s*|import\s*\(\s*|require\s*\(\s*)['"](?:konva(?:\/[^'"]*)?|react-konva)['"]/;
+function assertKonvaOwner(source, content) {
+  assert.ok(
+    !konvaImport.test(content) || /^packages\/visualizer\/(?:src\/renderer\.ts|dist\/renderer\.js)$/.test(source),
+    `${source} imports Konva outside the browser renderer`,
+  );
+}
 for (const module of graph.modules) {
+  if (existsSync(resolve(root, module.source)))
+    assertKonvaOwner(module.source, readFileSync(resolve(root, module.source), 'utf8'));
   for (const edge of module.dependencies) {
+    if (edge.module === 'konva' || edge.module.startsWith('konva/'))
+      assert.match(
+        module.source,
+        /^packages\/visualizer\/(?:src\/renderer\.ts|dist\/renderer\.js)$/,
+        'Konva must remain in the renderer',
+      );
     if (edge.module === '@shopify/shopify-api' || edge.module.startsWith('@shopify/shopify-api/')) {
       assert.ok(module.source.startsWith('packages/shopify/'), `${module.source} imports Shopify SDK outside adapter`);
     }
@@ -54,7 +70,7 @@ const browser = [...bySource.keys()].filter(
 assert.ok(browser.length >= 3, 'browser entry graph must be nonempty');
 const builtins = new Set(builtinModules.map((name) => name.replace(/^node:/, '')));
 const banned =
-  /^(?:apps\/worker|packages\/(?:shopify|artwork|database|observability|signer|cart-authorization))\/|(?:^|\/)@shopify\/shopify-api(?:\/|$)|^spikes\//;
+  /^(?:apps\/worker|apps\/web\/src\/server|packages\/(?:shopify|artwork|database|observability|signer|cart-authorization))\/|(?:^|\/)@shopify\/shopify-api(?:\/|$)|^spikes\//;
 for (const entry of browser) {
   const seen = new Set();
   const todo = [entry];
@@ -92,6 +108,21 @@ for (const manifest of manifests) {
 }
 
 const probes = [
+  [
+    'packages/visualizer/src/__boundary_probe.ts',
+    "import {readFileSync} from 'node:fs'; export {readFileSync};",
+    'browser-no-node-builtins',
+  ],
+  [
+    'packages/visualizer/src/__boundary_probe.ts',
+    "import {createCatalogReader} from '../../shopify/src/catalog.js'; export {createCatalogReader};",
+    'visualizer-does-not-import-server',
+  ],
+  [
+    'apps/web/src/islands/__boundary_probe.ts',
+    "import {createMerchantConfigService} from '../server/merchant-config.js'; export {createMerchantConfigService};",
+    'browser-does-not-import-server',
+  ],
   [
     'packages/domain/src/__boundary_probe.ts',
     "import {readFileSync} from 'node:fs'; export {readFileSync};",
@@ -164,6 +195,10 @@ const probes = [
     'database-root-must-use-package',
   ],
 ];
+assert.throws(
+  () => assertKonvaOwner('packages/visualizer/src/geometry.ts', "await import('konva')"),
+  /Konva outside the browser renderer/,
+);
 // A real server composition package may use only the database package root.
 const serverProbe = resolve(root, 'apps/worker/src/__boundary_probe.ts');
 assert.ok(!existsSync(serverProbe), 'refusing to overwrite server boundary fixture');
@@ -233,6 +268,28 @@ try {
   );
   assert.notEqual(bundle.status, 0, 'web-island bundler must reject Node import');
   assert.match(bundle.stderr, /Could not resolve "node:module"/);
+} finally {
+  rmSync(webProbe, { force: true });
+}
+
+// A browser island may reach the visualizer package and Konva through its renderer.
+assert.ok(!existsSync(webProbe));
+try {
+  writeFileSync(webProbe, "import {createVisualizer} from '@insignia/visualizer'; export {createVisualizer};");
+  const result = JSON.parse(cruise([webProbe], 'json'));
+  const island = result.modules.find((module) => module.source === 'apps/web/src/islands/__boundary_probe.ts');
+  assert.equal(island?.dependencies[0]?.module, '@insignia/visualizer');
+  assert.equal(result.summary.error, 0, 'browser visualizer import must pass boundaries');
+  run('corepack', [
+    'pnpm',
+    'exec',
+    'esbuild',
+    webProbe,
+    '--bundle',
+    '--platform=browser',
+    '--format=esm',
+    '--outfile=.m1-artifacts/valid-visualizer-browser.js',
+  ]);
 } finally {
   rmSync(webProbe, { force: true });
 }

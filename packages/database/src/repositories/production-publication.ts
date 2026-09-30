@@ -310,6 +310,8 @@ export class PgProductionPublication {
       const open = await sql<{ operation_id: string }>`SELECT p.operation_id FROM m4_publication_progress p
         JOIN publication_operations o USING (shop_id, config_id, operation_id)
         WHERE p.shop_id=${input.shopId} AND p.config_id=${input.configId}
+          AND o.installation_generation=${row.generation}::bigint
+          AND o.status IN ('requested','acknowledged','observed')
           AND p.phase NOT IN ('active','conflict','operator-hold')
         LIMIT 1`.execute(tx);
       if (open.rows[0]) throw new Error('Another publication is pending');

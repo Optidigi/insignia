@@ -120,6 +120,16 @@ export function createConfigRepositoryInternal(executor: DatabaseExecutor) {
         .executeTakeFirst();
       return row ? mapConfig(row) : null;
     },
+    async getConfigForUpdate(shopId: string, configId: string): Promise<ConfigRecord | null> {
+      const row = await executor
+        .selectFrom('product_configs')
+        .selectAll()
+        .where('shop_id', '=', shopId)
+        .where('config_id', '=', configId)
+        .forUpdate()
+        .executeTakeFirst();
+      return row ? mapConfig(row) : null;
+    },
 
     async getByProduct(shopId: string, externalProductId: string): Promise<ConfigRecord | null> {
       const row = await executor
@@ -127,6 +137,16 @@ export function createConfigRepositoryInternal(executor: DatabaseExecutor) {
         .selectAll()
         .where('shop_id', '=', shopId)
         .where('external_product_id', '=', externalProductId)
+        .executeTakeFirst();
+      return row ? mapConfig(row) : null;
+    },
+    async getByProductForUpdate(shopId: string, externalProductId: string): Promise<ConfigRecord | null> {
+      const row = await executor
+        .selectFrom('product_configs')
+        .selectAll()
+        .where('shop_id', '=', shopId)
+        .where('external_product_id', '=', externalProductId)
+        .forUpdate()
         .executeTakeFirst();
       return row ? mapConfig(row) : null;
     },

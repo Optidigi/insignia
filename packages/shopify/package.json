@@ -14,6 +14,9 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
+  "dependencies": {
+    "@shopify/shopify-api": "15.0.0"
+  },
   "devDependencies": {
     "@types/node": "24.10.0",
     "typescript": "5.9.3",
