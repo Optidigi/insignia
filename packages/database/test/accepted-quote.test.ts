@@ -205,6 +205,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     const results = await Promise.all([
       repo.accept(input, async () => {
         signed++;
+        await expect(
+          database.transaction().execute(async (other) => {
+            await sql`SET LOCAL lock_timeout = '200ms'`.execute(other);
+            await sql`UPDATE installation_generations SET authorization_epoch = ${value.authorizationEpoch + 1}
+              WHERE shop_id = ${value.shopId} AND generation = ${value.generation}::bigint`.execute(other);
+          }),
+        ).rejects.toThrow(/lock timeout/);
         return { quote, authorization };
       }),
       repo.accept(input, async () => {
@@ -232,6 +239,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('accepted quote PostgreSQL aut
     ).rejects.toThrow();
     await sql`UPDATE installation_generations SET authorization_epoch = ${value.authorizationEpoch + 1}
       WHERE shop_id = ${value.shopId} AND generation = ${value.generation}::bigint`.execute(database);
+    // A caller may have read the old tenant epoch before a revocation. The replay query
+    // must compare with the current installation row, not just that stale caller value.
+    await expect(repo.findCompleted(input)).rejects.toThrow(/revoked authorization identity/);
+    await expect(repo.accept(input, async () => ({ quote, authorization }))).rejects.toThrow(
+      /installation authorization fence/,
+    );
     const advanced = { ...input, authorizationEpoch: value.authorizationEpoch + 1 };
     await expect(repo.findCompleted(advanced)).rejects.toThrow(/revoked authorization identity/);
     await expect(

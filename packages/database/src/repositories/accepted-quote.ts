@@ -135,6 +135,8 @@ export class PgAcceptedQuoteRepository {
       request_digest: string;
       authorization_generation: string;
       authorization_epoch: string;
+      current_authorization_generation: string;
+      current_authorization_epoch: string;
       quote_value: unknown;
       set_id: string;
       key_id: string;
@@ -146,6 +148,8 @@ export class PgAcceptedQuoteRepository {
       member_carriers: unknown;
     }>`
       SELECT q.request_digest, q.authorization_generation::text, q.authorization_epoch::text,
+        i.authorization_generation::text AS current_authorization_generation,
+        i.authorization_epoch::text AS current_authorization_epoch,
         q.quote_value, a.set_id::text, a.key_id,
         a.public_key_fingerprint, a.first_valid_day, a.last_valid_day, a.valid_through_day,
         a.envelope_carrier, a.member_carriers
@@ -160,7 +164,9 @@ export class PgAcceptedQuoteRepository {
     if (!row) return null;
     if (
       row.authorization_generation !== input.authorizationGeneration ||
-      row.authorization_epoch !== String(input.authorizationEpoch)
+      row.authorization_epoch !== String(input.authorizationEpoch) ||
+      row.current_authorization_generation !== input.authorizationGeneration ||
+      row.current_authorization_epoch !== String(input.authorizationEpoch)
     )
       throw new Error('idempotency key belongs to revoked authorization identity');
     if (row.request_digest !== input.requestDigest) throw new Error('idempotency digest conflict');
@@ -219,7 +225,7 @@ export class PgAcceptedQuoteRepository {
         FROM shops s JOIN installation_generations i
           ON i.shop_id = s.shop_id AND i.generation = s.current_generation
         WHERE s.shop_id = ${input.shopId} AND i.deactivated_at IS NULL
-        FOR UPDATE OF s`.execute(transaction);
+        FOR UPDATE OF s, i`.execute(transaction);
       const current = active.rows[0];
       if (
         !current ||
