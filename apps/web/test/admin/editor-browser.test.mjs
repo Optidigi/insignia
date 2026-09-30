@@ -4,7 +4,8 @@ import { createHash } from 'node:crypto';
 import { mkdir, readFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { crc32, deflateSync } from 'node:zlib';
-import { validatePublishedConfig } from '@insignia/domain';
+import { currencyExponent } from '@insignia/cart-authorization';
+import { priceProposal, validatePublishedConfig } from '@insignia/domain';
 import { chromium } from 'playwright';
 
 const polarisUrl = 'https://cdn.shopify.com/shopifycloud/polaris-1.1.js';
@@ -128,6 +129,129 @@ async function startServer() {
   await exited;
   throw new Error('Web server did not start');
 }
+test('editor-generated fixed, override and tier defaults price through unchanged M2 in zero/two/three exponent currencies', {
+  timeout: 60000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  assert.equal(createHash('sha256').update(source).digest('hex'), polarisSha);
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    for (const currency of ['USD', 'EUR', 'JPY', 'KWD']) {
+      const page = await browser.newPage();
+      await page.addInitScript(() => {
+        window.shopify = { idToken: async () => 'synthetic-money-token' };
+      });
+      await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+      await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+      await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+        route.fulfill({ body: '', contentType: 'text/javascript' }),
+      );
+      let current = { ...draft(), shopCurrency: currency };
+      let version = '1';
+      let saved;
+      await page.route('**/api/admin/products/111/config', (route) => {
+        if (route.request().method() === 'GET') {
+          const value = response(current);
+          value.config.currentShopCurrency = currency;
+          value.config.draftVersion = version;
+          return route.fulfill({ json: value });
+        }
+        assert.equal(route.request().method(), 'PUT');
+        saved = route.request().postDataJSON();
+        current = saved.draft;
+        version = String(Number(version) + 1);
+        return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
+      });
+      await page.goto(server.base + '/admin/products/111/config');
+      await page.getByText('Draft version 1').waitFor();
+      await page.getByRole('button', { name: 'Add fixed price' }).click();
+      const price = (presentment = currency, quantity = 2) =>
+        priceProposal({
+          shopId: 'shop_1',
+          groups: [
+            {
+              version: 'm2-customization-group-v1',
+              shopId: 'shop_1',
+              productId: '111',
+              configRevisionId: 'revision_1',
+              revisionContentHash: 'a'.repeat(64),
+              design: {
+                placements: [
+                  {
+                    placementId: 'front',
+                    methodId: 'print',
+                    stepId: 'small',
+                    artwork: { kind: 'deferred', intentId: 'synthetic-intent' },
+                  },
+                ],
+                options: [],
+              },
+              variants: [{ variantId: '11', quantity }],
+            },
+          ],
+          configs: [
+            validatePublishedConfig({
+              version: 'm2-published-config-v1',
+              shopId: 'shop_1',
+              productId: '111',
+              revisionId: 'revision_1',
+              revisionContentHash: 'a'.repeat(64),
+              shopCurrency: currency,
+              methods: saved.draft.methods,
+              placements: saved.draft.placements,
+              productionOptions: saved.draft.productionOptions,
+              pricingRules: saved.draft.pricingRules,
+            }),
+          ],
+          bases: [
+            {
+              shopId: 'shop_1',
+              productId: '111',
+              variantId: '11',
+              currency: presentment,
+              minor: '100',
+              contextId: 'ctx',
+            },
+          ],
+          currency: {
+            version: 'm2-currency-resolution-v1',
+            presentmentCurrency: presentment,
+            exponents: { [currency]: currencyExponent(currency), [presentment]: currencyExponent(presentment) },
+          },
+          effectiveAt: '2026-09-30T12:00:00.000Z',
+          marketContext: 'synthetic',
+          roundingPolicy: 'm2-half-even-v1',
+        });
+      const save = async () => {
+        await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+        await page.getByText('Draft saved.').waitFor();
+      };
+      await save();
+      assert.equal(price().totalMinor, '200', currency + ' fixed default must be usable');
+      await page.getByRole('button', { name: 'Add presentment override' }).click();
+      const override = currency === 'EUR' ? 'USD' : 'EUR';
+      await page.getByLabel('Presentment currency').fill(override);
+      await save();
+      assert.equal(price(override).totalMinor, '200', 'override default must be usable without FX');
+      await page.getByLabel('Role').selectOption('unit');
+      await page
+        .locator('select')
+        .filter({ has: page.locator('option[value="allUnits"]') })
+        .selectOption('allUnits');
+      await page.getByRole('button', { name: 'Add quantity tier' }).click();
+      await save();
+      assert.equal(price(currency, 1).totalMinor, '100', 'first tier must retain usable default');
+      assert.equal(price(currency, 2).totalMinor, '200', 'new tier must have usable default');
+      await page.close();
+    }
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
 test('real browser editor syncs typed view, variant and step controls with direct Konva canvas and saved draft', {
   timeout: 45000,
 }, async () => {
@@ -246,11 +370,11 @@ test('real browser editor syncs typed view, variant and step controls with direc
       .selectOption('allUnits');
     await page.getByRole('button', { name: 'Add quantity tier' }).click();
     await page.getByLabel('Minimum quantity').last().fill('12');
-    await page.getByLabel('Shop amount (USD)').first().fill('4.500');
-    await page.getByLabel('Shop amount (USD)').last().fill('3.000');
+    await page.getByLabel('Shop amount (USD)').first().fill('4.50');
+    await page.getByLabel('Shop amount (USD)').last().fill('3.00');
     await page.getByRole('button', { name: 'Add presentment override' }).first().click();
     await page.getByLabel('Presentment currency').fill('EUR');
-    await page.getByLabel('Presentment amount').fill('4.000');
+    await page.getByLabel('Presentment amount').fill('4.00');
     if (process.env.M5_CAPTURE_BROWSER === '1')
       await page.screenshot({ path: new URL('editor-edited.png', captureDir).pathname, fullPage: true });
     assert.equal(
@@ -528,7 +652,7 @@ test('merchant currency adoption refreshes saved publication eligibility and lat
         id: 'setup-price',
         role: 'setup',
         scope: { kind: 'general' },
-        rate: { kind: 'fixed', amount: { shopDecimal: '4.500', presentmentOverrides: [] } },
+        rate: { kind: 'fixed', amount: { shopDecimal: '4.50', presentmentOverrides: [] } },
       },
     ];
     let version = '1';
@@ -560,13 +684,13 @@ test('merchant currency adoption refreshes saved publication eligibility and lat
     await page.getByText('Current shop currency: EUR', { exact: false }).waitFor();
     const publicationButton = page.locator('s-button').filter({ hasText: 'Request publication' });
     assert.equal(await publicationButton.evaluate((button) => button.disabled), true);
-    assert.equal(await page.getByLabel('Shop amount (USD)').inputValue(), '4.500');
+    assert.equal(await page.getByLabel('Shop amount (USD)').inputValue(), '4.50');
     await page.getByRole('button', { name: 'Use current shop currency' }).click();
-    assert.equal(await page.getByLabel('Shop amount (EUR)').inputValue(), '4.500');
+    assert.equal(await page.getByLabel('Shop amount (EUR)').inputValue(), '4.50');
     await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
     await page.getByText('Draft saved.').waitFor();
     assert.equal(saved.draft.shopCurrency, 'EUR');
-    assert.equal(saved.draft.pricingRules[0].rate.amount.shopDecimal, '4.500');
+    assert.equal(saved.draft.pricingRules[0].rate.amount.shopDecimal, '4.50');
     await page.waitForFunction(
       () =>
         [...document.querySelectorAll('s-button')].some(

@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { executeCommand } from '@insignia/application';
+import { currencyExponent } from '@insignia/cart-authorization';
 import { type MerchantDraft, MerchantDraftSchema, PublishedConfigSchema } from '@insignia/contracts';
 import type { DurableTransaction } from '@insignia/database';
 import { CONFIG_DRAFT_STORAGE_VERSION, type DurableCore, sha256CanonicalJson } from '@insignia/database';
-import { validatePublishedConfig } from '@insignia/domain';
+import { parseSignedMinor, validatePublishedConfig } from '@insignia/domain';
 import { GEOMETRY_VERSION, type GeometryV1, validateGeometryBridge } from '@insignia/visualizer/geometry';
 import type { AdminActor as Actor, CatalogProduct } from './admin/contracts.js';
 
@@ -44,6 +45,22 @@ function validatedDraft(value: unknown, actor: Actor, productId: string): Mercha
   const published = validatePublishedConfig(
     PublishedConfigSchema.parse(draftPublished(draft, actor, productId, 'draft')),
   );
+  // Check every configured amount, including unselected tiers and overrides.
+  // M2 still owns signed-role, range and final allocation semantics; never round
+  // a lexical amount to make it fit a currency's precision.
+  const shopExponent = currencyExponent(draft.shopCurrency);
+  if (shopExponent === undefined) throw new Error('Unsupported shop currency');
+  for (const rule of draft.pricingRules) {
+    const amounts = rule.rate.kind === 'fixed' ? [rule.rate.amount] : rule.rate.tiers.map((tier) => tier.amount);
+    for (const amount of amounts) {
+      parseSignedMinor(amount.shopDecimal, shopExponent);
+      for (const override of amount.presentmentOverrides) {
+        const exponent = currencyExponent(override.currency);
+        if (exponent === undefined) throw new Error('Unsupported presentment currency');
+        parseSignedMinor(override.decimal, exponent);
+      }
+    }
+  }
   validateGeometryBridge(geometry, published);
   const references = [
     ['methods', draft.methods.map((item) => item.id)],
@@ -208,6 +225,19 @@ export function createMerchantConfigService(input: {
     if (!scope || scope.shopDomain !== actor.shop || `gid://shopify/Shop/${scope.shopifyShopId}` !== actor.shopId)
       throw new Error('Current tenant installation required');
   }
+  function commandTransactions(actor: Actor) {
+    return {
+      run<T>(work: (tx: DurableTransaction) => Promise<T>): Promise<T> {
+        return core.transactions.run(async (tx) => {
+          // Reserve inserts reference shops and take a FK key-share lock. Lock
+          // the current tenant first so concurrent commands cannot both upgrade
+          // that shared lock to FOR UPDATE and deadlock inside their callbacks.
+          await currentLocked(actor, tx);
+          return work(tx);
+        });
+      },
+    };
+  }
   async function product(actor: Actor, gid: string): Promise<CatalogProduct> {
     await current(actor);
     const found = await input.catalog.get(actor, gid);
@@ -275,11 +305,10 @@ export function createMerchantConfigService(input: {
       let result: { kind: 'executed' | 'replayed'; resultRef: string };
       try {
         result = await executeCommand(
-          core.transactions,
+          commandTransactions(actor),
           core.commands,
           command(actor, 'm5-create-config', key, { productId }),
           async (tx) => {
-            await currentLocked(actor, tx);
             if (await core.configs.getByProductForUpdate(tx, actor.tenantShopId, productNumber(productId)))
               return 'occupied';
             const id = randomUUID();
@@ -333,7 +362,7 @@ export function createMerchantConfigService(input: {
       }
       const shopCurrency = await input.catalog.shopCurrency(actor);
       const result = await executeCommand(
-        core.transactions,
+        commandTransactions(actor),
         core.commands,
         command(actor, 'm5-save-draft', data.idempotencyKey, {
           productId,
@@ -342,7 +371,6 @@ export function createMerchantConfigService(input: {
           draft,
         }),
         async (tx) => {
-          await currentLocked(actor, tx);
           if (draft.shopCurrency !== shopCurrency) return 'currency';
           const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
           if (!config || config.externalProductId !== productNumber(productId)) return 'conflict';
@@ -369,11 +397,10 @@ export function createMerchantConfigService(input: {
       let result: { kind: 'executed' | 'replayed'; resultRef: string };
       try {
         result = await executeCommand(
-          core.transactions,
+          commandTransactions(actor),
           core.commands,
           command(actor, 'm5-copy-config', key, { sourceProductId, targetProductId }),
           async (tx) => {
-            await currentLocked(actor, tx);
             if (await core.configs.getByProductForUpdate(tx, actor.tenantShopId, productNumber(targetProductId)))
               return 'occupied';
             const source = await core.configs.getByProductForUpdate(
@@ -456,8 +483,7 @@ export function createMerchantConfigService(input: {
           .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
         if (!eligibility.allowed)
           return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
-        const result = await executeCommand(core.transactions, core.commands, identity, async (tx) => {
-          await currentLocked(actor, tx);
+        const result = await executeCommand(commandTransactions(actor), core.commands, identity, async (tx) => {
           const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
           if (
             !config ||

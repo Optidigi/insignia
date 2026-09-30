@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
-import { createDurableCore } from '@insignia/database';
+import { CONFIG_DRAFT_STORAGE_VERSION, createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
@@ -71,6 +71,205 @@ function actor(shopId, shop, shopifyShopId) {
     canEdit: true,
   };
 }
+test('overlapping distinct-key M5 creates serialize before the command FK lock upgrade', {
+  skip: !database,
+  timeout: 15000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  const shopId = randomUUID();
+  const shop = 'm' + randomUUID().replaceAll('-', '') + '.myshopify.com';
+  const shopifyShopId = String(BigInt('0x' + randomUUID().replaceAll('-', '').slice(0, 12)) + 1n);
+  const staff = actor(shopId, shop, shopifyShopId);
+  try {
+    await core.transactions.run((tx) =>
+      core.tenants.createShop(tx, {
+        shopId,
+        shopDomain: shop,
+        shopifyShopId,
+        externalInstallationId: staff.installationId,
+      }),
+    );
+    let arrivals = 0;
+    let release;
+    const bothReserved = new Promise((resolve) => {
+      release = resolve;
+    });
+    const delayed = {
+      ...core,
+      commands: {
+        ...core.commands,
+        async reserve(tx, identity) {
+          const result = await core.commands.reserve(tx, identity);
+          if (++arrivals === 2) release();
+          // Bound a pause after reservation. The correct tenant-first path serializes
+          // before the second reservation, so this gate must also release by time.
+          await Promise.race([bothReserved, new Promise((resolve) => setTimeout(resolve, 100))]);
+          return result;
+        },
+      },
+    };
+    const service = createMerchantConfigService({
+      core: delayed,
+      catalog: { get: async (_actor, id) => (id === productA ? item(id) : null), shopCurrency: async () => 'USD' },
+      eligibility: async () => ({ allowed: false, reason: 'Synthetic' }),
+      publication: () => {
+        throw new Error('create must not publish');
+      },
+    });
+    const results = await Promise.all([
+      service.create(staff, productA, 'overlap-one'),
+      service.create(staff, productA, 'overlap-two'),
+    ]);
+    assert.deepEqual(results.map((result) => result.kind).sort(), ['conflict', 'created']);
+    const created = results.find((result) => result.kind === 'created');
+    assert.equal((await core.configs.getByProduct(shopId, '111')).configId, created.configId);
+    assert.equal((await service.read(staff, productA)).config.draftVersion, '1');
+  } finally {
+    await core.close();
+  }
+});
+test('currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent', {
+  skip: !database,
+  timeout: 30000,
+}, async () => {
+  const core = createDurableCore(new Pool({ connectionString: database }));
+  try {
+    for (const [currency, valid, invalid] of [
+      ['USD', '1.23', '1.230'],
+      ['JPY', '1', '1.0'],
+      ['KWD', '1.234', '1.2345'],
+    ]) {
+      const shopId = randomUUID();
+      const shop = 'm' + randomUUID().replaceAll('-', '') + '.myshopify.com';
+      const shopifyShopId = String(BigInt('0x' + randomUUID().replaceAll('-', '').slice(0, 12)) + 1n);
+      const staff = actor(shopId, shop, shopifyShopId);
+      await core.transactions.run((tx) =>
+        core.tenants.createShop(tx, {
+          shopId,
+          shopDomain: shop,
+          shopifyShopId,
+          externalInstallationId: staff.installationId,
+        }),
+      );
+      let prepares = 0;
+      const service = createMerchantConfigService({
+        core,
+        catalog: { get: async (_actor, id) => (id === productA ? item(id) : null), shopCurrency: async () => currency },
+        eligibility: async () => ({ allowed: true, reason: null }),
+        publication: () => ({
+          prepare: async () => {
+            prepares++;
+            throw new Error('invalid draft must not prepare');
+          },
+          advance: async () => {
+            throw new Error('invalid draft must not advance');
+          },
+        }),
+      });
+      const created = await service.create(staff, productA, 'create-money');
+      assert.equal(created.kind, 'created');
+      const draft = {
+        ...baseDraft(),
+        shopCurrency: currency,
+        pricingRules: [
+          {
+            id: 'setup',
+            role: 'setup',
+            scope: { kind: 'general' },
+            rate: { kind: 'fixed', amount: { shopDecimal: valid, presentmentOverrides: [] } },
+          },
+          {
+            id: 'signed-adjustment',
+            role: 'unit',
+            scope: { kind: 'placement', placementId: sharedId },
+            rate: { kind: 'fixed', amount: { shopDecimal: '-' + valid, presentmentOverrides: [] } },
+          },
+        ],
+      };
+      const saved = await service.save(staff, productA, {
+        configId: created.configId,
+        draftVersion: '1',
+        draft,
+        idempotencyKey: 'valid-money',
+      });
+      assert.deepEqual(saved, { kind: 'saved', draftVersion: '2' });
+      const badCases = [];
+      const fixed = structuredClone(draft);
+      fixed.pricingRules[0].rate.amount.shopDecimal = invalid;
+      badCases.push(fixed);
+      for (const [overrideCurrency, decimal] of [
+        ['USD', '1.230'],
+        ['JPY', '1.0'],
+        ['ZZZ', '0'],
+      ]) {
+        if (overrideCurrency === currency) continue;
+        const override = structuredClone(draft);
+        override.pricingRules[0].rate.amount.presentmentOverrides = [{ currency: overrideCurrency, decimal }];
+        badCases.push(override);
+      }
+      const tiers = structuredClone(draft);
+      tiers.pricingRules = [
+        {
+          id: 'tier',
+          role: 'unit',
+          scope: { kind: 'placement', placementId: sharedId },
+          rate: {
+            kind: 'allUnits',
+            tiers: [
+              { minQuantity: 1, amount: { shopDecimal: '0', presentmentOverrides: [] } },
+              { minQuantity: 100, amount: { shopDecimal: '-' + invalid, presentmentOverrides: [] } },
+            ],
+          },
+        },
+      ];
+      badCases.push(tiers);
+      for (const [index, bad] of badCases.entries()) {
+        assert.equal(
+          (
+            await service.save(staff, productA, {
+              configId: created.configId,
+              draftVersion: '2',
+              draft: bad,
+              idempotencyKey: 'invalid-money-' + index,
+            })
+          ).kind,
+          'invalid',
+          currency + ' case ' + index,
+        );
+      }
+      assert.equal((await core.configs.getConfig(shopId, created.configId)).draftVersion, '2');
+      // A draft written before the precision guard must also fail at the public publish command.
+      const legacy = structuredClone(draft);
+      legacy.pricingRules[0].rate.amount.presentmentOverrides = [{ currency: 'JPY', decimal: '0.000' }];
+      if (currency === 'JPY')
+        legacy.pricingRules[0].rate.amount.presentmentOverrides = [{ currency: 'USD', decimal: '0.000' }];
+      await core.transactions.run((tx) =>
+        core.configs.updateDraft(tx, {
+          shopId,
+          configId: created.configId,
+          expectedVersion: '2',
+          schemaVersion: CONFIG_DRAFT_STORAGE_VERSION,
+          draftValue: legacy,
+        }),
+      );
+      assert.equal((await service.read(staff, productA)).config.publishEligibility.allowed, false);
+      assert.equal(
+        (
+          await service.publish(staff, productA, {
+            configId: created.configId,
+            draftVersion: '3',
+            idempotencyKey: 'publish-invalid-money',
+          })
+        ).kind,
+        'invalid',
+      );
+      assert.equal(await core.configs.getCurrentPublication(shopId, created.configId), null);
+      assert.equal(prepares, 0);
+    }
+  } finally {
+    await core.close();
+  }
+});
 test('durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence', {
   skip: !database,
   timeout: 30000,

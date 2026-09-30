@@ -122,7 +122,7 @@ function initialEditor(draft: MerchantDraft): EditorState {
   return { version: 0, geometry, viewId: geometry.views[0]?.id ?? 'front', artwork: { kind: 'logo-later' } };
 }
 function currencyAmount() {
-  return { shopDecimal: '0.000', presentmentOverrides: [] as { currency: string; decimal: string }[] };
+  return { shopDecimal: '0', presentmentOverrides: [] as { currency: string; decimal: string }[] };
 }
 function snapshotDraft(value: MerchantDraft): MerchantDraft {
   const copy = structuredClone(value);
@@ -1443,7 +1443,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                                     ...current,
                                     presentmentOverrides: [
                                       ...current.presentmentOverrides,
-                                      { currency: 'EUR', decimal: '0.000' },
+                                      { currency: draft.shopCurrency === 'EUR' ? 'USD' : 'EUR', decimal: '0' },
                                     ],
                                   })),
                                 )
