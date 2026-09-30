@@ -4,9 +4,9 @@ import { createDurableCore } from '@insignia/database';
 import {
   createAdminOnlineIdentity,
   createCatalogReader,
+  createCatalogTransport,
   createFunctionOwnershipReconciler,
   createPublicationAdminHttpTransport,
-  createCatalogTransport,
   type OnlineStaffGrant,
   type CatalogProduct as ProviderProduct,
 } from '@insignia/shopify';

@@ -1,9 +1,10 @@
 // Sole-operator launcher. No secrets, JWTs, request headers/bodies or staff IDs are logged.
-import { readFileSync } from 'node:fs';
+
 import { createHash } from 'node:crypto';
-import { createDiagnosticObserver } from './diagnostic-observer.mjs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createDiagnosticObserver } from './diagnostic-observer.mjs';
 import { createPreviewOperator } from './read-register.mjs';
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
