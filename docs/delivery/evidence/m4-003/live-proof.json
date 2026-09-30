@@ -1,0 +1,264 @@
+{
+  "schemaVersion": "m4-003-sanitized-live-proof-v1",
+  "candidateHeadAtProof": "a4ed7479a839129ffca3d2acf604d1a91dbbb6cd",
+  "registerSha256": "c3fc56823ceaa7400ea440655c9f728104e40156aa4b3cd3794644f0f0406a35",
+  "registerLocalPath": "/home/serveradmin/insignia-m4-003-external-register.json",
+  "status": "PASS_PROBE_ONLY_PRODUCTION_KEYS_UNPROVED",
+  "target": {
+    "app": "gid://shopify/App/429028933633",
+    "installation": "gid://shopify/AppInstallation/1054356963611",
+    "shop": "gid://shopify/Shop/105501393179",
+    "product": "gid://shopify/Product/10485042479387",
+    "domain": "insignia-rewrite-dev.myshopify.com"
+  },
+  "identity": {
+    "app": "gid://shopify/App/429028933633",
+    "installation": "gid://shopify/AppInstallation/1054356963611",
+    "grants": [
+      "read_cart_transforms",
+      "read_inventory",
+      "read_locations",
+      "read_products",
+      "read_validations",
+      "write_cart_transforms",
+      "write_inventory",
+      "write_products",
+      "write_validations"
+    ]
+  },
+  "limits": {
+    "admin_auth": 3,
+    "admin_read": 12,
+    "admin_set": 6,
+    "admin_delete": 1
+  },
+  "counts": {
+    "admin_auth": 1,
+    "admin_read": 4,
+    "admin_set": 2,
+    "admin_delete": 1
+  },
+  "attempts": [
+    {
+      "id": "admin_auth-01",
+      "kind": "admin_auth",
+      "purpose": "existing-scope client credentials for exact app/store",
+      "reservedAt": "2026-09-30T12:52:47.021Z",
+      "outcome": "RESPONSE",
+      "completedAt": "2026-09-30T12:52:47.405Z",
+      "httpStatus": 200,
+      "responseBytes": 172,
+      "responseSha256": "5c5d290e10f92eb288a0c544af06f74ba7688bff8bb71e3dc1de5bb358ede26d",
+      "scopes": [
+        "read_locations",
+        "write_cart_transforms",
+        "write_inventory",
+        "write_products",
+        "write_validations"
+      ]
+    },
+    {
+      "id": "admin_read-01",
+      "kind": "admin_read",
+      "purpose": "exact app/shop/archived fixture and package prestate",
+      "reservedAt": "2026-09-30T12:52:47.410Z",
+      "outcome": "RESPONSE",
+      "querySha256": "39ab5a22137a1ecb8e8f8af8cc580458410145f351774b01423abff8fd2886c7",
+      "completedAt": "2026-09-30T12:52:47.713Z",
+      "httpStatus": 200,
+      "responseBytes": 1079,
+      "responseSha256": "757daaa536c8eff1b8e9155df511e4b8d5478e01ffca18b6b40360b8915e3d8c",
+      "topLevelKeys": [
+        "data",
+        "extensions"
+      ]
+    },
+    {
+      "id": "admin_set-01",
+      "kind": "admin_set",
+      "purpose": "atomic CAS-null isolated Shop/Product probe create",
+      "reservedAt": "2026-09-30T12:52:47.726Z",
+      "outcome": "RESPONSE",
+      "querySha256": "4584e38855cd098d536fd793f1fbbd875ecb9b3bf44d36615478e7714f7e8620",
+      "completedAt": "2026-09-30T12:52:48.045Z",
+      "httpStatus": 200,
+      "responseBytes": 866,
+      "responseSha256": "992a129eb47aa8f502c518a985308cb717fd9f84c03398d40f960bd26ca47abe",
+      "topLevelKeys": [
+        "data",
+        "extensions"
+      ]
+    },
+    {
+      "id": "admin_read-02",
+      "kind": "admin_read",
+      "purpose": "exact two-owner CAS probe readback",
+      "reservedAt": "2026-09-30T12:52:48.050Z",
+      "outcome": "RESPONSE",
+      "querySha256": "39ab5a22137a1ecb8e8f8af8cc580458410145f351774b01423abff8fd2886c7",
+      "completedAt": "2026-09-30T12:52:48.316Z",
+      "httpStatus": 200,
+      "responseBytes": 1716,
+      "responseSha256": "4d1a7326320e3ceede9210f992fded42b951e137d20b51cd21b212998edc9584",
+      "topLevelKeys": [
+        "data",
+        "extensions"
+      ]
+    },
+    {
+      "id": "admin_set-02",
+      "kind": "admin_set",
+      "purpose": "intentionally stale compareDigest rejection",
+      "reservedAt": "2026-09-30T12:52:48.322Z",
+      "outcome": "RESPONSE",
+      "querySha256": "4584e38855cd098d536fd793f1fbbd875ecb9b3bf44d36615478e7714f7e8620",
+      "completedAt": "2026-09-30T12:52:48.572Z",
+      "httpStatus": 200,
+      "responseBytes": 270,
+      "responseSha256": "75632a2bc0caed037b151237b6961d1d137e2a2ff0b9112e802aa62c6facc9bc",
+      "topLevelKeys": [
+        "data",
+        "extensions"
+      ]
+    },
+    {
+      "id": "admin_read-03",
+      "kind": "admin_read",
+      "purpose": "exact own state before non-CAS probe-only cleanup",
+      "reservedAt": "2026-09-30T12:52:48.582Z",
+      "outcome": "RESPONSE",
+      "querySha256": "39ab5a22137a1ecb8e8f8af8cc580458410145f351774b01423abff8fd2886c7",
+      "completedAt": "2026-09-30T12:52:48.829Z",
+      "httpStatus": 200,
+      "responseBytes": 1716,
+      "responseSha256": "4d1a7326320e3ceede9210f992fded42b951e137d20b51cd21b212998edc9584",
+      "topLevelKeys": [
+        "data",
+        "extensions"
+      ]
+    },
+    {
+      "id": "admin_delete-01",
+      "kind": "admin_delete",
+      "purpose": "delete only two package-created isolated probe fields",
+      "reservedAt": "2026-09-30T12:52:48.834Z",
+      "outcome": "RESPONSE",
+      "querySha256": "86ecb994a2fdca71679520ffe872a0306452a3620bb1535c32d6f2552d0bbc0e",
+      "completedAt": "2026-09-30T12:52:49.120Z",
+      "httpStatus": 200,
+      "responseBytes": 490,
+      "responseSha256": "24d29dc9cb326817480233149f8dcfa11e3423b80ad5e4d848361c79f004a7e2",
+      "topLevelKeys": [
+        "data",
+        "extensions"
+      ]
+    },
+    {
+      "id": "admin_read-04",
+      "kind": "admin_read",
+      "purpose": "final exact absent probe readback and archived fixture",
+      "reservedAt": "2026-09-30T12:52:49.126Z",
+      "outcome": "RESPONSE",
+      "querySha256": "39ab5a22137a1ecb8e8f8af8cc580458410145f351774b01423abff8fd2886c7",
+      "completedAt": "2026-09-30T12:52:49.409Z",
+      "httpStatus": 200,
+      "responseBytes": 1079,
+      "responseSha256": "757daaa536c8eff1b8e9155df511e4b8d5478e01ffca18b6b40360b8915e3d8c",
+      "topLevelKeys": [
+        "data",
+        "extensions"
+      ]
+    }
+  ],
+  "staleCasRejected": true,
+  "prestate": {
+    "shop": {
+      "id": "gid://shopify/Shop/105501393179",
+      "domain": "insignia-rewrite-dev.myshopify.com",
+      "publicConfig": null,
+      "probe": null
+    },
+    "product": {
+      "id": "gid://shopify/Product/10485042479387",
+      "handle": "m0-014-optional-20260928",
+      "status": "ARCHIVED",
+      "onlineStoreUrl": null,
+      "variants": [
+        {
+          "id": "gid://shopify/ProductVariant/54061591232795",
+          "price": "20.00"
+        },
+        {
+          "id": "gid://shopify/ProductVariant/54061591265563",
+          "price": "20.00"
+        }
+      ],
+      "registration": null,
+      "policy": null,
+      "probe": null
+    }
+  },
+  "poststate": {
+    "shop": {
+      "id": "gid://shopify/Shop/105501393179",
+      "domain": "insignia-rewrite-dev.myshopify.com",
+      "publicConfig": null,
+      "probe": null
+    },
+    "product": {
+      "id": "gid://shopify/Product/10485042479387",
+      "handle": "m0-014-optional-20260928",
+      "status": "ARCHIVED",
+      "onlineStoreUrl": null,
+      "variants": [
+        {
+          "id": "gid://shopify/ProductVariant/54061591232795",
+          "price": "20.00"
+        },
+        {
+          "id": "gid://shopify/ProductVariant/54061591265563",
+          "price": "20.00"
+        }
+      ],
+      "registration": null,
+      "policy": null,
+      "probe": null
+    }
+  },
+  "conclusion": {
+    "exactProbePrestateRestored": true,
+    "productionEnforcementKeysTouched": false,
+    "productionEnforcementKeyWriteProved": false,
+    "functionPropagationProved": false,
+    "otherProviderCalls": 0
+  },
+  "operatorScriptLocalPath": "/tmp/insignia-m4-003-live-proof.mjs",
+  "operatorScriptSha256": "87751c2b15cf42071ab5306e798149da5f4a4812aa3b3044ef100e3d82743da1",
+  "assertedCreatedProbe": {
+    "shop": {
+      "ownerId": "gid://shopify/Shop/105501393179",
+      "namespace": "app--429028933633",
+      "key": "insignia_m4003_cas_probe_09b14421ebd14b8b",
+      "type": "single_line_text_field"
+    },
+    "product": {
+      "ownerId": "gid://shopify/Product/10485042479387",
+      "namespace": "app--429028933633",
+      "key": "insignia_m4003_cas_probe_09b14421ebd14b8b",
+      "type": "single_line_text_field"
+    },
+    "checksActuallyExecuted": [
+      "atomic set returned two distinct expected owner IDs",
+      "both exact readbacks matched owner, expanded app namespace, key, type and generated value",
+      "both readbacks contained a 64-character lowercase hex compareDigest",
+      "the deliberately wrong digest yielded a nonempty userErrors array",
+      "the next readback still matched the original generated value on both owners",
+      "metafieldsDelete returned two exact identifiers and the final readback was absent on both owners"
+    ]
+  },
+  "unretainedInDurableRegister": [
+    "generated probe value and its SHA-256",
+    "intermediate actual compareDigest strings",
+    "specific stale-CAS user error code; only nonempty userErrors and unchanged exact readback were retained"
+  ]
+}
