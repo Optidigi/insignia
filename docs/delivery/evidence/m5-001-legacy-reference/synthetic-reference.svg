@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="390" viewBox="0 0 1120 390" role="img" aria-label="Synthetic conceptual customizer states; not a legacy screenshot">
+  <rect width="1120" height="390" fill="#f4f5f7"/>
+  <text x="24" y="29" font-family="sans-serif" font-size="17" font-weight="bold" fill="#28323d">SYNTHETIC RECONSTRUCTION — NOT LEGACY EVIDENCE</text>
+  <g font-family="sans-serif" font-size="13" fill="#28323d">
+    <g transform="translate(22 52)">
+      <rect width="250" height="300" rx="8" fill="white" stroke="#bac2ca"/>
+      <text x="15" y="27" font-weight="bold">1  Initial preview</text>
+      <path d="M82 77 L105 64 L145 64 L168 77 L190 103 L171 120 L160 108 L160 245 L90 245 L90 108 L79 120 L60 103 Z" fill="#d7e1e9" stroke="#718293"/>
+      <rect x="105" y="124" width="40" height="35" fill="none" stroke="#6282a0" stroke-dasharray="4 3"/>
+      <text x="15" y="275">Choose a placement</text>
+    </g>
+    <g transform="translate(294 52)">
+      <rect width="250" height="300" rx="8" fill="white" stroke="#bac2ca"/>
+      <text x="15" y="27" font-weight="bold">2  Placement selected</text>
+      <path d="M82 77 L105 64 L145 64 L168 77 L190 103 L171 120 L160 108 L160 245 L90 245 L90 108 L79 120 L60 103 Z" fill="#d7e1e9" stroke="#718293"/>
+      <rect x="105" y="124" width="40" height="35" fill="#9bc5e8" fill-opacity=".35" stroke="#1769aa" stroke-width="2"/>
+      <text x="15" y="275">Front chest selected</text>
+    </g>
+    <g transform="translate(566 52)">
+      <rect width="250" height="300" rx="8" fill="white" stroke="#bac2ca"/>
+      <text x="15" y="27" font-weight="bold">3  Method and step</text>
+      <rect x="15" y="50" width="220" height="42" rx="4" fill="#f4f7fa" stroke="#bac2ca"/>
+      <text x="27" y="75">Method: synthetic print</text>
+      <rect x="15" y="105" width="220" height="42" rx="4" fill="#f4f7fa" stroke="#bac2ca"/>
+      <text x="27" y="130">Step: synthetic small</text>
+      <rect x="91" y="185" width="68" height="60" fill="none" stroke="#68717a" stroke-dasharray="5 4"/>
+      <rect x="108" y="200" width="34" height="30" fill="#d4d7dc" stroke="#52616f" stroke-dasharray="5 4"/>
+      <text x="15" y="275">Logo later placeholder</text>
+    </g>
+    <g transform="translate(838 52)">
+      <rect width="250" height="300" rx="8" fill="white" stroke="#bac2ca"/>
+      <text x="15" y="27" font-weight="bold">4  Quantity / review</text>
+      <text x="15" y="70">Variant: synthetic blue</text>
+      <text x="15" y="108">Quantity: 2</text>
+      <rect x="15" y="131" width="220" height="92" rx="4" fill="#f4f7fa" stroke="#bac2ca"/>
+      <text x="27" y="157">Front chest</text>
+      <text x="27" y="181">Synthetic print · small</text>
+      <text x="27" y="205">Logo later</text>
+      <text x="15" y="275">Mobile: same steps stack vertically</text>
+    </g>
+  </g>
+</svg>

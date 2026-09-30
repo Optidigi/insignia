@@ -108,6 +108,35 @@ export function createTenantRepository(executor: DatabaseExecutor) {
         .executeTakeFirst();
       return row ? mapShop(row) : null;
     },
+    async getShopByDomain(shopDomain: string): Promise<ShopRecord | null> {
+      const row = await executor
+        .selectFrom('shops')
+        .select(['shop_id', 'shop_domain', 'shopify_shop_id', 'current_generation'])
+        .where('shop_domain', '=', shopDomain)
+        .executeTakeFirst();
+      return row ? mapShop(row) : null;
+    },
+    async getCurrentAdminInstallation(shopId: string): Promise<{
+      generation: string;
+      externalInstallationId: string | null;
+      active: boolean;
+    } | null> {
+      const row = await executor
+        .selectFrom('shops')
+        .innerJoin('installation_generations as i', (join) =>
+          join.onRef('i.shop_id', '=', 'shops.shop_id').onRef('i.generation', '=', 'shops.current_generation'),
+        )
+        .select(['i.generation', 'i.external_installation_id', 'i.deactivated_at'])
+        .where('shops.shop_id', '=', shopId)
+        .executeTakeFirst();
+      return row
+        ? {
+            generation: row.generation,
+            externalInstallationId: row.external_installation_id,
+            active: row.deactivated_at === null,
+          }
+        : null;
+    },
 
     async createShop(
       transaction: Transaction<Database>,

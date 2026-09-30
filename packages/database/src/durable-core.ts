@@ -8,13 +8,21 @@ import type {
   SigningKeyStore,
   TransactionRunner,
 } from '@insignia/application';
+import { type GeometryV1, validateGeometry, validateGeometryBridge } from '@insignia/visualizer/geometry';
 import type { Transaction } from 'kysely';
+import { sql } from 'kysely';
 import type { Pool } from 'pg';
 import { createDatabase, type Database } from './client/database.js';
 import type { CredentialKeyRing } from './credentials/envelope.js';
+import { sha256CanonicalJson } from './hash/canonical.js';
 import { PgAcceptedQuoteRepository } from './repositories/accepted-quote.js';
 import { PgCommandRepository } from './repositories/command/pg-command-repository.js';
-import { type ConfigRecord, createConfigRepository, type RevisionRecord } from './repositories/config.js';
+import {
+  type ConfigRecord,
+  createConfigRepository,
+  createConfigRepositoryInternal,
+  type RevisionRecord,
+} from './repositories/config.js';
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
 import { PgProductionPublication, type ProductionPublicationRemote } from './repositories/production-publication.js';
@@ -66,7 +74,13 @@ export interface DurableCore {
     getEffective(shopId: string, productId: string): Promise<EffectiveQuoteRevision | null>;
   };
   readonly transactions: TransactionRunner<DurableTransaction>;
-  readonly commands: CommandRepository<DurableTransaction>;
+  readonly commands: CommandRepository<DurableTransaction> & {
+    lookup(identity: { shopId: string; namespace: string; key: string }): Promise<{
+      requestDigest: string;
+      status: string;
+      resultRef: string | null;
+    } | null>;
+  };
   readonly inbox: InboxRepository<DurableTransaction>;
   readonly outbox: OutboxRepository<DurableTransaction>;
   readonly configs: {
@@ -77,7 +91,13 @@ export interface DurableCore {
       shopId: string,
       configId: string,
     ): Promise<ConfigRecord | null>;
+    getConfigForUpdate(transaction: DurableTransaction, shopId: string, configId: string): Promise<ConfigRecord | null>;
     getByProduct(shopId: string, productId: string): Promise<ConfigRecord | null>;
+    getByProductForUpdate(
+      transaction: DurableTransaction,
+      shopId: string,
+      productId: string,
+    ): Promise<ConfigRecord | null>;
     updateDraft(
       transaction: DurableTransaction,
       input: {
@@ -90,9 +110,47 @@ export interface DurableCore {
     ): Promise<{ kind: 'updated'; config: ConfigRecord } | { kind: 'conflict' }>;
     getRevision(shopId: string, revisionId: string): Promise<RevisionRecord | null>;
     getValidatedPublishedRevision(shopId: string, revisionId: string): Promise<RevisionRecord | null>;
+    createValidatedRevision(
+      transaction: DurableTransaction,
+      input: {
+        shopId: string;
+        configId: string;
+        revisionId: string;
+        publishedValue: unknown;
+        geometry: { version: string; value: unknown };
+        mode: 'required' | 'optional';
+        createdByRef: string;
+      },
+    ): Promise<RevisionRecord>;
+    getRevisionGeometry(
+      shopId: string,
+      revisionId: string,
+    ): Promise<{
+      version: string;
+      value: unknown;
+      contentHash: string;
+      mode: 'required' | 'optional';
+    } | null>;
+    getCurrentPublication(
+      shopId: string,
+      configId: string,
+    ): Promise<{
+      operationId: string;
+      revisionId: string;
+      phase: string;
+      mode: 'required' | 'optional';
+      priorMode: 'required' | 'optional' | null;
+      status: string;
+    } | null>;
   };
   readonly tenants: {
     getShop(shopId: string): Promise<ShopRecord | null>;
+    getShopByDomain(shopDomain: string): Promise<ShopRecord | null>;
+    getCurrentAdminInstallation(shopId: string): Promise<{
+      generation: string;
+      externalInstallationId: string | null;
+      active: boolean;
+    } | null>;
     getActiveAuthorizationScope(input: {
       shopId: string;
       installationGeneration: string;
@@ -201,6 +259,16 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
     commands: {
       reserve: async (handle, identity) => commands.reserve(resolve(handle), identity),
       complete: async (handle, identity, resultRef) => commands.complete(resolve(handle), identity, resultRef),
+      lookup: async (identity) => {
+        const row = await database
+          .selectFrom('idempotency_records')
+          .select(['request_digest', 'status', 'result_ref'])
+          .where('shop_id', '=', identity.shopId)
+          .where('namespace', '=', identity.namespace)
+          .where('idempotency_key', '=', identity.key)
+          .executeTakeFirst();
+        return row ? { requestDigest: row.request_digest, status: row.status, resultRef: row.result_ref } : null;
+      },
     },
     inbox: {
       receive: (message) => inbox.receive(message),
@@ -218,13 +286,98 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       getConfig: (shopId, configId) => configs.getConfig(shopId, configId),
       getConfigInTransaction: async (handle, shopId, configId) =>
         createConfigRepository(resolve(handle)).getConfig(shopId, configId),
+      getConfigForUpdate: async (handle, shopId, configId) =>
+        createConfigRepositoryInternal(resolve(handle)).getConfigForUpdate(shopId, configId),
       getByProduct: (shopId, productId) => configs.getByProduct(shopId, productId),
+      getByProductForUpdate: async (handle, shopId, productId) =>
+        createConfigRepositoryInternal(resolve(handle)).getByProductForUpdate(shopId, productId),
       updateDraft: async (handle, input) => createConfigRepository(resolve(handle)).updateDraft(input),
       getRevision: (shopId, revisionId) => configs.getRevision(shopId, revisionId),
       getValidatedPublishedRevision: (shopId, revisionId) => configs.getValidatedPublishedRevision(shopId, revisionId),
+      createValidatedRevision: async (handle, input) => {
+        if (
+          input.geometry.version !== 'm5-geometry-v1' ||
+          !input.createdByRef ||
+          (input.mode !== 'required' && input.mode !== 'optional')
+        )
+          throw new Error('Revision geometry, mode and actor required');
+        const tx = resolve(handle);
+        const revision = await createConfigRepositoryInternal(tx).createRevision({
+          shopId: input.shopId,
+          configId: input.configId,
+          revisionId: input.revisionId,
+          schemaVersion: 'm2-published-config-v1',
+          publishedValue: input.publishedValue,
+          createdByRef: input.createdByRef,
+        });
+        validateGeometryBridge(
+          input.geometry.value as GeometryV1,
+          revision.publishedValue as Parameters<typeof validateGeometryBridge>[1],
+        );
+        await sql`INSERT INTO config_revision_geometry
+          (shop_id, config_id, revision_id, schema_version, mode, geometry_value, content_hash)
+          VALUES (${input.shopId}, ${input.configId}, ${input.revisionId}, ${input.geometry.version}, ${input.mode},
+            ${JSON.stringify(input.geometry.value)}::jsonb, ${sha256CanonicalJson(input.geometry.value)})`.execute(tx);
+        return revision;
+      },
+      getRevisionGeometry: async (shopId, revisionId) => {
+        const rows = await sql<{
+          schema_version: string;
+          mode: 'required' | 'optional';
+          geometry_value: unknown;
+          content_hash: string;
+        }>`
+          SELECT schema_version, mode, geometry_value, content_hash FROM config_revision_geometry
+          WHERE shop_id=${shopId} AND revision_id=${revisionId}`.execute(database);
+        const row = rows.rows[0];
+        if (!row) return null;
+        if (sha256CanonicalJson(row.geometry_value) !== row.content_hash)
+          throw new Error('Revision geometry hash mismatch');
+        if (row.schema_version !== 'm5-geometry-v1') throw new Error('Unsupported revision geometry version');
+        validateGeometry(row.geometry_value as GeometryV1);
+        const revision = await configs.getValidatedPublishedRevision(shopId, revisionId);
+        if (!revision) throw new Error('Revision geometry lacks published revision');
+        validateGeometryBridge(
+          row.geometry_value as GeometryV1,
+          revision.publishedValue as Parameters<typeof validateGeometryBridge>[1],
+        );
+        return {
+          version: row.schema_version,
+          value: row.geometry_value,
+          contentHash: row.content_hash,
+          mode: row.mode,
+        };
+      },
+      getCurrentPublication: async (shopId, configId) => {
+        const rows = await sql<{
+          operation_id: string;
+          revision_id: string;
+          phase: string;
+          mode: 'required' | 'optional';
+          prior_mode: 'required' | 'optional' | null;
+          status: string;
+        }>`SELECT o.operation_id, o.revision_id, p.phase, p.mode, p.prior_mode, o.status
+          FROM publication_operations o JOIN m4_publication_progress p
+          USING (shop_id, config_id, operation_id)
+          WHERE o.shop_id=${shopId} AND o.config_id=${configId}
+          ORDER BY o.operation_sequence DESC LIMIT 1`.execute(database);
+        const row = rows.rows[0];
+        return row
+          ? {
+              operationId: row.operation_id,
+              revisionId: row.revision_id,
+              phase: row.phase,
+              mode: row.mode,
+              priorMode: row.prior_mode,
+              status: row.status,
+            }
+          : null;
+      },
     },
     tenants: {
       getShop: (shopId) => tenants.getShop(shopId),
+      getShopByDomain: (shopDomain) => tenants.getShopByDomain(shopDomain),
+      getCurrentAdminInstallation: (shopId) => tenants.getCurrentAdminInstallation(shopId),
       getActiveAuthorizationScope: (input) => tenants.getActiveAuthorizationScope(input),
       lockActiveAuthorizationScope: (handle, input) =>
         createTenantRepository(resolve(handle)).lockActiveAuthorizationScope(input),

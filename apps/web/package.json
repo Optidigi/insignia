@@ -6,7 +6,7 @@
   "engines": { "node": "24.21.0" },
   "scripts": {
     "build": "astro check && astro build",
-    "test": "node --test test/*.test.mjs",
+    "test": "node --test test/*.test.mjs test/admin/*.test.mjs",
     "start": "node dist/server/entry.mjs"
   },
   "dependencies": {
@@ -14,15 +14,19 @@
     "@astrojs/preact": "6.0.5",
     "@insignia/application": "workspace:*",
     "@insignia/cart-authorization": "workspace:*",
+    "@insignia/contracts": "workspace:*",
     "@insignia/database": "workspace:*",
+    "@insignia/domain": "workspace:*",
     "@insignia/observability": "workspace:*",
     "@insignia/shopify": "workspace:*",
+    "@insignia/visualizer": "workspace:*",
     "@insignia/worker": "workspace:*",
     "astro": "7.3.5",
     "pg": "8.23.0",
     "preact": "10.29.8"
   },
   "devDependencies": {
+    "@shopify/shopify-api": "15.0.0",
     "@astrojs/check": "0.9.6",
     "@shopify/polaris-types": "1.1.0",
     "@types/node": "24.10.0",

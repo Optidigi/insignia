@@ -11,12 +11,20 @@ module.exports = {
       name: 'browser-does-not-import-server',
       severity: 'error',
       from: { path: '^(apps/storefront/src/|apps/web/src/islands/|packages/contracts/src/)' },
-      to: { path: '^(apps/worker/|packages/(shopify|artwork|database|observability|signer|cart-authorization)/)' },
+      to: {
+        path: '^(apps/(worker|web/src/server)/|packages/(shopify|artwork|database|observability|signer|cart-authorization)/)',
+      },
+    },
+    {
+      name: 'visualizer-does-not-import-server',
+      severity: 'error',
+      from: { path: '^packages/visualizer/src/' },
+      to: { path: '^(apps/|packages/(shopify|artwork|database|observability|signer|cart-authorization)/)' },
     },
     {
       name: 'browser-no-node-builtins',
       severity: 'error',
-      from: { path: '^(apps/storefront/src/|apps/web/src/islands/|packages/contracts/src/)' },
+      from: { path: '^(apps/storefront/src/|apps/web/src/islands/|packages/contracts/src/|packages/visualizer/src/)' },
       to: { dependencyTypes: ['core'] },
     },
     {

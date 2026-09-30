@@ -1,5 +1,5 @@
 {
-  "name": "@insignia/database",
+  "name": "@insignia/visualizer",
   "version": "0.0.1",
   "private": true,
   "type": "module",
@@ -7,6 +7,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
+    },
+    "./geometry": {
+      "types": "./dist/geometry.d.ts",
+      "default": "./dist/geometry.js"
     }
   },
   "scripts": {
@@ -15,17 +19,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@insignia/application": "workspace:*",
-    "@insignia/cart-authorization": "workspace:*",
-    "@insignia/contracts": "workspace:*",
-    "@insignia/domain": "workspace:*",
-    "@insignia/visualizer": "workspace:*",
-    "kysely": "0.29.6",
-    "pg": "8.23.0"
+    "konva": "10.7.0"
   },
   "devDependencies": {
-    "@types/node": "24.10.0",
-    "@types/pg": "8.23.1",
     "typescript": "5.9.3",
     "vitest": "5.0.2"
   }
