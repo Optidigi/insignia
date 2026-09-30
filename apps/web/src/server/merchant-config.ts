@@ -177,7 +177,7 @@ function state(
   if (phase === 'activation-pending') return 'REMOTE_READY_ACTIVATION_PENDING';
   if (phase === 'conflict') return 'CONFLICT';
   if (phase === 'operator-hold') return 'OPERATOR_HOLD';
-  if (phase === 'prepared') return 'PUBLISH_REQUESTED';
+  if (phase === 'prepared' || phase === 'intent') return 'PUBLISH_REQUESTED';
   return 'REMOTE_PENDING';
 }
 
@@ -251,6 +251,7 @@ export function createMerchantConfigService(input: {
             state: publicationState,
             revisionId: progress?.revisionId ?? config.effectiveRevisionId,
             sourceDraftVersion: progress?.sourceDraftVersion ?? null,
+            requestKey: progress?.requestKey ?? null,
             activeRevisionId: config.effectiveRevisionId,
             reason:
               publicationState === 'REMOTE_READY_ACTIVATION_PENDING'
@@ -479,6 +480,7 @@ export function createMerchantConfigService(input: {
             geometry: { version: GEOMETRY_VERSION, value: geometry },
             presentation: { version: 'm5-presentation-v1', labels: draft.labels ?? {} },
             sourceDraftVersion: data.draftVersion,
+            sourceInstallationGeneration: actor.installationGeneration,
             mode: draft.mode,
             createdByRef: actor.staffId,
           });
@@ -494,6 +496,9 @@ export function createMerchantConfigService(input: {
       const [revisionId, mode] = resultRef.split(':');
       if (!revisionId || (mode !== 'required' && mode !== 'optional'))
         throw new Error('Invalid durable publish result');
+      const sourceScope = await core.configs.getRevisionSourceScope(actor.tenantShopId, revisionId);
+      if (!sourceScope || sourceScope.installationGeneration !== actor.installationGeneration)
+        return { kind: 'forbidden', message: 'Publication belongs to a prior installation' };
       const existing = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
       if (existing && existing.operationId !== revisionId && existing.phase !== 'active')
         return { kind: 'conflict', message: 'A newer publication request exists' };

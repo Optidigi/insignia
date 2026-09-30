@@ -88,6 +88,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     }),
   );
   let paused = false;
+  let failPrepareOnce = false;
   let currentCurrency = 'USD';
   let release;
   let entered;
@@ -117,6 +118,10 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     publication() {
       return {
         async prepare(input) {
+          if (failPrepareOnce) {
+            failPrepareOnce = false;
+            throw new Error('synthetic crash after immutable intent commit');
+          }
           return { operationId: input.operationId, phase: 'prepared' };
         },
         async advance() {
@@ -239,12 +244,37 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     );
     assert.deepEqual(await service.copy(staff, productA, productB, 'copy-key-01'), copy);
     assert.equal((await service.read(staff, productB)).config.draft.mode, 'optional');
+    failPrepareOnce = true;
+    await assert.rejects(
+      service.publish(staff, productA, {
+        configId: created.configId,
+        draftVersion: '3',
+        idempotencyKey: 'publish-key-01',
+      }),
+      /synthetic crash after immutable intent commit/,
+    );
+    const intent = (await service.read(staff, productA)).config.publication;
+    assert.equal(intent.state, 'PUBLISH_REQUESTED');
+    assert.equal(intent.sourceDraftVersion, '3');
+    assert.equal(intent.requestKey, 'publish-key-01');
+    assert.equal(
+      (
+        await service.save(staff, productA, {
+          configId: created.configId,
+          draftVersion: '3',
+          draft: changed,
+          idempotencyKey: 'save-after-intent',
+        })
+      ).kind,
+      'saved',
+    );
     const published = await service.publish(staff, productA, {
       configId: created.configId,
       draftVersion: '3',
       idempotencyKey: 'publish-key-01',
     });
     assert.equal(published.kind, 'accepted');
+    assert.equal(published.revisionId, intent.revisionId);
     assert.equal(published.state, 'REMOTE_READY_ACTIVATION_PENDING');
     const geometry = await core.configs.getRevisionGeometry(shopId, published.revisionId);
     const presentation = await core.configs.getRevisionPresentation(shopId, published.revisionId);
@@ -268,6 +298,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
           geometry: { version: 'm5-geometry-v1', value: invalid.geometry },
           presentation: { version: 'm5-presentation-v1', labels: invalid.labels ?? {} },
           sourceDraftVersion: '3',
+          sourceInstallationGeneration: staff.installationGeneration,
           mode: 'required',
           createdByRef: 'staff-1',
         }),
@@ -278,7 +309,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
       (
         await service.save(staff, productA, {
           configId: created.configId,
-          draftVersion: '3',
+          draftVersion: '4',
           draft: newerDraft,
           idempotencyKey: 'save-key-03',
         })
@@ -310,7 +341,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
       );
       const newer = await service.publish(staff, productA, {
         configId: created.configId,
-        draftVersion: '4',
+        draftVersion: '5',
         idempotencyKey: 'publish-key-02',
       });
       assert.equal(newer.kind, 'accepted', 'an active older operation permits a newer revision');
@@ -330,7 +361,7 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
         (
           await service.save(staff, productA, {
             configId: created.configId,
-            draftVersion: '4',
+            draftVersion: '5',
             draft: {
               ...newerDraft,
               labels: { ...newerDraft.labels, methods: { ...newerDraft.labels?.methods, [sharedId]: 'New name' } },
@@ -344,11 +375,37 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
       assert.equal(observed.state, 'PUBLISH_REQUESTED');
       assert.equal(observed.revisionId, newer.revisionId);
       assert.equal(observed.activeRevisionId, published.revisionId);
-      assert.equal(observed.sourceDraftVersion, '4');
-      assert.equal((await service.read(staff, productA)).config.draftVersion, '5');
+      assert.equal(observed.sourceDraftVersion, '5');
+      assert.equal((await service.read(staff, productA)).config.draftVersion, '6');
     } finally {
       await sql.end();
     }
+    const productDConfig = await core.configs.getByProduct(shopId, '444');
+    const productDDraft = structuredClone(baseDraft());
+    productDDraft.geometry.views[0].image.revisionId = 'product_444';
+    productDDraft.geometry.views[0].variantImages = [];
+    productDDraft.geometry.views[0].placements[0].variantOverrides = [];
+    assert.equal(
+      (
+        await service.save(staff, productD, {
+          configId: productDConfig.configId,
+          draftVersion: '1',
+          draft: productDDraft,
+          idempotencyKey: 'save-productD',
+        })
+      ).kind,
+      'saved',
+    );
+    failPrepareOnce = true;
+    await assert.rejects(
+      service.publish(staff, productD, {
+        configId: productDConfig.configId,
+        draftVersion: '2',
+        idempotencyKey: 'publish-productD-before-prepare',
+      }),
+      /synthetic crash after immutable intent commit/,
+    );
+    assert.equal((await core.configs.getCurrentPublication(shopId, productDConfig.configId)).phase, 'intent');
     paused = true;
     const racing = service.copy(staff, productA, productC, 'copy-key-race');
     await enteredPromise;
@@ -358,6 +415,32 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     release();
     await assert.rejects(racing, /Current tenant installation required/);
     assert.equal(await core.configs.getByProduct(shopId, '333'), null);
+    assert.equal(
+      await core.configs.getCurrentPublication(shopId, created.configId),
+      null,
+      'prior-generation M4 progress must not become the new installation current publication',
+    );
+    assert.equal(
+      await core.configs.getCurrentPublication(shopId, productDConfig.configId),
+      null,
+      'old installation unprepared intent must disappear from current readback',
+    );
+    const reinstalledStaff = {
+      ...staff,
+      installationGeneration: '2',
+      installationId: 'gid://shopify/AppInstallation/456',
+    };
+    assert.equal(
+      (
+        await service.publish(reinstalledStaff, productA, {
+          configId: created.configId,
+          draftVersion: '3',
+          idempotencyKey: 'publish-key-01',
+        })
+      ).kind,
+      'forbidden',
+      'an old-generation immutable intent must not resume in the new installation',
+    );
   } finally {
     await core.close();
   }

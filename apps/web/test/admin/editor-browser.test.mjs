@@ -73,6 +73,7 @@ function response(config) {
         state: 'DRAFT',
         revisionId: null,
         sourceDraftVersion: null,
+        requestKey: null,
         activeRevisionId: null,
         reason: null,
         requiresAllChannelHold: null,
@@ -378,6 +379,18 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
         version = '5';
         return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
       }
+      if (mode === 'wrong-version') {
+        uncertainKey = request.headers()['idempotency-key'];
+        uncertainBody = body;
+        return route.fulfill({ json: { kind: 'saved', draftVersion: '999' } });
+      }
+      if (mode === 'wrong-version-retry') {
+        assert.equal(request.headers()['idempotency-key'], uncertainKey);
+        assert.deepEqual(body, uncertainBody);
+        current = body.draft;
+        version = '6';
+        return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
+      }
       if (mode === 'denied') return route.fulfill({ status: 403, json: { message: 'Synthetic permission denied' } });
       if (mode === 'invalid') return route.fulfill({ status: 422, json: { message: 'Synthetic draft invalid' } });
       current = { ...draft(), mode: 'required' };
@@ -438,6 +451,14 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
     await page.locator('s-button').filter({ hasText: 'Retry exact save' }).click();
     await page.getByText('Draft saved.').waitFor();
     await page.getByText('Draft version 5').waitFor();
+    mode = 'wrong-version';
+    await page.getByLabel('Customization mode').selectOption('optional');
+    await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await page.getByText('Save result is uncertain. Retry the exact request or reload.').waitFor();
+    assert.equal(await page.getByText('Draft version 5').count(), 1);
+    mode = 'wrong-version-retry';
+    await page.locator('s-button').filter({ hasText: 'Retry exact save' }).click();
+    await page.getByText('Draft version 6').waitFor();
     assert.ok(readCalls >= 4 && tokenCalls >= 5);
     assert.deepEqual(await context.cookies(), []);
 
@@ -495,6 +516,8 @@ test('interrupted publication resumes the identical request after reload and rea
         view.config.publishEligibility = { allowed: true, reason: null };
         view.config.publication.state = phase;
         view.config.publication.revisionId = phase === 'DRAFT' ? null : 'same-immutable-revision';
+        view.config.publication.sourceDraftVersion = phase === 'DRAFT' ? null : '1';
+        view.config.publication.requestKey = phase === 'DRAFT' ? null : 'm5pub_config-1_1';
         return route.fulfill({ json: view });
       }
       assert.equal(request.method(), 'POST');
@@ -565,10 +588,11 @@ test('publication retry keeps the original version after a newer draft edit when
       if (route.request().method() === 'GET') {
         const view = response(draft());
         view.config.draftVersion = '2';
-        view.config.publishEligibility = { allowed: true, reason: null };
+        view.config.publishEligibility = { allowed: false, reason: 'Newer draft is ineligible' };
         view.config.publication.state = state;
         view.config.publication.revisionId = 'same-immutable-revision';
         view.config.publication.sourceDraftVersion = '1';
+        view.config.publication.requestKey = 'm5pub_config-1_1';
         return route.fulfill({ json: view });
       }
       const key = route.request().headers()['idempotency-key'];
@@ -590,6 +614,64 @@ test('publication retry keeps the original version after a newer draft edit when
     await page.getByText('Remote ready; activation pending').waitFor();
     assert.equal(observedKey, 'm5pub_config-1_1');
     assert.equal(writes, 2);
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('stale stored publication is replaced by the current immutable intent despite newer ineligible draft', {
+  timeout: 25000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-stale-publication-token' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let state = 'PUBLISH_REQUESTED';
+    let writes = 0;
+    await page.route('**/api/admin/products/111/config', (route) => {
+      if (route.request().method() === 'GET') {
+        const view = response(draft());
+        view.config.draftVersion = '3';
+        view.config.publishEligibility = { allowed: false, reason: 'Newer draft feature unavailable' };
+        view.config.publication.state = state;
+        view.config.publication.revisionId = 'revision-B';
+        view.config.publication.sourceDraftVersion = '2';
+        view.config.publication.requestKey = 'publish-key-B';
+        return route.fulfill({ json: view });
+      }
+      writes++;
+      assert.equal(route.request().headers()['idempotency-key'], 'publish-key-B');
+      assert.equal(route.request().postDataJSON().draftVersion, '2');
+      state = 'REMOTE_READY_ACTIVATION_PENDING';
+      return route.fulfill({ status: 202, json: { kind: 'accepted', state, revisionId: 'revision-B' } });
+    });
+    await page.goto(server.base + '/live');
+    await page.evaluate(() =>
+      sessionStorage.setItem(
+        'insignia:m5:publish:111',
+        JSON.stringify({
+          method: 'POST',
+          body: { action: 'publish', configId: 'config-1', draftVersion: '1' },
+          key: 'm5pub_config-1_1',
+        }),
+      ),
+    );
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.getByText('Newer draft feature unavailable').waitFor();
+    await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
+    await page.getByText('Remote ready; activation pending').waitFor();
+    assert.equal(writes, 1);
   } finally {
     await browser?.close();
     server.child.kill('SIGTERM');

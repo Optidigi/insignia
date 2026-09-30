@@ -121,6 +121,7 @@ export interface DurableCore {
         geometry: { version: string; value: unknown };
         presentation: unknown;
         sourceDraftVersion: string;
+        sourceInstallationGeneration: string;
         mode: 'required' | 'optional';
         createdByRef: string;
       },
@@ -135,6 +136,10 @@ export interface DurableCore {
       mode: 'required' | 'optional';
     } | null>;
     getRevisionPresentation(shopId: string, revisionId: string): Promise<MerchantPresentation | null>;
+    getRevisionSourceScope(
+      shopId: string,
+      revisionId: string,
+    ): Promise<{ draftVersion: string; installationGeneration: string } | null>;
     getCurrentPublication(
       shopId: string,
       configId: string,
@@ -143,6 +148,7 @@ export interface DurableCore {
       revisionId: string;
       phase: string;
       sourceDraftVersion: string | null;
+      requestKey: string | null;
       mode: 'required' | 'optional';
       priorMode: 'required' | 'optional' | null;
       status: string;
@@ -304,6 +310,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           input.geometry.version !== 'm5-geometry-v1' ||
           !input.createdByRef ||
           !/^[1-9][0-9]*$/.test(input.sourceDraftVersion) ||
+          !/^[1-9][0-9]*$/.test(input.sourceInstallationGeneration) ||
           (input.mode !== 'required' && input.mode !== 'optional')
         )
           throw new Error('Revision geometry, mode and actor required');
@@ -349,11 +356,11 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           VALUES (${input.shopId}, ${input.configId}, ${input.revisionId}, ${input.geometry.version}, ${input.mode},
             ${JSON.stringify(input.geometry.value)}::jsonb, ${sha256CanonicalJson(input.geometry.value)})`.execute(tx);
         await sql`INSERT INTO config_revision_presentation
-          (shop_id, config_id, revision_id, schema_version, presentation_value, content_hash, source_draft_version)
+          (shop_id, config_id, revision_id, schema_version, presentation_value, content_hash,
+            source_draft_version, source_installation_generation)
           VALUES (${input.shopId}, ${input.configId}, ${input.revisionId}, ${presentation.version},
-            ${JSON.stringify(presentation)}::jsonb, ${sha256CanonicalJson(presentation)}, ${input.sourceDraftVersion}::bigint)`.execute(
-          tx,
-        );
+            ${JSON.stringify(presentation)}::jsonb, ${sha256CanonicalJson(presentation)},
+            ${input.sourceDraftVersion}::bigint, ${input.sourceInstallationGeneration}::bigint)`.execute(tx);
         return revision;
       },
       getRevisionGeometry: async (shopId, revisionId) => {
@@ -397,23 +404,66 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           throw new Error('Revision presentation mismatch');
         return MerchantPresentationSchema.parse(row.presentation_value);
       },
+      getRevisionSourceScope: async (shopId, revisionId) => {
+        const rows = await sql<{ draft_version: string; installation_generation: string }>`
+          SELECT source_draft_version::text AS draft_version,
+            source_installation_generation::text AS installation_generation
+          FROM config_revision_presentation
+          WHERE shop_id=${shopId} AND revision_id=${revisionId}
+            AND source_draft_version IS NOT NULL AND source_installation_generation IS NOT NULL`.execute(database);
+        return rows.rows[0]
+          ? { draftVersion: rows.rows[0].draft_version, installationGeneration: rows.rows[0].installation_generation }
+          : null;
+      },
       getCurrentPublication: async (shopId, configId) => {
         const rows = await sql<{
           operation_id: string;
           revision_id: string;
           phase: string;
           source_draft_version: string | null;
+          request_key: string | null;
           mode: 'required' | 'optional';
           prior_mode: 'required' | 'optional' | null;
           status: string;
-        }>`SELECT o.operation_id, o.revision_id, p.phase, p.mode, p.prior_mode, o.status,
-          rp.source_draft_version::text
-          FROM publication_operations o JOIN m4_publication_progress p
-          USING (shop_id, config_id, operation_id)
+        }>`WITH candidates AS (
+          SELECT o.operation_id, o.revision_id, p.phase, p.mode, p.prior_mode, o.status,
+            rp.source_draft_version::text, i.idempotency_key AS request_key,
+            r.created_at, o.operation_sequence
+          FROM publication_operations o
+          JOIN m4_publication_progress p USING (shop_id, config_id, operation_id)
+          JOIN shops current_shop
+            ON current_shop.shop_id=o.shop_id AND current_shop.current_generation=o.installation_generation
+          JOIN config_revisions r ON r.shop_id=o.shop_id AND r.config_id=o.config_id AND r.revision_id=o.revision_id
           LEFT JOIN config_revision_presentation rp
             ON rp.shop_id=o.shop_id AND rp.config_id=o.config_id AND rp.revision_id=o.revision_id
+          LEFT JOIN LATERAL (
+            SELECT idempotency_key FROM idempotency_records i
+            WHERE i.shop_id=o.shop_id AND i.namespace='m5-publish-config' AND i.status='completed'
+              AND i.result_ref=o.revision_id || ':' || p.mode
+            ORDER BY i.completed_at DESC LIMIT 1
+          ) i ON true
           WHERE o.shop_id=${shopId} AND o.config_id=${configId}
-          ORDER BY o.operation_sequence DESC LIMIT 1`.execute(database);
+          UNION ALL
+          SELECT r.revision_id AS operation_id, r.revision_id, 'intent'::text AS phase,
+            g.mode, NULL::text AS prior_mode, 'intent'::text AS status,
+            rp.source_draft_version::text, i.idempotency_key AS request_key,
+            r.created_at, NULL::bigint AS operation_sequence
+          FROM config_revisions r
+          JOIN config_revision_geometry g
+            ON g.shop_id=r.shop_id AND g.config_id=r.config_id AND g.revision_id=r.revision_id
+          JOIN config_revision_presentation rp
+            ON rp.shop_id=r.shop_id AND rp.config_id=r.config_id AND rp.revision_id=r.revision_id
+          JOIN shops s ON s.shop_id=r.shop_id AND s.current_generation=rp.source_installation_generation
+          JOIN idempotency_records i ON i.shop_id=r.shop_id AND i.namespace='m5-publish-config'
+            AND i.status='completed' AND i.result_ref=r.revision_id || ':' || g.mode
+          WHERE r.shop_id=${shopId} AND r.config_id=${configId}
+            AND NOT EXISTS (
+              SELECT 1 FROM publication_operations o
+              WHERE o.shop_id=r.shop_id AND o.config_id=r.config_id AND o.revision_id=r.revision_id
+            )
+        ) SELECT operation_id, revision_id, phase, mode, prior_mode, status,
+          source_draft_version, request_key FROM candidates
+        ORDER BY created_at DESC, operation_sequence DESC NULLS LAST LIMIT 1`.execute(database);
         const row = rows.rows[0];
         return row
           ? {
@@ -421,6 +471,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
               revisionId: row.revision_id,
               phase: row.phase,
               sourceDraftVersion: row.source_draft_version,
+              requestKey: row.request_key,
               mode: row.mode,
               priorMode: row.prior_mode,
               status: row.status,

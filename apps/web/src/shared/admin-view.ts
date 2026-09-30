@@ -33,6 +33,7 @@ export interface ConfigView {
       state: PublicationState;
       revisionId: string | null;
       sourceDraftVersion: string | null;
+      requestKey: string | null;
       activeRevisionId?: string | null;
       reason: string | null;
       requiresAllChannelHold: boolean | null;

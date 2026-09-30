@@ -254,11 +254,21 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
           const terminal = ['REMOTE_READY_ACTIVATION_PENDING', 'ACTIVE', 'CONFLICT', 'OPERATOR_HOLD'];
           if (data.config && !terminal.includes(data.config.publication.state)) {
             const stored = readPublicationRequest(productId);
-            const body = stored?.body as { action?: string; configId?: string } | undefined;
+            const body = stored?.body as { action?: string; configId?: string; draftVersion?: string } | undefined;
+            const source = data.config.publication.sourceDraftVersion;
+            const originalKey = data.config.publication.requestKey;
+            const serverMatches =
+              data.config.publication.state === 'DRAFT' ||
+              (body?.draftVersion === source && (!originalKey || stored?.key === originalKey));
             publicationPending.current =
-              stored?.method === 'POST' && body?.action === 'publish' && body.configId === data.config.configId
+              stored?.method === 'POST' &&
+              body?.action === 'publish' &&
+              body.configId === data.config.configId &&
+              typeof body.draftVersion === 'string' &&
+              serverMatches
                 ? stored
                 : null;
+            if (!publicationPending.current && stored) clearPublicationRequest(productId);
           } else {
             publicationPending.current = null;
             clearPublicationRequest(productId);
@@ -470,7 +480,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         response.kind !== 'saved' ||
         typeof response.draftVersion !== 'string' ||
         !/^[1-9][0-9]*$/.test(response.draftVersion) ||
-        BigInt(response.draftVersion) <= BigInt(view.config.draftVersion)
+        BigInt(response.draftVersion) !== BigInt(view.config.draftVersion) + 1n
       )
         throw new Error('Invalid successful save response');
       const saved = (request.body as { draft: MerchantDraft }).draft;
@@ -514,8 +524,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     }
   }
   async function publish() {
-    if (!productId || !view?.config || !['clean', 'saved'].includes(saveState)) return;
+    if (!productId || !view?.config) return;
     const open = ['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(view.config.publication.state);
+    if (!open && !publicationPending.current && !['clean', 'saved'].includes(saveState)) return;
     const sourceVersion = open ? view.config.publication.sourceDraftVersion : view.config.draftVersion;
     if (!publicationPending.current && !sourceVersion) {
       setStatus('The original publication request cannot be recovered. Contact an operator before retrying.');
@@ -526,7 +537,10 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       ({
         method: 'POST',
         body: { action: 'publish', configId: view.config.configId, draftVersion: sourceVersion },
-        key: `m5pub_${view.config.configId}_${sourceVersion}`,
+        key:
+          open && view.config.publication.requestKey
+            ? view.config.publication.requestKey
+            : `m5pub_${view.config.configId}_${sourceVersion}`,
       } satisfies PendingRequest);
     publicationPending.current = request;
     writePublicationRequest(productId, request);
@@ -1488,7 +1502,12 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   </p>
                 )}
                 <s-button
-                  disabled={busy || !view.config.publishEligibility.allowed || !['clean', 'saved'].includes(saveState)}
+                  disabled={
+                    busy ||
+                    (!publicationPending.current &&
+                      !['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(view.config.publication.state) &&
+                      (!view.config.publishEligibility.allowed || !['clean', 'saved'].includes(saveState)))
+                  }
                   onClick={() => void publish()}
                 >
                   {publicationPending.current ||
