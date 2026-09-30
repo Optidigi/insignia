@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { createDiagnosticObserver } from './diagnostic-observer.mjs';
 import { createPreviewOperator } from './read-register.mjs';
 
 const shop = 'insignia-rewrite-dev.myshopify.com';
@@ -102,6 +103,32 @@ test('ambiguous or inflated history stops before any send', () => {
   const item = setup({ counts: { adminRead: 1, adminAuth: 0, partnerRead: 0 } });
   try {
     assert.throws(() => createPreviewOperator({ directory: item.directory }), /history/);
+  } finally {
+    item.close();
+  }
+});
+
+test('one-shot loss applies only after a committed local save and never changes transport counts', () => {
+  const item = setup();
+  try {
+    const messages = [];
+    const observe = createDiagnosticObserver({
+      directory: item.directory,
+      writeEvent: (event) => messages.push(JSON.parse(event)),
+    });
+    writeFileSync(join(item.directory, 'discard-one-local-save-response'), 'discard-one-committed-local-save\n');
+    observe({ kind: 'authentication', authorized: true });
+    observe({ kind: 'local_save', result: 'conflict', draftVersion: null });
+    assert.throws(
+      () => observe({ kind: 'local_save', result: 'saved', draftVersion: '2' }),
+      /committed local response discarded/,
+    );
+    observe({ kind: 'local_save', result: 'saved', draftVersion: '2' });
+    assert.equal(messages.filter((event) => event.kind === 'local_response_discarded').length, 1);
+    assert.deepEqual(
+      JSON.parse(readFileSync(join(item.directory, 'external-register.json'))).counts,
+      item.state.counts,
+    );
   } finally {
     item.close();
   }

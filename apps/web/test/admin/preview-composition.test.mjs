@@ -134,6 +134,15 @@ test('live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous r
             },
           },
         });
+      if (query.includes('shopifyFunctions'))
+        return Response.json({
+          data: {
+            shop: { id: 'gid://shopify/Shop/501' },
+            shopifyFunctions: { nodes: [], pageInfo: { hasNextPage: false } },
+            cartTransforms: { nodes: [], pageInfo: { hasNextPage: false } },
+            validations: { nodes: [], pageInfo: { hasNextPage: false } },
+          },
+        });
       if (query.includes('currencyCode')) return Response.json({ data: { shop: { currencyCode: 'USD' } } });
       return Response.json({
         data: {
@@ -164,6 +173,9 @@ test('live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous r
       INSIGNIA_M5_002_PRODUCT_ID: product,
       SHOPIFY_CLIENT_ID: client,
       SHOPIFY_CLIENT_SECRET: secret,
+      INSIGNIA_M5_002_APP_RESOURCE: '777',
+      INSIGNIA_M5_002_TRANSFORM_QUERY_HASH: 'a'.repeat(64),
+      INSIGNIA_M5_002_VALIDATION_QUERY_HASH: 'b'.repeat(64),
       DATABASE_URL: dbUrl.href,
       APP_URL: 'https://synthetic.example.test',
     });
@@ -187,6 +199,19 @@ test('live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous r
       draft,
       idempotencyKey: 'synthetic-save-5002',
     };
+    let loss = true;
+    globalThis.__insigniaM5002Observe = (event) => {
+      if (loss && event.kind === 'local_save' && event.result === 'saved') {
+        loss = false;
+        throw new Error('Synthetic discarded local result');
+      }
+    };
+    await assert.rejects(services.configs.save(actor, product, input), /discarded/);
+    assert.equal(
+      (await services.configs.read(actor, product)).config.draftVersion,
+      '2',
+      'commit survives response loss',
+    );
     const saved = await services.configs.save(actor, product, input);
     assert.equal(saved.kind, 'saved');
     assert.deepEqual(

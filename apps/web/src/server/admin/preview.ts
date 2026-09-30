@@ -4,6 +4,8 @@ import { createDurableCore } from '@insignia/database';
 import {
   createAdminOnlineIdentity,
   createCatalogReader,
+  createFunctionOwnershipReconciler,
+  createPublicationAdminHttpTransport,
   createCatalogTransport,
   type OnlineStaffGrant,
   type CatalogProduct as ProviderProduct,
@@ -125,6 +127,7 @@ export function createDiagnosticPreviewServices(env: NodeJS.ProcessEnv): AdminSe
     },
   });
   let bootstrap: Promise<void> | undefined;
+  let observation: Promise<void> | undefined;
   return {
     close: () => core.close(),
     appOrigin: env.APP_URL,
@@ -181,7 +184,59 @@ export function createDiagnosticPreviewServices(env: NodeJS.ProcessEnv): AdminSe
         },
       });
       const actor = await authenticate(request);
-      if (actor && online) grants.set(actor, online);
+      if (actor && online) {
+        grants.set(actor, online);
+        if (
+          actor.canRead &&
+          env.INSIGNIA_M5_002_APP_RESOURCE &&
+          env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH &&
+          env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH
+        ) {
+          const bound = actor,
+            grant = online;
+          observation ??= (async () => {
+            try {
+              const functions = await createFunctionOwnershipReconciler({
+                transport: createPublicationAdminHttpTransport({
+                  credentials: {
+                    async acquire(scope) {
+                      await active(bound);
+                      if (
+                        scope.shopId !== bound.tenantShopId ||
+                        scope.installationGeneration !== bound.installationGeneration
+                      )
+                        return { kind: 'inactive' as const };
+                      return {
+                        kind: 'usable' as const,
+                        shopDomain: shop,
+                        accessToken: grant.accessToken,
+                        accessExpiresAt: new Date(grant.expiresAtMs),
+                      };
+                    },
+                  },
+                }),
+              }).read(
+                {
+                  shopId: bound.tenantShopId,
+                  installationGeneration: bound.installationGeneration,
+                  shopifyShopId: shopId,
+                  appId: env.INSIGNIA_M5_002_APP_RESOURCE!,
+                },
+                {
+                  appKey: client,
+                  transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+                  validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+                },
+              );
+              await active(bound);
+              globalThis.__insigniaM5002Observe?.({ kind: 'function_objects', functions });
+            } catch {
+              globalThis.__insigniaM5002Observe?.({ kind: 'function_objects_unavailable' });
+            }
+          })();
+          await observation;
+        }
+      }
       globalThis.__insigniaM5002Observe?.({
         kind: 'authentication',
         path: new URL(request.url).pathname,
