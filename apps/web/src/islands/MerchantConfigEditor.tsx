@@ -1028,7 +1028,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                             max="1"
                             step="0.01"
                             value={selectedRect[field]}
-                            onChange={(event) => {
+                            onInput={(event) => {
                               const value = Number(event.currentTarget.value);
                               if (Number.isFinite(value))
                                 choose({

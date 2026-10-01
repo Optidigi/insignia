@@ -1,3 +1,5 @@
+> **Current M5-002R2 disposition:** [Local stabilization report](M5-002R2-REPORT.md) supersedes the local-blocker/grant-repair request below. Owner retains nine grants; no remote operation is authorized. The following earlier report remains historical evidence.
+
 > **M5-002R correction — 1 October 2026.** Current continuation: [M5-002R report](M5-002R-REPORT.md) and [external PR-028 verdict](PR-028-principal-review.md). Production source remains unchanged. New live observations are partial; exact cleanup is ambiguous. Final correction refs, CI and fresh review dispositions are in the PR body. The original packet below remains historical.
 
 # Principal review packet — M5-002

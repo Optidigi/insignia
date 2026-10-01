@@ -58,6 +58,8 @@ function featurePolicy(env: NodeJS.ProcessEnv): { catalog: EntitlementPolicyConf
 export function createProductionAdminServices(
   env: NodeJS.ProcessEnv = process.env,
   databasePool?: Pool,
+  // Inject only provider/entitlement time; identity and online grants keep real time.
+  entitlementClock: () => Date = () => new Date(),
 ): AdminServices {
   const databaseUrl = required(env, 'DATABASE_URL');
   const apiKey = required(env, 'SHOPIFY_CLIENT_ID');
@@ -72,6 +74,7 @@ export function createProductionAdminServices(
   const partner =
     policy && appGid && env.INSIGNIA_PARTNER_ORGANIZATION_ID && env.INSIGNIA_PARTNER_ACCESS_TOKEN
       ? createActiveSubscriptionClient({
+          now: entitlementClock,
           transport: createPartnerGraphqlTransport({
             organizationId: env.INSIGNIA_PARTNER_ORGANIZATION_ID,
             accessToken: env.INSIGNIA_PARTNER_ACCESS_TOKEN,
@@ -153,7 +156,7 @@ export function createProductionAdminServices(
         shopId: actor.shopId,
         tenantShopId: actor.tenantShopId,
         installationGeneration: actor.installationGeneration,
-        now: new Date(),
+        now: entitlementClock(),
       });
       const needed = [policy.features.base];
       if (draft.mode === 'required') needed.push(policy.features.required);

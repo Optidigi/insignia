@@ -1,3 +1,5 @@
+> **Current M5-002R2 disposition:** [Local stabilization report](M5-002R2-REPORT.md) supersedes the local-blocker/grant-repair request below. Owner retains nine grants; no remote operation is authorized. The following earlier report remains historical evidence.
+
 # M5-002R — corrected hydration observed; qualification remains blocked
 
 ## Disposition

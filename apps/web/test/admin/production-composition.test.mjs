@@ -57,7 +57,7 @@ function validDraft() {
 test('production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold', {
   skip: !database,
   timeout: 30000,
-}, async () => {
+}, async (t) => {
   const output = new URL('../../.astro/m5-production-composition.mjs', import.meta.url);
   await mkdir(new URL('../../.astro/', import.meta.url), { recursive: true });
   await build({
@@ -78,6 +78,7 @@ test('production composition uses signed staff SDK, current feature policy and r
   const shopId = `gid://shopify/Shop/${shopNumber}`;
   const shop = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
   let providerMode = 'current';
+  let entitlementNow = '2026-09-30T23:59:59.999Z';
   let adminMutations = 0;
   let partnerReads = 0;
   let sdkExchanges = 0;
@@ -228,6 +229,7 @@ test('production composition uses signed staff SDK, current feature policy and r
         INSIGNIA_M5_FEATURES_JSON: JSON.stringify(features),
       },
       pool,
+      () => new Date(entitlementNow),
     );
     const actor = await services.authenticate(
       new Request('https://synthetic.example/api/admin/products', {
@@ -255,6 +257,19 @@ test('production composition uses signed staff SDK, current feature policy and r
       const read = await services.configs.read(actor, productId);
       assert.equal(read.config.publishEligibility.allowed, allowed, mode);
     }
+    providerMode = 'cancelled';
+    for (const [instant, allowed] of [
+      ['2026-09-30T23:59:59.999Z', true],
+      ['2026-10-01T00:00:00.000Z', false],
+      ['2026-10-01T00:00:00.001Z', false],
+    ]) {
+      await t.test(`scheduled cancellation boundary ${instant}: allowed=${allowed}`, async () => {
+        entitlementNow = instant;
+        const read = await services.configs.read(actor, productId);
+        assert.equal(read.config.publishEligibility.allowed, allowed);
+      });
+    }
+    entitlementNow = '2026-09-30T23:59:59.999Z';
     providerMode = 'current';
     const published = await services.configs.publish(actor, productId, {
       configId: created.configId,

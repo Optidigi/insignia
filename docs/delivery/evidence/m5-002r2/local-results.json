@@ -1,0 +1,47 @@
+{
+  "authority": "owner explicit local-only M5-002R2 message, 2026-10-01",
+  "reviewedBase": "28e69864ebb9796504861a541363880cc86a82f8",
+  "reviewedHead": "bd32f9763c033586374d9f072d01fb59d5a3ad1e",
+  "reviewedTree": "217db18d714daf26365f4935579b3f1aaed351f6",
+  "rootRuntime": {
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "high",
+    "evidence": "trusted T3 Codex runtime message; project historical config is superseded by actual launch"
+  },
+  "sourceSha256": {
+    "apps/web/src/server/admin/production.ts": "cc2487cf7976786ac1897493e40b12540032ba178af831088e86cf23d879e52b",
+    "apps/web/src/islands/MerchantConfigEditor.tsx": "550f05d9ffc1fe62de61c7b2b64afbc6040ca5158c36c8d9f90471d01dd18b40",
+    "apps/web/test/admin/production-composition.test.mjs": "042bd71671abafc03f0087f95581efeb7ca56621ca7a78597414a8376b71d8f9",
+    "apps/web/test/admin/editor-browser.test.mjs": "8d4f221af51bc36f064ca7aa210a17aa102d0cf6547d9de5a0b033dc9897326b"
+  },
+  "localResults": {
+    "rootExit": 0,
+    "postgresExit": 0,
+    "postgresVersion": "18.6",
+    "databaseCoreTests": 52,
+    "httpCompositionTestsIncludingBoundarySubtests": 11,
+    "stressExit": 0,
+    "stressPass": 100,
+    "stressFail": 0,
+    "stressRetries": 0,
+    "stressCombinations": {
+      "dirty/success": 25,
+      "dirty/failed": 25,
+      "ambiguous/success": 25,
+      "ambiguous/failed": 25
+    },
+    "rendererControl": "expected actual-module rejection; wrapper exit 0"
+  },
+  "externalOperations": {
+    "Admin": 0,
+    "Partner": 0,
+    "ShopifyCLI": 0,
+    "ownerCredentialReads": 0
+  },
+  "grantsDisposition": "owner retains nine grants as dev-store preview state; no new remote verification or repair",
+  "FunctionDisposition": "DEV_PREVIEW_OBSERVED remains live-unqualified; production still requires RELEASE_BOUND",
+  "attachment": {
+    "sha256": "d5e973471f35be8516122f9865a53baac1f91c33e92b931d6e3f8e516d938d39",
+    "contents": "old M5-002R package, not requested R2 brief; explicit owner message governs"
+  }
+}

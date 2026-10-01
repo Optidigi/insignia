@@ -980,6 +980,73 @@ test('interrupted publication resumes the identical request after reload and rea
   }
 });
 
+test('numeric placement input reaches owner state before blur and survives an owner rerender', {
+  timeout: 25000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  assert.equal(createHash('sha256').update(source).digest('hex'), polarisSha);
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    page.setDefaultTimeout(5000);
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-owner-input-token' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+    let current = draft();
+    let version = '1';
+    let saved;
+    await page.route('**/api/admin/products/111/config', (route) => {
+      if (route.request().method() === 'GET') {
+        const view = response(current);
+        view.config.draftVersion = version;
+        return route.fulfill({ json: view });
+      }
+      assert.equal(route.request().method(), 'PUT');
+      saved = route.request().postDataJSON();
+      current = saved.draft;
+      version = '2';
+      return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
+    });
+    await page.goto(server.base + '/admin/products/111/config');
+    await page.getByLabel('Placement').first().selectOption('front');
+    await page.getByText('Preview: ready', { exact: true }).waitFor();
+    await page.getByLabel('centerX', { exact: true }).fill('0.6');
+    // Keep the numeric input focused: an independent selection updates the
+    // owner's state before the native change/blur event can commit the edit.
+    await page.getByLabel('Selected step').evaluate((select) => {
+      select.value = 'small';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve())));
+    assert.equal(await page.getByLabel('centerX', { exact: true }).inputValue(), '0.6');
+    assert.equal(
+      await page.getByLabel('centerX', { exact: true }).evaluate((input) => input === document.activeElement),
+      true,
+    );
+    await page.waitForFunction(() => {
+      const preview = document.querySelector('#insignia-visualizer');
+      const scene = JSON.parse(preview.getAttribute('data-projected-geometry'));
+      const placement = scene.placements.find((item) => item.id === 'front');
+      const actual = (placement.bounds.x - scene.contentRect.x + placement.bounds.width / 2) / scene.contentRect.width;
+      return scene.version === Number(preview.getAttribute('data-editor-version')) && Math.abs(actual - 0.6) < 1e-12;
+    });
+    await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await page.getByText('Draft saved.', { exact: true }).waitFor();
+    assert.equal(saved.draft.geometry.views[0].placements[0].rect.centerX, 0.6);
+    await page.reload();
+    await page.getByLabel('Placement').first().selectOption('front');
+    assert.equal(await page.getByLabel('centerX', { exact: true }).inputValue(), '0.6');
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
 const stressIterations = Number(process.env.M5_PUBLICATION_STRESS_ITERATIONS ?? '1');
 if (!Number.isInteger(stressIterations) || stressIterations < 1 || stressIterations > 100)
   throw new Error('Invalid publication stress iteration count');
