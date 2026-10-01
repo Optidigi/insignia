@@ -3,7 +3,9 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { createOperator, IDENTITY, initialize, TARGET } from './operator.mjs';
+import { createOperator, IDENTITY, initialize as initializeReal, TARGET } from './operator.mjs';
+
+const initialize = (directory, binding) => initializeReal(directory, binding, { synthetic: true });
 
 test('actual HTTP attempts are durably reserved before dispatch', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'm5004-'));
@@ -31,11 +33,12 @@ test('actual HTTP attempts are durably reserved before dispatch', async () => {
 });
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, writeFileSync } from 'node:fs';
-import { digest, freeze } from './binding.mjs';
+import { chmodSync, existsSync, mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { digest, freeze, verifyGate } from './binding.mjs';
 import {
   ADAPTER_UPDATE,
   assertIdentity,
+  assertOwned,
   assertUnpublished,
   CREATE,
   FIND,
@@ -43,7 +46,7 @@ import {
   GRANTS,
   SETUP,
 } from './operator.mjs';
-import { qualify } from './qualification.mjs';
+import { qualify, qualifySynthetic } from './qualification.mjs';
 
 function fixture(_directory, state, status = 'DRAFT') {
   return {
@@ -88,12 +91,21 @@ async function setup(options = {}) {
       active--;
       const body = JSON.parse(init.body);
       if (options.failure?.(body)) throw new Error('synthetic response lost');
+      if (body.query === ADAPTER_READ && options.readResponse) return options.readResponse();
       if (body.query === CREATE) return Response.json({ data: { productCreate: { product, userErrors: [] } } });
       if (body.query === SETUP || body.query === ADAPTER_UPDATE) {
+        if (options.mutationResponse) return options.mutationResponse();
         product = { ...product, status: body.variables.product.status };
         return Response.json({ data: { productUpdate: { product, userErrors: [] } } });
       }
-      return Response.json({ data: body.query === IDENTITY ? identity() : { product } });
+      return Response.json({
+        data:
+          body.query === IDENTITY
+            ? identity()
+            : body.query === ADAPTER_READ
+              ? { ...identity(), node: product }
+              : { product },
+      });
     },
   });
   const post = (query, variables = {}) =>
@@ -154,7 +166,7 @@ test('fixed targets/documents/variables reject unrelated writes and extra payloa
 test('normal reserves cannot consume final 12 reads/3 updates; all attempts count, one lock and one create', async () => {
   const f = await setup();
   try {
-    assert.throws(() => createOperator({ directory: f.directory }), /EEXIST/);
+    assert.throws(() => createOperator({ directory: f.directory, fetchImpl: async () => Response.json({}) }), /EEXIST/);
     assert.throws(() => initialize(f.directory, { source: 'other' }), /EEXIST/);
     await assert.rejects(
       f.post(CREATE, {
@@ -273,11 +285,11 @@ test('auth exact app/route counts3 and never persists synthetic secret or return
 test('missing/corrupt history never reinitializes or sends', () => {
   const directory = mkdtempSync(join(tmpdir(), 'm5004-'));
   try {
-    assert.throws(() => createOperator({ directory }));
+    assert.throws(() => createOperator({ directory, fetchImpl: async () => Response.json({}) }));
     const state = initialize(directory, { source: 'synthetic-source', modules: {} });
     state.counts.create = 1;
     writeFileSync(join(directory, 'register.json'), JSON.stringify(state));
-    assert.throws(() => createOperator({ directory }), /register_history/);
+    assert.throws(() => createOperator({ directory, fetchImpl: async () => Response.json({}) }), /register_history/);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -299,10 +311,17 @@ test('offline gate prevents even credential loading', async () => {
   assert.equal(loaded, false);
 });
 
-async function qualificationFixture({ mismatch = false, lost = false, published = false, wrongIdentity = false } = {}) {
+async function qualificationFixture({
+  mismatch = false,
+  lost = false,
+  published = false,
+  wrongIdentity = false,
+  metadataDrift = false,
+} = {}) {
   const root = mkdtempSync(join(tmpdir(), 'm5004-source-'));
   const directory = join(root, 'run');
   for (const name of [
+    '.github/workflows',
     'scripts/m5-004',
     'packages/shopify/src',
     'packages/shopify/dist',
@@ -375,7 +394,10 @@ async function qualificationFixture({ mismatch = false, lost = false, published 
       return Response.json({ data: { productUpdate: { product, userErrors: [] } } });
     }
     if (query === ADAPTER_READ) return Response.json({ data: { ...identity(), node: product } });
-    if (query === FIXTURE) return Response.json({ data: { product } });
+    if (query === FIXTURE) {
+      if (metadataDrift) product = { ...product, tags: [state.run, 'unrelated'] };
+      return Response.json({ data: { product } });
+    }
     if (query === FIND)
       return Response.json({
         data: { products: { nodes: [product], pageInfo: { hasNextPage: false, hasPreviousPage: false } } },
@@ -412,7 +434,7 @@ import { ADAPTER_READ, CATALOG_DETAIL, CATALOG_LIST } from './operator.mjs';
 test('full qualification reuses unchanged actual status/catalog adapters, fresh-process hold reload and drift refusal', async () => {
   const f = await qualificationFixture();
   try {
-    const result = await qualify({
+    const result = await qualifySynthetic({
       ...f,
       credentialLoader: () => ({ secret: 'synthetic-test-secret', ownership: { synthetic: true } }),
     });
@@ -429,7 +451,7 @@ test('full qualification reuses unchanged actual status/catalog adapters, fresh-
     assert.equal(state.counts.create, 1);
     assert.equal(state.counts.auth, 1);
     assert.equal(state.counts.update, 12);
-    assert.ok(state.counts.read <= 70);
+    assert.equal(state.counts.read, 62);
     assert.ok(f.writes.every((x) => ['DRAFT', 'ACTIVE', 'UNLISTED', 'ARCHIVED'].includes(x.status)));
     const text = readFileSync(join(f.directory, 'register.json'), 'utf8');
     assert.ok(!text.includes('synthetic-test-secret') && !text.includes('synthetic-token-not-real'));
@@ -442,11 +464,12 @@ for (const [name, options, expected] of [
   ['unexpected exposure', { published: true }, 'OWNERSHIP_UNRESOLVED_NO_MORE_MUTATIONS'],
   ['visibility mismatch', { mismatch: true }, 'UNRESOLVED_NO_MORE_MUTATIONS'],
   ['natural lost response', { lost: true }, 'UNRESOLVED_NO_MORE_MUTATIONS'],
+  ['metadata drift', { metadataDrift: true }, 'UNRESOLVED_NO_MORE_MUTATIONS'],
 ])
   test(`complete workflow stops on ${name}; no manufacture or unsafe cleanup`, async () => {
     const f = await qualificationFixture(options);
     try {
-      const result = await qualify({
+      const result = await qualifySynthetic({
         ...f,
         credentialLoader: () => ({ secret: 'synthetic-test-secret', ownership: { synthetic: true } }),
       });
@@ -454,9 +477,324 @@ for (const [name, options, expected] of [
       assert.equal(result.final.outcome, expected);
       const state = JSON.parse(readFileSync(join(f.directory, 'register.json')));
       assert.ok(state.counts.create <= 1);
-      if (options.wrongIdentity || options.published) assert.equal(state.counts.update, 0);
+      if (options.wrongIdentity || options.published || options.metadataDrift) assert.equal(state.counts.update, 0);
       if (options.lost || options.mismatch) assert.equal(f.writes.filter((x) => x.query === ADAPTER_UPDATE).length, 1);
     } finally {
       f.close();
     }
   });
+
+test('live register is canonical; synthetic initialization rejects unsafe directories and lost history', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'm5004-register-'));
+  try {
+    assert.throws(() => initializeReal(directory, { source: 'synthetic', modules: {} }), /canonical_register/);
+    chmodSync(directory, 0o777);
+    assert.throws(() => initialize(directory, { source: 'synthetic', modules: {} }), /register_permissions/);
+    chmodSync(directory, 0o700);
+    initialize(directory, { source: 'synthetic', modules: {} });
+    unlinkSync(join(directory, 'register.json'));
+    assert.throws(() => initialize(directory, { source: 'synthetic', modules: {} }), /EEXIST/);
+    assert.ok(!existsSync(join(directory, 'register.json')));
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('malformed/unsuccessful mutation responses stay unknown; only valid explicit rejection permits finalization', async () => {
+  for (const [status, userErrors, expected] of [
+    [500, [{ field: ['status'], message: 'synthetic error' }], 'UNKNOWN'],
+    [200, [{ field: ['status'] }], 'UNKNOWN'],
+    [200, [{ field: ['status'], message: 'synthetic error' }], 'REJECTED'],
+  ]) {
+    const f = await setup({
+      mutationResponse: () => Response.json({ data: { productUpdate: { product: null, userErrors } } }, { status }),
+    });
+    try {
+      f.operator.step('rejected', 'ACTIVE', SETUP);
+      await f.post(SETUP, { product: { id: f.product().id, status: 'ACTIVE' } });
+      assert.equal(f.operator.state().events.at(-1).result, expected);
+      if (expected === 'UNKNOWN') assert.throws(() => f.operator.finalize(), /unsettled_write/);
+      else f.operator.finalize();
+    } finally {
+      f.close();
+    }
+  }
+});
+
+test('lock cannot release while late HTTP/body work can still persist history', async () => {
+  const directory = mkdtempSync(join(tmpdir(), 'm5004-late-'));
+  initialize(directory, { source: 'synthetic', modules: {} });
+  let release;
+  const delayed = new Promise((r) => {
+    release = r;
+  });
+  const op = createOperator({
+    directory,
+    fetchImpl: async () => {
+      await delayed;
+      return Response.json({ data: identity() });
+    },
+  });
+  const pending = op.fetch(`https://${TARGET.domain}/admin/api/2026-07/graphql.json`, {
+    method: 'POST',
+    body: JSON.stringify({ query: IDENTITY, variables: {} }),
+  });
+  await Promise.resolve();
+  try {
+    assert.throws(() => op.close(), /pending_dispatch/);
+    assert.throws(() => createOperator({ directory, fetchImpl: async () => Response.json({}) }), /EEXIST/);
+  } finally {
+    release();
+    await pending;
+    try {
+      op.close();
+    } catch {}
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+test('acknowledged fixture metadata baseline rejects added tags or changed creation identity', async () => {
+  const f = await setup();
+  try {
+    for (const change of [
+      { tags: [f.initial.run, 'unrelated'] },
+      { createdAt: new Date(Date.parse(f.product().createdAt) + 1).toISOString() },
+    ]) {
+      assert.throws(() => assertOwned({ ...f.product(), ...change }, f.operator.state()), /fixture_identity/);
+    }
+  } finally {
+    f.close();
+  }
+});
+
+import { createShopifyAvailabilityHoldPort } from '../../packages/shopify/dist/index.js';
+
+const testScope = {
+  shopId: 'synthetic',
+  installationGeneration: '1',
+  shopifyShopId: TARGET.shop,
+  appClientId: TARGET.client,
+};
+const adapter = (fetchImpl) =>
+  createShopifyAvailabilityHoldPort({
+    isCurrent: async () => true,
+    credentials: {
+      acquire: async () => ({
+        kind: 'usable',
+        shopDomain: TARGET.domain,
+        accessToken: 'synthetic-token',
+        accessExpiresAt: new Date(Date.now() + 86400000),
+      }),
+    },
+    fetchImpl,
+  });
+const observedKind = async (fn) => {
+  try {
+    return (await fn()).state;
+  } catch (e) {
+    return e.kind;
+  }
+};
+test('actual adapter HTTP/GraphQL outcomes survive bounded transport and sanitized response replay', async () => {
+  for (const [status, wire, expected] of [
+    [403, '', 'forbidden'],
+    [429, 'not-json', 'throttled'],
+    [500, 'not-json', 'provider_unavailable'],
+    [200, 'not-json', 'provider_shape'],
+    [200, { errors: [{ message: 'synthetic sensitive text', extensions: { code: 'THROTTLED' } }] }, 'throttled'],
+    [200, { errors: null }, 'provider_shape'],
+    [200, null, 'unavailable'],
+  ]) {
+    let f;
+    f = await setup({
+      readResponse: () =>
+        new Response(
+          typeof wire === 'string' ? wire : JSON.stringify(wire ?? { data: { ...identity(), node: f.product() } }),
+          { status },
+        ),
+    });
+    try {
+      assert.equal(await observedKind(() => adapter(f.operator.fetch).snapshot(testScope, f.product().id)), expected);
+      const event = f.operator.state().events.at(-1);
+      assert.equal(event.httpStatus, status);
+      const replay = () =>
+        new Response(event.replayBody ?? JSON.stringify(event.response), { status: event.httpStatus });
+      assert.equal(await observedKind(() => adapter(replay).snapshot(testScope, f.product().id)), expected);
+      assert.ok(!JSON.stringify(event).includes('synthetic sensitive text'));
+    } finally {
+      f.close();
+    }
+  }
+});
+
+test('foreign live root and stale register binding cannot reach credential loading', async () => {
+  let loaded = false;
+  await assert.rejects(
+    qualify({
+      root: '/foreign-checkout',
+      directory: '/tmp/alternate',
+      binding: {},
+      gate: {},
+      credentialLoader: () => {
+        loaded = true;
+      },
+    }),
+    /executing_root/,
+  );
+  assert.equal(loaded, false);
+  const f = await qualificationFixture();
+  try {
+    const state = JSON.parse(readFileSync(join(f.directory, 'register.json')));
+    state.binding.source = 'stale-source';
+    writeFileSync(join(f.directory, 'register.json'), JSON.stringify(state));
+    await assert.rejects(
+      qualifySynthetic({
+        ...f,
+        credentialLoader: () => {
+          loaded = true;
+          return { secret: 'synthetic-secret' };
+        },
+      }),
+      /register_source_binding/,
+    );
+    assert.equal(loaded, false);
+  } finally {
+    f.close();
+  }
+});
+
+test('gate rejects incomplete CI and unbound review receipts even when every supplied workflow is green', async () => {
+  const f = await qualificationFixture();
+  try {
+    assert.throws(() => verifyGate(f.root, f.gate, f.binding), /offline_gate/);
+  } finally {
+    f.close();
+  }
+});
+
+test('complete source/build/review/CI gate accepts bound receipts and rejects omissions, stale refs or altered evidence', async () => {
+  const f = await qualificationFixture();
+  try {
+    const names = [
+      'M0-008 local publication and architecture checks',
+      'M0-009 embedded Astro local proof',
+      'M0-010 local hybrid billing proof',
+      'M0-011 local provider adapter boundary',
+      'M0-012 real contract local prototype',
+      'M0-013 off-store protocol capacity',
+      'M0-014 local public-app candidate',
+      'M1-001 foundation and boundaries',
+      'M3-001 PostgreSQL durable core',
+      'M3-002 local runtime and ingress',
+    ];
+    const base = 'a7b2ba236f6b7726f48af0cd50ae14e0b7cc8e30',
+      fingerprint = digest(JSON.stringify(f.binding));
+    const artifact = (name, text) => {
+      const path = join(f.directory, name);
+      writeFileSync(path, text);
+      return { path, sha256: digest(text) };
+    };
+    const reviews = ['spec', 'security'].map((role, i) => {
+      const thread = `00000000-0000-0000-0000-00000000000${i}`;
+      return {
+        role,
+        thread,
+        base,
+        head: f.binding.source,
+        bindingDigest: fingerprint,
+        model: 'gpt-6.1-sol',
+        effort: 'high',
+        sandbox: 'read-only',
+        verdict: 'no unresolved material finding',
+        report: artifact(role + '.md', 'Synthetic source-bound report'),
+        settings: artifact(
+          role + '.json',
+          JSON.stringify({
+            role,
+            thread,
+            selectedSameLaunchContext: [
+              {
+                cwd: f.root,
+                model: 'gpt-6.1-sol',
+                effort: 'high',
+                sandbox_policy: { type: 'read-only' },
+                approval_policy: 'never',
+              },
+            ],
+          }),
+        ),
+      };
+    });
+    const good = {
+      source: f.binding.source,
+      base,
+      bindingDigest: fingerprint,
+      offline: {
+        source: f.binding.source,
+        bindingDigest: fingerprint,
+        exitCode: 0,
+        report: artifact('offline.log', 'synthetic exit0'),
+      },
+      reviews,
+      ci: names.map((workflowName, i) => ({
+        workflowName,
+        headSha: f.binding.source,
+        status: 'completed',
+        conclusion: 'success',
+        databaseId: 9000 + i,
+        url: `https://github.com/Optidigi/insignia/actions/runs/${9000 + i}`,
+      })),
+    };
+    const verify = (g) => verifyGate(f.root, g, f.binding, { evidenceRoot: f.directory });
+    verify(good);
+    for (const change of [
+      (g) => g.ci.pop(),
+      (g) => (g.ci[0].conclusion = 'failure'),
+      (g) => (g.ci[0].headSha = 'stale'),
+      (g) => (g.reviews[0].head = 'stale'),
+      (g) => (g.reviews[0].bindingDigest = '0'.repeat(64)),
+      (g) => (g.offline.source = 'stale'),
+      (g) => (g.reviews[1].thread = g.reviews[0].thread),
+    ]) {
+      const bad = structuredClone(good);
+      change(bad);
+      assert.throws(() => verify(bad), /offline_gate/);
+    }
+    writeFileSync(good.reviews[0].report.path, 'modified');
+    assert.throws(() => verify(good), /gate_artifact/);
+  } finally {
+    f.close();
+  }
+});
+test('actual adapter user-error failure remains identical when replayed from sanitized mutation evidence', async () => {
+  const f = await setup({
+    mutationResponse: () =>
+      Response.json({
+        data: {
+          productUpdate: {
+            product: null,
+            userErrors: [{ field: ['status'], message: 'synthetic sensitive rejection' }],
+          },
+        },
+      }),
+  });
+  try {
+    f.setProduct({ ...f.product(), status: 'ACTIVE' });
+    const port = adapter(f.operator.fetch);
+    const before = await port.snapshot(testScope, f.product().id);
+    f.operator.step('user-error', 'DRAFT', ADAPTER_UPDATE);
+    const intent = { version: 'm5-availability-hold-v1', operationId: 'synthetic-user-error', before, held: null };
+    const kind = await observedKind(() => port.acquire(testScope, intent));
+    assert.equal(kind, 'user_error');
+    const e = f.operator.state().events.at(-1);
+    assert.equal(e.result, 'REJECTED');
+    assert.ok(!JSON.stringify(e).includes('synthetic sensitive rejection'));
+    const replay = adapter(async (_u, init) =>
+      JSON.parse(init.body).query === ADAPTER_UPDATE
+        ? Response.json(e.response, { status: e.httpStatus })
+        : Response.json({ data: { ...identity(), node: f.product() } }),
+    );
+    assert.equal(await observedKind(() => replay.acquire(testScope, intent)), kind);
+  } finally {
+    f.close();
+  }
+});

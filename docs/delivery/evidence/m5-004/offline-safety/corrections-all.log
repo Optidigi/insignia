@@ -1,0 +1,44 @@
+✔ actual HTTP attempts are durably reserved before dispatch (9.454491ms)
+✔ fixed targets/documents/variables reject unrelated writes and extra payload before actual HTTP (3.498851ms)
+✔ normal reserves cannot consume final 12 reads/3 updates; all attempts count, one lock and one create (157.831794ms)
+✔ naturally lost mutation response stops all later writes and cleanup across reopen; no automatic retry (2.063912ms)
+✔ real routing identity, nine retained grants and complete empty publication history are mandatory (1.852429ms)
+✔ auth exact app/route counts3 and never persists synthetic secret or returned token (1.694114ms)
+✔ missing/corrupt history never reinitializes or sends (0.664086ms)
+✔ offline gate prevents even credential loading (0.234377ms)
+✔ full qualification reuses unchanged actual status/catalog adapters, fresh-process hold reload and drift refusal (480.053118ms)
+✔ complete workflow stops on changed installation; no manufacture or unsafe cleanup (19.557322ms)
+✔ complete workflow stops on unexpected exposure; no manufacture or unsafe cleanup (19.586654ms)
+✔ complete workflow stops on visibility mismatch; no manufacture or unsafe cleanup (149.430989ms)
+✔ complete workflow stops on natural lost response; no manufacture or unsafe cleanup (90.447826ms)
+✔ live register is canonical; synthetic initialization rejects unsafe directories and lost history (0.612427ms)
+✔ malformed/unsuccessful mutation responses stay unknown; only valid explicit rejection permits finalization (4.224868ms)
+✔ lock cannot release while late HTTP/body work can still persist history (0.980959ms)
+✔ acknowledged fixture metadata baseline rejects added tags or changed creation identity (1.133546ms)
+✔ actual adapter HTTP/GraphQL outcomes survive bounded transport and sanitized response replay (12.184083ms)
+✔ foreign live root and stale register binding cannot reach credential loading (18.120568ms)
+✔ gate rejects incomplete CI and unbound review receipts even when every supplied workflow is green (24.574666ms)
+✔ complete source/build/review/CI gate accepts bound receipts and rejects omissions, stale refs or altered evidence (80.731848ms)
+✖ actual adapter user-error failure remains identical when replayed from sanitized mutation evidence (1.933917ms)
+ℹ tests 22
+ℹ suites 0
+ℹ pass 21
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1293.610813
+
+✖ failing tests:
+
+test at scripts/m5-004/operator.test.mjs:751:1
+✖ actual adapter user-error failure remains identical when replayed from sanitized mutation evidence (1.933917ms)
+  Error [ShopifyAvailabilityHoldError]: Shopify availability hold failed: owner_mismatch
+      at fail (file:///home/serveradmin/insignia-m5-004-worktree/packages/shopify/dist/availability-hold.js:42:11)
+      at read (file:///home/serveradmin/insignia-m5-004-worktree/packages/shopify/dist/availability-hold.js:403:20)
+      at async Object.snapshot (file:///home/serveradmin/insignia-m5-004-worktree/packages/shopify/dist/availability-hold.js:447:21)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-004-worktree/scripts/m5-004/operator.test.mjs:766:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    kind: 'owner_mismatch'
+  }

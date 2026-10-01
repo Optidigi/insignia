@@ -19,6 +19,7 @@ export const TARGET = Object.freeze({
   shop: 'gid://shopify/Shop/105501393179',
   installation: 'gid://shopify/AppInstallation/1054356963611',
 });
+export const LIVE_DIRECTORY = '/home/serveradmin/insignia-m5-004-handoff/run';
 export const LIMITS = Object.freeze({ auth: 3, read: 96, create: 1, update: 16 });
 export const GRANTS = [
   'read_products',
@@ -110,8 +111,20 @@ function persist(directory, state) {
     closeSync(dir);
   }
 }
-export function initialize(directory, binding) {
+function protectDirectory(directory) {
+  const d = lstatSync(directory);
+  requireValue(
+    d.isDirectory() && !d.isSymbolicLink() && d.uid === process.getuid() && (d.mode & 0o077) === 0,
+    'register_permissions',
+  );
+}
+export function initialize(directory, binding, { synthetic = false } = {}) {
+  requireValue(synthetic || resolve(directory) === LIVE_DIRECTORY, 'canonical_register');
   mkdirSync(directory, { recursive: true, mode: 0o700 });
+  protectDirectory(directory);
+  const sentinel = openSync(resolve(directory, 'initialized.once'), 'wx', 0o600);
+  fsyncSync(sentinel);
+  closeSync(sentinel);
   const marker = `insignia-m5-004-${randomUUID()}`;
   const state = {
     version: 1,
@@ -123,6 +136,7 @@ export function initialize(directory, binding) {
     counts: { auth: 0, read: 0, create: 0, update: 0 },
     events: [],
     fixture: null,
+    fixtureIdentity: null,
     identity: null,
     owned: false,
     unpublished: null,
@@ -188,6 +202,21 @@ function validate(state) {
     state.events.every((e) => e.source === state.binding.source),
     'register_source',
   );
+  if (state.owned) {
+    const product = state.events.find((e) => e.kind === 'create' && e.result === 'ACKNOWLEDGED')?.response?.data
+      ?.productCreate?.product;
+    requireValue(
+      product &&
+        JSON.stringify(state.fixtureIdentity) ===
+          JSON.stringify({
+            handle: product.handle,
+            title: product.title,
+            tags: product.tags,
+            createdAt: product.createdAt,
+          }),
+      'register_fixture_identity',
+    );
+  }
 }
 export function assertIdentity(data) {
   const install = data?.currentAppInstallation;
@@ -221,6 +250,16 @@ export function assertUnpublished(product) {
 }
 export function assertOwned(product, state) {
   assertUnpublished(product);
+  if (state.fixtureIdentity)
+    requireValue(
+      JSON.stringify({
+        handle: product.handle,
+        title: product.title,
+        tags: product.tags,
+        createdAt: product.createdAt,
+      }) === JSON.stringify(state.fixtureIdentity),
+      'fixture_identity',
+    );
   requireValue(
     product.handle === state.run &&
       product.title === state.run &&
@@ -252,13 +291,51 @@ async function body(response) {
     reader.releaseLock();
   }
   const text = Buffer.concat(chunks, length).toString('utf8');
+  let value;
   try {
-    return { value: JSON.parse(text), digest: hash(text) };
+    value = JSON.parse(text);
   } catch {
-    throw new Stop('response_json');
+    /* Preserve malformed JSON for the unchanged adapter. */
   }
+  return { value, text, digest: hash(text) };
 }
+function sanitizeEnvelope(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
+  const out = {};
+  if (Object.hasOwn(raw, 'data')) out.data = structuredClone(raw.data);
+  if (Object.hasOwn(raw, 'errors')) {
+    out.errors = Array.isArray(raw.errors)
+      ? raw.errors.map((e) => {
+          if (!e || typeof e !== 'object' || Array.isArray(e)) return e;
+          const copy = structuredClone(e);
+          if (typeof copy.message === 'string') copy.message = '<redacted provider message>';
+          if (copy.extensions && typeof copy.extensions === 'object') {
+            const code = copy.extensions.code;
+            copy.extensions = Object.hasOwn(copy.extensions, 'code')
+              ? {
+                  code:
+                    typeof code === 'string' && !['THROTTLED', 'MAX_COST_EXCEEDED', 'ACCESS_DENIED'].includes(code)
+                      ? '<redacted code>'
+                      : code,
+                }
+              : {};
+          }
+          return copy;
+        })
+      : structuredClone(raw.errors);
+  }
+  for (const field of ['productCreate', 'productUpdate']) {
+    const errors = out.data?.[field]?.userErrors;
+    if (Array.isArray(errors))
+      for (const error of errors)
+        if (error && typeof error.message === 'string') error.message = '<redacted provider message>';
+  }
+  return out;
+}
+
 export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
+  requireValue(fetchImpl !== globalThis.fetch || resolve(directory) === LIVE_DIRECTORY, 'canonical_register');
+  protectDirectory(directory);
   const lock = resolve(directory, 'operator.lock');
   const fd = openSync(lock, 'wx', 0o600);
   writeFileSync(fd, JSON.stringify({ pid: process.pid }));
@@ -285,7 +362,8 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
   }
   let step = null,
     closed = false,
-    serial = Promise.resolve();
+    serial = Promise.resolve(),
+    pendingDispatches = 0;
   const unknownWrite = () =>
     state.events.some((e) => ['create', 'update'].includes(e.kind) && ['RESERVED', 'UNKNOWN'].includes(e.result));
   const save = () => persist(directory, state);
@@ -310,6 +388,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
   }
   async function dispatch(url, init) {
     requireValue(!closed, 'closed');
+    requireValue(!init?.signal?.aborted, 'cancelled_before_dispatch');
     const u = new URL(url);
     requireValue(
       u.origin === `https://${TARGET.domain}` &&
@@ -440,6 +519,15 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
         redirect: 'error',
         signal: AbortSignal.any([AbortSignal.timeout(12_000), ...(init.signal ? [init.signal] : [])]),
       });
+      event.httpStatus = response.status;
+      if (kind !== 'auth' && response.status !== 200) {
+        event.result = ['create', 'update'].includes(kind) ? 'UNKNOWN' : 'RESPONDED';
+        event.replayBody = '';
+        event.bodyObservation = 'NOT_READ_STATUS_CLASSIFIED';
+        save();
+        void response.body?.cancel().catch(() => {});
+        return new Response(null, { status: response.status });
+      }
       parsed = await body(response);
     } catch {
       event.result = 'UNKNOWN';
@@ -451,31 +539,36 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
       // Never persist access tokens, credentials, headers, auth bodies or their digests.
       event.result = response.ok ? 'RESPONDED' : 'REJECTED';
       save();
-      return Response.json(parsed.value, { status: response.status });
+      return new Response(parsed.text, { status: response.status });
     }
     event.responseDigest = parsed.digest;
-    event.response = {
-      data: structuredClone(parsed.value.data ?? null),
-      errors: parsed.value.errors?.map((e) => ({ path: e.path ?? null, code: e.extensions?.code ?? null })) ?? null,
-    };
-    // Remote error messages are not retained. The selected fixture fields remain factual raw data.
-    for (const field of ['productCreate', 'productUpdate'])
-      if (event.response.data?.[field]?.userErrors) {
-        event.response.data[field].userErrors = event.response.data[field].userErrors.map((e) => ({ field: e.field }));
-      }
-    const mutation = parsed.value.data?.[kind === 'create' ? 'productCreate' : 'productUpdate'];
+    if (parsed.value === undefined) event.replayBody = 'invalid-json-redacted';
+    else event.response = sanitizeEnvelope(parsed.value);
+    const mutation = parsed.value?.data?.[kind === 'create' ? 'productCreate' : 'productUpdate'];
     if (['create', 'update'].includes(kind)) {
       const product = mutation?.product;
       event.result =
-        response.ok &&
-        !parsed.value.errors &&
+        response.status === 200 &&
+        parsed.value &&
+        !Object.hasOwn(parsed.value, 'errors') &&
         mutation?.userErrors?.length === 0 &&
         product &&
         gid.test(product.id) &&
         product.status === request.variables.product.status &&
         (kind === 'create' || product.id === state.fixture)
           ? 'ACKNOWLEDGED'
-          : mutation?.userErrors?.length > 0 && !product && !parsed.value.errors
+          : response.status === 200 &&
+              mutation?.product === null &&
+              Array.isArray(mutation.userErrors) &&
+              mutation.userErrors.length > 0 &&
+              mutation.userErrors.every(
+                (e) =>
+                  e &&
+                  typeof e.message === 'string' &&
+                  (e.field === null || (Array.isArray(e.field) && e.field.every((x) => typeof x === 'string'))),
+              ) &&
+              parsed.value &&
+              !Object.hasOwn(parsed.value, 'errors')
             ? 'REJECTED'
             : 'UNKNOWN';
       if (kind === 'create' && event.result === 'ACKNOWLEDGED') {
@@ -484,12 +577,18 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
         try {
           assertOwned(product, state);
           state.owned = true;
+          state.fixtureIdentity = {
+            handle: product.handle,
+            title: product.title,
+            tags: [...product.tags],
+            createdAt: product.createdAt,
+          };
         } catch {
           state.blocked = 'creation_ownership_or_exposure';
         }
       }
     } else event.result = 'RESPONDED';
-    const product = mutation?.product ?? parsed.value.data?.product ?? parsed.value.data?.node;
+    const product = mutation?.product ?? parsed.value?.data?.product ?? parsed.value?.data?.node;
     if (product && Object.hasOwn(product, 'resourcePublications')) {
       try {
         assertUnpublished(product);
@@ -501,7 +600,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
       }
     }
     save();
-    return Response.json(parsed.value, { status: response.status });
+    return new Response(parsed.text, { status: response.status });
   }
   return {
     state: () => structuredClone(state),
@@ -541,12 +640,18 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
       save();
     },
     fetch(url, init) {
-      const pending = serial.then(() => dispatch(url, init));
+      pendingDispatches++;
+      const pending = serial
+        .then(() => dispatch(url, init))
+        .finally(() => {
+          pendingDispatches--;
+        });
       serial = pending.catch(() => {});
       return pending;
     },
     close() {
       requireValue(!closed, 'closed');
+      requireValue(pendingDispatches === 0, 'pending_dispatch');
       closed = true;
       unlinkSync(lock);
     },

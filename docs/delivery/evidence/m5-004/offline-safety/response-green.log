@@ -1,0 +1,10 @@
+✔ malformed/unsuccessful mutation responses stay unknown; only valid explicit rejection permits finalization (16.386215ms)
+✔ actual adapter HTTP/GraphQL outcomes survive bounded transport and sanitized response replay (18.200742ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 251.898941

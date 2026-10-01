@@ -17,6 +17,7 @@ import {
   FIND,
   FIXTURE,
   IDENTITY,
+  LIVE_DIRECTORY,
   requireValue,
   SETUP,
   Stop,
@@ -37,8 +38,8 @@ export const REQUEST_PLAN = Object.freeze({
   create: 1,
   updates: 13,
   finalUpdatesReserved: 3,
-  // 5 serial cycle identity reads, 4 setups, 3 acquire/restore pairs,
-  // drift acquire/update, readback/membership, two catalog reads; conservative bound.
+  // Nominal: 59 normal reads +3 final reads; 12 status mutations.
+  // Additional conservative capacity remains below84/13 normal limits.
   normalReadsMaximum: 70,
   finalReadsReserved: 12,
   cases: ['DRAFT', 'ACTIVE', 'UNLISTED', 'ARCHIVED', 'observed-drift'],
@@ -78,19 +79,46 @@ export function protectedCredentials() {
     },
   };
 }
-export async function qualify({
-  root = ROOT,
-  directory,
-  binding,
-  gate,
-  credentialLoader = protectedCredentials,
-  fetchImpl = globalThis.fetch,
-}) {
-  // Must precede even credential-file metadata/content access.
-  verifyGate(root, gate, binding);
+export async function qualify({ root = ROOT, directory = LIVE_DIRECTORY, binding, gate }) {
+  requireValue(root === ROOT, 'executing_root');
+  requireValue(resolve(directory) === LIVE_DIRECTORY, 'canonical_register');
+  verifyGate(ROOT, gate, binding);
+  const operator = createOperator({ directory });
+  return runQualification({ operator, directory, binding, credentialLoader: protectedCredentials });
+}
+// Explicit offline seam: no default credentials/transport, no live source-attestation claim.
+export async function qualifySynthetic({ directory, binding, credentialLoader, fetchImpl }) {
+  requireValue(
+    typeof fetchImpl === 'function' &&
+      fetchImpl !== globalThis.fetch &&
+      typeof credentialLoader === 'function' &&
+      credentialLoader !== protectedCredentials &&
+      resolve(directory) !== LIVE_DIRECTORY,
+    'synthetic_boundaries',
+  );
   const operator = createOperator({ directory, fetchImpl });
+  return runQualification({
+    operator,
+    directory,
+    binding,
+    synthetic: true,
+    credentialLoader: () => {
+      const value = credentialLoader();
+      requireValue(value.secret?.startsWith('synthetic-'), 'synthetic_credential');
+      return value;
+    },
+  });
+}
+async function runQualification({ operator, directory, binding, credentialLoader, synthetic = false }) {
+  try {
+    requireValue(JSON.stringify(operator.state().binding) === JSON.stringify(binding), 'register_source_binding');
+  } catch (error) {
+    operator.close();
+    throw error;
+  }
   const evidence = {
     version: 1,
+    executionMode: synthetic ? 'SYNTHETIC_OFF_STORE' : 'LIVE_FROZEN_OPERATOR',
     binding,
     plan: REQUEST_PLAN,
     provider: [],
@@ -177,6 +205,7 @@ export async function qualify({
         auth.expires_in <= 86400,
       'admin_auth_contract',
     );
+    requireValue(!synthetic || auth.access_token.startsWith('synthetic-'), 'synthetic_bearer');
     token = { value: auth.access_token, expiresAt: Date.now() + auth.expires_in * 1000 };
     await identity();
     requireValue(
@@ -355,7 +384,8 @@ export async function qualify({
 }
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
   try {
-    const directory = resolve(process.argv[2]);
+    requireValue(process.argv.length === 2 || resolve(process.argv[2]) === LIVE_DIRECTORY, 'canonical_register');
+    const directory = LIVE_DIRECTORY;
     const binding = JSON.parse(readFileSync(resolve(directory, 'binding.json')));
     const gate = JSON.parse(readFileSync(resolve(directory, 'gate.json')));
     const result = await qualify({ directory, binding, gate });

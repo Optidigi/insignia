@@ -1,0 +1,30 @@
+✖ actual adapter HTTP/GraphQL outcomes survive bounded transport and sanitized response replay (13.315936ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 210.394487
+
+✖ failing tests:
+
+test at scripts/m5-004/operator.test.mjs:511:1
+✖ actual adapter HTTP/GraphQL outcomes survive bounded transport and sanitized response replay (13.315936ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'network_or_timeout'
+  - 'forbidden'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-004-worktree/scripts/m5-004/operator.test.mjs:514:13)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'network_or_timeout',
+    expected: 'forbidden',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

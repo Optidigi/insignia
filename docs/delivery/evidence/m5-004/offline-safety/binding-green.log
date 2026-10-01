@@ -1,0 +1,15 @@
+✔ offline gate prevents even credential loading (1.702531ms)
+✔ full qualification reuses unchanged actual status/catalog adapters, fresh-process hold reload and drift refusal (503.127378ms)
+✔ complete workflow stops on changed installation; no manufacture or unsafe cleanup (19.511022ms)
+✔ complete workflow stops on unexpected exposure; no manufacture or unsafe cleanup (19.558942ms)
+✔ complete workflow stops on visibility mismatch; no manufacture or unsafe cleanup (153.2011ms)
+✔ complete workflow stops on natural lost response; no manufacture or unsafe cleanup (90.46579ms)
+✔ foreign live root and stale register binding cannot reach credential loading (17.807514ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1009.387886

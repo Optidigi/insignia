@@ -1,0 +1,10 @@
+✔ lock cannot release while late HTTP/body work can still persist history (9.662575ms)
+✔ acknowledged fixture metadata baseline rejects added tags or changed creation identity (2.561051ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 202.221235
