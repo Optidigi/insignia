@@ -6,6 +6,7 @@ import type {
   ProductAvailabilityHoldPort,
   ProductAvailabilitySnapshot,
 } from '@insignia/application';
+import { activationDigest, availabilitySnapshotIdentityDigest } from '@insignia/application';
 import { type Kysely, sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../src/client/database.js';
@@ -34,7 +35,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     await database?.destroy();
   });
 
-  async function fixture() {
+  async function fixture(initialMode: 'required' | 'optional' = 'required') {
     const shopId = randomUUID();
     const providerShop = BigInt(`0x${shopId.replaceAll('-', '').slice(0, 12)}`).toString();
     const configId = randomUUID();
@@ -92,12 +93,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
           presentation: { version: 'm5-presentation-v1', labels: {} },
         }),
       );
-    await createRevision(revisionId, 'required');
+    await createRevision(revisionId, initialMode);
     const cells = new Map<
       string,
       { ownerId: string; namespace: string; key: string; type: string; value: string; compareDigest: string }
     >();
     let remoteReads = 0;
+    let remoteWrites = 0;
     let beforeRead: (() => Promise<void>) | undefined;
     const remote: ProductionPublicationRemote = {
       read: async (target) => {
@@ -106,6 +108,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         return cells.get(target.field) ?? null;
       },
       set: async (target) => {
+        remoteWrites++;
         if ((cells.get(target.field)?.compareDigest ?? null) !== target.compareDigest)
           throw new Error('Synthetic CAS mismatch');
         const observed = {
@@ -167,7 +170,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
               },
       },
       observeFunctions: async () => ({ transform: 'present', validation: 'present', observation }),
-      currentDay: async () => 20727,
+      currentDay: () => 20727,
     };
     const availabilityScope = { ...artifactScope, shopifyShopId: `gid://shopify/Shop/${providerShop}` };
     let current: ProductAvailabilitySnapshot = {
@@ -184,7 +187,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     let acquisitions = 0;
     let restores = 0;
     const availability: ProductAvailabilityHoldPort = {
-      snapshot: async () => current,
+      snapshot: async (scope) => ({ ...current, scope }),
       acquire: async (_scope, hold) => {
         const receipt = await sql<{
           kind: string;
@@ -224,6 +227,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         return { kind: 'RESTORED', current };
       },
     };
+    let recoveryAuthority: import('@insignia/application').TrustedAvailabilityRecoveryAuthorityPort | undefined;
     const options = {
       appId: '101',
       appClientId: 'synthetic-app',
@@ -234,9 +238,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       maxObservationAgeMs: 1000,
     };
     const identity = { shopId, configId, operationId };
-    const restart = () => core.productionActivations.create(options);
+    const restart = () => core.productionActivations.create({ ...options, recoveryAuthority });
     const activation = restart();
-    await activation.publications.prepare({ ...identity, revisionId, mode: 'required' });
+    await activation.publications.prepare({ ...identity, revisionId, mode: initialMode });
     const prepareHold = async () => {
       expect((await restart().advance(identity)).kind).toBe('WAITING_HOLD');
       expect((await restart().advance(identity)).kind).toBe('HELD');
@@ -247,6 +251,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     return {
       identity,
       scope,
+      remote,
+      set recoveryAuthority(value:
+        | import('@insignia/application').TrustedAvailabilityRecoveryAuthorityPort
+        | undefined) {
+        recoveryAuthority = value;
+      },
       revisionId,
       restart,
       prepareHold,
@@ -274,8 +284,19 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       get restores() {
         return restores;
       },
+      get remoteWrites() {
+        return remoteWrites;
+      },
       get remoteReads() {
         return remoteReads;
+      },
+      simulateExternalOriginalState: () => {
+        current = {
+          ...current,
+          state: 'available',
+          providerVersion: 'synthetic-external-restoration',
+          visibilityDigest: 'd'.repeat(64),
+        };
       },
       drift: () => {
         current = { ...current, providerVersion: 'merchant-change' };
@@ -564,6 +585,203 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect((await f.restart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
     expect(f.restores).toBe(0);
   });
+  it('a lost restoration response can complete through trusted observation-only operator recovery', async () => {
+    const f = await fixture();
+    await f.prepareHold();
+    await f.publish();
+    await f.restart().advance(f.identity);
+    const historical = (await f.restart().read(f.identity))?.evidence;
+    f.restoreLost = true;
+    await expect(f.restart().advance(f.identity)).rejects.toThrow('lost restore response');
+    expect((await f.restart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
+    await expect(f.restart().recover({ ...f.identity, commandKey: 'synthetic-recovery' })).rejects.toThrow();
+    f.recoveryAuthority = syntheticRecoveryAuthority();
+    const resolution = await f.restart().recover({ ...f.identity, commandKey: 'synthetic-recovery' });
+    expect(resolution.outcome).toBe('ORIGINAL_STATE_OBSERVED');
+    if (process.env.M5_RECOVERY_EXAMPLE_PATH)
+      await (await import('node:fs/promises')).writeFile(
+        process.env.M5_RECOVERY_EXAMPLE_PATH,
+        JSON.stringify(resolution, null, 2) + '\n',
+      );
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
+    expect((await f.restart().read(f.identity))?.evidence).toEqual(historical);
+    expect(await core.configs.getAvailabilityRecovery(f.identity.shopId, f.identity.configId)).toBeNull();
+    expect(f.restores).toBe(1);
+    expect(await f.restart().recover({ ...f.identity, commandKey: 'synthetic-recovery' })).toEqual(resolution);
+    await expect(f.restart().recover({ ...f.identity, commandKey: 'different' })).rejects.toThrow();
+  });
+
+  it('unsent acquisition can be abandoned only after an exact trusted settled-write review', async () => {
+    const f = await fixture();
+    await f.restart().advance(f.identity);
+    f.acquireNotSent = true;
+    await expect(f.restart().advance(f.identity)).rejects.toThrow('crash before provider dispatch');
+    expect((await f.restart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
+    f.recoveryAuthority = syntheticRecoveryAuthority();
+    const resolution = await f.restart().recover({ ...f.identity, commandKey: 'abandon-unsent' });
+    expect(resolution.activationEvidenceDigest).toBeNull();
+    expect((await f.restart().read(f.identity))?.state.kind).toBe('RESOLVED');
+    expect(await core.configs.getCurrentPublication(f.identity.shopId, f.identity.configId)).toBeNull();
+    expect(await core.configs.getAvailabilityRecovery(f.identity.shopId, f.identity.configId)).toBeNull();
+    expect((await core.configs.getConfig(f.identity.shopId, f.identity.configId))?.effectiveRevisionId).toBeNull();
+    expect(f.acquisitions).toBe(0);
+    expect(f.restores).toBe(0);
+    expect((await f.restart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
+    // The old request is never revived. A distinct new request is now permitted.
+    expect(
+      await f
+        .restart()
+        .publications.prepare({ ...f.identity, operationId: randomUUID(), revisionId: f.revisionId, mode: 'required' }),
+    ).toMatchObject({ phase: 'prepared' });
+  });
+
+  it.each(['reinstall', 'supersession'] as const)('operator recovery preserves newer work after %s', async (race) => {
+    const f = await fixture();
+    await f.prepareHold();
+    let newerOperation: string | null = null;
+    if (race === 'reinstall')
+      await core.transactions.run((tx) => core.tenants.startInstallation(tx, f.identity.shopId));
+    else {
+      newerOperation = randomUUID();
+      await database.transaction().execute((tx) =>
+        createPublicationRepository(tx).request({
+          ...f.identity,
+          operationId: newerOperation as string,
+          revisionId: f.revisionId,
+          installationGeneration: '1',
+          expectedProjection: { synthetic: 'newer' },
+        }),
+      );
+    }
+    expect((await f.restart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
+    const before = await core.configs.getConfig(f.identity.shopId, f.identity.configId);
+    f.simulateExternalOriginalState();
+    f.recoveryAuthority = syntheticRecoveryAuthority();
+    const resolution = await f.restart().recover({ ...f.identity, commandKey: 'recover-old' });
+    expect(resolution.currentScope.installationGeneration).toBe(race === 'reinstall' ? '2' : '1');
+    expect((await f.restart().read(f.identity))?.state.kind).toBe('RESOLVED');
+    expect(await core.configs.getConfig(f.identity.shopId, f.identity.configId)).toEqual(before);
+    expect(await core.configs.getAvailabilityRecovery(f.identity.shopId, f.identity.configId)).toBeNull();
+    if (newerOperation)
+      expect(
+        (
+          await database
+            .selectFrom('publication_operations')
+            .select('status')
+            .where('shop_id', '=', f.identity.shopId)
+            .where('operation_id', '=', newerOperation)
+            .executeTakeFirst()
+        )?.status,
+      ).toBe('requested');
+    expect(f.acquisitions).toBe(1);
+    expect(f.restores).toBe(0);
+  });
+
+  it('current drift and mismatched trusted decisions never clear an operator hold', async () => {
+    const f = await fixture();
+    await f.prepareHold();
+    await f.publish();
+    await f.restart().advance(f.identity);
+    f.drift();
+    expect((await f.restart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
+    f.recoveryAuthority = syntheticRecoveryAuthority();
+    await expect(f.restart().recover({ ...f.identity, commandKey: 'reject-drift' })).rejects.toThrow(
+      'Original availability not observed',
+    );
+    f.simulateExternalOriginalState();
+    const authority = syntheticRecoveryAuthority();
+    f.recoveryAuthority = {
+      read: async (context) => ({ ...((await authority.read(context)) as object), currentScopeDigest: '0'.repeat(64) }),
+    };
+    await expect(f.restart().recover({ ...f.identity, commandKey: 'reject-authority' })).rejects.toThrow(
+      'Trusted availability recovery decision',
+    );
+    expect((await f.restart().read(f.identity))?.state.kind).toBe('OPERATOR_HOLD');
+    expect(await core.configs.getAvailabilityRecovery(f.identity.shopId, f.identity.configId)).not.toBeNull();
+    expect(f.restores).toBe(0);
+  });
+
+  it('concurrent recovery commits one immutable audited resolution with no provider mutation', async () => {
+    const f = await fixture();
+    await f.restart().advance(f.identity);
+    f.acquireNotSent = true;
+    await expect(f.restart().advance(f.identity)).rejects.toThrow();
+    await f.restart().advance(f.identity);
+    let reviews = 0;
+    const authority = syntheticRecoveryAuthority();
+    f.recoveryAuthority = {
+      read: async (context) => {
+        reviews++;
+        return authority.read(context);
+      },
+    };
+    const request = { ...f.identity, commandKey: 'concurrent-resolve' };
+    const [a, b] = await Promise.all([f.restart().recover(request), f.restart().recover(request)]);
+    expect(a).toEqual(b);
+    expect(reviews).toBe(1);
+    await expect(
+      sql`UPDATE publication_operations SET availability_resolved_at=NULL WHERE shop_id=${f.identity.shopId} AND operation_id=${f.identity.operationId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('immutable resolved evidence');
+    await expect(
+      sql`UPDATE publication_operations SET failure_class='rewrite-history' WHERE shop_id=${f.identity.shopId} AND operation_id=${f.identity.operationId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('terminal publication operation is immutable');
+    await expect(
+      sql`UPDATE m5_availability_resolutions SET resolution=resolution WHERE shop_id=${f.identity.shopId} AND operation_id=${f.identity.operationId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('immutable');
+    await expect(
+      sql`DELETE FROM m5_availability_resolutions WHERE shop_id=${f.identity.shopId} AND operation_id=${f.identity.operationId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('immutable');
+    expect(f.acquisitions).toBe(0);
+    expect(f.restores).toBe(0);
+  });
+
+  it.each([
+    ['required', 'optional'],
+    ['optional', 'required'],
+  ] as const)('public spoofed admission cannot dispatch a %s to %s mode change', async (priorMode, nextMode) => {
+    const f = await fixture(priorMode);
+    await f.prepareHold();
+    await f.publish();
+    await f.restart().advance(f.identity);
+    await f.restart().advance(f.identity);
+    const revisionId = randomUUID();
+    const operationId = randomUUID();
+    await f.createRevision(revisionId, nextMode);
+    let callbacks = 0;
+    const input = {
+      appId: '101',
+      remote: f.remote,
+      admission: {
+        established: async () => {
+          callbacks++;
+          return true;
+        },
+      },
+    };
+    const publication = core.productionPublications.create(input);
+    await publication.prepare({ ...f.identity, operationId, revisionId, mode: nextMode });
+    const writes = f.remoteWrites;
+    for (let i = 0; i < 3; i++)
+      expect(await publication.advance(f.identity.shopId, f.identity.configId, operationId)).toMatchObject({
+        kind: 'ADMISSION_PENDING',
+        phase: 'prepared',
+      });
+    expect(callbacks).toBe(0);
+    expect(f.remoteWrites).toBe(writes);
+    expect(f.acquisitions).toBe(1);
+    expect((await core.configs.getConfig(f.identity.shopId, f.identity.configId))?.effectiveRevisionId).toBe(
+      f.revisionId,
+    );
+  });
+
   it('a pending owned hold prevents another production publication from hiding recovery', async () => {
     const f = await fixture();
     await f.prepareHold();
@@ -576,3 +794,23 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     ).rejects.toThrow('Availability hold requires recovery');
   });
 });
+
+function syntheticRecoveryAuthority(): import('@insignia/application').TrustedAvailabilityRecoveryAuthorityPort {
+  return {
+    read: async (context) => ({
+      version: 'm5-availability-recovery-decision-v1',
+      shopId: context.shopId,
+      configId: context.configId,
+      operationId: context.operationId,
+      commandKey: context.commandKey,
+      decisionRef: 'synthetic-owner-review',
+      actorRef: 'synthetic-owner',
+      currentScopeDigest: activationDigest(context.currentScope),
+      holdDigest: activationDigest(context.hold),
+      observedSnapshotDigest: availabilitySnapshotIdentityDigest(context.observed),
+      outstandingWrites: 'SETTLED_BY_TRUSTED_OPERATOR',
+      reviewedAt: now.toISOString(),
+      expiresAt: '2026-10-01T12:00:01.000Z',
+    }),
+  };
+}

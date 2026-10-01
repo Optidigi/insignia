@@ -12,6 +12,7 @@ export * from './pricing/catalog-context.js';
 export * from './pricing/customization-fx.js';
 export * from './publication/activation.js';
 export * from './publication/availability.js';
+export * from './publication/availability-recovery.js';
 export * from './publication/projection.js';
 export * from './quote/accept-quote.js';
 export * from './shopify/admin-credential-bridge.js';

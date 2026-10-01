@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
+import { createSyntheticActivation } from './support/synthetic-activation.mjs';
 
 const database = process.env.DATABASE_URL;
 const productId = 'gid://shopify/Product/555';
@@ -84,19 +85,9 @@ async function run(mode) {
       return { observed: result };
     },
   };
-  const publication = core.productionPublications.create({
-    appId,
-    remote,
-    ...(mode === 'pending'
-      ? {}
-      : {
-          admission: {
-            async established() {
-              return true;
-            },
-          },
-        }),
-  });
+  const activation = createSyntheticActivation({ core, appId, remote, shopId, shopifyShopId, productId });
+  const publication =
+    mode === 'pending' ? core.productionPublications.create({ appId, remote }) : activation.publications;
   const service = createMerchantConfigService({
     core,
     catalog: {
@@ -164,6 +155,23 @@ async function run(mode) {
     });
     assert.equal(published.kind, 'accepted');
     assert.ok(await core.configs.getRevisionGeometry(shopId, published.revisionId));
+    if (mode !== 'pending') {
+      const identity = { shopId, configId: created.configId, operationId: published.revisionId };
+      assert.equal(remoteWrites, 0, 'First publication must wait for its owned hold');
+      assert.equal((await activation.advance(identity)).kind, 'WAITING_HOLD');
+      assert.equal((await activation.advance(identity)).kind, 'HELD');
+      const held = await activation.read(identity);
+      assert.equal(held.state.hold.operationId, published.revisionId);
+      assert.equal(held.state.hold.held.productId, productId);
+      assert.equal(held.state.hold.held.state, 'unavailable');
+      const resumed = await service.publish(actor, productId, {
+        configId: created.configId,
+        draftVersion: saved.draftVersion,
+        idempotencyKey: `publish-${mode}`,
+      });
+      assert.equal(resumed.kind, 'accepted');
+      assert.equal(resumed.revisionId, published.revisionId);
+    }
     if (mode === 'ready') {
       let phase;
       for (let attempt = 0; attempt < 6; attempt++) {
@@ -173,10 +181,11 @@ async function run(mode) {
       }
       assert.equal(phase, 'activation-pending');
       const view = await service.read(actor, productId);
-      assert.equal(view.config.publication.state, 'REMOTE_READY_ACTIVATION_PENDING');
+      assert.equal(view.config.publication.state, 'HELD_ACTIVATION_PENDING');
       assert.equal(view.config.publication.functionReadiness, 'UNVERIFIABLE_DEPLOYED_WASM_IDENTITY');
       assert.equal(view.config.publication.activeRevisionId, null);
     } else if (mode === 'conflict') {
+      assert.equal((await publication.advance(shopId, created.configId, published.revisionId)).kind, 'CONFLICT');
       assert.equal((await service.read(actor, productId)).config.publication.state, 'CONFLICT');
     } else if (mode === 'pending') {
       assert.equal((await service.read(actor, productId)).config.publication.state, 'PUBLISH_REQUESTED');

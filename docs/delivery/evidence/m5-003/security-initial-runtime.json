@@ -1,0 +1,10 @@
+{
+  "cwd": "/home/serveradmin/insignia-m5-003-worktree",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "approval_policy": "never",
+  "sandbox_policy": {
+    "type": "read-only"
+  },
+  "sessionId": "01a0f749-e643-7371-87a4-1b2b186296e8"
+}

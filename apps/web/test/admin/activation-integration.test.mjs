@@ -177,7 +177,7 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
       {
         expectedBuild: { read: async () => build },
         observeFunctions: async () => ({ transform: 'present', validation: 'present', observation }),
-        currentDay: async () => 20727,
+        currentDay: () => 20727,
       },
       {
         read: async () => ({

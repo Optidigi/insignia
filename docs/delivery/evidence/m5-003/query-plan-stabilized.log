@@ -1,0 +1,30 @@
+$ node scripts/m5-003/large-history.mjs
+/home/serveradmin/insignia-m5-003-worktree/node_modules/.pnpm/pg-pool@3.14.0_pg@8.23.0/node_modules/pg-pool/index.js:45
+    Error.captureStackTrace(err)
+          ^
+
+error: canceling statement due to user request
+    at /home/serveradmin/insignia-m5-003-worktree/node_modules/.pnpm/pg-pool@3.14.0_pg@8.23.0/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///home/serveradmin/insignia-m5-003-worktree/scripts/m5-003/large-history.mjs:68:1 {
+  length: 324,
+  severity: 'ERROR',
+  code: '57014',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: 'SQL statement "SELECT 1 FROM ONLY "public"."publication_operations" x WHERE "shop_id" OPERATOR(pg_catalog.=) $1 AND "config_id" OPERATOR(pg_catalog.=) $2 AND "operation_id" OPERATOR(pg_catalog.=) $3 FOR KEY SHARE OF x"',
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postgres.c',
+  line: '3464',
+  routine: 'ProcessInterrupts'
+}
+
+Node.js v24.21.0
+[ELIFECYCLE] Command failed with exit code 1.

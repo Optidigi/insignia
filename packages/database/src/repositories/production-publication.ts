@@ -316,7 +316,7 @@ export class PgProductionPublication {
         return { operationId: input.operationId, phase: replay.rows[0].phase };
       }
       const unresolvedHold = await sql<{ operation_id: string }>`SELECT operation_id FROM m5_activation_state
-        WHERE shop_id=${input.shopId} AND config_id=${input.configId} AND hold IS NOT NULL AND kind <> 'RESTORED'
+        WHERE shop_id=${input.shopId} AND config_id=${input.configId} AND hold IS NOT NULL AND kind NOT IN ('RESTORED','RESOLVED')
         LIMIT 1`.execute(tx);
       if (unresolvedHold.rows[0]) throw new Error('Availability hold requires recovery before another publication');
       const open = await sql<{ operation_id: string }>`SELECT p.operation_id FROM m4_publication_progress p
@@ -499,6 +499,12 @@ export class PgProductionPublication {
       FOR UPDATE OF s, i, c`.execute(tx);
       const stored = await this.load(shopId, configId, operationId, tx);
       if (!stored) return { kind: 'OPERATOR_HOLD', phase: 'operator-hold' };
+      const resolved = (
+        await sql<{ resolved: boolean }>`SELECT true AS resolved FROM m5_availability_resolutions
+        WHERE shop_id=${shopId} AND config_id=${configId} AND operation_id=${operationId}`.execute(tx)
+      ).rows[0];
+      if (resolved && stored.progress.phase !== 'active') return { kind: 'OPERATOR_HOLD', phase: 'operator-hold' };
+
       const { operation, progress } = stored;
       const hold = async (observed: unknown): Promise<PublicationAdvanceResult> => {
         if (!(await this.save(stored, 'operator-hold', observed, 0, tx)))

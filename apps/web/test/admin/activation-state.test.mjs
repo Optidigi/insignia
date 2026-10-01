@@ -50,3 +50,27 @@ test('admin distinguishes activation waiting, held, restoration and conflict wit
   );
   assert.equal(projectActivationPublicationState({ ...active, activationKind: 'unknown' }), 'OPERATOR_HOLD');
 });
+
+test('publication conflict outranks a retained held/pending activation state', () => {
+  assert.equal(
+    projectActivationPublicationState({
+      phase: 'conflict',
+      effectiveOperationId: null,
+      operationId: 'op',
+      activationKind: 'HELD',
+    }),
+    'CONFLICT',
+  );
+});
+
+test('terminal operator hold outranks stale held activation', () => {
+  assert.equal(
+    projectActivationPublicationState({
+      phase: 'operator-hold',
+      effectiveOperationId: null,
+      operationId: 'op',
+      activationKind: 'HELD',
+    }),
+    'OPERATOR_HOLD',
+  );
+});

@@ -311,7 +311,7 @@ export class PgActivationStore implements ActivationStore {
           // including when an old-generation hold survives reinstall or supersession.
           await sql`UPDATE m5_activation_state SET kind='OPERATOR_HOLD', version=version+1
           WHERE shop_id=${identity.shopId} AND config_id=${identity.configId} AND operation_id=${identity.operationId}
-            AND kind NOT IN ('RESTORED','OPERATOR_HOLD')`.execute(this.database);
+            AND kind NOT IN ('RESTORED','RESOLVED','OPERATOR_HOLD')`.execute(this.database);
         }
         throw error;
       });

@@ -57,6 +57,7 @@ export type ActivationStateKind =
   | 'HELD'
   | 'RESTORATION_PENDING'
   | 'RESTORED'
+  | 'RESOLVED'
   | 'OPERATOR_HOLD';
 export type ActivationState = Readonly<{
   kind: ActivationStateKind;
@@ -117,8 +118,8 @@ export type ActivationReadinessPort = Readonly<{
     observation: FunctionObjectObservation | null;
   }>;
   observeProjection(candidate: ActivationCandidate): Promise<{ projection: unknown; observedAt: string }>;
-  /** Merchant-local calendar day, independently derived by the server. */
-  currentDay(candidate: ActivationCandidate, now: Date): Promise<number>;
+  /** Synchronous merchant-local day from preloaded trusted context; no awaited IO at the decision boundary. */
+  currentDay(candidate: ActivationCandidate, now: Date): number;
 }>;
 /** Internal persistence seam. The database facade exposes only the coordinator, never these sessions. */
 export interface ActivationSession {
@@ -243,9 +244,36 @@ export function createPublicationActivation(input: {
       maxObservationAgeMs: input.maxObservationAgeMs,
     });
     return {
+      expectedBuild,
       attestation: parseFunctionArtifactAttestation(attestation),
       observation: structuredClone(observation) as FunctionObjectObservation,
     };
+  }
+  function decisionReady(
+    c: ActivationCandidate,
+    artifact: Awaited<ReturnType<typeof release>>,
+    remote: { projection: unknown; observedAt: string },
+    hold: ProductAvailabilitySnapshot | null,
+  ) {
+    const acceptedDay = input.readiness.currentDay(c, now());
+    const decisionAt = now();
+    requireIssuanceReady({ config: c.publicConfig, keyId: c.selectedKeyId, acceptedDay });
+    // No awaited operation after this complete synchronous revalidation before commit/dispatch.
+    assertProductionFunctionArtifactReady({
+      scope: {
+        shopId: c.shopId,
+        installationGeneration: c.scope.installationGeneration,
+        appClientId: c.availabilityScope.appClientId,
+      },
+      expectedBuild: artifact.expectedBuild,
+      attestation: artifact.attestation,
+      observation: artifact.observation,
+      now: decisionAt,
+      maxObservationAgeMs: input.maxObservationAgeMs,
+    });
+    fresh(remote.observedAt, decisionAt, input.maxObservationAgeMs);
+    if (hold) fresh(hold.observedAt, decisionAt, input.maxObservationAgeMs);
+    return decisionAt;
   }
   async function held(session: ActivationSession): Promise<ProductAvailabilitySnapshot | null> {
     const c = session.candidate;
@@ -322,20 +350,23 @@ export function createPublicationActivation(input: {
             if (c.state.kind === 'RESTORED') return result('ACTIVE', c);
             if (!c.state.hold?.held || c.state.kind !== 'RESTORATION_PENDING')
               throw new Error('Missing restoration intent');
+            let restorationArtifact: Awaited<ReturnType<typeof release>>;
             try {
-              await release(c);
+              restorationArtifact = await release(c);
             } catch {
               return result('ACTIVATED_RESTORATION_PENDING', c);
             }
+            let restorationProjection: { projection: unknown; observedAt: string };
             try {
               const remote = await input.readiness.observeProjection(c);
+              restorationProjection = remote;
               fresh(remote.observedAt, now(), input.maxObservationAgeMs);
               if (activationDigest(remote.projection) !== c.desiredProjectionDigest)
                 throw new Error('Restoration policy drift');
               requireIssuanceReady({
                 config: c.publicConfig,
                 keyId: c.selectedKeyId,
-                acceptedDay: await input.readiness.currentDay(c, now()),
+                acceptedDay: input.readiness.currentDay(c, now()),
               });
             } catch {
               await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
@@ -348,6 +379,7 @@ export function createPublicationActivation(input: {
               return result('OPERATOR_HOLD', c);
             }
             fresh(observation.current.observedAt, now(), input.maxObservationAgeMs);
+            decisionReady(c, restorationArtifact, restorationProjection, observation.current);
             const restored = await input.availability.restore(c.availabilityScope, c.state.hold, observation.current);
             if (restored.kind === 'RESTORATION_PENDING') return result('ACTIVATED_RESTORATION_PENDING', c);
             const valid =
@@ -400,7 +432,7 @@ export function createPublicationActivation(input: {
           requireIssuanceReady({
             config: c.publicConfig,
             keyId: c.selectedKeyId,
-            acceptedDay: await input.readiness.currentDay(c, at),
+            acceptedDay: input.readiness.currentDay(c, at),
           });
           let remote: { projection: unknown; observedAt: string };
           try {
@@ -438,8 +470,9 @@ export function createPublicationActivation(input: {
           requireIssuanceReady({
             config: c.publicConfig,
             keyId: c.selectedKeyId,
-            acceptedDay: await input.readiness.currentDay(c, now()),
+            acceptedDay: input.readiness.currentDay(c, now()),
           });
+          const decisionAt = decisionReady(c, artifact, remote, holdObservation);
           const evidence: ActivationEvidence = {
             ...identity,
             version: 'm5-activation-evidence-v1',
@@ -461,7 +494,7 @@ export function createPublicationActivation(input: {
             admissionClass: admission,
             hold: admission === 'SAME_MODE' ? null : session.candidate.state.hold,
             holdObservation,
-            createdAt: now().toISOString(),
+            createdAt: decisionAt.toISOString(),
             projectionObservedAt: remote.observedAt,
           };
           const evidenceDigest = await session.commit(evidence);

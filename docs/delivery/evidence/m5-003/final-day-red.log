@@ -1,0 +1,42 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/application
+
+ ❯ src/publication/activation.test.ts (37 tests | 1 failed) 77ms
+   × a delayed final day computation cannot commit expired release/projection evidence 11ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/publication/activation.test.ts > a delayed final day computation cannot commit expired release/projection evidence
+AssertionError: promise resolved "{ kind: 'ACTIVE', …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "evidenceDigest": "593140961e5c33007b0f27d8aee8f209a0951daa31fd79d9987cfd434ff938e6",
++   "kind": "ACTIVE",
+  }
+
+ ❯ src/publication/activation.test.ts:597:28
+    595|   const f = fixture('required');
+    596|   f.delayFinalDay = true;
+    597|   await expect(f.advance()).rejects.toThrow();
+       |                            ^
+    598|   expect(f.evidence).toBeNull();
+    599| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 36 passed (37)
+   Start at  12:02:32
+   Duration  348ms (transform 40%, tests 37%, import 21%, worker 2%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/application
+

@@ -63,13 +63,6 @@ export interface DurableCore {
     create(input: {
       appId: string;
       remote: ProductionPublicationRemote;
-      admission?: {
-        established(input: {
-          productId: string;
-          priorMode: 'required' | 'optional' | null;
-          nextMode: 'required' | 'optional';
-        }): Promise<boolean>;
-      };
     }): Pick<PgProductionPublication, 'prepare' | 'advance'>;
   };
   readonly productionActivations: {
@@ -340,6 +333,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       WHERE operation.shop_id=${shopId} AND operation.config_id=${configId}
         AND operation.installation_generation=(
           SELECT current_generation FROM shops WHERE shop_id=${shopId})
+      AND (operation.availability_resolved_at IS NULL OR operation.status='activated')
       ORDER BY operation.operation_sequence DESC LIMIT 1`.execute(executor);
     const row = historical.rows[0];
     return row
@@ -359,7 +353,15 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   return {
     signingKeys,
     productionPublications: {
-      create: ({ appId, remote, admission }) => new PgProductionPublication(database, remote, appId, admission),
+      create: ({ appId, remote }) => {
+        // First publication and mode changes use productionActivations' durable owned hold.
+        // Extra runtime properties cannot supply admission to this fail-closed facade.
+        const publication = new PgProductionPublication(database, remote, appId);
+        return {
+          prepare: publication.prepare.bind(publication),
+          advance: publication.advance.bind(publication),
+        };
+      },
     },
     productionActivations: { create: (options) => createProductionActivation(database, options) },
     acceptedQuotes: {
@@ -533,7 +535,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           SELECT state.operation_id, state.kind, operation.installation_generation::text
           FROM m5_activation_state state JOIN publication_operations operation USING (shop_id, config_id, operation_id)
           WHERE state.shop_id=${shopId} AND state.config_id=${configId}
-            AND state.hold IS NOT NULL AND state.kind <> 'RESTORED' LIMIT 1`.execute(database);
+            AND state.hold IS NOT NULL AND state.kind NOT IN ('RESTORED','RESOLVED') LIMIT 1`.execute(database);
         const row = rows.rows[0];
         return row
           ? { operationId: row.operation_id, kind: row.kind, installationGeneration: row.installation_generation }

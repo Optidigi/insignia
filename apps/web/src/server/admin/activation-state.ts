@@ -8,6 +8,8 @@ export function projectActivationPublicationState(input: {
   recoveryFromAnotherOperation?: boolean;
 }): PublicationState {
   if (input.recoveryFromAnotherOperation) return 'OPERATOR_HOLD';
+  if (input.phase === 'operator-hold') return 'OPERATOR_HOLD';
+  if (input.phase === 'conflict') return 'CONFLICT';
   const active =
     input.phase === 'active' && input.effectiveOperationId !== null && input.effectiveOperationId === input.operationId;
   switch (input.activationKind) {

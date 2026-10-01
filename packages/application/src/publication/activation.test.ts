@@ -35,6 +35,10 @@ import type { AvailabilityScope, ProductAvailabilityHoldPort, ProductAvailabilit
 
 const now = new Date('2026-10-01T12:00:00.000Z');
 function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'required' | 'optional' = 'required') {
+  let clock = now;
+  let delayFinalDay = false;
+  let delayRestorationProjection = false;
+  let finalDayReads = 0;
   const scope = {
     shopId: 'synthetic-shop',
     installationGeneration: '1',
@@ -115,7 +119,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     },
     observe: async (_scope, hold) =>
       current.state === 'unavailable' && current.providerVersion === 'owned-hold'
-        ? { kind: 'HELD', current, hold: { ...hold, held: current } }
+        ? { kind: 'HELD', current: { ...current, observedAt: clock.toISOString() }, hold: { ...hold, held: current } }
         : { kind: 'CONFLICT', current },
     restore: async (_scope, hold) => {
       stateAtRestore = structuredClone(candidate.state);
@@ -214,7 +218,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     createPublicationActivation({
       store,
       availability,
-      now: () => now,
+      now: () => clock,
       maxObservationAgeMs: 1000,
       readiness: {
         expectedBuild: { read: async () => build },
@@ -227,13 +231,25 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
             observation: driftOnFinal && functionReads >= 2 ? { ...observation, validation: null } : observation,
           };
         },
-        observeProjection: async () => ({ projection, observedAt: now.toISOString() }),
-        currentDay: async () => (rollsDay && dayReads++ > 0 ? 20728 : 20727),
+        observeProjection: async () => {
+          if (delayRestorationProjection && candidate.status === 'activated') clock = new Date(now.getTime() + 2000);
+          return { projection, observedAt: clock.toISOString() };
+        },
+        currentDay: () => {
+          if (delayFinalDay && ++finalDayReads > 1) clock = new Date(now.getTime() + 2000);
+          return rollsDay && dayReads++ > 0 ? 20728 : 20727;
+        },
       },
     });
   const advance = () => restart().advance({ shopId: scope.shopId, configId: 'config', operationId: 'operation' });
   return {
     advance,
+    set delayRestorationProjection(value: boolean) {
+      delayRestorationProjection = value;
+    },
+    set delayFinalDay(value: boolean) {
+      delayFinalDay = value;
+    },
     get candidate() {
       return candidate;
     },
@@ -581,4 +597,23 @@ it('evidence array accessors and hidden extras are rejected without invoking cod
   Object.defineProperty(extra, 'hidden', { value: 'ignored' });
   expect(() => activationDigest(extra)).toThrow();
   expect(activationDigest([1, { b: true, a: null }])).toBe(activationDigest([1, { a: null, b: true }]));
+});
+
+it('a delayed final day computation cannot commit expired release/projection evidence', async () => {
+  const f = fixture('required');
+  f.delayFinalDay = true;
+  await expect(f.advance()).rejects.toThrow();
+  expect(f.evidence).toBeNull();
+});
+
+it('a slow restoration projection read must not dispatch over expired release observations', async () => {
+  const f = fixture();
+  await f.advance();
+  await f.advance();
+  const immutable = f.evidence;
+  f.delayRestorationProjection = true;
+  await expect(f.advance()).rejects.toThrow();
+  expect(f.restores).toBe(0);
+  expect(f.evidence).toBe(immutable);
+  expect(f.candidate.state.kind).toBe('RESTORATION_PENDING');
 });

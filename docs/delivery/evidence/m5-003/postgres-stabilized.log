@@ -1,0 +1,43 @@
+$ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+Applying: 20260929000100_durable_core.sql
+Applied: 20260929000100_durable_core.sql in 59.920492ms
+Applying: 20260929000200_runtime_ingress_credentials.sql
+Applied: 20260929000200_runtime_ingress_credentials.sql in 19.882426ms
+Applying: 20260929000300_authorization_generation.sql
+Applied: 20260929000300_authorization_generation.sql in 9.38233ms
+Applying: 20260929000400_accepted_quote.sql
+Applied: 20260929000400_accepted_quote.sql in 27.691541ms
+Applying: 20260930000100_m4_key_lifecycle.sql
+Applied: 20260930000100_m4_key_lifecycle.sql in 27.996325ms
+Applying: 20260930000200_publication_progress.sql
+Applied: 20260930000200_publication_progress.sql in 16.531761ms
+Applying: 20260930000300_m5_revision_geometry.sql
+Applied: 20260930000300_m5_revision_geometry.sql in 12.462236ms
+Applying: 20260930000400_m5_revision_presentation.sql
+Applied: 20260930000400_m5_revision_presentation.sql in 12.123856ms
+Applying: 20260930000500_m5_publication_source_version.sql
+Applied: 20260930000500_m5_publication_source_version.sql in 10.804732ms
+Applying: 20260930000600_m5_publication_intent_generation.sql
+Applied: 20260930000600_m5_publication_intent_generation.sql in 9.986745ms
+Applying: 20260930000700_m5_publication_intent_lookup.sql
+Applied: 20260930000700_m5_publication_intent_lookup.sql in 11.451655ms
+Applying: 20260930000800_m5_current_publication_pointer.sql
+Applied: 20260930000800_m5_current_publication_pointer.sql in 9.910991ms
+Applying: 20260930000900_m5_activation.sql
+Applied: 20260930000900_m5_activation.sql in 33.355388ms
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ corepack pnpm --filter @insignia/database test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+
+ Test Files  10 passed (10)
+      Tests  84 passed (84)
+   Start at  12:55:00
+   Duration  8.76s (tests 62%, import 27%, transform 10%)
+
+    Isolate  10 workers spawned · ~216ms startup each (spawn + environment, per file)
+             at least ~504ms faster with isolate: false — reuses workers across files instead of one per file
+

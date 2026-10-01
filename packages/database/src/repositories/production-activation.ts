@@ -3,10 +3,12 @@ import {
   activationDigest,
   createPublicationActivation,
   type ProductAvailabilityHoldPort,
+  type TrustedAvailabilityRecoveryAuthorityPort,
 } from '@insignia/application';
 import type { Kysely } from 'kysely';
 import type { Database } from '../client/database.js';
 import { PgActivationStore } from './activation.js';
+import { createAvailabilityRecovery } from './availability-recovery.js';
 import {
   exactPublicationField,
   PgProductionPublication,
@@ -25,6 +27,7 @@ export type ProductionActivationOptions = {
   readiness: Omit<ActivationReadinessPort, 'observeProjection'>;
   now?: () => Date;
   maxObservationAgeMs: number;
+  recoveryAuthority?: TrustedAvailabilityRecoveryAuthorityPort;
 };
 /** Scoped server-only factory. Raw executor, store sessions and commit never escape. */
 export function createProductionActivation(database: Kysely<Database>, options: ProductionActivationOptions) {
@@ -101,6 +104,7 @@ export function createProductionActivation(database: Kysely<Database>, options: 
       prepare: publications.prepare.bind(publications),
       advance: publications.advance.bind(publications),
     },
+    recover: createAvailabilityRecovery(database, { ...options, now }),
     advance: coordinator.advance,
     read: (identity: Parameters<typeof store.read>[0]) => store.read(identity),
   };

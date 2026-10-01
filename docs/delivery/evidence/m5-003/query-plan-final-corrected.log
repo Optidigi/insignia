@@ -1,0 +1,11 @@
+$ node scripts/m5-003/large-history.mjs
+file:///home/serveradmin/insignia-m5-003-worktree/scripts/m5-003/large-history.mjs:164
+assert.equal((await reader.acceptedQuotes.getEffective(shopId, productId)).config.revisionId, finalRevision);
+                                                                           ^
+
+TypeError: Cannot read properties of null (reading 'config')
+    at file:///home/serveradmin/insignia-m5-003-worktree/scripts/m5-003/large-history.mjs:164:76
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+
+Node.js v24.21.0
+[ELIFECYCLE] Command failed with exit code 1.

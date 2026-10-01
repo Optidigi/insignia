@@ -2,7 +2,7 @@
 
 All new provider observations here are synthetic. No real Shopify/provider operation, owner credential read or real activation occurred.
 
-## Executed evidence
+## Initial integration receipts (superseded where noted)
 
 - `pr28-premerge.json`, `principal-verification.json`, `pr28-merge.json`: exact approved PR28 inputs, ten successful attempt1 runs, external principal verdict and verified remote merge parents/tree.
 - `query-plan.json`: final built public read-seam SQL and PG18.6 EXPLAIN ANALYZE BUFFERS over100,001 history rows foroneconfig plus5,000 current configs. Exact source/output hashes, rows, indexes and machine timings included. `query-plan-initial.json` retains earlier pre-integration measurement; it is not the final binary proof. `query-plan-fixture-red.log` retains incorrect benchmark-fixture ordering, subsequently corrected.
@@ -34,3 +34,31 @@ All new provider observations here are synthetic. No real Shopify/provider opera
 | Same-mode vs first/mode-change | application + PG | Same-mode acquires no hold; first and both transitions require owned hold |
 
 The status adapter is a candidate without native atomic version CAS. Pre-read/write races and in-flight cart/checkout propagation remain unproved. Operator-held unknown ownership is deliberately not resolved by another automatic mutation. No real release-source implementation is wired; production requires independently trusted RELEASE_BOUND evidence.
+
+## Local-review corrections
+
+Initial independent full-source reviews of `09e301fb3274f5d0f7f77c27a14deef3ae7ef293` are preserved in `spec-initial-review.md` and `security-initial-review.md`, with actual read-only model/effort contexts. They requested changes, not a clean disposition.
+
+- Admission closure: public facade removes the injectable admission callback and returns only bound methods. Normal API checks now run 19 compiler and four runtime negatives; real-PG tests reject first-publication and both mode-change spoofing without dispatch. `admission-writer-receipts.json` distinguishes its skipped PG tests from integrated executed evidence.
+- `final-day-red/green.log`, `restoration-expiry-red/green.log`: reproduced final-await expiration; retained complete inputs are synchronously revalidated after the last await. Production keeps the real clock.
+- `conflict-ui-red/green.log`: terminal publication state outranks an earlier activation-held state.
+- `recovery-red.log`, `recovery-expanded-pg.log`: a scoped trusted settled-write decision plus exact original-state readback closes the operation through immutable `m5-availability-resolution-v1`. `recovery-example.json` is actual sanitized PG readback with synthetic authority, not a live operator decision. Lost restoration, unsent acquire, reinstall, supersession and concurrent recovery are covered. Recovery makes no availability mutation.
+- `postgres-corrections.log`: the new index marker first collided with terminal immutability. The final guard permits only an audited one-time marker; existing terminal fields still use the original immutable transition guard. `postgres-stabilized.log` runs **84/84** tests with fresh migrations twice.
+- `http-stabilized.log`: **16/16** PG-backed HTTP/composition tests. `worker-pg-stabilized.log`: **15/15**, no skipped PG refresh/queue cases.
+- `root-corrections.log` preserves a formatting failure. `root-stabilized.log` is complete pinned-root PASS with Rust/Wasm replays, browser suites, opacity/secrets and historical hashes intact.
+- `query-plan-final-corrected.log` preserves the initial incorrect assertion that the quote-issuance seam should succeed after 50k newer resolved requests. Its existing sequence guard intentionally returns null. The final artifact measures the required Admin seam separately, retaining that rejection.
+
+A trusted recovery authority implementation remains unwired. `RESOLVED` preserves the old request rather than reviving it; a current effective activation may become `RESTORED` only with its original immutable evidence retained. Replays return the same resolution; another command key, drift, mismatched authority, unreviewed in-flight writes or a historical-record edit is rejected.
+
+| Additional boundary | Result |
+|---|---|
+| Final awaited day/projection read expires release inputs | No activation/restore dispatch after final synchronous revalidation |
+| Lost restore response followed by independently settled original-state observation | Audited resolution; no second provider mutation; original activation evidence unchanged |
+| Unsent/ambiguous acquisition with trusted settled-write decision | Old request resolved/abandoned, never reactivated; distinct new request possible |
+| Reinstall/supersession during old hold | Current scope independently checked; newer config/operation/effective pointers preserved |
+| Concurrent operator recovery | One immutable resolution, exact replay, no mutation |
+| Resolution marker/history mutation | Marker requires immutable resolved evidence; timestamp cannot be erased/replaced; terminal historical fields remain immutable |
+
+Final `stress-stabilized.log` executes **100/100** (25 per success/failure × dirty/ambiguous combination), zero retries/skips. `renderer-stabilized.log` preserves the normal expected-failure control. `query-plan-stabilized.log` preserves cancellation of a slow bulk FK fixture insertion; statistics are now analyzed before dependent bulk rows to avoid an empty-table cached FK lookup plan. No database trigger/constraint or security policy was disabled.
+
+`query-plan-indexed.log` and final `query-plan.json` pass all three required read plans: pointer PK, visible-operation partial index without history sort, and Admin product-config unique index; each returns one row. Structural recovery rows are synthetic SQL-cardinality fixtures, not application-validated operator decisions. `migration-rollback-up.log` rehearses down/up successfully on the package-owned disposable database after preserving the plan/evidence readbacks.

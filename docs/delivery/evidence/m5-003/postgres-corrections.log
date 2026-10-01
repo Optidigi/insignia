@@ -1,0 +1,59 @@
+$ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ corepack pnpm --filter @insignia/database test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+ ❯ test/activation.test.ts (29 tests | 1 failed) 4391ms
+   ❯ PG18 scoped production activation (29)
+     × operator recovery preserves newer work after supersession 52ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > operator recovery preserves newer work after supersession
+error: terminal publication operation is immutable
+ ❯ ../../node_modules/.pnpm/pg@8.23.0/node_modules/pg/lib/client.js:694:17
+ ❯ PostgresConnection.executeQuery ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/dialect/postgres/postgres-driver.js:113:28
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:39:24
+ ❯ SingleConnectionProvider.#run ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/single-connection-provider.js:24:16
+ ❯ DefaultQueryExecutor.executeQuery ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:38:28
+ ❯ src/repositories/availability-recovery.ts:138:9
+    136|       );
+    137|       if (!effective) {
+    138|         await sql`UPDATE publication_operations SET availability_resol…
+       |         ^
+    139|           WHERE shop_id=${request.shopId} AND config_id=${request.conf…
+    140|           tx,
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+ ❯ DefaultConnectionProvider.provideConnection ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/default-connection-provider.js:10:20
+ ❯ test/activation.test.ts:660:24
+ ❯ PostgresConnection.executeQuery ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/dialect/postgres/postgres-driver.js:126:41
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:39:24
+ ❯ SingleConnectionProvider.#run ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/single-connection-provider.js:24:16
+ ❯ DefaultQueryExecutor.executeQuery ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:38:28
+ ❯ src/repositories/availability-recovery.ts:138:9
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+ ❯ DefaultConnectionProvider.provideConnection ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/default-connection-provider.js:10:20
+ ❯ test/activation.test.ts:660:24
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 9 passed (10)
+      Tests  1 failed | 83 passed (84)
+   Start at  12:51:00
+   Duration  5.20s (tests 63%, import 26%, transform 11%)
+
+    Isolate  10 workers spawned · ~128ms startup each (spawn + environment, per file)
+             at least ~298ms faster with isolate: false — reuses workers across files instead of one per file
+
+[ELIFECYCLE] Test failed. See above for more details.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in /home/serveradmin/insignia-m5-003-worktree/
+  │ packages/database
+
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

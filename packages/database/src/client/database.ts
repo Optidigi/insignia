@@ -75,6 +75,7 @@ export interface PublicationOperationsTable {
   failed_at: NullableTimestamp;
   failure_class: string | null;
   superseded_at: NullableTimestamp;
+  availability_resolved_at: NullableTimestamp;
 }
 
 export interface IdempotencyRecordsTable {

@@ -14,6 +14,13 @@ try {
     ['raw table map', ["import type { Database } from '@insignia/database';", 2305]],
     ['raw executor', ["import type { DatabaseExecutor } from '@insignia/database';", 2305]],
     [
+      'caller boolean publication admission',
+      [
+        "import { createDurableCore } from '@insignia/database'; declare const core: ReturnType<typeof createDurableCore>; core.productionPublications.create({ appId: '123', remote: {} as never, admission: { established: async () => true } });",
+        2353,
+      ],
+    ],
+    [
       'activation raw store',
       [
         "import { createDurableCore } from '@insignia/database'; declare const core: ReturnType<typeof createDurableCore>; core.productionActivations.store;",

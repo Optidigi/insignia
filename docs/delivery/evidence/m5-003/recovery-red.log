@@ -1,0 +1,32 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+ ❯ test/activation.test.ts (22 tests | 1 failed | 21 skipped) 288ms
+   ❯ PG18 scoped production activation (22)
+     × a lost restoration response can complete through trusted observation-only operator recovery 270ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > a lost restoration response can complete through trusted observation-only operator recovery
+TypeError: f.restart(...).recover is not a function
+ ❯ test/activation.test.ts:578:30
+    576|     await expect(f.restart().advance(f.identity)).rejects.toThrow('los…
+    577|     expect((await f.restart().advance(f.identity)).kind).toBe('OPERATO…
+    578|     await expect(f.restart().recover({ ...f.identity, commandKey:'synt…
+       |                              ^
+    579|     f.recoveryAuthority = syntheticRecoveryAuthority();
+    580|     const resolution = await f.restart().recover({ ...f.identity, comm…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 21 skipped (22)
+   Start at  12:16:22
+   Duration  1.02s (transform 36%, tests 32%, import 31%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/database
+

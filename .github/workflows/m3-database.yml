@@ -59,6 +59,14 @@ jobs:
       - run: corepack pnpm check:database
       - name: M5 100k actual read-seam query plans
         run: M5_QUERY_PLAN_OUTPUT=/tmp/m5-query-plan.json corepack pnpm test:m5-query-plan
+      - name: Preserve actual M5 PostgreSQL plans and build hashes
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m5-003-query-plans-${{ github.sha }}
+          path: /tmp/m5-query-plan.json
+          if-no-files-found: error
+          retention-days: 14
+          overwrite: false
       - name: Rehearse disposable down and up
         run: |
           corepack pnpm exec dbmate --no-dump-schema --migrations-dir packages/database/migrations rollback

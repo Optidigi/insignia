@@ -7,3 +7,8 @@ Their Git metadata lay outside writable roots, so they created isolated local bu
 Writer A's first PG execution lacked DATABASE_URL and skipped its 21 new tests; these are not claimed as passing writer evidence. Integration subsequently executed all21 against PostgreSQL18.6. The integrated database suite executes73 tests. Writer B's focused suite passed109 synthetic hold tests; integrated Shopify executes202. Writer root secret/boundary prerequisites were incomplete; the integrator executes the complete built root suite and actual opacity probes.
 
 Fresh independent full-source read-only Spec/correctness and Standards/security reviewers use the same explicit model/effort with `--sandbox read-only`. Their exact candidate/dispositions and selected launch contexts are recorded after completion. No full session/token export or provider-private attestation is required or supplied.
+
+
+A later restricted admission writer used the same actual model/high settings in a separate worktree while the integrator owned non-overlapping recovery/readiness paths. Its selected context is `admission-writer-runtime.json`. At no time did this add a third concurrent writer. Its isolated shared-dependency shim did not constitute full root/PG verification; final integrated commands provide that evidence.
+
+Initial fresh full-source Spec and Standards/security reviews requested changes on `09e301f…`; their complete sanitized findings and selected contexts are retained. Ordinary in-scope corrections were implemented locally. Final independent full-source rereviews use fresh contexts, the same explicit model/high settings, read-only sandbox and no provider operation; exact candidate refs and dispositions belong in the PR body.
