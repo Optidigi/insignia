@@ -1,0 +1,11 @@
+Continue EXISTING Insignia PR #29 with the attached insignia-m5-003r2-handoff package.
+
+I authorize the local/off-store correction in M5-003R2-TRANSPORT-DISPATCH-CLOSURE.md. Read README.md and PR-029R-principal-review.md first. The principal verdict remains CHANGES_REQUESTED for R1-T: freshness must survive transport credential/pre-send work until the actual HTTP mutation invocation. R2 and the earlier observation-origin fixes stay closed.
+
+Use actual GPT-6.1-sol/high throughout and the repository-pinned skills. Verify exact baseline 91f46ba0006d9c5d50613dc39e234f33c797f625, tree b717f3b729a914686510622f97f6ff48da2f691d, base/effective 8a84ddeaf277368852d224915abe6d4a93a3d8a4; preserve newer work and report a mismatch before proceeding.
+
+Reproduce through the real public PostgreSQL publication facade plus the actual Shopify adapter/HTTP transport, mocking only external boundaries. Trace/test the adjacent restoration pre-send path as scoped. Preserve existing claim, CAS, idempotency and recovery semantics. The included diagnostic snapshots are evidence, not replacement implementation or the permanent test.
+
+Keep the same PR. Return red/green closure, corrected refs, all applicable exact-head CI and fresh full-source Spec and Standards/security reviews. Then stop for principal rereview.
+
+No merge, successor PR/slice, Shopify/provider/credential operation, preview, deployment, production activation, M6/M7, gate pass or launch is authorized.

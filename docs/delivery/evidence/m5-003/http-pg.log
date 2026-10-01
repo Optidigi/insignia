@@ -1,0 +1,127 @@
+✔ real PG activation composes trusted release, synthetic Shopify hold and immutable evidence (622.378543ms)
+✔ admin distinguishes activation waiting, held, restoration and conflict without manufacturing ACTIVE (1.260462ms)
+node:internal/modules/esm/resolve:272
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/home/serveradmin/insignia-m5-003-worktree/apps/web/src/server/admin/activation-state.js' imported from /home/serveradmin/insignia-m5-003-worktree/apps/web/src/server/merchant-config.ts
+    at finalizeResolution (node:internal/modules/esm/resolve:272:11)
+    at moduleResolve (node:internal/modules/esm/resolve:879:10)
+    at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:705:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:725:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:763:56)
+    at #resolve (node:internal/modules/esm/loader:687:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:607:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:276:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:381:17) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///home/serveradmin/insignia-m5-003-worktree/apps/web/src/server/admin/activation-state.js'
+}
+
+Node.js v24.21.0
+✖ test/admin/merchant-config.test.mjs (661.404948ms)
+node:internal/modules/esm/resolve:272
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/home/serveradmin/insignia-m5-003-worktree/apps/web/src/server/admin/activation-state.js' imported from /home/serveradmin/insignia-m5-003-worktree/apps/web/src/server/merchant-config.ts
+    at finalizeResolution (node:internal/modules/esm/resolve:272:11)
+    at moduleResolve (node:internal/modules/esm/resolve:879:10)
+    at defaultResolve (node:internal/modules/esm/resolve:1006:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:705:20)
+    at #resolveAndMaybeBlockOnLoaderThread (node:internal/modules/esm/loader:725:38)
+    at ModuleLoader.resolveSync (node:internal/modules/esm/loader:763:56)
+    at #resolve (node:internal/modules/esm/loader:687:17)
+    at ModuleLoader.getOrCreateModuleJob (node:internal/modules/esm/loader:607:35)
+    at ModuleJob.syncLink (node:internal/modules/esm/module_job:276:33)
+    at ModuleJob.link (node:internal/modules/esm/module_job:381:17) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///home/serveradmin/insignia-m5-003-worktree/apps/web/src/server/admin/activation-state.js'
+}
+
+Node.js v24.21.0
+✖ test/admin/merchant-publication.test.mjs (445.189643ms)
+✔ diagnostic preview requires accounting and HTTPS before any provider access (693.894441ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: synthetic-preview.myshopify.com, isOnline: true}
+✔ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (1322.506007ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: maa8e7b28f5ff47c3b2b0aa78f213afee.myshopify.com, isOnline: true}
+▶ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold
+  ✔ scheduled cancellation boundary 2026-09-30T23:59:59.999Z: allowed=true (31.44691ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.000Z: allowed=false (26.025665ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.001Z: allowed=false (24.373807ms)
+✖ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (717.908001ms)
+✔ server activation composition cannot promote a diagnostic observation without trusted release source (1.805656ms)
+✖ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (5206.117804ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 8
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7418.270182
+
+✖ failing tests:
+
+test at test/admin/merchant-config.test.mjs:1:1
+✖ test/admin/merchant-config.test.mjs (661.404948ms)
+  'test failed'
+
+test at test/admin/merchant-publication.test.mjs:1:1
+✖ test/admin/merchant-publication.test.mjs (445.189643ms)
+  'test failed'
+
+test at test/admin/production-composition.test.mjs:57:1
+✖ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (717.908001ms)
+  ReferenceError: state is not defined
+      at Object.publish (file:///home/serveradmin/insignia-m5-003-worktree/apps/web/.astro/m5-production-composition.mjs:545:53)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-003-worktree/apps/web/test/admin/production-composition.test.mjs:274:23)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+
+test at test/shopify-webhook.test.mjs:10:1
+✖ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (5206.117804ms)
+  AssertionError [ERR_ASSERTION]: web server did not become ready: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-003-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-003-worktree/apps/web/test/shopify-webhook.test.mjs:63:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/apps/web

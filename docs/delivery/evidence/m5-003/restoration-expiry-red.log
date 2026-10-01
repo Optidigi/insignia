@@ -1,0 +1,37 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/application
+
+ ❯ src/publication/activation.test.ts (38 tests | 1 failed | 37 skipped) 22ms
+   × a slow restoration projection read must not dispatch over expired release observations 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/publication/activation.test.ts > a slow restoration projection read must not dispatch over expired release observations
+AssertionError: expected 1 to be +0 // Object.is equality
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ src/publication/activation.test.ts:615:22
+    613|   f.delayRestorationProjection = true;
+    614|   await expect(f.advance()).rejects.toThrow();
+    615|   expect(f.restores).toBe(0);
+       |                      ^
+    616|   expect(f.evidence).toBe(immutable);
+    617|   expect(f.candidate.state.kind).toBe('RESTORATION_PENDING');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 37 skipped (38)
+   Start at  12:09:53
+   Duration  281ms (transform 55%, import 28%, tests 14%, worker 3%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/application

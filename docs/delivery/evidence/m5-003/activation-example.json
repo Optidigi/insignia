@@ -1,0 +1,89 @@
+{
+  "hold": {
+    "held": {
+      "scope": {
+        "shopId": "f26165f9-7a61-4d97-bd4f-648564a0c6e7",
+        "appClientId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "shopifyShopId": "gid://shopify/Shop/1091584559505872089",
+        "installationGeneration": "1"
+      },
+      "state": "unavailable",
+      "productId": "gid://shopify/Product/42",
+      "observedAt": "2026-10-01T12:00:00.000Z",
+      "providerVersion": "2026-10-01T11:00:01.000Z",
+      "visibilityDigest": "177279f21cb52e7d9e762dce3f653371c10aa781bb2aa504b1b09ed21f265348"
+    },
+    "before": {
+      "scope": {
+        "shopId": "f26165f9-7a61-4d97-bd4f-648564a0c6e7",
+        "appClientId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "shopifyShopId": "gid://shopify/Shop/1091584559505872089",
+        "installationGeneration": "1"
+      },
+      "state": "available",
+      "productId": "gid://shopify/Product/42",
+      "observedAt": "2026-10-01T12:00:00.000Z",
+      "providerVersion": "2026-10-01T11:00:00.000Z",
+      "visibilityDigest": "177279f21cb52e7d9e762dce3f653371c10aa781bb2aa504b1b09ed21f265348"
+    },
+    "version": "m5-availability-hold-v1",
+    "operationId": "d4d71d31-fce4-40eb-bad7-8b9be32ce38c"
+  },
+  "shopId": "f26165f9-7a61-4d97-bd4f-648564a0c6e7",
+  "version": "m5-activation-evidence-v1",
+  "configId": "0ea24ef6-b6c6-49ee-a067-ff17d5694cb8",
+  "createdAt": "2026-10-01T12:00:00.000Z",
+  "revisionId": "ba8cfe8a-0804-409b-b33c-3e2d43637194",
+  "operationId": "d4d71d31-fce4-40eb-bad7-8b9be32ce38c",
+  "revisionHash": "959805644ddb25251c0bf6daef5d6f75ccccf3be8b216458db0a045f7db50862",
+  "selectedKeyId": 7,
+  "admissionClass": "FIRST_PUBLICATION",
+  "decisionVersion": 1,
+  "holdObservation": {
+    "scope": {
+      "shopId": "f26165f9-7a61-4d97-bd4f-648564a0c6e7",
+      "appClientId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "shopifyShopId": "gid://shopify/Shop/1091584559505872089",
+      "installationGeneration": "1"
+    },
+    "state": "unavailable",
+    "productId": "gid://shopify/Product/42",
+    "observedAt": "2026-10-01T12:00:00.000Z",
+    "providerVersion": "2026-10-01T11:00:01.000Z",
+    "visibilityDigest": "177279f21cb52e7d9e762dce3f653371c10aa781bb2aa504b1b09ed21f265348"
+  },
+  "functionPresence": {
+    "transform": "present",
+    "validation": "present"
+  },
+  "operationSequence": "1",
+  "authorizationEpoch": 0,
+  "artifactEvidenceRef": "synthetic-release",
+  "functionObservation": {
+    "shopId": "f26165f9-7a61-4d97-bd4f-648564a0c6e7",
+    "transform": {
+      "handle": "synthetic-transform",
+      "apiType": "cart_transform",
+      "apiVersion": "2026-07",
+      "functionId": "gid://shopify/ShopifyFunction/1",
+      "inputQuerySha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "observedAt": "2026-10-01T12:00:00.000Z",
+    "validation": {
+      "handle": "synthetic-validation",
+      "apiType": "cart_checkout_validation",
+      "apiVersion": "2026-07",
+      "functionId": "gid://shopify/ShopifyFunction/2",
+      "inputQuerySha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "appClientId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "installationGeneration": "1"
+  },
+  "projectionObservedAt": "2026-10-01T12:00:00.000Z",
+  "artifactEvidenceDigest": "be058161693c492404fa0582be1b3334c81a6a7cd85bc5b818c8b385ef2a7e5d",
+  "installationGeneration": "1",
+  "authorizationGeneration": "b500c6d1-4672-4eff-ae5c-3d1b3cb4c663",
+  "desiredProjectionDigest": "9b2d33bb44832af8aa7b0ae6f6644106cdef0f7579c6b665264a70491f3e5c7f",
+  "observedProjectionDigest": "9b2d33bb44832af8aa7b0ae6f6644106cdef0f7579c6b665264a70491f3e5c7f",
+  "functionObservationDigest": "d681180915145d6d0f23041d93e4a6b379bcf35753ca1f899564601cafc1d8b7"
+}

@@ -79,3 +79,44 @@ describe('bounded Admin catalog reader', () => {
     await expect(repeated.get(id)).rejects.toThrow('pagination');
   });
 });
+
+it('R2 mixed ACTIVE/UNLISTED catalog pages and detail retain legal status and bounded pagination', async () => {
+  const calls: unknown[] = [];
+  const unlisted = {
+    ...product,
+    status: 'UNLISTED',
+    variants: { ...product.variants, pageInfo: { hasNextPage: false } },
+  };
+  const reader = createCatalogReader({
+    async read<T>(operation: 'list' | 'detail' | 'currency', variables: Record<string, unknown>): Promise<T> {
+      calls.push({ operation, variables });
+      return (
+        operation === 'list'
+          ? {
+              products: {
+                nodes: [{ ...unlisted, id: 'gid://shopify/Product/43', status: 'ACTIVE' }, unlisted],
+                pageInfo: { hasNextPage: true, endCursor: 'bounded-next' },
+              },
+            }
+          : { product: unlisted }
+      ) as T;
+    },
+  });
+  const page = await reader.list({ first: 2 });
+  expect(page.products.map((p) => p.status)).toEqual(['ACTIVE', 'UNLISTED']);
+  expect(page.nextCursor).toBe('bounded-next');
+  expect(await reader.get(id)).toMatchObject({ status: 'UNLISTED', variantsTruncated: false });
+  expect(calls).toHaveLength(2);
+  await expect(reader.list({ first: 21 })).rejects.toThrow('pagination');
+});
+
+it('R2 genuinely unknown catalog status remains a whole-response error', async () => {
+  const bad = { ...product, status: 'UNSUPPORTED_SYNTHETIC_STATUS' };
+  const reader = createCatalogReader({
+    async read<T>(): Promise<T> {
+      return { product: bad, products: { nodes: [bad], pageInfo: { hasNextPage: false, endCursor: null } } } as T;
+    },
+  });
+  await expect(reader.list()).rejects.toThrow('Invalid catalog product');
+  await expect(reader.get(id)).rejects.toThrow('Invalid catalog product');
+});

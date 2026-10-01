@@ -1,0 +1,45 @@
+✔ real PG activation composes trusted release, synthetic Shopify hold and immutable evidence (784.774401ms)
+✔ admin distinguishes activation waiting, held, restoration and conflict without manufacturing ACTIVE (1.318248ms)
+✔ publication conflict outranks a retained held/pending activation state (0.212126ms)
+✔ terminal operator hold outranks stale held activation (0.169436ms)
+✔ overlapping distinct-key M5 creates serialize before the command FK lock upgrade (207.74505ms)
+✔ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (339.575887ms)
+✔ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (627.399992ms)
+✔ actual M4 prepare/advance over immutable M5 revision reports ready, conflict and hold truthfully (1312.91154ms)
+✔ diagnostic preview requires accounting and HTTPS before any provider access (734.999325ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: synthetic-preview.myshopify.com, isOnline: true}
+✔ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (1113.894398ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: m44c698e1d05a42fcac002b9408a48584.myshopify.com, isOnline: true}
+▶ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold
+  ✔ scheduled cancellation boundary 2026-09-30T23:59:59.999Z: allowed=true (27.739273ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.000Z: allowed=false (24.296295ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.001Z: allowed=false (16.372235ms)
+✔ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (777.632954ms)
+✔ server activation composition cannot promote a diagnostic observation without trusted release source (5.083509ms)
+✔ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (3683.044629ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11852.919012

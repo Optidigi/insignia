@@ -1,0 +1,425 @@
+{
+  "kind": "principal-fixed-source-transport-dispatch-characterization",
+  "head": "91f46ba0006d9c5d50613dc39e234f33c797f625",
+  "node": "v22.16.0",
+  "sourceVerification": {
+    "availability-hold.ts": {
+      "bytes": 23397,
+      "gitBlob": "144c4ab6210757847a3c58903db5f3df61e62d81",
+      "sha256": "ce1279a2611674fefd4e423bdb3aba76e5890bcfef4807e7527ac4abff375813"
+    },
+    "production-activation.ts": {
+      "bytes": 5261,
+      "gitBlob": "0f1bae13e1fc09c0d8b10e7086d007a0f71ce982",
+      "sha256": "926d178c0f2b4d26757c8c1a28dbf68296dd1159c495aa2dffc14d03fd61083a"
+    },
+    "publication-admin.ts": {
+      "bytes": 19306,
+      "gitBlob": "2f91fa12a06315a9f9959547a2ef7569556fdf9e",
+      "sha256": "76e2b41c28e3aa2510d0ec80aefa87c31763b2cd104f2d23c821b22cb929c317"
+    }
+  },
+  "executedScope": "Complete unchanged Shopify hold + publication adapter/HTTP transport; exact production admission callback; equivalent exact caller guard/dispatch excerpt",
+  "exclusions": [
+    "No full production coordinator or database transaction",
+    "No pinned Node24 suite",
+    "No real Shopify/network calls",
+    "No repository modification"
+  ],
+  "correctedObservationControls": [
+    {
+      "delayMs": 0,
+      "accepted": true
+    },
+    {
+      "delayMs": 999,
+      "accepted": true
+    },
+    {
+      "delayMs": 1000,
+      "accepted": true
+    },
+    {
+      "delayMs": 1001,
+      "accepted": false
+    },
+    {
+      "delayMs": 2000,
+      "accepted": false
+    }
+  ],
+  "correctedStatusControls": [
+    {
+      "status": "ACTIVE",
+      "accepted": true,
+      "normalizedState": "available"
+    },
+    {
+      "status": "DRAFT",
+      "accepted": true,
+      "normalizedState": "unavailable"
+    },
+    {
+      "status": "ARCHIVED",
+      "accepted": true,
+      "normalizedState": "archived"
+    },
+    {
+      "status": "UNLISTED",
+      "accepted": true,
+      "normalizedState": "unlisted"
+    },
+    {
+      "status": "UNSUPPORTED_SYNTHETIC_STATUS",
+      "accepted": false,
+      "kind": "provider_shape"
+    }
+  ],
+  "callerGuardControls": [
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "before-caller-guard",
+      "delayMs": 0,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 0,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "before-caller-guard",
+      "delayMs": 1000,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 1000,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "before-caller-guard",
+      "delayMs": 1001,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": false,
+      "writes": 0,
+      "result": "ADMISSION_PENDING"
+    },
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "before-caller-guard",
+      "delayMs": 2000,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": false,
+      "writes": 0,
+      "result": "ADMISSION_PENDING"
+    },
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "before-caller-guard",
+      "delayMs": -1,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": false,
+      "writes": 0,
+      "result": "ADMISSION_PENDING"
+    }
+  ],
+  "transportDispatchCases": [
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 0,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 0,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 999,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 999,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 1000,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 1000,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 1001,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 1001,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 2000,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 2000,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "prepared",
+      "field": "public_config",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": -1,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": -1,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "shop-config-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 0,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 0,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "shop-config-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 999,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 999,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "shop-config-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 1000,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 1000,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "shop-config-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 1001,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 1001,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "shop-config-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 2000,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 2000,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "shop-config-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": -1,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": -1,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "pending-written",
+      "field": "policy",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 0,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 0,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "pending-written",
+      "field": "policy",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 999,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 999,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "pending-written",
+      "field": "policy",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 1000,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 1000,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "pending-written",
+      "field": "policy",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 1001,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 1001,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "pending-written",
+      "field": "policy",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 2000,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 2000,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "pending-written",
+      "field": "policy",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": -1,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": -1,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "policy-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 0,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 0,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "policy-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 999,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 999,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "policy-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 1000,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 1000,
+      "admissionFreshAtHttp": true,
+      "result": "applied"
+    },
+    {
+      "phase": "policy-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 1001,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 1001,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "policy-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": 2000,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": 2000,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    },
+    {
+      "phase": "policy-written",
+      "field": "registration",
+      "delayPoint": "inside-transport-credential",
+      "delayMs": -1,
+      "freshnessBudgetMs": 1000,
+      "freshAtCallerGuard": true,
+      "writes": 1,
+      "ageAtHttpMs": -1,
+      "admissionFreshAtHttp": false,
+      "result": "applied"
+    }
+  ],
+  "staleOrReversedHttpDispatches": 12
+}

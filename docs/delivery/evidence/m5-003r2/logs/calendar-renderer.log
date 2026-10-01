@@ -1,0 +1,25 @@
+$ node scripts/m5-002/missing-renderer-control.mjs
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":1,"saveMode":"dirty","publishMode":"success","observation":{"ownerVersion":"2","selectedPlacement":"front","numericInputValue":"0.6","projectedGeometry":null,"publicationMetadata":"{\"state\":\"PUBLISH_REQUESTED\",\"revisionId\":\"original-immutable-revision\",\"sourceDraftVersion\":\"1\"}"}}
+✖ publication success preserves dirty local edits and exact save recovery [1/1] (5658.422357ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6419.243485
+
+✖ failing tests:
+
+test at apps/web/test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves dirty local edits and exact save recovery [1/1] (5658.422357ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+    - waiting for getByText('Preview: ready', { exact: true }) to be visible
+
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-003-worktree/apps/web/test/admin/editor-browser.test.mjs:1178:67) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Preview: ready', { exact: true }) to be visible" ]
+  }
+EXPECTED NEGATIVE CONTROL: missing renderer rejected before canvas baseline.

@@ -1,0 +1,57 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+stdout | test/activation.test.ts > PG18 scoped production activation > R1-T real restoration credential delay -1 ms
+R1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVATED_RESTORATION_PENDING","evidenceDigest":"39677437a8152ac1dbb99cb057548d07010b986297c7402b45ee30f2b91a226d"},"statusMutations":["DRAFT"]}
+
+ ❯ test/activation.test.ts (84 tests | 2 failed) 11118ms
+   ❯ PG18 scoped production activation (84)
+     × R1-T real restoration credential delay -1 ms 196ms
+     × same-mode second revision activates without acquiring another hold 252ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T real restoration credential delay -1 ms
+ShopifyAvailabilityHoldError: Shopify availability hold failed: invalid_request
+ ❯ src/repositories/activation.ts:303:24
+    301|         };
+    302|         try {
+    303|           return await action(session);
+       |                        ^
+    304|         } finally {
+    305|           valid = false;
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+ ❯ DefaultConnectionProvider.provideConnection ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/default-connection-provider.js:10:20
+ ❯ test/activation.test.ts:711:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > same-mode second revision activates without acquiring another hold
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/activation.test.ts:803:28
+    801|     await f.publish(identity);
+    802|     expect((await f.restart().advance(identity)).kind).toBe('ACTIVE');
+    803|     expect(f.acquisitions).toBe(1);
+       |                            ^
+    804|     expect((await f.restart().read(identity))?.evidence).toMatchObject…
+    805|       admissionClass: 'SAME_MODE',
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 82 passed (84)
+   Start at  19:27:18
+   Duration  12.10s (tests 93%, transform 4%, import 3%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/database

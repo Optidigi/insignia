@@ -1,0 +1,13 @@
+{
+  "cwd": "/home/serveradmin/insignia-m5-003-hold-writer",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "approval_policy": "never",
+  "sandbox_policy": {
+    "type": "workspace-write",
+    "network_access": false,
+    "exclude_tmpdir_env_var": false,
+    "exclude_slash_tmp": false
+  },
+  "sessionId": "01a0f717-5466-7673-bc7c-21795fadd8ee"
+}

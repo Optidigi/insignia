@@ -1,0 +1,123 @@
+{
+  "commit": "258e996f03d3cea371f47486066a406ce202422e",
+  "base": "3da7725f8ec2e717e3da033018f870f5866fd1c6",
+  "bundle": "/tmp/m5-003-writer-a.bundle",
+  "git_limitation": "Original worktree Git metadata is outside writable roots. Commit uses isolated /tmp Git directory and index; original HEAD/index unchanged.",
+  "red_green_receipts": [
+    {
+      "command": "corepack pnpm --filter @insignia/application exec vitest run src/publication/activation.test.ts",
+      "case": "first publication including reinstall",
+      "red_exit": 1,
+      "red_observation": "expected FIRST_PUBLICATION; received SAME_MODE",
+      "green_exit": 0
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/application exec vitest run src/publication/activation.test.ts",
+      "case": "merchant day changes during final observations",
+      "red_exit": 1,
+      "red_observation": "promise resolved ACTIVE instead of rejecting expired issuance readiness",
+      "green_exit": 0
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/application exec vitest run src/publication/activation.test.ts",
+      "case": "remote policy drift after activation commit before restore",
+      "red_exit": 1,
+      "red_observation": "expected OPERATOR_HOLD; received ACTIVE",
+      "green_exit": 0
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/application exec vitest run src/publication/activation.test.ts",
+      "case": "Function objects exist but deployment missing",
+      "red_exit": 1,
+      "red_observation": "expected WAITING_RELEASE; received ACTIVE",
+      "green_exit": 0
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/application exec vitest run src/publication/activation.test.ts",
+      "case": "missing availability visibility evidence",
+      "red_exit": 1,
+      "red_observation": "promise resolved WAITING_HOLD instead of rejecting malformed snapshot",
+      "green_exit": 0
+    }
+  ],
+  "final_checks": [
+    {
+      "command": "corepack pnpm --filter @insignia/application test",
+      "exit": 0,
+      "result": "12 files, 145 tests PASS; 35 new activation tests included"
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/application build",
+      "exit": 0
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/database build",
+      "exit": 0
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/database exec tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --skipLibCheck test/activation.test.ts",
+      "exit": 0
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/application exec tsc --noEmit --target ES2022 --module NodeNext --moduleResolution NodeNext --strict --skipLibCheck src/publication/activation.test.ts",
+      "exit": 0
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/database exec vitest run test/activation.test.ts",
+      "exit": 0,
+      "result": "21 tests SKIPPED; DATABASE_URL absent; no PG18 PASS claimed"
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/database test",
+      "exit": 1,
+      "result": "Existing unconditionally executed PG suites fail because DATABASE_URL absent; 27 failed, 2 passed, 40 skipped at time of attempt"
+    },
+    {
+      "command": "node scripts/boundaries/check-database-api.mjs",
+      "exit": 0,
+      "result": "14 compiler probes and 4 runtime deep-import probes PASS"
+    },
+    {
+      "command": "local isolated TypeScript activation facade probe",
+      "exit": 0,
+      "result": "3 compiler probes reject raw commit, store and lower-level publications.activate"
+    },
+    {
+      "command": "node scripts/boundaries/check-secrets.mjs",
+      "exit": 1,
+      "result": "Unavailable: apps/storefront/dist/insignia-storefront.js not built"
+    },
+    {
+      "command": "corepack pnpm exec biome check <seven assigned TS files>",
+      "exit": 0,
+      "result": "No warnings/fixes on final source"
+    },
+    {
+      "command": "git --git-dir=/tmp/m5-003-writer-a-git/.git diff --cached --check",
+      "exit": 0
+    },
+    {
+      "command": "whole staged diff scope and secret-pattern inspection",
+      "exit": 0,
+      "result": "Exactly eight assigned paths; no secret-shaped staged data"
+    },
+    {
+      "command": "git --git-dir=/tmp/m5-003-writer-a-git/.git bundle verify /tmp/m5-003-writer-a.bundle",
+      "exit": 0
+    }
+  ],
+  "scope_limits": [
+    "No network/provider/credential-file/host/preview/deploy actions",
+    "No push, merge, PR or delegation",
+    "No production RELEASE_BOUND record generated; injected synthetic fixtures only",
+    "100k-history benchmark and full CI remain integrator work"
+  ],
+  "integration_requirements": [
+    "Application root must export publication/availability.js and publication/activation.js. The existing unstaged root index edit is excluded from this commit.",
+    "Server composition uses core.productionActivations.create(options); facade exposes publications.prepare/advance, coordinator advance, and read only.",
+    "Root provides trusted expectedBuild/trustedEvidence ports, ownership presence plus strict Function observation, merchant-local currentDay, and availability adapter.",
+    "Run all migrations including 20260930000900_m5_activation.sql and 21 retained PG18 activation tests on isolated database.",
+    "Provider callbacks run while scoped DB locks are held. Preacquire/refresh offline credentials before invocation, or use existing online grants. Do not reenter core.credentials.acquire from a locked callback.",
+    "No availability interface correction requested. Lost restore response with unowned state conservatively becomes operator hold."
+  ]
+}

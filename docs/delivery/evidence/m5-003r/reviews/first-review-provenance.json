@@ -1,0 +1,38 @@
+[
+  {
+    "role": "spec",
+    "rawSha256": "333cda5a9bfd805c26a7e0221a68d772a05861ae883a49d4ecbd79ee7d29441e",
+    "publishedSha256": "c0b9919f7f571ae5f06f5af4d9d648ce34fd19699a82c2906d943aaf3b1ea104",
+    "transformation": "Only absolute local source link targets replaced with fixed-reviewed-head GitHub links. Complete attributed report retained.",
+    "runtime": {
+      "cwd": "/home/serveradmin/insignia-m5-003-worktree",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "sessionId": "01a0f897-c141-70f1-9ec2-1c8c8a3f45e5"
+    },
+    "exitStatus": 0,
+    "finding": "P2 stale admission during post-observation preparation; further correction required"
+  },
+  {
+    "role": "security",
+    "rawSha256": "c1baa70b1f089984d895d47e141a9a6279b6dfe879daf3b42afcdf01e3b00b79",
+    "publishedSha256": "023bd8949c7655804599de2621c296e0b623b77a6fee4bce4500acd748b84935",
+    "transformation": "Only absolute local source link targets replaced with fixed-reviewed-head GitHub links. Complete attributed report retained.",
+    "runtime": {
+      "cwd": "/home/serveradmin/insignia-m5-003-worktree",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "sessionId": "01a0f897-c156-75d0-9b64-4e9cafb5da6e"
+    },
+    "exitStatus": 0,
+    "finding": "P2 stale admission during post-observation preparation; further correction required"
+  }
+]

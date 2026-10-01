@@ -1,0 +1,19 @@
+(node:486) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+(Use `node --trace-warnings ...` to show where the warning was created)
+node:internal/modules/run_main:123
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Publication HTTP mutation dispatched after admission expired/reversed inside credential acquisition
+
+12 !== 0
+
+    at file:///mnt/data/insignia-pr29-rereview/evidence/probe.mjs:161:56 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 12,
+  expected: 0,
+  operator: 'strictEqual'
+}
+
+Node.js v22.16.0

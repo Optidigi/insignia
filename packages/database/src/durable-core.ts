@@ -26,6 +26,7 @@ import {
 } from './repositories/config.js';
 import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.js';
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
+import { createProductionActivation, type ProductionActivationOptions } from './repositories/production-activation.js';
 import { PgProductionPublication, type ProductionPublicationRemote } from './repositories/production-publication.js';
 import {
   type ClaimIdentity,
@@ -62,14 +63,10 @@ export interface DurableCore {
     create(input: {
       appId: string;
       remote: ProductionPublicationRemote;
-      admission?: {
-        established(input: {
-          productId: string;
-          priorMode: 'required' | 'optional' | null;
-          nextMode: 'required' | 'optional';
-        }): Promise<boolean>;
-      };
     }): Pick<PgProductionPublication, 'prepare' | 'advance'>;
+  };
+  readonly productionActivations: {
+    create(options: ProductionActivationOptions): ReturnType<typeof createProductionActivation>;
   };
   readonly acceptedQuotes: QuoteAcceptanceStore & {
     getEffective(shopId: string, productId: string): Promise<EffectiveQuoteRevision | null>;
@@ -152,7 +149,12 @@ export interface DurableCore {
       mode: 'required' | 'optional';
       priorMode: 'required' | 'optional' | null;
       status: string;
+      activationKind: string | null;
     } | null>;
+    getAvailabilityRecovery(
+      shopId: string,
+      configId: string,
+    ): Promise<{ operationId: string; kind: string; installationGeneration: string } | null>;
     getCurrentPublicationInTransaction(
       transaction: DurableTransaction,
       shopId: string,
@@ -271,9 +273,10 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       phase: string | null;
       prior_mode: 'required' | 'optional' | null;
       status: string | null;
+      activation_kind: string | null;
     }>`SELECT pointer.revision_id, pointer.source_draft_version::text,
         pointer.idempotency_key, geometry.mode, operation.operation_id,
-        progress.phase, progress.prior_mode, operation.status
+        progress.phase, progress.prior_mode, operation.status, activation.kind AS activation_kind
       FROM m5_current_publication_pointer pointer
       JOIN shops shop ON shop.shop_id=pointer.shop_id
         AND shop.current_generation=pointer.installation_generation
@@ -286,6 +289,9 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       LEFT JOIN m4_publication_progress progress
         ON progress.shop_id=operation.shop_id AND progress.config_id=operation.config_id
         AND progress.operation_id=operation.operation_id
+      LEFT JOIN m5_activation_state activation
+        ON activation.shop_id=operation.shop_id AND activation.config_id=operation.config_id
+        AND activation.operation_id=operation.operation_id
       WHERE pointer.shop_id=${shopId} AND pointer.config_id=${configId}`.execute(executor);
     const selected = pointer.rows[0];
     if (selected) {
@@ -299,6 +305,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
         mode: selected.mode,
         priorMode: selected.prior_mode,
         status: selected.status ?? 'intent',
+        activationKind: selected.activation_kind,
       };
     }
     const historical = await sql<{
@@ -308,9 +315,10 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       mode: 'required' | 'optional';
       prior_mode: 'required' | 'optional' | null;
       status: string;
+      activation_kind: string | null;
       source_draft_version: string | null;
     }>`SELECT operation.operation_id, operation.revision_id,
-        progress.phase, progress.mode, progress.prior_mode, operation.status,
+        progress.phase, progress.mode, progress.prior_mode, operation.status, activation.kind AS activation_kind,
         presentation.source_draft_version::text
       FROM publication_operations operation
       JOIN m4_publication_progress progress
@@ -319,9 +327,13 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       LEFT JOIN config_revision_presentation presentation
         ON presentation.shop_id=operation.shop_id AND presentation.config_id=operation.config_id
         AND presentation.revision_id=operation.revision_id
+      LEFT JOIN m5_activation_state activation
+        ON activation.shop_id=operation.shop_id AND activation.config_id=operation.config_id
+        AND activation.operation_id=operation.operation_id
       WHERE operation.shop_id=${shopId} AND operation.config_id=${configId}
         AND operation.installation_generation=(
           SELECT current_generation FROM shops WHERE shop_id=${shopId})
+      AND (operation.availability_resolved_at IS NULL OR operation.status='activated')
       ORDER BY operation.operation_sequence DESC LIMIT 1`.execute(executor);
     const row = historical.rows[0];
     return row
@@ -334,14 +346,24 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           mode: row.mode,
           priorMode: row.prior_mode,
           status: row.status,
+          activationKind: row.activation_kind,
         }
       : null;
   }
   return {
     signingKeys,
     productionPublications: {
-      create: ({ appId, remote, admission }) => new PgProductionPublication(database, remote, appId, admission),
+      create: ({ appId, remote }) => {
+        // First publication and mode changes use productionActivations' durable owned hold.
+        // Extra runtime properties cannot supply admission to this fail-closed facade.
+        const publication = new PgProductionPublication(database, remote, appId);
+        return {
+          prepare: publication.prepare.bind(publication),
+          advance: publication.advance.bind(publication),
+        };
+      },
     },
+    productionActivations: { create: (options) => createProductionActivation(database, options) },
     acceptedQuotes: {
       getEffective: (shopId, productId) => acceptedQuotes.getEffective(shopId, productId),
       findCompleted: (input) => acceptedQuotes.findCompleted<AcceptedQuoteResult>(input),
@@ -505,6 +527,18 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
             AND source_draft_version IS NOT NULL AND source_installation_generation IS NOT NULL`.execute(database);
         return rows.rows[0]
           ? { draftVersion: rows.rows[0].draft_version, installationGeneration: rows.rows[0].installation_generation }
+          : null;
+      },
+      getAvailabilityRecovery: async (shopId, configId) => {
+        // An owned hold survives reinstall/supersession; never hide it behind the new generation's pointer.
+        const rows = await sql<{ operation_id: string; kind: string; installation_generation: string }>`
+          SELECT state.operation_id, state.kind, operation.installation_generation::text
+          FROM m5_activation_state state JOIN publication_operations operation USING (shop_id, config_id, operation_id)
+          WHERE state.shop_id=${shopId} AND state.config_id=${configId}
+            AND state.hold IS NOT NULL AND state.kind NOT IN ('RESTORED','RESOLVED') LIMIT 1`.execute(database);
+        const row = rows.rows[0];
+        return row
+          ? { operationId: row.operation_id, kind: row.kind, installationGeneration: row.installation_generation }
           : null;
       },
       getCurrentPublication: (shopId, configId) => currentPublication(database, shopId, configId),

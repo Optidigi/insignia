@@ -240,6 +240,11 @@ function PublicationStatus({ config }: { config: NonNullable<ConfigView['config'
     PUBLISH_REQUESTED: 'Publication requested',
     REMOTE_PENDING: 'Shopify publication pending',
     REMOTE_READY_ACTIVATION_PENDING: 'Remote ready; activation pending',
+    ACTIVATION_WAITING_RELEASE: 'Activation waiting for verified release evidence',
+    ACTIVATION_WAITING_HOLD: 'Activation waiting for availability hold',
+    HELD_ACTIVATION_PENDING: 'Product held; activation pending',
+    ACTIVATED_RESTORATION_PENDING: 'Revision activated; availability restoration pending',
+    RESTORATION_CONFLICT: 'Revision activated; availability conflict requires operator review',
     ACTIVE: 'Active',
     CONFLICT: 'Publication conflict',
     OPERATOR_HOLD: 'Operator hold',
@@ -289,7 +294,17 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
 
   function syncPublication(data: ConfigView) {
     if (!productId) return;
-    const terminal = ['REMOTE_READY_ACTIVATION_PENDING', 'ACTIVE', 'CONFLICT', 'OPERATOR_HOLD'];
+    const terminal = [
+      'REMOTE_READY_ACTIVATION_PENDING',
+      'ACTIVATION_WAITING_RELEASE',
+      'ACTIVATION_WAITING_HOLD',
+      'HELD_ACTIVATION_PENDING',
+      'ACTIVATED_RESTORATION_PENDING',
+      'RESTORATION_CONFLICT',
+      'ACTIVE',
+      'CONFLICT',
+      'OPERATOR_HOLD',
+    ];
     if (data.config && !terminal.includes(data.config.publication.state)) {
       const stored = readPublicationRequest(productId);
       const body = stored?.body as { action?: string; configId?: string; draftVersion?: string } | undefined;

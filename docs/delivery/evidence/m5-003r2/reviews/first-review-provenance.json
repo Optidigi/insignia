@@ -1,0 +1,48 @@
+[
+  {
+    "role": "spec",
+    "sessionId": "01a0f8fc-161f-7252-a3e3-b707d8e196b6",
+    "selectedContexts": [
+      {
+        "cwd": "/home/serveradmin/insignia-m5-003-worktree",
+        "model": "gpt-6.1-sol",
+        "effort": "high",
+        "approval_policy": "never",
+        "sandbox_policy": {
+          "type": "read-only"
+        }
+      }
+    ],
+    "sourceHead": "1ee6bebd02f1ee4f57cc07ec553946231c7db8ab",
+    "tree": "cdf291d40532630e6ed872ef0b14edaf34b32ce4",
+    "rawSha256": "1a2ee97dfdaf0339c5c123a7a358a5dc4b27ad87f86a912a6dda0e4162165ecf",
+    "publishedSha256": "f43859a18edad657da20b59ae330c89a29cf91e43514efe20dcac93849c5db09",
+    "transformation": "Absolute local source links replaced by fixed-head GitHub links; final newline normalized; full report otherwise retained",
+    "exitStatus": 0,
+    "disposition": "One unresolved material calendar/preparation freshness finding; not clearance",
+    "observableProvenanceQualification": "Actual same-launch model/high/read-only settings verified from selected turn_context; reviewer self-attestation is not required and its limitation is preserved verbatim"
+  },
+  {
+    "role": "security",
+    "sessionId": "01a0f8fc-40ff-7702-bc5e-ab3f35923643",
+    "selectedContexts": [
+      {
+        "cwd": "/home/serveradmin/insignia-m5-003-worktree",
+        "model": "gpt-6.1-sol",
+        "effort": "high",
+        "approval_policy": "never",
+        "sandbox_policy": {
+          "type": "read-only"
+        }
+      }
+    ],
+    "sourceHead": "1ee6bebd02f1ee4f57cc07ec553946231c7db8ab",
+    "tree": "cdf291d40532630e6ed872ef0b14edaf34b32ce4",
+    "rawSha256": "ef77e1aa53977291db8f86b5e2fde5708e19686356aa9e6c9adbe51ce10e6442",
+    "publishedSha256": "24ad46ecabf2adec4f9782767157c36cd22cd1664b916d71af1a372d6675b0f8",
+    "transformation": "Absolute local source links replaced by fixed-head GitHub links; final newline normalized; full report otherwise retained",
+    "exitStatus": 0,
+    "disposition": "One unresolved material calendar/preparation freshness finding; not clearance",
+    "observableProvenanceQualification": "Actual same-launch model/high/read-only settings verified from selected turn_context; reviewer self-attestation is not required and its limitation is preserved verbatim"
+  }
+]

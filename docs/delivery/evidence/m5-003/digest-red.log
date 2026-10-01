@@ -1,0 +1,30 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/application
+
+ ❯ src/publication/activation.test.ts (36 tests | 1 failed) 72ms
+   × evidence array accessors and hidden extras are rejected without invoking code 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/publication/activation.test.ts > evidence array accessors and hidden extras are rejected without invoking code
+AssertionError: expected [Function] to throw an error
+ ❯ src/publication/activation.test.ts:572:41
+    570|   const value = [1];
+    571|   Object.defineProperty(value, '0', { enumerable: true, get: () => { i…
+    572|   expect(() => activationDigest(value)).toThrow();
+       |                                         ^
+    573|   expect(invoked).toBe(false);
+    574|   const extra = [1];
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 35 passed (36)
+   Start at  11:39:17
+   Duration  342ms (transform 42%, tests 35%, import 21%, worker 2%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/application

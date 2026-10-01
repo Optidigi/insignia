@@ -1,0 +1,12 @@
+packages/shopify/test/availability-hold.test.ts(1163,34): error TS2345: Argument of type '() => Promise<{ kind: "unavailable"; shopDomain?: undefined; accessToken?: undefined; accessExpiresAt?: undefined; } | { kind: "usable"; shopDomain: string; accessToken: string; accessExpiresAt: Date; }>' is not assignable to parameter of type '() => Promise<AdminCredentialAcquire>'.
+  Type 'Promise<{ kind: "unavailable"; shopDomain?: undefined; accessToken?: undefined; accessExpiresAt?: undefined; } | { kind: "usable"; shopDomain: string; accessToken: string; accessExpiresAt: Date; }>' is not assignable to type 'Promise<AdminCredentialAcquire>'.
+    Type '{ kind: "unavailable"; shopDomain?: undefined; accessToken?: undefined; accessExpiresAt?: undefined; } | { kind: "usable"; shopDomain: string; accessToken: string; accessExpiresAt: Date; }' is not assignable to type 'AdminCredentialAcquire'.
+      Type '{ kind: "unavailable"; shopDomain?: undefined; accessToken?: undefined; accessExpiresAt?: undefined; }' is not assignable to type 'AdminCredentialAcquire'.
+        Type '{ kind: "unavailable"; shopDomain?: undefined; accessToken?: undefined; accessExpiresAt?: undefined; }' is not assignable to type '{ kind: "usable"; shopDomain: string; accessToken: string; accessExpiresAt: Date; }'.
+          Types of property 'kind' are incompatible.
+            Type '"unavailable"' is not assignable to type '"usable"'.
+packages/shopify/test/publication-admin.test.ts(43,36): error TS2493: Tuple type '[]' of length '0' has no element at index '0'.
+packages/shopify/test/publication-admin.test.ts(44,36): error TS2493: Tuple type '[]' of length '0' has no element at index '0'.
+packages/shopify/test/publication-admin.test.ts(44,40): error TS2339: Property 'query' does not exist on type 'never'.
+packages/shopify/test/publication-admin.test.ts(223,38): error TS2493: Tuple type '[]' of length '0' has no element at index '0'.
+packages/shopify/test/publication-admin.test.ts(224,44): error TS2493: Tuple type '[]' of length '0' has no element at index '1'.

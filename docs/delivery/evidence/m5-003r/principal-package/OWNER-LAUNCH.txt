@@ -1,0 +1,9 @@
+Continue EXISTING Insignia PR #29 using the attached insignia-m5-003r-handoff package.
+
+I authorize the local/off-store correction defined in M5-003R-AVAILABILITY-CONTRACT-CORRECTION.md: fix R1 observation freshness and R2 valid product-status handling, with the specified tests and fresh full-source reviews. First read README.md and the attributed PR-029-principal-review.md. The principal verdict is CHANGES_REQUESTED, not approval.
+
+Use actual GPT-6.1-sol/high throughout. Verify the package's exact base/head/tree against GitHub and the worktree; preserve newer work and return any ref mismatch before proceeding. Use the repository-pinned mattpocock skills and the existing delivery workflow.
+
+Keep the same PR. Return the corrected head/tree, red/green closure, complete applicable exact-head CI and both fresh review reports, then stop for principal rereview.
+
+No merge or successor slice/PR. No Shopify/provider/credential operation, preview, deployment, product/metafield mutation, production activation, M6/M7, gate pass or launch is authorized.

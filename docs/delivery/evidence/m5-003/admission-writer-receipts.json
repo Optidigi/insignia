@@ -1,0 +1,109 @@
+[
+  {
+    "check": "database-build",
+    "command": [
+      "node",
+      "node_modules/typescript/bin/tsc",
+      "-p",
+      "packages/database/tsconfig.json"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-003-admission-writer",
+    "exit_status": 0,
+    "log": "database-build.log"
+  },
+  {
+    "check": "database-typecheck",
+    "command": [
+      "node",
+      "node_modules/typescript/bin/tsc",
+      "-p",
+      "packages/database/tsconfig.json",
+      "--noEmit"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-003-admission-writer",
+    "exit_status": 0,
+    "log": "database-typecheck.log"
+  },
+  {
+    "check": "test-typecheck",
+    "command": [
+      "node",
+      "node_modules/typescript/bin/tsc",
+      "--noEmit",
+      "--strict",
+      "--noUncheckedIndexedAccess",
+      "--skipLibCheck",
+      "--target",
+      "ES2022",
+      "--module",
+      "NodeNext",
+      "--moduleResolution",
+      "NodeNext",
+      "packages/database/test/public-admission.test.ts"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-003-admission-writer",
+    "exit_status": 0,
+    "log": "test-typecheck.log"
+  },
+  {
+    "check": "database-tests",
+    "command": [
+      "node",
+      "node_modules/vitest/vitest.mjs",
+      "run",
+      "test/public-admission.test.ts",
+      "test/production-publication.test.ts",
+      "test/activation.test.ts"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-003-admission-writer/packages/database",
+    "exit_status": 0,
+    "log": "database-tests.log"
+  },
+  {
+    "check": "merchant-publication",
+    "command": [
+      "node",
+      "apps/web/test/admin/merchant-publication.test.mjs"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-003-admission-writer",
+    "exit_status": 0,
+    "log": "merchant-publication.log"
+  },
+  {
+    "check": "style",
+    "command": [
+      "node",
+      "node_modules/@biomejs/biome/bin/biome",
+      "check",
+      "packages/database/src/durable-core.ts",
+      "scripts/boundaries/check-database-api.mjs",
+      "apps/web/test/admin/merchant-publication.test.mjs",
+      "apps/web/test/admin/support/synthetic-activation.mjs",
+      "packages/database/test/public-admission.test.ts"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-003-admission-writer",
+    "exit_status": 0,
+    "log": "style.log"
+  },
+  {
+    "check": "diff-check",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-003-admission-writer",
+    "exit_status": 0,
+    "log": "diff-check.log"
+  },
+  {
+    "check": "database-api",
+    "command": [
+      "node",
+      "scripts/boundaries/check-database-api.mjs"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-003-admission-writer",
+    "exit_status": 0,
+    "log": "database-api.log"
+  }
+]

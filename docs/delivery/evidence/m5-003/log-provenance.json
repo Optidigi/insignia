@@ -1,0 +1,110 @@
+[
+  {
+    "path": "database-api-final.log",
+    "rawSha256": "cc5ff0045665f4c7588b15c75f5bc76c80ba42abe19b1956f9fd3b3061cde70c",
+    "sanitizedSha256": "cc5ff0045665f4c7588b15c75f5bc76c80ba42abe19b1956f9fd3b3061cde70c",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "digest-green.log",
+    "rawSha256": "22e26d943fd3fad24f80e4ee94f83da9d8726190486b9f40c08c9ee18643dba0",
+    "sanitizedSha256": "819407fc83363c6c7757ee334176b634ae827b17ce739f720565e67cf9cbbb30",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "digest-red.log",
+    "rawSha256": "f0f59dd9fef764dcb91a87772f9f00189ba0d2a6a6cfb10864ce27b60da6e917",
+    "sanitizedSha256": "18fb286bb82ca84a6fe8fdb5fec46f5e508d77949a71249158c9f8f7b19dd9ca",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "hold-red.log",
+    "rawSha256": "ed4935d7dc31ae4c1fabbaa696afb83bbdd6e8db595c3ab16dafd6a7679868bb",
+    "sanitizedSha256": "83ee289c4162f7c5050cba35216b20e9083d15ada722a79ba41380c9b266af64",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "http-pg-final.log",
+    "rawSha256": "866fb3871b5e0846572eef0d4e0c40f58bb0602597244ed87cc8ebac5f87e916",
+    "sanitizedSha256": "866fb3871b5e0846572eef0d4e0c40f58bb0602597244ed87cc8ebac5f87e916",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "http-pg-green.log",
+    "rawSha256": "29eaa5ade89d3c768dff3665b44a93985648f5dcce64a18f4f07402261aea56b",
+    "sanitizedSha256": "5268e9c9a764e318673ec594b9090d32585be78268287346dbb6d05043c9298f",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "http-pg.log",
+    "rawSha256": "409bab0970531e80d7b94cb1e190e46d46b78e85ca639b24a76188fbaeb0a540",
+    "sanitizedSha256": "9065507c5e1a69ec21cf87cec8675ea46de895e44222b2f8bc471b7a3b24c15f",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "pg-activation-first.log",
+    "rawSha256": "7c2134d7518bc10ff94a2e2d575a4942b261f27aeaaa458c50ea1af26a6918eb",
+    "sanitizedSha256": "a2281f5a985bd28b3e31b8ccb76987fb61e65bcc26a92b602d455feca6f6f5f7",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "pg-activation-green.log",
+    "rawSha256": "7d47f46d9df8bcae54e92eefcfe7ec5760a276a7bcd6f647a269dc74f85a3e8f",
+    "sanitizedSha256": "530fd280af6dfcb0a6f4affca29aa576fdc640f2b8ffd5c9f96774ec48fb90dc",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "pg-full.log",
+    "rawSha256": "5a9b20175b7cc9c110ef012d2585f7152d5658302548e18b2aba77605d37640e",
+    "sanitizedSha256": "e2ef0cd5c6532f241096c845e7be8f953852d7b713a259e3e636be4a2f14b372",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "query-plan-final.log",
+    "rawSha256": "ddaef658b8752a2ea2f0ca6c5d8ad57004abb53c325bebd8f30c53951759b6bb",
+    "sanitizedSha256": "ddaef658b8752a2ea2f0ca6c5d8ad57004abb53c325bebd8f30c53951759b6bb",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "query-plan-fixture-red.log",
+    "rawSha256": "10cda7ed9ba02b96c60435db31da8a78b0f8efe389aa8945bb3a58da0d9eca3a",
+    "sanitizedSha256": "10cda7ed9ba02b96c60435db31da8a78b0f8efe389aa8945bb3a58da0d9eca3a",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "release-green.log",
+    "rawSha256": "d83fc29c3dadb7c4e91d5dc20e3cbe58f7a77b3ffee8d608a19cdfbfc0a02891",
+    "sanitizedSha256": "bf443ab4bedd3f72189b5e9316e9f3a7cabd5bddfdd7ae51224e700d183f836b",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "release-red.log",
+    "rawSha256": "95feab6487eb76a3bb5613af756aa5ef725d756b8d007176b2b20fb816f30635",
+    "sanitizedSha256": "535111ff51604b987776148652bcb4b481325946d8f16332946703874a000e7d",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "renderer-control.log",
+    "rawSha256": "597b63aaf9b0d4ba9d1fca46c3ceb1148d280d4fe30a822608ebdc153478e03a",
+    "sanitizedSha256": "2e55a2484e62b05929ba5c15f038f28f4b950aef1c0101bcbec09f3411c74f70",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "root-first.log",
+    "rawSha256": "c664bd507990d4165a301ce03b0c6af0b53d5f536889c030c6bc0910904ab8e5",
+    "sanitizedSha256": "85021b449c86e55b34aa88f533e5107f7c42052d9d5bf73e0d7851ce12688f3d",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "root-integrated-green.log",
+    "rawSha256": "b3e356f026ab6b2fd59e895416528a955abd54adb374ce1a98d54635d7cd4c7f",
+    "sanitizedSha256": "23ac9e0c1a7ab54f305b0f4545609434c07d85f47f8f4753216edbd5aefc3baf",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  },
+  {
+    "path": "stress-100.log",
+    "rawSha256": "f19ca4160588039e8075d9fff7697ccf06be2834cb975da7fd93c987fe579b13",
+    "sanitizedSha256": "f19ca4160588039e8075d9fff7697ccf06be2834cb975da7fd93c987fe579b13",
+    "transform": "ANSI removed; trailing whitespace/blank EOF normalized; substantive output unchanged"
+  }
+]

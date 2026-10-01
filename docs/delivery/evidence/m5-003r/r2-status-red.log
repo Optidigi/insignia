@@ -1,0 +1,70 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/shopify
+
+ ❯ test/catalog.test.ts (5 tests | 1 failed | 4 skipped) 9ms
+   × R2 mixed ACTIVE/UNLISTED catalog pages and detail retain legal status and bounded pagination 6ms
+ ❯ test/availability-hold.test.ts (121 tests | 2 failed | 119 skipped) 27ms
+   × retains and restores original UNLISTED with no unnecessary DRAFT write 23ms
+   × R2 a merchant UNLISTED status change while held conflicts without a visibility-broadening restore 1ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/availability-hold.test.ts > retains and restores original UNLISTED with no unnecessary DRAFT write
+ShopifyAvailabilityHoldError: Shopify availability hold failed: provider_shape
+ ❯ fail src/availability-hold.ts:66:9
+     64| }
+     65| const fail = (kind: AvailabilityHoldFailureKind): never => {
+     66|   throw new ShopifyAvailabilityHoldError(kind);
+       |         ^
+     67| };
+     68| const record = (v: unknown): Record<string, unknown> | null =>
+ ❯ parseProduct src/availability-hold.ts:186:92
+ ❯ read src/availability-hold.ts:420:20
+ ❯ Object.snapshot src/availability-hold.ts:458:15
+ ❯ owned test/availability-hold.test.ts:126:18
+ ❯ test/availability-hold.test.ts:150:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/availability-hold.test.ts > R2 a merchant UNLISTED status change while held conflicts without a visibility-broadening restore
+ShopifyAvailabilityHoldError: Shopify availability hold failed: provider_shape
+ ❯ fail src/availability-hold.ts:66:9
+     64| }
+     65| const fail = (kind: AvailabilityHoldFailureKind): never => {
+     66|   throw new ShopifyAvailabilityHoldError(kind);
+       |         ^
+     67| };
+     68| const record = (v: unknown): Record<string, unknown> | null =>
+ ❯ parseProduct src/availability-hold.ts:186:92
+ ❯ read src/availability-hold.ts:420:20
+ ❯ Object.snapshot src/availability-hold.ts:458:15
+ ❯ owned test/availability-hold.test.ts:126:18
+ ❯ test/availability-hold.test.ts:1067:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/catalog.test.ts > R2 mixed ACTIVE/UNLISTED catalog pages and detail retain legal status and bounded pagination
+Error: Invalid catalog product
+ ❯ project src/catalog.ts:72:11
+     70|     typeof value.variants.pageInfo?.hasNextPage !== 'boolean'
+     71|   )
+     72|     throw new Error('Invalid catalog product');
+       |           ^
+     73|   if (new Set(value.variants.nodes.map((item) => item.id)).size !== va…
+     74|     throw new Error('Duplicate catalog variant identity');
+ ❯ src/catalog.ts:133:62
+ ❯ Object.list src/catalog.ts:133:48
+ ❯ test/catalog.test.ts:91:16
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  2 failed (2)
+      Tests  3 failed | 123 skipped (126)
+   Start at  17:38:49
+   Duration  382ms (transform 65%, import 22%, tests 10%, worker 3%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/shopify

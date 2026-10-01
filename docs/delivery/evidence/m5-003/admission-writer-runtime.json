@@ -1,0 +1,13 @@
+{
+  "cwd": "/home/serveradmin/insignia-m5-003-admission-writer",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "approval_policy": "never",
+  "sandbox_policy": {
+    "type": "workspace-write",
+    "network_access": false,
+    "exclude_tmpdir_env_var": false,
+    "exclude_slash_tmp": false
+  },
+  "sessionId": "01a0f754-5812-78e3-a95c-3c3ead3cffd9"
+}

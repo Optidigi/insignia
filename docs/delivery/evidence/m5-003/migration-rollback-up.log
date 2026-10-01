@@ -1,0 +1,5 @@
+Rolling back: 20260930000900_m5_activation.sql
+Rolled back: 20260930000900_m5_activation.sql in 36.140786ms
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+Applying: 20260930000900_m5_activation.sql
+Applied: 20260930000900_m5_activation.sql in 528.416693ms

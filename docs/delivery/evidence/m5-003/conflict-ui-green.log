@@ -1,0 +1,10 @@
+✔ admin distinguishes activation waiting, held, restoration and conflict without manufacturing ACTIVE (1.106766ms)
+✔ publication conflict outranks a retained held/pending activation state (0.1824ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 117.343611

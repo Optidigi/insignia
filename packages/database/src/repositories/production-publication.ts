@@ -21,7 +21,10 @@ type Target = Tenant & { field: Field; productId?: string };
 type Observed = { ownerId: string; namespace: string; key: string; type: string; value: string; compareDigest: string };
 export type ProductionPublicationRemote = {
   read(target: Target): Promise<Observed | null>;
-  set(target: Target & { value: string; compareDigest: string | null }): Promise<{ observed: Observed }>;
+  set(
+    target: Target & { value: string; compareDigest: string | null },
+    beforeSend?: () => boolean,
+  ): Promise<{ observed: Observed }>;
 };
 type Projection = {
   version: 'm4-publication-v1';
@@ -67,6 +70,8 @@ type Stored = {
   };
   progress: Progress;
 };
+// Ephemeral, internal authority: the observation must remain fresh through awaited preparation.
+type Admission = { isFresh(): boolean };
 export type PublicationAdvanceResult =
   | { kind: 'PENDING'; phase: ProgressPhase }
   | { kind: 'ACTIVE'; phase: 'active' }
@@ -76,7 +81,7 @@ export type PublicationAdvanceResult =
 
 const uuidHex = (uuid: string) => uuid.replaceAll('-', '');
 const productGid = (id: string) => `gid://shopify/Product/${id}`;
-function projection(value: unknown): Projection {
+export function publicationProjection(value: unknown): Projection {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Publication projection missing');
   const p = value as Partial<Projection>;
   if (
@@ -94,7 +99,7 @@ function projection(value: unknown): Projection {
     throw new Error('Publication projection malformed');
   return p as Projection;
 }
-function exact(observed: Observed | null, target: Target, expected: string): boolean {
+export function exactPublicationField(observed: Observed | null, target: Target, expected: string): boolean {
   if (!observed) return false;
   const key =
     target.field === 'public_config'
@@ -134,10 +139,14 @@ export class PgProductionPublication {
     private readonly appId: string,
     private readonly admission?: {
       established(input: {
+        shopId: string;
+        configId: string;
+        operationId: string;
+        installationGeneration: string;
         productId: string;
         priorMode: ProductPolicyMode | null;
         nextMode: ProductPolicyMode;
-      }): Promise<boolean>;
+      }): Promise<Admission | null>;
     },
   ) {
     if (!/^[1-9][0-9]*$/.test(appId)) throw new Error('Invalid trusted app identity');
@@ -254,16 +263,42 @@ export class PgProductionPublication {
         WHERE shop_id=${input.shopId} AND config_id=${input.configId}
           AND operation_id=${first.effective_operation_id}`.execute(this.database);
       const effective = prior.rows[0];
-      if (effective?.status !== 'activated' || effective.operation_sequence !== first.publication_sequence)
+      if (
+        effective?.status !== 'activated' ||
+        BigInt(effective.operation_sequence) > BigInt(first.publication_sequence)
+      )
         throw new Error('Durable effective publication is not coherent');
-      const old = projection(effective.expected_projection);
+      if (effective.operation_sequence !== first.publication_sequence) {
+        // Retained request sequence is monotonic; a separately audited abandoned
+        // tail need not equal the effective operation. Every intervening request
+        // must be resolved in this installation. This never relaxes quote issuance
+        // or the exact effective remote anchors checked below.
+        const closed = await sql<{ count: string; valid: boolean | null }>`SELECT count(*)::text AS count,
+          bool_and(COALESCE(o.status IN ('failed','superseded') AND o.availability_resolved_at IS NOT NULL
+            AND a.kind='RESOLVED' AND a.resolution_digest=r.resolution_digest, false)) AS valid
+          FROM publication_operations o
+          LEFT JOIN m5_activation_state a USING(shop_id,config_id,operation_id)
+          LEFT JOIN m5_availability_resolutions r USING(shop_id,config_id,operation_id)
+          WHERE o.shop_id=${input.shopId} AND o.config_id=${input.configId}
+            AND o.installation_generation=${first.generation}::bigint
+            AND o.operation_sequence>${effective.operation_sequence}::bigint
+            AND o.operation_sequence<=${first.publication_sequence}::bigint`.execute(this.database);
+        const gap = BigInt(first.publication_sequence) - BigInt(effective.operation_sequence);
+        if (closed.rows[0]?.valid !== true || BigInt(closed.rows[0].count) !== gap)
+          throw new Error('Durable effective publication is not coherent');
+      }
+      const old = publicationProjection(effective.expected_projection);
       if (
         old.productId !== productId ||
         old.shopifyShopId !== tenant.shopifyShopId ||
         old.generationHex !== uuidHex(first.authorization_generation) ||
         old.mode !== priorMode ||
-        !exact(priorRegistration, this.target(tenant, 'registration', productId), old.registrationReady) ||
-        !exact(priorPolicy, this.target(tenant, 'policy', productId), old.policy)
+        !exactPublicationField(
+          priorRegistration,
+          this.target(tenant, 'registration', productId),
+          old.registrationReady,
+        ) ||
+        !exactPublicationField(priorPolicy, this.target(tenant, 'policy', productId), old.policy)
       )
         throw new Error('Remote product policy differs from durable effective publication');
     }
@@ -307,6 +342,12 @@ export class PgProductionPublication {
           throw new Error('Publication operation idempotency conflict');
         return { operationId: input.operationId, phase: replay.rows[0].phase };
       }
+      if (row.publication_sequence !== first.publication_sequence)
+        throw new Error('Publication installation or revision changed while preparing');
+      const unresolvedHold = await sql<{ operation_id: string }>`SELECT operation_id FROM m5_activation_state
+        WHERE shop_id=${input.shopId} AND config_id=${input.configId} AND hold IS NOT NULL AND kind NOT IN ('RESTORED','RESOLVED')
+        LIMIT 1`.execute(tx);
+      if (unresolvedHold.rows[0]) throw new Error('Availability hold requires recovery before another publication');
       const open = await sql<{ operation_id: string }>`SELECT p.operation_id FROM m4_publication_progress p
         JOIN publication_operations o USING (shop_id, config_id, operation_id)
         WHERE p.shop_id=${input.shopId} AND p.config_id=${input.configId}
@@ -426,7 +467,7 @@ export class PgProductionPublication {
       WHERE s.shop_id=${input.operation.shopId} AND c.config_id=${input.operation.configId}
         AND i.deactivated_at IS NULL`.execute(database);
     const row = result.rows[0];
-    const expected = projection(input.operation.expectedProjection);
+    const expected = publicationProjection(input.operation.expectedProjection);
     if (
       !(
         row &&
@@ -487,6 +528,12 @@ export class PgProductionPublication {
       FOR UPDATE OF s, i, c`.execute(tx);
       const stored = await this.load(shopId, configId, operationId, tx);
       if (!stored) return { kind: 'OPERATOR_HOLD', phase: 'operator-hold' };
+      const resolved = (
+        await sql<{ resolved: boolean }>`SELECT true AS resolved FROM m5_availability_resolutions
+        WHERE shop_id=${shopId} AND config_id=${configId} AND operation_id=${operationId}`.execute(tx)
+      ).rows[0];
+      if (resolved && stored.progress.phase !== 'active') return { kind: 'OPERATOR_HOLD', phase: 'operator-hold' };
+
       const { operation, progress } = stored;
       const hold = async (observed: unknown): Promise<PublicationAdvanceResult> => {
         if (!(await this.save(stored, 'operator-hold', observed, 0, tx)))
@@ -503,7 +550,7 @@ export class PgProductionPublication {
           WHERE o.shop_id=${shopId} AND o.config_id=${configId} AND o.operation_id=${operationId}`.execute(tx);
         if (activated.rows[0]?.status !== 'activated' || activated.rows[0]?.effective_operation_id !== operationId)
           return { kind: 'OPERATOR_HOLD', phase: 'active' };
-        const expectedActive = projection(operation.expectedProjection);
+        const expectedActive = publicationProjection(operation.expectedProjection);
         const observedActive = await this.observe(
           {
             shopId,
@@ -519,22 +566,26 @@ export class PgProductionPublication {
           shopifyShopId: expectedActive.shopifyShopId,
           appId: this.appId,
         };
-        return exact(
+        return exactPublicationField(
           observedActive.publicConfig,
           this.target(tenant, 'public_config', expectedActive.productId),
           expectedActive.publicConfig,
         ) &&
-          exact(
+          exactPublicationField(
             observedActive.registration,
             this.target(tenant, 'registration', expectedActive.productId),
             expectedActive.registrationReady,
           ) &&
-          exact(observedActive.policy, this.target(tenant, 'policy', expectedActive.productId), expectedActive.policy)
+          exactPublicationField(
+            observedActive.policy,
+            this.target(tenant, 'policy', expectedActive.productId),
+            expectedActive.policy,
+          )
           ? { kind: 'ACTIVE', phase: 'active' }
           : { kind: 'OPERATOR_HOLD', phase: 'active' };
       }
       if (!(await this.current(stored, tx))) return hold(null);
-      const expected = projection(operation.expectedProjection);
+      const expected = publicationProjection(operation.expectedProjection);
       const tenant: Tenant = {
         shopId,
         installationGeneration: operation.installationGeneration,
@@ -542,17 +593,23 @@ export class PgProductionPublication {
         appId: this.appId,
       };
       const productId = expected.productId;
+      let admission: Admission | null = null;
       if (progress.prior_mode === null || progress.prior_mode !== progress.mode) {
-        const established = this.admission
+        admission = this.admission
           ? await this.admission.established({
+              shopId,
+              configId,
+              operationId,
+              installationGeneration: operation.installationGeneration,
               productId: productGid(productId),
               priorMode: progress.prior_mode,
               nextMode: progress.mode,
             })
-          : false;
-        if (!established) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
+          : null;
+        if (!admission?.isFresh()) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
       }
       const remote = await this.observe(tenant, productId);
+      if (admission && !admission.isFresh()) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
       const byField = {
         public_config: remote.publicConfig,
         registration: remote.registration,
@@ -590,13 +647,22 @@ export class PgProductionPublication {
                 : null;
       if (!desired) {
         if (
-          !exact(remote.publicConfig, this.target(tenant, 'public_config', productId), expected.publicConfig) ||
-          !exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationReady) ||
-          !exact(remote.policy, this.target(tenant, 'policy', productId), expected.policy)
+          !exactPublicationField(
+            remote.publicConfig,
+            this.target(tenant, 'public_config', productId),
+            expected.publicConfig,
+          ) ||
+          !exactPublicationField(
+            remote.registration,
+            this.target(tenant, 'registration', productId),
+            expected.registrationReady,
+          ) ||
+          !exactPublicationField(remote.policy, this.target(tenant, 'policy', productId), expected.policy)
         )
           return hold(remote);
         if (progress.phase === 'ready-written') {
           if (!(await this.current(stored, tx))) return hold(remote);
+          if (admission && !admission.isFresh()) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
           const journal = createPublicationRepository(tx);
           const acknowledged = await journal.acknowledge(shopId, configId, operationId);
           if (acknowledged !== 'acknowledged') throw new Error('M3 publication acknowledgement stale');
@@ -611,28 +677,48 @@ export class PgProductionPublication {
       const actual = byField[desired.field];
       if (
         desired.field === 'policy' &&
-        !exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationPending)
+        !exactPublicationField(
+          remote.registration,
+          this.target(tenant, 'registration', productId),
+          expected.registrationPending,
+        )
       )
         return hold(remote);
       if (
         desired.field === 'registration' &&
         progress.phase === 'policy-written' &&
-        (!exact(remote.policy, this.target(tenant, 'policy', productId), expected.policy) ||
-          (!exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationPending) &&
-            !exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationReady)))
+        (!exactPublicationField(remote.policy, this.target(tenant, 'policy', productId), expected.policy) ||
+          (!exactPublicationField(
+            remote.registration,
+            this.target(tenant, 'registration', productId),
+            expected.registrationPending,
+          ) &&
+            !exactPublicationField(
+              remote.registration,
+              this.target(tenant, 'registration', productId),
+              expected.registrationReady,
+            )))
       )
         return hold(remote);
-      if (!exact(actual, target, desired.value)) {
+      if (!exactPublicationField(actual, target, desired.value)) {
         if ((actual?.compareDigest ?? null) !== desired.prior) {
           await this.save(stored, 'conflict', remote, 0, tx);
           return { kind: 'CONFLICT', phase: 'conflict' };
         }
         if (!(await this.current(stored, tx))) return hold(remote);
+        // No await between this check and dispatch: projection and current-state I/O cannot renew authority.
+        if (admission && !admission.isFresh()) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
         try {
-          const written = await this.remote.set({ ...target, value: desired.value, compareDigest: desired.prior });
-          if (!exact(written.observed, target, desired.value)) throw new Error('Exact Admin readback failed');
+          const written = await this.remote.set(
+            { ...target, value: desired.value, compareDigest: desired.prior },
+            admission ? () => admission.isFresh() : undefined,
+          );
+          if (!exactPublicationField(written.observed, target, desired.value))
+            throw new Error('Exact Admin readback failed');
         } catch (error) {
           const kind = error && typeof error === 'object' && 'kind' in error ? (error as { kind: unknown }).kind : null;
+          if (kind === 'not_dispatched')
+            return { kind: admission ? 'ADMISSION_PENDING' : 'PENDING', phase: progress.phase };
           if (kind === 'cas_conflict') {
             await this.save(stored, 'conflict', remote, 0, tx);
             return { kind: 'CONFLICT', phase: 'conflict' };
@@ -657,7 +743,7 @@ export class PgProductionPublication {
           : desired.field === 'registration'
             ? readback.registration
             : readback.policy;
-      if (!exact(done, target, desired.value)) return hold(readback);
+      if (!exactPublicationField(done, target, desired.value)) return hold(readback);
       if (!(await this.save(stored, desired.next, readback, 0, tx))) return { kind: 'CONFLICT', phase: progress.phase };
       return { kind: 'PENDING', phase: desired.next };
     });

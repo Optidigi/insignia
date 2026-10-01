@@ -1,0 +1,55 @@
+{
+  "runtime": "Node24.21.0/pnpm12.6.0/TS5.9.3/PG18.6",
+  "sourceParent": "0c8e473f4ed38aa5a66c62f4a1602067ca500a44",
+  "sourceChanged": [
+    "packages/database/src/repositories/production-activation.ts",
+    "packages/database/src/repositories/production-publication.ts",
+    "packages/database/test/activation.test.ts",
+    "packages/database/test/production-publication.test.ts"
+  ],
+  "commands": [
+    {
+      "command": "bash /home/serveradmin/insignia-m5-002-handoff/check-local.sh",
+      "exitStatus": 0,
+      "log": "dispatch-correction-root.log",
+      "result": "Complete pinned root PASS"
+    },
+    {
+      "command": "DATABASE_URL=<isolated-PG18> corepack pnpm check:database",
+      "exitStatus": 0,
+      "log": "dispatch-correction-postgres.log",
+      "result": "105/105; migrations twice"
+    },
+    {
+      "command": "DATABASE_URL=<isolated-PG18> INSIGNIA_REQUIRE_POSTGRES_TEST=1 node --test test/admin/merchant-config.test.mjs test/admin/merchant-publication.test.mjs test/admin/production-composition.test.mjs test/admin/preview-composition.test.mjs test/admin/activation-integration.test.mjs test/admin/activation-state.test.mjs test/admin/release-evidence.test.mjs test/shopify-webhook.test.mjs",
+      "cwd": "apps/web",
+      "exitStatus": 0,
+      "log": "dispatch-correction-http.log",
+      "result": "16/16, zero skips"
+    },
+    {
+      "command": "DATABASE_URL=<isolated-PG18> INSIGNIA_REQUIRE_POSTGRES_TEST=1 corepack pnpm --filter @insignia/worker test",
+      "exitStatus": 0,
+      "log": "dispatch-correction-worker.log",
+      "result": "15/15, zero skips"
+    },
+    {
+      "command": "LD_LIBRARY_PATH=<retained-local-browser-libs> FONTCONFIG_FILE=<retained-local-font-config> M5_CAPTURE_BROWSER=0 corepack pnpm test:m5-stress",
+      "exitStatus": 0,
+      "log": "dispatch-correction-stress.log",
+      "result": "100/100,25 per combination,zero retries/skips"
+    },
+    {
+      "command": "node node_modules/typescript/bin/tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2022 --skipLibCheck packages/database/test/activation.test.ts packages/database/test/production-publication.test.ts packages/shopify/test/availability-hold.test.ts packages/shopify/test/catalog.test.ts",
+      "exitStatus": 0,
+      "log": "dispatch-correction-fixtures.log",
+      "result": "PASS"
+    },
+    {
+      "command": "LD_LIBRARY_PATH=<retained-local-browser-libs> FONTCONFIG_FILE=<retained-local-font-config> M5_CAPTURE_BROWSER=0 corepack pnpm test:m5-renderer-control",
+      "exitStatus": 0,
+      "log": "dispatch-correction-renderer.log",
+      "result": "Missing library negative control PASS"
+    }
+  ]
+}

@@ -7,7 +7,7 @@ export interface CatalogTransport {
 export type CatalogProduct = {
   id: string;
   title: string;
-  status: 'ACTIVE' | 'ARCHIVED' | 'DRAFT';
+  status: 'ACTIVE' | 'ARCHIVED' | 'DRAFT' | 'UNLISTED';
   image: { url: string; alt: string | null } | null;
   variants: {
     id: string;
@@ -63,7 +63,7 @@ function project(value: RawProduct, maxVariants = 8): CatalogProduct {
     !value ||
     !productGid.test(value.id) ||
     typeof value.title !== 'string' ||
-    !['ACTIVE', 'ARCHIVED', 'DRAFT'].includes(value.status) ||
+    !['ACTIVE', 'ARCHIVED', 'DRAFT', 'UNLISTED'].includes(value.status) ||
     !value.variants ||
     !Array.isArray(value.variants.nodes) ||
     value.variants.nodes.length > maxVariants ||

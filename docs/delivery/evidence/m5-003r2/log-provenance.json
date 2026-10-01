@@ -1,0 +1,170 @@
+[
+  {
+    "file": "logs/r1t-public-http-red.log",
+    "rawSha256": "35dc35d18004b23dc6c2230da155fd84d7d54ac1a8b33746862438c062ac46fa",
+    "publishedSha256": "6ba2b06aa6e73b3a5bdb14947534c8fc690b565dcd3177db5edb1c366cfc7e85",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/restore-public-http-red.log",
+    "rawSha256": "e7c8d4899bde73ed476ed72bf59a9f6341c2fb6e957a8660e96393215fde46cd",
+    "publishedSha256": "cbb8ad078da5f18d8a3ebfa8037f1dd4457d6e05ae62825f2c7983cf553ff7af",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/first-green.log",
+    "rawSha256": "a3a538ee49aa392a0cf146debaf200c033c5af7240e296243227374efc191df2",
+    "publishedSha256": "4725b57ce1695478e59177df63fbd43360dcbc7fd16da4f888a32d9d6994929e",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/matrix-green.log",
+    "rawSha256": "6fb1b90ddcf5fe81dee07602c01b4014113a8de216b6e42a977e98272a36669d",
+    "publishedSha256": "f8badc88790558aa3728fec622bceca34cb65c5eee86aaa9d4a17b10ba0ac6b0",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/activation-green.log",
+    "rawSha256": "76818336965d9d9b9af9c6dbd4d7113743e57215bc1f237b2831ffafd12217e4",
+    "publishedSha256": "9ac261f6f6ef53899a1bd6e8309cd6fd59bd9ffd62f8ea8c1dc6c17734cdc4bf",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/root-verified.log",
+    "rawSha256": "07ad5754b81326c1b11bcabcd50b38e7fe7e1b407eeac0d20c4bc290d79e9028",
+    "publishedSha256": "e7d7aa1f7aca835eeffb61250b92bbf3c8dd723eb1df8326a96dee3669896423",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/postgres-verified.log",
+    "rawSha256": "555e91599deeadff860114814a3dc4281b9546e525ceb6f2c492b853e5633729",
+    "publishedSha256": "a898edf795b1ffad874b503502a1a1742da8690bdc85853d205e748261285208",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/http.log",
+    "rawSha256": "e7585069197cd7fa5b7883d325ef3eaadeee20568e704ab529b36f079fc877d2",
+    "publishedSha256": "e7585069197cd7fa5b7883d325ef3eaadeee20568e704ab529b36f079fc877d2",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/worker.log",
+    "rawSha256": "e7b2bfde511c2bcc18a09052e2753fdfe1dacc5aaa03ba894fcea6aa95cab8e9",
+    "publishedSha256": "e7b2bfde511c2bcc18a09052e2753fdfe1dacc5aaa03ba894fcea6aa95cab8e9",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/stress.log",
+    "rawSha256": "b43aaef07ab7808c98567ff2dac4f5e2b11c369028171918283758093174cf71",
+    "publishedSha256": "b43aaef07ab7808c98567ff2dac4f5e2b11c369028171918283758093174cf71",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/renderer.log",
+    "rawSha256": "909179ace9ff31d4d55a6ed288133cc7fa9839f67456f4c9b629bcc10dcb622d",
+    "publishedSha256": "c005be2d3182d3358184b87ed8c24c23b4971dd76d364375e7877322a19e31cc",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/strict-all.log",
+    "rawSha256": "322e4432f925b08974ae4465fbf620ce6ebb8ccf50916dd41e0e6b5655e7b8ed",
+    "publishedSha256": "322e4432f925b08974ae4465fbf620ce6ebb8ccf50916dd41e0e6b5655e7b8ed",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/strict-verified.log",
+    "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "publishedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/shopify-final-typed.log",
+    "rawSha256": "5b6dea0342ac16c242cd0042eccf9483d46b7c9b9899376d116d29fa12b4ac2d",
+    "publishedSha256": "c3a049d1c2125456bc19ef790230f0bd4e66ab42a765011a075b2ab81e3ca348",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
+  },
+  {
+    "file": "logs/calendar-application-final.log",
+    "rawSha256": "683d90bcb6e53a57895acc7d38f290a07c49f958bb8e7b5413c65d9cfa03fce1",
+    "publishedSha256": "f0b63011e9777e9b4f3b11f421d559b7ec1b9cbae1725a43682d1756de8e5155",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-application.log",
+    "rawSha256": "5328f8f29b5a3e6b69fb56bf32d2be139cba9b0b128a6260e4054c733c07b137",
+    "publishedSha256": "915d16039e55b26c6923eebcd5b46c38574a66f50edd3ce1710b2e83e7d7f9aa",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-build-final.log",
+    "rawSha256": "b7fc0fac60c0348142429995e3356d61699b744e94ad478a2de93d07dda7a49c",
+    "publishedSha256": "e3c2a45781fa4cd1e7ea84547b7710319d29e01b213def9f921d9f931a79a93b",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-build.log",
+    "rawSha256": "85d561a50b01b84e02736045532141ba4b41757c3f2b90e7539b8ef4f8e68dfa",
+    "publishedSha256": "aaad95814c33c60f2caf0821ce943b7e8bebc7f628337ac023ec3c368720fa29",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-http.log",
+    "rawSha256": "28a9cde99b3b07cce9194a2eb55adca89209362725485105778530be024e4913",
+    "publishedSha256": "28a9cde99b3b07cce9194a2eb55adca89209362725485105778530be024e4913",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-postgres.log",
+    "rawSha256": "a82e814423b069d82448d1a6e0fc914c7ac226a05c142172aa48aa93a661a758",
+    "publishedSha256": "676a7244ebf10e82b9d280493a32f6de544bfb9744bb17220a6802f17f6cd5d3",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-public-final-green.log",
+    "rawSha256": "e4e1c1fc5c0f20fb3c8689bac5df81426a0a14002a499ea2ab6955801aa2e7e6",
+    "publishedSha256": "ae90aa5413813ef835b30fb42a87c8cadd9629faa0005251ebd9f40758ef7210",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-public-green.log",
+    "rawSha256": "0e163aee2206329d5458ba0641d988685db7f6c471da1115005203889c5fff2d",
+    "publishedSha256": "b45fb97a0d06ec873b63cabac2305f4ea7149dbcb11fa3a7d8f5e3ebd36cff70",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-public-red.log",
+    "rawSha256": "c68a315eb7c5a7d18eb2865f4352804c3cfd71ca4e63664ba5dd5869fecf272c",
+    "publishedSha256": "89cb1125894b2a41d7edc772fe06c0cd6b5d869c055ada9f93c3e28eacfffa68",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-renderer.log",
+    "rawSha256": "fe0659b441cf97ff1b63ad2b655d02efa9532f8050abc6800f9c150bc7072703",
+    "publishedSha256": "522a89289cbaf36302b438a55688b391e48d7dc1c8894445a994550ccdac0a49",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-root.log",
+    "rawSha256": "4aac15665a20e292f922d654d9582ce092f7156cf02e36d0e04f4cac364e0c93",
+    "publishedSha256": "b22e2b28501db17aafeaa7a9a3bd36502d334030af8f14b366477dc29dad1ea7",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-stress.log",
+    "rawSha256": "e3cab6e44e284cf22220fc878960181c89325c55b5c9141d56a75f8dd299ec04",
+    "publishedSha256": "e3cab6e44e284cf22220fc878960181c89325c55b5c9141d56a75f8dd299ec04",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-strict.log",
+    "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "publishedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  },
+  {
+    "file": "logs/calendar-worker.log",
+    "rawSha256": "34a652bd34835c95a987d0b7b20549967d9f287b4c723ce9faec7154719e6d66",
+    "publishedSha256": "34a652bd34835c95a987d0b7b20549967d9f287b4c723ce9faec7154719e6d66",
+    "transform": "ANSI removed; trailing whitespace/final blank lines normalized; synthetic local data only"
+  }
+]

@@ -1,0 +1,79 @@
+{
+  "kind": "principal-offline-fixed-source-characterization",
+  "head": "a426719e5350f61ecb5620f6c90ab7a0e365e66b",
+  "node": "v22.16.0",
+  "sourceVerification": {
+    "availability-hold.ts": {
+      "bytes": 22464,
+      "gitBlob": "4685b97caffa3b7c98600bceda5af9e5ff0f9d44",
+      "sha256": "399995b77183d1b24e6a54ce2b18ee0e5dc0b190e23d8b4ce1166585595b15e0"
+    },
+    "production-activation.ts": {
+      "bytes": 4925,
+      "gitBlob": "15c9a83b957065b41bfb06eab929b9aaace6aa53",
+      "sha256": "56733529dd02115eea94c53ce81ba3ff82f8003958c7c68ee620dc22c753a1c8"
+    }
+  },
+  "executedScope": "Complete adapter with synthetic HTTP; exact admission callback with a synthetic store and clock",
+  "exclusions": [
+    "No full workspace suite",
+    "No PostgreSQL transaction",
+    "No Shopify or other provider request",
+    "No code correction"
+  ],
+  "immediateControl": {
+    "transportDelayMs": 0,
+    "freshnessBudgetMs": 1000,
+    "admissionAccepted": true,
+    "payloadCapturedAt": "2026-10-01T12:00:00.000Z",
+    "adapterObservedAt": "2026-10-01T12:00:00.000Z",
+    "decisionAt": "2026-10-01T12:00:00.000Z",
+    "reportedAgeMs": 0,
+    "actualControlledPayloadAgeMs": 0,
+    "syntheticReadAttempts": 2
+  },
+  "delayedObservation": {
+    "transportDelayMs": 2000,
+    "freshnessBudgetMs": 1000,
+    "admissionAccepted": true,
+    "payloadCapturedAt": "2026-10-01T12:00:00.000Z",
+    "adapterObservedAt": "2026-10-01T12:00:02.000Z",
+    "decisionAt": "2026-10-01T12:00:02.000Z",
+    "reportedAgeMs": 0,
+    "actualControlledPayloadAgeMs": 2000,
+    "syntheticReadAttempts": 2
+  },
+  "statuses": [
+    {
+      "status": "ACTIVE",
+      "accepted": true,
+      "normalizedState": "available"
+    },
+    {
+      "status": "DRAFT",
+      "accepted": true,
+      "normalizedState": "unavailable"
+    },
+    {
+      "status": "ARCHIVED",
+      "accepted": true,
+      "normalizedState": "archived"
+    },
+    {
+      "status": "UNLISTED",
+      "accepted": false,
+      "errorKind": "provider_shape",
+      "message": "Shopify availability hold failed: provider_shape"
+    },
+    {
+      "status": "NOT_A_SHOPIFY_STATUS",
+      "accepted": false,
+      "errorKind": "provider_shape",
+      "message": "Shopify availability hold failed: provider_shape"
+    }
+  ],
+  "findings": {
+    "R1": true,
+    "R2": true
+  }
+}

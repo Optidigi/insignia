@@ -1,0 +1,130 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/shopify
+
+ ❯ test/availability-hold.test.ts (119 tests | 7 failed | 111 skipped) 35ms
+   × R1 fetch delay cannot renew observation authority 20ms
+   × R1 body delay cannot renew observation authority 1ms
+   × R1 credential delay cannot renew observation authority 1ms
+   × R1 within-budget observation preserves exact origin at 999 ms 1ms
+   × R1 within-budget observation preserves exact origin at 1000 ms 1ms
+   × R1 a legitimate provider version generated during request is not future of receipt 5ms
+   × R1 provider future of receipt and reversed observation clock are rejected 3ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 7 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/availability-hold.test.ts > R1 fetch delay cannot renew observation authority
+ FAIL  test/availability-hold.test.ts > R1 body delay cannot renew observation authority
+ FAIL  test/availability-hold.test.ts > R1 credential delay cannot renew observation authority
+AssertionError: expected '2026-10-01T12:00:02.000Z' to be '2026-10-01T12:00:00.000Z' // Object.is equality
+
+Expected: "2026-10-01T12:00:00.000Z"
+Received: "2026-10-01T12:00:02.000Z"
+
+ ❯ test/availability-hold.test.ts:1040:31
+    1038|   const f = timedRead(point, 2000);
+    1039|   const snapshot = await f.port.snapshot(scope, productId);
+    1040|   expect(snapshot.observedAt).toBe('2026-10-01T12:00:00.000Z');
+       |                               ^
+    1041|   expect(snapshot).toMatchObject({ receivedAt: '2026-10-01T12:00:02.00…
+    1042|   expect(f.now().getTime() - Date.parse(snapshot.observedAt)).toBe(200…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/7]⎯
+
+ FAIL  test/availability-hold.test.ts > R1 within-budget observation preserves exact origin at 999 ms
+AssertionError: expected '2026-10-01T12:00:00.999Z' to be '2026-10-01T12:00:00.000Z' // Object.is equality
+
+Expected: "2026-10-01T12:00:00.000Z"
+Received: "2026-10-01T12:00:00.999Z"
+
+ ❯ test/availability-hold.test.ts:1048:31
+    1046|   const f = timedRead('fetch', delay);
+    1047|   const snapshot = await f.port.snapshot(scope, productId);
+    1048|   expect(snapshot.observedAt).toBe(clock().toISOString());
+       |                               ^
+    1049|   expect(f.now().getTime() - Date.parse(snapshot.observedAt)).toBe(del…
+    1050| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/7]⎯
+
+ FAIL  test/availability-hold.test.ts > R1 within-budget observation preserves exact origin at 1000 ms
+AssertionError: expected '2026-10-01T12:00:01.000Z' to be '2026-10-01T12:00:00.000Z' // Object.is equality
+
+Expected: "2026-10-01T12:00:00.000Z"
+Received: "2026-10-01T12:00:01.000Z"
+
+ ❯ test/availability-hold.test.ts:1048:31
+    1046|   const f = timedRead('fetch', delay);
+    1047|   const snapshot = await f.port.snapshot(scope, productId);
+    1048|   expect(snapshot.observedAt).toBe(clock().toISOString());
+       |                               ^
+    1049|   expect(f.now().getTime() - Date.parse(snapshot.observedAt)).toBe(del…
+    1050| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/7]⎯
+
+ FAIL  test/availability-hold.test.ts > R1 a legitimate provider version generated during request is not future of receipt
+AssertionError: expected { scope: { …(4) }, …(5) } to match object { …(3) }
+(8 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "observedAt": "2026-10-01T12:00:00.000Z",
++   "observedAt": "2026-10-01T12:00:01.000Z",
+    "providerVersion": "2026-10-01T12:00:00.500Z",
+-   "receivedAt": "2026-10-01T12:00:01.000Z",
+  }
+
+ ❯ test/availability-hold.test.ts:1054:51
+    1052| test('R1 a legitimate provider version generated during request is not…
+    1053|   const f = timedRead('fetch', 1000, '2026-10-01T12:00:00.500Z');
+    1054|   expect(await f.port.snapshot(scope, productId)).toMatchObject({
+       |                                                   ^
+    1055|     observedAt: '2026-10-01T12:00:00.000Z', receivedAt: '2026-10-01T12…
+    1056|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/7]⎯
+
+ FAIL  test/availability-hold.test.ts > R1 provider future of receipt and reversed observation clock are rejected
+AssertionError: promise resolved "{ scope: { …(4) }, …(5) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "observedAt": "2026-10-01T11:59:59.999Z",
++   "productId": "gid://shopify/Product/202",
++   "providerVersion": "2026-10-01T11:00:00.000Z",
++   "scope": {
++     "appClientId": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
++     "installationGeneration": "7",
++     "shopId": "synthetic-shop",
++     "shopifyShopId": "gid://shopify/Shop/101",
++   },
++   "state": "unavailable",
++   "visibilityDigest": "5a6539d891596cb8e0d51ce7cf0892f7b714354e2cf19e630af27962f67c886b",
+  }
+
+ ❯ test/availability-hold.test.ts:1061:71
+    1059| test('R1 provider future of receipt and reversed observation clock are…
+    1060|   await expect(timedRead('fetch', 1000, '2026-10-01T12:00:01.001Z').po…
+    1061|   await expect(timedRead('fetch', -1).port.snapshot(scope, productId))…
+       |                                                                       ^
+    1062| });
+    1063|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/7]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  7 failed | 1 passed | 111 skipped (119)
+   Start at  17:35:28
+   Duration  317ms (transform 50%, import 28%, tests 20%, worker 3%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/shopify

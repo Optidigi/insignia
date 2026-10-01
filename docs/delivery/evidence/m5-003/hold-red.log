@@ -1,0 +1,41 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-hold-writer/packages/shopify
+
+ ❯ test/availability-hold.test.ts (2 tests | 1 failed) 49ms
+   × an acknowledged hold with unavailable readback reports an ambiguous write for journal recovery 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/availability-hold.test.ts > an acknowledged hold with unavailable readback reports an ambiguous write for journal recovery
+AssertionError: expected ShopifyAvailabilityHoldError: Shopify ava… { kind: '…' } to match object { kind: 'ambiguous_write' }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+- {
+-   "kind": "ambiguous_write",
++ ShopifyAvailabilityHoldError {
++   "kind": "network_or_timeout",
+  }
+
+ ❯ test/availability-hold.test.ts:79:6
+     77|   await expect(f.port.acquire(scope, {
+     78|     version: 'm5-availability-hold-v1', operationId: 'op-1', before, h…
+     79|   })).rejects.toMatchObject({ kind: 'ambiguous_write' });
+       |      ^
+     80|   expect(f.writes()).toHaveLength(1);
+     81| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed (2)
+   Start at  10:58:02
+   Duration  262ms (transform 41%, tests 40%, import 15%, worker 4%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-hold-
+  │ writer/packages/shopify
