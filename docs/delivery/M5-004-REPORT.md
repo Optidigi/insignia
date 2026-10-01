@@ -16,7 +16,7 @@ One existing Admin client_credentials exchange and one productCreate. Initial id
 
 ## Offline checks
 
-23 public operator/workflow tests pass on pinned Node24.21.0, exercising actual unchanged adapters with synthetic credentials/HTTP only. Cases include fixed route/doc/payload, exact identity/grants/development shop, unpublished ownership, one create and lock, durable budgets/finalization reserve, serialization, corrupt history, pre-credential gate, natural ambiguity, fresh-process hold and all five serial cases. Full root verification and both independent reviews are pending. Historical PostgreSQL/HTTP/worker evidence can be retained because these sources/compositions are unchanged; DB-free skips will remain explicit.
+30 public operator/workflow tests pass on pinned Node24.21.0, exercising actual unchanged adapters with synthetic credentials/HTTP only. Cases include fixed route/doc/payload, exact identity/grants/development shop, unpublished ownership, one create and lock, durable budgets/finalization reserve, serialization, corrupt history, pre-credential gate, natural ambiguity, fresh-process hold and all five serial cases. Full root verification and both independent reviews are pending. Historical PostgreSQL/HTTP/worker evidence can be retained because these sources/compositions are unchanged; DB-free skips will remain explicit.
 
 ## Limits
 
@@ -37,3 +37,11 @@ Both first independent GPT-6.1-sol/high reviews refused safety clearance at cand
 | Unrelated metadata drift | Bind acknowledged handle/title/exact tags/creation timestamp; later owned reads reject drift; reopened history validates baseline against creation receipt. |
 
 The root suite and100/100 no-retry stress passed for the first source, with eight explicit DB-free web skips. All ten initial-source CI workflows succeeded on attempt1. Corrected source is awaiting new root/CI and both fresh full-source safety reviews; these prior successes do not open its live gate. Historical PG/HTTP/worker and100k evidence is reused only where exact unchanged source/build bindings match.
+
+## Second safety review and response-byte closure
+
+Fresh reviews of e4fce4b6f7ab950e94a639b63785232b9d206032 closed the initial structural findings but withheld clearance for four additional edge cases. Full reports and corrections remain in offline-safety. Malformed success userErrors must be an actual empty array to acknowledge a write; a full synthetic workflow now confirms malformed success keeps UNKNOWN and sends no cleanup.
+
+The transport delivers original bounded fetch-observed bytes to the unchanged adapter and hashes those bytes. Availability keeps its128KiB bound; catalog keeps its1,000,000-byte bound and fatal UTF-8 behavior. Missing/oversized bodies retain provider_shape; synthetic replay preserves those outcomes. Oversized responses record only a bounded-prefix digest and explicitly do not claim a complete response hash. Sanitized invalid-UTF8 replay is diagnostic, not original provider bytes. Direct/wrapped/replayed controls cover these cases and user-error/HTTP classifications.
+
+Every drift/catalog case is persisted before assertions; normalized results and failure class are retained. Catalog failure leaves UNLISTED STOPPED. Drift observation failure stops before restoration; a known observed drift grants zero restoration writes. No source patch or retry would be permitted after a real contract failure. Corrected30-test suite is green; new complete-root, source CI and fresh full-source safety reviews are required before credentials.

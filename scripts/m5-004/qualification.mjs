@@ -299,14 +299,24 @@ async function runQualification({ operator, directory, binding, credentialLoader
       requireValue(raw.status === original, 'restoration_status');
       const mutations = operator.state().counts.update - beforeCounts;
       requireValue(mutations === (original === 'DRAFT' ? 0 : 2), 'adapter_mutation_count');
-      Object.assign(attempt, { adapterMutations: mutations, outcome: 'PASS' });
+      Object.assign(attempt, { adapterMutations: mutations, restorationOutcome: 'PASS' });
       persist();
       if (original === 'UNLISTED') {
         const catalog = createCatalogReader(
           createCatalogTransport({ shop: TARGET.domain, accessToken: token.value, fetchImpl: operator.fetch }),
         );
+        evidence.catalog = { outcome: 'IN_PROGRESS' };
+        persist();
+        evidence.catalog.operation = 'detail';
+        persist();
         const detail = await catalog.get(operator.state().fixture);
+        evidence.catalog.detail = detail;
+        persist();
+        evidence.catalog.operation = 'list';
+        persist();
         const list = await catalog.list({ search: `handle:${marker}`, first: 1 });
+        evidence.catalog.list = list;
+        persist();
         requireValue(
           detail?.status === 'UNLISTED' &&
             list.products.length === 1 &&
@@ -314,12 +324,19 @@ async function runQualification({ operator, directory, binding, credentialLoader
             list.products[0].status === 'UNLISTED',
           'catalog_contract',
         );
-        evidence.catalog = { detail, list };
+        evidence.catalog.outcome = 'PASS';
         persist();
       }
+      attempt.outcome = 'PASS';
+      persist();
     }
+    const drift = { case: 'observed-drift', outcome: 'IN_PROGRESS' };
+    evidence.cases.push(drift);
+    persist();
     await setup('ACTIVE', 'drift-setup');
     const before = await port.snapshot(scope, operator.state().fixture);
+    drift.before = before;
+    persist();
     operator.step('drift-acquire', 'DRAFT', ADAPTER_UPDATE);
     const acquired = await port.acquire(scope, {
       version: 'm5-availability-hold-v1',
@@ -327,26 +344,31 @@ async function runQualification({ operator, directory, binding, credentialLoader
       before,
       held: null,
     });
+    drift.acquired = acquired;
+    persist();
     requireValue(acquired.kind === 'HELD', 'drift_acquisition');
     const hold = reload(acquired.hold, 'drift');
     await setup('ARCHIVED', 'known-drift');
     const observation = await port.observe(scope, hold);
+    drift.observation = observation;
+    persist();
+    requireValue(observation.kind === 'CONFLICT', 'drift_observation_contract');
     const count = operator.state().counts.update;
-    operator.step('drift-restore', 'ACTIVE', ADAPTER_UPDATE);
+    // Known drift grants ZERO restoration writes: the prior SETUP step is consumed.
     const restored = await port.restore(scope, hold, hold.held, () => operator.permittedRestore(hold.before.productId));
+    drift.restored = restored;
+    drift.additionalRestoreMutations = operator.state().counts.update - count;
+    persist();
     requireValue(
       observation.kind === 'CONFLICT' && restored.kind === 'CONFLICT' && operator.state().counts.update === count,
       'drift_contract',
     );
     const raw = await owned();
+    drift.readback = raw;
+    persist();
     requireValue(raw.status === 'ARCHIVED', 'drift_preserved');
-    evidence.cases.push({
-      case: 'observed-drift',
-      observation,
-      restored,
-      outcome: 'PASS',
-      additionalRestoreMutations: 0,
-    });
+    drift.outcome = 'PASS';
+    persist();
     evidence.outcome = 'TESTED_MATRIX_PASS';
     persist();
   } catch (error) {
@@ -356,7 +378,45 @@ async function runQualification({ operator, directory, binding, credentialLoader
         : typeof error?.kind === 'string'
           ? error.kind
           : 'provider_contract_or_local_exception';
-    for (const attempt of evidence.cases) if (attempt.outcome === 'IN_PROGRESS') attempt.outcome = 'STOPPED';
+    const normalizedFailure = {
+      kind,
+      class: ['Error', 'Stop', 'ShopifyAvailabilityHoldError', 'TypeError', 'SyntaxError'].includes(error?.name)
+        ? error.name
+        : 'unknown',
+      message: [
+        'Invalid catalog image',
+        'Invalid catalog product',
+        'Duplicate catalog variant identity',
+        'Invalid catalog variant',
+        'Invalid catalog variant options',
+        'Invalid shop currency',
+        'Invalid catalog pagination',
+        'Invalid catalog response',
+        'Duplicate catalog product identity',
+        'Invalid product ID',
+        'Catalog product disappeared during pagination',
+        'Catalog product identity mismatch',
+        'Invalid variant pagination',
+        'Catalog product missing',
+        'Invalid catalog transport scope',
+        'Catalog read failed',
+        'Catalog response body missing',
+        'Catalog response too large',
+        'Catalog JSON response invalid',
+        'Catalog GraphQL response invalid',
+      ].includes(error?.message)
+        ? error.message
+        : '<message not retained>',
+    };
+    for (const attempt of evidence.cases)
+      if (attempt.outcome === 'IN_PROGRESS') {
+        attempt.outcome = 'STOPPED';
+        attempt.failure = normalizedFailure;
+      }
+    if (evidence.catalog?.outcome === 'IN_PROGRESS') {
+      evidence.catalog.outcome = 'STOPPED';
+      evidence.catalog.failure = normalizedFailure;
+    }
     evidence.outcome = 'STOPPED';
     evidence.stop = kind;
     operator.block(kind);

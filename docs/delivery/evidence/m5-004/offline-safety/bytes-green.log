@@ -1,0 +1,12 @@
+✔ actual adapter HTTP/GraphQL outcomes survive bounded transport and sanitized response replay (29.296221ms)
+✔ malformed success userErrors cannot acknowledge a status mutation or allow cleanup (5.969196ms)
+✔ actual availability missing/oversized bodies keep direct/wrapped/replayed shape errors (5.658694ms)
+✔ catalog receives original bounded UTF8 bytes and provenance hashes the bytes, not replacement text (2.953444ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 246.557069

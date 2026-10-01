@@ -1,0 +1,45 @@
+✖ actual availability missing/oversized bodies keep direct/wrapped/replayed shape errors (14.08242ms)
+✖ catalog receives original bounded UTF8 bytes and provenance hashes the bytes, not replacement text (4.322626ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 217.411866
+
+✖ failing tests:
+
+test at scripts/m5-004/operator.test.mjs:807:1
+✖ actual availability missing/oversized bodies keep direct/wrapped/replayed shape errors (14.08242ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'network_or_timeout'
+  - 'provider_shape'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-004-worktree/scripts/m5-004/operator.test.mjs:810:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'network_or_timeout',
+    expected: 'provider_shape',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-004/operator.test.mjs:813:1
+✖ catalog receives original bounded UTF8 bytes and provenance hashes the bytes, not replacement text (4.322626ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-004-worktree/scripts/m5-004/operator.test.mjs:822:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Catalog JSON response invalid/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

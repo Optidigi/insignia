@@ -1,0 +1,10 @@
+✔ actual availability missing/oversized bodies keep direct/wrapped/replayed shape errors (18.007446ms)
+✔ catalog receives original bounded UTF8 bytes and provenance hashes the bytes, not replacement text (4.607575ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 226.869485

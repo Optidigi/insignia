@@ -78,7 +78,7 @@ export const CATALOG_DETAIL = `query M5001Product($id: ID!, $after: String) { pr
 const gid = /^gid:\/\/shopify\/Product\/[1-9][0-9]*$/;
 const hash = (v) =>
   createHash('sha256')
-    .update(typeof v === 'string' ? v : JSON.stringify(v))
+    .update(typeof v === 'string' || ArrayBuffer.isView(v) ? v : JSON.stringify(v))
     .digest('hex');
 export class Stop extends Error {
   constructor(kind) {
@@ -271,18 +271,26 @@ export function assertOwned(product, state) {
     'fixture_ownership',
   );
 }
-async function body(response) {
-  requireValue(response.body, 'response_body');
+async function body(response, limit) {
+  if (!response.body) return { bytes: null, observation: 'MISSING_BODY' };
   const reader = response.body.getReader();
-  let length = 0;
   const chunks = [];
+  let length = 0,
+    observedBytes = 0,
+    oversized = false;
   try {
     for (;;) {
       const part = await reader.read();
       if (part.done) break;
-      length += part.value.byteLength;
-      requireValue(length <= 128 * 1024, 'response_bound');
-      chunks.push(part.value);
+      observedBytes += part.value.byteLength;
+      const take = Math.min(part.value.byteLength, limit + 1 - length);
+      chunks.push(part.value.subarray(0, take));
+      length += take;
+      if (length > limit) {
+        oversized = true;
+        void reader.cancel().catch(() => {});
+        break;
+      }
     }
   } catch (error) {
     void reader.cancel().catch(() => {});
@@ -290,14 +298,57 @@ async function body(response) {
   } finally {
     reader.releaseLock();
   }
-  const text = Buffer.concat(chunks, length).toString('utf8');
+  const bytes = Buffer.concat(chunks, length);
+  if (oversized) return { bytes, observation: 'OVERSIZED_BODY', prefixDigest: hash(bytes), observedBytes };
+  const text = bytes.toString('utf8');
+  let utf8Valid = true;
+  try {
+    new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+  } catch {
+    utf8Valid = false;
+  }
   let value;
   try {
     value = JSON.parse(text);
   } catch {
-    /* Preserve malformed JSON for the unchanged adapter. */
+    /* Delivered unchanged to the actual adapter. */
   }
-  return { value, text, digest: hash(text) };
+  return {
+    bytes,
+    value,
+    observation: utf8Valid ? 'COMPLETE_BODY' : 'INVALID_UTF8',
+    digest: hash(bytes),
+    observedBytes,
+  };
+}
+export function replayResponse(event) {
+  if (event.replayKind === 'TRANSPORT_OR_STREAM_ERROR') throw new Error('synthetic captured transport/stream failure');
+  const status = event.httpStatus;
+  let bytes;
+  if (event.replayKind === 'MISSING_BODY') bytes = null;
+  else if (event.replayKind === 'OVERSIZED_BODY') {
+    requireValue([128 * 1024, 1_000_000].includes(event.bodyLimit), 'replay_bound');
+    bytes = Buffer.alloc(event.bodyLimit + 1, 32);
+  } else if (event.replayKind === 'INVALID_UTF8') {
+    let text = JSON.stringify(event.response);
+    if (
+      typeof text === 'string' &&
+      !text.includes('\uFFFD') &&
+      event.response &&
+      typeof event.response === 'object' &&
+      !Array.isArray(event.response)
+    )
+      text = JSON.stringify({ ...event.response, m5ReplayInvalidUtf8: '\uFFFD' });
+    if (!text || !text.includes('\uFFFD')) bytes = Buffer.from([255]);
+    else {
+      const safe = Buffer.from(text),
+        at = safe.indexOf(Buffer.from('\uFFFD'));
+      bytes = Buffer.concat([safe.subarray(0, at), Buffer.from([255]), safe.subarray(at + 3)]);
+    }
+  } else if (event.replayKind === 'NON_JSON') bytes = Buffer.from('invalid-json-redacted');
+  else if (event.replayBody === '') bytes = null;
+  else bytes = Buffer.from(JSON.stringify(event.response));
+  return new Response(bytes, { status });
 }
 function sanitizeEnvelope(raw) {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return raw;
@@ -528,9 +579,10 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
         void response.body?.cancel().catch(() => {});
         return new Response(null, { status: response.status });
       }
-      parsed = await body(response);
+      parsed = await body(response, operation.startsWith('catalog_') ? 1_000_000 : 128 * 1024);
     } catch {
       event.result = 'UNKNOWN';
+      event.replayKind = 'TRANSPORT_OR_STREAM_ERROR';
       save();
       throw new Stop('unknown_http_result');
     }
@@ -539,11 +591,22 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
       // Never persist access tokens, credentials, headers, auth bodies or their digests.
       event.result = response.ok ? 'RESPONDED' : 'REJECTED';
       save();
-      return new Response(parsed.text, { status: response.status });
+      return new Response(parsed.bytes, { status: response.status });
     }
-    event.responseDigest = parsed.digest;
-    if (parsed.value === undefined) event.replayBody = 'invalid-json-redacted';
-    else event.response = sanitizeEnvelope(parsed.value);
+    event.bodyObservation = parsed.observation;
+    event.bodyLimit = operation.startsWith('catalog_') ? 1_000_000 : 128 * 1024;
+    if (parsed.digest) event.responseDigest = parsed.digest;
+    if (parsed.prefixDigest) {
+      event.responsePrefixDigest = parsed.prefixDigest;
+      event.observedBodyBytes = parsed.observedBytes;
+    }
+    event.replayKind = ['MISSING_BODY', 'OVERSIZED_BODY', 'INVALID_UTF8'].includes(parsed.observation)
+      ? parsed.observation
+      : parsed.value === undefined
+        ? 'NON_JSON'
+        : 'JSON';
+    if (parsed.value === undefined && event.replayKind === 'NON_JSON') event.replayBody = 'invalid-json-redacted';
+    if (parsed.value !== undefined) event.response = sanitizeEnvelope(parsed.value);
     const mutation = parsed.value?.data?.[kind === 'create' ? 'productCreate' : 'productUpdate'];
     if (['create', 'update'].includes(kind)) {
       const product = mutation?.product;
@@ -551,7 +614,8 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
         response.status === 200 &&
         parsed.value &&
         !Object.hasOwn(parsed.value, 'errors') &&
-        mutation?.userErrors?.length === 0 &&
+        Array.isArray(mutation?.userErrors) &&
+        mutation.userErrors.length === 0 &&
         product &&
         gid.test(product.id) &&
         product.status === request.variables.product.status &&
@@ -600,7 +664,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
       }
     }
     save();
-    return new Response(parsed.text, { status: response.status });
+    return new Response(parsed.bytes, { status: response.status });
   }
   return {
     state: () => structuredClone(state),

@@ -44,6 +44,7 @@ import {
   FIND,
   FIXTURE,
   GRANTS,
+  replayResponse,
   SETUP,
 } from './operator.mjs';
 import { qualify, qualifySynthetic } from './qualification.mjs';
@@ -317,6 +318,9 @@ async function qualificationFixture({
   published = false,
   wrongIdentity = false,
   metadataDrift = false,
+  wrongCatalog = false,
+  wrongDrift = false,
+  malformedSuccess = false,
 } = {}) {
   const root = mkdtempSync(join(tmpdir(), 'm5004-source-'));
   const directory = join(root, 'run');
@@ -367,7 +371,8 @@ async function qualificationFixture({
   };
   let product = fixture(directory, state);
   let version = Date.now() - 60000;
-  let sends = 0;
+  let sends = 0,
+    lastHeldVersion;
   const writes = [];
   const fetchImpl = async (url, init) => {
     sends++;
@@ -388,12 +393,24 @@ async function qualificationFixture({
       writes.push({ status: variables.product.status, query });
       version += 1000;
       product = { ...product, status: variables.product.status, updatedAt: new Date(version).toISOString() };
+      if (query === ADAPTER_UPDATE && variables.product.status === 'DRAFT') lastHeldVersion = product.updatedAt;
+      if (malformedSuccess && query === ADAPTER_UPDATE)
+        return Response.json({ data: { productUpdate: { product, userErrors: '' } } });
       if (lost && query === ADAPTER_UPDATE) throw new Error('synthetic lost acknowledgement');
       if (mismatch && query === ADAPTER_UPDATE)
         product = { ...product, onlineStoreUrl: 'https://example.com/synthetic-visible' };
       return Response.json({ data: { productUpdate: { product, userErrors: [] } } });
     }
-    if (query === ADAPTER_READ) return Response.json({ data: { ...identity(), node: product } });
+    if (query === ADAPTER_READ)
+      return Response.json({
+        data: {
+          ...identity(),
+          node:
+            wrongDrift && writes.length >= 12 && product.status === 'ARCHIVED'
+              ? { ...product, status: 'DRAFT', updatedAt: lastHeldVersion }
+              : product,
+        },
+      });
     if (query === FIXTURE) {
       if (metadataDrift) product = { ...product, tags: [state.run, 'unrelated'] };
       return Response.json({ data: { product } });
@@ -404,6 +421,7 @@ async function qualificationFixture({
       });
     const catalog = {
       ...product,
+      status: wrongCatalog ? 'ACTIVE' : product.status,
       featuredMedia: null,
       variants: {
         nodes: [{ id: 'gid://shopify/ProductVariant/1', title: 'Default Title', selectedOptions: [], image: null }],
@@ -465,6 +483,7 @@ for (const [name, options, expected] of [
   ['visibility mismatch', { mismatch: true }, 'UNRESOLVED_NO_MORE_MUTATIONS'],
   ['natural lost response', { lost: true }, 'UNRESOLVED_NO_MORE_MUTATIONS'],
   ['metadata drift', { metadataDrift: true }, 'UNRESOLVED_NO_MORE_MUTATIONS'],
+  ['malformed success', { malformedSuccess: true }, 'UNRESOLVED_NO_MORE_MUTATIONS'],
 ])
   test(`complete workflow stops on ${name}; no manufacture or unsafe cleanup`, async () => {
     const f = await qualificationFixture(options);
@@ -478,7 +497,8 @@ for (const [name, options, expected] of [
       const state = JSON.parse(readFileSync(join(f.directory, 'register.json')));
       assert.ok(state.counts.create <= 1);
       if (options.wrongIdentity || options.published || options.metadataDrift) assert.equal(state.counts.update, 0);
-      if (options.lost || options.mismatch) assert.equal(f.writes.filter((x) => x.query === ADAPTER_UPDATE).length, 1);
+      if (options.lost || options.mismatch || options.malformedSuccess)
+        assert.equal(f.writes.filter((x) => x.query === ADAPTER_UPDATE).length, 1);
     } finally {
       f.close();
     }
@@ -796,5 +816,154 @@ test('actual adapter user-error failure remains identical when replayed from san
     assert.equal(await observedKind(() => replay.acquire(testScope, intent)), kind);
   } finally {
     f.close();
+  }
+});
+
+test('malformed success userErrors cannot acknowledge a status mutation or allow cleanup', async () => {
+  for (const userErrors of ['', { length: 0 }, null]) {
+    let f;
+    f = await setup({
+      mutationResponse: () =>
+        Response.json({ data: { productUpdate: { product: { ...f.product(), status: 'ACTIVE' }, userErrors } } }),
+    });
+    try {
+      f.operator.step('malformed-success', 'ACTIVE', SETUP);
+      await f.post(SETUP, { product: { id: f.product().id, status: 'ACTIVE' } });
+      assert.equal(f.operator.state().events.at(-1).result, 'UNKNOWN');
+      assert.throws(() => f.operator.finalize(), /unsettled_write/);
+    } finally {
+      f.close();
+    }
+  }
+});
+
+import { createCatalogTransport } from '../../packages/shopify/dist/index.js';
+
+test('actual availability missing/oversized bodies keep direct/wrapped/replayed shape errors', async () => {
+  for (const raw of [null, Buffer.alloc(128 * 1024 + 1, 32)]) {
+    const f = await setup({ readResponse: () => new Response(raw, { status: 200 }) });
+    try {
+      assert.equal(
+        await observedKind(() =>
+          adapter(async () => new Response(raw, { status: 200 })).snapshot(testScope, f.product().id),
+        ),
+        'provider_shape',
+      );
+      assert.equal(
+        await observedKind(() => adapter(f.operator.fetch).snapshot(testScope, f.product().id)),
+        'provider_shape',
+      );
+      const event = f.operator.state().events.at(-1);
+      assert.equal(
+        await observedKind(() => adapter(async () => replayResponse(event)).snapshot(testScope, f.product().id)),
+        'provider_shape',
+      );
+    } finally {
+      f.close();
+    }
+  }
+});
+test('catalog receives original bounded UTF8 bytes and provenance hashes the bytes, not replacement text', async () => {
+  const f = await setup();
+  try {
+    const value = {
+      data: {
+        product: {
+          id: f.product().id,
+          title: 'MARK',
+          status: 'UNLISTED',
+          featuredMedia: null,
+          variants: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } },
+        },
+      },
+    };
+    const valid = Buffer.from(JSON.stringify(value));
+    const at = valid.indexOf('MARK');
+    const wire = Buffer.from(valid);
+    wire[at] = 255;
+    const fetchImpl = async () => new Response(wire, { status: 200 });
+    const direct = createCatalogTransport({ shop: TARGET.domain, accessToken: 'synthetic', fetchImpl });
+    await assert.rejects(direct.read('detail', { id: f.product().id, after: null }), /Catalog JSON response invalid/);
+
+    f.operator.close();
+    const wrapped = createOperator({ directory: f.directory, fetchImpl });
+    try {
+      const transport = createCatalogTransport({
+        shop: TARGET.domain,
+        accessToken: 'synthetic',
+        fetchImpl: wrapped.fetch,
+      });
+      await assert.rejects(
+        transport.read('detail', { id: f.product().id, after: null }),
+        /Catalog JSON response invalid/,
+      );
+      const event = wrapped.state().events.at(-1);
+      assert.equal(event.responseDigest, digest(wire));
+      const replay = createCatalogTransport({
+        shop: TARGET.domain,
+        accessToken: 'synthetic',
+        fetchImpl: async () => replayResponse(event),
+      });
+      await assert.rejects(replay.read('detail', { id: f.product().id, after: null }), /Catalog JSON response invalid/);
+    } finally {
+      wrapped.close();
+    }
+  } finally {
+    rmSync(f.directory, { recursive: true, force: true });
+  }
+});
+
+for (const [name, options, key] of [
+  ['catalog', { wrongCatalog: true }, 'UNLISTED'],
+  ['drift', { wrongDrift: true }, 'observed-drift'],
+])
+  test(`failed ${name} preserves actual normalized results before STOP`, async () => {
+    const f = await qualificationFixture(options);
+    try {
+      const result = await qualifySynthetic({
+        ...f,
+        credentialLoader: () => ({ secret: 'synthetic-key', ownership: { synthetic: true } }),
+      });
+      assert.equal(result.outcome, 'STOPPED');
+      const entry = result.cases.find((x) => x.case === key);
+      assert.equal(entry.outcome, 'STOPPED');
+      if (options.wrongCatalog) {
+        assert.equal(result.catalog.detail.status, 'ACTIVE');
+        assert.equal(result.catalog.list.products[0].status, 'ACTIVE');
+      }
+      if (options.wrongDrift) {
+        assert.equal(entry.observation.kind, 'HELD');
+        assert.equal(f.writes.length, 12);
+        assert.equal(entry.restored, undefined);
+      }
+      assert.equal(result.final.outcome, 'ARCHIVED_UNPUBLISHED_RETAINED');
+    } finally {
+      f.close();
+    }
+  });
+
+test('availability preserves its lossy UTF8 semantics while catalog rejects the same original bad bytes', async () => {
+  const f = await setup();
+  try {
+    const payload = Buffer.from(JSON.stringify({ data: { ...identity(), node: { ...f.product(), title: 'MARK' } } }));
+    payload[payload.indexOf('MARK')] = 255;
+    f.operator.close();
+    const op = createOperator({
+      directory: f.directory,
+      fetchImpl: async () => new Response(payload, { status: 200 }),
+    });
+    try {
+      assert.equal(await observedKind(() => adapter(op.fetch).snapshot(testScope, f.product().id)), 'unavailable');
+      const event = op.state().events.at(-1);
+      assert.equal(event.responseDigest, digest(payload));
+      assert.equal(
+        await observedKind(() => adapter(async () => replayResponse(event)).snapshot(testScope, f.product().id)),
+        'unavailable',
+      );
+    } finally {
+      op.close();
+    }
+  } finally {
+    rmSync(f.directory, { recursive: true, force: true });
   }
 });
