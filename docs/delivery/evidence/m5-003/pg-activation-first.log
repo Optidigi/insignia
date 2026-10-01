@@ -1,0 +1,87 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+ ❯ test/activation.test.ts (21 tests | 20 failed) 262ms
+   ❯ PG18 scoped production activation (21)
+     × immutable evidence refuses updates and deletes 8ms
+     × concurrent attempts commit one evidence row and one effective operation 2ms
+     × same-mode second revision activates without acquiring another hold 2ms
+     × policy transition requires its own hold (required-to-optional) 2ms
+     × policy transition requires its own hold (optional-to-required) 2ms
+     × a failure after evidence insert rolls evidence and effective activation back atomically 2ms
+     × persisted acquisition pending with an unsent mutation is observed and requires operator recovery 2ms
+     × lost acquisition is recovered from committed intent without a second mutation 2ms
+     × lost restore response and merchant drift retain effective activation and immutable evidence 2ms
+     × fresh exact policy drift while held blocks unsafe progress (before commit) 2ms
+     × fresh exact policy drift while held blocks unsafe progress (before restore) 2ms
+     × revoked selected key cannot activate or restore a held product 2ms
+     × missing release evidence leaves the hold intact and never activates 2ms
+     × fences reinstall before activation and preserves an operator hold 2ms
+     × fences epoch before activation and preserves an operator hold 2ms
+     × fences supersession before activation and preserves an operator hold 1ms
+     × locks the final read/commit against concurrent epoch 2ms
+     × locks the final read/commit against concurrent reinstall 1ms
+     × locks the final read/commit against concurrent supersession 1ms
+     × a pending owned hold prevents another production publication from hiding recovery 2ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 20 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > immutable evidence refuses updates and deletes
+ FAIL  test/activation.test.ts > PG18 scoped production activation > concurrent attempts commit one evidence row and one effective operation
+ FAIL  test/activation.test.ts > PG18 scoped production activation > same-mode second revision activates without acquiring another hold
+ FAIL  test/activation.test.ts > PG18 scoped production activation > policy transition requires its own hold (required-to-optional)
+ FAIL  test/activation.test.ts > PG18 scoped production activation > policy transition requires its own hold (optional-to-required)
+ FAIL  test/activation.test.ts > PG18 scoped production activation > a failure after evidence insert rolls evidence and effective activation back atomically
+ FAIL  test/activation.test.ts > PG18 scoped production activation > persisted acquisition pending with an unsent mutation is observed and requires operator recovery
+ FAIL  test/activation.test.ts > PG18 scoped production activation > lost acquisition is recovered from committed intent without a second mutation
+ FAIL  test/activation.test.ts > PG18 scoped production activation > lost restore response and merchant drift retain effective activation and immutable evidence
+ FAIL  test/activation.test.ts > PG18 scoped production activation > fresh exact policy drift while held blocks unsafe progress (before commit)
+ FAIL  test/activation.test.ts > PG18 scoped production activation > fresh exact policy drift while held blocks unsafe progress (before restore)
+ FAIL  test/activation.test.ts > PG18 scoped production activation > revoked selected key cannot activate or restore a held product
+ FAIL  test/activation.test.ts > PG18 scoped production activation > missing release evidence leaves the hold intact and never activates
+ FAIL  test/activation.test.ts > PG18 scoped production activation > fences reinstall before activation and preserves an operator hold
+ FAIL  test/activation.test.ts > PG18 scoped production activation > fences epoch before activation and preserves an operator hold
+ FAIL  test/activation.test.ts > PG18 scoped production activation > fences supersession before activation and preserves an operator hold
+ FAIL  test/activation.test.ts > PG18 scoped production activation > locks the final read/commit against concurrent epoch
+ FAIL  test/activation.test.ts > PG18 scoped production activation > locks the final read/commit against concurrent reinstall
+ FAIL  test/activation.test.ts > PG18 scoped production activation > locks the final read/commit against concurrent supersession
+ FAIL  test/activation.test.ts > PG18 scoped production activation > a pending owned hold prevents another production publication from hiding recovery
+error: duplicate key value violates unique constraint "shops_shopify_shop_id_key"
+ ❯ ../../node_modules/.pnpm/pg@8.23.0/node_modules/pg/lib/client.js:694:17
+ ❯ PostgresConnection.executeQuery ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/dialect/postgres/postgres-driver.js:113:28
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:39:24
+ ❯ SingleConnectionProvider.#run ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/single-connection-provider.js:24:16
+ ❯ DefaultQueryExecutor.executeQuery ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:38:28
+ ❯ InsertQueryBuilder.execute ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-builder/insert-query-builder.js:1101:24
+ ❯ Object.createShop src/repositories/tenant.ts:148:7
+    146|       if (input.shopifyShopId !== undefined && !/^[1-9][0-9]{0,19}$/.t…
+    147|         throw new TypeError('Invalid Shopify shop identity');
+    148|       await transaction
+       |       ^
+    149|         .insertInto('shops')
+    150|         .values({
+ ❯ test/activation.test.ts:43:7
+ ❯ src/durable-core.ts:376:20
+ ❯ PostgresConnection.executeQuery ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/dialect/postgres/postgres-driver.js:126:41
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:39:24
+ ❯ SingleConnectionProvider.#run ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/single-connection-provider.js:24:16
+ ❯ DefaultQueryExecutor.executeQuery ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:38:28
+ ❯ InsertQueryBuilder.execute ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-builder/insert-query-builder.js:1101:24
+ ❯ Object.createShop src/repositories/tenant.ts:148:7
+ ❯ test/activation.test.ts:43:7
+ ❯ src/durable-core.ts:376:20
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/20]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  20 failed | 1 passed (21)
+   Start at  11:33:38
+   Duration  1.08s (transform 40%, import 31%, tests 29%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/database
+

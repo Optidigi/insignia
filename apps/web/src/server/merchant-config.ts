@@ -6,12 +6,13 @@ import type { DurableTransaction } from '@insignia/database';
 import { CONFIG_DRAFT_STORAGE_VERSION, type DurableCore, sha256CanonicalJson } from '@insignia/database';
 import { parseSignedMinor, validatePublishedConfig } from '@insignia/domain';
 import { GEOMETRY_VERSION, type GeometryV1, validateGeometryBridge } from '@insignia/visualizer/geometry';
+import { projectActivationPublicationState } from './admin/activation-state.ts';
 import type { AdminActor as Actor, CatalogProduct } from './admin/contracts.js';
 
 type Outcome =
   | { kind: 'created'; configId: string }
   | { kind: 'saved'; draftVersion: string }
-  | { kind: 'accepted'; state: ReturnType<typeof state>; revisionId: string }
+  | { kind: 'accepted'; state: ReturnType<typeof projectActivationPublicationState>; revisionId: string }
   | { kind: 'conflict' | 'invalid' | 'forbidden'; message: string };
 type Publication = Pick<ReturnType<DurableCore['productionPublications']['create']>, 'prepare' | 'advance'>;
 const targetOccupied = (error: unknown) =>
@@ -177,27 +178,6 @@ function cloneForProduct(source: MerchantDraft, targetConfigId: string): Merchan
   return MerchantDraftSchema.parse(renamed);
 }
 
-function state(
-  phase: string | null,
-  activeOperation: string | null,
-  latestOperation: string | null,
-):
-  | 'DRAFT'
-  | 'PUBLISH_REQUESTED'
-  | 'REMOTE_PENDING'
-  | 'REMOTE_READY_ACTIVATION_PENDING'
-  | 'ACTIVE'
-  | 'CONFLICT'
-  | 'OPERATOR_HOLD' {
-  if (phase === null) return activeOperation ? 'ACTIVE' : 'DRAFT';
-  if (phase === 'active' && activeOperation === latestOperation) return 'ACTIVE';
-  if (phase === 'activation-pending') return 'REMOTE_READY_ACTIVATION_PENDING';
-  if (phase === 'conflict') return 'CONFLICT';
-  if (phase === 'operator-hold') return 'OPERATOR_HOLD';
-  if (phase === 'prepared' || phase === 'intent') return 'PUBLISH_REQUESTED';
-  return 'REMOTE_PENDING';
-}
-
 /** Commands bind every product read and mutation to the verified current M3 tenant. */
 export function createMerchantConfigService(input: {
   core: DurableCore;
@@ -253,6 +233,11 @@ export function createMerchantConfigService(input: {
       const config = await core.configs.getByProduct(actor.tenantShopId, productNumber(productId));
       if (!config) return { product: item, config: null };
       const progress = await core.configs.getCurrentPublication(actor.tenantShopId, config.configId);
+      const recovery = await core.configs.getAvailabilityRecovery(actor.tenantShopId, config.configId);
+      const otherRecovery =
+        recovery !== null &&
+        (recovery.operationId !== progress?.operationId ||
+          recovery.installationGeneration !== actor.installationGeneration);
       let eligibility: { allowed: boolean; reason: string | null };
       let currentShopCurrency: string | null = null;
       try {
@@ -265,11 +250,13 @@ export function createMerchantConfigService(input: {
       } catch {
         eligibility = { allowed: false, reason: 'Draft or entitlement unavailable' };
       }
-      const publicationState = state(
-        progress?.phase ?? null,
-        config.effectiveOperationId,
-        progress?.operationId ?? null,
-      );
+      const publicationState = projectActivationPublicationState({
+        phase: progress?.phase ?? null,
+        effectiveOperationId: config.effectiveOperationId,
+        operationId: progress?.operationId ?? null,
+        activationKind: progress?.activationKind ?? null,
+        recoveryFromAnotherOperation: otherRecovery,
+      });
       return {
         product: item,
         config: {
@@ -284,10 +271,13 @@ export function createMerchantConfigService(input: {
             sourceDraftVersion: progress?.sourceDraftVersion ?? null,
             requestKey: progress?.requestKey ?? null,
             activeRevisionId: config.effectiveRevisionId,
-            reason:
-              publicationState === 'REMOTE_READY_ACTIVATION_PENDING'
+            reason: otherRecovery
+              ? 'A prior installation or publication retains an availability hold. Operator recovery is required.'
+              : publicationState === 'REMOTE_READY_ACTIVATION_PENDING'
                 ? 'Remote fields read back. Function identity and activation admission remain pending.'
-                : publicationState === 'CONFLICT' || publicationState === 'OPERATOR_HOLD'
+                : publicationState === 'CONFLICT' ||
+                    publicationState === 'OPERATOR_HOLD' ||
+                    publicationState === 'RESTORATION_CONFLICT'
                   ? 'Publication requires operator review.'
                   : null,
             requiresAllChannelHold: progress
@@ -295,7 +285,9 @@ export function createMerchantConfigService(input: {
               : null,
             functionReadiness: progress ? 'UNVERIFIABLE_DEPLOYED_WASM_IDENTITY' : null,
           },
-          publishEligibility: eligibility,
+          publishEligibility: otherRecovery
+            ? { allowed: false, reason: 'Availability recovery is required before another publication.' }
+            : eligibility,
         },
       };
     },
@@ -554,7 +546,12 @@ export function createMerchantConfigService(input: {
         return {
           kind: 'accepted',
           revisionId,
-          state: state(existing.phase, recorded?.effectiveOperationId ?? null, revisionId),
+          state: projectActivationPublicationState({
+            phase: existing.phase,
+            effectiveOperationId: recorded?.effectiveOperationId ?? null,
+            operationId: revisionId,
+            activationKind: existing.activationKind,
+          }),
         };
       }
       // A command can commit its immutable revision before prepare or advance reaches Shopify.
@@ -598,7 +595,18 @@ export function createMerchantConfigService(input: {
         phase = advanced.phase;
         if (advanced.kind !== 'PENDING' || unchanged >= 2) break;
       }
-      return { kind: 'accepted', revisionId, state: state(phase, null, revisionId) };
+      const observed = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
+      const recorded = await core.configs.getConfig(actor.tenantShopId, data.configId);
+      return {
+        kind: 'accepted',
+        revisionId,
+        state: projectActivationPublicationState({
+          phase,
+          effectiveOperationId: recorded?.effectiveOperationId ?? null,
+          operationId: revisionId,
+          activationKind: observed?.operationId === revisionId ? observed.activationKind : null,
+        }),
+      };
     },
   };
 }

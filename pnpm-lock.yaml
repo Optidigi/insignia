@@ -413,6 +413,9 @@ importers:
 
   packages/shopify:
     dependencies:
+      '@insignia/application':
+        specifier: workspace:*
+        version: link:../application
       '@shopify/shopify-api':
         specifier: 15.0.0
         version: 15.0.0

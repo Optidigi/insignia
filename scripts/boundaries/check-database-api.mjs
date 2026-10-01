@@ -13,6 +13,34 @@ try {
     ['raw transaction helper', ["import { withTransaction } from '@insignia/database';", 2305]],
     ['raw table map', ["import type { Database } from '@insignia/database';", 2305]],
     ['raw executor', ["import type { DatabaseExecutor } from '@insignia/database';", 2305]],
+    [
+      'activation raw store',
+      [
+        "import { createDurableCore } from '@insignia/database'; declare const core: ReturnType<typeof createDurableCore>; core.productionActivations.store;",
+        2339,
+      ],
+    ],
+    [
+      'activation raw commit',
+      [
+        "import { createDurableCore } from '@insignia/database'; declare const core: ReturnType<typeof createDurableCore>; core.productionActivations.create({} as never).commit;",
+        2339,
+      ],
+    ],
+    [
+      'activation raw session',
+      [
+        "import { createDurableCore } from '@insignia/database'; declare const core: ReturnType<typeof createDurableCore>; core.productionActivations.create({} as never).locked;",
+        2339,
+      ],
+    ],
+    [
+      'activation lower-level activate',
+      [
+        "import { createDurableCore } from '@insignia/database'; declare const core: ReturnType<typeof createDurableCore>; core.productionActivations.create({} as never).publications.activate;",
+        2339,
+      ],
+    ],
     ['raw runner', ["import { PgTransactionRunner } from '@insignia/database';", 2305]],
     ['publication root export', ["import { stagePublicationIntent } from '@insignia/database';", 2305]],
     ['deep source', ["import { createDatabase } from '@insignia/database/src/client/database';", 2307]],

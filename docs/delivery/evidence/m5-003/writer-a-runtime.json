@@ -1,0 +1,13 @@
+{
+  "cwd": "/home/serveradmin/insignia-m5-003-activation-writer",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "approval_policy": "never",
+  "sandbox_policy": {
+    "type": "workspace-write",
+    "network_access": false,
+    "exclude_tmpdir_env_var": false,
+    "exclude_slash_tmp": false
+  },
+  "sessionId": "01a0f717-4ff8-74b1-9b9f-32b2e6810c0c"
+}

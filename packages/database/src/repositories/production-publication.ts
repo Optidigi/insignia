@@ -76,7 +76,7 @@ export type PublicationAdvanceResult =
 
 const uuidHex = (uuid: string) => uuid.replaceAll('-', '');
 const productGid = (id: string) => `gid://shopify/Product/${id}`;
-function projection(value: unknown): Projection {
+export function publicationProjection(value: unknown): Projection {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error('Publication projection missing');
   const p = value as Partial<Projection>;
   if (
@@ -94,7 +94,7 @@ function projection(value: unknown): Projection {
     throw new Error('Publication projection malformed');
   return p as Projection;
 }
-function exact(observed: Observed | null, target: Target, expected: string): boolean {
+export function exactPublicationField(observed: Observed | null, target: Target, expected: string): boolean {
   if (!observed) return false;
   const key =
     target.field === 'public_config'
@@ -134,6 +134,10 @@ export class PgProductionPublication {
     private readonly appId: string,
     private readonly admission?: {
       established(input: {
+        shopId: string;
+        configId: string;
+        operationId: string;
+        installationGeneration: string;
         productId: string;
         priorMode: ProductPolicyMode | null;
         nextMode: ProductPolicyMode;
@@ -256,14 +260,18 @@ export class PgProductionPublication {
       const effective = prior.rows[0];
       if (effective?.status !== 'activated' || effective.operation_sequence !== first.publication_sequence)
         throw new Error('Durable effective publication is not coherent');
-      const old = projection(effective.expected_projection);
+      const old = publicationProjection(effective.expected_projection);
       if (
         old.productId !== productId ||
         old.shopifyShopId !== tenant.shopifyShopId ||
         old.generationHex !== uuidHex(first.authorization_generation) ||
         old.mode !== priorMode ||
-        !exact(priorRegistration, this.target(tenant, 'registration', productId), old.registrationReady) ||
-        !exact(priorPolicy, this.target(tenant, 'policy', productId), old.policy)
+        !exactPublicationField(
+          priorRegistration,
+          this.target(tenant, 'registration', productId),
+          old.registrationReady,
+        ) ||
+        !exactPublicationField(priorPolicy, this.target(tenant, 'policy', productId), old.policy)
       )
         throw new Error('Remote product policy differs from durable effective publication');
     }
@@ -307,6 +315,10 @@ export class PgProductionPublication {
           throw new Error('Publication operation idempotency conflict');
         return { operationId: input.operationId, phase: replay.rows[0].phase };
       }
+      const unresolvedHold = await sql<{ operation_id: string }>`SELECT operation_id FROM m5_activation_state
+        WHERE shop_id=${input.shopId} AND config_id=${input.configId} AND hold IS NOT NULL AND kind <> 'RESTORED'
+        LIMIT 1`.execute(tx);
+      if (unresolvedHold.rows[0]) throw new Error('Availability hold requires recovery before another publication');
       const open = await sql<{ operation_id: string }>`SELECT p.operation_id FROM m4_publication_progress p
         JOIN publication_operations o USING (shop_id, config_id, operation_id)
         WHERE p.shop_id=${input.shopId} AND p.config_id=${input.configId}
@@ -426,7 +438,7 @@ export class PgProductionPublication {
       WHERE s.shop_id=${input.operation.shopId} AND c.config_id=${input.operation.configId}
         AND i.deactivated_at IS NULL`.execute(database);
     const row = result.rows[0];
-    const expected = projection(input.operation.expectedProjection);
+    const expected = publicationProjection(input.operation.expectedProjection);
     if (
       !(
         row &&
@@ -503,7 +515,7 @@ export class PgProductionPublication {
           WHERE o.shop_id=${shopId} AND o.config_id=${configId} AND o.operation_id=${operationId}`.execute(tx);
         if (activated.rows[0]?.status !== 'activated' || activated.rows[0]?.effective_operation_id !== operationId)
           return { kind: 'OPERATOR_HOLD', phase: 'active' };
-        const expectedActive = projection(operation.expectedProjection);
+        const expectedActive = publicationProjection(operation.expectedProjection);
         const observedActive = await this.observe(
           {
             shopId,
@@ -519,22 +531,26 @@ export class PgProductionPublication {
           shopifyShopId: expectedActive.shopifyShopId,
           appId: this.appId,
         };
-        return exact(
+        return exactPublicationField(
           observedActive.publicConfig,
           this.target(tenant, 'public_config', expectedActive.productId),
           expectedActive.publicConfig,
         ) &&
-          exact(
+          exactPublicationField(
             observedActive.registration,
             this.target(tenant, 'registration', expectedActive.productId),
             expectedActive.registrationReady,
           ) &&
-          exact(observedActive.policy, this.target(tenant, 'policy', expectedActive.productId), expectedActive.policy)
+          exactPublicationField(
+            observedActive.policy,
+            this.target(tenant, 'policy', expectedActive.productId),
+            expectedActive.policy,
+          )
           ? { kind: 'ACTIVE', phase: 'active' }
           : { kind: 'OPERATOR_HOLD', phase: 'active' };
       }
       if (!(await this.current(stored, tx))) return hold(null);
-      const expected = projection(operation.expectedProjection);
+      const expected = publicationProjection(operation.expectedProjection);
       const tenant: Tenant = {
         shopId,
         installationGeneration: operation.installationGeneration,
@@ -545,6 +561,10 @@ export class PgProductionPublication {
       if (progress.prior_mode === null || progress.prior_mode !== progress.mode) {
         const established = this.admission
           ? await this.admission.established({
+              shopId,
+              configId,
+              operationId,
+              installationGeneration: operation.installationGeneration,
               productId: productGid(productId),
               priorMode: progress.prior_mode,
               nextMode: progress.mode,
@@ -590,9 +610,17 @@ export class PgProductionPublication {
                 : null;
       if (!desired) {
         if (
-          !exact(remote.publicConfig, this.target(tenant, 'public_config', productId), expected.publicConfig) ||
-          !exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationReady) ||
-          !exact(remote.policy, this.target(tenant, 'policy', productId), expected.policy)
+          !exactPublicationField(
+            remote.publicConfig,
+            this.target(tenant, 'public_config', productId),
+            expected.publicConfig,
+          ) ||
+          !exactPublicationField(
+            remote.registration,
+            this.target(tenant, 'registration', productId),
+            expected.registrationReady,
+          ) ||
+          !exactPublicationField(remote.policy, this.target(tenant, 'policy', productId), expected.policy)
         )
           return hold(remote);
         if (progress.phase === 'ready-written') {
@@ -611,18 +639,30 @@ export class PgProductionPublication {
       const actual = byField[desired.field];
       if (
         desired.field === 'policy' &&
-        !exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationPending)
+        !exactPublicationField(
+          remote.registration,
+          this.target(tenant, 'registration', productId),
+          expected.registrationPending,
+        )
       )
         return hold(remote);
       if (
         desired.field === 'registration' &&
         progress.phase === 'policy-written' &&
-        (!exact(remote.policy, this.target(tenant, 'policy', productId), expected.policy) ||
-          (!exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationPending) &&
-            !exact(remote.registration, this.target(tenant, 'registration', productId), expected.registrationReady)))
+        (!exactPublicationField(remote.policy, this.target(tenant, 'policy', productId), expected.policy) ||
+          (!exactPublicationField(
+            remote.registration,
+            this.target(tenant, 'registration', productId),
+            expected.registrationPending,
+          ) &&
+            !exactPublicationField(
+              remote.registration,
+              this.target(tenant, 'registration', productId),
+              expected.registrationReady,
+            )))
       )
         return hold(remote);
-      if (!exact(actual, target, desired.value)) {
+      if (!exactPublicationField(actual, target, desired.value)) {
         if ((actual?.compareDigest ?? null) !== desired.prior) {
           await this.save(stored, 'conflict', remote, 0, tx);
           return { kind: 'CONFLICT', phase: 'conflict' };
@@ -630,7 +670,8 @@ export class PgProductionPublication {
         if (!(await this.current(stored, tx))) return hold(remote);
         try {
           const written = await this.remote.set({ ...target, value: desired.value, compareDigest: desired.prior });
-          if (!exact(written.observed, target, desired.value)) throw new Error('Exact Admin readback failed');
+          if (!exactPublicationField(written.observed, target, desired.value))
+            throw new Error('Exact Admin readback failed');
         } catch (error) {
           const kind = error && typeof error === 'object' && 'kind' in error ? (error as { kind: unknown }).kind : null;
           if (kind === 'cas_conflict') {
@@ -657,7 +698,7 @@ export class PgProductionPublication {
           : desired.field === 'registration'
             ? readback.registration
             : readback.policy;
-      if (!exact(done, target, desired.value)) return hold(readback);
+      if (!exactPublicationField(done, target, desired.value)) return hold(readback);
       if (!(await this.save(stored, desired.next, readback, 0, tx))) return { kind: 'CONFLICT', phase: progress.phase };
       return { kind: 'PENDING', phase: desired.next };
     });

@@ -1,0 +1,11 @@
+{
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "source": "T3 Code trusted runtime declaration; current root orchestrator/integrator",
+  "sessionId": "01a0d465-b5c0-7b22-bc4c-4662c3307c5d",
+  "cwd": "/home/serveradmin/insignia-m5-003-worktree",
+  "approval_policy": "never",
+  "sandbox_policy": {
+    "type": "danger-full-access"
+  }
+}

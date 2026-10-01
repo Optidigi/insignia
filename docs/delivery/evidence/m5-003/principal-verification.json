@@ -1,0 +1,27 @@
+{
+  "pr": 28,
+  "base": "28e69864ebb9796504861a541363880cc86a82f8",
+  "approved_head": "b2963fd68296935999ad548921e3117443eb9cc3",
+  "approved_tree": "3b97621164f0b58609154bbd7a12aaa7d1ca5a85",
+  "synthetic_merge": "3c55ea168c27da586ce15f52ab1c7c41820b3686",
+  "workflow_runs": [
+    36848305379,
+    36848305547,
+    36848305387,
+    36848305278,
+    36848305356,
+    36848305472,
+    36848305453,
+    36848305227,
+    36848305503,
+    36848305395
+  ],
+  "workflow_attempts": "all attempt 1",
+  "postgres_core": "52/52",
+  "http_composition": "11/11",
+  "m5_stress": "100/100, 25 per combination, zero retries",
+  "grant_state": "retain nine configured dev-store grants; no repair",
+  "function_state": "DEV_PREVIEW_OBSERVED live-unqualified; production RELEASE_BOUND required",
+  "milestone": "PR #28 approved; M5 remains IN_PROGRESS",
+  "native_github_review": "HTTP 403; not posted"
+}

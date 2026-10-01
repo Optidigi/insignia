@@ -1,0 +1,70 @@
+✔ real PG activation composes trusted release, synthetic Shopify hold and immutable evidence (422.911087ms)
+✔ admin distinguishes activation waiting, held, restoration and conflict without manufacturing ACTIVE (1.323597ms)
+✔ overlapping distinct-key M5 creates serialize before the command FK lock upgrade (192.16727ms)
+✔ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (207.03664ms)
+✖ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (360.041663ms)
+✔ actual M4 prepare/advance over immutable M5 revision reports ready, conflict and hold truthfully (720.523691ms)
+✔ diagnostic preview requires accounting and HTTPS before any provider access (551.30092ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: synthetic-preview.myshopify.com, isOnline: true}
+✔ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (1602.525001ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: m8904d9e875ee4393b6b82a7252e0954c.myshopify.com, isOnline: true}
+▶ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold
+  ✔ scheduled cancellation boundary 2026-09-30T23:59:59.999Z: allowed=true (21.093846ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.000Z: allowed=false (24.296036ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.001Z: allowed=false (14.436333ms)
+✔ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (743.152858ms)
+✔ server activation composition cannot promote a diagnostic observation without trusted release source (1.920947ms)
+✔ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (2059.310546ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 13
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9143.574341
+
+✖ failing tests:
+
+test at test/admin/merchant-config.test.mjs:273:1
+✖ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (360.041663ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'PUBLISH_REQUESTED'
+  - 'REMOTE_READY_ACTIVATION_PENDING'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-003-worktree/apps/web/test/admin/merchant-config.test.mjs:555:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'PUBLISH_REQUESTED',
+    expected: 'REMOTE_READY_ACTIVATION_PENDING',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/apps/web
+
