@@ -45,8 +45,19 @@ export const REQUEST_PLAN = Object.freeze({
   cases: ['DRAFT', 'ACTIVE', 'UNLISTED', 'ARCHIVED', 'observed-drift'],
 });
 export function protectedCredentials() {
-  const info = lstatSync(FILE),
+  let info, dir;
+  try {
+    info = lstatSync(FILE);
     dir = lstatSync(dirname(FILE));
+  } catch (error) {
+    throw new Stop(
+      error.code === 'ENOENT'
+        ? 'credential_route_missing'
+        : error.code === 'EACCES'
+          ? 'credential_route_unreadable'
+          : 'credential_route_io_error',
+    );
+  }
   requireValue(
     info.isFile() &&
       !info.isSymbolicLink() &&
@@ -58,11 +69,16 @@ export function protectedCredentials() {
       (dir.mode & 0o077) === 0,
     'credential_permissions',
   );
-  const contents = readFileSync(FILE, 'utf8');
+  let contents;
+  try {
+    contents = readFileSync(FILE, 'utf8');
+  } catch {
+    throw new Stop('credential_route_unreadable');
+  }
   requireValue(contents.length <= 32 * 1024, 'credential_bound');
   function variable(name) {
     const matches = contents.split('\n').filter((line) => line.startsWith(`${name}=`));
-    requireValue(matches.length === 1, 'credential_variable');
+    requireValue(matches.length === 1, `credential_variable_${name}`);
     let value = matches[0].slice(name.length + 1).trim();
     if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))
       value = value.slice(1, -1);
@@ -137,8 +153,14 @@ async function runQualification({ operator, directory, binding, credentialLoader
       headers: { 'content-type': 'application/json', 'x-shopify-access-token': token.value },
       body: JSON.stringify({ query, variables }),
     });
-    const result = await response.json();
-    requireValue(response.ok && !result.errors && result.data, 'graphql_contract');
+    requireValue(response.status === 200, `admin_graphql_http_${response.status}`);
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      throw new Stop('admin_graphql_response_json');
+    }
+    requireValue(!result.errors && result.data, 'graphql_contract');
     return result.data;
   }
   async function identity() {
@@ -193,7 +215,13 @@ async function runQualification({ operator, directory, binding, credentialLoader
         grant_type: 'client_credentials',
       }),
     });
-    const auth = await response.json();
+    requireValue(response.status === 200, `admin_auth_http_${response.status}`);
+    let auth;
+    try {
+      auth = await response.json();
+    } catch {
+      throw new Stop('admin_auth_response_json');
+    }
     requireValue(
       response.ok &&
         typeof auth.access_token === 'string' &&
