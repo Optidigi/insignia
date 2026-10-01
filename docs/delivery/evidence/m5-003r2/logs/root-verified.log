@@ -3,314 +3,314 @@ $ biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test a
 apps/web/src/server/admin/production.ts:69:57 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
 
   i Template literals are preferred over string concatenation.
-  
+
     67 │   const appOrigin = required(env, 'APP_URL');
     68 │   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
   > 69 │   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
        │                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     70 │   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
     71 │   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
-  
+
   i Unsafe fix: Use a template literal.
-  
+
      67  67 │     const appOrigin = required(env, 'APP_URL');
      68  68 │     const appId = env.INSIGNIA_SHOPIFY_APP_ID;
      69     │ - ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·'gid://shopify/App/'·+·appId·:·null;
          69 │ + ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·`gid://shopify/App/${appId}`·:·null;
      70  70 │     const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
      71  71 │     const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
-  
+
 
 apps/web/src/server/admin/production.ts:89:54 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
 
   i Template literals are preferred over string concatenation.
-  
+
     87 │       installationGeneration: actor.installationGeneration,
     88 │     });
   > 89 │     if (!scope || scope.shopDomain !== actor.shop || 'gid://shopify/Shop/' + scope.shopifyShopId !== actor.shopId)
        │                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     90 │       throw new Error('Admin installation changed');
     91 │   }
-  
+
   i Unsafe fix: Use a template literal.
-  
+
      87  87 │         installationGeneration: actor.installationGeneration,
      88  88 │       });
      89     │ - ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·'gid://shopify/Shop/'·+·scope.shopifyShopId·!==·actor.shopId)
          89 │ + ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·`gid://shopify/Shop/${scope.shopifyShopId}`·!==·actor.shopId)
      90  90 │         throw new Error('Admin installation changed');
      91  91 │     }
-  
+
 
 apps/web/src/server/admin/production.ts:214:51 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
 
   i Template literals are preferred over string concatenation.
-  
+
     212 │           const provider = await shopify.readInstallation(online);
     213 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
   > 214 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
         │                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     215 │             throw new Error('Tenant installation mismatch');
     216 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
-  
+
   i Unsafe fix: Use a template literal.
-  
+
     212 212 │             const provider = await shopify.readInstallation(online);
     213 213 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
     214     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
         214 │ + ··········if·(!tenant·||·!tenant.shopifyShopId·||·`gid://shopify/Shop/${tenant.shopifyShopId}`·!==·provider.shopId)
     215 215 │               throw new Error('Tenant installation mismatch');
     216 216 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
-  
+
 
 scripts/m5-002/preview-server.mjs:30:15 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   i Template literals are preferred over string concatenation.
-  
+
     28 │   ['VALIDATION', 'extensions/insignia-cart-validation/src/cart_validations_generate_run.graphql'],
     29 │ ])
   > 30 │   process.env['INSIGNIA_M5_002_' + kind + '_QUERY_HASH'] = createHash('sha256')
        │               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     31 │     .update(readFileSync(resolve(root, path)))
     32 │     .digest('hex');
-  
+
   i Unsafe fix: Use a template literal.
-  
+
     28 28 │     ['VALIDATION', 'extensions/insignia-cart-validation/src/cart_validations_generate_run.graphql'],
     29 29 │   ])
     30    │ - ··process.env['INSIGNIA_M5_002_'·+·kind·+·'_QUERY_HASH']·=·createHash('sha256')
        30 │ + ··process.env[`INSIGNIA_M5_002_${kind}_QUERY_HASH`]·=·createHash('sha256')
     31 31 │       .update(readFileSync(resolve(root, path)))
     32 32 │       .digest('hex');
-  
+
 
 scripts/m5-002/read-register.mjs:34:33 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   i Template literals are preferred over string concatenation.
-  
+
     32 │     const descriptor = openSync(register, 'w', 0o600);
     33 │     try {
   > 34 │       writeFileSync(descriptor, JSON.stringify(state, null, 2) + '\n');
        │                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     35 │       fsyncSync(descriptor);
     36 │     } finally {
-  
+
   i Unsafe fix: Use a template literal.
-  
+
     32 32 │       const descriptor = openSync(register, 'w', 0o600);
     33 33 │       try {
     34    │ - ······writeFileSync(descriptor,·JSON.stringify(state,·null,·2)·+·'\n');
        34 │ + ······writeFileSync(descriptor,·`${JSON.stringify(state,·null,·2)}\n`);
     35 35 │         fsyncSync(descriptor);
     36 36 │       } finally {
-  
+
 
 scripts/m5-003/large-history.mjs:28:34 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   i Template literals are preferred over string concatenation.
-  
+
     26 │     shopId,
     27 │     shopDomain: `${shopId}.benchmark.example`,
   > 28 │     shopifyShopId: String(BigInt('0x' + shopId.replaceAll('-', '').slice(0, 15))),
        │                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     29 │   });
     30 │   await core.tenants.startInstallation(tx, shopId);
-  
+
   i Unsafe fix: Use a template literal.
-  
+
      26  26 │       shopId,
      27  27 │       shopDomain: `${shopId}.benchmark.example`,
      28     │ - ····shopifyShopId:·String(BigInt('0x'·+·shopId.replaceAll('-',·'').slice(0,·15))),
          28 │ + ····shopifyShopId:·String(BigInt(`0x${shopId.replaceAll('-',·'').slice(0,·15)}`)),
      29  29 │     });
      30  30 │     await core.tenants.startInstallation(tx, shopId);
-  
+
 
 scripts/m5-003/large-history.mjs:293:22 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   i Template literals are preferred over string concatenation.
-  
+
     291 │ const out = resolve(process.env.M5_QUERY_PLAN_OUTPUT ?? 'docs/delivery/evidence/m5-003/query-plan.json');
     292 │ await mkdir(resolve(out, '..'), { recursive: true });
   > 293 │ await writeFile(out, JSON.stringify(artifact, null, 2) + '\n');
         │                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     294 │ console.log(JSON.stringify(Object.fromEntries(Object.entries(plans).map(([name, p]) => [name, p.summary])), null, 2));
     295 │ await reader.close();
-  
+
   i Unsafe fix: Use a template literal.
-  
+
     291 291 │   const out = resolve(process.env.M5_QUERY_PLAN_OUTPUT ?? 'docs/delivery/evidence/m5-003/query-plan.json');
     292 292 │   await mkdir(resolve(out, '..'), { recursive: true });
     293     │ - await·writeFile(out,·JSON.stringify(artifact,·null,·2)·+·'\n');
         293 │ + await·writeFile(out,·`${JSON.stringify(artifact,·null,·2)}\n`);
     294 294 │   console.log(JSON.stringify(Object.fromEntries(Object.entries(plans).map(([name, p]) => [name, p.summary])), null, 2));
     295 295 │   await reader.close();
-  
+
 
 apps/web/src/server/admin/auth.ts:48:48 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     46 │     let identity: VerifiedAdminIdentity;
     47 │     try {
   > 48 │       identity = await port.verifySessionToken(match[1]!);
        │                                                ^^^^^^^^^
     49 │     } catch {
     50 │       return null;
-  
+
 
 apps/web/src/server/admin/auth.ts:61:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     59 │     )
     60 │       return null;
   > 61 │     const grant = await port.exchangeOnlineGrant(match[1]!, identity);
        │                                                  ^^^^^^^^^
     62 │     if (
     63 │       grant.shop !== identity.shop ||
-  
+
 
 apps/web/src/server/admin/preview.ts:109:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     107 │             .then((found) => (found ? project(found) : null)),
     108 │         );
   > 109 │       const result = await map.get(id)!;
         │                            ^^^^^^^^^^^^
     110 │       await active(actor);
     111 │       return result;
-  
+
 
 apps/web/src/server/admin/preview.ts:116:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     114 │       await active(actor);
     115 │       if (!currencies.has(actor)) currencies.set(actor, reader(actor).shopCurrency());
   > 116 │       const result = await currencies.get(actor)!;
         │                            ^^^^^^^^^^^^^^^^^^^^^^
     117 │       await active(actor);
     118 │       return result;
-  
+
 
 apps/web/src/server/admin/preview.ts:163:34 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     161 │                   shopId: randomUUID(),
     162 │                   shopDomain: shop,
   > 163 │                   shopifyShopId: shopId.split('/').at(-1)!,
         │                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
     164 │                   externalInstallationId: provider.installationId,
     165 │                 }),
-  
+
 
 apps/web/src/server/admin/preview.ts:223:26 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     221 │                   installationGeneration: bound.installationGeneration,
     222 │                   shopifyShopId: shopId,
   > 223 │                   appId: env.INSIGNIA_M5_002_APP_RESOURCE!,
         │                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     224 │                 },
     225 │                 {
-  
+
 
 apps/web/src/server/admin/preview.ts:227:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     225 │                 {
     226 │                   appKey: client,
   > 227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
         │                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
     229 │                 },
-  
+
 
 apps/web/src/server/admin/preview.ts:228:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     226 │                   appKey: client,
     227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
   > 228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
         │                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     229 │                 },
     230 │               );
-  
+
 
 apps/web/src/server/admin/production.ts:214:15 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━
 
   ! Change to an optional chain.
-  
+
     212 │           const provider = await shopify.readInstallation(online);
     213 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
   > 214 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
         │               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     215 │             throw new Error('Tenant installation mismatch');
     216 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
-  
+
   i Unsafe fix: Change to an optional chain.
-  
+
     212 212 │             const provider = await shopify.readInstallation(online);
     213 213 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
     214     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
         214 │ + ··········if·(!tenant?.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
     215 215 │               throw new Error('Tenant installation mismatch');
     216 216 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
-  
+
 
 apps/web/src/server/merchant-config.ts:123:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     121 │         option.allowedValueIds.flatMap((id) => {
     122 │           const label = oldLabels?.[id];
   > 123 │           return label ? [[values.get(id)!, label]] : [];
         │                            ^^^^^^^^^^^^^^^
     124 │         }),
     125 │       );
-  
+
 
 apps/web/src/server/merchant-config.ts:126:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     124 │         }),
     125 │       );
   > 126 │       return Object.keys(remapped).length ? [[options.get(option.id)!, remapped]] : [];
         │                                               ^^^^^^^^^^^^^^^^^^^^^^^
     127 │     }),
     128 │   );
-  
+
 
 apps/web/src/server/merchant-config.ts:132:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     130 │     ...source,
     131 │     labels,
   > 132 │     methods: source.methods.map((item) => ({ id: methods.get(item.id)! })),
         │                                                  ^^^^^^^^^^^^^^^^^^^^^
     133 │     placements: source.placements.map((item) => ({
     134 │       ...item,
-  
+
 
 apps/web/src/server/merchant-config.ts:135:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
 
   ! Forbidden non-null assertion.
-  
+
     133 │     placements: source.placements.map((item) => ({
     134 │       ...item,
   > 135 │       id: placements.get(item.id)!,
         │           ^^^^^^^^^^^^^^^^^^^^^^^^
     136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
     137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
-  
+
 
 The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
 Diagnostics not shown: 79.
@@ -342,7 +342,7 @@ apps/storefront build: ✓ 5 modules transformed.
 apps/storefront build: rendering chunks...
 apps/storefront build: computing gzip size...
 apps/storefront build: dist/insignia-storefront.js  14.03 kB │ gzip: 5.93 kB
-apps/storefront build: 
+apps/storefront build:
 apps/storefront build: ✓ built in 32ms
 apps/worker build: Done
 apps/web build$ astro check && astro build
@@ -350,11 +350,11 @@ apps/storefront build: Done
 apps/web build: 19:36:29 [@astrojs/node] Enabling sessions with filesystem storage
 apps/web build: 19:36:29 [types] Generated 74ms
 apps/web build: 19:36:29 [check] Getting diagnostics for Astro files in /home/serveradmin/insignia-m5-003-worktree/apps/web...
-apps/web build: Result (28 files): 
+apps/web build: Result (28 files):
 apps/web build: - 0 errors
 apps/web build: - 0 warnings
 apps/web build: - 0 hints
-apps/web build: 
+apps/web build:
 apps/web build: 19:36:35 [@astrojs/node] Enabling sessions with filesystem storage
 apps/web build: 19:36:35 [types] Generated 66ms
 apps/web build: 19:36:35 [build] output: "server"

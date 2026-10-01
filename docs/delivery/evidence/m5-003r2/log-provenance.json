@@ -3,84 +3,84 @@
     "file": "logs/r1t-public-http-red.log",
     "rawSha256": "35dc35d18004b23dc6c2230da155fd84d7d54ac1a8b33746862438c062ac46fa",
     "publishedSha256": "6ba2b06aa6e73b3a5bdb14947534c8fc690b565dcd3177db5edb1c366cfc7e85",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/restore-public-http-red.log",
     "rawSha256": "e7c8d4899bde73ed476ed72bf59a9f6341c2fb6e957a8660e96393215fde46cd",
     "publishedSha256": "cbb8ad078da5f18d8a3ebfa8037f1dd4457d6e05ae62825f2c7983cf553ff7af",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/first-green.log",
     "rawSha256": "a3a538ee49aa392a0cf146debaf200c033c5af7240e296243227374efc191df2",
     "publishedSha256": "4725b57ce1695478e59177df63fbd43360dcbc7fd16da4f888a32d9d6994929e",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/matrix-green.log",
     "rawSha256": "6fb1b90ddcf5fe81dee07602c01b4014113a8de216b6e42a977e98272a36669d",
     "publishedSha256": "f8badc88790558aa3728fec622bceca34cb65c5eee86aaa9d4a17b10ba0ac6b0",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/activation-green.log",
     "rawSha256": "76818336965d9d9b9af9c6dbd4d7113743e57215bc1f237b2831ffafd12217e4",
     "publishedSha256": "9ac261f6f6ef53899a1bd6e8309cd6fd59bd9ffd62f8ea8c1dc6c17734cdc4bf",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/root-verified.log",
     "rawSha256": "07ad5754b81326c1b11bcabcd50b38e7fe7e1b407eeac0d20c4bc290d79e9028",
-    "publishedSha256": "07ad5754b81326c1b11bcabcd50b38e7fe7e1b407eeac0d20c4bc290d79e9028",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "publishedSha256": "e7d7aa1f7aca835eeffb61250b92bbf3c8dd723eb1df8326a96dee3669896423",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/postgres-verified.log",
     "rawSha256": "555e91599deeadff860114814a3dc4281b9546e525ceb6f2c492b853e5633729",
     "publishedSha256": "a898edf795b1ffad874b503502a1a1742da8690bdc85853d205e748261285208",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/http.log",
     "rawSha256": "e7585069197cd7fa5b7883d325ef3eaadeee20568e704ab529b36f079fc877d2",
     "publishedSha256": "e7585069197cd7fa5b7883d325ef3eaadeee20568e704ab529b36f079fc877d2",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/worker.log",
     "rawSha256": "e7b2bfde511c2bcc18a09052e2753fdfe1dacc5aaa03ba894fcea6aa95cab8e9",
     "publishedSha256": "e7b2bfde511c2bcc18a09052e2753fdfe1dacc5aaa03ba894fcea6aa95cab8e9",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/stress.log",
     "rawSha256": "b43aaef07ab7808c98567ff2dac4f5e2b11c369028171918283758093174cf71",
     "publishedSha256": "b43aaef07ab7808c98567ff2dac4f5e2b11c369028171918283758093174cf71",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/renderer.log",
     "rawSha256": "909179ace9ff31d4d55a6ed288133cc7fa9839f67456f4c9b629bcc10dcb622d",
-    "publishedSha256": "14ed06d1a2b719074fbecec80f4cb50c72e8ae01bb4139a40195c14ee008b184",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "publishedSha256": "c005be2d3182d3358184b87ed8c24c23b4971dd76d364375e7877322a19e31cc",
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/strict-all.log",
     "rawSha256": "322e4432f925b08974ae4465fbf620ce6ebb8ccf50916dd41e0e6b5655e7b8ed",
     "publishedSha256": "322e4432f925b08974ae4465fbf620ce6ebb8ccf50916dd41e0e6b5655e7b8ed",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/strict-verified.log",
     "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
     "publishedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   },
   {
     "file": "logs/shopify-final-typed.log",
     "rawSha256": "5b6dea0342ac16c242cd0042eccf9483d46b7c9b9899376d116d29fa12b4ac2d",
     "publishedSha256": "c3a049d1c2125456bc19ef790230f0bd4e66ab42a765011a075b2ab81e3ca348",
-    "transform": "ANSI removed; final blank lines normalized; synthetic data only; no owner credential reads"
+    "transform": "ANSI removed; per-line trailing whitespace and final blank lines normalized; synthetic data only; no owner credential reads"
   }
 ]
