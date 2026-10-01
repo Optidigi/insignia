@@ -7,15 +7,21 @@ import type {
   ProductAvailabilitySnapshot,
 } from '@insignia/application';
 import { activationDigest, availabilitySnapshotIdentityDigest } from '@insignia/application';
-import { createShopifyAvailabilityHoldPort } from '@insignia/shopify';
+import {
+  createPublicationAdminAdapter,
+  createPublicationAdminHttpTransport,
+  createShopifyAvailabilityHoldPort,
+} from '@insignia/shopify';
 import { type Kysely, sql } from 'kysely';
+import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../src/client/database.js';
 import type { DurableCore } from '../src/durable-core.js';
+import { createDurableCore } from '../src/index.js';
 import { CONFIG_DRAFT_STORAGE_VERSION } from '../src/repositories/config.js';
 import type { ProductionPublicationRemote } from '../src/repositories/production-publication.js';
 import { createPublicationRepository } from '../src/repositories/publication.js';
-import { openTestDatabase, openTestDurableCore } from './support/postgres.js';
+import { openTestDatabase } from './support/postgres.js';
 
 // No persisted production release record: these are injected synthetic premises only.
 const now = new Date('2026-10-01T12:00:00.000Z');
@@ -27,21 +33,48 @@ const fieldKeys = {
 describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activation', () => {
   let database: Kysely<Database>;
   let core: DurableCore;
+  let afterSql: ((text: string) => void) | undefined;
   beforeAll(async () => {
     database = await openTestDatabase();
-    core = openTestDurableCore();
+    const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 8 });
+    pool.on('connect', (client) => {
+      const original = client.query.bind(client);
+      client.query = ((...args: unknown[]) => {
+        const result: unknown = Reflect.apply(original, client, args);
+        if (result instanceof Promise)
+          return result.then((rows) => {
+            const input = args[0];
+            const text =
+              typeof input === 'string'
+                ? input
+                : input && typeof input === 'object' && 'text' in input && typeof input.text === 'string'
+                  ? input.text
+                  : '';
+            afterSql?.(text);
+            return rows;
+          });
+        return result;
+      }) as typeof client.query;
+    });
+    core = createDurableCore(pool);
   });
   afterAll(async () => {
     await core?.close();
     await database?.destroy();
   });
 
-  async function fixture(initialMode: 'required' | 'optional' = 'required', providerStatus?: string) {
+  async function fixture(
+    initialMode: 'required' | 'optional' = 'required',
+    providerStatus?: string,
+    httpPublication = false,
+  ) {
     let providerClock = new Date(now);
     let providerDelay: { point: 'fetch' | 'body' | 'credential'; ms: number } | null = null;
     const providerWrites: string[] = [];
     let status = providerStatus ?? 'ACTIVE';
     let version = '2026-10-01T11:00:00.000Z';
+    let availabilityReads = 0;
+    let restoreCredentialDelay: { afterReads: number; ms: number } | null = null;
     const shopId = randomUUID();
     const providerShop = BigInt(`0x${shopId.replaceAll('-', '').slice(0, 12)}`).toString();
     const configId = randomUUID();
@@ -107,7 +140,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     let remoteReads = 0;
     let remoteWrites = 0;
     let beforeRead: (() => Promise<void>) | undefined;
-    const remote: ProductionPublicationRemote = {
+    const syntheticRemote: ProductionPublicationRemote = {
       read: async (target) => {
         remoteReads++;
         await beforeRead?.();
@@ -129,6 +162,80 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         return { observed };
       },
     };
+    const httpMutations: { field: string; value: string; at: number }[] = [];
+    let publicationCredentialCalls = 0;
+    let publicationCredentialDelay: { call: number; ms: number; failure?: 'inactive' | 'error' | 'late' } | null = null;
+    let releasePublicationCredential: (() => void) | undefined;
+    const remote: ProductionPublicationRemote = httpPublication
+      ? createPublicationAdminAdapter({
+          transport: createPublicationAdminHttpTransport({
+            now: () => new Date(providerClock),
+            timeoutMs: 100,
+            credentials: {
+              acquire: async () => {
+                publicationCredentialCalls++;
+                if (publicationCredentialDelay?.call === publicationCredentialCalls) {
+                  const delay = publicationCredentialDelay;
+                  providerClock = new Date(providerClock.getTime() + delay.ms);
+                  publicationCredentialDelay = null;
+                  if (delay.failure === 'inactive') return { kind: 'inactive' };
+                  if (delay.failure === 'error') throw new Error('Synthetic credential boundary failure');
+                  if (delay.failure === 'late')
+                    await new Promise<void>((resolve) => {
+                      releasePublicationCredential = resolve;
+                    });
+                }
+                return {
+                  kind: 'usable',
+                  shopDomain: 'synthetic.myshopify.com',
+                  accessToken: 'synthetic-token',
+                  accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+                };
+              },
+            },
+            fetchImpl: (async (_url, init) => {
+              const request = JSON.parse(String(init?.body));
+              let data: unknown;
+              if (request.query.startsWith('mutation')) {
+                const field = request.variables.metafields[0];
+                const name = Object.entries(fieldKeys).find(([, key]) => key === field.key)?.[0];
+                if (!name) throw new Error('Unexpected synthetic field');
+                httpMutations.push({ field: name, value: field.value, at: providerClock.getTime() });
+                remoteWrites++;
+                if ((cells.get(name)?.compareDigest ?? null) !== field.compareDigest)
+                  return Response.json({
+                    data: { metafieldsSet: { metafields: [], userErrors: [{ code: 'STALE_OBJECT' }] } },
+                  });
+                const value = {
+                  ownerId: field.ownerId,
+                  namespace: 'app--101',
+                  key: field.key,
+                  type: field.type,
+                  value: field.value,
+                  compareDigest: createHash('sha256').update(field.value).digest('hex'),
+                };
+                cells.set(name, value);
+                data = { metafieldsSet: { metafields: [{ ...value, owner: { id: value.ownerId } }], userErrors: [] } };
+              } else {
+                remoteReads++;
+                await beforeRead?.();
+                const name = request.query.includes('insignia_public_config_v2')
+                  ? 'public_config'
+                  : request.query.includes('insignia_registration_v2')
+                    ? 'registration'
+                    : 'policy';
+                const value = cells.get(name);
+                const field = value ? { ...value, owner: { id: value.ownerId } } : null;
+                data =
+                  name === 'public_config'
+                    ? { shop: { id: `gid://shopify/Shop/${providerShop}`, field } }
+                    : { node: { __typename: 'Product', id: 'gid://shopify/Product/42', field } };
+              }
+              return Response.json({ data });
+            }) as typeof fetch,
+          }),
+        })
+      : syntheticRemote;
     const artifactScope = {
       shopId,
       installationGeneration: '1',
@@ -252,6 +359,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
           isCurrent: async () => true,
           credentials: {
             acquire: async () => {
+              if (!responsePending && restoreCredentialDelay?.afterReads === availabilityReads) {
+                providerClock = new Date(providerClock.getTime() + restoreCredentialDelay.ms);
+                restoreCredentialDelay = null;
+              }
               if (responsePending && providerDelay?.point === 'credential') {
                 providerClock = new Date(providerClock.getTime() + providerDelay.ms);
                 providerDelay = null;
@@ -268,6 +379,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
           fetchImpl: (async (_url, init) => {
             const request = JSON.parse(String(init?.body));
             const mutation = request.query.startsWith('mutation');
+            if (!mutation) availabilityReads++;
             if (mutation) {
               status = request.variables.product.status;
               providerWrites.push(status);
@@ -340,6 +452,21 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     };
     return {
       identity,
+      httpMutations,
+      expireRestoreCredential: (ms: number) => {
+        // Caller observes held status once; restore rereads it before status mutation preparation.
+        restoreCredentialDelay = { afterReads: availabilityReads + 2, ms };
+      },
+      failPublicationCredential: (failure: 'inactive' | 'error' | 'late') => {
+        publicationCredentialDelay = { call: publicationCredentialCalls + 4, ms: 0, failure };
+      },
+      releasePublicationCredential: () => {
+        releasePublicationCredential?.();
+      },
+      expirePublicationCredential: (ms: number) => {
+        // Advance performs three projection HTTP reads, then prepares the actual mutation.
+        publicationCredentialDelay = { call: publicationCredentialCalls + 4, ms };
+      },
       scope,
       remote,
       providerWrites,
@@ -489,6 +616,103 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect(f.remoteWrites).toBe(0);
   });
 
+  it.each(
+    ['prepared', 'shop-config-written', 'pending-written', 'policy-written'].flatMap((phase, index) =>
+      [0, 999, 1000, 1001, 2000, -1].map((ms) => ({ phase, index, ms })),
+    ),
+  )('R1-T actual HTTP phase $phase credential delay $ms ms', async ({ phase, index, ms }) => {
+    const f = await fixture('required', 'ACTIVE', true);
+    await f.prepareHold();
+    for (let i = 0; i < index; i++)
+      await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId);
+    const before = f.httpMutations.length;
+    f.expirePublicationCredential(ms);
+    const result = await f
+      .restart()
+      .publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId);
+    const permitted = ms >= 0 && ms <= 1000;
+    expect(f.httpMutations).toHaveLength(before + (permitted ? 1 : 0));
+    expect(result).toEqual(
+      permitted
+        ? {
+            kind: 'PENDING',
+            phase: ['shop-config-written', 'pending-written', 'policy-written', 'ready-written'][index],
+          }
+        : { kind: 'ADMISSION_PENDING', phase },
+    );
+    if (permitted)
+      expect(f.httpMutations.at(-1)?.field).toBe(['public_config', 'registration', 'policy', 'registration'][index]);
+    expect((await f.restart().read(f.identity))?.evidence).toBeNull();
+    expect((await core.configs.getConfig(f.identity.shopId, f.identity.configId))?.effectiveRevisionId).toBeNull();
+  });
+
+  it('R1-T actual final PostgreSQL key read cannot renew admission', async () => {
+    const f = await fixture('required', 'ACTIVE', true);
+    await f.prepareHold();
+    let armed = false;
+    let delayed = false;
+    let reads = 0;
+    f.beforeRead = async () => {
+      if (++reads === 3) armed = true;
+    };
+    afterSql = (text) => {
+      if (armed && !delayed && text.includes('FROM signing_keys')) {
+        delayed = true;
+        f.advanceProviderClock(2000);
+      }
+    };
+    try {
+      const result = await f
+        .restart()
+        .publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId);
+      expect(delayed).toBe(true);
+      expect(result).toEqual({ kind: 'ADMISSION_PENDING', phase: 'prepared' });
+      expect(f.httpMutations).toHaveLength(0);
+    } finally {
+      afterSql = undefined;
+    }
+  });
+
+  it.each(['inactive', 'error', 'late'] as const)(
+    'R1-T actual HTTP credential %s remains not sent',
+    async (failure) => {
+      const f = await fixture('required', 'ACTIVE', true);
+      await f.prepareHold();
+      f.failPublicationCredential(failure);
+      const result = await f
+        .restart()
+        .publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId);
+      expect(result).toEqual(
+        failure === 'inactive'
+          ? { kind: 'OPERATOR_HOLD', phase: 'operator-hold' }
+          : { kind: 'ADMISSION_PENDING', phase: 'prepared' },
+      );
+      f.releasePublicationCredential();
+      await new Promise<void>((resolve) => setImmediate(resolve));
+      expect(f.httpMutations).toHaveLength(0);
+      expect((await f.restart().read(f.identity))?.evidence).toBeNull();
+    },
+  );
+
+  it.each([0, 999, 1000, 1001, 2000, -1])('R1-T real restoration credential delay %s ms', async (ms) => {
+    const f = await fixture('required', 'ACTIVE', true);
+    await f.prepareHold();
+    await f.publish();
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    const evidence = (await f.restart().read(f.identity))?.evidence;
+    f.expireRestoreCredential(ms);
+    const result = await f.restart().advance(f.identity);
+    console.info('R1_T_RESTORE_HTTP_OBSERVATION', JSON.stringify({ result, statusMutations: f.providerWrites }));
+    const permitted = ms >= 0 && ms <= 1000;
+    expect(f.providerWrites).toEqual(permitted ? ['DRAFT', 'ACTIVE'] : ['DRAFT']);
+    expect(result.kind).toBe(permitted ? 'ACTIVE' : 'ACTIVATED_RESTORATION_PENDING');
+    expect((await f.restart().read(f.identity))?.evidence).toEqual(evidence);
+    expect((await f.restart().read(f.identity))?.state.kind).toBe(permitted ? 'RESTORED' : 'RESTORATION_CLAIMED');
+    if (ms < 0) await expect(f.restart().advance(f.identity)).rejects.toMatchObject({ kind: 'invalid_request' });
+    else await f.restart().advance(f.identity);
+    expect(f.providerWrites).toEqual(permitted ? ['DRAFT', 'ACTIVE'] : ['DRAFT']);
+  });
+
   it('R2 UNLISTED hold survives public read/restart and restores exact original status after activation', async () => {
     const f = await fixture('required', 'UNLISTED');
     await f.prepareHold();
@@ -566,7 +790,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     );
   });
   it('same-mode second revision activates without acquiring another hold', async () => {
-    const f = await fixture();
+    const f = await fixture('required', 'ACTIVE', true);
     await f.prepareHold();
     await f.publish();
     await f.restart().advance(f.identity);
@@ -577,7 +801,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     await f.restart().publications.prepare({ ...identity, revisionId, mode: 'required' });
     await f.publish(identity);
     expect((await f.restart().advance(identity)).kind).toBe('ACTIVE');
-    expect(f.acquisitions).toBe(1);
+    expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
     expect((await f.restart().read(identity))?.evidence).toMatchObject({
       admissionClass: 'SAME_MODE',
       hold: null,

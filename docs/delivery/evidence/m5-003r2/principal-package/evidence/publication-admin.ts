@@ -27,7 +27,6 @@ export type PublicationFailureKind =
   | 'unauthorized'
   | 'forbidden'
   | 'throttled'
-  | 'not_dispatched'
   | 'network_or_timeout'
   | 'provider_unavailable'
   | 'graphql_error'
@@ -95,7 +94,7 @@ export type PublicationAdminRequest = {
   variables: Record<string, unknown>;
 };
 export interface PublicationAdminTransport {
-  execute(request: PublicationAdminRequest, beforeSend?: () => boolean): Promise<{ status: number; body: unknown }>;
+  execute(request: PublicationAdminRequest): Promise<{ status: number; body: unknown }>;
 }
 
 const FIELDS = {
@@ -197,13 +196,9 @@ function observed(raw: unknown, target: PublicationTarget, ownerId: string): Pub
   };
 }
 
-async function execute(
-  transport: PublicationAdminTransport,
-  request: PublicationAdminRequest,
-  beforeSend?: () => boolean,
-) {
+async function execute(transport: PublicationAdminTransport, request: PublicationAdminRequest) {
   try {
-    return await transport.execute(request, beforeSend);
+    return await transport.execute(request);
   } catch (error) {
     if (error instanceof PublicationAdminError) throw error;
     return fail('network_or_timeout');
@@ -232,10 +227,7 @@ export function createPublicationAdminAdapter(config: { transport: PublicationAd
   };
   return {
     read,
-    async set(
-      input: PublicationTarget & { value: string; compareDigest: string | null },
-      beforeSend?: () => boolean,
-    ): Promise<{
+    async set(input: PublicationTarget & { value: string; compareDigest: string | null }): Promise<{
       kind: 'applied' | 'applied_after_ambiguous_response';
       observed: PublicationObserved;
     }> {
@@ -268,7 +260,7 @@ export function createPublicationAdminAdapter(config: { transport: PublicationAd
       };
       let acknowledged: PublicationObserved | null = null;
       try {
-        const data = unwrap(await execute(transport, request, beforeSend));
+        const data = unwrap(await execute(transport, request));
         const result = record(data.metafieldsSet) ?? fail('provider_shape');
         const errors = result.userErrors;
         const fields = result.metafields;
@@ -373,7 +365,7 @@ export function createPublicationAdminHttpTransport(config: {
   const fetchImpl = config.fetchImpl ?? fetch;
   const now = config.now ?? (() => new Date());
   return {
-    async execute(request, beforeSend) {
+    async execute(request) {
       if (
         !request ||
         !DOCUMENTS.has(request.query) ||
@@ -396,64 +388,47 @@ export function createPublicationAdminHttpTransport(config: {
         !gid('Shop', target.shopifyShopId)
       )
         fail('invalid_request');
+      let credential: Awaited<ReturnType<AdminCredentialSource['acquire']>>;
+      try {
+        credential = await config.credentials.acquire({
+          shopId: target.shopId,
+          installationGeneration: target.installationGeneration,
+        });
+      } catch {
+        return fail('network_or_timeout');
+      }
+      if (credential.kind !== 'usable') {
+        if (credential.kind === 'missing') return fail('credential_missing');
+        if (credential.kind === 'inactive') return fail('credential_inactive');
+        if (credential.kind === 'reauth_required') return fail('reauth_required');
+        return fail('provider_unavailable');
+      }
+      if (
+        !/^[a-z0-9][a-z0-9-]{0,62}\.myshopify\.com$/.test(credential.shopDomain) ||
+        typeof credential.accessToken !== 'string' ||
+        !credential.accessToken ||
+        credential.accessToken.length > 8192 ||
+        hasControlCharacters(credential.accessToken) ||
+        !(credential.accessExpiresAt instanceof Date) ||
+        !Number.isFinite(credential.accessExpiresAt.getTime()) ||
+        credential.accessExpiresAt.getTime() <= now().getTime() + 30_000
+      )
+        fail('credential_inactive');
+      const body = JSON.stringify({ query: request.query, variables: request.variables });
+      if (Buffer.byteLength(body, 'utf8') > 16 * 1024) fail('invalid_request');
       const controller = new AbortController();
       let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
       let timer: ReturnType<typeof setTimeout> | undefined;
-      let expired = false;
-      let sent = false;
-      const failureBeforeSend = () =>
-        request.operation === 'set' && !sent ? ('not_dispatched' as const) : ('network_or_timeout' as const);
       const deadline = new Promise<never>((_resolve, reject) => {
         timer = setTimeout(() => {
-          expired = true;
           controller.abort();
           // The injected fetch or stream may ignore AbortSignal. Never wait for cancellation.
           void reader?.cancel().catch(() => {});
-          reject(new PublicationAdminError(failureBeforeSend()));
+          reject(new PublicationAdminError('network_or_timeout'));
         }, config.timeoutMs ?? 8_000);
       });
       try {
         const fetchAndRead = async () => {
-          let credential: Awaited<ReturnType<AdminCredentialSource['acquire']>>;
-          try {
-            credential = await config.credentials.acquire({
-              shopId: target.shopId,
-              installationGeneration: target.installationGeneration,
-            });
-          } catch {
-            return fail(failureBeforeSend());
-          }
-          if (credential.kind !== 'usable') {
-            if (credential.kind === 'missing') return fail('credential_missing');
-            if (credential.kind === 'inactive') return fail('credential_inactive');
-            if (credential.kind === 'reauth_required') return fail('reauth_required');
-            return fail(request.operation === 'set' ? 'not_dispatched' : 'provider_unavailable');
-          }
-          if (
-            !/^[a-z0-9][a-z0-9-]{0,62}\.myshopify\.com$/.test(credential.shopDomain) ||
-            typeof credential.accessToken !== 'string' ||
-            !credential.accessToken ||
-            credential.accessToken.length > 8192 ||
-            hasControlCharacters(credential.accessToken) ||
-            !(credential.accessExpiresAt instanceof Date) ||
-            !Number.isFinite(credential.accessExpiresAt.getTime()) ||
-            credential.accessExpiresAt.getTime() <= now().getTime() + 30_000
-          )
-            fail('credential_inactive');
-          const body = JSON.stringify({ query: request.query, variables: request.variables });
-          if (Buffer.byteLength(body, 'utf8') > 16 * 1024) fail('invalid_request');
-          // All awaited preparation is complete. This callback never enters provider JSON.
-          if (expired) return fail(failureBeforeSend());
-          if (request.operation === 'set' && beforeSend) {
-            let approved = false;
-            try {
-              approved = beforeSend() === true;
-            } catch {
-              /* Refusal is known not sent. */
-            }
-            if (!approved) return fail('not_dispatched');
-          }
-          sent = true;
           const response = await fetchImpl(`https://${credential.shopDomain}/admin/api/2026-07/graphql.json`, {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'x-shopify-access-token': credential.accessToken },
@@ -461,10 +436,6 @@ export function createPublicationAdminHttpTransport(config: {
             signal: controller.signal,
             redirect: 'error',
           });
-          if (expired) {
-            void response.body?.cancel().catch(() => {});
-            return fail('network_or_timeout');
-          }
           if (response.status !== 200) return { status: response.status, body: null };
           if (!response.body) return fail('provider_shape');
           reader = response.body.getReader();
@@ -473,7 +444,6 @@ export function createPublicationAdminHttpTransport(config: {
           try {
             while (true) {
               const next = await reader.read();
-              if (expired) return fail('network_or_timeout');
               if (next.done) break;
               length += next.value.byteLength;
               if (length > MAX_RESPONSE_BYTES) {
@@ -497,7 +467,7 @@ export function createPublicationAdminHttpTransport(config: {
         return await Promise.race([fetchAndRead(), deadline]);
       } catch (error) {
         if (error instanceof PublicationAdminError) throw error;
-        return fail(failureBeforeSend());
+        return fail('network_or_timeout');
       } finally {
         if (timer) clearTimeout(timer);
       }

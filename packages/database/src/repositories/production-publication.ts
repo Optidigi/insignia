@@ -21,7 +21,10 @@ type Target = Tenant & { field: Field; productId?: string };
 type Observed = { ownerId: string; namespace: string; key: string; type: string; value: string; compareDigest: string };
 export type ProductionPublicationRemote = {
   read(target: Target): Promise<Observed | null>;
-  set(target: Target & { value: string; compareDigest: string | null }): Promise<{ observed: Observed }>;
+  set(
+    target: Target & { value: string; compareDigest: string | null },
+    beforeSend?: () => boolean,
+  ): Promise<{ observed: Observed }>;
 };
 type Projection = {
   version: 'm4-publication-v1';
@@ -706,11 +709,16 @@ export class PgProductionPublication {
         // No await between this check and dispatch: projection and current-state I/O cannot renew authority.
         if (admission && !admission.isFresh()) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
         try {
-          const written = await this.remote.set({ ...target, value: desired.value, compareDigest: desired.prior });
+          const written = await this.remote.set(
+            { ...target, value: desired.value, compareDigest: desired.prior },
+            admission ? () => admission.isFresh() : undefined,
+          );
           if (!exactPublicationField(written.observed, target, desired.value))
             throw new Error('Exact Admin readback failed');
         } catch (error) {
           const kind = error && typeof error === 'object' && 'kind' in error ? (error as { kind: unknown }).kind : null;
+          if (kind === 'not_dispatched')
+            return { kind: admission ? 'ADMISSION_PENDING' : 'PENDING', phase: progress.phase };
           if (kind === 'cas_conflict') {
             await this.save(stored, 'conflict', remote, 0, tx);
             return { kind: 'CONFLICT', phase: 'conflict' };

@@ -101,13 +101,10 @@ export function createProductionActivation(database: Kysely<Database>, options: 
         )
       )
         return null;
-      let lastCheckedAt = establishedAt;
       return {
         isFresh: () => {
           const at = now().getTime();
-          const valid = Number.isFinite(at) && at >= lastCheckedAt && at - time <= options.maxObservationAgeMs;
-          lastCheckedAt = at;
-          return valid;
+          return Number.isFinite(at) && at >= establishedAt && at - time <= options.maxObservationAgeMs;
         },
       };
     },

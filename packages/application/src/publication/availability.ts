@@ -29,7 +29,10 @@ export type AvailabilityHoldObservation =
   | Readonly<{ kind: 'NOT_HELD' | 'CONFLICT'; current: ProductAvailabilitySnapshot }>;
 export type AvailabilityRestoreResult =
   | Readonly<{ kind: 'RESTORED'; current: ProductAvailabilitySnapshot }>
-  | Readonly<{ kind: 'RESTORATION_PENDING' | 'CONFLICT'; current: ProductAvailabilitySnapshot | null }>;
+  | Readonly<{
+      kind: 'NOT_DISPATCHED' | 'RESTORATION_PENDING' | 'CONFLICT';
+      current: ProductAvailabilitySnapshot | null;
+    }>;
 export interface ProductAvailabilityHoldPort {
   snapshot(scope: AvailabilityScope, productId: string): Promise<ProductAvailabilitySnapshot>;
   acquire(scope: AvailabilityScope, hold: AvailabilityHold): Promise<AvailabilityHoldObservation>;
@@ -38,5 +41,7 @@ export interface ProductAvailabilityHoldPort {
     scope: AvailabilityScope,
     hold: AvailabilityHold,
     expectedCurrent: ProductAvailabilitySnapshot,
+    /** Trusted coordinator readiness checked synchronously at HTTP initiation. */
+    beforeSend?: () => boolean,
   ): Promise<AvailabilityRestoreResult>;
 }

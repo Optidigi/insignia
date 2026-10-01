@@ -423,9 +423,30 @@ export function createPublicationActivation(input: {
               return result('OPERATOR_HOLD', c);
             }
             fresh(observation.current.observedAt, now(), input.maxObservationAgeMs);
-            decisionReady(c, restorationArtifact, restorationProjection, observation.current);
-            const restored = await input.availability.restore(c.availabilityScope, c.state.hold, observation.current);
-            if (restored.kind === 'RESTORATION_PENDING') return result('ACTIVATED_RESTORATION_PENDING', c);
+            let lastDecision = decisionReady(
+              c,
+              restorationArtifact,
+              restorationProjection,
+              observation.current,
+            ).getTime();
+            const beforeSend = () => {
+              try {
+                const at = decisionReady(c, restorationArtifact, restorationProjection, observation.current).getTime();
+                if (at < lastDecision) return false;
+                lastDecision = at;
+                return true;
+              } catch {
+                return false;
+              }
+            };
+            const restored = await input.availability.restore(
+              c.availabilityScope,
+              c.state.hold,
+              observation.current,
+              beforeSend,
+            );
+            if (restored.kind === 'RESTORATION_PENDING' || restored.kind === 'NOT_DISPATCHED')
+              return result('ACTIVATED_RESTORATION_PENDING', c);
             const valid =
               restored.kind === 'RESTORED' &&
               snapshotShape(restored.current) &&

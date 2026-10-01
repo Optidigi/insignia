@@ -29,7 +29,9 @@ const productRead = (field: unknown) => ({
 
 describe('2026-07 app-owned publication Admin adapter', () => {
   test('reads a fixed product anchor and binds owner, namespace, type and digest', async () => {
-    const execute = vi.fn(async () => productRead(metafield('insignia_registration_v2')));
+    const execute = vi.fn(async (_request: PublicationAdminRequest) =>
+      productRead(metafield('insignia_registration_v2')),
+    );
     const adapter = createPublicationAdminAdapter({ transport: { execute } });
     const found = await adapter.read({ ...tenant, field: 'registration', productId });
     expect(found).toMatchObject({
@@ -202,7 +204,7 @@ describe('2026-07 app-owned publication Admin adapter', () => {
 
   test('HTTP transport uses the fenced installation token, exact version and bounded response', async () => {
     const fetchImpl = vi.fn(
-      async () =>
+      async (_url: string | URL | Request, _init?: RequestInit) =>
         new Response(JSON.stringify(productRead(metafield('insignia_registration_v2')).body), { status: 200 }),
     );
     const acquire = vi.fn(async () => ({
@@ -264,6 +266,66 @@ describe('2026-07 app-owned publication Admin adapter', () => {
       }),
     ).rejects.toMatchObject({ kind: 'invalid_request' });
     expect(acquire).not.toHaveBeenCalled();
+  });
+
+  test('actual HTTP lost response reads exact CAS result without a second mutation', async () => {
+    let mutations = 0;
+    let reads = 0;
+    const transport = createPublicationAdminHttpTransport({
+      credentials: {
+        acquire: async () => ({
+          kind: 'usable',
+          shopDomain: 'test-store.myshopify.com',
+          accessToken: 'synthetic-token',
+          accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+        }),
+      },
+      fetchImpl: (async (_url, init) => {
+        const request = JSON.parse(String(init?.body));
+        expect(Object.keys(request).sort()).toEqual(['query', 'variables']);
+        if (request.query.startsWith('mutation')) {
+          mutations++;
+          expect(request.variables.metafields[0].compareDigest).toBe(null);
+          throw new Error('Synthetic committed response loss');
+        }
+        reads++;
+        return Response.json(productRead(metafield('insignia_registration_v2', value, 'b'.repeat(64))).body);
+      }) as typeof fetch,
+    });
+    await expect(
+      createPublicationAdminAdapter({ transport }).set(
+        { ...tenant, field: 'registration', productId, value, compareDigest: null },
+        () => true,
+      ),
+    ).resolves.toMatchObject({ kind: 'applied_after_ambiguous_response' });
+    expect(mutations).toBe(1);
+    expect(reads).toBe(1);
+  });
+
+  test('actual HTTP pre-send refusal is not ambiguity and never enters provider JSON', async () => {
+    const fetchImpl = vi.fn();
+    const transport = createPublicationAdminHttpTransport({
+      credentials: {
+        acquire: async () => ({
+          kind: 'usable',
+          shopDomain: 'test-store.myshopify.com',
+          accessToken: 'synthetic-token',
+          accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+        }),
+      },
+      fetchImpl,
+    });
+    const adapter = createPublicationAdminAdapter({ transport });
+    for (const guard of [
+      () => false,
+      () => {
+        throw new Error('Synthetic refusal');
+      },
+    ])
+      await expect(
+        adapter.set({ ...tenant, field: 'registration', productId, value, compareDigest: null }, guard),
+      ).rejects.toMatchObject({ kind: 'not_dispatched' });
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 
   test('hard deadline bounds a stalled response body even if abort is ignored', async () => {

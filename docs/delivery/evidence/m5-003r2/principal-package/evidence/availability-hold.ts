@@ -47,7 +47,6 @@ export type AvailabilityHoldFailureKind =
   | 'unauthorized'
   | 'forbidden'
   | 'throttled'
-  | 'not_dispatched'
   | 'network_or_timeout'
   | 'provider_unavailable'
   | 'graphql_error'
@@ -328,49 +327,30 @@ export function createShopifyAvailabilityHoldPort(config: {
     await assertCurrent(scope);
     return result;
   };
-  const execute = async (
-    scope: AvailabilityScope,
-    query: string,
-    variables: Record<string, unknown>,
-    beforeSend?: () => boolean,
-  ) => {
+  const execute = async (scope: AvailabilityScope, query: string, variables: Record<string, unknown>) => {
     const controller = new AbortController();
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let expired = false;
-    let sent = false;
-    const failureBeforeSend = () =>
-      query === UPDATE && !sent ? ('not_dispatched' as const) : ('network_or_timeout' as const);
     const deadline = new Promise<never>((_resolve, reject) => {
       timer = setTimeout(() => {
         expired = true;
         controller.abort();
         void reader?.cancel().catch(() => {});
-        reject(new ShopifyAvailabilityHoldError(failureBeforeSend()));
+        reject(new ShopifyAvailabilityHoldError('network_or_timeout'));
       }, config.timeoutMs ?? 8_000);
     });
     try {
       const request = async () => {
         const token = await credential(scope);
         // An ignored deadline during credential/current resolution must not dispatch later.
-        if (expired) return fail(failureBeforeSend());
-        const requestBody = JSON.stringify({ query, variables });
-        if (query === UPDATE && beforeSend) {
-          let approved = false;
-          try {
-            approved = beforeSend() === true;
-          } catch {
-            /* Known pre-dispatch refusal. */
-          }
-          if (!approved) return fail('not_dispatched');
-        }
-        sent = true;
+        if (expired) return fail('network_or_timeout');
         const response = await (config.fetchImpl ?? fetch)(
           `https://${token.shopDomain}/admin/api/${AVAILABILITY_ADMIN_API_VERSION}/graphql.json`,
           {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'x-shopify-access-token': token.accessToken },
-            body: requestBody,
+            body: JSON.stringify({ query, variables }),
             redirect: 'error',
             signal: controller.signal,
           },
@@ -414,25 +394,17 @@ export function createShopifyAvailabilityHoldPort(config: {
       };
       return await Promise.race([request(), deadline]);
     } catch (error) {
-      if (error instanceof ShopifyAvailabilityHoldError) {
-        if (!sent && query === UPDATE && error.kind === 'provider_unavailable') return fail('not_dispatched');
-        throw error;
-      }
-      return fail(failureBeforeSend());
+      if (error instanceof ShopifyAvailabilityHoldError) throw error;
+      return fail('network_or_timeout');
     } finally {
       if (timer) clearTimeout(timer);
     }
   };
-  const observation = async (
-    scope: AvailabilityScope,
-    query: string,
-    variables: Record<string, unknown>,
-    beforeSend?: () => boolean,
-  ) => {
+  const observation = async (scope: AvailabilityScope, query: string, variables: Record<string, unknown>) => {
     // Credentials, transport, body consumption and post-response fencing all count
     // toward observation age. Receipt bounds updatedAt, never freshness.
     const observedAt = time();
-    const data = await execute(scope, query, variables, beforeSend);
+    const data = await execute(scope, query, variables);
     const receivedAt = time();
     if (receivedAt < observedAt) return fail('invalid_request');
     return { data, observedAt, receivedAt };
@@ -457,19 +429,9 @@ export function createShopifyAvailabilityHoldPort(config: {
     if (parsed.snapshot.providerVersion > receivedAt) return fail('provider_shape');
     return parsed;
   };
-  const mutate = async (
-    scope: AvailabilityScope,
-    productId: string,
-    state: ProductAvailabilitySnapshot['state'],
-    beforeSend?: () => boolean,
-  ) => {
+  const mutate = async (scope: AvailabilityScope, productId: string, state: ProductAvailabilitySnapshot['state']) => {
     const status = { available: 'ACTIVE', unavailable: 'DRAFT', archived: 'ARCHIVED', unlisted: 'UNLISTED' }[state];
-    const { data, observedAt, receivedAt } = await observation(
-      scope,
-      UPDATE,
-      { product: { id: productId, status } },
-      beforeSend,
-    );
+    const { data, observedAt, receivedAt } = await observation(scope, UPDATE, { product: { id: productId, status } });
     const result = record(data.productUpdate);
     if (!result || !Array.isArray(result.userErrors)) return fail('provider_shape');
     if (result.userErrors.length) {
@@ -545,7 +507,7 @@ export function createShopifyAvailabilityHoldPort(config: {
         return { kind: 'CONFLICT', current: after };
       return { kind: 'HELD', hold: { ...hold, held: after }, current: after };
     },
-    async restore(scope, hold, expectedCurrent, beforeSend): Promise<AvailabilityRestoreResult> {
+    async restore(scope, hold, expectedCurrent): Promise<AvailabilityRestoreResult> {
       validateHold(scope, hold);
       assertSnapshot(scope, expectedCurrent, hold.before.productId);
       const current = (await read(scope, hold.before.productId)).snapshot;
@@ -555,10 +517,8 @@ export function createShopifyAvailabilityHoldPort(config: {
       if (hold.before.state === 'unavailable') return { kind: 'RESTORED', current };
       let acknowledged: Awaited<ReturnType<typeof mutate>> | null = null;
       try {
-        acknowledged = await mutate(scope, hold.before.productId, hold.before.state, beforeSend);
+        acknowledged = await mutate(scope, hold.before.productId, hold.before.state);
       } catch (error) {
-        if (error instanceof ShopifyAvailabilityHoldError && error.kind === 'not_dispatched')
-          return { kind: 'NOT_DISPATCHED', current };
         if (!ambiguous(error)) throw error;
       }
       let after: ProductAvailabilitySnapshot;

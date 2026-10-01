@@ -1146,3 +1146,40 @@ test.each(['2026-10-01T11:59:59.999Z', 'not-a-date', '2026-10-01T13:00:00.000Z']
     expect(f.fetchImpl).toHaveBeenCalledTimes(1);
   },
 );
+
+test.each(['late', 'error', 'unavailable'] as const)(
+  'restoration credential %s is known not dispatched',
+  async (failure) => {
+    const f = fixture([
+      read(),
+      read(),
+      update(),
+      read(product('DRAFT', heldVersion)),
+      read(product('DRAFT', heldVersion)),
+    ]);
+    const acquired = await owned(f);
+    let calls = 0;
+    let release: (() => void) | undefined;
+    f.acquire.mockImplementation(async () => {
+      calls++;
+      if (calls === 3) {
+        if (failure === 'error') throw new Error('Synthetic credential failure');
+        if (failure === 'unavailable') return { kind: 'temporarily_unavailable' };
+        await new Promise<void>((resolve) => {
+          release = resolve;
+        });
+      }
+      return {
+        kind: 'usable',
+        shopDomain: 'synthetic.myshopify.com',
+        accessToken: 'synthetic-token',
+        accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+      };
+    });
+    const result = await f.port.restore(scope, acquired.hold, acquired.current, () => true);
+    expect(result.kind).toBe('NOT_DISPATCHED');
+    release?.();
+    await new Promise<void>((resolve) => setImmediate(resolve));
+    expect(f.writes().map((request) => request.variables.product.status)).toEqual(['DRAFT']);
+  },
+);

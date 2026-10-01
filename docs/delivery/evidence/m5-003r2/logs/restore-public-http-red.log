@@ -1,0 +1,43 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+stdout | test/activation.test.ts > PG18 scoped production activation > R1-T real restoration adapter rejects readiness expiry during pre-send credential work
+R1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVE","evidenceDigest":"c1e6a88292c99f3bddc98f54a19413b22241e8043435de16e28767d4e3169e81"},"statusMutations":["DRAFT","ACTIVE"]}
+
+ ❯ test/activation.test.ts (52 tests | 1 failed | 51 skipped) 255ms
+   ❯ PG18 scoped production activation (52)
+     × R1-T real restoration adapter rejects readiness expiry during pre-send credential work 238ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T real restoration adapter rejects readiness expiry during pre-send credential work
+AssertionError: expected [ 'DRAFT', 'ACTIVE' ] to deeply equal [ 'DRAFT' ]
+
+- Expected
++ Received
+
+  [
+    "DRAFT",
++   "ACTIVE",
+  ]
+
+ ❯ test/activation.test.ts:582:30
+    580|     const result = await f.restart().advance(f.identity);
+    581|     console.info('R1_T_RESTORE_HTTP_OBSERVATION', JSON.stringify({ res…
+    582|     expect(f.providerWrites).toEqual(['DRAFT']);
+       |                              ^
+    583|     expect(result.kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    584|     expect((await f.restart().read(f.identity))?.evidence).toEqual(evi…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 51 skipped (52)
+   Start at  19:16:00
+   Duration  1.25s (transform 40%, import 37%, tests 23%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/database

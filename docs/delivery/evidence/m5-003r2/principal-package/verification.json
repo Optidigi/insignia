@@ -1,0 +1,109 @@
+{
+  "verdict": "CHANGES_REQUESTED",
+  "finding": "R1-T",
+  "repository": "Optidigi/insignia",
+  "pr": 29,
+  "base": "8a84ddeaf277368852d224915abe6d4a93a3d8a4",
+  "head": "91f46ba0006d9c5d50613dc39e234f33c797f625",
+  "tree": "b717f3b729a914686510622f97f6ff48da2f691d",
+  "nativeReviewSubmitted": false,
+  "mergePerformed": false,
+  "shopifyOrProviderOperations": 0,
+  "directlyVerified": {
+    "mainRef": "8a84ddeaf277368852d224915abe6d4a93a3d8a4",
+    "prOpen": true,
+    "prDraft": false,
+    "prMerged": false,
+    "nativeReviewList": [],
+    "correctionComparison": {
+      "base": "a426719e5350f61ecb5620f6c90ab7a0e365e66b",
+      "aheadBy": 2,
+      "behindBy": 0
+    },
+    "headAssociatedWorkflows": [
+      {
+        "id": 36905985848,
+        "conclusion": "success"
+      },
+      {
+        "id": 36905986070,
+        "conclusion": "success"
+      },
+      {
+        "id": 36905985942,
+        "conclusion": "success"
+      },
+      {
+        "id": 36905985992,
+        "conclusion": "success"
+      },
+      {
+        "id": 36905986067,
+        "conclusion": "success"
+      },
+      {
+        "id": 36905986030,
+        "conclusion": "success"
+      },
+      {
+        "id": 36905986018,
+        "conclusion": "success"
+      },
+      {
+        "id": 36905985965,
+        "conclusion": "success"
+      },
+      {
+        "id": 36905985926,
+        "conclusion": "success"
+      },
+      {
+        "id": 36905986069,
+        "conclusion": "success"
+      }
+    ]
+  },
+  "reportedNotIndependentlyRerun": {
+    "workflowAttempt": 1,
+    "postgresTests": "105/105",
+    "httpTests": "16/16",
+    "workerTests": "15/15",
+    "geometryStress": "100/100 no retries"
+  },
+  "execution": {
+    "node": "v22.16.0",
+    "defaultProbeExit": 0,
+    "contractAssertionExit": 1,
+    "staleOrReversedSyntheticHttpSends": 12,
+    "fullPostgresCoordinatorExecuted": false,
+    "fullPinnedSuiteExecuted": false
+  },
+  "sourceVerification": {
+    "availability-hold.ts": {
+      "bytes": 23397,
+      "gitBlob": "144c4ab6210757847a3c58903db5f3df61e62d81",
+      "sha256": "ce1279a2611674fefd4e423bdb3aba76e5890bcfef4807e7527ac4abff375813"
+    },
+    "production-activation.ts": {
+      "bytes": 5261,
+      "gitBlob": "0f1bae13e1fc09c0d8b10e7086d007a0f71ce982",
+      "sha256": "926d178c0f2b4d26757c8c1a28dbf68296dd1159c495aa2dffc14d03fd61083a"
+    },
+    "publication-admin.ts": {
+      "bytes": 19306,
+      "gitBlob": "2f91fa12a06315a9f9959547a2ef7569556fdf9e",
+      "sha256": "76e2b41c28e3aa2510d0ec80aefa87c31763b2cd104f2d23c821b22cb929c317"
+    }
+  },
+  "preservedObligations": [
+    "live all-channel/in-flight qualification",
+    "non-CAS product-status race qualification",
+    "genuine RELEASE_BOUND source",
+    "trusted recovery source",
+    "remaining live G7"
+  ],
+  "currentExternalReferences": [
+    "https://shopify.dev/docs/api/admin-graphql/2026-01/enums/ProductStatus",
+    "https://shopify.dev/docs/apps/build/product-merchandising/unlisted-products"
+  ]
+}

@@ -1,0 +1,41 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+stdout | test/activation.test.ts > PG18 scoped production activation > R1-T public PG publication prevents an expired HTTP mutation after credential work
+R1_T_HTTP_OBSERVATION {"result":{"kind":"PENDING","phase":"shop-config-written"},"mutations":[{"field":"public_config","value":"{\"generationHex\":\"9c84fac70b24417badb914cad3de1cc4\",\"epoch\":0,\"maxBuckets\":32,\"maxPhysicalQuantity\":10000,\"allowNoMarket\":false,\"keys\":[{\"id\":7,\"publicHex\":\"f9ec95d0c005497ff391c6a9f3d0087917faf77540fda7b04d87282e288b94da\",\"revoked\":false,\"firstDay\":20000,\"lastDay\":30000}]}","at":1790856002000}]}
+
+ ❯ test/activation.test.ts (51 tests | 1 failed | 50 skipped) 156ms
+   ❯ PG18 scoped production activation (51)
+     × R1-T public PG publication prevents an expired HTTP mutation after credential work 140ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T public PG publication prevents an expired HTTP mutation after credential work
+AssertionError: expected [ { field: 'public_config', …(2) } ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ test/activation.test.ts:556:29
+    554|     const result = await f.restart().publications.advance(f.identity.s…
+    555|     console.info('R1_T_HTTP_OBSERVATION', JSON.stringify({ result, mut…
+    556|     expect(f.httpMutations).toHaveLength(0);
+       |                             ^
+    557|     expect(result).toEqual({ kind: 'ADMISSION_PENDING', phase: 'prepar…
+    558|     expect((await f.restart().read(f.identity))?.evidence).toBeNull();
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 50 skipped (51)
+   Start at  19:14:42
+   Duration  1.11s (transform 43%, import 41%, tests 16%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/database
