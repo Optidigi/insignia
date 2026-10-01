@@ -1,0 +1,52 @@
+$ node --test test/*.test.mjs
+✔ current and previous synthetic wrapping keys remain available by ID (2.454697ms)
+✔ PostgreSQL claim retries the old refresh token after a lost response and fences stale replacement (116.134556ms)
+✔ diagnostic decodes and derives synthetic pixels without claiming durable readiness (16.910423ms)
+✔ liveness stays separate from durable readiness; loopback metrics expose bounded outcomes (75.631682ms)
+{"level":30,"time":1790865094509,"event":"worker_started"}
+{"level":30,"time":1790865094516,"event":"webhook_enqueued","inboxId":"a4f1f4a7-fb3c-433a-83a4-bec06edd56c6"}
+{"level":50,"time":1790865094534,"event":"webhook_process_failed","inboxId":"a4f1f4a7-fb3c-433a-83a4-bec06edd56c6","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1790865098529,"event":"webhook_process_ok","inboxId":"a4f1f4a7-fb3c-433a-83a4-bec06edd56c6","attempt":1}
+{"level":30,"time":1790865098572,"event":"worker_stopped"}
+{"level":30,"time":1790865098603,"event":"worker_started"}
+{"level":30,"time":1790865098619,"event":"worker_stopped"}
+✔ PostgreSQL pg-boss starts, retries, settles and replays after restart (4180.976458ms)
+{"level":30,"time":1790865098668,"event":"worker_started"}
+{"level":30,"time":1790865098673,"event":"webhook_enqueued","inboxId":"9f5a8435-f027-460b-a219-cb4ee0ae99de"}
+{"level":50,"time":1790865098688,"event":"webhook_process_failed","inboxId":"9f5a8435-f027-460b-a219-cb4ee0ae99de","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1790865102680,"event":"webhook_process_ok","inboxId":"9f5a8435-f027-460b-a219-cb4ee0ae99de","attempt":1}
+{"level":30,"time":1790865102729,"event":"worker_stopped"}
+✔ pg-boss retry after committed uninstall retains one deactivation and one inbox fact (4109.282178ms)
+✔ process starts queues and workers before readiness; stop makes readiness unavailable (44.807029ms)
+✔ startup failure closes a started queue without reporting readiness (1.830396ms)
+{"level":30,"time":1790865094505,"event":"worker_started"}
+{"level":30,"time":1790865094511,"event":"worker_started"}
+{"level":30,"time":1790865094513,"event":"worker_started"}
+{"level":30,"time":1790865094517,"event":"worker_started"}
+{"level":30,"time":1790865094518,"event":"worker_started"}
+{"level":30,"time":1790865094521,"event":"worker_started"}
+✔ enqueue confirms exact inbox identity, including completed job replay (16.043543ms)
+✔ null send without same persisted job is retryable, never an acknowledgement (1.837371ms)
+✔ workers pass IDs only to injected durable handlers; failed attempt retries safely (3.876151ms)
+✔ invalid job body and identity fail closed without invoking application (1.092808ms)
+✔ enabled worker refuses missing credential-key configuration and stays not ready (1.700117ms)
+✔ refresh claim contention is retried rather than silently completing its job (2.588598ms)
+{"level":30,"time":1790865094508,"event":"webhook_enqueued","inboxId":"eeff8c0a-3ec3-4377-8d24-27d1edecae42"}
+{"level":30,"time":1790865094509,"event":"worker_stopped"}
+{"level":50,"time":1790865094514,"event":"webhook_process_failed","inboxId":"8703b487-f46a-473a-a71e-58c701e05679","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1790865094514,"event":"webhook_process_ok","inboxId":"8703b487-f46a-473a-a71e-58c701e05679","attempt":1}
+{"level":30,"time":1790865094515,"event":"refresh_process_ok","shopId":"ada209e8-f6a7-4e7c-9118-ae39a25dac09","attempt":0}
+{"level":30,"time":1790865094516,"event":"worker_stopped"}
+{"level":50,"time":1790865094517,"event":"webhook_process_failed","inboxId":"866c4851-a7f5-4edf-8b7f-e7e796d71967","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1790865094518,"event":"worker_stopped"}
+{"level":50,"time":1790865094521,"event":"refresh_process_failed","errorClass":"RefreshError","attempt":0}
+{"level":30,"time":1790865094522,"event":"worker_stopped"}
+✔ configured worker serves liveness and durable readiness, then closes on SIGTERM (805.960696ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9006.526537

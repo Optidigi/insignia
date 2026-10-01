@@ -214,5 +214,89 @@
     "rawSha256": "d5b90ca437fb74626ce010ea2770b35221b5a838a3aec4c77a587e0639f099ca",
     "sanitizedSha256": "d5b90ca437fb74626ce010ea2770b35221b5a838a3aec4c77a587e0639f099ca",
     "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "clock-midnight-red.log",
+    "rawSha256": "c74012b0e50363c97ce1f1ee6be59f30dd91e127476742b249f4629e3b075ea0",
+    "sanitizedSha256": "6cffd49adb62a5ccdf7ddfb1fd7dba1c3ec706da0282fe14995dddf6f2530ca3",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "unsettled-original-red.log",
+    "rawSha256": "57623ff446453b9a7d15ca43ea61405cd68c148e42e37429ccd9af2fe4b6fd88",
+    "sanitizedSha256": "d17a1627b2b51fa56acb94de49116176a78bb75a9d4de240904a6d331029e78c",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "clock-midnight-green.log",
+    "rawSha256": "1d96a6c17e8ad2032b56d900af1fae808a4c5c9f48987d1919075e5589a6cd4b",
+    "sanitizedSha256": "e11bae0a83d4bbf8d01ec2d764e15032ed54d061d35b09177d8e31560b97ded5",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "unsettled-original-green.log",
+    "rawSha256": "15b372f0e2a52feabf7b3fa4165240d10c534e4ea6eb3948b2970b320098334b",
+    "sanitizedSha256": "d1b54019fa4fe0ecc7cae2948b399106aade14bf900dc4dc4b7bf8909bbac907",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "r3-closure-root.log",
+    "rawSha256": "726b3daca775d04aca8d9997a9948ab073c1ad81828daf9dd830e258a92112e0",
+    "sanitizedSha256": "d4ce417371f0eee780f688aaee2288c1bf13f033ba1c6e14362fe9be756e8f1c",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "r3-closure-pg.log",
+    "rawSha256": "d44e0091d03660c8c1ef46bb9504eaf28646383cbc43192b56f226964928d4b8",
+    "sanitizedSha256": "16e3b07420d660580982801b0e1d7b7cfcc5a3c9d2f0dbb0db74cb615beae217",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "r3-closure-fixtures.log",
+    "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sanitizedSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "r3-closure-build.log",
+    "rawSha256": "344797f224eaf0df4a219f922be0189a5583d4b4339b75fca05bcff8ff956344",
+    "sanitizedSha256": "344797f224eaf0df4a219f922be0189a5583d4b4339b75fca05bcff8ff956344",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "r3-closure-http.log",
+    "rawSha256": "a1ae562456a9da9184d4eb865c5715822edf558929bb5823768a6d54e3260e14",
+    "sanitizedSha256": "a1ae562456a9da9184d4eb865c5715822edf558929bb5823768a6d54e3260e14",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "r3-closure-worker.log",
+    "rawSha256": "91e71c125c84938223b5a09ec556696279a4085f2ec89688e36a40c6be2a513d",
+    "sanitizedSha256": "91e71c125c84938223b5a09ec556696279a4085f2ec89688e36a40c6be2a513d",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "r3-closure-renderer.log",
+    "rawSha256": "47837a2e17ac4460b18dc47580f6d99ab1ce984186b5804f1f7ba4878f6744b0",
+    "sanitizedSha256": "0782540f42e8b1b3f2fbf5906e157b0a42f6cbb8c7b9ba39dd4fc1f75d7a5a53",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "r3-closure-stress.log",
+    "rawSha256": "270e94d07b28037944b340e838ce7573498d1546f18a76f029d4db94d5a46033",
+    "sanitizedSha256": "270e94d07b28037944b340e838ce7573498d1546f18a76f029d4db94d5a46033",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "r3-closure-query.log",
+    "rawSha256": "398ecc1fb0270f42cc0295599b2bcbd8192a29eb09dc6fd51a05015859e2fb78",
+    "sanitizedSha256": "398ecc1fb0270f42cc0295599b2bcbd8192a29eb09dc6fd51a05015859e2fb78",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "r3-closure-style.log",
+    "rawSha256": "19b828bec1d056df673c5b9c9437a97c84894cbb2d07257a1cd52ec91ddabb18",
+    "sanitizedSha256": "b86018ba158a6921741a16325adf577e11645a80e1a023be9a812ab7b9f208cb",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   }
 ]

@@ -256,8 +256,20 @@ export function createPublicationActivation(input: {
     remote: { projection: unknown; observedAt: string },
     hold: ProductAvailabilitySnapshot | null,
   ) {
-    const acceptedDay = input.readiness.currentDay(c, now());
     const decisionAt = now();
+    const acceptedDay = input.readiness.currentDay(c, decisionAt);
+    // The calendar calculation is synchronous and uses this exact instant.
+    // Reject an over-budget/reversed clock during that calculation rather than
+    // silently treating a slow callback as fresh evidence.
+    const calendarEndedAt = now();
+    if (
+      !Number.isFinite(calendarEndedAt.getTime()) ||
+      calendarEndedAt.getTime() < decisionAt.getTime() ||
+      calendarEndedAt.getTime() - decisionAt.getTime() > input.maxObservationAgeMs
+    )
+      throw new Error('Activation calendar calculation exceeded decision budget');
+    if (input.readiness.currentDay(c, calendarEndedAt) !== acceptedDay)
+      throw new Error('Merchant day changed during activation decision');
     requireIssuanceReady({ config: c.publicConfig, keyId: c.selectedKeyId, acceptedDay });
     // No awaited operation after this complete synchronous revalidation before commit/dispatch.
     assertProductionFunctionArtifactReady({

@@ -75,3 +75,10 @@ Final `stress-stabilized.log` executes **100/100** (25 per success/failure × di
 A claimed restoration may have been dispatched, may still be in flight, or may have crashed before dispatch. The name records a durable claim, not a fabricated provider outcome. No timeout/status observation grants a second mutation. No production release/recovery authority is wired.
 
 `stress-review-closure.log` repeats the required **100/100**,25 per combination,no retries/skips on corrected source. `renderer-review-closure.log` is the expected negative control. Final `query-plan.json`/`query-plan-review-closure.log` remain index-bounded, additionally bind the exact applied new migration, and preserve the rejected quote-readiness result. `migration-closure-down-up.log` passes the final disposable rehearsal. Final reviewed candidate/CI refs belong in the PR body.
+
+
+## Third review correction receipts
+
+`spec-r3-review.md` and `security-r3-review.md` preserve the outstanding-write and two-clock findings against `1e2765f…`. `r3-red-receipts.json`, `clock-midnight-red.log` and `unsettled-original-red.log` bind reproduced failures to that exact old source with the new regressions. Corrected full application174 and Shopify204 tests are in their corresponding green logs. `r3-closure-root.log`, `r3-closure-pg.log` (90), `r3-closure-http.log` (16), `r3-closure-worker.log` (15), fixture/build and renderer logs preserve actual completed commands. The whole-package status stays local/off-store; no outstanding write is inferred settled from status, timeout or zero usage.
+
+`r3-closure-stress.log` completes100/100 with zero retries/skips; `r3-closure-query.log` captures the final artifact-bound pointer/fallback/Admin index proof. Existing schema down/up proof is unaffected by these application/adapter-only changes.

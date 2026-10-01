@@ -509,13 +509,19 @@ export function createShopifyAvailabilityHoldPort(config: {
         throw error;
       }
       if (
+        acknowledged &&
         after.state === hold.before.state &&
         after.visibilityDigest === hold.before.visibilityDigest &&
         after.providerVersion > current.providerVersion &&
-        (!acknowledged || sameState(acknowledged.snapshot, after))
+        sameState(acknowledged.snapshot, after)
       )
         return { kind: 'RESTORED', current: after };
-      if (!acknowledged && sameState(after, current)) return { kind: 'RESTORATION_PENDING', current: after };
+      if (
+        !acknowledged &&
+        (sameState(after, current) ||
+          (after.state === hold.before.state && after.visibilityDigest === hold.before.visibilityDigest))
+      )
+        return { kind: 'RESTORATION_PENDING', current: after };
       return { kind: 'CONFLICT', current: after };
     },
   };

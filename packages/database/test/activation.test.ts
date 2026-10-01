@@ -184,7 +184,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     let acquireNotSent = false;
     let acquireLost = false;
     let restoreLost = false;
-    let restoreUnsettled: 'pending' | 'throw' | null = null;
+    let restoreUnsettled: 'pending' | 'throw' | 'original' | null = null;
+    let restoreSettled = false;
     let acquisitions = 0;
     let restores = 0;
     const availability: ProductAvailabilityHoldPort = {
@@ -222,6 +223,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         restores++;
         if (restoreUnsettled === 'pending') return { kind: 'RESTORATION_PENDING', current: null };
         if (restoreUnsettled === 'throw') throw new Error('unsettled restore response');
+        if (restoreUnsettled === 'original') {
+          current = { ...hold.before, providerVersion: 'independent-original' };
+          return { kind: 'RESTORATION_PENDING', current };
+        }
         current = { ...hold.before, providerVersion: 'restored' };
         if (restoreLost) {
           restoreLost = false;
@@ -275,8 +280,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       set restoreLost(value: boolean) {
         restoreLost = value;
       },
-      set restoreUnsettled(value: 'pending' | 'throw' | null) {
+      set restoreUnsettled(value: 'pending' | 'throw' | 'original' | null) {
         restoreUnsettled = value;
+      },
+      get restoreSettled() {
+        return restoreSettled;
+      },
+      completeUnsettledRestore: () => {
+        current = { ...current, state: 'available', providerVersion: 'late-restoration-completed' };
+        restoreSettled = true;
       },
       set releaseMissing(value: boolean) {
         releaseMissing = value;
@@ -503,6 +515,30 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect((await f.restart().read(f.identity))?.state.kind).toBe('RESTORED');
     expect((await f.restart().read(f.identity))?.evidence).toEqual(evidence);
     expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
+    expect(f.restores).toBe(1);
+  });
+  it('original-state change with an outstanding restore blocks a later publication until trusted settlement', async () => {
+    const f = await fixture();
+    await f.prepareHold();
+    await f.publish();
+    await f.restart().advance(f.identity);
+    f.restoreUnsettled = 'original';
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    expect((await f.restart().read(f.identity))?.state.kind).toBe('RESTORATION_CLAIMED');
+    const evidence = (await f.restart().read(f.identity))?.evidence;
+    const revisionId = randomUUID();
+    await f.createRevision(revisionId, 'required');
+    const next = { ...f.identity, operationId: randomUUID(), revisionId, mode: 'required' as const };
+    await expect(f.restart().publications.prepare(next)).rejects.toThrow('Availability hold requires recovery');
+    const authority = syntheticRecoveryAuthority();
+    f.recoveryAuthority = { read: async (context) => (f.restoreSettled ? authority.read(context) : null) };
+    const recovery = { ...f.identity, commandKey: 'settle-late-original' };
+    await expect(f.restart().recover(recovery)).rejects.toThrow('Trusted availability recovery decision');
+    f.completeUnsettledRestore();
+    await f.restart().recover(recovery);
+    expect((await f.restart().read(f.identity))?.state.kind).toBe('RESTORED');
+    expect((await f.restart().read(f.identity))?.evidence).toEqual(evidence);
+    await expect(f.restart().publications.prepare(next)).resolves.toMatchObject({ phase: 'prepared' });
     expect(f.restores).toBe(1);
   });
 

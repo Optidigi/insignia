@@ -308,7 +308,7 @@ test('restore never attributes an arbitrary DRAFT to an intent with no held evid
 });
 
 test.each([new Error('synthetic lost response'), new Response(null, { status: 503 })])(
-  'lost restore response is resolved by original-state readback without retry',
+  'lost restore response remains unresolved despite original-state readback',
   async (lost) => {
     const f = fixture([
       read(),
@@ -321,7 +321,7 @@ test.each([new Error('synthetic lost response'), new Response(null, { status: 50
     ]);
     const acquired = await owned(f);
     expect(await f.port.restore(scope, acquired.hold, acquired.current)).toMatchObject({
-      kind: 'RESTORED',
+      kind: 'RESTORATION_PENDING',
       current: { state: 'available' },
     });
     expect(f.writes()).toHaveLength(2);
@@ -378,6 +378,37 @@ test('unchanged readback does not settle a still-in-flight restoration HTTP requ
   expect(settled).toBe(false);
   expect(f.writes()).toHaveLength(2);
   complete(new Response(JSON.stringify(update(product('ACTIVE', '2026-10-01T11:02:00Z'))), { status: 200 }));
+  await Promise.resolve();
+  expect(f.writes()).toHaveLength(2);
+});
+
+test('independent original-state change does not settle an outstanding restoration', async () => {
+  let complete!: (response: Response) => void;
+  let settled = false;
+  const oldRequest = () =>
+    new Promise<Response>((resolve) => {
+      complete = resolve;
+    }).then((value) => {
+      settled = true;
+      return value;
+    });
+  const f = fixture([
+    read(),
+    read(),
+    update(),
+    read(product('DRAFT', heldVersion)),
+    read(product('DRAFT', heldVersion)),
+    oldRequest,
+    read(product('ACTIVE', '2026-10-01T11:02:00Z')),
+  ]);
+  const acquired = await owned(f);
+  expect(await f.port.restore(scope, acquired.hold, acquired.current)).toMatchObject({
+    kind: 'RESTORATION_PENDING',
+    current: { state: 'available' },
+  });
+  expect(settled).toBe(false);
+  expect(f.writes()).toHaveLength(2);
+  complete(new Response(JSON.stringify(update(product('ACTIVE', '2026-10-01T11:03:00Z'))), { status: 200 }));
   await Promise.resolve();
   expect(f.writes()).toHaveLength(2);
 });

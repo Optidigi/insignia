@@ -39,6 +39,12 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   let delayFinalDay = false;
   let delayRestorationProjection = false;
   let finalDayReads = 0;
+  let midnightClockRead: number | null = null;
+  let clockReads = 0;
+  const clockNow = () => {
+    if (midnightClockRead !== null && ++clockReads === midnightClockRead) clock = new Date(clock.getTime() + 1);
+    return new Date(clock);
+  };
   const scope = {
     shopId: 'synthetic-shop',
     installationGeneration: '1',
@@ -86,11 +92,12 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   let evidence: ActivationEvidence | null = null;
   let stateAtAcquisition: ActivationState | null = null;
   let stateAtRestore: ActivationState | null = null;
+  let restoreClock: Date | null = null;
   let crashBeforeAcquire = false;
   let crashBeforeRestore = false;
   let crashAcquire = false;
   let crashRestore = false;
-  let unresolvedRestore: 'pending' | 'throw' | null = null;
+  let unresolvedRestore: 'pending' | 'throw' | 'original' | null = null;
   let failCommit = false;
   let fenced = false;
   let acquisitions = 0;
@@ -125,10 +132,15 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
         : { kind: 'CONFLICT', current },
     restore: async (_scope, hold) => {
       stateAtRestore = structuredClone(candidate.state);
+      restoreClock = new Date(clock);
       restores++;
       if (unresolvedRestore === 'pending') return { kind: 'RESTORATION_PENDING', current: null };
       if (unresolvedRestore === 'throw') throw new Error('unsettled restore response');
-      current = { ...hold.before, providerVersion: 'restored' };
+      if (unresolvedRestore === 'original') {
+        current = { ...hold.before, providerVersion: 'independent-original', observedAt: clock.toISOString() };
+        return { kind: 'RESTORATION_PENDING', current };
+      }
+      current = { ...hold.before, providerVersion: 'restored', observedAt: clock.toISOString() };
       if (crashRestore) {
         crashRestore = false;
         throw new Error('lost restoration response');
@@ -226,7 +238,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     createPublicationActivation({
       store,
       availability,
-      now: () => clock,
+      now: clockNow,
       maxObservationAgeMs: 1000,
       readiness: {
         expectedBuild: { read: async () => build },
@@ -243,7 +255,8 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
           if (delayRestorationProjection && candidate.status === 'activated') clock = new Date(now.getTime() + 2000);
           return { projection, observedAt: clock.toISOString() };
         },
-        currentDay: () => {
+        currentDay: (_candidate, at) => {
+          if (midnightClockRead !== null) return Math.floor(at.getTime() / 86400000);
           if (delayFinalDay && ++finalDayReads > 1) clock = new Date(now.getTime() + 2000);
           return rollsDay && dayReads++ > 0 ? 20728 : 20727;
         },
@@ -255,8 +268,23 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     set crashBeforeRestore(value: boolean) {
       crashBeforeRestore = value;
     },
-    set unresolvedRestore(value: 'pending' | 'throw' | null) {
+    set unresolvedRestore(value: 'pending' | 'throw' | 'original' | null) {
       unresolvedRestore = value;
+    },
+    armMidnightRead: (read: number) => {
+      midnightClockRead = read;
+      clockReads = 0;
+      clock = new Date('2026-10-01T23:59:59.999Z');
+      current = { ...current, observedAt: clock.toISOString() };
+      observation = { ...observation, observedAt: clock.toISOString() };
+      attestation = { ...(attestation as Record<string, unknown>), observedAt: clock.toISOString() };
+      candidate = {
+        ...candidate,
+        publicConfig: {
+          ...candidate.publicConfig,
+          keys: candidate.publicConfig.keys.map((key) => ({ ...key, lastDay: 20729 })),
+        },
+      };
     },
     set delayRestorationProjection(value: boolean) {
       delayRestorationProjection = value;
@@ -284,6 +312,9 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     },
     get stateAtRestore() {
       return stateAtRestore;
+    },
+    get restoreClock() {
+      return restoreClock;
     },
     set phase(phase: string) {
       candidate = { ...candidate, phase };
@@ -647,6 +678,51 @@ it('a delayed final day computation cannot commit expired release/projection evi
   f.delayFinalDay = true;
   await expect(f.advance()).rejects.toThrow();
   expect(f.evidence).toBeNull();
+});
+
+it.each(['activation', 'restoration'] as const)(
+  'the %s decision uses one exact midnight instant for key coverage',
+  async (phase) => {
+    // Enumerated independent timing schedules, not retries. Each fixture advances
+    // one specified clock read across midnight by exactly 1 ms.
+    for (let read = 1; read <= 12; read++) {
+      const f = fixture(phase === 'activation' ? 'required' : null);
+      if (phase === 'restoration') {
+        await f.advance();
+        await f.advance();
+      }
+      f.armMidnightRead(read);
+      try {
+        await f.advance();
+      } catch (error) {
+        expect(error).toBeInstanceOf(Error);
+      }
+      if (phase === 'activation' && f.evidence) {
+        const day = Math.floor(Date.parse(f.evidence.createdAt) / 86400000);
+        expect(20729).toBeGreaterThanOrEqual(day + 2);
+      }
+      if (phase === 'restoration' && f.restores > 0) {
+        // Claiming is not dispatch. A real restore can occur only if the final
+        // key check was valid at its captured instant; crossing before that check
+        // leaves it claimed/pending with no provider call.
+        expect(f.stateAtRestore?.kind).toBe('RESTORATION_CLAIMED');
+        expect(20729).toBeGreaterThanOrEqual(Math.floor(f.restoreClock!.getTime() / 86400000) + 2);
+      }
+    }
+  },
+);
+
+it('independent original-state readback after an ambiguous restore does not close dispatch ownership', async () => {
+  const f = fixture();
+  await f.advance();
+  await f.advance();
+  const evidence = f.evidence;
+  f.unresolvedRestore = 'original';
+  expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+  expect(f.candidate.state.kind).toBe('RESTORATION_CLAIMED');
+  expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
+  expect(f.restores).toBe(1);
+  expect(f.evidence).toBe(evidence);
 });
 
 it('a slow restoration projection read must not dispatch over expired release observations', async () => {

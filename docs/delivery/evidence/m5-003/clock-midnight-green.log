@@ -1,0 +1,12 @@
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/application
+
+
+ Test Files  14 passed (14)
+      Tests  174 passed (174)
+   Start at  14:16:05
+   Duration  1.39s (transform 44%, import 33%, tests 19%, worker 3%)
+
+    Isolate  14 workers spawned · ~124ms startup each (spawn + environment, per file)
+             at least ~454ms faster with isolate: false — reuses workers across files instead of one per file

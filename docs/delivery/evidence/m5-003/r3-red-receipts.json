@@ -1,0 +1,36 @@
+[
+  {
+    "sourceRef": "1e2765fe200b43b7f4aa2535da3cebfafbb58031",
+    "sourcePath": "packages/application/src/publication/activation.ts",
+    "newRegressionCommand": [
+      "corepack",
+      "pnpm",
+      "--filter",
+      "@insignia/application",
+      "exec",
+      "vitest",
+      "run",
+      "src/publication/activation.test.ts",
+      "--testNamePattern=one exact midnight"
+    ],
+    "exitStatus": 1,
+    "log": "clock-midnight-red.log"
+  },
+  {
+    "sourceRef": "1e2765fe200b43b7f4aa2535da3cebfafbb58031",
+    "sourcePath": "packages/shopify/src/availability-hold.ts",
+    "newRegressionCommand": [
+      "corepack",
+      "pnpm",
+      "--filter",
+      "@insignia/shopify",
+      "exec",
+      "vitest",
+      "run",
+      "test/availability-hold.test.ts",
+      "--testNamePattern=independent original-state"
+    ],
+    "exitStatus": 1,
+    "log": "unsettled-original-red.log"
+  }
+]

@@ -35,7 +35,7 @@ Architecture/ledger v1.4, v2 bytes, historical Functions/evidence and orders #10
 
 ## Verification and review
 
-Final commands/results, red/green receipts, crash/race matrix and actual model/session controls are recorded in the accompanying evidence index and final PR body. Local execution: complete retained root suite PASS; PostgreSQL18.6 **89/89**; database/HTTP/server composition **16/16**; real-PG worker **15/15**; geometry publication stress **100/100** (25 per combination, no retry); missing-renderer expected-failure control PASS; public database API **19** compiler and **4** runtime negative probes PASS. The first full-source local reviews requested corrections to public admission, recoverability, terminal Admin state, final freshness and the actual Admin query-plan target. Their findings and preserved red/green evidence are included. Fresh full-source GPT-6.1-sol/high rereview dispositions are bound to the candidate in the final PR body. These results do not constitute a principal gate verdict.
+Final commands/results, red/green receipts, crash/race matrix and actual model/session controls are recorded in the accompanying evidence index and final PR body. Local execution: complete retained root suite PASS; PostgreSQL18.6 **90/90**; database/HTTP/server composition **16/16**; real-PG worker **15/15**; geometry publication stress **100/100** (25 per combination, no retry); missing-renderer expected-failure control PASS; public database API **19** compiler and **4** runtime negative probes PASS. The first full-source local reviews requested corrections to public admission, recoverability, terminal Admin state, final freshness and the actual Admin query-plan target. Their findings and preserved red/green evidence are included. Fresh full-source GPT-6.1-sol/high rereview dispositions are bound to the candidate in the final PR body. These results do not constitute a principal gate verdict.
 
 
 ## Second full-source review closure
@@ -46,3 +46,13 @@ Spec rereview at `f46535ce995f4e3ae05431b4888aa29028dc738f` reproduced two addit
 2. A new publication can follow an audited resolved/abandoned request tail while retaining the older effective operation and monotonic sequence. Every intervening current-installation operation must be closed by immutable resolution; exact effective remote anchors and the locked sequence are revalidated. Unknown/unresolved history or changed anchors still fails closed. Both required→optional and optional→required rescue paths retain hold admission. The quote-issuance sequence guard remains unchanged and returns null until a new coherent activation.
 
 Final local execution: application171, Shopify203, PostgreSQL89, HTTP16 and worker15; the complete retained root suite passes. Source/test compiler checks also pass. Fresh full-source rereview and final-head CI remain the handoff requirements; the actual final dispositions/refs are in the PR body.
+
+
+## Third full-source review closure
+
+The Spec and Standards/security reviews at `1e2765fe200b43b7f4aa2535da3cebfafbb58031` identified two further defects. Their attributed findings, selected read-only model/high contexts and old-source red receipts remain preserved.
+
+1. An unacknowledged restore cannot become RESTORED merely because a read sees the original status with a newer version. An earlier non-CAS write may still be outstanding. Only an acknowledged mutation and matching exact readback can settle the normal write path; unknown outcomes remain claimed/pending, then explicit operator hold. Application, adapter and real-PG tests cover an independently changed original state, late HTTP completion, blocked next publication and independently trusted settlement without a second write.
+2. Activation and restoration now derive merchant day from the same captured decision timestamp used by all final readiness checks and immutable evidence. A synchronous watchdog rejects reversed/over-budget calendar work or a day change during calculation. Twelve independent 1ms midnight schedules for both paths reject uncovered keys; these are enumerated test cases, not retries.
+
+Updated local execution: application **174/174**, Shopify **204/204**, PostgreSQL **90/90**, HTTP **16/16**, worker **15/15**, complete pinned root PASS and strict fixture compilation PASS. The final stress/query-plan receipts and fresh full-source review dispositions are included with the final PR refs. Earlier 171/203/89 counts remain historical evidence rather than being rewritten.

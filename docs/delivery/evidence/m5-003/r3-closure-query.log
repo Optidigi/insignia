@@ -1,0 +1,36 @@
+$ node scripts/m5-003/large-history.mjs
+{
+  "pointer": {
+    "planningMs": 1.186,
+    "executionMs": 0.088,
+    "rows": 1,
+    "indexes": [
+      "m5_current_publication_pointer_pkey",
+      "publication_operations_pkey",
+      "m4_publication_progress_pkey",
+      "m5_activation_state_pkey",
+      "shops_pkey",
+      "config_revision_geometry_pkey"
+    ]
+  },
+  "fallback": {
+    "planningMs": 0.809,
+    "executionMs": 1.295,
+    "rows": 1,
+    "indexes": [
+      "shops_pkey",
+      "m5_current_publication_visible_idx",
+      "config_revision_presentation_pkey",
+      "m5_activation_state_pkey",
+      "m4_publication_progress_pkey"
+    ]
+  },
+  "adminEffective": {
+    "planningMs": 0.177,
+    "executionMs": 0.016,
+    "rows": 1,
+    "indexes": [
+      "product_configs_shop_id_external_product_id_key"
+    ]
+  }
+}

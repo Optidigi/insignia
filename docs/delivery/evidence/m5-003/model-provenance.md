@@ -15,3 +15,6 @@ Initial fresh full-source Spec and Standards/security reviews requested changes 
 
 
 The second full-source sessions reviewed `f46535c…`: Spec requested two recovery corrections; Standards/security reported no material finding at that earlier head. Both reports remain attributed local verdicts. Their selected actual contexts independently record `gpt-6.1-sol`, effort `high`, approval `never`, sandbox `read-only`; the Spec report’s statement that its own interface cannot attest private runtime routing is preserved, not rewritten. Observable launch/context evidence satisfies the execution-setting check without claiming provider-private attestation.
+
+
+Third full-source sessions reviewed `1e2765f…`: Spec thread `01a0f7bb-1202-7b30-94ce-b9eb69408ac1`; Standards/security thread `01a0f7bb-1230-7970-a676-8aa69ffe2de0`. Both used explicit gpt-6.1-sol/high, approval never, read-only sandbox; their selected contexts and findings are preserved. The integrator corrected both findings. Interrupted-session audit found no running M5 writer/reviewer/browser process; the retained project-scoped PostgreSQL server is shared local test infrastructure and was left intact. Fresh full-source reviews of the corrected candidate follow, with exact refs/dispositions in the PR body.
