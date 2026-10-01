@@ -1,0 +1,18 @@
+{
+  "LOCAL-AGENT-LAUNCH.txt": {
+    "sha256": "ebc696cd37ad6c3e66817b522c883373e06a79b4995a32b67edd8e1da60628b9",
+    "bytes": 2500
+  },
+  "M5-002R-CORRECTED-LIVE-QUALIFICATION.md": {
+    "sha256": "0f4c4cf57d371e50f1bcf79376b2dde0b1fba7b1ba1ad9722a270d91f28c5fd4",
+    "bytes": 5140
+  },
+  "PR-028-principal-review.md": {
+    "sha256": "56d05e936d7b53bd311de225a139aeb825d3e85084f7c6f20bf8876081c72fff",
+    "bytes": 5480
+  },
+  "PR-028-verification.json": {
+    "sha256": "687b7fa59d935f9704fe21d9f07519a56d301e29cdafde3e6f5ded2e87b34345",
+    "bytes": 901
+  }
+}

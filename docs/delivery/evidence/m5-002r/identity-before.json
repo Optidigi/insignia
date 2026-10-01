@@ -1,0 +1,14 @@
+{
+  "shop": {
+    "id": "gid://shopify/Shop/105501393179",
+    "myshopifyDomain": "insignia-rewrite-dev.myshopify.com"
+  },
+  "currentAppInstallation": {
+    "id": "gid://shopify/AppInstallation/1054356963611",
+    "app": {
+      "id": "gid://shopify/App/429028933633",
+      "apiKey": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "accessScopes": []
+  }
+}

@@ -1,0 +1,66 @@
+[
+  {
+    "event": "m5-002",
+    "at": "2026-10-01T08:40:46.775Z",
+    "kind": "function_objects",
+    "functions": {
+      "transform": "unknown",
+      "validation": "unknown",
+      "runtimeIdentity": "unverifiable",
+      "readiness": "unknown",
+      "observation": {
+        "shopId": "8cc08c4c-b41f-4b99-a32e-bcc32cd923ec",
+        "installationGeneration": "1",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+        "observedAt": "2026-10-01T08:40:46.774Z",
+        "transform": null,
+        "validation": null
+      }
+    }
+  },
+  {
+    "event": "m5-002",
+    "at": "2026-10-01T08:40:46.775Z",
+    "kind": "authentication",
+    "path": "/api/admin/products",
+    "authorized": true,
+    "canRead": true,
+    "canEdit": true
+  },
+  {
+    "event": "m5-002",
+    "at": "2026-10-01T08:40:46.775Z",
+    "kind": "authentication",
+    "path": "/api/admin/products",
+    "authorized": true,
+    "canRead": true,
+    "canEdit": true
+  },
+  {
+    "event": "m5-002",
+    "at": "2026-10-01T08:41:44.863Z",
+    "kind": "authentication",
+    "path": "/api/admin/products/10485042479387/config",
+    "authorized": true,
+    "canRead": true,
+    "canEdit": true
+  },
+  {
+    "event": "m5-002",
+    "at": "2026-10-01T08:42:22.303Z",
+    "kind": "authentication",
+    "path": "/api/admin/products/10485042479387/config",
+    "authorized": true,
+    "canRead": true,
+    "canEdit": true
+  },
+  {
+    "event": "m5-002",
+    "at": "2026-10-01T08:42:23.093Z",
+    "kind": "authentication",
+    "path": "/api/admin/products/10485042479387/config",
+    "authorized": true,
+    "canRead": true,
+    "canEdit": true
+  }
+]

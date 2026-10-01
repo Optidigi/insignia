@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "kind": "sanitized operator evidence; no credential/session export",
+  "files": {
+    "LOCAL-AGENT-LAUNCH.txt": {
+      "sha256": "ebc696cd37ad6c3e66817b522c883373e06a79b4995a32b67edd8e1da60628b9",
+      "bytes": 2500
+    },
+    "attestation-local.log": {
+      "sha256": "baf063558790877c9e62dcaebfecc2036473d99f487aa8d00b080ee105e3c24e",
+      "bytes": 225
+    },
+    "authority-manifest.json": {
+      "sha256": "0c4edd39212d592110c5d036c3ecc9913d1065b394114dc3fa04fc909bb1fc8e",
+      "bytes": 565
+    },
+    "build-web.log": {
+      "sha256": "dc8707d321979558aa9a5044eff7088bd0cbf92424dfd5b29187b36dae862d0b",
+      "bytes": 974
+    },
+    "clean-sanitized.log": {
+      "sha256": "7f5189234223ade118175acb70cb964c6fa6ea9b17de85f8b8213f96c6e17e9e",
+      "bytes": 1060
+    },
+    "cleanup-receipt.json": {
+      "sha256": "1b032e779c05f816f708a7125bf84380200a92cd989de48f39d67262f82765fd",
+      "bytes": 1077
+    },
+    "correction-operator-guard.mjs": {
+      "sha256": "b7ecfc2480f2a567e9965a38d629746edc8406ca1903b0877113f63697abea71",
+      "bytes": 2697
+    },
+    "correction-register.json": {
+      "sha256": "2ae120ccf155280a19307d1e580feabf37c9dda214a161dad291800bd80ab7bf",
+      "bytes": 3993
+    },
+    "diagnostic-events.json": {
+      "sha256": "d5739fbe502e4f13b4072a0d6c4139563fc5e37bf0741bbba64cc8236708a3d5",
+      "bytes": 1619
+    },
+    "history-local.log": {
+      "sha256": "74150ef06baa48b4b9d43549a0c08f2ea19d942fd7d51ef8872f6e34993ae0cc",
+      "bytes": 1433
+    },
+    "identity-after.json": {
+      "sha256": "a26bd2b5620b347138633292671fd10a65564b385d4929f8b322c73aa1ad5b80",
+      "bytes": 847
+    },
+    "identity-before.json": {
+      "sha256": "d0ce7f46f1620263bf96c3506d39013ecade45e242dbbe56ff473d5ba41ab172",
+      "bytes": 357
+    },
+    "legacy-launcher-mirror.json": {
+      "sha256": "c6b5c068994de9c452978475dad85bde7f57542e8eca2e496a2d7e5591b5a257",
+      "bytes": 1673
+    },
+    "local-db-readback.json": {
+      "sha256": "acf8ac89245d1ce5c7bc0a6ee52d2e67e1151e06e5ae2851655f264ca92e6ca9",
+      "bytes": 406
+    },
+    "operator-negative-controls.json": {
+      "sha256": "49d552c58dd1394d6ab7f87ae7ead3608322509b1c4a71ffc5cabe32e00b6484",
+      "bytes": 299
+    },
+    "operator-runtime-tests.log": {
+      "sha256": "36b71faeb3120beb7a2f73401f184c23f86c2f5c054682c08aad9e5cfd4f9c41",
+      "bytes": 730
+    },
+    "owned-function-observation.json": {
+      "sha256": "dc1d50bea3c6db1ca46d7b0e235a671b00f5bb498b99c54ac7a9dcf86cee17e3",
+      "bytes": 511
+    },
+    "preview-artifact-receipt.json": {
+      "sha256": "6319b89bf6fc619c3053a1d55d42eb569c7cba35a7a3e41d759760d5d7171e9b",
+      "bytes": 1553
+    },
+    "root-runtime.json": {
+      "sha256": "21d3ec328270c3905bd332813346b9b9c9e41f1665a75a8945be0a31deaa4672",
+      "bytes": 390
+    },
+    "secrets-local.log": {
+      "sha256": "df2930cf51be684dd12567810d21eb980227efd2d006184a805757cfb2e8198a",
+      "bytes": 161
+    },
+    "source-integrity.json": {
+      "sha256": "91e849bea4004e86641502894be67f4762fc687e7a7049418d10915b374b7ea8",
+      "bytes": 591
+    }
+  }
+}

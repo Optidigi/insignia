@@ -1,3 +1,5 @@
+> **M5-002R correction — 1 October 2026.** The 1 October correction is recorded in [M5-002R-REPORT.md](M5-002R-REPORT.md): corrected hydration and local create/open were observed, but live recovery/Function binding remain incomplete and exact retained-grant cleanup is ambiguous. The original report below is preserved as a historical receipt.
+
 # M5-002 outcome — diagnostic implementation, cleaned preview, live G7 blocked
 
 ## Disposition
