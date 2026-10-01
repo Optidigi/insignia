@@ -13,9 +13,9 @@
 test at test/admin/editor-browser.test.mjs:983:1
 ✖ numeric placement input reaches owner state before blur and survives an owner rerender (756.0993ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
-  
+
   '0.5' !== '0.6'
-  
+
       at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-002-worktree/apps/web/test/admin/editor-browser.test.mjs:1025:12)
       at async Test.run (node:internal/test_runner/test:1409:7)
       at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {

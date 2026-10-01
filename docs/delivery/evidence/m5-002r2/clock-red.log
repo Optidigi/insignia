@@ -23,9 +23,9 @@
 test at test/admin/production-composition.test.mjs:57:1
 ✖ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (223.916824ms)
   AssertionError [ERR_ASSERTION]: current
-  
+
   false !== true
-  
+
       at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-002-worktree/apps/web/test/admin/production-composition.test.mjs:258:14)
       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
       at async Test.run (node:internal/test_runner/test:1409:7)

@@ -17,7 +17,7 @@ test at apps/web/test/admin/editor-browser.test.mjs:1056:7
   locator.waitFor: Timeout 5000ms exceeded.
   Call log:
   [2m  - waiting for getByText('Preview: ready', { exact: true }) to be visible[22m
-  
+
       at TestContext.<anonymous> (/home/serveradmin/insignia-m5-002-worktree/apps/web/test/admin/editor-browser.test.mjs:1160:67) {
     name: 'TimeoutError',
     log: [ "  - waiting for getByText('Preview: ready', { exact: true }) to be visible" ]

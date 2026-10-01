@@ -43,5 +43,47 @@
   "attachment": {
     "sha256": "d5e973471f35be8516122f9865a53baac1f91c33e92b931d6e3f8e516d938d39",
     "contents": "old M5-002R package, not requested R2 brief; explicit owner message governs"
+  },
+  "logExport": {
+    "root.log": {
+      "rawSha256": "4ebddc6343994d2d2aba0f5a0483bd6d9170a640bc36ff378c23c159ab609461",
+      "exportSha256": "54c4747d0ad7fa7789ed76382b2298a3ee31a6e41b0b3ad4218113b3cdb7239a",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "renderer-control.log": {
+      "rawSha256": "e83d86e5950554b24e6ff77e59ff429be4c393688ffc166a4649c751d2bc480b",
+      "exportSha256": "89a42532b146edb7900b27095301eb65aff4b7f232ab7389281ca8adb40c3d54",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "postgres.log": {
+      "rawSha256": "21158c26f778e5e49a031fb6cf3692ffd7ed876329ca9b37299d01171e0c0301",
+      "exportSha256": "21158c26f778e5e49a031fb6cf3692ffd7ed876329ca9b37299d01171e0c0301",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "clock-red.log": {
+      "rawSha256": "265480c3963ff209df57f33f6d342f085a49e046bbb053a07c0bcb89d460c549",
+      "exportSha256": "090123f9dce13419203622b1b48efe241e3034e4a09dd0f73958d2346cb5ab46",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "input-green.log": {
+      "rawSha256": "770bd8304bf6c37432a5e9fb09984892cbccaffc211c8a564dd644038373cdd0",
+      "exportSha256": "770bd8304bf6c37432a5e9fb09984892cbccaffc211c8a564dd644038373cdd0",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "stress-100.log": {
+      "rawSha256": "0ee073de05877f0c764791f68ef48d4beb1b4c4b286cd3607d4c5241cdf43b92",
+      "exportSha256": "0ee073de05877f0c764791f68ef48d4beb1b4c4b286cd3607d4c5241cdf43b92",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "input-red.log": {
+      "rawSha256": "c62301960949c7a6bb5e68f2bd045341093676d5c2b5753bc73bc60bce6b1ab4",
+      "exportSha256": "b8c4c0b155cd1a96fb497e40294f8506a20f44795fd58f6c28ecb5bbdfb4d1fc",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "clock-green.log": {
+      "rawSha256": "3933752e05c6c73c565a7f7fc3d0c7e55c2f404f1a146a3de23a8b821df1536f",
+      "exportSha256": "3933752e05c6c73c565a7f7fc3d0c7e55c2f404f1a146a3de23a8b821df1536f",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    }
   }
 }
