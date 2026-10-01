@@ -2,7 +2,7 @@
 
 Reviewed base `8a84ddeaf277368852d224915abe6d4a93a3d8a4` through HEAD `09e301fb3274f5d0f7f77c27a14deef3ae7ef293`, tree `a0ab43f9204f6261f382f813fd5d0c53621be481`. Final worktree status is clean. An initial untracked boundary probe disappeared during review; I made no changes.
 
-1. **P1 — Public publication admission can bypass durable hold ownership.**  
+1. **P1 — Public publication admission can bypass durable hold ownership.**
    [durable-core.ts:66](/home/serveradmin/insignia-m5-003-worktree/packages/database/src/durable-core.ts:66), [production-publication.ts:561](/home/serveradmin/insignia-m5-003-worktree/packages/database/src/repositories/production-publication.ts:561).
 
    Brief §3 requires an all-channel admission hold for first publication and mode changes. The public factory still accepts `admission.established()` supplied by its caller, and the publisher trusts its boolean before remote mutations.
@@ -11,7 +11,7 @@ Reviewed base `8a84ddeaf277368852d224915abe6d4a93a3d8a4` through HEAD `09e301fb3
 
    **Correction:** remove caller-controlled admission from the public facade, or make every production publisher independently verify the durable owned hold. Keep synthetic admission premises internal to tests. Add a public-facade test proving mode-change publication cannot dispatch without that hold.
 
-2. **P1 — Operator recovery cannot ever be completed.**  
+2. **P1 — Operator recovery cannot ever be completed.**
    [activation.ts:281](/home/serveradmin/insignia-m5-003-worktree/packages/application/src/publication/activation.ts:281), [activation.ts:345](/home/serveradmin/insignia-m5-003-worktree/packages/application/src/publication/activation.ts:345), [activation migration:84](/home/serveradmin/insignia-m5-003-worktree/packages/database/migrations/20260930000900_m5_activation.sql:84), [production-publication.ts:318](/home/serveradmin/insignia-m5-003-worktree/packages/database/src/repositories/production-publication.ts:318).
 
    Brief §14.7 requires restoration conflicts to be explicit **and recoverable**. `OPERATOR_HOLD` immediately returns without observation, its SQL transition is terminal, and unresolved hold records block every subsequent publication. No exposed recovery-completion operation exists.
@@ -20,7 +20,7 @@ Reviewed base `8a84ddeaf277368852d224915abe6d4a93a3d8a4` through HEAD `09e301fb3
 
    **Correction:** provide a scoped, audited operator recovery-completion path that validates the permitted current state, preserves historical activation evidence, and releases the publication block without blindly replaying mutations. Test completion after lost responses and across supersession/reinstall.
 
-3. **P2 — Admin masks terminal publication failures with stale activation state.**  
+3. **P2 — Admin masks terminal publication failures with stale activation state.**
    [activation-state.ts:13](/home/serveradmin/insignia-m5-003-worktree/apps/web/src/server/admin/activation-state.ts:13).
 
    Brief §8 requires truthful repair states. Activation-kind handling precedes publication-phase handling. A publisher CAS conflict changes progress to `conflict` while activation state can remain `HELD`.
