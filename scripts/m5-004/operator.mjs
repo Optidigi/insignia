@@ -571,7 +571,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
         signal: AbortSignal.any([AbortSignal.timeout(12_000), ...(init.signal ? [init.signal] : [])]),
       });
       event.httpStatus = response.status;
-      if (kind !== 'auth' && response.status !== 200) {
+      if (kind !== 'auth' && (operation.startsWith('catalog_') ? !response.ok : response.status !== 200)) {
         event.result = ['create', 'update'].includes(kind) ? 'UNKNOWN' : 'RESPONDED';
         event.replayBody = '';
         event.bodyObservation = 'NOT_READ_STATUS_CLASSIFIED';

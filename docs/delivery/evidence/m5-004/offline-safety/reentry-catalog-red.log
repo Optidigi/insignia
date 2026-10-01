@@ -1,0 +1,35 @@
+✖ reopening a finished run preserves exact normalized evidence and refuses before credential loading (536.590474ms)
+✖ catalog successful non200 keeps direct/wrapped/replayed body semantics (2.623578ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 751.682368
+
+✖ failing tests:
+
+test at scripts/m5-004/operator.test.mjs:971:2
+✖ reopening a finished run preserves exact normalized evidence and refuses before credential loading (536.590474ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-004-worktree/scripts/m5-004/operator.test.mjs:974:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /qualification_reentry_refused/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/m5-004/operator.test.mjs:978:2
+✖ catalog successful non200 keeps direct/wrapped/replayed body semantics (2.623578ms)
+  Error: Catalog response body missing
+      at file:///home/serveradmin/insignia-m5-004-worktree/packages/shopify/dist/catalog.js:158:27
+      at async withAdminDeadline (file:///home/serveradmin/insignia-m5-004-worktree/packages/shopify/dist/admin-deadline.js:18:16)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-004-worktree/scripts/m5-004/operator.test.mjs:980:223)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)

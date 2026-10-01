@@ -967,3 +967,54 @@ test('availability preserves its lossy UTF8 semantics while catalog rejects the 
     rmSync(f.directory, { recursive: true, force: true });
   }
 });
+
+test('reopening a finished run preserves exact normalized evidence and refuses before credential loading', async () => {
+  const f = await qualificationFixture();
+  try {
+    let loads = 0;
+    const loader = () => {
+      loads++;
+      return { secret: 'synthetic-key', ownership: { synthetic: true } };
+    };
+    await qualifySynthetic({ ...f, credentialLoader: loader });
+    const before = readFileSync(join(f.directory, 'qualification.json')),
+      register = readFileSync(join(f.directory, 'register.json')),
+      count = f.sends();
+    await assert.rejects(qualifySynthetic({ ...f, credentialLoader: loader }), /qualification_reentry_refused/);
+    assert.equal(loads, 1);
+    assert.equal(f.sends(), count);
+    assert.deepEqual(readFileSync(join(f.directory, 'qualification.json')), before);
+    assert.deepEqual(readFileSync(join(f.directory, 'register.json')), register);
+  } finally {
+    f.close();
+  }
+});
+test('catalog successful non200 keeps direct/wrapped/replayed body semantics', async () => {
+  const f = await setup();
+  f.operator.close();
+  const data = {
+    data: {
+      product: {
+        id: f.product().id,
+        title: 'synthetic',
+        status: 'UNLISTED',
+        featuredMedia: null,
+        variants: { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } },
+      },
+    },
+  };
+  const fetchImpl = async () => Response.json(data, { status: 201 });
+  const op = createOperator({ directory: f.directory, fetchImpl });
+  try {
+    const input = { id: f.product().id, after: null };
+    const make = (fetchImpl) => createCatalogTransport({ shop: TARGET.domain, accessToken: 'synthetic', fetchImpl });
+    const direct = await make(fetchImpl).read('detail', input);
+    assert.deepEqual(await make(op.fetch).read('detail', input), direct);
+    const event = op.state().events.at(-1);
+    assert.deepEqual(await make(async () => replayResponse(event)).read('detail', input), direct);
+    assert.equal(event.httpStatus, 201);
+  } finally {
+    op.close();
+    rmSync(f.directory, { recursive: true, force: true });
+  }
+});

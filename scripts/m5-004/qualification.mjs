@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { lstatSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, lstatSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -128,6 +128,10 @@ export async function qualifySynthetic({ directory, binding, credentialLoader, f
 async function runQualification({ operator, directory, binding, credentialLoader, synthetic = false }) {
   try {
     requireValue(JSON.stringify(operator.state().binding) === JSON.stringify(binding), 'register_source_binding');
+    requireValue(
+      operator.state().events.length === 0 && !existsSync(resolve(directory, 'qualification.json')),
+      'qualification_reentry_refused',
+    );
   } catch (error) {
     operator.close();
     throw error;
