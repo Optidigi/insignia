@@ -7,6 +7,7 @@ import type {
   ProductAvailabilitySnapshot,
 } from '@insignia/application';
 import { activationDigest, availabilitySnapshotIdentityDigest } from '@insignia/application';
+import { createShopifyAvailabilityHoldPort } from '@insignia/shopify';
 import { type Kysely, sql } from 'kysely';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Database } from '../src/client/database.js';
@@ -35,7 +36,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     await database?.destroy();
   });
 
-  async function fixture(initialMode: 'required' | 'optional' = 'required') {
+  async function fixture(initialMode: 'required' | 'optional' = 'required', providerStatus?: string) {
+    let providerClock = new Date(now);
+    let providerDelay: { point: 'fetch' | 'body' | 'credential'; ms: number } | null = null;
+    const providerWrites: string[] = [];
+    let status = providerStatus ?? 'ACTIVE';
+    let version = '2026-10-01T11:00:00.000Z';
     const shopId = randomUUID();
     const providerShop = BigInt(`0x${shopId.replaceAll('-', '').slice(0, 12)}`).toString();
     const configId = randomUUID();
@@ -123,7 +129,11 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         return { observed };
       },
     };
-    const artifactScope = { shopId, installationGeneration: '1', appClientId: 'synthetic-app' };
+    const artifactScope = {
+      shopId,
+      installationGeneration: '1',
+      appClientId: providerStatus ? 'a'.repeat(32) : 'synthetic-app',
+    };
     const transform = {
       functionId: 'transform',
       handle: 'transform',
@@ -235,14 +245,86 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         return { kind: 'RESTORED', current };
       },
     };
+    let responsePending = false;
+    const providerAvailability = providerStatus
+      ? createShopifyAvailabilityHoldPort({
+          now: () => new Date(providerClock),
+          isCurrent: async () => true,
+          credentials: {
+            acquire: async () => {
+              if (responsePending && providerDelay?.point === 'credential') {
+                providerClock = new Date(providerClock.getTime() + providerDelay.ms);
+                providerDelay = null;
+              }
+              responsePending = false;
+              return {
+                kind: 'usable',
+                shopDomain: 'synthetic.myshopify.com',
+                accessToken: 'synthetic-token',
+                accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+              };
+            },
+          },
+          fetchImpl: (async (_url, init) => {
+            const request = JSON.parse(String(init?.body));
+            const mutation = request.query.startsWith('mutation');
+            if (mutation) {
+              status = request.variables.product.status;
+              providerWrites.push(status);
+              version = status === 'DRAFT' ? '2026-10-01T11:01:00.000Z' : '2026-10-01T11:02:00.000Z';
+            }
+            const product = {
+              __typename: 'Product',
+              id: 'gid://shopify/Product/42',
+              status,
+              updatedAt: version,
+              publishedAt: null,
+              onlineStoreUrl: null,
+              resourcePublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
+              unpublishedPublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
+            };
+            const data = mutation
+              ? { productUpdate: { product, userErrors: [] } }
+              : {
+                  shop: { id: availabilityScope.shopifyShopId },
+                  currentAppInstallation: {
+                    app: { apiKey: availabilityScope.appClientId },
+                    accessScopes: [{ handle: 'read_products' }, { handle: 'write_products' }],
+                  },
+                  node: product,
+                };
+            const bytes = new TextEncoder().encode(JSON.stringify({ data }));
+            if (providerDelay?.point === 'fetch') {
+              providerClock = new Date(providerClock.getTime() + providerDelay.ms);
+              providerDelay = null;
+            }
+            responsePending = true;
+            return new Response(
+              new ReadableStream({
+                start(controller) {
+                  controller.enqueue(bytes);
+                },
+                pull(controller) {
+                  if (providerDelay?.point === 'body') {
+                    providerClock = new Date(providerClock.getTime() + providerDelay.ms);
+                    providerDelay = null;
+                  }
+                  controller.close();
+                },
+              }),
+              { status: 200 },
+            );
+          }) as typeof fetch,
+        })
+      : availability;
     let recoveryAuthority: import('@insignia/application').TrustedAvailabilityRecoveryAuthorityPort | undefined;
     const options = {
       appId: '101',
-      appClientId: 'synthetic-app',
+      appClientId: artifactScope.appClientId,
       remote,
-      availability,
+      availability: providerAvailability,
       readiness,
-      now: () => now,
+      now: () => (providerStatus ? new Date(providerClock) : now),
       maxObservationAgeMs: 1000,
     };
     const identity = { shopId, configId, operationId };
@@ -260,6 +342,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       identity,
       scope,
       remote,
+      providerWrites,
+      set providerDelay(value: { point: 'fetch' | 'body' | 'credential'; ms: number } | null) {
+        providerDelay = value;
+      },
       set recoveryAuthority(value:
         | import('@insignia/application').TrustedAvailabilityRecoveryAuthorityPort
         | undefined) {
@@ -321,6 +407,51 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       },
     };
   }
+
+  it.each(['fetch', 'body', 'credential'] as const)(
+    'R1 public publication rejects stale %s hold observation without any policy write',
+    async (point) => {
+      const f = await fixture('required', 'ACTIVE');
+      await f.prepareHold();
+      f.providerDelay = { point, ms: 2000 };
+      expect(
+        await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId),
+      ).toEqual({ kind: 'ADMISSION_PENDING', phase: 'prepared' });
+      expect(f.remoteWrites).toBe(0);
+      expect((await f.restart().read(f.identity))?.evidence).toBeNull();
+      expect((await core.configs.getConfig(f.identity.shopId, f.identity.configId))?.effectiveRevisionId).toBeNull();
+      expect(f.providerWrites).toEqual(['DRAFT']);
+    },
+  );
+  it.each([0, 999, 1000])('R1 public publication permits exact within-budget %s ms observation', async (ms) => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    f.providerDelay = { point: 'fetch', ms };
+    await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId);
+    expect(f.remoteWrites).toBe(1);
+  });
+
+  it('R2 UNLISTED hold survives public read/restart and restores exact original status after activation', async () => {
+    const f = await fixture('required', 'UNLISTED');
+    await f.prepareHold();
+    const held = await f.restart().read(f.identity);
+    expect(held?.state.hold?.before).toMatchObject({
+      state: 'unlisted',
+      observedAt: now.toISOString(),
+      receivedAt: now.toISOString(),
+    });
+    expect(held?.state.hold?.held?.state).toBe('unavailable');
+    await f.publish();
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    const evidence = (await f.restart().read(f.identity))?.evidence;
+    expect(evidence?.hold?.before.state).toBe('unlisted');
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
+    expect(f.providerWrites).toEqual(['DRAFT', 'UNLISTED']);
+    expect((await f.restart().read(f.identity))?.evidence).toEqual(evidence);
+    expect((await core.configs.getConfig(f.identity.shopId, f.identity.configId))?.effectiveRevisionId).toBe(
+      f.revisionId,
+    );
+  });
 
   it('first publication stays pending until the owned hold is reobserved', async () => {
     const f = await fixture();

@@ -183,7 +183,7 @@ export function activationDigest(value: unknown): string {
 function snapshotShape(snapshot: ProductAvailabilitySnapshot): boolean {
   return Boolean(
     snapshot &&
-      ['available', 'unavailable', 'archived'].includes(snapshot.state) &&
+      ['available', 'unavailable', 'archived', 'unlisted'].includes(snapshot.state) &&
       typeof snapshot.providerVersion === 'string' &&
       snapshot.providerVersion.length > 0 &&
       snapshot.providerVersion.length <= 256 &&

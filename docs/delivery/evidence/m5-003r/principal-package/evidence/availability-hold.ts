@@ -115,7 +115,7 @@ function assertSnapshot(scope: AvailabilityScope, value: ProductAvailabilitySnap
     !value?.scope ||
     !sameScope(scope, value.scope) ||
     value.productId !== productId ||
-    !['available', 'unavailable', 'archived', 'unlisted'].includes(value.state) ||
+    !['available', 'unavailable', 'archived'].includes(value.state) ||
     typeof value.visibilityDigest !== 'string' ||
     !/^[a-f0-9]{64}$/.test(value.visibilityDigest)
   )
@@ -124,9 +124,7 @@ function assertSnapshot(scope: AvailabilityScope, value: ProductAvailabilitySnap
     if (
       timestamp(value.providerVersion) !== value.providerVersion ||
       timestamp(value.observedAt) !== value.observedAt ||
-      timestamp(value.receivedAt ?? value.observedAt) !== (value.receivedAt ?? value.observedAt) ||
-      (value.receivedAt ?? value.observedAt) < value.observedAt ||
-      value.providerVersion > (value.receivedAt ?? value.observedAt)
+      value.providerVersion > value.observedAt
     )
       fail('invalid_request');
   } catch {
@@ -178,17 +176,11 @@ function connection(raw: unknown): Record<string, unknown>[] {
     return fail('provider_shape');
   return value.nodes.map((node: unknown) => record(node) ?? fail('provider_shape'));
 }
-function parseProduct(
-  raw: unknown,
-  scope: AvailabilityScope,
-  productId: string,
-  observedAt: string,
-  receivedAt: string,
-) {
+function parseProduct(raw: unknown, scope: AvailabilityScope, productId: string, observedAt: string) {
   const product = record(raw);
   if (!product) return fail('provider_shape');
   if (product.__typename !== 'Product' || product.id !== productId) return fail('owner_mismatch');
-  const states = { ACTIVE: 'available', DRAFT: 'unavailable', ARCHIVED: 'archived', UNLISTED: 'unlisted' } as const;
+  const states = { ACTIVE: 'available', DRAFT: 'unavailable', ARCHIVED: 'archived' } as const;
   if (typeof product.status !== 'string' || !Object.hasOwn(states, product.status)) return fail('provider_shape');
   const publications = connection(product.resourcePublications)
     .map((node) => {
@@ -231,7 +223,6 @@ function parseProduct(
     providerVersion: timestamp(product.updatedAt),
     visibilityDigest: hash({ publications, unpublished, publishedAt, onlineStoreUrl }),
     observedAt,
-    receivedAt,
   };
   return { snapshot: Object.freeze(snapshot), membershipDigest: hash({ publications, unpublished }) };
 }
@@ -294,10 +285,7 @@ export function createShopifyAvailabilityHoldPort(config: {
   const validateHold = (scope: AvailabilityScope, hold: AvailabilityHold) => {
     assertHold(scope, hold);
     const currentTime = time();
-    if (
-      (hold.before.receivedAt ?? hold.before.observedAt) > currentTime ||
-      (hold.held && (hold.held.receivedAt ?? hold.held.observedAt) > currentTime)
-    )
+    if (hold.before.observedAt > currentTime || (hold.held && hold.held.observedAt > currentTime))
       fail('invalid_request');
   };
   const credential = async (scope: AvailabilityScope) => {
@@ -400,18 +388,9 @@ export function createShopifyAvailabilityHoldPort(config: {
       if (timer) clearTimeout(timer);
     }
   };
-  const observation = async (scope: AvailabilityScope, query: string, variables: Record<string, unknown>) => {
-    // Credentials, transport, body consumption and post-response fencing all count
-    // toward observation age. Receipt bounds updatedAt, never freshness.
-    const observedAt = time();
-    const data = await execute(scope, query, variables);
-    const receivedAt = time();
-    if (receivedAt < observedAt) return fail('invalid_request');
-    return { data, observedAt, receivedAt };
-  };
   const read = async (scope: AvailabilityScope, productId: string) => {
     assertScope(scope, productId);
-    const { data, observedAt, receivedAt } = await observation(scope, READ, { productId });
+    const data = await execute(scope, READ, { productId });
     if (
       record(data.shop)?.id !== scope.shopifyShopId ||
       record(record(data.currentAppInstallation)?.app)?.apiKey !== scope.appClientId
@@ -425,13 +404,13 @@ export function createShopifyAvailabilityHoldPort(config: {
       !scopes.some((s: unknown) => record(s)?.handle === 'write_products')
     )
       return fail('forbidden');
-    const parsed = parseProduct(data.node, scope, productId, observedAt, receivedAt);
-    if (parsed.snapshot.providerVersion > receivedAt) return fail('provider_shape');
+    const parsed = parseProduct(data.node, scope, productId, time());
+    if (parsed.snapshot.providerVersion > parsed.snapshot.observedAt) return fail('provider_shape');
     return parsed;
   };
   const mutate = async (scope: AvailabilityScope, productId: string, state: ProductAvailabilitySnapshot['state']) => {
-    const status = { available: 'ACTIVE', unavailable: 'DRAFT', archived: 'ARCHIVED', unlisted: 'UNLISTED' }[state];
-    const { data, observedAt, receivedAt } = await observation(scope, UPDATE, { product: { id: productId, status } });
+    const status = { available: 'ACTIVE', unavailable: 'DRAFT', archived: 'ARCHIVED' }[state];
+    const data = await execute(scope, UPDATE, { product: { id: productId, status } });
     const result = record(data.productUpdate);
     if (!result || !Array.isArray(result.userErrors)) return fail('provider_shape');
     if (result.userErrors.length) {
@@ -449,8 +428,8 @@ export function createShopifyAvailabilityHoldPort(config: {
         return fail('provider_shape');
       return fail('user_error');
     }
-    const parsed = parseProduct(result.product, scope, productId, observedAt, receivedAt);
-    if (parsed.snapshot.state !== state || parsed.snapshot.providerVersion > receivedAt)
+    const parsed = parseProduct(result.product, scope, productId, time());
+    if (parsed.snapshot.state !== state || parsed.snapshot.providerVersion > parsed.snapshot.observedAt)
       return fail('readback_mismatch');
     return parsed;
   };

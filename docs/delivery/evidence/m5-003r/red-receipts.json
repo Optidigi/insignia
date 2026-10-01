@@ -1,0 +1,35 @@
+{
+  "reviewedBaseline": "a426719e5350f61ecb5620f6c90ab7a0e365e66b",
+  "runtimeNode": "v24.21.0",
+  "execution": [
+    {
+      "finding": "R1",
+      "stage": "before timing correction; unchanged complete availability adapter at reviewed source",
+      "command": "pnpm --filter @insignia/shopify exec vitest run test/availability-hold.test.ts --testNamePattern=R1",
+      "exitStatus": 1,
+      "log": "r1-adapter-red.log"
+    },
+    {
+      "finding": "R1",
+      "stage": "before timing correction; real public production facade, unchanged runtime",
+      "command": "DATABASE_URL=<isolated-local-PG18> pnpm --filter @insignia/database exec vitest run test/activation.test.ts --testNamePattern=R1",
+      "exitStatus": 1,
+      "log": "r1-public-pg-red.log"
+    },
+    {
+      "finding": "R2",
+      "stage": "intermediate: R1 corrected, R2 status parsing still unchanged; not the full original a426719 source",
+      "command": "pnpm --filter @insignia/shopify exec vitest run test/availability-hold.test.ts test/catalog.test.ts --testNamePattern=UNLISTED|unlisted",
+      "exitStatus": 1,
+      "log": "r2-status-red.log"
+    },
+    {
+      "finding": "R2",
+      "stage": "intermediate: R1 corrected, R2 still absent in SDK/application; public real-PG read/restart path",
+      "command": "DATABASE_URL=<isolated-local-PG18> pnpm --filter @insignia/database exec vitest run test/activation.test.ts --testNamePattern=R2",
+      "exitStatus": 1,
+      "log": "r2-public-pg-red.log"
+    }
+  ],
+  "greenClosure": "Actual corrected public modules: correction-shopify.log and correction-postgres.log; supplied extracted callback/probe is not used as their test seam."
+}

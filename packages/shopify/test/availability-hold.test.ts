@@ -43,7 +43,7 @@ const update = (node: unknown = product('DRAFT', heldVersion)) => ({
   data: { productUpdate: { product: node, userErrors: [] } },
 });
 type Step = unknown | Error | Response | (() => Promise<Response>);
-function fixture(steps: Step[]) {
+function fixture(steps: Step[], now = clock) {
   const queue = [...steps];
   const fetchImpl = vi.fn(async (_url: string | URL | Request, _init?: RequestInit) => {
     if (!queue.length) throw new Error('synthetic response queue exhausted');
@@ -65,7 +65,7 @@ function fixture(steps: Step[]) {
     credentials: { acquire },
     isCurrent,
     fetchImpl: fetchImpl as typeof fetch,
-    now: clock,
+    now,
     timeoutMs: 100,
   });
   const writes = () =>
@@ -129,7 +129,7 @@ async function owned(f: ReturnType<typeof fixture>) {
   return result;
 }
 
-test.each(['ACTIVE', 'ARCHIVED', 'DRAFT'])(
+test.each(['ACTIVE', 'ARCHIVED', 'DRAFT', 'UNLISTED'])(
   'retains and restores original %s with no unnecessary DRAFT write',
   async (status) => {
     const p = product(status);
@@ -149,7 +149,7 @@ test.each(['ACTIVE', 'ARCHIVED', 'DRAFT'])(
     const f = fixture(steps);
     const acquired = await owned(f);
     expect(acquired.hold.before.state).toBe(
-      { ACTIVE: 'available', ARCHIVED: 'archived', DRAFT: 'unavailable' }[status],
+      { ACTIVE: 'available', ARCHIVED: 'archived', DRAFT: 'unavailable', UNLISTED: 'unlisted' }[status],
     );
     expect(await f.port.restore(scope, acquired.hold, acquired.current)).toMatchObject({
       kind: 'RESTORED',
@@ -496,7 +496,7 @@ test('a journaled before snapshot from the future is rejected before any HTTP di
 
 const malformedProducts: readonly [string, unknown][] = [
   ['null product', null],
-  ['unknown status', { ...product(), status: 'UNLISTED' }],
+  ['unknown status', { ...product(), status: 'UNSUPPORTED_SYNTHETIC_STATUS' }],
   ['missing version', { ...product(), updatedAt: undefined }],
   ['impossible date', { ...product(), updatedAt: '2026-02-30T11:00:00Z' }],
   ['future version', { ...product(), updatedAt: '2026-10-01T13:00:00Z' }],
@@ -1005,3 +1005,144 @@ test('status-dependent Online Store URL can disappear under DRAFT and is exactly
     },
   });
 });
+
+// Deterministic payload capture and delivery, not sleeps or live provider calls.
+function timedRead(delayPoint: 'fetch' | 'body' | 'credential', delayMs: number, updatedAt = version) {
+  let at = clock().getTime();
+  let acquisitions = 0;
+  const payload = JSON.stringify(read(product('DRAFT', updatedAt)));
+  const bytes = new TextEncoder().encode(payload);
+  const port = createShopifyAvailabilityHoldPort({
+    now: () => new Date(at),
+    timeoutMs: 8000,
+    isCurrent: async () => true,
+    credentials: {
+      acquire: async () => {
+        if (++acquisitions === 2 && delayPoint === 'credential') at += delayMs;
+        return {
+          kind: 'usable',
+          shopDomain: 'synthetic.myshopify.com',
+          accessToken: 'synthetic-token',
+          accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+        };
+      },
+    },
+    fetchImpl: (async () => {
+      if (delayPoint === 'fetch') at += delayMs;
+      return new Response(
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue(bytes);
+          },
+          pull(controller) {
+            if (delayPoint === 'body') at += delayMs;
+            controller.close();
+          },
+        }),
+        { status: 200 },
+      );
+    }) as typeof fetch,
+  });
+  return { port, now: () => new Date(at) };
+}
+
+test.each(['fetch', 'body', 'credential'] as const)('R1 %s delay cannot renew observation authority', async (point) => {
+  const f = timedRead(point, 2000);
+  const snapshot = await f.port.snapshot(scope, productId);
+  expect(snapshot.observedAt).toBe('2026-10-01T12:00:00.000Z');
+  expect(snapshot).toMatchObject({ receivedAt: '2026-10-01T12:00:02.000Z' });
+  expect(f.now().getTime() - Date.parse(snapshot.observedAt)).toBe(2000);
+});
+
+test.each([0, 999, 1000])('R1 within-budget observation preserves exact origin at %s ms', async (delay) => {
+  const f = timedRead('fetch', delay);
+  const snapshot = await f.port.snapshot(scope, productId);
+  expect(snapshot.observedAt).toBe(clock().toISOString());
+  expect(f.now().getTime() - Date.parse(snapshot.observedAt)).toBe(delay);
+});
+
+test('R1 a legitimate provider version generated during request is not future of receipt', async () => {
+  const f = timedRead('fetch', 1000, '2026-10-01T12:00:00.500Z');
+  expect(await f.port.snapshot(scope, productId)).toMatchObject({
+    observedAt: '2026-10-01T12:00:00.000Z',
+    receivedAt: '2026-10-01T12:00:01.000Z',
+    providerVersion: '2026-10-01T12:00:00.500Z',
+  });
+});
+
+test('R1 provider future of receipt and reversed observation clock are rejected', async () => {
+  await expect(
+    timedRead('fetch', 1000, '2026-10-01T12:00:01.001Z').port.snapshot(scope, productId),
+  ).rejects.toMatchObject({ kind: 'provider_shape' });
+  await expect(timedRead('fetch', -1).port.snapshot(scope, productId)).rejects.toMatchObject({
+    kind: 'invalid_request',
+  });
+});
+
+test('R2 a merchant UNLISTED status change while held conflicts without a visibility-broadening restore', async () => {
+  const f = fixture([
+    read(product('UNLISTED')),
+    read(product('UNLISTED')),
+    update(),
+    read(product('DRAFT', heldVersion)),
+    read(product('ACTIVE', '2026-10-01T11:02:00Z')),
+  ]);
+  const acquired = await owned(f);
+  expect(await f.port.restore(scope, acquired.hold, acquired.current)).toMatchObject({
+    kind: 'CONFLICT',
+    current: { state: 'available' },
+  });
+  expect(f.writes().map((w) => w.variables.product.status)).toEqual(['DRAFT']);
+});
+
+test('R1 mid-request provider version survives journal validation and observe origin remains conservative', async () => {
+  const f = timedRead('fetch', 1000, '2026-10-01T12:00:00.500Z');
+  const before = await f.port.snapshot(scope, productId);
+  const held = await f.port.acquire(scope, intent(before));
+  expect(held.kind).toBe('HELD');
+  if (held.kind !== 'HELD') throw new Error('expected held');
+  const observed = await f.port.observe(scope, held.hold);
+  expect(observed.kind).toBe('HELD');
+  expect(f.now().getTime() - Date.parse(observed.current.observedAt)).toBe(1000);
+});
+
+test('R1 acquisition and restoration allow provider versions generated inside a request', async () => {
+  let at = clock().getTime();
+  const during = (status: string) => async () => {
+    at += 500;
+    return new Response(JSON.stringify(update(product(status, new Date(at).toISOString()))), { status: 200 });
+  };
+  const draftAt = '2026-10-01T12:00:00.500Z',
+    restoredAt = '2026-10-01T12:00:01.000Z';
+  const f = fixture(
+    [
+      read(),
+      read(),
+      during('DRAFT'),
+      read(product('DRAFT', draftAt)),
+      read(product('DRAFT', draftAt)),
+      during('ACTIVE'),
+      read(product('ACTIVE', restoredAt)),
+    ],
+    () => new Date(at),
+  );
+  const acquired = await owned(f);
+  expect(acquired.current).toMatchObject({ providerVersion: draftAt, observedAt: draftAt, receivedAt: draftAt });
+  expect(await f.port.restore(scope, acquired.hold, acquired.current)).toMatchObject({
+    kind: 'RESTORED',
+    current: { state: 'available', providerVersion: restoredAt },
+  });
+  expect(f.writes().map((w) => w.variables.product.status)).toEqual(['DRAFT', 'ACTIVE']);
+});
+
+test.each(['2026-10-01T11:59:59.999Z', 'not-a-date', '2026-10-01T13:00:00.000Z'])(
+  'R1 malformed/reversed/future receipt %s rejects a held journal before dispatch',
+  async (receivedAt) => {
+    const f = fixture([read()]);
+    const before = await f.port.snapshot(scope, productId);
+    await expect(f.port.acquire(scope, intent({ ...before, receivedAt }))).rejects.toMatchObject({
+      kind: 'invalid_request',
+    });
+    expect(f.fetchImpl).toHaveBeenCalledTimes(1);
+  },
+);

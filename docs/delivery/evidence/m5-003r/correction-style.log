@@ -1,0 +1,48 @@
+packages/database/test/activation.test.ts:859:9 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+
+    857 │       await (await import('node:fs/promises')).writeFile(
+    858 │         process.env.M5_RECOVERY_EXAMPLE_PATH,
+  > 859 │         JSON.stringify(resolution, null, 2) + '\n',
+        │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    860 │       );
+    861 │     expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
+
+  i Unsafe fix: Use a template literal.
+
+     857  857 │         await (await import('node:fs/promises')).writeFile(
+     858  858 │           process.env.M5_RECOVERY_EXAMPLE_PATH,
+     859      │ - ········JSON.stringify(resolution,·null,·2)·+·'\n',
+          859 │ + ········`${JSON.stringify(resolution,·null,·2)}\n`,
+     860  860 │         );
+     861  861 │       expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
+
+
+packages/database/test/activation.test.ts:713:11 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    711 │         await core.acceptedQuotes.getEffective(
+    712 │           f.identity.shopId,
+  > 713 │           (await core.configs.getConfig(f.identity.shopId, f.identity.configId))!.externalProductId,
+        │           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    714 │         ),
+    715 │       ).toBeNull();
+
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+
+     711  711 │           await core.acceptedQuotes.getEffective(
+     712  712 │             f.identity.shopId,
+     713      │ - ··········(await·core.configs.getConfig(f.identity.shopId,·f.identity.configId))!.externalProductId,
+          713 │ + ··········(await·core.configs.getConfig(f.identity.shopId,·f.identity.configId))?.externalProductId,
+     714  714 │           ),
+     715  715 │         ).toBeNull();
+
+
+Skipped 2 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 7 files in 75ms. Fixed 4 files.
+Found 1 warning.
+Found 1 info.

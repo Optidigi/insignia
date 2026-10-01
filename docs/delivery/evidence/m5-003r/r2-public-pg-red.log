@@ -1,0 +1,33 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+ ❯ test/activation.test.ts (42 tests | 1 failed | 41 skipped) 108ms
+   ❯ PG18 scoped production activation (42)
+     × R2 UNLISTED hold survives public read/restart and restores exact original status after activation 89ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R2 UNLISTED hold survives public read/restart and restores exact original status after activation
+ShopifyAvailabilityHoldError: Shopify availability hold failed: provider_shape
+ ❯ src/repositories/activation.ts:303:18
+    301|         };
+    302|         try {
+    303|           return await action(session);
+       |                  ^
+    304|         } finally {
+    305|           valid = false;
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+ ❯ DefaultConnectionProvider.provideConnection ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/default-connection-provider.js:10:20
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 41 skipped (42)
+   Start at  17:39:05
+   Duration  1.06s (transform 45%, import 43%, tests 12%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/database

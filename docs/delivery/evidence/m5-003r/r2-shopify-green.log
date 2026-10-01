@@ -1,0 +1,12 @@
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/shopify
+
+
+ Test Files  12 passed (12)
+      Tests  216 passed (216)
+   Start at  17:39:55
+   Duration  1.37s (tests 62%, transform 19%, import 16%, worker 2%)
+
+    Isolate  12 workers spawned · ~116ms startup each (spawn + environment, per file)
+             at least ~348ms faster with isolate: false — reuses workers across files instead of one per file

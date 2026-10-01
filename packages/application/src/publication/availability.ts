@@ -8,10 +8,14 @@ export type AvailabilityScope = Readonly<{
 export type ProductAvailabilitySnapshot = Readonly<{
   scope: AvailabilityScope;
   productId: string;
-  state: 'available' | 'unavailable' | 'archived';
+  state: 'available' | 'unavailable' | 'archived' | 'unlisted';
   providerVersion: string;
   visibilityDigest: string;
+  /** Conservative observation origin captured before provider/credential I/O. */
   observedAt: string;
+  /** Completion bound for provider version validation; absent on legacy snapshots.
+   * Never used to renew freshness or reinterpret the stored legacy origin. */
+  receivedAt?: string;
 }>;
 /** Persist this intent before dispatch. Recovery observes it, never blindly repeats a mutation. */
 export type AvailabilityHold = Readonly<{

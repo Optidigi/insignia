@@ -1,0 +1,116 @@
+[
+  {
+    "file": "r1-adapter-red.log",
+    "rawSha256": "33fb4c03890cac994180bce0ee4c69b4d075bbe2ee58413aaad2395b6d874ff4",
+    "sanitizedSha256": "1216ef8ed3589b50a5d05a8d509f0f5b7f4986fe7c2073730bc0e481162d6208",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "r1-public-pg-red.log",
+    "rawSha256": "66516424813e1ff37757c09e2f8e44420ae84e9e4b0dd0c08f6a4ac34d90b349",
+    "sanitizedSha256": "e8eb296743fadd4b2135b99e65e04dce4132943455523e126573b889619e032e",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "r1-adapter-green.log",
+    "rawSha256": "de8748708a8fb9fbf58f263f57f323aea984c532d66e3bf9381ccafd97b6592c",
+    "sanitizedSha256": "8965fe63b5d5e6862c3d739d956e176b9460eef81ac15279a4dc6ab8fce3fc6b",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "r1-public-pg-green.log",
+    "rawSha256": "24aa2e1e551b4b50fd07ac8c14b95d1d289fa1c7d1ee5e406568ec1822b36ecf",
+    "sanitizedSha256": "5768bbb107a385e488cce67499e4f1230733ee279bc204865fb77f4ed566027c",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "r2-status-red.log",
+    "rawSha256": "4dd926ebde4c81f433a130a1f13aefdda8e388f6841164afe9bec991514fa973",
+    "sanitizedSha256": "02a7e896c2d2f3e218b3532f045c4452f8f73dea9c325fc11651763a28f91989",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "r2-public-pg-red.log",
+    "rawSha256": "178e23608dc7dacf144dde69ffd798973f16af1049750543803f3c19b05e8e48",
+    "sanitizedSha256": "ea7f2781099f08548993bb59b34c8d0e84f223fe514f0b659ad9c31fc2c8bea2",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "r2-shopify-green.log",
+    "rawSha256": "42ed55cd3d9dc085fd42adbe358382eda35e256f91e4df6024d2a1ae18ec97f2",
+    "sanitizedSha256": "41a51a5d8de489c8af920ad0f0475ef5a7532603d26a539444cd5a6abe40246c",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "r2-public-pg-green.log",
+    "rawSha256": "28dd31d7a2636cfd2d6afeed4f6da7c89f5499aaf2468ff8b4cb0b858b63db7d",
+    "sanitizedSha256": "1c932698040a7c905f36853b3a00cb73038762d52207a1cb0ff46a6ec112f044",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "correction-style.log",
+    "rawSha256": "71b257ac55f4f40914280cded7b88e2842a382ef23398c31a4f11f6b1559967d",
+    "sanitizedSha256": "b2a1a0669003bf6425e0eb5cb7dfe7178864ad5f1be36e670ad5865ca9babbb0",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "correction-shopify.log",
+    "rawSha256": "34bd8f84350b7e013744d23ecaac1bfa9ff8394d517c9da869ddcc120aa32869",
+    "sanitizedSha256": "e6fc3a1a8409a55beb47cf733c2b2094aadc9b5c369f7a30e7d2191f90fc3be5",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "correction-fixtures.log",
+    "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sanitizedSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "correction-postgres.log",
+    "rawSha256": "48394ec1518041d353d09e2ae06b928683903c761d5fbc348178e264489ea56e",
+    "sanitizedSha256": "85e0a63344bc90fbaa6c5d149546063ab5528f8e93e4cf1371e4c0997227201c",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "correction-root.log",
+    "rawSha256": "3f9ad2ed384058d40ccc4934d01181173e434d7fd07d3274caaa3374e21bf7a0",
+    "sanitizedSha256": "d76711253b01ea0b2238a1ef699a6fea8c575e87355f7ab3f8715dfb9c2691e2",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "correction-http.log",
+    "rawSha256": "f51fe273858031903a6b62c72d135059d94fba68cda33f3dcbde2ad788dd3cf8",
+    "sanitizedSha256": "f51fe273858031903a6b62c72d135059d94fba68cda33f3dcbde2ad788dd3cf8",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "correction-stress.log",
+    "rawSha256": "880b20b3c1ff75d3b1df8c9d88c5c784a39cdff310dd8e5f597a86e245d0ae93",
+    "sanitizedSha256": "880b20b3c1ff75d3b1df8c9d88c5c784a39cdff310dd8e5f597a86e245d0ae93",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "correction-secrets.log",
+    "rawSha256": "c7c91b28f60f3ad86d27043356ab79b8a0f249caa99df9f87cdd931b6a238450",
+    "sanitizedSha256": "c7c91b28f60f3ad86d27043356ab79b8a0f249caa99df9f87cdd931b6a238450",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "correction-worker.log",
+    "rawSha256": "7ad80da485c2a6acc8dd54c73494aa5fa300cb165fa7b87f07811a375d5ada9b",
+    "sanitizedSha256": "7ad80da485c2a6acc8dd54c73494aa5fa300cb165fa7b87f07811a375d5ada9b",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "correction-renderer.log",
+    "rawSha256": "03ed6837443db037e677ee9f74ae886c5190041e5756771984e02259482065e1",
+    "sanitizedSha256": "1c13a2298a2c13aed99e56c20f3e32a4e3f86d3c1e83223fe2b7a7aad82cba77",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "final-style.log",
+    "rawSha256": "560e33bfcc0f615c1f9d7b05bd276cc552a976cfad7677d20d849122b6af46e2",
+    "sanitizedSha256": "cdc94c8a4d72f4aea74099b26355a625c352893fc32f4a81c029d443b8047b1e",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  }
+]

@@ -1,0 +1,182 @@
+{
+  "schema": "insignia-principal-review-intake-v1",
+  "date": "2026-10-01",
+  "repository": "Optidigi/insignia",
+  "repositoryId": 1386102402,
+  "pr": 29,
+  "base": "8a84ddeaf277368852d224915abe6d4a93a3d8a4",
+  "main": "8a84ddeaf277368852d224915abe6d4a93a3d8a4",
+  "head": "a426719e5350f61ecb5620f6c90ab7a0e365e66b",
+  "tree": "6b60ec923a3601584e05c76fcce362a9c0534d88",
+  "branch": "feat/m5-003-activation-admission",
+  "githubPrState": {
+    "state": "open",
+    "merged": false,
+    "draft": false,
+    "mergeable": true
+  },
+  "nativeReviewsRead": [],
+  "headFilteredWorkflowRead": {
+    "action": "GitHub.fetch_commit_workflow_runs",
+    "head": "a426719e5350f61ecb5620f6c90ab7a0e365e66b",
+    "conclusions": [
+      {
+        "runId": 36877391312,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "runId": 36877389775,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "runId": 36877389768,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "runId": 36877389523,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "runId": 36877389520,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "runId": 36877389605,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "runId": 36877389727,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "runId": 36877389647,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "runId": 36877389499,
+        "status": "completed",
+        "conclusion": "success"
+      },
+      {
+        "runId": 36877389593,
+        "status": "completed",
+        "conclusion": "success"
+      }
+    ],
+    "attemptQualification": "Attempt 1 is reported in PR body/comment; not every run attempt record was independently refetched."
+  },
+  "principalVerdict": "CHANGES_REQUESTED",
+  "principalFindings": [
+    "R1",
+    "R2"
+  ],
+  "authority": "External chat/package verdict; no native GitHub review submitted; no merge authorized.",
+  "directExecution": {
+    "kind": "principal-offline-fixed-source-characterization",
+    "head": "a426719e5350f61ecb5620f6c90ab7a0e365e66b",
+    "node": "v22.16.0",
+    "sourceVerification": {
+      "availability-hold.ts": {
+        "bytes": 22464,
+        "gitBlob": "4685b97caffa3b7c98600bceda5af9e5ff0f9d44",
+        "sha256": "399995b77183d1b24e6a54ce2b18ee0e5dc0b190e23d8b4ce1166585595b15e0"
+      },
+      "production-activation.ts": {
+        "bytes": 4925,
+        "gitBlob": "15c9a83b957065b41bfb06eab929b9aaace6aa53",
+        "sha256": "56733529dd02115eea94c53ce81ba3ff82f8003958c7c68ee620dc22c753a1c8"
+      }
+    },
+    "executedScope": "Complete adapter with synthetic HTTP; exact admission callback with a synthetic store and clock",
+    "exclusions": [
+      "No full workspace suite",
+      "No PostgreSQL transaction",
+      "No Shopify or other provider request",
+      "No code correction"
+    ],
+    "immediateControl": {
+      "transportDelayMs": 0,
+      "freshnessBudgetMs": 1000,
+      "admissionAccepted": true,
+      "payloadCapturedAt": "2026-10-01T12:00:00.000Z",
+      "adapterObservedAt": "2026-10-01T12:00:00.000Z",
+      "decisionAt": "2026-10-01T12:00:00.000Z",
+      "reportedAgeMs": 0,
+      "actualControlledPayloadAgeMs": 0,
+      "syntheticReadAttempts": 2
+    },
+    "delayedObservation": {
+      "transportDelayMs": 2000,
+      "freshnessBudgetMs": 1000,
+      "admissionAccepted": true,
+      "payloadCapturedAt": "2026-10-01T12:00:00.000Z",
+      "adapterObservedAt": "2026-10-01T12:00:02.000Z",
+      "decisionAt": "2026-10-01T12:00:02.000Z",
+      "reportedAgeMs": 0,
+      "actualControlledPayloadAgeMs": 2000,
+      "syntheticReadAttempts": 2
+    },
+    "statuses": [
+      {
+        "status": "ACTIVE",
+        "accepted": true,
+        "normalizedState": "available"
+      },
+      {
+        "status": "DRAFT",
+        "accepted": true,
+        "normalizedState": "unavailable"
+      },
+      {
+        "status": "ARCHIVED",
+        "accepted": true,
+        "normalizedState": "archived"
+      },
+      {
+        "status": "UNLISTED",
+        "accepted": false,
+        "errorKind": "provider_shape",
+        "message": "Shopify availability hold failed: provider_shape"
+      },
+      {
+        "status": "NOT_A_SHOPIFY_STATUS",
+        "accepted": false,
+        "errorKind": "provider_shape",
+        "message": "Shopify availability hold failed: provider_shape"
+      }
+    ],
+    "findings": {
+      "R1": true,
+      "R2": true
+    }
+  },
+  "reportedNotRerun": {
+    "postgresTests": "90/90",
+    "geometryStress": "100/100, no retries",
+    "rootSuite": "PASS",
+    "freshLocalReviews": "No unresolved material finding"
+  },
+  "limits": [
+    "Not a complete project reconstruction or complete all-path clearance",
+    "No principal PostgreSQL/browser/Node24/full-root rerun",
+    "No authenticated Shopify/provider call or repository mutation"
+  ],
+  "sourceUrls": {
+    "pr": "https://github.com/Optidigi/insignia/pull/29",
+    "main": "https://api.github.com/repos/Optidigi/insignia/branches/main",
+    "commit": "https://api.github.com/repos/Optidigi/insignia/git/commits/a426719e5350f61ecb5620f6c90ab7a0e365e66b",
+    "reviewComment": "https://github.com/Optidigi/insignia/pull/29#issuecomment-5933959821",
+    "report": "https://github.com/Optidigi/insignia/blob/a426719e5350f61ecb5620f6c90ab7a0e365e66b/docs/delivery/M5-003-REPORT.md",
+    "catalog": "https://github.com/Optidigi/insignia/blob/a426719e5350f61ecb5620f6c90ab7a0e365e66b/packages/shopify/src/catalog.ts",
+    "productStatus": "https://shopify.dev/docs/api/admin-graphql/latest/enums/ProductStatus",
+    "statusChangelog": "https://shopify.dev/changelog/posts/new-unlisted-product-status"
+  }
+}
