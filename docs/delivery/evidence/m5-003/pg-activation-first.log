@@ -84,4 +84,3 @@ Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
 
   × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
   │ worktree/packages/database
-

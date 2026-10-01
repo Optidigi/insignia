@@ -14,7 +14,7 @@ All new provider observations here are synthetic. No real Shopify/provider opera
 - `release-red.log` / `release-green.log`: absent production trusted source remains null; dev/mismatched records fail closed.
 - `database-api-final.log`:18 compiler negative API probes and4 runtime deep-import rejections, including no activation store, raw commit/session or lower-level publication.activate on the public facade.
 - `renderer-control.log`: deliberately missing renderer fails the actual component/canvas readiness test; the normal control command requires this failure.
-- Final root/stress logs and review dispositions are added after their respective runs. Final candidate refs/workflow URLs are in the actual PR body, avoiding self-referential committed head claims.
+- `root-integrated-green.log` and `stress-100.log` preserve executed passing root and100-case results. `log-provenance.json` records raw/sanitized hashes; ANSI/trailing whitespace normalization changes no substantive result. The final frozen-root run and review dispositions are added after completion. Final candidate refs/workflow URLs are in the actual PR body, avoiding self-referential committed head claims.
 
 ## Crash/recovery and race matrix
 

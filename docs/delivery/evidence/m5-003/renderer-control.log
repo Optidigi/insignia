@@ -16,8 +16,8 @@ test at apps/web/test/admin/editor-browser.test.mjs:1074:7
 ✖ publication success preserves dirty local edits and exact save recovery [1/1] (5821.468175ms)
   locator.waitFor: Timeout 5000ms exceeded.
   Call log:
-  [2m  - waiting for getByText('Preview: ready', { exact: true }) to be visible[22m
-  
+    - waiting for getByText('Preview: ready', { exact: true }) to be visible
+
       at TestContext.<anonymous> (/home/serveradmin/insignia-m5-003-worktree/apps/web/test/admin/editor-browser.test.mjs:1178:67) {
     name: 'TimeoutError',
     log: [ "  - waiting for getByText('Preview: ready', { exact: true }) to be visible" ]

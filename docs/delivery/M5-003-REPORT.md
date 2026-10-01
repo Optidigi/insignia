@@ -33,4 +33,4 @@ Architecture/ledger v1.4, v2 bytes, historical Functions/evidence and orders #10
 
 ## Verification and review
 
-Final commands/results, red/green receipts, crash/race matrix and actual model/session controls are recorded in the accompanying evidence index and final PR body. Fresh full-source GPT-6.1-sol/high Spec/correctness and Standards/security reviews are required before principal handoff.
+Final commands/results, red/green receipts, crash/race matrix and actual model/session controls are recorded in the accompanying evidence index and final PR body. Local execution: complete retained root suite PASS; PostgreSQL18.6 **73/73**; database/HTTP/server composition **14/14**; geometry publication stress **100/100** (25 per combination, no retry); missing-renderer expected-failure control PASS; public database API **18** compiler and **4** runtime negative probes PASS. The final frozen-root run and fresh full-source GPT-6.1-sol/high Spec/correctness and Standards/security reviews are recorded when completed. These results do not constitute a principal gate verdict.

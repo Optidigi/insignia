@@ -48,10 +48,10 @@ test at test/admin/merchant-config.test.mjs:273:1
 ✖ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (360.041663ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
   + actual - expected
-  
+
   + 'PUBLISH_REQUESTED'
   - 'REMOTE_READY_ACTIVATION_PENDING'
-  
+
       at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-003-worktree/apps/web/test/admin/merchant-config.test.mjs:555:12)
       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
       at async Test.run (node:internal/test_runner/test:1409:7)
@@ -67,4 +67,3 @@ Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
 
   × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
   │ worktree/apps/web
-

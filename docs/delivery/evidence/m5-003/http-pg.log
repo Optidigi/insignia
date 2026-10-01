@@ -104,7 +104,7 @@ test at test/shopify-webhook.test.mjs:10:1
   AssertionError [ERR_ASSERTION]: web server did not become ready: node:internal/modules/cjs/loader:1568
     throw err;
     ^
-  
+
   Error: Cannot find module '/home/serveradmin/insignia-m5-003-worktree/apps/web/dist/server/entry.mjs'
       at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
       at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
@@ -125,4 +125,3 @@ Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
 
   × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
   │ worktree/apps/web
-
