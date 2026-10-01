@@ -257,6 +257,7 @@ for (const path of [
   'packages/database/dist/durable-core.js',
   'packages/database/dist/repositories/accepted-quote.js',
   'packages/database/dist/repositories/config.js',
+  'packages/database/migrations/20260930000900_m5_activation.sql',
   'apps/web/src/server/merchant-config.ts',
 ])
   hashes[path] = createHash('sha256')

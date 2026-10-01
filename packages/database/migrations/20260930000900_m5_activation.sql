@@ -95,7 +95,7 @@ CREATE TABLE m5_activation_state (
   config_id text NOT NULL,
   operation_id text NOT NULL,
   kind text NOT NULL DEFAULT 'WAITING_RELEASE' CHECK (kind IN
-    ('WAITING_RELEASE','WAITING_HOLD','HOLD_INTENT','ACQUISITION_PENDING','HELD','RESTORATION_PENDING','RESTORED','RESOLVED','OPERATOR_HOLD')),
+    ('WAITING_RELEASE','WAITING_HOLD','HOLD_INTENT','ACQUISITION_PENDING','HELD','RESTORATION_PENDING','RESTORATION_CLAIMED','RESTORED','RESOLVED','OPERATOR_HOLD')),
   hold jsonb,
   evidence_digest text,
   resolution_digest text,
@@ -111,8 +111,8 @@ CREATE TABLE m5_activation_state (
     AND (hold->>'operationId') IS NOT DISTINCT FROM operation_id
     AND jsonb_typeof(hold->'before') IS NOT DISTINCT FROM 'object'
     AND (hold#>>'{before,scope,shopId}') IS NOT DISTINCT FROM shop_id)),
-  CHECK (kind NOT IN ('HOLD_INTENT','ACQUISITION_PENDING','HELD','RESTORATION_PENDING') OR hold IS NOT NULL),
-  CHECK (kind NOT IN ('RESTORATION_PENDING','RESTORED') OR evidence_digest IS NOT NULL)
+  CHECK (kind NOT IN ('HOLD_INTENT','ACQUISITION_PENDING','HELD','RESTORATION_PENDING','RESTORATION_CLAIMED') OR hold IS NOT NULL),
+  CHECK (kind NOT IN ('RESTORATION_PENDING','RESTORATION_CLAIMED','RESTORED') OR evidence_digest IS NOT NULL)
 );
 CREATE INDEX m5_activation_unresolved_hold ON m5_activation_state(shop_id, config_id)
   WHERE hold IS NOT NULL AND kind NOT IN ('RESTORED','RESOLVED');
@@ -127,6 +127,12 @@ BEGIN
       OR (OLD.hold->'held' <> 'null'::jsonb AND NEW.hold->'held' IS DISTINCT FROM OLD.hold->'held')))
     OR (OLD.resolution_digest IS NOT NULL AND NEW.resolution_digest IS DISTINCT FROM OLD.resolution_digest)
     OR (OLD.kind IN ('RESTORED','RESOLVED') AND NEW.kind <> OLD.kind)
+    OR (OLD.kind='RESTORATION_CLAIMED' AND NEW.resolution_digest IS NOT NULL AND NOT EXISTS (
+      SELECT 1 FROM m5_availability_resolutions r WHERE r.shop_id=OLD.shop_id AND r.config_id=OLD.config_id
+        AND r.operation_id=OLD.operation_id AND r.resolution_digest=NEW.resolution_digest
+        AND r.resolution->'originalHold' IS NOT DISTINCT FROM OLD.hold
+        AND r.resolution->'activationEvidenceDigest' IS NOT DISTINCT FROM COALESCE(to_jsonb(OLD.evidence_digest),'null'::jsonb)
+    ))
     OR (OLD.kind='OPERATOR_HOLD' AND NEW.kind <> OLD.kind AND NOT (
       NEW.kind IN ('RESTORED','RESOLVED') AND NEW.resolution_digest IS NOT NULL AND EXISTS (
         SELECT 1 FROM m5_availability_resolutions r WHERE r.shop_id=OLD.shop_id AND r.config_id=OLD.config_id
@@ -141,7 +147,8 @@ BEGIN
     (OLD.kind = 'HOLD_INTENT' AND NEW.kind = 'ACQUISITION_PENDING') OR
     (OLD.kind = 'ACQUISITION_PENDING' AND NEW.kind = 'HELD') OR
     (OLD.kind = 'HELD' AND NEW.kind IN ('WAITING_RELEASE','RESTORATION_PENDING')) OR
-    (OLD.kind = 'RESTORATION_PENDING' AND NEW.kind = 'RESTORED') OR
+    (OLD.kind = 'RESTORATION_PENDING' AND NEW.kind = 'RESTORATION_CLAIMED') OR
+    (OLD.kind = 'RESTORATION_CLAIMED' AND NEW.kind IN ('RESTORED','RESOLVED')) OR
     (OLD.kind='OPERATOR_HOLD' AND NEW.kind IN ('RESTORED','RESOLVED') AND NEW.resolution_digest IS NOT NULL) OR
     NEW.kind = 'OPERATOR_HOLD'
   ) THEN RAISE EXCEPTION 'invalid activation state transition' USING ERRCODE = 'check_violation'; END IF;

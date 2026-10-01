@@ -56,6 +56,7 @@ export type ActivationStateKind =
   | 'ACQUISITION_PENDING'
   | 'HELD'
   | 'RESTORATION_PENDING'
+  | 'RESTORATION_CLAIMED'
   | 'RESTORED'
   | 'RESOLVED'
   | 'OPERATOR_HOLD';
@@ -299,15 +300,31 @@ export function createPublicationActivation(input: {
     await session.save({ ...c.state, kind: 'HELD', hold: { ...hold, held: hold.held ?? observed.hold.held } });
     return observed.current;
   }
-  return {
+  const coordinator = {
     async advance(identity: ActivationIdentity): Promise<ActivationResult> {
       try {
         // A fresh token exists only for this invocation, after durable acquisition intent commits.
         let dispatchAcquisition = false;
+        let dispatchRestoration = false;
+        let resumeAfterConcurrentActivation = false;
         const prepared = await input.store.locked(identity, async (session): Promise<ActivationResult | null> => {
           const c = session.candidate;
           if (c.state.kind === 'OPERATOR_HOLD') return result('OPERATOR_HOLD', c);
-          if (c.status === 'activated') return null;
+          if (c.status === 'activated') {
+            if (c.state.kind === 'RESTORATION_PENDING') {
+              try {
+                await release(c);
+              } catch {
+                return result('ACTIVATED_RESTORATION_PENDING', c);
+              }
+              // Commit a one-use claim before any restore can be dispatched.
+              // No later invocation can reconstruct this local capability from
+              // unchanged readback or a timeout: the earlier write may be in flight.
+              await session.save({ ...c.state, kind: 'RESTORATION_CLAIMED' });
+              dispatchRestoration = true;
+            }
+            return null;
+          }
           const admission = classifyPublicationAdmission({
             prior: c.prior,
             proposed: { mode: c.mode, installationGeneration: c.scope.installationGeneration },
@@ -342,14 +359,29 @@ export function createPublicationActivation(input: {
           return result('WAITING_HOLD', c);
         });
         if (prepared) return prepared;
-        return await input.store.locked(identity, async (session): Promise<ActivationResult> => {
+        const outcome = await input.store.locked(identity, async (session): Promise<ActivationResult> => {
           let c = session.candidate;
           if (c.state.kind === 'OPERATOR_HOLD') return result('OPERATOR_HOLD', c);
           if (c.status === 'activated') {
             if (!c.state.evidenceDigest) throw new Error('Activated publication lacks immutable evidence');
             if (c.state.kind === 'RESTORED') return result('ACTIVE', c);
-            if (!c.state.hold?.held || c.state.kind !== 'RESTORATION_PENDING')
+            // Another invocation may have committed activation between our two
+            // transactions. We did not acquire its restoration claim.
+            if (c.state.kind === 'RESTORATION_PENDING') {
+              resumeAfterConcurrentActivation = true;
+              return result('ACTIVATED_RESTORATION_PENDING', c);
+            }
+            if (!c.state.hold?.held || c.state.kind !== 'RESTORATION_CLAIMED')
               throw new Error('Missing restoration intent');
+            if (!dispatchRestoration) {
+              const observed = await input.availability.observe(c.availabilityScope, c.state.hold);
+              if (observed.kind === 'HELD' && exactSnapshot(observed.current, c.state.hold.held)) {
+                fresh(observed.current.observedAt, now(), input.maxObservationAgeMs);
+                return result('ACTIVATED_RESTORATION_PENDING', c);
+              }
+              await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
+              return result('OPERATOR_HOLD', c);
+            }
             let restorationArtifact: Awaited<ReturnType<typeof release>>;
             try {
               restorationArtifact = await release(c);
@@ -500,10 +532,14 @@ export function createPublicationActivation(input: {
           const evidenceDigest = await session.commit(evidence);
           return { kind: evidence.hold ? 'ACTIVATED_RESTORATION_PENDING' : 'ACTIVE', evidenceDigest };
         });
+        // Only restart preparation for an undispatched intent committed by a
+        // concurrent activation. Claimed/ambiguous writes never enter this path.
+        return resumeAfterConcurrentActivation ? coordinator.advance(identity) : outcome;
       } catch (error) {
         if (error instanceof ActivationFenceError) return { kind: 'OPERATOR_HOLD', evidenceDigest: null };
         throw error;
       }
     },
   };
+  return coordinator;
 }

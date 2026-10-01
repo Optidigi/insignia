@@ -184,6 +184,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     let acquireNotSent = false;
     let acquireLost = false;
     let restoreLost = false;
+    let restoreUnsettled: 'pending' | 'throw' | null = null;
     let acquisitions = 0;
     let restores = 0;
     const availability: ProductAvailabilityHoldPort = {
@@ -215,10 +216,12 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         const record = await core.productionActivations
           .create(options)
           .read({ ...identity, operationId: hold.operationId });
-        expect(record?.state.kind).toBe('RESTORATION_PENDING');
+        expect(record?.state.kind).toBe('RESTORATION_CLAIMED');
         expect(record?.evidence).not.toBeNull();
         expect((await core.configs.getConfig(shopId, configId))?.effectiveRevisionId).not.toBeNull();
         restores++;
+        if (restoreUnsettled === 'pending') return { kind: 'RESTORATION_PENDING', current: null };
+        if (restoreUnsettled === 'throw') throw new Error('unsettled restore response');
         current = { ...hold.before, providerVersion: 'restored' };
         if (restoreLost) {
           restoreLost = false;
@@ -271,6 +274,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       },
       set restoreLost(value: boolean) {
         restoreLost = value;
+      },
+      set restoreUnsettled(value: 'pending' | 'throw' | null) {
+        restoreUnsettled = value;
       },
       set releaseMissing(value: boolean) {
         releaseMissing = value;
@@ -462,6 +468,88 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       f.revisionId,
     );
   });
+  it.each(['pending', 'throw'] as const)(
+    'restart never redispatches an unsettled %s restore over unchanged readback',
+    async (outcome) => {
+      const f = await fixture();
+      await f.prepareHold();
+      await f.publish();
+      await f.restart().advance(f.identity);
+      const evidence = (await f.restart().read(f.identity))?.evidence;
+      f.restoreUnsettled = outcome;
+      if (outcome === 'throw')
+        await expect(f.restart().advance(f.identity)).rejects.toThrow('unsettled restore response');
+      else expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+      for (let i = 0; i < 3; i++)
+        expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+      expect(f.restores).toBe(1);
+      expect((await f.restart().read(f.identity))?.evidence).toEqual(evidence);
+    },
+  );
+  it('claimed ambiguous restoration needs independently settled original-state recovery', async () => {
+    const f = await fixture();
+    await f.prepareHold();
+    await f.publish();
+    await f.restart().advance(f.identity);
+    f.restoreUnsettled = 'pending';
+    await f.restart().advance(f.identity);
+    expect((await f.restart().read(f.identity))?.state.kind).toBe('RESTORATION_CLAIMED');
+    f.recoveryAuthority = syntheticRecoveryAuthority();
+    const request = { ...f.identity, commandKey: 'settle-claimed' };
+    await expect(f.restart().recover(request)).rejects.toThrow('Original availability not observed');
+    const evidence = (await f.restart().read(f.identity))?.evidence;
+    f.simulateExternalOriginalState();
+    await f.restart().recover(request);
+    expect((await f.restart().read(f.identity))?.state.kind).toBe('RESTORED');
+    expect((await f.restart().read(f.identity))?.evidence).toEqual(evidence);
+    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
+    expect(f.restores).toBe(1);
+  });
+
+  it.each([
+    ['required', 'optional'],
+    ['optional', 'required'],
+  ] as const)(
+    'resolved unsent %s to %s request permits a distinct safely fenced publication',
+    async (priorMode, nextMode) => {
+      const f = await fixture(priorMode);
+      await f.prepareHold();
+      await f.publish();
+      await f.restart().advance(f.identity);
+      await f.restart().advance(f.identity);
+      const effective = (await core.configs.getConfig(f.identity.shopId, f.identity.configId))?.effectiveRevisionId;
+      const abandoned = { ...f.identity, operationId: randomUUID() };
+      const revisionId = randomUUID();
+      await f.createRevision(revisionId, nextMode);
+      await f.restart().publications.prepare({ ...abandoned, revisionId, mode: nextMode });
+      await f.restart().advance(abandoned);
+      f.acquireNotSent = true;
+      await expect(f.restart().advance(abandoned)).rejects.toThrow();
+      expect((await f.restart().advance(abandoned)).kind).toBe('OPERATOR_HOLD');
+      f.recoveryAuthority = syntheticRecoveryAuthority();
+      await f.restart().recover({ ...abandoned, commandKey: 'close-mode-change' });
+      const next = { ...f.identity, operationId: randomUUID() };
+      await expect(f.restart().publications.prepare({ ...next, revisionId, mode: nextMode })).resolves.toMatchObject({
+        phase: 'prepared',
+      });
+      const writes = f.remoteWrites;
+      expect(await f.restart().publications.advance(next.shopId, next.configId, next.operationId)).toMatchObject({
+        kind: 'ADMISSION_PENDING',
+      });
+      expect(f.remoteWrites).toBe(writes);
+      expect((await core.configs.getConfig(f.identity.shopId, f.identity.configId))?.effectiveRevisionId).toBe(
+        effective,
+      );
+      expect(
+        await core.acceptedQuotes.getEffective(
+          f.identity.shopId,
+          (await core.configs.getConfig(f.identity.shopId, f.identity.configId))!.externalProductId,
+        ),
+      ).toBeNull();
+      expect((await f.restart().advance(next)).kind).toBe('WAITING_HOLD');
+      expect((await f.restart().advance(next)).kind).toBe('HELD');
+    },
+  );
   it.each(['before commit', 'before restore'])(
     'fresh exact policy drift while held blocks unsafe progress (%s)',
     async (boundary) => {

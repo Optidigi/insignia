@@ -1,0 +1,37 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+ ❯ test/activation.test.ts (33 tests | 2 failed | 31 skipped) 476ms
+   ❯ PG18 scoped production activation (33)
+     × resolved unsent required to optional request permits a distinct safely fenced publication 272ms
+     × resolved unsent optional to required request permits a distinct safely fenced publication 187ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > resolved unsent required to optional request permits a distinct safely fenced publication
+ FAIL  test/activation.test.ts > PG18 scoped production activation > resolved unsent optional to required request permits a distinct safely fenced publication
+AssertionError: promise rejected "Error: Durable effective publication is n…" instead of resolving
+ ❯ test/activation.test.ts:488:87
+    486|     f.recoveryAuthority=syntheticRecoveryAuthority();await f.restart()…
+    487|     const next={...f.identity,operationId:randomUUID()};
+    488|     await expect(f.restart().publications.prepare({...next,revisionId,…
+       |                                                                                       ^
+    489|     const writes=f.remoteWrites;
+    490|     expect(await f.restart().publications.advance(next.shopId,next.con…
+
+Caused by: Error: Durable effective publication is not coherent
+ ❯ PgProductionPublication.prepare src/repositories/production-publication.ts:262:15
+ ❯ test/activation.test.ts:488:5
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 31 skipped (33)
+   Start at  13:26:44
+   Duration  1.23s (tests 43%, transform 31%, import 25%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/database

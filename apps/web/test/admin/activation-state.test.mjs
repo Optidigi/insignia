@@ -27,6 +27,14 @@ test('admin distinguishes activation waiting, held, restoration and conflict wit
     'ACTIVATED_RESTORATION_PENDING',
   );
   assert.equal(
+    projectActivationPublicationState({ ...active, activationKind: 'RESTORATION_CLAIMED' }),
+    'ACTIVATED_RESTORATION_PENDING',
+  );
+  assert.equal(
+    projectActivationPublicationState({ ...active, activationKind: 'RESTORATION_CLAIMED', effectiveOperationId: null }),
+    'OPERATOR_HOLD',
+  );
+  assert.equal(
     projectActivationPublicationState({ ...active, activationKind: 'OPERATOR_HOLD' }),
     'RESTORATION_CONFLICT',
   );

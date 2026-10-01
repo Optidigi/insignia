@@ -1,0 +1,59 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/application
+
+ ❯ src/publication/activation.test.ts (40 tests | 2 failed) 91ms
+   ❯ production activation coordinator with injected synthetic boundary fixtures (25)
+     × persists acquisition intent and restoration pending before dispatch and restores only after activation 14ms
+   × a slow restoration projection read must not dispatch over expired release observations 5ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/publication/activation.test.ts > production activation coordinator with injected synthetic boundary fixtures > persists acquisition intent and restoration pending before dispatch and restores only after activation
+AssertionError: expected { Object (kind, hold, ...) } to match object { kind: 'RESTORATION_PENDING', …(1) }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+    "evidenceDigest": "4f30efa74e53bc003aaf46df16b09aa384f0cdcfe1c86f909eeaf342007b8e19",
+-   "kind": "RESTORATION_PENDING",
++   "kind": "RESTORATION_DISPATCHED",
+  }
+
+ ❯ src/publication/activation.test.ts:404:30
+    402|     expect(f.restores).toBe(0);
+    403|     expect((await f.advance()).kind).toBe('ACTIVE');
+    404|     expect(f.stateAtRestore).toMatchObject({ kind: 'RESTORATION_PENDIN…
+       |                              ^
+    405|     expect(f.current.state).toBe('available');
+    406|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/publication/activation.test.ts > a slow restoration projection read must not dispatch over expired release observations
+AssertionError: expected 'RESTORATION_DISPATCHED' to be 'RESTORATION_PENDING' // Object.is equality
+
+Expected: "RESTORATION_PENDING"
+Received: "RESTORATION_DISPATCHED"
+
+ ❯ src/publication/activation.test.ts:641:34
+    639|   expect(f.restores).toBe(0);
+    640|   expect(f.evidence).toBe(immutable);
+    641|   expect(f.candidate.state.kind).toBe('RESTORATION_PENDING');
+       |                                  ^
+    642| });
+    643|
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 38 passed (40)
+   Start at  13:29:32
+   Duration  361ms (tests 40%, transform 38%, import 19%, worker 2%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/application

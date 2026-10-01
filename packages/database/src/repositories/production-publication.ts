@@ -258,8 +258,30 @@ export class PgProductionPublication {
         WHERE shop_id=${input.shopId} AND config_id=${input.configId}
           AND operation_id=${first.effective_operation_id}`.execute(this.database);
       const effective = prior.rows[0];
-      if (effective?.status !== 'activated' || effective.operation_sequence !== first.publication_sequence)
+      if (
+        effective?.status !== 'activated' ||
+        BigInt(effective.operation_sequence) > BigInt(first.publication_sequence)
+      )
         throw new Error('Durable effective publication is not coherent');
+      if (effective.operation_sequence !== first.publication_sequence) {
+        // Retained request sequence is monotonic; a separately audited abandoned
+        // tail need not equal the effective operation. Every intervening request
+        // must be resolved in this installation. This never relaxes quote issuance
+        // or the exact effective remote anchors checked below.
+        const closed = await sql<{ count: string; valid: boolean | null }>`SELECT count(*)::text AS count,
+          bool_and(COALESCE(o.status IN ('failed','superseded') AND o.availability_resolved_at IS NOT NULL
+            AND a.kind='RESOLVED' AND a.resolution_digest=r.resolution_digest, false)) AS valid
+          FROM publication_operations o
+          LEFT JOIN m5_activation_state a USING(shop_id,config_id,operation_id)
+          LEFT JOIN m5_availability_resolutions r USING(shop_id,config_id,operation_id)
+          WHERE o.shop_id=${input.shopId} AND o.config_id=${input.configId}
+            AND o.installation_generation=${first.generation}::bigint
+            AND o.operation_sequence>${effective.operation_sequence}::bigint
+            AND o.operation_sequence<=${first.publication_sequence}::bigint`.execute(this.database);
+        const gap = BigInt(first.publication_sequence) - BigInt(effective.operation_sequence);
+        if (closed.rows[0]?.valid !== true || BigInt(closed.rows[0].count) !== gap)
+          throw new Error('Durable effective publication is not coherent');
+      }
       const old = publicationProjection(effective.expected_projection);
       if (
         old.productId !== productId ||
@@ -315,6 +337,8 @@ export class PgProductionPublication {
           throw new Error('Publication operation idempotency conflict');
         return { operationId: input.operationId, phase: replay.rows[0].phase };
       }
+      if (row.publication_sequence !== first.publication_sequence)
+        throw new Error('Publication installation or revision changed while preparing');
       const unresolvedHold = await sql<{ operation_id: string }>`SELECT operation_id FROM m5_activation_state
         WHERE shop_id=${input.shopId} AND config_id=${input.configId} AND hold IS NOT NULL AND kind NOT IN ('RESTORED','RESOLVED')
         LIMIT 1`.execute(tx);

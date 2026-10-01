@@ -1,0 +1,47 @@
+$ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ corepack pnpm --filter @insignia/database test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+ ❯ test/activation.test.ts (33 tests | 1 failed) 6079ms
+   ❯ PG18 scoped production activation (33)
+     × concurrent attempts commit one evidence row and one effective operation 186ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > concurrent attempts commit one evidence row and one effective operation
+AssertionError: expected +0 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 0
+
+ ❯ test/activation.test.ts:362:24
+    360|     }>`SELECT count(*)::text AS count FROM m5_activation_evidence WHER…
+    361|     expect(evidence.rows[0]?.count).toBe('1');
+    362|     expect(f.restores).toBe(1);
+       |                        ^
+    363|     expect((await core.configs.getConfig(f.identity.shopId, f.identity…
+    364|       f.identity.operationId,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 9 passed (10)
+      Tests  1 failed | 87 passed (88)
+   Start at  13:33:10
+   Duration  6.85s (tests 69%, import 22%, transform 9%)
+
+[ELIFECYCLE] Test failed. See above for more details.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in /home/serveradmin/insignia-m5-003-worktree/
+  │ packages/database
+
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

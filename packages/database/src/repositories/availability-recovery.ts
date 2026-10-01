@@ -85,7 +85,8 @@ export function createAvailabilityRecovery(
         return prior.resolution;
       }
       if (
-        state?.kind !== 'OPERATOR_HOLD' ||
+        !state ||
+        !['OPERATOR_HOLD', 'RESTORATION_CLAIMED'].includes(state.kind) ||
         !state.hold ||
         state.hold.before.productId !== `gid://shopify/Product/${config.external_product_id}`
       )

@@ -351,6 +351,37 @@ test.each(['held', 'unreadable', 'drift'])('ambiguous restore leaves %s explicit
   expect(f.writes()).toHaveLength(2);
 });
 
+test('unchanged readback does not settle a still-in-flight restoration HTTP request', async () => {
+  let complete!: (response: Response) => void;
+  let settled = false;
+  const inFlight = () =>
+    new Promise<Response>((resolve) => {
+      complete = resolve;
+    }).then((value) => {
+      settled = true;
+      return value;
+    });
+  const f = fixture([
+    read(),
+    read(),
+    update(),
+    read(product('DRAFT', heldVersion)),
+    read(product('DRAFT', heldVersion)),
+    inFlight,
+    read(product('DRAFT', heldVersion)),
+  ]);
+  const acquired = await owned(f);
+  expect(await f.port.restore(scope, acquired.hold, acquired.current)).toMatchObject({
+    kind: 'RESTORATION_PENDING',
+    current: { state: 'unavailable' },
+  });
+  expect(settled).toBe(false);
+  expect(f.writes()).toHaveLength(2);
+  complete(new Response(JSON.stringify(update(product('ACTIVE', '2026-10-01T11:02:00Z'))), { status: 200 }));
+  await Promise.resolve();
+  expect(f.writes()).toHaveLength(2);
+});
+
 test('acknowledged restoration still requires exact mutation version readback', async () => {
   const f = fixture([
     read(),

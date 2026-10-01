@@ -87,8 +87,10 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   let stateAtAcquisition: ActivationState | null = null;
   let stateAtRestore: ActivationState | null = null;
   let crashBeforeAcquire = false;
+  let crashBeforeRestore = false;
   let crashAcquire = false;
   let crashRestore = false;
+  let unresolvedRestore: 'pending' | 'throw' | null = null;
   let failCommit = false;
   let fenced = false;
   let acquisitions = 0;
@@ -124,6 +126,8 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     restore: async (_scope, hold) => {
       stateAtRestore = structuredClone(candidate.state);
       restores++;
+      if (unresolvedRestore === 'pending') return { kind: 'RESTORATION_PENDING', current: null };
+      if (unresolvedRestore === 'throw') throw new Error('unsettled restore response');
       current = { ...hold.before, providerVersion: 'restored' };
       if (crashRestore) {
         crashRestore = false;
@@ -180,6 +184,10 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   const store = {
     locked: async <T>(_identity: unknown, action: (session: ActivationSession) => Promise<T>) => {
       if (fenced) throw new ActivationFenceError('reinstall/epoch/supersession');
+      if (crashBeforeRestore && candidate.state.kind === 'RESTORATION_CLAIMED') {
+        crashBeforeRestore = false;
+        throw new Error('crash after restore claim before dispatch');
+      }
       const before = structuredClone(candidate);
       const previousEvidence = evidence;
       try {
@@ -244,6 +252,12 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   const advance = () => restart().advance({ shopId: scope.shopId, configId: 'config', operationId: 'operation' });
   return {
     advance,
+    set crashBeforeRestore(value: boolean) {
+      crashBeforeRestore = value;
+    },
+    set unresolvedRestore(value: 'pending' | 'throw' | null) {
+      unresolvedRestore = value;
+    },
     set delayRestorationProjection(value: boolean) {
       delayRestorationProjection = value;
     },
@@ -395,7 +409,7 @@ describe('production activation coordinator with injected synthetic boundary fix
     expect(f.evidence).toMatchObject({ admissionClass: 'FIRST_PUBLICATION', hold: { held: { state: 'unavailable' } } });
     expect(f.restores).toBe(0);
     expect((await f.advance()).kind).toBe('ACTIVE');
-    expect(f.stateAtRestore).toMatchObject({ kind: 'RESTORATION_PENDING', evidenceDigest: expect.any(String) });
+    expect(f.stateAtRestore).toMatchObject({ kind: 'RESTORATION_CLAIMED', evidenceDigest: expect.any(String) });
     expect(f.current.state).toBe('available');
   });
   it.each([null, { evidenceKind: 'SOURCE_ONLY' }, { evidenceKind: 'DEV_PREVIEW_OBSERVED' }])(
@@ -480,6 +494,35 @@ describe('production activation coordinator with injected synthetic boundary fix
     expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
     expect(f.restores).toBe(1);
     expect(f.evidence).not.toBeNull();
+  });
+  it.each(['pending', 'throw'] as const)(
+    'an unsettled %s restore is never redispatched while the hold remains observed',
+    async (outcome) => {
+      const f = fixture();
+      await f.advance();
+      await f.advance();
+      const evidence = f.evidence;
+      f.unresolvedRestore = outcome;
+      if (outcome === 'throw') await expect(f.advance()).rejects.toThrow('unsettled restore response');
+      else expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+      expect(f.restores).toBe(1);
+      expect(f.current.state).toBe('unavailable');
+      for (let i = 0; i < 3; i++) expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+      expect(f.restores).toBe(1);
+      expect(f.evidence).toBe(evidence);
+    },
+  );
+  it('a lost invocation after the committed restore claim never dispatches on restart', async () => {
+    const f = fixture();
+    await f.advance();
+    await f.advance();
+    const evidence = f.evidence;
+    f.crashBeforeRestore = true;
+    await expect(f.advance()).rejects.toThrow('crash after restore claim before dispatch');
+    expect(f.candidate.state.kind).toBe('RESTORATION_CLAIMED');
+    expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    expect(f.restores).toBe(0);
+    expect(f.evidence).toBe(evidence);
   });
   it.each(['before activation', 'after activation'])(
     'merchant changes while held become operator hold (%s)',
@@ -615,5 +658,5 @@ it('a slow restoration projection read must not dispatch over expired release ob
   await expect(f.advance()).rejects.toThrow();
   expect(f.restores).toBe(0);
   expect(f.evidence).toBe(immutable);
-  expect(f.candidate.state.kind).toBe('RESTORATION_PENDING');
+  expect(f.candidate.state.kind).toBe('RESTORATION_CLAIMED');
 });

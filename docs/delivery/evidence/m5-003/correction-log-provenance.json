@@ -124,5 +124,95 @@
     "rawSha256": "e5c3d32c77ead4d9848adef85719adacc1f139241f760d7c4b5ede1b7fcc89af",
     "sanitizedSha256": "f9d0372a3655985c26d78a6bb8357d4cb76c381a1afd15a365cce7c65e75efc9",
     "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "restore-dispatch-red.log",
+    "rawSha256": "2bb232829e42db71b1ef87e3d5043cf0d6b2384c5424cc4e6140ceb9aaf866e5",
+    "sanitizedSha256": "aac647a8979808d513dfa4b2f3776d47e11a3c7400038f706286c6583a2764cb",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "resolved-mode-red.log",
+    "rawSha256": "28d6e20428b5d1b64af07b6b1850f87b9748202a80aca23f724bd940f927f0b0",
+    "sanitizedSha256": "a2f009d49d0c52f9f68f8f966364066b095af6f66c2b82d55f63762a52e1a6a3",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "restore-dispatch-first-green.log",
+    "rawSha256": "476bb3268aeb82d79c2262fd20d4a94e6033d00984de738dcf03e3c891829e4d",
+    "sanitizedSha256": "00d47a2c39e3dd1e583e419477890fe3cb2d08693d2fe81b0e024129811a92a9",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "postgres-closure.log",
+    "rawSha256": "03da72f7d305ba83acb6131913b53a48b413fbaf4135a191f9ecbf462084cbdd",
+    "sanitizedSha256": "03da72f7d305ba83acb6131913b53a48b413fbaf4135a191f9ecbf462084cbdd",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "postgres-closure-green.log",
+    "rawSha256": "4e56cf5f526b1cbe5e7de7aae776d1013ac58ad603cd235fa39b12c3f6466a14",
+    "sanitizedSha256": "4e56cf5f526b1cbe5e7de7aae776d1013ac58ad603cd235fa39b12c3f6466a14",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "postgres-closure-final.log",
+    "rawSha256": "c4ad2f06ce1965545a488e33d1fbb3d68d5321c8eae1f41d84fe7bd961d13b91",
+    "sanitizedSha256": "3083ad62b8b981ee5d7d58b104af52cb30174da63f2b50ba04b2663885bf3499",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "root-review-closure.log",
+    "rawSha256": "19259b4146d6f1ba103bc395cd01f22f139de641d844cae87ea9a5b4df300924",
+    "sanitizedSha256": "bb5e7f0623da5afe1606f05634da2b16a99d86889abf2e6508dd9f569eb02b65",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "postgres-review-closure.log",
+    "rawSha256": "87eecb8f6fce802165ee9f0778ef151382846111469592fcfe111b19b90b0b7c",
+    "sanitizedSha256": "94c302bbf87895ea509dc0ee152a5a14ffca0a942f818b9ee967389af9d2aea0",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "http-review-closure.log",
+    "rawSha256": "f5524f5f6e9515cf2de750ac7daf1b5b492b4c46e77e45545ddc175531a163c8",
+    "sanitizedSha256": "f5524f5f6e9515cf2de750ac7daf1b5b492b4c46e77e45545ddc175531a163c8",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "worker-review-closure.log",
+    "rawSha256": "a0c78e8440e734f1d02865f900009f3f71f85086be22ed0ffc37fe53b092cd54",
+    "sanitizedSha256": "a0c78e8440e734f1d02865f900009f3f71f85086be22ed0ffc37fe53b092cd54",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "closure-fixture-typecheck.log",
+    "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sanitizedSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "stress-review-closure.log",
+    "rawSha256": "8cbc9f8df300ba9c5b78efc80af5a408060eeced23d0ac93d151be7f520808aa",
+    "sanitizedSha256": "8cbc9f8df300ba9c5b78efc80af5a408060eeced23d0ac93d151be7f520808aa",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "renderer-review-closure.log",
+    "rawSha256": "71ef4012e713b0dc10d13e51b91ba28cdcef33d361705c1d9dca689c99cf6529",
+    "sanitizedSha256": "ead15064bb394bb599d4e34ab81a38b93dc9ae8c80dfcffd6db00d4a35529fe2",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "query-plan-review-closure.log",
+    "rawSha256": "ffd0b6fdda7d16ab26205f633cc368bbe0fc1c6a70caf859bb2dce4682747280",
+    "sanitizedSha256": "ffd0b6fdda7d16ab26205f633cc368bbe0fc1c6a70caf859bb2dce4682747280",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
+  },
+  {
+    "file": "migration-closure-down-up.log",
+    "rawSha256": "d5b90ca437fb74626ce010ea2770b35221b5a838a3aec4c77a587e0639f099ca",
+    "sanitizedSha256": "d5b90ca437fb74626ce010ea2770b35221b5a838a3aec4c77a587e0639f099ca",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   }
 ]

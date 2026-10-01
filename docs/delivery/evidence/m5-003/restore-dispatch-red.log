@@ -1,0 +1,55 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/application
+
+ ❯ src/publication/activation.test.ts (40 tests | 2 failed | 38 skipped) 33ms
+   ❯ production activation coordinator with injected synthetic boundary fixtures (25)
+     × an unsettled pending restore is never redispatched while the hold remains observed 24ms
+     × an unsettled throw restore is never redispatched while the hold remains observed 6ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/publication/activation.test.ts > production activation coordinator with injected synthetic boundary fixtures > an unsettled pending restore is never redispatched while the hold remains observed
+AssertionError: expected 4 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 4
+
+ ❯ src/publication/activation.test.ts:499:24
+    497|     expect(f.current.state).toBe('unavailable');
+    498|     for (let i=0;i<3;i++) expect((await f.advance()).kind).toBe('ACTIV…
+    499|     expect(f.restores).toBe(1);
+       |                        ^
+    500|     expect(f.evidence).toBe(evidence);
+    501|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/publication/activation.test.ts > production activation coordinator with injected synthetic boundary fixtures > an unsettled throw restore is never redispatched while the hold remains observed
+Error: unsettled restore response
+ ❯ Object.restore src/publication/activation.test.ts:129:48
+    127|       restores++;
+    128|       if (unresolvedRestore === 'pending') return { kind: 'RESTORATION…
+    129|       if (unresolvedRestore === 'throw') throw new Error('unsettled re…
+       |                                                ^
+    130|       current = { ...hold.before, providerVersion: 'restored' };
+    131|       if (crashRestore) {
+ ❯ src/publication/activation.ts:383:55
+ ❯ Object.locked src/publication/activation.test.ts:189:16
+ ❯ Object.advance src/publication/activation.ts:345:16
+ ❯ src/publication/activation.test.ts:498:35
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  2 failed | 38 skipped (40)
+   Start at  13:26:43
+   Duration  292ms (transform 51%, import 26%, tests 20%, worker 3%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/application

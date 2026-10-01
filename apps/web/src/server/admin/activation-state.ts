@@ -22,6 +22,7 @@ export function projectActivationPublicationState(input: {
     case 'HELD':
       return 'HELD_ACTIVATION_PENDING';
     case 'RESTORATION_PENDING':
+    case 'RESTORATION_CLAIMED':
       return active ? 'ACTIVATED_RESTORATION_PENDING' : 'OPERATOR_HOLD';
     case 'OPERATOR_HOLD':
       return active ? 'RESTORATION_CONFLICT' : 'OPERATOR_HOLD';

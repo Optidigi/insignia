@@ -1,22 +1,22 @@
 {
-  "shopId": "bf589cae-c0fb-4d9c-9b2a-6093a795f55e",
-  "configId": "59f55eef-2602-4c6c-b2ff-39af90984626",
-  "operationId": "0981961a-db83-41cd-b4b5-8acc0035c1f7",
+  "shopId": "314e81b7-c7a1-41db-bb12-de5aa123519a",
+  "configId": "e0c314c9-fdc0-407a-938d-3cc504c58d18",
+  "operationId": "6f13e466-3efe-4a34-a6d0-97bb236545d6",
   "commandKey": "synthetic-recovery",
   "version": "m5-availability-resolution-v1",
   "outcome": "ORIGINAL_STATE_OBSERVED",
   "currentScope": {
-    "shopId": "bf589cae-c0fb-4d9c-9b2a-6093a795f55e",
+    "shopId": "314e81b7-c7a1-41db-bb12-de5aa123519a",
     "installationGeneration": "1",
-    "shopifyShopId": "gid://shopify/Shop/210387306725627",
+    "shopifyShopId": "gid://shopify/Shop/54213253515169",
     "appClientId": "synthetic-app"
   },
   "originalHold": {
     "held": {
       "scope": {
-        "shopId": "bf589cae-c0fb-4d9c-9b2a-6093a795f55e",
+        "shopId": "314e81b7-c7a1-41db-bb12-de5aa123519a",
         "appClientId": "synthetic-app",
-        "shopifyShopId": "gid://shopify/Shop/210387306725627",
+        "shopifyShopId": "gid://shopify/Shop/54213253515169",
         "installationGeneration": "1"
       },
       "state": "unavailable",
@@ -27,9 +27,9 @@
     },
     "before": {
       "scope": {
-        "shopId": "bf589cae-c0fb-4d9c-9b2a-6093a795f55e",
+        "shopId": "314e81b7-c7a1-41db-bb12-de5aa123519a",
         "appClientId": "synthetic-app",
-        "shopifyShopId": "gid://shopify/Shop/210387306725627",
+        "shopifyShopId": "gid://shopify/Shop/54213253515169",
         "installationGeneration": "1"
       },
       "state": "available",
@@ -39,13 +39,13 @@
       "visibilityDigest": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
     },
     "version": "m5-availability-hold-v1",
-    "operationId": "0981961a-db83-41cd-b4b5-8acc0035c1f7"
+    "operationId": "6f13e466-3efe-4a34-a6d0-97bb236545d6"
   },
   "observed": {
     "scope": {
-      "shopId": "bf589cae-c0fb-4d9c-9b2a-6093a795f55e",
+      "shopId": "314e81b7-c7a1-41db-bb12-de5aa123519a",
       "installationGeneration": "1",
-      "shopifyShopId": "gid://shopify/Shop/210387306725627",
+      "shopifyShopId": "gid://shopify/Shop/54213253515169",
       "appClientId": "synthetic-app"
     },
     "state": "available",
@@ -56,19 +56,19 @@
   },
   "decision": {
     "version": "m5-availability-recovery-decision-v1",
-    "shopId": "bf589cae-c0fb-4d9c-9b2a-6093a795f55e",
-    "configId": "59f55eef-2602-4c6c-b2ff-39af90984626",
-    "operationId": "0981961a-db83-41cd-b4b5-8acc0035c1f7",
+    "shopId": "314e81b7-c7a1-41db-bb12-de5aa123519a",
+    "configId": "e0c314c9-fdc0-407a-938d-3cc504c58d18",
+    "operationId": "6f13e466-3efe-4a34-a6d0-97bb236545d6",
     "commandKey": "synthetic-recovery",
     "decisionRef": "synthetic-owner-review",
     "actorRef": "synthetic-owner",
-    "currentScopeDigest": "5c51c29d11a88db244cf51961a5bc72dbff38b8b3c6cdbe22b7f7492a5e0cea7",
-    "holdDigest": "3ce22c722f7780301e8375c3fec6608048b3ce2758adee8484ffa26afeeb6a80",
-    "observedSnapshotDigest": "6b04cc2acfa848217d76dd9f7efa40aeca729d3b75386bc2abb9ddffb7ba2c32",
+    "currentScopeDigest": "fa33dc199efee31d9abb3563323d6cec44852649ef70b147fe482c0456319dab",
+    "holdDigest": "35abf85bb2868547c3262614d23f9708ff25ed76921d198765cdd216c9c94bd0",
+    "observedSnapshotDigest": "9e9ee4e03ec1ed43ee76934b3115ce850c8922a3828b206e2ba15a32b76140c9",
     "outstandingWrites": "SETTLED_BY_TRUSTED_OPERATOR",
     "reviewedAt": "2026-10-01T12:00:00.000Z",
     "expiresAt": "2026-10-01T12:00:01.000Z"
   },
-  "activationEvidenceDigest": "683afaafb670e096e74a50b2c45f885bbd9555b9a61eabeff691601fe55be035",
+  "activationEvidenceDigest": "f1a8604bc804d64ea8f1e39ea07ea4f40e8be225f226ed7361399a8e5da7e9c7",
   "createdAt": "2026-10-01T12:00:00.000Z"
 }

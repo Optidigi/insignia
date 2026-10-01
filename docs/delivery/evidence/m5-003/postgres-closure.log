@@ -1,0 +1,87 @@
+$ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+Applying: 20260929000100_durable_core.sql
+Applied: 20260929000100_durable_core.sql in 27.923815ms
+Applying: 20260929000200_runtime_ingress_credentials.sql
+Applied: 20260929000200_runtime_ingress_credentials.sql in 8.592347ms
+Applying: 20260929000300_authorization_generation.sql
+Applied: 20260929000300_authorization_generation.sql in 5.060757ms
+Applying: 20260929000400_accepted_quote.sql
+Applied: 20260929000400_accepted_quote.sql in 10.098931ms
+Applying: 20260930000100_m4_key_lifecycle.sql
+Applied: 20260930000100_m4_key_lifecycle.sql in 9.684883ms
+Applying: 20260930000200_publication_progress.sql
+Applied: 20260930000200_publication_progress.sql in 4.604612ms
+Applying: 20260930000300_m5_revision_geometry.sql
+Applied: 20260930000300_m5_revision_geometry.sql in 4.002682ms
+Applying: 20260930000400_m5_revision_presentation.sql
+Applied: 20260930000400_m5_revision_presentation.sql in 3.653716ms
+Applying: 20260930000500_m5_publication_source_version.sql
+Applied: 20260930000500_m5_publication_source_version.sql in 1.880001ms
+Applying: 20260930000600_m5_publication_intent_generation.sql
+Applied: 20260930000600_m5_publication_intent_generation.sql in 1.953187ms
+Applying: 20260930000700_m5_publication_intent_lookup.sql
+Applied: 20260930000700_m5_publication_intent_lookup.sql in 2.126711ms
+Applying: 20260930000800_m5_current_publication_pointer.sql
+Applied: 20260930000800_m5_current_publication_pointer.sql in 4.165874ms
+Applying: 20260930000900_m5_activation.sql
+Applied: 20260930000900_m5_activation.sql in 15.967754ms
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ corepack pnpm --filter @insignia/database test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+ ❯ test/production-publication.test.ts (10 tests | 1 failed) 830ms
+   ❯ M4 production publication journal (10)
+     × returns one journal when the same publication command races 39ms
+ ❯ test/activation.test.ts (33 tests | 1 failed) 6108ms
+   ❯ PG18 scoped production activation (33)
+     × concurrent attempts commit one evidence row and one effective operation 176ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > concurrent attempts commit one evidence row and one effective operation
+Error: Missing restoration intent
+ ❯ src/repositories/activation.ts:303:24
+    301|         };
+    302|         try {
+    303|           return await action(session);
+       |                        ^
+    304|         } finally {
+    305|           valid = false;
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+ ❯ DefaultConnectionProvider.provideConnection ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/default-connection-provider.js:10:20
+ ❯ test/activation.test.ts:351:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  test/production-publication.test.ts > M4 production publication journal > returns one journal when the same publication command races
+Error: Publication installation or revision changed while preparing
+ ❯ src/repositories/production-publication.ts:330:15
+    328|         row.effective_operation_id !== first.effective_operation_id
+    329|       )
+    330|         throw new Error('Publication installation or revision changed …
+       |               ^
+    331|       const replay = await sql<{ revision_id: string; mode: ProductPol…
+    332|         SELECT o.revision_id, p.mode, p.phase FROM publication_operati…
+ ❯ ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+ ❯ DefaultConnectionProvider.provideConnection ../../node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/default-connection-provider.js:10:20
+ ❯ test/production-publication.test.ts:266:22
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  2 failed | 8 passed (10)
+      Tests  2 failed | 86 passed (88)
+   Start at  13:31:35
+   Duration  6.87s (tests 69%, import 23%, transform 8%)
+
+[ELIFECYCLE] Test failed. See above for more details.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in /home/serveradmin/insignia-m5-003-worktree/
+  │ packages/database
+
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.
