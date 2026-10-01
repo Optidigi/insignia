@@ -67,6 +67,8 @@ type Stored = {
   };
   progress: Progress;
 };
+// Ephemeral, internal authority: the observation must remain fresh through awaited preparation.
+type Admission = { isFresh(): boolean };
 export type PublicationAdvanceResult =
   | { kind: 'PENDING'; phase: ProgressPhase }
   | { kind: 'ACTIVE'; phase: 'active' }
@@ -141,7 +143,7 @@ export class PgProductionPublication {
         productId: string;
         priorMode: ProductPolicyMode | null;
         nextMode: ProductPolicyMode;
-      }): Promise<boolean>;
+      }): Promise<Admission | null>;
     },
   ) {
     if (!/^[1-9][0-9]*$/.test(appId)) throw new Error('Invalid trusted app identity');
@@ -588,8 +590,9 @@ export class PgProductionPublication {
         appId: this.appId,
       };
       const productId = expected.productId;
+      let admission: Admission | null = null;
       if (progress.prior_mode === null || progress.prior_mode !== progress.mode) {
-        const established = this.admission
+        admission = this.admission
           ? await this.admission.established({
               shopId,
               configId,
@@ -599,10 +602,11 @@ export class PgProductionPublication {
               priorMode: progress.prior_mode,
               nextMode: progress.mode,
             })
-          : false;
-        if (!established) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
+          : null;
+        if (!admission?.isFresh()) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
       }
       const remote = await this.observe(tenant, productId);
+      if (admission && !admission.isFresh()) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
       const byField = {
         public_config: remote.publicConfig,
         registration: remote.registration,
@@ -655,6 +659,7 @@ export class PgProductionPublication {
           return hold(remote);
         if (progress.phase === 'ready-written') {
           if (!(await this.current(stored, tx))) return hold(remote);
+          if (admission && !admission.isFresh()) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
           const journal = createPublicationRepository(tx);
           const acknowledged = await journal.acknowledge(shopId, configId, operationId);
           if (acknowledged !== 'acknowledged') throw new Error('M3 publication acknowledgement stale');
@@ -698,6 +703,8 @@ export class PgProductionPublication {
           return { kind: 'CONFLICT', phase: 'conflict' };
         }
         if (!(await this.current(stored, tx))) return hold(remote);
+        // No await between this check and dispatch: projection and current-state I/O cannot renew authority.
+        if (admission && !admission.isFresh()) return { kind: 'ADMISSION_PENDING', phase: progress.phase };
         try {
           const written = await this.remote.set({ ...target, value: desired.value, compareDigest: desired.prior });
           if (!exactPublicationField(written.observed, target, desired.value))

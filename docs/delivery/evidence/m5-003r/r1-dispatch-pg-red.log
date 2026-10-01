@@ -1,0 +1,139 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+ ❯ test/activation.test.ts (50 tests | 5 failed | 42 skipped) 615ms
+   ❯ PG18 scoped production activation (50)
+     × R1 dispatch rejects admission expiring during projection reads at prepared 141ms
+     × R1 dispatch rejects admission expiring during projection reads at shop-config-written 67ms
+     × R1 dispatch rejects admission expiring during projection reads at pending-written 72ms
+     × R1 dispatch rejects admission expiring during projection reads at policy-written 76ms
+     × R1 dispatch rejects a reversed clock after fresh hold admission 53ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 5 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1 dispatch rejects admission expiring during projection reads at prepared
+AssertionError: expected { kind: 'PENDING', …(1) } to deeply equal { kind: 'ADMISSION_PENDING', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "kind": "ADMISSION_PENDING",
+-   "phase": "prepared",
++   "kind": "PENDING",
++   "phase": "shop-config-written",
+  }
+
+ ❯ test/activation.test.ts:455:9
+    453|       expect(
+    454|         await f.restart().publications.advance(f.identity.shopId, f.id…
+    455|       ).toEqual({ kind: 'ADMISSION_PENDING', phase });
+       |         ^
+    456|       expect(f.remoteWrites).toBe(writes);
+    457|       expect((await f.restart().read(f.identity))?.evidence).toBeNull(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/5]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1 dispatch rejects admission expiring during projection reads at shop-config-written
+AssertionError: expected { kind: 'PENDING', …(1) } to deeply equal { kind: 'ADMISSION_PENDING', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "kind": "ADMISSION_PENDING",
+-   "phase": "shop-config-written",
++   "kind": "PENDING",
++   "phase": "pending-written",
+  }
+
+ ❯ test/activation.test.ts:455:9
+    453|       expect(
+    454|         await f.restart().publications.advance(f.identity.shopId, f.id…
+    455|       ).toEqual({ kind: 'ADMISSION_PENDING', phase });
+       |         ^
+    456|       expect(f.remoteWrites).toBe(writes);
+    457|       expect((await f.restart().read(f.identity))?.evidence).toBeNull(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/5]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1 dispatch rejects admission expiring during projection reads at pending-written
+AssertionError: expected { kind: 'PENDING', …(1) } to deeply equal { kind: 'ADMISSION_PENDING', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "kind": "ADMISSION_PENDING",
+-   "phase": "pending-written",
++   "kind": "PENDING",
++   "phase": "policy-written",
+  }
+
+ ❯ test/activation.test.ts:455:9
+    453|       expect(
+    454|         await f.restart().publications.advance(f.identity.shopId, f.id…
+    455|       ).toEqual({ kind: 'ADMISSION_PENDING', phase });
+       |         ^
+    456|       expect(f.remoteWrites).toBe(writes);
+    457|       expect((await f.restart().read(f.identity))?.evidence).toBeNull(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/5]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1 dispatch rejects admission expiring during projection reads at policy-written
+AssertionError: expected { kind: 'PENDING', …(1) } to deeply equal { kind: 'ADMISSION_PENDING', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "kind": "ADMISSION_PENDING",
+-   "phase": "policy-written",
++   "kind": "PENDING",
++   "phase": "ready-written",
+  }
+
+ ❯ test/activation.test.ts:455:9
+    453|       expect(
+    454|         await f.restart().publications.advance(f.identity.shopId, f.id…
+    455|       ).toEqual({ kind: 'ADMISSION_PENDING', phase });
+       |         ^
+    456|       expect(f.remoteWrites).toBe(writes);
+    457|       expect((await f.restart().read(f.identity))?.evidence).toBeNull(…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/5]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1 dispatch rejects a reversed clock after fresh hold admission
+AssertionError: expected { kind: 'PENDING', …(1) } to deeply equal { kind: 'ADMISSION_PENDING', …(1) }
+
+- Expected
++ Received
+
+  {
+-   "kind": "ADMISSION_PENDING",
+-   "phase": "prepared",
++   "kind": "PENDING",
++   "phase": "shop-config-written",
+  }
+
+ ❯ test/activation.test.ts:488:7
+    486|     expect(
+    487|       await f.restart().publications.advance(f.identity.shopId, f.iden…
+    488|     ).toEqual({ kind: 'ADMISSION_PENDING', phase: 'prepared' });
+       |       ^
+    489|     expect(f.remoteWrites).toBe(0);
+    490|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/5]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  5 failed | 3 passed | 42 skipped (50)
+   Start at  18:11:16
+   Duration  1.56s (tests 43%, transform 29%, import 28%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/database
+

@@ -10,6 +10,12 @@ The complete availability adapter now captures `observedAt` before credential/pr
 
 Public tests reproduce the old defect through `createShopifyAvailabilityHoldPort` and the real PostgreSQL `core.productionActivations.create(...).publications.advance(...)` facade. Fetch, body and post-response credential delays previously returned `PENDING/shop-config-written`; corrected results stay `ADMISSION_PENDING/prepared` with zero policy writes, no immutable activation evidence and no effective revision. Immediate/999ms/exact 1000ms observations pass a 1000ms budget. Mid-request provider-version, observe-origin, mutation/readback and malformed/reversed/future controls are retained. No fixed sleep, longer timeout or extra mutation-authority system is used.
 
+## R1 fresh-review dispatch correction
+
+Both first fresh full-source reviews independently found that a correct observation could become stale during the later projection/current-state reads. Their complete [Spec](evidence/m5-003r/reviews/first-spec.md) and [Standards/security](evidence/m5-003r/reviews/first-security.md) reports are preserved against first corrected head `0c8e473f4ed38aa5a66c62f4a1602067ca500a44`, together with selected actual model/high/read-only contexts and its ten green attempt-1 CI runs. Neither was clearance.
+
+New permanent real-PostgreSQL public-facade tests were red at that runtime: four write phases and a reversed clock failed; three immediate/999ms/exact-1000ms controls passed. All eight pass after correction. Admission now carries an internal ephemeral freshness check, retaining the observed origin and establishment time. Projection reads cannot renew it. It is checked again after projection I/O and final current-installation/key preparation, synchronously immediately before `remote.set`, with no intervening await. A reversed/nonfinite clock or expired observation stays `ADMISSION_PENDING`, without additional remote writes, activation evidence or effective revision. Same-mode no-hold behavior remains unchanged. No new public authority, extra provider observation/retry or persisted lease is introduced.
+
 ## R2 legal status and exact restoration
 
 `UNLISTED` maps to a distinct normalized `unlisted` state; `available` remains ACTIVE and `unavailable` remains DRAFT. Catalog list/detail retain UNLISTED, including mixed ACTIVE/UNLISTED pages and bounded pagination. Unknown controls use `UNSUPPORTED_SYNTHETIC_STATUS` and still fail closed. Synthetic mutation/readback tests preserve `UNLISTED → DRAFT → UNLISTED`; a merchant switch to ACTIVE while held yields conflict without a restoration write. ACTIVE/DRAFT/ARCHIVED controls remain intact. Real PostgreSQL public read/restart and immutable activation evidence retain the original unlisted state and exact restoration sequence.
@@ -26,7 +32,7 @@ Architecture/ledger v1.4, v2 bytes/Functions, M2 money, tenant/install/key/epoch
 
 ## Verification and review
 
-Executed complete root PASS; application174, Shopify221, PostgreSQL97, HTTP16, worker15, stress100/100 with no retries and renderer-negative control PASS. Strict complete fixtures, secrets and style pass. Red/green commands, logs, fresh full-source reports and final exact-head CI are supplied by the [evidence index](evidence/m5-003r/README.md) and exact-head PR packet. The whole pinned root, real PG18, HTTP/worker, 100-case no-retry stress and renderer-negative controls are required. Existing 100k query plans may be retained only if their six exact script/built seam/migration bindings remain unchanged. Final head/tree/base/CI are recorded after committing, avoiding self-reference.
+Executed complete root PASS; application174, Shopify221, PostgreSQL105, HTTP16, worker15, stress100/100 with no retries and renderer-negative control PASS. Strict complete fixtures, secrets and style pass. Red/green commands, logs, fresh full-source reports and final exact-head CI are supplied by the [evidence index](evidence/m5-003r/README.md) and exact-head PR packet. The whole pinned root, real PG18, HTTP/worker, 100-case no-retry stress and renderer-negative controls are required. All six preserved 100k query-plan script/built seam/migration bindings remain identical after rebuilding the dispatch correction. Final head/tree/base/CI are recorded after committing, avoiding self-reference.
 
 ## Remaining boundaries
 

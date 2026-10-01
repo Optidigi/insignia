@@ -81,22 +81,32 @@ export function createProductionActivation(database: Kysely<Database>, options: 
         hold.before.scope.installationGeneration !== identity.installationGeneration ||
         hold.before.scope.appClientId !== options.appClientId
       )
-        return false;
+        return null;
       const observed = await options.availability.observe(hold.before.scope, hold);
-      const at = now().getTime();
+      const establishedAt = now().getTime();
       const time = Date.parse(observed.current.observedAt);
-      return (
-        observed.kind === 'HELD' &&
-        observed.hold.held !== null &&
-        observed.current.productId === hold.held.productId &&
-        observed.current.state === 'unavailable' &&
-        activationDigest(observed.current.scope) === activationDigest(hold.held.scope) &&
-        observed.current.providerVersion === hold.held.providerVersion &&
-        observed.current.visibilityDigest === hold.held.visibilityDigest &&
-        Number.isFinite(time) &&
-        time <= at &&
-        at - time <= options.maxObservationAgeMs
-      );
+      if (
+        !(
+          observed.kind === 'HELD' &&
+          observed.hold.held !== null &&
+          observed.current.productId === hold.held.productId &&
+          observed.current.state === 'unavailable' &&
+          activationDigest(observed.current.scope) === activationDigest(hold.held.scope) &&
+          observed.current.providerVersion === hold.held.providerVersion &&
+          observed.current.visibilityDigest === hold.held.visibilityDigest &&
+          Number.isFinite(time) &&
+          Number.isFinite(establishedAt) &&
+          time <= establishedAt &&
+          establishedAt - time <= options.maxObservationAgeMs
+        )
+      )
+        return null;
+      return {
+        isFresh: () => {
+          const at = now().getTime();
+          return Number.isFinite(at) && at >= establishedAt && at - time <= options.maxObservationAgeMs;
+        },
+      };
     },
   });
   return {

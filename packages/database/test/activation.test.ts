@@ -346,6 +346,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       set providerDelay(value: { point: 'fetch' | 'body' | 'credential'; ms: number } | null) {
         providerDelay = value;
       },
+      advanceProviderClock: (ms: number) => {
+        providerClock = new Date(providerClock.getTime() + ms);
+      },
       set recoveryAuthority(value:
         | import('@insignia/application').TrustedAvailabilityRecoveryAuthorityPort
         | undefined) {
@@ -429,6 +432,61 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     f.providerDelay = { point: 'fetch', ms };
     await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId);
     expect(f.remoteWrites).toBe(1);
+  });
+
+  it.each(['prepared', 'shop-config-written', 'pending-written', 'policy-written'] as const)(
+    'R1 dispatch rejects admission expiring during projection reads at %s',
+    async (phase) => {
+      const f = await fixture('required', 'ACTIVE');
+      await f.prepareHold();
+      const phases = ['prepared', 'shop-config-written', 'pending-written', 'policy-written'];
+      for (let i = 0; i < phases.indexOf(phase); i++)
+        await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId);
+      const writes = f.remoteWrites;
+      let delayed = false;
+      f.beforeRead = async () => {
+        if (!delayed) {
+          delayed = true;
+          f.advanceProviderClock(2000);
+        }
+      };
+      expect(
+        await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId),
+      ).toEqual({ kind: 'ADMISSION_PENDING', phase });
+      expect(f.remoteWrites).toBe(writes);
+      expect((await f.restart().read(f.identity))?.evidence).toBeNull();
+      expect((await core.configs.getConfig(f.identity.shopId, f.identity.configId))?.effectiveRevisionId).toBeNull();
+    },
+  );
+  it.each([0, 999, 1000])('R1 dispatch retains the exact %s ms projection-read boundary', async (ms) => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    let delayed = false;
+    f.beforeRead = async () => {
+      if (!delayed) {
+        delayed = true;
+        f.advanceProviderClock(ms);
+      }
+    };
+    expect(
+      await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId),
+    ).toEqual({ kind: 'PENDING', phase: 'shop-config-written' });
+    expect(f.remoteWrites).toBe(1);
+  });
+  it('R1 dispatch rejects a reversed clock after fresh hold admission', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    let reversed = false;
+    f.beforeRead = async () => {
+      if (!reversed) {
+        reversed = true;
+        f.advanceProviderClock(-1);
+      }
+    };
+    expect(
+      await f.restart().publications.advance(f.identity.shopId, f.identity.configId, f.identity.operationId),
+    ).toEqual({ kind: 'ADMISSION_PENDING', phase: 'prepared' });
+    expect(f.remoteWrites).toBe(0);
   });
 
   it('R2 UNLISTED hold survives public read/restart and restores exact original status after activation', async () => {

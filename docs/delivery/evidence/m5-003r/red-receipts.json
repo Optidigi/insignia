@@ -29,6 +29,14 @@
       "command": "DATABASE_URL=<isolated-local-PG18> pnpm --filter @insignia/database exec vitest run test/activation.test.ts --testNamePattern=R2",
       "exitStatus": 1,
       "log": "r2-public-pg-red.log"
+    },
+    {
+      "finding": "R1 review correction",
+      "stage": "First corrected candidate 0c8e473f4ed38aa5a66c62f4a1602067ca500a44; new public PostgreSQL tests, before the dispatch-age correction",
+      "command": "DATABASE_URL=<isolated-local-PG18> corepack pnpm --filter @insignia/database exec vitest run test/activation.test.ts -t \"R1 dispatch\"",
+      "exitStatus": 1,
+      "log": "r1-dispatch-pg-red.log",
+      "result": "5 failed, 3 boundary controls passed; four write phases and reversed-clock case dispatch incorrectly"
     }
   ],
   "greenClosure": "Actual corrected public modules: correction-shopify.log and correction-postgres.log; supplied extracted callback/probe is not used as their test seam."

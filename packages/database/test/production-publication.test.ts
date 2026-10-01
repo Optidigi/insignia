@@ -147,7 +147,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     expect(outbox.rows).toHaveLength(1);
 
     const publisher = new PgProductionPublication(database, remote, '101', {
-      established: async () => true, // Synthetic admission premise; no production adapter exists.
+      established: async () => ({ isFresh: () => true }), // Synthetic admission premise; no production adapter exists.
     });
     remote.ambiguousOnce = true;
     expect(await publisher.advance(f.shopId, f.configId, operationId)).toEqual({ kind: 'PENDING', phase: 'prepared' });
@@ -198,7 +198,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
   it('holds on stale CAS without replacing a surviving enforcement anchor', async () => {
     const f = await fixture();
     const remote = new FakeRemote();
-    const publisher = new PgProductionPublication(database, remote, '101', { established: async () => true });
+    const publisher = new PgProductionPublication(database, remote, '101', {
+      established: async () => ({ isFresh: () => true }),
+    });
     const operationId = randomUUID();
     await publisher.prepare({ ...f, operationId, mode: 'optional' });
     await publisher.advance(f.shopId, f.configId, operationId);
@@ -218,7 +220,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
   it('does not promote a competing or deleted pending registration to ready', async () => {
     const f = await fixture();
     const remote = new FakeRemote();
-    const publisher = new PgProductionPublication(database, remote, '101', { established: async () => true });
+    const publisher = new PgProductionPublication(database, remote, '101', {
+      established: async () => ({ isFresh: () => true }),
+    });
     const operationId = randomUUID();
     await publisher.prepare({ ...f, operationId, mode: 'required' });
     for (let i = 0; i < 3; i++) await publisher.advance(f.shopId, f.configId, operationId);
@@ -237,7 +241,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
   it('holds when durable key revocation makes the prepared public config stale', async () => {
     const f = await fixture();
     const remote = new FakeRemote();
-    const publisher = new PgProductionPublication(database, remote, '101', { established: async () => true });
+    const publisher = new PgProductionPublication(database, remote, '101', {
+      established: async () => ({ isFresh: () => true }),
+    });
     const operationId = randomUUID();
     await publisher.prepare({ ...f, operationId, mode: 'optional' });
     await sql`UPDATE signing_keys SET state='revoked', revoked_at=clock_timestamp(),
@@ -319,7 +325,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
     const f = await fixture();
     const remote = new FakeRemote();
     const operationId = randomUUID();
-    const restart = () => new PgProductionPublication(database, remote, '101', { established: async () => true });
+    const restart = () =>
+      new PgProductionPublication(database, remote, '101', { established: async () => ({ isFresh: () => true }) });
     await restart().prepare({ ...f, operationId, mode: 'required' });
     const phases = ['prepared', 'shop-config-written', 'pending-written', 'policy-written'] as const;
     const next = ['shop-config-written', 'pending-written', 'policy-written', 'ready-written'] as const;
@@ -338,7 +345,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
   it('rejects coherent rollback of a prior effective required policy', async () => {
     const f = await fixture();
     const remote = new FakeRemote();
-    const publisher = new PgProductionPublication(database, remote, '101', { established: async () => true });
+    const publisher = new PgProductionPublication(database, remote, '101', {
+      established: async () => ({ isFresh: () => true }),
+    });
     const publishAndActivate = async (mode: 'required' | 'optional') => {
       const operationId = randomUUID();
       await publisher.prepare({ ...f, operationId, mode });
@@ -375,7 +384,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('M4 production publication jou
   it('serializes a paused Admin write against emergency key revocation', async () => {
     const f = await fixture();
     const remote = new FakeRemote();
-    const publisher = new PgProductionPublication(database, remote, '101', { established: async () => true });
+    const publisher = new PgProductionPublication(database, remote, '101', {
+      established: async () => ({ isFresh: () => true }),
+    });
     const operationId = randomUUID();
     await publisher.prepare({ ...f, operationId, mode: 'optional' });
     let entered: (() => void) | undefined;

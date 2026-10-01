@@ -112,5 +112,65 @@
     "rawSha256": "560e33bfcc0f615c1f9d7b05bd276cc552a976cfad7677d20d849122b6af46e2",
     "sanitizedSha256": "cdc94c8a4d72f4aea74099b26355a625c352893fc32f4a81c029d443b8047b1e",
     "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "r1-dispatch-pg-red.log",
+    "rawSha256": "5c9f4b8c81feb2b76d6825200416826c74eda2f0d16db03407f84afd9278aec4",
+    "sanitizedSha256": "5c9f4b8c81feb2b76d6825200416826c74eda2f0d16db03407f84afd9278aec4",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "r1-dispatch-pg-green.log",
+    "rawSha256": "a906425649cf158d769a6f98861ce812dadd14b1cae55c97ebf1b5b06f49e5e3",
+    "sanitizedSha256": "a906425649cf158d769a6f98861ce812dadd14b1cae55c97ebf1b5b06f49e5e3",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "dispatch-correction-root.log",
+    "rawSha256": "657e6a9015c2103405313244409a987748395044d00ed7bec9dac62b66da2ceb",
+    "sanitizedSha256": "a571b10b569cd182b461b5a09b71b2568133589d2cb698f2826e43b89a60a491",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "dispatch-correction-postgres.log",
+    "rawSha256": "fd6230d117bf474fd63f6e8eea1850db6a6294ad48c5a2625806ea720ec0743b",
+    "sanitizedSha256": "fd6230d117bf474fd63f6e8eea1850db6a6294ad48c5a2625806ea720ec0743b",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "dispatch-correction-http.log",
+    "rawSha256": "587724b27a299e7ec7fa84c801d0edcef224c8c6447021a94d7b4cf5953ab26a",
+    "sanitizedSha256": "587724b27a299e7ec7fa84c801d0edcef224c8c6447021a94d7b4cf5953ab26a",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "dispatch-correction-worker.log",
+    "rawSha256": "dadd88a3c1f2f2638b5a3f5283e4d4409e5701e6ee3b933e78a5b043a7871291",
+    "sanitizedSha256": "dadd88a3c1f2f2638b5a3f5283e4d4409e5701e6ee3b933e78a5b043a7871291",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "dispatch-correction-stress.log",
+    "rawSha256": "d855d25ce37d2c02f91cdb7b6d6dd7473826a79323907f128c75b30b26bf3e33",
+    "sanitizedSha256": "d855d25ce37d2c02f91cdb7b6d6dd7473826a79323907f128c75b30b26bf3e33",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "dispatch-correction-fixtures.log",
+    "rawSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "sanitizedSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "dispatch-correction-renderer.log",
+    "rawSha256": "14212ce25029f05086f326afe2301fdeba2300d5272992c62c30d922e2af2e5a",
+    "sanitizedSha256": "4ca7633668177447b6d946626e19ee725f396a0cad565c02629054ffc905e2d4",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
+  },
+  {
+    "file": "dispatch-correction-secrets.log",
+    "rawSha256": "c7c91b28f60f3ad86d27043356ab79b8a0f249caa99df9f87cdd931b6a238450",
+    "sanitizedSha256": "c7c91b28f60f3ad86d27043356ab79b8a0f249caa99df9f87cdd931b6a238450",
+    "transformation": "ANSI/carriage return and trailing whitespace normalization only"
   }
 ]
