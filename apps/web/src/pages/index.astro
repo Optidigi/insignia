@@ -1,4 +1,9 @@
 ---
+if (process.env.INSIGNIA_M5_002_DIAGNOSTIC === '1') {
+  const destination = new URL('/admin/products', Astro.url);
+  destination.search = Astro.url.search;
+  return Astro.redirect(destination.pathname + destination.search);
+}
 ---
 <!doctype html>
 <html lang="en">

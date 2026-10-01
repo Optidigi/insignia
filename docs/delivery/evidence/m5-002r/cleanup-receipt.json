@@ -1,0 +1,31 @@
+{
+  "status": "AMBIGUOUS_EXACT_GRANT_RESTORATION",
+  "devCleanExitCode": 0,
+  "devPreviewRemoved": true,
+  "nativeAdminIframeOrigin": "https://example.com",
+  "nativeAdminPreviewCount": 0,
+  "ownedPreviewProcessesRemaining": 0,
+  "preReleaseResource": "1146748534785",
+  "preReleaseName": "insignia-1",
+  "preReleaseUrl": "https://example.com",
+  "preReleaseEmbedded": true,
+  "preReleaseApiVersion": "2026-07",
+  "postReleaseResourceIndependentlyReread": false,
+  "postReleaseQualification": "CLI reported active-version restoration; native no-preview/example.com observed; exact Dashboard version reread stopped after grant mismatch",
+  "preGrants": [],
+  "postGrants": [
+    "read_cart_transforms",
+    "read_inventory",
+    "read_locations",
+    "read_products",
+    "read_validations",
+    "write_cart_transforms",
+    "write_inventory",
+    "write_products",
+    "write_validations"
+  ],
+  "sameAppShopInstallation": true,
+  "exactGrantsMatch": false,
+  "furtherRemoteActions": "NONE after discrepancy; no repair or scope cycle",
+  "causalAttribution": "unestablished"
+}

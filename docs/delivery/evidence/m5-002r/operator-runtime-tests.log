@@ -1,0 +1,14 @@
+✔ complete built server reproduces CLI development-mode CSP rejection (251.610094ms)
+✔ actual launcher runtime preparation admits built hydration without widening CSP (219.91712ms)
+✔ actual launcher register reserves durably before synthetic fetch, serializes and denies extra attempts (76.877854ms)
+✔ exact SDK online exchange is counted per attempt; mutations, wrong targets and other token/event routes never send (2.650867ms)
+✔ ambiguous or inflated history stops before any send (0.515574ms)
+✔ one-shot loss applies only after a committed local save and never changes transport counts (1.660893ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 545.633873

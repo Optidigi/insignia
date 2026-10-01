@@ -1,0 +1,44 @@
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: mc12a1e77b0ee4cd6a19ae8ee6f8e3d31.myshopify.com, isOnline: true}
+✖ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (223.916824ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 563.119168
+
+✖ failing tests:
+
+test at test/admin/production-composition.test.mjs:57:1
+✖ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (223.916824ms)
+  AssertionError [ERR_ASSERTION]: current
+
+  false !== true
+
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-002-worktree/apps/web/test/admin/production-composition.test.mjs:258:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-002-
+  │ worktree/apps/web
+

@@ -1,0 +1,17 @@
+{
+  "role": "security",
+  "sessionId": "01a0f6d7-992b-7c43-ac36-cb8391c4a139",
+  "lastMessages": [
+    "I\u2019ll verify the pinned refs and worktree, read the required authority documents and complete source files, then report any material standards or security issues. I\u2019ll stay local an",
+    "The worktree is clean, and HEAD, tree, and effective merge base match all three supplied hashes. I\u2019ve loaded the code-review skill; your explicit no-delegation instruction override"
+  ],
+  "clientRuntime": {
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "cwd": "/home/serveradmin/insignia-m5-002-worktree",
+    "approval_policy": "never",
+    "sandbox_policy": {
+      "type": "read-only"
+    }
+  }
+}

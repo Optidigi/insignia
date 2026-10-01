@@ -1,0 +1,28 @@
+diff --git a/apps/web/test/admin/production-composition.test.mjs b/apps/web/test/admin/production-composition.test.mjs
+index 0f7ed79..f26e980 100644
+--- a/apps/web/test/admin/production-composition.test.mjs
++++ b/apps/web/test/admin/production-composition.test.mjs
+@@ -81,6 +81,14 @@ test('production composition uses signed staff SDK, current feature policy and r
+   let adminMutations = 0;
+   let partnerReads = 0;
+   let sdkExchanges = 0;
++  // This integration calls the real production clock. Keep the synthetic
++  // current/cancellation cycle around this run instead of a calendar deadline.
++  const cycleNow = Date.now();
++  const halfCycleMs = 15 * 24 * 60 * 60 * 1000;
++  const currentBillingCycle = {
++    startTime: new Date(cycleNow - halfCycleMs).toISOString(),
++    endTime: new Date(cycleNow + halfCycleMs).toISOString(),
++  };
+   try {
+     await core.transactions.run((tx) =>
+       core.tenants.createShop(tx, {
+@@ -137,7 +145,7 @@ test('production composition uses signed staff SDK, current feature policy and r
+               billingPeriod: 'EVERY_30_DAYS',
+               cancelAtEndOfCycle: providerMode === 'cancelled',
+               trialEndsAt: null,
+-              currentBillingCycle: { startTime: '2026-09-01T00:00:00Z', endTime: '2026-10-01T00:00:00Z' },
++              currentBillingCycle,
+               items: [
+                 {
+                   handle: planHandle,

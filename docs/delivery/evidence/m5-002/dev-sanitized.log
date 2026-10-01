@@ -1,0 +1,144 @@
+╭─ info ───────────────────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Using shopify.app.m5-002.toml for default values:                           │
+│                                                                              │
+│    • Org:             Optidigi                                               │
+│    • App:             Insignia                                               │
+│    • Dev store:       insignia-rewrite-dev.myshopify.com                     │
+│    • Update URLs:     Yes                                                    │
+│                                                                              │
+│   You can pass `--reset` to your command to reset your app configuration.    │
+│                                                                              │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+Preview URL: https://admin.shopify.com/store/insignia-rewrite-dev/apps/1443cf6d03d39edae7c101a943c5c684?[query redacted]
+GraphiQL URL (Admin API): http://localhost:3457/graphiql?[query redacted]
+Preparing dev preview on insignia-rewrite-dev.myshopify.comProxy server started on port 43733 GraphiQL server started on port 3457Building function insignia-experimental-v2-transform...Building function insignia-experimental-v2-validation.../home/serveradmin/insignia-m5-002-worktree/crates/cart-transform/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+/home/serveradmin/insignia-m5-002-worktree/crates/cart-validation/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.26
+   Compiling semver v1.0.28
+   Compiling proc-macro2 v1.0.107
+23:19:38 [@astrojs/node] Server listening on http://127.0.0.1:37657
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling semver v1.0.28
+   Compiling zmij v1.0.23
+   Compiling zmij v1.0.23
+   Compiling heck v0.5.0
+   Compiling serde_json v1.0.151
+   Compiling rustc_version v0.4.1
+   Compiling heck v0.5.0
+   Compiling serde_json v1.0.151
+   Compiling rustc_version v0.4.1
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling version_check v0.9.5
+   Compiling serde_core v1.0.229
+   Compiling logos-codegen v0.15.1
+   Compiling logos-codegen v0.15.1
+   Compiling generic-array v0.14.7
+   Compiling lazy_static v1.5.0
+   Compiling regex-syntax v0.8.11
+   Compiling fnv v1.0.7
+   Compiling generic-array v0.14.7
+   Compiling lazy_static v1.5.0
+   Compiling regex-syntax v0.8.11
+   Compiling beef v0.5.2
+   Compiling fnv v1.0.7
+   Compiling beef v0.5.2
+   Compiling syn v2.0.119
+   Compiling syn v2.0.119
+   Compiling syn v3.0.6
+   Compiling syn v3.0.6
+   Compiling memchr v2.8.3
+   Compiling either v1.18.0
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling itertools v0.14.0
+   Compiling either v1.18.0
+   Compiling itoa v1.0.18
+   Compiling itertools v0.14.0
+   Compiling strum_macros v0.27.2
+   Compiling strum_macros v0.27.2
+   Compiling logos-derive v0.15.1
+   Compiling enum-as-inner v0.6.1
+   Compiling logos-derive v0.15.1
+   Compiling unicode-width v0.1.14
+   Compiling paste v1.0.15
+   Compiling enum-as-inner v0.6.1
+   Compiling yansi v1.0.1
+   Compiling paste v1.0.15
+   Compiling unicode-width v0.1.14
+   Compiling yansi v1.0.1
+   Compiling logos v0.15.1
+   Compiling ariadne v0.5.1
+   Compiling logos v0.15.1
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling seq-macro v0.3.6
+   Compiling seq-macro v0.3.6
+   Compiling unicode-segmentation v1.13.3
+   Compiling unicode-segmentation v1.13.3
+   Compiling ariadne v0.5.1
+   Compiling digest v0.10.7
+   Compiling digest v0.10.7
+   Compiling curve25519-dalek v4.1.3
+   Compiling thiserror v2.0.21
+   Compiling curve25519-dalek v4.1.3
+   Compiling thiserror v2.0.21
+   Compiling strum v0.27.2
+   Compiling strum v0.27.2
+   Compiling bluejay-core v0.3.1
+   Compiling bluejay-core v0.3.1
+   Compiling convert_case v0.8.0
+   Compiling thiserror-impl v2.0.21
+   Compiling convert_case v0.8.0
+   Compiling thiserror-impl v2.0.21
+   Compiling bluejay-parser v0.3.1
+   Compiling serde v1.0.229
+   Compiling bluejay-parser v0.3.1
+   Compiling serde v1.0.229
+   Compiling shopify_function_wasm_api_core v0.2.0
+   Compiling shopify_function_wasm_api_core v0.2.0
+   Compiling sha2 v0.10.9
+   Compiling sha2 v0.10.9
+   Compiling convert_case v0.11.0
+   Compiling convert_case v0.11.0
+   Compiling serde_derive v1.0.229
+   Compiling bluejay-validator v0.3.1
+   Compiling serde_derive v1.0.229
+   Compiling bluejay-validator v0.3.1
+   Compiling ed25519-dalek v2.2.0
+   Compiling ed25519-dalek v2.2.0
+   Compiling shopify_function_wasm_api v0.3.1
+   Compiling shopify_function_wasm_api v0.3.1
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling bluejay-typegen-codegen v0.3.1
+   Compiling shopify_function_macro v2.2.0
+   Compiling shopify_function_macro v2.2.0
+   Compiling cart-authorization v0.1.0 (/home/serveradmin/insignia-m5-002-worktree/crates/cart-authorization)
+   Compiling cart-authorization v0.1.0 (/home/serveradmin/insignia-m5-002-worktree/crates/cart-authorization)
+   Compiling shopify_function v2.2.0
+   Compiling shopify_function v2.2.0
+   Compiling cart-validation v0.1.0 (/home/serveradmin/insignia-m5-002-worktree/crates/cart-validation)
+   Compiling cart-transform v0.1.0 (/home/serveradmin/insignia-m5-002-worktree/crates/cart-transform)
+    Finished `release` profile [optimized] target(s) in 26.04s
+f32282420c3c1088e40d369e351d3d594cdd661fe46b239424fa7a3547a85c7a  /home/serveradmin/insignia-m5-002-worktree/extensions/insignia-cart-validation/target/cart-validation.raw.wasm
+51cd4867fa5c8181eac421c65e3e7fd210662213c3705ffe5cfc8c8d4a085207  /home/serveradmin/insignia-m5-002-worktree/extensions/insignia-cart-validation/target/cart-validation.wasm
+186152 /home/serveradmin/insignia-m5-002-worktree/extensions/insignia-cart-validation/target/cart-validation.raw.wasm
+183160 /home/serveradmin/insignia-m5-002-worktree/extensions/insignia-cart-validation/target/cart-validation.wasm
+369312 total
+    Finished `release` profile [optimized] target(s) in 26.34s
+e7081ad72ce8b41dcc5917d3e0dd87bff9a9d81c73c2a683cc11f1b183a2d52d  /home/serveradmin/insignia-m5-002-worktree/extensions/insignia-cart-transform/target/cart-transform.raw.wasm
+76e890cf702a6bc182e8ca8b55942260f33a5bc5e072d42c2f104a72161a4ddb  /home/serveradmin/insignia-m5-002-worktree/extensions/insignia-cart-transform/target/cart-transform.wasm
+184504 /home/serveradmin/insignia-m5-002-worktree/extensions/insignia-cart-transform/target/cart-transform.raw.wasm
+181570 /home/serveradmin/insignia-m5-002-worktree/extensions/insignia-cart-transform/target/cart-transform.wasm
+366074 total
+✅ Ready, watching for changes in your app │ Access scopes auto-granted: read_cart_transforms, read_inventory, read_locations, read_products, read_validations, write_cart_transforms, write_inventory, write_products, write_validations└ Using URL: https://parenting-dollar-foo-reached.trycloudflare.com

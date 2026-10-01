@@ -1,6 +1,7 @@
 import {
   type AcceptedQuote,
   assertQuoteIssuanceReady,
+  type FunctionArtifactReadinessPorts,
   SigningKeyLifecycle,
   type SigningKeyRing,
 } from '@insignia/application';
@@ -12,7 +13,7 @@ import {
   type PublicationAdminTransport,
 } from '@insignia/shopify';
 
-/** Production composition remains fail closed while Admin cannot attest the deployed Wasm identity. */
+/** No default deployment trust: Admin object observations alone cannot attest deployed Wasm identity. */
 export function createProductionQuoteReadiness(input: {
   core: DurableCore;
   ring: SigningKeyRing;
@@ -22,13 +23,15 @@ export function createProductionQuoteReadiness(input: {
   transport: PublicationAdminTransport;
   maxObservationAgeMs: number;
   clock?: () => Date;
+  artifactPorts?: FunctionArtifactReadinessPorts;
 }): { assertReady(input: { quote: AcceptedQuote }): Promise<void> } {
   const keys = new SigningKeyLifecycle(input.core.signingKeys, input.ring);
   const admin = createPublicationAdminAdapter({ transport: input.transport });
-  const functions = createFunctionOwnershipReconciler({ transport: input.transport });
   const now = input.clock ?? (() => new Date());
+  const functions = createFunctionOwnershipReconciler({ transport: input.transport, clock: now });
   return {
     async assertReady({ quote }) {
+      if (!input.artifactPorts) throw new Error('Function artifact trusted evidence and expected build ports missing');
       const scope = {
         shopId: quote.shopId,
         installationGeneration: quote.installationGeneration,
@@ -56,6 +59,15 @@ export function createProductionQuoteReadiness(input: {
       if (!observed) throw new Error('Public Function config missing');
       const observedAt = now();
       const owned = await functions.read(tenant, input.expectedFunctions);
+      const artifactScope = {
+        shopId: quote.shopId,
+        installationGeneration: quote.installationGeneration,
+        appClientId: input.expectedFunctions.appKey,
+      };
+      const [expectedBuild, attestation] = await Promise.all([
+        input.artifactPorts.expectedBuild.read(artifactScope),
+        input.artifactPorts.trustedEvidence.read(artifactScope),
+      ]);
       const effective = await Promise.all(
         quote.effectiveRevisions.map((revision) =>
           input.core.acceptedQuotes.getEffective(quote.shopId, revision.productId),
@@ -84,6 +96,7 @@ export function createProductionQuoteReadiness(input: {
         maxObservationAgeMs: input.maxObservationAgeMs,
         functions: owned,
         effectiveRevision,
+        artifact: { appClientId: artifactScope.appClientId, expectedBuild, attestation },
       });
     },
   };

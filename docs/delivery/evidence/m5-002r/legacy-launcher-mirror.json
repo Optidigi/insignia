@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "appId": "429028933633",
+  "clientId": "1443cf6d03d39edae7c101a943c5c684",
+  "shop": "insignia-rewrite-dev.myshopify.com",
+  "limits": {
+    "adminRead": 30,
+    "adminAuth": 4,
+    "partnerRead": 4
+  },
+  "counts": {
+    "adminRead": 13,
+    "adminAuth": 4,
+    "partnerRead": 0
+  },
+  "events": [
+    {
+      "kind": "adminAuth",
+      "at": "2026-10-01T08:40:45.642Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:40:45.997Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:40:46.224Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:40:46.504Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:40:46.778Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:40:47.036Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:41:44.572Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:41:44.866Z"
+    },
+    {
+      "kind": "adminAuth",
+      "at": "2026-10-01T08:42:21.661Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:42:22.059Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:42:22.307Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:42:22.565Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:42:22.863Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:42:23.096Z"
+    },
+    {
+      "kind": "adminRead",
+      "at": "2026-10-01T08:42:23.327Z"
+    },
+    {
+      "kind": "adminAuth",
+      "at": "2026-10-01T08:44:34.273Z"
+    },
+    {
+      "kind": "adminAuth",
+      "at": "2026-10-01T08:44:34.282Z"
+    }
+  ]
+}

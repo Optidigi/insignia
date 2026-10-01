@@ -1,4 +1,5 @@
 import type { AdminServices } from './contracts.js';
+import { createDiagnosticPreviewServices } from './preview.js';
 import { createProductionAdminServices } from './production.js';
 
 let services: AdminServices | undefined;
@@ -12,7 +13,10 @@ export function configureAdminServices(value: AdminServices): void {
 export function adminServices(): AdminServices | undefined {
   if (services) return services;
   try {
-    services = createProductionAdminServices();
+    services =
+      process.env.INSIGNIA_M5_002_DIAGNOSTIC === '1'
+        ? createDiagnosticPreviewServices(process.env)
+        : createProductionAdminServices();
   } catch {
     return undefined;
   }

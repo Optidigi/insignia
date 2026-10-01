@@ -1,0 +1,138 @@
+{
+  "schemaVersion": 1,
+  "appId": "429028933633",
+  "clientId": "1443cf6d03d39edae7c101a943c5c684",
+  "shop": "insignia-rewrite-dev.myshopify.com",
+  "limits": {
+    "adminRead": 20,
+    "adminAuth": 6,
+    "partnerRead": 0
+  },
+  "counts": {
+    "adminRead": 15,
+    "adminAuth": 6,
+    "partnerRead": 0
+  },
+  "events": [
+    {
+      "kind": "adminRead",
+      "purpose": "pre-preview fixed identity/grants via CLI",
+      "at": "2026-10-01T08:38:21.818Z"
+    },
+    {
+      "kind": "adminAuth",
+      "purpose": "conservative pre-preview CLI auth reservation",
+      "at": "2026-10-01T08:38:21.821Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "post-clean fixed identity/grants read",
+      "at": "2026-10-01T08:38:21.824Z",
+      "completion": "executed after stopping preview"
+    },
+    {
+      "kind": "adminAuth",
+      "purpose": "post-clean CLI auth reservation",
+      "at": "2026-10-01T08:38:21.827Z",
+      "completion": "executed after stopping preview"
+    },
+    {
+      "kind": "adminAuth",
+      "purpose": "conservative app-dev CLI authentication reservation",
+      "at": "2026-10-01T08:40:03.085Z"
+    },
+    {
+      "kind": "adminAuth",
+      "purpose": "app-dev-clean CLI authentication reservation",
+      "at": "2026-10-01T08:40:03.087Z",
+      "completion": "executed after stopping preview"
+    },
+    {
+      "kind": "adminAuth",
+      "purpose": "diagnostic online token-exchange attempt",
+      "at": "2026-10-01T08:40:45.645Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001StaffInstallation",
+      "at": "2026-10-01T08:40:45.999Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001StaffInstallation",
+      "at": "2026-10-01T08:40:46.227Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: InsigniaOwnedFunctions",
+      "at": "2026-10-01T08:40:46.507Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001Products",
+      "at": "2026-10-01T08:40:46.780Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001Products",
+      "at": "2026-10-01T08:40:47.038Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001StaffInstallation",
+      "at": "2026-10-01T08:41:44.575Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001Product",
+      "at": "2026-10-01T08:41:44.870Z"
+    },
+    {
+      "kind": "adminAuth",
+      "purpose": "diagnostic online token-exchange attempt",
+      "at": "2026-10-01T08:42:21.664Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001StaffInstallation",
+      "at": "2026-10-01T08:42:22.062Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001Product",
+      "at": "2026-10-01T08:42:22.310Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001ShopCurrency",
+      "at": "2026-10-01T08:42:22.568Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001StaffInstallation",
+      "at": "2026-10-01T08:42:22.866Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001Product",
+      "at": "2026-10-01T08:42:23.099Z"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "diagnostic GraphQL attempt: M5001ShopCurrency",
+      "at": "2026-10-01T08:42:23.329Z"
+    }
+  ],
+  "readAccounting": {
+    "actualDiagnosticAttempts": 13,
+    "CLIIdentityReads": 2,
+    "totalReadAttempts": 15
+  },
+  "authAccounting": {
+    "actualDiagnosticTokenExchangeAttempts": 2,
+    "conservativeCLIReservations": 4,
+    "totalAttemptsAndReservations": 6,
+    "CLIExchangeInternals": "not independently wire-observed"
+  },
+  "stoppedReason": "Authentication reservation ceiling exhausted; then exact retained-grant restoration mismatch. No further remote operation."
+}

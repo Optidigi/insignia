@@ -1,0 +1,54 @@
+$ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ corepack pnpm --filter @insignia/database test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-002-worktree/packages/database
+
+
+ Test Files  8 passed (8)
+      Tests  52 passed (52)
+   Start at  10:15:31
+   Duration  3.30s (tests 50%, import 37%, transform 12%, worker 1%)
+
+✔ overlapping distinct-key M5 creates serialize before the command FK lock upgrade (177.321245ms)
+✔ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (213.010798ms)
+✔ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (429.720907ms)
+✔ actual M4 prepare/advance over immutable M5 revision reports ready, conflict and hold truthfully (617.713422ms)
+✔ diagnostic preview requires accounting and HTTPS before any provider access (491.113803ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: synthetic-preview.myshopify.com, isOnline: true}
+✔ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (614.656591ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: m2eb170d5cc884a9b86f38bc60a11d83a.myshopify.com, isOnline: true}
+▶ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold
+  ✔ scheduled cancellation boundary 2026-09-30T23:59:59.999Z: allowed=true (12.582938ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.000Z: allowed=false (11.658501ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.001Z: allowed=false (11.634226ms)
+✔ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (446.685244ms)
+✔ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (3372.874453ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10015.790954

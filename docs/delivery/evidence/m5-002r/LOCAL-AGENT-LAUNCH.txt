@@ -1,0 +1,67 @@
+Continue EXISTING Optidigi/insignia PR #28 under
+M5-002R-CORRECTED-LIVE-QUALIFICATION.md.
+
+Principal verdict: CHANGES_REQUESTED for LIVE EVIDENCE ONLY.
+
+Reviewed refs:
+- base/effective merge base:
+  28e69864ebb9796504861a541363880cc86a82f8
+- reviewed head:
+  0b08c033d7a5609e2cfde219d5b76d4822d29723
+- reviewed tree:
+  19a031897116f1a2a11384afc040dbcce19fd9fe
+
+The source implementation is accepted as review-clean.
+Do not churn it unless the corrected live proof exposes a real defect.
+
+USE ACTUAL GPT-6.1-SOL HIGH THROUGHOUT.
+
+I authorize exactly ONE additional corrected `shopify app dev` preview on:
+- app 429028933633
+- client ID 1443cf6d03d39edae7c101a943c5c684
+- insignia-rewrite-dev.myshopify.com
+
+Use the FINAL corrected launcher:
+prepareBuiltPreviewRuntime(process.env) BEFORE importing built Astro output.
+
+Additional correction ceiling:
+- max 20 Admin GraphQL read attempts;
+- max 6 Admin auth/token-exchange attempts/reservations;
+- ZERO Partner reads;
+- ZERO Shopify Admin GraphQL mutations;
+- ZERO App Events;
+- ZERO product/metafield/publication/Market/inventory/cart/order mutations.
+
+Existing credential files may be read only by the sole operator:
+- /home/serveradmin/.local/share/insignia-public-app/server.env
+- /home/serveradmin/.local/share/insignia-public-app/partner-read.env
+
+Never print, commit, modify or export credentials/tokens.
+
+Required live results:
+- hydrated embedded cold launch;
+- deep link + reload;
+- real Polaris/Preact/Konva initialization;
+- real retained-product metadata;
+- disposable-local-PostgreSQL create/save/reload;
+- one CAS conflict;
+- one committed response-loss + exact save replay;
+- authenticated owned Transform/Validation Function ID/handle/API/query hashes;
+- DEV_PREVIEW_OBSERVED accepted only by diagnostic path;
+- production readiness still rejects without RELEASE_BOUND.
+
+Attempt mobile/cookie-blocked coverage where browser tooling actually supports it. Otherwise record NOT_RUN/PARTIAL honestly.
+
+After proof:
+run `shopify app dev clean`,
+verify no preview,
+verify original released version and exact retained grants.
+
+If cleanup is ambiguous, STOP.
+If the corrected preview reveals a source defect, fix/rereview/CI on the same PR but do NOT start another preview without new principal authorization.
+
+If only evidence changes, keep production source unchanged and rerun final-head CI for the new evidence head.
+
+Return PR #28 for principal rereview.
+
+No merge, activation, Function release, M6/M7, gate pass or launch is authorized.

@@ -1,0 +1,82 @@
+[ { server_version: '18.6 (Ubuntu 18.6-0ubuntu0.26.04.1)' } ]
+$ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+Applying: 20260929000100_durable_core.sql
+Applied: 20260929000100_durable_core.sql in 28.346325ms
+Applying: 20260929000200_runtime_ingress_credentials.sql
+Applied: 20260929000200_runtime_ingress_credentials.sql in 8.819222ms
+Applying: 20260929000300_authorization_generation.sql
+Applied: 20260929000300_authorization_generation.sql in 5.121283ms
+Applying: 20260929000400_accepted_quote.sql
+Applied: 20260929000400_accepted_quote.sql in 10.415593ms
+Applying: 20260930000100_m4_key_lifecycle.sql
+Applied: 20260930000100_m4_key_lifecycle.sql in 9.753349ms
+Applying: 20260930000200_publication_progress.sql
+Applied: 20260930000200_publication_progress.sql in 4.638725ms
+Applying: 20260930000300_m5_revision_geometry.sql
+Applied: 20260930000300_m5_revision_geometry.sql in 5.187686ms
+Applying: 20260930000400_m5_revision_presentation.sql
+Applied: 20260930000400_m5_revision_presentation.sql in 3.873111ms
+Applying: 20260930000500_m5_publication_source_version.sql
+Applied: 20260930000500_m5_publication_source_version.sql in 2.019766ms
+Applying: 20260930000600_m5_publication_intent_generation.sql
+Applied: 20260930000600_m5_publication_intent_generation.sql in 1.95772ms
+Applying: 20260930000700_m5_publication_intent_lookup.sql
+Applied: 20260930000700_m5_publication_intent_lookup.sql in 2.233548ms
+Applying: 20260930000800_m5_current_publication_pointer.sql
+Applied: 20260930000800_m5_current_publication_pointer.sql in 4.360277ms
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ corepack pnpm --filter @insignia/database test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-002-worktree/packages/database
+
+
+ Test Files  8 passed (8)
+      Tests  52 passed (52)
+   Start at  09:36:50
+   Duration  3.84s (tests 52%, import 35%, transform 13%, worker 1%)
+
+    Isolate  8 workers spawned · ~157ms startup each (spawn + environment, per file)
+             at least ~261ms faster with isolate: false — reuses workers across files instead of one per file
+
+✔ overlapping distinct-key M5 creates serialize before the command FK lock upgrade (203.851271ms)
+✔ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (174.227458ms)
+✔ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (489.473499ms)
+✔ actual M4 prepare/advance over immutable M5 revision reports ready, conflict and hold truthfully (705.015144ms)
+✔ diagnostic preview requires accounting and HTTPS before any provider access (507.887058ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: synthetic-preview.myshopify.com, isOnline: true}
+✔ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (910.958651ms)
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: m4cc2aa238c5940e79e06d6d8f9051fb5.myshopify.com, isOnline: true}
+▶ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold
+  ✔ scheduled cancellation boundary 2026-09-30T23:59:59.999Z: allowed=true (12.662512ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.000Z: allowed=false (12.175676ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.001Z: allowed=false (20.688505ms)
+✔ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (539.735307ms)
+✔ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (1609.957604ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8389.188173

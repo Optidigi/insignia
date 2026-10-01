@@ -7,12 +7,29 @@ import {
 } from './publication-admin.js';
 
 export type FunctionPresence = 'present' | 'missing' | 'duplicate' | 'drift' | 'unknown';
+export type OwnedFunctionObjectIdentity = Readonly<{
+  functionId: string;
+  handle: string;
+  apiType: 'cart_transform' | 'cart_checkout_validation';
+  apiVersion: string;
+  inputQuerySha256: string;
+}>;
+export type OwnedFunctionObjectObservation = Readonly<{
+  shopId: string;
+  installationGeneration: string;
+  appClientId: string;
+  observedAt: string;
+  transform: OwnedFunctionObjectIdentity | null;
+  validation: OwnedFunctionObjectIdentity | null;
+}>;
 export type FunctionOwnership = {
   transform: FunctionPresence;
   validation: FunctionPresence;
   /** Admin exposes no deployed Wasm hash or global propagation barrier. */
   runtimeIdentity: 'unverifiable';
   readiness: 'unknown';
+  /** Owned objects exist independently of active Transform/Validation deployments; no Wasm claim. */
+  observation: OwnedFunctionObjectObservation | null;
 };
 export type ExpectedFunctionOwnership = {
   /** The installed app's client ID, not an arbitrary merchant-supplied app key. */
@@ -27,6 +44,7 @@ const unknown: FunctionOwnership = {
   validation: 'unknown',
   runtimeIdentity: 'unverifiable',
   readiness: 'unknown',
+  observation: null,
 };
 const handles = {
   transform: 'insignia-experimental-v2-transform',
@@ -49,7 +67,10 @@ function hash(value: string): string {
 }
 
 /** Read-only: an absent/partial/provider-uncertain observation never becomes READY. */
-export function createFunctionOwnershipReconciler(config: { transport: PublicationAdminTransport }) {
+export function createFunctionOwnershipReconciler(config: {
+  transport: PublicationAdminTransport;
+  clock?: () => Date;
+}) {
   return {
     async read(tenant: PublicationTenant, expected: ExpectedFunctionOwnership): Promise<FunctionOwnership> {
       if (
@@ -87,8 +108,39 @@ export function createFunctionOwnershipReconciler(config: { transport: Publicati
       const functions = nodes(data.shopifyFunctions);
       const transforms = nodes(data.cartTransforms);
       const validations = nodes(data.validations);
-      if (!functions || !transforms || !validations) return unknown;
+      if (!functions) return unknown;
       const owned = (handle: string) => functions.filter((item) => item.handle === handle);
+      const objectIdentity = (kind: 'transform' | 'validation'): OwnedFunctionObjectIdentity | null => {
+        const matches = owned(handles[kind]);
+        const found = matches[0];
+        if (
+          matches.length !== 1 ||
+          !found ||
+          found.appKey !== expected.appKey ||
+          typeof found.id !== 'string' ||
+          !found.id ||
+          typeof found.apiVersion !== 'string' ||
+          typeof found.inputQuery !== 'string' ||
+          (found.apiType !== 'cart_transform' && found.apiType !== 'cart_checkout_validation')
+        )
+          return null;
+        return Object.freeze({
+          functionId: found.id,
+          handle: handles[kind],
+          apiType: found.apiType,
+          apiVersion: found.apiVersion,
+          inputQuerySha256: hash(found.inputQuery),
+        });
+      };
+      const observation = Object.freeze({
+        shopId: tenant.shopId,
+        installationGeneration: tenant.installationGeneration,
+        appClientId: expected.appKey,
+        observedAt: (config.clock ?? (() => new Date()))().toISOString(),
+        transform: objectIdentity('transform'),
+        validation: objectIdentity('validation'),
+      });
+      if (!transforms || !validations) return { ...unknown, observation };
       const status = (kind: 'transform' | 'validation'): FunctionPresence => {
         const matches = owned(handles[kind]);
         if (matches.length > 1) return 'duplicate';
@@ -132,6 +184,7 @@ export function createFunctionOwnershipReconciler(config: { transport: Publicati
         validation: status('validation'),
         runtimeIdentity: 'unverifiable',
         readiness: 'unknown',
+        observation,
       };
     },
   };

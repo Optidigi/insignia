@@ -1,0 +1,78 @@
+{
+  "qualification": "SYNTHETIC ONLY; no live Function ID/query binding obtained",
+  "expectedBuild": {
+    "shopId": "11111111-1111-4111-8111-111111111111",
+    "installationGeneration": "1",
+    "appClientId": "synthetic-client",
+    "schemaVersion": 1,
+    "sourceCommit": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "appVersionRef": null,
+    "devPreviewRef": "synthetic-dev-preview",
+    "transform": {
+      "functionId": "synthetic-transform",
+      "handle": "insignia-experimental-v2-transform",
+      "apiType": "cart_transform",
+      "apiVersion": "2026-07",
+      "inputQuerySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "wasmSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "validation": {
+      "functionId": "synthetic-validation",
+      "handle": "insignia-experimental-v2-validation",
+      "apiType": "cart_checkout_validation",
+      "apiVersion": "2026-07",
+      "inputQuerySha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "wasmSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    }
+  },
+  "attestation": {
+    "shopId": "11111111-1111-4111-8111-111111111111",
+    "installationGeneration": "1",
+    "appClientId": "synthetic-client",
+    "schemaVersion": 1,
+    "sourceCommit": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "appVersionRef": null,
+    "devPreviewRef": "synthetic-dev-preview",
+    "transform": {
+      "functionId": "synthetic-transform",
+      "handle": "insignia-experimental-v2-transform",
+      "apiType": "cart_transform",
+      "apiVersion": "2026-07",
+      "inputQuerySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "wasmSha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "validation": {
+      "functionId": "synthetic-validation",
+      "handle": "insignia-experimental-v2-validation",
+      "apiType": "cart_checkout_validation",
+      "apiVersion": "2026-07",
+      "inputQuerySha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "wasmSha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    },
+    "evidenceKind": "DEV_PREVIEW_OBSERVED",
+    "observedAt": "2026-09-30T23:00:00.000Z",
+    "expiresAt": "2026-09-30T23:05:00.000Z"
+  },
+  "observation": {
+    "shopId": "11111111-1111-4111-8111-111111111111",
+    "installationGeneration": "1",
+    "appClientId": "synthetic-client",
+    "observedAt": "2026-09-30T23:00:00.000Z",
+    "transform": {
+      "functionId": "synthetic-transform",
+      "handle": "insignia-experimental-v2-transform",
+      "apiType": "cart_transform",
+      "apiVersion": "2026-07",
+      "inputQuerySha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "validation": {
+      "functionId": "synthetic-validation",
+      "handle": "insignia-experimental-v2-validation",
+      "apiType": "cart_checkout_validation",
+      "apiVersion": "2026-07",
+      "inputQuerySha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  "developmentDiagnostic": "PASS",
+  "productionReadiness": "REJECTED"
+}

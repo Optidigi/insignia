@@ -1,0 +1,18 @@
+{
+  "sourceChanged": false,
+  "testDateProposal": "NOT ADOPTED; temporary local test-only change proved red/green, then restored exact reviewed test source",
+  "runtimeWorkflowFirstFailure": 36839365228,
+  "runtimeFailure": "production-composition current fixture expired 2026-10-01; real production clock correctly fails closed; local full-module red reproduced",
+  "foundationWorkflowFirstFailure": 36839365241,
+  "foundationFailure": "publication success / ambiguous edits: centerX remained0.5 after filling0.6, waitForFunction timeout at editor-browser.test.mjs1094",
+  "newLocalStress": {
+    "command": "pnpm test:m5-stress",
+    "retries": 0,
+    "tests": 40,
+    "pass": 39,
+    "fail": 1,
+    "firstFailedCase": "iteration7 dirty/success before publication baseline; same0.5 observation",
+    "cause": "unestablished; no passing retry substituted for failure"
+  },
+  "authorityDisposition": "Live-evidence-only correction; no production source churn. Preserve failures and request principal direction; no new preview."
+}

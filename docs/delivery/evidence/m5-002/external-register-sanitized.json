@@ -1,0 +1,39 @@
+{
+  "schemaVersion": 1,
+  "appId": "429028933633",
+  "clientId": "1443cf6d03d39edae7c101a943c5c684",
+  "shop": "insignia-rewrite-dev.myshopify.com",
+  "limits": {
+    "adminRead": 30,
+    "adminAuth": 4,
+    "partnerRead": 4
+  },
+  "counts": {
+    "adminRead": 2,
+    "adminAuth": 2,
+    "partnerRead": 0
+  },
+  "events": [
+    {
+      "kind": "adminRead",
+      "purpose": "pre-preview fixed identity via CLI",
+      "at": "2026-09-30T22:24:00.303342+00:00"
+    },
+    {
+      "kind": "adminAuth",
+      "purpose": "conservative CLI identity authentication reservation; actual exchange opaque",
+      "at": "2026-09-30T22:24:00.303369+00:00"
+    },
+    {
+      "kind": "adminAuth",
+      "purpose": "Conservative CLI post-clean authentication reservation; actual exchange opaque",
+      "state": "executed",
+      "actualExchangeCount": "opaque; one conservative reservation"
+    },
+    {
+      "kind": "adminRead",
+      "purpose": "one fixed post-clean identity/grant read via CLI",
+      "at": "2026-09-30T23:32:39.914469+00:00"
+    }
+  ]
+}

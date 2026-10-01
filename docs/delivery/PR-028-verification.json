@@ -1,0 +1,25 @@
+{
+  "pr": 28,
+  "base": "28e69864ebb9796504861a541363880cc86a82f8",
+  "reviewed_head": "0b08c033d7a5609e2cfde219d5b76d4822d29723",
+  "reviewed_tree": "19a031897116f1a2a11384afc040dbcce19fd9fe",
+  "synthetic_merge": "d91c152fec6691a52a564c26d553a8bbd7010f3c",
+  "workflow_runs": [
+    36792728895,
+    36792728928,
+    36792728359,
+    36792728372,
+    36792728329,
+    36792728333,
+    36792728384,
+    36792728328,
+    36792728352,
+    36792728375
+  ],
+  "source_disposition": "no material source defect found",
+  "blocking_finding": "final runtime correction never exercised live; hydration/auth/DB/Function binding unproved",
+  "live_preview_source": "dd880d36c9b653d83ec84ccddf7c202585b06408",
+  "final_runtime_correction_head": "0b08c033d7a5609e2cfde219d5b76d4822d29723",
+  "prior_cleanup": "released version restored and nine grants retained",
+  "native_github_review": "HTTP 403; not posted"
+}

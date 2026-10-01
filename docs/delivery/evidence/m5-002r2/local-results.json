@@ -1,0 +1,155 @@
+{
+  "authority": "owner explicit local-only M5-002R2 message, 2026-10-01",
+  "reviewedBase": "28e69864ebb9796504861a541363880cc86a82f8",
+  "reviewedHead": "bd32f9763c033586374d9f072d01fb59d5a3ad1e",
+  "reviewedTree": "217db18d714daf26365f4935579b3f1aaed351f6",
+  "rootRuntime": {
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "high",
+    "evidence": "trusted T3 Codex runtime message; project historical config is superseded by actual launch"
+  },
+  "sourceSha256": {
+    "apps/web/src/server/admin/production.ts": "cc2487cf7976786ac1897493e40b12540032ba178af831088e86cf23d879e52b",
+    "apps/web/src/islands/MerchantConfigEditor.tsx": "79f4633ec9587e554fed398ff52091ed6bb23700528f1b9ab544a7f4420603ca",
+    "apps/web/test/admin/production-composition.test.mjs": "042bd71671abafc03f0087f95581efeb7ca56621ca7a78597414a8376b71d8f9",
+    "apps/web/test/admin/editor-browser.test.mjs": "03fb3f7dae9d17cf5cfbc642eac7f8b1dad0fba1fce4aba6b6a74c5c38ad84e8"
+  },
+  "localResults": {
+    "rootExit": 0,
+    "postgresExit": 0,
+    "postgresVersion": "18.6",
+    "databaseCoreTests": 52,
+    "httpCompositionTestsIncludingBoundarySubtests": 11,
+    "stressExit": 0,
+    "stressPass": 100,
+    "stressFail": 0,
+    "stressRetries": 0,
+    "stressCombinations": {
+      "dirty/success": 25,
+      "dirty/failed": 25,
+      "ambiguous/success": 25,
+      "ambiguous/failed": 25
+    },
+    "rendererControl": "expected actual-module rejection; wrapper exit 0"
+  },
+  "externalOperations": {
+    "Admin": 0,
+    "Partner": 0,
+    "ShopifyCLI": 0,
+    "ownerCredentialReads": 0
+  },
+  "grantsDisposition": "owner retains nine grants as dev-store preview state; no new remote verification or repair",
+  "FunctionDisposition": "DEV_PREVIEW_OBSERVED remains live-unqualified; production still requires RELEASE_BOUND",
+  "attachment": {
+    "sha256": "d5e973471f35be8516122f9865a53baac1f91c33e92b931d6e3f8e516d938d39",
+    "contents": "old M5-002R package, not requested R2 brief; explicit owner message governs"
+  },
+  "logExport": {
+    "root.log": {
+      "rawSha256": "4ebddc6343994d2d2aba0f5a0483bd6d9170a640bc36ff378c23c159ab609461",
+      "exportSha256": "54c4747d0ad7fa7789ed76382b2298a3ee31a6e41b0b3ad4218113b3cdb7239a",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "renderer-control.log": {
+      "rawSha256": "e83d86e5950554b24e6ff77e59ff429be4c393688ffc166a4649c751d2bc480b",
+      "exportSha256": "89a42532b146edb7900b27095301eb65aff4b7f232ab7389281ca8adb40c3d54",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "postgres.log": {
+      "rawSha256": "21158c26f778e5e49a031fb6cf3692ffd7ed876329ca9b37299d01171e0c0301",
+      "exportSha256": "21158c26f778e5e49a031fb6cf3692ffd7ed876329ca9b37299d01171e0c0301",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "clock-red.log": {
+      "rawSha256": "265480c3963ff209df57f33f6d342f085a49e046bbb053a07c0bcb89d460c549",
+      "exportSha256": "090123f9dce13419203622b1b48efe241e3034e4a09dd0f73958d2346cb5ab46",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "input-green.log": {
+      "rawSha256": "770bd8304bf6c37432a5e9fb09984892cbccaffc211c8a564dd644038373cdd0",
+      "exportSha256": "770bd8304bf6c37432a5e9fb09984892cbccaffc211c8a564dd644038373cdd0",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "stress-100.log": {
+      "rawSha256": "0ee073de05877f0c764791f68ef48d4beb1b4c4b286cd3607d4c5241cdf43b92",
+      "exportSha256": "0ee073de05877f0c764791f68ef48d4beb1b4c4b286cd3607d4c5241cdf43b92",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "input-red.log": {
+      "rawSha256": "c62301960949c7a6bb5e68f2bd045341093676d5c2b5753bc73bc60bce6b1ab4",
+      "exportSha256": "b8c4c0b155cd1a96fb497e40294f8506a20f44795fd58f6c28ecb5bbdfb4d1fc",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "clock-green.log": {
+      "rawSha256": "3933752e05c6c73c565a7f7fc3d0c7e55c2f404f1a146a3de23a8b821df1536f",
+      "exportSha256": "3933752e05c6c73c565a7f7fc3d0c7e55c2f404f1a146a3de23a8b821df1536f",
+      "normalization": "trailing whitespace only; raw logs retained in local handoff"
+    },
+    "root-final.log": {
+      "rawSha256": "67e39974f5a80d92775fae0994c85416593f2af78b7de8683f7275cae1446161",
+      "exportSha256": "3891a8b223075e56cdca4232c8040ec8fb9fe4aa5c71867a9bcc86d68d70938a",
+      "normalization": "trailing whitespace only; raw retained in local handoff",
+      "stage": "final buffered source"
+    },
+    "postgres-final.log": {
+      "rawSha256": "ee64b7052aed7fbd9e25d88f76c53eb628742acfca48744c2a5d798d90bd2ceb",
+      "exportSha256": "ee64b7052aed7fbd9e25d88f76c53eb628742acfca48744c2a5d798d90bd2ceb",
+      "normalization": "trailing whitespace only; raw retained in local handoff",
+      "stage": "final buffered source"
+    },
+    "stress-final-100.log": {
+      "rawSha256": "790777f00451688a79a469d45776cff3e030507ef9a9363d017f3973ae137074",
+      "exportSha256": "790777f00451688a79a469d45776cff3e030507ef9a9363d017f3973ae137074",
+      "normalization": "trailing whitespace only; raw retained in local handoff",
+      "stage": "final buffered source"
+    },
+    "renderer-final-control.log": {
+      "rawSha256": "ec7903dcb4c2c11dc816f231d7bc05796c9a9ae6b127192fbe6319fcc4cbd3ef",
+      "exportSha256": "557aeee05ea7de4aa2f232ca3974488c3d6b36ac000f7252a00fbc54122ccb47",
+      "normalization": "trailing whitespace only; raw retained in local handoff",
+      "stage": "final buffered source"
+    },
+    "fraction-red.log": {
+      "rawSha256": "1a9e47d92b1bb9314fe46dd7b32cdd7910d099fe7fb05ab4baf8ba2efef674f8",
+      "exportSha256": "59ffab0f8b93722ec452e3a623088c787d157b4e07b883552414e742a9150812",
+      "normalization": "trailing whitespace only; raw retained in local handoff",
+      "stage": "intermediate keyboard guard only (before raw-text buffer)"
+    },
+    "fraction-green.log": {
+      "rawSha256": "f0f643fe231a294e3636a18c29fa6092d4561379dc39a3d3955d69362a2d0ea2",
+      "exportSha256": "f0f643fe231a294e3636a18c29fa6092d4561379dc39a3d3955d69362a2d0ea2",
+      "normalization": "trailing whitespace only; raw retained in local handoff",
+      "stage": "final buffered source"
+    },
+    "keyboard-red.log": {
+      "exportSha256": "db80baf7ae401c514259d632f2b2be120bfa8523674c7e6454924397b72b81ce",
+      "stage": "initial onInput repro or intermediate guard correction; superseded by fraction controls"
+    },
+    "keyboard-green.log": {
+      "exportSha256": "f1e43673ae8be89aa20642e46fc8a2c70861802d426d26d3f01ab7bfc9bfd9b7",
+      "stage": "initial onInput repro or intermediate guard correction; superseded by fraction controls"
+    }
+  },
+  "initialSourceSha256": {
+    "apps/web/src/server/admin/production.ts": "cc2487cf7976786ac1897493e40b12540032ba178af831088e86cf23d879e52b",
+    "apps/web/src/islands/MerchantConfigEditor.tsx": "550f05d9ffc1fe62de61c7b2b64afbc6040ca5158c36c8d9f90471d01dd18b40",
+    "apps/web/test/admin/production-composition.test.mjs": "042bd71671abafc03f0087f95581efeb7ca56621ca7a78597414a8376b71d8f9",
+    "apps/web/test/admin/editor-browser.test.mjs": "8d4f221af51bc36f064ca7aa210a17aa102d0cf6547d9de5a0b033dc9897326b"
+  },
+  "initialCandidateHead": "ed4eb4c33df58343aac8989dfcde6e09fb29dcb2",
+  "finalVerification": "buffered numeric input with synchronous external-owner synchronization; production clock source unchanged; exact final commit/CI/reviews in PR body",
+  "finalLogs": [
+    "root-final.log",
+    "postgres-final.log",
+    "stress-final-100.log",
+    "renderer-final-control.log",
+    "fraction-green.log"
+  ],
+  "initialLogs": [
+    "root.log",
+    "postgres.log",
+    "stress-100.log",
+    "renderer-control.log",
+    "input-green.log"
+  ]
+}

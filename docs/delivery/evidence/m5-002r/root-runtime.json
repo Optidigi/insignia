@@ -1,0 +1,7 @@
+{
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "observableSource": "trusted T3 Code same-turn runtime_info",
+  "role": "sole orchestrator/integrator/Shopify operator; evidence only, no implementation writer",
+  "isolation": "root host danger-full-access; fresh reviewers explicit restricted read-only Codex CLI; outside credential files not proven unreadable, reading them prohibited"
+}

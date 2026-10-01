@@ -1,0 +1,15 @@
+{
+  "sessionId": "01a0f6ac-6e4c-7551-a32e-cfb33344dd82",
+  "actualTurnContexts": [
+    {
+      "cwd": "/home/serveradmin/insignia-m5-002-worktree",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      }
+    }
+  ],
+  "observableSource": "selected real Codex same-launch rollout turn_context; no raw conversation or credentials exported"
+}

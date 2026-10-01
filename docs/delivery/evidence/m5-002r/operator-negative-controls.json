@@ -1,0 +1,7 @@
+{
+  "commands": "import correction guard with synthetic fetch; assert rejects for different shop, GraphQL mutation and App Events route",
+  "deniedCases": 3,
+  "underlyingFetches": 0,
+  "productionSourceChanged": false,
+  "scope": "temporary operator transport only, not application fixture data"
+}

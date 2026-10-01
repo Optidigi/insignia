@@ -1,0 +1,9 @@
+{
+  "reviewedHead": "0b08c033d7a5609e2cfde219d5b76d4822d29723",
+  "reviewedTree": "19a031897116f1a2a11384afc040dbcce19fd9fe",
+  "command": "git diff reviewedHead -- apps packages crates extensions scripts .github .agents .codex AGENTS.md package.json pnpm-lock.yaml shopify.app.m5-002.toml",
+  "result": "empty",
+  "currentTrackedChanges": "docs/delivery only; new evidence/prompt/review docs also under docs/delivery",
+  "planSha256": "cd59fd361d69adc3f307ee9b88ba1f5509ffeefb68aea90a15f9b88757b4e792",
+  "ledgerSha256": "3d1e8fe50c948822ba3403facfc142402d4fc6631d8d667a2e3341ff6cdbd802"
+}

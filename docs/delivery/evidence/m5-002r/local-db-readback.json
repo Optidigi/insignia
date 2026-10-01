@@ -1,0 +1,19 @@
+{
+  "database": "insignia_m5002_diagnostic",
+  "prestate": {
+    "shops": 0,
+    "configs": 0
+  },
+  "poststate": [
+    {
+      "external_product_id": "10485042479387",
+      "draft_version": "1",
+      "draft_schema_version": "m3-config-draft-v1"
+    }
+  ],
+  "scope": "disposable local only; no merchant write",
+  "saved": false,
+  "casConflict": false,
+  "responseLoss": false,
+  "exactReplay": false
+}

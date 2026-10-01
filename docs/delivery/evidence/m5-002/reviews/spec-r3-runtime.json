@@ -1,0 +1,14 @@
+{
+  "sessionId": "01a0f494-8b70-7d80-ae6a-1cd72424a302",
+  "launch": [
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "cwd": "/home/serveradmin/insignia-m5-002-worktree"
+    }
+  ]
+}

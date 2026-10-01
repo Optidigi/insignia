@@ -1,0 +1,25 @@
+{
+  "role": "Writer A",
+  "session": {
+    "id": "01a0f463-d4ec-7413-b2da-547b3e4645bd",
+    "cwd": "/home/serveradmin/insignia-m5-002-artifact-worktree",
+    "cli_version": "0.159.2",
+    "source": "exec",
+    "model_provider": "openai"
+  },
+  "turnContexts": [
+    {
+      "cwd": "/home/serveradmin/insignia-m5-002-artifact-worktree",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "workspace-write",
+        "network_access": false,
+        "exclude_tmpdir_env_var": false,
+        "exclude_slash_tmp": false
+      }
+    }
+  ],
+  "isolationLimitation": "Filesystem sandbox restricts writes, not all outside reads. Credentials prohibited by task and not used."
+}

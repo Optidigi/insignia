@@ -11,6 +11,7 @@ on:
       - 'packages/visualizer/**'
       - 'packages/contracts/**'
       - 'packages/observability/**'
+      - 'scripts/m5-002/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/m3-runtime.yml'
@@ -26,6 +27,7 @@ on:
       - 'packages/visualizer/**'
       - 'packages/contracts/**'
       - 'packages/observability/**'
+      - 'scripts/m5-002/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/m3-runtime.yml'
@@ -76,7 +78,7 @@ jobs:
         run: node --test test/shopify-webhook.test.mjs
       - name: M5 Admin editor and publication with PostgreSQL
         working-directory: apps/web
-        run: node --test test/admin/merchant-config.test.mjs test/admin/merchant-publication.test.mjs test/admin/production-composition.test.mjs
+        run: node --test test/admin/merchant-config.test.mjs test/admin/merchant-publication.test.mjs test/admin/production-composition.test.mjs test/admin/preview-composition.test.mjs
       - name: Rehearse disposable migration down and up
         run: |
           corepack pnpm exec dbmate --no-dump-schema --migrations-dir packages/database/migrations rollback

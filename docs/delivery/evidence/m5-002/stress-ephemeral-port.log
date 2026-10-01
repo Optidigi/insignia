@@ -1,0 +1,49 @@
+$ M5_PUBLICATION_STRESS_ITERATIONS=10 corepack pnpm --filter @insignia/web exec node --test --test-name-pattern="publication (success|failed) preserves" test/admin/editor-browser.test.mjs
+✔ publication success preserves dirty local edits and exact save recovery [1/10] (939.589665ms)
+✔ publication failed preserves dirty local edits and exact save recovery [1/10] (876.543719ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [1/10] (941.399871ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [1/10] (915.222687ms)
+✔ publication success preserves dirty local edits and exact save recovery [2/10] (859.175774ms)
+✔ publication failed preserves dirty local edits and exact save recovery [2/10] (838.134378ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [2/10] (909.997127ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [2/10] (882.174888ms)
+✔ publication success preserves dirty local edits and exact save recovery [3/10] (820.014943ms)
+✔ publication failed preserves dirty local edits and exact save recovery [3/10] (856.680404ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [3/10] (992.430799ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [3/10] (901.451419ms)
+✔ publication success preserves dirty local edits and exact save recovery [4/10] (834.025166ms)
+✔ publication failed preserves dirty local edits and exact save recovery [4/10] (832.033554ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [4/10] (1019.984134ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [4/10] (957.640217ms)
+✔ publication success preserves dirty local edits and exact save recovery [5/10] (823.057739ms)
+✔ publication failed preserves dirty local edits and exact save recovery [5/10] (848.8982ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [5/10] (917.697115ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [5/10] (931.796295ms)
+✔ publication success preserves dirty local edits and exact save recovery [6/10] (868.783022ms)
+✔ publication failed preserves dirty local edits and exact save recovery [6/10] (854.218376ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [6/10] (944.611495ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [6/10] (911.27955ms)
+✔ publication success preserves dirty local edits and exact save recovery [7/10] (845.078741ms)
+✔ publication failed preserves dirty local edits and exact save recovery [7/10] (819.697481ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [7/10] (865.055566ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [7/10] (918.253096ms)
+✔ publication success preserves dirty local edits and exact save recovery [8/10] (837.427895ms)
+✔ publication failed preserves dirty local edits and exact save recovery [8/10] (874.364385ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [8/10] (872.309515ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [8/10] (900.897878ms)
+✔ publication success preserves dirty local edits and exact save recovery [9/10] (799.55813ms)
+✔ publication failed preserves dirty local edits and exact save recovery [9/10] (809.782098ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [9/10] (889.387477ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [9/10] (882.293155ms)
+✔ publication success preserves dirty local edits and exact save recovery [10/10] (840.034575ms)
+✔ publication failed preserves dirty local edits and exact save recovery [10/10] (862.172443ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [10/10] (925.200721ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [10/10] (959.189733ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 40
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 35848.065176

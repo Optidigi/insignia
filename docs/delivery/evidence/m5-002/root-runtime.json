@@ -1,0 +1,8 @@
+{
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "observableSource": "trusted T3 Code same-turn runtime_info, current root orchestrator/integrator",
+  "rootRole": "integrator, Writer B source and sole remote operator",
+  "workerRoute": "explicit Codex CLI gpt-6.1-sol/high in restricted sessions; Writer A separate worktree, read-only independent reviewers",
+  "limitation": "root host danger-full-access; writer sandbox restricts writes, not all outside reads; no provider-private attestation claimed"
+}

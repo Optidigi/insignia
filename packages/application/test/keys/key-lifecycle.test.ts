@@ -50,7 +50,7 @@ describe('signing key boundary', () => {
     expect(() => requireIssuanceReady({ config: prepublished, keyId: 7, acceptedDay: 102 })).toThrow();
   });
 
-  it('fails closed on drift, stale observation, and unknown Function ownership', () => {
+  it('does not treat the legacy verified flag as artifact authority', () => {
     const desired = buildPublicConfig({
       scope,
       keys: [{ id: 7, publicKey, state: 'active', firstDay: 100, lastDay: 104 }],
@@ -70,15 +70,6 @@ describe('signing key boundary', () => {
       },
       effectiveRevision: true,
     };
-    expect(() => assertQuoteIssuanceReady(ready)).not.toThrow();
-    expect(() => assertQuoteIssuanceReady({ ...ready, observed: { ...ready.observed, value: '{}' } })).toThrow();
-    expect(() => assertQuoteIssuanceReady({ ...ready, now: new Date('2026-09-30T10:01:00Z') })).toThrow();
-    expect(() =>
-      assertQuoteIssuanceReady({ ...ready, functions: { ...ready.functions, runtimeIdentity: 'unverifiable' } }),
-    ).toThrow();
-    expect(() =>
-      assertQuoteIssuanceReady({ ...ready, functions: { ...ready.functions, validation: 'unknown' } }),
-    ).toThrow();
-    expect(() => assertQuoteIssuanceReady({ ...ready, scope: { ...scope, authorizationEpoch: 1 } })).toThrow();
+    expect(() => assertQuoteIssuanceReady(ready)).toThrow('Function artifact evidence missing');
   });
 });

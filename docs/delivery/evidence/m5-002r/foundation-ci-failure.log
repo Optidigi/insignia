@@ -1,0 +1,1130 @@
+foundation	Build and check actual workspace	﻿2026-10-01T08:56:05.5439770Z ##[group]Run corepack pnpm check
+foundation	Build and check actual workspace	2026-10-01T08:56:05.5440133Z ^[[36;1mcorepack pnpm check^[[0m
+foundation	Build and check actual workspace	2026-10-01T08:56:05.5506723Z shell: /usr/bin/bash -e {0}
+foundation	Build and check actual workspace	2026-10-01T08:56:05.5507038Z env:
+foundation	Build and check actual workspace	2026-10-01T08:56:05.5507286Z   RUSTUP_TOOLCHAIN: 1.98.1
+foundation	Build and check actual workspace	2026-10-01T08:56:05.5507583Z ##[endgroup]
+foundation	Build and check actual workspace	2026-10-01T08:56:05.6342400Z $ corepack pnpm check:style && corepack pnpm build && corepack pnpm test:unit && corepack pnpm test:m5-operator && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && python3 -B scripts/boundaries/check-cargo-workspace.py && corepack pnpm check:rust && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 python3 -B scripts/m4-002/replay-production-vectors.py && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/m4-003/replay-public-config.mjs && corepack pnpm test:browser && python3 -B spikes/m0-007/scripts/check-history.py && python3 -B spikes/m0-014/scripts/check-live-setup.py && python3 -B scripts/m1-functions/artifact-manifest.py
+foundation	Build and check actual workspace	2026-10-01T08:56:05.7067944Z $ biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1227719Z apps/web/src/server/admin/production.ts:67:57 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1228508Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1228890Z   i Template literals are preferred over string concatenation.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1229519Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1230070Z     65 │   const appOrigin = required(env, 'APP_URL');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1231085Z     66 │   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1232329Z   > 67 │   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1233402Z        │                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1234701Z     68 │   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1236203Z     69 │   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1237024Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1237413Z   i Unsafe fix: Use a template literal.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1238335Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1239034Z      65  65 │     const appOrigin = required(env, 'APP_URL');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1239860Z      66  66 │     const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1241531Z      67     │ - ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·'gid://shopify/App/'·+·appId·:·null;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1243135Z          67 │ + ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·`gid://shopify/App/${appId}`·:·null;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1244679Z      68  68 │     const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1246243Z      69  69 │     const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1247078Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1247243Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1248135Z apps/web/src/server/admin/production.ts:86:54 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1248817Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1249176Z   i Template literals are preferred over string concatenation.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1249915Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1250752Z     84 │       installationGeneration: actor.installationGeneration,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1251803Z     85 │     });
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1252893Z   > 86 │     if (!scope || scope.shopDomain !== actor.shop || 'gid://shopify/Shop/' + scope.shopifyShopId !== actor.shopId)
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1254163Z        │                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1255176Z     87 │       throw new Error('Admin installation changed');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1255765Z     88 │   }
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1256076Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1256454Z   i Unsafe fix: Use a template literal.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1256895Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1257559Z      84  84 │         installationGeneration: actor.installationGeneration,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1258244Z      85  85 │       });
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1259451Z      86     │ - ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·'gid://shopify/Shop/'·+·scope.shopifyShopId·!==·actor.shopId)
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1261427Z          86 │ + ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·`gid://shopify/Shop/${scope.shopifyShopId}`·!==·actor.shopId)
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1263021Z      87  87 │         throw new Error('Admin installation changed');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1263637Z      88  88 │     }
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1263966Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1264133Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1265025Z apps/web/src/server/admin/production.ts:211:51 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1265821Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1266188Z   i Template literals are preferred over string concatenation.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1266761Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1267429Z     209 │           const provider = await shopify.readInstallation(online);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1268491Z     210 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1269899Z   > 211 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1271398Z         │                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1272303Z     212 │             throw new Error('Tenant installation mismatch');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1273568Z     213 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1274358Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1274735Z   i Unsafe fix: Use a template literal.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1275174Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1275864Z     209 209 │             const provider = await shopify.readInstallation(online);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1277085Z     210 210 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1278771Z     211     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1279897Z         211 │ + ··········if·(!tenant·||·!tenant.shopifyShopId·||·`gid://shopify/Shop/${tenant.shopifyShopId}`·!==·provider.shopId)
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1281508Z     212 212 │               throw new Error('Tenant installation mismatch');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1282751Z     213 213 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1283564Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1283742Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1284647Z scripts/m5-002/preview-server.mjs:30:15 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1285344Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1285718Z   i Template literals are preferred over string concatenation.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1286292Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1287264Z     28 │   ['VALIDATION', 'extensions/insignia-cart-validation/src/cart_validations_generate_run.graphql'],
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1288161Z     29 │ ])
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1288937Z   > 30 │   process.env['INSIGNIA_M5_002_' + kind + '_QUERY_HASH'] = createHash('sha256')
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1289877Z        │               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1290839Z     31 │     .update(readFileSync(resolve(root, path)))
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1291455Z     32 │     .digest('hex');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1292147Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1292396Z   i Unsafe fix: Use a template literal.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1292668Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1293259Z     28 28 │     ['VALIDATION', 'extensions/insignia-cart-validation/src/cart_validations_generate_run.graphql'],
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1293941Z     29 29 │   ])
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1294583Z     30    │ - ··process.env['INSIGNIA_M5_002_'·+·kind·+·'_QUERY_HASH']·=·createHash('sha256')
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1295782Z        30 │ + ··process.env[`INSIGNIA_M5_002_${kind}_QUERY_HASH`]·=·createHash('sha256')
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1296728Z     31 31 │       .update(readFileSync(resolve(root, path)))
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1297287Z     32 32 │       .digest('hex');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1297535Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1297639Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1298267Z scripts/m5-002/read-register.mjs:34:33 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1298699Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1298997Z   i Template literals are preferred over string concatenation.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1299599Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1300219Z     32 │     const descriptor = openSync(register, 'w', 0o600);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1302213Z     33 │     try {
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1303017Z   > 34 │       writeFileSync(descriptor, JSON.stringify(state, null, 2) + '\n');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1303956Z        │                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1304635Z     35 │       fsyncSync(descriptor);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1305146Z     36 │     } finally {
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1305504Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1305899Z   i Unsafe fix: Use a template literal.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1306356Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1306957Z     32 32 │       const descriptor = openSync(register, 'w', 0o600);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1307588Z     33 33 │       try {
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1308691Z     34    │ - ······writeFileSync(descriptor,·JSON.stringify(state,·null,·2)·+·'\n');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1309851Z        34 │ + ······writeFileSync(descriptor,·`${JSON.stringify(state,·null,·2)}\n`);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1310962Z     35 35 │         fsyncSync(descriptor);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1311519Z     36 36 │       } finally {
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1311905Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1312068Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1312966Z apps/web/src/server/admin/auth.ts:48:48 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1313651Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1313858Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1314278Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1314781Z     46 │     let identity: VerifiedAdminIdentity;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1315354Z     47 │     try {
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1316010Z   > 48 │       identity = await port.verifySessionToken(match[1]!);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1316812Z        │                                                ^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1317362Z     49 │     } catch {
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1317809Z     50 │       return null;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1318213Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1318383Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1319257Z apps/web/src/server/admin/auth.ts:61:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1319959Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1320169Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1320759Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1321104Z     59 │     )
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1321494Z     60 │       return null;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1322276Z   > 61 │     const grant = await port.exchangeOnlineGrant(match[1]!, identity);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1323155Z        │                                                  ^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1323710Z     62 │     if (
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1324217Z     63 │       grant.shop !== identity.shop ||
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1324689Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1324851Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1325737Z apps/web/src/server/admin/preview.ts:109:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1326447Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1326650Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1327060Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1327668Z     107 │             .then((found) => (found ? project(found) : null)),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1328511Z     108 │         );
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1329044Z   > 109 │       const result = await map.get(id)!;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1329691Z         │                            ^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1330274Z     110 │       await active(actor);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1331114Z     111 │       return result;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1331508Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1331668Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1332559Z apps/web/src/server/admin/preview.ts:116:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1333238Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1333459Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1333885Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1334304Z     114 │       await active(actor);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1335251Z     115 │       if (!currencies.has(actor)) currencies.set(actor, reader(actor).shopCurrency());
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1336274Z   > 116 │       const result = await currencies.get(actor)!;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1336999Z         │                            ^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1337627Z     117 │       await active(actor);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1338162Z     118 │       return result;
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1338545Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1338713Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1339589Z apps/web/src/server/admin/preview.ts:163:34 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1340264Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1340711Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1341132Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1341622Z     161 │                   shopId: randomUUID(),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1342273Z     162 │                   shopDomain: shop,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1343027Z   > 163 │                   shopifyShopId: shopId.split('/').at(-1)!,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1343821Z         │                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1344666Z     164 │                   externalInstallationId: provider.installationId,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1345550Z     165 │                 }),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1345928Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1346097Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1346985Z apps/web/src/server/admin/preview.ts:223:26 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1347667Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1347874Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1348288Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1348969Z     221 │                   installationGeneration: bound.installationGeneration,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1349795Z     222 │                   shopifyShopId: shopId,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1350790Z   > 223 │                   appId: env.INSIGNIA_M5_002_APP_RESOURCE!,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1351598Z         │                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1351977Z     224 │                 },
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1352251Z     225 │                 {
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1352477Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1352582Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1353130Z apps/web/src/server/admin/preview.ts:227:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1353525Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1353657Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1353914Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1354126Z     225 │                 {
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1354447Z     226 │                   appKey: client,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1355009Z   > 227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1355630Z         │                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1356252Z     228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1356714Z     229 │                 },
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1356937Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1357039Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1357542Z apps/web/src/server/admin/preview.ts:228:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1357948Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1358080Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1358325Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1358593Z     226 │                   appKey: client,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1359327Z     227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1360038Z   > 228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1361506Z         │                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1361988Z     229 │                 },
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1362262Z     230 │               );
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1362486Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1362597Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1363119Z apps/web/src/server/admin/production.ts:211:15 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1363526Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1363651Z   ! Change to an optional chain.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1363914Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1364330Z     209 │           const provider = await shopify.readInstallation(online);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1364947Z     210 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1365780Z   > 211 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1366404Z         │               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1366869Z     212 │             throw new Error('Tenant installation mismatch');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1367529Z     213 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1367980Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1368228Z   i Unsafe fix: Change to an optional chain.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1368506Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1368919Z     209 209 │             const provider = await shopify.readInstallation(online);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1369566Z     210 210 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1370890Z     211     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1371912Z         211 │ + ··········if·(!tenant?.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1372615Z     212 212 │               throw new Error('Tenant installation mismatch');
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1373322Z     213 213 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1373801Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1373908Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1374420Z apps/web/src/server/merchant-config.ts:122:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1374816Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1374949Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1375196Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1375525Z     120 │         option.allowedValueIds.flatMap((id) => {
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1375955Z     121 │           const label = oldLabels?.[id];
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1376422Z   > 122 │           return label ? [[values.get(id)!, label]] : [];
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1376849Z         │                            ^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1377316Z     123 │         }),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1377556Z     124 │       );
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1377754Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1377856Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1378405Z apps/web/src/server/merchant-config.ts:125:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1378804Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1378928Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1379183Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1379397Z     123 │         }),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1379637Z     124 │       );
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1380145Z   > 125 │       return Object.keys(remapped).length ? [[options.get(option.id)!, remapped]] : [];
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1380931Z         │                                               ^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1381283Z     126 │     }),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1381533Z     127 │   );
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1381726Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1381827Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1382339Z apps/web/src/server/merchant-config.ts:131:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1382741Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1382864Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1383109Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1383323Z     129 │     ...source,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1383585Z     130 │     labels,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1384052Z   > 131 │     methods: source.methods.map((item) => ({ id: methods.get(item.id)! })),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1384610Z         │                                                  ^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1385208Z     132 │     placements: source.placements.map((item) => ({
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1385704Z     133 │       ...item,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1385934Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1386033Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1386546Z apps/web/src/server/merchant-config.ts:134:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1386945Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1387083Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1387344Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1387692Z     132 │     placements: source.placements.map((item) => ({
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1388072Z     133 │       ...item,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1388414Z   > 134 │       id: placements.get(item.id)!,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1388788Z         │           ^^^^^^^^^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1389319Z     135 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1389977Z     136 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1390520Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1390636Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1391151Z apps/web/src/server/merchant-config.ts:135:59 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1391549Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1391680Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1391929Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1392145Z     133 │       ...item,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1392650Z     134 │       id: placements.get(item.id)!,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1393200Z   > 135 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1393784Z         │                                                           ^^^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1394342Z     136 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1394762Z     137 │     })),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1394963Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1395068Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1395574Z apps/web/src/server/merchant-config.ts:136:55 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1395967Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1396097Z   ! Forbidden non-null assertion.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1396346Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1396624Z     134 │       id: placements.get(item.id)!,
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1397170Z     135 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1397815Z   > 136 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1398360Z         │                                                       ^^^^^^^^^^^^^^
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1398702Z     137 │     })),
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1399275Z     138 │     productionOptions: source.productionOptions.map((item) => ({
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1399665Z   
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1399772Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1400214Z The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1400883Z Diagnostics not shown: 71.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1401238Z Checked 172 files in 372ms. No fixes applied.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1401557Z Found 33 warnings.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.1401776Z Found 58 infos.
+foundation	Build and check actual workspace	2026-10-01T08:56:06.2339564Z $ corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build
+foundation	Build and check actual workspace	2026-10-01T08:56:06.3158440Z packages/cart-authorization build$ tsc -p tsconfig.json
+foundation	Build and check actual workspace	2026-10-01T08:56:06.3164763Z packages/contracts build$ tsc -p tsconfig.json
+foundation	Build and check actual workspace	2026-10-01T08:56:06.3176902Z packages/domain build$ tsc -p tsconfig.json
+foundation	Build and check actual workspace	2026-10-01T08:56:06.3177634Z packages/observability build$ tsc -p tsconfig.json
+foundation	Build and check actual workspace	2026-10-01T08:56:07.9084413Z packages/domain build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:07.9138749Z packages/shopify build$ tsc -p tsconfig.json
+foundation	Build and check actual workspace	2026-10-01T08:56:08.0474041Z packages/contracts build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:08.0481580Z packages/visualizer build$ tsc -p tsconfig.json
+foundation	Build and check actual workspace	2026-10-01T08:56:08.4500683Z packages/cart-authorization build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:08.4509949Z packages/application build$ tsc -p tsconfig.json
+foundation	Build and check actual workspace	2026-10-01T08:56:08.5336246Z packages/observability build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:09.6181702Z packages/visualizer build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:10.2881220Z packages/shopify build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:10.3836858Z packages/application build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:10.3838142Z packages/database build$ tsc -p tsconfig.json
+foundation	Build and check actual workspace	2026-10-01T08:56:12.7405620Z packages/database build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:12.8211486Z apps/storefront build$ tsc --noEmit && vite build && node scripts/copy-theme-asset.mjs
+foundation	Build and check actual workspace	2026-10-01T08:56:12.8212208Z apps/worker build$ tsc -p tsconfig.json
+foundation	Build and check actual workspace	2026-10-01T08:56:14.7728008Z apps/worker build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:14.7729160Z apps/web build$ astro check && astro build
+foundation	Build and check actual workspace	2026-10-01T08:56:14.7822773Z apps/storefront build: ^[[36mvite v8.3.1 ^[[32mbuilding client environment for production...^[[36m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:14.7946352Z apps/storefront build: transforming...
+foundation	Build and check actual workspace	2026-10-01T08:56:14.8032159Z apps/storefront build: ✓ 5 modules transformed.
+foundation	Build and check actual workspace	2026-10-01T08:56:14.8064026Z apps/storefront build: rendering chunks...
+foundation	Build and check actual workspace	2026-10-01T08:56:14.8151347Z apps/storefront build: computing gzip size...
+foundation	Build and check actual workspace	2026-10-01T08:56:14.8157061Z apps/storefront build: dist/insignia-storefront.js  14.03 kB │ gzip: 5.93 kB
+foundation	Build and check actual workspace	2026-10-01T08:56:14.8159847Z apps/storefront build: 
+foundation	Build and check actual workspace	2026-10-01T08:56:14.8161585Z apps/storefront build: ^[[32m✓ built in 32ms^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:14.8613106Z apps/storefront build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:16.1775887Z apps/web build: ^[[2m08:56:16^[[22m ^[[34m[@astrojs/node]^[[39m Enabling sessions with filesystem storage
+foundation	Build and check actual workspace	2026-10-01T08:56:16.3171414Z apps/web build: ^[[2m08:56:16^[[22m ^[[34m[types]^[[39m Generated ^[[2m137ms^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:16.3248566Z apps/web build: ^[[2m08:56:16^[[22m ^[[34m[check]^[[39m Getting diagnostics for Astro files in /home/runner/work/insignia/insignia/apps/web...
+foundation	Build and check actual workspace	2026-10-01T08:56:20.3312868Z apps/web build: Result (26 files): 
+foundation	Build and check actual workspace	2026-10-01T08:56:20.3313655Z apps/web build: - 0 errors
+foundation	Build and check actual workspace	2026-10-01T08:56:20.3314110Z apps/web build: - 0 warnings
+foundation	Build and check actual workspace	2026-10-01T08:56:20.3314601Z apps/web build: - 0 hints
+foundation	Build and check actual workspace	2026-10-01T08:56:20.3315081Z apps/web build: 
+foundation	Build and check actual workspace	2026-10-01T08:56:21.3513082Z apps/web build: ^[[2m08:56:21^[[22m ^[[34m[@astrojs/node]^[[39m Enabling sessions with filesystem storage
+foundation	Build and check actual workspace	2026-10-01T08:56:21.4506902Z apps/web build: ^[[2m08:56:21^[[22m ^[[34m[types]^[[39m Generated ^[[2m63ms^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:21.4509527Z apps/web build: ^[[2m08:56:21^[[22m ^[[34m[build]^[[39m output: ^[[34m"server"^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:21.4510916Z apps/web build: ^[[2m08:56:21^[[22m ^[[34m[build]^[[39m mode: ^[[34m"server"^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:21.4512485Z apps/web build: ^[[2m08:56:21^[[22m ^[[34m[build]^[[39m directory: ^[[34m/home/runner/work/insignia/insignia/apps/web/dist/^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:21.4513847Z apps/web build: ^[[2m08:56:21^[[22m ^[[34m[build]^[[39m adapter: ^[[32m@astrojs/node^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:21.4515381Z apps/web build: ^[[2m08:56:21^[[22m ^[[34m[build]^[[39m Collecting build info...
+foundation	Build and check actual workspace	2026-10-01T08:56:21.4516584Z apps/web build: ^[[2m08:56:21^[[22m ^[[34m[build]^[[39m ^[[32m✓ Completed in 109ms.^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:21.4529956Z apps/web build: ^[[2m08:56:21^[[22m ^[[34m[build]^[[39m Building server entrypoints...
+foundation	Build and check actual workspace	2026-10-01T08:56:21.7050248Z apps/web build: ^[[2m08:56:21^[[22m ^[[34m[vite]^[[39m ^[[32m✓ built in 225ms^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:23.1282268Z apps/web build: ^[[2m08:56:23^[[22m ^[[34m[vite]^[[39m ^[[32m✓ built in 1.42s^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:23.3688901Z apps/web build: ^[[2m08:56:23^[[22m ^[[34m[vite]^[[39m ^[[32m✓ built in 231ms^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:23.3807062Z apps/web build: ^[[2m08:56:23^[[22m ^[[34m[build]^[[39m Rearranging server assets...
+foundation	Build and check actual workspace	2026-10-01T08:56:23.3817076Z apps/web build: ^[[2m08:56:23^[[22m ^[[34m[build]^[[39m ^[[32m✓ Completed in 1.93s.^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:23.3823173Z apps/web build: ^[[2m08:56:23^[[22m ^[[34m[build]^[[39m Server built in ^[[1m2.04s^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:23.3824031Z apps/web build: ^[[2m08:56:23^[[22m ^[[34m[build]^[[39m ^[[1mComplete!^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:23.4183826Z apps/web build: Done
+foundation	Build and check actual workspace	2026-10-01T08:56:23.5044825Z $ corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/contracts test && corepack pnpm --filter @insignia/visualizer test && corepack pnpm --filter @insignia/cart-authorization test && corepack pnpm --filter @insignia/application test && corepack pnpm --filter @insignia/shopify test && corepack pnpm --filter @insignia/observability test && corepack pnpm --filter @insignia/worker test
+foundation	Build and check actual workspace	2026-10-01T08:56:23.5807433Z $ vitest run
+foundation	Build and check actual workspace	2026-10-01T08:56:23.8608203Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:23.8612844Z ^[[1m^[[30m^[[46m RUN ^[[49m^[[39m^[[22m ^[[36mv5.0.2 ^[[39m^[[90m/home/runner/work/insignia/insignia/packages/domain^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:23.8614219Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:24.1408896Z  ^[[32m✓^[[39m src/customization/identity.test.ts ^[[2m(^[[22m^[[2m5 tests^[[22m^[[2m)^[[22m^[[32m 14^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:24.1637833Z  ^[[32m✓^[[39m src/pricing/evaluate.test.ts ^[[2m(^[[22m^[[2m9 tests^[[22m^[[2m)^[[22m^[[32m 32^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:24.2760009Z  ^[[32m✓^[[39m src/pricing/properties.test.ts ^[[2m(^[[22m^[[2m7 tests^[[22m^[[2m)^[[22m^[[32m 147^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:24.3259046Z  ^[[32m✓^[[39m src/config/model.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[32m 9^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:24.3389610Z  ^[[32m✓^[[39m src/money.test.ts ^[[2m(^[[22m^[[2m2 tests^[[22m^[[2m)^[[22m^[[32m 5^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:24.3424150Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:24.3429340Z ^[[2m Test Files ^[[22m ^[[1m^[[32m5 passed^[[39m^[[22m^[[90m (5)^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:24.3430290Z ^[[2m      Tests ^[[22m ^[[1m^[[32m26 passed^[[39m^[[22m^[[90m (26)^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:24.3431322Z ^[[2m   Start at ^[[22m 08:56:23
+foundation	Build and check actual workspace	2026-10-01T08:56:24.3435500Z ^[[2m   Duration ^[[22m 468ms^[[2m (transform 41%, tests 38%, import 15%, worker 5%)^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:24.3454163Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:24.4681526Z $ vitest run
+foundation	Build and check actual workspace	2026-10-01T08:56:24.7557205Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:24.7561421Z ^[[1m^[[30m^[[46m RUN ^[[49m^[[39m^[[22m ^[[36mv5.0.2 ^[[39m^[[90m/home/runner/work/insignia/insignia/packages/contracts^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:24.7562199Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:25.0434435Z  ^[[32m✓^[[39m src/v1/pricing-config.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[32m 13^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.0457142Z  ^[[32m✓^[[39m src/v1/proposal.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[32m 15^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.0500921Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:25.0505609Z ^[[2m Test Files ^[[22m ^[[1m^[[32m2 passed^[[39m^[[22m^[[90m (2)^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.0506786Z ^[[2m      Tests ^[[22m ^[[1m^[[32m6 passed^[[39m^[[22m^[[90m (6)^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.0507716Z ^[[2m   Start at ^[[22m 08:56:24
+foundation	Build and check actual workspace	2026-10-01T08:56:25.0512301Z ^[[2m   Duration ^[[22m 285ms^[[2m (import 54%, transform 32%, tests 10%, worker 3%)^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.0528839Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:25.1497556Z $ vitest run
+foundation	Build and check actual workspace	2026-10-01T08:56:25.4162167Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:25.4169404Z ^[[1m^[[30m^[[46m RUN ^[[49m^[[39m^[[22m ^[[36mv5.0.2 ^[[39m^[[90m/home/runner/work/insignia/insignia/packages/visualizer^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.4171223Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:25.6440694Z  ^[[32m✓^[[39m src/renderer.test.ts ^[[2m(^[[22m^[[2m1 test^[[22m^[[2m)^[[22m^[[32m 10^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.6447218Z  ^[[32m✓^[[39m src/geometry.test.ts ^[[2m(^[[22m^[[2m8 tests^[[22m^[[2m)^[[22m^[[32m 15^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.6517207Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:25.6522134Z ^[[2m Test Files ^[[22m ^[[1m^[[32m2 passed^[[39m^[[22m^[[90m (2)^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.6523228Z ^[[2m      Tests ^[[22m ^[[1m^[[32m9 passed^[[39m^[[22m^[[90m (9)^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.6524079Z ^[[2m   Start at ^[[22m 08:56:25
+foundation	Build and check actual workspace	2026-10-01T08:56:25.6529027Z ^[[2m   Duration ^[[22m 225ms^[[2m (transform 63%, import 19%, tests 13%, worker 5%)^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:25.6543021Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:25.7680794Z $ node --experimental-strip-types --test test/*.test.ts
+foundation	Build and check actual workspace	2026-10-01T08:56:25.9788253Z ✔ hard subset bounds and untrusted ordinary-line hints (2.740896ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:25.9813904Z ✔ 33 buckets are refused before the signer is called (0.495916ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:25.9982327Z ✔ every admitted code matches the versioned matrix and unknown/digital values reject (14.365671ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0015427Z ✔ production-generated carriers decode, conserve and verify for every complete set (9.032608ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0018015Z ✔ PostgreSQL-persisted negative adjustment has exact signed quote and member economics (1.326215ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0019634Z ✔ versioned 33-bucket vector rejects before any signing call (0.501055ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0022147Z ✔ production decoder and signature bytes preserve the independent v2 wire literal (7.610273ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0024165Z ✔ injected synthetic Ed25519 signer covers the complete set and three-day key window (3.023523ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0025813Z ✔ invalid window or set refuses signing and noncanonical carrier refuses decoding (0.727408ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0100756Z ℹ tests 9
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0101179Z ℹ suites 0
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0101537Z ℹ pass 9
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0102123Z ℹ fail 0
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0102478Z ℹ cancelled 0
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0102908Z ℹ skipped 0
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0103769Z ℹ todo 0
+foundation	Build and check actual workspace	2026-10-01T08:56:26.0104190Z ℹ duration_ms 211.637776
+foundation	Build and check actual workspace	2026-10-01T08:56:26.1018528Z $ vitest run
+foundation	Build and check actual workspace	2026-10-01T08:56:26.3741149Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:26.3750180Z ^[[1m^[[30m^[[46m RUN ^[[49m^[[39m^[[22m ^[[36mv5.0.2 ^[[39m^[[90m/home/runner/work/insignia/insignia/packages/application^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:26.3751330Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:26.6596726Z  ^[[32m✓^[[39m test/provider-policy.test.ts ^[[2m(^[[22m^[[2m8 tests^[[22m^[[2m)^[[22m^[[32m 18^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:26.8022090Z  ^[[32m✓^[[39m src/quote/accept-quote.test.ts ^[[2m(^[[22m^[[2m21 tests^[[22m^[[2m)^[[22m^[[32m 88^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:26.8573178Z  ^[[32m✓^[[39m test/offline-credentials.test.ts ^[[2m(^[[22m^[[2m5 tests^[[22m^[[2m)^[[22m^[[32m 17^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.1102349Z  ^[[32m✓^[[39m test/keys/key-lifecycle.test.ts ^[[2m(^[[22m^[[2m4 tests^[[22m^[[2m)^[[22m^[[32m 18^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.1222200Z  ^[[32m✓^[[39m test/artifact-attestation.test.ts ^[[2m(^[[22m^[[2m58 tests^[[22m^[[2m)^[[22m^[[32m 53^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.2791146Z  ^[[32m✓^[[39m test/shopify-ingress.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[32m 10^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.2892094Z  ^[[32m✓^[[39m test/provider-composition.test.ts ^[[2m(^[[22m^[[2m2 tests^[[22m^[[2m)^[[22m^[[32m 14^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.3180888Z  ^[[32m✓^[[39m test/admin-credential-bridge.test.ts ^[[2m(^[[22m^[[2m2 tests^[[22m^[[2m)^[[22m^[[32m 10^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4356026Z  ^[[32m✓^[[39m test/customization-fx.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[32m 8^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4570024Z  ^[[32m✓^[[39m test/catalog-context.test.ts ^[[2m(^[[22m^[[2m2 tests^[[22m^[[2m)^[[22m^[[32m 6^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4855326Z  ^[[32m✓^[[39m src/publication/projection.test.ts ^[[2m(^[[22m^[[2m2 tests^[[22m^[[2m)^[[22m^[[32m 5^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4889109Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4893698Z ^[[2m Test Files ^[[22m ^[[1m^[[32m11 passed^[[39m^[[22m^[[90m (11)^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4894753Z ^[[2m      Tests ^[[22m ^[[1m^[[32m110 passed^[[39m^[[22m^[[90m (110)^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4895898Z ^[[2m   Start at ^[[22m 08:56:26
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4898905Z ^[[2m   Duration ^[[22m 1.10s^[[2m (transform 41%, import 40%, tests 15%, worker 4%)^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4913605Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4914864Z ^[[2m    Isolate ^[[22m ^[[33m11 workers spawned^[[39m^[[2m · ~129ms startup each (spawn + environment, per file)^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4916969Z ^[[2m            ^[[22m ^[[2mat least ~345ms faster with ^[[22m^[[33misolate: false^[[39m^[[2m — reuses workers across files instead of one per file^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.4917943Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:27.6220744Z $ vitest run
+foundation	Build and check actual workspace	2026-10-01T08:56:27.8965417Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:27.8981950Z ^[[1m^[[30m^[[46m RUN ^[[49m^[[39m^[[22m ^[[36mv5.0.2 ^[[39m^[[90m/home/runner/work/insignia/insignia/packages/shopify^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:27.8982465Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.2500585Z  ^[[32m✓^[[39m test/contextual-pricing.test.ts ^[[2m(^[[22m^[[2m26 tests^[[22m^[[2m)^[[22m^[[32m 74^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.2513937Z  ^[[32m✓^[[39m test/active-subscription.test.ts ^[[2m(^[[22m^[[2m21 tests^[[22m^[[2m)^[[22m^[[32m 81^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.3565090Z  ^[[32m✓^[[39m test/publication-admin.test.ts ^[[2m(^[[22m^[[2m10 tests^[[22m^[[2m)^[[22m^[[32m 179^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.4509340Z  ^[[32m✓^[[39m test/function-ownership.test.ts ^[[2m(^[[22m^[[2m5 tests^[[22m^[[2m)^[[22m^[[32m 15^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5743077Z ^[[90mstdout^[[2m | test/admin-online-identity.test.ts^[[2m > ^[[22m^[[2mproduction Shopify online staff adapter with synthetic transport^[[2m > ^[[22m^[[2muses the actual pinned SDK token exchange with a synthetic HTTP response
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5748980Z ^[[22m^[[39m[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5750674Z [shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5752088Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5753210Z   Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5754470Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5755247Z [shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5756115Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5757627Z   Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5760150Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5760697Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5794604Z ^[[90mstdout^[[2m | test/admin-online-identity.test.ts^[[2m > ^[[22m^[[2mproduction Shopify online staff adapter with synthetic transport^[[2m > ^[[22m^[[2muses the actual pinned SDK token exchange with a synthetic HTTP response
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5797232Z ^[[22m^[[39m[shopify-api/INFO] Creating new session | {shop: alpha.myshopify.com, isOnline: true}
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5798164Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5819309Z ^[[90mstdout^[[2m | test/admin-online-identity.test.ts^[[2m > ^[[22m^[[2mproduction Shopify online staff adapter with synthetic transport^[[2m > ^[[22m^[[2mchecks the signed ID token, online staff and exact installation read
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5822004Z ^[[22m^[[39m[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5823420Z [shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5824286Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5825430Z   Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5827678Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5828518Z [shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5829409Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5831371Z   Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5833024Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5833251Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5921774Z ^[[90mstdout^[[2m | test/admin-online-identity.test.ts^[[2m > ^[[22m^[[2mproduction Shopify online staff adapter with synthetic transport^[[2m > ^[[22m^[[2mrejects expired identity and grant, malformed installation and large bodies
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5924914Z ^[[22m^[[39m[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5926426Z [shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5927295Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5928416Z   Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5929657Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5930741Z [shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5931720Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5933289Z   Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5934952Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5935184Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5952304Z ^[[90mstdout^[[2m | test/admin-online-identity.test.ts^[[2m > ^[[22m^[[2mproduction Shopify online staff adapter with synthetic transport^[[2m > ^[[22m^[[2mrejects expired identity and grant, malformed installation and large bodies
+foundation	Build and check actual workspace	2026-10-01T08:56:28.5981701Z ^[[22m^[[39m[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6001668Z [shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6030969Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6032130Z   Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6033107Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6033686Z [shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6034276Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6035585Z   Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6037418Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6037453Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6042982Z  ^[[32m✓^[[39m test/admin-online-identity.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[32m 29^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.6482365Z  ^[[32m✓^[[39m test/open-exchange-rates.test.ts ^[[2m(^[[22m^[[2m6 tests^[[22m^[[2m)^[[22m^[[32m 76^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.7102404Z  ^[[32m✓^[[39m test/refresh.test.ts ^[[2m(^[[22m^[[2m11 tests^[[22m^[[2m)^[[22m^[[32m 62^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.8157981Z  ^[[32m✓^[[39m test/webhook.test.ts ^[[2m(^[[22m^[[2m5 tests^[[22m^[[2m)^[[22m^[[32m 44^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.8530000Z  ^[[32m✓^[[39m test/catalog.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[32m 13^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9247882Z  ^[[32m✓^[[39m test/shop-context.test.ts ^[[2m(^[[22m^[[2m2 tests^[[22m^[[2m)^[[22m^[[32m 55^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9636642Z  ^[[32m✓^[[39m test/live-subscription-shape.test.ts ^[[2m(^[[22m^[[2m1 test^[[22m^[[2m)^[[22m^[[32m 6^[[2mms^[[22m^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9672367Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9678077Z ^[[2m Test Files ^[[22m ^[[1m^[[32m11 passed^[[39m^[[22m^[[90m (11)^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9679496Z ^[[2m      Tests ^[[22m ^[[1m^[[32m93 passed^[[39m^[[22m^[[90m (93)^[[39m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9680958Z ^[[2m   Start at ^[[22m 08:56:27
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9685322Z ^[[2m   Duration ^[[22m 1.06s^[[2m (tests 43%, transform 29%, import 24%, worker 4%)^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9702005Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9703234Z ^[[2m    Isolate ^[[22m ^[[33m11 workers spawned^[[39m^[[2m · ~126ms startup each (spawn + environment, per file)^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9705327Z ^[[2m            ^[[22m ^[[2mat least ~336ms faster with ^[[22m^[[33misolate: false^[[39m^[[2m — reuses workers across files instead of one per file^[[22m
+foundation	Build and check actual workspace	2026-10-01T08:56:28.9706263Z 
+foundation	Build and check actual workspace	2026-10-01T08:56:29.0873205Z $ node --test test/*.test.mjs
+foundation	Build and check actual workspace	2026-10-01T08:56:29.2207832Z ✔ structured runtime events cannot emit arbitrary payload or credential fields (4.200149ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:29.2212112Z ✔ metric labels are fixed outcomes and never contain tenant or delivery IDs (2.399478ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:29.2320818Z ℹ tests 2
+foundation	Build and check actual workspace	2026-10-01T08:56:29.2322359Z ℹ suites 0
+foundation	Build and check actual workspace	2026-10-01T08:56:29.2323235Z ℹ pass 2
+foundation	Build and check actual workspace	2026-10-01T08:56:29.2323603Z ℹ fail 0
+foundation	Build and check actual workspace	2026-10-01T08:56:29.2323963Z ℹ cancelled 0
+foundation	Build and check actual workspace	2026-10-01T08:56:29.2324350Z ℹ skipped 0
+foundation	Build and check actual workspace	2026-10-01T08:56:29.2324707Z ℹ todo 0
+foundation	Build and check actual workspace	2026-10-01T08:56:29.2325141Z ℹ duration_ms 113.131507
+foundation	Build and check actual workspace	2026-10-01T08:56:29.3219219Z $ node --test test/*.test.mjs
+foundation	Build and check actual workspace	2026-10-01T08:56:29.4259554Z ✔ current and previous synthetic wrapping keys remain available by ID (2.936631ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:29.8065677Z ﹣ PostgreSQL claim retries the old refresh token after a lost response and fences stale replacement (1.486434ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:56:29.8566055Z ✔ diagnostic decodes and derives synthetic pixels without claiming durable readiness (11.505741ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:29.8568598Z ✔ liveness stays separate from durable readiness; loopback metrics expose bounded outcomes (89.360493ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0682867Z ﹣ PostgreSQL pg-boss starts, retries, settles and replays after restart (0.871326ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0689431Z ﹣ pg-boss retry after committed uninstall retains one deactivation and one inbox fact (0.16094ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0830981Z ✔ process starts queues and workers before readiness; stop makes readiness unavailable (52.422688ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0831973Z ✔ startup failure closes a started queue without reporting readiness (1.878286ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0854713Z {"level":30,"time":1790844990081,"event":"worker_started"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0855624Z {"level":30,"time":1790844990085,"event":"worker_started"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0869020Z {"level":30,"time":1790844990086,"event":"worker_started"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0894675Z {"level":30,"time":1790844990089,"event":"worker_started"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0903125Z {"level":30,"time":1790844990090,"event":"worker_started"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0912902Z {"level":30,"time":1790844990091,"event":"worker_started"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0954398Z ✔ enqueue confirms exact inbox identity, including completed job replay (7.042974ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0960046Z ✔ null send without same persisted job is retryable, never an acknowledgement (1.50592ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0965795Z ✔ workers pass IDs only to injected durable handlers; failed attempt retries safely (2.559597ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0969818Z ✔ invalid job body and identity fail closed without invoking application (0.813989ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0975410Z ✔ enabled worker refuses missing credential-key configuration and stays not ready (0.753426ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0978923Z ✔ refresh claim contention is retried rather than silently completing its job (1.158793ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0985731Z {"level":30,"time":1790844990082,"event":"webhook_enqueued","inboxId":"88f73118-fe76-4ac0-94ee-ed6423e0315c"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0986866Z {"level":30,"time":1790844990083,"event":"worker_stopped"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0988470Z {"level":50,"time":1790844990087,"event":"webhook_process_failed","inboxId":"542b7127-7478-4a9c-a514-2dac9ef11ab2","errorClass":"ProcessingError","attempt":0}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0990174Z {"level":30,"time":1790844990087,"event":"webhook_process_ok","inboxId":"542b7127-7478-4a9c-a514-2dac9ef11ab2","attempt":1}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0991556Z {"level":30,"time":1790844990087,"event":"refresh_process_ok","shopId":"8bc497df-54e7-4a5c-94cf-50b16494e83f","attempt":0}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0992234Z {"level":30,"time":1790844990088,"event":"worker_stopped"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0993164Z {"level":50,"time":1790844990089,"event":"webhook_process_failed","inboxId":"0b3cf0e2-8549-4be9-bc3a-5903df4fdafc","errorClass":"ProcessingError","attempt":0}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0993956Z {"level":30,"time":1790844990090,"event":"worker_stopped"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0994631Z {"level":50,"time":1790844990091,"event":"refresh_process_failed","errorClass":"RefreshError","attempt":0}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.0995264Z {"level":30,"time":1790844990091,"event":"worker_stopped"}
+foundation	Build and check actual workspace	2026-10-01T08:56:30.1098449Z ﹣ configured worker serves liveness and durable readiness, then closes on SIGTERM (0.942359ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:56:30.1102426Z ℹ tests 15
+foundation	Build and check actual workspace	2026-10-01T08:56:30.1103047Z ℹ suites 0
+foundation	Build and check actual workspace	2026-10-01T08:56:30.1104047Z ℹ pass 11
+foundation	Build and check actual workspace	2026-10-01T08:56:30.1104473Z ℹ fail 0
+foundation	Build and check actual workspace	2026-10-01T08:56:30.1104892Z ℹ cancelled 0
+foundation	Build and check actual workspace	2026-10-01T08:56:30.1105347Z ℹ skipped 4
+foundation	Build and check actual workspace	2026-10-01T08:56:30.1105794Z ℹ todo 0
+foundation	Build and check actual workspace	2026-10-01T08:56:30.1106262Z ℹ duration_ms 754.856165
+foundation	Build and check actual workspace	2026-10-01T08:56:30.2019894Z $ node --test scripts/m5-002/read-register.test.mjs scripts/m5-002/built-runtime.test.mjs
+foundation	Build and check actual workspace	2026-10-01T08:56:30.5296646Z ✔ complete built server reproduces CLI development-mode CSP rejection (234.058177ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7116011Z ✔ actual launcher runtime preparation admits built hydration without widening CSP (188.622494ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7227687Z ✔ actual launcher register reserves durably before synthetic fetch, serializes and denies extra attempts (94.600454ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7230050Z ✔ exact SDK online exchange is counted per attempt; mutations, wrong targets and other token/event routes never send (4.048215ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7232018Z ✔ ambiguous or inflated history stops before any send (0.606122ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7233680Z ✔ one-shot loss applies only after a committed local save and never changes transport counts (1.48402ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7234775Z ℹ tests 6
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7235199Z ℹ suites 0
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7235630Z ℹ pass 6
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7236058Z ℹ fail 0
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7236451Z ℹ cancelled 0
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7236885Z ℹ skipped 0
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7237275Z ℹ todo 0
+foundation	Build and check actual workspace	2026-10-01T08:56:30.7237725Z ℹ duration_ms 488.484624
+foundation	Build and check actual workspace	2026-10-01T08:56:30.8085748Z $ tsc -p scripts/m1-functions/tsconfig.json && node --test scripts/m1-functions/check-vector.test.ts
+foundation	Build and check actual workspace	2026-10-01T08:56:31.7514076Z ✔ TypeScript/Node and Rust share the exact experimental-v2 envelope/member bytes (4.948415ms)
+foundation	Build and check actual workspace	2026-10-01T08:56:31.7637967Z ℹ tests 1
+foundation	Build and check actual workspace	2026-10-01T08:56:31.7641772Z ℹ suites 0
+foundation	Build and check actual workspace	2026-10-01T08:56:31.7642103Z ℹ pass 1
+foundation	Build and check actual workspace	2026-10-01T08:56:31.7650521Z ℹ fail 0
+foundation	Build and check actual workspace	2026-10-01T08:56:31.7651027Z ℹ cancelled 0
+foundation	Build and check actual workspace	2026-10-01T08:56:31.7651542Z ℹ skipped 0
+foundation	Build and check actual workspace	2026-10-01T08:56:31.7652085Z ℹ todo 0
+foundation	Build and check actual workspace	2026-10-01T08:56:31.7652617Z ℹ duration_ms 108.597839
+foundation	Build and check actual workspace	2026-10-01T08:56:31.8504135Z $ node scripts/boundaries/check.mjs && node scripts/boundaries/check-database-api.mjs && node scripts/boundaries/check-domain-effects.mjs && node --test scripts/boundaries/domain-effects.test.mjs
+foundation	Build and check actual workspace	2026-10-01T08:56:52.1211510Z Boundary checks passed: 169 real modules, 4 browser modules, 19 negative source fixtures, 2 rejected browser bundles and exports.
+foundation	Build and check actual workspace	2026-10-01T08:57:00.6023129Z Database public API rejects 14 compiler probes and 4 runtime deep imports.
+foundation	Build and check actual workspace	2026-10-01T08:57:01.1648040Z 6 production domain modules have no prohibited ambient effects
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0772811Z ✔ Date.now is rejected in a production domain helper (7.557995ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0813695Z ✔ new Date is rejected in a production domain helper (0.765779ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0815224Z ✔ Math.random is rejected in a production domain helper (0.461812ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0817090Z ✔ globalThis.Date.now is rejected in a production domain helper (0.549235ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0818638Z ✔ fetch is rejected in a production domain helper (1.203767ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0820232Z ✔ globalThis.crypto is rejected in a production domain helper (0.425234ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0821783Z ✔ computed random is rejected in a production domain helper (0.941377ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0822722Z ✔ template random is rejected in a production domain helper (0.762332ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0824042Z ✔ dynamic Math member is rejected in a production domain helper (1.131431ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0825118Z ✔ spread Date is rejected in a production domain helper (1.42487ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0826332Z ✔ random destructuring is rejected in a production domain helper (0.722468ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0827378Z ✔ date alias is rejected in a production domain helper (0.376893ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0828508Z ✔ math alias is rejected in a production domain helper (0.407961ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0829562Z ✔ import meta is rejected in a production domain helper (0.440732ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0831111Z ✔ process environment is rejected in a production domain helper (0.221724ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0833348Z ✔ deterministic numeric and explicit-value operations stay allowed (1.220428ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0834912Z ✔ type-only properties are not ambient API references (2.098837ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.0836383Z ✔ compiled graph includes an imported module with an excluded test-like filename (571.12391ms)
+foundation	Build and check actual workspace	2026-10-01T08:57:02.1318228Z ℹ tests 18
+foundation	Build and check actual workspace	2026-10-01T08:57:02.1318934Z ℹ suites 0
+foundation	Build and check actual workspace	2026-10-01T08:57:02.1319790Z ℹ pass 18
+foundation	Build and check actual workspace	2026-10-01T08:57:02.1379849Z ℹ fail 0
+foundation	Build and check actual workspace	2026-10-01T08:57:02.1380190Z ℹ cancelled 0
+foundation	Build and check actual workspace	2026-10-01T08:57:02.1380773Z ℹ skipped 0
+foundation	Build and check actual workspace	2026-10-01T08:57:02.1381148Z ℹ todo 0
+foundation	Build and check actual workspace	2026-10-01T08:57:02.1381541Z ℹ duration_ms 925.625457
+foundation	Build and check actual workspace	2026-10-01T08:57:02.2165584Z $ node scripts/boundaries/check-secrets.mjs
+foundation	Build and check actual workspace	2026-10-01T08:57:02.2596030Z Secret/fixture provenance check passed: 96 production source files, 75 separately scanned test/fixture files, 2 browser artifacts, 2 explicitly synthetic seeds.
+foundation	Build and check actual workspace	2026-10-01T08:57:02.6263912Z 20 archived Cargo manifests remain independent
+foundation	Build and check actual workspace	2026-10-01T08:57:02.7063602Z $ bash scripts/m1-functions/check.sh
+foundation	Build and check actual workspace	2026-10-01T08:57:02.8453193Z     Updating crates.io index
+foundation	Build and check actual workspace	2026-10-01T08:57:03.4279304Z  Downloading crates ...
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5171840Z   Downloaded block-buffer v0.10.4
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5247899Z   Downloaded beef v0.5.2
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5269907Z   Downloaded autocfg v1.5.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5288945Z   Downloaded ariadne v0.5.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5312467Z   Downloaded base64 v0.22.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5359875Z   Downloaded fnv v1.0.7
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5369553Z   Downloaded typenum v1.20.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5413095Z   Downloaded ed25519 v2.2.3
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5435233Z   Downloaded enum-as-inner v0.6.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5455667Z   Downloaded crypto-common v0.1.7
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5466191Z   Downloaded lazy_static v1.5.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5487845Z   Downloaded bluejay-core v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5530617Z   Downloaded heck v0.5.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5546702Z   Downloaded bumpalo v3.20.3
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5579632Z   Downloaded ed25519-dalek v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5619857Z   Downloaded itoa v1.0.18
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5638675Z   Downloaded logos-derive v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5647448Z   Downloaded paste v1.0.15
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5681069Z   Downloaded generic-array v0.14.7
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5697002Z   Downloaded shopify_function_provider v2.0.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5720748Z   Downloaded cpufeatures v0.2.17
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5741763Z   Downloaded digest v0.10.7
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5766634Z   Downloaded convert_case v0.8.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5784010Z   Downloaded either v1.18.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5799102Z   Downloaded bluejay-typegen-codegen v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5819739Z   Downloaded bluejay-parser v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5876538Z   Downloaded logos-codegen v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5930066Z   Downloaded thiserror v2.0.21
+foundation	Build and check actual workspace	2026-10-01T08:57:03.5996965Z   Downloaded unicode-ident v1.0.26
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6025465Z   Downloaded zmij v1.0.23
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6043693Z   Downloaded seq-macro v0.3.6
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6062619Z   Downloaded version_check v0.9.5
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6075582Z   Downloaded cfg-if v1.0.5
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6088337Z   Downloaded shopify_function v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6101290Z   Downloaded signature v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6115919Z   Downloaded bluejay-validator v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6175289Z   Downloaded num-traits v0.2.19
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6201800Z   Downloaded rustc_version v0.4.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6214893Z   Downloaded curve25519-dalek-derive v0.1.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6225246Z   Downloaded shopify_function_macro v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6233762Z   Downloaded subtle v2.6.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6245501Z   Downloaded convert_case v0.11.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6264216Z   Downloaded shopify_function_wasm_api_core v0.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6271674Z   Downloaded strum v0.27.2
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6280957Z   Downloaded thiserror-impl v2.0.21
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6296135Z   Downloaded shopify_function_wasm_api v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6313389Z   Downloaded sha2 v0.10.9
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6339680Z   Downloaded rmp v0.8.15
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6381046Z   Downloaded rmp-serde v1.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6399806Z   Downloaded strum_macros v0.27.2
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6424907Z   Downloaded semver v1.0.28
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6448728Z   Downloaded serde_core v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6476609Z   Downloaded serde_derive v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6507607Z   Downloaded quote v1.0.47
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6535929Z   Downloaded ryu v1.0.23
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6569239Z   Downloaded memchr v2.8.3
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6625792Z   Downloaded serde v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6661776Z   Downloaded unicode-segmentation v1.13.3
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6691089Z   Downloaded proc-macro2 v1.0.107
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6721176Z   Downloaded yansi v1.0.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6744865Z   Downloaded itertools v0.14.0
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6815977Z   Downloaded serde_json v1.0.151
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6892762Z   Downloaded curve25519-dalek v4.1.3
+foundation	Build and check actual workspace	2026-10-01T08:57:03.6976800Z   Downloaded unicode-width v0.1.14
+foundation	Build and check actual workspace	2026-10-01T08:57:03.7032688Z   Downloaded syn v3.0.6
+foundation	Build and check actual workspace	2026-10-01T08:57:03.7157742Z   Downloaded regex-syntax v0.8.11
+foundation	Build and check actual workspace	2026-10-01T08:57:03.7225902Z   Downloaded syn v2.0.119
+foundation	Build and check actual workspace	2026-10-01T08:57:03.7340377Z   Downloaded logos v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:03.7726223Z    Compiling proc-macro2 v1.0.107
+foundation	Build and check actual workspace	2026-10-01T08:57:03.7727051Z    Compiling quote v1.0.47
+foundation	Build and check actual workspace	2026-10-01T08:57:03.7738426Z    Compiling unicode-ident v1.0.26
+foundation	Build and check actual workspace	2026-10-01T08:57:03.7739239Z    Compiling semver v1.0.28
+foundation	Build and check actual workspace	2026-10-01T08:57:03.8331766Z    Compiling zmij v1.0.23
+foundation	Build and check actual workspace	2026-10-01T08:57:03.9727295Z    Compiling rustc_version v0.4.1
+foundation	Build and check actual workspace	2026-10-01T08:57:04.1062599Z    Compiling serde_json v1.0.151
+foundation	Build and check actual workspace	2026-10-01T08:57:04.1651748Z    Compiling version_check v0.9.5
+foundation	Build and check actual workspace	2026-10-01T08:57:04.1685169Z    Compiling heck v0.5.0
+foundation	Build and check actual workspace	2026-10-01T08:57:04.1991951Z     Checking typenum v1.20.1
+foundation	Build and check actual workspace	2026-10-01T08:57:04.3151002Z    Compiling serde_core v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:04.3772222Z    Compiling generic-array v0.14.7
+foundation	Build and check actual workspace	2026-10-01T08:57:04.4901652Z    Compiling serde v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:04.8292601Z    Compiling syn v2.0.119
+foundation	Build and check actual workspace	2026-10-01T08:57:04.8797643Z    Compiling syn v3.0.6
+foundation	Build and check actual workspace	2026-10-01T08:57:05.4067853Z     Checking crypto-common v0.1.7
+foundation	Build and check actual workspace	2026-10-01T08:57:05.4461525Z     Checking block-buffer v0.10.4
+foundation	Build and check actual workspace	2026-10-01T08:57:05.5181079Z    Compiling logos-codegen v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:05.8370178Z     Checking digest v0.10.7
+foundation	Build and check actual workspace	2026-10-01T08:57:06.1631699Z    Compiling curve25519-dalek v4.1.3
+foundation	Build and check actual workspace	2026-10-01T08:57:06.2820278Z    Compiling regex-syntax v0.8.11
+foundation	Build and check actual workspace	2026-10-01T08:57:06.4151576Z    Compiling fnv v1.0.7
+foundation	Build and check actual workspace	2026-10-01T08:57:06.4481643Z    Compiling autocfg v1.5.1
+foundation	Build and check actual workspace	2026-10-01T08:57:06.7681723Z     Checking memchr v2.8.3
+foundation	Build and check actual workspace	2026-10-01T08:57:07.1284735Z     Checking cfg-if v1.0.5
+foundation	Build and check actual workspace	2026-10-01T08:57:07.1531015Z    Compiling lazy_static v1.5.0
+foundation	Build and check actual workspace	2026-10-01T08:57:07.1891970Z     Checking itoa v1.0.18
+foundation	Build and check actual workspace	2026-10-01T08:57:07.2731623Z    Compiling beef v0.5.2
+foundation	Build and check actual workspace	2026-10-01T08:57:07.3508984Z     Checking cpufeatures v0.2.17
+foundation	Build and check actual workspace	2026-10-01T08:57:07.3677396Z    Compiling serde_derive v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:08.6281810Z    Compiling strum_macros v0.27.2
+foundation	Build and check actual workspace	2026-10-01T08:57:08.7531508Z    Compiling curve25519-dalek-derive v0.1.1
+foundation	Build and check actual workspace	2026-10-01T08:57:09.1822173Z    Compiling num-traits v0.2.19
+foundation	Build and check actual workspace	2026-10-01T08:57:09.8451631Z    Compiling either v1.18.0
+foundation	Build and check actual workspace	2026-10-01T08:57:10.0161667Z     Checking subtle v2.6.1
+foundation	Build and check actual workspace	2026-10-01T08:57:10.6161656Z     Checking signature v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:10.6501223Z     Checking ed25519 v2.2.3
+foundation	Build and check actual workspace	2026-10-01T08:57:10.6991723Z    Compiling strum v0.27.2
+foundation	Build and check actual workspace	2026-10-01T08:57:10.8454720Z    Compiling itertools v0.14.0
+foundation	Build and check actual workspace	2026-10-01T08:57:10.9031756Z    Compiling logos-derive v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:11.1501800Z    Compiling enum-as-inner v0.6.1
+foundation	Build and check actual workspace	2026-10-01T08:57:11.2672431Z     Checking sha2 v0.10.9
+foundation	Build and check actual workspace	2026-10-01T08:57:11.4481595Z    Compiling yansi v1.0.1
+foundation	Build and check actual workspace	2026-10-01T08:57:11.4721810Z    Compiling unicode-width v0.1.14
+foundation	Build and check actual workspace	2026-10-01T08:57:11.6551654Z    Compiling paste v1.0.15
+foundation	Build and check actual workspace	2026-10-01T08:57:11.7012030Z    Compiling ariadne v0.5.1
+foundation	Build and check actual workspace	2026-10-01T08:57:11.8091449Z     Checking ed25519-dalek v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:12.1111669Z    Compiling logos v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:12.2078074Z    Compiling unicode-segmentation v1.13.3
+foundation	Build and check actual workspace	2026-10-01T08:57:12.2327877Z     Checking base64 v0.22.1
+foundation	Build and check actual workspace	2026-10-01T08:57:12.3671666Z    Compiling seq-macro v0.3.6
+foundation	Build and check actual workspace	2026-10-01T08:57:12.4861941Z    Compiling bluejay-core v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:12.5671779Z     Checking rmp v0.8.15
+foundation	Build and check actual workspace	2026-10-01T08:57:12.7521699Z    Compiling bluejay-parser v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:12.7712355Z    Compiling thiserror v2.0.21
+foundation	Build and check actual workspace	2026-10-01T08:57:12.7763245Z     Checking shopify_function_wasm_api_core v0.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:12.8591557Z    Compiling convert_case v0.8.0
+foundation	Build and check actual workspace	2026-10-01T08:57:13.0071356Z     Checking cart-authorization v0.1.0 (/home/runner/work/insignia/insignia/crates/cart-authorization)
+foundation	Build and check actual workspace	2026-10-01T08:57:13.0501647Z    Compiling thiserror-impl v2.0.21
+foundation	Build and check actual workspace	2026-10-01T08:57:13.1251544Z     Checking bumpalo v3.20.3
+foundation	Build and check actual workspace	2026-10-01T08:57:13.2356032Z     Checking rmp-serde v1.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:13.4621659Z     Checking shopify_function_provider v2.0.1
+foundation	Build and check actual workspace	2026-10-01T08:57:13.5611656Z    Compiling convert_case v0.11.0
+foundation	Build and check actual workspace	2026-10-01T08:57:13.6071772Z     Checking ryu v1.0.23
+foundation	Build and check actual workspace	2026-10-01T08:57:14.0737074Z    Compiling bluejay-validator v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:14.1672117Z     Checking shopify_function_wasm_api v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:15.2682133Z    Compiling bluejay-typegen-codegen v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:15.6349118Z    Compiling shopify_function_macro v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:17.0971653Z     Checking shopify_function v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:17.1380632Z     Checking cart-validation v0.1.0 (/home/runner/work/insignia/insignia/crates/cart-validation)
+foundation	Build and check actual workspace	2026-10-01T08:57:17.1383223Z     Checking cart-transform v0.1.0 (/home/runner/work/insignia/insignia/crates/cart-transform)
+foundation	Build and check actual workspace	2026-10-01T08:57:17.8383335Z     Finished `dev` profile [unoptimized + debuginfo] target(s) in 15.01s
+foundation	Build and check actual workspace	2026-10-01T08:57:17.9314147Z    Compiling memchr v2.8.3
+foundation	Build and check actual workspace	2026-10-01T08:57:17.9315139Z    Compiling zmij v1.0.23
+foundation	Build and check actual workspace	2026-10-01T08:57:17.9315605Z    Compiling itoa v1.0.18
+foundation	Build and check actual workspace	2026-10-01T08:57:17.9316064Z    Compiling typenum v1.20.1
+foundation	Build and check actual workspace	2026-10-01T08:57:18.0682081Z    Compiling serde_core v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:18.2342745Z    Compiling strum v0.27.2
+foundation	Build and check actual workspace	2026-10-01T08:57:18.2891681Z    Compiling cpufeatures v0.2.17
+foundation	Build and check actual workspace	2026-10-01T08:57:18.3192469Z    Compiling cfg-if v1.0.5
+foundation	Build and check actual workspace	2026-10-01T08:57:18.3404146Z    Compiling subtle v2.6.1
+foundation	Build and check actual workspace	2026-10-01T08:57:18.4312259Z    Compiling signature v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:18.4699146Z    Compiling ed25519 v2.2.3
+foundation	Build and check actual workspace	2026-10-01T08:57:18.5617131Z    Compiling serde_json v1.0.151
+foundation	Build and check actual workspace	2026-10-01T08:57:18.6651736Z    Compiling generic-array v0.14.7
+foundation	Build and check actual workspace	2026-10-01T08:57:18.6969631Z    Compiling base64 v0.22.1
+foundation	Build and check actual workspace	2026-10-01T08:57:18.9322430Z    Compiling num-traits v0.2.19
+foundation	Build and check actual workspace	2026-10-01T08:57:19.2216052Z    Compiling block-buffer v0.10.4
+foundation	Build and check actual workspace	2026-10-01T08:57:19.2901458Z    Compiling crypto-common v0.1.7
+foundation	Build and check actual workspace	2026-10-01T08:57:19.3401440Z    Compiling digest v0.10.7
+foundation	Build and check actual workspace	2026-10-01T08:57:19.4481716Z    Compiling curve25519-dalek v4.1.3
+foundation	Build and check actual workspace	2026-10-01T08:57:19.6492214Z    Compiling sha2 v0.10.9
+foundation	Build and check actual workspace	2026-10-01T08:57:19.8511607Z    Compiling bluejay-core v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:20.0011634Z    Compiling ed25519-dalek v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:20.1201808Z    Compiling bluejay-parser v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:20.1828918Z    Compiling rmp v0.8.15
+foundation	Build and check actual workspace	2026-10-01T08:57:20.3542304Z    Compiling serde v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:20.4653873Z    Compiling shopify_function_wasm_api_core v0.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:20.5701560Z    Compiling bumpalo v3.20.3
+foundation	Build and check actual workspace	2026-10-01T08:57:20.9271745Z    Compiling rmp-serde v1.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:21.1051806Z    Compiling shopify_function_provider v2.0.1
+foundation	Build and check actual workspace	2026-10-01T08:57:21.3252816Z    Compiling cart-authorization v0.1.0 (/home/runner/work/insignia/insignia/crates/cart-authorization)
+foundation	Build and check actual workspace	2026-10-01T08:57:21.6416575Z    Compiling bluejay-validator v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:21.6991495Z    Compiling thiserror v2.0.21
+foundation	Build and check actual workspace	2026-10-01T08:57:21.7061396Z    Compiling ryu v1.0.23
+foundation	Build and check actual workspace	2026-10-01T08:57:21.7510227Z    Compiling shopify_function_wasm_api v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:23.2088164Z    Compiling bluejay-typegen-codegen v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:23.5804284Z    Compiling shopify_function_macro v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:25.0462847Z    Compiling shopify_function v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:25.1657451Z    Compiling cart-transform v0.1.0 (/home/runner/work/insignia/insignia/crates/cart-transform)
+foundation	Build and check actual workspace	2026-10-01T08:57:25.1658990Z    Compiling cart-validation v0.1.0 (/home/runner/work/insignia/insignia/crates/cart-validation)
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2425015Z     Finished `test` profile [unoptimized + debuginfo] target(s) in 8.37s
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2458648Z      Running unittests src/lib.rs (target/debug/deps/cart_authorization-428bc6dab939b9b3)
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2473041Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2473244Z running 0 tests
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2473490Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2474146Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2474754Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2475644Z      Running tests/currency_matrix.rs (target/debug/deps/currency_matrix-a76cbbc666a7ab20)
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2484594Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2484784Z running 1 test
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2530972Z test every_admitted_currency_agrees_with_versioned_ts_matrix ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2531364Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2531814Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2532433Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2533482Z      Running tests/production_vectors.rs (target/debug/deps/production_vectors-931358b74671ec5f)
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2542605Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.2542774Z running 1 test
+foundation	Build and check actual workspace	2026-10-01T08:57:26.3799249Z test production_typescript_vectors_verify_with_complete_rust_core ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.3799728Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.3800181Z test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.13s
+foundation	Build and check actual workspace	2026-10-01T08:57:26.3800917Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.3803403Z      Running tests/whole_quote.rs (target/debug/deps/whole_quote-dd6e3b33eb9f8a50)
+foundation	Build and check actual workspace	2026-10-01T08:57:26.3815130Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.3815328Z running 13 tests
+foundation	Build and check actual workspace	2026-10-01T08:57:26.4061888Z test canonical_carriers_reject_length_padding_alphabet_and_tail_bits ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.4169129Z test complete_ordered_set_verifies_once_and_matches_observed_price ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.4178611Z test compensated_price_mutations_cannot_preserve_authorization_by_preserving_total ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.4364827Z test every_header_byte_class_is_signed_and_structural_header_is_strict ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.4641217Z test last_member_change_invalidates_everything ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.4782666Z test independent_context_keys_date_and_physical_economics_reject ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.5021343Z test missing_duplicate_unsigned_and_extra_members_fail_closed ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.5371425Z test member_from_a_different_signed_quote_cannot_mix_with_original_envelope ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.5411630Z test noncanonical_public_point_and_revoked_or_out_of_window_keys_reject ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.5472964Z test shared_python_typescript_rust_golden_vector_agrees ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.5780013Z test signature_and_arithmetic_profiles_reject_mutations ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.5837696Z test large_complete_quantity_and_500_unit_tier_cannot_be_partially_reused ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7640277Z test fifteen_independently_signed_high_bit_magic_variants_reject ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7641416Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7642122Z test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.38s
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7643110Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7643725Z      Running unittests src/main.rs (target/debug/deps/cart_transform-358275b5ea2405f6)
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7655769Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7655979Z running 20 tests
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7662007Z test capacity::tests::exact_output_bound_has_headroom ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7662888Z test capacity::tests::cart_line_width_and_grammar ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7663843Z test product_policy::tests::absent_fields_are_unmanaged_but_a_single_lost_field_is_uncertain ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7664950Z test product_policy::tests::illegible_lone_anchor_cannot_authorize_a_signed_quote ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7666295Z test product_policy::tests::matching_ready_fields_classify_required_and_optional ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7691660Z test product_policy::tests::pending_malformed_and_stale_fields_block_plain_but_preserve_signed ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7702314Z test product_policy::tests::wrong_installation_generation_rejects_signed_too ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7704034Z test product_policy::tests::strict_grammar_rejects_unknown_states_and_noncanonical_revisions ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7706876Z test tests::revoked_and_out_of_window_public_keys_emit_no_price_operation ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7718332Z test tests::no_partial_expansion_for_incomplete_or_tampered_set ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7821153Z test tests::complete_set_sets_both_prices_and_copies_compact_member ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7851288Z test tests::signed_quote_with_only_illegible_policy_emits_no_price ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7861981Z test tests::signed_quote_with_no_product_anchors_still_requires_shop_keys ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7963706Z test tests::signed_prices_survive_policy_revision_and_one_lost_anchor ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.7987628Z test tests::context_physical_line_policy_and_cart_order_are_enforced ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8001758Z test tests::unsigned_marker_removed_and_invalid_signature_emit_no_price ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8031528Z test tests::untrusted_config_cannot_raise_experiment_ceiling ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8036123Z test tests::ten_thousand_physical_units_use_two_expansions ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8118318Z test tests::transform_accepts_canonical_zero_and_echoes_target_local_id ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8350907Z test tests::ten_bucket_output_is_bounded_and_oversized_sets_emit_no_partial_operation ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8351622Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8352255Z test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8353392Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8354889Z      Running unittests src/main.rs (target/debug/deps/cart_validation-95daed9c7c60dc1b)
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8367262Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8367455Z running 24 tests
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8371121Z test capacity::tests::exact_output_bound_has_headroom ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8372713Z test capacity::tests::cart_line_width_and_grammar ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8374625Z test product_policy::tests::absent_fields_are_unmanaged_but_a_single_lost_field_is_uncertain ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8377049Z test product_policy::tests::illegible_lone_anchor_cannot_authorize_a_signed_quote ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8379402Z test product_policy::tests::pending_malformed_and_stale_fields_block_plain_but_preserve_signed ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8381593Z test product_policy::tests::strict_grammar_rejects_unknown_states_and_noncanonical_revisions ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8382927Z test product_policy::tests::matching_ready_fields_classify_required_and_optional ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8384130Z test product_policy::tests::wrong_installation_generation_rejects_signed_too ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8407628Z test tests::incomplete_tampered_and_unsigned_required_sets_reject ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8461550Z test tests::malformed_stale_pending_and_wrong_generation_policy_fail_plain ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8526505Z test tests::complete_set_compares_observed_exact_subtotals ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8553247Z test tests::one_lost_anchor_blocks_plain_while_explicit_optional_and_unmanaged_pass ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8556339Z test tests::buyer_marker_removal_cannot_turn_known_required_into_plain ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8566706Z test tests::revoked_and_out_of_window_public_keys_reject_checkout ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8568300Z test tests::cart_order_context_and_physical_claim_changes_fail_at_checkout ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8591295Z test tests::signed_quote_with_only_illegible_policy_rejects ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8701936Z test tests::signed_quote_with_no_product_anchors_needs_healthy_shop_keys ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8822238Z test tests::signed_historical_quote_survives_same_generation_policy_revision ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8825375Z test tests::ten_thousand_physical_units_validate_without_per_unit_expansion ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8851285Z test tests::untrusted_config_cannot_raise_experiment_ceiling ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8911719Z test tests::zero_based_cartline_does_not_bypass_economics_or_trust_at_checkout ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.8998861Z test tests::mixed_200_line_cart_blocks_damaged_managed_line_then_recovers ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.9159636Z test tests::ten_bucket_set_validates_and_oversized_sets_reject ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.9776133Z test tests::zero_based_cartline_preserves_complete_signed_checkout_at_both_steps ... ok
+foundation	Build and check actual workspace	2026-10-01T08:57:26.9777337Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:26.9778451Z test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.14s
+foundation	Build and check actual workspace	2026-10-01T08:57:26.9779355Z    Doc-tests cart_authorization
+foundation	Build and check actual workspace	2026-10-01T08:57:26.9779879Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:27.0056083Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:27.0056932Z running 0 tests
+foundation	Build and check actual workspace	2026-10-01T08:57:27.0057328Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:27.0058240Z test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+foundation	Build and check actual workspace	2026-10-01T08:57:27.0059234Z 
+foundation	Build and check actual workspace	2026-10-01T08:57:27.3807918Z /home/runner/work/insignia/insignia/crates/cart-transform/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+foundation	Build and check actual workspace	2026-10-01T08:57:27.4655998Z    Compiling proc-macro2 v1.0.107
+foundation	Build and check actual workspace	2026-10-01T08:57:27.4656919Z    Compiling quote v1.0.47
+foundation	Build and check actual workspace	2026-10-01T08:57:27.4658597Z    Compiling unicode-ident v1.0.26
+foundation	Build and check actual workspace	2026-10-01T08:57:27.4659169Z    Compiling semver v1.0.28
+foundation	Build and check actual workspace	2026-10-01T08:57:27.5272005Z    Compiling zmij v1.0.23
+foundation	Build and check actual workspace	2026-10-01T08:57:27.6084035Z    Compiling heck v0.5.0
+foundation	Build and check actual workspace	2026-10-01T08:57:27.6561742Z    Compiling rustc_version v0.4.1
+foundation	Build and check actual workspace	2026-10-01T08:57:27.7102427Z    Compiling serde_json v1.0.151
+foundation	Build and check actual workspace	2026-10-01T08:57:27.7382170Z    Compiling version_check v0.9.5
+foundation	Build and check actual workspace	2026-10-01T08:57:27.7912037Z    Compiling serde_core v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:27.8543786Z    Compiling logos-codegen v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:27.9534476Z    Compiling lazy_static v1.5.0
+foundation	Build and check actual workspace	2026-10-01T08:57:27.9570076Z    Compiling generic-array v0.14.7
+foundation	Build and check actual workspace	2026-10-01T08:57:27.9673895Z    Compiling regex-syntax v0.8.11
+foundation	Build and check actual workspace	2026-10-01T08:57:27.9881556Z    Compiling fnv v1.0.7
+foundation	Build and check actual workspace	2026-10-01T08:57:28.0191882Z    Compiling typenum v1.20.1
+foundation	Build and check actual workspace	2026-10-01T08:57:28.0384649Z    Compiling beef v0.5.2
+foundation	Build and check actual workspace	2026-10-01T08:57:28.2761988Z    Compiling syn v2.0.119
+foundation	Build and check actual workspace	2026-10-01T08:57:28.3149205Z    Compiling syn v3.0.6
+foundation	Build and check actual workspace	2026-10-01T08:57:30.4181631Z    Compiling memchr v2.8.3
+foundation	Build and check actual workspace	2026-10-01T08:57:31.0303862Z    Compiling itoa v1.0.18
+foundation	Build and check actual workspace	2026-10-01T08:57:31.1381623Z    Compiling either v1.18.0
+foundation	Build and check actual workspace	2026-10-01T08:57:31.3001884Z    Compiling itertools v0.14.0
+foundation	Build and check actual workspace	2026-10-01T08:57:32.0538161Z    Compiling strum_macros v0.27.2
+foundation	Build and check actual workspace	2026-10-01T08:57:32.2721663Z    Compiling logos-derive v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:32.4291766Z    Compiling enum-as-inner v0.6.1
+foundation	Build and check actual workspace	2026-10-01T08:57:32.6965973Z    Compiling yansi v1.0.1
+foundation	Build and check actual workspace	2026-10-01T08:57:32.8134138Z    Compiling unicode-width v0.1.14
+foundation	Build and check actual workspace	2026-10-01T08:57:32.8866500Z    Compiling paste v1.0.15
+foundation	Build and check actual workspace	2026-10-01T08:57:32.9622211Z    Compiling ariadne v0.5.1
+foundation	Build and check actual workspace	2026-10-01T08:57:32.9902024Z    Compiling logos v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:33.0251777Z    Compiling block-buffer v0.10.4
+foundation	Build and check actual workspace	2026-10-01T08:57:33.0890680Z    Compiling crypto-common v0.1.7
+foundation	Build and check actual workspace	2026-10-01T08:57:33.1036992Z    Compiling unicode-segmentation v1.13.3
+foundation	Build and check actual workspace	2026-10-01T08:57:33.1327927Z    Compiling seq-macro v0.3.6
+foundation	Build and check actual workspace	2026-10-01T08:57:33.3528113Z    Compiling digest v0.10.7
+foundation	Build and check actual workspace	2026-10-01T08:57:33.4711594Z    Compiling curve25519-dalek v4.1.3
+foundation	Build and check actual workspace	2026-10-01T08:57:33.5912008Z    Compiling thiserror v2.0.21
+foundation	Build and check actual workspace	2026-10-01T08:57:33.7621707Z    Compiling cfg-if v1.0.5
+foundation	Build and check actual workspace	2026-10-01T08:57:33.8300213Z    Compiling convert_case v0.8.0
+foundation	Build and check actual workspace	2026-10-01T08:57:33.9763509Z    Compiling strum v0.27.2
+foundation	Build and check actual workspace	2026-10-01T08:57:34.0251864Z    Compiling bluejay-core v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:34.0938936Z    Compiling thiserror-impl v2.0.21
+foundation	Build and check actual workspace	2026-10-01T08:57:34.3017946Z    Compiling bluejay-parser v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:34.5691711Z    Compiling signature v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:34.6071620Z    Compiling serde v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:34.7551612Z    Compiling subtle v2.6.1
+foundation	Build and check actual workspace	2026-10-01T08:57:35.2524547Z    Compiling ed25519 v2.2.3
+foundation	Build and check actual workspace	2026-10-01T08:57:35.3501801Z    Compiling shopify_function_wasm_api_core v0.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:35.4415055Z    Compiling sha2 v0.10.9
+foundation	Build and check actual workspace	2026-10-01T08:57:35.7406219Z    Compiling bluejay-validator v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:35.8711403Z    Compiling convert_case v0.11.0
+foundation	Build and check actual workspace	2026-10-01T08:57:35.9607817Z    Compiling serde_derive v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:36.0901683Z    Compiling ed25519-dalek v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:36.2841778Z    Compiling shopify_function_wasm_api v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:36.8261435Z    Compiling ryu v1.0.23
+foundation	Build and check actual workspace	2026-10-01T08:57:37.0071897Z    Compiling base64 v0.22.1
+foundation	Build and check actual workspace	2026-10-01T08:57:37.6727599Z    Compiling bluejay-typegen-codegen v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:38.2011522Z    Compiling shopify_function_macro v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:38.4112436Z    Compiling cart-authorization v0.1.0 (/home/runner/work/insignia/insignia/crates/cart-authorization)
+foundation	Build and check actual workspace	2026-10-01T08:57:39.7744514Z    Compiling shopify_function v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:39.9351156Z    Compiling cart-transform v0.1.0 (/home/runner/work/insignia/insignia/crates/cart-transform)
+foundation	Build and check actual workspace	2026-10-01T08:57:41.6497420Z     Finished `release` profile [optimized] target(s) in 14.26s
+foundation	Build and check actual workspace	2026-10-01T08:57:41.6829258Z f6a27462279ae490df31a6ba432b48da4ada5c71481b1e274404a0cbb4375131  /home/runner/work/insignia/insignia/extensions/insignia-cart-transform/target/cart-transform.raw.wasm
+foundation	Build and check actual workspace	2026-10-01T08:57:41.6832742Z b91c2260575873cd21209391cfe04b89d78ca700a893602409ef53efb3e424ca  /home/runner/work/insignia/insignia/extensions/insignia-cart-transform/target/cart-transform.wasm
+foundation	Build and check actual workspace	2026-10-01T08:57:41.6842031Z 184248 /home/runner/work/insignia/insignia/extensions/insignia-cart-transform/target/cart-transform.raw.wasm
+foundation	Build and check actual workspace	2026-10-01T08:57:41.6843742Z 181314 /home/runner/work/insignia/insignia/extensions/insignia-cart-transform/target/cart-transform.wasm
+foundation	Build and check actual workspace	2026-10-01T08:57:41.6845065Z 365562 total
+foundation	Build and check actual workspace	2026-10-01T08:57:42.0195540Z /home/runner/work/insignia/insignia/crates/cart-validation/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+foundation	Build and check actual workspace	2026-10-01T08:57:42.1034729Z    Compiling proc-macro2 v1.0.107
+foundation	Build and check actual workspace	2026-10-01T08:57:42.1035748Z    Compiling unicode-ident v1.0.26
+foundation	Build and check actual workspace	2026-10-01T08:57:42.1036358Z    Compiling quote v1.0.47
+foundation	Build and check actual workspace	2026-10-01T08:57:42.1631603Z    Compiling semver v1.0.28
+foundation	Build and check actual workspace	2026-10-01T08:57:42.1632210Z    Compiling zmij v1.0.23
+foundation	Build and check actual workspace	2026-10-01T08:57:42.2492263Z    Compiling heck v0.5.0
+foundation	Build and check actual workspace	2026-10-01T08:57:42.3002239Z    Compiling rustc_version v0.4.1
+foundation	Build and check actual workspace	2026-10-01T08:57:42.3343749Z    Compiling serde_json v1.0.151
+foundation	Build and check actual workspace	2026-10-01T08:57:42.3883475Z    Compiling version_check v0.9.5
+foundation	Build and check actual workspace	2026-10-01T08:57:42.4131868Z    Compiling serde_core v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:42.5011461Z    Compiling logos-codegen v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:42.5833281Z    Compiling fnv v1.0.7
+foundation	Build and check actual workspace	2026-10-01T08:57:42.5871264Z    Compiling generic-array v0.14.7
+foundation	Build and check actual workspace	2026-10-01T08:57:42.6043994Z    Compiling regex-syntax v0.8.11
+foundation	Build and check actual workspace	2026-10-01T08:57:42.6169214Z    Compiling typenum v1.20.1
+foundation	Build and check actual workspace	2026-10-01T08:57:42.6811603Z    Compiling beef v0.5.2
+foundation	Build and check actual workspace	2026-10-01T08:57:42.9172021Z    Compiling syn v2.0.119
+foundation	Build and check actual workspace	2026-10-01T08:57:42.9362226Z    Compiling lazy_static v1.5.0
+foundation	Build and check actual workspace	2026-10-01T08:57:42.9751906Z    Compiling syn v3.0.6
+foundation	Build and check actual workspace	2026-10-01T08:57:45.0841696Z    Compiling either v1.18.0
+foundation	Build and check actual workspace	2026-10-01T08:57:45.4152194Z    Compiling itoa v1.0.18
+foundation	Build and check actual workspace	2026-10-01T08:57:45.5141975Z    Compiling memchr v2.8.3
+foundation	Build and check actual workspace	2026-10-01T08:57:46.1141600Z    Compiling itertools v0.14.0
+foundation	Build and check actual workspace	2026-10-01T08:57:46.6621536Z    Compiling strum_macros v0.27.2
+foundation	Build and check actual workspace	2026-10-01T08:57:46.8199336Z    Compiling logos-derive v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:46.9891783Z    Compiling enum-as-inner v0.6.1
+foundation	Build and check actual workspace	2026-10-01T08:57:47.2471783Z    Compiling unicode-width v0.1.14
+foundation	Build and check actual workspace	2026-10-01T08:57:47.4991393Z    Compiling yansi v1.0.1
+foundation	Build and check actual workspace	2026-10-01T08:57:47.5591654Z    Compiling paste v1.0.15
+foundation	Build and check actual workspace	2026-10-01T08:57:47.6150299Z    Compiling logos v0.15.1
+foundation	Build and check actual workspace	2026-10-01T08:57:47.6811364Z    Compiling crypto-common v0.1.7
+foundation	Build and check actual workspace	2026-10-01T08:57:47.7021664Z    Compiling block-buffer v0.10.4
+foundation	Build and check actual workspace	2026-10-01T08:57:47.7241677Z    Compiling unicode-segmentation v1.13.3
+foundation	Build and check actual workspace	2026-10-01T08:57:47.7713699Z    Compiling ariadne v0.5.1
+foundation	Build and check actual workspace	2026-10-01T08:57:47.7781672Z    Compiling seq-macro v0.3.6
+foundation	Build and check actual workspace	2026-10-01T08:57:48.0741573Z    Compiling digest v0.10.7
+foundation	Build and check actual workspace	2026-10-01T08:57:48.1961738Z    Compiling curve25519-dalek v4.1.3
+foundation	Build and check actual workspace	2026-10-01T08:57:48.3153749Z    Compiling cfg-if v1.0.5
+foundation	Build and check actual workspace	2026-10-01T08:57:48.3352456Z    Compiling thiserror v2.0.21
+foundation	Build and check actual workspace	2026-10-01T08:57:48.5671613Z    Compiling convert_case v0.8.0
+foundation	Build and check actual workspace	2026-10-01T08:57:48.6083551Z    Compiling strum v0.27.2
+foundation	Build and check actual workspace	2026-10-01T08:57:48.6501846Z    Compiling bluejay-core v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:48.6951694Z    Compiling thiserror-impl v2.0.21
+foundation	Build and check actual workspace	2026-10-01T08:57:48.8206387Z    Compiling signature v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:48.8580879Z    Compiling serde v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:48.9332541Z    Compiling bluejay-parser v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:49.5956485Z    Compiling subtle v2.6.1
+foundation	Build and check actual workspace	2026-10-01T08:57:49.8231513Z    Compiling ed25519 v2.2.3
+foundation	Build and check actual workspace	2026-10-01T08:57:49.9182170Z    Compiling shopify_function_wasm_api_core v0.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:50.0201065Z    Compiling sha2 v0.10.9
+foundation	Build and check actual workspace	2026-10-01T08:57:50.4761456Z    Compiling bluejay-validator v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:50.5241613Z    Compiling convert_case v0.11.0
+foundation	Build and check actual workspace	2026-10-01T08:57:50.5271087Z    Compiling serde_derive v1.0.229
+foundation	Build and check actual workspace	2026-10-01T08:57:50.7472881Z    Compiling ed25519-dalek v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:50.9451660Z    Compiling shopify_function_wasm_api v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:51.4922400Z    Compiling ryu v1.0.23
+foundation	Build and check actual workspace	2026-10-01T08:57:51.6982047Z    Compiling base64 v0.22.1
+foundation	Build and check actual workspace	2026-10-01T08:57:52.3821799Z    Compiling bluejay-typegen-codegen v0.3.1
+foundation	Build and check actual workspace	2026-10-01T08:57:52.8659925Z    Compiling shopify_function_macro v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:53.0101139Z    Compiling cart-authorization v0.1.0 (/home/runner/work/insignia/insignia/crates/cart-authorization)
+foundation	Build and check actual workspace	2026-10-01T08:57:54.3863139Z    Compiling shopify_function v2.2.0
+foundation	Build and check actual workspace	2026-10-01T08:57:54.5426336Z    Compiling cart-validation v0.1.0 (/home/runner/work/insignia/insignia/crates/cart-validation)
+foundation	Build and check actual workspace	2026-10-01T08:57:56.1755493Z     Finished `release` profile [optimized] target(s) in 14.14s
+foundation	Build and check actual workspace	2026-10-01T08:57:56.2078935Z 6352fbc332159dfec120ed514f2d2eb532cdf0c97d6cd69998b7f50902391363  /home/runner/work/insignia/insignia/extensions/insignia-cart-validation/target/cart-validation.raw.wasm
+foundation	Build and check actual workspace	2026-10-01T08:57:56.2082548Z 09d719d4e10b18b0ffc95973b0fe1f8da83a9977f979dd7818138cdc90965c96  /home/runner/work/insignia/insignia/extensions/insignia-cart-validation/target/cart-validation.wasm
+foundation	Build and check actual workspace	2026-10-01T08:57:56.2091899Z 185896 /home/runner/work/insignia/insignia/extensions/insignia-cart-validation/target/cart-validation.raw.wasm
+foundation	Build and check actual workspace	2026-10-01T08:57:56.2093527Z 182904 /home/runner/work/insignia/insignia/extensions/insignia-cart-validation/target/cart-validation.wasm
+foundation	Build and check actual workspace	2026-10-01T08:57:56.5250643Z 368800 total
+foundation	Build and check actual workspace	2026-10-01T08:57:56.5251619Z /home/runner/work/insignia/insignia/.m1-artifacts/tools/function-runner-9.2.2.gz: OK
+foundation	Build and check actual workspace	2026-10-01T08:57:56.8139990Z /home/runner/work/insignia/insignia/.m1-artifacts/tools/function-runner-9.2.2: OK
+foundation	Build and check actual workspace	2026-10-01T08:57:57.6613820Z transform 8 f6a27462279ae490df31a6ba432b48da4ada5c71481b1e274404a0cbb4375131 b91c2260575873cd21209391cfe04b89d78ca700a893602409ef53efb3e424ca
+foundation	Build and check actual workspace	2026-10-01T08:57:57.6616379Z validation 18 6352fbc332159dfec120ed514f2d2eb532cdf0c97d6cd69998b7f50902391363 09d719d4e10b18b0ffc95973b0fe1f8da83a9977f979dd7818138cdc90965c96
+foundation	Build and check actual workspace	2026-10-01T08:58:00.5476619Z {
+foundation	Build and check actual workspace	2026-10-01T08:58:00.5477277Z   "rows": 230,
+foundation	Build and check actual workspace	2026-10-01T08:58:00.5477894Z   "positive": 16,
+foundation	Build and check actual workspace	2026-10-01T08:58:00.5479152Z   "vectorsSha256": "7f0046b88183b79cbccc305c883aab0483a6cda1eddb191297e2295c35ac1eda",
+foundation	Build and check actual workspace	2026-10-01T08:58:00.5481473Z   "transformWasmSha256": "b91c2260575873cd21209391cfe04b89d78ca700a893602409ef53efb3e424ca",
+foundation	Build and check actual workspace	2026-10-01T08:58:00.5482758Z   "validationWasmSha256": "09d719d4e10b18b0ffc95973b0fe1f8da83a9977f979dd7818138cdc90965c96"
+foundation	Build and check actual workspace	2026-10-01T08:58:00.5483429Z }
+foundation	Build and check actual workspace	2026-10-01T08:58:00.6887945Z M4-003 production builder config passed 6 complete Function runs.
+foundation	Build and check actual workspace	2026-10-01T08:58:00.7632838Z $ corepack pnpm --filter @insignia/web test && corepack pnpm --filter @insignia/storefront test
+foundation	Build and check actual workspace	2026-10-01T08:58:00.8412000Z $ node --test test/*.test.mjs test/admin/*.test.mjs
+foundation	Build and check actual workspace	2026-10-01T08:58:01.0572294Z ✔ current staff and installation grant read and edit; reinstallation is checked every request (2.298129ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.0602059Z ✔ staff read access does not grant mutation (1.309594ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.0631541Z ✔ expired or cross-shop identity and stale installation fail closed (0.63211ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.1290050Z ✔ read requires current verified staff and exact shop, even on deep links (40.799904ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.1336317Z ✔ mutation refuses cross-origin and staff denial before invoking command (3.055593ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.1363835Z ✔ save carries exact product, draft version and idempotency to durable command (2.53998ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.1367285Z ✔ stale draft save is a conflict, never a success response (1.106174ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.1401880Z ✔ publish returns activation-pending truthfully and requires current edit grant (1.225537ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.1431651Z ✔ a product missing from the verified shop cannot be changed (1.361802ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.1433542Z ✔ expired identity and shop supplied in command body cannot create a config (2.072638ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.1473625Z ✔ unwired admin backend serves no private catalog data (0.628172ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:01.1480060Z ✔ unknown durable command failures remain unavailable without leaking details (1.782076ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:05.7406646Z ✔ editor-generated fixed, override and tier defaults price through unchanged M2 in zero/two/three exponent currencies (4323.860902ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:07.4043116Z ✔ real browser editor syncs typed view, variant and step controls with direct Konva canvas and saved draft (1662.461228ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:08.4647293Z ✔ removing named choices drops only their labels including nested option value labels before save (1061.451511ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:09.3967730Z ✔ variant without a saved image override retains the portrait default until explicit landscape adoption (931.987373ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:10.3402523Z ✔ merchant currency adoption refreshes saved publication eligibility and later failed or stale reads fail closed (942.329537ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:12.2101870Z ✔ mobile deep link, cookie-free reload, interrupted save, stale conflict, and missing Polaris control (1871.124325ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:13.1193753Z ✔ interrupted publication resumes the identical request after reload and reaches a durable phase (908.493857ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:14.0209584Z ✔ publication success preserves dirty local edits and exact save recovery [1/1] (902.126546ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:14.8999721Z ✔ publication failed preserves dirty local edits and exact save recovery [1/1] (879.007867ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:20.6072319Z PUBLICATION_STRESS_FIRST_FAILURE {"iteration":1,"saveMode":"ambiguous","publishMode":"success","observation":{"ownerVersion":"1","selectedPlacement":"front","numericInputValue":"0.5","projectedGeometry":"{\"version\":1,\"viewId\":\"front-view\",\"status\":\"ready\",\"image\":{\"revisionId\":\"product_111\",\"width\":1,\"height\":1,\"url\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=\"},\"contentRect\":{\"x\":238,\"y\":0,\"width\":420,\"height\":420},\"placements\":[{\"id\":\"front\",\"selected\":true,\"bounds\":{\"x\":385,\"y\":147,\"width\":126,\"height\":126}}]}","publicationMetadata":"{\"state\":\"PUBLISH_REQUESTED\",\"revisionId\":\"original-immutable-revision\",\"sourceDraftVersion\":\"1\"}"}}
+foundation	Build and check actual workspace	2026-10-01T08:58:20.6382043Z ✖ publication success preserves ambiguous local edits and exact save recovery [1/1] (5736.1175ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:21.5819351Z ✔ publication failed preserves ambiguous local edits and exact save recovery [1/1] (945.438321ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:22.4765736Z ✔ publication retry keeps the original version after a newer draft edit when embedded storage is denied (894.466367ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:23.1667540Z ✔ stale stored publication is replaced by the current immutable intent despite newer ineligible draft (690.154207ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:23.8556926Z ✔ reinstalled Admin discards prior-generation browser request and publishes with a new key (688.862457ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:25.1169394Z ✔ concurrent editor refreshes share one App Bridge identity request (1261.187231ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1202685Z ✔ empty merchant draft can be configured through typed controls and pass M2 validation (1003.58912ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1466807Z ﹣ overlapping distinct-key M5 creates serialize before the command FK lock upgrade (1.397999ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1468762Z ﹣ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (0.183913ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1471096Z ﹣ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (0.147255ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1473111Z ﹣ actual M4 prepare/advance over immutable M5 revision reports ready, conflict and hold truthfully (1.212323ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1474985Z ✔ diagnostic preview requires accounting and HTTPS before any provider access (465.339588ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1476921Z ﹣ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (0.483412ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1478924Z ✔ preview same-token single flight; replacement and current-installation invalidation exchange fresh (1.581141ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1480991Z ✔ preview rejected exchange is not cached and expired or long-lived identity is denied (0.776689ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1483016Z ﹣ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (0.947218ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1484806Z ✔ server composition binds trusted provider reads to one signed immutable quote candidate (38.701234ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1486232Z ✔ built SSR serves public shell and a real Polaris/Preact interaction (6267.485431ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1487673Z ✔ HTTP 5xx after durable inbox commit leads to same-ID retry and a single queue handoff (19.622699ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1489645Z ✔ stream bound rejects a lying or absent Content-Length before trusted metadata is stored (4.7156ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1491167Z ﹣ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (1.197274ms) # SKIP
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1492233Z ℹ tests 42
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1492607Z ℹ suites 0
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1492961Z ℹ pass 34
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1493302Z ℹ fail 1
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1493652Z ℹ cancelled 0
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1494022Z ℹ skipped 7
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1494371Z ℹ todo 0
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1494784Z ℹ duration_ms 25276.273422
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1496935Z 
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1497136Z ✖ failing tests:
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1497402Z 
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1497630Z test at test/admin/editor-browser.test.mjs:989:7
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1498358Z ✖ publication success preserves ambiguous local edits and exact save recovery [1/1] (5736.1175ms)
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1498929Z   page.waitForFunction: Timeout 5000ms exceeded.
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1499656Z       at TestContext.<anonymous> (/home/runner/work/insignia/insignia/apps/web/test/admin/editor-browser.test.mjs:1094:22) {
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1500258Z     name: 'TimeoutError',
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1500880Z     log: []
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1557204Z [ELIFECYCLE] Test failed. See above for more details.
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1557573Z   }
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1668885Z Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1669419Z 
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1670116Z   × "pnpm recursive run" failed in /home/runner/work/insignia/insignia/apps/
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1671345Z   │ web
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1671672Z 
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1738997Z [ELIFECYCLE] Command failed with exit code 1.
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1803132Z [ELIFECYCLE] Command failed with exit code 1.
+foundation	Build and check actual workspace	2026-10-01T08:58:26.1886880Z ##[error]Process completed with exit code 1.
