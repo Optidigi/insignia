@@ -1,0 +1,17 @@
+{
+  "role": "spec",
+  "sessionId": "01a0f6d7-992b-7180-a0cc-fe03a735255c",
+  "lastMessages": [
+    "I\u2019ll verify the exact Git refs and worktree, then review the required documents and full current source files for spec correctness. I\u2019ll keep all inspection local and read-only, an",
+    "The worktree is clean, and HEAD, tree, and effective merge base match the requested hashes. I\u2019ve loaded the code-review skill; your explicit no-delegation instruction takes precede"
+  ],
+  "clientRuntime": {
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "cwd": "/home/serveradmin/insignia-m5-002-worktree",
+    "approval_policy": "never",
+    "sandbox_policy": {
+      "type": "read-only"
+    }
+  }
+}

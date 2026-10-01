@@ -7,7 +7,8 @@ base `28e69864ebb9796504861a541363880cc86a82f8`. Worktree was clean and exactly
 matched reviewed head `bd32f9763c033586374d9f072d01fb59d5a3ad1e` and tree
 `217db18d714daf26365f4935579b3f1aaed351f6` before editing. Current final refs,
 ten exact-head workflow results and fresh full-source review dispositions are
-in the PR body, avoiding a self-referential commit.
+in the PR body, avoiding a self-referential commit. Initial candidate results
+are retained separately from final corrected-source verification.
 
 [Current authority](prompts/M5-002R2-LOCAL-STABILIZATION.md) records the explicit
 owner instruction. The ZIP contained the older live brief, not an R2 brief;
@@ -28,7 +29,7 @@ instant rather than rolling dates. Before scheduled cancellation end
 `2026-09-30T23:59:59.999Z`: allowed; exact end `2026-10-01T00:00:00.000Z` and
 one millisecond after: denied. Existing feature/pending/unknown/inactive and
 publication-admission behavior is retained. [Red](evidence/m5-002r2/clock-red.log),
-[green](evidence/m5-002r2/clock-green.log), [full boundary results](evidence/m5-002r2/postgres.log).
+[green](evidence/m5-002r2/clock-green.log), [full boundary results](evidence/m5-002r2/postgres-final.log).
 
 **Numeric input:** A focused real built-browser regression entered `0.6`, kept
 the numeric input focused, and triggered an independent owner selection
@@ -41,6 +42,33 @@ reload persistence. [Red](evidence/m5-002r2/input-red.log),
 canvas state was used. Existing dirty/ambiguous publication and exact save
 replay semantics stay unchanged.
 
+### Additional keyboard-entry correction before handoff
+
+An additional focused built-browser check on initial candidate
+`ed4eb4c33df58343aac8989dfcde6e09fb29dcb2` found that clearing and typing `0.6`
+keystroke-by-keystroke produced `0.56`: rejecting the incomplete `0` triggered
+an owner rerender before typing finished. This failed observation is retained
+in [keyboard red](evidence/m5-002r2/keyboard-red.log). The two initial full-source
+reviews found no material issue at that earlier head; their dispositions are
+retained as initial results, not final clearance of the later correction.
+
+Valid input now passes the unchanged geometry rectangle validator before
+committing owner state. Incomplete/invalid keystrokes remain DOM input only;
+final invalid change/blur still goes through the existing owner validation and
+restores the valid rectangle. No invalid geometry becomes draft or canvas
+authority. A second focused control found that formatting intermediate valid numbers
+also changed typed `0.605` to `0.665`; [fraction red](evidence/m5-002r2/fraction-red.log)
+preserves that result. A small rectangle-input component now retains raw text
+until blur while valid values commit immediately through unchanged geometry
+validation. External owner changes synchronize the control before paint, and changing
+placement/view/variant remounts its context-specific buffer. The regression
+now types `0.605`, triggers an owner rerender, saves it, rejects `1.2` on blur,
+and confirms reload retains `0.605`. [Final focused green](evidence/m5-002r2/fraction-green.log).
+
+Fresh final full-source reviews and new exact-head CI are required after this
+ordinary local correction. Initial ten green workflows and local 100/100
+remain historical; final results are separately recorded in the PR body.
+
 ## Executed local verification
 
 Pinned Node 24.21.0 / pnpm 12.6.0, TypeScript 5.9.3, Rust 1.98.1, PostgreSQL 18.6.
@@ -49,11 +77,11 @@ Synthetic SDK/provider transports only; database tests used a new project-local
 
 | Command | Actual result | Evidence |
 |---|---|---|
-| `pnpm check` through existing scoped Rust/browser environment | exit 0; full root green, including actual builds, units, boundaries, secrets, TS/Rust vectors, browser and historical hashes | [Root](evidence/m5-002r2/root.log) |
-| `pnpm check:database` | migration up twice; 52/52 core tests | [PostgreSQL](evidence/m5-002r2/postgres.log) |
+| `pnpm check` through existing scoped Rust/browser environment | exit 0; full root green, including actual builds, units, boundaries, secrets, TS/Rust vectors, browser and historical hashes | [Root](evidence/m5-002r2/root-final.log) |
+| `pnpm check:database` | migration up twice; 52/52 core tests | [PostgreSQL](evidence/m5-002r2/postgres-final.log) |
 | `pnpm --filter @insignia/web exec node --test test/shopify-webhook.test.mjs test/admin/merchant-config.test.mjs test/admin/merchant-publication.test.mjs test/admin/production-composition.test.mjs test/admin/preview-composition.test.mjs` | 11/11 including three explicit boundary subtests | Same PostgreSQL log |
-| `pnpm test:m5-stress` | **100/100; 25 each dirty/ambiguous × success/failure; zero retries** | [Stress](evidence/m5-002r2/stress-100.log) |
-| `pnpm test:m5-renderer-control` | wrapper exit 0; deliberately missing actual renderer rejects before baseline | [Negative control](evidence/m5-002r2/renderer-control.log) |
+| `pnpm test:m5-stress` | **100/100; 25 each dirty/ambiguous × success/failure; zero retries** | [Stress](evidence/m5-002r2/stress-final-100.log) |
+| `pnpm test:m5-renderer-control` | wrapper exit 0; deliberately missing actual renderer rejects before baseline | [Negative control](evidence/m5-002r2/renderer-final-control.log) |
 
 The root stress script and Foundation CI now require 25 iterations per
 combination. Previous CI failures and the unchanged-source 39/40 result remain

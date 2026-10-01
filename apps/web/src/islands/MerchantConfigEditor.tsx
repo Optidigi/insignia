@@ -8,11 +8,51 @@ import {
   projectScene,
   type Viewport,
   validateGeometry,
+  validateRect,
 } from '@insignia/visualizer/geometry';
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { CatalogProduct, ConfigView } from '../shared/admin-view.js';
 
 type Props = { mode: 'picker' | 'config'; productId?: string };
+// Preserve typed spelling until blur; only validated numeric values become geometry.
+function RectNumberInput({
+  id,
+  value,
+  onInput,
+  onChange,
+}: {
+  id: string;
+  value: number;
+  onInput: (value: number) => void;
+  onChange: (value: number) => void;
+}) {
+  const [text, setText] = useState<string | null>(null);
+  const lastInput = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    if (value !== lastInput.current) setText(null);
+  }, [value]);
+  return (
+    <input
+      id={id}
+      type="number"
+      min="0.01"
+      max="1"
+      step="0.01"
+      value={text ?? value}
+      onInput={(event) => {
+        const raw = event.currentTarget.value;
+        lastInput.current = Number(raw);
+        setText(raw);
+        onInput(Number(raw));
+      }}
+      onChange={(event) => onChange(Number(event.currentTarget.value))}
+      onBlur={() => {
+        lastInput.current = null;
+        setText(null);
+      }}
+    />
+  );
+}
 type List = { products: CatalogProduct[]; nextCursor: string | null };
 type SaveState = 'clean' | 'dirty' | 'saving' | 'saved' | 'conflict' | 'ambiguous';
 type PendingRequest = { method: 'POST' | 'PUT'; body: object; key: string; installationGeneration?: string };
@@ -1020,17 +1060,37 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                         </label>
                       ))}
                       {(['centerX', 'centerY', 'width', 'height'] as const).map((field) => (
-                        <label key={field}>
+                        <label key={field} htmlFor={`placement-rect-${field}`}>
                           {field}{' '}
-                          <input
-                            type="number"
-                            min="0.01"
-                            max="1"
-                            step="0.01"
+                          <RectNumberInput
+                            id={`placement-rect-${field}`}
+                            key={JSON.stringify([
+                              productId,
+                              editor.viewId,
+                              editor.variantId,
+                              selectedPlacement.id,
+                              field,
+                            ])}
                             value={selectedRect[field]}
-                            onInput={(event) => {
-                              const value = Number(event.currentTarget.value);
-                              if (Number.isFinite(value))
+                            onInput={(value) => {
+                              if (!Number.isFinite(value)) return;
+                              const rect = { ...selectedRect, [field]: value };
+                              try {
+                                validateRect(rect);
+                              } catch {
+                                // Keep incomplete typing in the DOM; it is not geometry authority.
+                                return;
+                              }
+                              choose({
+                                kind: 'set-placement-rect',
+                                viewId: editor.viewId,
+                                variantId: editor.variantId,
+                                placementId: selectedPlacement.id,
+                                rect,
+                              });
+                            }}
+                            onChange={(value) => {
+                              if (Number.isFinite(value) && value !== selectedRect[field])
                                 choose({
                                   kind: 'set-placement-rect',
                                   viewId: editor.viewId,

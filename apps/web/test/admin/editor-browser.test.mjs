@@ -1008,7 +1008,7 @@ test('numeric placement input reaches owner state before blur and survives an ow
       assert.equal(route.request().method(), 'PUT');
       saved = route.request().postDataJSON();
       current = saved.draft;
-      version = '2';
+      version = String(BigInt(version) + 1n);
       return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
     });
     await page.goto(server.base + '/admin/products/111/config');
@@ -1040,6 +1040,24 @@ test('numeric placement input reaches owner state before blur and survives an ow
     await page.reload();
     await page.getByLabel('Placement').first().selectOption('front');
     assert.equal(await page.getByLabel('centerX', { exact: true }).inputValue(), '0.6');
+    await page.getByLabel('centerX', { exact: true }).fill('');
+    await page.getByLabel('centerX', { exact: true }).pressSequentially('0.605');
+    await page.getByLabel('Selected step').evaluate((select) => {
+      select.value = 'large';
+      select.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+    await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => resolve())));
+    assert.equal(await page.getByLabel('centerX', { exact: true }).inputValue(), '0.605');
+    await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await page.getByText('Draft saved.', { exact: true }).waitFor();
+    assert.equal(saved.draft.geometry.views[0].placements[0].rect.centerX, 0.605);
+    await page.getByLabel('centerX', { exact: true }).fill('1.2');
+    await page.getByLabel('centerX', { exact: true }).press('Tab');
+    await page.getByText('Preview: placement rectangle must fit inside normalized image', { exact: true }).waitFor();
+    assert.equal(await page.getByLabel('centerX', { exact: true }).inputValue(), '0.605');
+    await page.reload();
+    await page.getByLabel('Placement').first().selectOption('front');
+    assert.equal(await page.getByLabel('centerX', { exact: true }).inputValue(), '0.605');
   } finally {
     await browser?.close();
     server.child.kill('SIGTERM');
