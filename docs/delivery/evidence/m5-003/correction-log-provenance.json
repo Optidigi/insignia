@@ -2,127 +2,127 @@
   {
     "file": "final-day-red.log",
     "rawSha256": "1a91fe36188e2e28193b7b337a11bec81e441ae8af40c06f281fea9a9c07827f",
-    "sanitizedSha256": "1a91fe36188e2e28193b7b337a11bec81e441ae8af40c06f281fea9a9c07827f",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "sanitizedSha256": "da45d740d110ff91eb5dcdb3785af216dfa7da334c8d9e6c3c1297c1c317ad9f",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "final-day-green.log",
     "rawSha256": "b1d330b8ff086b4f9811511e9705fc8c797624c7553d295fbb28025e4456fa26",
-    "sanitizedSha256": "b1d330b8ff086b4f9811511e9705fc8c797624c7553d295fbb28025e4456fa26",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "sanitizedSha256": "5348c3882d7e7974d03c60e66e07873999e6dbc2b113f95f3cefc68ecabc4102",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "restoration-expiry-red.log",
     "rawSha256": "16ad0800ab3991b28018fcbe4254d9be20f86052c3d97fd250d9f58b927ec40f",
-    "sanitizedSha256": "16ad0800ab3991b28018fcbe4254d9be20f86052c3d97fd250d9f58b927ec40f",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "sanitizedSha256": "6a9ec2a16cb9417159315147154b6d61262c71f9b11fe69ef3d24c8d7ea3d34d",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "restoration-expiry-green.log",
     "rawSha256": "5a25b2509d13be88b9266886647e49e7781d01690cbc738a5c4f6cada3a55f37",
-    "sanitizedSha256": "5a25b2509d13be88b9266886647e49e7781d01690cbc738a5c4f6cada3a55f37",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "sanitizedSha256": "5bae856579564017efe7f927f44910d14301e8e7e856640ceee360e974c8e4d3",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "conflict-ui-red.log",
     "rawSha256": "360a069e8c5b61446356c097aa9c3cbec84b0ecbb53580091046ba369aabbf43",
     "sanitizedSha256": "93a727c15985632f2c03076a7bf7b2f9cc06b11e2868fff4681200f117db7579",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "conflict-ui-green.log",
     "rawSha256": "dcbfa38fb608bca6722d3990104dfe2c0684a5c16f41a8c830fd95f89d921083",
     "sanitizedSha256": "dcbfa38fb608bca6722d3990104dfe2c0684a5c16f41a8c830fd95f89d921083",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "recovery-red.log",
     "rawSha256": "83e609048b9cc5d67cdc80aec0a6c316bb21a163849eaee0a08d0bc5cd0740c7",
-    "sanitizedSha256": "83e609048b9cc5d67cdc80aec0a6c316bb21a163849eaee0a08d0bc5cd0740c7",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "sanitizedSha256": "4473cdab74f058a95cf939ca7316b211a1bbe9ab7666531e6b53cfcb28a548cb",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "recovery-expanded-pg.log",
     "rawSha256": "b16dc04942ae823b43c5ee354b6d42b25a89d79886c11b4b38643632d94c8784",
-    "sanitizedSha256": "b16dc04942ae823b43c5ee354b6d42b25a89d79886c11b4b38643632d94c8784",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "sanitizedSha256": "d6e4a66d7ecdbc1ade9608edfa94466f1dfd2e22af9f6cb41ecb97379bf48b99",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "postgres-corrections.log",
     "rawSha256": "a561446a6f53cf250f91ef230b647b932eacb97abe08cf18a2bd8cc8e0507feb",
     "sanitizedSha256": "a561446a6f53cf250f91ef230b647b932eacb97abe08cf18a2bd8cc8e0507feb",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "postgres-stabilized.log",
     "rawSha256": "17d4aa2a938b20df2a9cca88d29b084f810630fb3736f17142756c3e6df8a59a",
-    "sanitizedSha256": "17d4aa2a938b20df2a9cca88d29b084f810630fb3736f17142756c3e6df8a59a",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "sanitizedSha256": "e5797e4199b6c42db5b8dbc3198db420a4ef2963aabdbd919776114b20b0f471",
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "root-corrections.log",
     "rawSha256": "0b40dec66eddc4fe812200a241502782d52c9fbae5b801a2b3a072993752c2ee",
     "sanitizedSha256": "2f1601458b084b41f68ab8dd7d1fdff334fb0538e6259fbaa8bc7a0e4371e598",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "root-stabilized.log",
     "rawSha256": "8bc671346f37ba3db405a325fc0f975e03e62b691016d2983af2ae66110e3ea0",
     "sanitizedSha256": "f3defaee9340bb71d5d1f25972bb335b577e150567c2e4044f908d0b2b871fdb",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "http-stabilized.log",
     "rawSha256": "506a51afdbf6c1f6e3c8907e162a23a8581c00314bdf8ed45b8010e1b95c55ad",
     "sanitizedSha256": "506a51afdbf6c1f6e3c8907e162a23a8581c00314bdf8ed45b8010e1b95c55ad",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "worker-pg-stabilized.log",
     "rawSha256": "494df3e3627fba582f2d77afa1ef70b810039c05471bb93dfe072fb49ee88dfb",
     "sanitizedSha256": "494df3e3627fba582f2d77afa1ef70b810039c05471bb93dfe072fb49ee88dfb",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "query-plan-final-corrected.log",
     "rawSha256": "7c7b59dc5cd9ae93bfc69da8dd1d5f5c5e18a13a476268b958302c239b9f977f",
     "sanitizedSha256": "7c7b59dc5cd9ae93bfc69da8dd1d5f5c5e18a13a476268b958302c239b9f977f",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "stress-stabilized.log",
     "rawSha256": "8ed15aa1845144f40dd42d8e997aefe50cfa32584390cea394c816b9eb9fe32e",
     "sanitizedSha256": "8ed15aa1845144f40dd42d8e997aefe50cfa32584390cea394c816b9eb9fe32e",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "renderer-stabilized.log",
     "rawSha256": "1975a869028d78fd7fbfedc4f02f793365a60ddc24a6d9f62ac65391a47b8fdd",
     "sanitizedSha256": "767399f608d0fab5a9f257013ad6e08ca646c63b9104999577c5906effc99767",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "query-plan-stabilized.log",
     "rawSha256": "bb7cf2e601545d2e9cce2762f7d54d21205b7708e4edeba5b7aaee1a8a53566b",
     "sanitizedSha256": "bb7cf2e601545d2e9cce2762f7d54d21205b7708e4edeba5b7aaee1a8a53566b",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "query-plan-indexed.log",
     "rawSha256": "4ec405f4674c64a42c01ac5b6cbd41c7bba2c48db3abd8f42a3c4a8428067696",
     "sanitizedSha256": "4ec405f4674c64a42c01ac5b6cbd41c7bba2c48db3abd8f42a3c4a8428067696",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "migration-rollback-up.log",
     "rawSha256": "c85028f46a08efc449caf248e1b9a239c0804ce40d647a4950fdc26bfe4d0f50",
     "sanitizedSha256": "c85028f46a08efc449caf248e1b9a239c0804ce40d647a4950fdc26bfe4d0f50",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   },
   {
     "file": "style-final-corrections.log",
     "rawSha256": "e5c3d32c77ead4d9848adef85719adacc1f139241f760d7c4b5ede1b7fcc89af",
     "sanitizedSha256": "f9d0372a3655985c26d78a6bb8357d4cb76c381a1afd15a365cce7c65e75efc9",
-    "transformation": "ANSI/control-carriage-return removal and trailing whitespace only"
+    "transformation": "ANSI/control-carriage-return removal and trailing whitespace/blank EOF normalization only"
   }
 ]
