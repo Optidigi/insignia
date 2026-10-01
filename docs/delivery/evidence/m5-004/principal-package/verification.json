@@ -1,0 +1,188 @@
+{
+  "kind": "principal-review-observation-summary-not-raw-GitHub-response",
+  "reviewDateUtc": "2026-10-01",
+  "repository": "Optidigi/insignia",
+  "pr": 29,
+  "verdict": "APPROVED_LOCAL_OFFSTORE_SCOPE",
+  "base": "8a84ddeaf277368852d224915abe6d4a93a3d8a4",
+  "head": "7a67028d55c191d9c83816312844f2e9cd62d648",
+  "tree": "5f3f29d44da7d5f0423fd6902c19dc501f7c79ff",
+  "observedPrState": {
+    "state": "open",
+    "draft": false,
+    "merged": false,
+    "nativeReviews": []
+  },
+  "observedMain": "8a84ddeaf277368852d224915abe6d4a93a3d8a4",
+  "ciSyntheticMerge": {
+    "sha": "6bdc72f20436a8010e8d36db513a0dc0079e2be5",
+    "parents": [
+      "8a84ddeaf277368852d224915abe6d4a93a3d8a4",
+      "7a67028d55c191d9c83816312844f2e9cd62d648"
+    ],
+    "tree": "5f3f29d44da7d5f0423fd6902c19dc501f7c79ff",
+    "isActualMerge": false
+  },
+  "githubEvidence": {
+    "pr": "https://github.com/Optidigi/insignia/pull/29",
+    "packet": "https://github.com/Optidigi/insignia/pull/29#issuecomment-5940113122",
+    "headCommit": "https://api.github.com/repos/Optidigi/insignia/git/commits/7a67028d55c191d9c83816312844f2e9cd62d648",
+    "mainRef": "https://api.github.com/repos/Optidigi/insignia/git/ref/heads/main",
+    "runs": "https://api.github.com/repos/Optidigi/insignia/actions/runs?head_sha=7a67028d55c191d9c83816312844f2e9cd62d648&event=pull_request&per_page=20",
+    "nativeReviews": "https://api.github.com/repos/Optidigi/insignia/pulls/29/reviews?per_page=100"
+  },
+  "workflows": [
+    {
+      "id": 36920893665,
+      "name": "M1-001 foundation and boundaries",
+      "headSha": "7a67028d55c191d9c83816312844f2e9cd62d648",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/36920893665"
+    },
+    {
+      "id": 36920893479,
+      "name": "M3-002 local runtime and ingress",
+      "headSha": "7a67028d55c191d9c83816312844f2e9cd62d648",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/36920893479"
+    },
+    {
+      "id": 36920893494,
+      "name": "M3-001 PostgreSQL durable core",
+      "headSha": "7a67028d55c191d9c83816312844f2e9cd62d648",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/36920893494"
+    },
+    {
+      "id": 36920893491,
+      "name": "M0-014 local public-app candidate",
+      "headSha": "7a67028d55c191d9c83816312844f2e9cd62d648",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/36920893491"
+    },
+    {
+      "id": 36920893514,
+      "name": "M0-013 off-store protocol capacity",
+      "headSha": "7a67028d55c191d9c83816312844f2e9cd62d648",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/36920893514"
+    },
+    {
+      "id": 36920893498,
+      "name": "M0-010 local hybrid billing proof",
+      "headSha": "7a67028d55c191d9c83816312844f2e9cd62d648",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/36920893498"
+    },
+    {
+      "id": 36920893476,
+      "name": "M0-009 embedded Astro local proof",
+      "headSha": "7a67028d55c191d9c83816312844f2e9cd62d648",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/36920893476"
+    },
+    {
+      "id": 36920893490,
+      "name": "M0-008 local publication and architecture checks",
+      "headSha": "7a67028d55c191d9c83816312844f2e9cd62d648",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/36920893490"
+    },
+    {
+      "id": 36920893528,
+      "name": "M0-012 real contract local prototype",
+      "headSha": "7a67028d55c191d9c83816312844f2e9cd62d648",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/36920893528"
+    },
+    {
+      "id": 36920893561,
+      "name": "M0-011 local provider adapter boundary",
+      "headSha": "7a67028d55c191d9c83816312844f2e9cd62d648",
+      "event": "pull_request",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/36920893561"
+    }
+  ],
+  "independentlyReadCiLog": {
+    "runId": 36920893479,
+    "jobId": 110566366200,
+    "checkout": "6bdc72f20436a8010e8d36db513a0dc0079e2be5",
+    "runtime": "Node24.21.0/PostgreSQL18.6",
+    "database": 159,
+    "shopify": 226,
+    "application": 174,
+    "http": 16,
+    "worker": 15,
+    "migrationRehearsal": "apply/repeat and rollback/reapply succeeded",
+    "scope": "actual job log read via GitHub connector; not rerun locally"
+  },
+  "independentProbe": {
+    "node": "v22.16.0",
+    "command": "node --experimental-transform-types evidence/probe.mjs --assert-contract",
+    "exitStatus": 0,
+    "cases": 56,
+    "staleOrReversedSends": 0,
+    "results": "evidence/results.json",
+    "sourceVerification": "evidence/source-verification.json",
+    "exclusions": [
+      "full PostgreSQL coordinator",
+      "production calendar execution",
+      "Node24 suite",
+      "live Shopify",
+      "full Rust/Wasm/browser build"
+    ]
+  },
+  "reportedNotIndependentlyRerun": {
+    "completeRoot": "PASS",
+    "geometryStress": 100,
+    "retries": 0,
+    "missingRendererNegativeControl": "PASS",
+    "queryBindings": 6
+  },
+  "performedMutations": {
+    "repository": false,
+    "githubReviewSubmission": false,
+    "merge": false,
+    "shopify": false
+  },
+  "methodNote": "This JSON is a transcribed/normalized record of inspected connector results and actually executed scratch diagnostics. It is not a signed provider attestation or an original downloaded API response.",
+  "remaining": [
+    "real status/hold contract qualification",
+    "published-product/all-channel/in-flight acceptance",
+    "native non-CAS race disposition",
+    "real RELEASE_BOUND source",
+    "trusted production recovery source",
+    "remaining G7",
+    "later milestone acceptance"
+  ]
+}

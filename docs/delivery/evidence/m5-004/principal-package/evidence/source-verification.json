@@ -1,0 +1,26 @@
+[
+  {
+    "file": "publication-admin.ts",
+    "bytes": 20546,
+    "expectedGitBlob": "c1d3f5004805aebbaa36a4bc604171cd12428ce6",
+    "actualGitBlob": "c1d3f5004805aebbaa36a4bc604171cd12428ce6",
+    "sha256": "3642f2391c22cc6c654433a198754b52c61efd85e6a7592ab860a16d6f8974f4",
+    "matches": true
+  },
+  {
+    "file": "production-activation.ts",
+    "bytes": 5363,
+    "expectedGitBlob": "fa3b82d5900b9b8cb0525b1cb15d003d32f6a91f",
+    "actualGitBlob": "fa3b82d5900b9b8cb0525b1cb15d003d32f6a91f",
+    "sha256": "07e961186df49b70345bbb321e3dff90e1e00b9f1d6c79bb4063748143a83645",
+    "matches": true
+  },
+  {
+    "file": "availability-hold.ts",
+    "bytes": 24419,
+    "expectedGitBlob": "ed78b378adb011fe1a7342072b94b2c08863f63a",
+    "actualGitBlob": "ed78b378adb011fe1a7342072b94b2c08863f63a",
+    "sha256": "aeb68cf151fc5b3fba0974e7fb659a8bcc422c0b2e517f478e0f2b185e7ab421",
+    "matches": true
+  }
+]

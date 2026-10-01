@@ -1,0 +1,16 @@
+✔ actual HTTP attempts are durably reserved before dispatch (8.79833ms)
+✔ fixed targets/documents/variables reject unrelated writes and extra payload before actual HTTP (3.222182ms)
+✔ normal reserves cannot consume final 12 reads/3 updates; all attempts count, one lock and one create (167.974003ms)
+✔ naturally lost mutation response stops all later writes and cleanup across reopen; no automatic retry (2.056446ms)
+✔ real routing identity, nine retained grants and complete empty publication history are mandatory (1.857654ms)
+✔ auth exact app/route counts3 and never persists synthetic secret or returned token (1.598528ms)
+✔ missing/corrupt history never reinitializes or sends (0.629787ms)
+✔ offline gate prevents even credential loading (0.863067ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 397.438895
