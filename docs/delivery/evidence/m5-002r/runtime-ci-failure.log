@@ -1,0 +1,63 @@
+runtime	M5 Admin editor and publication with PostgreSQL	﻿2026-10-01T08:56:57.7705709Z ##[group]Run node --test test/admin/merchant-config.test.mjs test/admin/merchant-publication.test.mjs test/admin/production-composition.test.mjs test/admin/preview-composition.test.mjs
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:57.7707167Z ^[[36;1mnode --test test/admin/merchant-config.test.mjs test/admin/merchant-publication.test.mjs test/admin/production-composition.test.mjs test/admin/preview-composition.test.mjs^[[0m
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:57.7769474Z shell: /usr/bin/bash -e {0}
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:57.7769738Z env:
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:57.7770297Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:57.7770670Z   INSIGNIA_REQUIRE_POSTGRES_TEST: 1
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:57.7770934Z ##[endgroup]
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:58.5833848Z ✔ overlapping distinct-key M5 creates serialize before the command FK lock upgrade (221.370355ms)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:58.7747982Z ✔ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (193.401954ms)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2246885Z ✔ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (451.827777ms)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2478051Z ✔ actual M4 prepare/advance over immutable M5 revision reports ready, conflict and hold truthfully (693.769203ms)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2480429Z ✔ diagnostic preview requires accounting and HTTPS before any provider access (537.495464ms)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2481721Z [shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2482797Z [shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2483406Z 
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2484565Z   Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2485588Z 
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2486198Z [shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2486827Z 
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2488200Z   Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2489539Z 
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2490346Z [shopify-api/INFO] Creating new session | {shop: synthetic-preview.myshopify.com, isOnline: true}
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.2492338Z ✔ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (643.923956ms)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.5977927Z [shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.5978914Z [shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.5979273Z 
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.5979799Z   Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.5980387Z 
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.5980913Z [shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.5981510Z 
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.5982368Z   Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.5983158Z 
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6061189Z [shopify-api/INFO] Creating new session | {shop: m81002910f6e6467795fee123a3c21c6c.myshopify.com, isOnline: true}
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6628849Z ✖ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (219.693155ms)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6795650Z ℹ tests 7
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6796067Z ℹ suites 0
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6796316Z ℹ pass 6
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6796542Z ℹ fail 1
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6796769Z ℹ cancelled 0
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6797017Z ℹ skipped 0
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6797247Z ℹ todo 0
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6797558Z ℹ duration_ms 1863.430267
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6805543Z 
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6806189Z ✖ failing tests:
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6806748Z 
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6807312Z test at test/admin/production-composition.test.mjs:57:1
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6808410Z ✖ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (219.693155ms)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6809593Z   AssertionError [ERR_ASSERTION]: current
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6809911Z   
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6810119Z   false !== true
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6810332Z   
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6811050Z       at TestContext.<anonymous> (file:///home/runner/work/insignia/insignia/apps/web/test/admin/production-composition.test.mjs:256:14)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6812008Z       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6812625Z       at async Test.run (node:internal/test_runner/test:1409:7)
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6813242Z       at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6813906Z     generatedMessage: false,
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6814187Z     code: 'ERR_ASSERTION',
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6814740Z     actual: false,
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6814977Z     expected: true,
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6815276Z     operator: 'strictEqual',
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6815768Z     diff: 'simple'
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6816165Z   }
+runtime	M5 Admin editor and publication with PostgreSQL	2026-10-01T08:56:59.6880076Z ##[error]Process completed with exit code 1.

@@ -1,0 +1,66 @@
+$ M5_PUBLICATION_STRESS_ITERATIONS=10 corepack pnpm --filter @insignia/web exec node --test --test-name-pattern="publication (success|failed) preserves" test/admin/editor-browser.test.mjs
+✔ publication success preserves dirty local edits and exact save recovery [1/10] (941.269521ms)
+✔ publication failed preserves dirty local edits and exact save recovery [1/10] (857.116219ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [1/10] (931.911164ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [1/10] (983.935657ms)
+✔ publication success preserves dirty local edits and exact save recovery [2/10] (829.948334ms)
+✔ publication failed preserves dirty local edits and exact save recovery [2/10] (843.412854ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [2/10] (933.989882ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [2/10] (974.098102ms)
+✔ publication success preserves dirty local edits and exact save recovery [3/10] (882.954642ms)
+✔ publication failed preserves dirty local edits and exact save recovery [3/10] (836.437839ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [3/10] (932.484221ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [3/10] (913.274831ms)
+✔ publication success preserves dirty local edits and exact save recovery [4/10] (913.134635ms)
+✔ publication failed preserves dirty local edits and exact save recovery [4/10] (816.620507ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [4/10] (888.868169ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [4/10] (894.291523ms)
+✔ publication success preserves dirty local edits and exact save recovery [5/10] (900.412074ms)
+✔ publication failed preserves dirty local edits and exact save recovery [5/10] (847.757605ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [5/10] (971.094611ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [5/10] (918.23675ms)
+✔ publication success preserves dirty local edits and exact save recovery [6/10] (870.047791ms)
+✔ publication failed preserves dirty local edits and exact save recovery [6/10] (815.175498ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [6/10] (912.721369ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [6/10] (866.726575ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":7,"saveMode":"dirty","publishMode":"success","observation":{"ownerVersion":"1","selectedPlacement":"front","numericInputValue":"0.5","projectedGeometry":"{\"version\":1,\"viewId\":\"front-view\",\"status\":\"ready\",\"image\":{\"revisionId\":\"product_111\",\"width\":1,\"height\":1,\"url\":\"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=\"},\"contentRect\":{\"x\":238,\"y\":0,\"width\":420,\"height\":420},\"placements\":[{\"id\":\"front\",\"selected\":true,\"bounds\":{\"x\":385,\"y\":147,\"width\":126,\"height\":126}}]}","publicationMetadata":"{\"state\":\"PUBLISH_REQUESTED\",\"revisionId\":\"original-immutable-revision\",\"sourceDraftVersion\":\"1\"}"}}
+✖ publication success preserves dirty local edits and exact save recovery [7/10] (5675.95077ms)
+✔ publication failed preserves dirty local edits and exact save recovery [7/10] (828.947521ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [7/10] (998.635176ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [7/10] (994.723078ms)
+✔ publication success preserves dirty local edits and exact save recovery [8/10] (897.35029ms)
+✔ publication failed preserves dirty local edits and exact save recovery [8/10] (887.709504ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [8/10] (878.317652ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [8/10] (890.263664ms)
+✔ publication success preserves dirty local edits and exact save recovery [9/10] (832.853763ms)
+✔ publication failed preserves dirty local edits and exact save recovery [9/10] (821.510763ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [9/10] (991.003972ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [9/10] (884.707897ms)
+✔ publication success preserves dirty local edits and exact save recovery [10/10] (815.025641ms)
+✔ publication failed preserves dirty local edits and exact save recovery [10/10] (854.935969ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [10/10] (942.517205ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [10/10] (951.405295ms)
+ℹ tests 40
+ℹ suites 0
+ℹ pass 39
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 41075.433056
+
+✖ failing tests:
+
+test at test/admin/editor-browser.test.mjs:989:7
+✖ publication success preserves dirty local edits and exact save recovery [7/10] (5675.95077ms)
+  page.waitForFunction: Timeout 5000ms exceeded.
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-002-worktree/apps/web/test/admin/editor-browser.test.mjs:1094:22) {
+    name: 'TimeoutError',
+    log: []
+  }
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-002-
+  │ worktree/apps/web
+
+[ELIFECYCLE] Command failed with exit code 1.
