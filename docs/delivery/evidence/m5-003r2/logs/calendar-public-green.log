@@ -1,0 +1,41 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+ ❯ test/activation.test.ts (104 tests | 4 failed | 84 skipped) 3965ms
+   ❯ PG18 scoped production activation (104)
+     × R1-T calendar call 3 validates same-mode activation at final age 1001 226ms
+     × R1-T calendar call 3 validates same-mode activation at final age 1050 171ms
+     × R1-T calendar call 4 validates same-mode activation at final age 1001 166ms
+     × R1-T calendar call 4 validates same-mode activation at final age 1050 182ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 3 validates same-mode activation at final age 1001
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 3 validates same-mode activation at final age 1050
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 4 validates same-mode activation at final age 1001
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 4 validates same-mode activation at final age 1050
+AssertionError: expected [Function] to throw error including 'Stale' but got 'Function artifact evidence invalid or…'
+
+Expected: "Stale"
+Received: "Function artifact evidence invalid or mismatched"
+
+ ❯ test/activation.test.ts:795:52
+    793|         );
+    794|       } else {
+    795|         await expect(f.restart().advance(identity)).rejects.toThrow('S…
+       |                                                    ^
+    796|         expect((await f.restart().read(identity))?.evidence).toBeNull(…
+    797|         expect((await core.configs.getConfig(identity.shopId, identity…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  4 failed | 16 passed | 84 skipped (104)
+   Start at  20:03:14
+   Duration  5.38s (tests 76%, transform 12%, import 12%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/database

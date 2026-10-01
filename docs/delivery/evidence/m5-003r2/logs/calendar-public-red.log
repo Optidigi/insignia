@@ -1,0 +1,182 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/database
+
+ ❯ test/activation.test.ts (104 tests | 14 failed | 84 skipped) 3683ms
+   ❯ PG18 scoped production activation (104)
+     × R1-T calendar call 1 consumes remaining restoration budget at age 1001 278ms
+     × R1-T calendar call 1 consumes remaining restoration budget at age 1050 121ms
+     × R1-T calendar call 1 consumes remaining restoration budget at age 1001 122ms
+     × R1-T calendar call 2 consumes remaining restoration budget at age 1001 128ms
+     × R1-T calendar call 2 consumes remaining restoration budget at age 1050 117ms
+     × R1-T calendar call 2 consumes remaining restoration budget at age 1001 112ms
+     × R1-T calendar call 3 validates same-mode activation at final age 999 181ms
+     × R1-T calendar call 3 validates same-mode activation at final age 1000 175ms
+     × R1-T calendar call 3 validates same-mode activation at final age 1001 178ms
+     × R1-T calendar call 3 validates same-mode activation at final age 1050 176ms
+     × R1-T calendar call 4 validates same-mode activation at final age 999 175ms
+     × R1-T calendar call 4 validates same-mode activation at final age 1000 180ms
+     × R1-T calendar call 4 validates same-mode activation at final age 1001 393ms
+     × R1-T calendar call 4 validates same-mode activation at final age 1050 377ms
+
+⎯⎯⎯⎯⎯⎯ Failed Tests 14 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 1 consumes remaining restoration budget at age 1001
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 1 consumes remaining restoration budget at age 1050
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 1 consumes remaining restoration budget at age 1001
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 2 consumes remaining restoration budget at age 1001
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 2 consumes remaining restoration budget at age 1050
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 2 consumes remaining restoration budget at age 1001
+AssertionError: expected [ { status: 'ACTIVE', …(1) } ] to have a length of +0 but got 1
+
+- Expected
++ Received
+
+- 0
++ 1
+
+ ❯ test/activation.test.ts:752:24
+    750|       const result = await f.restart().advance(f.identity);
+    751|       const restores = f.providerMutations.filter((entry) => entry.sta…
+    752|       expect(restores).toHaveLength(allowed ? 1 : 0);
+       |                        ^
+    753|       if (allowed) expect(restores[0]?.at).toBe(now.getTime() + age);
+    754|       expect(result.kind).toBe(allowed ? 'ACTIVE' : 'ACTIVATED_RESTORA…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/14]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 3 validates same-mode activation at final age 999
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 4 validates same-mode activation at final age 999
+AssertionError: expected '2026-10-01T12:00:00.950Z' to be '2026-10-01T12:00:00.999Z' // Object.is equality
+
+Expected: "2026-10-01T12:00:00.999Z"
+Received: "2026-10-01T12:00:00.950Z"
+
+ ❯ test/activation.test.ts:788:73
+    786|       if (allowed) {
+    787|         expect((await f.restart().advance(identity)).kind).toBe('ACTIV…
+    788|         expect((await f.restart().read(identity))?.evidence?.createdAt…
+       |                                                                         ^
+    789|           new Date(now.getTime() + age).toISOString(),
+    790|         );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/14]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 3 validates same-mode activation at final age 1000
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 4 validates same-mode activation at final age 1000
+AssertionError: expected '2026-10-01T12:00:00.950Z' to be '2026-10-01T12:00:01.000Z' // Object.is equality
+
+Expected: "2026-10-01T12:00:01.000Z"
+Received: "2026-10-01T12:00:00.950Z"
+
+ ❯ test/activation.test.ts:788:73
+    786|       if (allowed) {
+    787|         expect((await f.restart().advance(identity)).kind).toBe('ACTIV…
+    788|         expect((await f.restart().read(identity))?.evidence?.createdAt…
+       |                                                                         ^
+    789|           new Date(now.getTime() + age).toISOString(),
+    790|         );
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/14]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 3 validates same-mode activation at final age 1001
+AssertionError: promise resolved "{ kind: 'ACTIVE', …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "evidenceDigest": "501ef98daf857b80746ac16271c3c8710c9f73c1ceb133c48a53d84041e4ca06",
++   "kind": "ACTIVE",
+  }
+
+ ❯ test/activation.test.ts:795:52
+    793|         );
+    794|       } else {
+    795|         await expect(f.restart().advance(identity)).rejects.toThrow('S…
+       |                                                    ^
+    796|         expect((await f.restart().read(identity))?.evidence).toBeNull(…
+    797|         expect((await core.configs.getConfig(identity.shopId, identity…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/14]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 3 validates same-mode activation at final age 1050
+AssertionError: promise resolved "{ kind: 'ACTIVE', …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "evidenceDigest": "e818da0ae010f427c0263537cbf24b5357388ed3ff18ece9e82013f06897af4d",
++   "kind": "ACTIVE",
+  }
+
+ ❯ test/activation.test.ts:795:52
+    793|         );
+    794|       } else {
+    795|         await expect(f.restart().advance(identity)).rejects.toThrow('S…
+       |                                                    ^
+    796|         expect((await f.restart().read(identity))?.evidence).toBeNull(…
+    797|         expect((await core.configs.getConfig(identity.shopId, identity…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[5/14]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 4 validates same-mode activation at final age 1001
+AssertionError: promise resolved "{ kind: 'ACTIVE', …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "evidenceDigest": "9ed8dd8080266427cea5c6d7d1f907a61c818367c5302b77ebeccbdaabdb3b2a",
++   "kind": "ACTIVE",
+  }
+
+ ❯ test/activation.test.ts:795:52
+    793|         );
+    794|       } else {
+    795|         await expect(f.restart().advance(identity)).rejects.toThrow('S…
+       |                                                    ^
+    796|         expect((await f.restart().read(identity))?.evidence).toBeNull(…
+    797|         expect((await core.configs.getConfig(identity.shopId, identity…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[6/14]⎯
+
+ FAIL  test/activation.test.ts > PG18 scoped production activation > R1-T calendar call 4 validates same-mode activation at final age 1050
+AssertionError: promise resolved "{ kind: 'ACTIVE', …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "evidenceDigest": "323d317f0b83ab500bb2634a5409d594bef6148730961369544a407b8903459b",
++   "kind": "ACTIVE",
+  }
+
+ ❯ test/activation.test.ts:795:52
+    793|         );
+    794|       } else {
+    795|         await expect(f.restart().advance(identity)).rejects.toThrow('S…
+       |                                                    ^
+    796|         expect((await f.restart().read(identity))?.evidence).toBeNull(…
+    797|         expect((await core.configs.getConfig(identity.shopId, identity…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[7/14]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  14 failed | 6 passed | 84 skipped (104)
+   Start at  20:01:58
+   Duration  4.67s (tests 82%, transform 9%, import 9%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-003-
+  │ worktree/packages/database

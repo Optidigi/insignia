@@ -1,0 +1,48 @@
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-003-worktree/packages/application
+
+ ❯ src/publication/activation.test.ts (44 tests | 2 failed) 165ms
+   × the activation decision uses one exact midnight instant for key coverage 27ms
+   × the restoration decision uses one exact midnight instant for key coverage 20ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/publication/activation.test.ts > the activation decision uses one exact midnight instant for key coverage
+AssertionError: expected 20729 to be greater than or equal to 20730
+ ❯ src/publication/activation.test.ts:702:23
+    700|       if (phase === 'activation' && f.evidence) {
+    701|         const day = Math.floor(Date.parse(f.evidence.createdAt) / 8640…
+    702|         expect(20729).toBeGreaterThanOrEqual(day + 2);
+       |                       ^
+    703|       }
+    704|       if (phase === 'restoration' && f.restores > 0) {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/2]⎯
+
+ FAIL  src/publication/activation.test.ts > the restoration decision uses one exact midnight instant for key coverage
+AssertionError: expected 20729 to be greater than or equal to 20730
+ ❯ src/publication/activation.test.ts:709:23
+    707|         // leaves it claimed/pending with no provider call.
+    708|         expect(f.stateAtRestore?.kind).toBe('RESTORATION_CLAIMED');
+    709|         expect(20729).toBeGreaterThanOrEqual(Math.floor(f.restoreClock…
+       |                       ^
+    710|       }
+    711|     }
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/2]⎯
+
+
+ Test Files  1 failed | 13 passed (14)
+      Tests  2 failed | 172 passed (174)
+   Start at  20:03:14
+   Duration  1.65s (transform 44%, import 34%, tests 18%, worker 3%)
+
+    Isolate  14 workers spawned · ~145ms startup each (spawn + environment, per file)
+             at least ~532ms faster with isolate: false — reuses workers across files instead of one per file
+
+[ELIFECYCLE] Test failed. See above for more details.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in /home/serveradmin/insignia-m5-003-worktree/
+  │ packages/application

@@ -14,6 +14,96 @@
       "check": "full pinned root",
       "command": "bash /home/serveradmin/insignia-m5-002-handoff/check-local.sh",
       "exit": 0,
+      "log": "logs/calendar-root.log"
+    },
+    {
+      "check": "real PostgreSQL18",
+      "command": "DATABASE_URL=<isolated-synthetic-test-db> pnpm check:database",
+      "exit": 0,
+      "tests": 159,
+      "log": "logs/calendar-postgres.log"
+    },
+    {
+      "check": "HTTP/Admin required PostgreSQL",
+      "command": "DATABASE_URL=<isolated-test-db> INSIGNIA_REQUIRE_POSTGRES_TEST=1 node --test test/admin/{merchant-config,merchant-publication,production-composition,preview-composition,activation-integration,activation-state,release-evidence}.test.mjs test/shopify-webhook.test.mjs (apps/web)",
+      "exit": 0,
+      "tests": 16,
+      "skips": 0,
+      "log": "logs/calendar-http.log"
+    },
+    {
+      "check": "worker required PostgreSQL/pg-boss",
+      "command": "DATABASE_URL=<isolated-test-db> INSIGNIA_REQUIRE_POSTGRES_TEST=1 pnpm --filter @insignia/worker test",
+      "exit": 0,
+      "tests": 15,
+      "skips": 0,
+      "log": "logs/calendar-worker.log"
+    },
+    {
+      "check": "publication no-retry browser stress",
+      "command": "LD_LIBRARY_PATH=<existing-pw-libs> FONTCONFIG_FILE=<existing-fonts> M5_CAPTURE_BROWSER=0 pnpm test:m5-stress",
+      "exit": 0,
+      "tests": 100,
+      "retries": 0,
+      "skips": 0,
+      "log": "logs/calendar-stress.log"
+    },
+    {
+      "check": "missing-renderer negative control",
+      "command": "same browser library environment; pnpm test:m5-renderer-control",
+      "exit": 0,
+      "expectedInnerFailure": true,
+      "log": "logs/calendar-renderer.log"
+    },
+    {
+      "check": "strict complete changed fixtures",
+      "command": "pnpm exec tsc --noEmit --strict --module NodeNext --moduleResolution NodeNext --target ES2022 --skipLibCheck packages/database/test/activation.test.ts packages/shopify/test/publication-admin.test.ts packages/shopify/test/availability-hold.test.ts",
+      "exit": 0,
+      "log": "logs/calendar-strict.log"
+    },
+    {
+      "check": "Shopify adapter suite",
+      "command": "pnpm --filter @insignia/shopify test",
+      "exit": 0,
+      "tests": 226,
+      "log": "logs/calendar-root.log"
+    }
+  ],
+  "red": {
+    "baselinePublicationHttpMutations": 1,
+    "baselineRestoreStatuses": [
+      "DRAFT",
+      "ACTIVE"
+    ],
+    "defect": "expired credential preparation sent actual HTTP mutation"
+  },
+  "matrix": {
+    "publicationPhases": 4,
+    "credentialDelaysMs": [
+      0,
+      999,
+      1000,
+      1001,
+      2000,
+      -1
+    ],
+    "successRows": 12,
+    "deniedRows": 12,
+    "deniedAdditionalMutationCount": 0,
+    "finalRealSqlReadDelay": 2000,
+    "restorationBoundaryRows": 6,
+    "credentialInactiveErrorLate": 3,
+    "lateRestorationErrorUnavailable": 3,
+    "prototypeReleaseOnly": true
+  },
+  "queryPlan": "six unchanged bindings; no new measurement",
+  "noExternalOperations": true,
+  "historicalArchitectureUnchanged": true,
+  "firstCandidateChecks": [
+    {
+      "check": "full pinned root",
+      "command": "bash /home/serveradmin/insignia-m5-002-handoff/check-local.sh",
+      "exit": 0,
       "log": "logs/root-verified.log"
     },
     {
@@ -69,34 +159,33 @@
       "log": "logs/shopify-final-typed.log"
     }
   ],
-  "red": {
-    "baselinePublicationHttpMutations": 1,
-    "baselineRestoreStatuses": [
-      "DRAFT",
-      "ACTIVE"
-    ],
-    "defect": "expired credential preparation sent actual HTTP mutation"
-  },
-  "matrix": {
-    "publicationPhases": 4,
-    "credentialDelaysMs": [
-      0,
-      999,
-      1000,
-      1001,
-      2000,
-      -1
-    ],
-    "successRows": 12,
-    "deniedRows": 12,
-    "deniedAdditionalMutationCount": 0,
-    "finalRealSqlReadDelay": 2000,
-    "restorationBoundaryRows": 6,
-    "credentialInactiveErrorLate": 3,
-    "lateRestorationErrorUnavailable": 3,
-    "prototypeReleaseOnly": true
-  },
-  "queryPlan": "six unchanged bindings; no new measurement",
-  "noExternalOperations": true,
-  "historicalArchitectureUnchanged": true
+  "calendarCorrection": {
+    "firstReviewedHead": "1ee6bebd02f1ee4f57cc07ec553946231c7db8ab",
+    "red": {
+      "failed": 14,
+      "positiveControls": 6,
+      "log": "logs/calendar-public-red.log",
+      "fixtureSha256": "409b820f1e54781c7b6f53db4575500262db9ba2337af004b907e7e49e9d36cc"
+    },
+    "intermediateExpectationFailures": {
+      "failed": 4,
+      "passed": 16,
+      "log": "logs/calendar-public-green.log"
+    },
+    "intermediateMidnightFailures": {
+      "failed": 2,
+      "passed": 172,
+      "log": "logs/calendar-application.log"
+    },
+    "finalPublicMatrix": {
+      "passed": 20,
+      "log": "logs/calendar-public-final-green.log"
+    },
+    "finalApplication": {
+      "passed": 174,
+      "log": "logs/calendar-application-final.log"
+    },
+    "boundedCalendarSamples": 3,
+    "externalOperations": 0
+  }
 }

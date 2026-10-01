@@ -256,20 +256,35 @@ export function createPublicationActivation(input: {
     remote: { projection: unknown; observedAt: string },
     hold: ProductAvailabilitySnapshot | null,
   ) {
-    const decisionAt = now();
-    const acceptedDay = input.readiness.currentDay(c, decisionAt);
-    // The calendar calculation is synchronous and uses this exact instant.
-    // Reject an over-budget/reversed clock during that calculation rather than
-    // silently treating a slow callback as fresh evidence.
-    const calendarEndedAt = now();
-    if (
-      !Number.isFinite(calendarEndedAt.getTime()) ||
-      calendarEndedAt.getTime() < decisionAt.getTime() ||
-      calendarEndedAt.getTime() - decisionAt.getTime() > input.maxObservationAgeMs
-    )
-      throw new Error('Activation calendar calculation exceeded decision budget');
-    if (input.readiness.currentDay(c, calendarEndedAt) !== acceptedDay)
-      throw new Error('Merchant day changed during activation decision');
+    const calendarStartedAt = now();
+    if (!Number.isFinite(calendarStartedAt.getTime())) throw new Error('Invalid activation decision clock');
+    let decisionAt = calendarStartedAt;
+    let acceptedDay: number | undefined;
+    let settled = false;
+    // Calendar work is synchronous but can consume the remaining freshness
+    // budget. Settle a day and instant together, without provider I/O or mutation retry.
+    // Three bounded samples tolerate a clock tick; unstable preparation denies.
+    for (let sample = 0; sample < 3; sample++) {
+      const day = input.readiness.currentDay(c, decisionAt);
+      if (acceptedDay !== undefined && day !== acceptedDay)
+        throw new Error('Merchant day changed during activation decision');
+      acceptedDay = day;
+      if (input.readiness.currentDay(c, decisionAt) !== acceptedDay)
+        throw new Error('Merchant day changed during activation decision');
+      const completedAt = now();
+      if (
+        !Number.isFinite(completedAt.getTime()) ||
+        completedAt.getTime() < decisionAt.getTime() ||
+        completedAt.getTime() - calendarStartedAt.getTime() > input.maxObservationAgeMs
+      )
+        throw new Error('Activation calendar calculation exceeded decision budget');
+      if (completedAt.getTime() === decisionAt.getTime()) {
+        settled = true;
+        break;
+      }
+      decisionAt = completedAt;
+    }
+    if (!settled || acceptedDay === undefined) throw new Error('Activation calendar calculation did not settle');
     requireIssuanceReady({ config: c.publicConfig, keyId: c.selectedKeyId, acceptedDay });
     // No awaited operation after this complete synchronous revalidation before commit/dispatch.
     assertProductionFunctionArtifactReady({

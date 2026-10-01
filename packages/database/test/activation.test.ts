@@ -71,6 +71,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     let providerClock = new Date(now);
     let providerDelay: { point: 'fetch' | 'body' | 'credential'; ms: number } | null = null;
     const providerWrites: string[] = [];
+    const providerMutations: { status: string; at: number }[] = [];
+    let calendarDelay: { at: number; call: number; ms: number; seen: number } | null = null;
     let status = providerStatus ?? 'ACTIVE';
     let version = '2026-10-01T11:00:00.000Z';
     let availabilityReads = 0;
@@ -287,7 +289,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
               },
       },
       observeFunctions: async () => ({ transform: 'present', validation: 'present', observation }),
-      currentDay: () => 20727,
+      currentDay: () => {
+        if (calendarDelay?.at === providerClock.getTime() && ++calendarDelay.seen === calendarDelay.call) {
+          providerClock = new Date(providerClock.getTime() + calendarDelay.ms);
+          calendarDelay = null;
+        }
+        return 20727;
+      },
     };
     const availabilityScope = { ...artifactScope, shopifyShopId: `gid://shopify/Shop/${providerShop}` };
     let current: ProductAvailabilitySnapshot = {
@@ -383,6 +391,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
             if (mutation) {
               status = request.variables.product.status;
               providerWrites.push(status);
+              providerMutations.push({ status, at: providerClock.getTime() });
               version = status === 'DRAFT' ? '2026-10-01T11:01:00.000Z' : '2026-10-01T11:02:00.000Z';
             }
             const product = {
@@ -470,6 +479,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       scope,
       remote,
       providerWrites,
+      providerMutations,
+      delayCalendar: (offsetMs: number, ms: number, call: number) => {
+        calendarDelay = { at: providerClock.getTime() + offsetMs, ms, call, seen: 0 };
+      },
       set providerDelay(value: { point: 'fetch' | 'body' | 'credential'; ms: number } | null) {
         providerDelay = value;
       },
@@ -712,6 +725,82 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     else await f.restart().advance(f.identity);
     expect(f.providerWrites).toEqual(permitted ? ['DRAFT', 'ACTIVE'] : ['DRAFT']);
   });
+
+  it.each(
+    [1, 2].flatMap((call) =>
+      [
+        { credential: 950, calendar: 0, age: 950, allowed: true },
+        { credential: 950, calendar: 49, age: 999, allowed: true },
+        { credential: 950, calendar: 50, age: 1000, allowed: true },
+        { credential: 950, calendar: 51, age: 1001, allowed: false },
+        { credential: 950, calendar: 100, age: 1050, allowed: false },
+        { credential: 999, calendar: 2, age: 1001, allowed: false },
+      ].map((row) => ({ ...row, call })),
+    ),
+  )(
+    'R1-T calendar call $call consumes remaining restoration budget at age $age',
+    async ({ credential, calendar, call, age, allowed }) => {
+      const f = await fixture('required', 'ACTIVE', true);
+      await f.prepareHold();
+      await f.publish();
+      expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+      const evidence = (await f.restart().read(f.identity))?.evidence;
+      f.expireRestoreCredential(credential);
+      f.delayCalendar(credential, calendar, call);
+      const result = await f.restart().advance(f.identity);
+      const restores = f.providerMutations.filter((entry) => entry.status === 'ACTIVE');
+      expect(restores).toHaveLength(allowed ? 1 : 0);
+      if (allowed) expect(restores[0]?.at).toBe(now.getTime() + age);
+      expect(result.kind).toBe(allowed ? 'ACTIVE' : 'ACTIVATED_RESTORATION_PENDING');
+      expect((await f.restart().read(f.identity))?.evidence).toEqual(evidence);
+      expect((await f.restart().read(f.identity))?.state.kind).toBe(allowed ? 'RESTORED' : 'RESTORATION_CLAIMED');
+      await f.restart().advance(f.identity);
+      expect(f.providerMutations.filter((entry) => entry.status === 'ACTIVE')).toHaveLength(allowed ? 1 : 0);
+    },
+  );
+
+  it.each(
+    [3, 4].flatMap((call) =>
+      [
+        { calendar: 49, age: 999, allowed: true },
+        { calendar: 50, age: 1000, allowed: true },
+        { calendar: 51, age: 1001, allowed: false },
+        { calendar: 100, age: 1050, allowed: false },
+      ].map((row) => ({ ...row, call })),
+    ),
+  )(
+    'R1-T calendar call $call validates same-mode activation at final age $age',
+    async ({ calendar, call, age, allowed }) => {
+      const f = await fixture('required', 'ACTIVE', true);
+      await f.prepareHold();
+      await f.publish();
+      await f.restart().advance(f.identity);
+      await f.restart().advance(f.identity);
+      const revisionId = randomUUID();
+      const identity = { ...f.identity, operationId: randomUUID() };
+      await f.createRevision(revisionId, 'required');
+      await f.restart().publications.prepare({ ...identity, revisionId, mode: 'required' });
+      await f.publish(identity);
+      f.advanceProviderClock(950);
+      f.delayCalendar(0, calendar, call);
+      if (allowed) {
+        expect((await f.restart().advance(identity)).kind).toBe('ACTIVE');
+        expect((await f.restart().read(identity))?.evidence?.createdAt).toBe(
+          new Date(now.getTime() + age).toISOString(),
+        );
+        expect((await core.configs.getConfig(identity.shopId, identity.configId))?.effectiveRevisionId).toBe(
+          revisionId,
+        );
+      } else {
+        await expect(f.restart().advance(identity)).rejects.toThrow('Function artifact evidence invalid or mismatched');
+        expect((await f.restart().read(identity))?.evidence).toBeNull();
+        expect((await core.configs.getConfig(identity.shopId, identity.configId))?.effectiveRevisionId).toBe(
+          f.revisionId,
+        );
+      }
+      expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE']);
+    },
+  );
 
   it('R2 UNLISTED hold survives public read/restart and restores exact original status after activation', async () => {
     const f = await fixture('required', 'UNLISTED');
