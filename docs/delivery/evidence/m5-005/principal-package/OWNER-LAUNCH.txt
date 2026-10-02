@@ -1,0 +1,30 @@
+Use the attached insignia-pr30-approved-m5-005-handoff package.
+Read README.md, PR-030-principal-review.md and the M5-005 brief first.
+
+I authorize the NORMAL merge of PR #30 only at:
+base a7b2ba236f6b7726f48af0cd50ae14e0b7cc8e30
+head 30f00935f90f7564d426838487b3a6e5f37a9e01
+tree e772af245c7f09c59d398656e16305adfeaea005
+
+Reverify live refs, applicable passing checks and external principal approval.
+Keep the head unchanged through merge. No squash/rebase, force push, fabricated
+native approval or protection bypass. Stop on mismatch or an unmet requirement.
+Verify the actual merge's ordered parents and tree afterward.
+
+Then create a new branch from that verified merge. I authorize M5-005 exactly as
+specified in M5-005-SCOPE-PROVENANCE-DIAGNOSTIC.md: one existing-route token exchange,
+two fixed GraphQL reads and one same-bearer access-scopes GET, with the brief's
+optional two read-only existing-session Dev Dashboard views. Complete the offline
+source/safety/CI gate before credential or authenticated browser/API access.
+
+Use actual GPT-6.1-sol/high and repository-pinned skills. Preserve M5-004's closed
+register and all historical evidence. This is diagnosis only: no grant repair,
+reauthorization, reinstall, token refresh, alternate credentials, preview, app
+configuration/version change, fixture/product work or M5-004 replay, even if the
+new scope observations match nine handles. Public-merchant auth and production
+readiness remain unchanged.
+
+Return one diagnostic PR with source-bound observations, scope-history comparison,
+supported interpretation, precise remaining permission/prerequisite, fresh reviews
+and final CI. Stop for principal review. No successor merge, M6/M7, activation,
+RELEASE_BOUND/gate pass or launch is authorized.

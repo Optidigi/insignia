@@ -17,6 +17,7 @@ on:
       - 'rust-toolchain.toml'
       - 'scripts/m5-002/**'
       - 'scripts/m5-004/**'
+      - 'scripts/m5-005/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -37,6 +38,7 @@ on:
       - 'Cargo.toml'
       - 'scripts/m5-002/**'
       - 'scripts/m5-004/**'
+      - 'scripts/m5-005/**'
       - 'package.json'
       - '.github/workflows/m1-foundation.yml'
 

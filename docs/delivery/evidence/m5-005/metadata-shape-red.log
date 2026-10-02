@@ -1,0 +1,31 @@
+✔ one actual diagnostic sequence keeps empty installation distinct from nonempty token/REST/declarations (9.825369ms)
+✔ partial stream failure is UNKNOWN and cannot allow a later independent read (2.938323ms)
+✔ permission/shape metadata error does not become an empty grant agreement (3.244601ms)
+✖ metadata shape failure still permits the independent REST read (3.004514ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 213.319444
+
+✖ failing tests:
+
+test at scripts/m5-005/diagnostic.test.mjs:56:1
+✖ metadata shape failure still permits the independent REST read (3.004514ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  3 !== 4
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-005-worktree/scripts/m5-005/diagnostic.test.mjs:58:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 3,
+    expected: 4,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

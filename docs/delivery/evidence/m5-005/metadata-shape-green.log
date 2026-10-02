@@ -1,0 +1,12 @@
+✔ one actual diagnostic sequence keeps empty installation distinct from nonempty token/REST/declarations (9.901674ms)
+✔ partial stream failure is UNKNOWN and cannot allow a later independent read (2.930756ms)
+✔ permission/shape metadata error does not become an empty grant agreement (3.211931ms)
+✔ metadata shape failure still permits the independent REST read (2.364822ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 214.843202
