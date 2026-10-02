@@ -562,3 +562,46 @@ test('complete source/CI/review gate accepts exact receipts and rejects omitted/
     rmSync(root, { recursive: true, force: true });
   }
 });
+test('captured four-surface empty scope result replays through the public sequence without authorizing repair', async () => {
+  const fixture = JSON.parse(
+    readFileSync(new URL('../../docs/delivery/evidence/m5-005/captured-scope-fixture.json', import.meta.url)),
+  );
+  const x = await sample({
+    auth: { access_token: 'synthetic-captured-bearer', expires_in: 86400, scope: fixture.authScope },
+    identity: { data: identity(fixture.installationScopes) },
+    declared: {
+      data: {
+        currentAppInstallation: {
+          id: target.installation,
+          app: {
+            id: target.app,
+            apiKey: target.client,
+            requestedAccessScopes: fixture.requestedScopes,
+            optionalAccessScopes: fixture.optionalScopes,
+          },
+        },
+      },
+    },
+    rest: { access_scopes: fixture.restScopes },
+  });
+  try {
+    assert.equal(x.result.outcome, 'OBSERVATIONS_COMPLETE');
+    assert.equal(x.sent.length, 4);
+    assert.deepEqual(x.result.counts, { auth: 1, identity: 1, declared: 1, rest: 1 });
+    for (const scope of [
+      x.result.observations.auth.scopes,
+      x.result.observations.identity.scopes,
+      x.result.observations.declared.requested,
+      x.result.observations.declared.optional,
+      x.result.observations.rest.scopes,
+    ]) {
+      assert.equal(scope.state, 'EMPTY');
+      assert.deepEqual(scope.handles, []);
+    }
+    assert.deepEqual(x.result.comparison, { tokenVsInstallation: 'SAME', restVsInstallation: 'SAME' });
+    assert.equal(x.result.pendingAtClose, 0);
+    assert.equal(x.result.lockReleased, true);
+  } finally {
+    rmSync(x.directory, { recursive: true, force: true });
+  }
+});

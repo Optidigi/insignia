@@ -1,0 +1,13 @@
+{
+  "authScope": "",
+  "installationScopes": [],
+  "requestedScopes": [],
+  "optionalScopes": [],
+  "restScopes": [],
+  "provenance": {
+    "register": "live/register.json",
+    "source": "6cde4be314904e0c82152d378fb9bf7864ba1fa1",
+    "capturedAt": "2026-10-02T01:23:19.717Z",
+    "authentication": "synthetic bearer/expiry only in replay; no live token/body exported"
+  }
+}

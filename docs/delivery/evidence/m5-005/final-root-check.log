@@ -1,0 +1,820 @@
+$ corepack pnpm check:style && corepack pnpm build && corepack pnpm test:unit && corepack pnpm test:m5-operator && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && python3 -B scripts/boundaries/check-cargo-workspace.py && corepack pnpm check:rust && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 python3 -B scripts/m4-002/replay-production-vectors.py && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/m4-003/replay-public-config.mjs && corepack pnpm test:browser && python3 -B spikes/m0-007/scripts/check-history.py && python3 -B spikes/m0-014/scripts/check-live-setup.py && python3 -B scripts/m1-functions/artifact-manifest.py
+$ biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002 scripts/m5-003 scripts/m5-004 scripts/m5-005
+apps/web/src/server/admin/production.ts:69:57 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    67 │   const appOrigin = required(env, 'APP_URL');
+    68 │   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+  > 69 │   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
+       │                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    70 │   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+    71 │   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+  
+  i Unsafe fix: Use a template literal.
+  
+     67  67 │     const appOrigin = required(env, 'APP_URL');
+     68  68 │     const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+     69     │ - ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·'gid://shopify/App/'·+·appId·:·null;
+         69 │ + ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·`gid://shopify/App/${appId}`·:·null;
+     70  70 │     const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+     71  71 │     const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+  
+
+apps/web/src/server/admin/production.ts:89:54 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    87 │       installationGeneration: actor.installationGeneration,
+    88 │     });
+  > 89 │     if (!scope || scope.shopDomain !== actor.shop || 'gid://shopify/Shop/' + scope.shopifyShopId !== actor.shopId)
+       │                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    90 │       throw new Error('Admin installation changed');
+    91 │   }
+  
+  i Unsafe fix: Use a template literal.
+  
+     87  87 │         installationGeneration: actor.installationGeneration,
+     88  88 │       });
+     89     │ - ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·'gid://shopify/Shop/'·+·scope.shopifyShopId·!==·actor.shopId)
+         89 │ + ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·`gid://shopify/Shop/${scope.shopifyShopId}`·!==·actor.shopId)
+     90  90 │         throw new Error('Admin installation changed');
+     91  91 │     }
+  
+
+apps/web/src/server/admin/production.ts:214:51 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    212 │           const provider = await shopify.readInstallation(online);
+    213 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
+  > 214 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+        │                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    215 │             throw new Error('Tenant installation mismatch');
+    216 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+  
+  i Unsafe fix: Use a template literal.
+  
+    212 212 │             const provider = await shopify.readInstallation(online);
+    213 213 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
+    214     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+        214 │ + ··········if·(!tenant·||·!tenant.shopifyShopId·||·`gid://shopify/Shop/${tenant.shopifyShopId}`·!==·provider.shopId)
+    215 215 │               throw new Error('Tenant installation mismatch');
+    216 216 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+  
+
+apps/web/src/server/admin/auth.ts:48:48 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    46 │     let identity: VerifiedAdminIdentity;
+    47 │     try {
+  > 48 │       identity = await port.verifySessionToken(match[1]!);
+       │                                                ^^^^^^^^^
+    49 │     } catch {
+    50 │       return null;
+  
+
+apps/web/src/server/admin/auth.ts:61:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    59 │     )
+    60 │       return null;
+  > 61 │     const grant = await port.exchangeOnlineGrant(match[1]!, identity);
+       │                                                  ^^^^^^^^^
+    62 │     if (
+    63 │       grant.shop !== identity.shop ||
+  
+
+apps/web/src/server/admin/preview.ts:109:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    107 │             .then((found) => (found ? project(found) : null)),
+    108 │         );
+  > 109 │       const result = await map.get(id)!;
+        │                            ^^^^^^^^^^^^
+    110 │       await active(actor);
+    111 │       return result;
+  
+
+apps/web/src/server/admin/preview.ts:116:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    114 │       await active(actor);
+    115 │       if (!currencies.has(actor)) currencies.set(actor, reader(actor).shopCurrency());
+  > 116 │       const result = await currencies.get(actor)!;
+        │                            ^^^^^^^^^^^^^^^^^^^^^^
+    117 │       await active(actor);
+    118 │       return result;
+  
+
+apps/web/src/server/admin/preview.ts:163:34 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    161 │                   shopId: randomUUID(),
+    162 │                   shopDomain: shop,
+  > 163 │                   shopifyShopId: shopId.split('/').at(-1)!,
+        │                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+    164 │                   externalInstallationId: provider.installationId,
+    165 │                 }),
+  
+
+apps/web/src/server/admin/preview.ts:223:26 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    221 │                   installationGeneration: bound.installationGeneration,
+    222 │                   shopifyShopId: shopId,
+  > 223 │                   appId: env.INSIGNIA_M5_002_APP_RESOURCE!,
+        │                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    224 │                 },
+    225 │                 {
+  
+
+apps/web/src/server/admin/preview.ts:227:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    225 │                 {
+    226 │                   appKey: client,
+  > 227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+        │                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+    229 │                 },
+  
+
+apps/web/src/server/admin/preview.ts:228:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    226 │                   appKey: client,
+    227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+  > 228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+        │                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    229 │                 },
+    230 │               );
+  
+
+apps/web/src/server/admin/production.ts:214:15 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━
+
+  ! Change to an optional chain.
+  
+    212 │           const provider = await shopify.readInstallation(online);
+    213 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
+  > 214 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+        │               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    215 │             throw new Error('Tenant installation mismatch');
+    216 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+  
+  i Unsafe fix: Change to an optional chain.
+  
+    212 212 │             const provider = await shopify.readInstallation(online);
+    213 213 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
+    214     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+        214 │ + ··········if·(!tenant?.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+    215 215 │               throw new Error('Tenant installation mismatch');
+    216 216 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+  
+
+apps/web/src/server/merchant-config.ts:123:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    121 │         option.allowedValueIds.flatMap((id) => {
+    122 │           const label = oldLabels?.[id];
+  > 123 │           return label ? [[values.get(id)!, label]] : [];
+        │                            ^^^^^^^^^^^^^^^
+    124 │         }),
+    125 │       );
+  
+
+apps/web/src/server/merchant-config.ts:126:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    124 │         }),
+    125 │       );
+  > 126 │       return Object.keys(remapped).length ? [[options.get(option.id)!, remapped]] : [];
+        │                                               ^^^^^^^^^^^^^^^^^^^^^^^
+    127 │     }),
+    128 │   );
+  
+
+apps/web/src/server/merchant-config.ts:132:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    130 │     ...source,
+    131 │     labels,
+  > 132 │     methods: source.methods.map((item) => ({ id: methods.get(item.id)! })),
+        │                                                  ^^^^^^^^^^^^^^^^^^^^^
+    133 │     placements: source.placements.map((item) => ({
+    134 │       ...item,
+  
+
+apps/web/src/server/merchant-config.ts:135:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    133 │     placements: source.placements.map((item) => ({
+    134 │       ...item,
+  > 135 │       id: placements.get(item.id)!,
+        │           ^^^^^^^^^^^^^^^^^^^^^^^^
+    136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+    137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+  
+
+apps/web/src/server/merchant-config.ts:136:59 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    134 │       ...item,
+    135 │       id: placements.get(item.id)!,
+  > 136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+        │                                                           ^^^^^^^^^^^^^^^^
+    137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+    138 │     })),
+  
+
+apps/web/src/server/merchant-config.ts:137:55 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    135 │       id: placements.get(item.id)!,
+    136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+  > 137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+        │                                                       ^^^^^^^^^^^^^^
+    138 │     })),
+    139 │     productionOptions: source.productionOptions.map((item) => ({
+  
+
+apps/web/src/server/merchant-config.ts:140:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    138 │     })),
+    139 │     productionOptions: source.productionOptions.map((item) => ({
+  > 140 │       id: options.get(item.id)!,
+        │           ^^^^^^^^^^^^^^^^^^^^^
+    141 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+    142 │     })),
+  
+
+apps/web/src/server/merchant-config.ts:141:57 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    139 │     productionOptions: source.productionOptions.map((item) => ({
+    140 │       id: options.get(item.id)!,
+  > 141 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+        │                                                         ^^^^^^^^^^^^^^^
+    142 │     })),
+    143 │     pricingRules: source.pricingRules.map((rule) => ({
+  
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 94.
+Checked 203 files in 375ms. No fixes applied.
+Found 36 warnings.
+Found 78 infos.
+$ corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build
+packages/domain build$ tsc -p tsconfig.json
+packages/observability build$ tsc -p tsconfig.json
+packages/contracts build$ tsc -p tsconfig.json
+packages/cart-authorization build$ tsc -p tsconfig.json
+packages/domain build: Done
+packages/visualizer build$ tsc -p tsconfig.json
+packages/contracts build: Done
+packages/application build$ tsc -p tsconfig.json
+packages/cart-authorization build: Done
+packages/observability build: Done
+packages/visualizer build: Done
+packages/application build: Done
+packages/shopify build$ tsc -p tsconfig.json
+packages/shopify build: Done
+packages/database build$ tsc -p tsconfig.json
+packages/database build: Done
+apps/storefront build$ tsc --noEmit && vite build && node scripts/copy-theme-asset.mjs
+apps/worker build$ tsc -p tsconfig.json
+apps/worker build: Done
+apps/web build$ astro check && astro build
+apps/storefront build: vite v8.3.1 building client environment for production...
+apps/storefront build: transforming...
+apps/storefront build: ✓ 5 modules transformed.
+apps/storefront build: rendering chunks...
+apps/storefront build: computing gzip size...
+apps/storefront build: dist/insignia-storefront.js  14.03 kB │ gzip: 5.93 kB
+apps/storefront build: 
+apps/storefront build: ✓ built in 26ms
+apps/storefront build: Done
+apps/web build: 01:26:44 [@astrojs/node] Enabling sessions with filesystem storage
+apps/web build: 01:26:44 [types] Generated 67ms
+apps/web build: 01:26:44 [check] Getting diagnostics for Astro files in /home/serveradmin/insignia-m5-005-worktree/apps/web...
+apps/web build: Result (28 files): 
+apps/web build: - 0 errors
+apps/web build: - 0 warnings
+apps/web build: - 0 hints
+apps/web build: 
+apps/web build: 01:26:49 [@astrojs/node] Enabling sessions with filesystem storage
+apps/web build: 01:26:49 [types] Generated 65ms
+apps/web build: 01:26:49 [build] output: "server"
+apps/web build: 01:26:49 [build] mode: "server"
+apps/web build: 01:26:49 [build] directory: /home/serveradmin/insignia-m5-005-worktree/apps/web/dist/
+apps/web build: 01:26:49 [build] adapter: @astrojs/node
+apps/web build: 01:26:49 [build] Collecting build info...
+apps/web build: 01:26:49 [build] ✓ Completed in 109ms.
+apps/web build: 01:26:49 [build] Building server entrypoints...
+apps/web build: 01:26:50 [vite] ✓ built in 217ms
+apps/web build: 01:26:51 [vite] ✓ built in 1.48s
+apps/web build: 01:26:51 [vite] ✓ built in 217ms
+apps/web build: 01:26:51 [build] Rearranging server assets...
+apps/web build: 01:26:51 [build] ✓ Completed in 1.98s.
+apps/web build: 01:26:51 [build] Server built in 2.09s
+apps/web build: 01:26:51 [build] Complete!
+apps/web build: Done
+$ corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/contracts test && corepack pnpm --filter @insignia/visualizer test && corepack pnpm --filter @insignia/cart-authorization test && corepack pnpm --filter @insignia/application test && corepack pnpm --filter @insignia/shopify test && corepack pnpm --filter @insignia/observability test && corepack pnpm --filter @insignia/worker test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-005-worktree/packages/domain
+
+
+ Test Files  5 passed (5)
+      Tests  26 passed (26)
+   Start at  01:26:52
+   Duration  449ms (transform 51%, tests 31%, import 14%, worker 4%)
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-005-worktree/packages/contracts
+
+
+ Test Files  2 passed (2)
+      Tests  6 passed (6)
+   Start at  01:26:53
+   Duration  270ms (import 55%, transform 31%, tests 10%, worker 3%)
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-005-worktree/packages/visualizer
+
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  01:26:54
+   Duration  221ms (transform 67%, import 15%, tests 13%, worker 5%)
+
+$ node --experimental-strip-types --test test/*.test.ts
+✔ hard subset bounds and untrusted ordinary-line hints (2.187488ms)
+✔ 33 buckets are refused before the signer is called (0.457422ms)
+✔ every admitted code matches the versioned matrix and unknown/digital values reject (15.228639ms)
+✔ production-generated carriers decode, conserve and verify for every complete set (7.136003ms)
+✔ PostgreSQL-persisted negative adjustment has exact signed quote and member economics (1.153301ms)
+✔ versioned 33-bucket vector rejects before any signing call (0.438079ms)
+✔ production decoder and signature bytes preserve the independent v2 wire literal (5.646504ms)
+✔ injected synthetic Ed25519 signer covers the complete set and three-day key window (3.025386ms)
+✔ invalid window or set refuses signing and noncanonical carrier refuses decoding (0.55657ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 184.595082
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-005-worktree/packages/application
+
+
+ Test Files  14 passed (14)
+      Tests  174 passed (174)
+   Start at  01:26:55
+   Duration  1.38s (transform 44%, import 33%, tests 19%, worker 3%)
+
+    Isolate  14 workers spawned · ~121ms startup each (spawn + environment, per file)
+             at least ~445ms faster with isolate: false — reuses workers across files instead of one per file
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-005-worktree/packages/shopify
+
+
+ Test Files  12 passed (12)
+      Tests  226 passed (226)
+   Start at  01:26:56
+   Duration  1.33s (tests 64%, transform 19%, import 14%, worker 2%)
+
+    Isolate  12 workers spawned · ~118ms startup each (spawn + environment, per file)
+             at least ~354ms faster with isolate: false — reuses workers across files instead of one per file
+
+$ node --test test/*.test.mjs
+✔ structured runtime events cannot emit arbitrary payload or credential fields (4.788384ms)
+✔ metric labels are fixed outcomes and never contain tenant or delivery IDs (2.592358ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 126.519381
+$ node --test test/*.test.mjs
+✔ current and previous synthetic wrapping keys remain available by ID (2.333257ms)
+﹣ PostgreSQL claim retries the old refresh token after a lost response and fences stale replacement (0.983731ms) # SKIP
+✔ diagnostic decodes and derives synthetic pixels without claiming durable readiness (15.703764ms)
+✔ liveness stays separate from durable readiness; loopback metrics expose bounded outcomes (61.965069ms)
+﹣ PostgreSQL pg-boss starts, retries, settles and replays after restart (0.949839ms) # SKIP
+﹣ pg-boss retry after committed uninstall retains one deactivation and one inbox fact (0.150249ms) # SKIP
+✔ process starts queues and workers before readiness; stop makes readiness unavailable (42.155359ms)
+✔ startup failure closes a started queue without reporting readiness (1.620444ms)
+{"level":30,"time":1790904419265,"event":"worker_started"}
+{"level":30,"time":1790904419269,"event":"worker_started"}
+{"level":30,"time":1790904419271,"event":"worker_started"}
+{"level":30,"time":1790904419273,"event":"worker_started"}
+{"level":30,"time":1790904419275,"event":"worker_started"}
+{"level":30,"time":1790904419277,"event":"worker_started"}
+✔ enqueue confirms exact inbox identity, including completed job replay (7.099218ms)
+✔ null send without same persisted job is retryable, never an acknowledgement (1.525003ms)
+✔ workers pass IDs only to injected durable handlers; failed attempt retries safely (2.749314ms)
+✔ invalid job body and identity fail closed without invoking application (0.97168ms)
+✔ enabled worker refuses missing credential-key configuration and stays not ready (1.508633ms)
+✔ refresh claim contention is retried rather than silently completing its job (2.012205ms)
+{"level":30,"time":1790904419266,"event":"webhook_enqueued","inboxId":"2fd75a76-daed-4af2-82d1-563c97d38cd4"}
+{"level":30,"time":1790904419267,"event":"worker_stopped"}
+{"level":50,"time":1790904419271,"event":"webhook_process_failed","inboxId":"28eefa22-94cb-4883-bba3-0731b2024482","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1790904419272,"event":"webhook_process_ok","inboxId":"28eefa22-94cb-4883-bba3-0731b2024482","attempt":1}
+{"level":30,"time":1790904419272,"event":"refresh_process_ok","shopId":"9e1d4ed4-f04a-4f5a-9ff9-c3b415ad9cad","attempt":0}
+{"level":30,"time":1790904419273,"event":"worker_stopped"}
+{"level":50,"time":1790904419274,"event":"webhook_process_failed","inboxId":"287e5239-904f-463b-b5f8-7e9c59d8365d","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1790904419275,"event":"worker_stopped"}
+{"level":50,"time":1790904419277,"event":"refresh_process_failed","errorClass":"RefreshError","attempt":0}
+{"level":30,"time":1790904419278,"event":"worker_stopped"}
+﹣ configured worker serves liveness and durable readiness, then closes on SIGTERM (1.036599ms) # SKIP
+ℹ tests 15
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 4
+ℹ todo 0
+ℹ duration_ms 624.724426
+$ node --test scripts/m5-002/read-register.test.mjs scripts/m5-002/built-runtime.test.mjs && node --test scripts/m5-004/operator.test.mjs && node --test scripts/m5-005/diagnostic.test.mjs
+✔ complete built server reproduces CLI development-mode CSP rejection (252.222607ms)
+✔ actual launcher runtime preparation admits built hydration without widening CSP (190.348742ms)
+✔ actual launcher register reserves durably before synthetic fetch, serializes and denies extra attempts (73.738009ms)
+✔ exact SDK online exchange is counted per attempt; mutations, wrong targets and other token/event routes never send (1.70331ms)
+✔ ambiguous or inflated history stops before any send (0.615996ms)
+✔ one-shot loss applies only after a committed local save and never changes transport counts (2.138295ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 515.807564
+✔ actual HTTP attempts are durably reserved before dispatch (9.689446ms)
+✔ captured M5-004 empty grants stop the actual public workflow before any fixture write (5.89164ms)
+✔ fixed targets/documents/variables reject unrelated writes and extra payload before actual HTTP (3.351735ms)
+✔ normal reserves cannot consume final 12 reads/3 updates; all attempts count, one lock and one create (172.640615ms)
+✔ naturally lost mutation response stops all later writes and cleanup across reopen; no automatic retry (2.147804ms)
+✔ real routing identity, nine retained grants and complete empty publication history are mandatory (2.016701ms)
+✔ auth exact app/route counts3 and never persists synthetic secret or returned token (1.650131ms)
+✔ missing/corrupt history never reinitializes or sends (0.660333ms)
+✔ offline gate prevents even credential loading (0.273669ms)
+✔ full qualification reuses unchanged actual status/catalog adapters, fresh-process hold reload and drift refusal (499.847683ms)
+✔ complete workflow stops on changed installation; no manufacture or unsafe cleanup (19.95685ms)
+✔ complete workflow stops on unexpected exposure; no manufacture or unsafe cleanup (20.379778ms)
+✔ complete workflow stops on visibility mismatch; no manufacture or unsafe cleanup (150.06894ms)
+✔ complete workflow stops on natural lost response; no manufacture or unsafe cleanup (96.035646ms)
+✔ complete workflow stops on metadata drift; no manufacture or unsafe cleanup (22.490595ms)
+✔ complete workflow stops on malformed success; no manufacture or unsafe cleanup (89.162036ms)
+✔ live register is canonical; synthetic initialization rejects unsafe directories and lost history (0.644641ms)
+✔ malformed/unsuccessful mutation responses stay unknown; only valid explicit rejection permits finalization (4.37541ms)
+✔ lock cannot release while late HTTP/body work can still persist history (0.992071ms)
+✔ acknowledged fixture metadata baseline rejects added tags or changed creation identity (1.095912ms)
+✔ actual adapter HTTP/GraphQL outcomes survive bounded transport and sanitized response replay (11.109004ms)
+✔ foreign live root and stale register binding cannot reach credential loading (18.960384ms)
+✔ gate rejects incomplete CI and unbound review receipts even when every supplied workflow is green (26.030076ms)
+✔ complete source/build/review/CI gate accepts bound receipts and rejects omissions, stale refs or altered evidence (84.279104ms)
+✔ actual adapter user-error failure remains identical when replayed from sanitized mutation evidence (4.1135ms)
+✔ malformed success userErrors cannot acknowledge a status mutation or allow cleanup (5.948321ms)
+✔ actual availability missing/oversized bodies keep direct/wrapped/replayed shape errors (4.65927ms)
+✔ catalog receives original bounded UTF8 bytes and provenance hashes the bytes, not replacement text (2.313213ms)
+✔ failed catalog preserves actual normalized results before STOP (260.463472ms)
+✔ failed drift preserves actual normalized results before STOP (454.71444ms)
+✔ availability preserves its lossy UTF8 semantics while catalog rejects the same original bad bytes (2.21628ms)
+✔ reopening a finished run preserves exact normalized evidence and refuses before credential loading (459.132794ms)
+✔ catalog successful non200 keeps direct/wrapped/replayed body semantics (1.930132ms)
+ℹ tests 33
+ℹ suites 0
+ℹ pass 33
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2659.219914
+✔ one actual diagnostic sequence keeps empty installation distinct from nonempty token/REST/declarations (10.673447ms)
+✔ partial stream failure is UNKNOWN and cannot allow a later independent read (3.12187ms)
+✔ permission/shape metadata error does not become an empty grant agreement (3.065491ms)
+✔ metadata shape failure still permits the independent REST read (2.210641ms)
+✔ public sequence preserves missing installation/REST scope semantics (2.334847ms)
+✔ public sequence preserves null installation/REST scope semantics (2.108782ms)
+✔ public sequence preserves empty installation/REST scope semantics (2.031755ms)
+✔ public sequence preserves wrong-type installation/REST scope semantics (1.791887ms)
+✔ public sequence preserves duplicates installation/REST scope semantics (2.074675ms)
+✔ public sequence preserves bad-handle installation/REST scope semantics (3.154586ms)
+✔ token missing is recorded separately without preventing identity verification (1.698467ms)
+✔ token null is recorded separately without preventing identity verification (1.449984ms)
+✔ token empty is recorded separately without preventing identity verification (1.502806ms)
+✔ token wrong-type is recorded separately without preventing identity verification (1.414434ms)
+✔ token duplicate is recorded separately without preventing identity verification (1.492575ms)
+✔ token bad-handle is recorded separately without preventing identity verification (1.449206ms)
+✔ wrong shop identity stops after exactly two attempts (1.196526ms)
+✔ wrong domain identity stops after exactly two attempts (0.904742ms)
+✔ wrong app identity stops after exactly two attempts (1.028852ms)
+✔ wrong client identity stops after exactly two attempts (0.940895ms)
+✔ wrong installation identity stops after exactly two attempts (0.90549ms)
+✔ wrong development identity stops after exactly two attempts (0.859063ms)
+✔ explicit mismatched declared identity stops before REST (1.369756ms)
+✔ token-invalid metadata response stops all later work (1.271366ms)
+✔ offline unvalidated metadata is NOT_RUN without live document fallback (1.211049ms)
+✔ unvalidated identity document stops before credential access (0.424457ms)
+✔ actual entrypoint prevents host dispatch (0.964355ms)
+✔ actual entrypoint prevents API dispatch (0.801902ms)
+✔ actual entrypoint prevents method dispatch (0.792644ms)
+✔ actual entrypoint prevents document dispatch (0.903808ms)
+✔ actual entrypoint prevents mutation dispatch (0.840349ms)
+✔ actual entrypoint prevents variables dispatch (0.859919ms)
+✔ fixed REST GET prevents query (2.997683ms)
+✔ fixed REST GET prevents body (1.481776ms)
+✔ canonical history cannot be reopened, exhausted, corrupted or reset after loss (2.269025ms)
+✔ expired credential preparation never dispatches a late HTTP call and retains pending lock (35.520683ms)
+✔ ignored abort and late HTTP completion remain UNKNOWN with no later request or evidence rewrite (36.675152ms)
+✔ metadata oversized is shape evidence and allows independent REST (3.199768ms)
+✔ metadata invalid-UTF8 is shape evidence and allows independent REST (1.874382ms)
+✔ metadata invalid-JSON is shape evidence and allows independent REST (1.865659ms)
+✔ metadata missing-body is shape evidence and allows independent REST (1.66938ms)
+✔ unusable authentication never authorizes a read (0.864167ms)
+✔ unusable authentication never authorizes a read (0.746963ms)
+✔ unusable authentication never authorizes a read (0.744511ms)
+✔ synthetic entry cannot override its mode to admit a nonsynthetic bearer (0.963034ms)
+✔ pinned documented fields validate both exact documents and reject mutation/extra/unknown syntax (0.806793ms)
+✔ live entrypoint rejects an unbound offline gate before owner credential metadata (27.965281ms)
+✔ complete source/CI/review gate accepts exact receipts and rejects omitted/stale/altered evidence (88.368937ms)
+✔ captured four-surface empty scope result replays through the public sequence without authorizing repair (2.053846ms)
+ℹ tests 49
+ℹ suites 0
+ℹ pass 49
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 465.942935
+$ tsc -p scripts/m1-functions/tsconfig.json && node --test scripts/m1-functions/check-vector.test.ts
+✔ TypeScript/Node and Rust share the exact experimental-v2 envelope/member bytes (4.703583ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 120.887916
+$ node scripts/boundaries/check.mjs && node scripts/boundaries/check-database-api.mjs && node scripts/boundaries/check-domain-effects.mjs && node --test scripts/boundaries/domain-effects.test.mjs
+Boundary checks passed: 187 real modules, 4 browser modules, 19 negative source fixtures, 2 rejected browser bundles and exports.
+Database public API rejects 19 compiler probes and 4 runtime deep imports.
+6 production domain modules have no prohibited ambient effects
+✔ Date.now is rejected in a production domain helper (9.088309ms)
+✔ new Date is rejected in a production domain helper (0.746079ms)
+✔ Math.random is rejected in a production domain helper (0.483925ms)
+✔ globalThis.Date.now is rejected in a production domain helper (0.509198ms)
+✔ fetch is rejected in a production domain helper (1.209029ms)
+✔ globalThis.crypto is rejected in a production domain helper (0.410101ms)
+✔ computed random is rejected in a production domain helper (0.913765ms)
+✔ template random is rejected in a production domain helper (0.663169ms)
+✔ dynamic Math member is rejected in a production domain helper (1.204301ms)
+✔ spread Date is rejected in a production domain helper (1.568505ms)
+✔ random destructuring is rejected in a production domain helper (0.739355ms)
+✔ date alias is rejected in a production domain helper (0.353915ms)
+✔ math alias is rejected in a production domain helper (0.289564ms)
+✔ import meta is rejected in a production domain helper (0.398604ms)
+✔ process environment is rejected in a production domain helper (0.227607ms)
+✔ deterministic numeric and explicit-value operations stay allowed (1.407471ms)
+✔ type-only properties are not ambient API references (2.183311ms)
+✔ compiled graph includes an imported module with an excluded test-like filename (561.93607ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 980.851448
+$ node scripts/boundaries/check-secrets.mjs
+Secret/fixture provenance check passed: 108 production source files, 82 separately scanned test/fixture files, 2 browser artifacts, 2 explicitly synthetic seeds.
+20 archived Cargo manifests remain independent
+$ bash scripts/m1-functions/check.sh
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (target/debug/deps/cart_authorization-428bc6dab939b9b3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/currency_matrix.rs (target/debug/deps/currency_matrix-a76cbbc666a7ab20)
+
+running 1 test
+test every_admitted_currency_agrees_with_versioned_ts_matrix ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/production_vectors.rs (target/debug/deps/production_vectors-931358b74671ec5f)
+
+running 1 test
+test production_typescript_vectors_verify_with_complete_rust_core ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/whole_quote.rs (target/debug/deps/whole_quote-dd6e3b33eb9f8a50)
+
+running 13 tests
+test canonical_carriers_reject_length_padding_alphabet_and_tail_bits ... ok
+test complete_ordered_set_verifies_once_and_matches_observed_price ... ok
+test compensated_price_mutations_cannot_preserve_authorization_by_preserving_total ... ok
+test every_header_byte_class_is_signed_and_structural_header_is_strict ... ok
+test last_member_change_invalidates_everything ... ok
+test independent_context_keys_date_and_physical_economics_reject ... ok
+test missing_duplicate_unsigned_and_extra_members_fail_closed ... ok
+test member_from_a_different_signed_quote_cannot_mix_with_original_envelope ... ok
+test noncanonical_public_point_and_revoked_or_out_of_window_keys_reject ... ok
+test shared_python_typescript_rust_golden_vector_agrees ... ok
+test signature_and_arithmetic_profiles_reject_mutations ... ok
+test large_complete_quantity_and_500_unit_tier_cannot_be_partially_reused ... ok
+test fifteen_independently_signed_high_bit_magic_variants_reject ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+     Running unittests src/main.rs (target/debug/deps/cart_transform-358275b5ea2405f6)
+
+running 20 tests
+test capacity::tests::cart_line_width_and_grammar ... ok
+test capacity::tests::exact_output_bound_has_headroom ... ok
+test product_policy::tests::absent_fields_are_unmanaged_but_a_single_lost_field_is_uncertain ... ok
+test product_policy::tests::illegible_lone_anchor_cannot_authorize_a_signed_quote ... ok
+test product_policy::tests::matching_ready_fields_classify_required_and_optional ... ok
+test product_policy::tests::pending_malformed_and_stale_fields_block_plain_but_preserve_signed ... ok
+test product_policy::tests::wrong_installation_generation_rejects_signed_too ... ok
+test product_policy::tests::strict_grammar_rejects_unknown_states_and_noncanonical_revisions ... ok
+test tests::no_partial_expansion_for_incomplete_or_tampered_set ... ok
+test tests::revoked_and_out_of_window_public_keys_emit_no_price_operation ... ok
+test tests::complete_set_sets_both_prices_and_copies_compact_member ... ok
+test tests::signed_quote_with_only_illegible_policy_emits_no_price ... ok
+test tests::signed_quote_with_no_product_anchors_still_requires_shop_keys ... ok
+test tests::context_physical_line_policy_and_cart_order_are_enforced ... ok
+test tests::signed_prices_survive_policy_revision_and_one_lost_anchor ... ok
+test tests::unsigned_marker_removed_and_invalid_signature_emit_no_price ... ok
+test tests::ten_thousand_physical_units_use_two_expansions ... ok
+test tests::untrusted_config_cannot_raise_experiment_ceiling ... ok
+test tests::transform_accepts_canonical_zero_and_echoes_target_local_id ... ok
+test tests::ten_bucket_output_is_bounded_and_oversized_sets_emit_no_partial_operation ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src/main.rs (target/debug/deps/cart_validation-95daed9c7c60dc1b)
+
+running 24 tests
+test capacity::tests::exact_output_bound_has_headroom ... ok
+test capacity::tests::cart_line_width_and_grammar ... ok
+test product_policy::tests::absent_fields_are_unmanaged_but_a_single_lost_field_is_uncertain ... ok
+test product_policy::tests::matching_ready_fields_classify_required_and_optional ... ok
+test product_policy::tests::pending_malformed_and_stale_fields_block_plain_but_preserve_signed ... ok
+test product_policy::tests::illegible_lone_anchor_cannot_authorize_a_signed_quote ... ok
+test product_policy::tests::strict_grammar_rejects_unknown_states_and_noncanonical_revisions ... ok
+test product_policy::tests::wrong_installation_generation_rejects_signed_too ... ok
+test tests::incomplete_tampered_and_unsigned_required_sets_reject ... ok
+test tests::malformed_stale_pending_and_wrong_generation_policy_fail_plain ... ok
+test tests::complete_set_compares_observed_exact_subtotals ... ok
+test tests::buyer_marker_removal_cannot_turn_known_required_into_plain ... ok
+test tests::one_lost_anchor_blocks_plain_while_explicit_optional_and_unmanaged_pass ... ok
+test tests::revoked_and_out_of_window_public_keys_reject_checkout ... ok
+test tests::cart_order_context_and_physical_claim_changes_fail_at_checkout ... ok
+test tests::signed_quote_with_only_illegible_policy_rejects ... ok
+test tests::signed_quote_with_no_product_anchors_needs_healthy_shop_keys ... ok
+test tests::signed_historical_quote_survives_same_generation_policy_revision ... ok
+test tests::untrusted_config_cannot_raise_experiment_ceiling ... ok
+test tests::ten_thousand_physical_units_validate_without_per_unit_expansion ... ok
+test tests::zero_based_cartline_does_not_bypass_economics_or_trust_at_checkout ... ok
+test tests::mixed_200_line_cart_blocks_damaged_managed_line_then_recovers ... ok
+test tests::ten_bucket_set_validates_and_oversized_sets_reject ... ok
+test tests::zero_based_cartline_preserves_complete_signed_checkout_at_both_steps ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+   Doc-tests cart_authorization
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+/home/serveradmin/insignia-m5-005-worktree/crates/cart-transform/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+    Finished `release` profile [optimized] target(s) in 0.04s
+e7081ad72ce8b41dcc5917d3e0dd87bff9a9d81c73c2a683cc11f1b183a2d52d  /home/serveradmin/insignia-m5-005-worktree/extensions/insignia-cart-transform/target/cart-transform.raw.wasm
+76e890cf702a6bc182e8ca8b55942260f33a5bc5e072d42c2f104a72161a4ddb  /home/serveradmin/insignia-m5-005-worktree/extensions/insignia-cart-transform/target/cart-transform.wasm
+184504 /home/serveradmin/insignia-m5-005-worktree/extensions/insignia-cart-transform/target/cart-transform.raw.wasm
+181570 /home/serveradmin/insignia-m5-005-worktree/extensions/insignia-cart-transform/target/cart-transform.wasm
+366074 total
+/home/serveradmin/insignia-m5-005-worktree/crates/cart-validation/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+    Finished `release` profile [optimized] target(s) in 0.04s
+f32282420c3c1088e40d369e351d3d594cdd661fe46b239424fa7a3547a85c7a  /home/serveradmin/insignia-m5-005-worktree/extensions/insignia-cart-validation/target/cart-validation.raw.wasm
+51cd4867fa5c8181eac421c65e3e7fd210662213c3705ffe5cfc8c8d4a085207  /home/serveradmin/insignia-m5-005-worktree/extensions/insignia-cart-validation/target/cart-validation.wasm
+186152 /home/serveradmin/insignia-m5-005-worktree/extensions/insignia-cart-validation/target/cart-validation.raw.wasm
+183160 /home/serveradmin/insignia-m5-005-worktree/extensions/insignia-cart-validation/target/cart-validation.wasm
+369312 total
+/home/serveradmin/insignia-m5-005-worktree/.m1-artifacts/tools/function-runner-9.2.2: OK
+transform 8 e7081ad72ce8b41dcc5917d3e0dd87bff9a9d81c73c2a683cc11f1b183a2d52d 76e890cf702a6bc182e8ca8b55942260f33a5bc5e072d42c2f104a72161a4ddb
+validation 18 f32282420c3c1088e40d369e351d3d594cdd661fe46b239424fa7a3547a85c7a 51cd4867fa5c8181eac421c65e3e7fd210662213c3705ffe5cfc8c8d4a085207
+{
+  "rows": 230,
+  "positive": 16,
+  "vectorsSha256": "7f0046b88183b79cbccc305c883aab0483a6cda1eddb191297e2295c35ac1eda",
+  "transformWasmSha256": "76e890cf702a6bc182e8ca8b55942260f33a5bc5e072d42c2f104a72161a4ddb",
+  "validationWasmSha256": "51cd4867fa5c8181eac421c65e3e7fd210662213c3705ffe5cfc8c8d4a085207"
+}
+M4-003 production builder config passed 6 complete Function runs.
+$ corepack pnpm --filter @insignia/web test && corepack pnpm --filter @insignia/storefront test
+$ node --test test/*.test.mjs test/admin/*.test.mjs
+﹣ real PG activation composes trusted release, synthetic Shopify hold and immutable evidence (0.961782ms) # SKIP
+✔ admin distinguishes activation waiting, held, restoration and conflict without manufacturing ACTIVE (1.215101ms)
+✔ publication conflict outranks a retained held/pending activation state (0.22072ms)
+✔ terminal operator hold outranks stale held activation (0.179624ms)
+✔ current staff and installation grant read and edit; reinstallation is checked every request (1.924499ms)
+✔ staff read access does not grant mutation (1.094ms)
+✔ expired or cross-shop identity and stale installation fail closed (0.475447ms)
+✔ read requires current verified staff and exact shop, even on deep links (29.804528ms)
+✔ mutation refuses cross-origin and staff denial before invoking command (2.402269ms)
+✔ save carries exact product, draft version and idempotency to durable command (1.799877ms)
+✔ stale draft save is a conflict, never a success response (0.911462ms)
+✔ publish returns activation-pending truthfully and requires current edit grant (1.164884ms)
+✔ a product missing from the verified shop cannot be changed (0.931646ms)
+✔ expired identity and shop supplied in command body cannot create a config (1.672821ms)
+✔ unwired admin backend serves no private catalog data (0.575231ms)
+✔ unknown durable command failures remain unavailable without leaking details (0.982524ms)
+✔ editor-generated fixed, override and tier defaults price through unchanged M2 in zero/two/three exponent currencies (3571.001107ms)
+✔ real browser editor syncs typed view, variant and step controls with direct Konva canvas and saved draft (1940.359389ms)
+✔ removing named choices drops only their labels including nested option value labels before save (1150.86906ms)
+✔ variant without a saved image override retains the portrait default until explicit landscape adoption (974.485599ms)
+✔ merchant currency adoption refreshes saved publication eligibility and later failed or stale reads fail closed (912.920387ms)
+✔ mobile deep link, cookie-free reload, interrupted save, stale conflict, and missing Polaris control (2022.640147ms)
+✔ interrupted publication resumes the identical request after reload and reaches a durable phase (834.649015ms)
+✔ numeric placement input reaches owner state before blur and survives an owner rerender (1317.802584ms)
+✔ publication success preserves dirty local edits and exact save recovery [1/1] (832.84774ms)
+✔ publication failed preserves dirty local edits and exact save recovery [1/1] (813.678024ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [1/1] (878.803802ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [1/1] (955.842977ms)
+✔ publication retry keeps the original version after a newer draft edit when embedded storage is denied (845.42808ms)
+✔ stale stored publication is replaced by the current immutable intent despite newer ineligible draft (648.462734ms)
+✔ reinstalled Admin discards prior-generation browser request and publishes with a new key (652.155027ms)
+✔ concurrent editor refreshes share one App Bridge identity request (1264.780514ms)
+✔ empty merchant draft can be configured through typed controls and pass M2 validation (1141.931453ms)
+﹣ overlapping distinct-key M5 creates serialize before the command FK lock upgrade (1.048715ms) # SKIP
+﹣ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (0.176332ms) # SKIP
+﹣ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (0.149863ms) # SKIP
+﹣ actual M4 prepare/advance over immutable M5 revision reports ready, conflict and hold truthfully (0.95786ms) # SKIP
+✔ diagnostic preview requires accounting and HTTPS before any provider access (466.682382ms)
+﹣ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (0.749461ms) # SKIP
+✔ preview same-token single flight; replacement and current-installation invalidation exchange fresh (1.424921ms)
+✔ preview rejected exchange is not cached and expired or long-lived identity is denied (0.887472ms)
+﹣ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (0.949675ms) # SKIP
+✔ server activation composition cannot promote a diagnostic observation without trusted release source (1.783575ms)
+✔ server composition binds trusted provider reads to one signed immutable quote candidate (43.811218ms)
+✔ built SSR serves public shell and a real Polaris/Preact interaction (5971.954085ms)
+✔ HTTP 5xx after durable inbox commit leads to same-ID retry and a single queue handoff (14.949765ms)
+✔ stream bound rejects a lying or absent Content-Length before trusted metadata is stored (4.383615ms)
+﹣ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (1.056763ms) # SKIP
+ℹ tests 48
+ℹ suites 0
+ℹ pass 40
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 8
+ℹ todo 0
+ℹ duration_ms 21407.202467
+$ node --test test/*.test.mjs
+✔ custom element mounts, unmounts, and contains DOM, state and events (754.478098ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1184.905876
+{"archivedArchitectureRef": "0f2c80a316228bd69fdd2ff272e967ff14647b2b", "archivedArchitectureVerified": true, "archivedV1_2Ref": "662a78cd27507d8a2f1eaa976f1c644c93edd1be", "archivedV1_2Sha256": {"docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209", "docs/architecture/decision-ledger.md": "97ebb79ddc53000c53c46218ba8c83a5ba2279720ed07ff50809706b4f1a800a", "docs/architecture/implementation-plan.md": "8bb45ac9e2834bf047824a2e3dda4da7f76692bae685f6657da7b3ab03d0b145"}, "archivedV1_3Ref": "4209bb16a09cff95d5cbbc1bbcb082e8c1fa8899", "archivedV1_3Sha256": {"docs/architecture/decision-ledger.md": "d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9", "docs/architecture/implementation-plan.md": "b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d"}, "currentArchitectureSha256": {"docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209", "docs/architecture/decision-ledger.md": "3d1e8fe50c948822ba3403facfc142402d4fc6631d8d667a2e3341ff6cdbd802", "docs/architecture/implementation-plan.md": "cd59fd361d69adc3f307ee9b88ba1f5509ffeefb68aea90a15f9b88757b4e792"}, "currentArchitectureVersion": "1.4", "historicalMerge": "eaa386c90786e560d49f8311878c95d26cc3c7b8", "manifestSha256": "c2d017f70c4e781d174695c27b9a8c3295666c105af598d8caed6ce9a18160e8", "oldSourceCount": 41, "unchangedReceiptCount": 120}
+{"draftProducts": 2, "hashedSetupReceipts": 14, "initialUnits": 272, "ownedFunctions": 2, "status": "PASS", "variants": 3}
+48 required files hashed: .m1-artifacts/manifest.json
