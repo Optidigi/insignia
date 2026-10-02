@@ -2,9 +2,10 @@ import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { lstatSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { requireValue } from './operator.mjs';
+import { profileDirectory, requireValue } from './operator.mjs';
 export const digest = (bytes) => createHash('sha256').update(bytes).digest('hex');
-export function freeze(root) {
+export function freeze(root, { profile = 'm5-004' } = {}) {
+  profileDirectory(profile);
   const hashes = {};
   function walk(directory) {
     for (const entry of readdirSync(resolve(root, directory), { withFileTypes: true })) {
@@ -17,6 +18,7 @@ export function freeze(root) {
   for (const directory of [
     '.github/workflows',
     'scripts/m5-004',
+    ...(profile === 'm5-009' ? ['scripts/m5-009'] : []),
     'packages/shopify/src',
     'packages/shopify/dist',
     'packages/application/src',
@@ -31,6 +33,9 @@ export function freeze(root) {
     hashes[path] = digest(readFileSync(resolve(root, path)));
   return {
     source: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
+    ...(profile === 'm5-009'
+      ? { tree: execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { cwd: root, encoding: 'utf8' }).trim() }
+      : {}),
     modules: Object.fromEntries(Object.entries(hashes).sort(([a], [b]) => a.localeCompare(b))),
   };
 }
@@ -48,8 +53,18 @@ export const WORKFLOWS = Object.freeze([
   'M3-001 PostgreSQL durable core',
   'M3-002 local runtime and ingress',
 ]);
-export function verifyGate(root, gate, binding, { evidenceRoot = EVIDENCE_ROOT } = {}) {
-  requireValue(JSON.stringify(freeze(root)) === JSON.stringify(binding), 'source_binding');
+export function verifyGate(
+  root,
+  gate,
+  binding,
+  {
+    profile = 'm5-004',
+    evidenceRoot = profile === 'm5-004' ? EVIDENCE_ROOT : '/home/serveradmin/insignia-m5-009-handoff',
+  } = {},
+) {
+  profileDirectory(profile);
+  const base = profile === 'm5-004' ? BASE : '9ce56a1a9b8f674a3500f6592803f7a52e2ef18d';
+  requireValue(JSON.stringify(freeze(root, { profile })) === JSON.stringify(binding), 'source_binding');
   requireValue(
     execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim() === '',
     'dirty_source',
@@ -57,7 +72,8 @@ export function verifyGate(root, gate, binding, { evidenceRoot = EVIDENCE_ROOT }
   const fingerprint = digest(JSON.stringify(binding));
   requireValue(
     gate?.source === binding.source &&
-      gate.base === BASE &&
+      (profile === 'm5-004' || gate.tree === binding.tree) &&
+      gate.base === base &&
       gate.bindingDigest === fingerprint &&
       gate.offline?.source === binding.source &&
       gate.offline.bindingDigest === fingerprint &&
@@ -68,7 +84,7 @@ export function verifyGate(root, gate, binding, { evidenceRoot = EVIDENCE_ROOT }
         gate.reviews.some(
           (x) =>
             x.role === role &&
-            x.base === BASE &&
+            x.base === base &&
             x.head === binding.source &&
             x.bindingDigest === fingerprint &&
             x.model === 'gpt-6.1-sol' &&

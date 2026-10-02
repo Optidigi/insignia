@@ -18,6 +18,7 @@ import {
   FIXTURE,
   IDENTITY,
   LIVE_DIRECTORY,
+  profileDirectory,
   requireValue,
   SETUP,
   Stop,
@@ -95,24 +96,31 @@ export function protectedCredentials() {
     },
   };
 }
-export async function qualify({ root = ROOT, directory = LIVE_DIRECTORY, binding, gate }) {
+export async function qualify({
+  root = ROOT,
+  profile = 'm5-004',
+  directory = profileDirectory(profile),
+  binding,
+  gate,
+}) {
   requireValue(root === ROOT, 'executing_root');
-  requireValue(resolve(directory) === LIVE_DIRECTORY, 'canonical_register');
-  verifyGate(ROOT, gate, binding);
-  const operator = createOperator({ directory });
+  requireValue(resolve(directory) === profileDirectory(profile), 'canonical_register');
+  verifyGate(ROOT, gate, binding, { profile });
+  const operator = createOperator({ directory, profile });
   return runQualification({ operator, directory, binding, credentialLoader: protectedCredentials });
 }
 // Explicit offline seam: no default credentials/transport, no live source-attestation claim.
-export async function qualifySynthetic({ directory, binding, credentialLoader, fetchImpl }) {
+export async function qualifySynthetic({ directory, binding, credentialLoader, fetchImpl, profile = 'm5-004' }) {
   requireValue(
     typeof fetchImpl === 'function' &&
       fetchImpl !== globalThis.fetch &&
       typeof credentialLoader === 'function' &&
       credentialLoader !== protectedCredentials &&
-      resolve(directory) !== LIVE_DIRECTORY,
+      resolve(directory) !== LIVE_DIRECTORY &&
+      resolve(directory) !== profileDirectory('m5-009'),
     'synthetic_boundaries',
   );
-  const operator = createOperator({ directory, fetchImpl });
+  const operator = createOperator({ directory, fetchImpl, profile });
   return runQualification({
     operator,
     directory,

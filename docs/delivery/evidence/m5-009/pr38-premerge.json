@@ -1,0 +1,84 @@
+{
+  "pr": {
+    "baseRefName": "main",
+    "baseRefOid": "d3adffdd7ea6c538016ac3569d1f17e81259aa89",
+    "headRefOid": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+    "mergeStateStatus": "CLEAN",
+    "state": "OPEN"
+  },
+  "tree": "a88f092e62f9fabceb0c35e8a468383897ad9b9c",
+  "effectiveMergeBase": "d3adffdd7ea6c538016ac3569d1f17e81259aa89",
+  "checks": [
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37051954476,
+      "headSha": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+      "workflowName": "M0-012 real contract local prototype"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37051954475,
+      "headSha": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+      "workflowName": "M0-010 local hybrid billing proof"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37051954494,
+      "headSha": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+      "workflowName": "M0-011 local provider adapter boundary"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37051954548,
+      "headSha": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+      "workflowName": "M0-009 embedded Astro local proof"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37051954393,
+      "headSha": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+      "workflowName": "M0-008 local publication and architecture checks"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37051954549,
+      "headSha": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+      "workflowName": "M3-001 PostgreSQL durable core"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37051954375,
+      "headSha": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+      "workflowName": "M3-002 local runtime and ingress"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37051954382,
+      "headSha": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+      "workflowName": "M0-014 local public-app candidate"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37051954482,
+      "headSha": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+      "workflowName": "M0-013 off-store protocol capacity"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37051954540,
+      "headSha": "8dbe18ccc7f5c465384d7f34df92822b85c743a7",
+      "workflowName": "M1-001 foundation and boundaries"
+    }
+  ],
+  "externalApprovalSha256": "705cbcb638ff940ffa619283e5f04f50816a7a2fb6f874e9935dde4e83894b1f"
+}
