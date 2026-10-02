@@ -1,0 +1,12 @@
+{
+  "loaderSource": "scripts/m5-004/qualification.mjs",
+  "loaderSourceSha256": "c97ecd8f5b2aab0bb6eaf2dc32c51a3a031813f180fe8fa08d9b881ecf67e37e",
+  "exactExtractedLoaderSha256": "3b1cea864f7a41338010e62e88875fc3f8844068705d04128bc37c59675a2783",
+  "querySource": "scripts/m5-005/schema-contract.mjs",
+  "helperSha256": "7dab8b6fac82c0b3c5a2b3bfdb6ee3d5eb2873356b8e45fe320eb25651988d5d",
+  "historicalGuardsChanged": false,
+  "localReviewCorrections": [
+    "exclusive durable wx one-use guard before register read",
+    "cancel non-OK and oversized bodies; abort every request in finally"
+  ]
+}

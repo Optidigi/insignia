@@ -1,0 +1,19 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 37,
+  "base": "adecff04a3ff5b5d72665cbb404265477d6eb748",
+  "head": "77d01a5cfe828c723f37d7ab45e245d01e44d5bd",
+  "tree": "f11ba18504ccf44c29c0319aa3f1afc8ed91103e",
+  "final_head_workflows": 10,
+  "all_final_head_workflows_success": true,
+  "all_final_head_run_attempts": 1,
+  "principal_verdict": "APPROVED_STOPPED_DOCS_EVIDENCE_SCOPE",
+  "next_slice": "M5-008S",
+  "required_scopes_after_release": [],
+  "optional_scopes_after_release": [
+    "write_products"
+  ],
+  "grant_target_store": "insignia-rewrite-dev",
+  "installation_inventory_required": false,
+  "product_mutation_authorized": false
+}

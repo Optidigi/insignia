@@ -1,0 +1,77 @@
+{
+  "schema": "insignia.m5-008s.register.v1",
+  "state": "CLOSED_VERIFIED",
+  "app": "gid://shopify/App/429028933633",
+  "client": "1443cf6d03d39edae7c101a943c5c684",
+  "shop": "gid://shopify/Shop/105501393179",
+  "store": "insignia-rewrite-dev.myshopify.com",
+  "installation": "gid://shopify/AppInstallation/1054356963611",
+  "limits": {
+    "new_version_release": 1,
+    "optional_scope_request": 1,
+    "optional_scope_approval": 1,
+    "structural_rollback": 1,
+    "auth_exchange": 1,
+    "admin_read": 1
+  },
+  "reserved": {
+    "new_version_release": 1,
+    "optional_scope_request": 1,
+    "optional_scope_approval": 1,
+    "structural_rollback": 0,
+    "auth_exchange": 1,
+    "admin_read": 1
+  },
+  "events": [
+    {
+      "operation": "new_version_release",
+      "state": "reserved",
+      "at": "2026-10-02T18:14:10.792584+00:00"
+    },
+    {
+      "operation": "new_version_release",
+      "state": "verified",
+      "version": "insignia-2",
+      "id": "1152880803841",
+      "only_changed_field": "optional_scopes",
+      "required_scopes": [],
+      "optional_scopes": [
+        "write_products"
+      ]
+    },
+    {
+      "operation": "optional_scope_request",
+      "state": "reserved",
+      "at": "2026-10-02T18:16:05.898708+00:00",
+      "store": "insignia-rewrite-dev",
+      "client": "1443cf6d03d39edae7c101a943c5c684",
+      "scope": "write_products"
+    },
+    {
+      "operation": "optional_scope_approval",
+      "state": "reserved",
+      "at": "2026-10-02T18:16:32.643530+00:00",
+      "native_action": "Update",
+      "only_new_permission": "Edit products — Products, collections",
+      "store": "insignia-rewrite-dev",
+      "app": "Insignia"
+    },
+    {
+      "operation": "optional_scope_approval",
+      "state": "observed",
+      "interpretation": "native Update returned to existing exact-store app route; actual grant pending fixed API read",
+      "at": "2026-10-02T18:19:01.783764+00:00"
+    },
+    {
+      "operation": "auth_and_identity_read",
+      "state": "reserved",
+      "at": "2026-10-02T18:22:03.078Z"
+    },
+    {
+      "operation": "auth_and_identity_read",
+      "state": "VERIFIED_WRITE_PRODUCTS",
+      "classification": null,
+      "at": "2026-10-02T18:22:03.849Z"
+    }
+  ]
+}

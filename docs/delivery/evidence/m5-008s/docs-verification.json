@@ -1,0 +1,17 @@
+{
+  "schema": "insignia.m5-008s.docs-check.v1",
+  "at": "2026-10-02T18:26:10.262715+00:00",
+  "exit": 0,
+  "changedFilesChecked": 20,
+  "jsonFilesParsed": 11,
+  "newLocalLinks": "PASS after line-suffix normalization; first checker incorrectly treated :81 as filename, no source/evidence change",
+  "suppliedRecordsByteExact": true,
+  "historicalArtifactsUnchanged": 33,
+  "sensitivePatternScan": "PASS; selected public projection, no credential comparison/read",
+  "gitScope": "AGENTS + docs/delivery only",
+  "productionSourceTOMLArchitectureTestsDependenciesCI": "unchanged",
+  "manualRootPostgresStressBenchmark": "NOT_RUN; automatic final-head CI required",
+  "finalChangedFiles": 22,
+  "finalJsonFilesParsed": 12,
+  "finalManifestMembers": 14
+}
