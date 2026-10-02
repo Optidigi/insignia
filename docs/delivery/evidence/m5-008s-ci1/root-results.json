@@ -1,0 +1,22 @@
+{
+  "command": "corepack pnpm check",
+  "exit": 0,
+  "includesStyle": true,
+  "initialAttempt": {
+    "exit": 101,
+    "classification": "host default cc absent; Rust linker launch failed",
+    "logSha256": "e6de03cd086a742c1d9747ceb59536a5e491fdb51ced0be43979798826a7c7e6"
+  },
+  "effectiveEnvironment": {
+    "CARGO_HOME": "/home/serveradmin/insignia-pf001-tools/rust/cargo",
+    "RUSTUP_HOME": "/home/serveradmin/insignia-pf001-tools/rust/rustup",
+    "PATHPrefix": "/home/serveradmin/insignia-pf001-tools/rust/cargo/bin",
+    "CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER": "/home/serveradmin/insignia-pf002-rust-smoke/cc-zig"
+  },
+  "linkerAuthority": "docs/delivery/evidence/pf002-readiness.md",
+  "logSha256": "19b2019bd807d85cb9f9f153fd0e8e14616dc2a375373eaeb838520cda64f78c",
+  "node": "24.21.0",
+  "pnpm": "12.6.0",
+  "rust": "1.98.1",
+  "limitations": "Root-suite DB-gated tests remain skipped without configured PostgreSQL; database integration is covered by natural exact-head CI. No host or tracked compiler configuration changed."
+}

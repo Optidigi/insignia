@@ -1,0 +1,31 @@
+{
+  "command": "corepack pnpm test:m5-operator && corepack pnpm test:m5-stress && corepack pnpm test:m5-renderer-control",
+  "exit": 0,
+  "operatorTests": {
+    "builtRuntimeAndRegister": 6,
+    "m5_004Synthetic": 33,
+    "m5_005Synthetic": 49,
+    "allPassed": true
+  },
+  "stress": {
+    "passed": 100,
+    "failed": 0,
+    "iterationsPerCombination": 25,
+    "combinations": [
+      "dirty/success",
+      "dirty/failed",
+      "ambiguous/success",
+      "ambiguous/failed"
+    ],
+    "retry": false
+  },
+  "rendererControl": {
+    "outerExit": 0,
+    "expectedInnerExit": 1,
+    "firstFailure": "missing renderer; projectedGeometry null; Preview ready absent",
+    "outcome": "EXPECTED NEGATIVE CONTROL: missing renderer rejected before canvas baseline"
+  },
+  "capture": "tool results; retained later stdout chunks are partial, summaries and exit recorded; no claim of complete raw stdout capture",
+  "productionImplementationBlob": "98903ae9226fe3ace6c77141b4936401178cc068",
+  "correctedTestBlob": "5aacc470f96a37da129faf53bf93f261c31658f6"
+}
