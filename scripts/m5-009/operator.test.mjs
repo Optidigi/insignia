@@ -407,3 +407,67 @@ test('successor gate binds its own tree, directory, exact source and independent
     rmSync(root, { recursive: true, force: true });
   }
 });
+
+import { FIND, replayResponse } from './operator.mjs';
+
+test('captured live publication-field denial stops create settlement and never permits status finalization', async () => {
+  const captured = JSON.parse(
+    readFileSync(new URL('../../docs/delivery/evidence/m5-009/live/register.json', import.meta.url)),
+  );
+  assert.equal(captured.binding.source, 'e92a2131f33d82f51f6ed15f7e4361c62238e04b');
+  assert.deepEqual(captured.counts, { auth: 1, read: 2, create: 1, update: 0 });
+  const [identityEvent, createEvent, lookupEvent] = captured.events.slice(1);
+  assert.equal(createEvent.result, 'UNKNOWN');
+  assert.equal(createEvent.response.data.productCreate.product, null);
+  assert.deepEqual(createEvent.response.errors[0].path, ['productCreate', 'product', 'unpublishedPublications']);
+  assert.equal(createEvent.response.errors[0].extensions.code, 'ACCESS_DENIED');
+  assert.equal(lookupEvent.response.data, null);
+  assert.deepEqual(lookupEvent.response.errors[0].path, ['products', 'nodes', 0, 'unpublishedPublications']);
+  const directory = mkdtempSync(join(tmpdir(), 'm5009-live-replay-'));
+  const binding = { source: 'synthetic-captured-live-replay', modules: {} };
+  const state = initialize(directory, binding, { synthetic: true });
+  const expected = [IDENTITY, CREATE, FIND];
+  const events = [identityEvent, createEvent, lookupEvent];
+  let requests = 0;
+  try {
+    const result = await qualifySynthetic({
+      directory,
+      binding,
+      credentialLoader: () => ({ secret: 'synthetic-replay-secret', ownership: { synthetic: true } }),
+      fetchImpl: async (url, init) => {
+        requests++;
+        if (requests === 1) {
+          assert.equal(url, `https://${TARGET.domain}/admin/oauth/access_token`);
+          return Response.json({ access_token: 'synthetic-replay-bearer', expires_in: 86400 });
+        }
+        assert.equal(url, `https://${TARGET.domain}/admin/api/2026-07/graphql.json`);
+        const index = requests - 2;
+        assert.ok(index < events.length, 'no retry, extra read or status update');
+        const body = JSON.parse(init.body);
+        assert.equal(body.query, expected[index]);
+        assert.deepEqual(
+          body.variables,
+          index === 0
+            ? {}
+            : index === 1
+              ? { product: { title: state.run, handle: state.run, tags: [state.run], status: 'DRAFT' } }
+              : { search: `handle:${state.run}` },
+        );
+        return replayResponse(events[index]);
+      },
+    });
+    assert.equal(requests, 4);
+    assert.equal(result.outcome, 'STOPPED');
+    assert.equal(result.stop, 'graphql_contract');
+    assert.equal(result.final.outcome, 'OWNERSHIP_UNRESOLVED_NO_MORE_MUTATIONS');
+    assert.deepEqual(result.cases, []);
+    const register = JSON.parse(readFileSync(join(directory, 'register.json')));
+    assert.deepEqual(register.counts, captured.counts);
+    assert.equal(register.events[2].result, 'UNKNOWN');
+    assert.equal(register.fixture, null);
+    assert.equal(register.owned, false);
+    assert.equal(existsSync(join(directory, 'operator.lock')), false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});

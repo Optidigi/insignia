@@ -1,0 +1,30 @@
+{
+  "disposition": "CLOSED_STOPPED_NO_MORE_REQUESTS",
+  "source": "e92a2131f33d82f51f6ed15f7e4361c62238e04b",
+  "tree": "7bcaefb8a14c9d6e9cdce95eaf83249bc22b4693",
+  "marker": "insignia-m5-009-439c9699-af2f-4e8a-b0f1-89003b88a2d4",
+  "counts": {
+    "auth": 1,
+    "read": 2,
+    "create": 1,
+    "update": 0
+  },
+  "limits": {
+    "auth": 3,
+    "read": 96,
+    "create": 1,
+    "update": 16
+  },
+  "stop": "graphql_contract",
+  "final": {
+    "outcome": "OWNERSHIP_UNRESOLVED_NO_MORE_MUTATIONS"
+  },
+  "createSettlement": "UNKNOWN",
+  "fixture": null,
+  "matrix": "NOT_RUN",
+  "requestsInFlight": false,
+  "operatorLockPresent": false,
+  "registerSha256": "bef5820a2a73f90e0f0e44272ba1f668859b1e558f5c33200605f45e4a954d35",
+  "qualificationSha256": "06ec052b7c01fd1c86389d1fc3d4b8bfff9bd8d8e6437314bdd76a22768e94f0",
+  "noFinalization": "Unknown create settlement and no usable returned Product ID; no updates/deletion/archive."
+}

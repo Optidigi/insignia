@@ -1,0 +1,14 @@
+{
+  "frozenLiveSource": "e92a2131f33d82f51f6ed15f7e4361c62238e04b",
+  "sourceGateNowClosed": true,
+  "capturedResponseReplay": "PASS through actual qualifySynthetic public seam; synthetic external auth/fetch only",
+  "focused": {
+    "command": "node --test scripts/m5-004/operator.test.mjs scripts/m5-009/operator.test.mjs",
+    "exit": 0,
+    "tests": 45,
+    "legacy": 33,
+    "successor": 12,
+    "logSha256": "2b64f0f67153eef915f062378b5eeea8497c3ee2b2ada8e6e10b7a64c665eed8"
+  },
+  "remoteContinuation": "NONE; prohibited after stop/source change"
+}
