@@ -1,0 +1,18 @@
+{
+  "source": "6cde4be314904e0c82152d378fb9bf7864ba1fa1",
+  "offlineGateVerifiedBeforeTools": true,
+  "browserStatus": "UNAVAILABLE: no preview automation host attached",
+  "browserOpen": "UNAVAILABLE: no preview automation host attached; explicit do not retry",
+  "viewsReserved": 0,
+  "viewsInspected": 0,
+  "versions": {
+    "outcome": "NOT_OBSERVED",
+    "reason": "no connected existing-session collaborative desktop browser"
+  },
+  "developmentOverview": {
+    "outcome": "NOT_OBSERVED",
+    "reason": "no connected existing-session collaborative desktop browser"
+  },
+  "alternateBrowserOrAuthentication": "not attempted",
+  "nativeUiBackgroundRequests": "none initiated by this operator; no globally complete HTTP count claimed"
+}

@@ -1,0 +1,130 @@
+{
+  "version": 1,
+  "reviewDate": "2026-10-02",
+  "principal": "ChatGPT in the Insignia Rewrite Project",
+  "verdict": "APPROVED",
+  "acceptanceScope": "M5-004 operator implementation and accurately stopped access-prerequisite evidence only",
+  "availabilityQualification": "BLOCKED_ACCESS_PREREQUISITE; all product/status/catalog cases NOT_RUN",
+  "repository": "Optidigi/insignia",
+  "pr": 30,
+  "branch": "feat/m5-004-availability-qualification",
+  "base": "a7b2ba236f6b7726f48af0cd50ae14e0b7cc8e30",
+  "effectiveMergeBase": "a7b2ba236f6b7726f48af0cd50ae14e0b7cc8e30",
+  "head": "30f00935f90f7564d426838487b3a6e5f37a9e01",
+  "tree": "e772af245c7f09c59d398656e16305adfeaea005",
+  "observedGithubState": {
+    "main": "a7b2ba236f6b7726f48af0cd50ae14e0b7cc8e30",
+    "prState": "open",
+    "merged": false,
+    "draft": false,
+    "nativeReviews": [],
+    "commitsAhead": 6,
+    "changedPaths": 100
+  },
+  "verifiedPriorMerge": {
+    "pr": 29,
+    "merge": "a7b2ba236f6b7726f48af0cd50ae14e0b7cc8e30",
+    "orderedParents": [
+      "8a84ddeaf277368852d224915abe6d4a93a3d8a4",
+      "7a67028d55c191d9c83816312844f2e9cd62d648"
+    ],
+    "tree": "5f3f29d44da7d5f0423fd6902c19dc501f7c79ff"
+  },
+  "recordedLiveObservation": {
+    "source": "e3d15d451f60fd3dc894679534f0f0132186857d",
+    "tree": "b81608fc911e7bdbaadcf5daa20e8b6e5694bbb9",
+    "identityReadAt": "2026-10-02T00:09:19.023Z",
+    "counts": {
+      "auth": 1,
+      "read": 1,
+      "create": 0,
+      "update": 0
+    },
+    "identityFieldsMatched": true,
+    "returnedAccessScopes": [],
+    "stop": "retained_grants",
+    "fixture": null,
+    "rawProviderAccessByPrincipal": false,
+    "savedResponseQualification": "sanitized selected semantics, not original full raw bytes"
+  },
+  "directlyVerified": [
+    "GitHub PR metadata and Git objects",
+    "Current main and effective merge-base comparison",
+    "Complete changed-path inventory",
+    "Complete five operator scripts and permanent tests",
+    "Root/CI/AGENTS/tooling patches",
+    "Governing brief/ledger/operating model and relevant scope history",
+    "Committed live register and report",
+    "Both complete final local review reports",
+    "Ten head-associated successful workflow conclusions",
+    "Runtime failed attempt1 install-stage and successful attempt2 steps at unchanged head"
+  ],
+  "notExecutedByPrincipal": [
+    "Node/pnpm root or operator tests",
+    "PostgreSQL/HTTP/worker/browser/stress suites",
+    "100001-row benchmark",
+    "Rehash of all retained local build/log artifacts",
+    "Local-agent host/process audit",
+    "Owner credential access",
+    "Shopify/provider requests",
+    "GitHub writes/native review/merge"
+  ],
+  "reportedRuntimeEvidence": {
+    "root": "PASS",
+    "operatorTests": 33,
+    "stress": "100/100, zero retries",
+    "dbFreeRootSkips": {
+      "web": 8,
+      "worker": 4
+    },
+    "evidenceSource": "PR body, report and attributed local review packets; not principal reruns"
+  },
+  "ci": {
+    "allHeadAssociatedRunsConclusion": "success",
+    "otherAttemptNumbersSource": "PR packet",
+    "runtimeAttempt1": {
+      "run": 36945109129,
+      "job": 110645313794,
+      "conclusion": "failure",
+      "failedStep": "corepack pnpm install --frozen-lockfile",
+      "applicationTests": "skipped"
+    },
+    "runtimeAttempt2": {
+      "run": 36945109129,
+      "job": 110646173532,
+      "conclusion": "success",
+      "steps": "retained build, checks, database, HTTP/Admin, worker and migration rehearsal succeeded"
+    },
+    "runs": {
+      "M0-008": 36945109147,
+      "M0-009": 36945108961,
+      "M0-010": 36945108946,
+      "M0-011": 36945108968,
+      "M0-012": 36945109118,
+      "M0-013": 36945109029,
+      "M0-014": 36945108949,
+      "M1-001": 36945108960,
+      "M3-001": 36945109165,
+      "M3-002": 36945109129
+    }
+  },
+  "localReviews": {
+    "qualification": "Supporting local reviews, not this principal verdict; selected client settings reported, no provider-private attestation",
+    "spec": "https://github.com/Optidigi/insignia/pull/30#issuecomment-5943279725",
+    "standardsSecurity": "https://github.com/Optidigi/insignia/pull/30#issuecomment-5943279961"
+  },
+  "newAuthorityCondition": "Owner forwards OWNER-LAUNCH.txt; normal merge verified first; M5-005 offline source/safety/CI gate precedes credential/browser/API work",
+  "principalRepositoryWrites": 0,
+  "principalProviderOperations": 0,
+  "sources": [
+    "https://github.com/Optidigi/insignia/pull/30",
+    "https://api.github.com/repos/Optidigi/insignia/git/commits/a7b2ba236f6b7726f48af0cd50ae14e0b7cc8e30",
+    "https://api.github.com/repos/Optidigi/insignia/git/commits/30f00935f90f7564d426838487b3a6e5f37a9e01",
+    "https://github.com/Optidigi/insignia/blob/30f00935f90f7564d426838487b3a6e5f37a9e01/docs/delivery/M5-004-REPORT.md",
+    "https://github.com/Optidigi/insignia/blob/30f00935f90f7564d426838487b3a6e5f37a9e01/docs/delivery/evidence/m5-004/live/register.json",
+    "https://github.com/Optidigi/insignia/blob/30f00935f90f7564d426838487b3a6e5f37a9e01/docs/delivery/M5-002R-REPORT.md",
+    "https://github.com/Optidigi/insignia/blob/30f00935f90f7564d426838487b3a6e5f37a9e01/docs/delivery/PR-028R3-principal-review.md",
+    "https://api.github.com/repos/Optidigi/insignia/actions/runs/36945109129/attempts/1/jobs",
+    "https://api.github.com/repos/Optidigi/insignia/actions/runs/36945109129/attempts/2/jobs"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "originalDirectory": "/home/serveradmin/insignia-m5-004-handoff/run",
+  "before": {
+    "binding.json": "2ba9330007e8558ced2707160c8bb006eaee7ee201e7e56b88f37edf479f07eb",
+    "gate.json": "1618d743eeeac7c936e3a0865893a0bdd553fdfbbd96f6054b6fbc8a8f6ff564",
+    "initialized.once": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "qualification.json": "ee4e4813db9540549f78235b95469555490e34ed8eb1e8289a8072b352381497",
+    "register.json": "0c741a66c9289be824ff75d879ef8f7b4e6f739e85cc6cf541340fe35b956ba2"
+  },
+  "after": {
+    "binding.json": "2ba9330007e8558ced2707160c8bb006eaee7ee201e7e56b88f37edf479f07eb",
+    "gate.json": "1618d743eeeac7c936e3a0865893a0bdd553fdfbbd96f6054b6fbc8a8f6ff564",
+    "initialized.once": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "qualification.json": "ee4e4813db9540549f78235b95469555490e34ed8eb1e8289a8072b352381497",
+    "register.json": "0c741a66c9289be824ff75d879ef8f7b4e6f739e85cc6cf541340fe35b956ba2"
+  },
+  "byteForByteUnchanged": true,
+  "oldOperatorLock": false,
+  "oldRunReplayed": false
+}

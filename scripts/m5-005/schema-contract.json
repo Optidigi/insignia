@@ -1,0 +1,85 @@
+{
+  "apiVersion": "2026-07",
+  "method": "Public versioned Shopify documentation field/type extraction; bounded selected-field contract, not full provider SDL/introspection/MCP validation",
+  "fields": {
+    "App": {
+      "id": "ID!",
+      "apiKey": "String!",
+      "requestedAccessScopes": "[AccessScope!]!",
+      "optionalAccessScopes": "[AccessScope!]!"
+    },
+    "AppInstallation": {
+      "id": "ID!",
+      "app": "App!",
+      "accessScopes": "[AccessScope!]!"
+    },
+    "AccessScope": {
+      "handle": "String!"
+    },
+    "Shop": {
+      "id": "ID!",
+      "myshopifyDomain": "String!",
+      "plan": "ShopPlan!"
+    },
+    "ShopPlan": {
+      "partnerDevelopment": "Boolean!",
+      "displayName": "String!"
+    },
+    "Query": {
+      "shop": "Shop",
+      "currentAppInstallation": "AppInstallation"
+    }
+  },
+  "documents": [
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/App.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/App.md",
+      "sha256": "fa26821adf6048b15e922cfbb0f59ad7cf0f16d47ad6cf422b89d408e5560ab2",
+      "bytes": 16818,
+      "result": "retrieved"
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/AppInstallation.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/AppInstallation.md",
+      "sha256": "d418e8d77d11e8f02ef033aa39df583ef03adf8c417cfebc753fcfa59b009b1c",
+      "bytes": 18623,
+      "result": "retrieved"
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/AccessScope.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/AccessScope.md",
+      "sha256": "93be5873dda1d1b515680e64da685072a04f6705773eb11db429254f261697d6",
+      "bytes": 5054,
+      "result": "retrieved"
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/Shop.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/Shop.md",
+      "sha256": "ae71d3cfe9f4bac79c4389aead3cb51a9c7b1d8fccd5f6a7dc9fdfcffb52bdad",
+      "bytes": 113207,
+      "result": "retrieved"
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/ShopPlan.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/ShopPlan.md",
+      "sha256": "0d3312e249de9a66e3e2a5c4520936c3c9c98134bef89d8474653237d46edaea",
+      "bytes": 1724,
+      "result": "retrieved"
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/queries/currentAppInstallation.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/queries/currentAppInstallation.md",
+      "sha256": "06e6a2c74fc2e0e9ae04b2d9946899069b757713adffdb6226743035267c25dc",
+      "bytes": 29231,
+      "result": "retrieved"
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/queries/shop.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/queries/shop.md",
+      "sha256": "22607c38981dee35ff652ed0debc08652e74e082d5bebd268b8e479150222004",
+      "bytes": 163488,
+      "result": "retrieved"
+    }
+  ],
+  "deprecated": "ShopPlan.displayName remains present and deprecated; exact authorized document retained, no substitution."
+}

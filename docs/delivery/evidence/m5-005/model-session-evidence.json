@@ -1,0 +1,19 @@
+{
+  "orchestrator": {
+    "runtime": "T3 Code Codex harness",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "source": "same-launch trusted T3 runtime metadata supplied in this turn",
+    "providerPrivateAttestation": "not requested or claimed"
+  },
+  "writers": [
+    "root"
+  ],
+  "soleRemoteOperator": "root",
+  "safetyReviewRoute": "two fresh explicit codex exec --model gpt-6.1-sol -c model_reasoning_effort=high --sandbox read-only sessions",
+  "nativeAgentAudit": {
+    "root": "running",
+    "otherNativeAgents": 0
+  },
+  "credentialAndBrowserAccess": "NOT_RUN pending exact-source safety gate"
+}

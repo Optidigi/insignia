@@ -1,0 +1,23 @@
+{
+  "node": "24.21.0",
+  "pnpm": "12.6.0",
+  "safetySourceFocused": 48,
+  "completedChangeFocused": 49,
+  "rootSourceExit": 0,
+  "rootCompletedChangeExit": 0,
+  "geometryStress": {
+    "cases": 100,
+    "passed": 100,
+    "retries": 0,
+    "combinations": 4,
+    "each": 25
+  },
+  "dbFreeSkips": {
+    "web": 8,
+    "worker": 4
+  },
+  "databaseIntegration": "real PostgreSQL 18.6 hosted M3 core/runtime; source ten-workflow receipt retained; final-head runs separately required",
+  "benchmark": "six retained 100001-row input hashes rechecked; evidence provenance unchanged",
+  "secretScan": "PASS",
+  "productionAndHistoricalChangedPaths": []
+}

@@ -1,0 +1,20 @@
+{
+  "verifiedAt": "2026-10-02T01:23:09.100Z",
+  "source": "6cde4be314904e0c82152d378fb9bf7864ba1fa1",
+  "bindingDigest": "74babee8d42ae80cd9239962d206afb6ffdeb4d32f93d69d5ed048e6f7b49697",
+  "gateSha256": "fba08357cb5b01b2d22cc987efb7d9a24b0a3679a3c1a2289610ea6ffcd32284",
+  "reviews": [
+    {
+      "role": "spec",
+      "thread": "01a0fa2f-176e-70c0-8cb4-ade1f61894da"
+    },
+    {
+      "role": "security",
+      "thread": "01a0fa2f-1b50-72f0-8d01-46aa133503fd"
+    }
+  ],
+  "allTenSourceWorkflows": "SUCCESS attempt 1",
+  "rootExit": 0,
+  "stressExit": 0,
+  "ownerAccessPrior": "NOT_RUN"
+}

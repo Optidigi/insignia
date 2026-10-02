@@ -1,0 +1,49 @@
+✔ one actual diagnostic sequence keeps empty installation distinct from nonempty token/REST/declarations (9.694041ms)
+✖ partial stream failure is UNKNOWN and cannot allow a later independent read (4.36382ms)
+✖ permission/shape metadata error does not become an empty grant agreement (3.289648ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 1
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 217.485495
+
+✖ failing tests:
+
+test at scripts/m5-005/diagnostic.test.mjs:44:1
+✖ partial stream failure is UNKNOWN and cannot allow a later independent read (4.36382ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'OBSERVATIONS_COMPLETE'
+  - 'STOPPED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-005-worktree/scripts/m5-005/diagnostic.test.mjs:50:14)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'OBSERVATIONS_COMPLETE',
+    expected: 'STOPPED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-005/diagnostic.test.mjs:52:1
+✖ permission/shape metadata error does not become an empty grant agreement (3.289648ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  'SAME' !== 'UNKNOWN'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-005-worktree/scripts/m5-005/diagnostic.test.mjs:54:95)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'SAME',
+    expected: 'UNKNOWN',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,34 @@
+{
+  "source": "6cde4be314904e0c82152d378fb9bf7864ba1fa1",
+  "sourceTree": "5e31daec61ced395dc623a401031274fc0214403",
+  "times": {
+    "start": "2026-10-02T01:23:18.521Z",
+    "end": "2026-10-02T01:23:19.717Z"
+  },
+  "reservedAttempts": {
+    "auth": 1,
+    "identity": 1,
+    "declared": 1,
+    "rest": 1
+  },
+  "actualDispatchedHttpRequests": 4,
+  "distinctTokenAcquisitions": 1,
+  "sameBearerAllReads": true,
+  "graphQlMutations": 0,
+  "identity": "MATCHED exact five IDs/domain/partnerDevelopment",
+  "scopeStates": {
+    "token": "EMPTY",
+    "installation": "EMPTY",
+    "requested": "EMPTY",
+    "optional": "EMPTY",
+    "rest": "EMPTY"
+  },
+  "closed": true,
+  "pendingWork": 0,
+  "operatorLockAbsent": true,
+  "mutationsOrCleanupRequired": false,
+  "remainingProgrammaticAllowance": 0,
+  "sourceChangedAfterLive": "executing operator unchanged; one captured-input synthetic regression added afterward; frozen live binding preserved",
+  "fullAuthBodyOrDigestPersisted": false,
+  "bearerIdentifiersPersisted": false
+}
