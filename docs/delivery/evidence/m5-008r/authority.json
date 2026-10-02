@@ -1,0 +1,38 @@
+{
+  "schema": "insignia.m5-008r.authority.v1",
+  "package_sha256": "2d0cae0ff264c5cebe742606bb756a3ed4d2f320ee3c16994df224e14d73de12",
+  "supplied_manifest": {
+    "M5-008R-COMBINED-RELEASE-AND-GRANT-VERIFICATION.md": "dd73c8f75ab489cbe3871b4265b2254ce3a947bce2d6dd0a521b33a752733851",
+    "OWNER-LAUNCH.txt": "ce9e68209341cdd3f67e420880350ade51e183b13ceed8a18ffca854b20ea55b",
+    "PR-036-principal-review.md": "4b1e451eaf7fe975b56fc6ed6e269fe0b10b73a88aa52ac644db2988e6b11e1d",
+    "README.md": "db7234c928468fb9ba9c22dc9038b68cc335eb9b8cfab865112bc05bad012fd9",
+    "RESEARCH-NOTES.md": "fe623eca51e33916737bead80b04b65612ccc2c9ab6f18060de2e6037a2407be",
+    "verification.json": "0ff40ec3113025deb8d9bc5036da1f72110c90ebbfc8904d717f74a168afff29"
+  },
+  "manifest_result": "6/6 PASS",
+  "supplied_verification_record": {
+    "repository": "Optidigi/insignia",
+    "pr": 36,
+    "base": "34c78b56df98cc049adca842653ad6f9ae23b2a8",
+    "head": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+    "tree": "976c08996fe61d56cdce86f4f60427fabd66d799",
+    "pr_state": "open_non_draft_unmerged_mergeable",
+    "changed_files": 13,
+    "final_head_workflows": 10,
+    "all_final_head_workflows_success": true,
+    "all_final_head_run_attempts": 1,
+    "native_reviews": 0,
+    "principal_verdict": "APPROVED_STOPPED_DOCS_EVIDENCE_SCOPE",
+    "next_slice": "M5-008R",
+    "combined_create_release_authorized_conditionally": true,
+    "install_impact_gate": "current Installs count exactly 1; sole current install insignia-rewrite-dev",
+    "required_scope": "write_products",
+    "product_mutation_authorized": false
+  },
+  "root_model": "gpt-6.1-sol",
+  "root_effort": "high",
+  "root_evidence": "Trusted T3 Codex same-launch runtime; no provider-private attestation",
+  "browser_operator": "root only",
+  "conditional_release": "Not eligible: current inventory not exposed",
+  "historical_code_architecture": "Unchanged"
+}
