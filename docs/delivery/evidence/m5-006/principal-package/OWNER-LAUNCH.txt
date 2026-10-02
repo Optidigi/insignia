@@ -1,0 +1,33 @@
+Use the attached insignia-pr31-approved-m5-006-handoff package.
+Read README.md, PR-031-principal-review.md and the M5-006 brief first.
+
+I authorize the NORMAL merge of PR #31 only at:
+base 6687e443baf97ee8bf179db61a1e4450f903f8eb
+head dc9db629559d5fa7049de2d0d3fed28d53a08fb4
+tree aeb12dba4944b5934fc33c5494992c6ad5ca87dd
+
+Reverify live refs, applicable passing checks and external principal approval.
+Keep the reviewed head unchanged. No squash/rebase, force push, fabricated native
+approval or protection bypass. Stop on mismatch or an unmet requirement.
+Verify the actual merge's ordered parents and tree afterward.
+
+I then authorize the two-view, existing-session, READ-ONLY Dashboard inspection
+in M5-006-RELEASED-CONFIGURATION-CHECKPOINT.md. Check the shared-browser prerequisite
+first. If it is disconnected or requires login, stop and report that prerequisite;
+do not build a replacement tool or open a redundant successor PR.
+
+Use actual GPT-6.1-sol/high and repository-pinned skills. Inspect only the exact
+app's active released-version details and development/preview overview. Capture
+scope declarations, version identity and displayed configuration/preview facts,
+then recommend the smallest next action without executing it.
+
+No new diagnostic harness, credential-file access, token exchange, scripted
+Shopify API call, Shopify CLI command, login/consent, configuration/scope repair,
+preview/release, product work or M5-004/M5-005 rerun is authorized.
+
+With useful new observations, return one docs/evidence-only PR with exact refs,
+fresh scoped Spec/security reviews and applicable CI. Preserve the approved
+source, closed registers and all historical evidence. Do not manually rerun
+unchanged integration/stress/benchmark suites solely for this inspection.
+Stop for principal review. No successor merge, M6/M7, activation, RELEASE_BOUND,
+complete gate pass or launch is authorized.

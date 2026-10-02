@@ -1,0 +1,14 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/31",
+  "merge": "dbaa7488780ddf8fd01991bf5a76a909e07b34e0",
+  "orderedParents": [
+    "6687e443baf97ee8bf179db61a1e4450f903f8eb",
+    "dc9db629559d5fa7049de2d0d3fed28d53a08fb4"
+  ],
+  "tree": "aeb12dba4944b5934fc33c5494992c6ad5ca87dd",
+  "mergedAt": "2026-10-02T10:33:44Z",
+  "remoteMain": "dbaa7488780ddf8fd01991bf5a76a909e07b34e0",
+  "reviewedHeadUnchanged": true,
+  "method": "normal merge commit; no squash/rebase/admin/bypass/native approval",
+  "externalApproval": "PR-031-principal-review.md attributed ChatGPT principal"
+}

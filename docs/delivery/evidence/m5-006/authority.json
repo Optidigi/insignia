@@ -1,0 +1,12 @@
+{
+  "packageDirectory": "/home/serveradmin/insignia-m5-006-package-01txio8a/insignia-pr31-approved-m5-006-handoff",
+  "zipSha256": "faa17177e82fb7d12835578dd9acd7bea265eaf5f8e99f486ceada7412cf35ff",
+  "principalReviewSha256": "b2abee1eecce7f81bd3e5e691435d927f4496a9153e9f5cd3e212b9f5daa79c9",
+  "externalVerdict": "APPROVED; attributed ChatGPT principal; not native approval",
+  "orchestrator": {
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "proof": "trusted same-launch T3 runtime metadata"
+  },
+  "authorizedActivities": "PR31 exact normal merge then two existing-session native read-only views; early stop on browser prerequisite failure"
+}

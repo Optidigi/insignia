@@ -1,0 +1,73 @@
+{
+  "outcome": "PARTIAL_USEFUL_OBSERVATIONS_COMPLETE",
+  "app": "gid://shopify/App/429028933633",
+  "client": "1443cf6d03d39edae7c101a943c5c684",
+  "store": "insignia-rewrite-dev.myshopify.com",
+  "browser": {
+    "status": "not attached",
+    "singleNormalOpen": "available tab_f about:blank; established collaborative browser only",
+    "existingAuthentication": "exact-app Dev Dashboard overview opened without login/consent"
+  },
+  "maximumViewScopes": 2,
+  "views": [
+    {
+      "scope": "app/development overview",
+      "purpose": "verify exact-app existing-session authentication and directly displayed preview/configuration context",
+      "target": "https://dev.shopify.com/dashboard/200969036/apps/429028933633",
+      "reservedAt": "2026-10-02T10:35:10.307909+00:00",
+      "outcome": "OBSERVED_LIMITED",
+      "observedAt": "2026-10-02T10:36:22.992391+00:00",
+      "displayedAppName": "Insignia",
+      "displayedOrganization": "Optidigi",
+      "appResourceFromNativeUrl": "429028933633",
+      "oauthClientId": "NOT_OBSERVED in permitted overview; prior M5-005 exact identity mapping retained",
+      "store": "NOT_OBSERVED",
+      "developmentPreview": "NOT_OBSERVED; no directly displayed preview-status/target field, not proof of absence"
+    },
+    {
+      "scope": "Versions/currently active released version details",
+      "purpose": "capture explicit active/released designation, exact version identity and directly displayed configuration/scopes/extensions",
+      "target": "exact app 429028933633 Versions link from authenticated overview",
+      "reservedAt": "2026-10-02T10:36:22.992424+00:00",
+      "outcome": "OBSERVED_WITH_FIELD_LIMITS",
+      "observedAt": "2026-10-02T10:39:14.057369+00:00",
+      "listingUrl": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions",
+      "detailUrl": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/1146748534785",
+      "displayedAppName": "Insignia",
+      "appResourceFromNativeUrl": "429028933633",
+      "versionName": "insignia-1",
+      "versionIdFromNativeUrl": "1146748534785",
+      "activeDesignation": "Active on listing and version details",
+      "timelineEvent": "Released",
+      "releaseTimeAsDisplayed": "Sep 28, 2026 \u00b7 2:11 pm",
+      "displayedTimezone": "NOT_OBSERVED; retain displayed time without UTC conversion",
+      "application_url": "https://example.com",
+      "embedded": "true",
+      "use_legacy_install_flow": "false",
+      "webhook_api_version": "2026-07",
+      "accessScopesSection": "displayed with use_legacy_install_flow false only",
+      "requiredScopes": {
+        "outcome": "NOT_OBSERVED",
+        "reason": "no scopes field/list or explicit empty label displayed"
+      },
+      "optionalScopes": {
+        "outcome": "NOT_OBSERVED",
+        "reason": "no optional_scopes field/list or explicit empty label displayed"
+      },
+      "extensions": {
+        "outcome": "NOT_OBSERVED",
+        "reason": "no extension section/list or explicit empty designation displayed"
+      },
+      "readOnlyExpansionControls": "none displayed; ordinary scroll and visible rendered text confirmed same fields",
+      "oauthClientId": "NOT_OBSERVED; preceding exact M5-005 app/client identity mapping retained, not a current native read"
+    }
+  ],
+  "scriptedShopifyApiRequests": 0,
+  "tokenExchanges": 0,
+  "shopifyCliCommands": 0,
+  "credentialFileAccess": 0,
+  "mutations": 0,
+  "viewScopesConsumed": 2,
+  "nativeUiNetworkTraffic": "incidental UI background traffic not individually accounted; not claimed zero total network",
+  "rawScreenshotsAccountDataNetworkTracesBrowserStorageExported": false
+}
