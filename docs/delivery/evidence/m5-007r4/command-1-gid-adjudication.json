@@ -1,0 +1,21 @@
+{
+  "publicVersions": [
+    {
+      "versionTag": "insignia-1",
+      "versionId": "gid://shopify/Version/1146748534785",
+      "status": "active",
+      "createdAt": "2026-09-28 12:11:16"
+    }
+  ],
+  "initialAutomatedCategory": "VERSION_OR_OUTPUT_MISMATCH",
+  "actualIdentity": "EXACT_EXPECTED_VERSION_GID",
+  "observed": "gid://shopify/Version/1146748534785",
+  "expectedResourceId": "1146748534785",
+  "cliExitCode": 0,
+  "rootDecision": "SUCCESS_CRITERION_MET; conditional slots eligible",
+  "reason": "Checker compared numeric spelling only. Actual Shopify Version GID identifies the unchanged exact expected resource. No different app/version or command failure observed.",
+  "expectedAppBinding": "Fixed explicit client plus byte-identical exact-app local input; CLI JSON does not separately return App GID",
+  "noRetry": true,
+  "sourceBefore": "98065b094865c188241d119348bc046dd8e4a587819aaeb4f51c057fae126ece",
+  "sourceAfter": "7335a2cc11e31fb0446f5ab7edc8d44ecf6b348c0b98014c28fb313944d0c66d"
+}

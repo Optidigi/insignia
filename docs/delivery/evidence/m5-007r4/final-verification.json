@@ -1,0 +1,35 @@
+{
+  "baseline": "9dc728b21d58a1687fae7221e64225373bbbbecb",
+  "tree": "4177381a98d2d3b07264572a01ce53abdb7e565e",
+  "all25HashesMatchBeforeAfter": true,
+  "pluginRegistryAbsentBeforeAfter": true,
+  "sanitizerSourceUnchanged": true,
+  "controls": "10/10 PASS",
+  "consumed": 3,
+  "remaining": 0,
+  "allCLIExitCodes": [
+    0,
+    0,
+    0
+  ],
+  "durationsSeconds": [
+    4.137,
+    4.239,
+    2.63
+  ],
+  "signalOrTimeout": false,
+  "ownedProcessGroupsGone": true,
+  "versionBracketMatches": true,
+  "activeVersion": {
+    "versionTag": "insignia-1",
+    "versionId": "gid://shopify/Version/1146748534785",
+    "status": "active",
+    "createdAt": "2026-09-28 12:11:16"
+  },
+  "rawDisposition": "Private mode0600 retained locally; excluded from Git/archive; no raw hashes exported",
+  "closedHistoricalAndR2_R3RecordsUnchanged": true,
+  "noOperatorCredentialRead": true,
+  "newBrowserOrDirectAPI": false,
+  "remoteWritesByOperator": false,
+  "globalInstallIncident": "Untouched/unused/unresolved"
+}

@@ -1,0 +1,75 @@
+{
+  "result": {
+    "slot": 2,
+    "argv": [
+      "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node",
+      "/home/serveradmin/insignia-pf001-tools/shopify/node_modules/@shopify/cli/bin/run.js",
+      "app",
+      "config",
+      "link",
+      "--client-id",
+      "1443cf6d03d39edae7c101a943c5c684",
+      "--path",
+      "/home/serveradmin/insignia-m5-007r4-run-7y7t9_o3/capture",
+      "--file-name",
+      "m5-007r2"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-007r4-run-7y7t9_o3/capture",
+    "reservedAt": "2026-10-02T16:19:36.154646+00:00",
+    "environmentNamesSet": [
+      "CI",
+      "FORCE_COLOR",
+      "HOME",
+      "LANG",
+      "LOGNAME",
+      "NO_COLOR",
+      "PATH",
+      "SHOPIFY_CLI_NO_ANALYTICS",
+      "TERM",
+      "TZ",
+      "USER"
+    ],
+    "knownPublicValues": {
+      "CI": "1",
+      "SHOPIFY_CLI_NO_ANALYTICS": "1"
+    },
+    "environmentNamesExplicitlyUnset": [
+      "SHOPIFY_CLI_FORCE_AUTO_UPGRADE",
+      "SHOPIFY_FLAG_*",
+      "alternate token/auth/proxy overrides",
+      "NODE_OPTIONS",
+      "NODE_PATH",
+      "debug/plugin/Oclif overrides",
+      "all non-allowlisted inherited names"
+    ],
+    "stdin": "CLOSED",
+    "tty": false,
+    "deadlineSeconds": 120,
+    "status": "SUCCEEDED",
+    "ownedProcessGroup": 375497,
+    "exitCode": 0,
+    "signal": null,
+    "elapsedSeconds": 4.239,
+    "timeout": false,
+    "ownedDescendantsRemained": false,
+    "expectedContextUnambiguous": true,
+    "classification": "UNKNOWN",
+    "finishedAt": "2026-10-02T16:19:40.412531+00:00",
+    "rawOutputDisposition": "RETAINED_PRIVATE_MODE_0600_NOT_FOR_EXPORT",
+    "rawStdoutBytes": 0,
+    "rawStderrBytes": 1549
+  },
+  "diagnostic": {
+    "classification": "UNKNOWN",
+    "diagnostics": [
+      "UNSAFE_TEXT_OMITTED: no safely projected causal diagnostic"
+    ],
+    "omittedLines": 15,
+    "errorClassesOrCodes": [],
+    "httpStatuses": [],
+    "updaterOrInstallAttemptObservedInOutput": false,
+    "deviceInitiationDirectlyObservedInOutput": false,
+    "deviceInitiationConclusion": "UNKNOWN",
+    "networkActivityConclusion": "UNKNOWN"
+  }
+}

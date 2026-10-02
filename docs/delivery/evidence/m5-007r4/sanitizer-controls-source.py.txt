@@ -1,0 +1,31 @@
+import json
+from pathlib import Path
+from sanitizer import project
+
+cases = [
+    ("unknown", "unfamiliar synthetic text", "UNKNOWN", None),
+    ("flag", "Error: Nonexistent flag: --synthetic-option", "CLI_ARGUMENT_OR_CONTEXT", "--synthetic-option"),
+    ("http-auth", "HTTPError: HTTP 401 Unauthorized https://synthetic.invalid/private?token=SECRET", "PROVIDER_RESPONSE_ERROR", "HTTP 401"),
+    ("bearer", "Error: Unauthorized Bearer synthetic_token_abcdefghijklmnopqrstuvwxyz123456", "PROVIDER_RESPONSE_ERROR", "<BEARER>"),
+    ("private-path", "Error: ENOENT cannot read /home/synthetic/private/session.json", "LOCAL_RUNTIME_OR_IO", "<PRIVATE_PATH>"),
+    ("ci-auth", "Error: Cannot authenticate in CI; login required", "AUTH_REQUIRED_OR_CI_REFUSAL", "login required"),
+    ("actual-argument-conflict", "--config=m5-002 cannot also be provided when using --client-id", "CLI_ARGUMENT_OR_CONTEXT", "cannot also be provided"),
+    ("empty", "", "UNKNOWN", None),
+    ("malformed", "{malformed synthetic JSON", "UNKNOWN", None),
+    ("actor", "Error: Forbidden account syntheticperson user@example.invalid", "PROVIDER_RESPONSE_ERROR", "<ACTOR>"),
+]
+results = []
+for name, raw, expected, retained in cases:
+    value = project("", raw)
+    assert value["classification"] == expected, (name, value)
+    safe = json.dumps(value)
+    if retained:
+        assert retained in safe, name
+    for private in ["synthetic_token_abcdefghijklmnopqrstuvwxyz123456", "https://synthetic.invalid", "/home/synthetic", "syntheticperson", "user@example.invalid", "token=SECRET"]:
+        assert private not in safe, (name, private)
+    assert value["diagnostics"] and value["networkActivityConclusion"] == "UNKNOWN"
+    results.append({"case": name, "status": "PASS", "projection": value})
+out = Path(__file__).parent / "sanitized" / "sanitizer-controls.json"
+out.write_text(json.dumps({"status": "PASS", "count": len(results), "syntheticOnly": True, "controls": results}, indent=2) + "\n")
+out.chmod(0o600)
+print(json.dumps({"status": "PASS", "syntheticControls": len(results), "cliImportedOrExecuted": False}))
