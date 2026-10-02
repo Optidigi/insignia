@@ -1,0 +1,18 @@
+# M5-007R installed launch-path inspection (root)
+
+Static inspection only; no Shopify invocation, browser, credential/cache-content read or global-install inventory has occurred. See launch-policy.json for 25 source hashes and the exact proposed environment. Node --version alone returned v24.21.0. The retained symlink/manifest identify Shopify CLI4.8.2; both principal source anchors match.
+
+## Established paths
+
+- bin/run.js imports bootstrap with development:false; enableCompileCache may write ordinary Node compile-cache bytecode. GZKEIUJT creates ShopifyConfig rooted at the retained package. Its known commands use the lazy local loader. Hydrogen init bypasses app commands; no create-mode injection applies.
+- KANWS6HC auto-upgrade selection checks force override BEFORE CI. The fresh child allowlist contains CI=1 and omits that override. Both upgrade selection and warning paths then return. No persistent upgrade preference is changed. Notification background launch is CI suppressed. Analytics NO_ANALYTICS suppresses transmission but may compute local metadata/read caches; it is not a sandbox.
+- versions list -> tce linked context -> Dl -> appFromIdentifiers(apiKey). Explicit link -> Tf/IW takes that same explicit-existing branch; organization/app selection and create are excluded. Versions query derives active status from activeRelease.version.id, not a star/display label.
+- tce resolves explicit local config; scratch has no environment files, package, dependency, web/extension files. AE multiple-local-version lookup exits with no @shopify/cli dependency / CI. No app dev, deploy, release, installation or resource-registration command is called by these bodies.
+- Tf reads specifications/current active modules, maps configuration modules, writes only new shopify.app.m5-007r.toml and directory-scoped local selection/context preferences. No force or reset. Missing remote config can use UW fallback; config link is transformed/defaulted configuration, never a released extension manifest. App secret fields are fetched internally by official client but must not be extracted or printed. Version stdout is reduced to nonpersonal version/status/date fields; raw stdout/stderr are not retained.
+
+## Exact unresolved guards for independent review
+
+- AppManagementClient.session() -> zDt() -> yu() uses noPrompt:false by default. Missing/invalid session reaches fce/Nse, whose device_authorization HTTP POST occurs BEFORE the CI guard. CI then throws before displaying verification code, opening browser or polling. Thus no interactive login is possible under this environment, but no claim that the command cannot INITIATE a new authentication request is warranted. Automatic existing-session renewal is separately permitted. Need the launch checker to assess this against the owner envelope; do not silently patch the CLI or supply a different authentication route.
+- GZKEIUJT constructs Config({root}) without userPlugins:false. CTNBSUVU's default loadUserPlugins may read the original same-account Oclif user plugin registry and load external hooks. Their presence/content has not been independently inspected, because permitted root/reviewer reads are confined to named package/worktree/evidence paths. Removing environment overrides does not itself disable this registry. Core package declares no extra plugin list. Known built-in lifecycle is audited; an absolute assertion about unknown external hooks is not supported.
+
+The source safety review must disposition these boundaries before access. No session validity, successful launch, updated global executable, scope repair or remote qualification is claimed.

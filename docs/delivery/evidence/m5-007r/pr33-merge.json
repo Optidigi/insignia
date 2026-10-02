@@ -1,0 +1,16 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 33,
+  "method": "normal merge commit",
+  "sha": "8ec0b62526a1f8c115c2f8b9d38057a5e61b8cdb",
+  "orderedParents": [
+    "3aa67ef95154a07b3100a5f2042d9173bbe1f6eb",
+    "3265e9715ea42eaf0d09ae4c1010242dd8cd9206"
+  ],
+  "tree": "3e2c3caa0f58f9af377347f089455308143c68a4",
+  "mergedAt": "2026-10-02T12:37:11Z",
+  "remoteMain": "8ec0b62526a1f8c115c2f8b9d38057a5e61b8cdb",
+  "approvedHeadUnchanged": true,
+  "fetchedGitObjectVerified": true,
+  "externalApprovalNotNative": true
+}
