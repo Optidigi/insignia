@@ -118,14 +118,19 @@ function protectDirectory(directory) {
     'register_permissions',
   );
 }
-export function initialize(directory, binding, { synthetic = false } = {}) {
-  requireValue(synthetic || resolve(directory) === LIVE_DIRECTORY, 'canonical_register');
+export function profileDirectory(profile) {
+  requireValue(['m5-004', 'm5-009'].includes(profile), 'operator_profile');
+  return `/home/serveradmin/insignia-${profile}-handoff/run`;
+}
+export function initialize(directory, binding, { synthetic = false, profile = 'm5-004' } = {}) {
+  const liveDirectory = profileDirectory(profile);
+  requireValue(synthetic || resolve(directory) === liveDirectory, 'canonical_register');
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   protectDirectory(directory);
   const sentinel = openSync(resolve(directory, 'initialized.once'), 'wx', 0o600);
   fsyncSync(sentinel);
   closeSync(sentinel);
-  const marker = `insignia-m5-004-${randomUUID()}`;
+  const marker = `insignia-${profile}-${randomUUID()}`;
   const state = {
     version: 1,
     target: TARGET,
@@ -152,12 +157,12 @@ export function initialize(directory, binding, { synthetic = false } = {}) {
   }
   return state;
 }
-function validate(state) {
+function validate(state, profile) {
   requireValue(
     state?.version === 1 &&
       JSON.stringify(state.target) === JSON.stringify(TARGET) &&
       JSON.stringify(state.limits) === JSON.stringify(LIMITS) &&
-      /^insignia-m5-004-[a-f0-9-]{36}$/.test(state.run) &&
+      new RegExp(`^insignia-${profile}-[a-f0-9-]{36}$`).test(state.run) &&
       state.binding?.source &&
       state.binding.modules &&
       Array.isArray(state.events),
@@ -218,7 +223,8 @@ function validate(state) {
     );
   }
 }
-export function assertIdentity(data) {
+export function assertIdentity(data, { profile = 'm5-004' } = {}) {
+  profileDirectory(profile);
   const install = data?.currentAppInstallation;
   requireValue(
     data?.shop?.id === TARGET.shop &&
@@ -229,8 +235,23 @@ export function assertIdentity(data) {
       install.app.apiKey === TARGET.client,
     'identity',
   );
-  const grants = install.accessScopes?.map((x) => x.handle).sort();
-  requireValue(JSON.stringify(grants) === JSON.stringify(GRANTS), 'retained_grants');
+  if (profile === 'm5-004') {
+    const grants = install.accessScopes?.map((x) => x.handle).sort();
+    requireValue(JSON.stringify(grants) === JSON.stringify(GRANTS), 'retained_grants');
+  } else {
+    const scopes = install.accessScopes;
+    requireValue(
+      Array.isArray(scopes) &&
+        scopes.length <= 250 &&
+        scopes.every(
+          (x) => keys(x, ['handle']) && typeof x.handle === 'string' && /^[a-z][a-z0-9_]{0,127}$/.test(x.handle),
+        ),
+      'grant_shape',
+    );
+    const grants = scopes.map((x) => x.handle);
+    requireValue(new Set(grants).size === grants.length, 'grant_shape');
+    requireValue(grants.includes('write_products'), 'product_capability');
+  }
 }
 export function assertUnpublished(product) {
   requireValue(product?.__typename === 'Product' && gid.test(product.id), 'product_shape');
@@ -384,8 +405,9 @@ function sanitizeEnvelope(raw) {
   return out;
 }
 
-export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
-  requireValue(fetchImpl !== globalThis.fetch || resolve(directory) === LIVE_DIRECTORY, 'canonical_register');
+export function createOperator({ directory, fetchImpl = globalThis.fetch, profile = 'm5-004' }) {
+  const liveDirectory = profileDirectory(profile);
+  requireValue(fetchImpl !== globalThis.fetch || resolve(directory) === liveDirectory, 'canonical_register');
   protectDirectory(directory);
   const lock = resolve(directory, 'operator.lock');
   const fd = openSync(lock, 'wx', 0o600);
@@ -406,7 +428,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
       'register_permissions',
     );
     state = JSON.parse(readFileSync(resolve(directory, 'register.json'), 'utf8'));
-    validate(state);
+    validate(state, profile);
   } catch (error) {
     unlinkSync(lock);
     throw error;
@@ -670,7 +692,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch }) {
     state: () => structuredClone(state),
     identity(data) {
       try {
-        assertIdentity(data);
+        assertIdentity(data, { profile });
         state.identity = { ...structuredClone(data), at: new Date().toISOString() };
         save();
       } catch (error) {

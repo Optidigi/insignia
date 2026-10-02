@@ -1,0 +1,51 @@
+{
+  "node": "24.21.0",
+  "pnpm": "12.6.0",
+  "build": {
+    "command": "corepack pnpm build",
+    "exit": 0
+  },
+  "tdd": {
+    "redExit": 1,
+    "redFailure": "retained_grants against old identity guard",
+    "greenExit": 0
+  },
+  "focused": {
+    "command": "node --test scripts/m5-004/operator.test.mjs scripts/m5-009/operator.test.mjs",
+    "exit": 0,
+    "tests": 44,
+    "legacy": 33,
+    "successor": 11
+  },
+  "root": {
+    "command": "corepack pnpm check",
+    "exit": 0,
+    "note": "Root passed before the final additional successor-gate probe; focused44 and final style include it. Natural exact-source foundation CI must qualify the complete committed source before any credential access.",
+    "initialStyleExit": 1,
+    "initialStyleClassification": "new test assignment-in-expression and formatting; corrected before freeze",
+    "linker": "retained process-local cc-zig",
+    "localDB": "DB-gated web/worker tests skipped; required exact-source PostgreSQL CI pending"
+  },
+  "stress": {
+    "command": "corepack pnpm test:m5-stress",
+    "exit": 0,
+    "passes": 100,
+    "failures": 0,
+    "retries": 0,
+    "iterationsPerCombination": 25
+  },
+  "rendererControl": {
+    "command": "corepack pnpm test:m5-renderer-control",
+    "exit": 0,
+    "expectedInnerExit": 1
+  },
+  "developmentOnly": "No credential/browser/authenticated provider access before gate",
+  "logs": {
+    "build.log": "b87c8c12063d6e51620dde6d94d14190e5656bdd2465a80705e9f3734d5c6d79",
+    "focused-final.log": "aef6b3310bc065fe8bf6a0b6bb7aafc274e3d2a608dbe8a4f896710f2e499be0",
+    "root.log": "effa69c2df2e5c9f12bebf0ce1e74136001975b2504659bf5e228b521ac8b797",
+    "root-green.log": "62ca61124bbd46c40995f47d8222419f5d539e907808b7df0310cc595ab01138",
+    "renderer.log": "7ef0017863f57a26defadc525bea64fb021493bd5709e60e95443984b98beeb1"
+  },
+  "syntheticFixtureCorrection": "Initial synthetic matrix incorrectly omitted read_products and was refused by the unchanged production adapter. Its fake provider now returns the actual expected read/write product handles; this did not alter the experiment write_products-only identity requirement or production adapters."
+}

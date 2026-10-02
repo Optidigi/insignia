@@ -1,0 +1,38 @@
+✖ current product capability accepts write_products without the obsolete nine grants (1.600607ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 76.427698
+
+✖ failing tests:
+
+test at scripts/m5-009/operator.test.mjs:14:1
+✖ current product capability accepts write_products without the obsolete nine grants (1.600607ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception.
+  Actual message: "retained_grants"
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-009-worktree/scripts/m5-009/operator.test.mjs:15:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: Error: retained_grants
+        at requireValue (file:///home/serveradmin/insignia-m5-009-worktree/scripts/m5-004/operator.mjs:90:21)
+        at Module.assertIdentity (file:///home/serveradmin/insignia-m5-009-worktree/scripts/m5-004/operator.mjs:233:3)
+        at assertIdentity (file:///home/serveradmin/insignia-m5-009-worktree/scripts/m5-009/operator.mjs:8:48)
+        at file:///home/serveradmin/insignia-m5-009-worktree/scripts/m5-009/operator.test.mjs:15:29
+        at getActual (node:assert:611:5)
+        at strict.doesNotThrow (node:assert:779:32)
+        at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-009-worktree/scripts/m5-009/operator.test.mjs:15:10)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.start (node:internal/test_runner/test:1262:17),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }

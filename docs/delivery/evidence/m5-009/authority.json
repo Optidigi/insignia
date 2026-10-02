@@ -1,0 +1,14 @@
+{
+  "packageSha256": "ca02078da90fdb3395cd5779f4a1bb125c7504f83c0cf14bc518d69303d07bcc",
+  "packageManifestEntries": 6,
+  "packageManifest": "PASS",
+  "principalVerdict": "APPROVED for PR38 exact reviewed refs only",
+  "principalOriginalFilename": "PR-038-principal-review.md",
+  "trackedPrincipalFilename": "docs/delivery/PR-038R-principal-review.md",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "soleWriterIntegratorOperator": "root",
+  "newCanonicalRun": "/home/serveradmin/insignia-m5-009-handoff/run",
+  "oldCanonicalRun": "/home/serveradmin/insignia-m5-004-handoff/run",
+  "oldRunDisposition": "CLOSED; unchanged"
+}
