@@ -1,0 +1,113 @@
+{
+  "review_date": "2026-10-02",
+  "repository": "Optidigi/insignia",
+  "pr": 31,
+  "base": "6687e443baf97ee8bf179db61a1e4450f903f8eb",
+  "head": "dc9db629559d5fa7049de2d0d3fed28d53a08fb4",
+  "tree": "aeb12dba4944b5934fc33c5494992c6ad5ca87dd",
+  "branch": "feat/m5-005-scope-provenance",
+  "external_verdict": "APPROVED_DIAGNOSTIC_SCOPE",
+  "directly_verified": {
+    "github_pr_open_non_draft_unmerged": true,
+    "main": "6687e443baf97ee8bf179db61a1e4450f903f8eb",
+    "effective_merge_base": "6687e443baf97ee8bf179db61a1e4450f903f8eb",
+    "ahead_commits": 2,
+    "pr30_merge": {
+      "sha": "6687e443baf97ee8bf179db61a1e4450f903f8eb",
+      "parents": [
+        "a7b2ba236f6b7726f48af0cd50ae14e0b7cc8e30",
+        "30f00935f90f7564d426838487b3a6e5f37a9e01"
+      ],
+      "tree": "e772af245c7f09c59d398656e16305adfeaea005"
+    },
+    "native_reviews": [],
+    "source_blobs_read_in_full": {
+      "scripts/m5-005/diagnostic.mjs": "98903ae9226fe3ace6c77141b4936401178cc068",
+      "scripts/m5-005/diagnostic.test.mjs": "b0148d263257ce9e5d49adb87eb151cb46831ebb",
+      "scripts/m5-005/binding.mjs": "901e3f9f15e9e23fae9133a94dacddc8e164eac7",
+      "scripts/m5-005/schema-contract.mjs": "e8126b7b4cff6f569c4a870a7c1df90ad9531df4",
+      "scripts/m5-005/schema-contract.json": "12f0fe3306c30607a85d7b55381a4335131726dc"
+    },
+    "source_blob_note": "Blob identities returned by GitHub; no independent local full-file hash recalculation claimed.",
+    "changed_path_inventory_count": 57,
+    "successful_head_associated_runs": [
+      36951137666,
+      36951137745,
+      36951137661,
+      36951137611,
+      36951137613,
+      36951137630,
+      36951137614,
+      36951137619,
+      36951137615,
+      36951137632
+    ],
+    "foundation_job_steps_read": 110664129046
+  },
+  "source_evidence_inspected": {
+    "live_source": "6cde4be314904e0c82152d378fb9bf7864ba1fa1",
+    "live_tree": "5e31daec61ced395dc623a401031274fc0214403",
+    "live_observation_interval_utc": [
+      "2026-10-02T01:23:18.521Z",
+      "2026-10-02T01:23:19.717Z"
+    ],
+    "counts": {
+      "auth": 1,
+      "identity": 1,
+      "declared": 1,
+      "rest": 1
+    },
+    "scope_states": {
+      "token": "EMPTY",
+      "installation": "EMPTY",
+      "rest": "EMPTY",
+      "requested": "EMPTY",
+      "optional": "EMPTY"
+    },
+    "dashboard": "NOT_OBSERVED_NO_AUTOMATION_HOST",
+    "pending_at_close": 0,
+    "lock_released": true,
+    "packet_reported_checks": {
+      "root": "PASS",
+      "focused": "49/49",
+      "postgresql": "159",
+      "stress": "100/100 no retries",
+      "all_final_workflow_attempts": 1
+    },
+    "checks_note": "Workflow successes and foundation step success verified from native metadata. Test totals/attempt summary also recorded in the packet; suites were not rerun here.",
+    "reviews": [
+      "https://github.com/Optidigi/insignia/pull/31#issuecomment-5943958965",
+      "https://github.com/Optidigi/insignia/pull/31#issuecomment-5943959159"
+    ]
+  },
+  "not_performed": [
+    "Native approval",
+    "Merge",
+    "Repository edit",
+    "Shopify authentication or operation",
+    "Local-host access",
+    "Test/build execution",
+    "Every retained artifact hash recheck"
+  ],
+  "environment_limit": "Public container git clone could not resolve github.com. GitHub connector reads succeeded and supplied the inspected source.",
+  "next_action": "Owner-authorized exact normal merge, then M5-006 two-view existing-session inspection; no automatic repair.",
+  "skills": {
+    "writing-for-agents": {
+      "source": "https://github.com/Optidigi/insignia/blob/dc9db629559d5fa7049de2d0d3fed28d53a08fb4/.agents/skills/writing-for-agents/SKILL.md",
+      "blob": "a37608daf6e835e767deecfb498facecaaba82ba"
+    },
+    "handoff": {
+      "source": "https://github.com/Optidigi/insignia/blob/dc9db629559d5fa7049de2d0d3fed28d53a08fb4/.agents/skills/handoff/SKILL.md",
+      "blob": "2eb98a51b97bb5bac461a26ad14828eeac827909"
+    },
+    "code-review": "Repository-pinned two-axis technique; supplied independent local reports remain separately attributed, not principal subagents.",
+    "diagnosing-bugs": "Retain empirical symptom versus causal inference; no new live diagnostic loop authorized."
+  },
+  "references": {
+    "pr": "https://github.com/Optidigi/insignia/pull/31",
+    "report": "https://github.com/Optidigi/insignia/blob/dc9db629559d5fa7049de2d0d3fed28d53a08fb4/docs/delivery/M5-005-REPORT.md",
+    "register": "https://github.com/Optidigi/insignia/blob/dc9db629559d5fa7049de2d0d3fed28d53a08fb4/docs/delivery/evidence/m5-005/live/register.json",
+    "native_views": "https://github.com/Optidigi/insignia/blob/dc9db629559d5fa7049de2d0d3fed28d53a08fb4/docs/delivery/evidence/m5-005/native-views.json",
+    "runs": "https://api.github.com/repos/Optidigi/insignia/actions/runs?head_sha=dc9db629559d5fa7049de2d0d3fed28d53a08fb4&event=pull_request&per_page=20"
+  }
+}

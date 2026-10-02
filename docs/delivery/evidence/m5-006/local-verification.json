@@ -1,0 +1,21 @@
+{
+  "base": "dbaa7488780ddf8fd01991bf5a76a909e07b34e0",
+  "scope": "documentation/evidence only",
+  "commands": [
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "command": "temporary Python changed-file JSON/redaction/allowed-path checks (not tracked tooling)",
+      "exitCode": 0
+    }
+  ],
+  "filesChecked": 19,
+  "noManualUnchangedBuildIntegrationStressBenchmark": true,
+  "retainedChecksRef": "dc9db629559d5fa7049de2d0d3fed28d53a08fb4",
+  "retainedCheckSource": "approved-head-ci.json",
+  "newHeadCI": "required automatically triggered applicable runs; record separately in PR packet",
+  "priorRegisters": "both byte-identical per receipts",
+  "sourcePathsChanged": []
+}
