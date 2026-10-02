@@ -1,0 +1,16 @@
+{
+  "thread_id": "01a0fce0-8c61-7033-96ec-5d8d453ea9c0",
+  "contexts": [
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-007r-worktree",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "approval_policy": "never"
+    }
+  ],
+  "launch_exit": 0,
+  "result": "READY"
+}

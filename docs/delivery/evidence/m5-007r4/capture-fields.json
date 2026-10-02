@@ -1,0 +1,31 @@
+{
+  "artifactName": "shopify.app.m5-007r2.toml",
+  "sha256": "55088880dae5e48293dcf88a58b75c0f62f9c95e2d30943314f310510ea8fc14",
+  "topLevelKeys": [
+    "client_id",
+    "name",
+    "application_url",
+    "embedded",
+    "access_scopes",
+    "auth",
+    "webhooks"
+  ],
+  "safeFields": {
+    "client_id": "1443cf6d03d39edae7c101a943c5c684",
+    "name": "Insignia",
+    "application_url": "https://example.com",
+    "embedded": true,
+    "access_scopes": {
+      "scopes": "",
+      "optional_scopes": [],
+      "use_legacy_install_flow": false
+    },
+    "auth": {
+      "redirect_urls": []
+    },
+    "webhooks": {
+      "api_version": "2026-07"
+    }
+  },
+  "label": "CLI_GENERATED_TRANSFORMED_CONFIG_NOT_RAW_SERVER_OR_EXTENSION_MANIFEST"
+}

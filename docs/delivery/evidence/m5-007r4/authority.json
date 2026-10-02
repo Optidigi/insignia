@@ -1,0 +1,9 @@
+{
+  "zipSha256": "41fad07dd4b125e19357a27d797e9936b19ee328ace7d3de4ddb403f7415dba4",
+  "manifestEntriesPassed": 5,
+  "externalDisposition": "M5-007R3 CONFIRMED_LOCAL_ARGUMENT_ERROR",
+  "permission": "Owner forwarded M5-007R4; corrected versions argv and default local filename only",
+  "rootModel": "gpt-6.1-sol",
+  "rootEffort": "high",
+  "base": "9dc728b21d58a1687fae7221e64225373bbbbecb"
+}

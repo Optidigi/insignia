@@ -1,0 +1,23 @@
+{
+  "/home/serveradmin/insignia-m5-007r2-handoff/M5-007R2-REPORT.md": "4d4ed1a1250f4c33171009e705be1912a36a021c34339bbbce0e14502db926ba",
+  "/home/serveradmin/insignia-m5-007r2-handoff/sanitized-review-export.zip": "cf3b41561d76d4a89fb5d3cd23e7653598cb52f60438bb4c7887a441a31d8a30",
+  "/home/serveradmin/insignia-m5-007r2-handoff/capture-register.json": "36e009b0da7515f1dc36c6d5b24c1f52617b484621bc070f40d039e3e07f907f",
+  "/home/serveradmin/insignia-m5-007r2-handoff/launch-security-result.md": "98182179063c27743f6bad8dcade2c1b7d9805af37f4cb5bb173548d6bdfe835",
+  "/home/serveradmin/insignia-m5-007r2-handoff/failure-evidence-supplement.md": "96b602c66e8044d909865788556174b17690fbc5ad1fee78e87f9e3f61fe19b1",
+  "/home/serveradmin/insignia-m5-007r2-handoff/m5-007r2-evidence-recovery-export.zip": "b8235d0f6090cb520ac87ffd39eddbd85156ed8a51928ec83aa31ef4ad6275ce",
+  "/home/serveradmin/insignia-m5-004-handoff/run/gate.json": "1618d743eeeac7c936e3a0865893a0bdd553fdfbbd96f6054b6fbc8a8f6ff564",
+  "/home/serveradmin/insignia-m5-004-handoff/run/register.json": "0c741a66c9289be824ff75d879ef8f7b4e6f739e85cc6cf541340fe35b956ba2",
+  "/home/serveradmin/insignia-m5-004-handoff/run/qualification.json": "ee4e4813db9540549f78235b95469555490e34ed8eb1e8289a8072b352381497",
+  "/home/serveradmin/insignia-m5-004-handoff/run/initialized.once": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "/home/serveradmin/insignia-m5-004-handoff/run/binding.json": "2ba9330007e8558ced2707160c8bb006eaee7ee201e7e56b88f37edf479f07eb",
+  "/home/serveradmin/insignia-m5-005-handoff/run/register.json": "d9bb2d43ed7b51b9d66584881a9499a97b5cd819c8be17d75649dd33925dd98b",
+  "/home/serveradmin/insignia-m5-005-handoff/run/initialized.once": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "/home/serveradmin/insignia-m5-007-handoff/capture-state.json": "96cecbb8c32088fb934db35a12e0961f04adbec932def8ad8f47d838c19636f1",
+  "/home/serveradmin/insignia-m5-007r-handoff/capture-state.json": "979580052bcb5ef0b5cf6f626333fbba3946ba56941c0a12ec68fd7f3626012a",
+  "/home/serveradmin/insignia-m5-007r3-run-s6kn7v16/register.json": "77da11d88fb658a51de2ef98fe3de34b07c6f12493a203f63478f005b5aa6048",
+  "/home/serveradmin/insignia-m5-007r3-run-s6kn7v16/sanitized/command-1.json": "b9784712c109bd30e31c6ac38f2d9205ffb112698004c12b1245bbea102d622c",
+  "/home/serveradmin/insignia-m5-007r3-run-s6kn7v16/sanitized/command-1-final-projection.json": "da5fa37ae739c24817bd432f5c09c1093d98baab30898034e5828a4b4f903d81",
+  "/home/serveradmin/insignia-m5-007r3-run-s6kn7v16/sanitizer.py": "41e1384af1088db3c8e4bd839c62674c7cfb53bea4bdb1279d7717c865c6002d",
+  "/home/serveradmin/insignia-m5-007r3-run-s6kn7v16/test_sanitizer.py": "c1d4b8633b04df366487513edd397734dc92519f0257edc55349cad87f779328",
+  "/home/serveradmin/insignia-m5-007r2-handoff/m5-007r3-command1-review-export.zip": "d448509ad0a507f243284dd22401429a5307dfd5b9af87e3161c2539894e9f1a"
+}

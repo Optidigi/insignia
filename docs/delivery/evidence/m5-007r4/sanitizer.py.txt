@@ -1,0 +1,63 @@
+"""Private diagnostic projection. No CLI import, network or process execution."""
+import re
+
+
+def redact(line):
+    line = re.sub(r"\x1b\[[0-?]*[ -/]*[@-~]", "", line)
+    line = line.strip(" \t│┃╭╮╰╯─┌┐└┘")
+    if re.match(r"^at\s", line) or "-----BEGIN" in line:
+        return None
+    line = re.sub(r"(?i)bearer\s+[^\s,;]+", "Bearer <BEARER>", line)
+    line = re.sub(r"(?i)(?:access_token|refresh_token|client_secret|device_code|user_code|password|token)\s*[:=]\s*[^\s,;]+", "<SECRET_FIELD>", line)
+    line = re.sub(r"https?://[^\s<>]+", "<PRIVATE_URL>", line)
+    line = re.sub(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}", "<ACTOR>", line)
+    line = re.sub(r"(?i)(?:logged in as|account|user|actor)\s*[:=]?\s+(?!required\b|authentication\b)[^\s,;]+", "<ACTOR_FIELD>", line)
+    line = re.sub(r"(?:/(?:home|tmp|Users|private|root|var|opt|usr)/|[A-Za-z]:\\)[^\s,;]+", "<PRIVATE_PATH>", line)
+    line = re.sub(r"(?i)(?:browser|session|device|verification)[-_ ](?:id|code|url)\s*[:=]\s*[^\s,;]+", "<SESSION_FIELD>", line)
+    line = re.sub(r"[A-Za-z0-9_+/=-]{24,}", "<SENSITIVE_IDENTIFIER>", line)
+    if len(line) > 320 or any(ord(c) < 32 for c in line):
+        return None
+    return line
+
+
+def project(stdout, stderr):
+    diagnostics = []
+    omitted = 0
+    original = stdout + "\n" + stderr
+    for raw_line in original.splitlines():
+        line = redact(raw_line)
+        if not line:
+            omitted += bool(raw_line.strip())
+            continue
+        if re.search(r"(?i)\b(error|fatal|nonexistent flag|unknown flag|unexpected argument|invalid (?:flag|argument|config)|couldn.t|cannot|can.t|not found|enoent|eacces|enotfound|econn\w*|unauthorized|forbidden|authentication|log.?in|non.interactive|HTTP\s+[45]\d\d)\b", line):
+            diagnostics.append(line)
+        else:
+            omitted += 1
+    diagnostics = list(dict.fromkeys(diagnostics))[:8]
+    text = "\n".join(diagnostics)
+    if re.search(r"(?i)nonexistent flag|unknown flag|unexpected argument|cannot also be provided when using|invalid (?:flag|argument|config)|config(?:uration)?.*(?:not found|does not exist|couldn.t)", text):
+        category = "CLI_ARGUMENT_OR_CONTEXT"
+    elif re.search(r"(?i)(?:log.?in|authenticat).*(?:required|non.interactive|CI)|(?:non.interactive|CI).*(?:log.?in|authenticat)", text):
+        category = "AUTH_REQUIRED_OR_CI_REFUSAL"
+    elif re.search(r"(?i)HTTP\s+[45]\d\d|unauthorized|forbidden", text):
+        category = "PROVIDER_RESPONSE_ERROR"
+    elif re.search(r"(?i)enoent|eacces|enotfound|econn\w*|TypeError|SyntaxError|ReferenceError", text):
+        category = "LOCAL_RUNTIME_OR_IO"
+    else:
+        category = "UNKNOWN"
+    classes = sorted(set(re.findall(r"\b(?:[A-Z][A-Za-z]+Error|Error|E[A-Z_]{3,})\b", text)))
+    statuses = sorted(set(re.findall(r"(?i)HTTP\s+([45]\d\d)\b", text)))
+    # Original text is examined locally for safety markers, never returned.
+    install = bool(re.search(r"(?i)npm install|installing.*(?:shopify|plugin)|upgrad(?:e|ing).*CLI", original))
+    device = bool(re.search(r"(?i)device.authorization.{0,50}(?:initiated|created)|(?:initiated|created).{0,50}device.authorization", original))
+    return {
+        "classification": category,
+        "diagnostics": diagnostics or ["UNSAFE_TEXT_OMITTED: no safely projected causal diagnostic"],
+        "omittedLines": omitted,
+        "errorClassesOrCodes": classes,
+        "httpStatuses": statuses,
+        "updaterOrInstallAttemptObservedInOutput": install,
+        "deviceInitiationDirectlyObservedInOutput": device,
+        "deviceInitiationConclusion": "OBSERVED_IN_TEXT" if device else "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN",
+    }

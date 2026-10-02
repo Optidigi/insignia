@@ -1,0 +1,192 @@
+{
+  "status": "PASS",
+  "count": 10,
+  "syntheticOnly": true,
+  "controls": [
+    {
+      "case": "unknown",
+      "status": "PASS",
+      "projection": {
+        "classification": "UNKNOWN",
+        "diagnostics": [
+          "UNSAFE_TEXT_OMITTED: no safely projected causal diagnostic"
+        ],
+        "omittedLines": 1,
+        "errorClassesOrCodes": [],
+        "httpStatuses": [],
+        "updaterOrInstallAttemptObservedInOutput": false,
+        "deviceInitiationDirectlyObservedInOutput": false,
+        "deviceInitiationConclusion": "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN"
+      }
+    },
+    {
+      "case": "flag",
+      "status": "PASS",
+      "projection": {
+        "classification": "CLI_ARGUMENT_OR_CONTEXT",
+        "diagnostics": [
+          "Error: Nonexistent flag: --synthetic-option"
+        ],
+        "omittedLines": 0,
+        "errorClassesOrCodes": [
+          "Error"
+        ],
+        "httpStatuses": [],
+        "updaterOrInstallAttemptObservedInOutput": false,
+        "deviceInitiationDirectlyObservedInOutput": false,
+        "deviceInitiationConclusion": "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN"
+      }
+    },
+    {
+      "case": "http-auth",
+      "status": "PASS",
+      "projection": {
+        "classification": "PROVIDER_RESPONSE_ERROR",
+        "diagnostics": [
+          "HTTPError: HTTP 401 Unauthorized <PRIVATE_URL><SECRET_FIELD>"
+        ],
+        "omittedLines": 0,
+        "errorClassesOrCodes": [
+          "HTTPError"
+        ],
+        "httpStatuses": [
+          "401"
+        ],
+        "updaterOrInstallAttemptObservedInOutput": false,
+        "deviceInitiationDirectlyObservedInOutput": false,
+        "deviceInitiationConclusion": "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN"
+      }
+    },
+    {
+      "case": "bearer",
+      "status": "PASS",
+      "projection": {
+        "classification": "PROVIDER_RESPONSE_ERROR",
+        "diagnostics": [
+          "Error: Unauthorized Bearer <BEARER>"
+        ],
+        "omittedLines": 0,
+        "errorClassesOrCodes": [
+          "Error"
+        ],
+        "httpStatuses": [],
+        "updaterOrInstallAttemptObservedInOutput": false,
+        "deviceInitiationDirectlyObservedInOutput": false,
+        "deviceInitiationConclusion": "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN"
+      }
+    },
+    {
+      "case": "private-path",
+      "status": "PASS",
+      "projection": {
+        "classification": "LOCAL_RUNTIME_OR_IO",
+        "diagnostics": [
+          "Error: ENOENT cannot read <PRIVATE_PATH>"
+        ],
+        "omittedLines": 0,
+        "errorClassesOrCodes": [
+          "ENOENT",
+          "Error"
+        ],
+        "httpStatuses": [],
+        "updaterOrInstallAttemptObservedInOutput": false,
+        "deviceInitiationDirectlyObservedInOutput": false,
+        "deviceInitiationConclusion": "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN"
+      }
+    },
+    {
+      "case": "ci-auth",
+      "status": "PASS",
+      "projection": {
+        "classification": "AUTH_REQUIRED_OR_CI_REFUSAL",
+        "diagnostics": [
+          "Error: Cannot authenticate in CI; login required"
+        ],
+        "omittedLines": 0,
+        "errorClassesOrCodes": [
+          "Error"
+        ],
+        "httpStatuses": [],
+        "updaterOrInstallAttemptObservedInOutput": false,
+        "deviceInitiationDirectlyObservedInOutput": false,
+        "deviceInitiationConclusion": "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN"
+      }
+    },
+    {
+      "case": "actual-argument-conflict",
+      "status": "PASS",
+      "projection": {
+        "classification": "CLI_ARGUMENT_OR_CONTEXT",
+        "diagnostics": [
+          "--config=m5-002 cannot also be provided when using --client-id"
+        ],
+        "omittedLines": 0,
+        "errorClassesOrCodes": [],
+        "httpStatuses": [],
+        "updaterOrInstallAttemptObservedInOutput": false,
+        "deviceInitiationDirectlyObservedInOutput": false,
+        "deviceInitiationConclusion": "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN"
+      }
+    },
+    {
+      "case": "empty",
+      "status": "PASS",
+      "projection": {
+        "classification": "UNKNOWN",
+        "diagnostics": [
+          "UNSAFE_TEXT_OMITTED: no safely projected causal diagnostic"
+        ],
+        "omittedLines": 0,
+        "errorClassesOrCodes": [],
+        "httpStatuses": [],
+        "updaterOrInstallAttemptObservedInOutput": false,
+        "deviceInitiationDirectlyObservedInOutput": false,
+        "deviceInitiationConclusion": "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN"
+      }
+    },
+    {
+      "case": "malformed",
+      "status": "PASS",
+      "projection": {
+        "classification": "UNKNOWN",
+        "diagnostics": [
+          "UNSAFE_TEXT_OMITTED: no safely projected causal diagnostic"
+        ],
+        "omittedLines": 1,
+        "errorClassesOrCodes": [],
+        "httpStatuses": [],
+        "updaterOrInstallAttemptObservedInOutput": false,
+        "deviceInitiationDirectlyObservedInOutput": false,
+        "deviceInitiationConclusion": "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN"
+      }
+    },
+    {
+      "case": "actor",
+      "status": "PASS",
+      "projection": {
+        "classification": "PROVIDER_RESPONSE_ERROR",
+        "diagnostics": [
+          "Error: Forbidden <ACTOR_FIELD> <ACTOR>"
+        ],
+        "omittedLines": 0,
+        "errorClassesOrCodes": [
+          "Error"
+        ],
+        "httpStatuses": [],
+        "updaterOrInstallAttemptObservedInOutput": false,
+        "deviceInitiationDirectlyObservedInOutput": false,
+        "deviceInitiationConclusion": "UNKNOWN",
+        "networkActivityConclusion": "UNKNOWN"
+      }
+    }
+  ]
+}
