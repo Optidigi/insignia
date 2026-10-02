@@ -1,0 +1,21 @@
+{
+  "packageSha256": "734e1fe15652313613f3ca90b37256b37d56d6e90dd2e140e8dc11621306be64",
+  "manifest": "All supplied entries MATCH",
+  "externalVerdict": "APPROVED_PR35_ONLY",
+  "rootModel": "gpt-6.1-sol",
+  "effort": "high",
+  "oneRemoteOperator": "root",
+  "scopeRefinement": "write_products only; nine-scope proposal not adopted",
+  "publicDocumentation": [
+    {
+      "url": "https://shopify.dev/docs/apps/launch/deployment/app-versions",
+      "checked": "2026-10-02",
+      "claim": "Dashboard create-page route inherits active-version extensions under documented contract; not an observed extension manifest"
+    },
+    {
+      "url": "https://shopify.dev/docs/apps/build/authentication-authorization/manage-access-scopes",
+      "checked": "2026-10-02",
+      "claim": "write_products includes read capability; same-organization approval contract does not establish this app installation inventory"
+    }
+  ]
+}

@@ -1,0 +1,324 @@
+{
+  "app": "gid://shopify/App/429028933633",
+  "developmentOrganization": "200969036",
+  "browser": "T3 existing same-account session",
+  "prestate": {
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/1146748534785",
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nVersions\n/\ninsignia-1\nActive\nApp details\nname\nInsignia\napplication_url\nhttps://example.com\nembedded\ntrue\nAccess scopes\nuse_legacy_install_flow\nfalse\nWebhooks\napi_version\n2026-07\nTimeline\nReleased\nSep 28, 2026 \u00b7 2:11 pm\n\u00b7\n[operator]\nCreated\nSep 28, 2026 \u00b7 2:11 pm\n\u00b7\n[operator]"
+  },
+  "createPage": {
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/new",
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nCreate version\n\nThis form is pre-populated from version insignia-1.\n\nApp details\n\nUpdate app identity details for this version\n\nApp name\nVersion name (optional)\nAPI access\n\nAdd scopes, webhooks, and install behavior when your app needs Shopify data\n\nDocs\nScopes\nSelect from list\nScopes\n\nThese scopes are required to provide your app functionality. Enter scopes as a comma-separated list\n\nOptional scopes\nSelect from list\nOptional scopes\n\nEnter scopes as a comma-separated list\n\nWebhooks API version\n2026-07\nURLs\n\nConfigure the app URL, redirect URLs, and embedded app behavior\n\nApp URL\nEmbed app in Shopify admin\nAllowed redirection URL(s)\n\nEnter redirect URLs as a comma-separated list\n\nUse legacy install flow\nDocs\nPreferences URL (optional)\nPOS\n\nConfigure how this app appears in Shopify POS\n\nEmbed app in Shopify POS\nApp proxy\n\nConfigure storefront proxy paths and request forwarding\n\nSubpath prefix\nSelect an option\nSubpath\nProxy URL\nRelease"
+  },
+  "createFields": {
+    "buttons": [
+      {
+        "disabled": false,
+        "name": "",
+        "text": "Select from list",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n              \n  \n\n\n            ",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "  \n      Cancel\n  \n  \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "  \n      Done\n  \n  \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "Select from list",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n              \n  \n\n\n            ",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "  \n      Cancel\n  \n  \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "  \n      Done\n  \n  \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "2026-07",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n        \n          2026-01\n        \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n        \n          2026-04\n        \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n        \n          2026-07\n        \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n        \n          2026-10\n        \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "Select an option",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n        \n          apps\n        \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n        \n          a\n        \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n        \n          community\n        \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n        \n          tools\n        \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "Release",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n              \n  \n\n\n            ",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "  \n      Cancel\n  \n  \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "  \n      Release\n  \n  \n",
+        "type": "submit",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n    Active\n    \n  \n\n\n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n        \n          Active\n        \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n        \n          Inactive\n        \n",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "disabled": false,
+        "name": "",
+        "text": "\n\n  \n\n  \n\n",
+        "type": "submit",
+        "value": ""
+      }
+    ],
+    "fields": [
+      {
+        "id": "version_app_module_data_branding_name",
+        "tag": "INPUT",
+        "type": "text",
+        "value": "Insignia"
+      },
+      {
+        "id": "version_version_tag",
+        "tag": "INPUT",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "id": "version_app_module_data_app_access_scopes",
+        "tag": "TEXTAREA",
+        "type": "textarea",
+        "value": ""
+      },
+      {
+        "id": "version_app_module_data_app_access_optional_scopes",
+        "tag": "TEXTAREA",
+        "type": "textarea",
+        "value": ""
+      },
+      {
+        "id": "version_app_module_data_webhooks_api_version",
+        "tag": "BUTTON",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "id": "version_app_module_data_app_home_app_url",
+        "tag": "INPUT",
+        "type": "text",
+        "value": "https://example.com"
+      },
+      {
+        "checked": true,
+        "id": "version_app_module_data_app_home_embedded",
+        "tag": "INPUT",
+        "type": "checkbox",
+        "value": "1"
+      },
+      {
+        "id": "version_app_module_data_app_access_redirect_url_allowlist",
+        "tag": "TEXTAREA",
+        "type": "textarea",
+        "value": ""
+      },
+      {
+        "checked": false,
+        "id": "version_app_module_data_app_access_use_legacy_install_flow",
+        "tag": "INPUT",
+        "type": "checkbox",
+        "value": "1"
+      },
+      {
+        "id": "version_app_module_data_app_home_preferences_url",
+        "tag": "INPUT",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "checked": false,
+        "id": "version_app_module_data_point_of_sale_embedded",
+        "tag": "INPUT",
+        "type": "checkbox",
+        "value": "1"
+      },
+      {
+        "id": "version_app_module_data_app_proxy_prefix",
+        "tag": "BUTTON",
+        "type": "button",
+        "value": ""
+      },
+      {
+        "id": "version_app_module_data_app_proxy_subpath",
+        "tag": "INPUT",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "id": "version_app_module_data_app_proxy_url",
+        "tag": "INPUT",
+        "type": "text",
+        "value": ""
+      }
+    ],
+    "forms": [
+      {
+        "action": "/dashboard/200969036/apps/429028933633/versions",
+        "method": "post"
+      },
+      {
+        "action": "/dashboard/200969036/store_switcher_list",
+        "method": "get"
+      }
+    ],
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/new"
+  },
+  "confirmation": {
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/new",
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nCreate version\n\nThis form is pre-populated from version insignia-1.\n\nApp details\n\nUpdate app identity details for this version\n\nApp name\nVersion name (optional)\nAPI access\n\nAdd scopes, webhooks, and install behavior when your app needs Shopify data\n\nDocs\nScopes\nSelect from list\nScopes\n\nThese scopes are required to provide your app functionality. Enter scopes as a comma-separated list\n\nOptional scopes\nSelect from list\nOptional scopes\n\nEnter scopes as a comma-separated list\n\nWebhooks API version\n2026-07\nURLs\n\nConfigure the app URL, redirect URLs, and embedded app behavior\n\nApp URL\nEmbed app in Shopify admin\nAllowed redirection URL(s)\n\nEnter redirect URLs as a comma-separated list\n\nUse legacy install flow\nDocs\nPreferences URL (optional)\nPOS\n\nConfigure how this app appears in Shopify POS\n\nEmbed app in Shopify POS\nApp proxy\n\nConfigure storefront proxy paths and request forwarding\n\nSubpath prefix\nSelect an option\nSubpath\nProxy URL\nRelease\nRelease this new version?\nVersion message (optional)\nCancel\nRelease"
+  },
+  "impact": {
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633",
+    "visibleImpactLabels": [
+      "Install events",
+      "Uninstall events",
+      "Distribution\n\nManage Shopify App Store listing",
+      "Distribution"
+    ],
+    "last7DaysInstallEvents": 1,
+    "last7DaysUninstallEvents": 0,
+    "installationInventory": "NOT_OBSERVED",
+    "externalMerchantImpact": "NOT_BOUNDED",
+    "warning": "Event totals are not current installation inventory or ownership proof"
+  },
+  "finalVersions": {
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions",
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nVersions\nCreate version\nSEPTEMBER 28, 2026\ninsignia-1\nActive\n[operator]\n\n2:11 pm"
+  },
+  "attribution": "Root native UI observations; not independently replayed or request-body evidence",
+  "finishRecordedAt": "2026-10-02T17:11:14.784932+00:00",
+  "pageReadiness": "Final Versions URL explicitly waited for before recording"
+}
