@@ -1,0 +1,26 @@
+{
+  "schema": "insignia.m5-008r.register.v1",
+  "state": "CLOSED_BLOCKED_BEFORE_FORM_EDIT",
+  "app": "gid://shopify/App/429028933633",
+  "shop": "gid://shopify/Shop/105501393179",
+  "limits": {
+    "new_versions": 1,
+    "releases": 1,
+    "structural_rollback": 1,
+    "auth_exchange": 1,
+    "admin_read": 1
+  },
+  "reserved": {
+    "new_versions": 0,
+    "releases": 0,
+    "structural_rollback": 0,
+    "auth_exchange": 0,
+    "admin_read": 0
+  },
+  "reason": "Current Installs count/list unavailable in inspected exact-app Overview",
+  "pending_work": false,
+  "retry_authorized": false,
+  "credentials_read": false,
+  "shopify_cli_invocations": 0,
+  "scripted_provider_calls": 0
+}

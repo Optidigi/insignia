@@ -1,0 +1,62 @@
+{
+  "schema": "insignia.m5-008r.ui-observations.v1",
+  "operator": "root GPT-6.1-sol/high; existing T3 shared authenticated browser only",
+  "overview": {
+    "observed_at": "2026-10-02T17:36:27.483Z",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633",
+    "title": "Overview \u00b7 Insignia \u00b7 Dev Dashboard",
+    "loading": false,
+    "visible_text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\nGrowth\nLast 7 days\nInstall events\n\n1\n\n\u2014\n\nSep 25\nSep 27\nSep 29\nOct 1\nOct 2\n0\n0.2\n0.4\n0.6\n0.8\n1\n\nInstall events. One series: Install events. Install events peaks at 1 (Sep 28).\n\nInstall events\nPeriod\tInstall events\nSep 25\t0\nSep 26\t0\nSep 27\t0\nSep 28\t1\nSep 29\t0\nSep 30\t0\nOct 1\t0\nOct 2\t0\nUninstall events\n\n0\n\n\u2014\n\nSep 25\nSep 27\nSep 29\nOct 1\nOct 2\n0\n1\n\nUninstall events. One series: Uninstall events. Uninstall events peaks at 0 (Sep 25).\n\nUninstall events\nPeriod\tUninstall events\nSep 25\t0\nSep 26\t0\nSep 27\t0\nSep 28\t0\nSep 29\t0\nSep 30\t0\nOct 1\t0\nOct 2\t0\nOperations\nLast 7 days\nGraphQL error rate\n\n3.5%\n\nLogs \nError rate\nRequests\nSep 25\nSep 26\nSep 27\nSep 28\nSep 29\nSep 30\nOct 1\nOct 2\n0%\n2%\n4%\n6%\n0\n20\n40\n60\n80\n100\n\nGraphQL error rate. 2 series: Error rate, Requests. Error rate peaks at 5.1% (Sep 28).\n\nGraphQL error rate\nPeriod\tError rate\tRequests\nSep 25\t0%\t0\nSep 26\t0%\t0\nSep 27\t0%\t0\nSep 28\t5.1%\t98\nSep 29\t2.9%\t70\nSep 30\t0%\t12\nOct 1\t0%\t17\nOct 2\t0%\t3\nREST error rate\n\n0%\n\nLogs \nError rate\nRequests\nSep 25\nSep 26\nSep 27\nSep 28\nSep 29\nSep 30\nOct 1\nOct 2\n0%\n100%\n0\n0.2\n0.4\n0.6\n0.8\n1\n\nREST error rate. 2 series: Error rate, Requests. Error rate peaks at 0% (Sep 25).\n\nREST error rate\nPeriod\tError rate\tRequests\nSep 25\t0%\t0\nSep 26\t0%\t0\nSep 27\t0%\t0\nSep 28\t0%\t0\nSep 29\t0%\t0\nSep 30\t0%\t0\nOct 1\t0%\t0\nOct 2\t0%\t1\nWebhook failure rate\n\nNo webhook deliveries in this date range\n\nWebhook response time\n\nNo webhook response time data in this date range\n\nFunction error rate\n\n0%\n\nLogs \nError rate\nFunction runs\nSep 25\nSep 26\nSep 27\nSep 28\nSep 29\nSep 30\nOct 1\nOct 2\n0%\n100%\n0\n20\n40\n60\n80\n\nFunction runs. 2 series: Error rate, Function runs. Error rate peaks at 0% (Sep 25).\n\nFunction runs\nPeriod\tError rate\tFunction runs\nSep 25\t0%\t0\nSep 26\t0%\t0\nSep 27\t0%\t0\nSep 28\t0%\t16\nSep 29\t0%\t70\nSep 30\t0%\t0\nOct 1\t0%\t0\nOct 2\t0%\t0\nFunction error types\n\n No errors in this date range\n\nAdmin performance\nLast 7 days\nDistribution\n\nManage Shopify App Store listing",
+    "controls": [
+      {
+        "tag": "a",
+        "name": "Overview",
+        "selector": "nav > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > ul > li:nth-of-type(1) > a"
+      },
+      {
+        "tag": "a",
+        "name": "Versions",
+        "selector": "nav > div:nth-of-type(1) > div:nth-of-type(2) > div > div:nth-of-type(2) > ul > li:nth-of-type(3) > a"
+      }
+    ],
+    "qualification": "Current Installs metric and Current installs control not exposed in rendered exact-app Overview. Growth install events are not inventory."
+  },
+  "focused_dom": {
+    "asideText": [
+      "Distribution\n\nManage Shopify App Store listing"
+    ],
+    "currentInstallLabels": [],
+    "mainHeader": "/\nInsignia",
+    "title": "Overview \u00b7 Insignia \u00b7 Dev Dashboard",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633"
+  },
+  "final_versions": {
+    "observed_at": "2026-10-02T17:36:58.253Z",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions",
+    "title": "Versions \u00b7 Insignia \u00b7 Dev Dashboard",
+    "visible_text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nVersions\nCreate version\nSEPTEMBER 28, 2026\ninsignia-1\nActive\nAdmin Optidigi\n\n2:11 pm",
+    "controls": [
+      {
+        "name": "Create version",
+        "selector": "div > main > header > div:nth-of-type(2) > div > div > div:nth-of-type(2) > a"
+      },
+      {
+        "name": "insignia-1",
+        "selector": "div > div > div:nth-of-type(2) > div > div > div:nth-of-type(1) > div > a"
+      }
+    ],
+    "active_public_detail_path": "/dashboard/200969036/apps/429028933633/versions/1146748534785"
+  },
+  "installation_gate": {
+    "result": "BLOCKED_CURRENT_INSTALLATION_INVENTORY_NOT_EXPOSED",
+    "current_count": null,
+    "current_list": null,
+    "reason": "Overview displayed Growth install events but no current Installs count or Current installs control. No substitution with chart."
+  },
+  "display_diagnostic": {
+    "observed": true,
+    "classification": "import-map parse error reported by collaborative-browser console during Overview load",
+    "cause": "UNKNOWN; not established as cause of missing UI"
+  },
+  "privacy": "Selected rendered public facts only; no raw snapshot/network/session/contact/credential data saved"
+}

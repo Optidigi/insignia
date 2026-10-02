@@ -1,0 +1,13 @@
+{
+  "pr_url": "https://github.com/Optidigi/insignia/pull/36",
+  "merge_sha": "adecff04a3ff5b5d72665cbb404265477d6eb748",
+  "ordered_parents": [
+    "34c78b56df98cc049adca842653ad6f9ae23b2a8",
+    "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3"
+  ],
+  "tree": "976c08996fe61d56cdce86f4f60427fabd66d799",
+  "merged_at": "2026-10-02T17:35:19Z",
+  "remote_main": "adecff04a3ff5b5d72665cbb404265477d6eb748",
+  "branch": "feat/m5-008r-combined-release",
+  "worktree": "/home/serveradmin/insignia-m5-008r-worktree"
+}

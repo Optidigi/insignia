@@ -1,0 +1,208 @@
+{
+  "pr": {
+    "baseRefName": "main",
+    "baseRefOid": "34c78b56df98cc049adca842653ad6f9ae23b2a8",
+    "headRefOid": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+    "isDraft": false,
+    "mergeStateStatus": "CLEAN",
+    "mergeable": "MERGEABLE",
+    "number": 36,
+    "state": "OPEN",
+    "statusCheckRollup": [
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-02T17:15:48Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Optidigi/insignia/actions/runs/37039479430/job/110945749995",
+        "name": "publication-local",
+        "startedAt": "2026-10-02T17:15:31Z",
+        "status": "COMPLETED",
+        "workflowName": "M0-008 local publication and architecture checks"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-02T17:15:58Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Optidigi/insignia/actions/runs/37039479445/job/110945750324",
+        "name": "embedded-local",
+        "startedAt": "2026-10-02T17:15:30Z",
+        "status": "COMPLETED",
+        "workflowName": "M0-009 embedded Astro local proof"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-02T17:15:43Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Optidigi/insignia/actions/runs/37039479442/job/110945750868",
+        "name": "billing-local",
+        "startedAt": "2026-10-02T17:15:31Z",
+        "status": "COMPLETED",
+        "workflowName": "M0-010 local hybrid billing proof"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-02T17:15:48Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Optidigi/insignia/actions/runs/37039479498/job/110945751467",
+        "name": "provider-local",
+        "startedAt": "2026-10-02T17:15:31Z",
+        "status": "COMPLETED",
+        "workflowName": "M0-011 local provider adapter boundary"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-02T17:15:44Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Optidigi/insignia/actions/runs/37039479437/job/110945752932",
+        "name": "local-proof",
+        "startedAt": "2026-10-02T17:15:31Z",
+        "status": "COMPLETED",
+        "workflowName": "M0-012 real contract local prototype"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-02T17:18:07Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Optidigi/insignia/actions/runs/37039479411/job/110945750549",
+        "name": "offstore-proof",
+        "startedAt": "2026-10-02T17:15:30Z",
+        "status": "COMPLETED",
+        "workflowName": "M0-013 off-store protocol capacity"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-02T17:17:49Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Optidigi/insignia/actions/runs/37039479484/job/110945750652",
+        "name": "local-candidate",
+        "startedAt": "2026-10-02T17:15:31Z",
+        "status": "COMPLETED",
+        "workflowName": "M0-014 local public-app candidate"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-02T17:20:33Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Optidigi/insignia/actions/runs/37039479453/job/110945750708",
+        "name": "foundation",
+        "startedAt": "2026-10-02T17:15:30Z",
+        "status": "COMPLETED",
+        "workflowName": "M1-001 foundation and boundaries"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-02T17:17:11Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Optidigi/insignia/actions/runs/37039479419/job/110945750694",
+        "name": "durable-core",
+        "startedAt": "2026-10-02T17:15:31Z",
+        "status": "COMPLETED",
+        "workflowName": "M3-001 PostgreSQL durable core"
+      },
+      {
+        "__typename": "CheckRun",
+        "completedAt": "2026-10-02T17:17:29Z",
+        "conclusion": "SUCCESS",
+        "detailsUrl": "https://github.com/Optidigi/insignia/actions/runs/37039479486/job/110945753022",
+        "name": "runtime",
+        "startedAt": "2026-10-02T17:15:32Z",
+        "status": "COMPLETED",
+        "workflowName": "M3-002 local runtime and ingress"
+      }
+    ]
+  },
+  "workflows": [
+    {
+      "id": 37039479484,
+      "name": "M0-014 local public-app candidate",
+      "head_sha": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/37039479484"
+    },
+    {
+      "id": 37039479486,
+      "name": "M3-002 local runtime and ingress",
+      "head_sha": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/37039479486"
+    },
+    {
+      "id": 37039479411,
+      "name": "M0-013 off-store protocol capacity",
+      "head_sha": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/37039479411"
+    },
+    {
+      "id": 37039479437,
+      "name": "M0-012 real contract local prototype",
+      "head_sha": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/37039479437"
+    },
+    {
+      "id": 37039479445,
+      "name": "M0-009 embedded Astro local proof",
+      "head_sha": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/37039479445"
+    },
+    {
+      "id": 37039479419,
+      "name": "M3-001 PostgreSQL durable core",
+      "head_sha": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/37039479419"
+    },
+    {
+      "id": 37039479453,
+      "name": "M1-001 foundation and boundaries",
+      "head_sha": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/37039479453"
+    },
+    {
+      "id": 37039479442,
+      "name": "M0-010 local hybrid billing proof",
+      "head_sha": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/37039479442"
+    },
+    {
+      "id": 37039479498,
+      "name": "M0-011 local provider adapter boundary",
+      "head_sha": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/37039479498"
+    },
+    {
+      "id": 37039479430,
+      "name": "M0-008 local publication and architecture checks",
+      "head_sha": "9e2d9ebe68d51c2ad346dafdfad78e2cca29dae3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/37039479430"
+    }
+  ],
+  "tree": "976c08996fe61d56cdce86f4f60427fabd66d799",
+  "effective_merge_base": "34c78b56df98cc049adca842653ad6f9ae23b2a8"
+}
