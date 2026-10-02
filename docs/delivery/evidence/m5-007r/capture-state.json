@@ -1,0 +1,42 @@
+{
+  "slice": "M5-007R",
+  "observedAt": "2026-10-02T12:51:26.480729+00:00",
+  "status": "STOPPED_BEFORE_AUTHENTICATED_CLI",
+  "reason": "fresh restricted source launch review BLOCKED; pre-CI new-auth route and unverified user-plugin hooks",
+  "priorSlice": "docs/delivery/evidence/m5-007/cli-installed-check.json",
+  "priorAuthenticatedLogicalInvocations": 0,
+  "ceiling": 3,
+  "authenticatedLogicalInvocations": 0,
+  "slots": [
+    {
+      "slot": 1,
+      "purpose": "versions list before",
+      "status": "NOT_RUN",
+      "reserved": false
+    },
+    {
+      "slot": 2,
+      "purpose": "explicit-client config link",
+      "status": "NOT_RUN",
+      "reserved": false
+    },
+    {
+      "slot": 3,
+      "purpose": "versions list after",
+      "status": "NOT_RUN",
+      "reserved": false
+    }
+  ],
+  "captureDirectory": "NOT_CREATED",
+  "versionContextDirectory": "NOT_CREATED",
+  "generatedTOML": "NOT_CREATED",
+  "beforeAfterVersionBracket": "NOT_OBSERVED",
+  "browserViews": 0,
+  "ShopifyInvocationsIncludingHelp": 0,
+  "manualCredentialOrCacheReads": 0,
+  "sessionValidity": "NOT_TESTED",
+  "deadlineAndDescendants": "NOT_EXERCISED; no Shopify process launched",
+  "noRemainingOwnedShopifyProcess": true,
+  "globalInstallation": "untouched/unused; footprint NOT_OBSERVED",
+  "continuationAuthority": "unused slots do not authorize execution after this principal handback"
+}

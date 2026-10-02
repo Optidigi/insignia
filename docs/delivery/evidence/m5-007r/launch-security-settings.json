@@ -1,0 +1,18 @@
+{
+  "threadId": "01a0fca5-a078-71d2-93cc-86d5615381bb",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "cwd": "/home/serveradmin/insignia-m5-007-worktree",
+  "sandboxPolicy": {
+    "type": "read-only"
+  },
+  "approvalPolicy": "never",
+  "source": "same-launch turn_context; selected fields only",
+  "sessionPath": "/home/serveradmin/.codex/sessions/2026/10/02/rollout-2026-10-02T12-45-08-01a0fca5-a078-71d2-93cc-86d5615381bb.jsonl",
+  "launcher": "codex exec --model gpt-6.1-sol -c model_reasoning_effort=high --sandbox read-only",
+  "root": {
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "source": "trusted T3 runtime metadata"
+  }
+}

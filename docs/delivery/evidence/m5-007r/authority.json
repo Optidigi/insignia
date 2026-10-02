@@ -1,0 +1,42 @@
+{
+  "attachment": "insignia-pr33-approved-m5-007r-handoff.zip",
+  "sha256": "50e9d801d593d299718f1c064ef1b7d4df8fe998b504d1a5e455a50ebe88da22",
+  "neutralExtraction": "/home/serveradmin/insignia-m5-007r-package-iqti1wz6/insignia-pr33-approved-m5-007r-handoff",
+  "manifestEntries": {
+    "M5-007R-CLI-CAPTURE-CONTINUATION.md": "1997b8240e04cc7064cb77e5e2bd25a2e65bf8f40158374c112f838a7557f03e",
+    "OWNER-LAUNCH.txt": "9e2e84f26c7552550bbf7861634164cb30f7c1833e06472a0048512c17a5d2b6",
+    "PR-033-principal-review.md": "66bdcb350be7500826e4a6767735bf1b1f5c41320a4a2b900c1a39af83714d2d",
+    "README.md": "4536f7423327db7d59dc7e11b118ef621d1a054fb93376c0c33b746d554a8e48",
+    "RESEARCH-NOTES.md": "72835ff35df972e32b5e6932c3a3d8c792a579534cec2dbc6173ccdaa0ca7c8c",
+    "prior-package-check.json": "84f547696ea9c17cad68865620b1f3ae6c616b90574af26220522d93640d0152",
+    "verification.json": "4877bb207196cb301fbbecd45e41c87df85db414b002408b01ab2e950481b781"
+  },
+  "allManifestEntriesPassed": true,
+  "externalPrincipalVerdict": "APPROVED exact PR33 docs/evidence; not native GitHub approval or retrospective host-install authorization",
+  "ownerAuthorization": "current thread: exact PR33 normal merge and M5-007R with no new login/consent or unapproved override",
+  "root": {
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "source": "trusted T3 runtime metadata"
+  },
+  "skills": [
+    {
+      "name": "writing-for-agents",
+      "read": true,
+      "sha256": "551adca942227b44192edba88acd4e8db911f0121ce58ad16944ccf6a896a74a",
+      "source": "repository-pinned mattpocock skill; active prompt/operating model override defaults"
+    },
+    {
+      "name": "handoff",
+      "read": true,
+      "sha256": "7c62de979fdc7ac32fb5ddb2146156c917f80ee070d30fadc9d40343c4b6ed25",
+      "source": "repository-pinned mattpocock skill; active prompt/operating model override defaults"
+    },
+    {
+      "name": "code-review",
+      "read": true,
+      "sha256": "47f4e52c21694def9c7c11cbfbf891ca35eac7a93e395797515be3c8a409ae50",
+      "source": "repository-pinned mattpocock skill; active prompt/operating model override defaults"
+    }
+  ]
+}

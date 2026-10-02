@@ -1,0 +1,27 @@
+{
+  "base": "8ec0b62526a1f8c115c2f8b9d38057a5e61b8cdb",
+  "scope": "documentation/evidence only",
+  "commands": [
+    {
+      "command": "git diff --cached --check",
+      "exitCode": 0
+    },
+    {
+      "command": "pinned Node scripts/boundaries/check-secrets.mjs",
+      "exitCode": 1,
+      "result": "Could not complete in fresh docs worktree: missing unchanged built apps/storefront/dist/insignia-storefront.js. No build/suite rerun to supply artifacts; automatic CI runs full existing check."
+    },
+    {
+      "command": "temporary changed-file JSON/redaction/allowed-path/authority-byte/register-hash checks",
+      "exitCode": 0,
+      "result": "PASS for changed docs only; not equivalent to full build-artifact secret check"
+    }
+  ],
+  "filesCheckedBeforeReceipt": 16,
+  "noManualUnchangedSuiteReruns": true,
+  "automaticFinalHeadCI": "required separately in final PR packet",
+  "canonicalRegistersUnchanged": true,
+  "sourceChanges": [],
+  "ShopifyInvocationCount": 0,
+  "launchVerdict": "BLOCKED"
+}
