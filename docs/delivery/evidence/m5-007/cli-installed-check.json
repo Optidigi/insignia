@@ -1,0 +1,71 @@
+{
+  "installedPackage": "@shopify/cli",
+  "isolatedVersion": "4.8.2",
+  "executable": "/home/serveradmin/insignia-pf001-tools/shopify/node_modules/.bin/shopify",
+  "localChecks": [
+    {
+      "command": "shopify version",
+      "result": "reported 4.8.2 then automatic global upgrade to reported 4.8.3",
+      "exitCode": 0,
+      "unsupportedSideEffect": true
+    },
+    {
+      "command": "shopify app config link --help",
+      "exitCode": 0
+    },
+    {
+      "command": "shopify app versions list --help",
+      "exitCode": 0
+    }
+  ],
+  "authenticatedLogicalInvocations": 0,
+  "plannedCommands": [
+    "versions list before",
+    "explicit-client config link into empty private capture",
+    "versions list after"
+  ],
+  "plannedCommandsDisposition": "NOT_RUN: stopped before authenticated CLI work on unexpected automatic global upgrade",
+  "globalUpgradeOutput": {
+    "reportedCommand": "npm install -g @shopify/cli@latest",
+    "reportedChangedPackages": 49,
+    "reportedResult": "Shopify CLI upgraded; now version 4.8.3",
+    "isolatedPackageStill": "4.8.2",
+    "exactGlobalInstallPath": "NOT_OBSERVED; no default shopify executable found on current PATH; isolated package still 4.8.2"
+  },
+  "manualCredentialAccess": false,
+  "furtherCLIStopped": true,
+  "attemptedInterruption": "process completed before Ctrl-C/poll; no remaining identified upgrade process",
+  "noUnauthorizedRollback": true,
+  "sourceInspection": {
+    "versionCommand": "prints installed version; upgrade is outside command run",
+    "upgradeChunk": "dist/chunk-KANWS6HC.js",
+    "upgradeChunkSha256": "66ccd85d7ab66455d1e7724e1618891cbec7409990c8cf1cc9bc65331215d811",
+    "processLocalGuard": "ie() returns without upgrade when imported CI guard is true; CI guard reads process.env.CI",
+    "ciGuardChunk": "dist/chunk-ESTXKKAB.js",
+    "ciGuardChunkSha256": "c75a0d473ba3325862e9455717d14b8892e1c30428d8adf20c53310f1d687ef8",
+    "forceAutoUpgradeEnvironmentEnabled": false,
+    "CI1NotAppliedOrTestedInThisSlice": true,
+    "contextLoadingAndTransportAudit": "NOT_COMPLETED: early unsupported behavior ended CLI work; no claim authenticated command safety gate passed"
+  },
+  "plannedFlagsHelpVerified": {
+    "versionsList": [
+      "client-id",
+      "path",
+      "config",
+      "json"
+    ],
+    "configLink": [
+      "client-id",
+      "path",
+      "file-name"
+    ],
+    "commandSourceEntriesRead": [
+      "dist/chunk-FGZNKGW5.js",
+      "dist/chunk-EZ6VGZXC.js",
+      "dist/chunk-QYV62H24.js"
+    ],
+    "explicitLinkBranch": "entry resolves link then loads context; complete context-hook audit not completed",
+    "generatedConfiguration": "NOT_CREATED",
+    "activeVersionBeforeAfter": "NOT_OBSERVED"
+  }
+}

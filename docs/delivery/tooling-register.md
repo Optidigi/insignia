@@ -134,3 +134,9 @@ The same protected own-organization client_credentials route was used once after
 ## M5-006 native read-only checkpoint
 
 The shared browser's single normal open succeeded and exact-app Dev Dashboard navigation reused an authenticated session without login/consent. The sole operator consumed two view scopes only; no scripted Shopify API, token, owner credential or CLI route was used. Active/Released insignia-1 and its displayed configuration were captured; omitted declaration/extension/preview fields remain NOT_OBSERVED. [Report](M5-006-REPORT.md), [narrow observation notes](evidence/m5-006/view-observations.json). No new harness, browser tooling or host change. Prior M5-004/M5-005 registers remain closed and byte-identical.
+
+## M5-007 bounded official-CLI/native-console checkpoint — 2 October 2026
+
+[Report](M5-007-REPORT.md): installed isolated Shopify CLI 4.8.2 and local help/source were inspected. `shopify version` unexpectedly completed an npm global auto-upgrade (installer reports 4.8.3); exact global executable/path unobserved, isolated package still 4.8.2. Further CLI stopped before all three authenticated commands; context-hook safety audit remains incomplete. No generated configuration exists. Process-local CI suppression is an inspected-source proposal, not a tested/approved launch.
+
+One authenticated existing-session designated-store Admin view exposed no visible native Dev Console control; exact console app, preview and extensions remain NOT_OBSERVED, not absent. No manual owner credential access, scripted Shopify API, token or remote mutation. Source/registers preserved; the unintended global npm side effect is disclosed without an unauthorized rollback. Actual GPT-6.1-sol/high root and fresh scoped reviewers; automatic exact-head CI is separate from retained prior-suite evidence.
