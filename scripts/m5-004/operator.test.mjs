@@ -49,6 +49,48 @@ import {
 } from './operator.mjs';
 import { qualify, qualifySynthetic } from './qualification.mjs';
 
+test('captured M5-004 empty grants stop the actual public workflow before any fixture write', async () => {
+  const captured = JSON.parse(
+    readFileSync(new URL('../../docs/delivery/evidence/m5-004/live/identity-response.json', import.meta.url)),
+  );
+  assert.equal(captured.source, 'e3d15d451f60fd3dc894679534f0f0132186857d');
+  assert.equal(captured.response.data.shop.id, TARGET.shop);
+  assert.equal(captured.response.data.currentAppInstallation.id, TARGET.installation);
+  assert.deepEqual(captured.response.data.currentAppInstallation.accessScopes, []);
+  assert.throws(() => assertIdentity(captured.response.data), { kind: 'retained_grants' });
+  const directory = mkdtempSync(join(tmpdir(), 'm5004-captured-'));
+  const binding = { source: 'synthetic-captured-response-replay', modules: {} };
+  initialize(directory, binding);
+  let requests = 0;
+  try {
+    const result = await qualifySynthetic({
+      directory,
+      binding,
+      credentialLoader: () => ({ secret: 'synthetic-replay-secret', ownership: { synthetic: true } }),
+      fetchImpl: async (url, init) => {
+        requests++;
+        if (url === `https://${TARGET.domain}/admin/oauth/access_token`)
+          return Response.json({ access_token: 'synthetic-replay-bearer', expires_in: 86400 });
+        assert.equal(url, `https://${TARGET.domain}/admin/api/2026-07/graphql.json`);
+        assert.deepEqual(JSON.parse(init.body), { query: IDENTITY, variables: {} });
+        return replayResponse(captured);
+      },
+    });
+    assert.equal(result.executionMode, 'SYNTHETIC_OFF_STORE');
+    assert.equal(result.outcome, 'STOPPED');
+    assert.equal(result.stop, 'retained_grants');
+    assert.equal(result.final.outcome, 'NO_FIXTURE_CREATED');
+    assert.deepEqual(result.cases, []);
+    assert.equal(requests, 2);
+    const register = JSON.parse(readFileSync(join(directory, 'register.json')));
+    assert.deepEqual(register.counts, { auth: 1, read: 1, create: 0, update: 0 });
+    assert.equal(register.fixture, null);
+    assert.equal(existsSync(join(directory, 'operator.lock')), false);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
 function fixture(_directory, state, status = 'DRAFT') {
   return {
     __typename: 'Product',

@@ -6,17 +6,45 @@ The owner authorized only PR29's exact normal merge and this bounded qualificati
 
 ## Current outcome
 
-OFFLINE SAFETY CORRECTED, FRESH RECLEARANCE PENDING; live results NOT_RUN. No credential file or authenticated provider operation used before required source/build, safety-review and CI clearance. Current runtime is T3 Code Codex gpt-6.1-sol/high. Two independent read-only CLI reviews use the same actual model/effort.
+**STOPPED_ACCESS_PREREQUISITE — no fixture created, no Shopify mutation.** One authentication exchange and one fixed Admin identity read completed on 2 October 2026 UTC. App, client, shop, installation and development-store identity matched. That response returned `currentAppInstallation.accessScopes: []`, failing the required exact nine-grant guard before creation. This is the current bearer’s returned scope view; it does not establish why it differs from historical preview evidence or prove an organization-wide permission change.
 
-The experiment reuses unchanged built production availability/catalog adapters and raw HTTP through one durable fixed-target budget guard. Production/application/database/protocol behavior remains unchanged. One uniquely marked DRAFT product is the only eligible fixture. Every actual fetch reserves before dispatch; no retry; unknown writes stop later writes and cleanup. Source/build hashes and exact-source CI must match before credential access. Fresh process reload preserves each hold's exact bytes.
+The affected live experiment ended. No scope repair, reauthorization, alternate credential search or retry occurred. All five status/catalog cases are NOT_RUN. No cleanup mutation is needed because no fixture exists. The register is settled, its lock released, and unused allowances confer no further authority. The precise next prerequisite is principal/owner disposition of this current empty-scope response versus the retained nine-grant requirement; a targeted access investigation or repair requires new authority.
+
+The live source is **e3d15d451f60fd3dc894679534f0f0132186857d**, tree **b81608fc911e7bdbaadcf5daa20e8b6e5694bbb9**, with a173-path source/build binding digest **dd134b3d6673965078cf7c4cb5638d3d735f54b117b7a3fcc7685981cefebedb**. Both fresh full-source safety reviewers cleared that candidate before credential access; all ten source workflows succeeded on attempt1. The later evidence head adds the captured-response regression and reporting, and is not represented as the live-run source.
+
+The experiment reused unchanged production availability/catalog builds; the guard stopped before either reached a product. No production application/database/protocol behavior changed. Root/integrator runtime is actual T3 Code Codex gpt-6.1-sol/high. Independent reviewers used explicit same-launch model/effort/read-only settings, retained in full source-bound reports and selected settings receipts.
+
+## Actual access, budgets and final state
+
+| Check | Observed result |
+|---|---|
+| Credential route | Existing approved server.env, uid1000, mode600; parent ownership/private permissions passed. Contents, secret, bearer and auth response omitted. No Partner credential read. |
+| Authentication | Existing Admin client_credentials HTTP200; usable short-lived bearer accepted in memory, no cache/export. |
+| Shop | gid://shopify/Shop/105501393179; insignia-rewrite-dev.myshopify.com; partnerDevelopment=true; Basic App Development. |
+| App/client | gid://shopify/App/429028933633;1443cf6d03d39edae7c101a943c5c684. |
+| Installation | gid://shopify/AppInstallation/1054356963611. |
+| Access | HTTP200 scope array empty; expected read_products, write_products, read_cart_transforms, write_cart_transforms, read_validations, write_validations, read_inventory, write_inventory, read_locations. Guard returned retained_grants. |
+| Actual attempts | auth1/3; reads1/96; create0/1; status updates0/16. Final reserves12 reads/3 updates unused. |
+| Fixture/cleanup | NO_FIXTURE_CREATED. No creation, status/publication/policy/key/Function/billing/commerce mutation; no compensating action or delete. |
+| DRAFT/ACTIVE/UNLISTED/ARCHIVED/drift | All NOT_RUN; no product snapshot, hold, restore or catalog result invented. |
+
+[Immutable operator register](evidence/m5-004/live/register.json), [qualification](evidence/m5-004/live/qualification.json), [sanitized identity response](evidence/m5-004/live/identity-response.json) and [budget/cleanup receipt](evidence/m5-004/live/cleanup-budget.json) preserve the stopped outcome. The fetch-observed identity body SHA-256 is90c969d016495de29cf427fc797c9c2c6bd6742f8b6aa10785661ed5a600e6a3. Saved selected fields are sanitized evidence, not the original full body; local replay reconstructs those selected JSON semantics, not byte identity. Auth event bodyDigest hashes only a fixed public intent and literal secret placeholder, never credential bytes.
+
+The captured-input regression runs the actual public qualification workflow and identity guard with only external fetch/credentials synthetic. It reproduces retained_grants, exactly one auth/read, zero fixture writes and released lock. It establishes stop behavior, not live availability-adapter qualification.
 
 ## Request plan
 
 One existing Admin client_credentials exchange and one productCreate. Initial identity + owned read:2 reads. DRAFT cycle:2 identity +4 adapter reads +1 owned=7 reads,0 updates. ACTIVE/UNLISTED/ARCHIVED: setup3 reads + cycle9 reads each,3 updates each including setup; UNLISTED adds2 catalog reads. Drift:two setup groups6 reads + snapshot/acquire/observe/restore5 adapter reads + final owned1=12 reads,3 updates. Thus normal plan59 reads/12 updates, with conservative allowance up to70 reads, remaining normal84-read/13-update caps. Finalization normally3 reads/0 updates; on stopped known writes up to6 reads/1 status update. Whole-slice maximum96 reads/16 updates reserves12/3 for finalization; auth3/create1. Every attempted request, including failed HTTP, consumes a reservation. No parallel provider calls or intentional live faults.
 
-## Offline checks
+## Offline checks and local review
 
-32 public operator/workflow tests pass on pinned Node24.21.0, exercising actual unchanged adapters with synthetic credentials/HTTP only. Cases include fixed route/doc/payload, exact identity/grants/development shop, unpublished ownership, one create and lock, durable budgets/finalization reserve, serialization, corrupt history, pre-credential gate, natural ambiguity, fresh-process hold and all five serial cases. Full root verification and both independent reviews are pending. Historical PostgreSQL/HTTP/worker evidence can be retained because these sources/compositions are unchanged; DB-free skips will remain explicit.
+The pre-access source passed32 public operator/workflow tests on pinned Node24.21.0. Final evidence source adds one captured-response case (33 tests), without production/operator behavior changes. Complete root check reached its artifact manifest; exact-source foundation CI independently succeeded for the full root command and100/100 no-retry geometry stress. Eight DB-free web skips remain explicit; they are not PostgreSQL integration evidence. Exact-source PostgreSQL18/HTTP/worker workflows succeeded, including159 database tests, one built HTTP/queue-handoff test,15 PostgreSQL-backed Admin/editor tests and15 worker/runtime tests. Final-head CI is linked in the PR packet after committing.
+
+All six retained100001-row benchmark source/build/query/migration inputs still match their original hashes; the benchmark was not unnecessarily repeated. Architecture v1.4 plan/ledger hashes and historical receipts/source remain unchanged.
+
+The first three safety pairs’ findings, actual red/green evidence and original reports remain preserved below and under offline-safety. Fourth Spec and Standards/security full-source reviews both report **no unresolved material finding** at the live source. Their actual distinct sessions are01a0f9e9-e373-7752-9ee0-7aa47ec05588 and01a0f9e9-e8be-7b02-81a1-58f1405332c6, each observed modelgpt-6.1-sol, efforthigh, sandboxread-only, approvalnever. These local findings do not confer principal approval. The completed evidence change requires two further fresh full-source reviews, whose exact-head reports/settings and dispositions will be returned in the PR packet.
+
+No raw agent sessions/reasoning, owner credential files, auth payloads/bearers or private request traces are imported. Earlier retained logs contain formatting whitespace; that diagnostic is not rewritten as a code/security pass. Current source formatting checks remain separate.
 
 ## Limits
 

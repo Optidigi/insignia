@@ -1,0 +1,35 @@
+{
+  "source": "e3d15d451f60fd3dc894679534f0f0132186857d",
+  "runs": {
+    "pg": 36943812581,
+    "runtime": 36943812530
+  },
+  "selectedOutput": {
+    "pg": [
+      "durable-core\tRun corepack pnpm check:boundaries\t2026-10-02T00:02:12.4568651Z \u2139 tests 18",
+      "durable-core\tRun corepack pnpm check:boundaries\t2026-10-02T00:02:12.4569636Z \u2139 pass 18",
+      "durable-core\tRun corepack pnpm check:boundaries\t2026-10-02T00:02:12.4571173Z \u2139 skipped 0",
+      "durable-core\tRun corepack pnpm check:database\t2026-10-02T00:02:24.4659680Z       Tests  159 passed (159)"
+    ],
+    "runtime": [
+      "runtime\tRun corepack pnpm check:boundaries\t2026-10-02T00:02:16.0960825Z \u2139 tests 18",
+      "runtime\tRun corepack pnpm check:boundaries\t2026-10-02T00:02:16.0961766Z \u2139 pass 18",
+      "runtime\tRun corepack pnpm check:boundaries\t2026-10-02T00:02:16.0963824Z \u2139 skipped 0",
+      "runtime\tRun corepack pnpm check:database\t2026-10-02T00:02:28.7858775Z       Tests  159 passed (159)",
+      "runtime\tRun corepack pnpm --filter @insignia/shopify test\t2026-10-02T00:02:30.7506674Z       Tests  226 passed (226)",
+      "runtime\tRun corepack pnpm --filter @insignia/application test\t2026-10-02T00:02:32.6825762Z       Tests  174 passed (174)",
+      "runtime\tRun corepack pnpm --filter @insignia/observability test\t2026-10-02T00:02:33.0119222Z \u2139 tests 2",
+      "runtime\tRun corepack pnpm --filter @insignia/observability test\t2026-10-02T00:02:33.0120362Z \u2139 pass 2",
+      "runtime\tRun corepack pnpm --filter @insignia/observability test\t2026-10-02T00:02:33.0121249Z \u2139 skipped 0",
+      "runtime\tRun corepack pnpm --filter @insignia/worker test\t2026-10-02T00:02:42.2637443Z \u2139 tests 15",
+      "runtime\tRun corepack pnpm --filter @insignia/worker test\t2026-10-02T00:02:42.2638080Z \u2139 pass 15",
+      "runtime\tRun corepack pnpm --filter @insignia/worker test\t2026-10-02T00:02:42.2638701Z \u2139 skipped 0",
+      "runtime\tBuilt HTTP ingress with PostgreSQL and queue handoff\t2026-10-02T00:02:50.7780310Z \u2139 tests 1",
+      "runtime\tBuilt HTTP ingress with PostgreSQL and queue handoff\t2026-10-02T00:02:50.7781250Z \u2139 pass 1",
+      "runtime\tBuilt HTTP ingress with PostgreSQL and queue handoff\t2026-10-02T00:02:50.7782905Z \u2139 skipped 0",
+      "runtime\tM5 Admin editor and publication with PostgreSQL\t2026-10-02T00:02:53.3438860Z \u2139 tests 15",
+      "runtime\tM5 Admin editor and publication with PostgreSQL\t2026-10-02T00:02:53.3439614Z \u2139 pass 15",
+      "runtime\tM5 Admin editor and publication with PostgreSQL\t2026-10-02T00:02:53.3440675Z \u2139 skipped 0"
+    ]
+  }
+}

@@ -1,11 +1,19 @@
 # M5-004 evidence
 
-Supplied principal package is preserved byte-for-byte in principal-package. The external approval authorized only the exact PR29 merge, recorded in pr29-merge.json.
+The supplied principal package remains byte-for-byte in principal-package. External approval covers only PR29’s exact refs, normally merged as recorded in pr29-merge.json.
 
-Offline reservation test first failed with expected1/actual0 when exercised against the unsafe stub; operator-red.log is deliberate red evidence, operator-first-green.log is green. operator-workflow.log preserves a later wrong expected cleanup classification; actual safe stop was correct. Corrected public-workflow expectations and 13 safety tests pass in offline-final2.log.
+## Actual stopped access result
 
-Schema-contract.json records public 2026-07 documentation retrieval and field review, not live schema or MCP validation. Live provider results remain NOT_RUN until frozen source/build, both safety reviews and applicable exact-source CI pass.
+live/binding.json identifies actual frozen source e3d15d451f60fd3dc894679534f0f0132186857d and173 module hashes. live/gate.json binds the32-test report, both clear4 full-source safety reviews/settings and all ten exact-source attempt1 successful workflows. Those artifacts are retained under offline-safety. Local artifact paths inside the original gate preserve launch provenance; corresponding public copies can be found by basename in offline-safety. The gate was verified before owner credential metadata/content or authenticated access.
 
-Run register will contain one whole-slice history. Auth bodies/responses, tokens, credential files and raw agent sessions are excluded from tracked evidence. Selected source-bound reviews/results will be imported after execution.
+live/register.json is the original durable whole-slice history; qualification.json is its original normalized result. Both are imported without rewriting. One auth exchange and one identity read returned HTTP200. Exact app/shop/install/dev identity matched, but accessScopes was empty. retained_grants stopped the workflow before product creation. All matrix cases NOT_RUN; zero mutations, no fixture, no cleanup. No further authenticated calls occurred.
 
-Initial safety review findings, sourceCI successes and23-test corrective red/green evidence are under offline-safety. The initial source was never authorized by local safety clearance for credential use. Pending corrected clearance must be satisfied before any live operation.
+live/identity-response.json retains the sanitized read event; responseDigest is over original bounded fetch-observed bytes. Replay reconstructs sanitized JSON semantics, not original byte identity. The auth bodyDigest is over a public fixed intent with literal secret placeholder; no credential, bearer, auth response or their digest is retained. No raw sessions/traces are imported.
+
+## Offline evidence
+
+Original deliberate-red tests and first three rejected safety pairs remain in offline-safety, together with their actual corrections; these are experiment-harness findings, not production adapter changes. clear4 reviews are the first pair to clear the final live source. The captured empty-scope replay adds one final public-workflow regression and verifies zero fixture writes; it does not invent a successful availability test.
+
+Schema-contract.json records public2026-07 documentation retrieval and field review, not live schema or MCP validation. Retained-query-bindings.json confirms all six unchanged100001-row benchmark inputs; no new benchmark run is claimed. Full root/PG/HTTP/worker/final CI and completed-change reviews are linked at exact refs in the PR review packet.
+
+Live-source and final evidence-head provenance remain separate. An unpublished fixture experiment could not establish previously published withdrawal, nonempty publication history, all-channel propagation, checkout drainage, native status CAS or RELEASE_BOUND. No fixture was created in this stopped run, so even bounded availability/status qualification remains unproved.
