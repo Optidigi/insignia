@@ -1,0 +1,262 @@
+scripts/m5-004/operator.mjs:100:23 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+     98 │   const fd = openSync(temp, 'wx', 0o600);
+     99 │   try {
+  > 100 │     writeFileSync(fd, JSON.stringify(state, null, 2) + '\n');
+        │                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    101 │     fsyncSync(fd);
+    102 │   } finally {
+  
+  i Unsafe fix: Use a template literal.
+  
+     98  98 │     const fd = openSync(temp, 'wx', 0o600);
+     99  99 │     try {
+    100     │ - ····writeFileSync(fd,·JSON.stringify(state,·null,·2)·+·'\n');
+        100 │ + ····writeFileSync(fd,·`${JSON.stringify(state,·null,·2)}\n`);
+    101 101 │       fsyncSync(fd);
+    102 102 │     } finally {
+  
+
+scripts/m5-004/operator.mjs:134:23 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    132 │   const fd = openSync(resolve(directory, 'register.json'), 'wx', 0o600);
+    133 │   try {
+  > 134 │     writeFileSync(fd, JSON.stringify(state, null, 2) + '\n');
+        │                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    135 │     fsyncSync(fd);
+    136 │   } finally {
+  
+  i Unsafe fix: Use a template literal.
+  
+    132 132 │     const fd = openSync(resolve(directory, 'register.json'), 'wx', 0o600);
+    133 133 │     try {
+    134     │ - ····writeFileSync(fd,·JSON.stringify(state,·null,·2)·+·'\n');
+        134 │ + ····writeFileSync(fd,·`${JSON.stringify(state,·null,·2)}\n`);
+    135 135 │       fsyncSync(fd);
+    136 136 │     } finally {
+  
+
+scripts/m5-004/operator.test.mjs:128:8 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    126 │     const count = f.sends();
+    127 │     for (const [url, request] of [
+  > 128 │       ['http://' + TARGET.domain + '/admin/api/2026-07/graphql.json', { query: IDENTITY, variables: {} }],
+        │        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    129 │       ['https://other.myshopify.com/admin/api/2026-07/graphql.json', { query: IDENTITY, variables: {} }],
+    130 │       ['https://' + TARGET.domain + '/admin/api/2026-10/graphql.json', { query: IDENTITY, variables: {} }],
+  
+  i Unsafe fix: Use a template literal.
+  
+    126 126 │       const count = f.sends();
+    127 127 │       for (const [url, request] of [
+    128     │ - ······['http://'·+·TARGET.domain·+·'/admin/api/2026-07/graphql.json',·{·query:·IDENTITY,·variables:·{}·}],
+        128 │ + ······[`http://${TARGET.domain}/admin/api/2026-07/graphql.json`,·{·query:·IDENTITY,·variables:·{}·}],
+    129 129 │         ['https://other.myshopify.com/admin/api/2026-07/graphql.json', { query: IDENTITY, variables: {} }],
+    130 130 │         ['https://' + TARGET.domain + '/admin/api/2026-10/graphql.json', { query: IDENTITY, variables: {} }],
+  
+
+scripts/m5-004/operator.test.mjs:130:8 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    128 │       ['http://' + TARGET.domain + '/admin/api/2026-07/graphql.json', { query: IDENTITY, variables: {} }],
+    129 │       ['https://other.myshopify.com/admin/api/2026-07/graphql.json', { query: IDENTITY, variables: {} }],
+  > 130 │       ['https://' + TARGET.domain + '/admin/api/2026-10/graphql.json', { query: IDENTITY, variables: {} }],
+        │        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    131 │       [
+    132 │         'https://' + TARGET.domain + '/admin/api/2026-07/graphql.json',
+  
+  i Unsafe fix: Use a template literal.
+  
+    128 128 │         ['http://' + TARGET.domain + '/admin/api/2026-07/graphql.json', { query: IDENTITY, variables: {} }],
+    129 129 │         ['https://other.myshopify.com/admin/api/2026-07/graphql.json', { query: IDENTITY, variables: {} }],
+    130     │ - ······['https://'·+·TARGET.domain·+·'/admin/api/2026-10/graphql.json',·{·query:·IDENTITY,·variables:·{}·}],
+        130 │ + ······[`https://${TARGET.domain}/admin/api/2026-10/graphql.json`,·{·query:·IDENTITY,·variables:·{}·}],
+    131 131 │         [
+    132 132 │           'https://' + TARGET.domain + '/admin/api/2026-07/graphql.json',
+  
+
+scripts/m5-004/operator.test.mjs:132:9 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    130 │       ['https://' + TARGET.domain + '/admin/api/2026-10/graphql.json', { query: IDENTITY, variables: {} }],
+    131 │       [
+  > 132 │         'https://' + TARGET.domain + '/admin/api/2026-07/graphql.json',
+        │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    133 │         { query: 'mutation { publishablePublish { userErrors { message } } }', variables: {} },
+    134 │       ],
+  
+  i Unsafe fix: Use a template literal.
+  
+    130 130 │         ['https://' + TARGET.domain + '/admin/api/2026-10/graphql.json', { query: IDENTITY, variables: {} }],
+    131 131 │         [
+    132     │ - ········'https://'·+·TARGET.domain·+·'/admin/api/2026-07/graphql.json',
+        132 │ + ········`https://${TARGET.domain}/admin/api/2026-07/graphql.json`,
+    133 133 │           { query: 'mutation { publishablePublish { userErrors { message } } }', variables: {} },
+    134 134 │         ],
+  
+
+scripts/m5-004/operator.test.mjs:136:9 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    134 │       ],
+    135 │       [
+  > 136 │         'https://' + TARGET.domain + '/admin/api/2026-07/graphql.json',
+        │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    137 │         { query: FIXTURE, variables: { id: 'gid://shopify/Product/1' } },
+    138 │       ],
+  
+  i Unsafe fix: Use a template literal.
+  
+    134 134 │         ],
+    135 135 │         [
+    136     │ - ········'https://'·+·TARGET.domain·+·'/admin/api/2026-07/graphql.json',
+        136 │ + ········`https://${TARGET.domain}/admin/api/2026-07/graphql.json`,
+    137 137 │           { query: FIXTURE, variables: { id: 'gid://shopify/Product/1' } },
+    138 138 │         ],
+  
+
+scripts/m5-004/operator.test.mjs:140:9 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    138 │       ],
+    139 │       [
+  > 140 │         'https://' + TARGET.domain + '/admin/api/2026-07/graphql.json',
+        │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    141 │         { query: SETUP, variables: { product: { id: f.product().id, status: 'ACTIVE', price: '0' } } },
+    142 │       ],
+  
+  i Unsafe fix: Use a template literal.
+  
+    138 138 │         ],
+    139 139 │         [
+    140     │ - ········'https://'·+·TARGET.domain·+·'/admin/api/2026-07/graphql.json',
+        140 │ + ········`https://${TARGET.domain}/admin/api/2026-07/graphql.json`,
+    141 141 │           { query: SETUP, variables: { product: { id: f.product().id, status: 'ACTIVE', price: '0' } } },
+    142 142 │         ],
+  
+
+scripts/m5-004/operator.test.mjs:144:9 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    142 │       ],
+    143 │       [
+  > 144 │         'https://' + TARGET.domain + '/admin/api/2026-07/graphql.json',
+        │         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    145 │         { query: IDENTITY, variables: {}, operationName: 'different' },
+    146 │       ],
+  
+  i Unsafe fix: Use a template literal.
+  
+    142 142 │         ],
+    143 143 │         [
+    144     │ - ········'https://'·+·TARGET.domain·+·'/admin/api/2026-07/graphql.json',
+        144 │ + ········`https://${TARGET.domain}/admin/api/2026-07/graphql.json`,
+    145 145 │           { query: IDENTITY, variables: {}, operationName: 'different' },
+    146 146 │         ],
+  
+
+scripts/m5-004/qualification.mjs:103:61 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    101 │   };
+    102 │   const persist = () =>
+  > 103 │     writeFileSync(resolve(directory, 'qualification.json'), JSON.stringify(evidence, null, 2) + '\n', { mode: 0o600 });
+        │                                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    104 │   let token;
+    105 │   async function graph(query, variables = {}) {
+  
+  i Unsafe fix: Use a template literal.
+  
+    101 101 │     };
+    102 102 │     const persist = () =>
+    103     │ - ····writeFileSync(resolve(directory,·'qualification.json'),·JSON.stringify(evidence,·null,·2)·+·'\n',·{·mode:·0o600·});
+        103 │ + ····writeFileSync(resolve(directory,·'qualification.json'),·`${JSON.stringify(evidence,·null,·2)}\n`,·{·mode:·0o600·});
+    104 104 │     let token;
+    105 105 │     async function graph(query, variables = {}) {
+  
+
+scripts/m5-004/qualification.mjs:142:19 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    140 │   function reload(hold, name) {
+    141 │     const path = resolve(directory, `${name}.hold.json`);
+  > 142 │     const bytes = JSON.stringify(hold, null, 2) + '\n';
+        │                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    143 │     writeFileSync(path, bytes, { mode: 0o600 });
+    144 │     const returned = execFileSync(
+  
+  i Unsafe fix: Use a template literal.
+  
+    140 140 │     function reload(hold, name) {
+    141 141 │       const path = resolve(directory, `${name}.hold.json`);
+    142     │ - ····const·bytes·=·JSON.stringify(hold,·null,·2)·+·'\n';
+        142 │ + ····const·bytes·=·`${JSON.stringify(hold,·null,·2)}\n`;
+    143 143 │       writeFileSync(path, bytes, { mode: 0o600 });
+    144 144 │       const returned = execFileSync(
+  
+
+scripts/m5-004/qualification.mjs:361:7 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    359 │     const result = await qualify({ directory, binding, gate });
+    360 │     process.stdout.write(
+  > 361 │       JSON.stringify({ outcome: result.outcome, stop: result.stop ?? null, final: result.final?.outcome }) + '\n',
+        │       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    362 │     );
+    363 │   } catch (error) {
+  
+  i Unsafe fix: Use a template literal.
+  
+    359 359 │       const result = await qualify({ directory, binding, gate });
+    360 360 │       process.stdout.write(
+    361     │ - ······JSON.stringify({·outcome:·result.outcome,·stop:·result.stop·??·null,·final:·result.final?.outcome·})·+·'\n',
+        361 │ + ······`${JSON.stringify({·outcome:·result.outcome,·stop:·result.stop·??·null,·final:·result.final?.outcome·})}\n`,
+    362 362 │       );
+    363 363 │     } catch (error) {
+  
+
+scripts/m5-004/qualification.mjs:365:7 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    363 │   } catch (error) {
+    364 │     process.stdout.write(
+  > 365 │       JSON.stringify({
+        │       ^^^^^^^^^^^^^^^^
+  > 366 │         outcome: 'LOCAL_OR_AUTH_GATE_STOP',
+  > 367 │         kind: error instanceof Stop ? error.kind : 'unclassified_local_error',
+  > 368 │       }) + '\n',
+        │       ^^^^^^^^^
+    369 │     );
+    370 │     process.exitCode = 1;
+  
+  i Unsafe fix: Use a template literal.
+  
+    363 363 │     } catch (error) {
+    364 364 │       process.stdout.write(
+    365     │ - ······JSON.stringify({
+        365 │ + ······`${JSON.stringify({
+    366 366 │           outcome: 'LOCAL_OR_AUTH_GATE_STOP',
+    367 367 │           kind: error instanceof Stop ? error.kind : 'unclassified_local_error',
+    368     │ - ······})·+·'\n',
+        368 │ + ······})}\n`,
+    369 369 │       );
+    370 370 │       process.exitCode = 1;
+  
+
+Checked 5 files in 24ms. No fixes applied.
+Found 12 infos.

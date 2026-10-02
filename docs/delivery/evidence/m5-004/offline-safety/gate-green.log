@@ -1,0 +1,15 @@
+✔ full qualification reuses unchanged actual status/catalog adapters, fresh-process hold reload and drift refusal (509.625533ms)
+✔ complete workflow stops on changed installation; no manufacture or unsafe cleanup (19.499725ms)
+✔ complete workflow stops on unexpected exposure; no manufacture or unsafe cleanup (19.462089ms)
+✔ complete workflow stops on visibility mismatch; no manufacture or unsafe cleanup (156.229738ms)
+✔ complete workflow stops on natural lost response; no manufacture or unsafe cleanup (90.073972ms)
+✔ foreign live root and stale register binding cannot reach credential loading (18.092337ms)
+✔ gate rejects incomplete CI and unbound review receipts even when every supplied workflow is green (24.110322ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 7
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1046.43937

@@ -1,0 +1,21 @@
+✔ actual HTTP attempts are durably reserved before dispatch (8.863539ms)
+✔ fixed targets/documents/variables reject unrelated writes and extra payload before actual HTTP (3.182142ms)
+✔ normal reserves cannot consume final 12 reads/3 updates; all attempts count, one lock and one create (160.535583ms)
+✔ naturally lost mutation response stops all later writes and cleanup across reopen; no automatic retry (1.995548ms)
+✔ real routing identity, nine retained grants and complete empty publication history are mandatory (1.81284ms)
+✔ auth exact app/route counts3 and never persists synthetic secret or returned token (1.552309ms)
+✔ missing/corrupt history never reinitializes or sends (0.623487ms)
+✔ offline gate prevents even credential loading (0.863886ms)
+✔ full qualification reuses unchanged actual status/catalog adapters, fresh-process hold reload and drift refusal (484.121425ms)
+✔ complete workflow stops on changed installation; no manufacture or unsafe cleanup (30.283494ms)
+✔ complete workflow stops on unexpected exposure; no manufacture or unsafe cleanup (26.164064ms)
+✔ complete workflow stops on visibility mismatch; no manufacture or unsafe cleanup (146.315485ms)
+✔ complete workflow stops on natural lost response; no manufacture or unsafe cleanup (95.863067ms)
+ℹ tests 13
+ℹ suites 0
+ℹ pass 13
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1170.288186

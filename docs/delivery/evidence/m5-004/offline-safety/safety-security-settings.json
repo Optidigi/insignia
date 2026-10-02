@@ -1,0 +1,16 @@
+{
+  "role": "security",
+  "thread": "01a0f9a6-d07a-7100-a7ae-a8d0f47e07dd",
+  "launchCommand": "codex exec --model gpt-6.1-sol -c model_reasoning_effort=high -c approval_policy=never --sandbox read-only",
+  "selectedSameLaunchContext": [
+    {
+      "cwd": "/home/serveradmin/insignia-m5-004-worktree",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "approval_policy": "never"
+    }
+  ]
+}

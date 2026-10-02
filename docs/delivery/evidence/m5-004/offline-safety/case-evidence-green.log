@@ -1,0 +1,13 @@
+✔ full qualification reuses unchanged actual status/catalog adapters, fresh-process hold reload and drift refusal (524.127435ms)
+✔ complete workflow stops on malformed success; no manufacture or unsafe cleanup (92.18938ms)
+✔ malformed success userErrors cannot acknowledge a status mutation or allow cleanup (5.502245ms)
+✔ failed catalog preserves actual normalized results before STOP (252.951026ms)
+✔ failed drift preserves actual normalized results before STOP (446.904747ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1530.434302

@@ -1,0 +1,77 @@
+{
+  "apiVersion": "2026-07",
+  "method": "Unauthenticated official versioned documentation; selected query/input/enum fields reviewed. No authenticated schema call or MCP validation claimed. Real API errors will stop the experiment.",
+  "retrievals": [
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/productCreate.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/productCreate.md",
+      "status": 200,
+      "sha256": "fe03844581b12dc2645c795c1b623ea773f647a865f47de13ba046f8476bd259",
+      "bytes": 63565
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/productUpdate.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/productUpdate.md",
+      "status": 200,
+      "sha256": "314fa074575eaf9e27158b7f62d7920ccb84f5c9dad905876b618d94fb9db9d3",
+      "bytes": 45620
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/Product.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/Product.md",
+      "status": 200,
+      "sha256": "d66fc6d3647acf24f4885fe5512e7e4907014d85da5d1373ad25dea6209bbf93",
+      "bytes": 145774
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/ShopPlan.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/ShopPlan.md",
+      "status": 200,
+      "sha256": "0d3312e249de9a66e3e2a5c4520936c3c9c98134bef89d8474653237d46edaea",
+      "bytes": 1724
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/enums/ProductStatus.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/enums/ProductStatus.md",
+      "status": 200,
+      "sha256": "8c60cb7049edb857539adafed928b9b0dbc1228d5b7866d5f9dbd14494036f59",
+      "bytes": 6991
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/input-objects/ProductCreateInput.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/input-objects/ProductCreateInput.md",
+      "status": 200,
+      "sha256": "392e2c278cc6015906e3f53090a5bec9656a9a8914e20264e42e5a15e3e37c54",
+      "bytes": 6356
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/input-objects/ProductUpdateInput.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/input-objects/ProductUpdateInput.md",
+      "status": 200,
+      "sha256": "b2db66e57ca5f6928f177c76228a11ce80f02faad4349850f4a3b7453a359c8b",
+      "bytes": 5889
+    },
+    {
+      "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/AppInstallation.md",
+      "finalUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/AppInstallation.md",
+      "status": 200,
+      "sha256": "d418e8d77d11e8f02ef033aa39df583ef03adf8c417cfebc753fcfa59b009b1c",
+      "bytes": 18623
+    }
+  ],
+  "contracts": {
+    "IDENTITY": "Shop.id/myshopifyDomain/plan.partnerDevelopment/displayName; currentAppInstallation.id/app.id/apiKey/accessScopes.handle",
+    "PRODUCT": "Product.__typename/id/status/updatedAt/publishedAt/onlineStoreUrl/resourcePublications(first:250,onlyPublished:false)/unpublishedPublications(first:250); complete connection pageInfo",
+    "CREATE": "productCreate(product:ProductCreateInput): title,handle,tags,status only; Product and userErrors",
+    "STATUS": "productUpdate(product:ProductUpdateInput): id/status only; unchanged production adapter response selection",
+    "CATALOG": "Unchanged M5001 product and narrowly filtered products documents, variants pagination; UNLISTED is valid in 2026-07"
+  },
+  "sources": [
+    "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/Product",
+    "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/ShopPlan",
+    "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/AppInstallation",
+    "https://shopify.dev/docs/api/admin-graphql/2026-07/input-objects/ProductCreateInput",
+    "https://shopify.dev/docs/api/admin-graphql/2026-07/input-objects/ProductUpdateInput",
+    "https://shopify.dev/docs/api/admin-graphql/2026-07/enums/ProductStatus"
+  ]
+}

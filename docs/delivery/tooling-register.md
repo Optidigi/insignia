@@ -122,3 +122,7 @@ T3: `https://developers.openai.com/codex/multi-agent` and `https://developers.op
 T4: `https://github.com/microsoft/playwright-mcp`
 T5: `https://github.com/mattpocock/skills`
 T6: `https://docs.github.com/en/actions/reference/security/secure-use`
+
+## M5-004 fixed existing Admin route
+
+The current owner-authorized app429028933633/client1443cf6d03d39edae7c101a943c5c684 uses the retained route documented in M4-001/M4-002/M4-003 reports: `/home/serveradmin/.local/share/insignia-public-app/server.env`, variables `SHOPIFY_API_KEY` and `SHOPIFY_API_SECRET`, read as data after file/directory ownership/private-mode checks. Existing same-organization Admin `client_credentials` POST goes only to `insignia-rewrite-dev.myshopify.com/admin/oauth/access_token`. M5-004 may use this route only after exact frozen source/build, offline safety reviews and all applicable exact-source CI. No App Events/Partner credential or token is used. Actual current route/identity/grants will be reported after that gate; historical access is not a current passing result.

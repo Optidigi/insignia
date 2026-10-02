@@ -1,0 +1,40 @@
+✔ actual HTTP attempts are durably reserved before dispatch (9.653882ms)
+✔ fixed targets/documents/variables reject unrelated writes and extra payload before actual HTTP (3.412638ms)
+✔ normal reserves cannot consume final 12 reads/3 updates; all attempts count, one lock and one create (171.619375ms)
+✔ naturally lost mutation response stops all later writes and cleanup across reopen; no automatic retry (2.119665ms)
+✔ real routing identity, nine retained grants and complete empty publication history are mandatory (1.895666ms)
+✔ auth exact app/route counts3 and never persists synthetic secret or returned token (1.716988ms)
+✔ missing/corrupt history never reinitializes or sends (0.679757ms)
+✔ offline gate prevents even credential loading (0.241638ms)
+✔ full qualification reuses unchanged actual status/catalog adapters, fresh-process hold reload and drift refusal (496.047203ms)
+✔ complete workflow stops on changed installation; no manufacture or unsafe cleanup (20.032502ms)
+✔ complete workflow stops on unexpected exposure; no manufacture or unsafe cleanup (19.90583ms)
+✔ complete workflow stops on visibility mismatch; no manufacture or unsafe cleanup (147.923932ms)
+✔ complete workflow stops on natural lost response; no manufacture or unsafe cleanup (90.538059ms)
+✔ complete workflow stops on metadata drift; no manufacture or unsafe cleanup (22.835606ms)
+✔ complete workflow stops on malformed success; no manufacture or unsafe cleanup (89.804049ms)
+✔ live register is canonical; synthetic initialization rejects unsafe directories and lost history (0.633081ms)
+✔ malformed/unsuccessful mutation responses stay unknown; only valid explicit rejection permits finalization (4.401165ms)
+✔ lock cannot release while late HTTP/body work can still persist history (1.053998ms)
+✔ acknowledged fixture metadata baseline rejects added tags or changed creation identity (1.210203ms)
+✔ actual adapter HTTP/GraphQL outcomes survive bounded transport and sanitized response replay (11.026515ms)
+✔ foreign live root and stale register binding cannot reach credential loading (21.905227ms)
+✔ gate rejects incomplete CI and unbound review receipts even when every supplied workflow is green (26.759128ms)
+✔ complete source/build/review/CI gate accepts bound receipts and rejects omissions, stale refs or altered evidence (101.870703ms)
+✔ actual adapter user-error failure remains identical when replayed from sanitized mutation evidence (11.5801ms)
+✔ malformed success userErrors cannot acknowledge a status mutation or allow cleanup (8.676819ms)
+✔ actual availability missing/oversized bodies keep direct/wrapped/replayed shape errors (5.674652ms)
+✔ catalog receives original bounded UTF8 bytes and provenance hashes the bytes, not replacement text (2.926157ms)
+✔ failed catalog preserves actual normalized results before STOP (261.590698ms)
+✔ failed drift preserves actual normalized results before STOP (450.282268ms)
+✔ availability preserves its lossy UTF8 semantics while catalog rejects the same original bad bytes (2.212516ms)
+✔ reopening a finished run preserves exact normalized evidence and refuses before credential loading (463.90578ms)
+✔ catalog successful non200 keeps direct/wrapped/replayed body semantics (1.956647ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2669.57227

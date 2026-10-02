@@ -1,0 +1,12 @@
+{
+  "merge": "a7b2ba236f6b7726f48af0cd50ae14e0b7cc8e30",
+  "orderedParents": [
+    "8a84ddeaf277368852d224915abe6d4a93a3d8a4",
+    "7a67028d55c191d9c83816312844f2e9cd62d648"
+  ],
+  "tree": "5f3f29d44da7d5f0423fd6902c19dc501f7c79ff",
+  "remoteMain": "a7b2ba236f6b7726f48af0cd50ae14e0b7cc8e30",
+  "mergedAt": "2026-10-01T22:20:29Z",
+  "method": "normal merge commit; no squash/rebase/admin/bypass",
+  "reviewedHeadUnchanged": true
+}

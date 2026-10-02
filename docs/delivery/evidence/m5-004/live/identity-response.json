@@ -1,0 +1,36 @@
+{
+  "index": 1,
+  "kind": "read",
+  "operation": "identity",
+  "fixture": null,
+  "source": "e3d15d451f60fd3dc894679534f0f0132186857d",
+  "step": null,
+  "at": "2026-10-02T00:09:19.023Z",
+  "bodyDigest": "0ece407fdc6d348fdaacbc44e2801289eebb3c53f7ef1f09ec5dcb9024c59210",
+  "result": "RESPONDED",
+  "httpStatus": 200,
+  "bodyObservation": "COMPLETE_BODY",
+  "bodyLimit": 131072,
+  "responseDigest": "90c969d016495de29cf427fc797c9c2c6bd6742f8b6aa10785661ed5a600e6a3",
+  "replayKind": "JSON",
+  "response": {
+    "data": {
+      "shop": {
+        "id": "gid://shopify/Shop/105501393179",
+        "myshopifyDomain": "insignia-rewrite-dev.myshopify.com",
+        "plan": {
+          "partnerDevelopment": true,
+          "displayName": "Basic App Development"
+        }
+      },
+      "currentAppInstallation": {
+        "id": "gid://shopify/AppInstallation/1054356963611",
+        "app": {
+          "id": "gid://shopify/App/429028933633",
+          "apiKey": "1443cf6d03d39edae7c101a943c5c684"
+        },
+        "accessScopes": []
+      }
+    }
+  }
+}

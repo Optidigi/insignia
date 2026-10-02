@@ -1,0 +1,16 @@
+{
+  "role": "spec",
+  "head": "e4fce4b6f7ab950e94a639b63785232b9d206032",
+  "thread": "01a0f9c1-5e87-7903-bd0b-7e1f58d5c0b0",
+  "selectedSameLaunchContext": [
+    {
+      "cwd": "/home/serveradmin/insignia-m5-004-worktree",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "approval_policy": "never"
+    }
+  ]
+}

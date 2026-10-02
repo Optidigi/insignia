@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "outcome": "STOPPED_ACCESS_PREREQUISITE",
+  "stop": "retained_grants",
+  "source": "e3d15d451f60fd3dc894679534f0f0132186857d",
+  "fixture": null,
+  "actualCounts": {
+    "auth": 1,
+    "read": 1,
+    "create": 0,
+    "update": 0
+  },
+  "ceilings": {
+    "auth": 3,
+    "read": 96,
+    "create": 1,
+    "update": 16
+  },
+  "finalReserve": {
+    "read": 12,
+    "update": 3
+  },
+  "requestsSettled": true,
+  "statusOrCreateRequests": 0,
+  "productCreated": false,
+  "cleanup": "NO_FIXTURE_CREATED; no cleanup mutation needed or permitted",
+  "operatorLockReleased": true,
+  "noFurtherCalls": "Scope mismatch stopped the package; unused allowances do not authorize retry/repair.",
+  "authenticationRequestDigest": "bodyDigest hashes only fixed client_id/grant_type and a literal not-retained secret placeholder, not any credential material."
+}

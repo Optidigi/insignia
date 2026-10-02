@@ -1,0 +1,29 @@
+Use the attached insignia-pr29-approved-m5-004-handoff package.
+Read README.md, PR-029R2-principal-review.md and the M5-004 brief first.
+
+I authorize the NORMAL merge of PR #29 only at:
+base 8a84ddeaf277368852d224915abe6d4a93a3d8a4
+head 7a67028d55c191d9c83816312844f2e9cd62d648
+tree 5f3f29d44da7d5f0423fd6902c19dc501f7c79ff
+
+Reverify live refs, applicable green checks and the external principal verdict.
+Preserve the head unchanged; do not add an approval commit before merging.
+No squash/rebase, force push, fabricated native approval or protection bypass.
+If the refs differ or GitHub requires an unmet approval, stop and report.
+Verify the actual merge's ordered parents and tree afterward.
+
+Then, on a new branch from that verified merge, I authorize M5-004 exactly as
+specified in M5-004-AVAILABILITY-ADAPTER-LIVE-QUALIFICATION.md.
+This includes the bounded existing-credential/Admin access, one new unpublished
+disposable product, its status-only test cycles and safe finalization within the
+brief's whole-slice budgets. Complete the offline safety review and exact-source
+CI before any authenticated operation. Keep the fixture unpublished throughout.
+
+Use actual GPT-6.1-sol/high and the repository-pinned skills. Preserve shared
+infrastructure, old fixtures, nine grants, billing resources and stopped previews.
+No app preview/deploy/release, scope repair, policy/Function/key mutation,
+production activation, commerce/billing operation or M6/M7 is authorized.
+
+Return one qualification PR with exact refs, observed evidence, budget/cleanup
+receipts, fresh full-source reviews and final CI, then stop for principal review.
+Do not merge that successor PR or infer a complete M5/gate pass.

@@ -1,0 +1,28 @@
+[
+  {
+    "criterion": "world-writable register directory rejected",
+    "passed": false
+  },
+  {
+    "criterion": "mismatched register binding prevents credential loader",
+    "passed": false
+  }
+]
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:
+
+  assert.ok(results.every(x=>x.passed))
+
+    at file:///home/serveradmin/insignia-m5-004-handoff/register-diagnostics.mjs:12:150 {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: false,
+  expected: true,
+  operator: '==',
+  diff: 'simple'
+}
+
+Node.js v24.21.0
