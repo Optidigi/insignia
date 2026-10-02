@@ -1,0 +1,55 @@
+{
+  "at": "2026-10-02T21:19:24.404Z",
+  "requestUrl": "https://admin.shopify.com/store/insignia-rewrite-dev/oauth/install?client_id=1443cf6d03d39edae7c101a943c5c684&optional_scopes=read_publications,read_product_listings",
+  "page": {
+    "buttons": [
+      {
+        "text": "",
+        "type": "button"
+      },
+      {
+        "text": "Search\nCtrl K",
+        "type": "button"
+      },
+      {
+        "text": "Sales channels",
+        "type": "button"
+      },
+      {
+        "text": "",
+        "type": "button"
+      },
+      {
+        "text": "",
+        "type": "button"
+      },
+      {
+        "text": "Apps",
+        "type": "button"
+      },
+      {
+        "text": "",
+        "type": "button"
+      },
+      {
+        "text": "insignia-rewrite-dev\n\ndev",
+        "type": "button"
+      },
+      {
+        "text": "",
+        "type": "button"
+      },
+      {
+        "text": "Cancel",
+        "type": "button"
+      },
+      {
+        "text": "Update",
+        "type": "button"
+      }
+    ],
+    "path": "https://admin.shopify.com/store/insignia-rewrite-dev/app/grant",
+    "text": "Shopify reviews apps to ensure your security is protected. Be sure you trust this app developer before installing.\nInsignia needs access to:\nView store data\nView productsProduct listings, collections\nView other dataPublications of products on sales channels\nCancel\nUpdate"
+  },
+  "verified": "exact store/client/app; two read permissions only; existing write_products not newly requested"
+}

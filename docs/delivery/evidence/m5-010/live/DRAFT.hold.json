@@ -1,0 +1,32 @@
+{
+  "version": "m5-availability-hold-v1",
+  "operationId": "insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb-DRAFT",
+  "before": {
+    "scope": {
+      "shopId": "m5_004_fixture_only",
+      "installationGeneration": "1",
+      "shopifyShopId": "gid://shopify/Shop/105501393179",
+      "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "productId": "gid://shopify/Product/10490211467547",
+    "state": "unavailable",
+    "providerVersion": "2026-10-02T21:19:49.000Z",
+    "visibilityDigest": "a1c58419a80c1a0a1ca9981d67e440ac29d50e75d4e9bef7c0b3d888c6c932bf",
+    "observedAt": "2026-10-02T21:19:49.817Z",
+    "receivedAt": "2026-10-02T21:19:50.111Z"
+  },
+  "held": {
+    "scope": {
+      "shopId": "m5_004_fixture_only",
+      "installationGeneration": "1",
+      "shopifyShopId": "gid://shopify/Shop/105501393179",
+      "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "productId": "gid://shopify/Product/10490211467547",
+    "state": "unavailable",
+    "providerVersion": "2026-10-02T21:19:49.000Z",
+    "visibilityDigest": "a1c58419a80c1a0a1ca9981d67e440ac29d50e75d4e9bef7c0b3d888c6c932bf",
+    "observedAt": "2026-10-02T21:19:50.113Z",
+    "receivedAt": "2026-10-02T21:19:50.357Z"
+  }
+}

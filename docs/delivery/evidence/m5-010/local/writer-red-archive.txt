@@ -1,0 +1,53 @@
+✔ 010 requires all publication/product capabilities and permits additional well formed grants (2.537584ms)
+✔ 010 denies normal fresh create until fixed predecessor has been safely resolved (3.517174ms)
+✔ complete absent predecessor lookup permits one fresh create and retains resolution independently (31.601904ms)
+✖ owned unpublished ARCHIVED predecessor requires exact archived readback before fresh create (2.616818ms)
+✖ owned unpublished DRAFT predecessor requires exact archived readback before fresh create (2.195761ms)
+✖ owned unpublished ACTIVE predecessor requires exact archived readback before fresh create (2.330347ms)
+✖ owned unpublished UNLISTED predecessor requires exact archived readback before fresh create (1.964897ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 3
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 72.596727
+
+✖ failing tests:
+
+test at scripts/m5-010/operator.test.mjs:87:3
+✖ owned unpublished ARCHIVED predecessor requires exact archived readback before fresh create (2.616818ms)
+  Stop [Error]: fixture
+      at requireValue (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:93:21)
+      at dispatch (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:554:9)
+      at file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:756:21 {
+    kind: 'fixture'
+  }
+
+test at scripts/m5-010/operator.test.mjs:87:3
+✖ owned unpublished DRAFT predecessor requires exact archived readback before fresh create (2.195761ms)
+  Stop [Error]: fixture
+      at requireValue (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:93:21)
+      at dispatch (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:554:9)
+      at file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:756:21 {
+    kind: 'fixture'
+  }
+
+test at scripts/m5-010/operator.test.mjs:87:3
+✖ owned unpublished ACTIVE predecessor requires exact archived readback before fresh create (2.330347ms)
+  Stop [Error]: fixture
+      at requireValue (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:93:21)
+      at dispatch (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:554:9)
+      at file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:756:21 {
+    kind: 'fixture'
+  }
+
+test at scripts/m5-010/operator.test.mjs:87:3
+✖ owned unpublished UNLISTED predecessor requires exact archived readback before fresh create (1.964897ms)
+  Stop [Error]: fixture
+      at requireValue (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:93:21)
+      at dispatch (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:554:9)
+      at file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:756:21 {
+    kind: 'fixture'
+  }

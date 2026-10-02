@@ -1,0 +1,129 @@
+✔ 010 requires all publication/product capabilities and permits additional well formed grants (3.374606ms)
+✔ 010 denies normal fresh create until fixed predecessor has been safely resolved (3.331971ms)
+✔ complete absent predecessor lookup permits one fresh create and retains resolution independently (8.880715ms)
+✔ owned unpublished ARCHIVED predecessor requires exact archived readback before fresh create (4.849098ms)
+✔ owned unpublished DRAFT predecessor requires exact archived readback before fresh create (4.564609ms)
+✔ owned unpublished ACTIVE predecessor requires exact archived readback before fresh create (5.497874ms)
+✔ owned unpublished UNLISTED predecessor requires exact archived readback before fresh create (3.47873ms)
+✔ predecessor multiple stops without any mutation or second lookup (1.759916ms)
+✔ predecessor partial next stops without any mutation or second lookup (1.528694ms)
+✔ predecessor partial previous stops without any mutation or second lookup (1.608671ms)
+✔ predecessor missing page info stops without any mutation or second lookup (1.446189ms)
+✔ predecessor missing nodes stops without any mutation or second lookup (1.299074ms)
+✔ predecessor invalid product id stops without any mutation or second lookup (1.342691ms)
+✔ predecessor wrong type stops without any mutation or second lookup (1.332469ms)
+✔ predecessor wrong handle stops without any mutation or second lookup (1.24487ms)
+✔ predecessor wrong title stops without any mutation or second lookup (1.262315ms)
+✔ predecessor wrong tag stops without any mutation or second lookup (1.283741ms)
+✔ predecessor too early creation stops without any mutation or second lookup (1.232994ms)
+✔ predecessor invalid creation stops without any mutation or second lookup (1.222457ms)
+✔ predecessor future creation stops without any mutation or second lookup (1.245756ms)
+✔ predecessor published stops without any mutation or second lookup (1.291563ms)
+✔ predecessor store url stops without any mutation or second lookup (1.308857ms)
+✔ predecessor publication membership stops without any mutation or second lookup (1.275081ms)
+✔ predecessor resource partial stops without any mutation or second lookup (1.269524ms)
+✔ predecessor unpublished partial stops without any mutation or second lookup (2.522903ms)
+✔ predecessor missing publications stops without any mutation or second lookup (1.254987ms)
+✔ predecessor unsupported status stops without any mutation or second lookup (1.233122ms)
+✔ predecessor lookup transport retains stop and never retries or creates (1.474839ms)
+✔ predecessor lookup http retains stop and never retries or creates (1.184046ms)
+✔ predecessor lookup missing body retains stop and never retries or creates (1.24049ms)
+✔ predecessor lookup invalid json retains stop and never retries or creates (1.30606ms)
+✔ predecessor lookup oversized retains stop and never retries or creates (2.190783ms)
+✔ predecessor lookup graphql permission retains stop and never retries or creates (1.376142ms)
+✔ predecessor lookup partial graphql data retains stop and never retries or creates (1.25981ms)
+✔ predecessor lookup mutation rejected retains stop and never retries or creates (1.301094ms)
+✔ predecessor archive transport retains stop and never retries or creates (1.863624ms)
+✔ predecessor archive http retains stop and never retries or creates (1.807319ms)
+✔ predecessor archive missing body retains stop and never retries or creates (1.693224ms)
+✔ predecessor archive invalid json retains stop and never retries or creates (1.857698ms)
+✔ predecessor archive oversized retains stop and never retries or creates (2.668512ms)
+✔ predecessor archive graphql permission retains stop and never retries or creates (1.895233ms)
+✔ predecessor archive partial graphql data retains stop and never retries or creates (1.835057ms)
+✔ predecessor archive mutation rejected retains stop and never retries or creates (1.956882ms)
+✔ predecessor readback transport retains stop and never retries or creates (2.378722ms)
+✔ predecessor readback http retains stop and never retries or creates (3.382989ms)
+✔ predecessor readback missing body retains stop and never retries or creates (2.267797ms)
+✔ predecessor readback invalid json retains stop and never retries or creates (2.363861ms)
+✔ predecessor readback oversized retains stop and never retries or creates (2.946254ms)
+✔ predecessor readback graphql permission retains stop and never retries or creates (2.391345ms)
+✔ predecessor readback partial graphql data retains stop and never retries or creates (2.359634ms)
+✔ predecessor readback mutation rejected retains stop and never retries or creates (2.347979ms)
+✔ archive wrong id cannot resolve predecessor (1.905384ms)
+✔ archive wrong metadata cannot resolve predecessor (1.643318ms)
+✔ archive wrong status cannot resolve predecessor (1.753231ms)
+✔ archive exposed cannot resolve predecessor (1.651906ms)
+✔ readback wrong id cannot resolve predecessor (2.157022ms)
+✔ readback wrong metadata cannot resolve predecessor (2.454607ms)
+✔ readback wrong status cannot resolve predecessor (3.264762ms)
+✔ readback exposed cannot resolve predecessor (2.134515ms)
+✖ public qualification resolves absent predecessor then runs unchanged real adapter matrix (5.100871ms)
+✖ public qualification resolves ARCHIVED predecessor then runs unchanged real adapter matrix (2.24061ms)
+✖ public qualification resolves ACTIVE predecessor then runs unchanged real adapter matrix (2.11308ms)
+ℹ tests 62
+ℹ suites 0
+ℹ pass 59
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 295.455225
+
+✖ failing tests:
+
+test at ../../../tmp/m5010-writer-runtime/scripts/m5-010/operator.test.mjs:337:3
+✖ public qualification resolves absent predecessor then runs unchanged real adapter matrix (5.100871ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOPPED'
+  - 'TESTED_MATRIX_PASS'
+  
+      at TestContext.<anonymous> (file:///tmp/m5010-writer-runtime/scripts/m5-010/operator.test.mjs:339:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOPPED',
+    expected: 'TESTED_MATRIX_PASS',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../tmp/m5010-writer-runtime/scripts/m5-010/operator.test.mjs:337:3
+✖ public qualification resolves ARCHIVED predecessor then runs unchanged real adapter matrix (2.24061ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOPPED'
+  - 'TESTED_MATRIX_PASS'
+  
+      at TestContext.<anonymous> (file:///tmp/m5010-writer-runtime/scripts/m5-010/operator.test.mjs:339:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOPPED',
+    expected: 'TESTED_MATRIX_PASS',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at ../../../tmp/m5010-writer-runtime/scripts/m5-010/operator.test.mjs:337:3
+✖ public qualification resolves ACTIVE predecessor then runs unchanged real adapter matrix (2.11308ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOPPED'
+  - 'TESTED_MATRIX_PASS'
+  
+      at TestContext.<anonymous> (file:///tmp/m5010-writer-runtime/scripts/m5-010/operator.test.mjs:339:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOPPED',
+    expected: 'TESTED_MATRIX_PASS',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

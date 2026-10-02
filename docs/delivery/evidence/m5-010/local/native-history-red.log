@@ -1,0 +1,30 @@
+✔ native release and two-scope consent are durable one-use operations with dependency and ambiguity stops (5.623942ms)
+✖ native successful sequence closes after exactly one release/request/approval and rejects reset reservation history (1.603292ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 94.009095
+
+✖ failing tests:
+
+test at scripts/m5-010/native-actions.test.mjs:36:1
+✖ native successful sequence closes after exactly one release/request/approval and rejects reset reservation history (1.603292ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-010-worktree/scripts/m5-010/native-actions.test.mjs:48:12)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: undefined,
+    operator: 'throws',
+    diff: 'simple'
+  }

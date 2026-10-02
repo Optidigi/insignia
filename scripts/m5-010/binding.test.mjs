@@ -14,7 +14,6 @@ test('successor gate binds its own tree, directory, exact source and independent
       '.github/workflows',
       'scripts/m5-004',
       'scripts/m5-009',
-      'scripts/m5-009',
       'scripts/m5-010',
       'packages/shopify/src',
       'packages/shopify/dist',
