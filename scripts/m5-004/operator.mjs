@@ -11,6 +11,13 @@ import {
   writeFileSync,
 } from 'node:fs';
 import { resolve } from 'node:path';
+import {
+  initialPredecessor,
+  isRecovery,
+  observePredecessor,
+  PREDECESSOR,
+  predecessorRequest,
+} from '../m5-010/recovery.mjs';
 
 export const TARGET = Object.freeze({
   app: 'gid://shopify/App/429028933633',
@@ -21,6 +28,8 @@ export const TARGET = Object.freeze({
 });
 export const LIVE_DIRECTORY = '/home/serveradmin/insignia-m5-004-handoff/run';
 export const LIMITS = Object.freeze({ auth: 3, read: 96, create: 1, update: 16 });
+const recoveryLimits = Object.freeze({ ...LIMITS, predecessorArchive: 1 });
+const limitsFor = (profile) => (profile === 'm5-010' ? recoveryLimits : LIMITS);
 export const GRANTS = [
   'read_products',
   'write_products',
@@ -119,7 +128,7 @@ function protectDirectory(directory) {
   );
 }
 export function profileDirectory(profile) {
-  requireValue(['m5-004', 'm5-009'].includes(profile), 'operator_profile');
+  requireValue(['m5-004', 'm5-009', 'm5-010'].includes(profile), 'operator_profile');
   return `/home/serveradmin/insignia-${profile}-handoff/run`;
 }
 export function initialize(directory, binding, { synthetic = false, profile = 'm5-004' } = {}) {
@@ -137,8 +146,8 @@ export function initialize(directory, binding, { synthetic = false, profile = 'm
     binding,
     run: marker,
     createdAt: new Date().toISOString(),
-    limits: LIMITS,
-    counts: { auth: 0, read: 0, create: 0, update: 0 },
+    limits: limitsFor(profile),
+    counts: Object.fromEntries(Object.keys(limitsFor(profile)).map((kind) => [kind, 0])),
     events: [],
     fixture: null,
     fixtureIdentity: null,
@@ -147,6 +156,7 @@ export function initialize(directory, binding, { synthetic = false, profile = 'm
     unpublished: null,
     blocked: null,
     finalizing: false,
+    ...(profile === 'm5-010' ? { predecessor: initialPredecessor() } : {}),
   };
   const fd = openSync(resolve(directory, 'register.json'), 'wx', 0o600);
   try {
@@ -158,10 +168,11 @@ export function initialize(directory, binding, { synthetic = false, profile = 'm
   return state;
 }
 function validate(state, profile) {
+  const limits = limitsFor(profile);
   requireValue(
     state?.version === 1 &&
       JSON.stringify(state.target) === JSON.stringify(TARGET) &&
-      JSON.stringify(state.limits) === JSON.stringify(LIMITS) &&
+      JSON.stringify(state.limits) === JSON.stringify(limits) &&
       new RegExp(`^insignia-${profile}-[a-f0-9-]{36}$`).test(state.run) &&
       state.binding?.source &&
       state.binding.modules &&
@@ -169,10 +180,10 @@ function validate(state, profile) {
     'register',
   );
   requireValue(
-    keys(state.counts, Object.keys(LIMITS)) && Number.isFinite(Date.parse(state.createdAt)),
+    keys(state.counts, Object.keys(limits)) && Number.isFinite(Date.parse(state.createdAt)),
     'register_history',
   );
-  for (const [kind, limit] of Object.entries(LIMITS)) {
+  for (const [kind, limit] of Object.entries(limits)) {
     requireValue(
       Number.isInteger(state.counts[kind]) &&
         state.counts[kind] >= 0 &&
@@ -185,7 +196,7 @@ function validate(state, profile) {
     const e = state.events[i];
     requireValue(
       e.index === i &&
-        Object.hasOwn(LIMITS, e.kind) &&
+        Object.hasOwn(limits, e.kind) &&
         /^[a-f0-9]{64}$/.test(e.bodyDigest) &&
         ['RESERVED', 'UNKNOWN', 'RESPONDED', 'ACKNOWLEDGED', 'NOT_SENT', 'REJECTED'].includes(e.result),
       'register_history',
@@ -222,6 +233,17 @@ function validate(state, profile) {
       'register_fixture_identity',
     );
   }
+  if (profile === 'm5-010') {
+    let predecessor = initialPredecessor();
+    for (const event of state.events.filter(isRecovery)) {
+      requireValue(
+        event.bodyDigest === hash(predecessorRequest(predecessor, event.operation)),
+        'register_predecessor_request',
+      );
+      predecessor = observePredecessor(predecessor, event);
+    }
+    requireValue(JSON.stringify(state.predecessor) === JSON.stringify(predecessor), 'register_predecessor');
+  }
 }
 export function assertIdentity(data, { profile = 'm5-004' } = {}) {
   profileDirectory(profile);
@@ -250,7 +272,12 @@ export function assertIdentity(data, { profile = 'm5-004' } = {}) {
     );
     const grants = scopes.map((x) => x.handle);
     requireValue(new Set(grants).size === grants.length, 'grant_shape');
-    requireValue(grants.includes('write_products'), 'product_capability');
+    const required =
+      profile === 'm5-010' ? ['write_products', 'read_publications', 'read_product_listings'] : ['write_products'];
+    requireValue(
+      required.every((handle) => grants.includes(handle)),
+      'product_capability',
+    );
   }
 }
 export function assertUnpublished(product) {
@@ -438,16 +465,32 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch, profil
     serial = Promise.resolve(),
     pendingDispatches = 0;
   const unknownWrite = () =>
-    state.events.some((e) => ['create', 'update'].includes(e.kind) && ['RESERVED', 'UNKNOWN'].includes(e.result));
+    state.events.some(
+      (e) => ['create', 'update', 'predecessorArchive'].includes(e.kind) && ['RESERVED', 'UNKNOWN'].includes(e.result),
+    );
   const save = () => persist(directory, state);
+  const recoveryObservation = (event) => {
+    if (profile === 'm5-010' && isRecovery(event)) {
+      state.predecessor = observePredecessor(state.predecessor, event);
+      if (state.predecessor.resolution === 'STOPPED') state.blocked = state.predecessor.failure;
+    }
+  };
   function reserve(kind, operation, publicBody) {
-    const cap = state.finalizing ? LIMITS[kind] : kind === 'read' ? 84 : kind === 'update' ? 13 : LIMITS[kind];
+    const cap = state.finalizing
+      ? state.limits[kind]
+      : kind === 'read'
+        ? 84
+        : kind === 'update'
+          ? 13
+          : state.limits[kind];
     requireValue(state.counts[kind] < cap, 'ceiling');
     const event = {
       index: state.events.length,
       kind,
       operation,
-      fixture: state.fixture,
+      fixture: ['predecessor_archive', 'predecessor_readback'].includes(operation)
+        ? state.predecessor.fixture
+        : state.fixture,
       source: state.binding.source,
       step: step?.name ?? null,
       at: new Date().toISOString(),
@@ -477,6 +520,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch, profil
     const request = JSON.parse(init.body);
     let kind,
       operation,
+      recoveryDeadline,
       publicBody = request;
     if (u.pathname === '/admin/oauth/access_token') {
       requireValue(
@@ -501,6 +545,60 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch, profil
         requireValue(keys(v, []), 'variables');
         kind = 'read';
         operation = 'identity';
+      } else if (profile === 'm5-010' && q === FIND && v?.search === `handle:${PREDECESSOR.marker}`) {
+        requireValue(
+          keys(v, ['search']) &&
+            state.predecessor.resolution === 'PENDING' &&
+            state.counts.create === 0 &&
+            !state.fixture &&
+            !state.blocked &&
+            state.identity &&
+            Date.now() - Date.parse(state.identity.at) <= 60_000 &&
+            !state.events.some((e) => e.operation === 'predecessor_lookup'),
+          'predecessor_permission',
+        );
+        kind = 'read';
+        operation = 'predecessor_lookup';
+      } else if (
+        profile === 'm5-010' &&
+        (q === FIXTURE || q === SETUP) &&
+        !state.fixture &&
+        state.counts.create === 0
+      ) {
+        const predecessor = state.predecessor;
+        requireValue(
+          !state.blocked &&
+            !unknownWrite() &&
+            state.identity &&
+            Date.now() - Date.parse(state.identity.at) <= 60_000 &&
+            Date.now() - Date.parse(predecessor.observedAt) <= 60_000,
+          'predecessor_permission',
+        );
+        if (q === FIXTURE) {
+          requireValue(
+            keys(v, ['id']) &&
+              v.id === predecessor.fixture &&
+              (predecessor.resolution === 'ARCHIVE_ACKNOWLEDGED' ||
+                (predecessor.resolution === 'FOUND' && predecessor.status === 'ARCHIVED')) &&
+              !state.events.some((e) => e.operation === 'predecessor_readback'),
+            'predecessor_permission',
+          );
+          kind = 'read';
+          operation = 'predecessor_readback';
+        } else {
+          requireValue(
+            keys(v, ['product']) &&
+              keys(v.product, ['id', 'status']) &&
+              v.product.id === predecessor.fixture &&
+              v.product.status === 'ARCHIVED' &&
+              predecessor.resolution === 'FOUND' &&
+              predecessor.status !== 'ARCHIVED',
+            'predecessor_permission',
+          );
+          kind = 'predecessorArchive';
+          operation = 'predecessor_archive';
+          recoveryDeadline = Math.min(Date.parse(state.identity.at), Date.parse(predecessor.observedAt)) + 60_000;
+        }
       } else if (q === FIND) {
         requireValue(
           keys(v, ['search']) &&
@@ -523,6 +621,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch, profil
             v.product.status === 'DRAFT' &&
             state.fixture === null &&
             state.identity &&
+            (profile !== 'm5-010' || ['ABSENT', 'ARCHIVED_VERIFIED'].includes(state.predecessor?.resolution)) &&
             !state.blocked &&
             !unknownWrite(),
           'create_permission',
@@ -577,10 +676,11 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch, profil
       }
     }
     const event = reserve(kind, operation, publicBody);
-    if (kind === 'update') {
-      step.consumed = true;
-      if (Date.now() > step.deadline) {
+    if (kind === 'update' || kind === 'predecessorArchive') {
+      if (kind === 'update') step.consumed = true;
+      if (Date.now() > (kind === 'update' ? step.deadline : recoveryDeadline)) {
         event.result = 'NOT_SENT';
+        recoveryObservation(event);
         save();
         throw new Stop('deadline');
       }
@@ -594,9 +694,10 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch, profil
       });
       event.httpStatus = response.status;
       if (kind !== 'auth' && (operation.startsWith('catalog_') ? !response.ok : response.status !== 200)) {
-        event.result = ['create', 'update'].includes(kind) ? 'UNKNOWN' : 'RESPONDED';
+        event.result = ['create', 'update', 'predecessorArchive'].includes(kind) ? 'UNKNOWN' : 'RESPONDED';
         event.replayBody = '';
         event.bodyObservation = 'NOT_READ_STATUS_CLASSIFIED';
+        recoveryObservation(event);
         save();
         void response.body?.cancel().catch(() => {});
         return new Response(null, { status: response.status });
@@ -605,6 +706,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch, profil
     } catch {
       event.result = 'UNKNOWN';
       event.replayKind = 'TRANSPORT_OR_STREAM_ERROR';
+      recoveryObservation(event);
       save();
       throw new Stop('unknown_http_result');
     }
@@ -630,7 +732,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch, profil
     if (parsed.value === undefined && event.replayKind === 'NON_JSON') event.replayBody = 'invalid-json-redacted';
     if (parsed.value !== undefined) event.response = sanitizeEnvelope(parsed.value);
     const mutation = parsed.value?.data?.[kind === 'create' ? 'productCreate' : 'productUpdate'];
-    if (['create', 'update'].includes(kind)) {
+    if (['create', 'update', 'predecessorArchive'].includes(kind)) {
       const product = mutation?.product;
       event.result =
         response.status === 200 &&
@@ -641,7 +743,7 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch, profil
         product &&
         gid.test(product.id) &&
         product.status === request.variables.product.status &&
-        (kind === 'create' || product.id === state.fixture)
+        (kind === 'create' || product.id === request.variables.product.id)
           ? 'ACKNOWLEDGED'
           : response.status === 200 &&
               mutation?.product === null &&
@@ -674,8 +776,9 @@ export function createOperator({ directory, fetchImpl = globalThis.fetch, profil
         }
       }
     } else event.result = 'RESPONDED';
+    recoveryObservation(event);
     const product = mutation?.product ?? parsed.value?.data?.product ?? parsed.value?.data?.node;
-    if (product && Object.hasOwn(product, 'resourcePublications')) {
+    if (!isRecovery(event) && product && Object.hasOwn(product, 'resourcePublications')) {
       try {
         assertUnpublished(product);
         requireValue(product.id === state.fixture, 'fixture');

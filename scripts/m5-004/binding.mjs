@@ -18,7 +18,8 @@ export function freeze(root, { profile = 'm5-004' } = {}) {
   for (const directory of [
     '.github/workflows',
     'scripts/m5-004',
-    ...(profile === 'm5-009' ? ['scripts/m5-009'] : []),
+    ...(profile !== 'm5-004' ? ['scripts/m5-009'] : []),
+    ...(profile === 'm5-010' ? ['scripts/m5-010'] : []),
     'packages/shopify/src',
     'packages/shopify/dist',
     'packages/application/src',
@@ -33,7 +34,7 @@ export function freeze(root, { profile = 'm5-004' } = {}) {
     hashes[path] = digest(readFileSync(resolve(root, path)));
   return {
     source: execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf8' }).trim(),
-    ...(profile === 'm5-009'
+    ...(profile !== 'm5-004'
       ? { tree: execFileSync('git', ['rev-parse', 'HEAD^{tree}'], { cwd: root, encoding: 'utf8' }).trim() }
       : {}),
     modules: Object.fromEntries(Object.entries(hashes).sort(([a], [b]) => a.localeCompare(b))),
@@ -57,13 +58,15 @@ export function verifyGate(
   root,
   gate,
   binding,
-  {
-    profile = 'm5-004',
-    evidenceRoot = profile === 'm5-004' ? EVIDENCE_ROOT : '/home/serveradmin/insignia-m5-009-handoff',
-  } = {},
+  { profile = 'm5-004', evidenceRoot = `/home/serveradmin/insignia-${profile}-handoff` } = {},
 ) {
   profileDirectory(profile);
-  const base = profile === 'm5-004' ? BASE : '9ce56a1a9b8f674a3500f6592803f7a52e2ef18d';
+  const base =
+    profile === 'm5-004'
+      ? BASE
+      : profile === 'm5-009'
+        ? '9ce56a1a9b8f674a3500f6592803f7a52e2ef18d'
+        : '25e6c487741e1685637d351137d9671033f3c53d';
   requireValue(JSON.stringify(freeze(root, { profile })) === JSON.stringify(binding), 'source_binding');
   requireValue(
     execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8' }).trim() === '',

@@ -1,0 +1,229 @@
+{
+  "before": {
+    "text": "/\nInsignia\n/\nVersions\n/\ninsignia-2\nActive\nApp details\nname\nInsignia\napplication_url\nhttps://example.com\nembedded\ntrue\nAccess scopes\noptional_scopes\nwrite_products\nuse_legacy_install_flow\nfalse\nWebhooks\napi_version\n2026-07\nTimeline\nReleased\nOct 2, 2026 · 8:14 pm\n·\nAdmin Optidigi\nCreated\nOct 2, 2026 · 8:14 pm\n·\nAdmin Optidigi",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/1152880803841"
+  },
+  "beforeForm": {
+    "fields": [
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_branding_name",
+        "type": "text",
+        "value": "Insignia"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_version_tag",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "checked": null,
+        "disabled": false,
+        "id": "version_app_module_data_app_access_scopes",
+        "type": "textarea",
+        "value": ""
+      },
+      {
+        "checked": null,
+        "disabled": false,
+        "id": "version_app_module_data_app_access_optional_scopes",
+        "type": "textarea",
+        "value": "write_products"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_app_home_app_url",
+        "type": "text",
+        "value": "https://example.com"
+      },
+      {
+        "checked": true,
+        "disabled": false,
+        "id": "version_app_module_data_app_home_embedded",
+        "type": "checkbox",
+        "value": "1"
+      },
+      {
+        "checked": null,
+        "disabled": false,
+        "id": "version_app_module_data_app_access_redirect_url_allowlist",
+        "type": "textarea",
+        "value": ""
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_app_access_use_legacy_install_flow",
+        "type": "checkbox",
+        "value": "1"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_app_home_preferences_url",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_point_of_sale_embedded",
+        "type": "checkbox",
+        "value": "1"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_app_proxy_subpath",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_app_proxy_url",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "checked": null,
+        "disabled": false,
+        "id": "version_message",
+        "type": "textarea",
+        "value": ""
+      }
+    ],
+    "text": "/\nInsignia\n/\nCreate version\n\nThis form is pre-populated from version insignia-2.\n\nApp details\n\nUpdate app identity details for this version\n\nApp name\nVersion name (optional)\nAPI access\n\nAdd scopes, webhooks, and install behavior when your app needs Shopify data\n\nDocs\nScopes\nSelect from list\nScopes\n\nThese scopes are required to provide your app functionality. Enter scopes as a comma-separated list\n\nOptional scopes\nSelect from list\nOptional scopes\n\nEnter scopes as a comma-separated list\n\nWebhooks API version\n2026-07\nURLs\n\nConfigure the app URL, redirect URLs, and embedded app behavior\n\nApp URL\nEmbed app in Shopify admin\nAllowed redirection URL(s)\n\nEnter redirect URLs as a comma-separated list\n\nUse legacy install flow\nDocs\nPreferences URL (optional)\nPOS\n\nConfigure how this app appears in Shopify POS\n\nEmbed app in Shopify POS\nApp proxy\n\nConfigure storefront proxy paths and request forwarding\n\nSubpath prefix\nSelect an option\nSubpath\nProxy URL\nRelease",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/new",
+    "visibleButtons": [
+      {
+        "text": "Select from list",
+        "type": "button"
+      },
+      {
+        "text": "Select from list",
+        "type": "button"
+      },
+      {
+        "text": "2026-07",
+        "type": "button"
+      },
+      {
+        "text": "Select an option",
+        "type": "button"
+      },
+      {
+        "text": "Release",
+        "type": "button"
+      }
+    ]
+  },
+  "afterForm": {
+    "fields": [
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_branding_name",
+        "type": "text",
+        "value": "Insignia"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_version_tag",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "checked": null,
+        "disabled": false,
+        "id": "version_app_module_data_app_access_scopes",
+        "type": "textarea",
+        "value": ""
+      },
+      {
+        "checked": null,
+        "disabled": false,
+        "id": "version_app_module_data_app_access_optional_scopes",
+        "type": "textarea",
+        "value": "write_products,read_publications,read_product_listings"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_app_home_app_url",
+        "type": "text",
+        "value": "https://example.com"
+      },
+      {
+        "checked": true,
+        "disabled": false,
+        "id": "version_app_module_data_app_home_embedded",
+        "type": "checkbox",
+        "value": "1"
+      },
+      {
+        "checked": null,
+        "disabled": false,
+        "id": "version_app_module_data_app_access_redirect_url_allowlist",
+        "type": "textarea",
+        "value": ""
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_app_access_use_legacy_install_flow",
+        "type": "checkbox",
+        "value": "1"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_app_home_preferences_url",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_point_of_sale_embedded",
+        "type": "checkbox",
+        "value": "1"
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_app_proxy_subpath",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "checked": false,
+        "disabled": false,
+        "id": "version_app_module_data_app_proxy_url",
+        "type": "text",
+        "value": ""
+      },
+      {
+        "checked": null,
+        "disabled": false,
+        "id": "version_message",
+        "type": "textarea",
+        "value": ""
+      }
+    ],
+    "text": "/\nInsignia\n/\nCreate version\n\nThis form is pre-populated from version insignia-2.\n\nApp details\n\nUpdate app identity details for this version\n\nApp name\nVersion name (optional)\nAPI access\n\nAdd scopes, webhooks, and install behavior when your app needs Shopify data\n\nDocs\nScopes\nSelect from list\nScopes\n\nThese scopes are required to provide your app functionality. Enter scopes as a comma-separated list\n\nOptional scopes\nSelect from list\nOptional scopes\n\nEnter scopes as a comma-separated list\n\nWebhooks API version\n2026-07\nURLs\n\nConfigure the app URL, redirect URLs, and embedded app behavior\n\nApp URL\nEmbed app in Shopify admin\nAllowed redirection URL(s)\n\nEnter redirect URLs as a comma-separated list\n\nUse legacy install flow\nDocs\nPreferences URL (optional)\nPOS\n\nConfigure how this app appears in Shopify POS\n\nEmbed app in Shopify POS\nApp proxy\n\nConfigure storefront proxy paths and request forwarding\n\nSubpath prefix\nSelect an option\nSubpath\nProxy URL\nRelease",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/new"
+  },
+  "confirmation": {
+    "confirmation": [
+      "Release this new version?\nVersion message (optional)\nCancel\nRelease"
+    ],
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/new"
+  },
+  "capturedAt": "2026-10-02T21:18:22.953Z"
+}

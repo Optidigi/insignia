@@ -1,0 +1,10 @@
+✔ native release and two-scope consent are durable one-use operations with dependency and ambiguity stops (5.533299ms)
+✔ native successful sequence closes after exactly one release/request/approval and rejects reset reservation history (2.747204ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 88.239238

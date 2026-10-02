@@ -7,6 +7,7 @@ import {
   createCatalogTransport,
   createShopifyAvailabilityHoldPort,
 } from '../../packages/shopify/dist/index.js';
+import { resolvePredecessor } from '../m5-010/recovery.mjs';
 import { digest, verifyGate } from './binding.mjs';
 import {
   ADAPTER_UPDATE,
@@ -107,7 +108,7 @@ export async function qualify({
   requireValue(resolve(directory) === profileDirectory(profile), 'canonical_register');
   verifyGate(ROOT, gate, binding, { profile });
   const operator = createOperator({ directory, profile });
-  return runQualification({ operator, directory, binding, credentialLoader: protectedCredentials });
+  return runQualification({ operator, directory, binding, credentialLoader: protectedCredentials, profile });
 }
 // Explicit offline seam: no default credentials/transport, no live source-attestation claim.
 export async function qualifySynthetic({ directory, binding, credentialLoader, fetchImpl, profile = 'm5-004' }) {
@@ -117,7 +118,8 @@ export async function qualifySynthetic({ directory, binding, credentialLoader, f
       typeof credentialLoader === 'function' &&
       credentialLoader !== protectedCredentials &&
       resolve(directory) !== LIVE_DIRECTORY &&
-      resolve(directory) !== profileDirectory('m5-009'),
+      resolve(directory) !== profileDirectory('m5-009') &&
+      resolve(directory) !== profileDirectory('m5-010'),
     'synthetic_boundaries',
   );
   const operator = createOperator({ directory, fetchImpl, profile });
@@ -125,6 +127,7 @@ export async function qualifySynthetic({ directory, binding, credentialLoader, f
     operator,
     directory,
     binding,
+    profile,
     synthetic: true,
     credentialLoader: () => {
       const value = credentialLoader();
@@ -133,7 +136,14 @@ export async function qualifySynthetic({ directory, binding, credentialLoader, f
     },
   });
 }
-async function runQualification({ operator, directory, binding, credentialLoader, synthetic = false }) {
+async function runQualification({
+  operator,
+  directory,
+  binding,
+  credentialLoader,
+  synthetic = false,
+  profile = 'm5-004',
+}) {
   try {
     requireValue(JSON.stringify(operator.state().binding) === JSON.stringify(binding), 'register_source_binding');
     requireValue(
@@ -148,7 +158,7 @@ async function runQualification({ operator, directory, binding, credentialLoader
     version: 1,
     executionMode: synthetic ? 'SYNTHETIC_OFF_STORE' : 'LIVE_FROZEN_OPERATOR',
     binding,
-    plan: REQUEST_PLAN,
+    plan: profile === 'm5-010' ? { ...REQUEST_PLAN, predecessorArchive: 1 } : REQUEST_PLAN,
     provider: [],
     normalized: [],
     cases: [],
@@ -248,6 +258,10 @@ async function runQualification({ operator, directory, binding, credentialLoader
     requireValue(!synthetic || auth.access_token.startsWith('synthetic-'), 'synthetic_bearer');
     token = { value: auth.access_token, expiresAt: Date.now() + auth.expires_in * 1000 };
     await identity();
+    if (profile === 'm5-010') {
+      evidence.predecessor = await resolvePredecessor(operator, graph);
+      persist();
+    }
     requireValue(
       operator.state().counts.create === 0 && operator.state().fixture === null,
       'creation_already_attempted',
@@ -430,6 +444,7 @@ async function runQualification({ operator, directory, binding, credentialLoader
       evidence.catalog.failure = normalizedFailure;
     }
     evidence.outcome = 'STOPPED';
+    if (profile === 'm5-010') evidence.predecessor = operator.state().predecessor;
     evidence.stop = kind;
     operator.block(kind);
     persist();

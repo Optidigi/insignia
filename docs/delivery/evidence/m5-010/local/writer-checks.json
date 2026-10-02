@@ -1,0 +1,33 @@
+{
+  "focused": {
+    "command": "PATH=/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin:$PATH node --import /tmp/m5010-writer-runtime/file-backed-child-stdio.mjs --test --test-isolation=none scripts/m5-004/operator.test.mjs scripts/m5-009/operator.test.mjs scripts/m5-010/operator.test.mjs",
+    "exitCode": 0,
+    "tests": 130,
+    "pass": 130,
+    "fail": 0,
+    "report": "/home/serveradmin/insignia-m5-010-handoff/writer-focused-final.txt",
+    "hostAdaptation": "File-backed execFileSync stdout/stderr executes actual children; --test-isolation=none avoids denied default subprocess socketpairs."
+  },
+  "assignedStyle": {
+    "command": "PATH=/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin:$PATH node_modules/.bin/biome check scripts/m5-004/operator.mjs scripts/m5-004/qualification.mjs scripts/m5-009/operator.test.mjs scripts/m5-010/operator.mjs scripts/m5-010/qualification.mjs scripts/m5-010/operator.test.mjs scripts/m5-010/recovery.mjs",
+    "exitCode": 0,
+    "report": "/home/serveradmin/insignia-m5-010-handoff/writer-style-final.txt",
+    "notes": "2 baseline warnings and 8 info diagnostics; no errors."
+  },
+  "stagedDiffCheck": {
+    "command": "git --git-dir=/home/serveradmin/insignia-m5-010-handoff/writer-commit/.git --work-tree=/home/serveradmin/insignia-m5-010-writer-worktree diff --cached --check",
+    "exitCode": 0
+  },
+  "bundleVerify": {
+    "command": "git bundle verify /home/serveradmin/insignia-m5-010-handoff/writer-change.bundle",
+    "exitCode": 0
+  },
+  "notRun": [
+    "root full gates",
+    "100/100 stress",
+    "renderer control",
+    "independent fresh reviewers",
+    "CI",
+    "all remote/credential/provider operations"
+  ]
+}

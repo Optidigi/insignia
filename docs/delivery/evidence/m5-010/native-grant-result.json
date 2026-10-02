@@ -1,0 +1,9 @@
+{
+  "at": "2026-10-02T21:19:46.269Z",
+  "action": "native Update clicked exactly once",
+  "after": {
+    "path": "https://admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1",
+    "text": "Skip to content\nSearch\nCtrl K\nHome\nOrders\nProducts\nCustomers\nGrowth\nDiscounts\nContent\nMarkets\nFinance\nAnalytics\nSales channels\nOnline Store\nAgentic\nApps\nInsignia\nSettings\n\ninsignia-rewrite-dev\n\ndev\n\nWork with Sidekick"
+  },
+  "qualification": "native approval returned to exact installed Insignia route; current grants to be verified by fixed provider identity before any product operation"
+}

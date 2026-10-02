@@ -1,0 +1,28 @@
+{
+  "source": "evidence delivery after immutable live gate closed",
+  "focused": {
+    "tests": 136,
+    "pass": 136,
+    "fail": 0,
+    "skip": 0,
+    "exitCode": 0,
+    "command": "node --test scripts/m5-004/operator.test.mjs scripts/m5-009/operator.test.mjs scripts/m5-010/*.test.mjs"
+  },
+  "style": {
+    "exitCode": 0,
+    "existingWarnings": 37,
+    "existingInfos": 82
+  },
+  "secretProvenanceCheck": {
+    "exitCode": 0
+  },
+  "diffCheck": {
+    "exitCode": 0
+  },
+  "reviewCorrections": [
+    "Spec P3 stale Next review pointer updated to M5-010",
+    "Security P3 duplicate synthetic fixture-directory entry removed after closing live gate; normal focused suite remains136/136"
+  ],
+  "productionSourceChanged": false,
+  "furtherProviderOperations": false
+}

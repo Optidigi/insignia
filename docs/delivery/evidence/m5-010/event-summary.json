@@ -1,0 +1,222 @@
+[
+  {
+    "index": 0,
+    "kind": "auth",
+    "operation": "existing_admin_client_credentials",
+    "step": null,
+    "at": "2026-10-02T21:19:46.669Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "e81e0b482c50f297dc8b9554c13dca56d3e4323297af5dfa9b980469208f60aa",
+    "responseDigest": null
+  },
+  {
+    "index": 1,
+    "kind": "read",
+    "operation": "identity",
+    "step": null,
+    "at": "2026-10-02T21:19:47.055Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "0ece407fdc6d348fdaacbc44e2801289eebb3c53f7ef1f09ec5dcb9024c59210",
+    "responseDigest": "4e517182a3d14b50d835aa519516a8aeddc0ccafcc50c53d9943d950f4abf6f1"
+  },
+  {
+    "index": 2,
+    "kind": "read",
+    "operation": "predecessor_lookup",
+    "step": null,
+    "at": "2026-10-02T21:19:47.344Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "b6ddf796d76a432a8cd01e5f1bb54f1b937238dd2dcc5679f25d712be95b37a7",
+    "responseDigest": "cbebff64019d681efa437f375b41c3ac0bb5a3c16a1f611b1f62cae81df05b03"
+  },
+  {
+    "index": 3,
+    "kind": "predecessorArchive",
+    "operation": "predecessor_archive",
+    "step": null,
+    "at": "2026-10-02T21:19:47.631Z",
+    "result": "ACKNOWLEDGED",
+    "httpStatus": 200,
+    "bodyDigest": "aec435bccaf1d0971eccc1fc528cb8c49d05731b7d2fe0caf9cd79e804a93625",
+    "responseDigest": "680017610811ff3bb260856fb05f7bfb32ff416a67223ffa730fb69265fe652f"
+  },
+  {
+    "index": 4,
+    "kind": "read",
+    "operation": "predecessor_readback",
+    "step": null,
+    "at": "2026-10-02T21:19:48.134Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "fa70a4c4d1b5df393299f29319c7def1cdb16bb57820fedc30279ce247b5c728",
+    "responseDigest": "663b656afe386e6f88bc8364fa53c81569ec955f8fe6d8698aa889f3d7e3d6f2"
+  },
+  {
+    "index": 5,
+    "kind": "create",
+    "operation": "create_draft",
+    "step": null,
+    "at": "2026-10-02T21:19:48.409Z",
+    "result": "ACKNOWLEDGED",
+    "httpStatus": 200,
+    "bodyDigest": "7ecbdb0fbcba92db0f20b6fc66b29da50ee1dd80e6a904d6244ebf09f59c519c",
+    "responseDigest": "7c5a241c6910dea23341981b4fe9dc968893871e51d0f0030523ddeea627751c"
+  },
+  {
+    "index": 6,
+    "kind": "read",
+    "operation": "fixture_read",
+    "step": null,
+    "at": "2026-10-02T21:19:49.306Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "031225cadd06592e66a427f6e0c703915e027819644befeadf038d26ac9de290",
+    "responseDigest": "2798aebff1df3c76368b3fc6403b2e80869a20405aebdf825435922367bdc467"
+  },
+  {
+    "index": 7,
+    "kind": "read",
+    "operation": "identity",
+    "step": null,
+    "at": "2026-10-02T21:19:49.567Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "0ece407fdc6d348fdaacbc44e2801289eebb3c53f7ef1f09ec5dcb9024c59210",
+    "responseDigest": "4e517182a3d14b50d835aa519516a8aeddc0ccafcc50c53d9943d950f4abf6f1"
+  },
+  {
+    "index": 8,
+    "kind": "read",
+    "operation": "adapter_read",
+    "step": null,
+    "at": "2026-10-02T21:19:49.820Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "0a597df4d0ee2540584ccdd8525d1dad8fe86a110a3a018fd5f0909f59c5ea3f",
+    "responseDigest": "146b6bd028670664db3ae6a152bd54f9d1f539ac1a35cca4321f7cd9a7cb3443"
+  },
+  {
+    "index": 9,
+    "kind": "read",
+    "operation": "adapter_read",
+    "step": "acquire-DRAFT",
+    "at": "2026-10-02T21:19:50.114Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "0a597df4d0ee2540584ccdd8525d1dad8fe86a110a3a018fd5f0909f59c5ea3f",
+    "responseDigest": "146b6bd028670664db3ae6a152bd54f9d1f539ac1a35cca4321f7cd9a7cb3443"
+  },
+  {
+    "index": 10,
+    "kind": "read",
+    "operation": "adapter_read",
+    "step": "acquire-DRAFT",
+    "at": "2026-10-02T21:19:50.416Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "0a597df4d0ee2540584ccdd8525d1dad8fe86a110a3a018fd5f0909f59c5ea3f",
+    "responseDigest": "146b6bd028670664db3ae6a152bd54f9d1f539ac1a35cca4321f7cd9a7cb3443"
+  },
+  {
+    "index": 11,
+    "kind": "read",
+    "operation": "identity",
+    "step": "acquire-DRAFT",
+    "at": "2026-10-02T21:19:50.695Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "0ece407fdc6d348fdaacbc44e2801289eebb3c53f7ef1f09ec5dcb9024c59210",
+    "responseDigest": "4e517182a3d14b50d835aa519516a8aeddc0ccafcc50c53d9943d950f4abf6f1"
+  },
+  {
+    "index": 12,
+    "kind": "read",
+    "operation": "adapter_read",
+    "step": "restore-DRAFT",
+    "at": "2026-10-02T21:19:50.971Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "0a597df4d0ee2540584ccdd8525d1dad8fe86a110a3a018fd5f0909f59c5ea3f",
+    "responseDigest": "146b6bd028670664db3ae6a152bd54f9d1f539ac1a35cca4321f7cd9a7cb3443"
+  },
+  {
+    "index": 13,
+    "kind": "read",
+    "operation": "fixture_read",
+    "step": "restore-DRAFT",
+    "at": "2026-10-02T21:19:51.273Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "031225cadd06592e66a427f6e0c703915e027819644befeadf038d26ac9de290",
+    "responseDigest": "2798aebff1df3c76368b3fc6403b2e80869a20405aebdf825435922367bdc467"
+  },
+  {
+    "index": 14,
+    "kind": "read",
+    "operation": "identity",
+    "step": "restore-DRAFT",
+    "at": "2026-10-02T21:19:51.560Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "0ece407fdc6d348fdaacbc44e2801289eebb3c53f7ef1f09ec5dcb9024c59210",
+    "responseDigest": "4e517182a3d14b50d835aa519516a8aeddc0ccafcc50c53d9943d950f4abf6f1"
+  },
+  {
+    "index": 15,
+    "kind": "read",
+    "operation": "fixture_read",
+    "step": "restore-DRAFT",
+    "at": "2026-10-02T21:19:51.816Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "031225cadd06592e66a427f6e0c703915e027819644befeadf038d26ac9de290",
+    "responseDigest": "2798aebff1df3c76368b3fc6403b2e80869a20405aebdf825435922367bdc467"
+  },
+  {
+    "index": 16,
+    "kind": "update",
+    "operation": "setup_status",
+    "step": "setup-ACTIVE",
+    "at": "2026-10-02T21:19:52.097Z",
+    "result": "ACKNOWLEDGED",
+    "httpStatus": 200,
+    "bodyDigest": "35971205c3b33611dd628611105e6e0ee3ec76fdedf138d03ab8b602dad73a21",
+    "responseDigest": "0d819ccba799f77541a11a33921684d3480439ac7fdfdc39820448956c250538"
+  },
+  {
+    "index": 17,
+    "kind": "read",
+    "operation": "fixture_read",
+    "step": "setup-ACTIVE",
+    "at": "2026-10-02T21:19:52.803Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "031225cadd06592e66a427f6e0c703915e027819644befeadf038d26ac9de290",
+    "responseDigest": "1888ec00bdc4a86bc53045a9898c8941d81d6c5be2b9200c770d90c720b3e034"
+  },
+  {
+    "index": 18,
+    "kind": "read",
+    "operation": "identity",
+    "step": "setup-ACTIVE",
+    "at": "2026-10-02T21:19:53.077Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "0ece407fdc6d348fdaacbc44e2801289eebb3c53f7ef1f09ec5dcb9024c59210",
+    "responseDigest": "4e517182a3d14b50d835aa519516a8aeddc0ccafcc50c53d9943d950f4abf6f1"
+  },
+  {
+    "index": 19,
+    "kind": "read",
+    "operation": "fixture_read",
+    "step": "setup-ACTIVE",
+    "at": "2026-10-02T21:19:53.324Z",
+    "result": "RESPONDED",
+    "httpStatus": 200,
+    "bodyDigest": "031225cadd06592e66a427f6e0c703915e027819644befeadf038d26ac9de290",
+    "responseDigest": "1888ec00bdc4a86bc53045a9898c8941d81d6c5be2b9200c770d90c720b3e034"
+  }
+]

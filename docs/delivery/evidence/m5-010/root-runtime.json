@@ -1,0 +1,9 @@
+{
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "source": "T3 Code trusted developer same-launch runtime_info",
+  "role": "orchestrator/integrator and sole remote operator",
+  "nativeTools": "host filesystem access; not a restricted sandbox",
+  "writer": "separate codex workspace-write network-disabled session",
+  "reviewers": "fresh codex read-only sessions required before live and after completed change"
+}

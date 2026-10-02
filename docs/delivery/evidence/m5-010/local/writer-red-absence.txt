@@ -1,0 +1,22 @@
+✔ 010 requires all publication/product capabilities and permits additional well formed grants (3.311529ms)
+✔ 010 denies normal fresh create until fixed predecessor has been safely resolved (3.023086ms)
+✖ complete absent predecessor lookup permits one fresh create and retains resolution independently (1.060444ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 28.715967
+
+✖ failing tests:
+
+test at scripts/m5-010/operator.test.mjs:66:1
+✖ complete absent predecessor lookup permits one fresh create and retains resolution independently (1.060444ms)
+  Stop [Error]: variables
+      at requireValue (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:90:21)
+      at dispatch (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:508:9)
+      at file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-004/operator.mjs:735:21 {
+    kind: 'variables'
+  }
