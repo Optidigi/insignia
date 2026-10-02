@@ -1,0 +1,28 @@
+{
+  "slice": "M5-007",
+  "principalExternalVerdict": "APPROVED_DOCS_PARTIAL_EVIDENCE",
+  "verdictPath": "docs/delivery/PR-032-principal-review.md",
+  "nativeApprovalFabricated": false,
+  "ownerAuthorization": "thread launch exact PR32 normal merge plus bounded official-CLI/native-console observation",
+  "packageZipSha256": "cdb1e21fc97fa5087de94004da9a6e603d3d34baec0e82d80ddd4f26396a8337",
+  "packageManifestAllSevenEntriesPassed": true,
+  "packageFiles": {
+    "MANIFEST.sha256": "abb9a7dc235b24e70439c377b1b189834ae45e383635fc8c51874c4375e05a52",
+    "prior-package-check.json": "2dd954d84837dde03d4a7513da8d7d533e7fc188ce468d85e540f838b32c1ffd",
+    "README.md": "e0d7a0e9ad50692f952120b23c6e1e8a1c5ea47ee861fd18e579bfb4996b45d0",
+    "RESEARCH-NOTES.md": "02068ff734ccb40696af9266fdff2e7c079acda80eaa8709846de6ef1c9ec48b",
+    "verification.json": "cec5f6557dab037944c6fea71897de17127dd10c0fc6874dd1977361d52e839b",
+    "M5-007-READONLY-CONFIGURATION-CAPTURE.md": "439116100d25670774bb48f37787b0578fbecb5c7e47534a1b95a046719e936c",
+    "OWNER-LAUNCH.txt": "e49cfdfec5cb6aa02f4caacec58527df1528dcd46f72c5ad4d24133bb356d5f6",
+    "PR-032-principal-review.md": "160452996b18591ba96c827a45ff75681fadf9cb09facb85058c64e07c99a8c3"
+  },
+  "localPackageRetained": true,
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "modelEvidence": "actual same-launch trusted T3 runtime metadata; no provider-private attestation",
+  "writerOperator": "sole root",
+  "reviewScope": "complete documentation/evidence change only; fresh independent restricted same-model/high sessions",
+  "manualOwnerCredentialFileAccess": false,
+  "sourceChanges": [],
+  "unsupportedSideEffectDisclosed": "installed version probe unexpectedly completed npm global upgrade; further CLI stopped; no rollback or persistent setting change attempted"
+}

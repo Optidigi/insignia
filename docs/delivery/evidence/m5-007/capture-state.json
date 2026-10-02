@@ -1,0 +1,12 @@
+{
+  "directory": "/tmp/insignia-m5-007-empty-capture-2zlxge2g",
+  "privateMode": "0700",
+  "createdAt": "2026-10-02T11:57:28.026629+00:00",
+  "empty": true,
+  "discoverableAncestorAppConfig": [],
+  "seededLocalInput": false,
+  "configurationArtifact": "NOT_CREATED",
+  "authenticatedCommandReservations": [],
+  "authenticatedLogicalInvocations": 0,
+  "stopReason": "unexpected automatic global upgrade from installed-version probe"
+}

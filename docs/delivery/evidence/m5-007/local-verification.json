@@ -1,0 +1,20 @@
+{
+  "base": "3aa67ef95154a07b3100a5f2042d9173bbe1f6eb",
+  "scope": "documentation/evidence only",
+  "commands": [
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "command": "temporary changed-file JSON/redaction/allowed-path/authority-byte checks; not a tracked harness",
+      "exitCode": 0
+    }
+  ],
+  "filesCheckedBeforeReceipt": 14,
+  "noManualUnchangedSuiteReruns": true,
+  "automaticFinalHeadCI": "required separately in PR packet",
+  "canonicalRegistersUnchanged": true,
+  "sourceChanges": [],
+  "unexpectedLocalSideEffect": "reported global npm upgrade from version probe retained as noncompliance; no rollback attempted"
+}
