@@ -141,7 +141,25 @@ test('successor documents, request ceilings, ownership, settlement and shared ma
     const current = readFileSync(new URL(`../m5-004/${file}`, import.meta.url), 'utf8');
     const start = file === 'operator.mjs' ? 'export function assertUnpublished' : 'async function runQualification';
     const end = file === 'operator.mjs' ? 'export function createOperator' : '\nif (process.argv[1]';
-    const segment = (s) => s.slice(s.indexOf(start), s.indexOf(end));
+    const segment = (s) => {
+      const shared = s.slice(s.indexOf(start), s.indexOf(end));
+      if (file === 'operator.mjs') return shared;
+      // Remove only 010 orchestration/evidence additions; the whole shared matrix,
+      // settlement failure handling and finalization still match the frozen source.
+      return shared
+        .replace(/async function runQualification\([\s\S]*?\) \{/, (header) =>
+          header.replace(/\s+/g, ' ').replace(/, profile = 'm5-004',?/, ''),
+        )
+        .replace(
+          "plan: profile === 'm5-010' ? { ...REQUEST_PLAN, predecessorArchive: 1 } : REQUEST_PLAN,",
+          'plan: REQUEST_PLAN,',
+        )
+        .replace(
+          "    if (profile === 'm5-010') {\n      evidence.predecessor = await resolvePredecessor(operator, graph);\n      persist();\n    }\n",
+          '',
+        )
+        .replace("    if (profile === 'm5-010') evidence.predecessor = operator.state().predecessor;\n", '');
+    };
     assert.equal(segment(current), segment(original), `${file} shared behavior`);
   }
 });

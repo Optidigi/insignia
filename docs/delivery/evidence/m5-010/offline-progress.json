@@ -1,0 +1,72 @@
+{
+  "root": {
+    "model": "gpt-6.1-sol",
+    "reasoning_effort": "high",
+    "source": "T3 Code trusted developer same-launch runtime_info",
+    "role": "orchestrator/integrator and sole remote operator",
+    "nativeTools": "host filesystem access; not a restricted sandbox",
+    "writer": "separate codex workspace-write network-disabled session",
+    "reviewers": "fresh codex read-only sessions required before live and after completed change"
+  },
+  "writer": {
+    "commit": "89a129b8867bb4452b224e8c5575557bdd4b2286",
+    "tree": "26fb18afaec0b41e859f900d09d1fcb8e79a86d0",
+    "thread": "01a0fe56-99ba-7130-b642-4b2e3f2eae04",
+    "contexts": [
+      {
+        "cwd": "/home/serveradmin/insignia-m5-010-writer-worktree",
+        "model": "gpt-6.1-sol",
+        "effort": "high",
+        "approval_policy": "never",
+        "sandbox_policy": {
+          "type": "workspace-write",
+          "writable_roots": [
+            "/home/serveradmin/insignia-m5-010-handoff"
+          ],
+          "network_access": false,
+          "exclude_tmpdir_env_var": false,
+          "exclude_slash_tmp": false
+        }
+      }
+    ],
+    "exitCode": 0,
+    "sandboxLimitation": "File-backed execFileSync stdout/stderr executes actual children; --test-isolation=none avoids denied default subprocess socketpairs.",
+    "gitOrchestration": "Coordinator staged/committed exactly seven assigned files; sandbox Git metadata was read-only."
+  },
+  "integratorFocused": {
+    "command": "node --test scripts/m5-004/operator.test.mjs scripts/m5-009/operator.test.mjs scripts/m5-010/*.test.mjs",
+    "node": "24.21.0",
+    "tests": 136,
+    "pass": 136,
+    "fail": 0,
+    "exitCode": 0,
+    "normalRunner": true,
+    "sha256": "f22978dc67bf8b200eee58ed312b8b3f84f7b37282246f957c2429033a73b295"
+  },
+  "stress": {
+    "pass": 100,
+    "fail": 0,
+    "retry": 0,
+    "iterationsPerCombination": 25,
+    "exitCode": 0,
+    "sha256": "ae2a24dc52b4d2a0b9159e8dcb76cee7e5572b6ac5121eed157c02e4744c684f"
+  },
+  "rendererControl": {
+    "exitCode": 0,
+    "expectedInnerExit": 1,
+    "outcome": "missing renderer rejected",
+    "sha256": "f20eec84280b6306e136b0c5f4f7b10879cb9f930dac65f1a00d418a7ee4d962"
+  },
+  "redEvidence": {
+    "writer-red-create-fence.txt": "29b9b6567bb543443de8b83d733f0d5fe489ee124286fca7632e3cef898fc980",
+    "writer-red-qualification.txt": "0b0f3a3a35d6cf098161ff338832f8a0be9542f359d491c7034a772351dd0b09",
+    "writer-red-reservation-deadline.txt": "614d88d28a2f7afa95f1e699a69ad9ff47329555bdad55fba320f145507063f9",
+    "writer-red-profile.txt": "cef6cb394a4bb5b5c520f85cf77b3c2b15d3f36efb70520a231118f8b84bd8f5",
+    "writer-red-absence.txt": "111a5bd41fcbe4ee75fc4e00383ae6f332e37f5c35609f208cbd24b8aec82437",
+    "writer-red-archive.txt": "86ed51d9637bcb87aa305d61ecf453699cf029d748f99e60f3bd36607f17d788"
+  },
+  "integratorCorrections": [
+    "Synthetic gate fixture now includes retained009 directory hashed by010 freeze; first root failure retained privately.",
+    "Extra public qualifier BranchB fault controls added; an initial test-helper edit touched the earlier raw fixture and was corrected before freeze. Production implementation unaffected."
+  ]
+}
