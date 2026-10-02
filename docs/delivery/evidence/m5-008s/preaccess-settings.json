@@ -1,0 +1,28 @@
+[
+  {
+    "role": "preaccess",
+    "threadId": "01a0fdd6-eba6-7321-bc3f-c23363d57975",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "cwd": "/home/serveradmin/insignia-m5-008s-worktree",
+    "sandboxPolicy": {
+      "type": "read-only"
+    },
+    "approvalPolicy": "never",
+    "exit": 0,
+    "evidence": "selected own same-launch turn_context settings only; private events/reasoning excluded"
+  },
+  {
+    "role": "preaccess-rereview",
+    "threadId": "01a0fdd8-d4ff-7043-8655-903a03ba3aa1",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "cwd": "/home/serveradmin/insignia-m5-008s-worktree",
+    "sandboxPolicy": {
+      "type": "read-only"
+    },
+    "approvalPolicy": "never",
+    "exit": 0,
+    "evidence": "selected own same-launch turn_context settings only; private events/reasoning excluded"
+  }
+]

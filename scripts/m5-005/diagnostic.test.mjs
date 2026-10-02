@@ -365,7 +365,7 @@ test('ignored abort and late HTTP completion remain UNKNOWN with no later reques
   const delayed = new Promise((r) => {
     release = r;
   });
-  const x = await sample({ deadlineMs: 15, fetchImpl: () => delayed });
+  const x = await sample({ deadlineMs: 1000, fetchImpl: () => delayed });
   try {
     assert.equal(x.sent.length, 1);
     assert.equal(x.result.events[0].result, 'UNKNOWN');

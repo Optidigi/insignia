@@ -1,0 +1,279 @@
+{
+  "prelist": {
+    "at": "2026-10-02T18:08:56.573Z",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions",
+    "title": "Versions \u00b7 Insignia \u00b7 Dev Dashboard",
+    "visibleText": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nVersions\nCreate version\nSEPTEMBER 28, 2026\ninsignia-1\nActive\nAdmin Optidigi\n\n2:11 pm"
+  },
+  "activePre": {
+    "at": "2026-10-02T18:09:34.222Z",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/1146748534785",
+    "title": "insignia-1 \u00b7 Insignia \u00b7 Dev Dashboard",
+    "visibleText": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nVersions\n/\ninsignia-1\nActive\nApp details\nname\nInsignia\napplication_url\nhttps://example.com\nembedded\ntrue\nAccess scopes\nuse_legacy_install_flow\nfalse\nWebhooks\napi_version\n2026-07\nTimeline\nReleased\nSep 28, 2026 \u00b7 2:11 pm\n\u00b7\nAdmin Optidigi\nCreated\nSep 28, 2026 \u00b7 2:11 pm\n\u00b7\nAdmin Optidigi"
+  },
+  "formPre": {
+    "at": "2026-10-02T18:13:32.683Z",
+    "controls": {
+      "version_app_module_data_app_access_optional_scopes": {
+        "type": "textarea",
+        "value": ""
+      },
+      "version_app_module_data_app_access_redirect_url_allowlist": {
+        "type": "textarea",
+        "value": ""
+      },
+      "version_app_module_data_app_access_scopes": {
+        "type": "textarea",
+        "value": ""
+      },
+      "version_app_module_data_app_access_use_legacy_install_flow": {
+        "type": "checkbox",
+        "value": false
+      },
+      "version_app_module_data_app_home_app_url": {
+        "type": "text",
+        "value": "https://example.com"
+      },
+      "version_app_module_data_app_home_embedded": {
+        "type": "checkbox",
+        "value": true
+      },
+      "version_app_module_data_app_home_preferences_url": {
+        "type": "text",
+        "value": ""
+      },
+      "version_app_module_data_app_proxy_prefix": {
+        "type": "button",
+        "value": ""
+      },
+      "version_app_module_data_app_proxy_subpath": {
+        "type": "text",
+        "value": ""
+      },
+      "version_app_module_data_app_proxy_url": {
+        "type": "text",
+        "value": ""
+      },
+      "version_app_module_data_branding_name": {
+        "type": "text",
+        "value": "Insignia"
+      },
+      "version_app_module_data_point_of_sale_embedded": {
+        "type": "checkbox",
+        "value": false
+      },
+      "version_app_module_data_webhooks_api_version": {
+        "type": "button",
+        "value": ""
+      },
+      "version_version_tag": {
+        "type": "text",
+        "value": ""
+      }
+    },
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nCreate version\n\nThis form is pre-populated from version insignia-1.\n\nApp details\n\nUpdate app identity details for this version\n\nApp name\nVersion name (optional)\nAPI access\n\nAdd scopes, webhooks, and install behavior when your app needs Shopify data\n\nDocs\nScopes\nSelect from list\nScopes\n\nThese scopes are required to provide your app functionality. Enter scopes as a comma-separated list\n\nOptional scopes\nSelect from list\nOptional scopes\n\nEnter scopes as a comma-separated list\n\nWebhooks API version\n2026-07\nURLs\n\nConfigure the app URL, redirect URLs, and embedded app behavior\n\nApp URL\nEmbed app in Shopify admin\nAllowed redirection URL(s)\n\nEnter redirect URLs as a comma-separated list\n\nUse legacy install flow\nDocs\nPreferences URL (optional)\nPOS\n\nConfigure how this app appears in Shopify POS\n\nEmbed app in Shopify POS\nApp proxy\n\nConfigure storefront proxy paths and request forwarding\n\nSubpath prefix\nSelect an option\nSubpath\nProxy URL\nRelease",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/new"
+  },
+  "formEdited": {
+    "at": "2026-10-02T18:13:46.201Z",
+    "controls": {
+      "version_app_module_data_app_access_optional_scopes": {
+        "type": "textarea",
+        "value": "write_products"
+      },
+      "version_app_module_data_app_access_redirect_url_allowlist": {
+        "type": "textarea",
+        "value": ""
+      },
+      "version_app_module_data_app_access_scopes": {
+        "type": "textarea",
+        "value": ""
+      },
+      "version_app_module_data_app_access_use_legacy_install_flow": {
+        "type": "checkbox",
+        "value": false
+      },
+      "version_app_module_data_app_home_app_url": {
+        "type": "text",
+        "value": "https://example.com"
+      },
+      "version_app_module_data_app_home_embedded": {
+        "type": "checkbox",
+        "value": true
+      },
+      "version_app_module_data_app_home_preferences_url": {
+        "type": "text",
+        "value": ""
+      },
+      "version_app_module_data_app_proxy_prefix": {
+        "type": "button",
+        "value": ""
+      },
+      "version_app_module_data_app_proxy_subpath": {
+        "type": "text",
+        "value": ""
+      },
+      "version_app_module_data_app_proxy_url": {
+        "type": "text",
+        "value": ""
+      },
+      "version_app_module_data_branding_name": {
+        "type": "text",
+        "value": "Insignia"
+      },
+      "version_app_module_data_point_of_sale_embedded": {
+        "type": "checkbox",
+        "value": false
+      },
+      "version_app_module_data_webhooks_api_version": {
+        "type": "button",
+        "value": ""
+      },
+      "version_version_tag": {
+        "type": "text",
+        "value": ""
+      }
+    },
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nCreate version\n\nThis form is pre-populated from version insignia-1.\n\nApp details\n\nUpdate app identity details for this version\n\nApp name\nVersion name (optional)\nAPI access\n\nAdd scopes, webhooks, and install behavior when your app needs Shopify data\n\nDocs\nScopes\nSelect from list\nScopes\n\nThese scopes are required to provide your app functionality. Enter scopes as a comma-separated list\n\nOptional scopes\nSelect from list\nOptional scopes\n\nEnter scopes as a comma-separated list\n\nWebhooks API version\n2026-07\nURLs\n\nConfigure the app URL, redirect URLs, and embedded app behavior\n\nApp URL\nEmbed app in Shopify admin\nAllowed redirection URL(s)\n\nEnter redirect URLs as a comma-separated list\n\nUse legacy install flow\nDocs\nPreferences URL (optional)\nPOS\n\nConfigure how this app appears in Shopify POS\n\nEmbed app in Shopify POS\nApp proxy\n\nConfigure storefront proxy paths and request forwarding\n\nSubpath prefix\nSelect an option\nSubpath\nProxy URL\nRelease",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/new"
+  },
+  "confirmation": {
+    "at": "2026-10-02T18:13:58.970Z",
+    "dialogs": [
+      {
+        "buttons": [
+          {
+            "text": "",
+            "type": "button"
+          },
+          {
+            "text": "Cancel",
+            "type": "button"
+          },
+          {
+            "text": "Release",
+            "type": "submit"
+          }
+        ],
+        "text": "Release this new version?\nVersion message (optional)\nCancel\nRelease"
+      }
+    ],
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nCreate version\n\nThis form is pre-populated from version insignia-1.\n\nApp details\n\nUpdate app identity details for this version\n\nApp name\nVersion name (optional)\nAPI access\n\nAdd scopes, webhooks, and install behavior when your app needs Shopify data\n\nDocs\nScopes\nSelect from list\nScopes\n\nThese scopes are required to provide your app functionality. Enter scopes as a comma-separated list\n\nOptional scopes\nSelect from list\nOptional scopes\n\nEnter scopes as a comma-separated list\n\nWebhooks API version\n2026-07\nURLs\n\nConfigure the app URL, redirect URLs, and embedded app behavior\n\nApp URL\nEmbed app in Shopify admin\nAllowed redirection URL(s)\n\nEnter redirect URLs as a comma-separated list\n\nUse legacy install flow\nDocs\nPreferences URL (optional)\nPOS\n\nConfigure how this app appears in Shopify POS\n\nEmbed app in Shopify POS\nApp proxy\n\nConfigure storefront proxy paths and request forwarding\n\nSubpath prefix\nSelect an option\nSubpath\nProxy URL\nRelease\nRelease this new version?\nVersion message (optional)\nCancel\nRelease"
+  },
+  "postList": {
+    "at": "2026-10-02T18:14:34.200Z",
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nVersions\nCreate version\nOCTOBER 2, 2026\ninsignia-2\nActive\nAdmin Optidigi\n\n8:14 pm\n\nSEPTEMBER 28, 2026\ninsignia-1\nAdmin Optidigi\n\n2:11 pm",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions"
+  },
+  "postDetail": {
+    "at": "2026-10-02T18:14:47.814Z",
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nVersions\n/\ninsignia-2\nActive\nApp details\nname\nInsignia\napplication_url\nhttps://example.com\nembedded\ntrue\nAccess scopes\noptional_scopes\nwrite_products\nuse_legacy_install_flow\nfalse\nWebhooks\napi_version\n2026-07\nTimeline\nReleased\nOct 2, 2026 \u00b7 8:14 pm\n\u00b7\nAdmin Optidigi\nCreated\nOct 2, 2026 \u00b7 8:14 pm\n\u00b7\nAdmin Optidigi",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/1152880803841"
+  },
+  "postForm": {
+    "at": "2026-10-02T18:15:49.729Z",
+    "controls": {
+      "version_app_module_data_app_access_optional_scopes": {
+        "type": "textarea",
+        "value": "write_products"
+      },
+      "version_app_module_data_app_access_redirect_url_allowlist": {
+        "type": "textarea",
+        "value": ""
+      },
+      "version_app_module_data_app_access_scopes": {
+        "type": "textarea",
+        "value": ""
+      },
+      "version_app_module_data_app_access_use_legacy_install_flow": {
+        "type": "checkbox",
+        "value": false
+      },
+      "version_app_module_data_app_home_app_url": {
+        "type": "text",
+        "value": "https://example.com"
+      },
+      "version_app_module_data_app_home_embedded": {
+        "type": "checkbox",
+        "value": true
+      },
+      "version_app_module_data_app_home_preferences_url": {
+        "type": "text",
+        "value": ""
+      },
+      "version_app_module_data_app_proxy_prefix": {
+        "type": "button",
+        "value": ""
+      },
+      "version_app_module_data_app_proxy_subpath": {
+        "type": "text",
+        "value": ""
+      },
+      "version_app_module_data_app_proxy_url": {
+        "type": "text",
+        "value": ""
+      },
+      "version_app_module_data_branding_name": {
+        "type": "text",
+        "value": "Insignia"
+      },
+      "version_app_module_data_point_of_sale_embedded": {
+        "type": "checkbox",
+        "value": false
+      },
+      "version_app_module_data_webhooks_api_version": {
+        "type": "button",
+        "value": ""
+      },
+      "version_version_tag": {
+        "type": "text",
+        "value": ""
+      }
+    },
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nCreate version\n\nThis form is pre-populated from version insignia-2.\n\nApp details\n\nUpdate app identity details for this version\n\nApp name\nVersion name (optional)\nAPI access\n\nAdd scopes, webhooks, and install behavior when your app needs Shopify data\n\nDocs\nScopes\nSelect from list\nScopes\n\nThese scopes are required to provide your app functionality. Enter scopes as a comma-separated list\n\nOptional scopes\nSelect from list\nOptional scopes\n\nEnter scopes as a comma-separated list\n\nWebhooks API version\n2026-07\nURLs\n\nConfigure the app URL, redirect URLs, and embedded app behavior\n\nApp URL\nEmbed app in Shopify admin\nAllowed redirection URL(s)\n\nEnter redirect URLs as a comma-separated list\n\nUse legacy install flow\nDocs\nPreferences URL (optional)\nPOS\n\nConfigure how this app appears in Shopify POS\n\nEmbed app in Shopify POS\nApp proxy\n\nConfigure storefront proxy paths and request forwarding\n\nSubpath prefix\nSelect an option\nSubpath\nProxy URL\nRelease",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/new"
+  },
+  "optionalGrant": {
+    "pre": {
+      "at": "2026-10-02T18:16:15.795Z",
+      "buttons": [
+        {
+          "text": "",
+          "type": "button"
+        },
+        {
+          "text": "Search\nCtrl K",
+          "type": "button"
+        },
+        {
+          "text": "insignia-rewrite-dev",
+          "type": "button"
+        },
+        {
+          "text": "",
+          "type": "button"
+        },
+        {
+          "text": "Cancel",
+          "type": "button"
+        },
+        {
+          "text": "Update",
+          "type": "button"
+        }
+      ],
+      "path": "/store/insignia-rewrite-dev/app/grant",
+      "text": "Shopify reviews apps to ensure your security is protected. Be sure you trust this app developer before installing.\nInsignia needs access to:\nView and edit store data\nEdit productsProducts, collections\nCancel\nUpdate"
+    },
+    "post": {
+      "at": "2026-10-02T18:16:49.562Z",
+      "destination": "https://admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1",
+      "text": ""
+    }
+  },
+  "finalActive": {
+    "at": "2026-10-02T18:22:23.987Z",
+    "text": "Skip to main content\n$ shopify dev\nInsignia\nBack\nOverview\nLogs\nVersions\nApp settings\nSettings\nO\nOptidigi\n/\nInsignia\n/\nVersions\n/\ninsignia-2\nActive\nApp details\nname\nInsignia\napplication_url\nhttps://example.com\nembedded\ntrue\nAccess scopes\noptional_scopes\nwrite_products\nuse_legacy_install_flow\nfalse\nWebhooks\napi_version\n2026-07\nTimeline\nReleased\nOct 2, 2026 \u00b7 8:14 pm\n\u00b7\nAdmin Optidigi\nCreated\nOct 2, 2026 \u00b7 8:14 pm\n\u00b7\nAdmin Optidigi",
+    "url": "https://dev.shopify.com/dashboard/200969036/apps/429028933633/versions/1152880803841"
+  }
+}

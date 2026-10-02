@@ -1,0 +1,30 @@
+{
+  "originalHead": "a1f0472116616bd583265f550b894df581630b32",
+  "originalTestBlob": "b0148d263257ce9e5d49adb87eb151cb46831ebb",
+  "productionImplementationBlob": "98903ae9226fe3ace6c77141b4936401178cc068",
+  "originalAcceptedRecords": {
+    "docs/delivery/M5-008S-REPORT.md": "a405e0756a95e481d6dbb5a07933d8201d5de08ac54fce16474f432fcd45056c",
+    "docs/delivery/M5-008S-RESEARCH-NOTES.md": "74221027a22e5fe03619f21073cdfda25fdeb09a0395a38df0af9c5a4f7c1d88",
+    "docs/delivery/evidence/m5-008s/MANIFEST.sha256": "1892b7de4e8c1ad8a36a37b63c354d7fbf2a740ff69f46f255257ed5a4812a36",
+    "docs/delivery/evidence/m5-008s/authority.json": "efb741a15569c4dba9e92c97935569658f7233bef6ef7f691cd1c52f301ca665",
+    "docs/delivery/evidence/m5-008s/docs-verification.json": "8f2bd97d46f049447299f7bf4c196a05ea2ef728bdd90c93cd1f90a665e2b228",
+    "docs/delivery/evidence/m5-008s/grant-helper-source.mjs.txt": "7dab8b6fac82c0b3c5a2b3bfdb6ee3d5eb2873356b8e45fe320eb25651988d5d",
+    "docs/delivery/evidence/m5-008s/grant-result.json": "be145d6677133529f54b6effe3751ddcd51f53a634b02023d07f374fea766283",
+    "docs/delivery/evidence/m5-008s/helper-provenance.json": "952085ccdd5919f98db55732c498f9d508efd498da5245180db60e9c92a74833",
+    "docs/delivery/evidence/m5-008s/local-verification.json": "6fb78ed7a3590f27f5a5d6e1bc76e1c510e80e85f145e895ac5efbff5cce75a3",
+    "docs/delivery/evidence/m5-008s/pr37-merge.json": "e87c0776257fef3c3b883239c4a35f262c8ec0c626571c1c6357ff63c8bff601",
+    "docs/delivery/evidence/m5-008s/pr37-premerge.json": "fdd04c4f36e5322813a973f8a393a51babad41b35b270f4e3f879fbc09935f39",
+    "docs/delivery/evidence/m5-008s/preaccess-rereview-security-review.md": "29ad69003d538645b2e6b975169968d052f7e847436ac35ec0ae773e8529b4dd",
+    "docs/delivery/evidence/m5-008s/preaccess-security-review.md": "c4b5007da12fb4f98b9a55f1300ab7fde39192e1df944a71d9790c4a0fefa73f",
+    "docs/delivery/evidence/m5-008s/preaccess-settings.json": "1b1d171b74af370c49bf3921a7b82f0c445dc120f12b0c199d43b56b2721be84",
+    "docs/delivery/evidence/m5-008s/preservation.json": "051ce36a1c7028f7b91c9edda161a53b49fe4eb8e3cb7849d2310693ab80ba81",
+    "docs/delivery/evidence/m5-008s/register.json": "7f1c9daf6d9e3272cfaf0610ee2001b6fae6e8df0df7971100b7fee1e5b7fa46",
+    "docs/delivery/evidence/m5-008s/ui-observations.json": "e483787ddd8a46f477ab191d3205a781f782ee82e09d79e7b1aaf9d096da8115",
+    "docs/delivery/prompts/M5-008S-OPTIONAL-SCOPE-DEV-STORE-GRANT.md": "87e73a3c8ac2245d9ff290e6e41482bd5a3373cf2689728ab46cab42ca5f5753"
+  },
+  "oldFailureRun": 37048061147,
+  "oldFailureHead": "a1f0472116616bd583265f550b894df581630b32",
+  "oldFailureAttempt": 1,
+  "oldFailureConclusion": "failure",
+  "remoteOperations": "NONE; accepted state preserved without live reobservation"
+}

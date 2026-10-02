@@ -1,0 +1,214 @@
+{
+  "node": "24.21.0",
+  "argv": [
+    "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node",
+    "--test",
+    "--test-reporter=tap",
+    "--test-name-pattern=^ignored abort and late HTTP completion remain UNKNOWN with no later request or evidence rewrite$",
+    "scripts/m5-005/diagnostic.test.mjs"
+  ],
+  "retryOnFailure": false,
+  "requestedExecutions": 20,
+  "executions": [
+    {
+      "ordinal": 1,
+      "at": "2026-10-02T18:55:23.154706+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.287,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "61e2c5614aca30fe2a741d6240885e7f3257006c202fed18d902b8ca17d2b450"
+    },
+    {
+      "ordinal": 2,
+      "at": "2026-10-02T18:55:24.442241+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.283,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "35b6b66cbf34ad60b8f049c7a7ececd3bfc304a8421f7976fc017e0d7f34e416"
+    },
+    {
+      "ordinal": 3,
+      "at": "2026-10-02T18:55:25.725354+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.292,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "33a2c14e5f90139cbc1e05cec51966f1922801e7adfaf7acc11d3f3ed5aa99a4"
+    },
+    {
+      "ordinal": 4,
+      "at": "2026-10-02T18:55:27.017129+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.275,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "73f56a0a2958f47ac1723dec6bf6a5ac54f8084f68528280ed4560bf27ddf6c0"
+    },
+    {
+      "ordinal": 5,
+      "at": "2026-10-02T18:55:28.292605+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.281,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "08b997616562ebb8daa94b043604ab5045840ac412cdfe041f70f38edb71193b"
+    },
+    {
+      "ordinal": 6,
+      "at": "2026-10-02T18:55:29.573587+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.29,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "6fd7fbb70cc5ed2e326cdfb85e8e4d90ba84b332ea45ae1d65ffb859fb1948a6"
+    },
+    {
+      "ordinal": 7,
+      "at": "2026-10-02T18:55:30.863620+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.29,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "a485050e49695e6ca8b72e6f74142eddb08f7589909a1f6f59e54effcf8c2e2f"
+    },
+    {
+      "ordinal": 8,
+      "at": "2026-10-02T18:55:32.153780+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.295,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "a8d03639d802cb9adeac51e42235a7eb1f6e64024c789e85786539849ce64f83"
+    },
+    {
+      "ordinal": 9,
+      "at": "2026-10-02T18:55:33.449438+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.28,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "cb9caaaf494c4d98e7ea7e64814b8bd858f37b56d44e3c245025eb407de731c7"
+    },
+    {
+      "ordinal": 10,
+      "at": "2026-10-02T18:55:34.729603+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.3,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "c39c8853a7297ad0d8a0525b2a5dc1d9dfd6d32c93bfb4660d867c02cdb02362"
+    },
+    {
+      "ordinal": 11,
+      "at": "2026-10-02T18:55:36.029509+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.279,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "3427a9cc52724df913bbbe22b6c2e04ef0e3f960f91602e5788a3ea5cee1daf9"
+    },
+    {
+      "ordinal": 12,
+      "at": "2026-10-02T18:55:37.309051+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.278,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "1872593ecaec86d18f4ccae86f59737b003ca0a9f5808eee0859f69fe9ea7864"
+    },
+    {
+      "ordinal": 13,
+      "at": "2026-10-02T18:55:38.587691+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.285,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "a9de5e2ddb4912d198e4139ad0d9c4c00c21fc67687a9dc7a33a9447b8e5b861"
+    },
+    {
+      "ordinal": 14,
+      "at": "2026-10-02T18:55:39.873266+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.294,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "4fabe4a7911347e7831310004dd4699d8284136afe5d8ece36f9976cc207214f"
+    },
+    {
+      "ordinal": 15,
+      "at": "2026-10-02T18:55:41.167836+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.294,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "bf123d8dba29df16a3098ab949085b784ab55b71fa80388797c88e51fa82ea12"
+    },
+    {
+      "ordinal": 16,
+      "at": "2026-10-02T18:55:42.462501+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.285,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "5f3528d2993c8754d106f714da7c78bebcfe9aef635b664c1cff894e08f6d93e"
+    },
+    {
+      "ordinal": 17,
+      "at": "2026-10-02T18:55:43.747796+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.283,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "4604377dce849c8d2c0aa3beb224e49aade169645fa9566c939aaf025f5f7965"
+    },
+    {
+      "ordinal": 18,
+      "at": "2026-10-02T18:55:45.031027+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.278,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "5a53adab9a12394d37759b6130e7ffb0659af363a3c74bb0ba668c358ebe4df5"
+    },
+    {
+      "ordinal": 19,
+      "at": "2026-10-02T18:55:46.309523+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.29,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "e356da4dfc7c6cc8e535fee5a5cac90896b8bf7b25d5bbb0428c315811d4efe9"
+    },
+    {
+      "ordinal": 20,
+      "at": "2026-10-02T18:55:47.600036+00:00",
+      "exit": 0,
+      "elapsedSeconds": 1.284,
+      "namedTestPresent": true,
+      "onePass": true,
+      "zeroFailures": true,
+      "outputSha256": "261c0df865b7a5c832a467071ff7ed7a911cb30e98a08a003cecdcf640df0616"
+    }
+  ]
+}

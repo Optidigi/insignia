@@ -1,0 +1,48 @@
+{
+  "schema": "insignia.m5-008s.grant.v1",
+  "apiVersion": "2026-07",
+  "queryHash": "b0b9b788418c0b7e30d120adfc5a2c4a1a83ee220a0a2f880e03677748944ee9",
+  "attempts": [
+    {
+      "kind": "auth",
+      "at": "2026-10-02T18:22:03.085Z",
+      "method": "POST",
+      "url": "https://insignia-rewrite-dev.myshopify.com/admin/oauth/access_token",
+      "status": 200,
+      "completedAt": "2026-10-02T18:22:03.540Z"
+    },
+    {
+      "kind": "admin_read",
+      "at": "2026-10-02T18:22:03.541Z",
+      "method": "POST",
+      "url": "https://insignia-rewrite-dev.myshopify.com/admin/api/2026-07/graphql.json",
+      "status": 200,
+      "completedAt": "2026-10-02T18:22:03.843Z"
+    }
+  ],
+  "rawBodiesRetained": false,
+  "bearerRetained": false,
+  "credentialOwnership": {
+    "uid": 1000,
+    "mode": "600",
+    "route": "existing own-organization Admin client_credentials; server.env"
+  },
+  "auth": {
+    "tokenType": "not_supplied",
+    "expiresIn": 86399
+  },
+  "identity": {
+    "shop": "gid://shopify/Shop/105501393179",
+    "domain": "insignia-rewrite-dev.myshopify.com",
+    "partnerDevelopment": true,
+    "installation": "gid://shopify/AppInstallation/1054356963611",
+    "app": "gid://shopify/App/429028933633",
+    "client": "1443cf6d03d39edae7c101a943c5c684",
+    "grantedScopes": [
+      "read_products",
+      "write_products"
+    ],
+    "writeProductsGranted": true
+  },
+  "result": "VERIFIED_WRITE_PRODUCTS"
+}

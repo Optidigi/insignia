@@ -1,0 +1,89 @@
+import { lstatSync,readFileSync,writeFileSync,renameSync,openSync,closeSync,fsyncSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { createHash } from 'node:crypto';
+import { pathToFileURL } from 'node:url';
+import { IDENTITY,validateDocument } from '/home/serveradmin/insignia-m5-008s-worktree/scripts/m5-005/schema-contract.mjs';
+const RUN='/home/serveradmin/insignia-m5-008s-run-ak9r6qiw';
+const FILE='/home/serveradmin/.local/share/insignia-public-app/server.env';
+const TARGET=Object.freeze({app:'gid://shopify/App/429028933633',client:'1443cf6d03d39edae7c101a943c5c684',shop:'gid://shopify/Shop/105501393179',domain:'insignia-rewrite-dev.myshopify.com',installation:'gid://shopify/AppInstallation/1054356963611'});
+class Stop extends Error { constructor(code){super(code);this.code=code} }
+function requireValue(value,code){if(!value)throw new Stop(code)}
+const hasControl=(value)=>[...value].some(char=>char.charCodeAt(0)<32||char.charCodeAt(0)===127);
+export function protectedCredentials() {
+  let info, dir;
+  try {
+    info = lstatSync(FILE);
+    dir = lstatSync(dirname(FILE));
+  } catch (error) {
+    throw new Stop(
+      error.code === 'ENOENT'
+        ? 'credential_route_missing'
+        : error.code === 'EACCES'
+          ? 'credential_route_unreadable'
+          : 'credential_route_io_error',
+    );
+  }
+  requireValue(
+    info.isFile() &&
+      !info.isSymbolicLink() &&
+      info.uid === process.getuid() &&
+      (info.mode & 0o077) === 0 &&
+      dir.isDirectory() &&
+      !dir.isSymbolicLink() &&
+      dir.uid === process.getuid() &&
+      (dir.mode & 0o077) === 0,
+    'credential_permissions',
+  );
+  let contents;
+  try {
+    contents = readFileSync(FILE, 'utf8');
+  } catch {
+    throw new Stop('credential_route_unreadable');
+  }
+  requireValue(contents.length <= 32 * 1024, 'credential_bound');
+  function variable(name) {
+    const matches = contents.split('\n').filter((line) => line.startsWith(`${name}=`));
+    requireValue(matches.length === 1, `credential_variable_${name}`);
+    let value = matches[0].slice(name.length + 1).trim();
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'")))
+      value = value.slice(1, -1);
+    requireValue(value.length > 0 && value.length <= 4096 && !hasControl(value), 'credential_value');
+    return value;
+  }
+  requireValue(variable('SHOPIFY_API_KEY') === TARGET.client, 'credential_client');
+  return {
+    secret: variable('SHOPIFY_API_SECRET'),
+    ownership: {
+      uid: info.uid,
+      mode: (info.mode & 0o777).toString(8),
+      route: 'existing own-organization Admin client_credentials; server.env',
+    },
+  };
+}
+
+function durable(path,value){const temp=path+'.tmp';writeFileSync(temp,JSON.stringify(value,null,2)+'\n',{mode:0o600});const fd=openSync(temp,'r');fsyncSync(fd);closeSync(fd);renameSync(temp,path);const dir=openSync(dirname(path),'r');fsyncSync(dir);closeSync(dir)}
+export function project(data){
+ requireValue(data&&typeof data==='object','identity_shape');
+ const {shop,currentAppInstallation:i}=data;
+ requireValue(shop?.id===TARGET.shop&&shop.myshopifyDomain===TARGET.domain&&shop.plan?.partnerDevelopment===true&&i?.id===TARGET.installation&&i.app?.id===TARGET.app&&i.app.apiKey===TARGET.client,'identity_mismatch');
+ requireValue(Array.isArray(i.accessScopes)&&i.accessScopes.length<=100,'scope_shape');
+ const scopes=i.accessScopes.map(x=>{requireValue(x&&typeof x.handle==='string'&&/^[a-z][a-z0-9_]{0,99}$/.test(x.handle),'scope_handle');return x.handle}).sort();
+ requireValue(new Set(scopes).size===scopes.length,'scope_duplicate');
+ return {shop:shop.id,domain:shop.myshopifyDomain,partnerDevelopment:true,installation:i.id,app:i.app.id,client:i.app.apiKey,grantedScopes:scopes,writeProductsGranted:scopes.includes('write_products')};
+}
+export function tokenValue(data){requireValue(data&&typeof data.access_token==='string'&&data.access_token.length>0&&data.access_token.length<=8192&&!hasControl(data.access_token),'auth_token');if(data.token_type!==undefined)requireValue(typeof data.token_type==='string'&&data.token_type.toLowerCase()==='bearer','auth_type');if(data.expires_in!==undefined)requireValue(Number.isSafeInteger(data.expires_in)&&data.expires_in>0,'auth_expiry');return data.access_token}
+async function jsonPost(url,headers,body,record,kind){
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);record.attempts.push({kind,at:new Date().toISOString(),method:'POST',url});durable(RUN+'/grant-result.json',record);
+ try{const response=await fetch(url,{method:'POST',headers,body,signal:controller.signal,redirect:'error'});const receipt=record.attempts.at(-1);receipt.status=response.status;durable(RUN+'/grant-result.json',record);if(!response.ok){await response.body?.cancel();throw new Stop(kind+'_http')}requireValue(response.body,kind+'_body');const reader=response.body.getReader();const chunks=[];let total=0;try{while(true){const {value,done}=await reader.read();if(done)break;total+=value.length;requireValue(total<=131072,kind+'_body_bound');chunks.push(value)}}catch(error){await reader.cancel().catch(()=>{});throw error}finally{reader.releaseLock()}let data;try{data=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(Buffer.concat(chunks)))}catch{throw new Stop(kind+'_json')};receipt.completedAt=new Date().toISOString();return data;
+ }catch(error){if(error instanceof Stop)throw error;throw new Stop(controller.signal.aborted?kind+'_deadline':kind+'_transport_unknown')}finally{controller.abort();clearTimeout(timer)}
+}
+async function main(){
+ const lock=openSync(RUN+'/auth-read.reserved.once','wx',0o600);fsyncSync(lock);closeSync(lock);const lockDir=openSync(RUN,'r');fsyncSync(lockDir);closeSync(lockDir);
+ const path=RUN+'/register.json';const register=JSON.parse(readFileSync(path,'utf8'));requireValue(register.state==='OPTIONAL_APPROVAL_OBSERVED'&&register.reserved.auth_exchange===0&&register.reserved.admin_read===0,'register_reentry');
+ register.reserved.auth_exchange=1;register.reserved.admin_read=1;register.state='AUTH_READ_RESERVED';register.events.push({operation:'auth_and_identity_read',state:'reserved',at:new Date().toISOString()});durable(path,register);
+ const record={schema:'insignia.m5-008s.grant.v1',apiVersion:'2026-07',queryHash:createHash('sha256').update(IDENTITY).digest('hex'),attempts:[],rawBodiesRetained:false,bearerRetained:false};
+ try{validateDocument(IDENTITY);const credentials=protectedCredentials();record.credentialOwnership=credentials.ownership;const auth=await jsonPost('https://'+TARGET.domain+'/admin/oauth/access_token',{'content-type':'application/json'},JSON.stringify({grant_type:'client_credentials',client_id:TARGET.client,client_secret:credentials.secret}),record,'auth');const bearer=tokenValue(auth);record.auth={tokenType:auth.token_type??'not_supplied',expiresIn:auth.expires_in??'not_supplied'};const response=await jsonPost('https://'+TARGET.domain+'/admin/api/2026-07/graphql.json',{'content-type':'application/json','X-Shopify-Access-Token':bearer},JSON.stringify({query:IDENTITY}),record,'admin_read');requireValue(!response.errors,'graphql_errors');record.identity=project(response.data);requireValue(record.identity.writeProductsGranted,'write_products_absent');record.result='VERIFIED_WRITE_PRODUCTS';register.state='CLOSED_VERIFIED';
+ }catch(error){record.result='STOP';record.classification=error instanceof Stop?error.code:'local_unknown';register.state='CLOSED_STOP';}
+ durable(RUN+'/grant-result.json',record);register.events.push({operation:'auth_and_identity_read',state:record.result,classification:record.classification??null,at:new Date().toISOString()});durable(path,register);process.stdout.write(JSON.stringify({result:record.result,classification:record.classification??null})+'\n');if(record.result==='STOP')process.exitCode=2;
+}
+if(process.argv[1]&&import.meta.url===pathToFileURL(process.argv[1]).href)await main();

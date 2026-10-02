@@ -1,0 +1,33 @@
+{
+  "schema": "insignia.m5-008s.local.v1",
+  "syntheticControls": {
+    "node": "v24.21.0",
+    "passed": 12,
+    "credentialReads": 0,
+    "fetchCalls": 0,
+    "scope": "identity/development/duplicate-scope/absent-write/auth-token negatives, before helper safety corrections"
+  },
+  "correctedHelperSyntax": {
+    "command": "pinned Node24.21.0 --check grant-helper.mjs",
+    "exit": 0
+  },
+  "localScratchFailures": [
+    {
+      "stage": "UI evidence update",
+      "result": "Python NameError from unparsed JSON boolean; corrected with json.loads, no evidence/remote dispatch from failed command"
+    },
+    {
+      "stage": "preaccess review prompt creation",
+      "result": "Path.with_name rejected nested path after helper correction; absent-input reviewer command exit1, no review/session launched; corrected path and fresh reviewer started"
+    }
+  ],
+  "browserReadbackCorrections": [
+    "click returned before navigation; read-only readiness/evaluate failures retained as local timing observations",
+    "premature comparison at Versions list had null controls; no actual config mismatch; subsequent exact current create form matched all whitelisted fields"
+  ],
+  "preaccessFindings": [
+    "exclusive reservation",
+    "cancel failed response bodies"
+  ],
+  "productionSourceChanged": false
+}

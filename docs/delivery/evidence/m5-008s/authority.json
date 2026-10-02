@@ -1,0 +1,35 @@
+{
+  "package_sha256": "c23df4490af4819fa42ebe7dedebbb5f8e630dd01478adbbee403141bb291ca4",
+  "supplied_manifest": {
+    "M5-008S-OPTIONAL-SCOPE-DEV-STORE-GRANT.md": "87e73a3c8ac2245d9ff290e6e41482bd5a3373cf2689728ab46cab42ca5f5753",
+    "OWNER-LAUNCH.txt": "39c083786116c3ec8fff69dd3a3c6729b2e16b3daaf399d533564790d7508050",
+    "PR-037-principal-review.md": "74feb54d6fa709605a64fe13368da94648999c9483797594c5d217b279287bf3",
+    "README.md": "230480ab5423a1a4247040c26c0db71a23ad9b44aeae1a928314360201866186",
+    "RESEARCH-NOTES.md": "c484b7c7030ca0f70236ea7c857513d25459dc827a1f8b2a4ad8c14a4e7195f2",
+    "verification.json": "8472a288d4a303d774d98631ca46661d12e7756ba92f9501e5c7a481c1e7d232"
+  },
+  "manifest_result": "6/6 PASS",
+  "root_model": "gpt-6.1-sol",
+  "root_effort": "high",
+  "root_settings_evidence": "Trusted T3 same-launch runtime",
+  "operator": "Root only",
+  "verification": {
+    "repository": "Optidigi/insignia",
+    "pr": 37,
+    "base": "adecff04a3ff5b5d72665cbb404265477d6eb748",
+    "head": "77d01a5cfe828c723f37d7ab45e245d01e44d5bd",
+    "tree": "f11ba18504ccf44c29c0319aa3f1afc8ed91103e",
+    "final_head_workflows": 10,
+    "all_final_head_workflows_success": true,
+    "all_final_head_run_attempts": 1,
+    "principal_verdict": "APPROVED_STOPPED_DOCS_EVIDENCE_SCOPE",
+    "next_slice": "M5-008S",
+    "required_scopes_after_release": [],
+    "optional_scopes_after_release": [
+      "write_products"
+    ],
+    "grant_target_store": "insignia-rewrite-dev",
+    "installation_inventory_required": false,
+    "product_mutation_authorized": false
+  }
+}
