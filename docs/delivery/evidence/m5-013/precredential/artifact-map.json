@@ -1,0 +1,22 @@
+{
+  "/home/serveradmin/insignia-m5-013-handoff/offline-summary.json": {
+    "repositoryPath": "docs/delivery/evidence/m5-013/precredential/offline-summary.json",
+    "sha256": "8b4f970ec8934b7b2689486e2bd9f0efe541a5f2c1238ed4937041cabfe17273"
+  },
+  "/home/serveradmin/insignia-m5-013-handoff/source-spec-result.md": {
+    "repositoryPath": "docs/delivery/evidence/m5-013/precredential/source-spec-result.md",
+    "sha256": "0c3dd6c0d16b10cb97a05637a4c535bc796718371d671c63c1b851674830a6bc"
+  },
+  "/home/serveradmin/insignia-m5-013-handoff/source-security-result.md": {
+    "repositoryPath": "docs/delivery/evidence/m5-013/precredential/source-security-result.md",
+    "sha256": "4b84b7cb00235fd185ed7e490bc7b04a8532d59de94ca95f710a824ea2bb0452"
+  },
+  "/home/serveradmin/insignia-m5-013-handoff/source-spec-settings.json": {
+    "repositoryPath": "docs/delivery/evidence/m5-013/precredential/source-spec-settings.json",
+    "sha256": "033c74e18efc88c8f93af98c4f3fb8b69d221f414e7dfa18db9a86cb829a210b"
+  },
+  "/home/serveradmin/insignia-m5-013-handoff/source-security-settings.json": {
+    "repositoryPath": "docs/delivery/evidence/m5-013/precredential/source-security-settings.json",
+    "sha256": "eb092fd00f593a39ee50a21ae1f0cbe34dc5e564954d31b6be93e3ab462e59c6"
+  }
+}

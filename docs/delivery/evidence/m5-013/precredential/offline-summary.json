@@ -1,0 +1,34 @@
+{
+  "source": "df76a6a39b31263796b8a355debd64661a14f5f2",
+  "tree": "9e7635c410c510d2aa691095da94f0b84901e333",
+  "bindingDigest": "ee31f7e78c16b1f517bb1138bb0c23a0257dedf22adb802fe410b94f4b848db7",
+  "exitCode": 0,
+  "checks": {
+    "base": "9d896e824ebf3beb5e560ce89e9873799869f6c5",
+    "root": {
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "browser": "offline committed tests, synthetic only",
+      "database": "not locally configured; dependent local tests skipped; exact CI required"
+    },
+    "focused": {
+      "command": "node --test scripts/m5-013/operator.test.mjs scripts/m5-013/binding.test.mjs",
+      "exitCode": 0,
+      "pass": 26,
+      "serialSyntheticCases": 100
+    },
+    "schema": {
+      "server": "Shopify Dev MCPv1.15.4",
+      "version": "2026-07",
+      "documents": 3,
+      "invalidControl": "rejected",
+      "warnings": "ShopPlan.displayName deprecated only"
+    },
+    "redGreenCycles": 3,
+    "setupFailures": "missing initial build and schema wrong-import preserved NON-ACCEPTANCE; corrected before accepted checks",
+    "priorCanonicalFilesUnchanged": 33,
+    "productionPackagesSourceUnchanged": true,
+    "credentialAccess": false,
+    "AdminCalls": 0
+  }
+}

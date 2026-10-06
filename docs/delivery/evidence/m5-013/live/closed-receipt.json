@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "profile": "m5-013",
+  "canonicalDirectory": "/home/serveradmin/insignia-m5-013-handoff/run",
+  "closed": true,
+  "furtherAuthority": "CLOSED; no additional credential/provider operation or register reopening",
+  "closedAt": "2026-10-06T16:30:12.360266Z",
+  "source": "df76a6a39b31263796b8a355debd64661a14f5f2",
+  "tree": "9e7635c410c510d2aa691095da94f0b84901e333",
+  "sourceBindingDigest": "ee31f7e78c16b1f517bb1138bb0c23a0257dedf22adb802fe410b94f4b848db7",
+  "outcome": "SETTLED",
+  "cleanup": {
+    "outcome": "FINAL_ARCHIVED_UNPUBLISHED",
+    "status": "ARCHIVED",
+    "effective": false,
+    "acknowledgement": "ACKNOWLEDGED"
+  },
+  "counts": {
+    "auth": 1,
+    "read": 2,
+    "update": 1
+  },
+  "pendingAtClose": null,
+  "lastObservedAt": "2026-10-06T16:26:28.142Z",
+  "fixture": "gid://shopify/Product/10490211467547",
+  "marker": "insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb",
+  "final": {
+    "__typename": "Product",
+    "id": "gid://shopify/Product/10490211467547",
+    "handle": "insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb",
+    "title": "insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb",
+    "tags": [
+      "insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb"
+    ],
+    "createdAt": "2026-10-02T21:19:48Z",
+    "status": "ARCHIVED",
+    "updatedAt": "2026-10-06T16:26:27Z",
+    "publishedAt": null,
+    "onlineStoreUrl": null,
+    "publishedOnPublication": false,
+    "resourcePublications": {
+      "nodes": [],
+      "pageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
+    }
+  },
+  "timestamps": {
+    "acknowledgedUpdatedAt": "2026-10-06T16:26:27Z",
+    "finalUpdatedAt": "2026-10-06T16:26:27Z",
+    "equal": true,
+    "deltaMilliseconds": 0
+  },
+  "canonicalFiles": {
+    "binding.json": "e2a7466ff0ab58752cf29589f33e8ac8bf26a853b7ba50ddc3c36ff457411be0",
+    "gate.json": "b4953fae6757b77b93419b79bd6f4d31aa8db37eb07f959b61e948264bad8e0b",
+    "initialized.once": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "qualification.json": "beb853cb8d632f58c74933e2eea9ed100ba9d805582b8fd3e488a1e0b7357d23",
+    "register.json": "bfcdc9605e83eb2778b088e5ca3d3b5fe99ceda52100c6827089177e9336f1ef"
+  },
+  "priorCanonicalFilesVerifiedUnchanged": 33,
+  "sealing": "All canonical files made mode0444 after durable closure receipt; no immutable filesystem/superuser guarantee is claimed."
+}

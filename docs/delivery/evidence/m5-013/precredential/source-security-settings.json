@@ -1,0 +1,18 @@
+{
+  "thread": "01a11201-71a8-70f2-8b79-235e49c17c6f",
+  "role": "security",
+  "source": "df76a6a39b31263796b8a355debd64661a14f5f2",
+  "base": "9d896e824ebf3beb5e560ce89e9873799869f6c5",
+  "attestation": "orchestrator verified actual same-launch turn_context; reviewer cannot independently attest provider internals",
+  "selectedSameLaunchContext": [
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-013-worktree",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "approval_policy": "never"
+    }
+  ]
+}
