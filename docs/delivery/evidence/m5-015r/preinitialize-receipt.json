@@ -1,0 +1,18 @@
+{
+  "base": "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+  "head": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+  "tree": "120d331e00cb95d56bc4712947a61f06683a2640",
+  "effectiveMergeBase": "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+  "remoteMain": "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+  "bindingDigest": "4c9b42df4d0663bfa6c74a09f4f0b10a753ad0066d515bb448c84d224d90d76f",
+  "bindingFileSha256": "e55a6f1f57430878de86c3245ee2da7a9e8ad91428a3018dea68f0f7d83f0cc0",
+  "gateFileSha256": "91b779690efad7869b7f12e8fc3d6c4189fdc68cc94d1b95ccbe4464020469ff",
+  "modules": 3166,
+  "ciCount": 10,
+  "reviewThreads": [
+    "01a11316-1fc3-7692-96ac-1c11431a0010",
+    "01a11316-2004-7622-8d05-ca04fab3ad7b"
+  ],
+  "canonicalAbsent": true,
+  "at": "2026-10-06T21:27:38.674Z"
+}

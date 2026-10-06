@@ -1,0 +1,42 @@
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (8.311003ms)
+✔ missing adapter transport / import proof uses only the guarded operator or denies locally (283.50354ms)
+✔ misspelled adapter transport / import proof uses only the guarded operator or denies locally (297.373783ms)
+✔ imports adapter transport / import proof uses only the guarded operator or denies locally (413.920314ms)
+✔ correct adapter transport / import proof uses only the guarded operator or denies locally (503.827834ms)
+✔ zero ACTIVE effective membership is PARTIAL with one create and safe archive, without acquire or restore (62.749712ms)
+✔ production v2 core lifecycle survives an actual fresh process, with capability=true and exact persisted hold bytes (1103.393606ms)
+✔ absence of future capability is recorded without weakening core qualification (1014.52457ms)
+✔ exact shop fence prevents creation (3.883538ms)
+✔ exact domain fence prevents creation (3.018187ms)
+✔ exact development fence prevents creation (2.588714ms)
+✔ exact app fence prevents creation (2.461572ms)
+✔ exact client fence prevents creation (2.742287ms)
+✔ exact installation fence prevents creation (2.652716ms)
+✔ exact grants fence prevents creation (5.905473ms)
+✔ ownership drift stops before setup and denies archival cleanup (10.638199ms)
+✔ actual schedule stops setup; explicit archive cannot turn persistent schedule into PASS (30.282666ms)
+✔ configured intent drift after setup stops acquire and permits separately settled cleanup (43.275876ms)
+✔ ambiguous create has one exact-marker recovery read and no further mutation (6.44599ms)
+✔ lost acquire acknowledgement never causes restore, replay or cleanup mutation (29.387414ms)
+✔ closed register rejects reentry before loading even synthetic credentials (38.775786ms)
+✔ unsafe synthetic directory and live gate reject before any request (0.420734ms)
+✔ global attempts, document denial, token replacement and serial reservation are durable (295.817942ms)
+✔ one-second ACK/readback difference is retained while v2 semantics complete in fresh process (969.539652ms)
+✔ lost restore acknowledgement in fresh process never retries or archives (729.117907ms)
+✔ incomplete configured-intent connection stops lifecycle before setup (11.991456ms)
+✔ production pagination consumes global budget and repeated cursor stops without mutation (15.560479ms)
+✔ fresh-process-only resume rejects same PID before credential load in live operator seam (33.74918ms)
+✔ non-quiescent fetch timeout retains pending reservation and forbids another request (8001.502993ms)
+✔ malformed production mutation acknowledgement is not considered settled for archival authority (26.306255ms)
+✔ failed disposal of an oversized body quarantines the outbound attempt (2.147421ms)
+✔ persisted hold tampering stops fresh-process resume before a second auth or cleanup request (588.514494ms)
+✔ all synthetic auth/create/status/production reads dispatch only after matching durable events (38.915838ms)
+✔ durable accounting corruption prevents create dispatch and any cleanup mutation (4.267638ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13371.929051

@@ -1,0 +1,52 @@
+✖ missing fetchImpl fails locally as network_escape_denied with zero native requests (237.538327ms)
+✖ misspelled fetchImpl fails locally as network_escape_denied with zero native requests (228.17673ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 567.534403
+
+✖ failing tests:
+
+test at scripts/m5-015r/guard.test.mjs:6:3
+✖ missing fetchImpl fails locally as network_escape_denied with zero native requests (237.538327ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'provider_unavailable'
+  - 'network_escape_denied'
+
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015r-worktree/scripts/m5-015r/guard.test.mjs:17:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'provider_unavailable',
+    expected: 'network_escape_denied',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-015r/guard.test.mjs:6:3
+✖ misspelled fetchImpl fails locally as network_escape_denied with zero native requests (228.17673ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'provider_unavailable'
+  - 'network_escape_denied'
+
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015r-worktree/scripts/m5-015r/guard.test.mjs:17:14)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'provider_unavailable',
+    expected: 'network_escape_denied',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

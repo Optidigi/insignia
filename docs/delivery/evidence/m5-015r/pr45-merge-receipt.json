@@ -1,0 +1,12 @@
+{
+  "merge": "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+  "orderedParents": [
+    "245be82fd3dd3a0dbe808cb65340ce16e1caa503",
+    "ee86996a55b6c7f4cccfbb4b326522b6f9d0cb4c"
+  ],
+  "tree": "c68d782d6c0f985ad724c277435cf792e0a40bbe",
+  "remoteMain": "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+  "method": "NORMAL merge",
+  "protectionBypass": false,
+  "nativeApprovalFabricated": false
+}

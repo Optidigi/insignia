@@ -1,0 +1,1 @@
+{"outcome":"STOPPED","stop":"provider_shape","cleanup":{"outcome":"UNSETTLED_CLEANUP"},"counts":{"auth":1,"graphql":9,"create":1,"directUpdate":1,"adapterMutation":0},"transport":{"invocations":10,"mismatch":false,"reserved":10,"dispatched":10,"matches":true}}

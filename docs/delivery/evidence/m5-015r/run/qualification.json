@@ -1,0 +1,175 @@
+{
+  "outcome": "STOPPED",
+  "cleanup": {
+    "outcome": "UNSETTLED_CLEANUP"
+  },
+  "credentialMetadata": {
+    "uid": 1000,
+    "mode": "600",
+    "route": "existing own-organization Admin client_credentials; server.env"
+  },
+  "identity": {
+    "shop": {
+      "id": "gid://shopify/Shop/105501393179",
+      "myshopifyDomain": "insignia-rewrite-dev.myshopify.com",
+      "plan": {
+        "partnerDevelopment": true
+      }
+    },
+    "currentAppInstallation": {
+      "id": "gid://shopify/AppInstallation/1054356963611",
+      "app": {
+        "id": "gid://shopify/App/429028933633",
+        "apiKey": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "accessScopes": [
+        {
+          "handle": "read_publications"
+        },
+        {
+          "handle": "read_product_listings"
+        },
+        {
+          "handle": "write_products"
+        },
+        {
+          "handle": "read_products"
+        }
+      ]
+    }
+  },
+  "create": {
+    "__typename": "Product",
+    "id": "gid://shopify/Product/10495813091611",
+    "handle": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+    "title": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+    "tags": [
+      "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f"
+    ],
+    "createdAt": "2026-10-06T21:27:53Z",
+    "status": "DRAFT",
+    "updatedAt": "2026-10-06T21:27:54Z"
+  },
+  "latestOwnership": {
+    "shop": {
+      "id": "gid://shopify/Shop/105501393179",
+      "myshopifyDomain": "insignia-rewrite-dev.myshopify.com",
+      "plan": {
+        "partnerDevelopment": true
+      }
+    },
+    "currentAppInstallation": {
+      "id": "gid://shopify/AppInstallation/1054356963611",
+      "app": {
+        "id": "gid://shopify/App/429028933633",
+        "apiKey": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "accessScopes": [
+        {
+          "handle": "read_publications"
+        },
+        {
+          "handle": "read_product_listings"
+        },
+        {
+          "handle": "write_products"
+        },
+        {
+          "handle": "read_products"
+        }
+      ]
+    },
+    "product": {
+      "__typename": "Product",
+      "id": "gid://shopify/Product/10495813091611",
+      "handle": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+      "title": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+      "tags": [
+        "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f"
+      ],
+      "createdAt": "2026-10-06T21:27:53Z",
+      "status": "ACTIVE",
+      "updatedAt": "2026-10-06T21:27:59Z"
+    }
+  },
+  "draft": {
+    "version": "m5-product-availability-snapshot-v2",
+    "scope": {
+      "shopId": "m5_015r_fixture_only",
+      "installationGeneration": "1",
+      "shopifyShopId": "gid://shopify/Shop/105501393179",
+      "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "productId": "gid://shopify/Product/10495813091611",
+    "state": "unavailable",
+    "providerUpdatedAt": "2026-10-06T21:27:55.000Z",
+    "effectiveVisibility": {
+      "publishedPublicationIds": [],
+      "onlineStore": {
+        "publishedAtPresent": false,
+        "urlPresent": false
+      },
+      "publicationEvidence": [],
+      "publishedAt": null,
+      "onlineStoreUrl": null
+    },
+    "configuredIntent": {
+      "includedPublicationIds": [],
+      "publicationSettings": [],
+      "scheduled": []
+    },
+    "intentDigest": "d6f7c2b896a057cbe478cbe5c33ae876eed724daadda2094b2afa4d44d9ff90b",
+    "effectiveDigest": "0bcfa96aee0883f6cef8a95c673080105759b704ccc98b5f6897b9e7299ead6c",
+    "observedAt": "2026-10-06T21:27:55.716Z",
+    "receivedAt": "2026-10-06T21:27:57.822Z"
+  },
+  "futureCapability": {
+    "flag": "FUTURE_CAPABILITY_NOT_OBSERVED",
+    "count": 0,
+    "publicationSettings": []
+  },
+  "setup": {
+    "__typename": "Product",
+    "id": "gid://shopify/Product/10495813091611",
+    "handle": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+    "title": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+    "tags": [
+      "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f"
+    ],
+    "createdAt": "2026-10-06T21:27:53Z",
+    "status": "ACTIVE",
+    "updatedAt": "2026-10-06T21:27:58Z"
+  },
+  "stop": "provider_shape",
+  "cleanupStop": "provider_shape",
+  "accounting": {
+    "auth": 1,
+    "graphql": 9,
+    "create": 1,
+    "directUpdate": 1,
+    "adapterMutation": 0
+  },
+  "transportAccounting": {
+    "invocations": 10,
+    "mismatch": false,
+    "reserved": 10,
+    "dispatched": 10,
+    "matches": true
+  },
+  "processGuard": {
+    "immutable": true
+  },
+  "pendingAtClose": null,
+  "settlements": [
+    {
+      "operation": "create",
+      "invoked": true,
+      "settlement": "ACKNOWLEDGED"
+    },
+    {
+      "operation": "setup",
+      "invoked": true,
+      "settlement": "ACKNOWLEDGED"
+    }
+  ]
+}

@@ -1,3 +1,11 @@
+# Current review boundary — M5-015R
+
+[PR45 approval](PR-045-principal-review.md) was followed by exact normal merge `6a186bea8e5d1c01a66f7ab683c06393fe81e991`; ordered parents/tree and remote main matched. M5-015 remains permanently STOPPED and its historical state below is unchanged.
+
+Fresh M5-015R is **CLOSED / STOPPED `provider_shape`**, after complete source/build/check/review/CI freeze and one live attempt. **Fresh Product `10495813091611` remains last verified ACTIVE and unarchived**, marker `insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f`. Its effective legacy Publication `339456917787` is absent from the complete enumerated configured-intent authority, so production v2 ACTIVE and independent cleanup-prestate snapshots reject. No hold intent/acquire/fresh live resume/observe/restore/archive was dispatched. Create/setup ACKs settled, pending0, unknown mutations0; all10 actual requests match durable accounting (auth1/GraphQL9/create1/direct status1/adapter mutations0).
+
+[Report and exact evidence](M5-015R-REPORT.md) in [PR46](https://github.com/Optidigi/insignia/pull/46). Source frozen at `c7ff662b01c20aea2b60c677a47b093a1c48b9f0`; all3,166 hashes unchanged at closure. Canonical `/home/serveradmin/insignia-m5-015r-handoff/run` is closed, byte-preserved and read-only. Worktree `/home/serveradmin/insignia-m5-015r-worktree`, branch `feat/m5-015r-live-v2-qualification`. Only completed-change evidence/reviews/final CI remain. No further credential/provider/browser/fixture cleanup, new product, production correction or reopening of this run. Principal must adjudicate fixture cleanup and Publication coverage. No successor merge, production activation, RELEASE_BOUND/G7, M6/M7 or launch.
+
 # Current review boundary — M5-015
 
 [PR #44 external approval](PR-044R-principal-review.md) and live refs/ten exact-head attempt1 workflows matched. Normal merge `245be82fd3dd3a0dbe808cb65340ce16e1caa503` has the approved ordered parents and tree; [receipt](evidence/m5-015/pr44-merge-receipt.json). Remote main matched that merge before slice work.

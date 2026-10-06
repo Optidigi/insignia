@@ -1,0 +1,129 @@
+{
+  "source": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+  "method": "Extract exact saved fields only; no provider request or replacement availability logic",
+  "observations": [
+    {
+      "operation": "draft-read",
+      "eventIndex": 4,
+      "status": "DRAFT",
+      "providerUpdatedAt": "2026-10-06T21:27:55Z",
+      "enumeratedPublicationIds": [
+        "gid://shopify/Publication/339456885019",
+        "gid://shopify/Publication/339456950555",
+        "gid://shopify/Publication/339456983323"
+      ],
+      "enumeratedIncludedProducts": [
+        {
+          "publicationId": "gid://shopify/Publication/339456885019",
+          "productIds": []
+        },
+        {
+          "publicationId": "gid://shopify/Publication/339456950555",
+          "productIds": []
+        },
+        {
+          "publicationId": "gid://shopify/Publication/339456983323",
+          "productIds": []
+        }
+      ],
+      "publicationPageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "endCursor": "eyJsYXN0X2lkIjozMzk0NTY5ODMzMjMsImxhc3RfdmFsdWUiOiIzMzk0NTY5ODMzMjMifQ=="
+      },
+      "legacyMembership": [],
+      "resourcePageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
+    },
+    {
+      "operation": "before-read",
+      "eventIndex": 7,
+      "status": "ACTIVE",
+      "providerUpdatedAt": "2026-10-06T21:27:59Z",
+      "enumeratedPublicationIds": [
+        "gid://shopify/Publication/339456885019",
+        "gid://shopify/Publication/339456950555",
+        "gid://shopify/Publication/339456983323"
+      ],
+      "enumeratedIncludedProducts": [
+        {
+          "publicationId": "gid://shopify/Publication/339456885019",
+          "productIds": []
+        },
+        {
+          "publicationId": "gid://shopify/Publication/339456950555",
+          "productIds": []
+        },
+        {
+          "publicationId": "gid://shopify/Publication/339456983323",
+          "productIds": []
+        }
+      ],
+      "publicationPageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "endCursor": "eyJsYXN0X2lkIjozMzk0NTY5ODMzMjMsImxhc3RfdmFsdWUiOiIzMzk0NTY5ODMzMjMifQ=="
+      },
+      "legacyMembership": [
+        {
+          "isPublished": true,
+          "publishDate": "2026-10-06T21:27:58Z",
+          "publication": {
+            "id": "gid://shopify/Publication/339456917787"
+          }
+        }
+      ],
+      "resourcePageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
+    },
+    {
+      "operation": "cleanup-read-read",
+      "eventIndex": 9,
+      "status": "ACTIVE",
+      "providerUpdatedAt": "2026-10-06T21:27:59Z",
+      "enumeratedPublicationIds": [
+        "gid://shopify/Publication/339456885019",
+        "gid://shopify/Publication/339456950555",
+        "gid://shopify/Publication/339456983323"
+      ],
+      "enumeratedIncludedProducts": [
+        {
+          "publicationId": "gid://shopify/Publication/339456885019",
+          "productIds": []
+        },
+        {
+          "publicationId": "gid://shopify/Publication/339456950555",
+          "productIds": []
+        },
+        {
+          "publicationId": "gid://shopify/Publication/339456983323",
+          "productIds": []
+        }
+      ],
+      "publicationPageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false,
+        "endCursor": "eyJsYXN0X2lkIjozMzk0NTY5ODMzMjMsImxhc3RfdmFsdWUiOiIzMzk0NTY5ODMzMjMifQ=="
+      },
+      "legacyMembership": [
+        {
+          "isPublished": true,
+          "publishDate": "2026-10-06T21:27:58Z",
+          "publication": {
+            "id": "gid://shopify/Publication/339456917787"
+          }
+        }
+      ],
+      "resourcePageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
+    }
+  ],
+  "classification": "ACTIVE legacy effective ID is absent from enumerated configured-intent authority; validAvailabilityV2 rejects, source unchanged",
+  "unresolved": "Why the publication is absent and its current includedProducts/intent are NOT_OBSERVED"
+}

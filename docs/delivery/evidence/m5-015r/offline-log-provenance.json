@@ -1,0 +1,92 @@
+[
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/guard-red.log",
+    "rawSha256": "6e97270525888d9bf278d13454a11fe00630c41c6c2d63cfb5c90dec1f8942a7",
+    "copy": "guard-red.log",
+    "copySha256": "627f6d865a80ed7efe035c68798bef0b6ed120ee1abc4bc9aa6cb64a5e5bf239"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/guard-green.log",
+    "rawSha256": "83dc0a685dd8645d67ca2c091417b0b23d96e1cf02b0c5fbe8db942d6b07684e",
+    "copy": "guard-green.log",
+    "copySha256": "83dc0a685dd8645d67ca2c091417b0b23d96e1cf02b0c5fbe8db942d6b07684e"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/guard-final-proof.log",
+    "rawSha256": "5de04910bf593460c82b5c04d1d03b0be78e17a5c31fc62b8ca596119c47fbcc",
+    "copy": "guard-final-proof.log",
+    "copySha256": "5de04910bf593460c82b5c04d1d03b0be78e17a5c31fc62b8ca596119c47fbcc"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/focused-final.log",
+    "rawSha256": "e8ac6dd2998ee18ef2ebf5147c30d1b2227dd0aae0635d70aab197eeab41088f",
+    "copy": "focused-final.log",
+    "copySha256": "e8ac6dd2998ee18ef2ebf5147c30d1b2227dd0aae0635d70aab197eeab41088f"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/adapter.log",
+    "rawSha256": "ce64ad6a9107fd1faa862e54f2b89c1ec9744d0047a584d4e9f021cf0352dee8",
+    "copy": "adapter.log",
+    "copySha256": "b9ff2a2d1ef2c363850fd81a41f034eef226ea064e63418d5a764c6531fcc186"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/recovery.log",
+    "rawSha256": "4915bedf916a1406929dc22d0cdff09468ff8126415e078e960b7417cac9ed18",
+    "copy": "recovery.log",
+    "copySha256": "350459ee39e692f0ffa66928dbd4f7e37ff92b2c766b1a39ab0951ed1d10b238"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/root-check-r1.log",
+    "rawSha256": "623c612d836570debc8b5cd28076a272d12b566811aec913eccc67011c71e2b0",
+    "copy": "root-check-r1.log",
+    "copySha256": "46a326e8e582ffbeb3b6f16a2ed336843fb4b53b1602285b6209ffa19e2f9437"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/style-final.log",
+    "rawSha256": "f5ce898669f5bbe63d2a9ff7b17ff19eefd28b9a3f292d055d702468abf78368",
+    "copy": "style-final.log",
+    "copySha256": "7742d4c0995501fd90bf46050fbd4fb796b81117e48d11597980ef07f756bd7a"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/history-check.json",
+    "rawSha256": "ba35fe29944eab50503bbf9906c97fac1d6049b56b55097ae74ff9461222287d",
+    "copy": "history-check.json",
+    "copySha256": "ba35fe29944eab50503bbf9906c97fac1d6049b56b55097ae74ff9461222287d"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/stress.log",
+    "rawSha256": "bdd1c5fff872a0d780b7cda4b6cedaac4f0a60399f6508a5fb0139ee56f03b0f",
+    "copy": "stress.log",
+    "copySha256": "bdd1c5fff872a0d780b7cda4b6cedaac4f0a60399f6508a5fb0139ee56f03b0f"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/renderer-control.log",
+    "rawSha256": "7a08d51c8422b88d988ccddb2a6a8f05754ea99100ab4bca9ac244536d7f6d53",
+    "copy": "renderer-control.log",
+    "copySha256": "df213f336c96dbd2bff7c69c9cb9378698db6e2d1f64cc91e1710ddab89b83ba"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/cleanup-red.log",
+    "rawSha256": "45204f0bbe82c561fff7195b6e9d74dd994b6d909eea5424d4d334d4f87b3e4e",
+    "copy": "cleanup-red.log",
+    "copySha256": "f4c450b44ce95e3449fdc856a96be847863d3f22c440134957666b7e27616ab6"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/cleanup-green.log",
+    "rawSha256": "7fba4b56153093b6af444d448d51af9308d044b44c0c551b6dffacae445a1415",
+    "copy": "cleanup-green.log",
+    "copySha256": "7fba4b56153093b6af444d448d51af9308d044b44c0c551b6dffacae445a1415"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/focused-corrected.log",
+    "rawSha256": "2e5b255fa99fb2cb7bbd44c5e89c2d5d0abd2f07439feaae2b6c05318a8b5d1e",
+    "copy": "focused-corrected.log",
+    "copySha256": "2e5b255fa99fb2cb7bbd44c5e89c2d5d0abd2f07439feaae2b6c05318a8b5d1e"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-015r-handoff/root-check-r2.log",
+    "rawSha256": "480110b1317d77ce953cc0b0110ae890e174079e64e60659bdfe31c4d197f30d",
+    "copy": "root-check-r2.log",
+    "copySha256": "3116db8798f826a93f1e6151e787dd00ae3223d9520c9513c2e1e242b6f6f0e7"
+  }
+]
