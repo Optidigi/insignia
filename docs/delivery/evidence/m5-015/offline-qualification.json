@@ -16,7 +16,7 @@
       "exitCode": 0,
       "result": "PASS",
       "artifact": "local/shopify-focused.log",
-      "sha256": "fb0db50bfaeb3673668de703e23fd1c8665a15fd059e02e7951003605f296c3e",
+      "sha256": "cb011778345167a221be0f986049d14f722f21bc703896177d060318e6b9b418",
       "details": "170 passed"
     },
     {
@@ -24,7 +24,7 @@
       "exitCode": 0,
       "result": "PASS",
       "artifact": "local/recovery-focused-final.log",
-      "sha256": "f441bf251844e54964a568ff34c011cdf6e9bb4b9d4011ea684e7680476d6b95",
+      "sha256": "daaf418449e28d486e96a9d44c668c5b0f71d4f79220cbd9d7d5e56b4201e314",
       "details": "20 passed"
     },
     {
@@ -64,7 +64,7 @@
       "exitCode": 1,
       "result": "FAILED_COMMAND_SELECTION",
       "artifact": "local/recovery-focused.log",
-      "sha256": "1853cb9e9862a131794379af4c67658119330dfed58e1148355beed8f6a9e9f6",
+      "sha256": "34573f48f37fb3b89b3c3b17913d5875ae5d5cdb9d5bcc2f930f02e77aaf5f78",
       "details": "wrong nonexistent test filter; corrected actual path run above"
     },
     {

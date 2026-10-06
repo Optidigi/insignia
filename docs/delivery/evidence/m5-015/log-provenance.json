@@ -1,5 +1,5 @@
 {
-  "transform": "ANSI escapes removed; trailing whitespace trimmed; original offline logs retained in neutral handoff directory",
+  "transform": "ANSI escapes removed; trailing whitespace and final blank lines trimmed; original offline logs retained in neutral handoff directory",
   "artifacts": {
     "partial-tracer-red.log": {
       "rawSha256": "fa62346b20affc15d40c658e69d6143af9e731eb7f0777baac120f67bda254b7",
@@ -11,7 +11,7 @@
     },
     "local/recovery-focused-final.log": {
       "rawSha256": "f441bf251844e54964a568ff34c011cdf6e9bb4b9d4011ea684e7680476d6b95",
-      "plainSha256": "f441bf251844e54964a568ff34c011cdf6e9bb4b9d4011ea684e7680476d6b95"
+      "plainSha256": "daaf418449e28d486e96a9d44c668c5b0f71d4f79220cbd9d7d5e56b4201e314"
     },
     "local/publication-stress.log": {
       "rawSha256": "f8d371f93372066fb2962bd653d7800f81df2b7cab257759c1f3db3e65ffd4e2",
@@ -51,7 +51,7 @@
     },
     "local/recovery-focused.log": {
       "rawSha256": "1853cb9e9862a131794379af4c67658119330dfed58e1148355beed8f6a9e9f6",
-      "plainSha256": "1853cb9e9862a131794379af4c67658119330dfed58e1148355beed8f6a9e9f6"
+      "plainSha256": "34573f48f37fb3b89b3c3b17913d5875ae5d5cdb9d5bcc2f930f02e77aaf5f78"
     },
     "local/malformed-ack-red.log": {
       "rawSha256": "e798f106cace26348622f39aa9b99521dd6c8e35cd70a323c0abc54549603978",
@@ -67,7 +67,7 @@
     },
     "local/shopify-focused.log": {
       "rawSha256": "fb0db50bfaeb3673668de703e23fd1c8665a15fd059e02e7951003605f296c3e",
-      "plainSha256": "fb0db50bfaeb3673668de703e23fd1c8665a15fd059e02e7951003605f296c3e"
+      "plainSha256": "cb011778345167a221be0f986049d14f722f21bc703896177d060318e6b9b418"
     }
   }
 }
