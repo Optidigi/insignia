@@ -1,0 +1,39 @@
+Use the attached `insignia-pr45-approved-m5-015r-handoff` package.
+
+Read README.md, PR-045-principal-review.md and M5-015R-LIVE-V2-QUALIFICATION.md first.
+
+I authorize NORMAL merge of PR #45 only at:
+base 245be82fd3dd3a0dbe808cb65340ce16e1caa503
+head ee86996a55b6c7f4cccfbb4b326522b6f9d0cb4c
+tree c68d782d6c0f985ad724c277435cf792e0a40bbe
+
+Reverify refs, all ten exact-head attempt-1 workflows and the external principal approval. No squash/rebase/force/protection bypass/fabricated native approval. Verify actual merge parents/tree.
+
+PR #45 is approved only as a truthful STOPPED M5-015 incident/offline-harness record. Never reopen or resume M5-015.
+
+Then execute fresh M5-015R exactly as specified.
+
+Fresh live run:
+`/home/serveradmin/insignia-m5-015r-handoff/run`
+
+Before any credential or Shopify request, add/prove the process-level network escape guard:
+- capture native fetch privately for the operator;
+- make globalThis.fetch throw `network_escape_denied`;
+- operator alone gets the captured native transport;
+- production v2 adapter gets only `fetchImpl: op.fetch`;
+- start and resume keep the guard active.
+
+A missing/misspelled fetchImpl must fail locally with zero external calls.
+
+Complete/freeze the full offline gate before initializing the live register.
+
+Then one fresh lifecycle only:
+DRAFT snapshot → direct ACTIVE → persisted v2 intent → acquire once → persisted hold → fresh-process observe once → restore once → archive once.
+
+Never retry create/acquire/restore.
+Every actual Shopify request must have a durable operator receipt.
+Any transport/accounting mismatch stops immediately.
+
+No publication/scope/version/product-delete/inventory/variant/price/media mutation. No production activation, RELEASE_BOUND, G7, M6/M7 or launch.
+
+Return one integrated evidence PR and stop. Do not merge the successor.

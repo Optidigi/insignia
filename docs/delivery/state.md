@@ -1,3 +1,9 @@
+# Current execution boundary — M5-015R
+
+[PR #45 approval](PR-045-principal-review.md) authorizes the truthful STOPPED M5-015 incident/offline-harness record only. The exact normal merge `6a186bea8e5d1c01a66f7ab683c06393fe81e991` matched ordered parents/tree and remote main; [receipt](evidence/m5-015r/pr45-merge-receipt.json). M5-015 remains permanently stopped and its historical state below is unchanged.
+
+Fresh [M5-015R](prompts/M5-015R-LIVE-V2-QUALIFICATION.md) is implementing and qualifying the mandatory process-level fetch guard and durable transport accounting locally. The canonical live directory is not initialized and protected credentials/live provider operations are NOT_RUN. Worktree `/home/serveradmin/insignia-m5-015r-worktree`, branch `feat/m5-015r-live-v2-qualification`. Full offline checks, independent full-source reviews and exact-source CI must pass before live authority opens. [Report](M5-015R-REPORT.md). Stop at principal review; no successor merge or launch.
+
 # Current review boundary — M5-015
 
 [PR #44 external approval](PR-044R-principal-review.md) and live refs/ten exact-head attempt1 workflows matched. Normal merge `245be82fd3dd3a0dbe808cb65340ce16e1caa503` has the approved ordered parents and tree; [receipt](evidence/m5-015/pr44-merge-receipt.json). Remote main matched that merge before slice work.
