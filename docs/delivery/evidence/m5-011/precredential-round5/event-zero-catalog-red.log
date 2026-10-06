@@ -1,0 +1,150 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (4.171584ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (205.992619ms)
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (2.003235ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (43.506165ms)
+✔ ownership stops before any status mutation (3.825327ms)
+✔ incomplete resourcePublications stops before any status mutation (2.490212ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.576056ms)
+✔ incomplete APP stops before any status mutation (3.457937ms)
+✔ incomplete MARKET stops before any status mutation (4.358904ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (4.91829ms)
+✔ incomplete NONE stops before any status mutation (6.408086ms)
+✔ missing read scope stops before any status mutation (1.679341ms)
+✔ initial DRAFT drift stops before any status mutation (5.843142ms)
+✔ cross-partition version drift stops before any status mutation (3.121865ms)
+✔ observed required grant loss in adapter read stops before any status mutation (7.921334ms)
+✔ lost DRAFT acknowledgement never retries or archives (13.175324ms)
+✔ DRAFT readback failure never retries or archives (11.280911ms)
+✔ post-DRAFT ownership drift never retries or archives (15.615991ms)
+✔ post-DRAFT partition drift never retries or archives (16.955286ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (19.30866ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (21.088785ms)
+✔ newly appearing DRAFT V2 membership is not described as retained from ACTIVE (21.487538ms)
+✖ concrete Shopify AppCatalog metadata permits the fixed adjudication (6.892501ms)
+✖ concrete Shopify MarketCatalog metadata permits the fixed adjudication (6.243025ms)
+✖ concrete Shopify CompanyLocationCatalog metadata permits the fixed adjudication (5.895798ms)
+✖ catalog typename and global ID mismatch stops before any status mutation (20.552369ms)
+✔ wrapped production failure preserves {"userError":true} (10.421967ms)
+✔ wrapped production failure preserves {"adapterFailure":"http403"} (8.690654ms)
+✔ wrapped production failure preserves {"adapterFailure":"graphql"} (7.14659ms)
+✔ wrapped production failure preserves {"adapterFailure":"invalidJSON"} (6.981336ms)
+✔ wrapped production failure preserves {"adapterFailure":"missingBody"} (8.402769ms)
+✔ wrapped production failure preserves {"adapterFailure":"badScopes"} (6.918121ms)
+✔ wrapped production failure preserves {"adapterFailure":"badNodes"} (8.907135ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOutstanding":true} (37.342643ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyOutstanding":true} (38.389389ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOversizeOutstanding":true} (38.810274ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyAbortOutstanding":true} (38.21982ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyCancelRejected":true} (17.343109ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.861419ms)
+✖ quarantined first event zero rejects every subsequent provider dispatch (21.61462ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (1553.650625ms)
+ℹ tests 41
+ℹ suites 0
+ℹ pass 36
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2297.898677
+
+✖ failing tests:
+
+test at scripts/m5-011/operator.test.mjs:269:3
+✖ concrete Shopify AppCatalog metadata permits the fixed adjudication (6.892501ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOPPED'
+  - 'ADJUDICATED_AND_ARCHIVED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:271:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOPPED',
+    expected: 'ADJUDICATED_AND_ARCHIVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:269:3
+✖ concrete Shopify MarketCatalog metadata permits the fixed adjudication (6.243025ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOPPED'
+  - 'ADJUDICATED_AND_ARCHIVED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:271:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOPPED',
+    expected: 'ADJUDICATED_AND_ARCHIVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:269:3
+✖ concrete Shopify CompanyLocationCatalog metadata permits the fixed adjudication (5.895798ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOPPED'
+  - 'ADJUDICATED_AND_ARCHIVED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:271:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOPPED',
+    expected: 'ADJUDICATED_AND_ARCHIVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:275:1
+✖ catalog typename and global ID mismatch stops before any status mutation (20.552369ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'catalog_shape'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:277:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'catalog_shape',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:381:1
+✖ quarantined first event zero rejects every subsequent provider dispatch (21.61462ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /closed_or_parallel/. Input:
+  
+  'Error: identity'
+  
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:393:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: Error: identity
+        at Object.transport [as fetch] (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.mjs:628:13)
+        at async waitForActual (node:assert:646:5)
+        at async strict.rejects (node:assert:769:25)
+        at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:393:5)
+        at async Test.run (node:internal/test_runner/test:1409:7)
+        at async Test.processPendingSubtests (node:internal/test_runner/test:974:7),
+    expected: /closed_or_parallel/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

@@ -155,7 +155,7 @@ export function assertPublication(data) {
   if (p.catalog !== null)
     requireValue(
       ['AppCatalog', 'MarketCatalog', 'CompanyLocationCatalog'].includes(p.catalog?.__typename) &&
-        gid('Catalog', p.catalog.id) &&
+        gid(p.catalog.__typename, p.catalog.id) &&
         typeof p.catalog.title === 'string' &&
         typeof p.catalog.status === 'string',
       'catalog_shape',
@@ -373,7 +373,7 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
     assertCurrent();
   };
   function classify(url, init, body) {
-    requireValue(!state.closed && !busy && !state.pending, 'closed_or_parallel');
+    requireValue(!state.closed && !busy && state.pending === null, 'closed_or_parallel');
     requireValue(init?.method === 'POST' && typeof init.body === 'string', 'request_shape');
     if (url === `https://${TARGET.domain}/admin/oauth/access_token`) {
       requireValue(

@@ -111,7 +111,14 @@ function simulator(options = {}) {
             id: PUBLICATION_ID,
             autoPublish: true,
             supportsFuturePublishing: false,
-            catalog: null,
+            catalog: options.catalog
+              ? {
+                  __typename: options.catalog,
+                  id: `gid://shopify/${options.catalogIdPrefix ?? options.catalog}/1`,
+                  title: 'synthetic catalog',
+                  status: 'ACTIVE',
+                }
+              : null,
             channels: connection([
               {
                 id: 'gid://shopify/Channel/1',
@@ -260,6 +267,20 @@ test('newly appearing DRAFT V2 membership is not described as retained from ACTI
   assert.equal(result.classification, 'DIFFERENT_PLATFORM_BEHAVIOR');
   assert.equal(result.adjudication.v2Retained, false);
 });
+for (const catalog of ['AppCatalog', 'MarketCatalog', 'CompanyLocationCatalog'])
+  test(`concrete Shopify ${catalog} metadata permits the fixed adjudication`, async () => {
+    const s = simulator({ catalog }),
+      result = await runSynthetic(s);
+    assert.equal(result.outcome, 'ADJUDICATED_AND_ARCHIVED');
+    assert.equal(result.publication.catalog.id, `gid://shopify/${catalog}/1`);
+    assert.equal(s.updates(), 2);
+  });
+test('catalog typename and global ID mismatch stops before any status mutation', async () => {
+  const s = simulator({ catalog: 'AppCatalog', catalogIdPrefix: 'Catalog' }),
+    result = await runSynthetic(s);
+  assert.equal(result.stop, 'catalog_shape');
+  assert.equal(s.updates(), 0);
+});
 for (const [options, expected] of [
   [{ userError: true }, 'user_error'],
   [{ adapterFailure: 'http403' }, 'forbidden'],
@@ -360,6 +381,48 @@ test('durable transport denies alternate target, ACTIVE, extra fields and arbitr
   assert.equal(sent, 0);
   assert.throws(() => createOperator({ directory, binding: {} }), /reentry/);
   assert.equal(JSON.parse(readFileSync(join(directory, 'register.json'))).counts.update, 0);
+});
+test('quarantined first event zero rejects every subsequent provider dispatch', async (t) => {
+  const original = AbortSignal.timeout.bind(AbortSignal);
+  t.mock.method(AbortSignal, 'timeout', () => original(20));
+  const keepalive = setTimeout(() => {}, 500);
+  let dispatched = 0;
+  const op = createOperator({
+    directory: mkdtempSync(join(tmpdir(), 'm5011-')),
+    binding: { synthetic: true },
+    fetchImpl: async () => {
+      dispatched++;
+      return dispatched === 1
+        ? new Response(new ReadableStream({ cancel: () => new Promise(() => {}) }), { status: 503 })
+        : Response.json({ data: {} });
+    },
+  });
+  try {
+    await assert.rejects(
+      op.fetch(`https://${TARGET.domain}/admin/oauth/access_token`, {
+        method: 'POST',
+        body: JSON.stringify({
+          client_id: TARGET.client,
+          client_secret: 'synthetic-secret',
+          grant_type: 'client_credentials',
+        }),
+      }),
+      /transport_timeout/,
+    );
+    assert.equal(op.state().pending, 0);
+    await assert.rejects(
+      op.fetch(`https://${TARGET.domain}/admin/api/2026-07/graphql.json`, {
+        method: 'POST',
+        body: JSON.stringify({ query: IDENTITY, variables: {} }),
+      }),
+      /closed_or_parallel/,
+    );
+    assert.equal(dispatched, 1);
+    assert.equal(op.state().pending, 0);
+    assert.deepEqual(op.state().counts, { auth: 1, read: 0, update: 0 });
+  } finally {
+    clearTimeout(keepalive);
+  }
 });
 
 test('100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write', async () => {
