@@ -100,6 +100,8 @@ async function run({ directory, binding, gate, assertCurrent, credentialLoader, 
     e.publications = await enumerate(op, request, PUBLICATIONS, 'publications', 3);
     e.catalogs = await enumerate(op, request, CATALOGS, 'catalogs', 2);
     Object.assign(e, classify(e.direct, e.publications, e.catalogs));
+    if (op.state().identityFailed || op.state().pending !== null || !op.transportAudit().matches)
+      Object.assign(e, { classification: 'UNRESOLVED', provenSurface: null, ambiguity: true });
     op.patch((s) => {
       s.adjudicated = true;
     });
@@ -143,6 +145,8 @@ async function run({ directory, binding, gate, assertCurrent, credentialLoader, 
   e.unknownMutations = state.events.filter((n) => n.mutation && n.settlement === 'UNKNOWN').length;
   e.fixtureLastVerified = state.fixture;
   e.authorityForFurtherProviderAccess = false;
+  if (state.identityFailed || !e.transportAccounting.matches || e.pending !== null)
+    Object.assign(e, { classification: 'UNRESOLVED', provenSurface: null, ambiguity: true });
   if (!e.transportAccounting.matches || e.pending !== null || e.unknownMutations > 0) e.outcome = 'STOPPED';
   op.close(e);
   return e;

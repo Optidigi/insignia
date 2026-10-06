@@ -56,6 +56,9 @@ export async function enumerate(op, request, query, name, reserve) {
     throw new Error('discovery_page_limit');
   } catch (error) {
     result.failure = error.kind ?? 'discovery_page_limit';
+    const event = op.state().events.at(-1);
+    const partial = event?.failure === 'provider_error' && event.response?.data?.[name];
+    if (partial) result.pages.push(partial);
   }
   return result;
 }
@@ -73,7 +76,28 @@ export function classify(direct, publications, catalogs) {
     !!c &&
     JSON.stringify({ __typename: c.__typename, id: c.id, status: c.status }) ===
       JSON.stringify(direct.publication?.catalog);
+  const observedPublications = publications.pages.flatMap((page) => (Array.isArray(page?.nodes) ? page.nodes : []));
+  const observedCatalogs = catalogs.pages.flatMap((page) => (Array.isArray(page?.nodes) ? page.nodes : []));
+  const expectedCatalog = JSON.stringify(direct.publication?.catalog);
+  const structuralFailure = (result) =>
+    result.failure !== null && !['provider_error', 'discovery_budget', 'NOT_RUN'].includes(result.failure);
   const ambiguity =
+    structuralFailure(publications) ||
+    structuralFailure(catalogs) ||
+    observedPublications.some(
+      (node) =>
+        node?.id === PUBLICATION &&
+        (node.autoPublish !== direct.publication?.autoPublish ||
+          node.supportsFuturePublishing !== direct.publication?.supportsFuturePublishing ||
+          JSON.stringify(node.catalog) !== expectedCatalog),
+    ) ||
+    observedCatalogs.some(
+      (node) =>
+        (node?.publication?.id === PUBLICATION &&
+          JSON.stringify({ __typename: node.__typename, id: node.id, status: node.status }) !== expectedCatalog) ||
+        (node?.id === CATALOG && node.publication?.id !== PUBLICATION),
+    ) ||
+    new Set(observedCatalogs.filter((node) => node?.publication?.id === PUBLICATION).map((node) => node.id)).size > 1 ||
     matches.length > 1 ||
     (p && !pubConsistent) ||
     (c && !catConsistent) ||

@@ -204,7 +204,9 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
         event.observation = { hasToken: true, expiresIn: raw.expires_in };
         returned = raw;
       } else {
-        if (Object.hasOwn(raw, 'errors')) {
+        const hasErrors = Object.hasOwn(raw, 'errors');
+        let d;
+        if (hasErrors)
           event.response = {
             errors: Array.isArray(raw.errors)
               ? raw.errors.map((e) => ({
@@ -213,22 +215,24 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
                 }))
               : [],
           };
-          throw new Stop('provider_error');
-        }
-        requireValue(raw?.data && typeof raw.data === 'object', 'provider_shape');
-        let d;
         try {
-          // Latch identity drift before any operation-specific projection can fail.
-          if (!r.mutation) {
-            event.identity = selectedIdentity(raw.data);
-            identity(raw.data);
+          // Reported identity is independent evidence, even in an error envelope.
+          // A pure denial without data carries no affirmative identity observation.
+          if (raw?.data && typeof raw.data === 'object') {
+            if (!r.mutation) {
+              event.identity = selectedIdentity(raw.data);
+              if (!hasErrors || raw.data.shop !== undefined || raw.data.currentAppInstallation !== undefined)
+                identity(raw.data);
+            }
+            d = selected(raw.data, r.operation);
+            event.response = { ...event.response, data: d };
           }
-          d = selected(raw.data, r.operation);
-          event.response = { data: d };
         } catch (error) {
           if (error.kind === 'identity' || error.kind === 'grants') state.identityFailed = true;
           throw error;
         }
+        if (hasErrors) throw new Stop('provider_error');
+        requireValue(d, 'provider_shape');
         if (!r.mutation)
           state.identity = {
             at: Date.now(),

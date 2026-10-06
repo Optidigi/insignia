@@ -1,0 +1,136 @@
+✖ GraphQL error with contradictory direct identity prevents archival (26.877788ms)
+✖ GraphQL error with contradictory catalog identity prevents archival (11.189118ms)
+✖ conflicting duplicate publications metadata cannot hide behind rejection (9.939589ms)
+✖ conflicting duplicate catalogs metadata cannot hide behind rejection (10.497889ms)
+✖ partial error publications data retains contradictory coverage evidence (9.906213ms)
+✖ partial error catalogs data retains contradictory coverage evidence (10.244186ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 0
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 325.720488
+
+✖ failing tests:
+
+test at scripts/m5-016/operator.test.mjs:284:38
+✖ GraphQL error with contradictory direct identity prevents archival (26.877788ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'PHASE_A_SETTLED'
+  - 'STOPPED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:286:16
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'PHASE_A_SETTLED',
+    expected: 'STOPPED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:284:38
+✖ GraphQL error with contradictory catalog identity prevents archival (11.189118ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'PHASE_A_SETTLED'
+  - 'STOPPED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:286:16
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'PHASE_A_SETTLED',
+    expected: 'STOPPED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:288:50
+✖ conflicting duplicate publications metadata cannot hide behind rejection (9.939589ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:292:16
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:288:50
+✖ conflicting duplicate catalogs metadata cannot hide behind rejection (10.497889ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:292:16
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:294:50
+✖ partial error publications data retains contradictory coverage evidence (9.906213ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:300:16
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:294:50
+✖ partial error catalogs data retains contradictory coverage evidence (10.244186ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:300:16
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

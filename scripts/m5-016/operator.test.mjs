@@ -281,6 +281,63 @@ test('identity mismatch combined with malformed operation data latches the fence
     },
   ));
 
+for (const query of [DIRECT, CATALOGS])
+  test(`GraphQL error with contradictory ${query === DIRECT ? 'direct' : 'catalog'} identity prevents archival`, async () =>
+    exercise(
+      (d, b) => {
+        if (b.query === query) {
+          d.shop.id = 'gid://shopify/Shop/9';
+          return Response.json({ data: d, errors: [{ message: 'denied', extensions: { code: 'ACCESS_DENIED' } }] });
+        }
+      },
+      (e) => {
+        assert.equal(e.outcome, 'STOPPED');
+        assert.equal(e.accounting.directUpdate, 0);
+        assert.equal(e.classification, 'UNRESOLVED');
+      },
+    ));
+
+for (const surface of ['publications', 'catalogs'])
+  test(`conflicting duplicate ${surface} metadata cannot hide behind rejection`, async () =>
+    exercise(
+      (d, b) => {
+        if (b.query === (surface === 'publications' ? PUBLICATIONS : CATALOGS)) {
+          const n = d[surface].nodes[0];
+          d[surface].nodes.push(
+            surface === 'publications'
+              ? { ...n, supportsFuturePublishing: !n.supportsFuturePublishing }
+              : { ...n, status: 'ARCHIVED' },
+          );
+        }
+      },
+      (e) => {
+        assert.equal(e.classification, 'UNRESOLVED');
+        assert.equal(e.ambiguity, true);
+        assert.equal(e[surface].failure, 'duplicate_discovery_id');
+      },
+    ));
+
+for (const surface of ['publications', 'catalogs'])
+  test(`partial error ${surface} data retains contradictory coverage evidence`, async () =>
+    exercise(
+      (d, b) => {
+        if (b.query === (surface === 'publications' ? PUBLICATIONS : CATALOGS)) {
+          if (surface === 'publications') d.publications.nodes[0].supportsFuturePublishing = true;
+          else d.catalogs.nodes[0].status = 'ARCHIVED';
+          return Response.json({
+            data: d,
+            errors: [{ message: 'partial failure', extensions: { code: 'ACCESS_DENIED' } }],
+          });
+        }
+      },
+      (e) => {
+        assert.equal(e.classification, 'UNRESOLVED');
+        assert.equal(e[surface].complete, false);
+        assert.equal(e.ambiguity, true);
+        assert.equal(e[surface].failure, 'provider_error');
+      },
+    ));
+
 test('lost archive acknowledgement gets exactly one final classification read and never a resend', async () =>
   exercise(
     (_d, b) => {
@@ -387,3 +444,16 @@ test('canonical entry exposes no resume phase and a closed synthetic register ca
     );
     assert.equal(f.calls.length, 7);
   }));
+
+test('identity contradiction in the final read invalidates the classification without another write', async () =>
+  exercise(
+    (d, b) => {
+      if (b.query === FINAL) d.shop.id = 'gid://shopify/Shop/9';
+    },
+    (e, f) => {
+      assert.equal(e.classification, 'UNRESOLVED');
+      assert.equal(e.outcome, 'STOPPED');
+      assert.equal(e.accounting.directUpdate, 1);
+      assert.equal(f.calls.filter((b) => b.query === FINAL).length, 1);
+    },
+  ));
