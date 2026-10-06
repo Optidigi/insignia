@@ -133,15 +133,15 @@ export function classify(observations) {
     channel: observations.channel.products.nodes.length === 1,
     association: observations.association.products.nodes.length === 1,
   };
-  // Empty and positive results on equivalent documented intent surfaces disagree.
+  // Only inclusion and the two intended searches vote on configured intent.
+  // Association is retained as diagnostic evidence with no guaranteed intent semantics.
   const intent = [matches.included, matches.app, matches.channel];
   const inconsistent =
     p.publishedOnPublication ||
     p.resourcePublications.nodes.some((n) => n.isPublished) ||
     p.publishedAt !== null ||
     p.onlineStoreUrl !== null ||
-    new Set(intent).size > 1 ||
-    matches.association !== intent[0];
+    new Set(intent).size > 1;
   return {
     classification: inconsistent
       ? 'INCONSISTENT'

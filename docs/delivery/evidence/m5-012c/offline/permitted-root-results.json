@@ -1,0 +1,75 @@
+{
+  "omitted": "corepack pnpm test:browser \u2014 explicit owner prohibition",
+  "results": [
+    {
+      "command": "corepack pnpm check:style",
+      "exitCode": 0,
+      "seconds": 0.684
+    },
+    {
+      "command": "corepack pnpm build",
+      "exitCode": 0,
+      "seconds": 17.23
+    },
+    {
+      "command": "corepack pnpm test:unit",
+      "exitCode": 0,
+      "seconds": 7.386
+    },
+    {
+      "command": "corepack pnpm test:m5-operator",
+      "exitCode": 0,
+      "seconds": 17.022
+    },
+    {
+      "command": "corepack pnpm test:vectors",
+      "exitCode": 0,
+      "seconds": 1.076
+    },
+    {
+      "command": "corepack pnpm check:boundaries",
+      "exitCode": 0,
+      "seconds": 37.022
+    },
+    {
+      "command": "corepack pnpm check:secrets",
+      "exitCode": 0,
+      "seconds": 0.163
+    },
+    {
+      "command": "python3 -B scripts/boundaries/check-cargo-workspace.py",
+      "exitCode": 0,
+      "seconds": 0.899
+    },
+    {
+      "command": "corepack pnpm check:rust",
+      "exitCode": 0,
+      "seconds": 2.193
+    },
+    {
+      "command": "M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 python3 -B scripts/m4-002/replay-production-vectors.py",
+      "exitCode": 0,
+      "seconds": 3.338
+    },
+    {
+      "command": "M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/m4-003/replay-public-config.mjs",
+      "exitCode": 0,
+      "seconds": 0.164
+    },
+    {
+      "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+      "exitCode": 0,
+      "seconds": 0.167
+    },
+    {
+      "command": "python3 -B spikes/m0-014/scripts/check-live-setup.py",
+      "exitCode": 0,
+      "seconds": 0.037
+    },
+    {
+      "command": "python3 -B scripts/m1-functions/artifact-manifest.py",
+      "exitCode": 0,
+      "seconds": 0.042
+    }
+  ]
+}

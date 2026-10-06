@@ -1,0 +1,93 @@
+{
+  "scope": "M5-012C local correction on same PR42; no provider/browser/credential operation",
+  "reviewedBase": "9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e",
+  "correctionFromHead": "4f0ee689218545af7161ce6a6fa4d942d319f533",
+  "focused": "35/35 passed including100 serial synthetic runs",
+  "root": {
+    "omitted": "corepack pnpm test:browser \u2014 explicit owner prohibition",
+    "results": [
+      {
+        "command": "corepack pnpm check:style",
+        "exitCode": 0,
+        "seconds": 0.684
+      },
+      {
+        "command": "corepack pnpm build",
+        "exitCode": 0,
+        "seconds": 17.23
+      },
+      {
+        "command": "corepack pnpm test:unit",
+        "exitCode": 0,
+        "seconds": 7.386
+      },
+      {
+        "command": "corepack pnpm test:m5-operator",
+        "exitCode": 0,
+        "seconds": 17.022
+      },
+      {
+        "command": "corepack pnpm test:vectors",
+        "exitCode": 0,
+        "seconds": 1.076
+      },
+      {
+        "command": "corepack pnpm check:boundaries",
+        "exitCode": 0,
+        "seconds": 37.022
+      },
+      {
+        "command": "corepack pnpm check:secrets",
+        "exitCode": 0,
+        "seconds": 0.163
+      },
+      {
+        "command": "python3 -B scripts/boundaries/check-cargo-workspace.py",
+        "exitCode": 0,
+        "seconds": 0.899
+      },
+      {
+        "command": "corepack pnpm check:rust",
+        "exitCode": 0,
+        "seconds": 2.193
+      },
+      {
+        "command": "M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 python3 -B scripts/m4-002/replay-production-vectors.py",
+        "exitCode": 0,
+        "seconds": 3.338
+      },
+      {
+        "command": "M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/m4-003/replay-public-config.mjs",
+        "exitCode": 0,
+        "seconds": 0.164
+      },
+      {
+        "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+        "exitCode": 0,
+        "seconds": 0.167
+      },
+      {
+        "command": "python3 -B spikes/m0-014/scripts/check-live-setup.py",
+        "exitCode": 0,
+        "seconds": 0.037
+      },
+      {
+        "command": "python3 -B scripts/m1-functions/artifact-manifest.py",
+        "exitCode": 0,
+        "seconds": 0.042
+      }
+    ]
+  },
+  "immutableFileCount": 132,
+  "rawEvidenceUnchanged": true,
+  "productionSourceAnd26ShopifyBuildArtifactsUnchanged": true,
+  "defectCycles": [
+    "query-red.log \u2192 query-green.log",
+    "consensus-red.log \u2192 consensus-green.log"
+  ],
+  "providerCalls": 0,
+  "browserOperations": 0,
+  "credentialAccess": false,
+  "liveAuthority": "CLOSED; no correction can authorize cleanup retroactively",
+  "schemaValidation": "NOT_RUN \u2014 explicit prohibition, no corrected query live-tested"
+}

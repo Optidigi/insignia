@@ -26,7 +26,7 @@ id includedProducts(first:2, query:"id:10490211467547") { nodes { ${OWN_FIELDS} 
 export const SEARCH_STRINGS = Object.freeze({
   app: 'id:10490211467547 published_status:294412484609-intended',
   channel: 'id:10490211467547 published_status:339456917787-intended',
-  association: 'id:10490211467547 publication_ids:339456917787',
+  association: "id:10490211467547 publication_ids:'339456917787'",
 });
 export const SEARCHES = Object.freeze(
   Object.fromEntries(

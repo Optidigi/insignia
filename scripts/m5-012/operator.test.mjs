@@ -3,7 +3,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { createOperator } from './operator.mjs';
+import { classify, createOperator } from './operator.mjs';
 
 test('alternate product and broad search are refused before HTTP', async () => {
   let calls = 0;
@@ -25,7 +25,7 @@ test('alternate product and broad search are refused before HTTP', async () => {
   assert.equal(calls, 0);
 });
 
-import { readFileSync } from 'node:fs';
+import { copyFileSync, readFileSync } from 'node:fs';
 import { runSynthetic } from './qualification.mjs';
 
 const marker = 'insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb';
@@ -236,6 +236,78 @@ test('contradictory inclusion/search results stop before cleanup', async () => {
   assert.equal(r.evidence.classification, 'INCONSISTENT');
   assert.equal(r.evidence.accounting.update, 0);
 });
+test('three qualified intent positives confirm intent with an empty diagnostic association', async () => {
+  const r = await synthetic({
+    intent: true,
+    change: (d, b) => {
+      if (b.query.includes('M5012Searchassociation')) d.products.nodes = [];
+    },
+  });
+  assert.equal(r.evidence.classification, 'INTENT_CONFIRMED');
+  assert.deepEqual(r.evidence.intent.matches, { included: true, app: true, channel: true, association: false });
+  assert.equal(r.evidence.intent.effective, false);
+});
+test('diagnostic association cannot change negative consensus or resolve actual intent disagreement', async () => {
+  const negative = await synthetic({
+    change: (d, b) => {
+      if (b.query.includes('M5012Searchassociation')) d.products.nodes = [product()];
+    },
+  });
+  assert.equal(negative.evidence.classification, 'NO_INTENT_OBSERVED');
+  assert.equal(negative.evidence.intent.matches.association, true);
+  for (const surface of ['M5012Included', 'M5012Searchapp', 'M5012Searchchannel']) {
+    const r = await synthetic({
+      intent: true,
+      change: (d, b) => {
+        if (b.query.includes(surface)) {
+          if (d.products) d.products.nodes = [];
+          else d.publication.includedProducts.nodes = [];
+        }
+      },
+    });
+    assert.equal(r.evidence.classification, 'INCONSISTENT', surface);
+    assert.equal(r.evidence.accounting.update, 0);
+  }
+});
+test('effective publication stays separate from matching configured-intent observations', async () => {
+  const r = await synthetic({
+    intent: true,
+    change: (d) => {
+      if (d.product) d.product.publishedOnPublication = true;
+    },
+  });
+  assert.deepEqual(r.evidence.intent.matches, { included: true, app: true, channel: true, association: true });
+  assert.equal(r.evidence.intent.effective, true);
+  assert.equal(r.evidence.classification, 'INCONSISTENT');
+  assert.equal(r.evidence.accounting.update, 0);
+});
+test('corrected interpretation cannot reopen the frozen closed attempt or authorize cleanup', () => {
+  const historical = new URL('../../docs/delivery/evidence/m5-012/live/', import.meta.url);
+  const before = readFileSync(new URL('register.json', historical));
+  const frozen = JSON.parse(before);
+  assert.equal(frozen.closed, true);
+  assert.equal(frozen.classification.classification, 'INCONSISTENT');
+  assert.equal(classify(frozen.observations).classification, 'INTENT_CONFIRMED');
+  const directory = mkdtempSync(join(tmpdir(), 'm5012-closed-copy-'));
+  for (const name of ['register.json', 'initialized.once'])
+    copyFileSync(new URL(name, historical), join(directory, name));
+  let calls = 0;
+  assert.throws(
+    () =>
+      createOperator({
+        directory,
+        binding: frozen.binding,
+        fetchImpl: () => {
+          calls++;
+          throw Error('HTTP forbidden');
+        },
+      }),
+    /reentry/,
+  );
+  assert.equal(calls, 0);
+  assert.deepEqual(readFileSync(join(directory, 'register.json')), before);
+  assert.deepEqual(readFileSync(new URL('register.json', historical)), before);
+});
 test('effective publication on DRAFT makes intent inconsistent and refuses cleanup', async () => {
   const r = await synthetic({
     change: (d) => {
@@ -330,7 +402,8 @@ test('fixed source query literals are exactly the authorized ID filters and firs
   const d = await import('./documents.mjs');
   assert.equal(d.SEARCH_STRINGS.app, 'id:10490211467547 published_status:294412484609-intended');
   assert.equal(d.SEARCH_STRINGS.channel, 'id:10490211467547 published_status:339456917787-intended');
-  assert.equal(d.SEARCH_STRINGS.association, 'id:10490211467547 publication_ids:339456917787');
+  assert.equal(d.SEARCH_STRINGS.association, "id:10490211467547 publication_ids:'339456917787'");
+  assert.match(d.SEARCHES.association, /query:"id:10490211467547 publication_ids:'339456917787'"/);
   assert.match(d.INCLUDED, /includedProducts\(first:2, query:"id:10490211467547"\)/);
   assert.match(d.PROJECTION, /publishedOnPublication\(publicationId:"gid:\/\/shopify\/Publication\/339456917787"\)/);
   for (const q of Object.values(d.READS)) assert.doesNotMatch(q, /first:(?!2\b)/);
