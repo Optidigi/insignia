@@ -1,0 +1,51 @@
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (1.74888ms)
+✖ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (34.386343ms)
+✔ ownership stops before any status mutation (2.735259ms)
+✔ incomplete resourcePublications stops before any status mutation (2.451364ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.390737ms)
+✔ incomplete APP stops before any status mutation (2.265477ms)
+✔ incomplete MARKET stops before any status mutation (2.292953ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (2.32004ms)
+✔ incomplete NONE stops before any status mutation (2.334409ms)
+✔ missing read scope stops before any status mutation (1.545557ms)
+✔ initial DRAFT drift stops before any status mutation (3.706987ms)
+✔ lost DRAFT acknowledgement never retries or archives (7.990039ms)
+✔ DRAFT readback failure never retries or archives (7.349594ms)
+✔ post-DRAFT ownership drift never retries or archives (9.423604ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (13.354912ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (11.84224ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.871105ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (992.262178ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 17
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1319.661107
+
+✖ failing tests:
+
+test at scripts/m5-011/operator.test.mjs:138:1
+✖ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (34.386343ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+
+    {
+      auth: 1,
+  +   read: 9,
+  -   read: 16,
+      update: 2
+    }
+
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:147:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { auth: 1, read: 9, update: 2 },
+    expected: { auth: 1, read: 16, update: 2 },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }

@@ -14,6 +14,7 @@ import {
   PUBLICATION,
   PUBLICATION_ID,
   TARGET,
+  V2_DOCUMENTS,
 } from './documents.mjs';
 export const LIVE_DIRECTORY = '/home/serveradmin/insignia-m5-011-handoff/run';
 export const LIMITS = Object.freeze({ auth: 3, read: 16, update: 2 });
@@ -269,8 +270,36 @@ function selectedProduct(p, own = false, v2 = false) {
 // Retain only the fixed selection, never unexpected provider fields or extensions.
 function selectedData(data, operation) {
   if (operation === 'identity') return selectedIdentity(data);
-  if (operation === 'projection')
-    return { ...selectedIdentity(data), product: selectedProduct(data.product, true, true) };
+  if (operation === 'projection') return { ...selectedIdentity(data), product: selectedProduct(data.product, true) };
+  if (operation.startsWith('v2_')) {
+    const type = operation.slice(3),
+      p = data.product,
+      c = p?.[type];
+    return {
+      ...selectedIdentity(data),
+      product: p && {
+        ...select(p, [
+          '__typename',
+          'id',
+          'handle',
+          'title',
+          'tags',
+          'createdAt',
+          'status',
+          'updatedAt',
+          'publishedAt',
+          'onlineStoreUrl',
+        ]),
+        [type]: c && {
+          pageInfo: select(c.pageInfo, ['hasNextPage', 'hasPreviousPage']),
+          nodes: c.nodes?.map((n) => ({
+            ...select(n, ['isPublished', 'publishDate']),
+            publication: select(n.publication, ['id']),
+          })),
+        },
+      },
+    };
+  }
   if (operation === 'adapter_read') return { ...selectedIdentity(data, true), node: selectedProduct(data.node) };
   if (operation === 'draft' || operation === 'archive')
     return {
@@ -366,6 +395,16 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
       v = body.variables;
     if (q === IDENTITY && keys(v, [])) return { kind: 'read', operation: 'identity' };
     if (q === PROJECTION && keys(v, ['id']) && v.id === FIXTURE) return { kind: 'read', operation: 'projection' };
+    for (const type of PARTITIONS)
+      if (
+        q === V2_DOCUMENTS[type] &&
+        keys(v, ['id']) &&
+        v.id === FIXTURE &&
+        ['PRESTATE', 'POST_DRAFT'].includes(state.phase) &&
+        state.owned &&
+        !Object.hasOwn(state.owned.product, type)
+      )
+        return { kind: 'read', operation: `v2_${type}` };
     if (q === PUBLICATION && keys(v, ['id']) && v.id === PUBLICATION_ID)
       return { kind: 'read', operation: 'publication' };
     if (
@@ -459,9 +498,32 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
           identity(raw.data);
         }
         if (request.operation === 'projection') {
-          const p = assertProjection(raw.data);
+          assertIdentity(raw.data);
+          const p = raw.data.product;
+          assertOwned(p);
+          visibility(p);
           identity(raw.data);
           state.owned = { product: p, at: Date.now() };
+        }
+        if (request.operation.startsWith('v2_')) {
+          identity(raw.data);
+          const p = raw.data.product,
+            type = request.operation.slice(3);
+          assertOwned(p);
+          const fields = ['status', 'updatedAt', 'publishedAt', 'onlineStoreUrl'];
+          requireValue(equal(select(p, fields), select(state.owned.product, fields)), 'projection_state_drift');
+          const nodes = connection(p[type]);
+          requireValue(
+            nodes.every(
+              (n) =>
+                gid('Publication', n?.publication?.id) &&
+                typeof n.isPublished === 'boolean' &&
+                (n.publishDate === null || date(n.publishDate)),
+            ) && new Set(nodes.map((n) => n.publication.id)).size === nodes.length,
+            'v2_shape',
+          );
+          state.owned.product[type] = p[type];
+          state.owned.at = Date.now();
         }
         if (request.operation === 'publication') assertPublication(raw.data);
         if (request.operation === 'adapter_read') {
@@ -512,6 +574,10 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
   return {
     fetch: transport,
     state: () => structuredClone(state),
+    projection() {
+      assertProjection({ ...state.identity.data, product: state.owned.product });
+      return structuredClone(state.owned.product);
+    },
     phase(value) {
       requireValue(!busy && !state.closed, 'phase');
       state.phase = value;

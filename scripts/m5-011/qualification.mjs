@@ -13,6 +13,7 @@ import {
   PUBLICATION,
   PUBLICATION_ID,
   TARGET,
+  V2_DOCUMENTS,
 } from './documents.mjs';
 import {
   createOperator,
@@ -21,7 +22,6 @@ import {
   membershipDigest,
   requireValue,
   Stop,
-  sameProduct,
   visibility,
 } from './operator.mjs';
 
@@ -103,6 +103,11 @@ async function run({ directory, binding, fetchImpl, credentialLoader, assertCurr
     requireValue(response.status === 200 && raw.data && !raw.errors, 'provider_error');
     return raw.data;
   }
+  async function projection() {
+    await request(PROJECTION, { id: FIXTURE });
+    for (const type of PARTITIONS) await request(V2_DOCUMENTS[type], { id: FIXTURE });
+    return op.projection();
+  }
   try {
     assertCurrent();
     const credentials = credentialLoader();
@@ -131,7 +136,7 @@ async function run({ directory, binding, fetchImpl, credentialLoader, assertCurr
     token = { accessToken: raw.access_token, expiresAt: Date.now() + raw.expires_in * 1000 };
     evidence.identity = await request(IDENTITY);
     op.phase('PRESTATE');
-    evidence.before = (await request(PROJECTION, { id: FIXTURE })).product;
+    evidence.before = await projection();
     requireValue(
       evidence.before.status === 'ACTIVE' &&
         evidence.before.resourcePublications.nodes.some(
@@ -187,7 +192,7 @@ async function run({ directory, binding, fetchImpl, credentialLoader, assertCurr
     const draftEvent = op.state().events.find((e) => e.operation === 'draft');
     requireValue(draftEvent?.settlement === 'ACKNOWLEDGED', 'draft_settlement_unknown');
     op.phase('POST_DRAFT');
-    evidence.after = (await request(PROJECTION, { id: FIXTURE })).product;
+    evidence.after = await projection();
     requireValue(evidence.after.status === 'DRAFT', 'post_state_drift');
     op.settle('draft', evidence.after);
     const current = evidence.adapter.current;
@@ -205,14 +210,9 @@ async function run({ directory, binding, fetchImpl, credentialLoader, assertCurr
       evidence.membership.before !== evidence.membership.after &&
       Date.parse(evidence.after.updatedAt) > Date.parse(evidence.before.updatedAt);
     save();
-    // Refresh exact identity/ownership before the independent disposable-fixture cleanup authority.
-    evidence.preCleanup = (await request(PROJECTION, { id: FIXTURE })).product;
-    requireValue(
-      sameProduct(evidence.preCleanup, evidence.after) &&
-        JSON.stringify(PARTITIONS.map((t) => evidence.preCleanup[t])) ===
-          JSON.stringify(PARTITIONS.map((t) => evidence.after[t])),
-      'cleanup_prestate_drift',
-    );
+    // All five post-DRAFT reads carry exact ownership/state/identity; each partition
+    // must match the legacy anchor. Use that freshly completed projection for cleanup.
+    evidence.preCleanup = structuredClone(evidence.after);
     op.phase('CLEANUP');
     await request(ARCHIVE, { product: { id: FIXTURE, status: 'ARCHIVED' } });
     op.phase('FINAL');

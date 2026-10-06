@@ -16,6 +16,7 @@ import {
   PUBLICATION,
   PUBLICATION_ID,
   TARGET,
+  V2_DOCUMENTS,
 } from './documents.mjs';
 import { assertOwned, createOperator } from './operator.mjs';
 import { runSynthetic } from './qualification.mjs';
@@ -86,8 +87,13 @@ function simulator(options = {}) {
     if (url.endsWith('/admin/oauth/access_token'))
       return Response.json({ access_token: 'synthetic-token', expires_in: 3600 });
     if (b.query === IDENTITY) return Response.json({ data: identity() });
-    if (b.query === PROJECTION) {
+    if (b.query === PROJECTION || Object.values(V2_DOCUMENTS).includes(b.query)) {
       const p = product();
+      if (
+        Object.values(V2_DOCUMENTS).includes(b.query) &&
+        (options.partitionDrift || (options.postPartitionDrift && status === 'DRAFT'))
+      )
+        p.updatedAt = new Date(Date.parse(version) + 1000).toISOString();
       if (options.incomplete)
         p[options.incomplete === true ? 'MARKET' : options.incomplete].pageInfo.hasNextPage = true;
       if (options.postOwnership && status === 'DRAFT') p.title = 'changed';
@@ -143,7 +149,7 @@ test('actual production acquire reports legacy membership conflict; V2 adjudicat
   assert.equal(result.adapter.kind, 'CONFLICT');
   assert.equal(result.adapterConflictBecauseLegacyMembershipChanged, true);
   assert.equal(result.cleanup.outcome, 'EXACT_ARCHIVED');
-  assert.deepEqual(result.accounting, { auth: 1, read: 9, update: 2 });
+  assert.deepEqual(result.accounting, { auth: 1, read: 16, update: 2 });
   assert.deepEqual(
     s.calls.filter((b) => b.query === ADAPTER_UPDATE || b.query === ARCHIVE).map((b) => b.variables.product.status),
     ['DRAFT', 'ARCHIVED'],
@@ -158,6 +164,7 @@ for (const [name, options] of [
   ]),
   ['missing read scope', { missingGrant: 'read_products' }],
   ['initial DRAFT drift', { prestatus: 'DRAFT' }],
+  ['cross-partition version drift', { partitionDrift: true }],
 ])
   test(`${name} stops before any status mutation`, async () => {
     const s = simulator(options),
@@ -170,6 +177,7 @@ for (const [name, options] of [
   ['lost DRAFT acknowledgement', { ackLoss: true }],
   ['DRAFT readback failure', { readbackFail: true }],
   ['post-DRAFT ownership drift', { postOwnership: true }],
+  ['post-DRAFT partition drift', { postPartitionDrift: true }],
 ])
   test(`${name} never retries or archives`, async () => {
     const s = simulator(options),

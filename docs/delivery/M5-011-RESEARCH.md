@@ -12,7 +12,7 @@ The retained publication's autoPublish setting may explain initial setup behavio
 
 ## Versioned field validation
 
-Shopify developer MCP v1.15.4 accepted all six fixed documents against Admin 2026-07 and rejected the invalid-field control. The inherited identity's ShopPlan.displayName has a deprecation warning; the selected field remains valid. No authenticated query was involved in schema validation.
+Shopify developer MCP v1.15.4 accepted all ten fixed documents against Admin 2026-07 and rejected the invalid-field control. The inherited identity's ShopPlan.displayName has a deprecation warning; the selected field remains valid. No authenticated query was involved in schema validation.
 
 Official references, retrieved 2026-10-06:
 
@@ -24,3 +24,9 @@ Official references, retrieved 2026-10-06:
 - [Channel](https://shopify.dev/docs/api/admin-graphql/2026-07/objects/Channel): minimal id/name/app id/title; merchant account fields are omitted.
 
 Receipts: [valid documents](evidence/m5-011/schema-validation.json), [invalid control](evidence/m5-011/schema-invalid-control.json). These are offline schema checks, not development-gate evidence.
+
+## Single-query cost and the fixed read plan
+
+[Shopify Admin rate limits](https://shopify.dev/docs/apps/build/apis/graphql-admin/rate-limits) enforce a1,000-point requested-cost ceiling before execution. Object selections and first/last connection bounds contribute to requested cost; the exact cost is known from a response, and Shopify may assign manual field costs. The initial combined six-connection document risked exceeding that limit despite the fixture having few records. It was replaced before credentials.
+
+Each complete projection is five fixed serial reads: legacy/unpublished plus ownership, then one V2 partition per read. Each partition carries the same exact ownership, identity, status, updatedAt, publishedAt and onlineStoreUrl; any difference from the anchor stops the experiment. The two projections cost10 reads; independent identity and publication metadata cost2; unchanged production snapshot/acquire cost3; final legacy/ownership read costs1. Total16. Cleanup uses the completed fresh DRAFT projection and includes one final read whether its acknowledgement is received or lost. There is no spare read for retry. This partitioning retains first:250 and complete pageInfo throughout; exact platform costs remain live observations, not an offline claim.

@@ -6,16 +6,23 @@ export const MARKER = 'insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb';
 export const PUBLICATION_ID = 'gid://shopify/Publication/339456917787';
 export const CREATED_AT = '2026-10-02T21:19:48Z';
 export const PARTITIONS = ['APP', 'MARKET', 'COMPANY_LOCATION', 'NONE'];
-const V2 = PARTITIONS.map(
-  (type) => `${type}: resourcePublicationsV2(first:250, onlyPublished:false, catalogType:${type}) {
+const ownFields = '__typename id handle title tags createdAt status updatedAt publishedAt onlineStoreUrl';
+const identityFields = `shop { id myshopifyDomain plan { partnerDevelopment displayName } }
+  currentAppInstallation { id app { id apiKey } accessScopes { handle } }`;
+export const V2_DOCUMENTS = Object.fromEntries(
+  PARTITIONS.map((type) => [
+    type,
+    `query M5011V2${type}($id: ID!) { ${identityFields} product(id:$id) { ${ownFields}
+  ${type}: resourcePublicationsV2(first:250, onlyPublished:false, catalogType:${type}) {
   nodes { isPublished publishDate publication { id } }
   pageInfo { hasNextPage hasPreviousPage }
-}`,
-).join('\n');
+} } }`,
+  ]),
+);
 export const PROJECTION = `query M5011Projection($id: ID!) {
   shop { id myshopifyDomain plan { partnerDevelopment displayName } }
   currentAppInstallation { id app { id apiKey } accessScopes { handle } }
-  product(id:$id) { ${PRODUCT_FIELDS} handle title tags createdAt ${V2} }
+  product(id:$id) { ${PRODUCT_FIELDS} handle title tags createdAt }
 }`;
 export const PUBLICATION = `query M5011Publication($id: ID!) {
   publication(id:$id) {
