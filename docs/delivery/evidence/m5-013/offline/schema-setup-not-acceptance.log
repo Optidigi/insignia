@@ -1,0 +1,5 @@
+Shopify Dev MCP Server v1.15.4 running on stdio
+[record-mcp-usage] Sending usage data for tool: learn_shopify_api
+{"content":[{"type":"text","text":"MCP error -32602: Input validation error: Invalid arguments for tool validate_graphql_codeblocks: [\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"codeblocks\",\n      0,\n      \"content\"\n    ],\n    \"message\": \"Invalid input\"\n  },\n  {\n    \"expected\": \"string\",\n    \"code\": \"invalid_type\",\n    \"path\": [\n      \"codeblocks\",\n      2,\n      \"content\"\n    ],\n    \"message\": \"Invalid input\"\n  }\n]"}],"isError":true}
+[record-mcp-usage] Sending usage data for tool: validate_graphql_codeblocks
+{"content":[{"type":"text","text":"## Validation Summary\n\n**Overall Status:** ❌ INVALID\n**Total Code Blocks:** 1\n\n## Detailed Results\n\n### Code Block 1\n**Artifact ID:** invalid-control\n**Revision:** 1\n*Use same ID & increment revision when retrying on an improvement of this artifact*\n\n**Status:** ❌ FAILED\n**Details:** GraphQL validation errors: Cannot query field \"definitelyInvalidM5011\" on type \"Publication\".\n\n"}]}

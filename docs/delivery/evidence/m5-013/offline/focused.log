@@ -1,0 +1,34 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (3.056405ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (228.905274ms)
+✔ alternate exact product is refused before HTTP (2.798772ms)
+✔ disposable cleanup settles exact final ARCHIVED despite a one-second acknowledgement timestamp difference (14.663951ms)
+✔ already ARCHIVED is verified with no update (4.263087ms)
+✔ foreign ownership stops with zero update (2.425361ms)
+✔ ACTIVE state stops with zero update (1.984263ms)
+✔ UNLISTED state stops with zero update (1.752596ms)
+✔ effective publication stops with zero update (1.897323ms)
+✔ published timestamp stops with zero update (1.756666ms)
+✔ online store URL stops with zero update (1.801336ms)
+✔ legacy effective membership stops with zero update (3.305855ms)
+✔ incomplete legacy stops with zero update (1.526343ms)
+✔ wrong installation stops with zero update (1.494416ms)
+✔ scope loss stops with zero update (1.392206ms)
+✔ malformed GraphQL error fields are rejected before mutation (6.645909ms)
+✔ ambiguous archive is not resent and one final exact read settles ARCHIVED (3.632293ms)
+✔ final DRAFT or effective-publication drift is unsettled with no retry (6.81937ms)
+✔ unsettled archive transport forbids final read and any overlap (8004.195165ms)
+✔ exact source documents have no searches or alternate mutation fields (4.459207ms)
+✔ alternate documents, extra fields and non-ARCHIVED statuses are denied before dispatch (4.985332ms)
+✔ closed cleanup register rejects any second initialization (3.456133ms)
+✔ 100 serial disposable cleanup cases never exceed one update (277.72714ms)
+✔ failed authentication cannot admit an Admin read through the public operator (1.002121ms)
+✔ failed prestate or final reads cannot be retried and archive cannot be resent (3.63481ms)
+✔ auth response disposal failure quarantines pending event index zero (0.978692ms)
+ℹ tests 26
+ℹ suites 0
+ℹ pass 26
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8583.251518

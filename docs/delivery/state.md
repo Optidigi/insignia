@@ -1,3 +1,9 @@
+# Current review boundary — M5-013
+
+[PR #42R external principal approval](PR-042R-principal-review.md) bound base9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e, head022f5ea238444e3ae2fcd93bb571162ccde63fd6, tree759634634ba8e2362ff6736fe4412e8fe2178614. Live refs, all10 exact-head attempt1 workflows and external approval matched. Normal merge9d896e824ebf3beb5e560ce89e9873799869f6c5 has those ordered parents and tree; [receipt](evidence/m5-013/pr42-merge-receipt.json). No native approval/protection bypass was fabricated.
+
+Only [M5-013 disposable fixture cleanup](prompts/M5-013-DRAFT-FIXTURE-CLEANUP.md) is authorized. Fresh operator/register qualification is in progress before credentials; no live M5-013 request has occurred. Whole-slice ceilings auth1/read3/update1, serial/no retry; only prestate/status-only ARCHIVED/final documents. Already ARCHIVED skips mutation. Final exact ownership/ARCHIVED/effective-unpublished is the cleanup settlement criterion; timestamp difference is recorded, not required equal. Production hold semantics and M5-011 conflict remain unchanged. Prior33 canonical files stay immutable. Return integrated evidence with fresh reviews/final CI, then principal review only; no successor merge or dependent work.
+
 # Current review boundary — M5-012C
 
 [PR #42 principal review](PR-042-principal-review.md) is CHANGES_REQUESTED at base/effective merge base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e`, head `4f0ee689218545af7161ce6a6fa4d942d319f533`, tree `8311e5d9cb2d3909f6c290ee7fee52ac1cdc090b`. Only [local M5-012C correction](prompts/M5-012C-ASSOCIATION-CORRECTION.md), checks, fresh actual GPT-6.1-sol/high reviews and natural final-head CI on the same PR are authorized; return for principal rereview, no merge/provider/browser/credential operation.
