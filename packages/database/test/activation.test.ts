@@ -3,14 +3,14 @@ import type {
   ActivationReadinessPort,
   ExpectedFunctionBuild,
   FunctionObjectObservation,
-  ProductAvailabilityHoldPort,
-  ProductAvailabilitySnapshot,
+  VersionedProductAvailabilityHoldPort as ProductAvailabilityHoldPort,
+  ProductAvailabilitySnapshotV2 as ProductAvailabilitySnapshot,
 } from '@insignia/application';
 import { activationDigest, availabilitySnapshotIdentityDigest } from '@insignia/application';
 import {
   createPublicationAdminAdapter,
   createPublicationAdminHttpTransport,
-  createShopifyAvailabilityHoldPort,
+  createShopifyAvailabilityHoldV2Port,
 } from '@insignia/shopify';
 import { type Kysely, sql } from 'kysely';
 import { Pool } from 'pg';
@@ -241,7 +241,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const artifactScope = {
       shopId,
       installationGeneration: '1',
-      appClientId: providerStatus ? 'a'.repeat(32) : 'synthetic-app',
+      appClientId: 'a'.repeat(32),
     };
     const transform = {
       functionId: 'transform',
@@ -302,8 +302,22 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       scope: availabilityScope,
       productId: 'gid://shopify/Product/42',
       state: 'available',
-      providerVersion: 'original',
-      visibilityDigest: 'd'.repeat(64),
+      version: 'm5-product-availability-snapshot-v2',
+      providerUpdatedAt: '2026-10-01T11:00:00.000Z',
+      configuredIntent: { includedPublicationIds: [], publicationSettings: [], scheduled: [] },
+      effectiveVisibility: {
+        publishedPublicationIds: [],
+        onlineStore: { publishedAtPresent: false, urlPresent: false },
+        publicationEvidence: [],
+        publishedAt: null,
+        onlineStoreUrl: null,
+      },
+      intentDigest: activationDigest({ includedPublicationIds: [], publicationSettings: [], scheduled: [] }),
+      effectiveDigest: activationDigest({
+        publishedPublicationIds: [],
+        onlineStore: { publishedAtPresent: false, urlPresent: false },
+      }),
+      receivedAt: now.toISOString(),
       observedAt: now.toISOString(),
     };
     let acquireNotSent = false;
@@ -327,7 +341,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
           throw new Error('crash before provider dispatch');
         }
         acquisitions++;
-        current = { ...current, state: 'unavailable', providerVersion: 'owned-hold' };
+        current = { ...current, state: 'unavailable', providerUpdatedAt: '2026-10-01T11:01:00.000Z' };
         if (acquireLost) {
           acquireLost = false;
           throw new Error('lost acquisition response');
@@ -335,7 +349,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         return { kind: 'HELD', current, hold: { ...hold, held: current } };
       },
       observe: async (_scope, hold) =>
-        current.providerVersion === 'owned-hold'
+        current.state === 'unavailable' && current.intentDigest === hold.before.intentDigest
           ? { kind: 'HELD', current, hold: { ...hold, held: current } }
           : { kind: 'CONFLICT', current },
       restore: async (_scope, hold) => {
@@ -349,10 +363,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         if (restoreUnsettled === 'pending') return { kind: 'RESTORATION_PENDING', current: null };
         if (restoreUnsettled === 'throw') throw new Error('unsettled restore response');
         if (restoreUnsettled === 'original') {
-          current = { ...hold.before, providerVersion: 'independent-original' };
+          current = { ...hold.before, providerUpdatedAt: '2026-10-01T11:02:00.000Z' };
           return { kind: 'RESTORATION_PENDING', current };
         }
-        current = { ...hold.before, providerVersion: 'restored' };
+        current = { ...hold.before, providerUpdatedAt: '2026-10-01T11:02:00.000Z' };
         if (restoreLost) {
           restoreLost = false;
           throw new Error('lost restore response');
@@ -362,7 +376,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     };
     let responsePending = false;
     const providerAvailability = providerStatus
-      ? createShopifyAvailabilityHoldPort({
+      ? createShopifyAvailabilityHoldV2Port({
           now: () => new Date(providerClock),
           isCurrent: async () => true,
           credentials: {
@@ -410,9 +424,17 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
                   shop: { id: availabilityScope.shopifyShopId },
                   currentAppInstallation: {
                     app: { apiKey: availabilityScope.appClientId },
-                    accessScopes: [{ handle: 'read_products' }, { handle: 'write_products' }],
+                    accessScopes: [
+                      { handle: 'read_products' },
+                      { handle: 'write_products' },
+                      { handle: 'read_publications' },
+                    ],
                   },
                   node: product,
+                  publications: {
+                    nodes: [],
+                    pageInfo: { hasNextPage: false, hasPreviousPage: false, endCursor: null },
+                  },
                 };
             const bytes = new TextEncoder().encode(JSON.stringify({ data }));
             if (providerDelay?.point === 'fetch') {
@@ -516,7 +538,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         return restoreSettled;
       },
       completeUnsettledRestore: () => {
-        current = { ...current, state: 'available', providerVersion: 'late-restoration-completed' };
+        current = { ...current, state: 'available', providerUpdatedAt: '2026-10-01T11:02:00.000Z' };
         restoreSettled = true;
       },
       set releaseMissing(value: boolean) {
@@ -541,15 +563,116 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         current = {
           ...current,
           state: 'available',
-          providerVersion: 'synthetic-external-restoration',
-          visibilityDigest: 'd'.repeat(64),
+          providerUpdatedAt: '2026-10-01T11:02:00.000Z',
         };
       },
       drift: () => {
-        current = { ...current, providerVersion: 'merchant-change' };
+        const configuredIntent = {
+          includedPublicationIds: ['gid://shopify/Publication/999'],
+          publicationSettings: [
+            { publicationId: 'gid://shopify/Publication/999', autoPublish: true, supportsFuturePublishing: false },
+          ],
+          scheduled: [],
+        };
+        current = { ...current, configuredIntent, intentDigest: activationDigest(configuredIntent) };
       },
     };
   }
+
+  it('v1 JSONB reads unchanged and unresolved legacy holds are preserved without provider dispatch', async () => {
+    const f = await fixture();
+    const legacyBefore = {
+      scope: {
+        shopId: f.identity.shopId,
+        installationGeneration: '1',
+        shopifyShopId: 'gid://shopify/Shop/101',
+        appClientId: 'a'.repeat(32),
+      },
+      productId: 'gid://shopify/Product/42',
+      state: 'available',
+      providerVersion: 'v1-original-version',
+      visibilityDigest: '1'.repeat(64),
+      observedAt: now.toISOString(),
+      receivedAt: now.toISOString(),
+    };
+    const legacy = {
+      version: 'm5-availability-hold-v1',
+      operationId: f.identity.operationId,
+      before: legacyBefore,
+      held: null,
+    };
+    await sql`INSERT INTO m5_activation_state(shop_id,config_id,operation_id,kind,hold) VALUES (${f.identity.shopId},${f.identity.configId},${f.identity.operationId},'ACQUISITION_PENDING',${JSON.stringify(legacy)}::jsonb)`.execute(
+      database,
+    );
+    expect((await f.restart().read(f.identity))?.state.hold).toEqual(legacy);
+    expect((await f.restart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
+    expect((await f.restart().read(f.identity))?.state.hold).toEqual(legacy);
+    expect(f.acquisitions).toBe(0);
+    expect(f.restores).toBe(0);
+    expect(f.remoteWrites).toBe(0);
+  });
+  it('v2 hold/evidence/restoration audit JSONB roundtrips, remains immutable, and rejects v1 decision semantics', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    const held = (await f.restart().read(f.identity))?.state.hold;
+    expect(held).toMatchObject({
+      version: 'm5-availability-hold-v2',
+      before: { version: 'm5-product-availability-snapshot-v2' },
+      acquisitionAcknowledgement: {
+        version: 'm5-availability-mutation-ack-v2',
+        providerUpdatedAt: '2026-10-01T11:01:00.000Z',
+      },
+    });
+    await expect(
+      sql`UPDATE m5_activation_state SET hold=jsonb_set(hold,'{acquisitionAcknowledgement,providerUpdatedAt}','"2026-10-01T11:59:00.000Z"'::jsonb),version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('v2 availability audit is immutable');
+    await f.publish();
+    await f.restart().advance(f.identity);
+    await f.restart().advance(f.identity);
+    const record = await f.restart().read(f.identity);
+    expect(record?.evidence).toMatchObject({ version: 'm5-activation-evidence-v2', decisionVersion: 2, hold: held });
+    expect(record?.state.hold).toMatchObject({
+      restorationReceipt: {
+        version: 'm5-availability-restoration-receipt-v2',
+        kind: 'RESTORED',
+        acknowledgement: { providerUpdatedAt: '2026-10-01T11:02:00.000Z' },
+        current: { providerUpdatedAt: '2026-10-01T11:02:00.000Z' },
+      },
+    });
+    await expect(
+      sql`UPDATE m5_activation_state SET hold=jsonb_set(hold,'{restorationReceipt,kind}','"CONFLICT"'::jsonb),version=version+1 WHERE shop_id=${f.identity.shopId}`.execute(
+        database,
+      ),
+    ).rejects.toThrow('v2 availability audit is immutable');
+    // A separate synthetic publication supplies the foreign-key identity for compatibility inserts.
+    const other = await fixture();
+    const base = record?.evidence;
+    if (!base) throw new Error('missing synthetic evidence');
+    const evidence = {
+      ...base,
+      ...other.identity,
+      revisionId: other.revisionId,
+      authorizationGeneration: other.scope.authorizationGeneration,
+      authorizationEpoch: other.scope.authorizationEpoch,
+      admissionClass: 'SAME_MODE',
+      hold: null,
+      holdObservation: null,
+    };
+    const insert = (value: unknown) =>
+      sql`INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES (${other.identity.shopId},${other.identity.configId},${other.identity.operationId},${other.revisionId},1,1,${other.scope.authorizationGeneration}::uuid,${other.scope.authorizationEpoch},7,${activationDigest(value)},${JSON.stringify(value)}::jsonb)`.execute(
+        database,
+      );
+    await expect(insert({ ...evidence, decisionVersion: 1 })).rejects.toThrow('m5_014_evidence_identity');
+    const v1 = { ...evidence, version: 'm5-activation-evidence-v1', decisionVersion: 1 };
+    await insert(v1);
+    await sql`INSERT INTO m5_activation_state(shop_id,config_id,operation_id,kind,evidence_digest) VALUES (${other.identity.shopId},${other.identity.configId},${other.identity.operationId},'RESTORED',${activationDigest(v1)})`.execute(
+      database,
+    );
+    expect((await other.restart().read(other.identity))?.evidence).toEqual(v1);
+    expect(await f.restart().read(f.identity)).toEqual(record);
+  });
 
   it.each(['fetch', 'body', 'credential'] as const)(
     'R1 public publication rejects stale %s hold observation without any policy write',
@@ -955,16 +1078,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect((await f.restart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
     expect(f.acquisitions).toBe(0);
   });
-  it('lost acquisition is recovered from committed intent without a second mutation', async () => {
+  it('lost acquisition remains unattributable after restart without a second mutation', async () => {
     const f = await fixture();
     await f.restart().advance(f.identity);
     f.acquireLost = true;
     await expect(f.restart().advance(f.identity)).rejects.toThrow('lost acquisition response');
     expect((await f.restart().read(f.identity))?.state.kind).toBe('ACQUISITION_PENDING');
-    expect((await f.restart().advance(f.identity)).kind).toBe('HELD');
+    expect((await f.restart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
     expect(f.acquisitions).toBe(1);
-    await f.publish();
-    expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    expect((await f.restart().read(f.identity))?.evidence).toBeNull();
   });
   it('lost restore response and merchant drift retain effective activation and immutable evidence', async () => {
     const f = await fixture();
@@ -1424,7 +1546,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
 function syntheticRecoveryAuthority(): import('@insignia/application').TrustedAvailabilityRecoveryAuthorityPort {
   return {
     read: async (context) => ({
-      version: 'm5-availability-recovery-decision-v1',
+      version:
+        context.hold.version === 'm5-availability-hold-v2'
+          ? 'm5-availability-recovery-decision-v2'
+          : 'm5-availability-recovery-decision-v1',
       shopId: context.shopId,
       configId: context.configId,
       operationId: context.operationId,

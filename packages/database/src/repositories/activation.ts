@@ -7,9 +7,12 @@ import {
   type ActivationState,
   type ActivationStore,
   activationDigest,
+  availabilityV2HeldSafe,
   buildPublicConfig,
   classifyPublicationAdmission,
+  isAvailabilityV2,
   publicKeyFingerprint,
+  sameAvailabilityV2,
 } from '@insignia/application';
 import { type Kysely, sql, type Transaction } from 'kysely';
 import type { Database } from '../client/database.js';
@@ -245,8 +248,8 @@ export class PgActivationStore implements ActivationStore {
               evidence.shopId !== identity.shopId ||
               evidence.configId !== identity.configId ||
               evidence.operationId !== identity.operationId ||
-              evidence.version !== 'm5-activation-evidence-v1' ||
-              evidence.decisionVersion !== 1 ||
+              evidence.version !== 'm5-activation-evidence-v2' ||
+              evidence.decisionVersion !== 2 ||
               evidence.revisionId !== candidate.revisionId ||
               evidence.revisionHash !== candidate.revisionHash ||
               evidence.operationSequence !== candidate.operationSequence ||
@@ -265,8 +268,10 @@ export class PgActivationStore implements ActivationStore {
                   !evidence.holdObservation ||
                   evidence.holdObservation.productId !== candidate.productId ||
                   evidence.holdObservation.state !== 'unavailable' ||
-                  evidence.holdObservation.providerVersion !== evidence.hold.held.providerVersion ||
-                  evidence.holdObservation.visibilityDigest !== evidence.hold.held.visibilityDigest ||
+                  evidence.hold.version !== 'm5-availability-hold-v2' ||
+                  !isAvailabilityV2(evidence.holdObservation) ||
+                  !sameAvailabilityV2(evidence.holdObservation, evidence.hold.held) ||
+                  !availabilityV2HeldSafe(evidence.holdObservation) ||
                   canonicalJson(evidence.holdObservation.scope) !== canonicalJson(candidate.availabilityScope) ||
                   canonicalJson(evidence.hold) !== canonicalJson(candidate.state.hold))
             )

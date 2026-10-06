@@ -1,3 +1,9 @@
+# Current review boundary — M5-014
+
+[PR #43 external principal approval](PR-043-principal-review.md) and live exact refs/ten attempt1 workflows matched. Normal merge55060c5a48617a27858d10fb0db639c7e9efe148 has approved ordered parents/tree; [receipt](evidence/m5-014/pr43-merge-receipt.json). M5-013 fixture is permanently closed; all39 prior canonical files remain immutable.
+
+Only [M5-014](prompts/M5-014-AVAILABILITY-HOLD-V2.md) LOCAL/OFF-STORE v2 implementation/regression/review/CI is authorized. Worktree `/home/serveradmin/insignia-m5-014-worktree`, branch feat/m5-014-availability-hold-v2. New activation uses v2; v1 recovery/JSONB retain historical meaning. No provider/browser/credential/Shopify CLI operation, live fixture, production activation, M6/M7, RELEASE_BOUND/gate pass or launch. Return one integrated implementation PR then stop for principal review; no successor merge.
+
 # Current review boundary — M5-013
 
 [PR #42R external principal approval](PR-042R-principal-review.md) bound base9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e, head022f5ea238444e3ae2fcd93bb571162ccde63fd6, tree759634634ba8e2362ff6736fe4412e8fe2178614. Live refs, all10 exact-head attempt1 workflows and external approval matched. Normal merge9d896e824ebf3beb5e560ce89e9873799869f6c5 has those ordered parents and tree; [receipt](evidence/m5-013/pr42-merge-receipt.json). No native approval/protection bypass was fabricated.

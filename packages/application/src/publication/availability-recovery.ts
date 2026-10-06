@@ -1,5 +1,19 @@
 import { type ActivationIdentity, activationDigest } from './activation.js';
-import type { AvailabilityHold, AvailabilityScope, ProductAvailabilitySnapshot } from './availability.js';
+import type {
+  AvailabilityHold as AvailabilityHoldV1,
+  AvailabilityScope,
+  ProductAvailabilitySnapshot as ProductAvailabilitySnapshotV1,
+} from './availability.js';
+import {
+  type VersionedAvailabilityHold as AvailabilityHold,
+  type AvailabilityHoldV2,
+  availabilityV2IntentQualified,
+  isAvailabilityV2,
+  type VersionedProductAvailabilitySnapshot as ProductAvailabilitySnapshot,
+  type ProductAvailabilitySnapshotV2,
+  sameAvailabilityV2,
+  validAvailabilityV2,
+} from './availability-v2.js';
 
 export type AvailabilityRecoveryRequest = ActivationIdentity & { commandKey: string };
 export type AvailabilityRecoveryContext = AvailabilityRecoveryRequest &
@@ -14,7 +28,7 @@ export type AvailabilityRecoveryContext = AvailabilityRecoveryRequest &
 export interface TrustedAvailabilityRecoveryAuthorityPort {
   read(context: AvailabilityRecoveryContext): Promise<unknown | null>;
 }
-export type AvailabilityRecoveryDecision = AvailabilityRecoveryRequest &
+export type AvailabilityRecoveryDecisionV1 = AvailabilityRecoveryRequest &
   Readonly<{
     version: 'm5-availability-recovery-decision-v1';
     decisionRef: string;
@@ -26,20 +40,40 @@ export type AvailabilityRecoveryDecision = AvailabilityRecoveryRequest &
     reviewedAt: string;
     expiresAt: string;
   }>;
-export type AvailabilityRecoveryResolution = AvailabilityRecoveryRequest &
+export type AvailabilityRecoveryDecisionV2 = Omit<AvailabilityRecoveryDecisionV1, 'version'> &
+  Readonly<{ version: 'm5-availability-recovery-decision-v2' }>;
+export type AvailabilityRecoveryDecision = AvailabilityRecoveryDecisionV1 | AvailabilityRecoveryDecisionV2;
+export type AvailabilityRecoveryResolutionV1 = AvailabilityRecoveryRequest &
   Readonly<{
     version: 'm5-availability-resolution-v1';
     outcome: 'ORIGINAL_STATE_OBSERVED';
     currentScope: AvailabilityScope;
-    originalHold: AvailabilityHold;
-    observed: ProductAvailabilitySnapshot;
-    decision: AvailabilityRecoveryDecision;
+    originalHold: AvailabilityHoldV1;
+    observed: ProductAvailabilitySnapshotV1;
+    decision: AvailabilityRecoveryDecisionV1;
     activationEvidenceDigest: string | null;
     createdAt: string;
   }>;
 
+export type AvailabilityRecoveryResolutionV2 = Omit<
+  AvailabilityRecoveryResolutionV1,
+  'version' | 'originalHold' | 'observed' | 'decision'
+> &
+  Readonly<{
+    version: 'm5-availability-resolution-v2';
+    originalHold: AvailabilityHoldV2;
+    reviewedObservation: ProductAvailabilitySnapshotV2;
+    observed: ProductAvailabilitySnapshotV2;
+    decision: AvailabilityRecoveryDecisionV2;
+  }>;
+export type AvailabilityRecoveryResolution = AvailabilityRecoveryResolutionV1 | AvailabilityRecoveryResolutionV2;
+
 /** Provider identity/version/state, deliberately excluding the fresh read timestamp. */
 export function availabilitySnapshotIdentityDigest(snapshot: ProductAvailabilitySnapshot): string {
+  if (isAvailabilityV2(snapshot)) {
+    if (!validAvailabilityV2(snapshot)) throw new Error('Invalid v2 recovery observation');
+    return activationDigest(snapshot);
+  }
   return activationDigest({
     scope: snapshot.scope,
     productId: snapshot.productId,
@@ -89,7 +123,10 @@ export function validateAvailabilityRecoveryDecision(
   )
     return invalid();
   if (
-    record.version !== 'm5-availability-recovery-decision-v1' ||
+    record.version !==
+      (context.hold.version === 'm5-availability-hold-v2'
+        ? 'm5-availability-recovery-decision-v2'
+        : 'm5-availability-recovery-decision-v1') ||
     ['shopId', 'configId', 'operationId', 'commandKey'].some(
       (key) => record[key] !== context[key as keyof AvailabilityRecoveryRequest],
     ) ||
@@ -138,6 +175,27 @@ export function validateAvailabilityRecoveryDecision(
  * process and never authorizes a write over drift. Current installation scope may
  * differ after reinstall; original product/shop/app identity must remain exact. */
 export function assertOriginalAvailabilityObserved(context: AvailabilityRecoveryContext): void {
+  if (context.hold.version === 'm5-availability-hold-v2') {
+    const before = context.hold.before,
+      current = context.observed,
+      scope = context.currentScope;
+    if (
+      context.hold.operationId !== context.operationId ||
+      before.scope.shopId !== context.shopId ||
+      scope.shopId !== context.shopId ||
+      scope.appClientId !== before.scope.appClientId ||
+      scope.shopifyShopId !== before.scope.shopifyShopId ||
+      !isAvailabilityV2(current) ||
+      !validAvailabilityV2(before) ||
+      !availabilityV2IntentQualified(before) ||
+      !availabilityV2IntentQualified(current) ||
+      activationDigest(current.scope) !== activationDigest(scope) ||
+      !sameAvailabilityV2({ ...before, scope }, current)
+    )
+      throw new Error('Original v2 availability not observed; operator hold retained');
+    return;
+  }
+  if (isAvailabilityV2(context.observed)) throw new Error('Historical v1 hold requires historical v1 observation');
   const before = context.hold.before,
     current = context.observed,
     scope = context.currentScope;

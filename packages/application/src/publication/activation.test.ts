@@ -31,7 +31,11 @@ import {
   activationDigest,
   createPublicationActivation,
 } from './activation.js';
-import type { AvailabilityScope, ProductAvailabilityHoldPort, ProductAvailabilitySnapshot } from './availability.js';
+import type { AvailabilityScope } from './availability.js';
+import type {
+  VersionedProductAvailabilityHoldPort as ProductAvailabilityHoldPort,
+  ProductAvailabilitySnapshotV2 as ProductAvailabilitySnapshot,
+} from './availability-v2.js';
 
 const now = new Date('2026-10-01T12:00:00.000Z');
 function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'required' | 'optional' = 'required') {
@@ -55,7 +59,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     shopId: scope.shopId,
     installationGeneration: '1',
     shopifyShopId: 'gid://shopify/Shop/1',
-    appClientId: 'synthetic-app',
+    appClientId: 'a'.repeat(32),
   };
   let candidate: ActivationCandidate = {
     shopId: scope.shopId,
@@ -106,8 +110,22 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     scope: availabilityScope,
     productId: candidate.productId,
     state: 'available',
-    providerVersion: 'original',
-    visibilityDigest: 'b'.repeat(64),
+    version: 'm5-product-availability-snapshot-v2',
+    providerUpdatedAt: '2026-10-01T11:00:00.000Z',
+    configuredIntent: { includedPublicationIds: [], publicationSettings: [], scheduled: [] },
+    effectiveVisibility: {
+      publishedPublicationIds: [],
+      onlineStore: { publishedAtPresent: false, urlPresent: false },
+      publicationEvidence: [],
+      publishedAt: null,
+      onlineStoreUrl: null,
+    },
+    intentDigest: activationDigest({ includedPublicationIds: [], publicationSettings: [], scheduled: [] }),
+    effectiveDigest: activationDigest({
+      publishedPublicationIds: [],
+      onlineStore: { publishedAtPresent: false, urlPresent: false },
+    }),
+    receivedAt: now.toISOString(),
     observedAt: now.toISOString(),
   };
   const availability: ProductAvailabilityHoldPort = {
@@ -119,7 +137,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       }
       stateAtAcquisition = structuredClone(candidate.state);
       acquisitions++;
-      current = { ...current, state: 'unavailable', providerVersion: 'owned-hold' };
+      current = { ...current, state: 'unavailable', providerUpdatedAt: '2026-10-01T11:01:00.000Z' };
       if (crashAcquire) {
         crashAcquire = false;
         throw new Error('lost acquisition response');
@@ -127,20 +145,35 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       return { kind: 'HELD', current, hold: { ...hold, held: current } };
     },
     observe: async (_scope, hold) =>
-      current.state === 'unavailable' && current.providerVersion === 'owned-hold'
-        ? { kind: 'HELD', current: { ...current, observedAt: clock.toISOString() }, hold: { ...hold, held: current } }
+      current.state === 'unavailable'
+        ? {
+            kind: 'HELD',
+            current: { ...current, observedAt: clock.toISOString(), receivedAt: clock.toISOString() },
+            hold: { ...hold, held: current },
+          }
         : { kind: 'CONFLICT', current },
     restore: async (_scope, hold) => {
+      if (hold.version !== 'm5-availability-hold-v2') throw new Error('new synthetic operation requires v2');
       stateAtRestore = structuredClone(candidate.state);
       restoreClock = new Date(clock);
       restores++;
       if (unresolvedRestore === 'pending') return { kind: 'RESTORATION_PENDING', current: null };
       if (unresolvedRestore === 'throw') throw new Error('unsettled restore response');
       if (unresolvedRestore === 'original') {
-        current = { ...hold.before, providerVersion: 'independent-original', observedAt: clock.toISOString() };
+        current = {
+          ...hold.before,
+          providerUpdatedAt: '2026-10-01T11:02:00.000Z',
+          observedAt: clock.toISOString(),
+          receivedAt: clock.toISOString(),
+        };
         return { kind: 'RESTORATION_PENDING', current };
       }
-      current = { ...hold.before, providerVersion: 'restored', observedAt: clock.toISOString() };
+      current = {
+        ...hold.before,
+        providerUpdatedAt: '2026-10-01T11:02:00.000Z',
+        observedAt: clock.toISOString(),
+        receivedAt: clock.toISOString(),
+      };
       if (crashRestore) {
         crashRestore = false;
         throw new Error('lost restoration response');
@@ -148,7 +181,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       return { kind: 'RESTORED', current };
     },
   };
-  const artifactScope = { shopId: scope.shopId, installationGeneration: '1', appClientId: 'synthetic-app' };
+  const artifactScope = { shopId: scope.shopId, installationGeneration: '1', appClientId: 'a'.repeat(32) };
   const transform = {
     functionId: 'transform',
     handle: 'transform',
@@ -265,6 +298,27 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   const advance = () => restart().advance({ shopId: scope.shopId, configId: 'config', operationId: 'operation' });
   return {
     advance,
+    persistLegacyHold: () => {
+      const before = {
+        scope: availabilityScope,
+        productId: candidate.productId,
+        state: 'available' as const,
+        providerVersion: 'historical-provider-version',
+        visibilityDigest: 'b'.repeat(64),
+        observedAt: now.toISOString(),
+      };
+      candidate = {
+        ...candidate,
+        state: {
+          kind: 'HOLD_INTENT',
+          evidenceDigest: null,
+          hold: { version: 'm5-availability-hold-v1', operationId: candidate.operationId, before, held: null },
+        },
+      };
+    },
+    advanceDiagnostic: () => {
+      current = { ...current, providerUpdatedAt: '2026-10-01T11:03:00.000Z' };
+    },
     set crashBeforeRestore(value: boolean) {
       crashBeforeRestore = value;
     },
@@ -275,7 +329,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       midnightClockRead = read;
       clockReads = 0;
       clock = new Date('2026-10-01T23:59:59.999Z');
-      current = { ...current, observedAt: clock.toISOString() };
+      current = { ...current, observedAt: clock.toISOString(), receivedAt: clock.toISOString() };
       observation = { ...observation, observedAt: clock.toISOString() };
       attestation = { ...(attestation as Record<string, unknown>), observedAt: clock.toISOString() };
       candidate = {
@@ -367,10 +421,10 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       fenced = value;
     },
     invalidSnapshot: () => {
-      current = { ...current, visibilityDigest: '' };
+      current = { ...current, intentDigest: '' };
     },
     drift: () => {
-      current = { ...current, providerVersion: 'merchant-change' };
+      current = { ...current, state: 'available' };
     },
     rollDay: () => {
       rollsDay = true;
@@ -478,14 +532,15 @@ describe('production activation coordinator with injected synthetic boundary fix
     expect(f.acquisitions).toBe(0);
     expect(f.current.state).toBe('available');
   });
-  it('lost hold response recovers by observation without acquiring twice', async () => {
+  it('lost hold response stays unattributable even if observation reports DRAFT; no second acquire', async () => {
     const f = fixture();
     await f.advance();
     f.crashAcquire = true;
     await expect(f.advance()).rejects.toThrow('lost acquisition response');
     expect(f.candidate.state.kind).toBe('ACQUISITION_PENDING');
     expect(f.current.state).toBe('unavailable');
-    expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+    expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
+    expect(f.evidence).toBeNull();
     expect(f.acquisitions).toBe(1);
   });
   it('crash after hold before publication preserves the owned hold for restart', async () => {
@@ -735,4 +790,30 @@ it('a slow restoration projection read must not dispatch over expired release ob
   expect(f.restores).toBe(0);
   expect(f.evidence).toBe(immutable);
   expect(f.candidate.state.kind).toBe('RESTORATION_CLAIMED');
+});
+
+it('new coordinator operations persist v2-only hold intents and explicit v2 activation evidence', async () => {
+  const f = fixture();
+  await f.advance();
+  await f.advance();
+  expect(f.stateAtAcquisition?.hold?.version).toBe('m5-availability-hold-v2');
+  expect(f.evidence).toMatchObject({ version: 'm5-activation-evidence-v2', decisionVersion: 2 });
+});
+
+it('unresolved historical v1 holds are operator-held without adoption or provider dispatch', async () => {
+  const f = fixture();
+  f.persistLegacyHold();
+  const original = structuredClone(f.candidate.state.hold);
+  expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
+  expect(f.candidate.state.hold).toEqual(original);
+  expect(f.acquisitions).toBe(0);
+  expect(f.restores).toBe(0);
+});
+it('unrelated provider updatedAt advance while held still permits v2 semantic activation and restore', async () => {
+  const f = fixture();
+  await f.advance();
+  await f.advance();
+  f.advanceDiagnostic();
+  expect((await f.advance()).kind).toBe('ACTIVE');
+  expect(f.restores).toBe(1);
 });

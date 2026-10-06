@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { activationDigest } from '@insignia/application';
 import { createServerActivationReadiness } from '../../../src/server/admin/release-evidence.ts';
 
 // TEST ONLY: injected synthetic premises, never a production release record or provider call.
@@ -69,8 +70,22 @@ export function createSyntheticActivation({ core, appId, remote, shopId, shopify
     scope: availabilityScope,
     productId,
     state: 'available',
-    providerVersion: 'synthetic-before',
-    visibilityDigest: 'e'.repeat(64),
+    version: 'm5-product-availability-snapshot-v2',
+    providerUpdatedAt: '2026-10-01T11:00:00.000Z',
+    configuredIntent: { includedPublicationIds: [], publicationSettings: [], scheduled: [] },
+    effectiveVisibility: {
+      publishedPublicationIds: [],
+      onlineStore: { publishedAtPresent: false, urlPresent: false },
+      publicationEvidence: [],
+      publishedAt: null,
+      onlineStoreUrl: null,
+    },
+    intentDigest: activationDigest({ includedPublicationIds: [], publicationSettings: [], scheduled: [] }),
+    effectiveDigest: activationDigest({
+      publishedPublicationIds: [],
+      onlineStore: { publishedAtPresent: false, urlPresent: false },
+    }),
+    receivedAt: now().toISOString(),
     observedAt: now().toISOString(),
   };
   const availability = {
@@ -83,7 +98,7 @@ export function createSyntheticActivation({ core, appId, remote, shopId, shopify
       assert.deepEqual(supplied, availabilityScope);
       assert.deepEqual(hold.before, current);
       assert.equal(hold.held, null);
-      current = { ...current, state: 'unavailable', providerVersion: 'synthetic-held' };
+      current = { ...current, state: 'unavailable', providerUpdatedAt: '2026-10-01T11:01:00.000Z' };
       return { kind: 'HELD', hold: { ...hold, held: structuredClone(current) }, current: structuredClone(current) };
     },
     async observe(supplied, hold) {
