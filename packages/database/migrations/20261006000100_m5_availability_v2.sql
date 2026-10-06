@@ -157,28 +157,37 @@ ALTER TABLE m5_activation_evidence ADD CONSTRAINT m5_014_evidence_v2_hold CHECK 
    AND evidence#>'{holdObservation,effectiveVisibility,onlineStore}'='{"publishedAtPresent":false,"urlPresent":false}'::jsonb)
  ),false));
 
--- V2 acknowledgements and restoration receipts are additive audit evidence. No v1 row is changed.
+-- One audit predicate fences both mutable state and immutable activation evidence.
+-- V1 rows bypass these additive constraints and are never rewritten.
+CREATE FUNCTION valid_availability_v2_audit(candidate jsonb) RETURNS boolean
+LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$
+ SELECT COALESCE((
+  (NOT candidate ? 'acquisitionAcknowledgement' OR (
+   candidate#>>'{acquisitionAcknowledgement,version}'='m5-availability-mutation-ack-v2'
+   AND candidate#>'{acquisitionAcknowledgement,scope}'=candidate#>'{before,scope}'
+   AND candidate#>>'{acquisitionAcknowledgement,productId}'=candidate#>>'{before,productId}'
+   AND candidate#>>'{acquisitionAcknowledgement,state}'='unavailable'
+   AND jsonb_typeof(candidate#>'{acquisitionAcknowledgement,providerUpdatedAt}')='string'))
+  AND (NOT candidate ? 'restorationReceipt' OR (
+   candidate#>>'{restorationReceipt,version}'='m5-availability-restoration-receipt-v2'
+   AND candidate#>>'{restorationReceipt,kind}' IN ('RESTORED','NOT_DISPATCHED','RESTORATION_PENDING','CONFLICT')
+   AND (candidate#>'{restorationReceipt,acknowledgement}'='null'::jsonb OR (
+    candidate#>>'{restorationReceipt,acknowledgement,version}'='m5-availability-mutation-ack-v2'
+    AND candidate#>'{restorationReceipt,acknowledgement,scope}'=candidate#>'{before,scope}'
+    AND candidate#>>'{restorationReceipt,acknowledgement,productId}'=candidate#>>'{before,productId}'
+    AND jsonb_typeof(candidate#>'{restorationReceipt,acknowledgement,providerUpdatedAt}')='string'))
+   AND (candidate#>'{restorationReceipt,current}'='null'::jsonb OR (
+    candidate#>>'{restorationReceipt,current,version}'='m5-product-availability-snapshot-v2'
+    AND candidate#>'{restorationReceipt,current,scope}'=candidate#>'{before,scope}'
+    AND candidate#>>'{restorationReceipt,current,productId}'=candidate#>>'{before,productId}'))))
+ ),false);
+$$;
 ALTER TABLE m5_activation_state ADD CONSTRAINT m5_014_v2_audit CHECK (
- hold IS NULL OR hold->>'version'<>'m5-availability-hold-v2' OR COALESCE((
-  (NOT hold ? 'acquisitionAcknowledgement' OR (
-   hold#>>'{acquisitionAcknowledgement,version}'='m5-availability-mutation-ack-v2'
-   AND hold#>'{acquisitionAcknowledgement,scope}'=hold#>'{before,scope}'
-   AND hold#>>'{acquisitionAcknowledgement,productId}'=hold#>>'{before,productId}'
-   AND hold#>>'{acquisitionAcknowledgement,state}'='unavailable'
-   AND jsonb_typeof(hold#>'{acquisitionAcknowledgement,providerUpdatedAt}')='string'))
-  AND (NOT hold ? 'restorationReceipt' OR (
-   hold#>>'{restorationReceipt,version}'='m5-availability-restoration-receipt-v2'
-   AND hold#>>'{restorationReceipt,kind}' IN ('RESTORED','NOT_DISPATCHED','RESTORATION_PENDING','CONFLICT')
-   AND (hold#>'{restorationReceipt,acknowledgement}'='null'::jsonb OR (
-    hold#>>'{restorationReceipt,acknowledgement,version}'='m5-availability-mutation-ack-v2'
-    AND hold#>'{restorationReceipt,acknowledgement,scope}'=hold#>'{before,scope}'
-    AND hold#>>'{restorationReceipt,acknowledgement,productId}'=hold#>>'{before,productId}'
-    AND jsonb_typeof(hold#>'{restorationReceipt,acknowledgement,providerUpdatedAt}')='string'))
-   AND (hold#>'{restorationReceipt,current}'='null'::jsonb OR (
-    hold#>>'{restorationReceipt,current,version}'='m5-product-availability-snapshot-v2'
-    AND hold#>'{restorationReceipt,current,scope}'=hold#>'{before,scope}'
-    AND hold#>>'{restorationReceipt,current,productId}'=hold#>>'{before,productId}'))))
- ),false));
+ hold IS NULL OR hold->>'version'<>'m5-availability-hold-v2'
+ OR valid_availability_v2_audit(hold));
+ALTER TABLE m5_activation_evidence ADD CONSTRAINT m5_014_evidence_v2_audit CHECK (
+ evidence->>'version'<>'m5-activation-evidence-v2' OR evidence->'hold'='null'::jsonb
+ OR valid_availability_v2_audit(evidence->'hold'));
 CREATE FUNCTION enforce_activation_v2_audit() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
  IF OLD.hold->>'version'='m5-availability-hold-v2' AND (
@@ -192,10 +201,12 @@ END $$;
 CREATE TRIGGER m5_activation_v2_audit_guard BEFORE UPDATE ON m5_activation_state FOR EACH ROW EXECUTE FUNCTION enforce_activation_v2_audit();
 
 -- migrate:down
+ALTER TABLE m5_activation_evidence DROP CONSTRAINT m5_014_evidence_v2_audit;
 ALTER TABLE m5_activation_evidence DROP CONSTRAINT m5_014_evidence_v2_hold;
 DROP TRIGGER m5_activation_v2_audit_guard ON m5_activation_state;
 DROP FUNCTION enforce_activation_v2_audit();
 ALTER TABLE m5_activation_state DROP CONSTRAINT m5_014_v2_audit;
+DROP FUNCTION valid_availability_v2_audit(jsonb);
 -- Reverting after v2 records exist fails closed; no down migration rewrites JSONB.
 ALTER TABLE m5_activation_evidence DROP CONSTRAINT m5_014_evidence_version;
 ALTER TABLE m5_activation_evidence ADD CONSTRAINT m5_014_evidence_version_v1 CHECK (jsonb_typeof(evidence) = 'object'
