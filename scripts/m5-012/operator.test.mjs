@@ -389,3 +389,62 @@ test('rejected foreign descriptive data is absent from register and qualificatio
     assert.doesNotMatch(retained, /synthetic-private-(title|tag)-sentinel/);
   }
 });
+
+test('a failed read reservation cannot be retried or lead to unverifiable cleanup', async () => {
+  const { IDENTITY, ARCHIVE } = await import('./documents.mjs');
+  const external = provider({ respond: (d, b, n) => (n === 2 ? Response.json({ data: d, errors: false }) : null) });
+  const op = createOperator({
+    directory: mkdtempSync(join(tmpdir(), 'm5012-no-retry-')),
+    binding: { synthetic: true },
+    fetchImpl: external.fetchImpl,
+  });
+  const endpoint = 'https://insignia-rewrite-dev.myshopify.com/admin/api/2026-07/graphql.json';
+  await op.fetch('https://insignia-rewrite-dev.myshopify.com/admin/oauth/access_token', {
+    method: 'POST',
+    body: JSON.stringify({
+      client_id: '1443cf6d03d39edae7c101a943c5c684',
+      client_secret: 'synthetic-secret',
+      grant_type: 'client_credentials',
+    }),
+  });
+  await assert.rejects(
+    op.fetch(endpoint, { method: 'POST', body: JSON.stringify({ query: IDENTITY, variables: {} }) }),
+    /provider_error/,
+  );
+  const before = external.calls.length;
+  await assert.rejects(
+    op.fetch(endpoint, { method: 'POST', body: JSON.stringify({ query: IDENTITY, variables: {} }) }),
+    /read_reentry/,
+  );
+  await assert.rejects(
+    op.fetch(endpoint, {
+      method: 'POST',
+      body: JSON.stringify({ query: ARCHIVE, variables: { product: { id: fixture, status: 'ARCHIVED' } } }),
+    }),
+  );
+  assert.equal(external.calls.length, before);
+  assert.deepEqual(op.state().counts, { auth: 1, read: 1, update: 0 });
+  op.finish({ synthetic: 'failed read fenced' });
+});
+test('documented search diagnostics without warnings preserve exact intent reads', async () => {
+  const r = await synthetic({
+    intent: true,
+    respond: (d, b) =>
+      b.query.includes('M5012Included')
+        ? Response.json({
+            data: d,
+            extensions: {
+              search: [
+                {
+                  path: ['publication', 'includedProducts'],
+                  query: 'id:10490211467547',
+                  parsed: { field: 'id', match_all: '10490211467547' },
+                },
+              ],
+            },
+          })
+        : null,
+  });
+  assert.equal(r.evidence.classification, 'INTENT_CONFIRMED');
+  assert.equal(r.evidence.cleanup.outcome, 'EXACT_ARCHIVED');
+});

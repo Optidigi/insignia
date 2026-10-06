@@ -1,0 +1,46 @@
+✖ a failed read reservation cannot be retried or lead to unverifiable cleanup (12.324049ms)
+✖ documented search diagnostics without warnings preserve exact intent reads (9.264158ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 219.761799
+
+✖ failing tests:
+
+test at scripts/m5-012/operator.test.mjs:393:1
+✖ a failed read reservation cannot be retried or lead to unverifiable cleanup (12.324049ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.test.mjs:401:2)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /read_reentry/,
+    operator: 'rejects',
+    diff: 'simple'
+  }
+
+test at scripts/m5-012/operator.test.mjs:405:1
+✖ documented search diagnostics without warnings preserve exact intent reads (9.264158ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'INCONSISTENT'
+  - 'INTENT_CONFIRMED'
+       ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.test.mjs:407:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'INCONSISTENT',
+    expected: 'INTENT_CONFIRMED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

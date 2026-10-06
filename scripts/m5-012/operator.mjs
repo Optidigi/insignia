@@ -318,8 +318,10 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
       body.query === READS[sequence[state.step]] &&
       keys(body.variables, []) &&
       state.counts.auth === 1
-    )
+    ) {
+      requireValue(!state.events.some((e) => e.operation === sequence[state.step]), 'read_reentry');
       return { kind: 'read', operation: sequence[state.step] };
+    }
     if (
       state.step === sequence.length &&
       body.query === ARCHIVE &&
@@ -330,6 +332,8 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
     ) {
       requireValue(
         state.counts.update === 0 &&
+          state.counts.read === sequence.length &&
+          state.counts.read < LIMITS.read &&
           state.prestate.status === 'DRAFT' &&
           ['INTENT_CONFIRMED', 'NO_INTENT_OBSERVED'].includes(state.classification?.classification),
         'cleanup_authority',
@@ -343,8 +347,10 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
       keys(body.variables, []) &&
       (state.counts.update === 1 || state.prestate?.status === 'ARCHIVED') &&
       !state.observations.final
-    )
+    ) {
+      requireValue(!state.events.some((e) => e.operation === 'final'), 'read_reentry');
       return { kind: 'read', operation: 'final' };
+    }
     throw new Stop('document_or_target_denied');
   }
   async function transport(url, init) {
@@ -438,7 +444,11 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
             raw?.extensions?.search !== undefined &&
             (!Array.isArray(raw.extensions.search) ||
               !raw.extensions.search.every(
-                (s) => s && typeof s === 'object' && !Array.isArray(s) && Array.isArray(s.warnings),
+                (s) =>
+                  s &&
+                  typeof s === 'object' &&
+                  !Array.isArray(s) &&
+                  (s.warnings === undefined || Array.isArray(s.warnings)),
               )),
           searchWarnings: Boolean(
             Array.isArray(raw?.extensions?.search) && raw.extensions.search.some((s) => s?.warnings?.length),
