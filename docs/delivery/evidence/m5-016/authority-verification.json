@@ -1,0 +1,15 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 46,
+  "base": "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+  "head": "38bac0cfabf96632e533e11df2ccfda9c513dea3",
+  "tree": "b54b0f83beee01a06a5218af0a18f604f6e3482b",
+  "verdict": "APPROVED_STOPPED_EVIDENCE",
+  "fixture": "gid://shopify/Product/10495813091611",
+  "fixture_status": "ACTIVE",
+  "requests": 10,
+  "pending": 0,
+  "unknown_mutations": 0,
+  "ci": "10/10 success attempt1",
+  "next_slice": "M5-016"
+}

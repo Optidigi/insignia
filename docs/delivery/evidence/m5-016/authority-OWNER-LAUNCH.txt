@@ -1,0 +1,30 @@
+Use the attached `insignia-pr46-approved-m5-016-handoff` package.
+
+Authorize NORMAL merge of PR #46 only at:
+base 6a186bea8e5d1c01a66f7ab683c06393fe81e991
+head 38bac0cfabf96632e533e11df2ccfda9c513dea3
+tree b54b0f83beee01a06a5218af0a18f604f6e3482b
+
+Reverify exact refs, all ten attempt-1 passing workflows, external principal approval and actual normal-merge parents/tree. No squash/rebase/force/protection bypass/fabricated approval.
+
+PR #46 is approved only as truthful STOPPED evidence. Never reopen M5-015R.
+
+Then execute M5-016 exactly:
+- fresh run `/home/serveradmin/insignia-m5-016-handoff/run`
+- exact ACTIVE fixture `gid://shopify/Product/10495813091611`
+- exact target Publication `gid://shopify/Publication/339456917787`
+- full offline gate before credentials
+- exact product prestate
+- exact `publication(id)` + includedProducts
+- complete `publications(catalogType:APP)`
+- complete `catalogs(type:APP)`
+- classify GENERIC_DISCOVERY_CONFIRMED / DIRECT_ONLY / UNRESOLVED
+- archive exact disposable fixture once when ownership/write settlement remain exact
+- verify final ARCHIVED/effectively unpublished
+- close live register; no provider access afterward
+
+Only if GENERIC_DISCOVERY_CONFIRMED, implement a local production correction using the generic discovery surface actually proven live. DIRECT_ONLY or UNRESOLVED means no production patch in this slice.
+
+No publication/create/delete/scope/version/inventory/variant/price/media mutation. No production activation, RELEASE_BOUND, G7, M6/M7 or launch.
+
+Return one integrated PR with fresh reviews and final CI; stop for principal review.

@@ -1,3 +1,9 @@
+# Current authorization — M5-016
+
+PR #46 normally merged at `d0efd626222047a2047573f678b019cd7b1802a9` with approved ordered parents/tree after ten exact-head attempt-1 successful workflows and supplied principal approval. M5-015R remains CLOSED/STOPPED; its exact canonical files and historical report are preserved.
+
+[M5-016 brief](prompts/M5-016-PUBLICATION-COVERAGE-AND-CLEANUP.md) authorizes fresh guarded publication coverage adjudication and cleanup of only product `10495813091611`, followed by a conditional local correction only after complete generic discovery is proven and Phase A closes. Worktree `/home/serveradmin/insignia-m5-016-worktree`, branch `feat/m5-016-publication-coverage`. Fresh run `/home/serveradmin/insignia-m5-016-handoff/run` is NOT_INITIALIZED. Offline source/build/review/CI gate in progress; credential/provider operations NOT_RUN. Return one integrated PR then principal review, no successor merge or further live hold qualification.
+
 # Current review boundary — M5-015R
 
 [PR45 approval](PR-045-principal-review.md) was followed by exact normal merge `6a186bea8e5d1c01a66f7ab683c06393fe81e991`; ordered parents/tree and remote main matched. M5-015 remains permanently STOPPED and its historical state below is unchanged.

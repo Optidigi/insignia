@@ -1,0 +1,38 @@
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.802442ms)
+✔ missing adapter transport / import proof uses only the guarded operator or denies locally (317.755815ms)
+✔ misspelled adapter transport / import proof uses only the guarded operator or denies locally (251.215356ms)
+✔ imports adapter transport / import proof uses only the guarded operator or denies locally (217.135865ms)
+✔ correct adapter transport / import proof uses only the guarded operator or denies locally (339.060107ms)
+✔ complete explicit APP discovery and exact inclusion authorize only the fixed archival cleanup (29.538005ms)
+✔ direct inclusion without either generic discovery surface classifies DIRECT_ONLY and still cleans the disposable fixture (17.102203ms)
+✔ complete APP catalogs independently establish the generic surface when typed publications omit the target (10.895191ms)
+✔ a denied second discovery surface is retained but cannot negate independently complete positive generic evidence (11.84759ms)
+✔ denied generic reads without complete positive evidence classify UNRESOLVED without retries (14.702786ms)
+✔ direct null remains UNRESOLVED despite generic positives (13.700598ms)
+✔ direct not-included remains UNRESOLVED despite generic positives (14.202133ms)
+✔ direct incomplete remains UNRESOLVED despite generic positives (11.943822ms)
+✔ direct error remains UNRESOLVED despite generic positives (10.471751ms)
+✔ capability drift between direct and generic observations is coverage ambiguity (11.20313ms)
+✔ multiple APP catalogs claiming the target Publication are coverage ambiguity (12.303106ms)
+✔ duplicate generic IDs and repeated cursors fail closed with cleanup capacity preserved (13.172522ms)
+✔ infinite unique discovery pages reserve one catalog attempt and exact cleanup/final read within sixteen GraphQL attempts (33.130625ms)
+✔ prestate identity drift stops before discovery or mutation (5.360817ms)
+✔ prestate ownership drift stops before discovery or mutation (3.02983ms)
+✔ prestate status drift stops before discovery or mutation (2.145927ms)
+✔ prestate target-effective drift stops before discovery or mutation (2.18955ms)
+✔ prestate connection drift stops before discovery or mutation (2.393602ms)
+✔ identity drift in discovery revokes cleanup before any mutation (4.437175ms)
+✔ lost archive acknowledgement gets exactly one final classification read and never a resend (10.101356ms)
+✔ final exact state settlement records updatedAt difference without timestamp equality (11.02938ms)
+✔ a failed final publication predicate closes STOPPED without another mutation or read (11.731538ms)
+✔ source drift before credentials produces no provider request (0.733242ms)
+✔ corrupt reservation accounting denies the captured transport before its first native call (1.644763ms)
+✔ canonical entry exposes no resume phase and a closed synthetic register cannot be reopened (11.584287ms)
+ℹ tests 30
+ℹ suites 0
+ℹ pass 30
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1247.839803
