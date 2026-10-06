@@ -1,0 +1,27 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (4.012049ms)
+✖ full source binding includes the inherited internal Rust links without following external symlinks (137.321702ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 222.025587
+
+✖ failing tests:
+
+test at scripts/m5-011/binding.test.mjs:56:1
+✖ full source binding includes the inherited internal Rust links without following external symlinks (137.321702ms)
+  Error: source_shape
+      at requireValue (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.mjs:27:21)
+      at freeze (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/binding.mjs:15:5)
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/binding.test.mjs:57:17)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    kind: 'source_shape'
+  }

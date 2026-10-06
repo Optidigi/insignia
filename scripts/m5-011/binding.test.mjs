@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { WORKFLOWS } from '../m5-004/binding.mjs';
-import { checkGateRecord, digest } from './binding.mjs';
+import { checkGateRecord, digest, freeze } from './binding.mjs';
 
 test('source gate requires two fresh high-effort reviews and every workflow on the frozen source', () => {
   const binding = { source: 'a'.repeat(40), tree: 'b'.repeat(40), modules: {} };
@@ -51,4 +51,10 @@ test('source gate requires two fresh high-effort reviews and every workflow on t
     change(copy);
     assert.throws(() => checkGateRecord(binding, copy), /offline_gate/);
   }
+});
+
+test('full source binding includes the inherited internal Rust links without following external symlinks', () => {
+  const binding = freeze(process.cwd());
+  assert.equal(binding.modules['spikes/m0-013/rust/extensions/transform'], digest('../transform'));
+  assert.equal(binding.modules['spikes/m0-014/rust/extensions/validation'], digest('../validation'));
 });

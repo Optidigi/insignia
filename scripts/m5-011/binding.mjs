@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process';
-import { lstatSync, readdirSync, readFileSync } from 'node:fs';
+import { lstatSync, readdirSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { WORKFLOWS } from '../m5-004/binding.mjs';
 import { digest, requireValue } from './operator.mjs';
@@ -12,8 +12,18 @@ export function freeze(root) {
   const modules = {};
   for (const path of git(root, ['ls-files']).split('\n')) {
     const info = lstatSync(resolve(root, path));
-    requireValue(info.isFile() && !info.isSymbolicLink(), 'source_shape');
-    modules[path] = digest(readFileSync(resolve(root, path)));
+    if (info.isSymbolicLink()) {
+      const link = readlinkSync(resolve(root, path));
+      requireValue(
+        realpathSync(resolve(root, path)).startsWith(`${realpathSync(root)}/`) &&
+          execFileSync('git', ['show', `${BASE}:${path}`], { cwd: root, encoding: 'utf8' }) === link,
+        'source_symlink',
+      );
+      modules[path] = digest(link);
+    } else {
+      requireValue(info.isFile(), 'source_shape');
+      modules[path] = digest(readFileSync(resolve(root, path)));
+    }
   }
   function walk(path) {
     for (const entry of readdirSync(resolve(root, path), { withFileTypes: true })) {
