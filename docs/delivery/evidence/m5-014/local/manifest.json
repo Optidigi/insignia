@@ -153,5 +153,45 @@
     "sha256": "b40be74261619d421e7750ec19049b7877b0d09b7f5bdef61054ffe3fd74a1c1",
     "uncompressedSha256": "5c100fdcc9f4fae49adf6d0849ba6cceb9696d1818f8732223a6e86f88fae528",
     "originalFileName": "pagination-red.log"
+  },
+  "root-after-audit-fix.log.gz": {
+    "sha256": "a2098b0e02389e9bdda2c2483c3a096404bafdc6536192e715d100939de451ee",
+    "uncompressedSha256": "dfed0cde0e1c6915deb38ee15c750815a79b1573d7cf92ac879b0d5275455160",
+    "originalFileName": "root-after-audit-fix.log"
+  },
+  "ack-audit-pg-red.log.gz": {
+    "sha256": "ba122a7f42b53900e0fcc3da03492d15edc77a67c32605df0d93ed402015c838",
+    "uncompressedSha256": "c500a10ee5c22f278584d730844d031146072b7f8a74c5c73255083ba7c7a803",
+    "originalFileName": "ack-audit-pg-red.log"
+  },
+  "ack-audit-pg-green.log.gz": {
+    "sha256": "ab4feb65ca27b3ade953d1e9229849b1b9a2b8b3424e85db46b5e39412bd91a0",
+    "uncompressedSha256": "5ff7632bd6debb0613933e18195d9517a8c7087d956ecf15673195a73b821e6d",
+    "originalFileName": "ack-audit-pg-green.log"
+  },
+  "ack-audit-runtime-green.log.gz": {
+    "sha256": "fd2bf0fc12a350ba88e9de7c990de798f407c695a294ced2438b9112c6ed09db",
+    "uncompressedSha256": "7dac419b5e252a0c636486ca0a99e5fda8f2e4e425b1f77312b54fc292e15da2",
+    "originalFileName": "ack-audit-runtime-green.log"
+  },
+  "ack-audit-red-style.log.gz": {
+    "sha256": "b0788ee225d255b6b57b9f7472b43a7984c7186639a1bb41f8412e518b826a5a",
+    "uncompressedSha256": "8fc37023c55294021ffbccfd4ce0f563c57c0ad57394138e54b8ec86347fd58b",
+    "originalFileName": "ack-audit-red-style.log"
+  },
+  "ack-audit-red-secrets.log.gz": {
+    "sha256": "fff472c949f76d47c66b54b52c829b8999f3875406527278ef3354e12dab6e7f",
+    "uncompressedSha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e",
+    "originalFileName": "ack-audit-red-secrets.log"
+  },
+  "ack-audit-green-style.log.gz": {
+    "sha256": "191948c9fd1d1492eebd57625bb67c66dc631de0f30989a547dff74fdd44711c",
+    "uncompressedSha256": "2b334b3d5c76441927ef284d780fa3af56f5b752758871cdefc1c480d36e0596",
+    "originalFileName": "ack-audit-green-style.log"
+  },
+  "ack-audit-green-secrets.log.gz": {
+    "sha256": "fff472c949f76d47c66b54b52c829b8999f3875406527278ef3354e12dab6e7f",
+    "uncompressedSha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e",
+    "originalFileName": "ack-audit-green-secrets.log"
   }
 }
