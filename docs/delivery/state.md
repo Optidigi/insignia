@@ -1,4 +1,8 @@
-# Current review boundary — M5-011
+# Current review boundary — M5-012C
+
+[PR #42 principal review](PR-042-principal-review.md) is CHANGES_REQUESTED at base/effective merge base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e`, head `4f0ee689218545af7161ce6a6fa4d942d319f533`, tree `8311e5d9cb2d3909f6c290ee7fee52ac1cdc090b`. Only [local M5-012C correction](prompts/M5-012C-ASSOCIATION-CORRECTION.md), checks, fresh actual GPT-6.1-sol/high reviews and natural final-head CI on the same PR are authorized; return for principal rereview, no merge/provider/browser/credential operation.
+
+Historical frozen M5-012 execution remains STOPPED INCONSISTENT, auth1/read7/update0, all settled/pending null, cleanup/final readback NOT_RUN. Raw live records and canonical closure remain unchanged. The owned fixture is last observed DRAFT. Principal adjudication found the unquoted fourth association predicate unqualified; accepted live facts are three qualified configured-intent positives and effective false. Corrected interpretation is INTENT_CONFIRMED, separately from the frozen harness result. Future association search is phrase-quoted and diagnostic only; disagreement among the three actual intent surfaces remains INCONSISTENT. The closed run never had cleanup authority and cannot gain it retroactively. [Report](M5-012-REPORT.md), [recommendation](M5-012-PRINCIPAL-RECOMMENDATION.md). M5-011's one-second conflict, production source/build and prior canonical records remain unchanged.
 
 PR #40 normal merge `1fffcb3048952ff762f1f9805f86aceed90f228f` verified with exact ordered parents/tree, ten reviewed-head attempt1 passing workflows and [external approval](PR-040-principal-review.md).
 

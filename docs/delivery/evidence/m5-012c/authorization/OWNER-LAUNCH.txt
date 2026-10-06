@@ -1,0 +1,18 @@
+Use the attached PR #42 principal correction package.
+
+PR #42 is CHANGES_REQUESTED at:
+base 9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e
+head 4f0ee689218545af7161ce6a6fa4d942d319f533
+tree 8311e5d9cb2d3909f6c290ee7fee52ac1cdc090b
+
+Do not merge and do not perform any Shopify/browser/credential operation. Preserve the raw M5-012 live run unchanged.
+
+Correct only the local association-query/interpretation defect in `M5-012C-ASSOCIATION-CORRECTION.md`:
+- quote the publication_ids value exactly as `publication_ids:'339456917787'`;
+- configured-intent consensus uses includedProducts + app-intended + channel-intended;
+- publication_ids stays separate diagnostic evidence and cannot by itself make intent inconsistent;
+- report the frozen run's INCONSISTENT result as historical execution output while recording the principal adjudication that its fourth predicate was unqualified.
+
+Add focused regressions, run applicable checks, obtain fresh GPT-6.1-sol/high Spec/security reviews, and let natural exact-head CI run. Return the same PR #42 for principal rereview.
+
+No cleanup, provider call, production adapter correction, successor merge, M6/M7, activation, RELEASE_BOUND/gate pass or launch is authorized.

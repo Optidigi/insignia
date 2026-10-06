@@ -1,0 +1,7 @@
+# Response to completed source round 2
+
+Spec reproduced a failed identity read followed by retry through the public durable operator, exhausting the final-read allowance before cleanup. The wrapper's stop was insufficient as a public-seam invariant. Each read operation is now admitted only if no durable event already reserved that operation. Cleanup also requires exactly seven completed pre-cleanup reads and capacity for the eighth/final read. The regression failed on the reviewed source; the fixed operator rejects retry before HTTP and never dispatches cleanup after the failed read. Security's predecessor pass does not clear this changed source.
+
+An additional integrator check covers the documented search-debug form without warnings. The primary search-syntax documentation permits debug responses with and without warnings. Optional absent warnings are accepted; a present malformed warnings value or any warning still stops. This changes diagnostic-shape handling only, preserving exact queries, ownership/complete-connection guards and publication fields. Its regression also failed before correction. No real provider result is claimed.
+
+Both full-source reviewers must inspect this new source, the original brief and all round-1/2 reports/responses. No source freeze, credential access or live attempt has occurred. Root/focused/stress and exact-current-source CI are refreshed before freeze.

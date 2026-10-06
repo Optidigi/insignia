@@ -1,0 +1,9 @@
+# M5-012 principal recommendation after association adjudication
+
+[PR #42 principal correction](PR-042-principal-review.md) adjudicates the historical fourth predicate as unqualified. The frozen unquoted publication_ids query returned empty without retained parsed-search evidence proving the exact predicate. The raw run's INCONSISTENT stop is unchanged historical execution output. The accepted live facts are three qualified intent/inclusion positives on the owned DRAFT fixture with effective publication false; their corrected configured-intent interpretation is INTENT_CONFIRMED.
+
+The local future association query is now exactly `id:10490211467547 publication_ids:'339456917787'`. Configured-intent consensus uses includedProducts plus both app/channel -intended searches. Association remains diagnostic and cannot by itself force INCONSISTENT. Official wording says associated; community reports suggest narrower behavior on DRAFT, without a guaranteed published-only contract. No corrected query has been run live.
+
+A future production snapshot should distinguish configured intent from effective publication, demonstrate API/context coverage, preserve exact ownership/grant/completeness guards and diagnostic reasons, and explicitly version persisted holds. Do not reinterpret opaque v1 digests or substitute V2 emptiness for absence. These intent surfaces were not captured before M5-011's transition, so no cross-transition invariance is established.
+
+M5-011's one-second timestamp mismatch remains real conflict evidence. No tolerance or native CAS assumption is introduced. A production correction must separately define ownership and settlement and receive implementation review. The closed M5-012 run never had cleanup authority; this local correction cannot retroactively grant it. Future fixture disposal requires fresh bounded authority. No production correction or provider operation is implemented or authorized here.

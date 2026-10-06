@@ -1,0 +1,12 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 42,
+  "base": "9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e",
+  "reviewed_head": "4f0ee689218545af7161ce6a6fa4d942d319f533",
+  "reviewed_tree": "8311e5d9cb2d3909f6c290ee7fee52ac1cdc090b",
+  "verdict": "CHANGES_REQUESTED",
+  "merge_authorized": false,
+  "provider_operations_authorized": false,
+  "material_finding": "unquoted publication_ids numeric search used as equivalent configured-intent predicate",
+  "raw_live_evidence_preserved": true
+}

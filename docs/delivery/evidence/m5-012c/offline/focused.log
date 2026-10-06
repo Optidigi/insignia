@@ -1,0 +1,43 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (3.054862ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (213.635636ms)
+✔ alternate product and broad search are refused before HTTP (2.969726ms)
+✔ fixed intent reads clean up one owned DRAFT and close with exact ARCHIVED settlement (27.363426ms)
+✔ already ARCHIVED fixture is observed with no cleanup mutation (10.220321ms)
+✔ complete negative intent surfaces report NO_INTENT_OBSERVED before cleanup (12.371553ms)
+✔ unexpected ownership stops before cleanup (2.644237ms)
+✔ unexpected ACTIVE stops before cleanup (2.321755ms)
+✔ initial version drift stops before cleanup (2.387ms)
+✔ scope loss stops before cleanup (1.584941ms)
+✔ incomplete includedProducts stops before cleanup (5.430152ms)
+✔ foreign exact-ID result stops before cleanup (5.656401ms)
+✔ duplicate exact-ID result stops before cleanup (5.4796ms)
+✔ one-second observation drift stops before cleanup (5.371955ms)
+✔ changed publication identity stops before cleanup (3.22698ms)
+✔ search anchor disagrees stops before cleanup (6.611177ms)
+✔ contradictory inclusion/search results stop before cleanup (8.712288ms)
+✔ three qualified intent positives confirm intent with an empty diagnostic association (11.650867ms)
+✔ diagnostic association cannot change negative consensus or resolve actual intent disagreement (38.047102ms)
+✔ effective publication stays separate from matching configured-intent observations (11.722417ms)
+✔ corrected interpretation cannot reopen the frozen closed attempt or authorize cleanup (4.701414ms)
+✔ effective publication on DRAFT makes intent inconsistent and refuses cleanup (10.671574ms)
+✔ ambiguous archive response consumes one final exact read without resend (9.550396ms)
+✔ one-second archive acknowledgement/readback drift stays a conflict (10.014918ms)
+✔ authentication failure closes the fresh register without Admin requests (1.034187ms)
+✔ quarantined outstanding archive forbids final read and any overlapping request (8013.800164ms)
+✔ fixed documents and variables exclude every alternate target before HTTP (128.476588ms)
+✔ fixed source query literals are exactly the authorized ID filters and first:2 (0.546933ms)
+✔ closed register cannot be initialized a second time (9.320316ms)
+✔ 100 serial synthetic runs preserve zero or one mutation and never overlap (863.577467ms)
+✔ invalid or malformed runtime search metadata stops before cleanup (7.836112ms)
+✔ malformed GraphQL errors values never authorize cleanup (18.453591ms)
+✔ rejected foreign descriptive data is absent from register and qualification evidence (9.027688ms)
+✔ a failed read reservation cannot be retried or lead to unverifiable cleanup (1.474207ms)
+✔ documented search diagnostics without warnings preserve exact intent reads (14.941611ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9488.346341

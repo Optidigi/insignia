@@ -1,0 +1,55 @@
+{
+  "source": "0f8b7d7d53732cf7d0038eb4d366fe2e6179b01f",
+  "bindingDigest": "6a3d80fdb571fc9754f11d4e5168a64b111e7296b0eb555a9fc8842cc1fbe115",
+  "exitCode": 0,
+  "checks": [
+    {
+      "command": "node --test scripts/m5-012/operator.test.mjs scripts/m5-012/binding.test.mjs",
+      "exitCode": 0,
+      "tests": 31,
+      "serialCases": 100,
+      "report": {
+        "path": "/home/serveradmin/insignia-m5-012-handoff/focused.log",
+        "sha256": "ed531582d3cdb69d0086c7eefe13a4adeddded935b09594dce2babe83a737590"
+      }
+    },
+    {
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "report": {
+        "path": "/home/serveradmin/insignia-m5-012-handoff/root-round3.log",
+        "sha256": "1b4c8b1d648fc75261ee6bc722596391cb7f6f8a208a99913862b4ec6fb4ccf8"
+      }
+    },
+    {
+      "command": "corepack pnpm test:m5-stress",
+      "exitCode": 0,
+      "tests": 100,
+      "report": {
+        "path": "/home/serveradmin/insignia-m5-012-handoff/browser-stress-round3.log",
+        "sha256": "807a7ecd33dd5a7c520233dcd03c447c0bfc06a5efee945c9793771d092cf809"
+      }
+    },
+    {
+      "command": "Shopify Dev MCP Admin 2026-07 schema",
+      "exitCode": 0,
+      "documents": 8,
+      "invalidControlRejected": true,
+      "report": {
+        "path": "/home/serveradmin/insignia-m5-012-handoff/schema-validation.json",
+        "sha256": "85656b6457a3dbcefc50b1bef2f8dd741a58ea38a2fa4698f3e2b4b5248bbc6a"
+      }
+    },
+    {
+      "command": "corepack pnpm check:secrets",
+      "exitCode": 0,
+      "report": {
+        "path": "/home/serveradmin/insignia-m5-012-handoff/source-secrets.log",
+        "sha256": "c7c91b28f60f3ad86d27043356ab79b8a0f249caa99df9f87cdd931b6a238450"
+      }
+    }
+  ],
+  "overlappingLaunches": "Stopped; NON-ACCEPTANCE logs excluded",
+  "credentialAccess": "NOT_RUN",
+  "providerCalls": 0
+}

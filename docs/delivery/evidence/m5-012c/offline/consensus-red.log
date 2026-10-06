@@ -1,0 +1,31 @@
+✖ three qualified intent positives confirm intent with an empty diagnostic association (24.69441ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 235.539208
+
+✖ failing tests:
+
+test at scripts/m5-012/operator.test.mjs:239:1
+✖ three qualified intent positives confirm intent with an empty diagnostic association (24.69441ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'INCONSISTENT'
+  - 'INTENT_CONFIRMED'
+       ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.test.mjs:246:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'INCONSISTENT',
+    expected: 'INTENT_CONFIRMED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

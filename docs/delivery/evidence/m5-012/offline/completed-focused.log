@@ -1,0 +1,39 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (3.262506ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (217.906119ms)
+✔ alternate product and broad search are refused before HTTP (3.047633ms)
+✔ fixed intent reads clean up one owned DRAFT and close with exact ARCHIVED settlement (33.391529ms)
+✔ already ARCHIVED fixture is observed with no cleanup mutation (10.258832ms)
+✔ complete negative intent surfaces report NO_INTENT_OBSERVED before cleanup (12.633015ms)
+✔ unexpected ownership stops before cleanup (2.663674ms)
+✔ unexpected ACTIVE stops before cleanup (2.408798ms)
+✔ initial version drift stops before cleanup (2.415871ms)
+✔ scope loss stops before cleanup (1.574931ms)
+✔ incomplete includedProducts stops before cleanup (4.841383ms)
+✔ foreign exact-ID result stops before cleanup (6.492482ms)
+✔ duplicate exact-ID result stops before cleanup (5.822368ms)
+✔ one-second observation drift stops before cleanup (5.412182ms)
+✔ changed publication identity stops before cleanup (3.216531ms)
+✔ search anchor disagrees stops before cleanup (7.26171ms)
+✔ contradictory inclusion/search results stop before cleanup (8.442722ms)
+✔ effective publication on DRAFT makes intent inconsistent and refuses cleanup (8.134504ms)
+✔ ambiguous archive response consumes one final exact read without resend (11.511087ms)
+✔ one-second archive acknowledgement/readback drift stays a conflict (13.228415ms)
+✔ authentication failure closes the fresh register without Admin requests (1.214033ms)
+✔ quarantined outstanding archive forbids final read and any overlapping request (8012.75238ms)
+✔ fixed documents and variables exclude every alternate target before HTTP (126.640359ms)
+✔ fixed source query literals are exactly the authorized ID filters and first:2 (0.492636ms)
+✔ closed register cannot be initialized a second time (11.162299ms)
+✔ 100 serial synthetic runs preserve zero or one mutation and never overlap (859.825901ms)
+✔ invalid or malformed runtime search metadata stops before cleanup (6.740204ms)
+✔ malformed GraphQL errors values never authorize cleanup (16.584921ms)
+✔ rejected foreign descriptive data is absent from register and qualification evidence (7.928957ms)
+✔ a failed read reservation cannot be retried or lead to unverifiable cleanup (1.444959ms)
+✔ documented search diagnostics without warnings preserve exact intent reads (10.619328ms)
+ℹ tests 31
+ℹ suites 0
+ℹ pass 31
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9429.2461
