@@ -188,6 +188,23 @@ ALTER TABLE m5_activation_state ADD CONSTRAINT m5_014_v2_audit CHECK (
 ALTER TABLE m5_activation_evidence ADD CONSTRAINT m5_014_evidence_v2_audit CHECK (
  evidence->>'version'<>'m5-activation-evidence-v2' OR evidence->'hold'='null'::jsonb
  OR valid_availability_v2_audit(evidence->'hold'));
+-- Recovery audit has the same version/identity contract as its owned hold.
+-- Null held is valid for an unsent acquisition; an observed held snapshot must
+-- retain v2 identity, configured intent and held-safe semantics.
+ALTER TABLE m5_availability_resolutions ADD CONSTRAINT m5_014_resolution_v2_hold_audit CHECK (
+ resolution->>'version'<>'m5-availability-resolution-v2' OR COALESCE((
+  valid_availability_v2_audit(resolution->'originalHold')
+  AND (resolution#>'{originalHold,held}'='null'::jsonb OR (
+   jsonb_typeof(resolution#>'{originalHold,held}')='object'
+   AND resolution#>>'{originalHold,held,version}'='m5-product-availability-snapshot-v2'
+   AND resolution#>'{originalHold,held,scope}'=resolution#>'{originalHold,before,scope}'
+   AND resolution#>>'{originalHold,held,productId}'=resolution#>>'{originalHold,before,productId}'
+   AND resolution#>>'{originalHold,held,state}'='unavailable'
+   AND resolution#>'{originalHold,held,configuredIntent}'=resolution#>'{originalHold,before,configuredIntent}'
+   AND resolution#>>'{originalHold,held,intentDigest}'=resolution#>>'{originalHold,before,intentDigest}'
+   AND resolution#>'{originalHold,held,effectiveVisibility,publishedPublicationIds}'='[]'::jsonb
+   AND resolution#>'{originalHold,held,effectiveVisibility,onlineStore}'='{"publishedAtPresent":false,"urlPresent":false}'::jsonb))
+ ),false));
 CREATE FUNCTION enforce_activation_v2_audit() RETURNS trigger LANGUAGE plpgsql AS $$
 BEGIN
  IF OLD.hold->>'version'='m5-availability-hold-v2' AND (
@@ -201,6 +218,7 @@ END $$;
 CREATE TRIGGER m5_activation_v2_audit_guard BEFORE UPDATE ON m5_activation_state FOR EACH ROW EXECUTE FUNCTION enforce_activation_v2_audit();
 
 -- migrate:down
+ALTER TABLE m5_availability_resolutions DROP CONSTRAINT m5_014_resolution_v2_hold_audit;
 ALTER TABLE m5_activation_evidence DROP CONSTRAINT m5_014_evidence_v2_audit;
 ALTER TABLE m5_activation_evidence DROP CONSTRAINT m5_014_evidence_v2_hold;
 DROP TRIGGER m5_activation_v2_audit_guard ON m5_activation_state;
