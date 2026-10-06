@@ -1,0 +1,8 @@
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "## Validation Summary\n\n**Overall Status:** ❌ INVALID\n**Total Code Blocks:** 1\n\n## Detailed Results\n\n### Code Block 1\n**Artifact ID:** invalid-control\n**Revision:** 1\n*Use same ID & increment revision when retrying on an improvement of this artifact*\n\n**Status:** ❌ FAILED\n**Details:** GraphQL validation errors: Cannot query field \"definitelyInvalidM5011\" on type \"Publication\".\n\n"
+    }
+  ]
+}

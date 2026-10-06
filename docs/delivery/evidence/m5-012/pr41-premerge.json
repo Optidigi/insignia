@@ -1,0 +1,123 @@
+{
+  "observedAt": "2026-10-06T13:58:15.423047+00:00",
+  "repository": "Optidigi/insignia",
+  "pr": 41,
+  "base": "1fffcb3048952ff762f1f9805f86aceed90f228f",
+  "head": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+  "tree": "e00f2f8ce5b33321b67c6271cb13a315f34471a1",
+  "main": "1fffcb3048952ff762f1f9805f86aceed90f228f",
+  "effectiveMergeBase": "1fffcb3048952ff762f1f9805f86aceed90f228f",
+  "state": "open",
+  "draft": false,
+  "merged": false,
+  "mergeable": true,
+  "auto_merge": null,
+  "nativeReviews": [],
+  "workflows": [
+    {
+      "id": 37470178136,
+      "name": "M0-012 real contract local prototype",
+      "path": ".github/workflows/m0-012-real-contract-local.yml",
+      "head_sha": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37470178136"
+    },
+    {
+      "id": 37470178347,
+      "name": "M0-008 local publication and architecture checks",
+      "path": ".github/workflows/m0-008-local.yml",
+      "head_sha": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37470178347"
+    },
+    {
+      "id": 37470178160,
+      "name": "M0-009 embedded Astro local proof",
+      "path": ".github/workflows/m0-009-embedded.yml",
+      "head_sha": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37470178160"
+    },
+    {
+      "id": 37470178350,
+      "name": "M0-010 local hybrid billing proof",
+      "path": ".github/workflows/m0-010-billing-local.yml",
+      "head_sha": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37470178350"
+    },
+    {
+      "id": 37470178480,
+      "name": "M0-013 off-store protocol capacity",
+      "path": ".github/workflows/m0-013-protocol-capacity.yml",
+      "head_sha": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37470178480"
+    },
+    {
+      "id": 37470178245,
+      "name": "M3-001 PostgreSQL durable core",
+      "path": ".github/workflows/m3-database.yml",
+      "head_sha": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37470178245"
+    },
+    {
+      "id": 37470178239,
+      "name": "M0-014 local public-app candidate",
+      "path": ".github/workflows/m0-014-public-app-checkout.yml",
+      "head_sha": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37470178239"
+    },
+    {
+      "id": 37470178267,
+      "name": "M0-011 local provider adapter boundary",
+      "path": ".github/workflows/m0-011-provider-local.yml",
+      "head_sha": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37470178267"
+    },
+    {
+      "id": 37470178368,
+      "name": "M3-002 local runtime and ingress",
+      "path": ".github/workflows/m3-runtime.yml",
+      "head_sha": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37470178368"
+    },
+    {
+      "id": 37470178304,
+      "name": "M1-001 foundation and boundaries",
+      "path": ".github/workflows/m1-foundation.yml",
+      "head_sha": "9353bf9a5c13649daa55cb3693cab16532c6f6f6",
+      "status": "completed",
+      "conclusion": "success",
+      "run_attempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37470178304"
+    }
+  ],
+  "externalApproval": {
+    "path": "/home/serveradmin/insignia-handoffs/pr41-approved-m5-012/insignia-pr41-approved-m5-012-handoff/PR-041-principal-review.md",
+    "sha256": "9607863b73a3457866269c847eef90c1543ed7a0e3b2ce5eb4bc5ac2a8bbd611",
+    "verdict": "APPROVED normal merge only"
+  }
+}

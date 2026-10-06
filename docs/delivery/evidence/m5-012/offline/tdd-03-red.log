@@ -1,0 +1,30 @@
+✖ invalid or malformed runtime search metadata stops before cleanup (33.199272ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 246.634813
+
+✖ failing tests:
+
+test at scripts/m5-012/operator.test.mjs:350:1
+✖ invalid or malformed runtime search metadata stops before cleanup (33.199272ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'provider_error'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.test.mjs:353:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'provider_error',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

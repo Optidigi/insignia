@@ -1,5 +1,8 @@
 # Current review boundary — M5-011
 
+
+M5-012 is IN_PROGRESS under the owner-forwarded [prompt](prompts/M5-012-PUBLICATION-INTENT-AND-CLEANUP.md). PR #41 normally merged as `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e` with ordered parents `1fffcb3048952ff762f1f9805f86aceed90f228f`, `9353bf9a5c13649daa55cb3693cab16532c6f6f6` and tree `e00f2f8ce5b33321b67c6271cb13a315f34471a1`; exact refs, external approval and ten attempt-1 passing workflows were reverified. M5-011 remains INCONCLUSIVE and immutable. Fresh M5-012 offline qualification and review/CI precede credential access; live intent and conditional ARCHIVED cleanup have not run.
+
 PR #40 normal merge `1fffcb3048952ff762f1f9805f86aceed90f228f` verified with exact ordered parents/tree, ten reviewed-head attempt1 passing workflows and [external approval](PR-040-principal-review.md).
 
 [M5-011 report](M5-011-REPORT.md): **INCONCLUSIVE**, stopped on one-second acknowledgement/readback provider-version drift after the sole production snapshot/acquire. The owned fixture10490211467547 was last observed DRAFT at2026-10-06T13:10:00.463Z. Archive was withheld; no ARCHIVED verification occurred. All four V2 partitions returned empty before/after despite legacy publication339456917787 disappearing in DRAFT. Both version mismatch and changed legacy membership meet adapter CONFLICT conditions; sole legacy causation is not isolated.

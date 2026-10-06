@@ -1,0 +1,31 @@
+✔ alternate product and broad search are refused before HTTP (2.36715ms)
+✖ fixed intent reads clean up one owned DRAFT and close with exact ARCHIVED settlement (26.425146ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 1
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 237.016247
+
+✖ failing tests:
+
+test at scripts/m5-012/operator.test.mjs:51:1
+✖ fixed intent reads clean up one owned DRAFT and close with exact ARCHIVED settlement (26.425146ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'ACKNOWLEDGED'
+  - 'EXACT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.test.mjs:57:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ACKNOWLEDGED',
+    expected: 'EXACT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

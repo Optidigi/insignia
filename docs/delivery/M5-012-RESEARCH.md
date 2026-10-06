@@ -1,0 +1,11 @@
+# M5-012 fixed publication-intent surfaces
+
+Checked 6 October 2026 before credential access. The eight fixed GraphQL documents in `scripts/m5-012/documents.mjs` validated with Shopify Dev MCP v1.15.4 against Admin 2026-07. The invalid-field control failed. ShopPlan.displayName is deprecated but remains valid; identity fields and grants are unchanged.
+
+[Publication](https://shopify.dev/docs/api/admin-graphql/2026-07/objects/Publication) documents `includedProducts` as inclusion independent of effective publication and accepts an exact-ID search. [Products](https://shopify.dev/docs/api/admin-graphql/2026-07/queries/products) documents channel-ID and channel-app-ID `-intended`, the exact `id` filter, and `publication_ids` association. Each connection uses first:2, exact constants and complete pageInfo. No fallback listing or alternate search is permitted.
+
+[Product](https://shopify.dev/docs/api/admin-graphql/2026-07/objects/Product) provides the exact `publishedOnPublication` boolean. Its updatedAt is a broad last-modified timestamp, not a documented atomic CAS token. The M5-011 one-second mismatch remains conflict evidence. This harness conservatively stops if the fresh DRAFT version differs from the last observed value or any subsequent anchor differs, and retains exact acknowledgement/readback equality for cleanup. It does not add tolerance or redefine production v1 semantics.
+
+[Search syntax](https://shopify.dev/docs/api/usage/search-syntax) defines implicit AND and numeric equality. Invalid search fields may be ignored; the documented debug header requests parser metadata, and any returned warning stops before cleanup. Schema validation alone does not prove runtime search interpretation.
+
+Implementation rule: disagreement among inclusion, app intended, channel intended or association yields INCONSISTENT and no cleanup. Complete agreeing inclusion/intended positives with effective false on DRAFT yield INTENT_CONFIRMED; complete negatives and effective false yield NO_INTENT_OBSERVED. This conservative treatment implements the brief's stop-on-ambiguity condition. Already ARCHIVED skips mutation and must have exact final state. M5-011 empty V2 views remain their original evidence; this slice does not reread or reinterpret V2.
