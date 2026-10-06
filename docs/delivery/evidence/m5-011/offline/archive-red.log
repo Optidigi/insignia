@@ -25,10 +25,10 @@ test at scripts/m5-011/operator.test.mjs:86:1
 ✖ ambiguous archive has exactly one bounded final observation and no resend (14.418092ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
   + actual - expected
-  
+
   + undefined
   - 'UNKNOWN_WRITE_OBSERVED_ARCHIVED'
-  
+
       at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:89:10)
       at async Test.run (node:internal/test_runner/test:1409:7)
       at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
