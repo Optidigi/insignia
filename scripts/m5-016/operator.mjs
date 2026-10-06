@@ -4,7 +4,7 @@ import { AVAILABILITY_ADMIN_API_VERSION } from '../../packages/shopify/dist/inde
 import { atomic, digest, requireValue, Stop, saveJSON } from '../m5-015r/operator.mjs';
 import { bytes } from './body.mjs';
 import { ARCHIVE, CATALOGS, DIRECT, FINAL, FIXTURE, PRESTATE, PUBLICATIONS, TARGET } from './documents.mjs';
-import { identity, owned, selected, visible } from './projections.mjs';
+import { identity, owned, selected, selectedIdentity, visible } from './projections.mjs';
 
 export { atomic, digest, requireValue, Stop, saveJSON };
 export const LIVE_DIRECTORY = '/home/serveradmin/insignia-m5-016-handoff/run';
@@ -218,9 +218,13 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
         requireValue(raw?.data && typeof raw.data === 'object', 'provider_shape');
         let d;
         try {
+          // Latch identity drift before any operation-specific projection can fail.
+          if (!r.mutation) {
+            event.identity = selectedIdentity(raw.data);
+            identity(raw.data);
+          }
           d = selected(raw.data, r.operation);
           event.response = { data: d };
-          if (!r.mutation) identity(d);
         } catch (error) {
           if (error.kind === 'identity' || error.kind === 'grants') state.identityFailed = true;
           throw error;

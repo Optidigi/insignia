@@ -42,6 +42,7 @@ export async function enumerate(op, request, query, name, reserve) {
         result.complete = true;
         return result;
       }
+      requireValue(c.nodes.length > 0, 'empty_discovery_page');
       requireValue(
         typeof page.endCursor === 'string' &&
           page.endCursor.length > 0 &&
@@ -73,10 +74,10 @@ export function classify(direct, publications, catalogs) {
     JSON.stringify({ __typename: c.__typename, id: c.id, status: c.status }) ===
       JSON.stringify(direct.publication?.catalog);
   const ambiguity =
-    (catalogs.complete && matches.length > 1) ||
-    (publications.complete && p && !pubConsistent) ||
-    (catalogs.complete && c && !catConsistent) ||
-    (catalogs.complete && historicalCatalog && historicalCatalog.publication?.id !== PUBLICATION);
+    matches.length > 1 ||
+    (p && !pubConsistent) ||
+    (c && !catConsistent) ||
+    (historicalCatalog && historicalCatalog.publication?.id !== PUBLICATION);
   const generic = (publications.complete && pubConsistent) || (catalogs.complete && catConsistent);
   return {
     classification:

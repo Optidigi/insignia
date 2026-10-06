@@ -137,14 +137,61 @@ test('multiple APP catalogs claiming the target Publication are coverage ambigui
     },
   ));
 
-test('duplicate generic IDs and repeated cursors fail closed with cleanup capacity preserved', async () =>
+test('observed conflicting catalogs followed by a denied page remain UNRESOLVED despite complete positive publications', async () =>
   exercise(
     (d, b) => {
+      if (b.query !== CATALOGS) return;
+      if (b.variables.after !== null)
+        return Response.json({ errors: [{ message: 'denied', extensions: { code: 'ACCESS_DENIED' } }] });
+      d.catalogs.nodes.push({ ...d.catalogs.nodes[0], id: 'gid://shopify/AppCatalog/9' });
+      d.catalogs.pageInfo = { hasNextPage: true, hasPreviousPage: false, endCursor: 'next' };
+    },
+    (e) => {
+      assert.equal(e.classification, 'UNRESOLVED');
+      assert.equal(e.ambiguity, true);
+      assert.equal(e.catalogs.complete, false);
+      assert.equal(e.catalogs.failure, 'provider_error');
+    },
+  ));
+
+for (const surface of ['publications', 'catalogs'])
+  test(`empty nonterminal ${surface} page fails before any continuation`, async () =>
+    exercise(
+      (d, b) => {
+        if (surface === 'catalogs' && b.query === PUBLICATIONS) d.publications.nodes = [];
+        if (surface === 'publications' && b.query === CATALOGS) d.catalogs.nodes = [];
+        const query = surface === 'publications' ? PUBLICATIONS : CATALOGS;
+        if (b.query === query && b.variables.after === null) {
+          d[surface].nodes = [];
+          d[surface].pageInfo = { hasNextPage: true, hasPreviousPage: false, endCursor: 'next' };
+        }
+      },
+      (e, f) => {
+        assert.equal(e[surface].complete, false);
+        assert.equal(e[surface].failure, 'empty_discovery_page');
+        assert.equal(
+          f.calls.filter((b) => b.query === (surface === 'publications' ? PUBLICATIONS : CATALOGS)).length,
+          1,
+        );
+        assert.equal(e.classification, 'UNRESOLVED');
+      },
+    ));
+
+test('duplicate generic IDs and repeated cursors fail closed with cleanup capacity preserved', async () =>
+  exercise(
+    (d, b, context) => {
       if (b.query === PUBLICATIONS) {
         d.publications.nodes.push(d.publications.nodes[0]);
       }
       if (b.query === CATALOGS) {
-        d.catalogs.nodes = [];
+        d.catalogs.nodes = [
+          {
+            __typename: 'AppCatalog',
+            id: `gid://shopify/AppCatalog/${1000 + context.calls.length}`,
+            status: 'ACTIVE',
+            publication: null,
+          },
+        ];
         d.catalogs.pageInfo = { hasNextPage: true, hasPreviousPage: b.variables.after !== null, endCursor: 'repeated' };
       }
     },
@@ -159,9 +206,20 @@ test('duplicate generic IDs and repeated cursors fail closed with cleanup capaci
 
 test('infinite unique discovery pages reserve one catalog attempt and exact cleanup/final read within sixteen GraphQL attempts', async () =>
   exercise(
-    (d, b) => {
+    (d, b, context) => {
       if (b.query === PUBLICATIONS) {
-        d.publications.nodes = [];
+        d.publications.nodes = [
+          {
+            id: `gid://shopify/Publication/${1000 + context.calls.length}`,
+            autoPublish: false,
+            supportsFuturePublishing: false,
+            catalog: {
+              __typename: 'AppCatalog',
+              id: `gid://shopify/AppCatalog/${1000 + context.calls.length}`,
+              status: 'ACTIVE',
+            },
+          },
+        ];
         d.publications.pageInfo = {
           hasNextPage: true,
           hasPreviousPage: b.variables.after !== null,
@@ -200,6 +258,21 @@ test('identity drift in discovery revokes cleanup before any mutation', async ()
   exercise(
     (d, b) => {
       if (b.query === DIRECT) d.currentAppInstallation.app.apiKey = '0'.repeat(32);
+    },
+    (e, f) => {
+      assert.equal(e.outcome, 'STOPPED');
+      assert.equal(e.accounting.directUpdate, 0);
+      assert.equal(f.calls.filter((b) => b.query === ARCHIVE).length, 0);
+    },
+  ));
+
+test('identity mismatch combined with malformed operation data latches the fence before projection', async () =>
+  exercise(
+    (d, b) => {
+      if (b.query === DIRECT) {
+        d.shop.id = 'gid://shopify/Shop/9';
+        d.publication.channels.nodes = {};
+      }
     },
     (e, f) => {
       assert.equal(e.outcome, 'STOPPED');

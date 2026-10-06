@@ -29,6 +29,19 @@ export const selectProduct = (p, visibility = true) =>
         }
       : {}),
   };
+export const selectedIdentity = (data) => ({
+  shop: data.shop && {
+    ...pick(data.shop, ['id', 'myshopifyDomain']),
+    plan: pick(data.shop.plan, ['partnerDevelopment']),
+  },
+  currentAppInstallation: data.currentAppInstallation && {
+    ...pick(data.currentAppInstallation, ['id']),
+    app: pick(data.currentAppInstallation.app, ['id', 'apiKey']),
+    accessScopes: Array.isArray(data.currentAppInstallation.accessScopes)
+      ? data.currentAppInstallation.accessScopes.map((n) => pick(n, ['handle']))
+      : data.currentAppInstallation.accessScopes,
+  },
+});
 export function selected(data, operation) {
   if (operation === 'archive')
     return {
@@ -39,19 +52,7 @@ export function selected(data, operation) {
           : data.productUpdate.userErrors,
       },
     };
-  const i = {
-    shop: data.shop && {
-      ...pick(data.shop, ['id', 'myshopifyDomain']),
-      plan: pick(data.shop.plan, ['partnerDevelopment']),
-    },
-    currentAppInstallation: data.currentAppInstallation && {
-      ...pick(data.currentAppInstallation, ['id']),
-      app: pick(data.currentAppInstallation.app, ['id', 'apiKey']),
-      accessScopes: Array.isArray(data.currentAppInstallation.accessScopes)
-        ? data.currentAppInstallation.accessScopes.map((n) => pick(n, ['handle']))
-        : data.currentAppInstallation.accessScopes,
-    },
-  };
+  const i = selectedIdentity(data);
   if (operation === 'prestate' || operation === 'final') return { ...i, product: selectProduct(data.product) };
   if (operation === 'direct')
     return {
