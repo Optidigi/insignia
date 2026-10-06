@@ -1,0 +1,7 @@
+{
+  "oldSource": "1d62d7249ee22e6275eb9ed3299fb6f56991d0f3",
+  "result": "SOURCE_BINDING_REJECTED",
+  "reason": "source_binding",
+  "command": "verifyGate only; no qualification/credential/provider invocation",
+  "providerCalls": 0
+}

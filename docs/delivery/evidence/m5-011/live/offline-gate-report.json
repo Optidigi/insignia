@@ -1,0 +1,44 @@
+{
+  "source": "1d62d7249ee22e6275eb9ed3299fb6f56991d0f3",
+  "tree": "97f5426a771752907b12e6d4f0b555b570ea0b35",
+  "bindingDigest": "3f349e8199d24793404a5739029cd3c0d25ac2bfda3e891b99ae3cc57232df3d",
+  "root": {
+    "command": "corepack pnpm check",
+    "exitCode": 0,
+    "report": "/home/serveradmin/insignia-m5-011-handoff/root-scope-entry.log",
+    "sha256": "bd7c4fe6240b99a22caaafb78432150e15cc8def14474bf0f7d9db779106c565",
+    "provenance": "Fixed harness bytes present before command started; only docs/evidence and commit metadata changed before completion on frozen source."
+  },
+  "focused": {
+    "command": "node --test scripts/m5-011/operator.test.mjs scripts/m5-011/binding.test.mjs",
+    "exitCode": 0,
+    "finalHarnessTests": 45,
+    "syntheticSerialStress": 100,
+    "report": "/home/serveradmin/insignia-m5-011-handoff/scope-entry-green.log",
+    "sha256": "e83447b6939602a3eec2d0744f424661e00a37c6f6385a62eab913ee832c34c2"
+  },
+  "browserStress": {
+    "command": "corepack pnpm test:m5-stress",
+    "pass": 100,
+    "fail": 0,
+    "report": "/home/serveradmin/insignia-m5-011-handoff/stress.log",
+    "sha256": "c38be411b3e817a690b8723aa5bc97b51bb3f22699b8bb59096f3967bc20a0d8",
+    "productionAppBytes": "unchanged across source qualification"
+  },
+  "rendererControl": {
+    "exitCode": 0,
+    "expectedNegative": true
+  },
+  "schema": {
+    "version": "2026-07",
+    "documents": 10,
+    "valid": true,
+    "invalidControlRejected": true
+  },
+  "database": "Local database-gated suites skipped; exact-source PostgreSQL18 CI required.",
+  "operatorChain": {
+    "command": "corepack pnpm test:m5-operator (inside root check)",
+    "exitCode": 0,
+    "finalHarnessTests": 45
+  }
+}

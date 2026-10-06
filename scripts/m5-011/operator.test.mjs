@@ -149,6 +149,10 @@ function simulator(options = {}) {
         return Response.json({ data: { ...identity(), node: p } });
       }
       if (options.readbackFail && status === 'DRAFT') throw new Error('synthetic-network');
+      if (options.ackReadbackVersionDrift && status === 'DRAFT' && !options.driftApplied) {
+        options.driftApplied = true;
+        version = new Date(Date.parse(version) + 1000).toISOString();
+      }
       const i = identity();
       if (options.adapterFailure === 'nullScope' || (options.adapterFailure === 'nullScopePost' && status === 'DRAFT'))
         i.currentAppInstallation.accessScopes.push(null);
@@ -271,6 +275,18 @@ test('newly appearing DRAFT V2 membership is not described as retained from ACTI
   const result = await runSynthetic(simulator({ v2Appear: true }));
   assert.equal(result.classification, 'DIFFERENT_PLATFORM_BEHAVIOR');
   assert.equal(result.adjudication.v2Retained, false);
+});
+test('acknowledgement/readback version drift stops before any post-DRAFT projection or cleanup', async () => {
+  const s = simulator({ ackReadbackVersionDrift: true }),
+    result = await runSynthetic(s);
+  assert.equal(result.outcome, 'STOPPED');
+  assert.equal(result.stop, 'adapter_ack_readback_drift');
+  assert.equal(result.adapter.kind, 'CONFLICT');
+  assert.equal(result.accounting.read, 10);
+  assert.equal(s.updates(), 1);
+  assert.equal(result.after, undefined);
+  assert.equal(result.cleanup, null);
+  assert.equal(s.calls.at(-1).query, ADAPTER_READ);
 });
 for (const catalog of ['AppCatalog', 'MarketCatalog', 'CompanyLocationCatalog'])
   test(`concrete Shopify ${catalog} metadata permits the fixed adjudication`, async () => {

@@ -198,11 +198,18 @@ async function run({ directory, binding, fetchImpl, credentialLoader, assertCurr
     save();
     const draftEvent = op.state().events.find((e) => e.operation === 'draft');
     requireValue(draftEvent?.settlement === 'ACKNOWLEDGED', 'draft_settlement_unknown');
+    const acknowledged = draftEvent.response.data.productUpdate.product,
+      current = evidence.adapter.current;
+    requireValue(
+      current?.state === 'unavailable' &&
+        current.providerVersion === new Date(acknowledged.updatedAt).toISOString() &&
+        current.visibilityDigest === digest(visibility(acknowledged)),
+      'adapter_ack_readback_drift',
+    );
     op.phase('POST_DRAFT');
     evidence.after = await projection();
     requireValue(evidence.after.status === 'DRAFT', 'post_state_drift');
     op.settle('draft', evidence.after);
-    const current = evidence.adapter.current;
     requireValue(
       current?.state === 'unavailable' &&
         current.providerVersion === new Date(evidence.after.updatedAt).toISOString() &&

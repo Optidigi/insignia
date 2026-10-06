@@ -1,0 +1,75 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (4.118726ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (205.919079ms)
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (2.069367ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (44.564604ms)
+✔ ownership stops before any status mutation (2.781209ms)
+✔ incomplete resourcePublications stops before any status mutation (2.535976ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.599309ms)
+✔ incomplete APP stops before any status mutation (3.480637ms)
+✔ incomplete MARKET stops before any status mutation (4.293022ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (4.920441ms)
+✔ incomplete NONE stops before any status mutation (6.436565ms)
+✔ missing read scope stops before any status mutation (1.619563ms)
+✔ initial DRAFT drift stops before any status mutation (5.811559ms)
+✔ cross-partition version drift stops before any status mutation (3.144303ms)
+✔ observed required grant loss in adapter read stops before any status mutation (9.241325ms)
+✔ lost DRAFT acknowledgement never retries or archives (11.512926ms)
+✔ DRAFT readback failure never retries or archives (11.433799ms)
+✔ post-DRAFT ownership drift never retries or archives (15.143722ms)
+✔ post-DRAFT partition drift never retries or archives (13.238039ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (25.668749ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (19.0177ms)
+✔ newly appearing DRAFT V2 membership is not described as retained from ACTIVE (19.244113ms)
+✖ acknowledgement/readback version drift stops before any post-DRAFT projection or cleanup (18.579072ms)
+✔ concrete Shopify AppCatalog metadata permits the fixed adjudication (19.074197ms)
+✔ concrete Shopify MarketCatalog metadata permits the fixed adjudication (19.639954ms)
+✔ concrete Shopify CompanyLocationCatalog metadata permits the fixed adjudication (19.509863ms)
+✔ catalog typename and global ID mismatch stops before any status mutation (6.117432ms)
+✔ wrapped production failure preserves {"userError":true} (12.402795ms)
+✔ wrapped production failure preserves {"adapterFailure":"http403"} (6.927327ms)
+✔ wrapped production failure preserves {"adapterFailure":"graphql"} (8.610755ms)
+✔ wrapped production failure preserves {"adapterFailure":"invalidJSON"} (6.445626ms)
+✔ wrapped production failure preserves {"adapterFailure":"missingBody"} (6.332571ms)
+✔ wrapped production failure preserves {"adapterFailure":"badScopes"} (7.020011ms)
+✔ wrapped production failure preserves {"adapterFailure":"badNodes"} (6.646864ms)
+✔ wrapped production failure preserves {"adapterFailure":"nullScope"} (8.341664ms)
+✔ wrapped production failure preserves {"adapterFailure":"nullScopePost"} (10.287893ms)
+✔ wrapped production failure preserves {"adapterFailure":"badHandlePost"} (10.319315ms)
+✔ wrapped production failure preserves {"adapterFailure":"scopeString"} (8.545228ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOutstanding":true} (38.289512ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyOutstanding":true} (38.051464ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOversizeOutstanding":true} (38.450772ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyAbortOutstanding":true} (38.592689ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyCancelRejected":true} (16.957757ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.857656ms)
+✔ quarantined first event zero rejects every subsequent provider dispatch (20.981485ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (1547.802147ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 45
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2365.018365
+
+✖ failing tests:
+
+test at scripts/m5-011/operator.test.mjs:279:1
+✖ acknowledgement/readback version drift stops before any post-DRAFT projection or cleanup (18.579072ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'write_settlement'
+  - 'adapter_ack_readback_drift'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:282:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'write_settlement',
+    expected: 'adapter_ack_readback_drift',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
