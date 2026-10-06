@@ -213,8 +213,12 @@ async function run({ directory, binding, phase, fetchImpl, credentialLoader, ass
         save();
       } catch (error) {
         evidence.cleanup.failure = failure(error);
+        evidence.cleanup.outcome = 'UNKNOWN_ARCHIVE_WRITE';
         save();
-        if (op.state().pending === null) await final();
+        if (op.state().pending === null && op.transportAudit().matches) {
+          evidence.cleanup.classificationRead = await owner(); // one exact bounded read, not mutation settlement
+          save();
+        }
         throw error;
       }
     }
@@ -405,12 +409,21 @@ async function run({ directory, binding, phase, fetchImpl, credentialLoader, ass
         await cleanup();
       } catch (cleanupError) {
         evidence.cleanupStop = failure(cleanupError);
-        evidence.cleanup.outcome =
-          evidence.cleanup.outcome === 'FINAL_ARCHIVED_UNPUBLISHED' ? evidence.cleanup.outcome : 'UNSETTLED_CLEANUP';
+        evidence.cleanup.outcome = ['FINAL_ARCHIVED_UNPUBLISHED', 'UNKNOWN_ARCHIVE_WRITE'].includes(
+          evidence.cleanup.outcome,
+        )
+          ? evidence.cleanup.outcome
+          : 'UNSETTLED_CLEANUP';
         save();
       }
     }
-    if (evidence.outcome === 'PARTIAL' && evidence.cleanup.outcome !== 'FINAL_ARCHIVED_UNPUBLISHED')
+    if (
+      evidence.outcome === 'PARTIAL' &&
+      (evidence.cleanup.outcome !== 'FINAL_ARCHIVED_UNPUBLISHED' ||
+        !op.allWritesSettled() ||
+        !op.transportAudit().matches ||
+        evidence.cleanupStop)
+    )
       evidence.outcome = 'STOPPED';
   } finally {
     token = null;

@@ -622,3 +622,46 @@ test('durable accounting corruption prevents create dispatch and any cleanup mut
     rmSync(path, { recursive: true, force: true });
   }
 });
+
+async function lostPartialCleanup() {
+  const path = directory(),
+    fake = provider({ effective: false });
+  let archiveAt;
+  const result = await runSynthetic({
+    directory: path,
+    phase: 'start',
+    credentialLoader: () => ({ secret: 'synthetic-secret' }),
+    fetchImpl: async (url, init) => {
+      const response = await fake.fetchImpl(url, init),
+        body = JSON.parse(init.body);
+      if (body.query?.startsWith('mutation M5015RStatus') && body.variables.product.status === 'ARCHIVED') {
+        archiveAt = fake.calls.length;
+        throw new Error('lost cleanup acknowledgement');
+      }
+      return response;
+    },
+  });
+  return { path, result, fake, afterArchive: fake.calls.slice(archiveAt) };
+}
+test('zero-effective PARTIAL branch becomes STOPPED if archive applied but acknowledgement is lost', async () => {
+  const { path, result } = await lostPartialCleanup();
+  try {
+    assert.equal(result.outcome, 'STOPPED');
+    assert.equal(result.cleanup.outcome, 'UNKNOWN_ARCHIVE_WRITE');
+    assert.equal(result.settlements.find((e) => e.operation === 'cleanup').settlement, 'UNKNOWN');
+    assert.equal(result.final, undefined);
+  } finally {
+    rmSync(path, { recursive: true, force: true });
+  }
+});
+test('lost archive ACK permits only one exact ownership/status classification read and no final snapshot or retry', async () => {
+  const { path, result, afterArchive } = await lostPartialCleanup();
+  try {
+    assert.equal(afterArchive.length, 1);
+    assert.match(afterArchive[0].body.query, /^query M5015ROwned/);
+    assert.equal(result.cleanup.classificationRead.status, 'ARCHIVED');
+    assert.equal(result.final, undefined);
+  } finally {
+    rmSync(path, { recursive: true, force: true });
+  }
+});

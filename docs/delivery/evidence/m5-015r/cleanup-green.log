@@ -1,0 +1,10 @@
+✔ zero-effective PARTIAL branch becomes STOPPED if archive applied but acknowledgement is lost (49.633316ms)
+✔ lost archive ACK permits only one exact ownership/status classification read and no final snapshot or retry (28.484265ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 318.045259
