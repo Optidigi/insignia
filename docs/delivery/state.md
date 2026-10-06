@@ -1,7 +1,7 @@
 # Current review boundary — M5-011
 
 
-M5-012 is IN_PROGRESS under the owner-forwarded [prompt](prompts/M5-012-PUBLICATION-INTENT-AND-CLEANUP.md). PR #41 normally merged as `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e` with ordered parents `1fffcb3048952ff762f1f9805f86aceed90f228f`, `9353bf9a5c13649daa55cb3693cab16532c6f6f6` and tree `e00f2f8ce5b33321b67c6271cb13a315f34471a1`; exact refs, external approval and ten attempt-1 passing workflows were reverified. M5-011 remains INCONCLUSIVE and immutable. Fresh M5-012 offline qualification and review/CI precede credential access; live intent and conditional ARCHIVED cleanup have not run.
+M5-012 is STOPPED **INCONSISTENT** after its single frozen-source attempt; [report](M5-012-REPORT.md). IncludedProducts and both intended searches match the owned DRAFT fixture; publication_ids validly excludes it; effective publication is false. Archive/final readback NOT_RUN. Auth1/read7/update0, pending null; canonical register closed, no further provider authority. PR #41's exact normal merge is `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e`; merge receipt in M5-012 evidence. Current PR #42 work is completed evidence/reviews/final CI, then principal review. M5-011's INCONCLUSIVE one-second version mismatch and all prior canonical records remain unchanged.
 
 PR #40 normal merge `1fffcb3048952ff762f1f9805f86aceed90f228f` verified with exact ordered parents/tree, ten reviewed-head attempt1 passing workflows and [external approval](PR-040-principal-review.md).
 

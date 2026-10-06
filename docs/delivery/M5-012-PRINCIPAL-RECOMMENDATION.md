@@ -1,0 +1,7 @@
+# M5-012 principal recommendation
+
+Adjudicate publication_ids coverage/meaning before approving a production availability correction. On this exact owned DRAFT fixture, includedProducts and both app/channel -intended searches agree on inclusion; exact effective publication and complete legacy membership are false/empty, while publication_ids excludes it. The canonical INCONSISTENT stop is preserved and cleanup remains withheld.
+
+The evidence supports separating configured channel intent from effective publication. A future snapshot design should retain both with demonstrated API/context coverage, preserve exact ownership/grant/completeness guards and diagnostic reasons, and explicitly version persisted holds. Do not reinterpret opaque v1 digests, substitute V2 emptiness for absence, or use publication_ids as the sole intent authority. M5-011 did not capture these new intent surfaces before its transition, so this slice cannot claim intent invariance across ACTIVE→DRAFT.
+
+Do not add timestamp tolerance: Product.updatedAt is a broad modification observation, and the M5-011 one-second mismatch stays conflict evidence. A production correction must define ownership and settlement, independently reviewed, rather than assume native CAS semantics. Any future fixture disposal requires fresh bounded authority; the M5-012 canonical register cannot be resumed. No correction or additional provider operation is implemented here.

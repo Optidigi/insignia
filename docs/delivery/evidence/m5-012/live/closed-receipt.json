@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "profile": "m5-012",
+  "closedAt": "2026-10-06T14:51:08.025052+00:00",
+  "source": "0f8b7d7d53732cf7d0038eb4d366fe2e6179b01f",
+  "tree": "1f4b2195bdd4325e126f4fc2a5911220399abecf",
+  "bindingDigest": "6a3d80fdb571fc9754f11d4e5168a64b111e7296b0eb555a9fc8842cc1fbe115",
+  "outcome": "STOPPED",
+  "stop": "intent_inconsistent",
+  "classification": "INCONSISTENT",
+  "intent": {
+    "classification": "INCONSISTENT",
+    "matches": {
+      "included": true,
+      "app": true,
+      "channel": true,
+      "association": false
+    },
+    "effective": false,
+    "status": "DRAFT"
+  },
+  "cleanup": {
+    "outcome": "NOT_ATTEMPTED"
+  },
+  "counts": {
+    "auth": 1,
+    "read": 7,
+    "update": 0
+  },
+  "pending": null,
+  "lastObserved": {
+    "at": "2026-10-06T14:47:50.793Z",
+    "id": "gid://shopify/Product/10490211467547",
+    "status": "DRAFT",
+    "updatedAt": "2026-10-06T13:09:52Z"
+  },
+  "files": {
+    "binding.json": "de0829c5dba9bc97afdb1a754462b61b94aff016b1249873fd326a004bb4dca2",
+    "gate.json": "27c5ed2a3b9d80812bbd99696102e35eec2cfcf93a52e6615f1bf1491b113c20",
+    "register.json": "632aa439d0f6f7c6097d400e468aed3f854bd4e2791ff1e9e0ccae3b2c8995df",
+    "qualification.json": "af587c4599f0cf805780deb9eba17c0ef1464f6147e7741c42a53784297bf95b",
+    "initialized.once": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "furtherProviderAuthority": "CLOSED; no retry or unused-read authority"
+}
