@@ -1245,11 +1245,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect((await f.restart().read(f.identity))?.evidence).toEqual(evidence);
     expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
     expect(f.restores).toBe(1);
-    if (
-      resolution.version !== 'm5-availability-resolution-v2' ||
-      !resolution.originalHold.held ||
-      !resolution.originalHold.acquisitionAcknowledgement
-    )
+    if (resolution.version !== 'm5-availability-resolution-v2' || !resolution.originalHold.held)
       throw new Error('expected complete v2 recovery audit');
     const other = await fixture();
     const nestedScope = {
@@ -1262,7 +1258,16 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       operationId: other.identity.operationId,
       before: { ...resolution.originalHold.before, scope: nestedScope },
       held: { ...resolution.originalHold.held, scope: nestedScope },
-      acquisitionAcknowledgement: { ...resolution.originalHold.acquisitionAcknowledgement, scope: nestedScope },
+      acquisitionAcknowledgement: {
+        version: 'm5-availability-mutation-ack-v2' as const,
+        scope: nestedScope,
+        productId: resolution.originalHold.before.productId,
+        state: 'unavailable' as const,
+        providerUpdatedAt: resolution.originalHold.held.providerUpdatedAt,
+        effectiveVisibility: resolution.originalHold.held.effectiveVisibility,
+        observedAt: resolution.originalHold.held.observedAt,
+        receivedAt: resolution.originalHold.held.receivedAt,
+      },
       restorationReceipt: resolution.originalHold.restorationReceipt && {
         ...resolution.originalHold.restorationReceipt,
         acknowledgement: resolution.originalHold.restorationReceipt.acknowledgement && {
