@@ -150,6 +150,11 @@ function simulator(options = {}) {
       }
       if (options.readbackFail && status === 'DRAFT') throw new Error('synthetic-network');
       const i = identity();
+      if (options.adapterFailure === 'nullScope' || (options.adapterFailure === 'nullScopePost' && status === 'DRAFT'))
+        i.currentAppInstallation.accessScopes.push(null);
+      if (options.adapterFailure === 'badHandlePost' && status === 'DRAFT')
+        i.currentAppInstallation.accessScopes.push({ handle: null });
+      if (options.adapterFailure === 'scopeString') i.currentAppInstallation.accessScopes.push('synthetic');
       if (options.adapterGrantDrift)
         i.currentAppInstallation.accessScopes = i.currentAppInstallation.accessScopes.filter(
           (n) => n.handle !== 'read_product_listings',
@@ -289,6 +294,10 @@ for (const [options, expected] of [
   [{ adapterFailure: 'missingBody' }, 'provider_shape'],
   [{ adapterFailure: 'badScopes' }, 'provider_shape'],
   [{ adapterFailure: 'badNodes' }, 'provider_shape'],
+  [{ adapterFailure: 'nullScope' }, 'provider_shape'],
+  [{ adapterFailure: 'nullScopePost' }, 'provider_shape'],
+  [{ adapterFailure: 'badHandlePost' }, 'provider_shape'],
+  [{ adapterFailure: 'scopeString' }, 'provider_shape'],
 ])
   test(`wrapped production failure preserves ${JSON.stringify(options)}`, async () => {
     const s = simulator(options),

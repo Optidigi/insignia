@@ -558,6 +558,12 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
         if (request.operation === 'adapter_read') {
           const p = raw.data.node;
           visibility(p);
+          const scopes = raw.data.currentAppInstallation?.accessScopes;
+          requireValue(
+            Array.isArray(scopes) &&
+              scopes.every((n) => n && typeof n === 'object' && !Array.isArray(n) && typeof n.handle === 'string'),
+            'response_selection',
+          );
           requireValue(
             raw.data.shop?.id === TARGET.shop &&
               raw.data.currentAppInstallation?.app?.apiKey === TARGET.client &&

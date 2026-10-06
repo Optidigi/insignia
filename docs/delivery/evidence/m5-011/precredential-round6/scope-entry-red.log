@@ -1,0 +1,131 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (4.102934ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (211.051349ms)
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (2.085505ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (45.748397ms)
+✔ ownership stops before any status mutation (4.155484ms)
+✔ incomplete resourcePublications stops before any status mutation (2.449533ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.574783ms)
+✔ incomplete APP stops before any status mutation (3.518226ms)
+✔ incomplete MARKET stops before any status mutation (4.220748ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (4.879866ms)
+✔ incomplete NONE stops before any status mutation (6.538491ms)
+✔ missing read scope stops before any status mutation (1.645ms)
+✔ initial DRAFT drift stops before any status mutation (5.830944ms)
+✔ cross-partition version drift stops before any status mutation (3.089806ms)
+✔ observed required grant loss in adapter read stops before any status mutation (7.910006ms)
+✔ lost DRAFT acknowledgement never retries or archives (13.106065ms)
+✔ DRAFT readback failure never retries or archives (11.380617ms)
+✔ post-DRAFT ownership drift never retries or archives (15.445932ms)
+✔ post-DRAFT partition drift never retries or archives (13.234286ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (25.19553ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (19.180321ms)
+✔ newly appearing DRAFT V2 membership is not described as retained from ACTIVE (19.355702ms)
+✔ concrete Shopify AppCatalog metadata permits the fixed adjudication (20.989668ms)
+✔ concrete Shopify MarketCatalog metadata permits the fixed adjudication (20.403248ms)
+✔ concrete Shopify CompanyLocationCatalog metadata permits the fixed adjudication (18.416314ms)
+✔ catalog typename and global ID mismatch stops before any status mutation (6.02723ms)
+✔ wrapped production failure preserves {"userError":true} (11.597696ms)
+✔ wrapped production failure preserves {"adapterFailure":"http403"} (9.397836ms)
+✔ wrapped production failure preserves {"adapterFailure":"graphql"} (7.246523ms)
+✔ wrapped production failure preserves {"adapterFailure":"invalidJSON"} (6.676775ms)
+✔ wrapped production failure preserves {"adapterFailure":"missingBody"} (8.361226ms)
+✔ wrapped production failure preserves {"adapterFailure":"badScopes"} (6.667364ms)
+✔ wrapped production failure preserves {"adapterFailure":"badNodes"} (6.913357ms)
+✖ wrapped production failure preserves {"adapterFailure":"nullScope"} (7.875486ms)
+✖ wrapped production failure preserves {"adapterFailure":"nullScopePost"} (12.547334ms)
+✖ wrapped production failure preserves {"adapterFailure":"badHandlePost"} (10.659249ms)
+✖ wrapped production failure preserves {"adapterFailure":"scopeString"} (6.831451ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOutstanding":true} (39.74911ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyOutstanding":true} (40.138353ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOversizeOutstanding":true} (37.634247ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyAbortOutstanding":true} (38.800166ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyCancelRejected":true} (18.612245ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.875819ms)
+✔ quarantined first event zero rejects every subsequent provider dispatch (21.40546ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (1542.683116ms)
+ℹ tests 45
+ℹ suites 0
+ℹ pass 41
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2356.373514
+
+✖ failing tests:
+
+test at scripts/m5-011/operator.test.mjs:302:3
+✖ wrapped production failure preserves {"adapterFailure":"nullScope"} (7.875486ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'network_or_timeout'
+  - 'provider_shape'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:337:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'network_or_timeout',
+    expected: 'provider_shape',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:302:3
+✖ wrapped production failure preserves {"adapterFailure":"nullScopePost"} (12.547334ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'ambiguous_write'
+  - 'provider_shape'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:337:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ambiguous_write',
+    expected: 'provider_shape',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:302:3
+✖ wrapped production failure preserves {"adapterFailure":"badHandlePost"} (10.659249ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'ambiguous_write'
+  - 'provider_shape'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:337:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ambiguous_write',
+    expected: 'provider_shape',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:302:3
+✖ wrapped production failure preserves {"adapterFailure":"scopeString"} (6.831451ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'network_or_timeout'
+  - 'provider_shape'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:337:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'network_or_timeout',
+    expected: 'provider_shape',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
