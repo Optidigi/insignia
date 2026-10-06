@@ -1132,7 +1132,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect((await f.restart().read(f.identity))?.state.kind).toBe('RESTORATION_CLAIMED');
     f.recoveryAuthority = syntheticRecoveryAuthority();
     const request = { ...f.identity, commandKey: 'settle-claimed' };
-    await expect(f.restart().recover(request)).rejects.toThrow('Original availability not observed');
+    await expect(f.restart().recover(request)).rejects.toThrow(/Original (v2 )?availability not observed/);
     const evidence = (await f.restart().read(f.identity))?.evidence;
     f.simulateExternalOriginalState();
     await f.restart().recover(request);
@@ -1434,7 +1434,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect((await f.restart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
     f.recoveryAuthority = syntheticRecoveryAuthority();
     await expect(f.restart().recover({ ...f.identity, commandKey: 'reject-drift' })).rejects.toThrow(
-      'Original availability not observed',
+      /Original (v2 )?availability not observed/,
     );
     f.simulateExternalOriginalState();
     const authority = syntheticRecoveryAuthority();

@@ -89,7 +89,7 @@ test('v2 original-state recovery rejects semantic drift even with identical upda
   };
   const drift = { ...observed, configuredIntent, intentDigest: activationDigest(configuredIntent) };
   expect(() => assertOriginalAvailabilityObserved({ ...context, observed: drift })).toThrow(
-    'Original availability not observed',
+    /Original (v2 )?availability not observed/,
   );
 });
 test('v2 exact decision binding includes observation timestamps, rather than only provider metadata', () => {
