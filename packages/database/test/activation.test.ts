@@ -1240,11 +1240,91 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     await expect(f.restart().recover(request)).rejects.toThrow(/Original (v2 )?availability not observed/);
     const evidence = (await f.restart().read(f.identity))?.evidence;
     f.simulateExternalOriginalState();
-    await f.restart().recover(request);
+    const resolution = await f.restart().recover(request);
     expect((await f.restart().read(f.identity))?.state.kind).toBe('RESTORED');
     expect((await f.restart().read(f.identity))?.evidence).toEqual(evidence);
     expect((await f.restart().advance(f.identity)).kind).toBe('ACTIVE');
     expect(f.restores).toBe(1);
+    if (
+      resolution.version !== 'm5-availability-resolution-v2' ||
+      !resolution.originalHold.held ||
+      !resolution.originalHold.acquisitionAcknowledgement
+    )
+      throw new Error('expected complete v2 recovery audit');
+    const other = await fixture();
+    const nestedScope = {
+      ...resolution.originalHold.before.scope,
+      shopId: other.identity.shopId,
+      shopifyShopId: `gid://shopify/Shop/${other.scope.shopifyShopId}`,
+    };
+    const originalHold = {
+      ...resolution.originalHold,
+      operationId: other.identity.operationId,
+      before: { ...resolution.originalHold.before, scope: nestedScope },
+      held: { ...resolution.originalHold.held, scope: nestedScope },
+      acquisitionAcknowledgement: { ...resolution.originalHold.acquisitionAcknowledgement, scope: nestedScope },
+      restorationReceipt: resolution.originalHold.restorationReceipt && {
+        ...resolution.originalHold.restorationReceipt,
+        acknowledgement: resolution.originalHold.restorationReceipt.acknowledgement && {
+          ...resolution.originalHold.restorationReceipt.acknowledgement,
+          scope: nestedScope,
+        },
+        current: resolution.originalHold.restorationReceipt.current && {
+          ...resolution.originalHold.restorationReceipt.current,
+          scope: nestedScope,
+        },
+      },
+    };
+    const observed = { ...resolution.observed, scope: nestedScope };
+    const context = {
+      ...other.identity,
+      commandKey: 'resolution-json-guard',
+      currentScope: nestedScope,
+      hold: originalHold,
+      observed,
+    };
+    const nestedResolution = {
+      ...resolution,
+      ...other.identity,
+      commandKey: context.commandKey,
+      currentScope: nestedScope,
+      originalHold,
+      observed,
+      reviewedObservation: observed,
+      activationEvidenceDigest: null,
+      decision: await syntheticRecoveryAuthority().read(context),
+    };
+    const insert = (value: unknown, executor = database) =>
+      sql`INSERT INTO m5_availability_resolutions(shop_id,config_id,operation_id,command_key,resolution_digest,resolution) VALUES (${other.identity.shopId},${other.identity.configId},${other.identity.operationId},${context.commandKey},${activationDigest(value)},${JSON.stringify(value)}::jsonb)`.execute(
+        executor,
+      );
+    await expect(
+      database.transaction().execute(async (transaction) => {
+        await insert(nestedResolution, transaction);
+        throw new Error('rollback accepted v2 resolution');
+      }),
+    ).rejects.toThrow('rollback accepted v2 resolution');
+    for (const invalidHold of [
+      { ...originalHold, held: { ...originalHold.held, version: 'm5-product-availability-snapshot-v1' } },
+      { ...originalHold, held: { ...originalHold.held, scope: resolution.originalHold.before.scope } },
+      { ...originalHold, held: { ...originalHold.held, intentDigest: '0'.repeat(64) } },
+      {
+        ...originalHold,
+        acquisitionAcknowledgement: { ...originalHold.acquisitionAcknowledgement, version: 'unsupported-ack' },
+      },
+      {
+        ...originalHold,
+        acquisitionAcknowledgement: {
+          ...originalHold.acquisitionAcknowledgement,
+          scope: resolution.originalHold.before.scope,
+        },
+      },
+      { ...originalHold, restorationReceipt: { ...originalHold.restorationReceipt, version: 'unsupported-receipt' } },
+    ])
+      await expect(insert({ ...nestedResolution, originalHold: invalidHold })).rejects.toThrow(
+        'm5_014_resolution_v2_hold_audit',
+      );
+    expect(await f.restart().recover(request)).toEqual(resolution);
   });
   it('original-state change with an outstanding restore blocks a later publication until trusted settlement', async () => {
     const f = await fixture();
