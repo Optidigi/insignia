@@ -431,7 +431,7 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
       } else {
         event.observation = {
           status: event.status,
-          graphqlErrors: Boolean(raw?.errors),
+          graphqlErrors: raw !== null && Object.hasOwn(raw, 'errors'),
           malformedBody: raw === null,
           searchDebugPresent: raw?.extensions?.search !== undefined,
           malformedSearchMetadata:
@@ -447,14 +447,14 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
         requireValue(
           event.status === 200 &&
             raw?.data &&
-            !raw.errors &&
+            !Object.hasOwn(raw, 'errors') &&
             !event.observation.searchWarnings &&
             !event.observation.malformedSearchMetadata,
           'provider_error',
         );
         raw = { data: selected(raw.data, r.operation) };
-        event.response = structuredClone(raw);
         validate(raw.data, r.operation);
+        event.response = structuredClone(raw);
         state.observations[r.operation] = structuredClone(raw.data);
         if (r.operation === 'association') state.classification = classify(state.observations);
         if (r.kind === 'read' && r.operation !== 'final') state.step++;

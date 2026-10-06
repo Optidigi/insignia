@@ -357,3 +357,35 @@ test('invalid or malformed runtime search metadata stops before cleanup', async 
     assert.equal(r.evidence.accounting.update, 0);
   }
 });
+
+test('malformed GraphQL errors values never authorize cleanup', async () => {
+  for (const errors of [false, null, 0, '', []]) {
+    const r = await synthetic({
+      respond: (d, b) => (b.query.includes('M5012Included') ? Response.json({ data: d, errors }) : null),
+    });
+    assert.equal(r.evidence.stop, 'provider_error');
+    assert.equal(r.evidence.accounting.update, 0);
+  }
+});
+test('rejected foreign descriptive data is absent from register and qualification evidence', async () => {
+  for (const surface of ['M5012Included', 'M5012Searchapp']) {
+    const r = await synthetic({
+      change: (d, b) => {
+        if (b.query.includes(surface)) {
+          const foreign = {
+            ...product(),
+            id: 'gid://shopify/Product/123',
+            title: 'synthetic-private-title-sentinel',
+            tags: ['synthetic-private-tag-sentinel'],
+          };
+          if (d.products) d.products.nodes = [foreign];
+          else d.publication.includedProducts.nodes = [foreign];
+        }
+      },
+    });
+    assert.equal(r.evidence.stop, 'ownership');
+    assert.equal(r.evidence.accounting.update, 0);
+    const retained = JSON.stringify({ register: r.register, evidence: r.evidence });
+    assert.doesNotMatch(retained, /synthetic-private-(title|tag)-sentinel/);
+  }
+});
