@@ -320,6 +320,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       receivedAt: now.toISOString(),
       observedAt: now.toISOString(),
     };
+    const originalAvailability = current;
     let acquireNotSent = false;
     let acquireLost = false;
     let restoreLost = false;
@@ -561,7 +562,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       },
       simulateExternalOriginalState: () => {
         current = {
-          ...current,
+          ...originalAvailability,
           state: 'available',
           providerUpdatedAt: '2026-10-01T11:02:00.000Z',
         };
