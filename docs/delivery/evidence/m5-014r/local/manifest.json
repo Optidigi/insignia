@@ -1,0 +1,62 @@
+{
+  "application-build.log.gz": {
+    "sha256": "795726b1741ef3a2491740427a53ab76498562caf657d652ad1a028af68fd86e",
+    "uncompressedSha256": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b",
+    "originalFileName": "application-build.log"
+  },
+  "application-focused.log.gz": {
+    "sha256": "3024261533a2606ebbd5df3bc5dd494d34fba9f3ebd7409411f27e20bed6da8e",
+    "uncompressedSha256": "29ea267eb89cfcb042789a6a01f63105a51af210de86f6fc128d3674b979d700",
+    "originalFileName": "application-focused.log"
+  },
+  "format-final.log.gz": {
+    "sha256": "312c1d16dcf08d5c9315d34f6a85b456fcdcad95181e36f54f112d50a88b644b",
+    "uncompressedSha256": "7e28a92d492d4be4721006457b946a7685958d07d3569c07b5ea8938fed5e9b8",
+    "originalFileName": "format-final.log"
+  },
+  "format.log.gz": {
+    "sha256": "f90a8df51667ec182168fe224e44ceed2dd5ad36daa89a84a2ff6dc636c31ed0",
+    "uncompressedSha256": "aaae92314adef90889198834ac26ddbfaedd1249395da7baeab5d44c08582eed",
+    "originalFileName": "format.log"
+  },
+  "future-capability-green.log.gz": {
+    "sha256": "19dc9b4f4ce40e57c5c5e60b314c972632b4570192487deb7fe2c827feb0e6af",
+    "uncompressedSha256": "7d58440372025baf33768d43b3fb8231ff0689e95c56120376e7a0436c5e98cc",
+    "originalFileName": "future-capability-green.log"
+  },
+  "future-capability-red.log.gz": {
+    "sha256": "25d2160d592f130f34b5b56dbca797dc4a55b6918828db7a5e770fb3ef0d2508",
+    "uncompressedSha256": "e6a914fcdc330b20d0225b30a93a8381c44880992b7e9d14a56d8e31635f58df",
+    "originalFileName": "future-capability-red.log"
+  },
+  "publication-stress.log.gz": {
+    "sha256": "8c8101f191923989dbd1c45337e6b2ac6d55eb4245c7e648a30621a4c2406e11",
+    "uncompressedSha256": "1e1ed6502bd9b9c0990b5bf5a25cf09a9c70194894144efd1fef277a6477f4ea",
+    "originalFileName": "publication-stress.log"
+  },
+  "renderer-control.log.gz": {
+    "sha256": "d6c4b862e8e9069143d9038c710975788645a87ad6b284b114fb8f8e1c386a98",
+    "uncompressedSha256": "5fdfa0a77cc727774f27b6cde715dd458b062ade1c75caf1bb97fb4016430765",
+    "originalFileName": "renderer-control.log"
+  },
+  "root-check.log.gz": {
+    "sha256": "8f60f5137348c5a78b93c33986dcb7d617d5cc52469496ce6911f6b14a19bf21",
+    "uncompressedSha256": "a4e72de9e82430a357cd3f75bc74146d7fb1e7190dbc599fb0fdb8935ef31565",
+    "originalFileName": "root-check.log"
+  },
+  "shopify-focused-final.log.gz": {
+    "sha256": "8c1e5bc502187e0ca2b0cb2f0f1615f62ee307a05fac04a405a67cc025ff69f3",
+    "uncompressedSha256": "211da0c5178cf4d7b9fbecc439faf7b489b2ebde91860284bca7c3fc6e9d421a",
+    "originalFileName": "shopify-focused-final.log"
+  },
+  "shopify-focused.log.gz": {
+    "sha256": "04e2a487182276a0a2bd68a240e756abd8e356c6af13682100f54c1f382716d8",
+    "uncompressedSha256": "bb7ff793eef25fe88229b81bf0b967a42e8a8b4bdbe8a1e857f7cefda42d6fa2",
+    "originalFileName": "shopify-focused.log"
+  },
+  "shopify-typecheck.log.gz": {
+    "sha256": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+    "uncompressedSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "originalFileName": "shopify-typecheck.log"
+  }
+}

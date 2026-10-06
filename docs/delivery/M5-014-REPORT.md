@@ -1,6 +1,6 @@
 # M5-014 — local availability hold v2 implementation
 
-Status: local implementation complete. Final review dispositions, exact PR refs and natural final-head CI are bound in the external PR #44 review packet. Principal review is required; this slice authorizes no live qualification or successor merge.
+Status: the initial local implementation received principal CHANGES_REQUESTED at head `f016e39cf6b54cd2b7e7860a5681c4bb867a6e51`. [M5-014R](M5-014R-REPORT.md) corrects capability-only qualification on the same PR; initial qualification and review observations below remain historical. Final review dispositions, exact PR refs and natural final-head CI are bound in the external PR #44 review packet. Principal review is required; this slice authorizes no live qualification or successor merge.
 
 ## Authority and baseline
 
@@ -30,7 +30,7 @@ No money, grouping, token, entitlement, retention or merchant API behavior chang
 
 Evidence comes from the supplied principal brief and repository M5-010–M5-013 raw observations/adjudications. [M5-011](M5-011-REPORT.md) preserves the historical timestamp/membership conflict; [M5-012](M5-012-REPORT.md) establishes includedProducts configured intent separately from the diagnostic association predicate; [M5-013](M5-013-REPORT.md) permanently closes the prior fixture. This implementation does not reinterpret those v1 executions. No online documentation/schema, Shopify/browser/credential/CLI/provider probe was performed.
 
-Scheduled/future publishing remains unqualified. Observed schedules are retained and rejected; included Publications advertising supportsFuturePublishing are conservatively rejected even when their current legacy view has no schedule. Empty supplemental views cannot prove schedule absence. Synthetic tests do not qualify scheduling, merchant capacity, propagation, checkout drainage, availability race exclusion or live adapter behavior. Multi-query observation is not atomic/native CAS and cannot exclude every unobserved external change.
+Actual observed scheduled/staged product publication remains unqualified and is retained/rejected. Publication supportsFuturePublishing is capability evidence retained in configuredIntent and intentDigest; capability=true alone does not block an unscheduled product. The principal rejected the initial conservative capability-only rejection; [M5-014R](M5-014R-REPORT.md) preserves the historical review result while correcting that predicate. Complete product observations remain required; V2 emptiness cannot establish configured intent. Synthetic tests do not qualify scheduling, merchant capacity, propagation, checkout drainage, availability race exclusion or live adapter behavior. Multi-query observation is not atomic/native CAS and cannot exclude every unobserved external change.
 
 ## Verification and delivery
 

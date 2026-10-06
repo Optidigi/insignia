@@ -170,14 +170,10 @@ export function validAvailabilityV2(value: unknown): value is ProductAvailabilit
     return false;
   }
 }
-/** Future-capable included publications and observed schedules are unqualified for holds.
- * Capability is retained explicitly; absence of V2 nodes cannot qualify future intent. */
+/** Actual observed product schedules are unqualified for holds.
+ * Publication scheduling capability remains hashed intent evidence, not a product schedule. */
 export function availabilityV2IntentQualified(value: ProductAvailabilitySnapshotV2): boolean {
-  return (
-    validAvailabilityV2(value) &&
-    value.configuredIntent.scheduled.length === 0 &&
-    value.configuredIntent.publicationSettings.every((p) => !p.supportsFuturePublishing)
-  );
+  return validAvailabilityV2(value) && value.configuredIntent.scheduled.length === 0;
 }
 export function availabilityV2HeldSafe(value: ProductAvailabilitySnapshotV2): boolean {
   return (

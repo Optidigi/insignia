@@ -1,3 +1,9 @@
+# Current review boundary — M5-014R
+
+[External principal review](PR-044-principal-review.md) returned CHANGES_REQUESTED on [PR #44](https://github.com/Optidigi/insignia/pull/44) at base/effective merge base `55060c5a48617a27858d10fb0db639c7e9efe148`, head `f016e39cf6b54cd2b7e7860a5681c4bb867a6e51`, tree `fb687b6ca8bff15a62b6fbd449cd293ee47c8e23`. Previous passing checks/local reviews did not establish correct capability qualification; their reports and historical evidence remain unchanged.
+
+Only [M5-014R](prompts/M5-014R-FUTURE-PUBLISHING-CAPABILITY-CORRECTION.md) local correction on the same PR is authorized. Unscheduled future-capable Publications are eligible; capability stays hashed/drift-sensitive, and actual scheduled product records remain unqualified. V1, SQL fences, recovery and closed canonical records stay unchanged. [Correction report](M5-014R-REPORT.md) indexes the behavioral reproduction, full qualification and fresh full-source review boundary. Exact completed candidate refs/reviews/natural final-head CI belong in the external PR packet. Worktree `/home/serveradmin/insignia-m5-014-worktree`, branch `feat/m5-014-availability-hold-v2`. Return for principal rereview; no merge/live provider/browser/credential operation, new fixture, M6/M7, production activation, RELEASE_BOUND/gate pass or launch.
+
 # Current review boundary — M5-014
 
 [PR #43 external principal approval](PR-043-principal-review.md) and live exact refs/ten attempt1 workflows matched. Normal merge55060c5a48617a27858d10fb0db639c7e9efe148 has approved ordered parents/tree; [receipt](evidence/m5-014/pr43-merge-receipt.json). M5-013 fixture is permanently closed; all39 prior canonical files remain immutable.
