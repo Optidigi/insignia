@@ -370,6 +370,8 @@ export function createShopifyAvailabilityHoldV2Port(
       if (
         prior &&
         (prior.state !== projection.state ||
+          activationDigest(prior.effectiveVisibility.publicationEvidence.filter((p) => !p.isPublished)) !==
+            activationDigest(projection.effectiveVisibility.publicationEvidence.filter((p) => !p.isPublished)) ||
           activationDigest(effectiveVisibilitySemantics(prior.effectiveVisibility)) !==
             activationDigest(effectiveVisibilitySemantics(projection.effectiveVisibility)))
       )

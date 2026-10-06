@@ -442,3 +442,21 @@ test('a body over the 128KiB bound is rejected before parsing/provider work can 
   await expect(f.port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'provider_shape' });
   expect(f.fetchImpl).toHaveBeenCalledTimes(1);
 });
+
+test('scheduled intent changing between pages fails consistency even with identical provider updatedAt', async () => {
+  const first = page();
+  first.data.node.resourcePublications.nodes[0]!.isPublished = false;
+  first.data.node.resourcePublications.nodes[0]!.publishDate = '2026-10-02T11:00:00Z';
+  first.data.publications.pageInfo = {
+    hasNextPage: true,
+    hasPreviousPage: false,
+    endCursor: 'cursor-1',
+  } as typeof first.data.publications.pageInfo;
+  const second = addIncluded(page(), 'gid://shopify/Publication/304');
+  second.data.publications.nodes.shift();
+  second.data.node.resourcePublications.nodes[0]!.isPublished = false;
+  second.data.node.resourcePublications.nodes[0]!.publishDate = '2026-10-02T11:01:00Z';
+  const f = fixture([first, second]);
+  await expect(f.port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'readback_mismatch' });
+  expect(f.writes()).toHaveLength(0);
+});
