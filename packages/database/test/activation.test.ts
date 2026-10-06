@@ -666,6 +666,28 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         database,
       );
     await expect(insert({ ...evidence, decisionVersion: 1 })).rejects.toThrow('m5_014_evidence_identity');
+    if (!base.hold || base.hold.version !== 'm5-availability-hold-v2' || !base.hold.held || !base.holdObservation)
+      throw new Error('expected v2 held evidence');
+    const nestedScope = { ...base.hold.before.scope, shopId: other.identity.shopId };
+    const before = { ...base.hold.before, scope: nestedScope };
+    const held = { ...base.hold.held, scope: nestedScope };
+    const nestedHold = { ...base.hold, operationId: other.identity.operationId, before, held };
+    const nestedEvidence = {
+      ...evidence,
+      admissionClass: 'FIRST_PUBLICATION',
+      hold: nestedHold,
+      holdObservation: held,
+    };
+    for (const mixed of [
+      { ...nestedEvidence, hold: { ...nestedHold, version: 'm5-availability-hold-v1' } },
+      {
+        ...nestedEvidence,
+        hold: { ...nestedHold, before: { ...before, version: 'm5-product-availability-snapshot-v1' } },
+      },
+      { ...nestedEvidence, holdObservation: { ...held, version: 'm5-product-availability-snapshot-v1' } },
+      { ...nestedEvidence, holdObservation: { ...held, intentDigest: '0'.repeat(64) } },
+    ])
+      await expect(insert(mixed)).rejects.toThrow('m5_014_evidence_v2_hold');
     const v1 = { ...evidence, version: 'm5-activation-evidence-v1', decisionVersion: 1 };
     await insert(v1);
     await sql`INSERT INTO m5_activation_state(shop_id,config_id,operation_id,kind,evidence_digest) VALUES (${other.identity.shopId},${other.identity.configId},${other.identity.operationId},'RESTORED',${activationDigest(v1)})`.execute(
