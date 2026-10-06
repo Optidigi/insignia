@@ -1,5 +1,5 @@
 {
-  "sourceHead": "a443b51fd66fbcfb4db9dcf66ad34b4dec159a8a",
+  "sourceHead": "54c1ea71ab0588003304256b0c081132eadd52b3",
   "includedPaths": [
     "packages",
     "apps",
@@ -12,6 +12,6 @@
     "Cargo.toml",
     "Cargo.lock"
   ],
-  "gitObjectListingSha256": "1580a98428faeee2889084cf6d9584d078068d8b6875dc52349d3b422ccabd99",
+  "gitObjectListingSha256": "f8ae4f704d50935fb2a517b1985541c3d0c4c549fedbce2a8db64b1b496e3580",
   "statement": "Final integration adds only docs/evidence; code equality must be independently rechecked before final handback"
 }
