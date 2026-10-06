@@ -1,0 +1,48 @@
+Use the attached `insignia-pr44-approved-m5-015-handoff` package.
+
+Read README.md, PR-044R-principal-review.md and M5-015-LIVE-AVAILABILITY-V2-QUALIFICATION.md first.
+
+I authorize the NORMAL merge of PR #44 only at:
+
+base 55060c5a48617a27858d10fb0db639c7e9efe148
+head 02e45926529fed9659e1c3dca81dec5f5ebe3174
+tree 8c906e854b9cadcb8e9eda2740a0098067a71ad0
+
+Reverify live refs, all ten exact-head attempt-1 passing workflows and external principal approval. Keep the approved head unchanged. No squash/rebase, force push, fabricated native approval or protection bypass. Stop on mismatch and verify actual merge ordered parents/tree.
+
+Then execute M5-015 exactly as specified.
+
+M5-015 is a fresh LIVE v2 adapter qualification on the exact designated development store.
+
+Do not reopen any historical register or touch the permanently archived M5-010 fixture.
+
+Create one new unpublished DRAFT disposable product only. No publication mutation.
+
+Use the production Availability Hold v2 adapter, not reimplemented snapshot/acquire/observe/restore logic.
+
+Required lifecycle:
+1. exact DRAFT v2 observation;
+2. one direct DRAFT→ACTIVE setup;
+3. exact ACTIVE v2 before snapshot;
+4. persist a v2 hold intent;
+5. one production adapter acquire to DRAFT;
+6. persist exact returned hold;
+7. restart into a fresh process and observe HELD;
+8. one production adapter restore to ACTIVE;
+9. explicit status-only archival cleanup and exact final v2 read.
+
+Never retry acquire/restore/create.
+
+Actual product schedules remain unqualified and stop the lifecycle branch. A future-capable included publication should be recorded if naturally observed, but do not mutate publication membership to manufacture that case.
+
+For core PASS, ACTIVE must expose real effective publication membership so the ACTIVE→DRAFT→ACTIVE semantic membership transition is actually exercised.
+
+All provider attempts count against the brief's ceilings.
+
+If any write settlement is ambiguous, do not issue another mutation unless the brief's exact safe-cleanup preconditions are independently satisfied.
+
+No app scope/version change, product deletion, publication mutation, inventory/variant/price work, production activation, RELEASE_BOUND, G7, M6/M7 or launch.
+
+Use actual GPT-6.1-sol/high and repository-pinned skills. Freeze source/build/review/CI before credentials. Return one integrated evidence PR with fresh completed-change reviews and final CI, then stop for principal review.
+
+Do not merge the successor PR.

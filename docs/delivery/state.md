@@ -1,3 +1,11 @@
+# Current review boundary — M5-015
+
+[PR #44 external approval](PR-044R-principal-review.md) and live refs/ten exact-head attempt1 workflows matched. Normal merge `245be82fd3dd3a0dbe808cb65340ce16e1caa503` has the approved ordered parents and tree; [receipt](evidence/m5-015/pr44-merge-receipt.json). Remote main matched that merge before slice work.
+
+M5-015 is **STOPPED_PRE_CREDENTIAL_GATE_BREACH**. The first synthetic tracer used the wrong adapter transport option (`fetch` instead of `fetchImpl`), so three synthetic executions emitted six unauthorized read requests using a synthetic token before the required offline gate. No protected credential was accessed and no provider mutation occurred. No product was created; the canonical M5-015 run was not initialized. This is a real slice constraint failure, not live qualification evidence. [Report](M5-015-REPORT.md) and [incident record](evidence/m5-015/offline-gate-incident.json).
+
+The correction uses the production v2 factory with `fetchImpl`, and all new synthetic tests deny uninjected network access. The live entry point is blocked pending principal adjudication. Only offline qualification, completed-change independent reviews and one evidence PR remain. Source/worktree: `/home/serveradmin/insignia-m5-015-worktree`, branch `feat/m5-015-live-v2-qualification`. No further provider/browser/credential operation, fixture, publication mutation, successor merge, production activation, RELEASE_BOUND/G7, M6/M7 or launch. Historical state below remains unchanged.
+
 # Current review boundary — M5-014R
 
 [External principal review](PR-044-principal-review.md) returned CHANGES_REQUESTED on [PR #44](https://github.com/Optidigi/insignia/pull/44) at base/effective merge base `55060c5a48617a27858d10fb0db639c7e9efe148`, head `f016e39cf6b54cd2b7e7860a5681c4bb867a6e51`, tree `fb687b6ca8bff15a62b6fbd449cd293ee47c8e23`. Previous passing checks/local reviews did not establish correct capability qualification; their reports and historical evidence remain unchanged.

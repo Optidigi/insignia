@@ -1,0 +1,13 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-015-worktree/packages/application
+
+No test files found, exiting with code 1
+
+filter: test/publication/availability-recovery.test.ts
+include: **/*.{test,spec}.?(c|m)[jt]s?(x)
+exclude:  **/node_modules/**, **/.git/**
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-015-
+  │ worktree/packages/application

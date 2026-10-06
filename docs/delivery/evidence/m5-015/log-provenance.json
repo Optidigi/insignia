@@ -1,0 +1,73 @@
+{
+  "transform": "ANSI escapes removed; trailing whitespace and final blank lines trimmed; original offline logs retained in neutral handoff directory",
+  "artifacts": {
+    "partial-tracer-red.log": {
+      "rawSha256": "fa62346b20affc15d40c658e69d6143af9e731eb7f0777baac120f67bda254b7",
+      "plainSha256": "163c724ef4630d8f6cb024ebfddb08644db4793ba92ca0b05721e01b69c14c7c"
+    },
+    "partial-tracer-green.log": {
+      "rawSha256": "dddc734916a5860fe3c547ed798ec14a8f288cd9d31d8fc579c36801082af61c",
+      "plainSha256": "dddc734916a5860fe3c547ed798ec14a8f288cd9d31d8fc579c36801082af61c"
+    },
+    "local/recovery-focused-final.log": {
+      "rawSha256": "f441bf251844e54964a568ff34c011cdf6e9bb4b9d4011ea684e7680476d6b95",
+      "plainSha256": "daaf418449e28d486e96a9d44c668c5b0f71d4f79220cbd9d7d5e56b4201e314"
+    },
+    "local/publication-stress.log": {
+      "rawSha256": "f8d371f93372066fb2962bd653d7800f81df2b7cab257759c1f3db3e65ffd4e2",
+      "plainSha256": "3d9bee33297e454428f372e260a33cceacee09675417bbbbc8eae0f4a949b241"
+    },
+    "local/root-check-final.log": {
+      "rawSha256": "8dc063773b18342416f251a11a5dcc857bc58231f27c8ab794bf0a101c8b9754",
+      "plainSha256": "528a37900693f7c5288f466c3cd6cd1a573a45df27b1dcabe141270265d7a1be"
+    },
+    "local/style-final.log": {
+      "rawSha256": "e687dd6f2d8c27f84bcd05d59d784ca849c796976b1058479e698b01a134cfcf",
+      "plainSha256": "121eec1b82e46f4a57d0b800a0bf279e8f7e6f13adb16aa4b7d32f2bf6cafe97"
+    },
+    "local/publication-stress-final.log": {
+      "rawSha256": "0f6a66625f07ef91915105acaefd2ba3867915524babb594dfa960eaf487f4af",
+      "plainSha256": "0f6a66625f07ef91915105acaefd2ba3867915524babb594dfa960eaf487f4af"
+    },
+    "local/renderer-control.log": {
+      "rawSha256": "3d05142d493d69746b1117f98ef74bf09ce97952d561b7923e57f94577b6c11c",
+      "plainSha256": "79a581722ab510b862be56f627bfe8250ee5d7a96ad73621317acdf36630b4e7"
+    },
+    "local/hold-tamper-red.log": {
+      "rawSha256": "50717586f638670838e837ebf98c63cfbafec91795007648bbd80b18a0ee18ce",
+      "plainSha256": "faf93b6f1cb4cd0d27736febe0fadcde705160fb369c4a4a7c91cf6cb520bfb9"
+    },
+    "local/secrets-final.log": {
+      "rawSha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e",
+      "plainSha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e"
+    },
+    "local/offline-focused-final.log": {
+      "rawSha256": "b4caf1e85048b0fcac41f1db189e033c4cc713693af0c91d649a36ed7c3f4513",
+      "plainSha256": "b4caf1e85048b0fcac41f1db189e033c4cc713693af0c91d649a36ed7c3f4513"
+    },
+    "local/root-check.log": {
+      "rawSha256": "3e0f5746510e2d091c96f0fa0a3fc13a4ed5692789b4c434b663e07536586559",
+      "plainSha256": "d368f82f378fcb99fa49d087c1933c3f0d39d1f66d2738f77d8f760dbcd233f1"
+    },
+    "local/recovery-focused.log": {
+      "rawSha256": "1853cb9e9862a131794379af4c67658119330dfed58e1148355beed8f6a9e9f6",
+      "plainSha256": "34573f48f37fb3b89b3c3b17913d5875ae5d5cdb9d5bcc2f930f02e77aaf5f78"
+    },
+    "local/malformed-ack-red.log": {
+      "rawSha256": "e798f106cace26348622f39aa9b99521dd6c8e35cd70a323c0abc54549603978",
+      "plainSha256": "a4fa15a0146a8bea92f9176d3f05fc9adf24dcab0ebfb07c016a5067cc431f89"
+    },
+    "local/database-local.log": {
+      "rawSha256": "24f26b83672d3d1a43da26d0ecd8283b6de88d5da7848861bc5273f317a2d996",
+      "plainSha256": "24f26b83672d3d1a43da26d0ecd8283b6de88d5da7848861bc5273f317a2d996"
+    },
+    "local/body-disposal-red.log": {
+      "rawSha256": "661b4458afb050f8d27acdb6997149d2cc92dd9096c55e7ddb0dcd276057a3bc",
+      "plainSha256": "7090bff2177b21ce2745cdab3cec2547b782f6aed5b3b240d79ce38a0467c2ae"
+    },
+    "local/shopify-focused.log": {
+      "rawSha256": "fb0db50bfaeb3673668de703e23fd1c8665a15fd059e02e7951003605f296c3e",
+      "plainSha256": "cb011778345167a221be0f986049d14f722f21bc703896177d060318e6b9b418"
+    }
+  }
+}

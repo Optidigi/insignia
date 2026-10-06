@@ -1,0 +1,22 @@
+{
+  "outcome": "STOPPED_PRE_CREDENTIAL_GATE_BREACH",
+  "cause": "createShopifyAvailabilityHoldV2Port configured with fetch rather than fetchImpl; production factory selected global fetch",
+  "observedFailure": "unauthorized",
+  "syntheticExecutions": 3,
+  "providerReadAttempts": 6,
+  "countBasis": "one initial test run; then a diagnostic import executed the test plus a separate diagnostic run; each attempted one snapshot and one cleanup-prestate snapshot",
+  "rawProviderRequestReceipts": "NOT_CAPTURED: bypassed experiment transport; count reconstructed from executed paths and unauthorized adapter errors",
+  "credentialExchanges": 0,
+  "protectedCredentialAccess": 0,
+  "providerMutationAttempts": 0,
+  "fixtureCreated": false,
+  "historicalFixtureTargeted": false,
+  "canonicalRegisterInitialized": false,
+  "productionDocuments": "InsigniaAvailabilityV2 reads; product gid://shopify/Product/202 is synthetic, not the permanently archived M5-010 product",
+  "requestCredential": "synthetic token only; value omitted",
+  "offlineGateSatisfiedBeforeAttempts": false,
+  "liveQualification": "NOT_RUN; no PASS/PARTIAL claim",
+  "containment": "no further provider requests; live entry point blocked; tests deny uninjected global fetch",
+  "graphQLCeilingUsed": 6,
+  "graphQLCeiling": 96
+}

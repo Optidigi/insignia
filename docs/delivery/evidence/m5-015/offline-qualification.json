@@ -1,0 +1,100 @@
+{
+  "scope": "M5-015 OFFLINE ONLY after live gate breach",
+  "liveOutcome": "STOPPED_PRE_CREDENTIAL_GATE_BREACH",
+  "finalSourceRootCheck": "PASS plus focused/style/secrets after the final resume-order correction; exact-head full CI required",
+  "checks": [
+    {
+      "command": "node --test scripts/m5-015/*.test.mjs",
+      "exitCode": 0,
+      "result": "PASS",
+      "artifact": "local/offline-focused-final.log",
+      "sha256": "b4caf1e85048b0fcac41f1db189e033c4cc713693af0c91d649a36ed7c3f4513",
+      "details": "28 passed; loopback mocks; uninjected global fetch denied"
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/shopify exec vitest run test/availability-hold.test.ts test/availability-hold-v2.test.ts",
+      "exitCode": 0,
+      "result": "PASS",
+      "artifact": "local/shopify-focused.log",
+      "sha256": "cb011778345167a221be0f986049d14f722f21bc703896177d060318e6b9b418",
+      "details": "170 passed"
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/application exec vitest run src/publication/availability-recovery.test.ts src/publication/availability-v2-recovery.test.ts",
+      "exitCode": 0,
+      "result": "PASS",
+      "artifact": "local/recovery-focused-final.log",
+      "sha256": "daaf418449e28d486e96a9d44c668c5b0f71d4f79220cbd9d7d5e56b4201e314",
+      "details": "20 passed"
+    },
+    {
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "result": "PASS",
+      "artifact": "local/root-check-final.log",
+      "sha256": "528a37900693f7c5288f466c3cd6cd1a573a45df27b1dcabe141270265d7a1be",
+      "details": "second full local root pass, then final hold-tamper ordering correction checked by all 28 focused regressions/style/secrets; natural exact-head CI reruns full root"
+    },
+    {
+      "command": "corepack pnpm test:m5-stress",
+      "exitCode": 0,
+      "result": "PASS",
+      "artifact": "local/publication-stress-final.log",
+      "sha256": "0f6a66625f07ef91915105acaefd2ba3867915524babb594dfa960eaf487f4af",
+      "details": "100/100 serial after root build; initial overlapped run retained as FAILED"
+    },
+    {
+      "command": "corepack pnpm test:m5-renderer-control",
+      "exitCode": 0,
+      "result": "PASS",
+      "artifact": "local/renderer-control.log",
+      "sha256": "79a581722ab510b862be56f627bfe8250ee5d7a96ad73621317acdf36630b4e7",
+      "details": "expected missing-renderer rejection; inner negative test exit1, outer control exit0"
+    },
+    {
+      "command": "corepack pnpm test:database",
+      "exitCode": 1,
+      "result": "UNAVAILABLE",
+      "artifact": "local/database-local.log",
+      "sha256": "24f26b83672d3d1a43da26d0ecd8283b6de88d5da7848861bc5273f317a2d996",
+      "details": "27 failures because DATABASE_URL unavailable; no local PostgreSQL success"
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/application exec vitest run test/publication/availability-recovery.test.ts",
+      "exitCode": 1,
+      "result": "FAILED_COMMAND_SELECTION",
+      "artifact": "local/recovery-focused.log",
+      "sha256": "34573f48f37fb3b89b3c3b17913d5875ae5d5cdb9d5bcc2f930f02e77aaf5f78",
+      "details": "wrong nonexistent test filter; corrected actual path run above"
+    },
+    {
+      "command": "corepack pnpm check:style",
+      "exitCode": 0,
+      "result": "PASS",
+      "artifact": "local/style-final.log",
+      "sha256": "121eec1b82e46f4a57d0b800a0bf279e8f7e6f13adb16aa4b7d32f2bf6cafe97",
+      "details": "style check"
+    },
+    {
+      "command": "corepack pnpm check:secrets",
+      "exitCode": 0,
+      "result": "PASS",
+      "artifact": "local/secrets-final.log",
+      "sha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e",
+      "details": "no secrets found"
+    }
+  ],
+  "expectedFailures": [
+    "initial stub tracer",
+    "unsafe malformed ACK settlement",
+    "failed oversized-body disposal",
+    "hold tamper auth-order regression"
+  ],
+  "publicationStressInitial": {
+    "result": "FAILED",
+    "cause": "concurrent full build temporarily removed apps/web/dist/server/entry.mjs",
+    "artifact": "local/publication-stress.log",
+    "supersededBy": "local/publication-stress-final.log",
+    "serialPass": 100
+  }
+}

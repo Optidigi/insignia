@@ -1,0 +1,36 @@
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.297384ms)
+✔ zero ACTIVE effective membership is PARTIAL with one create and safe archive, without acquire or restore (43.37177ms)
+✔ production v2 core lifecycle survives an actual fresh process, with capability=true and exact persisted hold bytes (610.741291ms)
+✔ absence of future capability is recorded without weakening core qualification (614.974925ms)
+✔ exact shop fence prevents creation (2.460997ms)
+✔ exact domain fence prevents creation (1.732403ms)
+✔ exact development fence prevents creation (1.850023ms)
+✔ exact app fence prevents creation (1.816994ms)
+✔ exact client fence prevents creation (1.744585ms)
+✔ exact installation fence prevents creation (1.673076ms)
+✔ exact grants fence prevents creation (1.912214ms)
+✔ ownership drift stops before setup and denies archival cleanup (4.799397ms)
+✔ actual schedule stops setup; explicit archive cannot turn persistent schedule into PASS (15.53023ms)
+✔ configured intent drift after setup stops acquire and permits separately settled cleanup (24.028191ms)
+✔ ambiguous create has one exact-marker recovery read and no further mutation (4.631414ms)
+✔ lost acquire acknowledgement never causes restore, replay or cleanup mutation (20.314873ms)
+✔ closed register rejects reentry before loading even synthetic credentials (20.161064ms)
+✔ unsafe synthetic directory and live gate reject before any request (0.368451ms)
+✔ global attempts, document denial, token replacement and serial reservation are durable (110.490407ms)
+✔ one-second ACK/readback difference is retained while v2 semantics complete in fresh process (602.892069ms)
+✔ lost restore acknowledgement in fresh process never retries or archives (589.975442ms)
+✔ incomplete configured-intent connection stops lifecycle before setup (8.078025ms)
+✔ production pagination consumes global budget and repeated cursor stops without mutation (12.536071ms)
+✔ fresh-process-only resume rejects same PID before credential load in live operator seam (16.678231ms)
+✔ non-quiescent fetch timeout retains pending reservation and forbids another request (8002.059905ms)
+✔ malformed production mutation acknowledgement is not considered settled for archival authority (20.932933ms)
+✔ failed disposal of an oversized body quarantines the outbound attempt (1.948573ms)
+✔ persisted hold tampering stops fresh-process resume before a second auth or cleanup request (507.348726ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11482.786838
