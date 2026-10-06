@@ -1,0 +1,7 @@
+{
+  "model": "gpt-6.1-sol",
+  "reasoning_effort": "high",
+  "source": "T3 Code trusted same-launch runtime_info",
+  "role": "orchestrator and sole serialized Shopify operator",
+  "reviewers": "fresh Codex CLI read-only sessions, with actual same-launch rollout settings required"
+}

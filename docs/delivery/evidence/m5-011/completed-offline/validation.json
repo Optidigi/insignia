@@ -1,0 +1,24 @@
+{
+  "liveSource": "1d62d7249ee22e6275eb9ed3299fb6f56991d0f3",
+  "liveRerun": false,
+  "focused": {
+    "command": "node --test scripts/m5-011/operator.test.mjs scripts/m5-011/binding.test.mjs",
+    "pass": 46,
+    "fail": 0,
+    "serialSyntheticCases": 100,
+    "sha256": "a3525c4e457a97db3766c3320666af08f0b0dbdb86a6c707bdea97f773b5cbdf"
+  },
+  "root": {
+    "command": "corepack pnpm check",
+    "exitCode": 0,
+    "log": "/home/serveradmin/insignia-m5-011-handoff/root-completed-change.log",
+    "sha256": "12e6eac4a04b888baa1dd2cd36be7275da8b345de11b18e64e7db7c53d70ee12",
+    "provenance": "Final corrected harness bytes present before start; only docs/evidence and commit metadata follow."
+  },
+  "secrets": {
+    "command": "corepack pnpm check:secrets",
+    "exitCode": 0,
+    "selectedLiveJSONSensitiveKeyAudit": "PASS"
+  },
+  "database": "Local database-gated tests skipped; exact-source and final-head PostgreSQL18 CI reported separately."
+}

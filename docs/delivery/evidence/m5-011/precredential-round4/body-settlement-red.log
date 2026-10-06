@@ -1,0 +1,114 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (4.237632ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (206.461736ms)
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (1.910072ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (44.523115ms)
+✔ ownership stops before any status mutation (2.724135ms)
+✔ incomplete resourcePublications stops before any status mutation (2.598561ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.524946ms)
+✔ incomplete APP stops before any status mutation (3.418651ms)
+✔ incomplete MARKET stops before any status mutation (4.301654ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (4.86107ms)
+✔ incomplete NONE stops before any status mutation (6.227275ms)
+✔ missing read scope stops before any status mutation (1.684392ms)
+✔ initial DRAFT drift stops before any status mutation (5.802854ms)
+✔ cross-partition version drift stops before any status mutation (3.041313ms)
+✔ observed required grant loss in adapter read stops before any status mutation (9.39886ms)
+✔ lost DRAFT acknowledgement never retries or archives (11.653079ms)
+✔ DRAFT readback failure never retries or archives (11.428151ms)
+✔ post-DRAFT ownership drift never retries or archives (15.190083ms)
+✔ post-DRAFT partition drift never retries or archives (17.085799ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (19.382638ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (20.932585ms)
+✔ newly appearing DRAFT V2 membership is not described as retained from ACTIVE (21.580807ms)
+✔ wrapped production failure preserves {"userError":true} (10.781166ms)
+✔ wrapped production failure preserves {"adapterFailure":"http403"} (6.944017ms)
+✔ wrapped production failure preserves {"adapterFailure":"graphql"} (8.382988ms)
+✔ wrapped production failure preserves {"adapterFailure":"invalidJSON"} (7.527183ms)
+✔ wrapped production failure preserves {"adapterFailure":"missingBody"} (6.555366ms)
+✔ wrapped production failure preserves {"adapterFailure":"badScopes"} (7.1592ms)
+✔ wrapped production failure preserves {"adapterFailure":"badNodes"} (7.164394ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOutstanding":true} (41.775866ms)
+✖ outstanding archive transport quarantines all further dispatch {"archiveBodyOutstanding":true} (22.650213ms)
+✖ outstanding archive transport quarantines all further dispatch {"archiveOversizeOutstanding":true} (20.60523ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.903034ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (1556.108373ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 32
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2148.104675
+
+✖ failing tests:
+
+test at scripts/m5-011/operator.test.mjs:303:1
+✖ outstanding archive transport quarantines all further dispatch {"archiveBodyOutstanding":true} (22.650213ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  ... Skipped lines
+  
+  + 'query M5011Projection($id: ID!) {\n' +
+  +   '  shop { id myshopifyDomain plan { partnerDevelopment displayName } }\n' +
+  +   '  currentAppInstallation { id app { id apiKey } accessScopes { handle } }\n' +
+  +   '  product(id:$id) { __typename id status updatedAt publishedAt onlineStoreUrl\n' +
+  - 'mutation M5011Archive($product: ProductUpdateInput!) {\n' +
+  -   '  productUpdate(product:$product) {\n' +
+  -   '    product { __typename id status updatedAt publishedAt onlineStoreUrl\n' +
+      '  resourcePublications(first: 250, onlyPublished: false) {\n' +
+      '    nodes { isPublished publishDate publication { id } }\n' +
+      '    pageInfo { hasNextPage hasPreviousPage }\n' +
+      '  }\n' +
+      '  unpublishedPublications(first: 250) {\n' +
+  ...
+      '  } handle title tags createdAt }\n' +
+  -   '    userErrors { field message }\n' +
+  -   '  }\n' +
+      '}'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:311:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'query M5011Projection($id: ID!) {\n  shop { id myshopifyDomain plan { partnerDevelopment displayName } }\n  currentAppInstallation { id app { id apiKey } accessScopes { handle } }\n  product(id:$id) { __typename id status updatedAt publishedAt onlineStoreUrl\n  resourcePublications(first: 250, onlyPublished: false) {\n    nodes { isPublished publishDate publication { id } }\n    pageInfo { hasNextPage hasPreviousPage }\n  }\n  unpublishedPublications(first: 250) {\n    nodes { id }\n    pageInfo { hasNextPage hasPreviousPage }\n  } handle title tags createdAt }\n}',
+    expected: 'mutation M5011Archive($product: ProductUpdateInput!) {\n  productUpdate(product:$product) {\n    product { __typename id status updatedAt publishedAt onlineStoreUrl\n  resourcePublications(first: 250, onlyPublished: false) {\n    nodes { isPublished publishDate publication { id } }\n    pageInfo { hasNextPage hasPreviousPage }\n  }\n  unpublishedPublications(first: 250) {\n    nodes { id }\n    pageInfo { hasNextPage hasPreviousPage }\n  } handle title tags createdAt }\n    userErrors { field message }\n  }\n}',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:303:1
+✖ outstanding archive transport quarantines all further dispatch {"archiveOversizeOutstanding":true} (20.60523ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  ... Skipped lines
+  
+  + 'query M5011Projection($id: ID!) {\n' +
+  +   '  shop { id myshopifyDomain plan { partnerDevelopment displayName } }\n' +
+  +   '  currentAppInstallation { id app { id apiKey } accessScopes { handle } }\n' +
+  +   '  product(id:$id) { __typename id status updatedAt publishedAt onlineStoreUrl\n' +
+  - 'mutation M5011Archive($product: ProductUpdateInput!) {\n' +
+  -   '  productUpdate(product:$product) {\n' +
+  -   '    product { __typename id status updatedAt publishedAt onlineStoreUrl\n' +
+      '  resourcePublications(first: 250, onlyPublished: false) {\n' +
+      '    nodes { isPublished publishDate publication { id } }\n' +
+      '    pageInfo { hasNextPage hasPreviousPage }\n' +
+      '  }\n' +
+      '  unpublishedPublications(first: 250) {\n' +
+  ...
+      '  } handle title tags createdAt }\n' +
+  -   '    userErrors { field message }\n' +
+  -   '  }\n' +
+      '}'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:311:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'query M5011Projection($id: ID!) {\n  shop { id myshopifyDomain plan { partnerDevelopment displayName } }\n  currentAppInstallation { id app { id apiKey } accessScopes { handle } }\n  product(id:$id) { __typename id status updatedAt publishedAt onlineStoreUrl\n  resourcePublications(first: 250, onlyPublished: false) {\n    nodes { isPublished publishDate publication { id } }\n    pageInfo { hasNextPage hasPreviousPage }\n  }\n  unpublishedPublications(first: 250) {\n    nodes { id }\n    pageInfo { hasNextPage hasPreviousPage }\n  } handle title tags createdAt }\n}',
+    expected: 'mutation M5011Archive($product: ProductUpdateInput!) {\n  productUpdate(product:$product) {\n    product { __typename id status updatedAt publishedAt onlineStoreUrl\n  resourcePublications(first: 250, onlyPublished: false) {\n    nodes { isPublished publishDate publication { id } }\n    pageInfo { hasNextPage hasPreviousPage }\n  }\n  unpublishedPublications(first: 250) {\n    nodes { id }\n    pageInfo { hasNextPage hasPreviousPage }\n  } handle title tags createdAt }\n    userErrors { field message }\n  }\n}',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

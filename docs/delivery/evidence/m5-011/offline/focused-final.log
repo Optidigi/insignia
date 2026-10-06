@@ -1,0 +1,28 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (4.241142ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (202.799293ms)
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (1.77606ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (34.637238ms)
+✔ ownership stops before any status mutation (2.882007ms)
+✔ incomplete resourcePublications stops before any status mutation (2.635825ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.531574ms)
+✔ incomplete APP stops before any status mutation (2.403552ms)
+✔ incomplete MARKET stops before any status mutation (2.403672ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (2.438996ms)
+✔ incomplete NONE stops before any status mutation (2.492187ms)
+✔ missing read scope stops before any status mutation (1.689566ms)
+✔ initial DRAFT drift stops before any status mutation (4.357231ms)
+✔ lost DRAFT acknowledgement never retries or archives (8.216963ms)
+✔ DRAFT readback failure never retries or archives (7.505918ms)
+✔ post-DRAFT ownership drift never retries or archives (9.934173ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (13.761697ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (12.072437ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.928129ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (1002.630555ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1351.220628

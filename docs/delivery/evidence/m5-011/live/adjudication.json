@@ -1,0 +1,89 @@
+{
+  "version": 1,
+  "canonicalOutcome": "STOPPED",
+  "canonicalClassification": "INCONCLUSIVE",
+  "projectionComparison": {
+    "classification": "DIFFERENT_PLATFORM_BEHAVIOR",
+    "legacyDisappeared": true,
+    "v2Retained": false,
+    "v2NewlyAppeared": false,
+    "v2Staged": false,
+    "active": [],
+    "draft": []
+  },
+  "fixtureLastObserved": {
+    "id": "gid://shopify/Product/10490211467547",
+    "status": "DRAFT",
+    "updatedAt": "2026-10-06T13:09:52Z",
+    "at": "2026-10-06T13:10:00.463Z",
+    "ownershipExact": true
+  },
+  "publication": {
+    "id": "gid://shopify/Publication/339456917787",
+    "autoPublish": true,
+    "supportsFuturePublishing": false,
+    "catalog": {
+      "__typename": "AppCatalog",
+      "id": "gid://shopify/AppCatalog/188090286363",
+      "title": "Channel Catalog 339456917787 for Microsoft Copilot",
+      "status": "ACTIVE"
+    },
+    "channels": {
+      "pageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      },
+      "nodes": [
+        {
+          "id": "gid://shopify/Channel/339456917787",
+          "name": "Microsoft Copilot",
+          "app": {
+            "id": "gid://shopify/App/294412484609",
+            "title": "Microsoft Copilot"
+          }
+        }
+      ]
+    }
+  },
+  "adapter": {
+    "kind": "CONFLICT",
+    "current": {
+      "scope": {
+        "shopId": "m5_011_fixture_only",
+        "installationGeneration": "1",
+        "shopifyShopId": "gid://shopify/Shop/105501393179",
+        "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "productId": "gid://shopify/Product/10490211467547",
+      "state": "unavailable",
+      "providerVersion": "2026-10-06T13:09:52.000Z",
+      "visibilityDigest": "a1c58419a80c1a0a1ca9981d67e440ac29d50e75d4e9bef7c0b3d888c6c932bf",
+      "observedAt": "2026-10-06T13:09:53.188Z",
+      "receivedAt": "2026-10-06T13:09:55.476Z"
+    }
+  },
+  "acknowledgement": {
+    "status": "DRAFT",
+    "updatedAt": "2026-10-06T13:09:51Z",
+    "visibilityDigest": "a1c58419a80c1a0a1ca9981d67e440ac29d50e75d4e9bef7c0b3d888c6c932bf"
+  },
+  "readback": {
+    "status": "DRAFT",
+    "updatedAt": "2026-10-06T13:09:52Z",
+    "visibilityDigest": "a1c58419a80c1a0a1ca9981d67e440ac29d50e75d4e9bef7c0b3d888c6c932bf"
+  },
+  "membershipDigests": {
+    "before": "624aefa993af861724b2065f9edcd1eaee7b9548f8245dfdecaddd2be28f8297",
+    "acknowledged": "455acf63d44dce0792771c706ef10c1271b58ced5f5810bc050036f0d21220a4",
+    "readback": "455acf63d44dce0792771c706ef10c1271b58ced5f5810bc050036f0d21220a4"
+  },
+  "conflictConditions": {
+    "acknowledgementReadbackMismatch": true,
+    "acknowledgedMembershipChanged": true,
+    "providerVersionDidNotAdvance": false
+  },
+  "causalLimit": "The first OR condition is true and short-circuits; legacy membership change would independently satisfy the second condition. Sole legacy-digest causation was not isolated.",
+  "cleanup": "NOT_ATTEMPTED_PROVIDER_VERSION_DRIFT",
+  "authority": "CLOSED_NO_SECOND_LIVE_RUN",
+  "timingLimitation": "Frozen harness deferred exact settlement check until after five post-DRAFT reads. Offline successor guard now stops before those reads; no live rerun."
+}

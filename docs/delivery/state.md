@@ -1,4 +1,12 @@
-# Insignia — current delivery state
+# Current review boundary — M5-011
+
+PR #40 normal merge `1fffcb3048952ff762f1f9805f86aceed90f228f` verified with exact ordered parents/tree, ten reviewed-head attempt1 passing workflows and [external approval](PR-040-principal-review.md).
+
+[M5-011 report](M5-011-REPORT.md): **INCONCLUSIVE**, stopped on one-second acknowledgement/readback provider-version drift after the sole production snapshot/acquire. The owned fixture10490211467547 was last observed DRAFT at2026-10-06T13:10:00.463Z. Archive was withheld; no ARCHIVED verification occurred. All four V2 partitions returned empty before/after despite legacy publication339456917787 disappearing in DRAFT. Both version mismatch and changed legacy membership meet adapter CONFLICT conditions; sole legacy causation is not isolated.
+
+Canonical `/home/serveradmin/insignia-m5-011-handoff/run` is closed (auth1/read15/update1). No second live run or further provider call is authorized. Prior registers and production availability source remain unchanged. An offline harness correction fences version/visibility drift before post reads; it was not run live. [Conditional proposal](M5-011-PROPOSED-CORRECTION.md) does not authorize production implementation. Return integrated PR #41 evidence, completed-change reviews and final CI, then stop for principal review of projection coverage, drift and remaining fixture disposition. No successor merge, matrix continuation, restore ACTIVE, publication/scope/version operation, M6/M7, activation, RELEASE_BOUND or gate/launch pass.
+
+# Insignia — historical delivery index
 
 Updated: 2 October 2026 UTC, PR #39 approved and normally merged; M5-010 qualification stopped on publication membership; PR #40 awaiting review. This is an operational index, not decision authority.
 
@@ -80,6 +88,6 @@ Updated: 2 October 2026 UTC, PR #39 approved and normally merged; M5-010 qualifi
 | M0-011R correction | [Preserved full-client pre-fix reproduction, red regression and correction evidence](../../spikes/m0-011/evidence/m0-011r/README.md) show validated cycle-instant comparison and exact handle/type item matching. Pinned Node 24 strict checks pass with 34 M0-010 and 22 M0-011 synthetic tests; historical architecture/source check passes. Fresh Spec/security local reviews found no remaining correction issue. No provider call or staging mutation occurred; live eligibility and accounting prerequisites remain open. |
 | G7 follow-up and preview holding state | M0-009's stopped development preview remains as accepted temporary residue; original eleven effective staging grants and released configuration are unchanged. Browser alternate-staff/expiry/cookie evidence, grant-cache revocation policy and durable synthetic-save recovery remain open G7 obligations. M0-010 neither cleans the preview nor changes grants. |
 | M3-002 local outcome | The [original packet](review-packet-M3-002.md) preserves the reviewed-head quarantine and earlier concern. The principal resolved that concern through the controlled-ingress trust decision. [M3-002R](review-packet-M3-002R.md) tests current-generation uninstall deactivation with credential, publication and outbox fencing; stale and malformed deliveries remain safe. Deployment TLS/proxy/header integrity and no raw body/HMAC logs remain M10 checks. |
-| Next review | Principal review of M5-010 qualification evidence on PR #40, publication-membership stop, fresh-fixture disposition and final-head reviews/CI. No successor merge, production activation, RELEASE_BOUND, complete M5/gate pass, M6/M7 or launch. |
+| Historical next review (2 October) | PR #40 review was subsequently approved and its exact normal merge is recorded above. Current M5-011 review is in the leading section. |
 
 The M0-001/M0-002 records remain historical. M4-001 added bounded live read-only provider observations and synthetic adapter contracts. M4-002 added immutable accepted quote and v2 Function implementation. M4-003 added signing-key and publication-readiness implementation. M5-001 implements Admin draft editing, a browser-safe geometry visualizer and publication request workflow for review; automatic FX activation, commercial plan catalog, production artwork authority, Function deployment and rollout remain separate decisions.

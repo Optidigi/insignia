@@ -1,0 +1,37 @@
+Use the attached `insignia-pr40-approved-m5-011-handoff` package.
+
+Read README.md, PR-040-principal-review.md and M5-011-PUBLISHED-STATE-HOLD-ADJUDICATION.md first.
+
+I authorize the NORMAL merge of PR #40 only at:
+base 25e6c487741e1685637d351137d9671033f3c53d
+head ca250edb776e6c5b4567334c1fb4f2c750ddcc5a
+tree 8b9d8389f48c0a8c12a6c56880abe994573af5c6
+
+Reverify live refs, all ten exact-head attempt-1 passing workflows and external principal approval. Keep the reviewed head unchanged. No squash/rebase, force push, fabricated native approval or protection bypass. Stop on mismatch and verify actual merge parents/tree.
+
+Then execute M5-011 exactly as specified.
+
+Do NOT continue the M5-010 matrix, weaken the publication guard, create another product, or restore the current fixture to ACTIVE.
+
+Create a fresh M5-011 register and qualify a fixed adjudication harness offline. Production availability-adapter source must remain unchanged for the live test.
+
+Exact fixture:
+gid://shopify/Product/10490211467547
+marker:
+insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb
+publication:
+gid://shopify/Publication/339456917787
+
+Before mutation, capture publication metadata and the product's legacy plus resourcePublicationsV2 views for APP, MARKET, COMPANY_LOCATION and NONE.
+
+Then invoke the CURRENT production availability port snapshot/acquire exactly once to move this owned fixture ACTIVE -> DRAFT. Never call restore.
+
+If settlement is exact and the product is DRAFT, capture the same V2 projection again. Determine whether publication339456917787 remains staged/configured in V2 while disappearing from the legacy view.
+
+After that evidence, if ownership and settlement remain exact, archive this disposable fixture once with a status-only productUpdate and verify final ARCHIVED state. No publish/unpublish mutation.
+
+If any write is ambiguous or identity/state drifts, stop. No retry.
+
+Do not implement the production adapter correction in this slice. Return the empirical classification and proposed smallest correction in one evidence PR with fresh completed-change reviews and CI, then stop for principal review.
+
+No scope/version change, new product, matrix continuation, publication mutation, M6/M7, activation, RELEASE_BOUND/gate pass or launch.

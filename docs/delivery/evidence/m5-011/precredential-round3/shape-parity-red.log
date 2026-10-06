@@ -1,0 +1,80 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (4.15ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (207.445859ms)
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (1.872953ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (43.340874ms)
+✔ ownership stops before any status mutation (3.663575ms)
+✔ incomplete resourcePublications stops before any status mutation (2.51866ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.458818ms)
+✔ incomplete APP stops before any status mutation (3.412752ms)
+✔ incomplete MARKET stops before any status mutation (4.21792ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (4.719049ms)
+✔ incomplete NONE stops before any status mutation (6.326437ms)
+✔ missing read scope stops before any status mutation (1.721254ms)
+✔ initial DRAFT drift stops before any status mutation (5.779486ms)
+✔ cross-partition version drift stops before any status mutation (3.180107ms)
+✔ observed required grant loss in adapter read stops before any status mutation (8.004163ms)
+✔ lost DRAFT acknowledgement never retries or archives (13.251005ms)
+✔ DRAFT readback failure never retries or archives (11.374499ms)
+✔ post-DRAFT ownership drift never retries or archives (15.564251ms)
+✔ post-DRAFT partition drift never retries or archives (17.629025ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (19.498763ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (20.689736ms)
+✔ newly appearing DRAFT V2 membership is not described as retained from ACTIVE (21.818133ms)
+✔ wrapped production failure preserves {"userError":true} (10.733374ms)
+✔ wrapped production failure preserves {"adapterFailure":"http403"} (6.892496ms)
+✔ wrapped production failure preserves {"adapterFailure":"graphql"} (7.025711ms)
+✔ wrapped production failure preserves {"adapterFailure":"invalidJSON"} (9.181071ms)
+✔ wrapped production failure preserves {"adapterFailure":"missingBody"} (6.524948ms)
+✖ wrapped production failure preserves {"adapterFailure":"badScopes"} (1.32783ms)
+✖ wrapped production failure preserves {"adapterFailure":"badNodes"} (7.406677ms)
+✔ an archive request still outstanding after timeout quarantines all further provider dispatch (40.69947ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.927022ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (1562.111633ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 30
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2100.57788
+
+✖ failing tests:
+
+test at scripts/m5-011/operator.test.mjs:248:3
+✖ wrapped production failure preserves {"adapterFailure":"badScopes"} (1.32783ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'owner_mismatch'
+  - 'provider_shape'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:281:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'owner_mismatch',
+    expected: 'provider_shape',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:248:3
+✖ wrapped production failure preserves {"adapterFailure":"badNodes"} (7.406677ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'network_or_timeout'
+  - 'provider_shape'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:283:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'network_or_timeout',
+    expected: 'provider_shape',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

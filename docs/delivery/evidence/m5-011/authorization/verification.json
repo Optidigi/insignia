@@ -1,0 +1,21 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 40,
+  "base": "25e6c487741e1685637d351137d9671033f3c53d",
+  "head": "ca250edb776e6c5b4567334c1fb4f2c750ddcc5a",
+  "tree": "8b9d8389f48c0a8c12a6c56880abe994573af5c6",
+  "final_head_workflows": 10,
+  "all_success": true,
+  "all_attempt": 1,
+  "native_reviews": 0,
+  "principal_verdict": "APPROVED_STOPPED_QUALIFICATION",
+  "fixture": "gid://shopify/Product/10490211467547",
+  "marker": "insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb",
+  "publication": "gid://shopify/Publication/339456917787",
+  "last_observed_status": "ACTIVE",
+  "next_slice": "M5-011",
+  "new_product_authorized": false,
+  "restore_active_authorized": false,
+  "publication_mutation_authorized": false,
+  "production_adapter_change_authorized": false
+}

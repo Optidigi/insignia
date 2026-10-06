@@ -1,0 +1,40 @@
+{
+  "root": {
+    "command": "corepack pnpm check",
+    "exitCode": 0,
+    "head": "f0b9176298756820bf27bc2a6e672c164a018908",
+    "report": "/home/serveradmin/insignia-m5-011-handoff/root-final.log"
+  },
+  "focused": {
+    "command": "node --test scripts/m5-011/operator.test.mjs scripts/m5-011/binding.test.mjs",
+    "pass": 22,
+    "fail": 0,
+    "serialSyntheticStress": 100
+  },
+  "browserStress": {
+    "command": "corepack pnpm test:m5-stress",
+    "pass": 100,
+    "fail": 0
+  },
+  "rendererControl": {
+    "command": "corepack pnpm test:m5-renderer-control",
+    "exitCode": 0,
+    "expectedNegative": true
+  },
+  "schema": {
+    "apiVersion": "2026-07",
+    "sixFixedDocuments": "SUPERSEDED_BEFORE_CREDENTIALS",
+    "invalidControl": "REJECTED",
+    "tenFixedDocuments": "VALID"
+  },
+  "reviewsRound1": "Interrupted before findings to correct binding rejection of four existing internal Rust links. No authenticated access.",
+  "readPlan": {
+    "preProjection": 5,
+    "metadataAndIdentity": 2,
+    "productionPort": 3,
+    "postProjection": 5,
+    "finalRead": 1,
+    "total": 16
+  },
+  "reviewsRound2": "Interrupted before completed findings for offline query-cost correction. No credentials."
+}
