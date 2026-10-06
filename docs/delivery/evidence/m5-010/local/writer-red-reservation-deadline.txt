@@ -1,0 +1,25 @@
+✖ archival permission expiring during durable reservation consumes allowance without HTTP or retry (16.886134ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 175.34755
+
+✖ failing tests:
+
+test at scripts/m5-010/operator.test.mjs:791:1
+✖ archival permission expiring during durable reservation consumes allowance without HTTP or retry (16.886134ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-010-writer-worktree/scripts/m5-010/operator.test.mjs:805:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: [Object],
+    operator: 'rejects',
+    diff: 'simple'
+  }

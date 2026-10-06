@@ -1,0 +1,94 @@
+{
+  "disposition": "CLOSED_STOPPED_NO_MORE_REQUESTS",
+  "source": "d0544cd8f2e72b5bb79410057121cd455db92f1a",
+  "tree": "05d58d32f8dd0d2e7ae7fd8c7412642546c3e946",
+  "marker": "insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb",
+  "counts": {
+    "auth": 1,
+    "read": 16,
+    "create": 1,
+    "update": 1,
+    "predecessorArchive": 1
+  },
+  "limits": {
+    "auth": 3,
+    "read": 96,
+    "create": 1,
+    "update": 16,
+    "predecessorArchive": 1
+  },
+  "stop": "publication_membership",
+  "final": {
+    "outcome": "UNRESOLVED_NO_MORE_MUTATIONS",
+    "reason": "publication_membership"
+  },
+  "fixture": "gid://shopify/Product/10490211467547",
+  "predecessor": {
+    "marker": "insignia-m5-009-439c9699-af2f-4e8a-b0f1-89003b88a2d4",
+    "createdAt": "2026-10-02T19:57:53.469Z",
+    "resolution": "ARCHIVED_VERIFIED",
+    "fixture": "gid://shopify/Product/10490128138523",
+    "fixtureIdentity": {
+      "handle": "insignia-m5-009-439c9699-af2f-4e8a-b0f1-89003b88a2d4",
+      "title": "insignia-m5-009-439c9699-af2f-4e8a-b0f1-89003b88a2d4",
+      "tags": [
+        "insignia-m5-009-439c9699-af2f-4e8a-b0f1-89003b88a2d4"
+      ],
+      "createdAt": "2026-10-02T19:58:01Z"
+    },
+    "status": "ARCHIVED",
+    "observedAt": "2026-10-02T21:19:48.134Z",
+    "failure": null
+  },
+  "lastObservedProduct": {
+    "__typename": "Product",
+    "id": "gid://shopify/Product/10490211467547",
+    "status": "ACTIVE",
+    "updatedAt": "2026-10-02T21:19:52Z",
+    "publishedAt": null,
+    "onlineStoreUrl": null,
+    "resourcePublications": {
+      "nodes": [
+        {
+          "isPublished": true,
+          "publishDate": "2026-10-02T21:19:52Z",
+          "publication": {
+            "id": "gid://shopify/Publication/339456917787"
+          }
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
+    },
+    "unpublishedPublications": {
+      "nodes": [
+        {
+          "id": "gid://shopify/Publication/339456885019"
+        },
+        {
+          "id": "gid://shopify/Publication/339456950555"
+        },
+        {
+          "id": "gid://shopify/Publication/339456983323"
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
+    },
+    "handle": "insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb",
+    "title": "insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb",
+    "tags": [
+      "insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb"
+    ],
+    "createdAt": "2026-10-02T21:19:48Z"
+  },
+  "requestsInFlight": false,
+  "operatorLockPresent": false,
+  "registerSha256": "31b152f4f82ed4e80376a80b06958a400eed17d481ad58a8445bdb61605a8d33",
+  "qualificationSha256": "88010b14f719164302a52060ee05a4089b4b68c6e0f00318a9cbdaf6c07e61c0",
+  "noFinalization": "Publication membership violates unpublished invariant; no further writes, archival, deletion or compensation. All prior writes acknowledged; current unpublished invariant failed."
+}

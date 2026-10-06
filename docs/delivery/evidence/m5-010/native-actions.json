@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "bindingDigest": "67e70b24e47afd5cbeba3cdc87ef0e4f4f216c8bbe8d69baf58fbbd254b9b9f0",
+  "state": "CLOSED_VERIFIED",
+  "counts": {
+    "release": 1,
+    "request": 1,
+    "approval": 1
+  },
+  "events": [
+    {
+      "action": "release",
+      "result": "RESERVED",
+      "at": "2026-10-02T21:18:23.153Z"
+    },
+    {
+      "action": "release",
+      "result": "VERIFIED",
+      "at": "2026-10-02T21:19:01.607Z",
+      "receiptDigest": "8a4686dbafb73f09913e1c29e7d43a65cb7e770c3004f123e36a2090ead87927"
+    },
+    {
+      "action": "request",
+      "result": "RESERVED",
+      "at": "2026-10-02T21:19:01.612Z"
+    },
+    {
+      "action": "request",
+      "result": "VERIFIED",
+      "at": "2026-10-02T21:19:24.523Z",
+      "receiptDigest": "93d676acd8b5bbb57083a8915eddff1f75f5a928b0cf86c9021d59a4a07a99a7"
+    },
+    {
+      "action": "approval",
+      "result": "RESERVED",
+      "at": "2026-10-02T21:19:24.528Z"
+    },
+    {
+      "action": "approval",
+      "result": "VERIFIED",
+      "at": "2026-10-02T21:19:46.381Z",
+      "receiptDigest": "5198a400ee54b8f64a1c28ba0bc5dcb747fe918b64d66ef909201c1f440528c2"
+    }
+  ]
+}

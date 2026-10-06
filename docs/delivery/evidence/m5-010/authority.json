@@ -1,0 +1,31 @@
+{
+  "authority": "owner-forwarded exact package; attributed external principal approval",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "modelSource": "trusted T3 same-launch runtime metadata",
+  "packageSha256": "bb6b6d439d0b42300edc5f79f67ad7fe1f6aed1ffc34346af4f9b2c10809ed4a",
+  "packageFiles": {
+    "MANIFEST.sha256": "39c045e40f743c9cdb2de8276e8169e719ecde199a2de4aa41374d88e8f7a250",
+    "README.md": "c0360fc22661c9cc5f0cb934fef4a92472bbde8e92d61703a0a408280de70199",
+    "RESEARCH-NOTES.md": "722278d19e88dc2e8a4157f999868c7692e7d56ccac3fef81a288abf2967ae5e",
+    "verification.json": "212c0b0dafa8d4a46f66d3a6d14d38b10ea2bf1dc07dc5859bebdc75847164fc",
+    "OWNER-LAUNCH.txt": "ac5e3387b99ad196b46c86abb6caed0c30395561dcbc68b0a44a1be0e83f6e47",
+    "PR-039-principal-review.md": "bbff0aa8a7e5c174ed33da7eb0013fb113bfd38283acc393eac214715b683e19",
+    "M5-010-PUBLICATION-READ-AND-AVAILABILITY.md": "853836927174a3d670f77c1054746a90c2a27ffe62895acc33cd0cbefa006752"
+  },
+  "canonical": "/home/serveradmin/insignia-m5-010-handoff/run",
+  "soleRemoteOperator": "root orchestrator",
+  "nativeBudget": {
+    "release": 1,
+    "request": 1,
+    "approval": 1
+  },
+  "providerBudget": {
+    "auth": 3,
+    "read": 96,
+    "create": 1,
+    "update": 16,
+    "predecessorArchive": 1
+  },
+  "forbidden": "No publication/delete/variant/inventory/price/commerce/billing/preview/Function operation"
+}
