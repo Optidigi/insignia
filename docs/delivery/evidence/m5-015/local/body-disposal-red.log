@@ -1,0 +1,28 @@
+✖ failed disposal of an oversized body quarantines the outbound attempt (16.156313ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 353.707557
+
+✖ failing tests:
+
+test at scripts/m5-015/operator.test.mjs:507:1
+✖ failed disposal of an oversized body quarantines the outbound attempt (16.156313ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  null !== 0
+
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/scripts/m5-015/operator.test.mjs:509:242)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

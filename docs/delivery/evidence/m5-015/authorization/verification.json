@@ -1,0 +1,15 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 44,
+  "base": "55060c5a48617a27858d10fb0db639c7e9efe148",
+  "head": "02e45926529fed9659e1c3dca81dec5f5ebe3174",
+  "tree": "8c906e854b9cadcb8e9eda2740a0098067a71ad0",
+  "correction_parent": "f016e39cf6b54cd2b7e7860a5681c4bb867a6e51",
+  "principal_verdict": "APPROVED",
+  "final_head_workflows": 10,
+  "all_final_head_workflows_success": true,
+  "all_final_head_run_attempts": 1,
+  "native_reviews": 0,
+  "provider_operations_in_pr44": 0,
+  "next_slice": "M5-015_LIVE_AVAILABILITY_V2_QUALIFICATION"
+}

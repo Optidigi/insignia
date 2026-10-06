@@ -1,0 +1,841 @@
+$ M5_PUBLICATION_STRESS_ITERATIONS=25 corepack pnpm --filter @insignia/web exec node --test --test-name-pattern="publication (success|failed) preserves" test/admin/editor-browser.test.mjs
+✔ publication success preserves dirty local edits and exact save recovery [1/25] (1539.645768ms)
+✔ publication failed preserves dirty local edits and exact save recovery [1/25] (1123.854738ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [1/25] (1205.116578ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [1/25] (1243.770345ms)
+✔ publication success preserves dirty local edits and exact save recovery [2/25] (1139.306612ms)
+✔ publication failed preserves dirty local edits and exact save recovery [2/25] (1454.114105ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [2/25] (1077.644509ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [2/25] (1084.208257ms)
+✔ publication success preserves dirty local edits and exact save recovery [3/25] (1159.717346ms)
+✔ publication failed preserves dirty local edits and exact save recovery [3/25] (976.17378ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [3/25] (1114.370007ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [3/25] (1065.659207ms)
+✔ publication success preserves dirty local edits and exact save recovery [4/25] (971.059956ms)
+✖ publication failed preserves dirty local edits and exact save recovery [4/25] (58.557973ms)
+✖ publication success preserves ambiguous local edits and exact save recovery [4/25] (61.605417ms)
+✖ publication failed preserves ambiguous local edits and exact save recovery [4/25] (57.363431ms)
+✖ publication success preserves dirty local edits and exact save recovery [5/25] (60.61581ms)
+✖ publication failed preserves dirty local edits and exact save recovery [5/25] (108.441775ms)
+✖ publication success preserves ambiguous local edits and exact save recovery [5/25] (57.338925ms)
+✖ publication failed preserves ambiguous local edits and exact save recovery [5/25] (57.986832ms)
+✖ publication success preserves dirty local edits and exact save recovery [6/25] (59.649411ms)
+✖ publication failed preserves dirty local edits and exact save recovery [6/25] (66.045819ms)
+✖ publication success preserves ambiguous local edits and exact save recovery [6/25] (61.53943ms)
+✖ publication failed preserves ambiguous local edits and exact save recovery [6/25] (57.905218ms)
+✖ publication success preserves dirty local edits and exact save recovery [7/25] (57.953704ms)
+✖ publication failed preserves dirty local edits and exact save recovery [7/25] (67.625234ms)
+✖ publication success preserves ambiguous local edits and exact save recovery [7/25] (59.595064ms)
+✖ publication failed preserves ambiguous local edits and exact save recovery [7/25] (62.171476ms)
+✖ publication success preserves dirty local edits and exact save recovery [8/25] (68.803375ms)
+✖ publication failed preserves dirty local edits and exact save recovery [8/25] (58.285764ms)
+✖ publication success preserves ambiguous local edits and exact save recovery [8/25] (58.577021ms)
+✖ publication failed preserves ambiguous local edits and exact save recovery [8/25] (108.122194ms)
+✖ publication success preserves dirty local edits and exact save recovery [9/25] (57.791681ms)
+✖ publication failed preserves dirty local edits and exact save recovery [9/25] (109.6962ms)
+✖ publication success preserves ambiguous local edits and exact save recovery [9/25] (114.635539ms)
+✖ publication failed preserves ambiguous local edits and exact save recovery [9/25] (62.559532ms)
+✖ publication success preserves dirty local edits and exact save recovery [10/25] (59.815375ms)
+✖ publication failed preserves dirty local edits and exact save recovery [10/25] (57.711763ms)
+✖ publication success preserves ambiguous local edits and exact save recovery [10/25] (117.705733ms)
+✖ publication failed preserves ambiguous local edits and exact save recovery [10/25] (160.326115ms)
+✖ publication success preserves dirty local edits and exact save recovery [11/25] (161.690523ms)
+✔ publication failed preserves dirty local edits and exact save recovery [11/25] (987.025249ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [11/25] (1119.374839ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [11/25] (1064.178909ms)
+✔ publication success preserves dirty local edits and exact save recovery [12/25] (1054.396834ms)
+✔ publication failed preserves dirty local edits and exact save recovery [12/25] (1162.530876ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [12/25] (1201.649445ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [12/25] (1181.765462ms)
+✔ publication success preserves dirty local edits and exact save recovery [13/25] (1093.582216ms)
+✔ publication failed preserves dirty local edits and exact save recovery [13/25] (1001.000932ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [13/25] (1301.929822ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [13/25] (1188.298714ms)
+✔ publication success preserves dirty local edits and exact save recovery [14/25] (941.178766ms)
+✔ publication failed preserves dirty local edits and exact save recovery [14/25] (851.351971ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [14/25] (991.662563ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [14/25] (1064.474245ms)
+✔ publication success preserves dirty local edits and exact save recovery [15/25] (907.649105ms)
+✔ publication failed preserves dirty local edits and exact save recovery [15/25] (1027.623337ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [15/25] (950.103705ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [15/25] (1028.12965ms)
+✔ publication success preserves dirty local edits and exact save recovery [16/25] (869.091015ms)
+✔ publication failed preserves dirty local edits and exact save recovery [16/25] (883.044125ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [16/25] (1014.425987ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [16/25] (966.195369ms)
+✔ publication success preserves dirty local edits and exact save recovery [17/25] (855.206903ms)
+✔ publication failed preserves dirty local edits and exact save recovery [17/25] (838.057522ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [17/25] (1004.285235ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [17/25] (1042.103309ms)
+✔ publication success preserves dirty local edits and exact save recovery [18/25] (1019.211087ms)
+✔ publication failed preserves dirty local edits and exact save recovery [18/25] (915.171235ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [18/25] (1109.046409ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [18/25] (961.54266ms)
+✔ publication success preserves dirty local edits and exact save recovery [19/25] (862.512169ms)
+✔ publication failed preserves dirty local edits and exact save recovery [19/25] (864.437396ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [19/25] (973.248821ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [19/25] (921.263644ms)
+✔ publication success preserves dirty local edits and exact save recovery [20/25] (918.734949ms)
+✔ publication failed preserves dirty local edits and exact save recovery [20/25] (867.209135ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [20/25] (974.021203ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [20/25] (973.999187ms)
+✔ publication success preserves dirty local edits and exact save recovery [21/25] (1044.519105ms)
+✔ publication failed preserves dirty local edits and exact save recovery [21/25] (995.354141ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [21/25] (1064.032351ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [21/25] (1066.660765ms)
+✔ publication success preserves dirty local edits and exact save recovery [22/25] (950.581316ms)
+✔ publication failed preserves dirty local edits and exact save recovery [22/25] (1192.19006ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [22/25] (1023.557147ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [22/25] (1002.110409ms)
+✔ publication success preserves dirty local edits and exact save recovery [23/25] (928.44923ms)
+✔ publication failed preserves dirty local edits and exact save recovery [23/25] (931.709926ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [23/25] (1011.066291ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [23/25] (992.3191ms)
+✔ publication success preserves dirty local edits and exact save recovery [24/25] (901.785671ms)
+✔ publication failed preserves dirty local edits and exact save recovery [24/25] (897.067687ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [24/25] (1037.062587ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [24/25] (996.263689ms)
+✔ publication success preserves dirty local edits and exact save recovery [25/25] (922.126304ms)
+✔ publication failed preserves dirty local edits and exact save recovery [25/25] (974.381262ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [25/25] (955.428579ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [25/25] (997.565421ms)
+ℹ tests 100
+ℹ suites 0
+ℹ pass 72
+ℹ fail 28
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 77275.705641
+
+✖ failing tests:
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves dirty local edits and exact save recovery [4/25] (58.557973ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves ambiguous local edits and exact save recovery [4/25] (61.605417ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves ambiguous local edits and exact save recovery [4/25] (57.363431ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves dirty local edits and exact save recovery [5/25] (60.61581ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves dirty local edits and exact save recovery [5/25] (108.441775ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves ambiguous local edits and exact save recovery [5/25] (57.338925ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves ambiguous local edits and exact save recovery [5/25] (57.986832ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves dirty local edits and exact save recovery [6/25] (59.649411ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves dirty local edits and exact save recovery [6/25] (66.045819ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves ambiguous local edits and exact save recovery [6/25] (61.53943ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves ambiguous local edits and exact save recovery [6/25] (57.905218ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves dirty local edits and exact save recovery [7/25] (57.953704ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves dirty local edits and exact save recovery [7/25] (67.625234ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves ambiguous local edits and exact save recovery [7/25] (59.595064ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves ambiguous local edits and exact save recovery [7/25] (62.171476ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves dirty local edits and exact save recovery [8/25] (68.803375ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves dirty local edits and exact save recovery [8/25] (58.285764ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves ambiguous local edits and exact save recovery [8/25] (58.577021ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves ambiguous local edits and exact save recovery [8/25] (108.122194ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves dirty local edits and exact save recovery [9/25] (57.791681ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves dirty local edits and exact save recovery [9/25] (109.6962ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves ambiguous local edits and exact save recovery [9/25] (114.635539ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves ambiguous local edits and exact save recovery [9/25] (62.559532ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves dirty local edits and exact save recovery [10/25] (59.815375ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves dirty local edits and exact save recovery [10/25] (57.711763ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves ambiguous local edits and exact save recovery [10/25] (117.705733ms)
+  Error: Web server did not start: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication failed preserves ambiguous local edits and exact save recovery [10/25] (160.326115ms)
+  Error: Web server did not start: node:internal/url:895
+        href = bindingUrl.parse(input, base, true);
+                          ^
+
+  TypeError: Invalid URL
+      at new URL (node:internal/url:895:25)
+      at deserializeManifest (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs:45:12)
+      at file:///home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs:3034:17
+      at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+      at async node:internal/modules/esm/loader:647:26
+      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+    code: 'ERR_INVALID_URL',
+    input: 'undefined'
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at test/admin/editor-browser.test.mjs:1074:7
+✖ publication success preserves dirty local edits and exact save recovery [11/25] (161.690523ms)
+  Error: Web server did not start: node:internal/url:895
+        href = bindingUrl.parse(input, base, true);
+                          ^
+
+  TypeError: Invalid URL
+      at new URL (node:internal/url:895:25)
+      at deserializeManifest (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs:45:12)
+      at file:///home/serveradmin/insignia-m5-015-worktree/apps/web/dist/server/entry.mjs:3034:17
+      at ModuleJob.run (node:internal/modules/esm/module_job:561:25)
+      at async node:internal/modules/esm/loader:647:26
+      at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {
+    code: 'ERR_INVALID_URL',
+    input: 'undefined'
+  }
+
+  Node.js v24.21.0
+
+      at startServer (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:135:9)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-015-worktree/apps/web/test/admin/editor-browser.test.mjs:1079:24)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-015-
+  │ worktree/apps/web
+
+[ELIFECYCLE] Command failed with exit code 1.
