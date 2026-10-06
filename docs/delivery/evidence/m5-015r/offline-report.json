@@ -1,0 +1,92 @@
+{
+  "source": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+  "tree": "120d331e00cb95d56bc4712947a61f06683a2640",
+  "checks": [
+    {
+      "command": "pnpm --filter @insignia/shopify exec vitest run test/availability-hold.test.ts test/availability-hold-v2.test.ts",
+      "exitCode": 0,
+      "result": "170 passed",
+      "log": "/home/serveradmin/insignia-m5-015r-handoff/adapter.log",
+      "sha256": "ce64ad6a9107fd1faa862e54f2b89c1ec9744d0047a584d4e9f021cf0352dee8"
+    },
+    {
+      "command": "pnpm --filter @insignia/application exec vitest run src/publication/availability-recovery.test.ts src/publication/availability-v2-recovery.test.ts",
+      "exitCode": 0,
+      "result": "20 passed",
+      "log": "/home/serveradmin/insignia-m5-015r-handoff/recovery.log",
+      "sha256": "4915bedf916a1406929dc22d0cdff09468ff8126415e078e960b7417cac9ed18"
+    },
+    {
+      "command": "pnpm check:style",
+      "exitCode": 0,
+      "result": "exit0",
+      "log": "/home/serveradmin/insignia-m5-015r-handoff/style-final.log",
+      "sha256": "f5ce898669f5bbe63d2a9ff7b17ff19eefd28b9a3f292d055d702468abf78368"
+    },
+    {
+      "command": "pnpm test:m5-stress",
+      "exitCode": 0,
+      "result": "100 passed",
+      "log": "/home/serveradmin/insignia-m5-015r-handoff/stress.log",
+      "sha256": "bdd1c5fff872a0d780b7cda4b6cedaac4f0a60399f6508a5fb0139ee56f03b0f"
+    },
+    {
+      "command": "pnpm test:m5-renderer-control",
+      "exitCode": 0,
+      "result": "expected inner failure / outer exit0",
+      "log": "/home/serveradmin/insignia-m5-015r-handoff/renderer-control.log",
+      "sha256": "7a08d51c8422b88d988ccddb2a6a8f05754ea99100ab4bca9ac244536d7f6d53"
+    },
+    {
+      "command": "node --test scripts/m5-015r/guard.test.mjs",
+      "exitCode": 0,
+      "result": "4 passed: omitted, typo, imports0 and private-native loopback8",
+      "log": "/home/serveradmin/insignia-m5-015r-handoff/guard-final-proof.log",
+      "sha256": "5de04910bf593460c82b5c04d1d03b0be78e17a5c31fc62b8ca596119c47fbcc"
+    },
+    {
+      "command": "node --test scripts/m5-015r/*.test.mjs",
+      "exitCode": 0,
+      "result": "36 passed",
+      "log": "/home/serveradmin/insignia-m5-015r-handoff/focused-corrected.log",
+      "sha256": "2e5b255fa99fb2cb7bbd44c5e89c2d5d0abd2f07439feaae2b6c05318a8b5d1e"
+    },
+    {
+      "command": "pnpm check",
+      "exitCode": 0,
+      "result": "complete current-source full root exit0",
+      "log": "/home/serveradmin/insignia-m5-015r-handoff/root-check-r2.log",
+      "sha256": "480110b1317d77ce953cc0b0110ae890e174079e64e60659bdfe31c4d197f30d"
+    },
+    {
+      "command": "node --test --test-name-pattern='zero-effective PARTIAL branch|lost archive ACK permits' scripts/m5-015r/operator.test.mjs",
+      "exitCode": 0,
+      "result": "2 focused regressions passed",
+      "log": "/home/serveradmin/insignia-m5-015r-handoff/cleanup-green.log",
+      "sha256": "7fba4b56153093b6af444d448d51af9308d044b44c0c551b6dffacae445a1415"
+    }
+  ],
+  "history": {
+    "historicalCanonicalFilesUnchanged": 39,
+    "historicalM515SourceAndEvidenceUnchanged": true,
+    "productionPackagesSqlUnchanged": true,
+    "historicalM515CanonicalExists": false,
+    "freshCanonicalInitialized": false
+  },
+  "guardProofExternalShopifyRequests": 0,
+  "protectedShopifyCredentialAccess": "NOT_RUN",
+  "liveRegisterInitialized": false,
+  "localPostgreSQL": "UNAVAILABLE: DATABASE_URL absent; exact source PostgreSQL18 CI required",
+  "guardRed": {
+    "command": "node --test scripts/m5-015r/guard.test.mjs",
+    "exitCode": 1,
+    "transport": "loopback only; no Shopify",
+    "sha256": "6e97270525888d9bf278d13454a11fe00630c41c6c2d63cfb5c90dec1f8942a7"
+  },
+  "cleanupRed": {
+    "exitCode": 1,
+    "transport": "memory only",
+    "sha256": "45204f0bbe82c561fff7195b6e9d74dd994b6d909eea5424d4d334d4f87b3e4e"
+  },
+  "priorFindings": "both cleanup findings corrected; entirely fresh exact-source reviews/CI required"
+}

@@ -1,0 +1,61 @@
+{
+  "outcome": "STOPPED",
+  "stop": "provider_shape",
+  "cleanupRaw": "UNSETTLED_CLEANUP",
+  "cleanupMutation": "NOT_DISPATCHED: production v2 cleanup prestate rejected",
+  "fixture": {
+    "__typename": "Product",
+    "id": "gid://shopify/Product/10495813091611",
+    "handle": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+    "title": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+    "tags": [
+      "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f"
+    ],
+    "createdAt": "2026-10-06T21:27:53Z",
+    "status": "ACTIVE",
+    "updatedAt": "2026-10-06T21:27:59Z"
+  },
+  "fixtureFinalArchiveVerified": false,
+  "fixtureLastVerifiedStatus": "ACTIVE",
+  "source": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+  "tree": "120d331e00cb95d56bc4712947a61f06683a2640",
+  "modulesUnchanged": 3166,
+  "counts": {
+    "auth": 1,
+    "graphql": 9,
+    "create": 1,
+    "directUpdate": 1,
+    "adapterMutation": 0
+  },
+  "highLevelCalls": {
+    "acquire": 0,
+    "observe": 0,
+    "restore": 0,
+    "setup": 1,
+    "cleanup": 0,
+    "recovery": 0
+  },
+  "transport": {
+    "invocations": 10,
+    "mismatch": false,
+    "reserved": 10,
+    "dispatched": 10,
+    "matches": true
+  },
+  "events": 10,
+  "allHttpStatus200": true,
+  "unknownMutations": 0,
+  "acquireObserveRestore": "NOT_RUN",
+  "liveFreshResume": "NOT_RUN",
+  "holdIntentAndReturnedHold": "NOT_RUN",
+  "files": {
+    "binding.json": "e55a6f1f57430878de86c3245ee2da7a9e8ad91428a3018dea68f0f7d83f0cc0",
+    "gate.json": "91b779690efad7869b7f12e8fc3d6c4189fdc68cc94d1b95ccbe4464020469ff",
+    "initialized.once": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "qualification.json": "fbdb621c1a66113ed901e4aa11fe2ac2893ed597001a6ca4889e661e9ededef6",
+    "register.json": "1021128558f8ee76042cb9a9d58a342fc05ab725b115db0369927c686896579e"
+  },
+  "principalReviewRequired": true,
+  "authorityForFurtherLiveOperation": false,
+  "closedAt": "2026-10-06T21:30:48.157Z"
+}

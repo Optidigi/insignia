@@ -1,0 +1,150 @@
+{
+  "base": "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+  "source": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+  "tree": "120d331e00cb95d56bc4712947a61f06683a2640",
+  "bindingDigest": "4c9b42df4d0663bfa6c74a09f4f0b10a753ad0066d515bb448c84d224d90d76f",
+  "offline": {
+    "source": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+    "bindingDigest": "4c9b42df4d0663bfa6c74a09f4f0b10a753ad0066d515bb448c84d224d90d76f",
+    "exitCode": 0,
+    "report": {
+      "path": "/home/serveradmin/insignia-m5-015r-handoff/offline-report.json",
+      "sha256": "668093ba4dc9e03db0909044ee3fc474719a0e2f9c9f6edb12e1a97365dafc11"
+    }
+  },
+  "reviews": [
+    {
+      "role": "spec",
+      "base": "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+      "head": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "bindingDigest": "4c9b42df4d0663bfa6c74a09f4f0b10a753ad0066d515bb448c84d224d90d76f",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "thread": "01a11316-1fc3-7692-96ac-1c11431a0010",
+      "verdict": "no unresolved material finding",
+      "report": {
+        "path": "/home/serveradmin/insignia-m5-015r-handoff/review-spec-r2.md",
+        "sha256": "9c9acfe250f82a591e6589d7709513fe74e5643b36081951adae4cf74b7e57b7"
+      },
+      "settings": {
+        "path": "/home/serveradmin/insignia-m5-015r-handoff/review-spec-r2-settings.json",
+        "sha256": "8c48eea46840db396b7853d56bc13c624b9e1556feb1ec03349e103a7ef08801"
+      }
+    },
+    {
+      "role": "security",
+      "base": "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+      "head": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "bindingDigest": "4c9b42df4d0663bfa6c74a09f4f0b10a753ad0066d515bb448c84d224d90d76f",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "thread": "01a11316-2004-7622-8d05-ca04fab3ad7b",
+      "verdict": "no unresolved material finding",
+      "report": {
+        "path": "/home/serveradmin/insignia-m5-015r-handoff/review-security-r2.md",
+        "sha256": "8c2bc758f10342fde3cf66cfc116c5ed4288e48ceacc61f8d0454277a0aabca6"
+      },
+      "settings": {
+        "path": "/home/serveradmin/insignia-m5-015r-handoff/review-security-r2-settings.json",
+        "sha256": "ba4002846f6b4f037bf6a6afd78b3fd620e954ea5211b5711056dc9b1a86e98d"
+      }
+    }
+  ],
+  "ci": [
+    {
+      "workflowName": "M0-011 local provider adapter boundary",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073274,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073274"
+    },
+    {
+      "workflowName": "M0-008 local publication and architecture checks",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073352,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073352"
+    },
+    {
+      "workflowName": "M0-012 real contract local prototype",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073396,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073396"
+    },
+    {
+      "workflowName": "M0-010 local hybrid billing proof",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073398,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073398"
+    },
+    {
+      "workflowName": "M0-009 embedded Astro local proof",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073385,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073385"
+    },
+    {
+      "workflowName": "M3-002 local runtime and ingress",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073382,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073382"
+    },
+    {
+      "workflowName": "M3-001 PostgreSQL durable core",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073418,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073418"
+    },
+    {
+      "workflowName": "M0-014 local public-app candidate",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073375,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073375"
+    },
+    {
+      "workflowName": "M0-013 off-store protocol capacity",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073378,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073378"
+    },
+    {
+      "workflowName": "M1-001 foundation and boundaries",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073321,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073321"
+    }
+  ],
+  "frozenAt": "2026-10-06T21:27:38.412Z",
+  "canonicalAbsentAtFreeze": true,
+  "protectedShopifyCredentialAccessBeforeFreeze": false
+}

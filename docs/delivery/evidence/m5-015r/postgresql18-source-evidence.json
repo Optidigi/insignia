@@ -1,0 +1,35 @@
+{
+  "source": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+  "actualServer": "PostgreSQL 18.6",
+  "databaseTests": 161,
+  "workflows": [
+    {
+      "workflowName": "M3-002 local runtime and ingress",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073382,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073382"
+    },
+    {
+      "workflowName": "M3-001 PostgreSQL durable core",
+      "headSha": "c7ff662b01c20aea2b60c677a47b093a1c48b9f0",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "databaseId": 37533073418,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37533073418"
+    }
+  ],
+  "rawLogs": [
+    {
+      "path": "/home/serveradmin/insignia-m5-015r-handoff/source-r2-m3-001-ci.log",
+      "sha256": "5fc261969f8851a74805c64ea8bb900662631ea5f14c1026564dab8fc4e2f7df"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-015r-handoff/source-r2-m3-002-ci.log",
+      "sha256": "5f1f3ed2547c2ca90d25d9db30dd2c84c15acf8c43ac84576a2328fbb2417f4d"
+    }
+  ]
+}

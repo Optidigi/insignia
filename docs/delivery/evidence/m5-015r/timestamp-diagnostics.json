@@ -1,0 +1,18 @@
+{
+  "directStatusDiagnostics": [
+    {
+      "operation": "create",
+      "ackUpdatedAt": "2026-10-06T21:27:54Z",
+      "ownershipUpdatedAt": "2026-10-06T21:27:54Z",
+      "deltaMilliseconds": 1000
+    },
+    {
+      "operation": "setup",
+      "ackUpdatedAt": "2026-10-06T21:27:58Z",
+      "ownershipUpdatedAt": "2026-10-06T21:27:59Z",
+      "deltaMilliseconds": 1000
+    }
+  ],
+  "acquireRestoreDiagnostics": "NOT_RUN",
+  "timestampToleranceIntroduced": false
+}

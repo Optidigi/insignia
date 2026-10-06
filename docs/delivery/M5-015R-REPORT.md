@@ -1,21 +1,57 @@
-# M5-015R — fresh Availability Hold v2 qualification
+# M5-015R — STOPPED, fixture remains ACTIVE
 
-Pre-credential state: OFFLINE_GATE_IN_PROGRESS. No canonical live directory, protected credential access or Shopify request has occurred in this fresh slice.
+The one fresh live attempt stopped at `provider_shape` on the production v2 ACTIVE snapshot. The independent production v2 cleanup-prestate snapshot failed the same way. **No archive mutation was dispatched. Fresh fixture `gid://shopify/Product/10495813091611` is last verified ACTIVE and remains unarchived.** No further provider, credential, resume or cleanup operation is authorized in this closed run.
 
-PR45 merged normally at `6a186bea8e5d1c01a66f7ab683c06393fe81e991`; its ordered parents/tree match external approval. The supplied package is retained under [authority evidence](evidence/m5-015r/README.md). M5-015 remains permanently STOPPED with all source and raw records unchanged. Its six reconstructed incident reads do not consume fresh M5-015R budgets.
+Marker: `insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f`.
 
-The new experiment-local harness installs an immutable global fetch denial before adapter construction. Native fetch is private to the guard module and can dispatch only through the operator after a fsynced event/reservation, exact durable-memory ledger comparison and ordinal/count checks. The production v2 factory receives only `fetchImpl: op.fetch`. Start and resume preserve this guard. Tests use only in-memory responses or loopback mocks. Production packages and SQL are unchanged.
+The outcome is **STOPPED**, not PASS or PARTIAL. The raw harness cleanup label is `UNSETTLED_CLEANUP`: this means cleanup could not be qualified, not an unknown archive write. Both actual mutations (create and ACTIVE setup) have settled acknowledgements. There are no pending requests or unknown mutation settlements.
 
-The omission/typo tracer failed before implementation through the loopback mock (no Shopify request), then passed as `network_escape_denied` with zero captured transport calls. Full qualification, full-source independent reviews, exact-head CI and source/build freeze remain required before initializing the canonical run. This report is not live PASS evidence.
+## Exact observed rejection
 
-Fresh attempt ceilings: auth2, Admin GraphQL96, create1, direct status3, adapter status2; all other mutations0. The frozen operator denies retries, historical fixture targets, arbitrary documents, parallel dispatch and unresolved write cleanup. Any accounting/guard mismatch stops transport and further mutation. Product schedules remain unqualified. Core live PASS additionally requires real ACTIVE effective membership and the complete acquire/observe/restore semantic membership transition with final ARCHIVED/effective-unpublished state.
+The valid DRAFT v2 snapshot had empty configured intent, empty effective membership, no schedule and held-safe visibility. `FUTURE_CAPABILITY_NOT_OBSERVED` refers to included Publications in that valid DRAFT snapshot; an ambient future-capable Publication that did not include the product is not coverage.
 
-Final evidence, completed-change reviews and CI will be integrated only after the run closes. No successor merge, publication mutation, production activation, RELEASE_BOUND/G7, M6/M7 or launch.
+Both saved ACTIVE responses report legacy `resourcePublications` membership `gid://shopify/Publication/339456917787`, `isPublished=true`, `publishDate=2026-10-06T21:27:58Z`. The complete enumerated `publications` connection contains only `339456885019`, `339456950555` and `339456983323`; their filtered `includedProducts` connections are empty. The effective Publication is absent from that enumeration. All saved connections have `hasNextPage=false` and `hasPreviousPage=false`.
 
-Local pre-credential checks completed: focused34/34; v1/v2 adapters170/170; recovery20/20; full `pnpm check` exit0 (Rust/Wasm, root units, operator/history/protocol/boundaries/secrets and browser checks); final style exit0; publication stress100/100; renderer control expected inner rejection with outer exit0. The final resume gate-binding assertion was added during root checks, then all focused tests and style passed again; exact-source CI will rerun the full regression before credentials. Local PostgreSQL is unavailable without DATABASE_URL; PostgreSQL18 CI is still pending. Raw logs and hashes are indexed in [log provenance](evidence/m5-015r/offline-log-provenance.json). All39 historical canonical files and historical M5-015 source/evidence are unchanged; both old and fresh live directories remain absent.
+The unchanged application [v2 validator](../../packages/application/src/publication/availability-v2.ts) requires effective IDs and publication evidence to be contained in configured-intent IDs. The unchanged production [v2 read](../../packages/shopify/src/availability-hold-v2.ts) therefore rejects this assembled snapshot as `provider_shape`. [Exact saved-field observations](evidence/m5-015r/publication-coverage-observations.json) and a [memory-only replay](evidence/m5-015r/saved-active-replay.json) reproduce the failure through the production factory with zero external requests.
 
-The draft integrated PR is awaiting two fresh full-source read-only reviews and all ten exact-source attempt1 workflows. No live authority has opened. The final source/build/gate binding will be retained outside the canonical directory until every gate condition is verified.
+This does not establish why the Publication is missing, or its configured intent. No extra publication lookup, broader listing, reinterpretation, invariant weakening or production correction was performed. A complete enumerated connection did not provide the configured-intent authority needed for the observed effective membership.
 
-The first full-source Spec review found two cleanup defects; [findings and red/green responses](evidence/m5-015r/review-findings-responses.md). Lost archive ACK now remains UNKNOWN/STOPPED and permits only one exact ownership/status classification read, with no final snapshot or resend. Current source is undergoing full regression and fresh reviews/CI again. The first head's reviews/checks remain historical; they cannot open the corrected source's gate.
+## Closed lifecycle and accounting
 
-Corrected source qualification: focused36/36 and a complete second `pnpm check` exit0, including applicable style/build/unit/operator/boundary/secret/Rust/Wasm/browser/history checks. Production/UI sources remain unchanged; the prior100/100 stress and expected renderer control remain applicable. The first source head naturally completed all ten attempt1 workflows, but its Spec findings keep that head ineligible. Corrected source now requires two fresh complete reviews and its own ten passing exact-head workflows before the canonical run may be initialized.
+| Stage | Result |
+|---|---|
+| Exact app/shop/installation/development/current minimum grants | PASS; additional valid `read_product_listings` recorded |
+| One fresh DRAFT create / ownership | ACKNOWLEDGED / exact |
+| Production DRAFT v2 snapshot | Valid, held-safe, no schedule |
+| One direct DRAFT → ACTIVE setup / ownership | ACKNOWLEDGED / exact ACTIVE |
+| Production ACTIVE v2 snapshot | `provider_shape`; no validated ACTIVE v2 snapshot returned |
+| Hold intent / acquire / returned hold | NOT_RUN |
+| Fresh live resume / observe / restore | NOT_RUN |
+| Independent cleanup-prestate snapshot | `provider_shape` |
+| Archive mutation / final ARCHIVED v2 snapshot | NOT_RUN; fixture remains last verified ACTIVE |
+
+All **10 actual outbound attempts** have matching durable events/transport ordinals and PID: auth1 + GraphQL9, create1, direct status1, adapter status0. All responses were HTTP200 and passed the operator's data/error envelope checks; production semantic validation rejected ACTIVE. Native dispatch/reservation counts are both10 with no mismatch; no retries occurred. All other mutation categories are0. [Exact raw register](evidence/m5-015r/run/register.json), [qualification output](evidence/m5-015r/run/qualification.json) and [closure](evidence/m5-015r/closure.json).
+
+Create ACK `updatedAt=2026-10-06T21:27:54Z`, next owned read `21:27:55Z`; ACTIVE setup ACK `21:27:58Z`, next owned read `21:27:59Z`. Both diagnostic deltas are exactly+1000ms. No timestamp tolerance/CAS change was introduced. Acquire/restore ACK diagnostics are NOT_RUN. [Diagnostics](evidence/m5-015r/timestamp-diagnostics.json).
+
+## Gate before credentials
+
+PR45 was normally merged as `6a186bea8e5d1c01a66f7ab683c06393fe81e991`; ordered parents/tree and remote main matched external approval. [Receipt](evidence/m5-015r/pr45-merge-receipt.json). M5-015 remains permanently STOPPED with historical source/raw records unchanged; its six reconstructed incident reads do not consume fresh M5-015R budgets.
+
+Live source was frozen at `c7ff662b01c20aea2b60c677a47b093a1c48b9f0`, tree `120d331e00cb95d56bc4712947a61f06683a2640`, with3,166 source/build hashes. The canonical live directory was absent until the entire gate verified. Two fresh actual GPT-6.1-sol/high read-only/never full-source reviews found no unresolved material findings, and all ten exact-source attempt1 workflows passed before credential access. [Freeze receipt](evidence/m5-015r/preinitialize-receipt.json), [exact binding](evidence/m5-015r/run/binding.json), [gate](evidence/m5-015r/run/gate.json), [source CI](evidence/m5-015r/source-r2-ci.json).
+
+The process privately captures native fetch, makes global fetch immutable/fail-closed as `network_escape_denied`, and gives production v2 only `fetchImpl: op.fetch`. Durable reservation, ledger equality, counter and PID checks precede dispatch. Omitted/typo transport tests deny locally with native0; correct private-native auth/create/status/snapshot proof uses eight loopback requests; imports make zero calls. Both separate synthetic start/resume processes install the guard before their credential loader. This is fetch escape control, not OS network isolation. [Red](evidence/m5-015r/guard-red.log), [green](evidence/m5-015r/guard-green.log), [full proof](evidence/m5-015r/guard-final-proof.log).
+
+Local qualification passed: focused36, v1/v2 adapters170, recovery20, two complete root regressions, publication stress100/100, expected renderer negative control. Applicable source CI ran PostgreSQL18.6 with161 database tests in each PostgreSQL workflow, runtime/integration/migration and actual-plan coverage. Local PostgreSQL remained unavailable without DATABASE_URL, not passed. [Offline report](evidence/m5-015r/offline-report.json), [raw/copy provenance](evidence/m5-015r/offline-log-provenance.json), [PostgreSQL evidence](evidence/m5-015r/postgresql18-source-evidence.json).
+
+The first Spec review found two cleanup defects, reproduced red and corrected before credentials: lost archive ACK must remain UNKNOWN/STOPPED and permits at most one ownership/status classification read. Both fresh full-source reviews were repeated on corrected source. [Findings/responses](evidence/m5-015r/review-findings-responses.md), [Spec](evidence/m5-015r/review-spec-r2.md), [Standards/security](evidence/m5-015r/review-security-r2.md).
+
+All3,166 bound source/build files were unchanged at run closure. Canonical raw bytes are copied exactly and hashed; files are owner-read-only inside the private directory, not claimed filesystem-immutable. All39 historical canonical hashes and historical M5-015 source/evidence remain unchanged. No historical fixture was touched.
+
+## Principal boundary
+
+PR46 integrates this truthful STOPPED evidence. Fresh completed-change reviews and final-head CI must be supplied in its external review packet, without creating a self-referential commit. No successor merge.
+
+The principal must adjudicate the unarchived ACTIVE fixture and the Publication coverage gap. A future authorized cleanup should qualify a separate fixed status-only disposable-fixture cleanup path; the closed/frozen M5-015R run cannot be reopened or bypassed. A future read-only investigation may qualify exact omitted-Publication resolution and configured-intent authority before any production correction. These are proposals, not new execution authority.
+
+Core ACTIVE → DRAFT → ACTIVE membership semantics, fresh-process live recovery, restoration, final archive, live future-capable included intent and scheduled behavior are NOT_PROVEN. No production activation, RELEASE_BOUND/G7, M6/M7, full gate acceptance or launch is claimed. No publication mutation, deletion, app scope/version, inventory/variant/price/media, billing/cart/order operation occurred.
