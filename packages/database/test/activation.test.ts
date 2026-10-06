@@ -670,13 +670,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       throw new Error('expected v2 held evidence');
     const nestedScope = { ...base.hold.before.scope, shopId: other.identity.shopId };
     const before = { ...base.hold.before, scope: nestedScope };
-    const held = { ...base.hold.held, scope: nestedScope };
-    const nestedHold = { ...base.hold, operationId: other.identity.operationId, before, held };
+    const nestedHeld = { ...base.hold.held, scope: nestedScope };
+    const nestedHold = { ...base.hold, operationId: other.identity.operationId, before, held: nestedHeld };
     const nestedEvidence = {
       ...evidence,
       admissionClass: 'FIRST_PUBLICATION',
       hold: nestedHold,
-      holdObservation: held,
+      holdObservation: nestedHeld,
     };
     for (const mixed of [
       { ...nestedEvidence, hold: { ...nestedHold, version: 'm5-availability-hold-v1' } },
@@ -684,8 +684,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         ...nestedEvidence,
         hold: { ...nestedHold, before: { ...before, version: 'm5-product-availability-snapshot-v1' } },
       },
-      { ...nestedEvidence, holdObservation: { ...held, version: 'm5-product-availability-snapshot-v1' } },
-      { ...nestedEvidence, holdObservation: { ...held, intentDigest: '0'.repeat(64) } },
+      { ...nestedEvidence, holdObservation: { ...nestedHeld, version: 'm5-product-availability-snapshot-v1' } },
+      { ...nestedEvidence, holdObservation: { ...nestedHeld, intentDigest: '0'.repeat(64) } },
     ])
       await expect(insert(mixed)).rejects.toThrow('m5_014_evidence_v2_hold');
     const v1 = { ...evidence, version: 'm5-activation-evidence-v1', decisionVersion: 1 };

@@ -118,45 +118,6 @@ ALTER TABLE m5_availability_resolutions ADD CONSTRAINT m5_014_resolution_version
     AND (resolution#>'{reviewedObservation,configuredIntent}') IS NOT DISTINCT FROM (resolution#>'{observed,configuredIntent}')
     AND (resolution#>>'{reviewedObservation,effectiveDigest}') IS NOT DISTINCT FROM (resolution#>>'{observed,effectiveDigest}')),false));
 
--- V2 evidence cannot borrow historical v1 hold/snapshot meanings. V1 rows bypass
--- this additive constraint and retain their original constraints unchanged.
-ALTER TABLE m5_activation_evidence ADD CONSTRAINT m5_014_evidence_v2_hold CHECK (
- evidence->>'version'<>'m5-activation-evidence-v2' OR COALESCE((
-  (evidence->>'admissionClass'='SAME_MODE' AND evidence->'hold'='null'::jsonb AND evidence->'holdObservation'='null'::jsonb)
-  OR (evidence->>'admissionClass' IN ('FIRST_PUBLICATION','MODE_CHANGE')
-   AND evidence#>>'{hold,version}'='m5-availability-hold-v2'
-   AND evidence#>>'{hold,operationId}'=operation_id
-   AND evidence#>>'{hold,before,version}'='m5-product-availability-snapshot-v2'
-   AND evidence#>>'{hold,held,version}'='m5-product-availability-snapshot-v2'
-   AND evidence#>>'{holdObservation,version}'='m5-product-availability-snapshot-v2'
-   AND evidence#>>'{hold,before,scope,shopId}'=shop_id
-   AND evidence#>>'{hold,before,scope,installationGeneration}'=installation_generation::text
-   AND evidence#>>'{hold,before,scope,appClientId}'=evidence#>>'{functionObservation,appClientId}'
-   AND evidence#>'{hold,held,scope}'=evidence#>'{hold,before,scope}'
-   AND evidence#>'{holdObservation,scope}'=evidence#>'{hold,before,scope}'
-   AND COALESCE((evidence#>>'{hold,before,productId}') ~ '^gid://shopify/Product/[1-9][0-9]{0,30}$',false)
-   AND evidence#>>'{hold,held,productId}'=evidence#>>'{hold,before,productId}'
-   AND evidence#>>'{holdObservation,productId}'=evidence#>>'{hold,before,productId}'
-   AND evidence#>>'{hold,held,state}'='unavailable'
-   AND evidence#>>'{holdObservation,state}'='unavailable'
-   AND jsonb_typeof(evidence#>'{hold,before,providerUpdatedAt}')='string'
-   AND jsonb_typeof(evidence#>'{hold,held,providerUpdatedAt}')='string'
-   AND jsonb_typeof(evidence#>'{holdObservation,providerUpdatedAt}')='string'
-   AND jsonb_typeof(evidence#>'{hold,before,configuredIntent}')='object'
-   AND evidence#>'{hold,before,configuredIntent,scheduled}'='[]'::jsonb
-   AND evidence#>'{hold,held,configuredIntent}'=evidence#>'{hold,before,configuredIntent}'
-   AND evidence#>'{holdObservation,configuredIntent}'=evidence#>'{hold,before,configuredIntent}'
-   AND COALESCE((evidence#>>'{hold,before,intentDigest}') ~ '^[a-f0-9]{64}$',false)
-   AND evidence#>>'{hold,held,intentDigest}'=evidence#>>'{hold,before,intentDigest}'
-   AND evidence#>>'{holdObservation,intentDigest}'=evidence#>>'{hold,before,intentDigest}'
-   AND COALESCE((evidence#>>'{hold,held,effectiveDigest}') ~ '^[a-f0-9]{64}$',false)
-   AND evidence#>>'{holdObservation,effectiveDigest}'=evidence#>>'{hold,held,effectiveDigest}'
-   AND evidence#>'{hold,held,effectiveVisibility,publishedPublicationIds}'='[]'::jsonb
-   AND evidence#>'{holdObservation,effectiveVisibility,publishedPublicationIds}'='[]'::jsonb
-   AND evidence#>'{hold,held,effectiveVisibility,onlineStore}'='{"publishedAtPresent":false,"urlPresent":false}'::jsonb
-   AND evidence#>'{holdObservation,effectiveVisibility,onlineStore}'='{"publishedAtPresent":false,"urlPresent":false}'::jsonb)
- ),false));
-
 -- V2 acknowledgements and restoration receipts are additive audit evidence. No v1 row is changed.
 ALTER TABLE m5_activation_state ADD CONSTRAINT m5_014_v2_audit CHECK (
  hold IS NULL OR hold->>'version'<>'m5-availability-hold-v2' OR COALESCE((
@@ -192,7 +153,6 @@ END $$;
 CREATE TRIGGER m5_activation_v2_audit_guard BEFORE UPDATE ON m5_activation_state FOR EACH ROW EXECUTE FUNCTION enforce_activation_v2_audit();
 
 -- migrate:down
-ALTER TABLE m5_activation_evidence DROP CONSTRAINT m5_014_evidence_v2_hold;
 DROP TRIGGER m5_activation_v2_audit_guard ON m5_activation_state;
 DROP FUNCTION enforce_activation_v2_audit();
 ALTER TABLE m5_activation_state DROP CONSTRAINT m5_014_v2_audit;
