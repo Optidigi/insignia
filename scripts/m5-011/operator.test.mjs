@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { createShopifyAvailabilityHoldPort } from '../../packages/shopify/dist/index.js';
 import {
   ADAPTER_READ,
   ADAPTER_UPDATE,
@@ -77,7 +78,11 @@ function simulator(options = {}) {
     ...Object.fromEntries(
       PARTITIONS.map((t) => [
         t,
-        connection(t === 'APP' && !(options.v2Disappear && status === 'DRAFT') ? [pub()] : []),
+        connection(
+          t === 'APP' && !(options.v2Disappear && status === 'DRAFT') && !(options.v2Appear && status === 'ACTIVE')
+            ? [pub()]
+            : [],
+        ),
       ]),
     ),
   });
@@ -118,15 +123,45 @@ function simulator(options = {}) {
         },
       });
     if (b.query === ADAPTER_READ) {
+      if (options.adapterFailure === 'http403') return new Response('<h1>Forbidden</h1>', { status: 403 });
+      if (options.adapterFailure === 'graphql')
+        return Response.json({ errors: [{ message: 'synthetic denial', extensions: { code: 'ACCESS_DENIED' } }] });
+      if (options.adapterFailure === 'invalidJSON') return new Response('{', { status: 200 });
+      if (options.adapterFailure === 'missingBody') return new Response(null, { status: 200 });
+      if (options.adapterFailure === 'badScopes')
+        return Response.json({
+          data: {
+            ...identity(),
+            currentAppInstallation: { ...identity().currentAppInstallation, accessScopes: {} },
+            node: product(),
+          },
+        });
+      if (options.adapterFailure === 'badNodes') {
+        const p = product();
+        p.resourcePublications.nodes = {};
+        return Response.json({ data: { ...identity(), node: p } });
+      }
       if (options.readbackFail && status === 'DRAFT') throw new Error('synthetic-network');
-      return Response.json({ data: { ...identity(), node: product() } });
+      const i = identity();
+      if (options.adapterGrantDrift)
+        i.currentAppInstallation.accessScopes = i.currentAppInstallation.accessScopes.filter(
+          (n) => n.handle !== 'read_product_listings',
+        );
+      return Response.json({ data: { ...i, node: product() } });
     }
     if (b.query === ADAPTER_UPDATE || b.query === ARCHIVE) {
       updates++;
+      if (options.userError && b.query === ADAPTER_UPDATE)
+        return Response.json({
+          data: {
+            productUpdate: { product: null, userErrors: [{ field: ['status'], message: 'synthetic rejection' }] },
+          },
+        });
       status = b.variables.product.status;
       version = new Date(Date.parse(version) + 1000).toISOString();
       if (options.ackLoss && status === 'DRAFT') throw new Error('synthetic-network');
       if (options.archiveLoss && status === 'ARCHIVED') throw new Error('synthetic-network');
+      if (options.archiveOutstanding && status === 'ARCHIVED') return new Promise(() => {});
       return Response.json({ data: { productUpdate: { product: product(), userErrors: [] } } });
     }
     throw new Error('Unexpected external request');
@@ -165,6 +200,7 @@ for (const [name, options] of [
   ['missing read scope', { missingGrant: 'read_products' }],
   ['initial DRAFT drift', { prestatus: 'DRAFT' }],
   ['cross-partition version drift', { partitionDrift: true }],
+  ['observed required grant loss in adapter read', { adapterGrantDrift: true }],
 ])
   test(`${name} stops before any status mutation`, async () => {
     const s = simulator(options),
@@ -199,6 +235,78 @@ test('ambiguous archive has exactly one bounded final observation and no resend'
   assert.equal(s.updates(), 2);
   assert.equal(result.cleanup?.outcome, 'UNKNOWN_WRITE_OBSERVED_ARCHIVED');
   assert.equal(s.calls.at(-1).query, PROJECTION);
+});
+
+test('newly appearing DRAFT V2 membership is not described as retained from ACTIVE', async () => {
+  const result = await runSynthetic(simulator({ v2Appear: true }));
+  assert.equal(result.classification, 'DIFFERENT_PLATFORM_BEHAVIOR');
+  assert.equal(result.adjudication.v2Retained, false);
+});
+for (const [options, expected] of [
+  [{ userError: true }, 'user_error'],
+  [{ adapterFailure: 'http403' }, 'forbidden'],
+  [{ adapterFailure: 'graphql' }, 'forbidden'],
+  [{ adapterFailure: 'invalidJSON' }, 'provider_shape'],
+  [{ adapterFailure: 'missingBody' }, 'provider_shape'],
+  [{ adapterFailure: 'badScopes' }, 'provider_shape'],
+  [{ adapterFailure: 'badNodes' }, 'provider_shape'],
+])
+  test(`wrapped production failure preserves ${JSON.stringify(options)}`, async () => {
+    const s = simulator(options),
+      scope = {
+        shopId: 'm5_011_fixture_only',
+        installationGeneration: '1',
+        shopifyShopId: TARGET.shop,
+        appClientId: TARGET.client,
+      };
+    const direct = simulator(options),
+      port = createShopifyAvailabilityHoldPort({
+        fetchImpl: direct.fetchImpl,
+        isCurrent: async () => true,
+        credentials: {
+          acquire: async () => ({
+            kind: 'usable',
+            shopDomain: TARGET.domain,
+            accessToken: 'synthetic-token',
+            accessExpiresAt: new Date(Date.now() + 3600000),
+          }),
+        },
+      });
+    let kind;
+    try {
+      const before = await port.snapshot(scope, FIXTURE);
+      await port.acquire(scope, {
+        version: 'm5-availability-hold-v1',
+        operationId: 'synthetic_rejection',
+        before,
+        held: null,
+      });
+    } catch (error) {
+      kind = error.kind;
+    }
+    assert.equal(kind, expected);
+    const result = await runSynthetic(s);
+    assert.equal(result.stop, expected);
+    assert.equal(
+      s.calls.filter((b) => b.query === ADAPTER_READ).length,
+      direct.calls.filter((b) => b.query === ADAPTER_READ).length,
+    );
+  });
+test('an archive request still outstanding after timeout quarantines all further provider dispatch', async (t) => {
+  const original = AbortSignal.timeout.bind(AbortSignal);
+  t.mock.method(AbortSignal, 'timeout', () => original(20));
+  const keepalive = setTimeout(() => {}, 500);
+  try {
+    const s = simulator({ archiveOutstanding: true }),
+      result = await runSynthetic(s);
+    assert.equal(result.outcome, 'STOPPED');
+    assert.equal(s.calls.at(-1).query, ARCHIVE);
+    assert.equal(result.accounting.read, 15);
+    assert.equal(result.cleanup.outcome, 'UNKNOWN_WRITE_REQUEST_STILL_OUTSTANDING');
+    assert.notEqual(JSON.parse(readFileSync(join(s.directory, 'register.json'))).pending, null);
+  } finally {
+    clearTimeout(keepalive);
+  }
 });
 
 test('durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP', async () => {

@@ -194,7 +194,7 @@ function persist(directory, state) {
   }
 }
 async function boundedBody(response, signal) {
-  requireValue(response.body, 'missing_body');
+  if (!response.body) return null;
   const reader = response.body.getReader();
   const abort = () => {
     void reader.cancel().catch(() => {});
@@ -206,23 +206,20 @@ async function boundedBody(response, signal) {
     for (;;) {
       const n = await reader.read();
       if (n.done) break;
-      length += n.value.byteLength;
+      const part = n.value.subarray(0, 128 * 1024 + 1 - length);
+      length += part.byteLength;
+      chunks.push(part);
       if (length > 128 * 1024) {
-        await reader.cancel();
-        throw new Stop('oversized_body');
+        void reader.cancel().catch(() => {});
+        break;
       }
-      chunks.push(n.value);
     }
   } finally {
     signal.removeEventListener('abort', abort);
     reader.releaseLock();
   }
   requireValue(!signal.aborted, 'transport_timeout');
-  try {
-    return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks, length)));
-  } catch {
-    throw new Stop('invalid_json');
-  }
+  return Buffer.concat(chunks, length);
 }
 const select = (value, names) =>
   value && typeof value === 'object'
@@ -462,6 +459,9 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
     state.pending = event.index;
     save();
     busy = true;
+    let underlyingSettled = true,
+      received;
+    const adapter = request.operation === 'adapter_read' || request.operation === 'draft';
     try {
       if (request.kind === 'update') fresh();
       else assertCurrent();
@@ -472,27 +472,46 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
       const aborted = new Promise((_resolve, reject) =>
         signal.addEventListener('abort', () => reject(new Stop('transport_timeout')), { once: true }),
       );
-      const received = await Promise.race([
+      underlyingSettled = false;
+      received = await Promise.race([
         aborted,
         (async () => {
-          event.invoked = true;
-          const response = await fetchImpl(url, { ...init, redirect: 'error', signal });
-          requireValue(!signal.aborted, 'transport_timeout');
-          return { response, raw: await boundedBody(response, signal) };
+          try {
+            event.invoked = true;
+            const response = await fetchImpl(url, { ...init, redirect: 'error', signal });
+            requireValue(!signal.aborted, 'transport_timeout');
+            return { response, bytes: response.status === 200 ? await boundedBody(response, signal) : null };
+          } finally {
+            underlyingSettled = true;
+          }
         })(),
       ]);
       const response = received.response;
-      let raw = received.raw;
+      let raw = null;
+      if (received.bytes && received.bytes.length <= 128 * 1024) {
+        try {
+          raw = JSON.parse(received.bytes.toString('utf8'));
+        } catch {
+          /* Keep original wire semantics for the production adapter. */
+        }
+      }
       event.status = response.status;
       if (request.kind === 'auth') {
         event.observation = {
           status: response.status,
-          hasToken: typeof raw.access_token === 'string',
-          expiresIn: raw.expires_in,
+          hasToken: typeof raw?.access_token === 'string',
+          expiresIn: Number.isSafeInteger(raw?.expires_in) ? raw.expires_in : null,
         };
-      } else if (response.status === 200 && raw.data && !raw.errors) {
+        requireValue(response.status === 200 && raw, 'auth_response');
+      } else if (response.status === 200 && raw?.data && !raw.errors) {
         // Documents select only synthetic ownership, publication and minimal app/channel identity.
-        raw = { data: selectedData(raw.data, request.operation) };
+        try {
+          raw = { data: selectedData(raw.data, request.operation) };
+        } catch {
+          // Malformed selections belong to the adapter's provider-shape branch.
+          // Authority and persistence checks below remain separate and fail closed.
+          throw new Stop('response_selection');
+        }
         event.response = structuredClone(raw);
         if (request.operation === 'identity') {
           identity(raw.data);
@@ -533,8 +552,12 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
             raw.data.shop?.id === TARGET.shop &&
               raw.data.currentAppInstallation?.app?.apiKey === TARGET.client &&
               Array.isArray(raw.data.currentAppInstallation.accessScopes) &&
-              ['read_products', 'write_products'].every((x) =>
+              ['read_products', 'write_products', 'read_publications', 'read_product_listings'].every((x) =>
                 raw.data.currentAppInstallation.accessScopes.some((y) => y.handle === x),
+              ) &&
+              equal(
+                raw.data.currentAppInstallation.accessScopes.map((n) => n.handle).sort(),
+                state.identity.data.currentAppInstallation.accessScopes.map((n) => n.handle).sort(),
               ),
             'adapter_identity',
           );
@@ -543,6 +566,12 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
         }
         if (request.kind === 'update') {
           const result = raw.data.productUpdate;
+          if (adapter && Array.isArray(result?.userErrors) && result.userErrors.length > 0) {
+            event.observation = { status: response.status, userErrors: true };
+            event.completedAt = new Date().toISOString();
+            save();
+            return new Response(received.bytes, { status: response.status });
+          }
           requireValue(Array.isArray(result?.userErrors) && result.userErrors.length === 0, 'mutation_user_error');
           visibility(result.product);
           requireValue(
@@ -553,21 +582,44 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
           event.settlement = 'ACKNOWLEDGED';
         }
       } else {
-        event.observation = { status: response.status, graphqlErrors: Boolean(raw.errors) };
-        throw new Stop('provider_error');
+        event.observation = {
+          status: response.status,
+          graphqlErrors: Boolean(raw?.errors),
+          malformedBody: raw === null,
+        };
+        if (!adapter) throw new Stop('provider_error');
       }
       event.completedAt = new Date().toISOString();
       save();
-      return Response.json(raw, { status: response.status });
+      return adapter
+        ? new Response(received.bytes, { status: response.status })
+        : Response.json(raw, { status: response.status });
     } catch (error) {
       event.failure = error instanceof Stop ? error.kind : 'transport_failure';
       event.completedAt = new Date().toISOString();
       if (!event.invoked && request.kind === 'update') event.settlement = 'NOT_DISPATCHED';
       save();
+      if (
+        adapter &&
+        received &&
+        error instanceof Stop &&
+        [
+          'product_shape',
+          'publication_shape',
+          'publication_duplicate',
+          'connection_incomplete',
+          'mutation_user_error',
+          'mutation_state',
+          'response_selection',
+        ].includes(error.kind)
+      ) {
+        return new Response(received.bytes, { status: received.response.status });
+      }
       throw new Stop(event.failure);
     } finally {
       busy = false;
-      state.pending = null;
+      state.pending = underlyingSettled ? null : event.index;
+      if (!underlyingSettled) event.quarantined = 'underlying_transport_still_outstanding';
       save();
     }
   }

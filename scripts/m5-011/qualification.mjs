@@ -42,11 +42,12 @@ export function classify(before, after) {
   const legacyDisappeared =
     before.resourcePublications.nodes.some((n) => n.publication.id === PUBLICATION_ID && n.isPublished) &&
     !after.resourcePublications.nodes.some((n) => n.publication.id === PUBLICATION_ID);
-  const retained = draft.length > 0;
+  const retained = active.length > 0 && draft.length > 0;
   return {
     classification: retained && legacyDisappeared ? 'SNAPSHOT_FIELD_DEFECT_SUPPORTED' : 'DIFFERENT_PLATFORM_BEHAVIOR',
     legacyDisappeared,
     v2Retained: retained,
+    v2NewlyAppeared: active.length === 0 && draft.length > 0,
     v2Staged: draft.some((n) => n.isPublished === false),
     active,
     draft,
@@ -99,6 +100,7 @@ async function run({ directory, binding, fetchImpl, credentialLoader, assertCurr
       headers: { 'content-type': 'application/json', 'x-shopify-access-token': token.accessToken },
       body: JSON.stringify({ query, variables }),
     });
+    requireValue(response.status === 200, 'provider_http_error');
     const raw = await response.json();
     requireValue(response.status === 200 && raw.data && !raw.errors, 'provider_error');
     return raw.data;
@@ -187,7 +189,12 @@ async function run({ directory, binding, fetchImpl, credentialLoader, assertCurr
     evidence.hold = hold;
     save();
     op.phase('ACQUIRE');
-    evidence.adapter = await port.acquire(scope, hold);
+    try {
+      evidence.adapter = await port.acquire(scope, hold);
+    } catch (error) {
+      evidence.adapter = { kind: 'FAILURE', failureKind: error.kind ?? 'local_failure' };
+      throw error;
+    }
     save();
     const draftEvent = op.state().events.find((e) => e.operation === 'draft');
     requireValue(draftEvent?.settlement === 'ACKNOWLEDGED', 'draft_settlement_unknown');
@@ -226,7 +233,9 @@ async function run({ directory, binding, fetchImpl, credentialLoader, assertCurr
     evidence.stop = error instanceof Stop ? error.kind : typeof error?.kind === 'string' ? error.kind : 'local_failure';
     evidence.outcome = 'STOPPED';
     const archive = op.state().events.find((e) => e.operation === 'archive');
-    if (archive?.invoked && !cleanupReadAttempted) {
+    if (archive?.invoked && op.state().pending !== null) {
+      evidence.cleanup = { outcome: 'UNKNOWN_WRITE_REQUEST_STILL_OUTSTANDING' };
+    } else if (archive?.invoked && !cleanupReadAttempted) {
       cleanupReadAttempted = true;
       op.phase('BOUNDED_CLEANUP_OBSERVATION');
       try {
@@ -245,6 +254,7 @@ async function run({ directory, binding, fetchImpl, credentialLoader, assertCurr
     // No resend and no cleanup after any unresolved write; the port owns its one bounded observation.
   }
   evidence.accounting = op.state().counts;
+  evidence.pendingAtClose = op.state().pending;
   evidence.settlements = op
     .state()
     .events.filter((e) => e.kind === 'update')

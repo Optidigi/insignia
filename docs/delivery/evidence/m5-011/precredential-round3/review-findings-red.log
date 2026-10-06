@@ -1,0 +1,206 @@
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (1.800844ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (41.54403ms)
+✔ ownership stops before any status mutation (3.357306ms)
+✔ incomplete resourcePublications stops before any status mutation (2.307713ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.272126ms)
+✔ incomplete APP stops before any status mutation (3.085132ms)
+✔ incomplete MARKET stops before any status mutation (3.823661ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (4.417108ms)
+✔ incomplete NONE stops before any status mutation (5.277863ms)
+✔ missing read scope stops before any status mutation (2.858925ms)
+✔ initial DRAFT drift stops before any status mutation (5.505514ms)
+✔ cross-partition version drift stops before any status mutation (2.925777ms)
+✖ observed required grant loss in adapter read stops before any status mutation (21.757682ms)
+✔ lost DRAFT acknowledgement never retries or archives (16.11206ms)
+✔ DRAFT readback failure never retries or archives (10.353159ms)
+✔ post-DRAFT ownership drift never retries or archives (13.198869ms)
+✔ post-DRAFT partition drift never retries or archives (16.020252ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (18.852175ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (20.683015ms)
+✖ newly appearing DRAFT V2 membership is not described as retained from ACTIVE (20.01484ms)
+✖ wrapped production failure preserves {"userError":true} (11.878946ms)
+✖ wrapped production failure preserves {"adapterFailure":"http403"} (7.348319ms)
+✖ wrapped production failure preserves {"adapterFailure":"graphql"} (7.221856ms)
+✖ wrapped production failure preserves {"adapterFailure":"invalidJSON"} (8.738008ms)
+✖ wrapped production failure preserves {"adapterFailure":"missingBody"} (6.635692ms)
+✖ an archive request still outstanding after timeout quarantines all further provider dispatch (38.257778ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (1.055436ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (1512.519025ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 20
+ℹ fail 8
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2043.111147
+
+✖ failing tests:
+
+test at scripts/m5-011/operator.test.mjs:178:3
+✖ observed required grant loss in adapter read stops before any status mutation (21.757682ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'ADJUDICATED_AND_ARCHIVED'
+  - 'STOPPED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:181:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'ADJUDICATED_AND_ARCHIVED',
+    expected: 'STOPPED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:213:1
+✖ newly appearing DRAFT V2 membership is not described as retained from ACTIVE (20.01484ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'SNAPSHOT_FIELD_DEFECT_SUPPORTED'
+  - 'DIFFERENT_PLATFORM_BEHAVIOR'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:215:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'SNAPSHOT_FIELD_DEFECT_SUPPORTED',
+    expected: 'DIFFERENT_PLATFORM_BEHAVIOR',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:219:1
+✖ wrapped production failure preserves {"userError":true} (11.878946ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'draft_settlement_unknown'
+  - 'user_error'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:227:45)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'draft_settlement_unknown',
+    expected: 'user_error',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:219:1
+✖ wrapped production failure preserves {"adapterFailure":"http403"} (7.348319ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'network_or_timeout'
+  - 'forbidden'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:227:45)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'network_or_timeout',
+    expected: 'forbidden',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:219:1
+✖ wrapped production failure preserves {"adapterFailure":"graphql"} (7.221856ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'network_or_timeout'
+  - 'forbidden'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:227:45)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'network_or_timeout',
+    expected: 'forbidden',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:219:1
+✖ wrapped production failure preserves {"adapterFailure":"invalidJSON"} (8.738008ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'network_or_timeout'
+  - 'provider_shape'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:227:45)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'network_or_timeout',
+    expected: 'provider_shape',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:219:1
+✖ wrapped production failure preserves {"adapterFailure":"missingBody"} (6.635692ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'network_or_timeout'
+  - 'provider_shape'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:227:45)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'network_or_timeout',
+    expected: 'provider_shape',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-011/operator.test.mjs:230:1
+✖ an archive request still outstanding after timeout quarantines all further provider dispatch (38.257778ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  ... Skipped lines
+  
+  + 'query M5011Projection($id: ID!) {\n' +
+  +   '  shop { id myshopifyDomain plan { partnerDevelopment displayName } }\n' +
+  +   '  currentAppInstallation { id app { id apiKey } accessScopes { handle } }\n' +
+  +   '  product(id:$id) { __typename id status updatedAt publishedAt onlineStoreUrl\n' +
+  - 'mutation M5011Archive($product: ProductUpdateInput!) {\n' +
+  -   '  productUpdate(product:$product) {\n' +
+  -   '    product { __typename id status updatedAt publishedAt onlineStoreUrl\n' +
+      '  resourcePublications(first: 250, onlyPublished: false) {\n' +
+      '    nodes { isPublished publishDate publication { id } }\n' +
+      '    pageInfo { hasNextPage hasPreviousPage }\n' +
+      '  }\n' +
+      '  unpublishedPublications(first: 250) {\n' +
+  ...
+      '  } handle title tags createdAt }\n' +
+  -   '    userErrors { field message }\n' +
+  -   '  }\n' +
+      '}'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:236:51)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'query M5011Projection($id: ID!) {\n  shop { id myshopifyDomain plan { partnerDevelopment displayName } }\n  currentAppInstallation { id app { id apiKey } accessScopes { handle } }\n  product(id:$id) { __typename id status updatedAt publishedAt onlineStoreUrl\n  resourcePublications(first: 250, onlyPublished: false) {\n    nodes { isPublished publishDate publication { id } }\n    pageInfo { hasNextPage hasPreviousPage }\n  }\n  unpublishedPublications(first: 250) {\n    nodes { id }\n    pageInfo { hasNextPage hasPreviousPage }\n  } handle title tags createdAt }\n}',
+    expected: 'mutation M5011Archive($product: ProductUpdateInput!) {\n  productUpdate(product:$product) {\n    product { __typename id status updatedAt publishedAt onlineStoreUrl\n  resourcePublications(first: 250, onlyPublished: false) {\n    nodes { isPublished publishDate publication { id } }\n    pageInfo { hasNextPage hasPreviousPage }\n  }\n  unpublishedPublications(first: 250) {\n    nodes { id }\n    pageInfo { hasNextPage hasPreviousPage }\n  } handle title tags createdAt }\n    userErrors { field message }\n  }\n}',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
