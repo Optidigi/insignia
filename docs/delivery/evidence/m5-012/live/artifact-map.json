@@ -1,0 +1,52 @@
+[
+  {
+    "original": "/home/serveradmin/insignia-m5-012-handoff/offline-summary.json",
+    "repository": "docs/delivery/evidence/m5-012/live/offline-summary.json",
+    "sha256": "97c08cf3b2e8755ff5cc8198a66ba4b6caf62679c62d2963e0d4d6389648e909"
+  },
+  {
+    "original": "/home/serveradmin/insignia-m5-012-handoff/focused.log",
+    "repository": "docs/delivery/evidence/m5-012/offline/focused-round3.log",
+    "sha256": "ed531582d3cdb69d0086c7eefe13a4adeddded935b09594dce2babe83a737590"
+  },
+  {
+    "original": "/home/serveradmin/insignia-m5-012-handoff/root-round3.log",
+    "repository": "docs/delivery/evidence/m5-012/offline/root-round3.log",
+    "sha256": "1b4c8b1d648fc75261ee6bc722596391cb7f6f8a208a99913862b4ec6fb4ccf8"
+  },
+  {
+    "original": "/home/serveradmin/insignia-m5-012-handoff/browser-stress-round3.log",
+    "repository": "docs/delivery/evidence/m5-012/offline/browser-stress-round3.log",
+    "sha256": "807a7ecd33dd5a7c520233dcd03c447c0bfc06a5efee945c9793771d092cf809"
+  },
+  {
+    "original": "/home/serveradmin/insignia-m5-012-handoff/schema-validation.json",
+    "repository": "docs/delivery/evidence/m5-012/offline/schema-validation.json",
+    "sha256": "85656b6457a3dbcefc50b1bef2f8dd741a58ea38a2fa4698f3e2b4b5248bbc6a"
+  },
+  {
+    "original": "/home/serveradmin/insignia-m5-012-handoff/source-secrets.log",
+    "repository": "docs/delivery/evidence/m5-012/offline/source-secrets.log",
+    "sha256": "c7c91b28f60f3ad86d27043356ab79b8a0f249caa99df9f87cdd931b6a238450"
+  },
+  {
+    "original": "/home/serveradmin/insignia-m5-012-handoff/safety-spec-result.md",
+    "repository": "docs/delivery/evidence/m5-012/precredential-round3/safety-spec-result.md",
+    "sha256": "c4f3a75bdab0a1175dca7a4e8b83e57a33e46e63f965193d2c77537b50535fd6"
+  },
+  {
+    "original": "/home/serveradmin/insignia-m5-012-handoff/safety-spec-settings.json",
+    "repository": "docs/delivery/evidence/m5-012/precredential-round3/safety-spec-settings.json",
+    "sha256": "dc2fb98373f1441b2db4255cc2ef2983a5dcda86b58aac2460a6289a7870733f"
+  },
+  {
+    "original": "/home/serveradmin/insignia-m5-012-handoff/safety-security-result.md",
+    "repository": "docs/delivery/evidence/m5-012/precredential-round3/safety-security-result.md",
+    "sha256": "bc09e66fa0d5d5ed7c9030c0604d5c191018ee811d54b7467d09313216da3d99"
+  },
+  {
+    "original": "/home/serveradmin/insignia-m5-012-handoff/safety-security-settings.json",
+    "repository": "docs/delivery/evidence/m5-012/precredential-round3/safety-security-settings.json",
+    "sha256": "973fb1b53ee81ba6285b834ca9dbc0bbb06068ba58b8ca0aed8cb7a80e67045c"
+  }
+]
