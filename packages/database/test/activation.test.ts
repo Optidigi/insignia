@@ -10,6 +10,7 @@ import { activationDigest, availabilitySnapshotIdentityDigest } from '@insignia/
 import {
   createPublicationAdminAdapter,
   createPublicationAdminHttpTransport,
+  createShopifyAvailabilityHoldPort,
   createShopifyAvailabilityHoldV2Port,
 } from '@insignia/shopify';
 import { type Kysely, sql } from 'kysely';
@@ -519,6 +520,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       },
       revisionId,
       restart,
+      restartWithAvailability: (port: ProductAvailabilityHoldPort) =>
+        core.productionActivations.create({ ...options, availability: port, recoveryAuthority }),
       prepareHold,
       publish,
       createRevision,
@@ -580,28 +583,54 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     };
   }
 
-  it('v1 JSONB reads unchanged and unresolved legacy holds are preserved without provider dispatch', async () => {
+  it('v1 JSONB remains unchanged through operator hold and exact historical trusted recovery', async () => {
     const f = await fixture();
-    const legacyBefore = {
-      scope: {
-        shopId: f.identity.shopId,
-        installationGeneration: '1',
-        shopifyShopId: 'gid://shopify/Shop/101',
-        appClientId: 'a'.repeat(32),
+    const legacyScope = {
+      shopId: f.identity.shopId,
+      installationGeneration: '1',
+      shopifyShopId: `gid://shopify/Shop/${f.scope.shopifyShopId}`,
+      appClientId: 'a'.repeat(32),
+    };
+    let requests = 0;
+    const legacyPort = createShopifyAvailabilityHoldPort({
+      now: () => now,
+      isCurrent: async () => true,
+      credentials: {
+        acquire: async () => ({
+          kind: 'usable',
+          shopDomain: 'synthetic.myshopify.com',
+          accessToken: 'synthetic-token',
+          accessExpiresAt: new Date('2099-01-01T00:00:00Z'),
+        }),
       },
-      productId: 'gid://shopify/Product/42',
-      state: 'available',
-      providerVersion: 'v1-original-version',
-      visibilityDigest: '1'.repeat(64),
-      observedAt: now.toISOString(),
-      receivedAt: now.toISOString(),
-    };
-    const legacy = {
-      version: 'm5-availability-hold-v1',
-      operationId: f.identity.operationId,
-      before: legacyBefore,
-      held: null,
-    };
+      fetchImpl: (async (_url, init) => {
+        requests++;
+        expect(JSON.parse(String(init?.body)).query).not.toMatch(/^mutation/);
+        return Response.json({
+          data: {
+            shop: { id: legacyScope.shopifyShopId },
+            currentAppInstallation: {
+              app: { apiKey: legacyScope.appClientId },
+              accessScopes: ['read_products', 'write_products', 'read_publications', 'read_product_listings'].map(
+                (handle) => ({ handle }),
+              ),
+            },
+            node: {
+              __typename: 'Product',
+              id: 'gid://shopify/Product/42',
+              status: 'ACTIVE',
+              updatedAt: '2026-10-01T11:00:00Z',
+              publishedAt: null,
+              onlineStoreUrl: null,
+              resourcePublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
+              unpublishedPublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
+            },
+          },
+        });
+      }) as typeof fetch,
+    });
+    const before = await legacyPort.snapshot(legacyScope, 'gid://shopify/Product/42');
+    const legacy = { version: 'm5-availability-hold-v1', operationId: f.identity.operationId, before, held: null };
     await sql`INSERT INTO m5_activation_state(shop_id,config_id,operation_id,kind,hold) VALUES (${f.identity.shopId},${f.identity.configId},${f.identity.operationId},'ACQUISITION_PENDING',${JSON.stringify(legacy)}::jsonb)`.execute(
       database,
     );
@@ -611,6 +640,17 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect(f.acquisitions).toBe(0);
     expect(f.restores).toBe(0);
     expect(f.remoteWrites).toBe(0);
+    f.recoveryAuthority = syntheticRecoveryAuthority();
+    const resolved = await f.restartWithAvailability(legacyPort).recover({ ...f.identity, commandKey: 'recover-v1' });
+    expect(resolved).toMatchObject({
+      version: 'm5-availability-resolution-v1',
+      originalHold: legacy,
+      decision: { version: 'm5-availability-recovery-decision-v1' },
+    });
+    expect((await f.restart().read(f.identity))?.state).toMatchObject({ kind: 'RESOLVED', hold: legacy });
+    expect(requests).toBe(3);
+    expect(f.acquisitions).toBe(0);
+    expect(f.restores).toBe(0);
   });
   it('v2 hold/evidence/restoration audit JSONB roundtrips, remains immutable, and rejects v1 decision semantics', async () => {
     const f = await fixture('required', 'ACTIVE');
