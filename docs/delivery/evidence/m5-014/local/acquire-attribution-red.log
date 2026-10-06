@@ -1,0 +1,36 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-014-worktree/packages/application
+
+ ❯ src/publication/activation.test.ts (47 tests | 1 failed) 170ms
+   ❯ production activation coordinator with injected synthetic boundary fixtures (26)
+     × lost hold response stays unattributable even if observation reports DRAFT; no second acquire 12ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/publication/activation.test.ts > production activation coordinator with injected synthetic boundary fixtures > lost hold response stays unattributable even if observation reports DRAFT; no second acquire
+AssertionError: expected 'ACTIVATED_RESTORATION_PENDING' to be 'OPERATOR_HOLD' // Object.is equality
+
+Expected: "OPERATOR_HOLD"
+Received: "ACTIVATED_RESTORATION_PENDING"
+
+ ❯ src/publication/activation.test.ts:542:38
+    540|     expect(f.candidate.state.kind).toBe('ACQUISITION_PENDING');
+    541|     expect(f.current.state).toBe('unavailable');
+    542|     expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
+       |                                      ^
+    543|     expect(f.evidence).toBeNull();
+    544|     expect(f.acquisitions).toBe(1);
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 46 passed (47)
+   Start at  17:39:14
+   Duration  441ms (tests 53%, transform 31%, import 14%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-014-
+  │ worktree/packages/application
+

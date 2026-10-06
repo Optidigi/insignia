@@ -1,0 +1,36 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-014-worktree/packages/shopify
+
+ ❯ test/availability-hold-v2.test.ts (31 tests | 1 failed) 219ms
+   × a settled ACK survives an incomplete final acquire read without granting hold ownership 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/availability-hold-v2.test.ts > a settled ACK survives an incomplete final acquire read without granting hold ownership
+ShopifyAvailabilityHoldError: Shopify availability hold failed: network_or_timeout
+ ❯ fail src/availability-hold-v2.ts:23:9
+     21|
+     22| const fail = (kind: ConstructorParameters<typeof ShopifyAvailabilityHo…
+     23|   throw new ShopifyAvailabilityHoldError(kind);
+       |         ^
+     24| };
+     25| const record = (v: unknown): Record<string, unknown> | null =>
+ ❯ execute src/availability-hold-v2.ts:329:14
+ ❯ read src/availability-hold-v2.ts:350:20
+ ❯ src/availability-hold-v2.ts:562:27
+ ❯ operation src/availability-hold-v2.ts:187:14
+ ❯ test/availability-hold-v2.test.ts:409:9
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 30 passed (31)
+   Start at  17:40:20
+   Duration  643ms (tests 44%, transform 42%, import 13%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-014-
+  │ worktree/packages/shopify
+

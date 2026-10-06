@@ -1,0 +1,35 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-014-worktree/packages/application
+
+ ❯ src/publication/activation.test.ts (45 tests | 1 failed) 128ms
+   × new coordinator operations persist v2-only hold intents and explicit v2 activation evidence 9ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  src/publication/activation.test.ts > new coordinator operations persist v2-only hold intents and explicit v2 activation evidence
+AssertionError: expected 'm5-availability-hold-v1' to be 'm5-availability-hold-v2' // Object.is equality
+
+Expected: "m5-availability-hold-v2"
+Received: "m5-availability-hold-v1"
+
+ ❯ src/publication/activation.test.ts:742:46
+    740| it('new coordinator operations persist v2-only hold intents and explic…
+    741|  const f=fixture();await f.advance();await f.advance();
+    742|  expect(f.stateAtAcquisition?.hold?.version).toBe('m5-availability-hol…
+       |                                              ^
+    743|  expect(f.evidence).toMatchObject({version:'m5-activation-evidence-v2'…
+    744| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 44 passed (45)
+   Start at  17:16:43
+   Duration  402ms (tests 48%, transform 34%, import 17%, worker 2%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-014-
+  │ worktree/packages/application
+

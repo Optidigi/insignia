@@ -1,0 +1,296 @@
+durable-core	Run corepack pnpm check:style	﻿2026-10-06T17:51:57.1635615Z ##[group]Run corepack pnpm check:style
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.1635838Z ^[[36;1mcorepack pnpm check:style^[[0m
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.1687995Z shell: /usr/bin/bash -e {0}
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.1688142Z env:
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.1688707Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.1688894Z ##[endgroup]
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.2269212Z $ biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002 scripts/m5-003 scripts/m5-004 scripts/m5-005 scripts/m5-009 scripts/m5-010 scripts/m5-011 scripts/m5-012 scripts/m5-013
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5990723Z apps/web/src/server/admin/production.ts:69:57 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5991169Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5991376Z   i Template literals are preferred over string concatenation.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5991671Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5991951Z     67 │   const appOrigin = required(env, 'APP_URL');
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5992323Z     68 │   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5992857Z   > 69 │   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5993410Z        │                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5993818Z     70 │   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5994549Z     71 │   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5994932Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5995130Z   i Unsafe fix: Use a template literal.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5995348Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5995621Z      67  67 │     const appOrigin = required(env, 'APP_URL');
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5996001Z      68  68 │     const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5997060Z      69     │ - ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·'gid://shopify/App/'·+·appId·:·null;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5997765Z          69 │ + ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·`gid://shopify/App/${appId}`·:·null;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5998522Z      70  70 │     const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5999244Z      71  71 │     const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5999638Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.5999726Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6000151Z apps/web/src/server/admin/production.ts:89:54 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6000569Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6000744Z   i Template literals are preferred over string concatenation.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6000923Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6001125Z     87 │       installationGeneration: actor.installationGeneration,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6001327Z     88 │     });
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6001726Z   > 89 │     if (!scope || scope.shopDomain !== actor.shop || 'gid://shopify/Shop/' + scope.shopifyShopId !== actor.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6002318Z        │                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6003054Z     90 │       throw new Error('Admin installation changed');
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6003259Z     91 │   }
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6003362Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6003561Z   i Unsafe fix: Use a template literal.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6003782Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6004322Z      87  87 │         installationGeneration: actor.installationGeneration,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6004581Z      88  88 │       });
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6005042Z      89     │ - ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·'gid://shopify/Shop/'·+·scope.shopifyShopId·!==·actor.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6005765Z          89 │ + ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·`gid://shopify/Shop/${scope.shopifyShopId}`·!==·actor.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6006128Z      90  90 │         throw new Error('Admin installation changed');
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6006316Z      91  91 │     }
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6006422Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6006491Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6006748Z apps/web/src/server/admin/production.ts:214:51 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6007043Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6007209Z   i Template literals are preferred over string concatenation.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6007487Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6007807Z     212 │           const provider = await shopify.readInstallation(online);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6008189Z     213 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6008601Z   > 214 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6009017Z         │                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6009437Z     215 │             throw new Error('Tenant installation mismatch');
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6009975Z     216 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6010344Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6010635Z   i Unsafe fix: Use a template literal.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6010781Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6010990Z     212 212 │             const provider = await shopify.readInstallation(online);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6011483Z     213 213 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6012290Z     214     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6013250Z         214 │ + ··········if·(!tenant·||·!tenant.shopifyShopId·||·`gid://shopify/Shop/${tenant.shopifyShopId}`·!==·provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6013850Z     215 215 │               throw new Error('Tenant installation mismatch');
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6014406Z     216 216 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6014778Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6014860Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6015280Z apps/web/src/server/admin/auth.ts:48:48 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6015594Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6015698Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6015903Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6016148Z     46 │     let identity: VerifiedAdminIdentity;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6016412Z     47 │     try {
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6016737Z   > 48 │       identity = await port.verifySessionToken(match[1]!);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6017121Z        │                                                ^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6017393Z     49 │     } catch {
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6017637Z     50 │       return null;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6017833Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6017916Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6018320Z apps/web/src/server/admin/auth.ts:61:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6018627Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6018730Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6018931Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6019098Z     59 │     )
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6019502Z     60 │       return null;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6019878Z   > 61 │     const grant = await port.exchangeOnlineGrant(match[1]!, identity);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6020318Z        │                                                  ^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6020675Z     62 │     if (
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6020922Z     63 │       grant.shop !== identity.shop ||
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6021296Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6021407Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6022080Z apps/web/src/server/admin/preview.ts:109:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6022398Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6022497Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6022701Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6022992Z     107 │             .then((found) => (found ? project(found) : null)),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6023290Z     108 │         );
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6023552Z   > 109 │       const result = await map.get(id)!;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6023865Z         │                            ^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6024157Z     110 │       await active(actor);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6024439Z     111 │       return result;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6024629Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6024708Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6025119Z apps/web/src/server/admin/preview.ts:116:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6025433Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6025537Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6025739Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6025944Z     114 │       await active(actor);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6026392Z     115 │       if (!currencies.has(actor)) currencies.set(actor, reader(actor).shopCurrency());
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6026856Z   > 116 │       const result = await currencies.get(actor)!;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6027208Z         │                            ^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6027498Z     117 │       await active(actor);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6027760Z     118 │       return result;
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6027946Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6028026Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6028443Z apps/web/src/server/admin/preview.ts:163:34 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6028755Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6028855Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6029058Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6029290Z     161 │                   shopId: randomUUID(),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6029606Z     162 │                   shopDomain: shop,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6029985Z   > 163 │                   shopifyShopId: shopId.split('/').at(-1)!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6030359Z         │                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6030858Z     164 │                   externalInstallationId: provider.installationId,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6031182Z     165 │                 }),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6031372Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6031450Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6031857Z apps/web/src/server/admin/preview.ts:223:26 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6032167Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6032268Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6032478Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6032803Z     221 │                   installationGeneration: bound.installationGeneration,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6033193Z     222 │                   shopifyShopId: shopId,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6033562Z   > 223 │                   appId: env.INSIGNIA_M5_002_APP_RESOURCE!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6033933Z         │                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6034205Z     224 │                 },
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6034422Z     225 │                 {
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6034602Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6034684Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6035091Z apps/web/src/server/admin/preview.ts:227:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6035401Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6035502Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6035703Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6035883Z     225 │                 {
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6036142Z     226 │                   appKey: client,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6036611Z   > 227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6037238Z         │                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6037750Z     228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6038220Z     229 │                 },
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6038398Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6038480Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6038873Z apps/web/src/server/admin/preview.ts:228:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6039070Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6039186Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6039389Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6039607Z     226 │                   appKey: client,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6040065Z     227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6040731Z   > 228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6041098Z         │                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6041401Z     229 │                 },
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6041620Z     230 │               );
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6041800Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6041883Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6042309Z apps/web/src/server/admin/production.ts:214:15 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6042636Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6042739Z   ! Change to an optional chain.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6042938Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6043253Z     212 │           const provider = await shopify.readInstallation(online);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6043752Z     213 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6044328Z   > 214 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6044714Z         │               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6045104Z     215 │             throw new Error('Tenant installation mismatch');
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6045644Z     216 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6046007Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6046202Z   i Unsafe fix: Change to an optional chain.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6046440Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6046659Z     212 212 │             const provider = await shopify.readInstallation(online);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6047070Z     213 213 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6047792Z     214     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6048590Z         214 │ + ··········if·(!tenant?.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6049014Z     215 215 │               throw new Error('Tenant installation mismatch');
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6049460Z     216 216 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6049835Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6049922Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6050343Z apps/web/src/server/merchant-config.ts:123:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6050765Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6050867Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6051069Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6051339Z     121 │         option.allowedValueIds.flatMap((id) => {
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6051580Z     122 │           const label = oldLabels?.[id];
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6051893Z   > 123 │           return label ? [[values.get(id)!, label]] : [];
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6052191Z         │                            ^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6052449Z     124 │         }),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6052650Z     125 │       );
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6052812Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6052892Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6053303Z apps/web/src/server/merchant-config.ts:126:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6053750Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6053848Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6054051Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6054202Z     124 │         }),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6054332Z     125 │       );
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6054673Z   > 126 │       return Object.keys(remapped).length ? [[options.get(option.id)!, remapped]] : [];
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6055218Z         │                                               ^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6055497Z     127 │     }),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6055684Z     128 │   );
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6055845Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6055925Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6056337Z apps/web/src/server/merchant-config.ts:132:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6056651Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6056752Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6056955Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6057075Z     130 │     ...source,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6057254Z     131 │     labels,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6057551Z   > 132 │     methods: source.methods.map((item) => ({ id: methods.get(item.id)! })),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6057995Z         │                                                  ^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6058378Z     133 │     placements: source.placements.map((item) => ({
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6058683Z     134 │       ...item,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6058864Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6058944Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6059354Z apps/web/src/server/merchant-config.ts:135:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6059668Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6059770Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6059973Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6060186Z     133 │     placements: source.placements.map((item) => ({
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6060432Z     134 │       ...item,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6060836Z   > 135 │       id: placements.get(item.id)!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6061140Z         │           ^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6061597Z     136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6062133Z     137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6062444Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6062525Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6062937Z apps/web/src/server/merchant-config.ts:136:59 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6063259Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6063358Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6063565Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6063745Z     134 │       ...item,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6064011Z     135 │       id: placements.get(item.id)!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6064456Z   > 136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6064924Z         │                                                           ^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6065370Z     137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6065829Z     138 │     })),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6065992Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6066072Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6066479Z apps/web/src/server/merchant-config.ts:137:55 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6066794Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6066890Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6067090Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6067422Z     135 │       id: placements.get(item.id)!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6067867Z     136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6068389Z   > 137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6068824Z         │                                                       ^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6069097Z     138 │     })),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6069445Z     139 │     productionOptions: source.productionOptions.map((item) => ({
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6069749Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6069831Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6070238Z apps/web/src/server/merchant-config.ts:140:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6070661Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6070746Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6070927Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6071097Z     138 │     })),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6071440Z     139 │     productionOptions: source.productionOptions.map((item) => ({
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6071830Z   > 140 │       id: options.get(item.id)!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6072110Z         │           ^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6072525Z     141 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6072867Z     142 │     })),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6073028Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6073113Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6073564Z apps/web/src/server/merchant-config.ts:141:57 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6073876Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6073976Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6074168Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6074370Z     139 │     productionOptions: source.productionOptions.map((item) => ({
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6074614Z     140 │       id: options.get(item.id)!,
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6074876Z   > 141 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6075160Z         │                                                         ^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6075341Z     142 │     })),
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6075548Z     143 │     pricingRules: source.pricingRules.map((rule) => ({
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6075813Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6075922Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6076211Z The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6076669Z Diagnostics not shown: 122.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6076919Z Checked 237 files in 340ms. No fixes applied.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6077171Z Found 3 errors.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6077406Z Found 56 warnings.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6077582Z Found 83 infos.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6225928Z check ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6226207Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6226349Z   × Some errors were emitted while running checks.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6226632Z   
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6226758Z 
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6289158Z [ELIFECYCLE] Command failed with exit code 1.
+durable-core	Run corepack pnpm check:style	2026-10-06T17:51:57.6363539Z ##[error]Process completed with exit code 1.

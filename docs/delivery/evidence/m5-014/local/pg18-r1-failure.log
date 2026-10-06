@@ -1,0 +1,222 @@
+durable-core	Run corepack pnpm check:database	﻿2026-10-06T17:45:35.2109478Z ##[group]Run corepack pnpm check:database
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.2109912Z ^[[36;1mcorepack pnpm check:database^[[0m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.2168520Z shell: /usr/bin/bash -e {0}
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.2168732Z env:
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.2169237Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.2169516Z ##[endgroup]
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.2838385Z $ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.3432360Z $ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.3965825Z Applying: 20260929000100_durable_core.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4172458Z Applied: 20260929000100_durable_core.sql in 20.652621ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4173119Z Applying: 20260929000200_runtime_ingress_credentials.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4231049Z Applied: 20260929000200_runtime_ingress_credentials.sql in 5.878913ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4231826Z Applying: 20260929000300_authorization_generation.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4264705Z Applied: 20260929000300_authorization_generation.sql in 3.37347ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4265386Z Applying: 20260929000400_accepted_quote.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4472573Z Applied: 20260929000400_accepted_quote.sql in 20.742496ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4473163Z Applying: 20260930000100_m4_key_lifecycle.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4537491Z Applied: 20260930000100_m4_key_lifecycle.sql in 6.509073ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4537895Z Applying: 20260930000200_publication_progress.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4568182Z Applied: 20260930000200_publication_progress.sql in 3.063132ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4568755Z Applying: 20260930000300_m5_revision_geometry.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4593914Z Applied: 20260930000300_m5_revision_geometry.sql in 2.558773ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4594524Z Applying: 20260930000400_m5_revision_presentation.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4621564Z Applied: 20260930000400_m5_revision_presentation.sql in 2.742461ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4622252Z Applying: 20260930000500_m5_publication_source_version.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4634347Z Applied: 20260930000500_m5_publication_source_version.sql in 1.291425ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4635128Z Applying: 20260930000600_m5_publication_intent_generation.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4647265Z Applied: 20260930000600_m5_publication_intent_generation.sql in 1.288836ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4647836Z Applying: 20260930000700_m5_publication_intent_lookup.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4661622Z Applied: 20260930000700_m5_publication_intent_lookup.sql in 1.421025ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4662097Z Applying: 20260930000800_m5_current_publication_pointer.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4688783Z Applied: 20260930000800_m5_current_publication_pointer.sql in 2.719606ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4689353Z Applying: 20260930000900_m5_activation.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4786204Z Applied: 20260930000900_m5_activation.sql in 9.725867ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4786602Z Applying: 20261006000100_m5_availability_v2.sql
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.4849987Z Applied: 20261006000100_m5_availability_v2.sql in 6.380598ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.5550743Z $ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.6721343Z $ corepack pnpm --filter @insignia/database test
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.7335923Z $ vitest run
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.9419172Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.9422312Z ^[[1m^[[30m^[[46m RUN ^[[49m^[[39m^[[22m ^[[36mv5.0.2 ^[[39m^[[90m/home/runner/work/insignia/insignia/packages/database^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:35.9423017Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:37.2779255Z  ^[[32m✓^[[39m test/accepted-quote.test.ts ^[[2m(^[[22m^[[2m2 tests^[[22m^[[2m)^[[22m^[[33m 612^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:37.2780804Z    ^[[32m✓^[[39m accepted quote PostgreSQL authority ^[[2m(2)^[[22m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:37.2782409Z      ^[[33m^[[2m✓^[[22m^[[39m stores one complete quote/set, replays the same key, and forbids mutation^[[33m 489^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:37.5602318Z  ^[[32m✓^[[39m test/runtime.test.ts ^[[2m(^[[22m^[[2m11 tests^[[22m^[[2m)^[[22m^[[33m 897^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:38.0073061Z  ^[[32m✓^[[39m test/config.test.ts ^[[2m(^[[22m^[[2m9 tests^[[22m^[[2m)^[[22m^[[33m 355^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:38.7657562Z  ^[[32m✓^[[39m test/production-publication.test.ts ^[[2m(^[[22m^[[2m10 tests^[[22m^[[2m)^[[22m^[[33m 861^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:38.9564420Z  ^[[32m✓^[[39m test/delivery/pg-delivery-repository.test.ts ^[[2m(^[[22m^[[2m10 tests^[[22m^[[2m)^[[22m^[[33m 589^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:39.5153209Z  ^[[32m✓^[[39m test/command/pg-command-repository.test.ts ^[[2m(^[[22m^[[2m6 tests^[[22m^[[2m)^[[22m^[[33m 378^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:39.7787156Z  ^[[32m✓^[[39m test/signing-keys.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[33m 468^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:40.1513206Z  ^[[32m✓^[[39m test/public-admission.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[32m 255^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:40.1734413Z  ^[[32m✓^[[39m test/authorization-generation.test.ts ^[[2m(^[[22m^[[2m1 test^[[22m^[[2m)^[[22m^[[32m 74^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.0040792Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay 0 ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.0042654Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVE","evidenceDigest":"47fd5f3e0831ccb3bc92871a8a3d0bc155ca9cdbdbfeb9c06d9b28e5f7790bde"},"statusMutations":["DRAFT","ACTIVE"]}
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.0045643Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.0985482Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay 999 ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.0987516Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVE","evidenceDigest":"b8233dc9b0ce6ef4f2a2debe74a691c142281bb31d27eee395ac2859de779755"},"statusMutations":["DRAFT","ACTIVE"]}
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.0988727Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.2119589Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay 1000 ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.2121963Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVE","evidenceDigest":"b1bbe3e77d01b0ad71da4993fd8d7f6f3d97aa35c6b8ca45e5e522634e70b655"},"statusMutations":["DRAFT","ACTIVE"]}
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.2123223Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.3081632Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay 1001 ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.3082930Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVATED_RESTORATION_PENDING","evidenceDigest":"63848bbbc762d1c602cb466c0692c5a4af91234e0ddf8c35914884454f11f588"},"statusMutations":["DRAFT"]}
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.3083481Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.4078860Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay 2000 ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.4080186Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVATED_RESTORATION_PENDING","evidenceDigest":"c28f438d7f6803bde50bc42514ecbcb92f68ea9354ab551954cf8df172b14cb9"},"statusMutations":["DRAFT"]}
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.4080748Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.4937788Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay -1 ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.4939106Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVATED_RESTORATION_PENDING","evidenceDigest":"e15194db75158b51f0a1f51f7a49dddc23b57498509c0e749d8403030b002804"},"statusMutations":["DRAFT"]}
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:41.4939654Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3824651Z  ^[[31m❯^[[39m test/activation.test.ts ^[[2m(^[[22m^[[2m106 tests^[[22m^[[2m | ^[[22m^[[31m1 failed^[[39m^[[2m)^[[22m^[[33m 10649^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3825774Z    ^[[31m❯^[[39m PG18 scoped production activation ^[[2m(106)^[[22m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3827756Z      ^[[32m✓^[[39m v1 JSONB reads unchanged and unresolved legacy holds are preserved without provider dispatch^[[32m 101^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3829148Z      ^[[33m^[[2m✓^[[22m^[[39m v2 hold/evidence/restoration audit JSONB roundtrips, remains immutable, and rejects v1 decision semantics^[[33m 324^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3840283Z      ^[[32m✓^[[39m R1 public publication rejects stale fetch hold observation without any policy write^[[32m 89^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3842157Z      ^[[32m✓^[[39m R1 public publication rejects stale body hold observation without any policy write^[[32m 80^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3843363Z      ^[[32m✓^[[39m R1 public publication rejects stale credential hold observation without any policy write^[[32m 134^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3844483Z      ^[[32m✓^[[39m R1 public publication permits exact within-budget 0 ms observation^[[32m 72^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3845466Z      ^[[32m✓^[[39m R1 public publication permits exact within-budget 999 ms observation^[[32m 49^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3846481Z      ^[[32m✓^[[39m R1 public publication permits exact within-budget 1000 ms observation^[[32m 45^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3847611Z      ^[[32m✓^[[39m R1 dispatch rejects admission expiring during projection reads at prepared^[[32m 152^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3848797Z      ^[[32m✓^[[39m R1 dispatch rejects admission expiring during projection reads at shop-config-written^[[32m 80^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3850013Z      ^[[32m✓^[[39m R1 dispatch rejects admission expiring during projection reads at pending-written^[[32m 64^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3851378Z      ^[[32m✓^[[39m R1 dispatch rejects admission expiring during projection reads at policy-written^[[32m 86^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3852470Z      ^[[32m✓^[[39m R1 dispatch retains the exact 0 ms projection-read boundary^[[32m 45^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3853411Z      ^[[32m✓^[[39m R1 dispatch retains the exact 999 ms projection-read boundary^[[32m 72^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3854656Z      ^[[32m✓^[[39m R1 dispatch retains the exact 1000 ms projection-read boundary^[[32m 75^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3855617Z      ^[[32m✓^[[39m R1 dispatch rejects a reversed clock after fresh hold admission^[[32m 44^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3856526Z      ^[[32m✓^[[39m R1-T actual HTTP phase prepared credential delay 0 ms^[[32m 108^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3857417Z      ^[[32m✓^[[39m R1-T actual HTTP phase prepared credential delay 999 ms^[[32m 66^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3858306Z      ^[[32m✓^[[39m R1-T actual HTTP phase prepared credential delay 1000 ms^[[32m 47^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3859148Z      ^[[32m✓^[[39m R1-T actual HTTP phase prepared credential delay 1001 ms^[[32m 152^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3860041Z      ^[[32m✓^[[39m R1-T actual HTTP phase prepared credential delay 2000 ms^[[32m 76^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3860923Z      ^[[32m✓^[[39m R1-T actual HTTP phase prepared credential delay -1 ms^[[32m 42^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3862348Z      ^[[32m✓^[[39m R1-T actual HTTP phase shop-config-written credential delay 0 ms^[[32m 157^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3863368Z      ^[[32m✓^[[39m R1-T actual HTTP phase shop-config-written credential delay 999 ms^[[32m 57^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3864354Z      ^[[32m✓^[[39m R1-T actual HTTP phase shop-config-written credential delay 1000 ms^[[32m 50^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3865350Z      ^[[32m✓^[[39m R1-T actual HTTP phase shop-config-written credential delay 1001 ms^[[32m 62^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3865907Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3866360Z ^[[31m⎯⎯⎯⎯⎯⎯⎯^[[39m^[[1m^[[41m Failed Tests 1 ^[[49m^[[22m^[[31m⎯⎯⎯⎯⎯⎯⎯^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3866678Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3867745Z ^[[41m^[[1m FAIL ^[[22m^[[49m test/activation.test.ts^[[2m > ^[[22mPG18 scoped production activation^[[2m > ^[[22mcurrent drift and mismatched trusted decisions never clear an operator hold
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3869642Z ^[[31m^[[1mAssertionError^[[22m: expected [Function] to throw error including 'Trusted availability recovery decision' but got 'Original v2 availability not observed…'^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3870429Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3870905Z Expected: ^[[32m"^[[7mTrusted^[[27m availability ^[[7mrecovery decision^[[27m"^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3872138Z Received: ^[[31m"^[[7mOriginal v2^[[27m availability ^[[7mnot observed; operator hold retained^[[27m"^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3872820Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3873230Z ^[[36m ^[[2m❯^[[22m test/activation.test.ts:^[[2m1444:89^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3874122Z      ^[[32m✓^[[39m R1-T actual HTTP phase shop-config-written credential delay 2000 ms^[[32m 73^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3875138Z      ^[[32m✓^[[39m R1-T actual HTTP phase shop-config-written credential delay -1 ms^[[32m 105^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3876108Z      ^[[32m✓^[[39m R1-T actual HTTP phase pending-written credential delay 0 ms^[[32m 91^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3877047Z      ^[[32m✓^[[39m R1-T actual HTTP phase pending-written credential delay 999 ms^[[32m 71^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3878151Z      ^[[33m^[[2m✓^[[22m^[[39m R1-T actual HTTP phase pending-written credential delay 1000 ms^[[33m 556^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3879151Z      ^[[32m✓^[[39m R1-T actual HTTP phase pending-written credential delay 1001 ms^[[32m 111^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3880120Z      ^[[32m✓^[[39m R1-T actual HTTP phase pending-written credential delay 2000 ms^[[32m 69^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3881083Z      ^[[32m✓^[[39m R1-T actual HTTP phase pending-written credential delay -1 ms^[[32m 199^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3882165Z      ^[[32m✓^[[39m R1-T actual HTTP phase policy-written credential delay 0 ms^[[32m 49^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3883081Z      ^[[32m✓^[[39m R1-T actual HTTP phase policy-written credential delay 999 ms^[[32m 45^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3884013Z      ^[[32m✓^[[39m R1-T actual HTTP phase policy-written credential delay 1000 ms^[[32m 64^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3885193Z      ^[[32m✓^[[39m R1-T actual HTTP phase policy-written credential delay 1001 ms^[[32m 46^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3886116Z      ^[[32m✓^[[39m R1-T actual HTTP phase policy-written credential delay 2000 ms^[[32m 50^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3887055Z      ^[[32m✓^[[39m R1-T actual HTTP phase policy-written credential delay -1 ms^[[32m 46^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3887992Z      ^[[32m✓^[[39m R1-T actual final PostgreSQL key read cannot renew admission^[[32m 29^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3888884Z      ^[[32m✓^[[39m R1-T actual HTTP credential inactive remains not sent^[[32m 42^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3889725Z      ^[[32m✓^[[39m R1-T actual HTTP credential error remains not sent^[[32m 31^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3890544Z      ^[[32m✓^[[39m R1-T actual HTTP credential late remains not sent^[[32m 133^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3891466Z      ^[[32m✓^[[39m R1-T real restoration credential delay 0 ms^[[32m 109^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3892236Z      ^[[32m✓^[[39m R1-T real restoration credential delay 999 ms^[[32m 94^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3893012Z      ^[[32m✓^[[39m R1-T real restoration credential delay 1000 ms^[[32m 117^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3893785Z      ^[[32m✓^[[39m R1-T real restoration credential delay 1001 ms^[[32m 93^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3894563Z      ^[[32m✓^[[39m R1-T real restoration credential delay 2000 ms^[[32m 100^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3895345Z      ^[[32m✓^[[39m R1-T real restoration credential delay -1 ms^[[32m 86^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3896193Z      ^[[32m✓^[[39m R1-T calendar call 1 consumes remaining restoration budget at age 950^[[32m 85^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3897191Z      ^[[32m✓^[[39m R1-T calendar call 1 consumes remaining restoration budget at age 999^[[32m 102^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3898196Z      ^[[32m✓^[[39m R1-T calendar call 1 consumes remaining restoration budget at age 1000^[[32m 101^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3899205Z      ^[[32m✓^[[39m R1-T calendar call 1 consumes remaining restoration budget at age 1001^[[32m 100^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3900205Z      ^[[32m✓^[[39m R1-T calendar call 1 consumes remaining restoration budget at age 1050^[[32m 82^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3901467Z      ^[[32m✓^[[39m R1-T calendar call 1 consumes remaining restoration budget at age 1001^[[32m 105^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3902460Z      ^[[32m✓^[[39m R1-T calendar call 2 consumes remaining restoration budget at age 950^[[32m 92^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3903652Z      ^[[32m✓^[[39m R1-T calendar call 2 consumes remaining restoration budget at age 999^[[32m 88^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3904649Z      ^[[32m✓^[[39m R1-T calendar call 2 consumes remaining restoration budget at age 1000^[[32m 103^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3905642Z      ^[[32m✓^[[39m R1-T calendar call 2 consumes remaining restoration budget at age 1001^[[32m 93^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3906689Z      ^[[32m✓^[[39m R1-T calendar call 2 consumes remaining restoration budget at age 1050^[[32m 100^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3907693Z      ^[[32m✓^[[39m R1-T calendar call 2 consumes remaining restoration budget at age 1001^[[32m 85^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3908688Z      ^[[32m✓^[[39m R1-T calendar call 3 validates same-mode activation at final age 999^[[32m 136^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3909662Z      ^[[32m✓^[[39m R1-T calendar call 3 validates same-mode activation at final age 1000^[[32m 115^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3910655Z      ^[[32m✓^[[39m R1-T calendar call 3 validates same-mode activation at final age 1001^[[32m 132^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3911805Z      ^[[32m✓^[[39m R1-T calendar call 3 validates same-mode activation at final age 1050^[[32m 226^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3912786Z      ^[[32m✓^[[39m R1-T calendar call 4 validates same-mode activation at final age 999^[[32m 225^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3913760Z      ^[[32m✓^[[39m R1-T calendar call 4 validates same-mode activation at final age 1000^[[32m 113^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3914912Z      ^[[32m✓^[[39m R1-T calendar call 4 validates same-mode activation at final age 1001^[[32m 137^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3915898Z      ^[[32m✓^[[39m R1-T calendar call 4 validates same-mode activation at final age 1050^[[32m 118^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3917053Z      ^[[32m✓^[[39m R2 UNLISTED hold survives public read/restart and restores exact original status after activation^[[32m 101^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3918195Z      ^[[32m✓^[[39m first publication stays pending until the owned hold is reobserved^[[32m 72^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3919073Z      ^[[32m✓^[[39m immutable evidence refuses updates and deletes^[[32m 58^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3920020Z      ^[[32m✓^[[39m concurrent attempts commit one evidence row and one effective operation^[[32m 122^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3921055Z      ^[[32m✓^[[39m same-mode second revision activates without acquiring another hold^[[32m 121^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3922280Z      ^[[32m✓^[[39m policy transition requires its own hold (required-to-optional)^[[32m 158^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3923261Z      ^[[32m✓^[[39m policy transition requires its own hold (optional-to-required)^[[32m 299^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3924363Z      ^[[32m✓^[[39m a failure after evidence insert rolls evidence and effective activation back atomically^[[32m 96^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3925599Z      ^[[32m✓^[[39m persisted acquisition pending with an unsent mutation is observed and requires operator recovery^[[32m 33^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3926796Z      ^[[32m✓^[[39m lost acquisition remains unattributable after restart without a second mutation^[[32m 32^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3927997Z      ^[[32m✓^[[39m lost restore response and merchant drift retain effective activation and immutable evidence^[[32m 80^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3929168Z      ^[[32m✓^[[39m restart never redispatches an unsettled pending restore over unchanged readback^[[32m 105^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3930292Z      ^[[32m✓^[[39m restart never redispatches an unsettled throw restore over unchanged readback^[[32m 94^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3931617Z      ^[[32m✓^[[39m claimed ambiguous restoration needs independently settled original-state recovery^[[32m 101^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3932916Z      ^[[32m✓^[[39m original-state change with an outstanding restore blocks a later publication until trusted settlement^[[32m 98^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3934380Z      ^[[32m✓^[[39m resolved unsent required to optional request permits a distinct safely fenced publication^[[32m 272^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3935599Z      ^[[32m✓^[[39m resolved unsent optional to required request permits a distinct safely fenced publication^[[32m 216^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3936709Z      ^[[32m✓^[[39m fresh exact policy drift while held blocks unsafe progress (before commit)^[[32m 55^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3937761Z      ^[[32m✓^[[39m fresh exact policy drift while held blocks unsafe progress (before restore)^[[32m 87^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3938759Z      ^[[32m✓^[[39m revoked selected key cannot activate or restore a held product^[[32m 55^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3939724Z      ^[[32m✓^[[39m missing release evidence leaves the hold intact and never activates^[[32m 62^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3940707Z      ^[[32m✓^[[39m fences reinstall before activation and preserves an operator hold^[[32m 109^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3941808Z      ^[[32m✓^[[39m fences epoch before activation and preserves an operator hold^[[32m 57^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3942796Z      ^[[32m✓^[[39m fences supersession before activation and preserves an operator hold^[[32m 159^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3943720Z      ^[[32m✓^[[39m locks the final read/commit against concurrent epoch^[[32m 99^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3944585Z      ^[[32m✓^[[39m locks the final read/commit against concurrent reinstall^[[32m 116^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3945650Z      ^[[32m✓^[[39m locks the final read/commit against concurrent supersession^[[32m 92^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3946749Z      ^[[32m✓^[[39m a lost restoration response can complete through trusted observation-only operator recovery^[[32m 93^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3947944Z      ^[[32m✓^[[39m unsent acquisition can be abandoned only after an exact trusted settled-write review^[[32m 59^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3948944Z      ^[[32m✓^[[39m operator recovery preserves newer work after reinstall^[[32m 33^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3949847Z      ^[[32m✓^[[39m operator recovery preserves newer work after supersession^[[32m 34^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3950988Z ^[[31m     ^[[31m×^[[31m current drift and mismatched trusted decisions never clear an operator hold^[[39m^[[32m 74^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3952428Z      ^[[32m✓^[[39m concurrent recovery commits one immutable audited resolution with no provider mutation^[[32m 39^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3953584Z      ^[[32m✓^[[39m public spoofed admission cannot dispatch a required to optional mode change^[[32m 92^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3954682Z      ^[[32m✓^[[39m public spoofed admission cannot dispatch a optional to required mode change^[[32m 79^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.3955803Z      ^[[32m✓^[[39m a pending owned hold prevents another production publication from hiding recovery^[[32m 79^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4053758Z     ^[[90m1442|^[[39m       read: async (context) => ({ ...((await authority.read(context)) …
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4054305Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4054929Z ^[[2m Test Files ^[[22m ^[[1m^[[31m1 failed^[[39m^[[22m^[[2m | ^[[22m^[[1m^[[32m9 passed^[[39m^[[22m^[[90m (10)^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4055967Z ^[[2m      Tests ^[[22m ^[[1m^[[31m1 failed^[[39m^[[22m^[[2m | ^[[22m^[[1m^[[32m160 passed^[[39m^[[22m^[[90m (161)^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4056618Z ^[[2m   Start at ^[[22m 17:45:35
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4057160Z     ^[[90m1443|^[[39m     };
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4057845Z     ^[[90m1444|^[[39m     await expect(f.restart().recover({ ...f.identity, commandKey: 'rej…
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4058642Z     ^[[90m   |^[[39m                                                                                         ^[[31m^^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4059142Z     ^[[90m1445|^[[39m       'Trusted availability recovery decision',
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4059475Z     ^[[90m1446|^[[39m     );
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4059599Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4059807Z ^[[31m^[[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4060260Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4060542Z ^[[2m   Duration ^[[22m 11.43s^[[2m (tests 80%, import 14%, transform 5%)^[[22m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4075149Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4089745Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4125855Z ##[error]AssertionError: expected [Function] to throw error including 'Trusted availability recovery decision' but got 'Original v2 availability not observed…'
+durable-core	Run corepack pnpm check:database	
+durable-core	Run corepack pnpm check:database	Expected: "Trusted availability recovery decision"
+durable-core	Run corepack pnpm check:database	Received: "Original v2 availability not observed; operator hold retained"
+durable-core	Run corepack pnpm check:database	
+durable-core	Run corepack pnpm check:database	 ❯ test/activation.test.ts:1444:89
+durable-core	Run corepack pnpm check:database	
+durable-core	Run corepack pnpm check:database	
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4493076Z [ELIFECYCLE] Test failed. See above for more details.
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4603465Z Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4603791Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4604328Z   × "pnpm recursive run" failed in /home/runner/work/insignia/insignia/
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4604680Z   │ packages/database
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4604800Z 
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4660244Z [ELIFECYCLE] Command failed with exit code 1.
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4714887Z [ELIFECYCLE] Command failed with exit code 1.
+durable-core	Run corepack pnpm check:database	2026-10-06T17:45:47.4777329Z ##[error]Process completed with exit code 1.
