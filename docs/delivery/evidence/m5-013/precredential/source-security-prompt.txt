@@ -1,0 +1,414 @@
+Standards/security axis: cite documented standards; inspect retained data, bounded transport/credentials/cleanup/no retry/authority and sandbox/report honesty. Repo standards override heuristic smells.
+On top of whatever the repo documents, the Standards axis always carries the **smell baseline** below: a fixed set of Fowler code smells (_Refactoring_, ch.3) that applies even when a repo documents nothing. Two rules bind it:
+
+- **The repo overrides.** A documented repo standard always wins; where it endorses something the baseline would flag, suppress the smell.
+- **Always a judgement call.** Each smell is a labelled heuristic ("possible Feature Envy"), never a hard violation. Like any standard here, skip anything tooling already enforces.
+
+Each smell reads *what it is* → *how to fix*; match it against the diff:
+
+- **Mysterious Name**: a function, variable, or type whose name doesn't reveal what it does or holds. → rename it; if no honest name comes, the design's murky.
+- **Duplicated Code**: the same logic shape appears in more than one hunk or file in the change. → extract the shared shape, call it from both.
+- **Feature Envy**: a method that reaches into another object's data more than its own. → move the method onto the data it envies.
+- **Data Clumps**: the same few fields or params keep travelling together (a type wanting to be born). → bundle them into one type, pass that.
+- **Primitive Obsession**: a primitive or string standing in for a domain concept that deserves its own type. → give the concept its own small type.
+- **Repeated Switches**: the same `switch`/`if`-cascade on the same type recurs across the change. → replace with polymorphism, or one map both sites share.
+- **Shotgun Surgery**: one logical change forces scattered edits across many files in the diff. → gather what changes together into one module.
+- **Divergent Change**: one file or module is edited for several unrelated reasons. → split so each module changes for one reason.
+- **Speculative Generality**: abstraction, parameters, or hooks added for needs the spec doesn't have. → delete it; inline back until a real need shows.
+- **Message Chains**: long `a.b().c().d()` navigation the caller shouldn't depend on. → hide the walk behind one method on the first object.
+- **Middle Man**: a class or function that mostly just delegates onward. → cut it, call the real target direct.
+- **Refused Bequest**: a subclass or implementer that ignores or overrides most of what it inherits. → drop the inheritance, use composition.
+
+
+Fresh independent precredential full-source review of Insignia M5-013 cleanup only. Actual launch GPT-6.1-sol/high, read-only/never. No edits, provider/browser/credential access, canonical run initialization, live qualification invocation, fixture archive, merge or successor work. No protectedCredentials call or secret-file inspection. Test only synthetic seams with mocked HTTP/credentials and filesystem writes in memory if needed; report blocked tests honestly. Read-only is not credential isolation.
+
+Base/effective merge base9d896e824ebf3beb5e560ce89e9873799869f6c5; review df76a6a39b31263796b8a355debd64661a14f5f2 using git diff 9d896e824ebf3beb5e560ce89e9873799869f6c5...df76a6a39b31263796b8a355debd64661a14f5f2 and corresponding commit log. Fresh canonicalM5-013 is not created and no credentials/live attempt admitted until full gate. Gate/binding currently qualifies the fixed source, not principal acceptance or launch. Any tracked source change after freeze closes live authority.
+
+Read all six M5-013 files in full, interacting M5-004 credentials and WORKFLOWS source (not credential file), M5-011 identity/ownership helpers, M5-012 shape/binding/transport helpers, unchanged production availability/application source/build, governing AGENTS/ledger/state/operating-model/roles/plan3.1/6.2, pinned TDD/tests/mocking/code-review skills. Read complete new report/authority/merge receipts and local root/focused/schema/redgreen artifacts under /home/serveradmin/insignia-m5-013-handoff, plus prior canonical baseline33 hashes. Verify no source/package/oldharness/priorraw changes, no searches/intent experiment, exact three documents andvariables, whole limitsauth1/read3/update1/no retry/no parallel, preserved transport/body quiescence index0, validation before descriptive retention, exact identity/grants/ownership/unpublished prestate andfinal; alreadyArchived skipmutation.
+
+Final ARCHIVED/unpublished owned readback is explicitly sufficient for disposable cleanup. Do not restore M5-012 acknowledgement-version equality: exact timestampdifference must be recorded, initial historicaltimestamp equality not required. This does not alter production hold semantics or waive M5-011 conflict. Ambiguous update can receive onefinal read only if underlying transport/body settled; neverresend. Finalnegative/foreign/incomplete/provider-error muststayunsettled with exactambiguity. Prior registers closed andimmutable.
+
+Return concrete verdict/severity/fileline/requirement/repro for unresolved material findings; files actually examined; tests actually executed vs supplied logs; model/sandbox/CI/physical durability limitations. No native/principal approval. Under400 words unless a concrete finding requires supplement. Source and source CI snapshots are supplied evidence, not independently rerun CI.
+
+ORIGINAL CURRENT USER/PRINCIPAL BRIEF:
+# M5-013 — exact DRAFT fixture cleanup
+
+## Goal
+Archive the one owned disposable fixture left DRAFT by M5-011/M5-012, with no publication mutation and no reuse of closed registers.
+
+This slice is cleanup only. It does not qualify or change the production availability adapter.
+
+## Baseline
+Owner forwarding requires verified NORMAL merge of corrected PR #42 at:
+- base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e`
+- head `022f5ea238444e3ae2fcd93bb571162ccde63fd6`
+- tree `759634634ba8e2362ff6736fe4412e8fe2178614`
+
+Verify actual merge parents/tree and begin from remote main.
+
+Use actual GPT-6.1-sol/high and repository-pinned TDD/tests-mocking, diagnosing-bugs, code-review, writing-for-agents and handoff skills.
+
+Closed M5-004/009/010/011/012 registers remain immutable.
+
+Exact fixture only:
+- Product `gid://shopify/Product/10490211467547`
+- Marker `insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb`
+- Created `2026-10-02T21:19:48Z`
+- Last accepted observation: DRAFT, effective publication false
+
+## 1. Fresh fixed cleanup operator
+Create a fresh canonical cleanup register under `/home/serveradmin/insignia-m5-013-handoff/run`.
+
+The operator is hard-coded to the exact fixture and exact app/shop/install identity. No search and no dynamic product ID.
+
+Allowed GraphQL documents only:
+1. identity + exact product prestate read;
+2. status-only `productUpdate` to ARCHIVED for that product;
+3. exact final product read.
+
+No ACTIVE/DRAFT update, create, delete, publish/unpublish, scope/version, inventory, variant, price, cart/order or other mutation.
+
+## 2. Pre-access offline gate
+Before credential access:
+- TDD the exact-target/no-alternate-target fences;
+- verify production packages/source remain unchanged;
+- verify the cleanup mutation contains only `{id,status:ARCHIVED}`;
+- run applicable focused/root/style/secret checks;
+- obtain fresh GPT-6.1-sol/high Spec and Standards/security reviews;
+- obtain all applicable exact-source CI green;
+- freeze source/tree/review/CI binding.
+
+Any tracked source change after freeze closes live authority.
+
+## 3. Provider ceilings
+Whole slice:
+- client-credentials exchanges: 1
+- Admin reads: 3
+- status-only updates: 1
+- every other provider operation: 0
+
+No retries or parallel calls.
+
+## 4. Exact prestate
+Using the protected existing credential route, read exact identity and exact product. Require:
+- exact known app/client/shop/domain/installation and partnerDevelopment=true;
+- current grants include `write_products`, `read_products`, `read_publications`, `read_product_listings`;
+- exact product ID, marker/title/sole tag/createdAt ownership;
+- status exactly DRAFT, or already ARCHIVED;
+- `publishedOnPublication(publicationId:339456917787) == false`;
+- `publishedAt == null`;
+- `onlineStoreUrl == null`;
+- complete legacy resourcePublications connection with no `isPublished=true` node.
+
+Do not require historical `updatedAt` equality. Record the current timestamp as observation only. If ownership/effective availability is ambiguous or status is neither DRAFT nor ARCHIVED, STOP with zero mutation.
+
+## 5. Cleanup mutation
+If already ARCHIVED: perform no mutation and proceed to final verification.
+
+If DRAFT: reserve and send exactly one status-only `productUpdate` to ARCHIVED.
+
+Do not require mutation-response `updatedAt` to equal final readback. This cleanup is not the production availability hold and does not establish restoration ownership/CAS.
+
+After the single mutation attempt, perform one exact final read.
+
+Cleanup is settled successfully only if the final read proves:
+- exact owned product;
+- status ARCHIVED;
+- effective publication false for publication339456917787;
+- publishedAt/onlineStoreUrl null;
+- no effective `resourcePublications` membership.
+
+If the mutation transport is ambiguous, use at most the one reserved final read to classify state; never resend.
+
+Report acknowledgement/readback timestamp differences exactly, but do not convert a harmless timestamp difference into permission to restore/retry.
+
+## 6. Return
+Return one docs/evidence PR with merge receipt, fresh gate, request accounting, prestate, mutation settlement, final ARCHIVED receipt, fresh completed-change reviews and final CI.
+
+Stop for principal review. No production adapter correction, new product, matrix continuation, M6/M7, activation, RELEASE_BOUND/gate pass or launch.
+
+OWNER LAUNCH AUTHORITY:
+Use the attached `insignia-pr42-approved-m5-013-handoff` package.
+
+I authorize the NORMAL merge of PR #42 only at:
+base 9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e
+head 022f5ea238444e3ae2fcd93bb571162ccde63fd6
+tree 759634634ba8e2362ff6736fe4412e8fe2178614
+
+Reverify live refs, all ten exact-head attempt-1 passing workflows and the external principal approval. Keep the reviewed head unchanged. No squash/rebase, force push, fabricated native approval or protection bypass. Stop on mismatch and verify actual merge parents/tree.
+
+Then execute M5-013 exactly as specified.
+
+This is cleanup only. Do not reopen any prior canonical register and do not perform another publication-intent experiment.
+
+Exact fixture:
+gid://shopify/Product/10490211467547
+marker: insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb
+
+Create a fresh fixed cleanup register/operator and fully qualify it offline before credential access.
+
+After exact identity/ownership/DRAFT-or-ARCHIVED/effective-unpublished prestate passes, archive the fixture at most once with a status-only update. Then perform one exact final read. No retry.
+
+For this explicit disposable-fixture cleanup, final ARCHIVED/effective-unpublished readback is the settlement criterion; do not require mutation-response updatedAt to equal final readback. Record any timestamp difference exactly. This does not alter production hold semantics or waive M5-011's conflict.
+
+No create, delete, publish/unpublish, scope/version, inventory/variant/price, production adapter change, M6/M7, activation, RELEASE_BOUND/gate pass or launch.
+
+Return one docs/evidence PR with exact receipts, fresh reviews and final CI, then stop for principal review. Do not merge the successor PR.
+
+APPROVED PR42 REREVIEW:
+# PR #42 — external principal rereview
+
+**Verdict: APPROVED for normal merge at corrected final head.**
+
+Exact binding:
+- Base/effective merge base: `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e`
+- Approved head: `022f5ea238444e3ae2fcd93bb571162ccde63fd6`
+- Approved tree: `759634634ba8e2362ff6736fe4412e8fe2178614`
+- PR state at rereview: open, non-draft, unmerged, mergeable
+- Current main: exact base above
+- Native GitHub reviews: none
+- Final-head workflows: 10/10 SUCCESS, all attempt 1
+
+The correction from prior reviewed head `4f0ee689218545af7161ce6a6fa4d942d319f533` is one commit. It exactly implements the principal finding:
+- future association filter is `publication_ids:'339456917787'`;
+- configured-intent consensus uses only `includedProducts`, app-ID intended and channel-ID intended;
+- association remains diagnostic-only;
+- three positive intent surfaces with DRAFT/effective-false classify `INTENT_CONFIRMED`;
+- disagreement among the three actual intent surfaces remains `INCONSISTENT`;
+- effective publication remains separate;
+- historical frozen M5-012 `INCONSISTENT` output and all raw live evidence remain unchanged;
+- the closed historical register gains no retroactive cleanup authority.
+
+Focused 35/35 and all 14 permitted root stages passed. Fresh GPT-6.1-sol/high Spec and Standards/security reviews report no unresolved material findings. Production availability source/build and M5-011's one-second conflict remain unchanged.
+
+Principal adjudication of the existing live evidence is therefore: **configured intent observed / effective publication false**. Cross-transition invariance is still not proven, and no production adapter correction is approved here.
+
+PRIOR M5-012 ROUND1 safety-spec-result.md historical:
+Two unresolved material findings at base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e` → head `0c5af128b947586cac780bffb298e2ca8859ba56`.
+
+- **Spec — P2: malformed GraphQL errors permit cleanup.** [operator.mjs:450](/home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.mjs:450) checks `!raw.errors`. An otherwise valid includedProducts response containing `errors: false`, `null`, `0`, or `""` passes and permits the ARCHIVED request. This violates the prompt’s “no GraphQL/provider ambiguity” requirement. All four cases reproduced through the actual operator with synthetic HTTP and memory-backed filesystem writes. Smallest fix: require the `errors` property to be absent; add regression coverage requiring update0.
+
+- **Standards/security — P2: rejected foreign data enters retained evidence.** [operator.mjs:456](/home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.mjs:456) assigns `event.response` before ownership validation. A foreign search result containing a synthetic private-title sentinel stops with `ownership`, but catch/finally persistence retains that title. Selecting field names does not sanitize unvalidated field contents. This violates AGENTS’ restriction against personal data in logs/handoffs. Smallest fix: retain response contents only after validation; preserve rejected observations as redacted failure metadata. Add a retention regression test.
+
+Examined: all six M5-012 files; complete inherited M5-011 operator/documents, M5-004 operator/qualification/binding, M5-010 recovery; Shopify source/build modules loaded through the imported barrel; availability contract; required authority documents, approval/merge receipts, offline evidence, package integration and ten workflows. Required diff and log commands ran.
+
+Actually executed:
+
+- Six syntax checks: passed.
+- In-memory operator probes: reproduced both findings; event-index0 quarantine blocked another request.
+- Authorization hashes and external approval copy: matched.
+- Prior Shopify build: 26/26 matched; closed registers: 27/27 matched.
+- Secret/provenance checker: passed.
+- Binding tests: gate-record test passed; full-freeze test blocked by nested `git` subprocess `EPERM`.
+- Diff whitespace check: failed on retained red-log whitespace.
+
+Supplied focused27/27, 100 serial cases, TDD and schema logs were inspected, not rerun. Root/stress/current-head CI remain unverified.
+
+Local review verdict: **material findings remain; offline gate incomplete**. Credentials **NOT_ACCESSED**; live **NOT_RUN**. No principal/native approval granted. Actual GPT-6.1-sol/high host identity could not be independently verified here.
+PRIOR M5-012 ROUND1 safety-security-result.md historical:
+One unresolved material finding at base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e`, head `0c5af128b947586cac780bffb298e2ca8859ba56`.
+
+**Standards/security — P2: rejected foreign-product content enters durable evidence.** At [operator.mjs:456](/home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.mjs:456), `event.response` receives the selected response before ownership validation. If `includedProducts` or a root search returns product123 with customer text in its title/tags, validation throws `ownership`, but the catch/finally saves that content into `register.json`. Cleanup correctly remains blocked; retention still violates AGENTS.md’s requirement to keep personal data out of logs/handoffs.
+
+**Counterexample executed:** actual operator source, entirely synthetic HTTP and an in-memory filesystem. A foreign result caused `ownership`, zero updates, and retained both injected private title and tag strings. No files or external resources were created.
+
+**Smallest fix:** assign rich `event.response` only after successful validation. Preserve sanitized failure metadata separately. Extend the foreign-result regression to assert that rejected descriptive fields are absent from serialized evidence.
+
+**Spec axis:** the same defect violates the fixed-target evidence boundary; no additional material finding identified. Copied transport/binding techniques were assessed for safety, without an optional refactoring finding.
+
+Examined: the requested diff/log; all six M5-012 files; full interacting repository helpers and Shopify source/build modules; authority, architecture, prompt, research/report, skills, external approval and merge receipts.
+
+Actually executed:
+
+- Six syntax checks: exit0.
+- Binding metadata test: 1/1, exit0.
+- Pure classification/product checks: 22 cases, exit0.
+- Retention reproduction: confirmed.
+- Integrity verification: approval manifest/original, merge parents/tree, 27 closed-register hashes and 26 prior-bound Shopify build hashes match; production source unchanged.
+- Full binding suite: exit1 from sandbox `spawnSync git EPERM`.
+- `git diff --check`: exit2 for preserved-log whitespace.
+
+Supplied evidence only: focused27/27, including100 serial scenarios and denied-target cases; schema and TDD logs. Root/stress/current-head CI remain pending.
+
+Credentials **NOT_ACCESSED**; live **NOT_RUN**. Worktree remains clean. This review does not clear the precredential gate or grant approval. Project configuration requests GPT-6.1-sol/high, but actual runtime model/effort attestation is unavailable here.
+PRIOR M5-012 ROUND1 responses.md historical:
+# Response to completed source round 1
+
+Both reviewers reproduced rejected foreign title/tag retention. Rich event.response now follows successful validation; rejected responses retain only fixed request and redacted failure metadata. New public-seam regression checks includedProducts and root search, asserting injected private sentinels are absent from serialized register and qualification evidence.
+
+Spec also reproduced falsy malformed GraphQL errors allowing cleanup. Success now requires the errors property to be absent; false/null/0/empty string/empty array all stop as provider_error with update0. The combined regressions failed before these changes and pass after correction.
+
+No credentials or provider operation occurred, and no source was frozen. Full root checks, current-source CI and fresh two-axis reviews must be repeated on the new source. Reports' inability to self-attest model is preserved; the orchestrator captured actual same-launch Codex turn_context and verified GPT-6.1-sol/high,read-only/never independently. Prior clean source remains a failed safety candidate despite its ten green workflows.
+
+PRIOR M5-012 ROUND2 safety-spec-result.md historical:
+One unresolved material **Spec finding** at base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e` → head `b70207ad43316cbffb78f98d3261bd94bf2b920a`.
+
+**P2 — failed reads remain retryable, allowing cleanup without final-read capacity.** [operator.mjs:316](/home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.mjs:316) accepts the current step again after a settled failure because only successful reads advance `state.step`; the failure path leaves no terminal fence. This violates “No retry” and “Then perform one exact readback.”
+
+**Executed counterexample:** authenticate; return `errors:false` on identity; catch its rejection; retry identity successfully; complete the remaining six reads; request ARCHIVED. The operator dispatches cleanup at **auth1/read8/update1**, then rejects final readback with `ceiling`. The qualification wrapper currently stops on the original failure, but the public durable-operator seam permits this sequence.
+
+**Smallest fix:** reject any read operation already reserved in durable events, including failed attempts. Preserve final-read capacity before admitting cleanup. Add a public-seam regression asserting the retry causes no HTTP dispatch and update0.
+
+Both round-1 defects are corrected: malformed `errors` properties stop, and rejected foreign descriptive data is absent from retained evidence.
+
+Examined: requested diff/log; all six M5-012 files; complete M5-004 operator/qualification/binding, M5-010 recovery, M5-011 operator/documents; all Shopify barrel-loaded source/runtime modules and availability contract; authority/architecture documents, full round-1 reports/response, approval/merge receipts, package integration and ten workflows.
+
+Actually executed:
+
+- Six syntax checks and secret/provenance checker: passed.
+- All 27 committed operator tests with synthetic HTTP, memory-backed filesystem and cross-realm assertion normalization: passed, including 100 serial scenarios.
+- Additional reservation/fsync and event-index0 quarantine probe: passed.
+- Retry/cleanup counterexample: reproduced.
+- Authorization hashes, external approval copy, 26 prior-bound build hashes and 27 closed-register hashes: matched; production source unchanged.
+- Binding metadata test passed; full freeze test blocked by sandbox `spawnSync git EPERM`.
+- Diff whitespace check failed on preserved red-log whitespace.
+
+Supplied evidence only: focused29/29 and browser stress100/100; root output inspected. CI snapshot showed nine successes and one in progress.
+
+Verdict: **material finding remains; precredential gate incomplete**. Credentials **NOT_ACCESSED**; live **NOT_RUN**. No principal/native approval. Actual model/effort metadata is not self-attested here.
+PRIOR M5-012 ROUND2 safety-security-result.md historical:
+Verdict: **no unresolved material finding** at head `b70207ad43316cbffb78f98d3261bd94bf2b920a`, against base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e`.
+
+Standards/security: no material finding. Spec compliance: no material finding.
+
+Both round-1 defects are resolved. GraphQL success requires the `errors` property to be absent at [operator.mjs:450](/home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.mjs:450). Rich response retention follows successful validation at [operator.mjs:456](/home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.mjs:456), preventing rejected foreign product data from being persisted.
+
+Examined:
+
+- Required exact-range `git diff` and `git log`; all six M5-012 files in full.
+- Full interacting M5-004/010/011 helpers, Shopify source/build modules, application availability contract, package integration and applicable CI workflows.
+- Governing instructions, architecture/delivery documents, pinned review/TDD guidance, both complete round-1 reports and response, authorization records and merge receipts.
+
+Actually executed:
+
+- Six syntax checks: passed.
+- Actual operator suite with filesystem writes redirected to memory: **27/27 passed**, including both regression families and 100 serial cases.
+- **39 supplemental public-seam probes passed**, covering malformed errors across reads, durable reservation before dispatch, event-index-zero quarantine, settled write failure and outstanding body cancellation.
+- Gate-record test and secret-boundary scanner: passed.
+- Authorization hashes **6/6**, closed-register hashes **27/27**, prior Shopify build hashes **26/26**: matched. Production Shopify source diff empty; final worktree clean.
+
+Limits and supplied evidence:
+
+- Memory-backed tests do **not** verify physical filesystem durability. The full binding test was unavailable because nested Git execution returned `EPERM`.
+- Supplied focused log reports **29/29**; browser-stress log reports **100/100**. Supplied root log reaches final artifact generation. I did not rerun those checks.
+- Latest supplied exact-head CI snapshot shows **9 successes and 1 running workflow**. The precredential gate remains incomplete.
+- `git diff --check` returned whitespace diagnostics confined to preserved red-test logs.
+- Runtime model/effort was not independently attested from this reviewer context.
+
+Credentials **NOT_ACCESSED**; live operations **NOT_RUN**. This is a local source-review verdict, not principal/native approval or authorization to proceed before gate completion.
+PRIOR M5-012 ROUND2 responses.md historical:
+# Response to completed source round 2
+
+Spec reproduced a failed identity read followed by retry through the public durable operator, exhausting the final-read allowance before cleanup. The wrapper's stop was insufficient as a public-seam invariant. Each read operation is now admitted only if no durable event already reserved that operation. Cleanup also requires exactly seven completed pre-cleanup reads and capacity for the eighth/final read. The regression failed on the reviewed source; the fixed operator rejects retry before HTTP and never dispatches cleanup after the failed read. Security's predecessor pass does not clear this changed source.
+
+An additional integrator check covers the documented search-debug form without warnings. The primary search-syntax documentation permits debug responses with and without warnings. Optional absent warnings are accepted; a present malformed warnings value or any warning still stops. This changes diagnostic-shape handling only, preserving exact queries, ownership/complete-connection guards and publication fields. Its regression also failed before correction. No real provider result is claimed.
+
+Both full-source reviewers must inspect this new source, the original brief and all round-1/2 reports/responses. No source freeze, credential access or live attempt has occurred. Root/focused/stress and exact-current-source CI are refreshed before freeze.
+
+PRIOR M5-012 ROUND3 safety-spec-result.md historical:
+Verdict: **no unresolved material finding** at head `0f8b7d7d53732cf7d0038eb4d366fe2e6179b01f`, against base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e`.
+
+**Spec:** zero material findings. **Standards/security:** zero material findings.
+
+All prior findings are resolved: malformed `errors` properties stop; rejected foreign descriptive data is excluded from retained evidence; failed reads cannot be retried. Cleanup requires seven pre-cleanup reads and final-read capacity. Failed final reads cannot be retried. Absent optional search warnings are accepted; malformed warning values and actual warnings stop.
+
+Examined:
+
+- Required exact-range `git diff` and `git log`; all six M5-012 files in full.
+- Full interacting M5-004/010/011 helpers, Shopify source/runtime build modules and availability contract.
+- Governing documents, pinned review/TDD/tests/mocking guidance, both complete prior-round reports and responses, authorization/merge receipts, package integration and ten workflows.
+
+Actually executed:
+
+- Six syntax checks and secret/provenance checker: exit0.
+- Unmodified operator tests with filesystem writes redirected to memory: **29/29 passed**, including 100 serial scenarios. Gate-record test passed.
+- **52 supplemental public-seam probes passed**, covering every failed-read reservation, final-read reentry, warning shapes, reservation before dispatch, event-index0 quarantine and outstanding body cancellation.
+- Closed-register hashes **27/27**, prior Shopify build hashes **26/26**, authorization hashes **6/6**, external approval original/copy: matched. Production source unchanged; worktree clean.
+- Full binding test blocked by sandbox `spawnSync git EPERM`; combined suite exit1. Initial runner setup failed before tests and was corrected. Physical durability was not tested.
+- Diff whitespace check: exit2, confined to preserved red-test logs.
+
+Supplied evidence only: focused31/31, schema/TDD logs, root-round3 output reaching final manifest generation, predecessor browser stress100/100. Current-head CI snapshot shows nine successes and one running workflow. Current stress and complete gate remain unverified here.
+
+Launch-settings artifact records GPT-6.1-sol/high, read-only/never; no provider-private attestation claimed.
+
+Credentials **NOT_ACCESSED**; live **NOT_RUN**. No principal/native approval or gate-clearance authorization granted.
+PRIOR M5-012 ROUND3 safety-security-result.md historical:
+Verdict: **no unresolved material finding** on either the Spec or Standards/security axis for base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e` → head `0f8b7d7d53732cf7d0038eb4d366fe2e6179b01f`.
+
+All prior findings and objections were considered. Round 1 is resolved by rejecting any `errors` property and validating before retaining provider data. Round 2 is resolved by durable read-reentry fencing, requiring exactly seven pre-cleanup reads, reserving final-read capacity, and prohibiting final-read retries. Supplemental public-seam probes reproduced these protections. Conservative stopping behavior preserves the fixed authority and timestamp requirements.
+
+Examined: exact diff/log; all six M5-012 files; full interacting inherited helpers, application contracts, Shopify source and build modules; governing documents and pinned review/TDD guidance; both rounds’ complete reports and responses; authorization, external approval and merge receipts; package scripts and applicable workflows. Production availability source/build and closed-register hashes remain unchanged.
+
+Actually executed, without physical filesystem writes:
+
+- Six syntax checks.
+- Test files with filesystem mutations redirected to memory: **30/31 passed**—29 operator tests and one gate-record test. The freeze-binding test failed because `spawnSync git` returned `EPERM`.
+- **16 additional synthetic probes passed**, covering failed-read retries, final-read retries, malformed warnings, reservation-before-dispatch, event-index-zero, ambiguous writes and outstanding body cancellation.
+- TypeScript project emission into memory matched all **26** Shopify build artifacts.
+- Authorization, closed-register and prior-build integrity checks passed; secret scan passed.
+- `git diff --check` reported trailing whitespace in preserved historical test logs.
+
+Memory tests verify reservation ordering, **not physical fsync durability**.
+
+Supplied evidence, not rerun here: focused **31/31**, schema checks, root-log completion output, current stress **100/100**, and an exact-head CI snapshot showing **10/10 successful workflows**. I did not independently establish a completed frozen offline gate.
+
+Credentials **NOT_ACCESSED**; live operations **NOT_RUN**. Worktree remained clean at the supplied head. No principal/native approval is granted.
+
+The local configuration requests GPT-6.1-sol/high; actual runtime model identity was not independently attestable from the available read-only evidence.
+PRIOR M5-012C spec (historical, not M5-013 qualification):
+**Verdict: no unresolved material Spec/correctness finding.**
+
+Reviewed PR #42 at base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e` → head `022f5ea238444e3ae2fcd93bb571162ccde63fd6`. Both requested three-dot diffs and commit logs ran.
+
+All five correction requirements are satisfied:
+
+- [documents.mjs:29](/home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/documents.mjs:29) preserves exact `publication_ids:'339456917787'` quoting inside GraphQL.
+- [operator.mjs:136](/home/serveradmin/insignia-m5-012-worktree/scripts/m5-012/operator.mjs:136) uses exactly the three inclusion/intended surfaces for consensus; association remains diagnostic.
+- Regressions cover empty association with positive consensus, negative consensus with positive association, and disagreement in each qualified surface.
+- Effective publication remains separately recorded and conservatively guarded, alongside legacy visibility.
+- Corrected classification cannot reopen the frozen attempt; the closed-copy regression rejects reentry before HTTP and preserves bytes.
+
+Ownership, grants, completeness, exact-version, transport, no-retry and final-read-capacity guards remain. Earlier malformed-errors and foreign-data-retention findings remain fixed. No production source/workflow change or scope expansion was found.
+
+Reporting preserves historical **INCONSISTENT/auth1/read7/update0/closed/no cleanup**, separately records principal **INTENT_CONFIRMED**, and makes neither guaranteed published-only association semantics nor transition-invariance claims.
+
+Examined all six M5-012 files in full; interacting M5-004/010/011 operator, qualification, binding and recovery helpers; production availability source/build and application contract; authority documents, architecture sections, pinned review/TDD/mocking guidance, report/state/research/recommendation, prior findings/responses, and retained binding/gate/register/qualification/closure evidence.
+
+**Executed here:**
+
+- Memory-backed focused suite: **34/35 passed**, including all correction regressions and 100 serial scenarios; suite exit1 because full freeze encountered nested Git `EPERM`.
+- Six syntax checks and secret/provenance scanner: passed.
+- TypeScript emission entirely in memory: 26 artifacts, zero diagnostics, exact byte matches.
+- Integrity: 132 immutable files, 2,846 frozen binding entries, 26 prior Shopify artifacts, authorization manifests and closure/artifact hashes matched.
+- `git diff --check`: exit2, confined to retained logs’ whitespace.
+
+**Supplied evidence only:** focused35/35, fourteen permitted root stages and red/green logs. Exact-head natural CI remains unverified here. Physical crash durability was not tested.
+
+Worktree remains clean. No edits, secret-file inspection, provider/browser/credential operation or live invocation occurred. Actual GPT-6.1-sol/high provider internals cannot be independently self-attested. This verdict grants no principal/native approval, cleanup or merge authority.
+PRIOR M5-012C security (historical, not M5-013 qualification):
+**Verdict: no unresolved material Standards/security finding.**
+
+Reviewed PR #42 at base `9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e`, correction start `4f0ee689218545af7161ce6a6fa4d942d319f533`, final head `022f5ea238444e3ae2fcd93bb571162ccde63fd6`. Both requested three-dot diffs and commit logs ran.
+
+The correction satisfies [M5-012C](/home/serveradmin/insignia-m5-012-worktree/docs/delivery/prompts/M5-012C-ASSOCIATION-CORRECTION.md): exact quoted association filter, three-surface configured-intent consensus, diagnostic association, and preserved closed-run authority. Ownership, grants, completeness, effective/legacy publication, exact versions, retry/reentry fences, transport quarantine and final-read capacity remain intact.
+
+Validation precedes rich response retention, consistent with [AGENTS.md’s safety standard](/home/serveradmin/insignia-m5-012-worktree/AGENTS.md:39). Reports distinguish historical INCONSISTENT/auth1/read7/update0/no-cleanup from principal-adjudicated INTENT_CONFIRMED and label historical browser/schema evidence honestly, consistent with [evidence reporting requirements](/home/serveradmin/insignia-m5-012-worktree/AGENTS.md:43).
+
+No actionable Fowler smell heuristic reported. Fixed-harness duplication was considered against the documented narrow scope and immutable historical boundaries; it is not a hard breach.
+
+Examined: all six M5-012 files; complete interacting M5-004 operator/qualification/binding, M5-010 recovery and M5-011 operator/documents; application availability contracts; all 13 Shopify source modules and 26 build artifacts; governing documents, pinned guidance, updated report/state/research/recommendation, prior findings/responses, raw binding/gate/register/qualification/closure, authorization, package scripts and ten applicable workflows.
+
+Actually executed:
+
+- Focused suite with filesystem writes redirected to memory and synthetic HTTP/credentials: **34/35 passed**, including 100 serial cases. Freeze-binding test blocked by nested Git `EPERM`; suite exit1.
+- Six syntax checks and repository secret/provenance check: passed.
+- Memory-only TypeScript emission: zero diagnostics; 26 exact build matches.
+- Integrity checks: **132/132 immutable files**, **2,846/2,846 frozen binding entries**, authorization manifests and closure/artifact hashes matched. Production source unchanged; worktree clean.
+- Both whitespace checks: exit2, confined to supplied log whitespace.
+
+Supplied evidence inspected, not rerun: focused35/35, red/green regressions and all14 permitted root stages passing. Final-head CI remains unverified here.
+
+Unresolved code objections: none. Physical crash durability and actual provider model/effort internals were not independently attested. No secret-file access, provider/browser operation, edit or cleanup occurred. This verdict grants no principal/native approval or continuation authority.
+Current responses and known objections: source copies bounded durable operator machinery into a new profile, narrows query matrix to prestate/update/final, removes intent entirely and implements explicit final-ARCHIVED disposal settlement. Exact-target and timestamp-difference regressions were red, then green. A failed-auth public-seam regression was red, then authenticated-state fence made it green. Twenty-six focused cases pass incl100serial scenarios, index0 disposal/quarantine, failed read/no retry and exactmutationfields. Initial missing build/module and schema wrong-import setup failures are preserved NON-ACCEPTANCE; actual red logs are semantic and successful schema3/control are separate. No unresolved known material objection is hidden. Independently verify all responses rather than trusting summaries.
+
+Source binding preview for independent hash/provenance checks: /home/serveradmin/insignia-m5-013-handoff/source-binding.json. No canonical run yet.

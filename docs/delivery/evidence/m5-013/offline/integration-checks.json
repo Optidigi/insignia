@@ -1,0 +1,18 @@
+{
+  "stage": "post-live docs/evidence integration",
+  "rootCheck": "full root passed at frozen source; no behavioral source changed afterwards; final natural CI runs whole root again",
+  "style": {
+    "command": "corepack pnpm check:style",
+    "exitCode": 0,
+    "notes": "Existing non-blocking warnings remain; no source fixes applied."
+  },
+  "secrets": {
+    "command": "corepack pnpm check:secrets",
+    "exitCode": 0
+  },
+  "evidenceScan": "No bearer/private-key/Shopify token values in live files; public client ID retained as identity. Exact canonical bytes preserved.",
+  "priorCanonicalUnchanged": 33,
+  "shopifyBuildUnchanged": 26,
+  "postFreezeCodeDiff": "empty for scripts/packages/apps/crates/.agents/.github/package.json",
+  "setupLimitation": "Prettier command unavailable; irrelevant to repository Biome scripts; no formatter was installed or substituted."
+}

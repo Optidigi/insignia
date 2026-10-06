@@ -1,0 +1,26 @@
+Use the attached `insignia-pr42-approved-m5-013-handoff` package.
+
+I authorize the NORMAL merge of PR #42 only at:
+base 9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e
+head 022f5ea238444e3ae2fcd93bb571162ccde63fd6
+tree 759634634ba8e2362ff6736fe4412e8fe2178614
+
+Reverify live refs, all ten exact-head attempt-1 passing workflows and the external principal approval. Keep the reviewed head unchanged. No squash/rebase, force push, fabricated native approval or protection bypass. Stop on mismatch and verify actual merge parents/tree.
+
+Then execute M5-013 exactly as specified.
+
+This is cleanup only. Do not reopen any prior canonical register and do not perform another publication-intent experiment.
+
+Exact fixture:
+gid://shopify/Product/10490211467547
+marker: insignia-m5-010-503f5c3d-a0d5-4c67-b2ef-5e22ad3f31bb
+
+Create a fresh fixed cleanup register/operator and fully qualify it offline before credential access.
+
+After exact identity/ownership/DRAFT-or-ARCHIVED/effective-unpublished prestate passes, archive the fixture at most once with a status-only update. Then perform one exact final read. No retry.
+
+For this explicit disposable-fixture cleanup, final ARCHIVED/effective-unpublished readback is the settlement criterion; do not require mutation-response updatedAt to equal final readback. Record any timestamp difference exactly. This does not alter production hold semantics or waive M5-011's conflict.
+
+No create, delete, publish/unpublish, scope/version, inventory/variant/price, production adapter change, M6/M7, activation, RELEASE_BOUND/gate pass or launch.
+
+Return one docs/evidence PR with exact receipts, fresh reviews and final CI, then stop for principal review. Do not merge the successor PR.

@@ -1,0 +1,11 @@
+{
+  "merge": "9d896e824ebf3beb5e560ce89e9873799869f6c5",
+  "parents": [
+    "9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e",
+    "022f5ea238444e3ae2fcd93bb571162ccde63fd6"
+  ],
+  "tree": "759634634ba8e2362ff6736fe4412e8fe2178614",
+  "main": "9d896e824ebf3beb5e560ce89e9873799869f6c5",
+  "method": "NORMAL merge",
+  "verified": true
+}

@@ -1,0 +1,20 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 42,
+  "base": "9edc6f3c4d186f760a0fe416bfdbccd8f2989f7e",
+  "head": "022f5ea238444e3ae2fcd93bb571162ccde63fd6",
+  "tree": "759634634ba8e2362ff6736fe4412e8fe2178614",
+  "principal_verdict": "APPROVED",
+  "final_head_workflows": 10,
+  "all_success": true,
+  "all_attempt": 1,
+  "native_reviews": 0,
+  "next_slice": "M5-013",
+  "cleanup_product": "gid://shopify/Product/10490211467547",
+  "provider_operations_authorized_in_cleanup": {
+    "auth": 1,
+    "reads": 3,
+    "status_updates": 1
+  },
+  "production_adapter_change_authorized": false
+}
