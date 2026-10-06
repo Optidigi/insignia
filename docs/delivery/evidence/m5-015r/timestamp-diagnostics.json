@@ -1,16 +1,27 @@
 {
+  "sourceCanonicalRegisterSha256": "1021128558f8ee76042cb9a9d58a342fc05ab725b115db0369927c686896579e",
   "directStatusDiagnostics": [
     {
       "operation": "create",
+      "ackEventIndex": 2,
       "ackUpdatedAt": "2026-10-06T21:27:54Z",
+      "ownershipEventIndex": 3,
       "ownershipUpdatedAt": "2026-10-06T21:27:54Z",
-      "deltaMilliseconds": 1000
+      "ownershipDeltaMilliseconds": 0,
+      "productionReadEventIndex": 4,
+      "productionReadUpdatedAt": "2026-10-06T21:27:55Z",
+      "productionReadDeltaMilliseconds": 1000
     },
     {
       "operation": "setup",
+      "ackEventIndex": 5,
       "ackUpdatedAt": "2026-10-06T21:27:58Z",
+      "ownershipEventIndex": 6,
       "ownershipUpdatedAt": "2026-10-06T21:27:59Z",
-      "deltaMilliseconds": 1000
+      "ownershipDeltaMilliseconds": 1000,
+      "productionReadEventIndex": 7,
+      "productionReadUpdatedAt": "2026-10-06T21:27:59Z",
+      "productionReadDeltaMilliseconds": 1000
     }
   ],
   "acquireRestoreDiagnostics": "NOT_RUN",

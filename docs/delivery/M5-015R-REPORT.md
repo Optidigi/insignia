@@ -32,7 +32,7 @@ This does not establish why the Publication is missing, or its configured intent
 
 All **10 actual outbound attempts** have matching durable events/transport ordinals and PID: auth1 + GraphQL9, create1, direct status1, adapter status0. All responses were HTTP200 and passed the operator's data/error envelope checks; production semantic validation rejected ACTIVE. Native dispatch/reservation counts are both10 with no mismatch; no retries occurred. All other mutation categories are0. [Exact raw register](evidence/m5-015r/run/register.json), [qualification output](evidence/m5-015r/run/qualification.json) and [closure](evidence/m5-015r/closure.json).
 
-Create ACK `updatedAt=2026-10-06T21:27:54Z`, next owned read `21:27:55Z`; ACTIVE setup ACK `21:27:58Z`, next owned read `21:27:59Z`. Both diagnostic deltas are exactly+1000ms. No timestamp tolerance/CAS change was introduced. Acquire/restore ACK diagnostics are NOT_RUN. [Diagnostics](evidence/m5-015r/timestamp-diagnostics.json).
+Create ACK and next owned read both have `updatedAt=2026-10-06T21:27:54Z` (delta0ms); the subsequent production DRAFT read has raw `updatedAt=21:27:55Z`, returned as snapshot `providerUpdatedAt=2026-10-06T21:27:55.000Z` (ACK-to-snapshot delta+1000ms). ACTIVE setup ACK has `21:27:58Z`; its next owned read and raw production ACTIVE response both have `21:27:59Z` (both deltas+1000ms). No timestamp tolerance/CAS change was introduced. Acquire/restore ACK diagnostics are NOT_RUN. [Diagnostics](evidence/m5-015r/timestamp-diagnostics.json).
 
 ## Gate before credentials
 

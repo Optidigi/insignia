@@ -9,3 +9,7 @@ Both reproduced with memory-only provider replies: archive applied, then transpo
 Grant-set question: the principal explicitly requires current grants contain three named scopes and record additional valid grants; no whole-set equality constraint is added. Exact identity/install/development/minimum grants are revalidated on ownership observations and the unchanged production adapter performs its own required-grant checks. No scope/config operation is authorized.
 
 Canonical live directory remains absent; credential access and Shopify requests remain NOT_RUN. Historical M5-015 remains unchanged and STOPPED.
+
+## Completed-evidence Round3 timestamp correction
+
+Both Spec/correctness and Standards/security reviews at head `98c5c374675ad89890245ab0d9d297d23943154f` found P2 in derived timestamp diagnostics/report: create ACK and next ownership event3 both54Z, yet delta was hardcoded1000ms and report assigned the later DRAFT snapshot55Z to ownership. Corrected derived diagnostics now identify exact event indices and compute separate ownership and production-read deltas directly from the unchanged canonical register: create0ms/+1000ms, setup+1000ms/+1000ms. The source canonical register SHA is included. No canonical bytes, harness/production source, timestamp semantics or provider operation changed. Fresh full-source reviews and final-head CI must repeat on corrected evidence.
