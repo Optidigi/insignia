@@ -1,9 +1,0 @@
-
- RUN  v5.0.2 /home/serveradmin/insignia-m5-014-worktree/packages/shopify
-
-
- Test Files  1 passed (1)
-      Tests  31 passed (31)
-   Start at  17:40:50
-   Duration  614ms (tests 43%, transform 42%, import 14%, worker 1%)
-

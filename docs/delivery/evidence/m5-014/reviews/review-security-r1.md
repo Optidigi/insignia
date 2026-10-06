@@ -1,6 +1,6 @@
 Standards/security review: **two P2 verification findings at the fixed candidate**.
 
-Base: `55060c5a48617a27858d10fb0db639c7e9efe148`  
+Base: `55060c5a48617a27858d10fb0db639c7e9efe148`
 Head: `e75c300ca65e4c9580c9db196a396801e7101cad`
 
 Both refs resolved; the three-dot diff was nonempty. Commits examined: `65c950a`, `e75c300`.

@@ -1,0 +1,5 @@
+# Raw qualification logs
+
+The gzip files retain exact original local/CI command output bytes, including terminal whitespace and failed runs. The manifest records compressed and uncompressed SHA256 hashes and original names. Raw originals remain in the neutral /home/serveradmin/insignia-m5-014-handoff directory. Extract with gzip -dc <file.log.gz>. Historical M5-004–M5-013 canonical/live records are unchanged and are not packaged/reopened here.
+
+Each filename denotes a command-bound observation, not a claim that every candidate passed. SQL-mixed-version-red was a duplicate-variable/style setup failure; sql-mixed-version-behavior-red is the actual PostgreSQL rejection regression that unexpectedly accepted the forbidden INSERT. Root-first/second/third preserve earlier guard/build/error-wording failures. Root-fourth and root-final-source passed. Database-local-unavailable failed27 for missing DATABASE_URL, passed3 non-PG and skipped131. Stress100 passed; renderer-control expected its one missing-renderer failure. Final exact-head CI and completed-source reviews belong in the external PR packet.
