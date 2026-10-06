@@ -701,9 +701,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       hold: null,
       holdObservation: null,
     };
-    const insert = (value: unknown) =>
+    const insert = (value: unknown, executor = database) =>
       sql`INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES (${other.identity.shopId},${other.identity.configId},${other.identity.operationId},${other.revisionId},1,1,${other.scope.authorizationGeneration}::uuid,${other.scope.authorizationEpoch},7,${activationDigest(value)},${JSON.stringify(value)}::jsonb)`.execute(
-        database,
+        executor,
       );
     await expect(insert({ ...evidence, decisionVersion: 1 })).rejects.toThrow('m5_014_evidence_identity');
     if (!base.hold || base.hold.version !== 'm5-availability-hold-v2' || !base.hold.held || !base.holdObservation)
@@ -711,7 +711,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const nestedScope = { ...base.hold.before.scope, shopId: other.identity.shopId };
     const before = { ...base.hold.before, scope: nestedScope };
     const nestedHeld = { ...base.hold.held, scope: nestedScope };
-    const nestedHold = { ...base.hold, operationId: other.identity.operationId, before, held: nestedHeld };
+    if (!base.hold.acquisitionAcknowledgement) throw new Error('expected acquisition audit');
+    const nestedAcknowledgement = { ...base.hold.acquisitionAcknowledgement, scope: nestedScope };
+    const nestedHold = {
+      ...base.hold,
+      operationId: other.identity.operationId,
+      before,
+      held: nestedHeld,
+      acquisitionAcknowledgement: nestedAcknowledgement,
+    };
     const nestedEvidence = {
       ...evidence,
       admissionClass: 'FIRST_PUBLICATION',
@@ -728,6 +736,40 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       { ...nestedEvidence, holdObservation: { ...nestedHeld, intentDigest: '0'.repeat(64) } },
     ])
       await expect(insert(mixed)).rejects.toThrow('m5_014_evidence_v2_hold');
+    // Verify the counterexamples differ from a database-accepted v2 record.
+    await expect(
+      database.transaction().execute(async (transaction) => {
+        await insert(nestedEvidence, transaction);
+        throw new Error('rollback accepted v2 evidence');
+      }),
+    ).rejects.toThrow('rollback accepted v2 evidence');
+    for (const invalidAcknowledgement of [
+      { ...nestedAcknowledgement, version: 'm5-availability-mutation-ack-v1' },
+      { ...nestedAcknowledgement, scope: base.hold.before.scope },
+      { ...nestedAcknowledgement, productId: 'gid://shopify/Product/999' },
+      { ...nestedAcknowledgement, state: 'available' },
+      { ...nestedAcknowledgement, providerUpdatedAt: 123 },
+    ])
+      await expect(
+        insert({ ...nestedEvidence, hold: { ...nestedHold, acquisitionAcknowledgement: invalidAcknowledgement } }),
+      ).rejects.toThrow('m5_014_evidence_v2_audit');
+    const restorationReceipt = {
+      version: 'm5-availability-restoration-receipt-v2',
+      kind: 'RESTORATION_PENDING',
+      acknowledgement: { ...nestedAcknowledgement, state: before.state },
+      current: before,
+    };
+    for (const invalidReceipt of [
+      { ...restorationReceipt, version: 'm5-availability-restoration-receipt-v1' },
+      {
+        ...restorationReceipt,
+        acknowledgement: { ...restorationReceipt.acknowledgement, scope: base.hold.before.scope },
+      },
+      { ...restorationReceipt, current: { ...before, version: 'm5-product-availability-snapshot-v1' } },
+    ])
+      await expect(
+        insert({ ...nestedEvidence, hold: { ...nestedHold, restorationReceipt: invalidReceipt } }),
+      ).rejects.toThrow('m5_014_evidence_v2_audit');
     const v1 = { ...evidence, version: 'm5-activation-evidence-v1', decisionVersion: 1 };
     await insert(v1);
     await sql`INSERT INTO m5_activation_state(shop_id,config_id,operation_id,kind,evidence_digest) VALUES (${other.identity.shopId},${other.identity.configId},${other.identity.operationId},'RESTORED',${activationDigest(v1)})`.execute(
