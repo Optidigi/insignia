@@ -196,8 +196,10 @@ function persist(directory, state) {
 async function boundedBody(response, signal) {
   if (!response.body) return null;
   const reader = response.body.getReader();
+  let cancellation;
+  const cancel = () => (cancellation ??= reader.cancel());
   const abort = () => {
-    void reader.cancel().catch(() => {});
+    void cancel().catch(() => {});
   };
   signal.addEventListener('abort', abort, { once: true });
   const chunks = [];
@@ -210,11 +212,12 @@ async function boundedBody(response, signal) {
       length += part.byteLength;
       chunks.push(part);
       if (length > 128 * 1024) {
-        void reader.cancel().catch(() => {});
+        await cancel();
         break;
       }
     }
   } finally {
+    if (signal.aborted) await cancel();
     signal.removeEventListener('abort', abort);
     reader.releaseLock();
   }
@@ -476,13 +479,20 @@ export function createOperator({ directory, binding, fetchImpl = globalThis.fetc
       received = await Promise.race([
         aborted,
         (async () => {
+          let responseReceived = false,
+            bodySettled = false;
           try {
             event.invoked = true;
             const response = await fetchImpl(url, { ...init, redirect: 'error', signal });
+            responseReceived = true;
+            let bytes = null;
+            if (response.status === 200 && !signal.aborted) bytes = await boundedBody(response, signal);
+            else await response.body?.cancel();
+            bodySettled = true;
             requireValue(!signal.aborted, 'transport_timeout');
-            return { response, bytes: response.status === 200 ? await boundedBody(response, signal) : null };
+            return { response, bytes };
           } finally {
-            underlyingSettled = true;
+            underlyingSettled = !responseReceived || bodySettled;
           }
         })(),
       ]);

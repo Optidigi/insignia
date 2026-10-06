@@ -162,6 +162,24 @@ function simulator(options = {}) {
       if (options.ackLoss && status === 'DRAFT') throw new Error('synthetic-network');
       if (options.archiveLoss && status === 'ARCHIVED') throw new Error('synthetic-network');
       if (options.archiveOutstanding && status === 'ARCHIVED') return new Promise(() => {});
+      if (options.archiveBodyOutstanding && status === 'ARCHIVED')
+        return new Response(new ReadableStream({ cancel: () => new Promise(() => {}) }), { status: 503 });
+      if (options.archiveBodyAbortOutstanding && status === 'ARCHIVED')
+        return new Response(new ReadableStream({ cancel: () => new Promise(() => {}) }), { status: 200 });
+      if (options.archiveBodyCancelRejected && status === 'ARCHIVED')
+        return new Response(new ReadableStream({ cancel: () => Promise.reject(new Error('synthetic cancel')) }), {
+          status: 503,
+        });
+      if (options.archiveOversizeOutstanding && status === 'ARCHIVED')
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              controller.enqueue(new Uint8Array(128 * 1024 + 1));
+            },
+            cancel: () => new Promise(() => {}),
+          }),
+          { status: 200 },
+        );
       return Response.json({ data: { productUpdate: { product: product(), userErrors: [] } } });
     }
     throw new Error('Unexpected external request');
@@ -292,22 +310,29 @@ for (const [options, expected] of [
       direct.calls.filter((b) => b.query === ADAPTER_READ).length,
     );
   });
-test('an archive request still outstanding after timeout quarantines all further provider dispatch', async (t) => {
-  const original = AbortSignal.timeout.bind(AbortSignal);
-  t.mock.method(AbortSignal, 'timeout', () => original(20));
-  const keepalive = setTimeout(() => {}, 500);
-  try {
-    const s = simulator({ archiveOutstanding: true }),
-      result = await runSynthetic(s);
-    assert.equal(result.outcome, 'STOPPED');
-    assert.equal(s.calls.at(-1).query, ARCHIVE);
-    assert.equal(result.accounting.read, 15);
-    assert.equal(result.cleanup.outcome, 'UNKNOWN_WRITE_REQUEST_STILL_OUTSTANDING');
-    assert.notEqual(JSON.parse(readFileSync(join(s.directory, 'register.json'))).pending, null);
-  } finally {
-    clearTimeout(keepalive);
-  }
-});
+for (const options of [
+  { archiveOutstanding: true },
+  { archiveBodyOutstanding: true },
+  { archiveOversizeOutstanding: true },
+  { archiveBodyAbortOutstanding: true },
+  { archiveBodyCancelRejected: true },
+])
+  test(`outstanding archive transport quarantines all further dispatch ${JSON.stringify(options)}`, async (t) => {
+    const original = AbortSignal.timeout.bind(AbortSignal);
+    t.mock.method(AbortSignal, 'timeout', () => original(20));
+    const keepalive = setTimeout(() => {}, 500);
+    try {
+      const s = simulator(options),
+        result = await runSynthetic(s);
+      assert.equal(result.outcome, 'STOPPED');
+      assert.equal(s.calls.at(-1).query, ARCHIVE);
+      assert.equal(result.accounting.read, 15);
+      assert.equal(result.cleanup.outcome, 'UNKNOWN_WRITE_REQUEST_STILL_OUTSTANDING');
+      assert.notEqual(JSON.parse(readFileSync(join(s.directory, 'register.json'))).pending, null);
+    } finally {
+      clearTimeout(keepalive);
+    }
+  });
 
 test('durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP', async () => {
   let sent = 0;

@@ -1,0 +1,44 @@
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (4.149661ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (203.148314ms)
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (1.901629ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (45.129473ms)
+✔ ownership stops before any status mutation (4.085963ms)
+✔ incomplete resourcePublications stops before any status mutation (2.563035ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.569114ms)
+✔ incomplete APP stops before any status mutation (3.429952ms)
+✔ incomplete MARKET stops before any status mutation (4.009143ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (4.792158ms)
+✔ incomplete NONE stops before any status mutation (6.912345ms)
+✔ missing read scope stops before any status mutation (1.787755ms)
+✔ initial DRAFT drift stops before any status mutation (6.607685ms)
+✔ cross-partition version drift stops before any status mutation (3.098591ms)
+✔ observed required grant loss in adapter read stops before any status mutation (7.578314ms)
+✔ lost DRAFT acknowledgement never retries or archives (13.129299ms)
+✔ DRAFT readback failure never retries or archives (11.415281ms)
+✔ post-DRAFT ownership drift never retries or archives (15.331147ms)
+✔ post-DRAFT partition drift never retries or archives (16.841041ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (19.600616ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (20.830753ms)
+✔ newly appearing DRAFT V2 membership is not described as retained from ACTIVE (21.213333ms)
+✔ wrapped production failure preserves {"userError":true} (10.702067ms)
+✔ wrapped production failure preserves {"adapterFailure":"http403"} (7.132841ms)
+✔ wrapped production failure preserves {"adapterFailure":"graphql"} (8.359155ms)
+✔ wrapped production failure preserves {"adapterFailure":"invalidJSON"} (7.479304ms)
+✔ wrapped production failure preserves {"adapterFailure":"missingBody"} (6.510607ms)
+✔ wrapped production failure preserves {"adapterFailure":"badScopes"} (7.135666ms)
+✔ wrapped production failure preserves {"adapterFailure":"badNodes"} (7.128389ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOutstanding":true} (41.442212ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyOutstanding":true} (40.224232ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOversizeOutstanding":true} (38.090635ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyAbortOutstanding":true} (37.200675ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyCancelRejected":true} (18.925966ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.860417ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (1562.173284ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2252.779036
