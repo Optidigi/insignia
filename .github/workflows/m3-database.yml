@@ -68,6 +68,12 @@ jobs:
           retention-days: 14
           overwrite: false
       - name: Rehearse disposable down and up
+        # V2 data cannot be downgraded into v1. Rehearse schema rollback in a separate,
+        # empty disposable database; qualification rows and historical JSONB stay intact.
+        env:
+          DATABASE_URL: postgres://insignia_test:insignia_test@localhost:5432/insignia_migration_rehearsal?sslmode=disable
         run: |
+          corepack pnpm exec dbmate create
+          corepack pnpm db:migrate
           corepack pnpm exec dbmate --no-dump-schema --migrations-dir packages/database/migrations rollback
           corepack pnpm db:migrate

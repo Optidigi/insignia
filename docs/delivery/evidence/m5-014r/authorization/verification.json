@@ -1,0 +1,12 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 44,
+  "base": "55060c5a48617a27858d10fb0db639c7e9efe148",
+  "reviewed_head": "f016e39cf6b54cd2b7e7860a5681c4bb867a6e51",
+  "reviewed_tree": "fb687b6ca8bff15a62b6fbd449cd293ee47c8e23",
+  "verdict": "CHANGES_REQUESTED",
+  "ci": "10/10 SUCCESS attempt1",
+  "material_finding": "supportsFuturePublishing capability incorrectly treated as actual product scheduled intent",
+  "provider_operations_authorized": false,
+  "merge_authorized": false
+}

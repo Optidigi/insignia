@@ -1,8 +1,11 @@
 import {
   type ActivationReadinessPort,
   activationDigest,
+  availabilityV2HeldSafe,
   createPublicationActivation,
-  type ProductAvailabilityHoldPort,
+  isAvailabilityV2,
+  type VersionedProductAvailabilityHoldPort as ProductAvailabilityHoldPort,
+  sameAvailabilityV2,
   type TrustedAvailabilityRecoveryAuthorityPort,
 } from '@insignia/application';
 import type { Kysely } from 'kysely';
@@ -74,6 +77,7 @@ export function createProductionActivation(database: Kysely<Database>, options: 
       const hold = record?.state.hold;
       if (
         record?.state.kind !== 'HELD' ||
+        hold?.version !== 'm5-availability-hold-v2' ||
         !hold?.held ||
         hold.operationId !== identity.operationId ||
         hold.before.productId !== identity.productId ||
@@ -84,7 +88,7 @@ export function createProductionActivation(database: Kysely<Database>, options: 
         return null;
       const observed = await options.availability.observe(hold.before.scope, hold);
       const establishedAt = now().getTime();
-      const time = Date.parse(observed.current.observedAt);
+      const time = observed.current ? Date.parse(observed.current.observedAt) : Number.NaN;
       if (
         !(
           observed.kind === 'HELD' &&
@@ -92,8 +96,9 @@ export function createProductionActivation(database: Kysely<Database>, options: 
           observed.current.productId === hold.held.productId &&
           observed.current.state === 'unavailable' &&
           activationDigest(observed.current.scope) === activationDigest(hold.held.scope) &&
-          observed.current.providerVersion === hold.held.providerVersion &&
-          observed.current.visibilityDigest === hold.held.visibilityDigest &&
+          isAvailabilityV2(observed.current) &&
+          sameAvailabilityV2(observed.current, hold.held) &&
+          availabilityV2HeldSafe(observed.current) &&
           Number.isFinite(time) &&
           Number.isFinite(establishedAt) &&
           time <= establishedAt &&

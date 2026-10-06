@@ -1,0 +1,262 @@
+{
+  "intent-red.log.gz": {
+    "sha256": "a04a5dcb1300d67b2d5adb1f76cf140b52eb9b1a07a74a0655517d523f405d20",
+    "uncompressedSha256": "53d0ffcc9b2b43bae1275f73578c876813fbc16038cc2525b7048224bbfd4c80",
+    "originalFileName": "intent-red.log"
+  },
+  "sql-mixed-version-red.log.gz": {
+    "sha256": "0eb49514372184617ae4b407a1980d3e67cf79dd09e9d8d1dfe9e28372e358e2",
+    "uncompressedSha256": "a56479ee7cd769366e644215200bf7f746559bedef27f18b49a4442c54409638",
+    "originalFileName": "sql-mixed-version-red.log"
+  },
+  "root-third.log.gz": {
+    "sha256": "8561c40b2baec4f50896dde838bd81b0f00ce2cb17c0a9a4e2e04a62a80ad03b",
+    "uncompressedSha256": "5bf5b869287e04175f1aa45e6182932758a8c7149ae5b8348dd2d7110e754ec0",
+    "originalFileName": "root-third.log"
+  },
+  "integration-style.log.gz": {
+    "sha256": "0f8dc30ca087fc881eaa679c5a49ce75903450554fa2b82aaefb8afdb4c74405",
+    "uncompressedSha256": "d2e547b8d5aba716012a5ff26f6a4f8fe10294945f5d933b58ba1e93f203fbe0",
+    "originalFileName": "integration-style.log"
+  },
+  "final-source-secrets.log.gz": {
+    "sha256": "fff472c949f76d47c66b54b52c829b8999f3875406527278ef3354e12dab6e7f",
+    "uncompressedSha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e",
+    "originalFileName": "final-source-secrets.log"
+  },
+  "activation-version-red.log.gz": {
+    "sha256": "c847f2afaaafdd026b18284a74bd8d074beec586744c9de6926d49e41b986198",
+    "uncompressedSha256": "0b5ea7f1dba8745a2c38935510f91d7811cac4787ec0e83653d83e3c02ab27cd",
+    "originalFileName": "activation-version-red.log"
+  },
+  "renderer-control.log.gz": {
+    "sha256": "71523ea854ab7f72daedfe3f823fc4541c4c9b5c46f23dc8424903e8cb7bf27a",
+    "uncompressedSha256": "5074fac1857e480f16f82ab354d324253c6c19c4dd165087791c9ed367651c3c",
+    "originalFileName": "renderer-control.log"
+  },
+  "scheduled-page-drift-red.log.gz": {
+    "sha256": "08d4f5d6c27e6ccc13c9210a8cc9ea52710e7d4d1954594004e5098c2238d7c0",
+    "uncompressedSha256": "1aac0e2c2b4429dfef499ca96080c5fbd8afaac059c84b127058fe4dcbd83af3",
+    "originalFileName": "scheduled-page-drift-red.log"
+  },
+  "root-final-source.log.gz": {
+    "sha256": "af30e6d783ce1b3b0a0d38f8936fc71e03c142de9bf8682e826444815566b60f",
+    "uncompressedSha256": "92205ded3acb773df5a45156458eb665cfe22e679ab5310fe870f1e1194efe32",
+    "originalFileName": "root-final-source.log"
+  },
+  "pagination-green.log.gz": {
+    "sha256": "168236ef13658bb8930ab7cc31f2c270a0b5addd3f5925f3e426e971223c84ab",
+    "uncompressedSha256": "14afc3ba3b93fe25d1a1ca33a8f2209771e1f54845aca53e9ed6849b4e579a7d",
+    "originalFileName": "pagination-green.log"
+  },
+  "stress-first.log.gz": {
+    "sha256": "5ae9a7e5d1c29b3ab5ab1c9fc40bfecc654a2bc9bba3ff77a10683ce1f8dad73",
+    "uncompressedSha256": "a87cce3c5468f9d20f1562e80d30d91d630984c516f80043dab80ba41882b628",
+    "originalFileName": "stress-first.log"
+  },
+  "acquire-attribution-red.log.gz": {
+    "sha256": "336a92770f58bb9646c6c46f8da3e692a84f12bbbc9982388d9fb9f331b1ad67",
+    "uncompressedSha256": "c1489d085f7f0509356b2d1937644b036861f80c16531e0b4fb12a6476f5cd42",
+    "originalFileName": "acquire-attribution-red.log"
+  },
+  "intent-green.log.gz": {
+    "sha256": "81c06f4b72eab20011496100645b16feb665412b18579958909db3729104b441",
+    "uncompressedSha256": "892d550b9f5cfbf492d5ccad6fabb662985299f51b5b8e092af6d7fa46762d99",
+    "originalFileName": "intent-green.log"
+  },
+  "root-fourth.log.gz": {
+    "sha256": "073afdef3a2d69e6530dfd26268f41a3ac4ac1fbb5cfb3f2f4ecaa6457003318",
+    "uncompressedSha256": "2311aa1500cb5450f97f28a53aeb08d891ba94cdd5ade8ad57628dbcbd7534e7",
+    "originalFileName": "root-fourth.log"
+  },
+  "expanded-adapter-green.log.gz": {
+    "sha256": "b694be3566f46151d1914db9c9ff213ece6f7f9c55fa096f2aa99ddc027b2c7a",
+    "uncompressedSha256": "58af14a44518d40926e3d42f61cbb584721f25238c8914c704f15fb436b62523",
+    "originalFileName": "expanded-adapter-green.log"
+  },
+  "no-retry-green.log.gz": {
+    "sha256": "09c7dccb8b154e347d7687b1b8a6b55c13c09faf2ed3716a595b3f6bf623c097",
+    "uncompressedSha256": "cd6b83049289168951c1e416f3e889813401b3a01ef61cfed5141b08dacc17e2",
+    "originalFileName": "no-retry-green.log"
+  },
+  "expanded-adapter-red.log.gz": {
+    "sha256": "c0490fac10835ba22e9a9c5f32987ec6f175d98d3ce0c3e235572747a4bfcc29",
+    "uncompressedSha256": "25984614ac71e10bdc0cf5e1dcf3304dec8a0f8f149a8b4c41e36002331e29cc",
+    "originalFileName": "expanded-adapter-red.log"
+  },
+  "no-retry-red.log.gz": {
+    "sha256": "74c7814b606a7198c1cf9ca517ba94faa50529d032f72acd5a963ec040327ca7",
+    "uncompressedSha256": "7a5eadc21ed88daa67f5fb168681449d38a310069d648572b8f10efdada4c593",
+    "originalFileName": "no-retry-red.log"
+  },
+  "activation-recovery-green-final-2.log.gz": {
+    "sha256": "cdc63ef35ac8bf083e1e954fc58fd311f1fe8a21875d7d4d3a019fb607785f86",
+    "uncompressedSha256": "acf0061f71a740baa902533f3a481ede94ed53d48e1d1a098d5efe76bfeea84d",
+    "originalFileName": "activation-recovery-green-final-2.log"
+  },
+  "database-local-unavailable.log.gz": {
+    "sha256": "72abd85a3c5bc88cddbe3bc3b407f0367a65489e6f577d6b9941ba68f78194de",
+    "uncompressedSha256": "1b515bfc5facf370b533496647bdc4a52e522287e969f6bdfc822b7108e13549",
+    "originalFileName": "database-local-unavailable.log"
+  },
+  "final-source-style.log.gz": {
+    "sha256": "96a6f09b8be5a44fabee9c59727820ca809fb21ddd950e3901d8bfe870b34983",
+    "uncompressedSha256": "bde2ca69d648f302bddc89b946838b3030cd59824a09587fdb94f375d0ad6d0d",
+    "originalFileName": "final-source-style.log"
+  },
+  "ack-read-failure-green.log.gz": {
+    "sha256": "15e79a87e52fa1b17d22d3963f26322ed45cad9f0969abbe4688d18876ad7229",
+    "uncompressedSha256": "d4045b2ada8bedc1ea0ae127cd29527755bdf1c92dd7af99b751e3ce6afb995c",
+    "originalFileName": "ack-read-failure-green.log"
+  },
+  "sql-mixed-version-behavior-red.log.gz": {
+    "sha256": "f40dd0eea2ff7ec43853d8037ac6b3cc62f316eb84f8f28471317a52bc68cc73",
+    "uncompressedSha256": "0a66b63d11dd5b955e31c703cca1ea1ea3084fdbae6bcda34da950d5dc5f9322",
+    "originalFileName": "sql-mixed-version-behavior-red.log"
+  },
+  "acquire-attribution-green.log.gz": {
+    "sha256": "e2d12d37b4fddf78d80a3e4b0cad3784fe8ced560da25c33d1d379063f87de63",
+    "uncompressedSha256": "89467111c6ee08fa4ef8417ac0e2883d903f94cd2b7f9b8947c30928dec7a660",
+    "originalFileName": "acquire-attribution-green.log"
+  },
+  "root-second.log.gz": {
+    "sha256": "90458b9fb25e1fe00788d402d6c19e55eeb301a65b4ec51453279ea5c54ca4cb",
+    "uncompressedSha256": "bb67722b493ab949f8866a43423545f3a6f2bfceee5df123be7e499e0e242401",
+    "originalFileName": "root-second.log"
+  },
+  "ack-read-failure-red.log.gz": {
+    "sha256": "4e1b63d3ead5a7b1c58136c3ef4770af2d49adc35ded70ac488f651cf24cdc73",
+    "uncompressedSha256": "034031b0ab431ccb7892ab238cfe6985d20ca5c8b01df04e93687c7392afe59b",
+    "originalFileName": "ack-read-failure-red.log"
+  },
+  "scheduled-page-drift-green.log.gz": {
+    "sha256": "243ea2bce057cba8aa014ac73dfc5e2b9cb4425ea2eb1389466977a54e46aff8",
+    "uncompressedSha256": "c1d155ce3782c1b270508715103a0aec2d1afbbf4a5a70838d6f3cb566f05698",
+    "originalFileName": "scheduled-page-drift-green.log"
+  },
+  "integration-secrets.log.gz": {
+    "sha256": "fff472c949f76d47c66b54b52c829b8999f3875406527278ef3354e12dab6e7f",
+    "uncompressedSha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e",
+    "originalFileName": "integration-secrets.log"
+  },
+  "root-first.log.gz": {
+    "sha256": "95a8070de5a5a9c685cc42c9cc5a09f6819f2c723388a2c62d4481b6f008fc72",
+    "uncompressedSha256": "f513431e18daea79dca6e1805d17bb5e158730d7031ea8cef425e3d03e399382",
+    "originalFileName": "root-first.log"
+  },
+  "pg18-r1-failure.log.gz": {
+    "sha256": "cc5d6f644efdd00910059aa85587970e9bf2bc3e75e20762d2f947c808bdea3c",
+    "uncompressedSha256": "d78bacf169973de203d10e2eadeba9197c78ec62903a01881f03068db0cd856f",
+    "originalFileName": "pg18-r1-failure.log"
+  },
+  "pagination-red.log.gz": {
+    "sha256": "b40be74261619d421e7750ec19049b7877b0d09b7f5bdef61054ffe3fd74a1c1",
+    "uncompressedSha256": "5c100fdcc9f4fae49adf6d0849ba6cceb9696d1818f8732223a6e86f88fae528",
+    "originalFileName": "pagination-red.log"
+  },
+  "root-after-audit-fix.log.gz": {
+    "sha256": "a2098b0e02389e9bdda2c2483c3a096404bafdc6536192e715d100939de451ee",
+    "uncompressedSha256": "dfed0cde0e1c6915deb38ee15c750815a79b1573d7cf92ac879b0d5275455160",
+    "originalFileName": "root-after-audit-fix.log"
+  },
+  "ack-audit-pg-red.log.gz": {
+    "sha256": "ba122a7f42b53900e0fcc3da03492d15edc77a67c32605df0d93ed402015c838",
+    "uncompressedSha256": "c500a10ee5c22f278584d730844d031146072b7f8a74c5c73255083ba7c7a803",
+    "originalFileName": "ack-audit-pg-red.log"
+  },
+  "ack-audit-pg-green.log.gz": {
+    "sha256": "ab4feb65ca27b3ade953d1e9229849b1b9a2b8b3424e85db46b5e39412bd91a0",
+    "uncompressedSha256": "5ff7632bd6debb0613933e18195d9517a8c7087d956ecf15673195a73b821e6d",
+    "originalFileName": "ack-audit-pg-green.log"
+  },
+  "ack-audit-runtime-green.log.gz": {
+    "sha256": "fd2bf0fc12a350ba88e9de7c990de798f407c695a294ced2438b9112c6ed09db",
+    "uncompressedSha256": "7dac419b5e252a0c636486ca0a99e5fda8f2e4e425b1f77312b54fc292e15da2",
+    "originalFileName": "ack-audit-runtime-green.log"
+  },
+  "ack-audit-red-style.log.gz": {
+    "sha256": "b0788ee225d255b6b57b9f7472b43a7984c7186639a1bb41f8412e518b826a5a",
+    "uncompressedSha256": "8fc37023c55294021ffbccfd4ce0f563c57c0ad57394138e54b8ec86347fd58b",
+    "originalFileName": "ack-audit-red-style.log"
+  },
+  "ack-audit-red-secrets.log.gz": {
+    "sha256": "fff472c949f76d47c66b54b52c829b8999f3875406527278ef3354e12dab6e7f",
+    "uncompressedSha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e",
+    "originalFileName": "ack-audit-red-secrets.log"
+  },
+  "ack-audit-green-style.log.gz": {
+    "sha256": "191948c9fd1d1492eebd57625bb67c66dc631de0f30989a547dff74fdd44711c",
+    "uncompressedSha256": "2b334b3d5c76441927ef284d780fa3af56f5b752758871cdefc1c480d36e0596",
+    "originalFileName": "ack-audit-green-style.log"
+  },
+  "ack-audit-green-secrets.log.gz": {
+    "sha256": "fff472c949f76d47c66b54b52c829b8999f3875406527278ef3354e12dab6e7f",
+    "uncompressedSha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e",
+    "originalFileName": "ack-audit-green-secrets.log"
+  },
+  "root-after-resolution-fix.log.gz": {
+    "sha256": "41829b69a10783bfbd8395fa9152d6dfcf05543b5ae1edc130987ea64bcf693e",
+    "uncompressedSha256": "2551fa8477980150cd1071455719732d4a3ae71c1d02becffd5b693afb6cdacf",
+    "originalFileName": "root-after-resolution-fix.log"
+  },
+  "resolution-audit-pg-setup-failure.log.gz": {
+    "sha256": "4c7f13c1ffb7113b7e4b04ea89e67ad14f4b376bb563f1c0e34f9672930676a2",
+    "uncompressedSha256": "72710bc290a91c07e9d99e108b21e32c32d9e9764da1b14f00cad77c24466039",
+    "originalFileName": "resolution-audit-pg-setup-failure.log"
+  },
+  "resolution-audit-pg-red.log.gz": {
+    "sha256": "0a1ecccf08b65e6db235829fcc285609637d84f5fb78d7c08af3558a7e07c812",
+    "uncompressedSha256": "d793c977987513efc6c3a6c04d8985f93e4526ebe32dfcec868dad832219574a",
+    "originalFileName": "resolution-audit-pg-red.log"
+  },
+  "resolution-audit-pg-green.log.gz": {
+    "sha256": "8ba6e4588b99216f86da844e022f54a0530600ec5fae7024454bef1771e8729c",
+    "uncompressedSha256": "d23c3969f4206522f67336a42ebb041143551983a529f9cbef8ca89799ef1db6",
+    "originalFileName": "resolution-audit-pg-green.log"
+  },
+  "resolution-audit-runtime-green.log.gz": {
+    "sha256": "9f38369216540a7d1849596686a88e0dbe5cefaff12775e08353c737017299b8",
+    "uncompressedSha256": "2a6321060a66b1a5a70c7f5fb94985e5eb71caae203ab9859ce74a8e38bcb0e8",
+    "originalFileName": "resolution-audit-runtime-green.log"
+  },
+  "resolution-audit-red-style.log.gz": {
+    "sha256": "cf9e290d78f4270b7bd207510334e0d55ff8cec6b9129c3a5956b57d4f49850b",
+    "uncompressedSha256": "140fb9f35808b8120d474323728e09014e62a55a155e4c1335c45a5b8045cac9",
+    "originalFileName": "resolution-audit-red-style.log"
+  },
+  "resolution-audit-red-style-corrected.log.gz": {
+    "sha256": "b0788ee225d255b6b57b9f7472b43a7984c7186639a1bb41f8412e518b826a5a",
+    "uncompressedSha256": "8fc37023c55294021ffbccfd4ce0f563c57c0ad57394138e54b8ec86347fd58b",
+    "originalFileName": "resolution-audit-red-style-corrected.log"
+  },
+  "resolution-audit-red-secrets.log.gz": {
+    "sha256": "fff472c949f76d47c66b54b52c829b8999f3875406527278ef3354e12dab6e7f",
+    "uncompressedSha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e",
+    "originalFileName": "resolution-audit-red-secrets.log"
+  },
+  "resolution-audit-green-style.log.gz": {
+    "sha256": "96a6f09b8be5a44fabee9c59727820ca809fb21ddd950e3901d8bfe870b34983",
+    "uncompressedSha256": "bde2ca69d648f302bddc89b946838b3030cd59824a09587fdb94f375d0ad6d0d",
+    "originalFileName": "resolution-audit-green-style.log"
+  },
+  "resolution-audit-green-secrets.log.gz": {
+    "sha256": "fff472c949f76d47c66b54b52c829b8999f3875406527278ef3354e12dab6e7f",
+    "uncompressedSha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e",
+    "originalFileName": "resolution-audit-green-secrets.log"
+  },
+  "storefront-port-red.log.gz": {
+    "sha256": "ad6250272901b5c56a34426945ba5f373325f397023246d1c582826e1abde08c",
+    "uncompressedSha256": "f93dbe10e6fed3f9d9be227c26b05cd340721a12b27d2e32cd677789d347188f",
+    "originalFileName": "storefront-port-red.log"
+  },
+  "storefront-port-green.log.gz": {
+    "sha256": "7be394fcae3ec868b760ffba54808d4277bac812125ab78d6b0164d06368da0b",
+    "uncompressedSha256": "dd86e95f8884c67733564abaca7a5318082cfbdb93d6166ca819b71aadf0bbb3",
+    "originalFileName": "storefront-port-green.log"
+  },
+  "final-foundation-failure.log.gz": {
+    "sha256": "0b5773e146b38083359bea59215cbcffcd7f266fab8832c7d5a31af08525ccc1",
+    "uncompressedSha256": "0745edcb9247f88baf5c997d567f844cb5569ef3bee2244c73e123b2a84d30d8",
+    "originalFileName": "final-foundation-failure.log"
+  }
+}

@@ -1,36 +1,18 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import { test } from 'node:test';
 import { chromium } from 'playwright';
+import { createServer } from 'vite';
 
 test('custom element mounts, unmounts, and contains DOM, state and events', async () => {
-  const port = 45000 + Math.floor(Math.random() * 1000);
-  const child = spawn(new URL('../node_modules/.bin/vite', import.meta.url).pathname, [
-    '--host',
-    '127.0.0.1',
-    '--port',
-    String(port),
-    '--strictPort',
-  ]);
-  const exited = new Promise((resolve) => child.once('close', resolve));
-  let stderr = '';
-  child.on('error', (error) => {
-    stderr += error.message;
-  });
-  child.stderr.setEncoding('utf8').on('data', (chunk) => {
-    stderr += chunk;
-  });
+  // Bind an OS-assigned port on the server itself: no random-port collision or
+  // gap between probing an unused port and taking ownership of it.
+  const server = await createServer({ server: { host: '127.0.0.1', port: 0, strictPort: true } });
   let browser;
   try {
-    let ready = false;
-    for (let i = 0; i < 100 && !ready && child.exitCode === null; i++) {
-      try {
-        ready = (await fetch(`http://127.0.0.1:${port}`)).ok;
-      } catch {
-        await new Promise((resolve) => setTimeout(resolve, 50));
-      }
-    }
-    assert.ok(ready, stderr);
+    await server.listen();
+    const address = server.httpServer.address();
+    assert.ok(address && typeof address === 'object');
+    const port = address.port;
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
     await page.goto(`http://127.0.0.1:${port}`);
@@ -57,7 +39,6 @@ test('custom element mounts, unmounts, and contains DOM, state and events', asyn
     assert.equal(await page.locator('insignia-local-preview output').count(), 1);
   } finally {
     await browser?.close();
-    child.kill('SIGTERM');
-    await exited;
+    await server.close();
   }
 });

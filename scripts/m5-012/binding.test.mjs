@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { WORKFLOWS } from '../m5-004/binding.mjs';
 import { checkGateRecord, digest, freeze } from './binding.mjs';
@@ -54,6 +55,13 @@ test('source gate requires two fresh high-effort reviews and every workflow on t
 });
 
 test('full source binding includes the inherited internal Rust links without following external symlinks', () => {
+  // Closed live qualification freezes the old complete Shopify build. The v2
+  // export intentionally invalidates that freeze; its guard must still reject it.
+  const old = JSON.parse(readFileSync('docs/delivery/evidence/m5-012/live/binding.json'));
+  if (digest(readFileSync('packages/shopify/dist/index.js')) !== old.modules['packages/shopify/dist/index.js']) {
+    assert.throws(() => freeze(process.cwd()), { kind: 'production_build_changed' });
+    return;
+  }
   const binding = freeze(process.cwd());
   assert.equal(binding.modules['spikes/m0-013/rust/extensions/transform'], digest('../transform'));
   assert.equal(binding.modules['spikes/m0-014/rust/extensions/validation'], digest('../validation'));

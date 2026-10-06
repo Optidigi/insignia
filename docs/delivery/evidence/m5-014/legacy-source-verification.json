@@ -1,0 +1,25 @@
+{
+  "base": "55060c5a48617a27858d10fb0db639c7e9efe148",
+  "checks": {
+    "packages/shopify/src/availability-hold.ts": {
+      "sha256": "aeb68cf151fc5b3fba0974e7fb659a8bcc422c0b2e517f478e0f2b185e7ab421",
+      "byteIdenticalToBase": true
+    },
+    "packages/shopify/test/availability-hold.test.ts": {
+      "sha256": "1a067c05a19208b20671464f81ecc0ece59672e1b4451f4c3dd551860ff68ba5",
+      "byteIdenticalToBase": true
+    },
+    "packages/application/src/publication/availability.ts": {
+      "sha256": "3b7b5e8c0f197334e0fc01473ca185515239c709572f4d3f4bef51d86df0aa70",
+      "byteIdenticalToBase": true
+    },
+    "packages/application/src/publication/availability-recovery.test.ts": {
+      "sha256": "6a7ee6742a0cc12d337fd3f47be314ff43b666177289948cd9b6d23c3ce4a3d9",
+      "byteIdenticalToBase": true
+    },
+    "packages/database/migrations/20260930000900_m5_activation.sql": {
+      "sha256": "09b8aed044e881b7bbf53e658ab2213f0cdcb9ee2d57fe9b5d293ff3d65a231d",
+      "byteIdenticalToBase": true
+    }
+  }
+}

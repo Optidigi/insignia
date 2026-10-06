@@ -11,11 +11,24 @@ import type { KeyScope } from '../keys/crypto.js';
 import { type PublicConfig, requireIssuanceReady } from '../keys/public-config.js';
 import type { FunctionPresence } from '../keys/readiness.js';
 import type {
-  AvailabilityHold,
+  AvailabilityHold as AvailabilityHoldV1,
   AvailabilityScope,
-  ProductAvailabilityHoldPort,
-  ProductAvailabilitySnapshot,
+  ProductAvailabilitySnapshot as ProductAvailabilitySnapshotV1,
 } from './availability.js';
+import type {
+  VersionedAvailabilityHold as AvailabilityHold,
+  VersionedProductAvailabilityHoldPort as ProductAvailabilityHoldPort,
+  VersionedProductAvailabilitySnapshot as ProductAvailabilitySnapshot,
+} from './availability-v2.js';
+import {
+  type AvailabilityHoldV2,
+  availabilityV2HeldSafe,
+  availabilityV2IntentQualified,
+  isAvailabilityV2,
+  type ProductAvailabilitySnapshotV2,
+  sameAvailabilityV2,
+  validAvailabilityV2,
+} from './availability-v2.js';
 import type { ProductPolicyMode } from './projection.js';
 
 export type AdmissionClass = 'FIRST_PUBLICATION' | 'MODE_CHANGE' | 'SAME_MODE';
@@ -84,7 +97,7 @@ export type ActivationCandidate = ActivationIdentity &
     selectedKeyId: number;
     state: ActivationState;
   }>;
-export type ActivationEvidence = ActivationIdentity &
+export type ActivationEvidenceV1 = ActivationIdentity &
   Readonly<{
     version: 'm5-activation-evidence-v1';
     decisionVersion: 1;
@@ -103,11 +116,22 @@ export type ActivationEvidence = ActivationIdentity &
     functionObservation: FunctionObjectObservation;
     functionPresence: { transform: 'present'; validation: 'present' };
     admissionClass: AdmissionClass;
-    hold: AvailabilityHold | null;
-    holdObservation: ProductAvailabilitySnapshot | null;
+    hold: AvailabilityHoldV1 | null;
+    holdObservation: ProductAvailabilitySnapshotV1 | null;
     createdAt: string;
     projectionObservedAt: string;
   }>;
+export type ActivationEvidenceV2 = Omit<
+  ActivationEvidenceV1,
+  'version' | 'decisionVersion' | 'hold' | 'holdObservation'
+> &
+  Readonly<{
+    version: 'm5-activation-evidence-v2';
+    decisionVersion: 2;
+    hold: AvailabilityHoldV2 | null;
+    holdObservation: ProductAvailabilitySnapshotV2 | null;
+  }>;
+export type ActivationEvidence = ActivationEvidenceV1 | ActivationEvidenceV2;
 /** Server composition supplies trusted deployment provenance. Never construct from request bodies or unsigned env JSON. */
 export type ActivationReadinessPort = Readonly<{
   expectedBuild: ExpectedFunctionBuildPort;
@@ -180,7 +204,9 @@ export function activationDigest(value: unknown): string {
   }
   return createHash('sha256').update(encode(value)).digest('hex');
 }
-function snapshotShape(snapshot: ProductAvailabilitySnapshot): boolean {
+function snapshotShape(snapshot: ProductAvailabilitySnapshot | null): snapshot is ProductAvailabilitySnapshot {
+  if (!snapshot) return false;
+  if (isAvailabilityV2(snapshot)) return validAvailabilityV2(snapshot);
   return Boolean(
     snapshot &&
       ['available', 'unavailable', 'archived', 'unlisted'].includes(snapshot.state) &&
@@ -193,6 +219,8 @@ function snapshotShape(snapshot: ProductAvailabilitySnapshot): boolean {
   );
 }
 function exactSnapshot(a: ProductAvailabilitySnapshot, b: ProductAvailabilitySnapshot): boolean {
+  if (isAvailabilityV2(a) || isAvailabilityV2(b))
+    return isAvailabilityV2(a) && isAvailabilityV2(b) && sameAvailabilityV2(a, b);
   return (
     snapshotShape(a) &&
     snapshotShape(b) &&
@@ -307,6 +335,14 @@ export function createPublicationActivation(input: {
     const c = session.candidate;
     const hold = c.state.hold;
     if (!hold) return null;
+    if (hold.version !== 'm5-availability-hold-v2') {
+      await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
+      return null;
+    }
+    if (hold.held === null && hold.before.state !== 'unavailable') {
+      await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
+      return null;
+    }
     const observed = await input.availability.observe(c.availabilityScope, hold);
     if (
       observed.kind !== 'HELD' ||
@@ -314,7 +350,9 @@ export function createPublicationActivation(input: {
       !exactSnapshot(observed.current, observed.hold.held) ||
       activationDigest(observed.hold.before) !== activationDigest(hold.before) ||
       observed.hold.operationId !== c.operationId ||
-      observed.hold.version !== 'm5-availability-hold-v1' ||
+      observed.hold.version !== 'm5-availability-hold-v2' ||
+      !isAvailabilityV2(observed.current) ||
+      !availabilityV2HeldSafe(observed.current) ||
       observed.current.state !== 'unavailable' ||
       observed.current.productId !== c.productId ||
       activationDigest(observed.current.scope) !== activationDigest(c.availabilityScope) ||
@@ -337,6 +375,10 @@ export function createPublicationActivation(input: {
         const prepared = await input.store.locked(identity, async (session): Promise<ActivationResult | null> => {
           const c = session.candidate;
           if (c.state.kind === 'OPERATOR_HOLD') return result('OPERATOR_HOLD', c);
+          if (c.state.hold?.version === 'm5-availability-hold-v1' && !['RESTORED', 'RESOLVED'].includes(c.state.kind)) {
+            await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
+            return result('OPERATOR_HOLD', c);
+          }
           if (c.status === 'activated') {
             if (c.state.kind === 'RESTORATION_PENDING') {
               try {
@@ -371,7 +413,8 @@ export function createPublicationActivation(input: {
             return result('WAITING_RELEASE', c);
           }
           const before = structuredClone(await input.availability.snapshot(c.availabilityScope, c.productId));
-          if (!snapshotShape(before)) throw new Error('Hold snapshot malformed');
+          if (!snapshotShape(before) || !isAvailabilityV2(before) || !availabilityV2IntentQualified(before))
+            throw new Error('Hold snapshot malformed or future intent unqualified');
           if (
             before.productId !== c.productId ||
             activationDigest(before.scope) !== activationDigest(c.availabilityScope)
@@ -381,7 +424,7 @@ export function createPublicationActivation(input: {
           await session.save({
             ...c.state,
             kind: 'HOLD_INTENT',
-            hold: { version: 'm5-availability-hold-v1', operationId: c.operationId, before, held: null },
+            hold: { version: 'm5-availability-hold-v2', operationId: c.operationId, before, held: null },
           });
           return result('WAITING_HOLD', c);
         });
@@ -460,6 +503,22 @@ export function createPublicationActivation(input: {
               observation.current,
               beforeSend,
             );
+            if (c.state.hold.version === 'm5-availability-hold-v2') {
+              if (restored.current && !isAvailabilityV2(restored.current))
+                throw new Error('V2 restoration returned legacy evidence');
+              await session.save({
+                ...session.candidate.state,
+                hold: {
+                  ...c.state.hold,
+                  restorationReceipt: {
+                    version: 'm5-availability-restoration-receipt-v2',
+                    kind: restored.kind,
+                    acknowledgement: restored.acknowledgement ?? null,
+                    current: restored.current as ProductAvailabilitySnapshotV2 | null,
+                  },
+                },
+              });
+            }
             if (restored.kind === 'RESTORATION_PENDING' || restored.kind === 'NOT_DISPATCHED')
               return result('ACTIVATED_RESTORATION_PENDING', c);
             const valid =
@@ -468,9 +527,11 @@ export function createPublicationActivation(input: {
               restored.current.productId === c.productId &&
               activationDigest(restored.current.scope) === activationDigest(c.availabilityScope) &&
               restored.current.state === c.state.hold.before.state &&
-              restored.current.visibilityDigest === c.state.hold.before.visibilityDigest;
+              isAvailabilityV2(restored.current) &&
+              isAvailabilityV2(c.state.hold.before) &&
+              sameAvailabilityV2(restored.current, c.state.hold.before);
             if (valid && restored.current) fresh(restored.current.observedAt, now(), input.maxObservationAgeMs);
-            await session.save({ ...c.state, kind: valid ? 'RESTORED' : 'OPERATOR_HOLD' });
+            await session.save({ ...session.candidate.state, kind: valid ? 'RESTORED' : 'OPERATOR_HOLD' });
             return result(valid ? 'ACTIVE' : 'OPERATOR_HOLD', c);
           }
           const admission = classifyPublicationAdmission({
@@ -491,7 +552,15 @@ export function createPublicationActivation(input: {
               ) {
                 await session.save({ ...c.state, kind: 'HELD', hold: observed.hold });
               } else {
-                await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
+                const acknowledgement = observed.kind === 'CONFLICT' ? observed.acknowledgement : undefined;
+                await session.save({
+                  ...c.state,
+                  kind: 'OPERATOR_HOLD',
+                  hold:
+                    c.state.hold.version === 'm5-availability-hold-v2' && acknowledgement
+                      ? { ...c.state.hold, acquisitionAcknowledgement: acknowledgement }
+                      : c.state.hold,
+                });
                 return result('OPERATOR_HOLD', c);
               }
             }
@@ -553,10 +622,17 @@ export function createPublicationActivation(input: {
             acceptedDay: input.readiness.currentDay(c, now()),
           });
           const decisionAt = decisionReady(c, artifact, remote, holdObservation);
-          const evidence: ActivationEvidence = {
+          if (
+            admission !== 'SAME_MODE' &&
+            (session.candidate.state.hold?.version !== 'm5-availability-hold-v2' ||
+              !holdObservation ||
+              !isAvailabilityV2(holdObservation))
+          )
+            throw new Error('V2 activation hold binding missing');
+          const evidence: ActivationEvidenceV2 = {
             ...identity,
-            version: 'm5-activation-evidence-v1',
-            decisionVersion: 1,
+            version: 'm5-activation-evidence-v2',
+            decisionVersion: 2,
             revisionId: c.revisionId,
             revisionHash: c.revisionHash,
             operationSequence: c.operationSequence,
@@ -572,8 +648,8 @@ export function createPublicationActivation(input: {
             functionObservation: artifact.observation,
             functionPresence: { transform: 'present', validation: 'present' },
             admissionClass: admission,
-            hold: admission === 'SAME_MODE' ? null : session.candidate.state.hold,
-            holdObservation,
+            hold: admission === 'SAME_MODE' ? null : (session.candidate.state.hold as AvailabilityHoldV2),
+            holdObservation: holdObservation as ProductAvailabilitySnapshotV2 | null,
             createdAt: decisionAt.toISOString(),
             projectionObservedAt: remote.observedAt,
           };

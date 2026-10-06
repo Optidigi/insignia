@@ -1,0 +1,186 @@
+{
+  "base": "55060c5a48617a27858d10fb0db639c7e9efe148",
+  "reviewedHead": "f016e39cf6b54cd2b7e7860a5681c4bb867a6e51",
+  "legacyFiles": {
+    "packages/shopify/src/availability-hold.ts": {
+      "sha256": "aeb68cf151fc5b3fba0974e7fb659a8bcc422c0b2e517f478e0f2b185e7ab421",
+      "byteIdenticalToBase": true
+    },
+    "packages/shopify/test/availability-hold.test.ts": {
+      "sha256": "1a067c05a19208b20671464f81ecc0ece59672e1b4451f4c3dd551860ff68ba5",
+      "byteIdenticalToBase": true
+    },
+    "packages/application/src/publication/availability.ts": {
+      "sha256": "3b7b5e8c0f197334e0fc01473ca185515239c709572f4d3f4bef51d86df0aa70",
+      "byteIdenticalToBase": true
+    },
+    "packages/application/src/publication/availability-recovery.test.ts": {
+      "sha256": "6a7ee6742a0cc12d337fd3f47be314ff43b666177289948cd9b6d23c3ce4a3d9",
+      "byteIdenticalToBase": true
+    },
+    "packages/database/migrations/20260930000900_m5_activation.sql": {
+      "sha256": "09b8aed044e881b7bbf53e658ab2213f0cdcb9ee2d57fe9b5d293ff3d65a231d",
+      "byteIdenticalToBase": true
+    }
+  },
+  "canonicalCount": 39,
+  "canonicalFiles": {
+    "/home/serveradmin/insignia-m5-004-handoff/run/gate.json": {
+      "sha256": "1618d743eeeac7c936e3a0865893a0bdd553fdfbbd96f6054b6fbc8a8f6ff564",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-004-handoff/run/register.json": {
+      "sha256": "0c741a66c9289be824ff75d879ef8f7b4e6f739e85cc6cf541340fe35b956ba2",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-004-handoff/run/qualification.json": {
+      "sha256": "ee4e4813db9540549f78235b95469555490e34ed8eb1e8289a8072b352381497",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-004-handoff/run/initialized.once": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-004-handoff/run/binding.json": {
+      "sha256": "2ba9330007e8558ced2707160c8bb006eaee7ee201e7e56b88f37edf479f07eb",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-009-handoff/run/gate.json": {
+      "sha256": "6cd2267f2b687a5ea96f8a909e86707f8b1469dcdb7b8335c1ac287691fe1d29",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-009-handoff/run/register.json": {
+      "sha256": "bef5820a2a73f90e0f0e44272ba1f668859b1e558f5c33200605f45e4a954d35",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-009-handoff/run/qualification.json": {
+      "sha256": "06ec052b7c01fd1c86389d1fc3d4b8bfff9bd8d8e6437314bdd76a22768e94f0",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-009-handoff/run/initialized.once": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-009-handoff/run/binding.json": {
+      "sha256": "4e585c9ec705eb802c6a7468099e4c1ece3768a00f4334e477dc2d8c4f95df74",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-010-handoff/run/gate.json": {
+      "sha256": "124e15c76751f463feaaa0dccf909d95ad981e489ba5d7345e9ed19820fac7dd",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-010-handoff/run/register.json": {
+      "sha256": "31b152f4f82ed4e80376a80b06958a400eed17d481ad58a8445bdb61605a8d33",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-010-handoff/run/qualification.json": {
+      "sha256": "88010b14f719164302a52060ee05a4089b4b68c6e0f00318a9cbdaf6c07e61c0",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-010-handoff/run/initialized.once": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-010-handoff/run/DRAFT.hold.json": {
+      "sha256": "2532005934c65a3f8619c4be779f7dec50f8f1ead8bdb33652f435cd18b3c9b9",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-010-handoff/run/closed-receipt.json": {
+      "sha256": "0c4b48af422ffc006b96a80b3b36effac27890c933cd48f4145803a012878755",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-010-handoff/run/binding.json": {
+      "sha256": "174d23075731170e6be35f3e6ac712366ad050b13fc37205e310f330eaf28464",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-011-handoff/run/pr40-live.json": {
+      "sha256": "2749288fa583e3cd5fea7bd4d715f61f0a5008717462dd1a753e5d66cc7de439",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-011-handoff/run/gate.json": {
+      "sha256": "69c1ecaf6943079990a3940a5b0a6b31c26564ed29fd14693a5a24941ee17e68",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-011-handoff/run/pr40-merge-commit.json": {
+      "sha256": "a2b0ea11f3358dfaa8007196a89afc267d0783b7689fff11e4b13ac411fc09a1",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-011-handoff/run/pr40-workflows.json": {
+      "sha256": "05e13751b803b75733557e5a9e4bc4c633a50ef9b63a14807f7ac39a1caaa5d2",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-011-handoff/run/register.json": {
+      "sha256": "a6a95b4a6876b66249983380afee4758aa487fcd3368b8f1e78ff57caad4cf86",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-011-handoff/run/pr40-merge-response.json": {
+      "sha256": "c1d963a60c12587cd5c8fb8b8dc1b1e2f4c4c328a813fd06abb4552ed2ba193f",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-011-handoff/run/qualification.json": {
+      "sha256": "b061621aa6d6f2b74b583fa92967c9a1003d6a34657e3371bc16ddbbac5675fd",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-011-handoff/run/initialized.once": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-011-handoff/run/closed-receipt.json": {
+      "sha256": "4e7eded2433eb81329c33178eff73f5b4ddec789dbf64abc74f0566ffabf1374",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-011-handoff/run/binding.json": {
+      "sha256": "a9ba76414916304da46ed721641893fee719566ae64e90f389c375fd9ad1935d",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-012-handoff/run/gate.json": {
+      "sha256": "27c5ed2a3b9d80812bbd99696102e35eec2cfcf93a52e6615f1bf1491b113c20",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-012-handoff/run/register.json": {
+      "sha256": "632aa439d0f6f7c6097d400e468aed3f854bd4e2791ff1e9e0ccae3b2c8995df",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-012-handoff/run/qualification.json": {
+      "sha256": "af587c4599f0cf805780deb9eba17c0ef1464f6147e7741c42a53784297bf95b",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-012-handoff/run/initialized.once": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-012-handoff/run/closed-receipt.json": {
+      "sha256": "93dc74a599bdffd1c26d8403367facbcba5393fe6e9de04bd4f0cb146566da56",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-012-handoff/run/binding.json": {
+      "sha256": "de0829c5dba9bc97afdb1a754462b61b94aff016b1249873fd326a004bb4dca2",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-013-handoff/run/gate.json": {
+      "sha256": "b4953fae6757b77b93419b79bd6f4d31aa8db37eb07f959b61e948264bad8e0b",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-013-handoff/run/register.json": {
+      "sha256": "bfcdc9605e83eb2778b088e5ca3d3b5fe99ceda52100c6827089177e9336f1ef",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-013-handoff/run/qualification.json": {
+      "sha256": "beb853cb8d632f58c74933e2eea9ed100ba9d805582b8fd3e488a1e0b7357d23",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-013-handoff/run/initialized.once": {
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-013-handoff/run/closed-receipt.json": {
+      "sha256": "218231c5748415dfb0065d5b019acee0638f6bbbe46179ca5169a5e78bc4f9cf",
+      "unchanged": true
+    },
+    "/home/serveradmin/insignia-m5-013-handoff/run/binding.json": {
+      "sha256": "e2a7466ff0ab58752cf29589f33e8ac8bf26a853b7ba50ddc3c36ff457411be0",
+      "unchanged": true
+    }
+  },
+  "databaseAndRecoveryChangedPaths": []
+}

@@ -1,0 +1,49 @@
+Selected executed receipt lines; full raw GitHub log SHA256 68f8d2d5e1b59aacbff6b38d9de5131a3454293771b0c080d66b9eafaa6bcb6e
+durable-core	Run corepack pnpm check:database	2026-10-06T17:57:35.4898513Z Applied: 20261006000100_m5_availability_v2.sql in 5.679304ms
+durable-core	Run corepack pnpm check:database	2026-10-06T17:57:44.4531249Z  ^[[32m✓^[[39m test/activation.test.ts ^[[2m(^[[22m^[[2m106 tests^[[22m^[[2m)^[[22m^[[33m 7876^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-06T17:57:44.4578614Z ^[[2m      Tests ^[[22m ^[[1m^[[32m161 passed^[[39m^[[22m^[[90m (161)^[[39m
+durable-core	M5 100k actual read-seam query plans	﻿2026-10-06T17:57:44.5200976Z ##[group]Run M5_QUERY_PLAN_OUTPUT=/tmp/m5-query-plan.json corepack pnpm test:m5-query-plan
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:57:44.5201369Z ^[[36;1mM5_QUERY_PLAN_OUTPUT=/tmp/m5-query-plan.json corepack pnpm test:m5-query-plan^[[0m
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:57:44.5255458Z shell: /usr/bin/bash -e {0}
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:57:44.5255620Z env:
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:57:44.5256028Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:57:44.5256218Z ##[endgroup]
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:57:44.5902557Z $ node scripts/m5-003/large-history.mjs
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0966829Z {
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0967086Z   "pointer": {
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0967309Z     "planningMs": 0.813,
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0967540Z     "executionMs": 0.097,
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0967718Z     "rows": 1,
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0967884Z     "indexes": [
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0968126Z       "m5_current_publication_pointer_pkey",
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0968448Z       "publication_operations_shop_id_config_id_operation_id_key",
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0968779Z       "m4_publication_progress_pkey",
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0969124Z       "m5_activation_state_pkey",
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0969309Z       "config_revision_geometry_pkey"
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0969737Z     ]
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0969957Z   },
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0970167Z   "fallback": {
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0970357Z     "planningMs": 0.453,
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0970537Z     "executionMs": 1.248,
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0970706Z     "rows": 1,
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0970846Z     "indexes": [
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0971041Z       "m5_current_publication_visible_idx",
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0971288Z       "config_revision_presentation_pkey",
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0971508Z       "m5_activation_state_pkey",
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0971687Z       "m4_publication_progress_pkey"
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0971826Z     ]
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0971922Z   },
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0972068Z   "adminEffective": {
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0972240Z     "planningMs": 0.115,
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0972414Z     "executionMs": 0.013,
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0972548Z     "rows": 1,
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0972666Z     "indexes": [
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0972830Z       "product_configs_shop_id_external_product_id_key"
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0973236Z     ]
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0973364Z   }
+durable-core	M5 100k actual read-seam query plans	2026-10-06T17:58:04.0973468Z }
+durable-core	Rehearse disposable down and up	﻿2026-10-06T17:58:04.9539984Z ##[group]Run corepack pnpm exec dbmate create
+durable-core	Rehearse disposable down and up	2026-10-06T17:58:05.2553746Z Applied: 20261006000100_m5_availability_v2.sql in 5.994795ms
+durable-core	Rehearse disposable down and up	2026-10-06T17:58:05.4806058Z Applied: 20261006000100_m5_availability_v2.sql in 8.054159ms
+durable-core	Stop containers	2026-10-06T17:58:05.7694742Z  2026-10-06 17:56:46.852 UTC [1] LOG:  starting PostgreSQL 18.6 (Debian 18.6-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+durable-core	Stop containers	2026-10-06T17:58:05.7720300Z  waiting for server to start....2026-10-06 17:56:46.539 UTC [53] LOG:  starting PostgreSQL 18.6 (Debian 18.6-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit

@@ -1,0 +1,16 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 43,
+  "base": "9d896e824ebf3beb5e560ce89e9873799869f6c5",
+  "head": "4ab249b764a58a08fb6599a2200d5214458da252",
+  "tree": "3bff5ab4b8a9beee4d772e9a2e00869783cea3f5",
+  "verdict": "APPROVED",
+  "ci": "10/10 SUCCESS attempt1",
+  "m5_013": "FINAL_ARCHIVED_UNPUBLISHED",
+  "counts": {
+    "auth": 1,
+    "read": 2,
+    "update": 1
+  },
+  "next": "M5-014_LOCAL_ONLY"
+}

@@ -1,0 +1,24 @@
+Use the attached `insignia-pr44-changes-requested-future-publishing-capability` package.
+
+PR #44 is CHANGES_REQUESTED at:
+base 55060c5a48617a27858d10fb0db639c7e9efe148
+head f016e39cf6b54cd2b7e7860a5681c4bb867a6e51
+tree fb687b6ca8bff15a62b6fbd449cd293ee47c8e23
+
+Do not merge and do not perform any Shopify/provider/browser/credential operation.
+
+Correct only the local future-publishing qualification defect.
+
+`supportsFuturePublishing` remains in configuredIntent/intentDigest as publication capability evidence. It must NOT block a product merely because the Publication supports scheduling.
+
+Actual observed `configuredIntent.scheduled` entries remain unqualified/fail-closed.
+
+Add the regressions in the brief, especially an Online-Store-shaped publication with supportsFuturePublishing=true, no actual schedule, ACTIVE→DRAFT effective-membership loss, and one-second ACK/readback updatedAt difference resulting in HELD.
+
+Preserve v1 semantics, mixed-version persistence fences, recovery semantics, ambiguous-write rules and all other v2 behavior.
+
+Use actual GPT-6.1-sol/high and repository-pinned skills. Run full regression, PostgreSQL18 CI, stress and fresh full-source reviews. Let natural final-head CI run.
+
+Return PR #44 for principal rereview and stop.
+
+No live qualification, new fixture, M6/M7, production activation, RELEASE_BOUND/gate pass or launch.

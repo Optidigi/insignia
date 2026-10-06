@@ -1,0 +1,17 @@
+{
+  "sourceHead": "54c1ea71ab0588003304256b0c081132eadd52b3",
+  "includedPaths": [
+    "packages",
+    "apps",
+    "scripts",
+    ".github/workflows",
+    "crates",
+    "extensions",
+    "package.json",
+    "pnpm-lock.yaml",
+    "Cargo.toml",
+    "Cargo.lock"
+  ],
+  "gitObjectListingSha256": "f8ae4f704d50935fb2a517b1985541c3d0c4c549fedbce2a8db64b1b496e3580",
+  "statement": "Final integration adds only docs/evidence; code equality must be independently rechecked before final handback"
+}

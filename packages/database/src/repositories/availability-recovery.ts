@@ -2,10 +2,14 @@ import {
   type AvailabilityRecoveryContext,
   type AvailabilityRecoveryRequest,
   type AvailabilityRecoveryResolution,
+  type AvailabilityRecoveryResolutionV1,
+  type AvailabilityRecoveryResolutionV2,
   activationDigest,
   assertOriginalAvailabilityObserved,
   availabilitySnapshotIdentityDigest,
-  type ProductAvailabilityHoldPort,
+  isAvailabilityV2,
+  type VersionedProductAvailabilityHoldPort as ProductAvailabilityHoldPort,
+  sameAvailabilityV2,
   type TrustedAvailabilityRecoveryAuthorityPort,
   validateAvailabilityRecoveryDecision,
 } from '@insignia/application';
@@ -97,23 +101,32 @@ export function createAvailabilityRecovery(
         shopifyShopId: `gid://shopify/Shop/${active.shopifyShopId}`,
         appClientId: options.appClientId,
       };
-      const observed = await options.availability.snapshot(currentScope, state.hold.before.productId);
+      const version = state.hold.version === 'm5-availability-hold-v1' ? 'v1' : 'v2';
+      const observed = await options.availability.snapshot(currentScope, state.hold.before.productId, version);
       const context: AvailabilityRecoveryContext = { ...request, currentScope, hold: state.hold, observed };
       assertOriginalAvailabilityObserved(context);
       // A separately reviewed settled-write decision is indispensable. Status alone
       // cannot clear an ambiguous write which may still be in flight.
       const authority = await recoveryAuthority.read(context);
-      const readback = await options.availability.snapshot(currentScope, state.hold.before.productId);
-      if (availabilitySnapshotIdentityDigest(readback) !== availabilitySnapshotIdentityDigest(observed))
+      const readback = await options.availability.snapshot(currentScope, state.hold.before.productId, version);
+      if (
+        version === 'v1'
+          ? availabilitySnapshotIdentityDigest(readback) !== availabilitySnapshotIdentityDigest(observed)
+          : !isAvailabilityV2(observed) || !isAvailabilityV2(readback) || !sameAvailabilityV2(observed, readback)
+      )
         throw new Error('Recovery observation drift');
       const finalContext = { ...context, observed: readback };
       assertOriginalAvailabilityObserved(finalContext);
       const at = options.now();
-      const decision = validateAvailabilityRecoveryDecision(authority, finalContext, at, options.maxObservationAgeMs);
-      const resolution: AvailabilityRecoveryResolution = {
+      const decision = validateAvailabilityRecoveryDecision(
+        authority,
+        version === 'v1' ? finalContext : context,
+        at,
+        options.maxObservationAgeMs,
+      );
+      const commonResolution = {
         ...request,
-        version: 'm5-availability-resolution-v1',
-        outcome: 'ORIGINAL_STATE_OBSERVED',
+        outcome: 'ORIGINAL_STATE_OBSERVED' as const,
         currentScope,
         originalHold: state.hold,
         observed: readback,
@@ -121,6 +134,37 @@ export function createAvailabilityRecovery(
         activationEvidenceDigest: state.evidence_digest,
         createdAt: at.toISOString(),
       };
+      let resolution: AvailabilityRecoveryResolution;
+      if (state.hold.version === 'm5-availability-hold-v2') {
+        if (
+          !isAvailabilityV2(observed) ||
+          !isAvailabilityV2(readback) ||
+          decision.version !== 'm5-availability-recovery-decision-v2'
+        )
+          throw new Error('V2 recovery evidence mismatch');
+        resolution = {
+          ...commonResolution,
+          version: 'm5-availability-resolution-v2',
+          originalHold: state.hold,
+          reviewedObservation: observed,
+          observed: readback,
+          decision,
+        } satisfies AvailabilityRecoveryResolutionV2;
+      } else {
+        if (
+          isAvailabilityV2(observed) ||
+          isAvailabilityV2(readback) ||
+          decision.version !== 'm5-availability-recovery-decision-v1'
+        )
+          throw new Error('Historical recovery evidence mismatch');
+        resolution = {
+          ...commonResolution,
+          version: 'm5-availability-resolution-v1',
+          originalHold: state.hold,
+          observed: readback,
+          decision,
+        } satisfies AvailabilityRecoveryResolutionV1;
+      }
       const digest = activationDigest(resolution);
       await sql`INSERT INTO m5_availability_resolutions (shop_id,config_id,operation_id,command_key,resolution_digest,resolution)
         VALUES (${request.shopId},${request.configId},${request.operationId},${request.commandKey},${digest},${JSON.stringify(resolution)}::jsonb)`.execute(

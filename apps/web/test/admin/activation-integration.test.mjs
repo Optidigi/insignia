@@ -4,7 +4,7 @@ import { writeFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { SigningKeyLifecycle } from '@insignia/application';
 import { createDurableCore } from '@insignia/database';
-import { createShopifyAvailabilityHoldPort } from '@insignia/shopify';
+import { createShopifyAvailabilityHoldV2Port } from '@insignia/shopify';
 import { Pool } from 'pg';
 import { createServerActivationReadiness } from '../../src/server/admin/release-evidence.ts';
 
@@ -105,7 +105,7 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
       resourcePublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
       unpublishedPublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
     });
-    const availability = createShopifyAvailabilityHoldPort({
+    const availability = createShopifyAvailabilityHoldV2Port({
       now,
       isCurrent: async (supplied) => {
         const active = await core.tenants.getActiveAuthorizationScope({
@@ -141,9 +141,14 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
             shop: { id: `gid://shopify/Shop/${providerShop}` },
             currentAppInstallation: {
               app: { apiKey: clientId },
-              accessScopes: [{ handle: 'read_products' }, { handle: 'write_products' }],
+              accessScopes: [
+                { handle: 'read_products' },
+                { handle: 'write_products' },
+                { handle: 'read_publications' },
+              ],
             },
             node: product(),
+            publications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, endCursor: null } },
           },
         });
       },
@@ -218,6 +223,9 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
     assert.equal((await core.configs.getCurrentPublication(shopId, configId)).activationKind, 'RESTORATION_PENDING');
     const evidence = (await activation.read(identity)).evidence;
     assert.equal(evidence.admissionClass, 'FIRST_PUBLICATION');
+    assert.equal(evidence.version, 'm5-activation-evidence-v2');
+    assert.equal(evidence.decisionVersion, 2);
+    assert.equal(evidence.hold.version, 'm5-availability-hold-v2');
     assert.equal((await activation.advance(identity)).kind, 'ACTIVE');
     assert.equal(status, 'ACTIVE');
     assert.equal((await core.configs.getCurrentPublication(shopId, configId)).activationKind, 'RESTORED');

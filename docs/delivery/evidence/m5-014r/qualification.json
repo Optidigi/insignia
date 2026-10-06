@@ -1,0 +1,58 @@
+{
+  "recordedAt": "2026-10-06T19:07:05.388455+00:00",
+  "reviewedHead": "f016e39cf6b54cd2b7e7860a5681c4bb867a6e51",
+  "qualificationSourceSha256": "37a475b601e21bb474e2e027461e3f4b581d1aa7334af6b0bc5d702c4ac4b106",
+  "parentRuntime": {
+    "host": "T3 Code / Codex",
+    "model": "gpt-6.1-sol",
+    "reasoningEffort": "high",
+    "source": "host runtime descriptor"
+  },
+  "checks": [
+    {
+      "log": "future-capability-red.log.gz",
+      "command": "corepack pnpm --filter @insignia/shopify exec vitest run test/availability-hold-v2.test.ts -t 'Online Store'",
+      "exitCode": 1,
+      "result": "expected HELD, received CONFLICT at reviewed production source before fix"
+    },
+    {
+      "log": "future-capability-green.log.gz",
+      "command": "same public-port reproduction after minimal predicate correction",
+      "exitCode": 0,
+      "result": "1 passed,34 skipped at intermediate test source"
+    },
+    {
+      "log": "shopify-focused-final.log.gz",
+      "command": "corepack pnpm --filter @insignia/shopify exec vitest run test/availability-hold-v2.test.ts test/availability-hold.test.ts",
+      "exitCode": 0,
+      "result": "170 passed"
+    },
+    {
+      "log": "application-focused.log.gz",
+      "command": "corepack pnpm --filter @insignia/application exec vitest run src/publication/availability-recovery.test.ts src/publication/availability-v2-recovery.test.ts",
+      "exitCode": 0,
+      "result": "20 passed; recovery source/tests unchanged"
+    },
+    {
+      "log": "root-check.log.gz",
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "result": "full root passed; application180 Shopify267; web40 pass8 PG-dependent skipped; storefront1 pass"
+    },
+    {
+      "log": "publication-stress.log.gz",
+      "command": "corepack pnpm test:m5-stress",
+      "exitCode": 0,
+      "result": "100 pass0 fail0 skip, no retries"
+    },
+    {
+      "log": "renderer-control.log.gz",
+      "command": "corepack pnpm test:m5-renderer-control",
+      "exitCode": 0,
+      "result": "expected inner failure before canvas baseline, outer negative-control success"
+    }
+  ],
+  "localPostgreSQL18": "UNAVAILABLE; use natural exact-final-head PostgreSQL18 workflows",
+  "liveQualification": "NOT_RUN / NOT_AUTHORIZED",
+  "finalRefsReviewsCI": "external PR44 packet, bound after commit"
+}

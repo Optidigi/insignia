@@ -1,0 +1,18 @@
+{
+  "role": "spec",
+  "thread": "01a11271-e5b6-74e3-8fc8-0c153e76e68a",
+  "base": "55060c5a48617a27858d10fb0db639c7e9efe148",
+  "head": "fc630956cd48dbb886ce5eac2cb4297a5162c684",
+  "selectedSameLaunchContext": [
+    {
+      "cwd": "/home/serveradmin/insignia-m5-014-worktree",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "approval_policy": "never"
+    }
+  ],
+  "attestation": "orchestrator verified actual same-launch turn_context; read-only is not credential isolation"
+}

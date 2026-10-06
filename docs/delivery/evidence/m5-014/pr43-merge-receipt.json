@@ -1,0 +1,15 @@
+{
+  "repository": "Optidigi/insignia",
+  "PR": 43,
+  "normalMerge": "55060c5a48617a27858d10fb0db639c7e9efe148",
+  "orderedParents": [
+    "9d896e824ebf3beb5e560ce89e9873799869f6c5",
+    "4ab249b764a58a08fb6599a2200d5214458da252"
+  ],
+  "tree": "3bff5ab4b8a9beee4d772e9a2e00869783cea3f5",
+  "remoteMain": "55060c5a48617a27858d10fb0db639c7e9efe148",
+  "approvedHeadUnchanged": true,
+  "method": "merge",
+  "noNativeApprovalFabricated": true,
+  "noProtectionBypass": true
+}
