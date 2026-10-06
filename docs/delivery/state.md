@@ -1,3 +1,9 @@
+# Current authorized slice — M5-011
+
+PR #40 normal merge `1fffcb3048952ff762f1f9805f86aceed90f228f` verified with ordered parents `25e6c487741e1685637d351137d9671033f3c53d`, `ca250edb776e6c5b4567334c1fb4f2c750ddcc5a`, tree `8b9d8389f48c0a8c12a6c56880abe994573af5c6`, ten exact-head attempt-1 passing workflows, and [external approval](PR-040-principal-review.md).
+
+[M5-011](prompts/M5-011-PUBLISHED-STATE-HOLD-ADJUDICATION.md) is IN_PROGRESS in `/home/serveradmin/insignia-m5-011-worktree`; one serialized operator owns `/home/serveradmin/insignia-m5-011-handoff/run`. The closed prior registers and production adapter stay unchanged. Offline qualification, full-source reviews and source CI precede credential access. The exact M5-010 fixture is last observed ACTIVE; live evidence has not yet been collected. Return evidence and proposed correction for principal review; no successor merge or dependent work.
+
 # Insignia — current delivery state
 
 Updated: 2 October 2026 UTC, PR #39 approved and normally merged; M5-010 qualification stopped on publication membership; PR #40 awaiting review. This is an operational index, not decision authority.

@@ -1,5 +1,5 @@
-# PF-001R project-local requested orchestrator settings. Runtime inheritance remains unverified.
-model = "gpt-6-sol"
+# M5-011 project-local model request; runtime evidence is captured separately.
+model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 
 [features]

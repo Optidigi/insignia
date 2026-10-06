@@ -1,0 +1,41 @@
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (1.677405ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (34.960071ms)
+✔ ownership stops before any status mutation (2.718166ms)
+✔ incomplete MARKET stops before any status mutation (2.311985ms)
+✔ missing read scope stops before any status mutation (1.414589ms)
+✔ initial DRAFT drift stops before any status mutation (2.484485ms)
+✔ lost DRAFT acknowledgement never retries or archives (9.938149ms)
+✔ DRAFT readback failure never retries or archives (8.244788ms)
+✔ post-DRAFT ownership drift never retries or archives (10.566133ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (15.175198ms)
+✖ ambiguous archive has exactly one bounded final observation and no resend (14.418092ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.834465ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 11
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 311.838953
+
+✖ failing tests:
+
+test at scripts/m5-011/operator.test.mjs:86:1
+✖ ambiguous archive has exactly one bounded final observation and no resend (14.418092ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + undefined
+  - 'UNKNOWN_WRITE_OBSERVED_ARCHIVED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:89:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'UNKNOWN_WRITE_OBSERVED_ARCHIVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

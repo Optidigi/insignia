@@ -1,0 +1,40 @@
+{
+  "sha": "1fffcb3048952ff762f1f9805f86aceed90f228f",
+  "node_id": "C_kwDOUp4-gtoAKDFmZmZjYjMwNDg5NTJmZjc2MmYxZjk4MDVmODZhY2VlZDkwZjIyOGY",
+  "url": "https://api.github.com/repos/Optidigi/insignia/git/commits/1fffcb3048952ff762f1f9805f86aceed90f228f",
+  "html_url": "https://github.com/Optidigi/insignia/commit/1fffcb3048952ff762f1f9805f86aceed90f228f",
+  "author": {
+    "name": "Shamil Agovic",
+    "email": "79763018+shimmy-aga@users.noreply.github.com",
+    "date": "2026-10-06T11:43:29Z"
+  },
+  "committer": {
+    "name": "GitHub",
+    "email": "noreply@github.com",
+    "date": "2026-10-06T11:43:29Z"
+  },
+  "tree": {
+    "sha": "8b9d8389f48c0a8c12a6c56880abe994573af5c6",
+    "url": "https://api.github.com/repos/Optidigi/insignia/git/trees/8b9d8389f48c0a8c12a6c56880abe994573af5c6"
+  },
+  "message": "Merge pull request #40 from Optidigi/feat/m5-010-publication-read-qualification\n\nM5-010: publication reads and stopped availability qualification",
+  "parents": [
+    {
+      "sha": "25e6c487741e1685637d351137d9671033f3c53d",
+      "url": "https://api.github.com/repos/Optidigi/insignia/git/commits/25e6c487741e1685637d351137d9671033f3c53d",
+      "html_url": "https://github.com/Optidigi/insignia/commit/25e6c487741e1685637d351137d9671033f3c53d"
+    },
+    {
+      "sha": "ca250edb776e6c5b4567334c1fb4f2c750ddcc5a",
+      "url": "https://api.github.com/repos/Optidigi/insignia/git/commits/ca250edb776e6c5b4567334c1fb4f2c750ddcc5a",
+      "html_url": "https://github.com/Optidigi/insignia/commit/ca250edb776e6c5b4567334c1fb4f2c750ddcc5a"
+    }
+  ],
+  "verification": {
+    "verified": true,
+    "reason": "valid",
+    "signature": "-----BEGIN PGP SIGNATURE-----\n\nwsFcBAABCAAQBQJqxN7hCRC1aQ7uu5UhlAAA5CkQACRWZAHFadBgKnBCmuJIMaKY\nqL1mqtVF5LiLFZ+5dyg8FgjHGd9mKDxo/3oVvdP2QWemW3hLJTkiihYy2tA9ut/J\nk4dyxyMqNXzvaISHSzPbdJ/Yy4T5aumWO8Z4638ZVLZBZn+9Kg2kFgKpnykvkAWp\nQ772NmaPOijB3Ye+IdJXkR2a5MANPYjifwtnsE79wpXScr9PqrGME4Z3XfhsC6mY\nZzpjZ5TJYO/ffyJh3apswsJ5SE3mSMwGgt0B9Yf6j8rWIAmw1RWURYeOZTOANsNa\nPoUciy/wCyReL7Z0J+Wm5PaQll3W+QuGcaFVtfTXeyCtBqtcxNz91iNlfWqpryhP\nYMKmWteXncH9iIlcqX7p7WM1syLaJ0WRma5DW34Dg6abb+zSox80bxI05Hv0geEP\noj/yFz63FvsXR+h6oe5xq7V8ysR0ySJt3lWVBoV+KewVsBNWEX7s+AJH1aWFuvdv\n6G0xLKuelryMKVsaVU9lbkZeH0yGU0e3JpttIDBYpdnq/hzjmiaMfZZ9RoQj+5wg\niW5UkGFKZ7pr3OJAwpDavcaS32uxfURCgsIL6M4hqyRsQmJK4VIVpYsCUL/Ft90N\n9KFPaPZ2D9Up018YWIJhaNbZOC5qw/5+bUhpPcah6F/aV/G1ZbONFNQYvH8zrXN4\nWovh9xro9xYxIqPdv8z8\n=TE0+\n-----END PGP SIGNATURE-----\n",
+    "payload": "tree 8b9d8389f48c0a8c12a6c56880abe994573af5c6\nparent 25e6c487741e1685637d351137d9671033f3c53d\nparent ca250edb776e6c5b4567334c1fb4f2c750ddcc5a\nauthor Shamil Agovic <79763018+shimmy-aga@users.noreply.github.com> 1791287009 +0200\ncommitter GitHub <noreply@github.com> 1791287009 +0200\n\nMerge pull request #40 from Optidigi/feat/m5-010-publication-read-qualification\n\nM5-010: publication reads and stopped availability qualification",
+    "verified_at": "2026-10-06T11:43:30Z"
+  }
+}

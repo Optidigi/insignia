@@ -1,0 +1,37 @@
+✖ exact historical ownership accepts the fixed fixture and rejects an alternate target (1.484587ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 84.52964
+
+✖ failing tests:
+
+test at scripts/m5-011/operator.test.mjs:6:1
+✖ exact historical ownership accepts the fixed fixture and rejects an alternate target (1.484587ms)
+  AssertionError [ERR_ASSERTION]: Got unwanted exception.
+  Actual message: "not implemented"
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:8:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.start (node:internal/test_runner/test:1262:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: Error: not implemented
+        at assertOwned (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.mjs:1:39)
+        at file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:8:29
+        at getActual (node:assert:611:5)
+        at strict.doesNotThrow (node:assert:779:32)
+        at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-011-worktree/scripts/m5-011/operator.test.mjs:8:10)
+        at Test.runInAsyncScope (node:async_hooks:227:14)
+        at Test.run (node:internal/test_runner/test:1402:25)
+        at Test.start (node:internal/test_runner/test:1262:17)
+        at startSubtestAfterBootstrap (node:internal/test_runner/harness:387:17),
+    expected: undefined,
+    operator: 'doesNotThrow',
+    diff: 'simple'
+  }

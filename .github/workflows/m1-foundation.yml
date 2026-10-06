@@ -20,6 +20,7 @@ on:
       - 'scripts/m5-005/**'
       - 'scripts/m5-009/**'
       - 'scripts/m5-010/**'
+      - 'scripts/m5-011/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
@@ -43,6 +44,7 @@ on:
       - 'scripts/m5-005/**'
       - 'scripts/m5-009/**'
       - 'scripts/m5-010/**'
+      - 'scripts/m5-011/**'
       - 'package.json'
       - '.github/workflows/m1-foundation.yml'
 
