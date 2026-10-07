@@ -1,0 +1,41 @@
+✔ admin distinguishes activation waiting, held, restoration and conflict without manufacturing ACTIVE (1.209479ms)
+✔ publication conflict outranks a retained held/pending activation state (0.172978ms)
+✔ terminal operator hold outranks stale held activation (0.156373ms)
+✖ failed immutable request is explicit while unresolved availability still takes precedence (1.164626ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 125.458542
+
+✖ failing tests:
+
+test at test/admin/activation-state.test.mjs:86:1
+✖ failed immutable request is explicit while unresolved availability still takes precedence (1.164626ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'OPERATOR_HOLD'
+  - 'FAILED'
+
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-018-worktree/apps/web/test/admin/activation-state.test.mjs:88:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'OPERATOR_HOLD',
+    expected: 'FAILED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-018-
+  │ worktree/apps/web

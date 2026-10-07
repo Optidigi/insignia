@@ -150,11 +150,17 @@ export interface DurableCore {
       priorMode: 'required' | 'optional' | null;
       status: string;
       activationKind: string | null;
+      reconciliationKind?: string | null;
     } | null>;
     getAvailabilityRecovery(
       shopId: string,
       configId: string,
     ): Promise<{ operationId: string; kind: string; installationGeneration: string } | null>;
+    getAvailabilityRecoveryInTransaction(
+      transaction: DurableTransaction,
+      shopId: string,
+      configId: string,
+    ): ReturnType<DurableCore['configs']['getAvailabilityRecovery']>;
     getCurrentPublicationInTransaction(
       transaction: DurableTransaction,
       shopId: string,
@@ -263,6 +269,18 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   const tenants = createTenantRepository(database);
   const webhooks = createShopifyWebhookRepository(database);
   const credentials = createShopCredentialRepository(database, options.credentialKeys);
+  async function availabilityRecovery(executor: DatabaseExecutor, shopId: string, configId: string) {
+    // An owned hold survives reinstall/supersession; never hide it behind the new generation's pointer.
+    const rows = await sql<{ operation_id: string; kind: string; installation_generation: string }>`
+          SELECT state.operation_id, state.kind, operation.installation_generation::text
+          FROM m5_activation_state state JOIN publication_operations operation USING (shop_id, config_id, operation_id)
+          WHERE state.shop_id=${shopId} AND state.config_id=${configId}
+            AND state.hold IS NOT NULL AND state.kind NOT IN ('RESTORED','RESOLVED') LIMIT 1`.execute(executor);
+    const row = rows.rows[0];
+    return row
+      ? { operationId: row.operation_id, kind: row.kind, installationGeneration: row.installation_generation }
+      : null;
+  }
   async function currentPublication(executor: DatabaseExecutor, shopId: string, configId: string) {
     const pointer = await sql<{
       revision_id: string;
@@ -274,9 +292,12 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       prior_mode: 'required' | 'optional' | null;
       status: string | null;
       activation_kind: string | null;
+      reconciliation_kind: string | null;
     }>`SELECT pointer.revision_id, pointer.source_draft_version::text,
         pointer.idempotency_key, geometry.mode, operation.operation_id,
-        progress.phase, progress.prior_mode, operation.status, activation.kind AS activation_kind
+        progress.phase, progress.prior_mode, operation.status, activation.kind AS activation_kind,
+        CASE WHEN progress.last_observed->'adminReconciliation'->>'version'='m5-admin-reconciliation-v1'
+          THEN progress.last_observed->'adminReconciliation'->>'kind' END AS reconciliation_kind
       FROM m5_current_publication_pointer pointer
       JOIN shops shop ON shop.shop_id=pointer.shop_id
         AND shop.current_generation=pointer.installation_generation
@@ -306,6 +327,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
         priorMode: selected.prior_mode,
         status: selected.status ?? 'intent',
         activationKind: selected.activation_kind,
+        reconciliationKind: selected.reconciliation_kind,
       };
     }
     const historical = await sql<{
@@ -316,9 +338,12 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       prior_mode: 'required' | 'optional' | null;
       status: string;
       activation_kind: string | null;
+      reconciliation_kind: string | null;
       source_draft_version: string | null;
     }>`SELECT operation.operation_id, operation.revision_id,
         progress.phase, progress.mode, progress.prior_mode, operation.status, activation.kind AS activation_kind,
+        CASE WHEN progress.last_observed->'adminReconciliation'->>'version'='m5-admin-reconciliation-v1'
+          THEN progress.last_observed->'adminReconciliation'->>'kind' END AS reconciliation_kind,
         presentation.source_draft_version::text
       FROM publication_operations operation
       JOIN m4_publication_progress progress
@@ -347,6 +372,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           priorMode: row.prior_mode,
           status: row.status,
           activationKind: row.activation_kind,
+          reconciliationKind: row.reconciliation_kind,
         }
       : null;
   }
@@ -529,18 +555,9 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           ? { draftVersion: rows.rows[0].draft_version, installationGeneration: rows.rows[0].installation_generation }
           : null;
       },
-      getAvailabilityRecovery: async (shopId, configId) => {
-        // An owned hold survives reinstall/supersession; never hide it behind the new generation's pointer.
-        const rows = await sql<{ operation_id: string; kind: string; installation_generation: string }>`
-          SELECT state.operation_id, state.kind, operation.installation_generation::text
-          FROM m5_activation_state state JOIN publication_operations operation USING (shop_id, config_id, operation_id)
-          WHERE state.shop_id=${shopId} AND state.config_id=${configId}
-            AND state.hold IS NOT NULL AND state.kind NOT IN ('RESTORED','RESOLVED') LIMIT 1`.execute(database);
-        const row = rows.rows[0];
-        return row
-          ? { operationId: row.operation_id, kind: row.kind, installationGeneration: row.installation_generation }
-          : null;
-      },
+      getAvailabilityRecovery: (shopId, configId) => availabilityRecovery(database, shopId, configId),
+      getAvailabilityRecoveryInTransaction: (handle, shopId, configId) =>
+        availabilityRecovery(resolve(handle), shopId, configId),
       getCurrentPublication: (shopId, configId) => currentPublication(database, shopId, configId),
       getCurrentPublicationInTransaction: async (handle, shopId, configId) =>
         currentPublication(resolve(handle), shopId, configId),

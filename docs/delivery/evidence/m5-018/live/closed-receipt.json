@@ -1,0 +1,30 @@
+{
+  "version": "m5-018-bounded-browser-closure-v1",
+  "closedAt": "2026-10-07T16:23:55.267978+00:00",
+  "classification": "BLOCKED_RELEASE_BOUND",
+  "soleActivationBlockerEstablished": false,
+  "sourceHead": "2c84d8feb95f8ec29ef90ed84d2c99b13aa22d6e",
+  "sourceFiles": 396,
+  "buildFiles": 225,
+  "sourceBuildAllUnchanged": true,
+  "nativeBrowserActions": 9,
+  "coldLaunchAttempts": 1,
+  "deepLinkAttempts": 0,
+  "reloadAttempts": 0,
+  "fixtureCount": 0,
+  "cleanup": "NOT_APPLICABLE: no product/config fixture or mutation",
+  "credentialValuesExtracted": 0,
+  "directProviderApiRequests": 0,
+  "providerMutations": 0,
+  "scopeChanges": 0,
+  "appReleases": 0,
+  "functionReleases": 0,
+  "pendingActions": 0,
+  "files": {
+    "actions.jsonl": "6805f0658a3a089677004e264bb09dbcbad5c89d274c54d62debac0aefaaad40",
+    "observation.json": "dbc9e2294cbcdb66475a6c6f9880fd3d89cdf02566ab43b1cf11e92409d6adf2",
+    "register.json": "239c363ff61f2172ba3f42b5e2ab2ba700698bdc2010c3227553be605063d733"
+  },
+  "normalization": "Browser authentication URL query and unrelated snapshot navigation omitted before sealing; no raw store product/customer/account/credential data retained",
+  "stop": "No more M5-018 provider/browser/credential operations; remaining work is docs/evidence/reviews/final CI/principal handoff."
+}

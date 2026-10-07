@@ -1,0 +1,36 @@
+✖ real admin HTTP publish commits PG v3 activation and immutable evidence: active-destroyed-key (1254.504442ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1763.299524
+
+✖ failing tests:
+
+test at test/admin/activation-integration.test.mjs:22:3
+✖ real admin HTTP publish commits PG v3 activation and immutable evidence: active-destroyed-key (1254.504442ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + undefined
+  - 'OPERATOR_HOLD'
+
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-018-worktree/apps/web/test/admin/activation-integration.test.mjs:390:16)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: 'OPERATOR_HOLD',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-018-
+  │ worktree/apps/web
+

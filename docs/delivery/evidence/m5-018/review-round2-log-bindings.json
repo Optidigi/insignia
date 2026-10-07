@@ -1,0 +1,17 @@
+[
+  {
+    "file": "operator-key-drift-red.log",
+    "originalSha256": "5b2ec3f27272f3ec761d98465106a5d3c034251be3d9fdbf6c7829fc99f289df",
+    "renderedSha256": "6f269da9c0e9ce471a5a13f16c2384f357e4f2c75abdd59e7fc1f5a57917aa07"
+  },
+  {
+    "file": "admin-v3-final-green.log",
+    "originalSha256": "122db8fde2022bab8ceb31302f0fffa674d972fe5ebb9338488feeeebb5d4aa1",
+    "renderedSha256": "122db8fde2022bab8ceb31302f0fffa674d972fe5ebb9338488feeeebb5d4aa1"
+  },
+  {
+    "file": "mobile-auth-reload-green.log",
+    "originalSha256": "20f3597a8b9e4b34499fda7a5d8ea2cb97913be749c607573fc26966686e8f24",
+    "renderedSha256": "20f3597a8b9e4b34499fda7a5d8ea2cb97913be749c607573fc26966686e8f24"
+  }
+]

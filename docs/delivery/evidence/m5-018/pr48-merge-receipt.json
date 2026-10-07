@@ -1,0 +1,19 @@
+{
+  "verifiedAt": "2026-10-07T14:30:04.995441+00:00",
+  "repository": "Optidigi/insignia",
+  "pr": 48,
+  "mergeMethod": "NORMAL",
+  "merge": "407608ab929e703cd2b10972de93cf00c58aa9df",
+  "orderedParents": [
+    "4bba14fb4415815557ffa5f1e600427a62128489",
+    "125e6d452d713acc9ce7eb741c2506f25857cb8f"
+  ],
+  "tree": "31ccad58a7a1941fce17451d83ca7326ac712ecc",
+  "remoteMain": "407608ab929e703cd2b10972de93cf00c58aa9df",
+  "approvedHeadChanged": false,
+  "squashRebaseForceBypass": false,
+  "nativeApprovalFabricated": false,
+  "sourceAvailabilityV3": "ACCEPTED_BY_EXTERNAL_PRINCIPAL",
+  "ci": 11,
+  "attempts": 1
+}

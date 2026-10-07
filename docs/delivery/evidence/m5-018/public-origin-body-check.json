@@ -1,0 +1,33 @@
+{
+  "purpose": "Public origin role classification only; no install/auth link followed, credentials/query/cookies sent or raw body retained",
+  "url": "https://insignia.optidigi.nl/",
+  "method": "GET",
+  "followRedirects": false,
+  "reservedAt": "2026-10-07T16:30:29.189674+00:00",
+  "completedAt": "2026-10-07T16:30:29.380160+00:00",
+  "curlExitCode": 0,
+  "publicLabels": [
+    {
+      "tag": "h1",
+      "text": "Logo customization for Shopify merchants"
+    },
+    {
+      "tag": "button",
+      "text": "Log in"
+    }
+  ],
+  "formRoutes": [
+    {
+      "method": "post",
+      "action": "/auth/login"
+    }
+  ],
+  "scriptRoutes": [],
+  "markers": {
+    "productionMerchantConfigEditor": false,
+    "appBridge": false,
+    "polaris": false
+  },
+  "error": "",
+  "rawBodyRetained": false
+}

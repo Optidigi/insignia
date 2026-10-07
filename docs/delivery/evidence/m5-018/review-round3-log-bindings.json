@@ -1,0 +1,27 @@
+[
+  {
+    "file": "restoration-admission-red-final.log",
+    "originalSha256": "485bd14762bb91bb23426d796454e4ddec33ba70b2272a0aa7b6237df7631b5e",
+    "renderedSha256": "cd1c8910190a6dc958a4e583e1d834e6265f845d9a3f01d4c22a1024c2d5b033"
+  },
+  {
+    "file": "destroyed-key-red-qualified.log",
+    "originalSha256": "3102d6d479659cdb24eb65e243d1a81e9747677438f35bbb923c1cd1d47ac0ec",
+    "renderedSha256": "a96eb37f788bd588f2b467c5763acde9cfddf940be65d4f95340b75783c6f75d"
+  },
+  {
+    "file": "admin-v3-round3-green.log",
+    "originalSha256": "f1a56d9744215ad4f103890bcf702a60436a9947fe274292985d5cbd7255e6c7",
+    "renderedSha256": "f1a56d9744215ad4f103890bcf702a60436a9947fe274292985d5cbd7255e6c7"
+  },
+  {
+    "file": "operator-ui-red.log",
+    "originalSha256": "286d47292bd64150ea3a9c8d20cefcf45a450a29244cd4c9c42c4383cf9704b2",
+    "renderedSha256": "60dcc37931fbe0a32d62100094b87c277bcb96dcafef2a455266da87edeb64fc"
+  },
+  {
+    "file": "operator-ui-green.log",
+    "originalSha256": "2039d162a5548a38fc2d0ed9101b625af512c776a69b620be188ff19ace906bc",
+    "renderedSha256": "2039d162a5548a38fc2d0ed9101b625af512c776a69b620be188ff19ace906bc"
+  }
+]

@@ -3,12 +3,16 @@ name: M0-007 policy and Function boundary checks
 on:
   pull_request:
     paths:
+      - "apps/web/**"
+      - "packages/database/**"
       - "spikes/m0-006/extensions/**"
       - "spikes/m0-007/**"
       - ".github/workflows/m0-007-local.yml"
   push:
     branches: [main]
     paths:
+      - "apps/web/**"
+      - "packages/database/**"
       - "spikes/m0-006/extensions/**"
       - "spikes/m0-007/**"
       - ".github/workflows/m0-007-local.yml"

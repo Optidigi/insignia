@@ -1,0 +1,19 @@
+**CHANGES_REQUESTED — round3 precredential Spec/correctness gate.**
+
+Reviewed base/effective merge base `407608ab929e703cd2b10972de93cf00c58aa9df` → candidate `8ca36eebd42a89ecb5bb99d0d08caa12cbd4e298`. This session’s runtime metadata confirms actual **GPT-6.1-sol/high**, read-only sandbox, approval policy never.
+
+**P1 — A new request can replace an unresolved restoration’s continuation pointer.** Candidate [merchant-config.ts:508](/home/serveradmin/insignia-m5-018-worktree/apps/web/src/server/merchant-config.ts:508) and the transactional check at line547 admit another request whenever publication phase is `active` and its reconciliation diagnostic is clear. They ignore `activationKind` and unresolved owned holds.
+
+Counterexample: operation A has atomically activated but remains `RESTORATION_PENDING` or `RESTORATION_CLAIMED`. Submit a different publication key against the current saved draft. Both admission checks pass, committing immutable revision B, its command/outbox and the replacement current-intent pointer at [line570](/home/serveradmin/insignia-m5-018-worktree/apps/web/src/server/merchant-config.ts:570). Preparation subsequently refuses B because A still owns an unresolved hold at [production-publication.ts:351](/home/serveradmin/insignia-m5-018-worktree/packages/database/src/repositories/production-publication.ts:351), producing503 **after** the pointer has changed. Replaying A then returns409 “A newer publication request exists” at merchant-config line619. GET selects B and projects another-operation recovery, preventing the admin from continuing A.
+
+The same admission omission covers activated availability `OPERATOR_HOLD`/rehold conflicts. The UI also enables a new request after `RESTORATION_CONFLICT` when the draft is eligible and saved.
+
+This violates M5-018 §§2–3’s durable workflow, restoration/operator handling and exact reentry requirements. Reject new intent creation while any unresolved owned hold exists, checking under the same transaction locks; preserve exact-key continuation of the existing request. Add PG/HTTP regressions asserting unchanged pointer, revision/outbox counts and continuation behavior. This is an admin admission defect; accepted v3 adapter semantics need no change.
+
+I examined the full four-commit log/diff, all seven changed source files and six changed tests, plus complete relevant admin composition/auth/HTTP/routes/readiness/preview, editor/geometry/Konva, PG config/command/outbox/publication/activation/recovery, application coordinator/contracts, Shopify identity/catalog/publication/ownership/availability adapters and worker seams. I read AGENTS, ledger, operating model, plan §§7/10/M5/G7, full brief, report/matrix, both rounds’ original reports, dispositions and regression receipts.
+
+The previous authorization race, explicit409, stale observation and active reconciliation/key/epoch findings have concrete corrections. Historical activated status remains terminal; diagnostics remain outside activation/hold JSONB. Git-object comparison confirms **2,690 historical evidence/spike paths, 47 application/Shopify source paths and all15 migrations unchanged**. All18 committed rendered/original log-binding pairs match. External sealed runs were not independently rehashed.
+
+I inspected existing focused, root,171PG,100stress and renderer receipts; **I personally ran no tests/builds/SQL or live operations, edited nothing and delegated nothing**. Full exact-source CI success is not claimed. External uncommitted source/test edits appeared during review and are excluded from this SHA-bound verdict.
+
+The bounded initial read-only live procedure respects the release boundary; pending matrix outcomes are appropriate. Live access remains closed. This is neither principal approval nor completed M5 exit acceptance.

@@ -25,7 +25,8 @@ export type PublicationState =
   | 'RESTORATION_CONFLICT'
   | 'ACTIVE'
   | 'CONFLICT'
-  | 'OPERATOR_HOLD';
+  | 'OPERATOR_HOLD'
+  | 'FAILED';
 
 export interface ConfigView {
   product: CatalogProduct;
@@ -54,5 +55,5 @@ export type CommandOutcome =
   | { kind: 'saved'; draftVersion: string }
   | { kind: 'accepted'; state: PublicationState; revisionId?: string }
   | { kind: 'conflict'; message: string }
-  | { kind: 'invalid'; message: string }
+  | { kind: 'invalid'; message: string; validationIssues?: { path: string; message: string }[] }
   | { kind: 'forbidden'; message: string };
