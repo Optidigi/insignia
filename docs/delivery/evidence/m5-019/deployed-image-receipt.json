@@ -1,0 +1,11 @@
+{
+  "imageId": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+  "tag": "insignia-rewrite-m5-019:f117be50d7bc",
+  "nodeVersion": "v24.21.0",
+  "user": "node",
+  "workdir": "/srv/insignia",
+  "baseDigest": "sha256:51b1100cc2a83d370c6a60952e3f2989c8a43159d0e38586e090f3b3326efefd",
+  "sizeBytes": 705126091,
+  "publicRoutingEnabled": false,
+  "legacyServicesChanged": false
+}

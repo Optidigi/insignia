@@ -1,0 +1,13 @@
+{
+  "designatedInstallationPresent": true,
+  "appFrameStillUsesActivePlaceholder": true,
+  "listingStatus": "DRAFT",
+  "listingPublishedOrReviewed": false,
+  "supportedOverview": "Dev Dashboard exposes last-seven-day event counts, Partner overview redirects administration to Dev Dashboard; no complete installation inventory exposed by inspected surfaces",
+  "completeInventory": "NOT_OBSERVED",
+  "absenceOtherInstalls": "NOT_ESTABLISHED",
+  "noReleaseCurrentInstallationImpact": "ZERO: version is not made available to merchants until release",
+  "futureReleaseImpact": "App Home URL and available Function modules change globally for this exact app; installation count cannot be inferred. Required/optional scopes unchanged; no grant request or per-store Function enablement, commerce mutation, legacy-app change or migration is included. Further qualification is bounded to designated development installation; no production/merchant launch.",
+  "releaseAuthorization": "NONE",
+  "readScopes": "No fresh installation-grant read claimed"
+}

@@ -1,0 +1,87 @@
+{
+  "head": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+  "runs": [
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37666870977,
+      "headSha": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+      "name": "M0-010 local hybrid billing proof",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37666870762,
+      "headSha": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+      "name": "M0-011 local provider adapter boundary",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37666870769,
+      "headSha": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+      "name": "M0-012 real contract local prototype",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37666870974,
+      "headSha": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+      "name": "M0-008 local publication and architecture checks",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37666870993,
+      "headSha": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+      "name": "M0-009 embedded Astro local proof",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37666870813,
+      "headSha": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+      "name": "M1-001 foundation and boundaries",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37666870797,
+      "headSha": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+      "name": "M0-014 local public-app candidate",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37666870899,
+      "headSha": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+      "name": "M3-002 local runtime and ingress",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37666871117,
+      "headSha": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+      "name": "M0-013 off-store protocol capacity",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37666870814,
+      "headSha": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+      "name": "M3-001 PostgreSQL durable core",
+      "status": "completed"
+    }
+  ],
+  "applicableWorkflowCount": 10,
+  "m0_007": "Not triggered: current changes do not match its committed paths filter; all accepted underlying app/DB/Function/policy/workflow source remains unchanged. PR49 entry separately verified all11 exact-head workflows. No new11-CI claim."
+}

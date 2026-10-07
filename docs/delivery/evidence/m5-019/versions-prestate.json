@@ -1,0 +1,23 @@
+[
+  {
+    "createdAt": "2026-10-02 21:18:24",
+    "versionTag": "insignia-3",
+    "status": "active",
+    "versionId": "gid://shopify/Version/1153019904001",
+    "message": ""
+  },
+  {
+    "createdAt": "2026-10-02 18:14:11",
+    "versionTag": "insignia-2",
+    "status": "inactive",
+    "versionId": "gid://shopify/Version/1152880803841",
+    "message": ""
+  },
+  {
+    "createdAt": "2026-09-28 12:11:16",
+    "versionTag": "insignia-1",
+    "status": "inactive",
+    "versionId": "gid://shopify/Version/1146748534785",
+    "message": ""
+  }
+]

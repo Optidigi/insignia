@@ -1,0 +1,53 @@
+{
+  "phase": "rollback-service-stopped",
+  "probeLocation": "llm-shamil external workspace",
+  "legacyPages": [
+    {
+      "path": "/",
+      "status": 200,
+      "cacheControl": null,
+      "contentType": "text/html; charset=utf-8",
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "correctRewriteClient": false,
+      "legacyShape": {
+        "title": [],
+        "h1": [
+          "Logo customization for Shopify merchants"
+        ],
+        "formActions": [
+          "/auth/login"
+        ],
+        "scripts": [
+          "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"
+        ]
+      }
+    },
+    {
+      "path": "/auth/login",
+      "status": 200,
+      "cacheControl": null,
+      "contentType": "text/html; charset=utf-8",
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "correctRewriteClient": false,
+      "legacyShape": {
+        "title": [],
+        "h1": [],
+        "formActions": [
+          "/auth/login"
+        ],
+        "scripts": [
+          "https://cdn.shopify.com/shopifycloud/polaris.js",
+          "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"
+        ]
+      }
+    }
+  ],
+  "adminFallback": {
+    "path": "/admin/products",
+    "status": 404,
+    "cacheControl": null,
+    "contentType": "text/html; charset=utf-8",
+    "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+    "correctRewriteClient": false
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "postgresImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+  "databaseContainer": "a1a521b36a30dd97c6ece2e3cb79ba05edf963362bc3ce3941e5ffac53cee265",
+  "databaseName": "insignia_rewrite",
+  "network": "insignia-rewrite-m5-019_private",
+  "publishedPorts": false,
+  "health": "healthy",
+  "migrationVersions": [
+    "20260929000100",
+    "20260929000200",
+    "20260929000300",
+    "20260929000400",
+    "20260930000100",
+    "20260930000200",
+    "20260930000300",
+    "20260930000400",
+    "20260930000500",
+    "20260930000600",
+    "20260930000700",
+    "20260930000800",
+    "20260930000900",
+    "20261006000100",
+    "20261007000100"
+  ],
+  "runtimeRole": "insignia_runtime|f|f|f|f",
+  "createTableDenied": true,
+  "createRoleDenied": true,
+  "provisioningPasswordCopyRemoved": true,
+  "legacyDatabaseAccessed": false
+}

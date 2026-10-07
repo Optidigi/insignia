@@ -1,0 +1,109 @@
+{
+  "classification": "HOST_WEB_READINESS_PASS",
+  "probeLocation": "llm-shamil external workspace",
+  "sourceHead": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+  "publicRoutes": [
+    {
+      "path": "/admin/products",
+      "status": 200,
+      "cacheControl": "private, no-store",
+      "contentType": "text/html",
+      "csp": "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' https: data:; connect-src 'self'; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'",
+      "correctRewriteClient": true
+    },
+    {
+      "path": "/api/admin/products",
+      "status": 401,
+      "cacheControl": "private, no-store",
+      "contentType": "application/json; charset=utf-8",
+      "csp": null,
+      "correctRewriteClient": false
+    },
+    {
+      "path": "/api/admin/products/1/config",
+      "status": 401,
+      "cacheControl": "private, no-store",
+      "contentType": "application/json; charset=utf-8",
+      "csp": null,
+      "correctRewriteClient": false
+    },
+    {
+      "path": "/_astro/MerchantConfigEditor.DP-cRyvJ.js",
+      "status": 200,
+      "cacheControl": "public, max-age=31536000, immutable",
+      "contentType": "text/javascript; charset=utf-8",
+      "csp": null,
+      "correctRewriteClient": false
+    },
+    {
+      "path": "/admin/products-extra",
+      "status": 404,
+      "cacheControl": null,
+      "contentType": "text/html; charset=utf-8",
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "correctRewriteClient": false
+    },
+    {
+      "path": "/api/admin/products-extra",
+      "status": 404,
+      "cacheControl": null,
+      "contentType": "text/html; charset=utf-8",
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "correctRewriteClient": false
+    }
+  ],
+  "legacyPages": [
+    {
+      "path": "/",
+      "status": 200,
+      "cacheControl": null,
+      "contentType": "text/html; charset=utf-8",
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "correctRewriteClient": false,
+      "legacyShape": {
+        "title": [],
+        "h1": [
+          "Logo customization for Shopify merchants"
+        ],
+        "formActions": [
+          "/auth/login"
+        ],
+        "scripts": [
+          "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"
+        ]
+      }
+    },
+    {
+      "path": "/auth/login",
+      "status": 200,
+      "cacheControl": null,
+      "contentType": "text/html; charset=utf-8",
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "correctRewriteClient": false,
+      "legacyShape": {
+        "title": [],
+        "h1": [],
+        "formActions": [
+          "/auth/login"
+        ],
+        "scripts": [
+          "https://cdn.shopify.com/shopifycloud/polaris.js",
+          "https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495"
+        ]
+      }
+    }
+  ],
+  "legacyRootLoginEqualDuringRollbackAndRestoration": true,
+  "rollbackRestoration": {
+    "containerId": "fda5d54ce1a12bdbff2acc2d25301612208c2eabbaf2db1af99f1201ca7d3109",
+    "imageId": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+    "health": "healthy",
+    "sameStoppedContainerAndImageRestored": true,
+    "legacyContainerImageStartTimeUnchanged": true,
+    "databaseContainerPreserved": true,
+    "routeEnabled": "true"
+  },
+  "serverSelfProbe": "timed out during rollback after new-web stop; state resolved read-only and rollback public proof moved to external workspace",
+  "authenticatedG7Acceptance": "NOT_RUN",
+  "appReleased": false
+}

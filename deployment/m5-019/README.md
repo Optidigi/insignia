@@ -68,5 +68,14 @@ not proof of grants, commercial readiness, Function enablement or activation.
 
 After the complete host/source/build/config/review/CI gate is frozen, the
 separate exact-app operator may create at most one unreleased Shopify version.
+`package-app-version.py` materializes the separately captured exact-app config
+and only the two accepted Function binaries. Its fixed local UIDs are proposed
+new identities, not claims about an existing provider registration. Query and
+Wasm hashes must match `extension-bindings.json`. The deployment copies use
+`command = "exit 1"`; the pinned CLI must use `--no-build --no-release`, making
+an accidentally enabled rebuild fail locally. Original source/config/binaries
+remain unchanged. Exclude the theme extension and preserve empty required and
+the exact three optional scopes. Inspect provider UID/module identity and
+active-version equality after the single no-release attempt.
 This directory does not release an app or Function, create a fixture, mutate
 availability/publications, change scopes or authorize M6/M7/launch.

@@ -1,0 +1,18 @@
+api_version = "2026-07"
+
+[[extensions]]
+uid = "c56038d4-146a-405e-b47d-a055249eeeb3"
+name = "Insignia experimental-v2 cart transform"
+handle = "insignia-experimental-v2-transform"
+type = "function"
+description = "Local preproduction candidate only"
+
+  [[extensions.targeting]]
+  target = "cart.transform.run"
+  input_query = "src/cart_transform_run.graphql"
+  export = "cart_transform_run"
+
+  [extensions.build]
+  command = "exit 1"
+  path = "target/cart-transform.wasm"
+  wasm_opt = false

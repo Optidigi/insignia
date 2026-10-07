@@ -1,0 +1,88 @@
+{
+  "containerId": "204c04cffe150718fd728dde06f52379f3c329021c8429c6443c2f543acfbc58",
+  "imageId": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+  "health": "healthy",
+  "networkPortsUnpublished": true,
+  "routeEnabled": false,
+  "runtimeUser": "node",
+  "readOnlyFilesystem": true,
+  "beforeRestart": {
+    "routes": [
+      {
+        "path": "/live",
+        "status": 200,
+        "cacheControl": "no-store",
+        "csp": null,
+        "publicClient": false
+      },
+      {
+        "path": "/admin/products",
+        "status": 200,
+        "cacheControl": "private, no-store",
+        "csp": "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' https: data:; connect-src 'self'; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'",
+        "publicClient": true
+      },
+      {
+        "path": "/api/admin/products",
+        "status": 401,
+        "cacheControl": "private, no-store",
+        "csp": null,
+        "publicClient": false
+      },
+      {
+        "path": "/api/admin/products/1/config",
+        "status": 401,
+        "cacheControl": "private, no-store",
+        "csp": null,
+        "publicClient": false
+      },
+      {
+        "path": "/_astro/MerchantConfigEditor.DP-cRyvJ.js",
+        "status": 200,
+        "cacheControl": "public, max-age=31536000, immutable"
+      }
+    ],
+    "webEntrySha256": "5dab1e4f21a7033582c1c2a326c97d6dcadae66ca04566a73a2aca113b4077f7"
+  },
+  "afterRestart": {
+    "routes": [
+      {
+        "path": "/live",
+        "status": 200,
+        "cacheControl": "no-store",
+        "csp": null,
+        "publicClient": false
+      },
+      {
+        "path": "/admin/products",
+        "status": 200,
+        "cacheControl": "private, no-store",
+        "csp": "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' https: data:; connect-src 'self'; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'",
+        "publicClient": true
+      },
+      {
+        "path": "/api/admin/products",
+        "status": 401,
+        "cacheControl": "private, no-store",
+        "csp": null,
+        "publicClient": false
+      },
+      {
+        "path": "/api/admin/products/1/config",
+        "status": 401,
+        "cacheControl": "private, no-store",
+        "csp": null,
+        "publicClient": false
+      },
+      {
+        "path": "/_astro/MerchantConfigEditor.DP-cRyvJ.js",
+        "status": 200,
+        "cacheControl": "public, max-age=31536000, immutable"
+      }
+    ],
+    "webEntrySha256": "5dab1e4f21a7033582c1c2a326c97d6dcadae66ca04566a73a2aca113b4077f7"
+  },
+  "sameContainerAndImage": true,
+  "restartHealthSettled": true,
+  "legacyServiceRestarted": false
+}

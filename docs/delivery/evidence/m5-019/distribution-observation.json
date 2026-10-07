@@ -1,0 +1,34 @@
+{
+  "links": [
+    {
+      "label": "ALL APPS",
+      "path": "/4697030/apps"
+    },
+    {
+      "label": "Overview",
+      "path": "/4697030/apps/429028933633/overview"
+    },
+    {
+      "label": "Distribution",
+      "path": "/4697030/apps/429028933633/distribution"
+    },
+    {
+      "label": "App history",
+      "path": "/4697030/apps/429028933633/history"
+    },
+    {
+      "label": "authenticates after install",
+      "path": "/docs/apps/launch/app-requirements-checklist"
+    },
+    {
+      "label": "redirects to app UI",
+      "path": "/docs/apps/launch/app-requirements-checklist"
+    },
+    {
+      "label": "App Store Requirements",
+      "path": "/docs/apps/launch/shopify-app-store/app-store-requirements"
+    }
+  ],
+  "path": "/4697030/apps/429028933633/distribution/app-store",
+  "text": "Click to go back\nApp Store review\nAttention\nDraft\n\nComplete preliminary steps to prepare your submission\n\nSubmit for review\nPreliminary steps\nQueries supported API versions\nFix requirement issues with your configuration\nURLsProvide URLs that don't include the words 'Shopify' or 'example' in the domain\nApp settingAdded an app icon so merchants can identify your app\nApp settingUsed an API contact email that doesn't include the word 'Shopify'\nFix configuration\nAdd an emergency contact for your account\n\nProvide an email and phone number for critical technical matters.\n\nFix in settings\nComplete your listing content (English)\nChange language\n\nYou started working on your listing content, but it's still incomplete or has errors. Finish it up, or address the errors.\n\nComplete\nRequest access to protected customer data\n\nIf your app uses customer data, you'll need approval to access it. This helps to protect our merchants and their customers.\n\nMy app won't use customer data\nRequest\nRun an automated check for common errors\nAutomated checks for common errors\nImmediately authenticates after install\nImmediately redirects to app UI after authentication\nProvides mandatory compliance webhooks\nVerifies webhooks with HMAC signatures\nUses a valid TLS certificate\nRun\n\nComplete app configuration to enable these automated checks\n\nSelect your app's capabilities to show personalized review requirements\n\nSome apps may have special requirements based on how they'll help merchants.\n\nSelect\nEmbedded app checks\nRun AI self review and confirm all App Store Requirements are met\n\nUse your AI assistant to run through the app review checks and get feedback before you submit. This can reduce review time and increase your chances of approval.\nInstall the Shopify AI Toolkit if you haven't already, then run this command:\n\nShopify AI Toolkit command\nMark as done\nI've reviewed all the App Store Requirements"
+}

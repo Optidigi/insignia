@@ -1,0 +1,18 @@
+{
+  "session": "01a1179d-83a3-75f0-965f-144201001c1b",
+  "head": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef",
+  "actualTurnContexts": [
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-019-worktree",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      }
+    }
+  ],
+  "readOnlyRuntime": true,
+  "credentialOrNetworkIsolation": false,
+  "reportSha256": "26dee9b56477eb05669fe4373f9b09963057f62a182915971aed90ff28422cf3"
+}
