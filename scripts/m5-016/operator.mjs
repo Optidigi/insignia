@@ -14,8 +14,9 @@ const keys = (v, n) =>
   typeof v === 'object' &&
   !Array.isArray(v) &&
   JSON.stringify(Object.keys(v).sort()) === JSON.stringify([...n].sort());
-export function createOperator({ directory, binding, fetchImpl, assertCurrent }) {
+export function createOperator({ directory, binding, fetchImpl, assertCurrent, monotonicNow }) {
   requireValue(typeof fetchImpl === 'function', 'transport_required');
+  requireValue(typeof monotonicNow === 'function', 'monotonic_clock');
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const info = lstatSync(directory);
   requireValue(
@@ -42,6 +43,7 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
     identity: null,
     fixture: null,
     ownedAt: null,
+    ownedMonotonicAt: null,
     identityFailed: false,
     prestateVerified: false,
     adjudicated: false,
@@ -63,16 +65,27 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
     !state.transport.mismatch &&
     !state.identityFailed &&
     state.events.filter((e) => e.mutation).every((e) => e.settlement === 'ACKNOWLEDGED');
-  const freshOwnedPrestate = () =>
-    state.adjudicated &&
-    state.prestateVerified &&
-    state.fixture?.status === 'ACTIVE' &&
-    state.identity &&
-    state.ownedAt &&
-    Date.now() >= state.identity.at &&
-    Date.now() - state.identity.at < 30000 &&
-    Date.now() >= state.ownedAt &&
-    Date.now() - state.ownedAt < 30000;
+  const freshOwnedPrestate = () => {
+    const elapsed = monotonicNow();
+    return (
+      state.adjudicated &&
+      state.prestateVerified &&
+      state.fixture?.status === 'ACTIVE' &&
+      state.identity &&
+      state.ownedAt &&
+      Number.isFinite(elapsed) &&
+      Number.isFinite(state.identity.monotonicAt) &&
+      Number.isFinite(state.ownedMonotonicAt) &&
+      elapsed >= state.identity.monotonicAt &&
+      elapsed - state.identity.monotonicAt < 30000 &&
+      elapsed >= state.ownedMonotonicAt &&
+      elapsed - state.ownedMonotonicAt < 30000 &&
+      Date.now() >= state.identity.at &&
+      Date.now() - state.identity.at < 30000 &&
+      Date.now() >= state.ownedAt &&
+      Date.now() - state.ownedAt < 30000
+    );
+  };
   function safeToArchive() {
     current();
     requireValue(freshOwnedPrestate() && known() && state.counts.directUpdate === 0, 'cleanup_authority');
@@ -172,7 +185,9 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
       state.counts[r.kind] < LIMITS[r.kind] && (r.kind === 'auth' || state.counts.graphql < LIMITS.graphql),
       'ceiling',
     );
-    const observationOrigin = Date.now();
+    const observationOrigin = Date.now(),
+      observationMonotonicOrigin = monotonicNow();
+    requireValue(Number.isFinite(observationMonotonicOrigin), 'monotonic_clock');
     state.counts[r.kind]++;
     if (r.kind === 'directUpdate') state.counts.graphql++;
     const event = {
@@ -181,6 +196,7 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
       request: r.kind === 'auth' ? { client_id: TARGET.client, grant_type: 'client_credentials' } : body,
       startedAt: new Date().toISOString(),
       observationOrigin,
+      observationMonotonicOrigin,
       invoked: false,
       settlement: r.mutation ? 'UNKNOWN' : 'PENDING',
     };
@@ -239,7 +255,7 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
               ? raw.errors.map((e) => ({
                   message: '<provider error>',
                   code:
-                    typeof e?.extensions?.code === 'string' && /^[A-Z][A-Z0-9_]{0,127}$/.test(e.extensions.code)
+                    typeof e?.extensions?.code === 'string' && /^[A-Za-z][A-Za-z0-9_]{0,127}$/.test(e.extensions.code)
                       ? e.extensions.code
                       : null,
                 }))
@@ -295,12 +311,14 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
         if (!r.mutation)
           state.identity = {
             at: observationOrigin,
+            monotonicAt: observationMonotonicOrigin,
             grants: d.currentAppInstallation.accessScopes.map((n) => n.handle).sort(),
           };
         if (r.operation === 'prestate') {
           state.fixture = visible(d.product, true);
           state.prestateVerified = true;
           state.ownedAt = observationOrigin;
+          state.ownedMonotonicAt = observationMonotonicOrigin;
         }
         if (r.operation === 'final') state.fixture = owned(d.product);
         if (r.mutation) {

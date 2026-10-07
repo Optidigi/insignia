@@ -5,6 +5,7 @@ import { join } from 'node:path';
 import test from 'node:test';
 import { ARCHIVE, CATALOGS, DIRECT, FINAL, PRESTATE, PUBLICATIONS, TARGET } from './documents.mjs';
 import { createGuardedOperator } from './guard.mjs';
+import { Stop } from './operator.mjs';
 import { provider } from './provider.fixture.mjs';
 import { runSynthetic } from './qualification.mjs';
 
@@ -641,6 +642,58 @@ test('archive freshness is rechecked after reservation immediately before native
           if (preparation && ++checks === 6) elapsed += 100;
         },
       },
+    );
+  } finally {
+    Date.now = original;
+  }
+});
+
+test('early source gate rejection settles its reserved but unsent archival request exactly', async () => {
+  let preparation = false,
+    checks = 0;
+  await exercise(
+    (_d, b) => {
+      if (b.query === CATALOGS) preparation = true;
+    },
+    (e, f) => {
+      assert.equal(f.calls.filter((b) => b.query === ARCHIVE).length, 0);
+      assert.equal(f.calls.filter((b) => b.query === FINAL).length, 0);
+      assert.equal(e.cleanup.outcome, 'NOT_DISPATCHED');
+      assert.equal(e.unknownMutations, 0);
+      assert.deepEqual(e.transportAccounting, { reserved: 6, dispatched: 5, denied: 1, matches: true });
+    },
+    {
+      assertCurrent: () => {
+        if (preparation && ++checks === 6) throw new Stop('source_binding');
+      },
+    },
+  );
+});
+test('wall rollback followed by successful reads cannot renew elapsed ownership freshness', async () => {
+  const original = Date.now;
+  const start = original();
+  let elapsed = 0,
+    rollback = 0;
+  Date.now = () => start + elapsed - rollback;
+  try {
+    await exercise(
+      (d, b) => {
+        elapsed += 7000;
+        if (b.query === DIRECT) rollback = 15000;
+        if (b.query === CATALOGS) {
+          if (b.variables.after === null)
+            d.catalogs.pageInfo = { hasNextPage: true, hasPreviousPage: false, endCursor: 'next' };
+          else {
+            d.catalogs.nodes = [];
+            d.catalogs.pageInfo = { hasNextPage: false, hasPreviousPage: true, endCursor: null };
+          }
+        }
+      },
+      (e, f) => {
+        assert.equal(f.calls.filter((b) => b.query === ARCHIVE).length, 0);
+        assert.equal(e.stop, 'cleanup_authority');
+      },
+      { monotonicNow: () => elapsed },
     );
   } finally {
     Date.now = original;

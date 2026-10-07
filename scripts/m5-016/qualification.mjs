@@ -45,10 +45,19 @@ export async function runSynthetic(options) {
     },
   });
 }
-async function run({ directory, binding, gate, assertCurrent, credentialLoader, fetchImpl, synthetic = false }) {
+async function run({
+  directory,
+  binding,
+  gate,
+  assertCurrent,
+  credentialLoader,
+  fetchImpl,
+  monotonicNow,
+  synthetic = false,
+}) {
   assertGuard();
   assertCurrent();
-  const op = createGuardedOperator({ directory, binding, fetchImpl, synthetic, assertCurrent });
+  const op = createGuardedOperator({ directory, binding, fetchImpl, monotonicNow, synthetic, assertCurrent });
   if (!synthetic) {
     saveJSON(directory, 'binding.json', binding, true);
     saveJSON(directory, 'gate.json', gate, true);

@@ -1,0 +1,102 @@
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.750752ms)
+✔ missing adapter transport / import proof uses only the guarded operator or denies locally (257.934061ms)
+✔ misspelled adapter transport / import proof uses only the guarded operator or denies locally (226.252146ms)
+✔ imports adapter transport / import proof uses only the guarded operator or denies locally (209.590756ms)
+✔ correct adapter transport / import proof uses only the guarded operator or denies locally (313.836609ms)
+✔ complete explicit APP discovery and exact inclusion authorize only the fixed archival cleanup (31.076036ms)
+✔ direct inclusion without either generic discovery surface classifies DIRECT_ONLY and still cleans the disposable fixture (12.859251ms)
+✔ complete APP catalogs independently establish the generic surface when typed publications omit the target (12.932197ms)
+✔ a denied second discovery surface is retained but cannot negate independently complete positive generic evidence (14.094841ms)
+✔ denied generic reads without complete positive evidence classify UNRESOLVED without retries (11.127719ms)
+✔ direct null remains UNRESOLVED despite generic positives (11.803996ms)
+✔ direct not-included remains UNRESOLVED despite generic positives (12.698811ms)
+✔ direct incomplete remains UNRESOLVED despite generic positives (12.975348ms)
+✔ direct error remains UNRESOLVED despite generic positives (9.857116ms)
+✔ capability drift between direct and generic observations is coverage ambiguity (11.325197ms)
+✔ multiple APP catalogs claiming the target Publication are coverage ambiguity (10.946184ms)
+✔ observed conflicting catalogs followed by a denied page remain UNRESOLVED despite complete positive publications (14.469734ms)
+✔ empty nonterminal publications page fails before any continuation (11.918222ms)
+✔ empty nonterminal catalogs page fails before any continuation (10.680483ms)
+✔ duplicate generic IDs and repeated cursors fail closed with cleanup capacity preserved (16.272969ms)
+✔ infinite unique discovery pages reserve one catalog attempt and exact cleanup/final read within sixteen GraphQL attempts (43.592226ms)
+✔ prestate identity drift stops before discovery or mutation (2.334472ms)
+✔ prestate ownership drift stops before discovery or mutation (2.180588ms)
+✔ prestate status drift stops before discovery or mutation (2.170714ms)
+✔ prestate target-effective drift stops before discovery or mutation (2.355462ms)
+✔ prestate connection drift stops before discovery or mutation (2.054403ms)
+✔ identity drift in discovery revokes cleanup before any mutation (3.965833ms)
+✔ identity mismatch combined with malformed operation data latches the fence before projection (3.728636ms)
+✔ GraphQL error with contradictory direct identity prevents archival (3.936471ms)
+✔ GraphQL error with contradictory catalog identity prevents archival (6.649688ms)
+✔ conflicting duplicate publications metadata cannot hide behind rejection (12.237394ms)
+✔ conflicting duplicate catalogs metadata cannot hide behind rejection (10.717453ms)
+✔ partial error publications data retains contradictory coverage evidence (11.019477ms)
+✔ partial error catalogs data retains contradictory coverage evidence (12.422233ms)
+✔ lost archive acknowledgement gets exactly one final classification read and never a resend (11.404448ms)
+✔ final exact state settlement records updatedAt difference without timestamp equality (10.49775ms)
+✔ a failed final publication predicate closes STOPPED without another mutation or read (10.652135ms)
+✔ source drift before credentials produces no provider request (0.740805ms)
+✔ corrupt reservation accounting denies the captured transport before its first native call (2.8018ms)
+✔ canonical entry exposes no resume phase and a closed synthetic register cannot be reopened (11.128677ms)
+✔ identity contradiction in the final read invalidates the classification without another write (10.809387ms)
+✔ HTTP 500 error with reported identity drift blocks cleanup (4.273482ms)
+✔ HTTP 403 error with reported identity drift blocks cleanup (7.216405ms)
+✔ a qualified HTTP 403 denial cannot negate a complete independent positive surface (12.45284ms)
+✔ malformed partial error publications remains coverage ambiguity (10.743515ms)
+✔ HTTP error partial publications contradictions remain visible (11.298725ms)
+✔ malformed partial error catalogs remains coverage ambiguity (10.548377ms)
+✔ HTTP error partial catalogs contradictions remain visible (12.192459ms)
+✔ ownership freshness starts before I/O and cannot be renewed by slow response completion (9.403621ms)
+✔ a backwards local clock cannot make future observation origins fresh for cleanup (7.452315ms)
+✔ falsy malformed publications false is coverage ambiguity (14.447376ms)
+✔ falsy malformed publications 0 is coverage ambiguity (10.225922ms)
+✔ falsy malformed publications "" is coverage ambiguity (10.119966ms)
+✔ malformed publications error envelope empty-array cannot qualify generic discovery (9.758363ms)
+✔ malformed publications error envelope object cannot qualify generic discovery (10.660345ms)
+✔ malformed publications error envelope null cannot qualify generic discovery (9.59476ms)
+✔ malformed publications error envelope null-member cannot qualify generic discovery (9.907212ms)
+✔ malformed publications error envelope numeric-message cannot qualify generic discovery (9.010036ms)
+✔ malformed publications error envelope empty-message cannot qualify generic discovery (11.102764ms)
+✔ malformed publications error envelope nonobject-extensions cannot qualify generic discovery (10.332975ms)
+✔ falsy malformed catalogs false is coverage ambiguity (11.240516ms)
+✔ falsy malformed catalogs 0 is coverage ambiguity (11.085454ms)
+✔ falsy malformed catalogs "" is coverage ambiguity (10.657917ms)
+✔ malformed catalogs error envelope empty-array cannot qualify generic discovery (9.431716ms)
+✔ malformed catalogs error envelope object cannot qualify generic discovery (9.473535ms)
+✔ malformed catalogs error envelope null cannot qualify generic discovery (11.218899ms)
+✔ malformed catalogs error envelope null-member cannot qualify generic discovery (9.616473ms)
+✔ malformed catalogs error envelope numeric-message cannot qualify generic discovery (9.596241ms)
+✔ malformed catalogs error envelope empty-message cannot qualify generic discovery (9.710782ms)
+✔ malformed catalogs error envelope nonobject-extensions cannot qualify generic discovery (10.982792ms)
+✔ archive freshness is rechecked after reservation immediately before native dispatch (8.941182ms)
+✔ early source gate rejection settles its reserved but unsent archival request exactly (8.413966ms)
+✖ wall rollback followed by successful reads cannot renew elapsed ownership freshness (15.227472ms)
+ℹ tests 73
+ℹ suites 0
+ℹ pass 72
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1122.968159
+
+✖ failing tests:
+
+test at scripts/m5-016/operator.test.mjs:672:1
+✖ wall rollback followed by successful reads cannot renew elapsed ownership freshness (15.227472ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at exercise.monotonicNow (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:693:16)
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:22:11)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:679:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

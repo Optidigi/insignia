@@ -1,0 +1,52 @@
+✖ early source gate rejection settles its reserved but unsent archival request exactly (25.934085ms)
+✖ wall rollback followed by successful reads cannot renew elapsed ownership freshness (14.63987ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 293.904253
+
+✖ failing tests:
+
+test at scripts/m5-016/operator.test.mjs:651:1
+✖ early source gate rejection settles its reserved but unsent archival request exactly (25.934085ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'UNKNOWN_ARCHIVE_WRITE'
+  - 'NOT_DISPATCHED'
+
+      at exercise.assertCurrent (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:655:12)
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:22:11)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:653:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'UNKNOWN_ARCHIVE_WRITE',
+    expected: 'NOT_DISPATCHED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:659:1
+✖ wall rollback followed by successful reads cannot renew elapsed ownership freshness (14.63987ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at exercise.monotonicNow (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:667:24)
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:22:11)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:661:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

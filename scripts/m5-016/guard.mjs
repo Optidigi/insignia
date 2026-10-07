@@ -6,6 +6,7 @@ import { createOperator, requireValue, Stop } from './operator.mjs';
 // The only native capability is module-private and delivered only through the
 // operator's reserved-dispatch wrapper. Import dependencies perform no requests.
 const nativeFetch = globalThis.fetch.bind(globalThis);
+const nativeMonotonicNow = globalThis.performance.now.bind(globalThis.performance);
 let denials = 0;
 class NetworkEscapeDenied extends ShopifyAvailabilityHoldError {
   constructor() {
@@ -25,6 +26,7 @@ export function assertGuard() {
 export function createGuardedOperator(options) {
   assertGuard();
   requireValue(options.synthetic === true || options.fetchImpl === undefined, 'native_transport_private');
+  requireValue(options.synthetic === true || options.monotonicNow === undefined, 'native_clock_private');
   // Only the explicitly synthetic entry may provide an in-memory/loopback mock.
   const transport = options.synthetic === true ? options.fetchImpl : nativeFetch;
   requireValue(typeof transport === 'function' && transport !== globalThis.fetch, 'transport_required');
@@ -32,12 +34,13 @@ export function createGuardedOperator(options) {
   const current = options.assertCurrent;
   op = createOperator({
     ...options,
+    monotonicNow: options.synthetic === true ? (options.monotonicNow ?? nativeMonotonicNow) : nativeMonotonicNow,
     assertCurrent: () => {
       assertGuard();
       current();
     },
     fetchImpl: async (url, init) => {
-      let index,
+      let index = op.state().pending,
         crossed = false;
       try {
         assertGuard();
@@ -46,7 +49,7 @@ export function createGuardedOperator(options) {
         const durable = JSON.parse(readFileSync(resolve(op.directory, 'register.json')));
         requireValue(JSON.stringify(state) === JSON.stringify(durable), 'transport_accounting_mismatch');
         const event = state.events[state.pending];
-        index = state.pending;
+        requireValue(state.pending === index, 'transport_accounting_mismatch');
         requireValue(
           event?.invoked === true &&
             event.transportOrdinal === dispatched + 1 &&

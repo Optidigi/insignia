@@ -1,0 +1,1199 @@
+$ corepack pnpm check:style && corepack pnpm build && corepack pnpm test:unit && corepack pnpm test:m5-operator && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && python3 -B scripts/boundaries/check-cargo-workspace.py && corepack pnpm check:rust && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 python3 -B scripts/m4-002/replay-production-vectors.py && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/m4-003/replay-public-config.mjs && corepack pnpm test:browser && python3 -B spikes/m0-007/scripts/check-history.py && python3 -B spikes/m0-014/scripts/check-live-setup.py && python3 -B scripts/m1-functions/artifact-manifest.py
+$ biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002 scripts/m5-003 scripts/m5-004 scripts/m5-005 scripts/m5-009 scripts/m5-010 scripts/m5-011 scripts/m5-012 scripts/m5-013 scripts/m5-015 scripts/m5-015r scripts/m5-016
+apps/web/src/server/admin/production.ts:69:57 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+
+    67 │   const appOrigin = required(env, 'APP_URL');
+    68 │   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+  > 69 │   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
+       │                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    70 │   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+    71 │   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+
+  i Unsafe fix: Use a template literal.
+
+     67  67 │     const appOrigin = required(env, 'APP_URL');
+     68  68 │     const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+     69     │ - ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·'gid://shopify/App/'·+·appId·:·null;
+         69 │ + ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·`gid://shopify/App/${appId}`·:·null;
+     70  70 │     const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+     71  71 │     const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+
+
+apps/web/src/server/admin/production.ts:89:54 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+
+    87 │       installationGeneration: actor.installationGeneration,
+    88 │     });
+  > 89 │     if (!scope || scope.shopDomain !== actor.shop || 'gid://shopify/Shop/' + scope.shopifyShopId !== actor.shopId)
+       │                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    90 │       throw new Error('Admin installation changed');
+    91 │   }
+
+  i Unsafe fix: Use a template literal.
+
+     87  87 │         installationGeneration: actor.installationGeneration,
+     88  88 │       });
+     89     │ - ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·'gid://shopify/Shop/'·+·scope.shopifyShopId·!==·actor.shopId)
+         89 │ + ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·`gid://shopify/Shop/${scope.shopifyShopId}`·!==·actor.shopId)
+     90  90 │         throw new Error('Admin installation changed');
+     91  91 │     }
+
+
+apps/web/src/server/admin/production.ts:214:51 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+
+    212 │           const provider = await shopify.readInstallation(online);
+    213 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
+  > 214 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+        │                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    215 │             throw new Error('Tenant installation mismatch');
+    216 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+
+  i Unsafe fix: Use a template literal.
+
+    212 212 │             const provider = await shopify.readInstallation(online);
+    213 213 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
+    214     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+        214 │ + ··········if·(!tenant·||·!tenant.shopifyShopId·||·`gid://shopify/Shop/${tenant.shopifyShopId}`·!==·provider.shopId)
+    215 215 │               throw new Error('Tenant installation mismatch');
+    216 216 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+
+
+apps/web/src/server/admin/auth.ts:48:48 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    46 │     let identity: VerifiedAdminIdentity;
+    47 │     try {
+  > 48 │       identity = await port.verifySessionToken(match[1]!);
+       │                                                ^^^^^^^^^
+    49 │     } catch {
+    50 │       return null;
+
+
+apps/web/src/server/admin/auth.ts:61:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    59 │     )
+    60 │       return null;
+  > 61 │     const grant = await port.exchangeOnlineGrant(match[1]!, identity);
+       │                                                  ^^^^^^^^^
+    62 │     if (
+    63 │       grant.shop !== identity.shop ||
+
+
+apps/web/src/server/admin/preview.ts:109:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    107 │             .then((found) => (found ? project(found) : null)),
+    108 │         );
+  > 109 │       const result = await map.get(id)!;
+        │                            ^^^^^^^^^^^^
+    110 │       await active(actor);
+    111 │       return result;
+
+
+apps/web/src/server/admin/preview.ts:116:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    114 │       await active(actor);
+    115 │       if (!currencies.has(actor)) currencies.set(actor, reader(actor).shopCurrency());
+  > 116 │       const result = await currencies.get(actor)!;
+        │                            ^^^^^^^^^^^^^^^^^^^^^^
+    117 │       await active(actor);
+    118 │       return result;
+
+
+apps/web/src/server/admin/preview.ts:163:34 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    161 │                   shopId: randomUUID(),
+    162 │                   shopDomain: shop,
+  > 163 │                   shopifyShopId: shopId.split('/').at(-1)!,
+        │                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+    164 │                   externalInstallationId: provider.installationId,
+    165 │                 }),
+
+
+apps/web/src/server/admin/preview.ts:223:26 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    221 │                   installationGeneration: bound.installationGeneration,
+    222 │                   shopifyShopId: shopId,
+  > 223 │                   appId: env.INSIGNIA_M5_002_APP_RESOURCE!,
+        │                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    224 │                 },
+    225 │                 {
+
+
+apps/web/src/server/admin/preview.ts:227:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    225 │                 {
+    226 │                   appKey: client,
+  > 227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+        │                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+    229 │                 },
+
+
+apps/web/src/server/admin/preview.ts:228:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    226 │                   appKey: client,
+    227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+  > 228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+        │                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    229 │                 },
+    230 │               );
+
+
+apps/web/src/server/admin/production.ts:214:15 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━
+
+  ! Change to an optional chain.
+
+    212 │           const provider = await shopify.readInstallation(online);
+    213 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
+  > 214 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+        │               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    215 │             throw new Error('Tenant installation mismatch');
+    216 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+
+  i Unsafe fix: Change to an optional chain.
+
+    212 212 │             const provider = await shopify.readInstallation(online);
+    213 213 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
+    214     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+        214 │ + ··········if·(!tenant?.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+    215 215 │               throw new Error('Tenant installation mismatch');
+    216 216 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+
+
+apps/web/src/server/merchant-config.ts:123:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    121 │         option.allowedValueIds.flatMap((id) => {
+    122 │           const label = oldLabels?.[id];
+  > 123 │           return label ? [[values.get(id)!, label]] : [];
+        │                            ^^^^^^^^^^^^^^^
+    124 │         }),
+    125 │       );
+
+
+apps/web/src/server/merchant-config.ts:126:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    124 │         }),
+    125 │       );
+  > 126 │       return Object.keys(remapped).length ? [[options.get(option.id)!, remapped]] : [];
+        │                                               ^^^^^^^^^^^^^^^^^^^^^^^
+    127 │     }),
+    128 │   );
+
+
+apps/web/src/server/merchant-config.ts:132:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    130 │     ...source,
+    131 │     labels,
+  > 132 │     methods: source.methods.map((item) => ({ id: methods.get(item.id)! })),
+        │                                                  ^^^^^^^^^^^^^^^^^^^^^
+    133 │     placements: source.placements.map((item) => ({
+    134 │       ...item,
+
+
+apps/web/src/server/merchant-config.ts:135:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    133 │     placements: source.placements.map((item) => ({
+    134 │       ...item,
+  > 135 │       id: placements.get(item.id)!,
+        │           ^^^^^^^^^^^^^^^^^^^^^^^^
+    136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+    137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+
+
+apps/web/src/server/merchant-config.ts:136:59 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    134 │       ...item,
+    135 │       id: placements.get(item.id)!,
+  > 136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+        │                                                           ^^^^^^^^^^^^^^^^
+    137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+    138 │     })),
+
+
+apps/web/src/server/merchant-config.ts:137:55 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    135 │       id: placements.get(item.id)!,
+    136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+  > 137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+        │                                                       ^^^^^^^^^^^^^^
+    138 │     })),
+    139 │     productionOptions: source.productionOptions.map((item) => ({
+
+
+apps/web/src/server/merchant-config.ts:140:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    138 │     })),
+    139 │     productionOptions: source.productionOptions.map((item) => ({
+  > 140 │       id: options.get(item.id)!,
+        │           ^^^^^^^^^^^^^^^^^^^^^
+    141 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+    142 │     })),
+
+
+apps/web/src/server/merchant-config.ts:141:57 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    139 │     productionOptions: source.productionOptions.map((item) => ({
+    140 │       id: options.get(item.id)!,
+  > 141 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+        │                                                         ^^^^^^^^^^^^^^^
+    142 │     })),
+    143 │     pricingRules: source.pricingRules.map((rule) => ({
+
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 125.
+Checked 271 files in 527ms. No fixes applied.
+Found 62 warnings.
+Found 83 infos.
+$ corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build
+packages/contracts build$ tsc -p tsconfig.json
+packages/cart-authorization build$ tsc -p tsconfig.json
+packages/observability build$ tsc -p tsconfig.json
+packages/domain build$ tsc -p tsconfig.json
+packages/domain build: Done
+packages/visualizer build$ tsc -p tsconfig.json
+packages/contracts build: Done
+packages/application build$ tsc -p tsconfig.json
+packages/cart-authorization build: Done
+packages/observability build: Done
+packages/visualizer build: Done
+packages/application build: Done
+packages/shopify build$ tsc -p tsconfig.json
+packages/shopify build: Done
+packages/database build$ tsc -p tsconfig.json
+packages/database build: Done
+apps/storefront build$ tsc --noEmit && vite build && node scripts/copy-theme-asset.mjs
+apps/worker build$ tsc -p tsconfig.json
+apps/worker build: Done
+apps/web build$ astro check && astro build
+apps/storefront build: vite v8.3.1 building client environment for production...
+apps/storefront build: transforming...
+apps/storefront build: ✓ 5 modules transformed.
+apps/storefront build: rendering chunks...
+apps/storefront build: computing gzip size...
+apps/storefront build: dist/insignia-storefront.js  14.03 kB │ gzip: 5.93 kB
+apps/storefront build:
+apps/storefront build: ✓ built in 27ms
+apps/storefront build: Done
+apps/web build: 00:32:18 [@astrojs/node] Enabling sessions with filesystem storage
+apps/web build: 00:32:18 [types] Generated 67ms
+apps/web build: 00:32:18 [check] Getting diagnostics for Astro files in /home/serveradmin/insignia-m5-016-worktree/apps/web...
+apps/web build: Result (28 files):
+apps/web build: - 0 errors
+apps/web build: - 0 warnings
+apps/web build: - 0 hints
+apps/web build:
+apps/web build: 00:32:24 [@astrojs/node] Enabling sessions with filesystem storage
+apps/web build: 00:32:24 [types] Generated 66ms
+apps/web build: 00:32:24 [build] output: "server"
+apps/web build: 00:32:24 [build] mode: "server"
+apps/web build: 00:32:24 [build] directory: /home/serveradmin/insignia-m5-016-worktree/apps/web/dist/
+apps/web build: 00:32:24 [build] adapter: @astrojs/node
+apps/web build: 00:32:24 [build] Collecting build info...
+apps/web build: 00:32:24 [build] ✓ Completed in 112ms.
+apps/web build: 00:32:24 [build] Building server entrypoints...
+apps/web build: 00:32:24 [vite] ✓ built in 212ms
+apps/web build: 00:32:26 [vite] ✓ built in 1.53s
+apps/web build: 00:32:26 [vite] ✓ built in 214ms
+apps/web build: 00:32:26 [build] Rearranging server assets...
+apps/web build: 00:32:26 [build] ✓ Completed in 2.02s.
+apps/web build: 00:32:26 [build] Server built in 2.13s
+apps/web build: 00:32:26 [build] Complete!
+apps/web build: Done
+$ corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/contracts test && corepack pnpm --filter @insignia/visualizer test && corepack pnpm --filter @insignia/cart-authorization test && corepack pnpm --filter @insignia/application test && corepack pnpm --filter @insignia/shopify test && corepack pnpm --filter @insignia/observability test && corepack pnpm --filter @insignia/worker test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-016-worktree/packages/domain
+
+
+ Test Files  5 passed (5)
+      Tests  26 passed (26)
+   Start at  00:32:27
+   Duration  429ms (transform 49%, tests 33%, import 14%, worker 4%)
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-016-worktree/packages/contracts
+
+
+ Test Files  2 passed (2)
+      Tests  6 passed (6)
+   Start at  00:32:27
+   Duration  268ms (import 54%, transform 31%, tests 11%, worker 3%)
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-016-worktree/packages/visualizer
+
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  00:32:28
+   Duration  218ms (transform 64%, import 18%, tests 13%, worker 5%)
+
+$ node --experimental-strip-types --test test/*.test.ts
+✔ hard subset bounds and untrusted ordinary-line hints (2.270591ms)
+✔ 33 buckets are refused before the signer is called (0.450238ms)
+✔ every admitted code matches the versioned matrix and unknown/digital values reject (12.736457ms)
+✔ production-generated carriers decode, conserve and verify for every complete set (6.502846ms)
+✔ PostgreSQL-persisted negative adjustment has exact signed quote and member economics (1.142436ms)
+✔ versioned 33-bucket vector rejects before any signing call (0.419293ms)
+✔ production decoder and signature bytes preserve the independent v2 wire literal (5.427446ms)
+✔ injected synthetic Ed25519 signer covers the complete set and three-day key window (2.810353ms)
+✔ invalid window or set refuses signing and noncanonical carrier refuses decoding (0.537544ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 185.143304
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-016-worktree/packages/application
+
+
+ Test Files  15 passed (15)
+      Tests  180 passed (180)
+   Start at  00:32:29
+   Duration  1.48s (transform 41%, import 34%, tests 21%, worker 3%)
+
+    Isolate  15 workers spawned · ~125ms startup each (spawn + environment, per file)
+             at least ~501ms faster with isolate: false — reuses workers across files instead of one per file
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-016-worktree/packages/shopify
+
+
+ Test Files  13 passed (13)
+      Tests  267 passed (267)
+   Start at  00:32:31
+   Duration  1.65s (tests 61%, transform 22%, import 15%, worker 2%)
+
+    Isolate  13 workers spawned · ~118ms startup each (spawn + environment, per file)
+             at least ~392ms faster with isolate: false — reuses workers across files instead of one per file
+
+$ node --test test/*.test.mjs
+✔ structured runtime events cannot emit arbitrary payload or credential fields (4.802742ms)
+✔ metric labels are fixed outcomes and never contain tenant or delivery IDs (2.593623ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 127.870886
+$ node --test test/*.test.mjs
+✔ current and previous synthetic wrapping keys remain available by ID (2.503904ms)
+﹣ PostgreSQL claim retries the old refresh token after a lost response and fences stale replacement (0.954866ms) # SKIP
+✔ diagnostic decodes and derives synthetic pixels without claiming durable readiness (12.340925ms)
+✔ liveness stays separate from durable readiness; loopback metrics expose bounded outcomes (56.932567ms)
+﹣ PostgreSQL pg-boss starts, retries, settles and replays after restart (0.968775ms) # SKIP
+﹣ pg-boss retry after committed uninstall retains one deactivation and one inbox fact (0.163298ms) # SKIP
+✔ process starts queues and workers before readiness; stop makes readiness unavailable (41.573261ms)
+✔ startup failure closes a started queue without reporting readiness (1.386032ms)
+{"level":30,"time":1791333154393,"event":"worker_started"}
+{"level":30,"time":1791333154398,"event":"worker_started"}
+{"level":30,"time":1791333154400,"event":"worker_started"}
+{"level":30,"time":1791333154403,"event":"worker_started"}
+{"level":30,"time":1791333154403,"event":"worker_started"}
+{"level":30,"time":1791333154404,"event":"worker_started"}
+✔ enqueue confirms exact inbox identity, including completed job replay (8.778034ms)
+✔ null send without same persisted job is retryable, never an acknowledgement (1.606263ms)
+✔ workers pass IDs only to injected durable handlers; failed attempt retries safely (2.841509ms)
+✔ invalid job body and identity fail closed without invoking application (0.898709ms)
+✔ enabled worker refuses missing credential-key configuration and stays not ready (0.773728ms)
+✔ refresh claim contention is retried rather than silently completing its job (1.282957ms)
+{"level":30,"time":1791333154395,"event":"webhook_enqueued","inboxId":"b9698b81-0149-4a18-91b3-b71c37ff8161"}
+{"level":30,"time":1791333154396,"event":"worker_stopped"}
+{"level":50,"time":1791333154400,"event":"webhook_process_failed","inboxId":"0ce883b0-083c-4e6e-b12e-eae67a895dc9","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791333154401,"event":"webhook_process_ok","inboxId":"0ce883b0-083c-4e6e-b12e-eae67a895dc9","attempt":1}
+{"level":30,"time":1791333154401,"event":"refresh_process_ok","shopId":"2eac10fe-2d72-4cec-9546-96d4dc03eb1b","attempt":0}
+{"level":30,"time":1791333154402,"event":"worker_stopped"}
+{"level":50,"time":1791333154403,"event":"webhook_process_failed","inboxId":"11743966-0118-4654-9978-7d987cee2e8d","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791333154404,"event":"worker_stopped"}
+{"level":50,"time":1791333154405,"event":"refresh_process_failed","errorClass":"RefreshError","attempt":0}
+{"level":30,"time":1791333154405,"event":"worker_stopped"}
+﹣ configured worker serves liveness and durable readiness, then closes on SIGTERM (1.078543ms) # SKIP
+ℹ tests 15
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 4
+ℹ todo 0
+ℹ duration_ms 605.045603
+$ node --test scripts/m5-002/read-register.test.mjs scripts/m5-002/built-runtime.test.mjs && node --test scripts/m5-004/operator.test.mjs scripts/m5-009/operator.test.mjs scripts/m5-010/operator.test.mjs scripts/m5-010/binding.test.mjs scripts/m5-010/native-actions.test.mjs && node --test scripts/m5-005/diagnostic.test.mjs && node --test scripts/m5-011/operator.test.mjs scripts/m5-011/binding.test.mjs && node --test scripts/m5-012/operator.test.mjs scripts/m5-012/binding.test.mjs && node --test scripts/m5-013/operator.test.mjs scripts/m5-013/binding.test.mjs scripts/m5-015/*.test.mjs scripts/m5-015r/*.test.mjs && node --test scripts/m5-016/*.test.mjs
+✔ complete built server reproduces CLI development-mode CSP rejection (251.657032ms)
+✔ actual launcher runtime preparation admits built hydration without widening CSP (210.53521ms)
+✔ actual launcher register reserves durably before synthetic fetch, serializes and denies extra attempts (75.864783ms)
+✔ exact SDK online exchange is counted per attempt; mutations, wrong targets and other token/event routes never send (5.067918ms)
+✔ ambiguous or inflated history stops before any send (0.507052ms)
+✔ one-shot loss applies only after a committed local save and never changes transport counts (1.483213ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 539.773703
+✔ actual HTTP attempts are durably reserved before dispatch (10.444236ms)
+✔ captured M5-004 empty grants stop the actual public workflow before any fixture write (6.771777ms)
+✔ fixed targets/documents/variables reject unrelated writes and extra payload before actual HTTP (4.389967ms)
+✔ normal reserves cannot consume final 12 reads/3 updates; all attempts count, one lock and one create (195.377142ms)
+✔ naturally lost mutation response stops all later writes and cleanup across reopen; no automatic retry (2.526855ms)
+✔ real routing identity, nine retained grants and complete empty publication history are mandatory (2.37798ms)
+✔ auth exact app/route counts3 and never persists synthetic secret or returned token (1.827452ms)
+✔ missing/corrupt history never reinitializes or sends (0.734092ms)
+✔ offline gate prevents even credential loading (0.675345ms)
+✔ full qualification reuses unchanged actual status/catalog adapters, fresh-process hold reload and drift refusal (571.781859ms)
+✔ complete workflow stops on changed installation; no manufacture or unsafe cleanup (22.559196ms)
+✔ complete workflow stops on unexpected exposure; no manufacture or unsafe cleanup (25.12308ms)
+✔ complete workflow stops on visibility mismatch; no manufacture or unsafe cleanup (163.262951ms)
+✔ complete workflow stops on natural lost response; no manufacture or unsafe cleanup (96.321294ms)
+✔ complete workflow stops on metadata drift; no manufacture or unsafe cleanup (25.283713ms)
+✔ complete workflow stops on malformed success; no manufacture or unsafe cleanup (108.89357ms)
+✔ live register is canonical; synthetic initialization rejects unsafe directories and lost history (0.669726ms)
+✔ malformed/unsuccessful mutation responses stay unknown; only valid explicit rejection permits finalization (4.674076ms)
+✔ lock cannot release while late HTTP/body work can still persist history (1.045748ms)
+✔ acknowledged fixture metadata baseline rejects added tags or changed creation identity (1.159499ms)
+✔ actual adapter HTTP/GraphQL outcomes survive bounded transport and sanitized response replay (13.058464ms)
+✔ foreign live root and stale register binding cannot reach credential loading (19.189334ms)
+✔ gate rejects incomplete CI and unbound review receipts even when every supplied workflow is green (29.224931ms)
+✔ complete source/build/review/CI gate accepts bound receipts and rejects omissions, stale refs or altered evidence (89.313839ms)
+✔ actual adapter user-error failure remains identical when replayed from sanitized mutation evidence (4.547433ms)
+✔ malformed success userErrors cannot acknowledge a status mutation or allow cleanup (4.448649ms)
+✔ actual availability missing/oversized bodies keep direct/wrapped/replayed shape errors (5.062585ms)
+✔ catalog receives original bounded UTF8 bytes and provenance hashes the bytes, not replacement text (2.434379ms)
+✔ failed catalog preserves actual normalized results before STOP (264.043785ms)
+✔ failed drift preserves actual normalized results before STOP (483.305509ms)
+✔ availability preserves its lossy UTF8 semantics while catalog rejects the same original bad bytes (2.19772ms)
+✔ reopening a finished run preserves exact normalized evidence and refuses before credential loading (467.57699ms)
+✔ catalog successful non200 keeps direct/wrapped/replayed body semantics (3.771005ms)
+✔ current product capability accepts write_products without the obsolete nine grants (1.757239ms)
+✔ legacy exact-nine guard stays unchanged while successor records current additional grants (3.416074ms)
+✔ successor rejects absent capability, malformed grants and every wrong routing identity (0.967926ms)
+✔ successor rejects the legacy canonical live directory before writing and cannot reopen legacy history (0.953277ms)
+✔ successor documents, request ceilings, ownership, settlement and shared matrix stay source-identical (10.765908ms)
+✔ fresh complete successor workflow uses real adapters, current product grants, persisted holds and unchanged matrix (958.711915ms)
+✔ public successor workflow stops on missing capability without unsafe cleanup or retries (2.186938ms)
+✔ public successor workflow stops on wrong identity without unsafe cleanup or retries (1.908672ms)
+✔ public successor workflow stops on lost status acknowledgement without unsafe cleanup or retries (79.352704ms)
+✔ successor live entry refuses incomplete gate before the protected credential route (29.040706ms)
+✔ successor gate binds its own tree, directory, exact source and independent review/CI receipts (104.793862ms)
+✔ captured live publication-field denial stops create settlement and never permits status finalization (4.480051ms)
+✔ successor gate binds its own tree, directory, exact source and independent review/CI receipts (128.595766ms)
+✔ native release and two-scope consent are durable one-use operations with dependency and ambiguity stops (6.409358ms)
+✔ native successful sequence closes after exactly one release/request/approval and rejects reset reservation history (3.353657ms)
+✔ 010 requires all publication/product capabilities and permits additional well formed grants (3.70891ms)
+✔ 010 denies normal fresh create until fixed predecessor has been safely resolved (3.311729ms)
+✔ complete absent predecessor lookup permits one fresh create and retains resolution independently (17.328053ms)
+✔ owned unpublished ARCHIVED predecessor requires exact archived readback before fresh create (6.244737ms)
+✔ owned unpublished DRAFT predecessor requires exact archived readback before fresh create (5.753279ms)
+✔ owned unpublished ACTIVE predecessor requires exact archived readback before fresh create (5.291181ms)
+✔ owned unpublished UNLISTED predecessor requires exact archived readback before fresh create (6.971591ms)
+✔ predecessor multiple stops without any mutation or second lookup (1.929472ms)
+✔ predecessor partial next stops without any mutation or second lookup (1.653508ms)
+✔ predecessor partial previous stops without any mutation or second lookup (1.74577ms)
+✔ predecessor missing page info stops without any mutation or second lookup (1.598054ms)
+✔ predecessor missing nodes stops without any mutation or second lookup (1.33037ms)
+✔ predecessor invalid product id stops without any mutation or second lookup (1.373496ms)
+✔ predecessor wrong type stops without any mutation or second lookup (1.296492ms)
+✔ predecessor wrong handle stops without any mutation or second lookup (1.281299ms)
+✔ predecessor wrong title stops without any mutation or second lookup (1.399323ms)
+✔ predecessor wrong tag stops without any mutation or second lookup (1.359917ms)
+✔ predecessor too early creation stops without any mutation or second lookup (1.330877ms)
+✔ predecessor invalid creation stops without any mutation or second lookup (1.330779ms)
+✔ predecessor future creation stops without any mutation or second lookup (1.352022ms)
+✔ predecessor published stops without any mutation or second lookup (1.323105ms)
+✔ predecessor store url stops without any mutation or second lookup (1.317273ms)
+✔ predecessor publication membership stops without any mutation or second lookup (1.34816ms)
+✔ predecessor resource partial stops without any mutation or second lookup (1.479331ms)
+✔ predecessor unpublished partial stops without any mutation or second lookup (1.389401ms)
+✔ predecessor missing publications stops without any mutation or second lookup (1.377708ms)
+✔ predecessor unsupported status stops without any mutation or second lookup (1.418457ms)
+✔ predecessor lookup transport retains stop and never retries or creates (1.640399ms)
+✔ predecessor lookup stream failure retains stop and never retries or creates (2.19046ms)
+✔ predecessor lookup invalid utf8 retains stop and never retries or creates (1.764397ms)
+✔ predecessor lookup http retains stop and never retries or creates (1.316132ms)
+✔ predecessor lookup missing body retains stop and never retries or creates (1.855742ms)
+✔ predecessor lookup invalid json retains stop and never retries or creates (1.69363ms)
+✔ predecessor lookup oversized retains stop and never retries or creates (2.408133ms)
+✔ predecessor lookup graphql permission retains stop and never retries or creates (1.707558ms)
+✔ predecessor lookup partial graphql data retains stop and never retries or creates (1.605188ms)
+✔ predecessor lookup mutation rejected retains stop and never retries or creates (1.751475ms)
+✔ predecessor archive transport retains stop and never retries or creates (1.987527ms)
+✔ predecessor archive stream failure retains stop and never retries or creates (2.09168ms)
+✔ predecessor archive invalid utf8 retains stop and never retries or creates (2.232048ms)
+✔ predecessor archive http retains stop and never retries or creates (2.314578ms)
+✔ predecessor archive missing body retains stop and never retries or creates (2.335947ms)
+✔ predecessor archive invalid json retains stop and never retries or creates (2.211979ms)
+✔ predecessor archive oversized retains stop and never retries or creates (2.857886ms)
+✔ predecessor archive graphql permission retains stop and never retries or creates (2.001257ms)
+✔ predecessor archive partial graphql data retains stop and never retries or creates (2.085619ms)
+✔ predecessor archive mutation rejected retains stop and never retries or creates (2.129791ms)
+✔ predecessor readback transport retains stop and never retries or creates (5.302803ms)
+✔ predecessor readback stream failure retains stop and never retries or creates (2.630637ms)
+✔ predecessor readback invalid utf8 retains stop and never retries or creates (2.388366ms)
+✔ predecessor readback http retains stop and never retries or creates (2.285301ms)
+✔ predecessor readback missing body retains stop and never retries or creates (2.248264ms)
+✔ predecessor readback invalid json retains stop and never retries or creates (2.403258ms)
+✔ predecessor readback oversized retains stop and never retries or creates (3.241602ms)
+✔ predecessor readback graphql permission retains stop and never retries or creates (3.390125ms)
+✔ predecessor readback partial graphql data retains stop and never retries or creates (2.608962ms)
+✔ predecessor readback mutation rejected retains stop and never retries or creates (2.314889ms)
+✔ archive wrong id cannot resolve predecessor (2.051514ms)
+✔ archive wrong metadata cannot resolve predecessor (1.671193ms)
+✔ archive wrong status cannot resolve predecessor (1.576272ms)
+✔ archive exposed cannot resolve predecessor (1.644524ms)
+✔ readback wrong id cannot resolve predecessor (2.277716ms)
+✔ readback wrong metadata cannot resolve predecessor (2.457594ms)
+✔ readback wrong status cannot resolve predecessor (2.272178ms)
+✔ readback exposed cannot resolve predecessor (2.991674ms)
+✔ public qualification resolves absent predecessor then runs unchanged real adapter matrix (495.88515ms)
+✔ public qualification resolves ARCHIVED predecessor then runs unchanged real adapter matrix (476.191779ms)
+✔ public qualification resolves ACTIVE predecessor then runs unchanged real adapter matrix (440.148931ms)
+✔ fixed predecessor search and status-only allowance cannot be caller substituted (1.752464ms)
+✔ reload retains predecessor FOUND, independent identity and one archival reservation (1.730831ms)
+✔ reload retains predecessor ARCHIVE_ACKNOWLEDGED, independent identity and one archival reservation (1.948199ms)
+✔ reload retains predecessor ARCHIVED_VERIFIED, independent identity and one archival reservation (2.359778ms)
+✔ reload retains predecessor STOPPED, independent identity and one archival reservation (1.93444ms)
+✔ reload retains predecessor ABSENT, independent identity and one archival reservation (1.273967ms)
+✔ reopening refuses forged safe resolution or a retained lookup for a substituted marker (1.839466ms)
+✔ serialized archive and readback attempts reserve actual HTTP once and never share the matrix allowance (5.366246ms)
+✔ predecessor lookup consumes normal read ceiling and auth remains bounded at three (66.104135ms)
+✔ public qualification stops on missing read_publications with no blind retry (1.770683ms)
+✔ public qualification stops on wrong identity with no blind retry (1.534186ms)
+✔ public qualification stops on predecessor permission failure with no blind retry (2.130993ms)
+✔ public qualification stops on fresh create unknown with no blind retry (4.279508ms)
+✔ public qualification stops on fresh adapter update unknown with no blind retry (68.305797ms)
+✔ 010 cannot reopen closed-profile histories and synthetic qualification rejects every canonical live directory (29.419025ms)
+✔ archival permission expiring during durable reservation consumes allowance without HTTP or retry (2.060857ms)
+✔ pending predecessor HTTP retains exclusive lock and prevents early operator closure (1.266162ms)
+✔ public qualification stops before fresh create after ACTIVE predecessor archive failure (2.931693ms)
+✔ public qualification stops before fresh create after ACTIVE predecessor readback failure (3.526458ms)
+✔ public qualification stops before fresh create after ARCHIVED predecessor readback failure (2.774723ms)
+ℹ tests 136
+ℹ suites 0
+ℹ pass 136
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2901.077293
+✔ one actual diagnostic sequence keeps empty installation distinct from nonempty token/REST/declarations (10.588668ms)
+✔ partial stream failure is UNKNOWN and cannot allow a later independent read (2.970957ms)
+✔ permission/shape metadata error does not become an empty grant agreement (2.86966ms)
+✔ metadata shape failure still permits the independent REST read (2.041156ms)
+✔ public sequence preserves missing installation/REST scope semantics (2.114993ms)
+✔ public sequence preserves null installation/REST scope semantics (1.867161ms)
+✔ public sequence preserves empty installation/REST scope semantics (1.766087ms)
+✔ public sequence preserves wrong-type installation/REST scope semantics (3.428293ms)
+✔ public sequence preserves duplicates installation/REST scope semantics (1.902774ms)
+✔ public sequence preserves bad-handle installation/REST scope semantics (1.869158ms)
+✔ token missing is recorded separately without preventing identity verification (1.675848ms)
+✔ token null is recorded separately without preventing identity verification (1.514702ms)
+✔ token empty is recorded separately without preventing identity verification (1.53025ms)
+✔ token wrong-type is recorded separately without preventing identity verification (1.383421ms)
+✔ token duplicate is recorded separately without preventing identity verification (1.43554ms)
+✔ token bad-handle is recorded separately without preventing identity verification (1.502303ms)
+✔ wrong shop identity stops after exactly two attempts (1.22616ms)
+✔ wrong domain identity stops after exactly two attempts (0.911396ms)
+✔ wrong app identity stops after exactly two attempts (0.991265ms)
+✔ wrong client identity stops after exactly two attempts (0.96238ms)
+✔ wrong installation identity stops after exactly two attempts (0.914082ms)
+✔ wrong development identity stops after exactly two attempts (0.953463ms)
+✔ explicit mismatched declared identity stops before REST (1.281045ms)
+✔ token-invalid metadata response stops all later work (1.276557ms)
+✔ offline unvalidated metadata is NOT_RUN without live document fallback (1.198459ms)
+✔ unvalidated identity document stops before credential access (0.416757ms)
+✔ actual entrypoint prevents host dispatch (0.947955ms)
+✔ actual entrypoint prevents API dispatch (0.818894ms)
+✔ actual entrypoint prevents method dispatch (0.797742ms)
+✔ actual entrypoint prevents document dispatch (0.870105ms)
+✔ actual entrypoint prevents mutation dispatch (0.851589ms)
+✔ actual entrypoint prevents variables dispatch (0.931206ms)
+✔ fixed REST GET prevents query (1.771545ms)
+✔ fixed REST GET prevents body (1.560991ms)
+✔ canonical history cannot be reopened, exhausted, corrupted or reset after loss (2.508036ms)
+✔ expired credential preparation never dispatches a late HTTP call and retains pending lock (35.331438ms)
+✔ ignored abort and late HTTP completion remain UNKNOWN with no later request or evidence rewrite (1023.607256ms)
+✔ metadata oversized is shape evidence and allows independent REST (3.581161ms)
+✔ metadata invalid-UTF8 is shape evidence and allows independent REST (1.487129ms)
+✔ metadata invalid-JSON is shape evidence and allows independent REST (1.490308ms)
+✔ metadata missing-body is shape evidence and allows independent REST (1.392924ms)
+✔ unusable authentication never authorizes a read (0.714329ms)
+✔ unusable authentication never authorizes a read (0.606993ms)
+✔ unusable authentication never authorizes a read (0.583844ms)
+✔ synthetic entry cannot override its mode to admit a nonsynthetic bearer (0.769621ms)
+✔ pinned documented fields validate both exact documents and reject mutation/extra/unknown syntax (0.653804ms)
+✔ live entrypoint rejects an unbound offline gate before owner credential metadata (25.858821ms)
+✔ complete source/CI/review gate accepts exact receipts and rejects omitted/stale/altered evidence (89.906754ms)
+✔ captured four-surface empty scope result replays through the public sequence without authorizing repair (2.086221ms)
+ℹ tests 49
+ℹ suites 0
+ℹ pass 49
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1491.130066
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (4.173218ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (240.713485ms)
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (2.041424ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (42.726367ms)
+✔ ownership stops before any status mutation (2.990199ms)
+✔ incomplete resourcePublications stops before any status mutation (2.645387ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.724531ms)
+✔ incomplete APP stops before any status mutation (3.793054ms)
+✔ incomplete MARKET stops before any status mutation (5.493663ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (6.263068ms)
+✔ incomplete NONE stops before any status mutation (8.776304ms)
+✔ missing read scope stops before any status mutation (1.557038ms)
+✔ initial DRAFT drift stops before any status mutation (5.881143ms)
+✔ cross-partition version drift stops before any status mutation (3.031945ms)
+✔ observed required grant loss in adapter read stops before any status mutation (8.354368ms)
+✔ lost DRAFT acknowledgement never retries or archives (13.557399ms)
+✔ DRAFT readback failure never retries or archives (12.873669ms)
+✔ post-DRAFT ownership drift never retries or archives (12.108786ms)
+✔ post-DRAFT partition drift never retries or archives (15.281107ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (19.646368ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (20.597655ms)
+✔ newly appearing DRAFT V2 membership is not described as retained from ACTIVE (19.813114ms)
+✔ acknowledgement/readback version drift stops before any post-DRAFT projection or cleanup (11.056246ms)
+✔ concrete Shopify AppCatalog metadata permits the fixed adjudication (20.015082ms)
+✔ concrete Shopify MarketCatalog metadata permits the fixed adjudication (19.154452ms)
+✔ concrete Shopify CompanyLocationCatalog metadata permits the fixed adjudication (19.679593ms)
+✔ catalog typename and global ID mismatch stops before any status mutation (5.962261ms)
+✔ wrapped production failure preserves {"userError":true} (14.010687ms)
+✔ wrapped production failure preserves {"adapterFailure":"http403"} (7.034624ms)
+✔ wrapped production failure preserves {"adapterFailure":"graphql"} (6.962295ms)
+✔ wrapped production failure preserves {"adapterFailure":"invalidJSON"} (6.94817ms)
+✔ wrapped production failure preserves {"adapterFailure":"missingBody"} (6.418034ms)
+✔ wrapped production failure preserves {"adapterFailure":"badScopes"} (8.558988ms)
+✔ wrapped production failure preserves {"adapterFailure":"badNodes"} (6.723417ms)
+✔ wrapped production failure preserves {"adapterFailure":"nullScope"} (6.675226ms)
+✔ wrapped production failure preserves {"adapterFailure":"nullScopePost"} (10.457773ms)
+✔ wrapped production failure preserves {"adapterFailure":"badHandlePost"} (12.101435ms)
+✔ wrapped production failure preserves {"adapterFailure":"scopeString"} (6.734047ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOutstanding":true} (39.777182ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyOutstanding":true} (36.291337ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOversizeOutstanding":true} (37.497354ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyAbortOutstanding":true} (39.605884ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyCancelRejected":true} (21.639359ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.906299ms)
+✔ quarantined first event zero rejects every subsequent provider dispatch (20.643063ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (1547.358458ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 46
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2391.185051
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (3.048335ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (212.459896ms)
+✔ alternate product and broad search are refused before HTTP (2.966689ms)
+✔ fixed intent reads clean up one owned DRAFT and close with exact ARCHIVED settlement (26.470079ms)
+✔ already ARCHIVED fixture is observed with no cleanup mutation (10.141847ms)
+✔ complete negative intent surfaces report NO_INTENT_OBSERVED before cleanup (12.731494ms)
+✔ unexpected ownership stops before cleanup (2.823016ms)
+✔ unexpected ACTIVE stops before cleanup (2.757275ms)
+✔ initial version drift stops before cleanup (2.64693ms)
+✔ scope loss stops before cleanup (1.912787ms)
+✔ incomplete includedProducts stops before cleanup (5.25356ms)
+✔ foreign exact-ID result stops before cleanup (7.220053ms)
+✔ duplicate exact-ID result stops before cleanup (5.511425ms)
+✔ one-second observation drift stops before cleanup (5.301273ms)
+✔ changed publication identity stops before cleanup (3.079185ms)
+✔ search anchor disagrees stops before cleanup (5.609541ms)
+✔ contradictory inclusion/search results stop before cleanup (9.465421ms)
+✔ three qualified intent positives confirm intent with an empty diagnostic association (13.261784ms)
+✔ diagnostic association cannot change negative consensus or resolve actual intent disagreement (37.693028ms)
+✔ effective publication stays separate from matching configured-intent observations (8.904298ms)
+✔ corrected interpretation cannot reopen the frozen closed attempt or authorize cleanup (4.337527ms)
+✔ effective publication on DRAFT makes intent inconsistent and refuses cleanup (7.722335ms)
+✔ ambiguous archive response consumes one final exact read without resend (9.649308ms)
+✔ one-second archive acknowledgement/readback drift stays a conflict (11.982033ms)
+✔ authentication failure closes the fresh register without Admin requests (1.02617ms)
+✔ quarantined outstanding archive forbids final read and any overlapping request (8012.835631ms)
+✔ fixed documents and variables exclude every alternate target before HTTP (125.302162ms)
+✔ fixed source query literals are exactly the authorized ID filters and first:2 (0.557565ms)
+✔ closed register cannot be initialized a second time (9.255218ms)
+✔ 100 serial synthetic runs preserve zero or one mutation and never overlap (868.016977ms)
+✔ invalid or malformed runtime search metadata stops before cleanup (6.887954ms)
+✔ malformed GraphQL errors values never authorize cleanup (16.157182ms)
+✔ rejected foreign descriptive data is absent from register and qualification evidence (8.840553ms)
+✔ a failed read reservation cannot be retried or lead to unverifiable cleanup (1.482158ms)
+✔ documented search diagnostics without warnings preserve exact intent reads (10.550153ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9514.926727
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (3.173979ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (236.695906ms)
+✔ alternate exact product is refused before HTTP (2.929174ms)
+✔ disposable cleanup settles exact final ARCHIVED despite a one-second acknowledgement timestamp difference (17.37794ms)
+✔ already ARCHIVED is verified with no update (4.416153ms)
+✔ foreign ownership stops with zero update (2.605475ms)
+✔ ACTIVE state stops with zero update (1.851301ms)
+✔ UNLISTED state stops with zero update (1.604173ms)
+✔ effective publication stops with zero update (1.60919ms)
+✔ published timestamp stops with zero update (1.757552ms)
+✔ online store URL stops with zero update (2.155085ms)
+✔ legacy effective membership stops with zero update (1.985167ms)
+✔ incomplete legacy stops with zero update (1.644719ms)
+✔ wrong installation stops with zero update (2.067792ms)
+✔ scope loss stops with zero update (1.916706ms)
+✔ malformed GraphQL error fields are rejected before mutation (7.419148ms)
+✔ ambiguous archive is not resent and one final exact read settles ARCHIVED (4.714772ms)
+✔ final DRAFT or effective-publication drift is unsettled with no retry (8.93831ms)
+✔ unsettled archive transport forbids final read and any overlap (8004.829455ms)
+✔ exact source documents have no searches or alternate mutation fields (14.132217ms)
+✔ alternate documents, extra fields and non-ARCHIVED statuses are denied before dispatch (13.713056ms)
+✔ closed cleanup register rejects any second initialization (5.766132ms)
+✔ 100 serial disposable cleanup cases never exceed one update (273.80393ms)
+✔ failed authentication cannot admit an Admin read through the public operator (1.007458ms)
+✔ failed prestate or final reads cannot be retried and archive cannot be resent (3.58544ms)
+✔ auth response disposal failure quarantines pending event index zero (0.980835ms)
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.431762ms)
+✔ zero ACTIVE effective membership is PARTIAL with one create and safe archive, without acquire or restore (43.980889ms)
+✔ production v2 core lifecycle survives an actual fresh process, with capability=true and exact persisted hold bytes (665.314151ms)
+✔ absence of future capability is recorded without weakening core qualification (654.895364ms)
+✔ exact shop fence prevents creation (2.542455ms)
+✔ exact domain fence prevents creation (1.824743ms)
+✔ exact development fence prevents creation (1.923275ms)
+✔ exact app fence prevents creation (1.859886ms)
+✔ exact client fence prevents creation (1.81866ms)
+✔ exact installation fence prevents creation (1.778413ms)
+✔ exact grants fence prevents creation (2.005146ms)
+✔ ownership drift stops before setup and denies archival cleanup (4.8168ms)
+✔ actual schedule stops setup; explicit archive cannot turn persistent schedule into PASS (16.203951ms)
+✔ configured intent drift after setup stops acquire and permits separately settled cleanup (24.556417ms)
+✔ ambiguous create has one exact-marker recovery read and no further mutation (4.741512ms)
+✔ lost acquire acknowledgement never causes restore, replay or cleanup mutation (25.656854ms)
+✔ closed register rejects reentry before loading even synthetic credentials (20.955175ms)
+✔ unsafe synthetic directory and live gate reject before any request (0.367354ms)
+✔ global attempts, document denial, token replacement and serial reservation are durable (117.587654ms)
+✔ one-second ACK/readback difference is retained while v2 semantics complete in fresh process (664.272975ms)
+✔ lost restore acknowledgement in fresh process never retries or archives (634.216833ms)
+✔ incomplete configured-intent connection stops lifecycle before setup (8.660158ms)
+✔ production pagination consumes global budget and repeated cursor stops without mutation (13.139518ms)
+✔ fresh-process-only resume rejects same PID before credential load in live operator seam (17.428606ms)
+✔ non-quiescent fetch timeout retains pending reservation and forbids another request (8001.966889ms)
+✔ malformed production mutation acknowledgement is not considered settled for archival authority (42.30179ms)
+✔ failed disposal of an oversized body quarantines the outbound attempt (2.139786ms)
+✔ persisted hold tampering stops fresh-process resume before a second auth or cleanup request (507.808732ms)
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.276994ms)
+✔ missing adapter transport / import proof uses only the guarded operator or denies locally (237.459571ms)
+✔ misspelled adapter transport / import proof uses only the guarded operator or denies locally (219.898651ms)
+✔ imports adapter transport / import proof uses only the guarded operator or denies locally (217.956326ms)
+✔ correct adapter transport / import proof uses only the guarded operator or denies locally (328.436543ms)
+✔ zero ACTIVE effective membership is PARTIAL with one create and safe archive, without acquire or restore (56.132053ms)
+✔ production v2 core lifecycle survives an actual fresh process, with capability=true and exact persisted hold bytes (691.509058ms)
+✔ absence of future capability is recorded without weakening core qualification (711.97769ms)
+✔ exact shop fence prevents creation (3.533515ms)
+✔ exact domain fence prevents creation (2.8579ms)
+✔ exact development fence prevents creation (2.722805ms)
+✔ exact app fence prevents creation (2.828178ms)
+✔ exact client fence prevents creation (2.543186ms)
+✔ exact installation fence prevents creation (2.483969ms)
+✔ exact grants fence prevents creation (2.742896ms)
+✔ ownership drift stops before setup and denies archival cleanup (7.276146ms)
+✔ actual schedule stops setup; explicit archive cannot turn persistent schedule into PASS (23.68556ms)
+✔ configured intent drift after setup stops acquire and permits separately settled cleanup (34.517312ms)
+✔ ambiguous create has one exact-marker recovery read and no further mutation (5.623924ms)
+✔ lost acquire acknowledgement never causes restore, replay or cleanup mutation (24.203926ms)
+✔ closed register rejects reentry before loading even synthetic credentials (30.104824ms)
+✔ unsafe synthetic directory and live gate reject before any request (0.371792ms)
+✔ global attempts, document denial, token replacement and serial reservation are durable (142.295421ms)
+✔ one-second ACK/readback difference is retained while v2 semantics complete in fresh process (638.811768ms)
+✔ lost restore acknowledgement in fresh process never retries or archives (591.870714ms)
+✔ incomplete configured-intent connection stops lifecycle before setup (10.904441ms)
+✔ production pagination consumes global budget and repeated cursor stops without mutation (14.073707ms)
+✔ fresh-process-only resume rejects same PID before credential load in live operator seam (25.536446ms)
+✔ non-quiescent fetch timeout retains pending reservation and forbids another request (8002.297876ms)
+✔ malformed production mutation acknowledgement is not considered settled for archival authority (26.643146ms)
+✔ failed disposal of an oversized body quarantines the outbound attempt (2.019766ms)
+✔ persisted hold tampering stops fresh-process resume before a second auth or cleanup request (514.513201ms)
+✔ all synthetic auth/create/status/production reads dispatch only after matching durable events (34.36187ms)
+✔ durable accounting corruption prevents create dispatch and any cleanup mutation (4.036544ms)
+✔ zero-effective PARTIAL branch becomes STOPPED if archive applied but acknowledgement is lost (25.839508ms)
+✔ lost archive ACK permits only one exact ownership/status classification read and no final snapshot or retry (25.863067ms)
+ℹ tests 90
+ℹ suites 0
+ℹ pass 90
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13554.323677
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.752499ms)
+✔ missing adapter transport / import proof uses only the guarded operator or denies locally (249.984984ms)
+✔ misspelled adapter transport / import proof uses only the guarded operator or denies locally (221.775978ms)
+✔ imports adapter transport / import proof uses only the guarded operator or denies locally (211.902597ms)
+✔ correct adapter transport / import proof uses only the guarded operator or denies locally (309.818552ms)
+✔ complete explicit APP discovery and exact inclusion authorize only the fixed archival cleanup (32.026901ms)
+✔ direct inclusion without either generic discovery surface classifies DIRECT_ONLY and still cleans the disposable fixture (12.672359ms)
+✔ complete APP catalogs independently establish the generic surface when typed publications omit the target (12.825788ms)
+✔ a denied second discovery surface is retained but cannot negate independently complete positive generic evidence (15.010537ms)
+✔ denied generic reads without complete positive evidence classify UNRESOLVED without retries (11.047163ms)
+✔ direct null remains UNRESOLVED despite generic positives (11.627634ms)
+✔ direct not-included remains UNRESOLVED despite generic positives (12.311238ms)
+✔ direct incomplete remains UNRESOLVED despite generic positives (13.281541ms)
+✔ direct error remains UNRESOLVED despite generic positives (10.046801ms)
+✔ capability drift between direct and generic observations is coverage ambiguity (11.359899ms)
+✔ multiple APP catalogs claiming the target Publication are coverage ambiguity (11.239744ms)
+✔ observed conflicting catalogs followed by a denied page remain UNRESOLVED despite complete positive publications (14.266086ms)
+✔ empty nonterminal publications page fails before any continuation (10.992169ms)
+✔ empty nonterminal catalogs page fails before any continuation (10.701209ms)
+✔ duplicate generic IDs and repeated cursors fail closed with cleanup capacity preserved (14.738142ms)
+✔ infinite unique discovery pages reserve one catalog attempt and exact cleanup/final read within sixteen GraphQL attempts (47.706501ms)
+✔ prestate identity drift stops before discovery or mutation (2.318134ms)
+✔ prestate ownership drift stops before discovery or mutation (2.170449ms)
+✔ prestate status drift stops before discovery or mutation (2.154049ms)
+✔ prestate target-effective drift stops before discovery or mutation (2.375688ms)
+✔ prestate connection drift stops before discovery or mutation (2.113912ms)
+✔ identity drift in discovery revokes cleanup before any mutation (3.945224ms)
+✔ identity mismatch combined with malformed operation data latches the fence before projection (3.751828ms)
+✔ GraphQL error with contradictory direct identity prevents archival (3.863288ms)
+✔ GraphQL error with contradictory catalog identity prevents archival (6.572119ms)
+✔ conflicting duplicate publications metadata cannot hide behind rejection (12.219711ms)
+✔ conflicting duplicate catalogs metadata cannot hide behind rejection (10.727322ms)
+✔ partial error publications data retains contradictory coverage evidence (10.779096ms)
+✔ partial error catalogs data retains contradictory coverage evidence (11.625255ms)
+✔ lost archive acknowledgement gets exactly one final classification read and never a resend (11.264388ms)
+✔ final exact state settlement records updatedAt difference without timestamp equality (10.753296ms)
+✔ a failed final publication predicate closes STOPPED without another mutation or read (12.201377ms)
+✔ source drift before credentials produces no provider request (0.751042ms)
+✔ corrupt reservation accounting denies the captured transport before its first native call (1.533914ms)
+✔ canonical entry exposes no resume phase and a closed synthetic register cannot be reopened (11.083319ms)
+✔ identity contradiction in the final read invalidates the classification without another write (10.431494ms)
+✔ HTTP 500 error with reported identity drift blocks cleanup (4.051113ms)
+✔ HTTP 403 error with reported identity drift blocks cleanup (6.874812ms)
+✔ a qualified HTTP 403 denial cannot negate a complete independent positive surface (11.881224ms)
+✔ malformed partial error publications remains coverage ambiguity (10.529244ms)
+✔ HTTP error partial publications contradictions remain visible (10.94253ms)
+✔ malformed partial error catalogs remains coverage ambiguity (11.869498ms)
+✔ HTTP error partial catalogs contradictions remain visible (10.731775ms)
+✔ ownership freshness starts before I/O and cannot be renewed by slow response completion (9.244296ms)
+✔ a backwards local clock cannot make future observation origins fresh for cleanup (7.475706ms)
+✔ falsy malformed publications false is coverage ambiguity (14.793937ms)
+✔ falsy malformed publications 0 is coverage ambiguity (10.403997ms)
+✔ falsy malformed publications "" is coverage ambiguity (10.164112ms)
+✔ malformed publications error envelope empty-array cannot qualify generic discovery (9.772119ms)
+✔ malformed publications error envelope object cannot qualify generic discovery (10.964534ms)
+✔ malformed publications error envelope null cannot qualify generic discovery (9.150101ms)
+✔ malformed publications error envelope null-member cannot qualify generic discovery (9.59138ms)
+✔ malformed publications error envelope numeric-message cannot qualify generic discovery (10.611538ms)
+✔ malformed publications error envelope empty-message cannot qualify generic discovery (9.578117ms)
+✔ malformed publications error envelope nonobject-extensions cannot qualify generic discovery (9.67083ms)
+✔ falsy malformed catalogs false is coverage ambiguity (10.457714ms)
+✔ falsy malformed catalogs 0 is coverage ambiguity (12.053818ms)
+✔ falsy malformed catalogs "" is coverage ambiguity (10.183914ms)
+✔ malformed catalogs error envelope empty-array cannot qualify generic discovery (9.462554ms)
+✔ malformed catalogs error envelope object cannot qualify generic discovery (9.512206ms)
+✔ malformed catalogs error envelope null cannot qualify generic discovery (9.845708ms)
+✔ malformed catalogs error envelope null-member cannot qualify generic discovery (10.767273ms)
+✔ malformed catalogs error envelope numeric-message cannot qualify generic discovery (11.159215ms)
+✔ malformed catalogs error envelope empty-message cannot qualify generic discovery (12.591504ms)
+✔ malformed catalogs error envelope nonobject-extensions cannot qualify generic discovery (9.52361ms)
+✔ archive freshness is rechecked after reservation immediately before native dispatch (8.59835ms)
+✔ early source gate rejection settles its reserved but unsent archival request exactly (8.505316ms)
+✔ wall rollback followed by successful reads cannot renew elapsed ownership freshness (9.434199ms)
+ℹ tests 73
+ℹ suites 0
+ℹ pass 73
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1103.350417
+$ tsc -p scripts/m1-functions/tsconfig.json && node --test scripts/m1-functions/check-vector.test.ts
+✔ TypeScript/Node and Rust share the exact experimental-v2 envelope/member bytes (4.709261ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 128.22032
+$ node scripts/boundaries/check.mjs && node scripts/boundaries/check-database-api.mjs && node scripts/boundaries/check-domain-effects.mjs && node --test scripts/boundaries/domain-effects.test.mjs
+Boundary checks passed: 191 real modules, 4 browser modules, 19 negative source fixtures, 2 rejected browser bundles and exports.
+Database public API rejects 19 compiler probes and 4 runtime deep imports.
+6 production domain modules have no prohibited ambient effects
+✔ Date.now is rejected in a production domain helper (8.903307ms)
+✔ new Date is rejected in a production domain helper (0.738539ms)
+✔ Math.random is rejected in a production domain helper (0.473467ms)
+✔ globalThis.Date.now is rejected in a production domain helper (0.491707ms)
+✔ fetch is rejected in a production domain helper (1.18887ms)
+✔ globalThis.crypto is rejected in a production domain helper (0.415422ms)
+✔ computed random is rejected in a production domain helper (0.890315ms)
+✔ template random is rejected in a production domain helper (0.659256ms)
+✔ dynamic Math member is rejected in a production domain helper (1.187808ms)
+✔ spread Date is rejected in a production domain helper (1.551944ms)
+✔ random destructuring is rejected in a production domain helper (0.728424ms)
+✔ date alias is rejected in a production domain helper (0.359808ms)
+✔ math alias is rejected in a production domain helper (0.289102ms)
+✔ import meta is rejected in a production domain helper (0.387196ms)
+✔ process environment is rejected in a production domain helper (0.240123ms)
+✔ deterministic numeric and explicit-value operations stay allowed (1.354032ms)
+✔ type-only properties are not ambient API references (2.100048ms)
+✔ compiled graph includes an imported module with an excluded test-like filename (556.235825ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 965.758932
+$ node scripts/boundaries/check-secrets.mjs
+Secret/fixture provenance check passed: 110 production source files, 83 separately scanned test/fixture files, 2 browser artifacts, 2 explicitly synthetic seeds.
+20 archived Cargo manifests remain independent
+$ bash scripts/m1-functions/check.sh
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (target/debug/deps/cart_authorization-428bc6dab939b9b3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/currency_matrix.rs (target/debug/deps/currency_matrix-a76cbbc666a7ab20)
+
+running 1 test
+test every_admitted_currency_agrees_with_versioned_ts_matrix ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/production_vectors.rs (target/debug/deps/production_vectors-931358b74671ec5f)
+
+running 1 test
+test production_typescript_vectors_verify_with_complete_rust_core ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/whole_quote.rs (target/debug/deps/whole_quote-dd6e3b33eb9f8a50)
+
+running 13 tests
+test canonical_carriers_reject_length_padding_alphabet_and_tail_bits ... ok
+test complete_ordered_set_verifies_once_and_matches_observed_price ... ok
+test compensated_price_mutations_cannot_preserve_authorization_by_preserving_total ... ok
+test every_header_byte_class_is_signed_and_structural_header_is_strict ... ok
+test last_member_change_invalidates_everything ... ok
+test independent_context_keys_date_and_physical_economics_reject ... ok
+test missing_duplicate_unsigned_and_extra_members_fail_closed ... ok
+test member_from_a_different_signed_quote_cannot_mix_with_original_envelope ... ok
+test noncanonical_public_point_and_revoked_or_out_of_window_keys_reject ... ok
+test shared_python_typescript_rust_golden_vector_agrees ... ok
+test signature_and_arithmetic_profiles_reject_mutations ... ok
+test large_complete_quantity_and_500_unit_tier_cannot_be_partially_reused ... ok
+test fifteen_independently_signed_high_bit_magic_variants_reject ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+     Running unittests src/main.rs (target/debug/deps/cart_transform-358275b5ea2405f6)
+
+running 20 tests
+test capacity::tests::cart_line_width_and_grammar ... ok
+test capacity::tests::exact_output_bound_has_headroom ... ok
+test product_policy::tests::illegible_lone_anchor_cannot_authorize_a_signed_quote ... ok
+test product_policy::tests::absent_fields_are_unmanaged_but_a_single_lost_field_is_uncertain ... ok
+test product_policy::tests::matching_ready_fields_classify_required_and_optional ... ok
+test product_policy::tests::pending_malformed_and_stale_fields_block_plain_but_preserve_signed ... ok
+test product_policy::tests::wrong_installation_generation_rejects_signed_too ... ok
+test product_policy::tests::strict_grammar_rejects_unknown_states_and_noncanonical_revisions ... ok
+test tests::no_partial_expansion_for_incomplete_or_tampered_set ... ok
+test tests::revoked_and_out_of_window_public_keys_emit_no_price_operation ... ok
+test tests::complete_set_sets_both_prices_and_copies_compact_member ... ok
+test tests::context_physical_line_policy_and_cart_order_are_enforced ... ok
+test tests::signed_quote_with_only_illegible_policy_emits_no_price ... ok
+test tests::signed_quote_with_no_product_anchors_still_requires_shop_keys ... ok
+test tests::signed_prices_survive_policy_revision_and_one_lost_anchor ... ok
+test tests::unsigned_marker_removed_and_invalid_signature_emit_no_price ... ok
+test tests::untrusted_config_cannot_raise_experiment_ceiling ... ok
+test tests::ten_thousand_physical_units_use_two_expansions ... ok
+test tests::transform_accepts_canonical_zero_and_echoes_target_local_id ... ok
+test tests::ten_bucket_output_is_bounded_and_oversized_sets_emit_no_partial_operation ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src/main.rs (target/debug/deps/cart_validation-95daed9c7c60dc1b)
+
+running 24 tests
+test capacity::tests::cart_line_width_and_grammar ... ok
+test capacity::tests::exact_output_bound_has_headroom ... ok
+test product_policy::tests::illegible_lone_anchor_cannot_authorize_a_signed_quote ... ok
+test product_policy::tests::absent_fields_are_unmanaged_but_a_single_lost_field_is_uncertain ... ok
+test product_policy::tests::matching_ready_fields_classify_required_and_optional ... ok
+test product_policy::tests::pending_malformed_and_stale_fields_block_plain_but_preserve_signed ... ok
+test product_policy::tests::wrong_installation_generation_rejects_signed_too ... ok
+test product_policy::tests::strict_grammar_rejects_unknown_states_and_noncanonical_revisions ... ok
+test tests::incomplete_tampered_and_unsigned_required_sets_reject ... ok
+test tests::malformed_stale_pending_and_wrong_generation_policy_fail_plain ... ok
+test tests::complete_set_compares_observed_exact_subtotals ... ok
+test tests::buyer_marker_removal_cannot_turn_known_required_into_plain ... ok
+test tests::one_lost_anchor_blocks_plain_while_explicit_optional_and_unmanaged_pass ... ok
+test tests::revoked_and_out_of_window_public_keys_reject_checkout ... ok
+test tests::cart_order_context_and_physical_claim_changes_fail_at_checkout ... ok
+test tests::signed_quote_with_only_illegible_policy_rejects ... ok
+test tests::signed_quote_with_no_product_anchors_needs_healthy_shop_keys ... ok
+test tests::signed_historical_quote_survives_same_generation_policy_revision ... ok
+test tests::untrusted_config_cannot_raise_experiment_ceiling ... ok
+test tests::ten_thousand_physical_units_validate_without_per_unit_expansion ... ok
+test tests::mixed_200_line_cart_blocks_damaged_managed_line_then_recovers ... ok
+test tests::zero_based_cartline_does_not_bypass_economics_or_trust_at_checkout ... ok
+test tests::ten_bucket_set_validates_and_oversized_sets_reject ... ok
+test tests::zero_based_cartline_preserves_complete_signed_checkout_at_both_steps ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+   Doc-tests cart_authorization
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+/home/serveradmin/insignia-m5-016-worktree/crates/cart-transform/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+    Finished `release` profile [optimized] target(s) in 0.04s
+c20cbda370e8ce19c309a49a71f497edb36e2f2db6b4667eced22073cb76fc17  /home/serveradmin/insignia-m5-016-worktree/extensions/insignia-cart-transform/target/cart-transform.raw.wasm
+49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576  /home/serveradmin/insignia-m5-016-worktree/extensions/insignia-cart-transform/target/cart-transform.wasm
+184312 /home/serveradmin/insignia-m5-016-worktree/extensions/insignia-cart-transform/target/cart-transform.raw.wasm
+181378 /home/serveradmin/insignia-m5-016-worktree/extensions/insignia-cart-transform/target/cart-transform.wasm
+365690 total
+/home/serveradmin/insignia-m5-016-worktree/crates/cart-validation/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+    Finished `release` profile [optimized] target(s) in 0.04s
+1c2e43c03c62fb1983089d3b8623eeb6a3ffc90211893c9abb7a2b67fa9ad763  /home/serveradmin/insignia-m5-016-worktree/extensions/insignia-cart-validation/target/cart-validation.raw.wasm
+3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6  /home/serveradmin/insignia-m5-016-worktree/extensions/insignia-cart-validation/target/cart-validation.wasm
+185960 /home/serveradmin/insignia-m5-016-worktree/extensions/insignia-cart-validation/target/cart-validation.raw.wasm
+182968 /home/serveradmin/insignia-m5-016-worktree/extensions/insignia-cart-validation/target/cart-validation.wasm
+368928 total
+/home/serveradmin/insignia-m5-016-worktree/.m1-artifacts/tools/function-runner-9.2.2: OK
+transform 8 c20cbda370e8ce19c309a49a71f497edb36e2f2db6b4667eced22073cb76fc17 49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576
+validation 18 1c2e43c03c62fb1983089d3b8623eeb6a3ffc90211893c9abb7a2b67fa9ad763 3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6
+{
+  "rows": 230,
+  "positive": 16,
+  "vectorsSha256": "7f0046b88183b79cbccc305c883aab0483a6cda1eddb191297e2295c35ac1eda",
+  "transformWasmSha256": "49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576",
+  "validationWasmSha256": "3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6"
+}
+M4-003 production builder config passed 6 complete Function runs.
+$ corepack pnpm --filter @insignia/web test && corepack pnpm --filter @insignia/storefront test
+$ node --test test/*.test.mjs test/admin/*.test.mjs
+﹣ real PG activation composes trusted release, synthetic Shopify hold and immutable evidence (0.862085ms) # SKIP
+✔ admin distinguishes activation waiting, held, restoration and conflict without manufacturing ACTIVE (1.607234ms)
+✔ publication conflict outranks a retained held/pending activation state (0.200011ms)
+✔ terminal operator hold outranks stale held activation (0.175689ms)
+✔ current staff and installation grant read and edit; reinstallation is checked every request (1.871602ms)
+✔ staff read access does not grant mutation (1.058897ms)
+✔ expired or cross-shop identity and stale installation fail closed (0.477728ms)
+✔ read requires current verified staff and exact shop, even on deep links (27.489496ms)
+✔ mutation refuses cross-origin and staff denial before invoking command (2.596077ms)
+✔ save carries exact product, draft version and idempotency to durable command (1.714414ms)
+✔ stale draft save is a conflict, never a success response (0.940157ms)
+✔ publish returns activation-pending truthfully and requires current edit grant (1.109623ms)
+✔ a product missing from the verified shop cannot be changed (0.904928ms)
+✔ expired identity and shop supplied in command body cannot create a config (1.164786ms)
+✔ unwired admin backend serves no private catalog data (0.641552ms)
+✔ unknown durable command failures remain unavailable without leaking details (1.042045ms)
+✔ editor-generated fixed, override and tier defaults price through unchanged M2 in zero/two/three exponent currencies (3514.037606ms)
+✔ real browser editor syncs typed view, variant and step controls with direct Konva canvas and saved draft (1939.97149ms)
+✔ removing named choices drops only their labels including nested option value labels before save (1168.026742ms)
+✔ variant without a saved image override retains the portrait default until explicit landscape adoption (926.438491ms)
+✔ merchant currency adoption refreshes saved publication eligibility and later failed or stale reads fail closed (963.703ms)
+✔ mobile deep link, cookie-free reload, interrupted save, stale conflict, and missing Polaris control (2029.875918ms)
+✔ interrupted publication resumes the identical request after reload and reaches a durable phase (878.622081ms)
+✔ numeric placement input reaches owner state before blur and survives an owner rerender (1305.665908ms)
+✔ publication success preserves dirty local edits and exact save recovery [1/1] (912.866914ms)
+✔ publication failed preserves dirty local edits and exact save recovery [1/1] (853.97463ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [1/1] (1025.19375ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [1/1] (966.555615ms)
+✔ publication retry keeps the original version after a newer draft edit when embedded storage is denied (875.990314ms)
+✔ stale stored publication is replaced by the current immutable intent despite newer ineligible draft (670.230237ms)
+✔ reinstalled Admin discards prior-generation browser request and publishes with a new key (747.27772ms)
+✔ concurrent editor refreshes share one App Bridge identity request (1330.058366ms)
+✔ empty merchant draft can be configured through typed controls and pass M2 validation (1214.377928ms)
+﹣ overlapping distinct-key M5 creates serialize before the command FK lock upgrade (1.046055ms) # SKIP
+﹣ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (0.187569ms) # SKIP
+﹣ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (0.144733ms) # SKIP
+﹣ actual M4 prepare/advance over immutable M5 revision reports ready, conflict and hold truthfully (0.921631ms) # SKIP
+✔ diagnostic preview requires accounting and HTTPS before any provider access (411.148144ms)
+﹣ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (0.665921ms) # SKIP
+✔ preview same-token single flight; replacement and current-installation invalidation exchange fresh (1.431244ms)
+✔ preview rejected exchange is not cached and expired or long-lived identity is denied (0.892101ms)
+﹣ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (0.970104ms) # SKIP
+✔ server activation composition cannot promote a diagnostic observation without trusted release source (1.739971ms)
+✔ server composition binds trusted provider reads to one signed immutable quote candidate (41.199805ms)
+✔ built SSR serves public shell and a real Polaris/Preact interaction (5940.166975ms)
+✔ HTTP 5xx after durable inbox commit leads to same-ID retry and a single queue handoff (15.669801ms)
+✔ stream bound rejects a lying or absent Content-Length before trusted metadata is stored (13.922735ms)
+﹣ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (1.024735ms) # SKIP
+ℹ tests 48
+ℹ suites 0
+ℹ pass 40
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 8
+ℹ todo 0
+ℹ duration_ms 22013.080975
+$ node --test test/*.test.mjs
+✔ custom element mounts, unmounts, and contains DOM, state and events (554.454663ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1092.966541
+{"archivedArchitectureRef": "0f2c80a316228bd69fdd2ff272e967ff14647b2b", "archivedArchitectureVerified": true, "archivedV1_2Ref": "662a78cd27507d8a2f1eaa976f1c644c93edd1be", "archivedV1_2Sha256": {"docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209", "docs/architecture/decision-ledger.md": "97ebb79ddc53000c53c46218ba8c83a5ba2279720ed07ff50809706b4f1a800a", "docs/architecture/implementation-plan.md": "8bb45ac9e2834bf047824a2e3dda4da7f76692bae685f6657da7b3ab03d0b145"}, "archivedV1_3Ref": "4209bb16a09cff95d5cbbc1bbcb082e8c1fa8899", "archivedV1_3Sha256": {"docs/architecture/decision-ledger.md": "d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9", "docs/architecture/implementation-plan.md": "b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d"}, "currentArchitectureSha256": {"docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209", "docs/architecture/decision-ledger.md": "3d1e8fe50c948822ba3403facfc142402d4fc6631d8d667a2e3341ff6cdbd802", "docs/architecture/implementation-plan.md": "cd59fd361d69adc3f307ee9b88ba1f5509ffeefb68aea90a15f9b88757b4e792"}, "currentArchitectureVersion": "1.4", "historicalMerge": "eaa386c90786e560d49f8311878c95d26cc3c7b8", "manifestSha256": "c2d017f70c4e781d174695c27b9a8c3295666c105af598d8caed6ce9a18160e8", "oldSourceCount": 41, "unchangedReceiptCount": 120}
+{"draftProducts": 2, "hashedSetupReceipts": 14, "initialUnits": 272, "ownedFunctions": 2, "status": "PASS", "variants": 3}
+48 required files hashed: .m1-artifacts/manifest.json
