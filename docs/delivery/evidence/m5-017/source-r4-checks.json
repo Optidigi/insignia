@@ -1,0 +1,79 @@
+{
+  "source": "b06cc057782513f9401b830fbf647405fa50dfbd",
+  "tree": "0cb88d7a96b2e0c9e37ccb1e57a45437490f1988",
+  "checks": [
+    {
+      "command": "PATH Cargo; DATABASE_URL=m5_017_r8; INSIGNIA_REQUIRE_POSTGRES_TEST=1 corepack pnpm check",
+      "exitCode": 0,
+      "log": "root-check-source-r4.log",
+      "sha256": "a831c8e08a0b0ad9c22231d519a15123bf4ebc89c3faea7033dc9237fd4826d2"
+    },
+    {
+      "command": "DATABASE_URL=m5_017_r8 corepack pnpm check:database",
+      "exitCode": 0,
+      "log": "pg18-full-source-r4.log",
+      "sha256": "72765f40527faf0ee41f7b10d00cf13497273de0ea8a1f6334953d238059c8c3"
+    },
+    {
+      "command": "DATABASE_URL=m5_017_r8 M5_QUERY_PLAN_OUTPUT=query-plan-source-r4.json corepack pnpm test:m5-query-plan",
+      "exitCode": 0,
+      "log": "query-plan-source-r4.log",
+      "sha256": "26e4c3e3687372ed66e1ae7093ba5bf8490c65f47ce3235c8557dde2a6922665"
+    },
+    {
+      "command": "fresh m5_017_rehearsal_r4 corepack pnpm db:migrate",
+      "exitCode": 0,
+      "log": "empty-migrate-source-r4.log",
+      "sha256": "31d01739b1c01bd30d26ba3a42661c40bfff7eb22ded9a6f211c4fdcc038aa73"
+    },
+    {
+      "command": "fresh m5_017_rehearsal_r4 dbmate rollback",
+      "exitCode": 0,
+      "log": "empty-down-source-r4.log",
+      "sha256": "67c4b775770b3bbb42c3ac0de8eb0291d8de40b4bb0f5445bd1a7199fcf941e6"
+    },
+    {
+      "command": "fresh m5_017_rehearsal_r4 corepack pnpm db:migrate",
+      "exitCode": 0,
+      "log": "empty-up-source-r4.log",
+      "sha256": "3c517a548db7868f48ad55a288615889deac9a2e27dc87c45f4522cf9d96b4d7"
+    },
+    {
+      "command": "populated m5_017_r8 dbmate rollback; expected deny",
+      "exitCode": 2,
+      "log": "populated-down-source-r4.log",
+      "sha256": "e13741b90701c233962d0f7fd72ff1b2e2ed5991679bf7be14f0cb40e090f59f"
+    },
+    {
+      "command": "M5_PUBLICATION_STRESS_ITERATIONS=100 pnpm --filter @insignia/web exec node --test --test-name-pattern publication (success|failed) preserves test/admin/editor-browser.test.mjs",
+      "exitCode": 0,
+      "log": "publication-stress100-source-r4.log",
+      "sha256": "9a29d20f5150e57442eade855ae6049694128be92a4926ffdd3a823f41f644ae"
+    },
+    {
+      "command": "corepack pnpm test:m5-renderer-control",
+      "exitCode": 0,
+      "log": "renderer-control-source-r4.log",
+      "sha256": "b533eaee01760e5bb6721a6d20f706cd2a71ef1947c4302b4a311dd4430ffb67"
+    }
+  ],
+  "databaseTests": 167,
+  "postgresVersionNum": 180006,
+  "v3MigrationRetainedAfterDeniedDown": 1,
+  "v3RowsAfterDeniedDown": 122,
+  "emptyMigrationReapplied": 1,
+  "stress": {
+    "iterationsPerCase": 100,
+    "cases": 4,
+    "passed": 400,
+    "failed": 0
+  },
+  "rendererControl": "EXPECTED_NEGATIVE_CONTROL",
+  "reviews": {
+    "spec": "no unresolved material finding",
+    "security": "NOT_CLEAR: original-DRAFT restoration ACK bypass"
+  },
+  "ci": "all11 natural exact-head attempt1 success",
+  "credentialAccess": "NOT_RUN",
+  "canonicalRun": "ABSENT"
+}

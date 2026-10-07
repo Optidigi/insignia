@@ -544,12 +544,23 @@ export function createPublicationActivation(input: {
                 return false;
               }
             };
-            const restored = await input.availability.restore(
+            const response = await input.availability.restore(
               c.availabilityScope,
               c.state.hold,
               observation.current,
               beforeSend,
             );
+            const acknowledgementQualified =
+              (c.state.hold.before.state === 'unavailable' && response.acknowledgement === undefined) ||
+              (availabilityV3AcknowledgementQualified(response.acknowledgement) &&
+                response.acknowledgement.productId === c.productId &&
+                response.acknowledgement.state === c.state.hold.before.state &&
+                activationDigest(response.acknowledgement.scope) === activationDigest(c.availabilityScope));
+            // A clean no-write DRAFT readback cannot erase scheduling in a supplied ACK.
+            const restored =
+              response.kind === 'RESTORED' && !acknowledgementQualified
+                ? { ...response, kind: 'CONFLICT' as const }
+                : response;
             if (c.state.hold.version === 'm5-availability-hold-v3') {
               if (
                 (restored.acknowledgement && restored.acknowledgement.version !== 'm5-availability-mutation-ack-v3') ||
@@ -583,11 +594,7 @@ export function createPublicationActivation(input: {
               isAvailabilityV3(restored.current) &&
               isAvailabilityV3(c.state.hold.before) &&
               sameAvailabilityV3(restored.current, c.state.hold.before) &&
-              (c.state.hold.before.state === 'unavailable' ||
-                (availabilityV3AcknowledgementQualified(restored.acknowledgement) &&
-                  restored.acknowledgement.productId === c.productId &&
-                  restored.acknowledgement.state === c.state.hold.before.state &&
-                  activationDigest(restored.acknowledgement.scope) === activationDigest(c.availabilityScope)));
+              acknowledgementQualified;
             if (valid && restored.current) fresh(restored.current.observedAt, now(), input.maxObservationAgeMs);
             await session.save({ ...session.candidate.state, kind: valid ? 'RESTORED' : 'OPERATOR_HOLD' });
             return result(valid ? 'ACTIVE' : 'OPERATOR_HOLD', c);

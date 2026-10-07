@@ -1495,6 +1495,15 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const { acquisitionAcknowledgement: _ack, ...clean } = incident;
     expect(await admits({ ...clean, restorationReceipt: receipt })).toBe(false);
     expect(await admits({ ...clean, held: draft, restorationReceipt: receipt })).toBe(true);
+    const owned = { ...clean, held: draft };
+    const qualifiedAck = hold.acquisitionAcknowledgement;
+    const stagedAck = incident.acquisitionAcknowledgement;
+    expect(await admits({ ...owned, restorationReceipt: { ...receipt, acknowledgement: qualifiedAck } })).toBe(true);
+    expect(await admits({ ...owned, restorationReceipt: { ...receipt, acknowledgement: stagedAck } })).toBe(false);
+    expect(
+      await admits({ ...owned, restorationReceipt: { ...receipt, kind: 'CONFLICT', acknowledgement: stagedAck } }),
+    ).toBe(true);
+
     const scheduled = {
       ...draft,
       effectiveVisibility: { ...draft.effectiveVisibility, publicationEvidence: [staged] },

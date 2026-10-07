@@ -101,6 +101,8 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   let crashBeforeRestore = false;
   let crashAcquire = false;
   let crashRestore = false;
+  let scheduledRestorationAck = false;
+  let omitRestorationAck = false;
   let unresolvedRestore: 'pending' | 'throw' | 'original' | null = null;
   let failCommit = false;
   let fenced = false;
@@ -199,6 +201,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
         crashRestore = false;
         throw new Error('lost restoration response');
       }
+      if (omitRestorationAck) return { kind: 'RESTORED', current };
       return {
         kind: 'RESTORED',
         current,
@@ -208,7 +211,18 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
           productId: current.productId,
           state: current.state,
           providerUpdatedAt: current.providerUpdatedAt,
-          effectiveVisibility: current.effectiveVisibility,
+          effectiveVisibility: scheduledRestorationAck
+            ? {
+                ...current.effectiveVisibility,
+                publicationEvidence: [
+                  {
+                    publicationId: 'gid://shopify/Publication/999',
+                    isPublished: false,
+                    publishDate: '2099-01-01T00:00:00.000Z',
+                  },
+                ],
+              }
+            : current.effectiveVisibility,
           observedAt: current.observedAt,
           receivedAt: current.receivedAt,
         },
@@ -388,6 +402,15 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
           },
         },
       };
+    },
+    set omitRestorationAck(value: boolean) {
+      omitRestorationAck = value;
+    },
+    useOriginalDraft: () => {
+      current = { ...current, state: 'unavailable' };
+    },
+    set scheduledRestorationAck(value: boolean) {
+      scheduledRestorationAck = value;
     },
     persistLegacyHold: () => {
       const before = {
@@ -661,6 +684,30 @@ describe('production activation coordinator with injected synthetic boundary fix
     expect(f.evidence).toBeNull();
     expect(f.acquisitions).toBe(1);
   });
+  for (const acknowledgement of ['absent', 'qualified', 'scheduled']) {
+    const scheduledAck = acknowledgement === 'scheduled';
+    it(`original DRAFT restoration ${acknowledgement} ACK`, async () => {
+      const f = fixture();
+      f.useOriginalDraft();
+      f.phase = 'prepared';
+      await f.advance();
+      expect((await f.advance()).kind).toBe('HELD');
+      f.phase = 'activation-pending';
+      expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+      f.scheduledRestorationAck = scheduledAck;
+      f.omitRestorationAck = acknowledgement === 'absent';
+      expect((await f.advance()).kind).toBe(scheduledAck ? 'OPERATOR_HOLD' : 'ACTIVE');
+      const hold = f.candidate.state.hold;
+      if (hold?.version !== 'm5-availability-hold-v3') throw new Error('expected v3');
+      expect(hold.restorationReceipt?.kind).toBe(scheduledAck ? 'CONFLICT' : 'RESTORED');
+      expect(hold.restorationReceipt?.acknowledgement?.effectiveVisibility.publicationEvidence.length ?? 0).toBe(
+        scheduledAck ? 1 : 0,
+      );
+      if (acknowledgement === 'absent') expect(hold.restorationReceipt?.acknowledgement).toBeNull();
+      await f.advance();
+      expect(f.restores).toBe(1);
+    });
+  }
   it('unheld original DRAFT incident cannot regain authority through an observation port', async () => {
     const f = fixture();
     f.phase = 'prepared';
