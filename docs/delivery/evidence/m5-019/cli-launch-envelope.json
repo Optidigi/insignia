@@ -36,14 +36,16 @@
     }
   ],
   "environmentAllowlist": [
-    "HOME",
-    "PATH",
+    "HOME (must equal /home/serveradmin)",
     "LANG",
     "LC_ALL",
     "TZ",
     "TERM",
+    "PATH (fixed)",
     "CI=1",
-    "SHOPIFY_CLI_NO_ANALYTICS=1"
+    "SHOPIFY_CLI_NO_ANALYTICS=1",
+    "GIT_CONFIG_GLOBAL=/dev/null",
+    "GIT_CONFIG_NOSYSTEM=1"
   ],
   "inheritedForceUpgradeDebugLoaderTokenProxyFlags": false,
   "externalOclifRegistry": "source-derived /home/serveradmin/.local/share/@shopify/cli/package.json absent",
@@ -70,5 +72,18 @@
   "releaseFlag": false,
   "creationAttemptCeiling": 1,
   "authCacheRoute": "same account HOME, existing supported CLI authentication, no token/cache value exported",
-  "limitations": "Official CLI transport may issue multiple authenticated metadata/upload requests; accounting is logical command/version-attempt accounting, not total HTTP packet interception."
+  "limitations": "Official CLI transport may issue multiple authenticated metadata/upload requests; accounting is logical command/version-attempt accounting, not total HTTP packet interception.",
+  "approvedHome": "/home/serveradmin",
+  "fixedChildPath": "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin:/usr/bin:/bin",
+  "gitValidation": {
+    "executable": "/usr/bin/git",
+    "frozenExecutableHashRequired": true,
+    "context": "exact source top-level and frozen absolute git directory",
+    "commandConfiguration": [
+      "core.fsmonitor=false",
+      "core.hooksPath=/dev/null",
+      "core.untrackedCache=false"
+    ],
+    "inheritedGitContextAndNodeLoaders": false
+  }
 }

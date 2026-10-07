@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -37,6 +38,60 @@ class GateControls(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn('gate_not_frozen', result.stderr)
             self.assertEqual(reservation.read_bytes() if reservation.exists() else None, before)
+
+    def test_cli_home_bound_and_ambient_loader_path_stripped(self):
+        for home in [None, '/different-account']:
+            with self.subTest(home=home), patch.dict(os.environ, {}, clear=True):
+                if home is not None:
+                    os.environ['HOME'] = home
+                with self.assertRaisesRegex(ValueError, 'cli_home_binding'):
+                    operator.cli_environment()
+                with tempfile.TemporaryDirectory() as directory:
+                    gate = Path(directory) / 'gate.json'
+                    gate.write_text(json.dumps({'slice': 'M5-019', 'frozen': True}))
+                    reservation = operator.CANONICAL / 'creation-reservation.json'
+                    before = reservation.read_bytes() if reservation.exists() else None
+                    result = subprocess.run([sys.executable, '-B', str(FILE), str(gate)],
+                                            capture_output=True, text=True)
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertIn('cli_home_binding', result.stderr)
+                    self.assertEqual(reservation.read_bytes() if reservation.exists() else None, before)
+        with patch.dict(os.environ, {'HOME': '/home/serveradmin', 'PATH': '/unreviewed',
+                                    'NODE_OPTIONS': '--require=/synthetic/escape-denied.js',
+                                    'SHOPIFY_FLAG_FORCE': 'synthetic-denied'}):
+            environment = operator.cli_environment()
+            self.assertEqual(environment['HOME'], '/home/serveradmin')
+            self.assertEqual(environment['PATH'], operator.CLI_PATH)
+            self.assertNotIn('NODE_OPTIONS', environment)
+            self.assertNotIn('SHOPIFY_FLAG_FORCE', environment)
+
+    def test_review_reports_and_settings_must_be_distinct(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(operator, 'NEUTRAL', Path(directory)):
+            reviews = [{'report': str(Path(directory) / 'spec.md'), 'settings': str(Path(directory) / 'spec.json')},
+                       {'report': str(Path(directory) / 'security.md'), 'settings': str(Path(directory) / 'security.json')}]
+            operator.validate_review_paths(reviews)
+            for field in ['report', 'settings']:
+                changed = copy.deepcopy(reviews)
+                changed[1][field] = changed[0][field]
+                with self.subTest(field=field), self.assertRaisesRegex(ValueError, 'review_file_duplicate'):
+                    operator.validate_review_paths(changed)
+
+    def test_git_uses_trusted_executable_and_ignores_substituted_context(self):
+        with patch.dict(os.environ, {'PATH': '/synthetic/unreviewed',
+                                    'GIT_DIR': '/synthetic/substituted', 'GIT_WORK_TREE': '/synthetic/substituted',
+                                    'GIT_CONFIG_GLOBAL': '/synthetic/unreviewed-config'}):
+            with patch.object(operator.subprocess, 'check_output', return_value=b'context') as execute:
+                self.assertEqual(operator.git_output(SOURCE, 'rev-parse', 'HEAD'), b'context')
+                arguments = execute.call_args.args[0]
+                environment = execute.call_args.kwargs['env']
+                self.assertEqual(arguments[0], '/usr/bin/git')
+                self.assertIn('core.fsmonitor=false', arguments)
+                self.assertIn('core.hooksPath=/dev/null', arguments)
+                self.assertNotIn('GIT_DIR', environment)
+                self.assertNotIn('GIT_WORK_TREE', environment)
+                self.assertEqual(environment['GIT_CONFIG_GLOBAL'], '/dev/null')
+                self.assertEqual(environment['GIT_CONFIG_NOSYSTEM'], '1')
+            self.assertEqual(operator.git_output(SOURCE, 'rev-parse', '--show-toplevel').decode().strip(), str(SOURCE))
 
     def test_ten_duplicate_workflows_are_rejected(self):
         rows = [{'name': next(iter(operator.WORKFLOWS)), 'databaseId': 1}] * 10

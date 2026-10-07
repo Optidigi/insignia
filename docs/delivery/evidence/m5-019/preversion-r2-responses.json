@@ -1,0 +1,28 @@
+{
+  "reviewedHead": "a52da8b6330af35b83b57c3b671eb81fea313fcd",
+  "priorSpec": "CHANGES_REQUESTED",
+  "priorStandardsSecurity": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "id": "CLI_HOME_REGISTRY_MISMATCH",
+      "correction": "Require approved HOME before validation subprocess/reservation; child HOME stays that value. Fixed trusted PATH and filtered Node version/CLI env reject loaders and force flags."
+    },
+    {
+      "id": "GIT_EXECUTION_CONTEXT_ESCAPE",
+      "correction": "Absolute frozen-hash Git executable; no inherited Git context/configuration; disable global/system config, fsmonitor/hooks/untracked cache; require actual source top-level and frozen git directory."
+    },
+    {
+      "id": "DUPLICATE_REVIEW_FILES",
+      "correction": "Two distinct canonical report paths and settings paths required before inventory. Retain distinct actual sessions/report hashes and require reviewed head in each CLEAR report."
+    }
+  ],
+  "controls": {
+    "count": 10,
+    "result": "PASS",
+    "shopifyCliDispatches": 0,
+    "externalRequests": 0
+  },
+  "creationAttempts": 0,
+  "releaseAttempts": 0,
+  "gate": "Fresh round3 full-source reviews and all10 natural exact-current-head workflows remain required."
+}

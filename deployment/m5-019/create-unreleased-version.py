@@ -13,6 +13,8 @@ WORKTREE = Path('/home/serveradmin/insignia-m5-019-worktree')
 CANONICAL = NEUTRAL / 'version-run'
 NODE = Path('/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node')
 CLI = Path('/home/serveradmin/insignia-pf001-tools/shopify/node_modules/@shopify/cli/bin/run.js')
+GIT = Path('/usr/bin/git')
+CLI_PATH = '/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin:/usr/bin:/bin'
 WORKFLOWS = {
     'M1-001 foundation and boundaries', 'M0-010 local hybrid billing proof',
     'M0-012 real contract local prototype', 'M0-011 local provider adapter boundary',
@@ -25,6 +27,21 @@ WORKFLOWS = {
 def require(condition, reason):
     if not condition:
         raise ValueError(reason)
+
+
+def cli_environment():
+    require(os.environ.get('HOME') == '/home/serveradmin', 'cli_home_binding')
+    environment = {key: os.environ[key] for key in ['HOME', 'LANG', 'LC_ALL', 'TZ', 'TERM'] if key in os.environ}
+    environment.update({'PATH': CLI_PATH, 'CI': '1', 'SHOPIFY_CLI_NO_ANALYTICS': '1',
+                        'GIT_CONFIG_GLOBAL': '/dev/null', 'GIT_CONFIG_NOSYSTEM': '1'})
+    return environment
+
+
+def git_output(source, *arguments):
+    require(source == WORKTREE, 'git_worktree_binding')
+    return subprocess.check_output([str(GIT), '-c', 'core.fsmonitor=false',
+                                    '-c', 'core.hooksPath=/dev/null', '-c', 'core.untrackedCache=false',
+                                    '-C', str(source), *arguments], env=cli_environment())
 
 
 def digest(path):
@@ -93,7 +110,7 @@ def validate_candidate(source, candidate):
 
 
 def mandatory_files(source, candidate_files, reviews):
-    tracked = subprocess.check_output(['git', 'ls-files', '-z'], cwd=source).decode().split('\0')
+    tracked = git_output(source, 'ls-files', '-z').decode().split('\0')
     paths = {source / path for path in tracked if path}
     baseline = json.loads((source / 'docs/delivery/evidence/m5-018/freeze-round4-inventory.json').read_text())
     accepted = baseline['source'] + baseline['build']
@@ -108,7 +125,7 @@ def mandatory_files(source, candidate_files, reviews):
         require(digest(path) == row['sha256'], 'pinned_cli_source_changed')
         paths.add(path)
     paths.update(candidate_files)
-    paths.add(NODE)
+    paths.update([NODE, GIT])
     for review in reviews:
         paths.update([Path(review['settings']), Path(review['report'])])
     paths.update(NEUTRAL / name for name in ['preversion-ci.json', 'versions-pre-freeze.json', 'reservation-control.json'])
@@ -123,15 +140,27 @@ def validate_files(rows, required):
         require(digest(path) == row['sha256'], 'frozen_file_changed')
 
 
+def validate_review_paths(reviews):
+    reports = [Path(row['report']).resolve() for row in reviews]
+    settings = [Path(row['settings']).resolve() for row in reviews]
+    require(len(set(reports)) == len(set(settings)) == 2, 'review_file_duplicate')
+    require(all(path.parent == NEUTRAL for path in reports + settings), 'review_path_binding')
+
+
 def validate_gate(gate_path):
+    environment = cli_environment()
     gate = json.loads(gate_path.read_text())
     require(gate['slice'] == 'M5-019' and gate['frozen'] is True, 'gate_not_frozen')
     source = Path(gate['worktree']).resolve()
     require(source == WORKTREE, 'worktree_binding')
+    git_rows = [row for row in gate['files'] if Path(row['path']).resolve() == GIT]
+    require(len(git_rows) == 1 and digest(GIT) == git_rows[0]['sha256'], 'git_executable_binding')
+    require(git_output(source, 'rev-parse', '--show-toplevel').decode().strip() == str(WORKTREE), 'git_context_binding')
+    require(git_output(source, 'rev-parse', '--absolute-git-dir').decode().strip() == gate['gitDirectory'], 'git_directory_changed')
     require(gate['versionTag'] == 'm5-019-' + gate['sourceHead'][:12], 'version_tag_binding')
-    require(subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=source, text=True).strip() == gate['sourceHead'],
+    require(git_output(source, 'rev-parse', 'HEAD').decode().strip() == gate['sourceHead'],
             'reviewed_head_changed')
-    require(not subprocess.check_output(['git', 'status', '--porcelain'], cwd=source, text=True), 'worktree_dirty')
+    require(not git_output(source, 'status', '--porcelain'), 'worktree_dirty')
     host = json.loads((source / 'docs/delivery/evidence/m5-019/host-routing-qualification.json').read_text())
     require(gate['hostClassification'] == host['classification'] == 'HOST_WEB_READINESS_PASS', 'host_not_ready')
     versions = json.loads((NEUTRAL / 'versions-pre-freeze.json').read_text())
@@ -140,6 +169,7 @@ def validate_gate(gate_path):
             'active_version_prestate_mismatch')
     reviews = gate['reviews']
     require(len(reviews) == 2 and {row['axis'] for row in reviews} == {'spec', 'security'}, 'review_axes_incomplete')
+    validate_review_paths(reviews)
     sessions = []
     for review in reviews:
         report, settings_path = Path(review['report']), Path(review['settings'])
@@ -147,7 +177,8 @@ def validate_gate(gate_path):
                 'review_path_binding')
         settings = json.loads(settings_path.read_text())
         require(review['verdict'] == 'CLEAR' and re.match(r'^\s*(?:\*\*)?CLEAR\b', report.read_text()), 'review_not_clear')
-        require(settings['head'] == gate['sourceHead'] and digest(report) == settings['reportSha256'], 'review_report_binding')
+        require(settings['head'] == gate['sourceHead'] and gate['sourceHead'] in report.read_text()
+                and digest(report) == settings['reportSha256'], 'review_report_binding')
         contexts = settings['actualTurnContexts']
         require(contexts and all(row['model'] == 'gpt-6.1-sol' and row['effort'] == 'high'
                 and row['sandbox_policy']['type'] == 'read-only' and row['approval_policy'] == 'never'
@@ -160,7 +191,7 @@ def validate_gate(gate_path):
     candidate = Path(gate['candidateDirectory']).resolve()
     candidate_files = validate_candidate(source, candidate)
     validate_files(gate['files'], mandatory_files(source, candidate_files, reviews))
-    require(subprocess.check_output([str(NODE), '--version'], text=True).strip() == 'v24.21.0', 'node_version_binding')
+    require(subprocess.check_output([str(NODE), '--version'], text=True, env=environment).strip() == 'v24.21.0', 'node_version_binding')
     require(json.loads((CLI.parent.parent / 'package.json').read_text())['version'] == '4.8.2', 'cli_version_binding')
     require(not Path('/home/serveradmin/.local/share/@shopify/cli/package.json').exists(), 'external_plugin_registry_changed')
     return gate, candidate
@@ -177,8 +208,7 @@ def main():
         'sourceHead': gate['sourceHead'], 'gateSha256': digest(gate_path),
         'attempt': 1, 'ceiling': 1, 'noBuild': True, 'noRelease': True, 'versionTag': gate['versionTag'],
     })
-    environment = {key: os.environ[key] for key in ['HOME', 'PATH', 'LANG', 'LC_ALL', 'TZ', 'TERM'] if key in os.environ}
-    environment.update({'CI': '1', 'SHOPIFY_CLI_NO_ANALYTICS': '1'})
+    environment = cli_environment()
     arguments = [str(NODE), str(CLI), 'app', 'deploy', '--path', str(candidate),
                  '--config', 'm5-019', '--no-build', '--no-release', '--version', gate['versionTag'], '--no-color']
     with (CANONICAL / 'cli-output.private.log').open('x') as output:
