@@ -36,7 +36,7 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
     phase: 'INITIALIZED',
     closed: false,
     counts: { auth: 0, graphql: 0, directUpdate: 0, create: 0, adapterMutation: 0 },
-    transport: { invocations: 0, mismatch: false },
+    transport: { invocations: 0, denials: 0, mismatch: false },
     events: [],
     pending: null,
     identity: null,
@@ -53,29 +53,51 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
   save();
   const current = () => {
     assertCurrent();
-    requireValue(!state.closed && !state.transport.mismatch && !state.identityFailed, 'closed_or_poisoned');
+    requireValue(
+      !state.closed && !state.transport.mismatch && state.transport.denials === 0 && !state.identityFailed,
+      'closed_or_poisoned',
+    );
   };
   const known = () =>
     state.pending === null &&
     !state.transport.mismatch &&
     !state.identityFailed &&
     state.events.filter((e) => e.mutation).every((e) => e.settlement === 'ACKNOWLEDGED');
+  const freshOwnedPrestate = () =>
+    state.adjudicated &&
+    state.prestateVerified &&
+    state.fixture?.status === 'ACTIVE' &&
+    state.identity &&
+    state.ownedAt &&
+    Date.now() >= state.identity.at &&
+    Date.now() - state.identity.at < 30000 &&
+    Date.now() >= state.ownedAt &&
+    Date.now() - state.ownedAt < 30000;
   function safeToArchive() {
     current();
+    requireValue(freshOwnedPrestate() && known() && state.counts.directUpdate === 0, 'cleanup_authority');
+  }
+  function assertArchiveDispatch(index) {
+    current();
+    const event = state.events[index];
     requireValue(
-      state.adjudicated &&
-        state.prestateVerified &&
-        state.fixture?.status === 'ACTIVE' &&
-        state.identity &&
-        Date.now() >= state.identity.at &&
-        Date.now() - state.identity.at < 30000 &&
-        state.ownedAt &&
-        Date.now() >= state.ownedAt &&
-        Date.now() - state.ownedAt < 30000 &&
-        known() &&
-        state.counts.directUpdate === 0,
+      freshOwnedPrestate() &&
+        state.pending === index &&
+        event?.operation === 'archive' &&
+        event.settlement === 'UNKNOWN' &&
+        state.counts.directUpdate === 1 &&
+        state.events.filter((e) => e.mutation && e.index !== index).every((e) => e.settlement === 'ACKNOWLEDGED'),
       'cleanup_authority',
     );
+  }
+  function rejectDispatch(index, kind) {
+    const event = state.events[index];
+    requireValue(event?.invoked && state.pending === index && !event.nativeDenied, 'transport_accounting_mismatch');
+    event.nativeDenied = true;
+    event.failure = kind;
+    event.settlement = event.mutation ? 'NOT_DISPATCHED' : 'FAILED';
+    state.transport.denials++;
+    save();
   }
   function classify(url, init, body) {
     current();
@@ -193,6 +215,7 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
         }
       })();
       const raw = await Promise.race([aborted, work]);
+      requireValue(raw && typeof raw === 'object' && !Array.isArray(raw), 'provider_shape');
       let returned;
       if (r.kind === 'auth') {
         requireValue(event.status === 200, 'provider_status');
@@ -215,11 +238,18 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
             errors: Array.isArray(raw.errors)
               ? raw.errors.map((e) => ({
                   message: '<provider error>',
-                  code: typeof e?.extensions?.code === 'string' ? e.extensions.code : null,
+                  code:
+                    typeof e?.extensions?.code === 'string' && /^[A-Z][A-Z0-9_]{0,127}$/.test(e.extensions.code)
+                      ? e.extensions.code
+                      : null,
                 }))
               : [],
           };
         try {
+          requireValue(
+            raw.data === undefined || raw.data === null || (typeof raw.data === 'object' && !Array.isArray(raw.data)),
+            'provider_shape',
+          );
           // Reported identity is independent evidence, even in an error envelope.
           // A pure denial without data carries no affirmative identity observation.
           if (raw?.data && typeof raw.data === 'object') {
@@ -239,6 +269,21 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
           if (error.kind === 'identity' || error.kind === 'grants') state.identityFailed = true;
           throw error;
         }
+        const errorsValid =
+          !hasErrors ||
+          (Array.isArray(raw.errors) &&
+            raw.errors.length > 0 &&
+            raw.errors.every(
+              (e) =>
+                e !== null &&
+                typeof e === 'object' &&
+                !Array.isArray(e) &&
+                typeof e.message === 'string' &&
+                e.message.length > 0 &&
+                (e.extensions === undefined ||
+                  (e.extensions !== null && typeof e.extensions === 'object' && !Array.isArray(e.extensions))),
+            ));
+        requireValue(errorsValid, 'provider_error_shape');
         event.denied =
           event.status === 403 &&
           Array.isArray(raw.errors) &&
@@ -293,6 +338,8 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
     directory,
     state: () => structuredClone(state),
     safeToArchive,
+    assertArchiveDispatch,
+    rejectDispatch,
     setToken(value) {
       requireValue(token === null, 'token_replacement');
       token = value;

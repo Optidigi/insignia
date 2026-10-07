@@ -69,8 +69,12 @@ export async function enumerate(op, request, query, name, reserve) {
     result.failure = error.kind ?? 'discovery_page_limit';
     const event = op.state().events.at(-1);
     result.denied = event?.operation === name && event.denied === true;
-    const partial = ['provider_error', 'provider_status'].includes(event?.failure) && event.response?.data?.[name];
-    if (partial) {
+    const hasPartial =
+      ['provider_error', 'provider_status', 'provider_error_shape'].includes(event?.failure) &&
+      event.response?.data &&
+      Object.hasOwn(event.response.data, name);
+    const partial = event.response?.data?.[name];
+    if (hasPartial && partial !== undefined && partial !== null) {
       const first = result.pages.length === 0;
       result.pages.push(partial);
       try {

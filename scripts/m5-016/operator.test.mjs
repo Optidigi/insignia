@@ -37,7 +37,7 @@ test('complete explicit APP discovery and exact inclusion authorize only the fix
     assert.equal(e.cleanup.outcome, 'FINAL_ARCHIVED_UNPUBLISHED');
     assert.equal(fake.calls.length, 7);
     assert.deepEqual(e.accounting, { auth: 1, graphql: 6, directUpdate: 1, create: 0, adapterMutation: 0 });
-    assert.deepEqual(e.transportAccounting, { reserved: 7, dispatched: 7, matches: true });
+    assert.deepEqual(e.transportAccounting, { reserved: 7, dispatched: 7, denied: 0, matches: true });
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
@@ -567,6 +567,79 @@ test('a backwards local clock cannot make future observation origins fresh for c
       (e) => {
         assert.equal(e.accounting.directUpdate, 0);
         assert.equal(e.stop, 'cleanup_authority');
+      },
+    );
+  } finally {
+    Date.now = original;
+  }
+});
+
+for (const [query, surface] of [
+  [PUBLICATIONS, 'publications'],
+  [CATALOGS, 'catalogs'],
+]) {
+  for (const value of [false, 0, ''])
+    test(`falsy malformed ${surface} ${JSON.stringify(value)} is coverage ambiguity`, async () =>
+      exercise(
+        (d, b) => {
+          if (b.query === query) {
+            d[surface] = value;
+            return Response.json({ data: d, errors: [{ message: 'partial' }] });
+          }
+        },
+        (e) => {
+          assert.equal(e.classification, 'UNRESOLVED');
+          assert.equal(e.ambiguity, true);
+        },
+      ));
+  for (const [label, errors] of [
+    ['empty-array', []],
+    ['object', {}],
+    ['null', null],
+    ['null-member', [null]],
+    ['numeric-message', [{ message: 17 }]],
+    ['empty-message', [{ message: '' }]],
+    ['nonobject-extensions', [{ message: 'partial', extensions: false }]],
+  ])
+    test(`malformed ${surface} error envelope ${label} cannot qualify generic discovery`, async () =>
+      exercise(
+        (_d, b) => {
+          if (b.query === query) return Response.json({ errors });
+        },
+        (e) => {
+          assert.equal(e.classification, 'UNRESOLVED');
+          assert.equal(e.ambiguity, true);
+        },
+      ));
+}
+test('archive freshness is rechecked after reservation immediately before native dispatch', async () => {
+  const original = Date.now;
+  const start = original();
+  let elapsed = 0,
+    preparation = false,
+    checks = 0;
+  Date.now = () => start + elapsed;
+  try {
+    await exercise(
+      (_d, b) => {
+        if (b.query === CATALOGS) {
+          elapsed = 29950;
+          preparation = true;
+        }
+      },
+      (e, f) => {
+        assert.equal(f.calls.filter((b) => b.query === ARCHIVE).length, 0);
+        assert.equal(f.calls.filter((b) => b.query === FINAL).length, 0);
+        assert.equal(e.outcome, 'STOPPED');
+        assert.equal(e.unknownMutations, 0);
+        assert.equal(e.cleanup.outcome, 'NOT_DISPATCHED');
+        assert.equal(e.transportAccounting.matches, true);
+        assert.equal(e.transportAccounting.denied, 1);
+      },
+      {
+        assertCurrent: () => {
+          if (preparation && ++checks === 6) elapsed += 100;
+        },
       },
     );
   } finally {

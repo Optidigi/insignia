@@ -114,8 +114,12 @@ async function run({ directory, binding, gate, assertCurrent, credentialLoader, 
       ack = (await request(ARCHIVE, { product: { id: FIXTURE, status: 'ARCHIVED' } })).productUpdate.product;
       e.cleanup.outcome = 'ARCHIVE_ACKNOWLEDGED';
     } catch (error) {
-      e.cleanup = { outcome: 'UNKNOWN_ARCHIVE_WRITE', failure: failure(error) };
       const s = op.state();
+      if (s.events.at(-1)?.settlement === 'NOT_DISPATCHED') {
+        e.cleanup = { outcome: 'NOT_DISPATCHED', failure: failure(error) };
+        throw error;
+      }
+      e.cleanup = { outcome: 'UNKNOWN_ARCHIVE_WRITE', failure: failure(error) };
       requireValue(
         s.pending === null &&
           op.transportAudit().matches &&

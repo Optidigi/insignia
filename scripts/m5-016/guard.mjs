@@ -37,6 +37,8 @@ export function createGuardedOperator(options) {
       current();
     },
     fetchImpl: async (url, init) => {
+      let index,
+        crossed = false;
       try {
         assertGuard();
         current();
@@ -44,6 +46,7 @@ export function createGuardedOperator(options) {
         const durable = JSON.parse(readFileSync(resolve(op.directory, 'register.json')));
         requireValue(JSON.stringify(state) === JSON.stringify(durable), 'transport_accounting_mismatch');
         const event = state.events[state.pending];
+        index = state.pending;
         requireValue(
           event?.invoked === true &&
             event.transportOrdinal === dispatched + 1 &&
@@ -60,9 +63,12 @@ export function createGuardedOperator(options) {
             JSON.stringify(event.kind === 'auth' ? { client_id: body.client_id, grant_type: body.grant_type } : body),
           'transport_accounting_mismatch',
         );
+        if (event.operation === 'archive') op.assertArchiveDispatch(index);
         dispatched++;
+        crossed = true;
         return transport(url, init);
       } catch (error) {
+        if (!crossed && Number.isInteger(index)) op.rejectDispatch(index, error.kind ?? 'local_dispatch_failure');
         if (error instanceof Stop && ['network_escape_denied', 'transport_accounting_mismatch'].includes(error.kind)) {
           op.patch((s) => {
             s.transport.mismatch = true;
@@ -78,7 +84,11 @@ export function createGuardedOperator(options) {
     transportAudit: () => ({
       reserved: op.state().transport.invocations,
       dispatched,
-      matches: dispatched === op.state().transport.invocations && !op.state().transport.mismatch && denials === 0,
+      denied: op.state().transport.denials,
+      matches:
+        dispatched + op.state().transport.denials === op.state().transport.invocations &&
+        !op.state().transport.mismatch &&
+        denials === 0,
     }),
   };
 }
