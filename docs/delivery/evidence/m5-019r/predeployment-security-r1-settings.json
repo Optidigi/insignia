@@ -1,0 +1,27 @@
+{
+  "head": "59b4aa44872c87f52ea6839ccd039bbd3f080bd4",
+  "session": "01a11877-2f57-7271-82c0-d77cfda1b688",
+  "actualTurnContexts": [
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-019-worktree",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      }
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-019-worktree",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      }
+    }
+  ],
+  "reportSha256": "8c4831cc923b848438ea12939164245b18d2a8fd9f5053adbb939604133b8c71",
+  "renderedReportSha256": "c9737cf2521c2043c370d9ef75c1efc4553267502228490f26aacf7305859738",
+  "disposition": "Historical CLEAR conditional security review; source head changed/CI failed, NOT reused for gate"
+}

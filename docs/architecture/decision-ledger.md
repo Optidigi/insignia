@@ -7,8 +7,6 @@ Version 1.4 — 30 September 2026. Companion: implementation-plan.md. The approv
 
 **Authority/scope:** Pasted baseline plus accepted answers, including final inactive/downgrade approval. Greenfield modular monolith. Legacy is a storefront UI/visual reference only. No migration/import concern or implementation work.
 
-**Canonical production identity — owner/principal M5-019R, 7 October 2026:** Product/app name Insignia; origin https://insignia.optidigi.com; Shopify App Home https://insignia.optidigi.com/admin/products; server APP_URL=https://insignia.optidigi.com. Prefer dedicated whole-host routing. Superseded .nl version1158837927937 must never be released; retain historical evidence. Stitchs/Superfunny are unrelated legacy apps and constrain this deployment only if a concrete shared-infrastructure collision is independently observed. This bounded correction does not authorize app/Function release, activation, G7/M5 pass or launch. See [principal decision](../delivery/PR-050-principal-review.md).
-
 **Stack/boundaries:** Strict TypeScript; Node 24 LTS; pnpm + Cargo; Astro 7 Node SSR; Preact admin islands and Vite storefront; Polaris Web Components; Custom Element + Shadow DOM; direct Konva in a shared framework-independent visualizer; Zod 4; PostgreSQL 18 + pg/Kysely; dbmate SQL; pg-boss; private R2; Sharp/libvips; Pino/prom-client; Vitest/Playwright/dependency-cruiser/GitHub Actions. Shopify JS SDK only inside Shopify adapter. Pure domain independent of framework, renderer, platform and persistence.
 
 **Configuration:** One active ProductConfig per product, independent copy, mutable draft, immutable published revisions. New unaccepted pricing uses current permitted publication. Accepted quotes/orders retain historical revisions.
