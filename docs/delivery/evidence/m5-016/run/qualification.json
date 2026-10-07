@@ -1,0 +1,403 @@
+{
+  "profile": "m5-016-phase-a",
+  "outcome": "PHASE_A_SETTLED",
+  "classification": "DIRECT_ONLY",
+  "fixture": "gid://shopify/Product/10495813091611",
+  "cleanup": {
+    "outcome": "FINAL_ARCHIVED_UNPUBLISHED",
+    "acknowledgedUpdatedAt": "2026-10-07T01:00:37Z",
+    "readbackUpdatedAt": "2026-10-07T01:00:37Z",
+    "deltaMilliseconds": 0
+  },
+  "direct": {
+    "publication": {
+      "id": "gid://shopify/Publication/339456917787",
+      "autoPublish": true,
+      "supportsFuturePublishing": false,
+      "catalog": {
+        "__typename": "AppCatalog",
+        "id": "gid://shopify/AppCatalog/188090286363",
+        "status": "ACTIVE"
+      },
+      "includedProducts": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Product/10495813091611"
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false
+        }
+      },
+      "channels": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Channel/339456917787",
+            "app": {
+              "id": "gid://shopify/App/294412484609"
+            }
+          }
+        ]
+      }
+    },
+    "confirmed": true
+  },
+  "publications": {
+    "complete": true,
+    "nodes": [
+      {
+        "id": "gid://shopify/Publication/339456885019",
+        "autoPublish": false,
+        "supportsFuturePublishing": true,
+        "catalog": {
+          "__typename": "AppCatalog",
+          "id": "gid://shopify/AppCatalog/188090253595",
+          "status": "ACTIVE"
+        }
+      },
+      {
+        "id": "gid://shopify/Publication/339456950555",
+        "autoPublish": false,
+        "supportsFuturePublishing": false,
+        "catalog": {
+          "__typename": "AppCatalog",
+          "id": "gid://shopify/AppCatalog/188090319131",
+          "status": "ACTIVE"
+        }
+      },
+      {
+        "id": "gid://shopify/Publication/339456983323",
+        "autoPublish": false,
+        "supportsFuturePublishing": false,
+        "catalog": {
+          "__typename": "AppCatalog",
+          "id": "gid://shopify/AppCatalog/188090351899",
+          "status": "ACTIVE"
+        }
+      }
+    ],
+    "pages": [
+      {
+        "nodes": [
+          {
+            "id": "gid://shopify/Publication/339456885019",
+            "autoPublish": false,
+            "supportsFuturePublishing": true,
+            "catalog": {
+              "__typename": "AppCatalog",
+              "id": "gid://shopify/AppCatalog/188090253595",
+              "status": "ACTIVE"
+            }
+          },
+          {
+            "id": "gid://shopify/Publication/339456950555",
+            "autoPublish": false,
+            "supportsFuturePublishing": false,
+            "catalog": {
+              "__typename": "AppCatalog",
+              "id": "gid://shopify/AppCatalog/188090319131",
+              "status": "ACTIVE"
+            }
+          },
+          {
+            "id": "gid://shopify/Publication/339456983323",
+            "autoPublish": false,
+            "supportsFuturePublishing": false,
+            "catalog": {
+              "__typename": "AppCatalog",
+              "id": "gid://shopify/AppCatalog/188090351899",
+              "status": "ACTIVE"
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false,
+          "endCursor": "eyJsYXN0X2lkIjozMzk0NTY5ODMzMjMsImxhc3RfdmFsdWUiOiIzMzk0NTY5ODMzMjMifQ=="
+        }
+      }
+    ],
+    "failure": null,
+    "shapeFailure": null,
+    "denied": false
+  },
+  "catalogs": {
+    "complete": true,
+    "nodes": [
+      {
+        "__typename": "AppCatalog",
+        "id": "gid://shopify/AppCatalog/188090253595",
+        "status": "ACTIVE",
+        "publication": {
+          "id": "gid://shopify/Publication/339456885019"
+        }
+      },
+      {
+        "__typename": "AppCatalog",
+        "id": "gid://shopify/AppCatalog/188090319131",
+        "status": "ACTIVE",
+        "publication": {
+          "id": "gid://shopify/Publication/339456950555"
+        }
+      },
+      {
+        "__typename": "AppCatalog",
+        "id": "gid://shopify/AppCatalog/188090351899",
+        "status": "ACTIVE",
+        "publication": {
+          "id": "gid://shopify/Publication/339456983323"
+        }
+      }
+    ],
+    "pages": [
+      {
+        "nodes": [
+          {
+            "__typename": "AppCatalog",
+            "id": "gid://shopify/AppCatalog/188090253595",
+            "status": "ACTIVE",
+            "publication": {
+              "id": "gid://shopify/Publication/339456885019"
+            }
+          },
+          {
+            "__typename": "AppCatalog",
+            "id": "gid://shopify/AppCatalog/188090319131",
+            "status": "ACTIVE",
+            "publication": {
+              "id": "gid://shopify/Publication/339456950555"
+            }
+          },
+          {
+            "__typename": "AppCatalog",
+            "id": "gid://shopify/AppCatalog/188090351899",
+            "status": "ACTIVE",
+            "publication": {
+              "id": "gid://shopify/Publication/339456983323"
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false,
+          "endCursor": "eyJsYXN0X2lkIjoxODgwOTAzNTE4OTksImxhc3RfdmFsdWUiOjE4ODA5MDM1MTg5OX0="
+        }
+      }
+    ],
+    "failure": null,
+    "shapeFailure": null,
+    "denied": false
+  },
+  "credentialOwnership": {
+    "uid": 1000,
+    "mode": "600",
+    "route": "existing own-organization Admin client_credentials; server.env"
+  },
+  "prestate": {
+    "shop": {
+      "id": "gid://shopify/Shop/105501393179",
+      "myshopifyDomain": "insignia-rewrite-dev.myshopify.com",
+      "plan": {
+        "partnerDevelopment": true
+      }
+    },
+    "currentAppInstallation": {
+      "id": "gid://shopify/AppInstallation/1054356963611",
+      "app": {
+        "id": "gid://shopify/App/429028933633",
+        "apiKey": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "accessScopes": [
+        {
+          "handle": "read_publications"
+        },
+        {
+          "handle": "read_product_listings"
+        },
+        {
+          "handle": "write_products"
+        },
+        {
+          "handle": "read_products"
+        }
+      ]
+    },
+    "product": {
+      "__typename": "Product",
+      "id": "gid://shopify/Product/10495813091611",
+      "handle": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+      "title": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+      "tags": [
+        "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f"
+      ],
+      "createdAt": "2026-10-06T21:27:53Z",
+      "status": "ACTIVE",
+      "updatedAt": "2026-10-06T21:28:06Z",
+      "publishedAt": null,
+      "onlineStoreUrl": null,
+      "publishedOnPublication": true,
+      "resourcePublications": {
+        "nodes": [
+          {
+            "isPublished": true,
+            "publishDate": "2026-10-06T21:27:58Z",
+            "publication": {
+              "id": "gid://shopify/Publication/339456917787"
+            }
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false
+        }
+      },
+      "unpublishedPublications": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Publication/339456885019"
+          },
+          {
+            "id": "gid://shopify/Publication/339456950555"
+          },
+          {
+            "id": "gid://shopify/Publication/339456983323"
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false
+        }
+      }
+    }
+  },
+  "explicitAppPublicationTarget": false,
+  "appCatalogPublicationTarget": false,
+  "historicalAppCatalogPresent": false,
+  "ambiguity": false,
+  "provenSurface": null,
+  "final": {
+    "shop": {
+      "id": "gid://shopify/Shop/105501393179",
+      "myshopifyDomain": "insignia-rewrite-dev.myshopify.com",
+      "plan": {
+        "partnerDevelopment": true
+      }
+    },
+    "currentAppInstallation": {
+      "id": "gid://shopify/AppInstallation/1054356963611",
+      "app": {
+        "id": "gid://shopify/App/429028933633",
+        "apiKey": "1443cf6d03d39edae7c101a943c5c684"
+      },
+      "accessScopes": [
+        {
+          "handle": "read_publications"
+        },
+        {
+          "handle": "read_product_listings"
+        },
+        {
+          "handle": "write_products"
+        },
+        {
+          "handle": "read_products"
+        }
+      ]
+    },
+    "product": {
+      "__typename": "Product",
+      "id": "gid://shopify/Product/10495813091611",
+      "handle": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+      "title": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+      "tags": [
+        "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f"
+      ],
+      "createdAt": "2026-10-06T21:27:53Z",
+      "status": "ARCHIVED",
+      "updatedAt": "2026-10-07T01:00:37Z",
+      "publishedAt": null,
+      "onlineStoreUrl": null,
+      "publishedOnPublication": false,
+      "resourcePublications": {
+        "nodes": [],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false
+        }
+      },
+      "unpublishedPublications": {
+        "nodes": [
+          {
+            "id": "gid://shopify/Publication/339456885019"
+          },
+          {
+            "id": "gid://shopify/Publication/339456950555"
+          },
+          {
+            "id": "gid://shopify/Publication/339456983323"
+          }
+        ],
+        "pageInfo": {
+          "hasNextPage": false,
+          "hasPreviousPage": false
+        }
+      }
+    }
+  },
+  "accounting": {
+    "auth": 1,
+    "graphql": 6,
+    "directUpdate": 1,
+    "create": 0,
+    "adapterMutation": 0
+  },
+  "transportAccounting": {
+    "reserved": 7,
+    "dispatched": 7,
+    "denied": 0,
+    "matches": true
+  },
+  "pending": null,
+  "unknownMutations": 0,
+  "fixtureLastVerified": {
+    "__typename": "Product",
+    "id": "gid://shopify/Product/10495813091611",
+    "handle": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+    "title": "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f",
+    "tags": [
+      "insignia-m5-015r-746f0a94-9ce4-4679-a324-6647f59c6c0f"
+    ],
+    "createdAt": "2026-10-06T21:27:53Z",
+    "status": "ARCHIVED",
+    "updatedAt": "2026-10-07T01:00:37Z",
+    "publishedAt": null,
+    "onlineStoreUrl": null,
+    "publishedOnPublication": false,
+    "resourcePublications": {
+      "nodes": [],
+      "pageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
+    },
+    "unpublishedPublications": {
+      "nodes": [
+        {
+          "id": "gid://shopify/Publication/339456885019"
+        },
+        {
+          "id": "gid://shopify/Publication/339456950555"
+        },
+        {
+          "id": "gid://shopify/Publication/339456983323"
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
+    }
+  },
+  "authorityForFurtherProviderAccess": false
+}

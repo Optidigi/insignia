@@ -1,0 +1,157 @@
+{
+  "source": "59593cae97fef72f1aa1260eee773fbc251a6f0e",
+  "tree": "b8eb2de66a085544df485030d162d710f4aac3b9",
+  "exitCode": 0,
+  "bindingDigest": "f06364ca2cb1ae88ca48527f5135d967aa629aa79bbca9d1dc4e3ddbf75b1e77",
+  "checks": [
+    {
+      "name": "adapters",
+      "command": "corepack pnpm --filter @insignia/shopify exec vitest run test/availability-hold.test.ts test/availability-hold-v2.test.ts",
+      "exitCode": 0,
+      "count": 170,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/adapters.log",
+      "sha256": "c6914f9a55e7f0faf71755e295b5cc76bbea18293b2db266557ddd824dd5e1a1"
+    },
+    {
+      "name": "recovery",
+      "command": "corepack pnpm --filter @insignia/application exec vitest run src/publication/availability-recovery.test.ts src/publication/availability-v2-recovery.test.ts",
+      "exitCode": 0,
+      "count": 20,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/recovery.log",
+      "sha256": "ba270199014b53af28f74716d189413c9dbff8952f2166601659506d8760523f"
+    },
+    {
+      "name": "rootR1",
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "count": null,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/root-check-r1.log",
+      "sha256": "53dcbc560ab75537cdfb165f5090ecc89f7985250fa9972f4a64ed480b3b3e85"
+    },
+    {
+      "name": "rootR2",
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "count": null,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/root-check-r2.log",
+      "sha256": "2412e0f9f38d6dcc9b7766c2da6d1c75ec02668d1ee207ad433fee3dac14f64d"
+    },
+    {
+      "name": "stress",
+      "command": "corepack pnpm test:m5-stress",
+      "exitCode": 0,
+      "count": 100,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/stress.log",
+      "sha256": "f105a5328ffff5cf2b62239f6ef63246c5b9f6ed2c458f8ee16312f1f9a1e77b"
+    },
+    {
+      "name": "rendererControl",
+      "command": "corepack pnpm test:m5-renderer-control",
+      "exitCode": 0,
+      "count": null,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/renderer-control.log",
+      "sha256": "ac59f52608a9188659222eb842487d18ce89dd7570e0038fe2494f12a06dbfd8"
+    },
+    {
+      "name": "rootR3",
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "count": null,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/root-check-r3.log",
+      "sha256": "55ec0acd1dc4ef1774bae1001c226981bade73ed9ebc86d8a833e63c98f7ddb6"
+    },
+    {
+      "name": "rootR4",
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "count": null,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/root-check-r4.log",
+      "sha256": "4ecde6faa8257123b39d63306e6466e40c08d356d59a91c1fd6970dd968b9433"
+    },
+    {
+      "name": "rootR5",
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "count": null,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/root-check-r5.log",
+      "sha256": "9078647cc63df8194f15cc9d17ee782a4bed411623e19d292a56a5ee4ce9ed51"
+    },
+    {
+      "name": "rootR6",
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "count": null,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/root-check-r6.log",
+      "sha256": "5d324004e0f4ad70a57e46e702ff12e03febda152e0e1028bb49ba08755289a9"
+    },
+    {
+      "name": "focused",
+      "command": "node --test scripts/m5-016/*.test.mjs",
+      "exitCode": 0,
+      "count": 73,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/focused-r6-current.log",
+      "sha256": "bd46bb0e3de7a99981c4e046b19673c590402790af713aa23776a66d7f1f23db"
+    },
+    {
+      "name": "rootR7",
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "count": null,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/root-check-r7.log",
+      "sha256": "903d29655f09d8e5e68096cb19ec8caefece6ae7318225b315a3e2449df6ae51"
+    },
+    {
+      "name": "style",
+      "command": "corepack pnpm check:style",
+      "exitCode": 0,
+      "count": null,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/style-r6-final.log",
+      "sha256": "2a149084e53c6478d7c9970485d0b494682bbb1a67eb5e45af288f0c2096ca17"
+    },
+    {
+      "name": "secrets",
+      "command": "corepack pnpm check:secrets",
+      "exitCode": 0,
+      "count": null,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/secrets-r6.log",
+      "sha256": "b4ed019dbf7bc866ccd011fe53ebec887954c379bbbb3c1e81162d244acc257e"
+    },
+    {
+      "name": "PostgreSQL18CI",
+      "command": "gh run view 37552982244 --repo Optidigi/insignia --log",
+      "exitCode": 0,
+      "ciRun": 37552982244,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/source-r6-postgresql18.log",
+      "sha256": "cee6237d598d603f97136c8529ebdc9ad49abd3de45fa9ef9bc376b61c2d8acd",
+      "version": "PostgreSQL 18.6"
+    },
+    {
+      "name": "runtimeCI",
+      "command": "gh run view 37552982231 --repo Optidigi/insignia --log",
+      "exitCode": 0,
+      "ciRun": 37552982231,
+      "log": "/home/serveradmin/insignia-m5-016-handoff/source-r6-runtime.log",
+      "sha256": "cdf04625eb7b0d05a3fbbffad2a6a9ebb3c46b035363b144e9b2f98e915f36d6",
+      "version": "PostgreSQL 18.6"
+    }
+  ],
+  "localPostgreSQL": "UNAVAILABLE: DATABASE_URL absent; exact-source PostgreSQL18 CI required",
+  "credentialAccess": "NOT_RUN",
+  "providerRequests": 0,
+  "canonicalInitialized": false,
+  "reviewExecution": "Two parallel installed Codex exec sessions; actual gpt-6.1-sol/high; enforced --sandbox read-only/approval never. Native delegation has no enforced read-only filesystem profile exposed here; no top-level T3 thread is created.",
+  "sourceBuildHashes": 3288,
+  "unchangedCompiledFiles": 96,
+  "historicalCanonicalFiles": 46,
+  "reviews": "Round6 full-source Spec/correctness and Standards/security: no unresolved material findings; actual same-launch gpt-6.1-sol/high/read-only/never settings verified.",
+  "exactSourceCI": {
+    "head": "59593cae97fef72f1aa1260eee773fbc251a6f0e",
+    "workflows": 10,
+    "attempt": 1,
+    "conclusion": "success",
+    "raw": {
+      "path": "/home/serveradmin/insignia-m5-016-handoff/source-r6-ci-raw.json",
+      "sha256": "63be81299254cf39e390a057e6fb683bd4728a9f2fa3af77ac8fa9e4f2d13cfe"
+    }
+  }
+}
