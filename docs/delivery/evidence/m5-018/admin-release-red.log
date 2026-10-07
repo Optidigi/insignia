@@ -28,10 +28,10 @@ test at test/admin/production-composition.test.mjs:57:1
 ✖ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (585.474404ms)
   AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
   + actual - expected
-  
+
   + 'PUBLISH_REQUESTED'
   - 'ACTIVATION_WAITING_RELEASE'
-  
+
       at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-018-worktree/apps/web/test/admin/production-composition.test.mjs:280:12)
       at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
       at async Test.run (node:internal/test_runner/test:1409:7)
@@ -47,4 +47,3 @@ Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
 
   × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-018-
   │ worktree/apps/web
-

@@ -14,8 +14,8 @@ test at test/admin/editor-browser.test.mjs:1613:1
 ✖ mounted admin refreshes late activation and readiness without overwriting local edits, then clears expired identity (8754.352998ms)
   locator.waitFor: Timeout 8000ms exceeded.
   Call log:
-  [2m  - waiting for getByText('Active', { exact: true }) to be visible[22m
-  
+    - waiting for getByText('Active', { exact: true }) to be visible
+
       at TestContext.<anonymous> (/home/serveradmin/insignia-m5-018-worktree/apps/web/test/admin/editor-browser.test.mjs:1642:53) {
     name: 'TimeoutError',
     log: [ "  - waiting for getByText('Active', { exact: true }) to be visible" ]
@@ -24,4 +24,3 @@ Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
 
   × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-018-
   │ worktree/apps/web
-

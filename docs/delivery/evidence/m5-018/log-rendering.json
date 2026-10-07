@@ -1,0 +1,37 @@
+{
+  "failed-state-red.log": {
+    "originalSha256": "6740681cd6391b8260c6531027c0b33b5306084ceb94bc27f9d8b70b796226ff",
+    "renderedSha256": "bc26e8caea8fc8b3d837f2007d0e1bd7b7099e70d566b13d8ed1b1c5807a26c5",
+    "normalization": "ANSI styling removed; trailing whitespace removed; original neutral log retained"
+  },
+  "late-state-red.log": {
+    "originalSha256": "d774e17e784c779dc5ad58f55837fcd784742440ac9bbd96afe285aa37ac4916",
+    "renderedSha256": "511e806a31e31f7820474120bab0c9dc9f0ac19081ce8918e93b406e0d88638e",
+    "normalization": "ANSI styling removed; trailing whitespace removed; original neutral log retained"
+  },
+  "validation-red.log": {
+    "originalSha256": "29c00139de1ef711b624e95dc3b832b175f7dbeac944a642872dbe8656d35ed0",
+    "renderedSha256": "0d025407409beb2833f19dfc8100bb4db239c87e3825480984241d1bc71d7131",
+    "normalization": "ANSI styling removed; trailing whitespace removed; original neutral log retained"
+  },
+  "late-state-green.log": {
+    "originalSha256": "0285250b23ce6d109cf11b87621fd26c318f7db4a9718e4d60c9b8e15d9d3315",
+    "renderedSha256": "0285250b23ce6d109cf11b87621fd26c318f7db4a9718e4d60c9b8e15d9d3315",
+    "normalization": "ANSI styling removed; trailing whitespace removed; original neutral log retained"
+  },
+  "admin-release-red.log": {
+    "originalSha256": "4a55953d8ecf4ccbdb625b27188dee1b09186e2a86f5eaaf8565fc3d80173eab",
+    "renderedSha256": "917bd86ceef8c2d37fd4af4b95474d27bdde6ee6b09005efe84cfe6893997ea8",
+    "normalization": "ANSI styling removed; trailing whitespace removed; original neutral log retained"
+  },
+  "admin-release-green.log": {
+    "originalSha256": "262c35779c5c4ba31a92c335902c6b9001ebf21078470c19de22b3a5e6afee4f",
+    "renderedSha256": "262c35779c5c4ba31a92c335902c6b9001ebf21078470c19de22b3a5e6afee4f",
+    "normalization": "ANSI styling removed; trailing whitespace removed; original neutral log retained"
+  },
+  "intent-outbox-red.log": {
+    "originalSha256": "aab33a7c628310ef7b1fe6e9752d9b1e60e93ba813985f12c59fa2d41ad5db1a",
+    "renderedSha256": "8395da163ba89618e56b028dea8a10970a3b6078d0defaf47e827b91e30f695b",
+    "normalization": "ANSI styling removed; trailing whitespace removed; original neutral log retained"
+  }
+}
