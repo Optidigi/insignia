@@ -460,6 +460,8 @@ export function createShopifyAvailabilityHoldV3Port(
     budget: Budget,
   ): Promise<AvailabilityObservationV3> {
     validate(scope, hold);
+    if (!hold.held && hold.acquisitionAcknowledgement)
+      return { kind: 'CONFLICT', current: null, acknowledgement: hold.acquisitionAcknowledgement };
     let current: ProductAvailabilitySnapshotV3;
     try {
       current = await read(scope, hold.before.productId, budget, originalAnchors(hold));
@@ -555,6 +557,8 @@ export function createShopifyAvailabilityHoldV3Port(
     budget: Budget,
   ): Promise<AvailabilityRestoreResultV3> {
     validate(scope, hold);
+    if (!hold.held && hold.acquisitionAcknowledgement)
+      return { kind: 'CONFLICT', current: null, acknowledgement: hold.acquisitionAcknowledgement };
     const key = attemptKey(scope, hold);
     if (restorationAttempts.has(key)) return fail('ambiguous_write');
     if (!isAvailabilityV3(expected) || !validAvailabilityV3(expected)) return fail('invalid_request');

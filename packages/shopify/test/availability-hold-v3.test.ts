@@ -747,3 +747,44 @@ test('a retained acquisition ACK without an owned held receipt cannot recreate a
   expect(f.requests).toHaveLength(requests);
   expect(f.writes).toEqual(['DRAFT']);
 });
+
+for (const scheduledAck of [false, true]) {
+  test(`unheld original DRAFT with retained ${scheduledAck ? 'scheduled' : 'qualified'} ACK cannot regain authority`, async () => {
+    const f = await acquiredFixture();
+    const ack = f.hold.acquisitionAcknowledgement;
+    if (!ack) throw new Error('expected ACK');
+    const hold = {
+      ...f.hold,
+      before: f.current,
+      held: null,
+      acquisitionAcknowledgement: scheduledAck
+        ? {
+            ...ack,
+            effectiveVisibility: {
+              ...ack.effectiveVisibility,
+              publicationEvidence: [
+                {
+                  publicationId: 'gid://shopify/Publication/999',
+                  isPublished: false,
+                  publishDate: '2099-01-01T00:00:00.000Z',
+                },
+              ],
+            },
+          }
+        : ack,
+    };
+    const requests = f.requests.length;
+    expect(await f.fresh().observe(scope, hold)).toEqual({
+      kind: 'CONFLICT',
+      current: null,
+      acknowledgement: hold.acquisitionAcknowledgement,
+    });
+    expect(await f.fresh().restore(scope, hold, hold.before)).toEqual({
+      kind: 'CONFLICT',
+      current: null,
+      acknowledgement: hold.acquisitionAcknowledgement,
+    });
+    expect(f.requests).toHaveLength(requests);
+    expect(f.writes).toEqual(['DRAFT']);
+  });
+}

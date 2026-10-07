@@ -104,6 +104,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   let unresolvedRestore: 'pending' | 'throw' | 'original' | null = null;
   let failCommit = false;
   let fenced = false;
+  let observations = 0;
   let acquisitions = 0;
   let restores = 0;
   let current: ProductAvailabilitySnapshot = {
@@ -162,14 +163,16 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
         },
       };
     },
-    observe: async (_scope, hold) =>
-      current.state === 'unavailable'
+    observe: async (_scope, hold) => {
+      observations++;
+      return current.state === 'unavailable'
         ? {
             kind: 'HELD',
             current: { ...current, observedAt: clock.toISOString(), receivedAt: clock.toISOString() },
             hold: { ...hold, held: current },
           }
-        : { kind: 'CONFLICT', current },
+        : { kind: 'CONFLICT', current };
+    },
     restore: async (_scope, hold) => {
       if (hold.version !== 'm5-availability-hold-v3') throw new Error('new synthetic operation requires v3');
       stateAtRestore = structuredClone(candidate.state);
@@ -350,6 +353,37 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
                 publicationEvidence: [...hold.before.effectiveVisibility.publicationEvidence, staged],
               },
               visibleScheduledOrStaged: [staged],
+            },
+          },
+        },
+      };
+    },
+    get observations() {
+      return observations;
+    },
+    persistUnheldDraftAck: () => {
+      const hold = candidate.state.hold;
+      if (hold?.version !== 'm5-availability-hold-v3' || !hold.held || !hold.acquisitionAcknowledgement)
+        throw new Error('expected acquired v3');
+      const staged = {
+        publicationId: 'gid://shopify/Publication/999',
+        isPublished: false,
+        publishDate: '2099-01-01T00:00:00.000Z',
+      };
+      candidate = {
+        ...candidate,
+        state: {
+          ...candidate.state,
+          hold: {
+            ...hold,
+            before: hold.held,
+            held: null,
+            acquisitionAcknowledgement: {
+              ...hold.acquisitionAcknowledgement,
+              effectiveVisibility: {
+                ...hold.acquisitionAcknowledgement.effectiveVisibility,
+                publicationEvidence: [staged],
+              },
             },
           },
         },
@@ -625,6 +659,20 @@ describe('production activation coordinator with injected synthetic boundary fix
     expect(f.current.state).toBe('unavailable');
     expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
     expect(f.evidence).toBeNull();
+    expect(f.acquisitions).toBe(1);
+  });
+  it('unheld original DRAFT incident cannot regain authority through an observation port', async () => {
+    const f = fixture();
+    f.phase = 'prepared';
+    await f.advance();
+    expect((await f.advance()).kind).toBe('HELD');
+    f.persistUnheldDraftAck();
+    f.phase = 'activation-pending';
+    const observations = f.observations;
+    expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
+    expect(f.observations).toBe(observations);
+    expect(f.evidence).toBeNull();
+    expect(f.restores).toBe(0);
     expect(f.acquisitions).toBe(1);
   });
   it('scheduled original persisted hold cannot authorize activation or restoration', async () => {

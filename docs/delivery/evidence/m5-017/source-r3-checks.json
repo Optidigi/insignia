@@ -1,0 +1,73 @@
+{
+  "source": "316419d10781f316a8b21b9296803cada5c81aa0",
+  "tree": "58a92c830390be03ea5b84531cd3b9feb9e8d84e",
+  "gateStatus": "NOT_CLEAR: original-DRAFT unheld scheduled ACK finding",
+  "checks": [
+    {
+      "command": "PATH Cargo; DATABASE_URL=m5_017_r7; INSIGNIA_REQUIRE_POSTGRES_TEST=1 corepack pnpm check",
+      "exitCode": 0,
+      "log": "root-check-source-r3.log",
+      "sha256": "3c4d388da6c6b52511d926d841b7907d24730da60f5ea724ac66f417f1b9d32a"
+    },
+    {
+      "command": "DATABASE_URL=m5_017_r7 corepack pnpm check:database",
+      "exitCode": 0,
+      "log": "pg18-full-source-r3.log",
+      "sha256": "c73ed79d8b3afea7e2a1e12cbf5990088102b12da1039623121f9fa0456f4251"
+    },
+    {
+      "command": "DATABASE_URL=m5_017_r7 M5_QUERY_PLAN_OUTPUT=query-plan-source-r3.json corepack pnpm test:m5-query-plan",
+      "exitCode": 0,
+      "log": "query-plan-source-r3.log",
+      "sha256": "3912cf40e720a81583aab155aee018f818e2df80971d2fb4f472ae7a7d08efdf"
+    },
+    {
+      "command": "fresh m5_017_rehearsal_r3 corepack pnpm db:migrate",
+      "exitCode": 0,
+      "log": "empty-migrate-source-r3.log",
+      "sha256": "00c54533c033575d27219b6fd984e4d546ec1153a67b5ed0c4eefdf506d2da90"
+    },
+    {
+      "command": "fresh m5_017_rehearsal_r3 dbmate rollback",
+      "exitCode": 0,
+      "log": "empty-down-source-r3.log",
+      "sha256": "82391a40463251e49c190bb8a72110e26a2a779672928d72750b8f4381ffa960"
+    },
+    {
+      "command": "fresh m5_017_rehearsal_r3 corepack pnpm db:migrate",
+      "exitCode": 0,
+      "log": "empty-up-source-r3.log",
+      "sha256": "c22f67a8466d22a1947d205451f7575b0e03b1b679f74249da8c36cd3e2c06d4"
+    },
+    {
+      "command": "populated m5_017_r7 dbmate rollback; expected deny",
+      "exitCode": 2,
+      "log": "populated-down-source-r3.log",
+      "sha256": "ec75311ebcd13864877a9d7a339078977d68360f1216f7b182f76ea47ac376c5"
+    },
+    {
+      "command": "M5_PUBLICATION_STRESS_ITERATIONS=100 pnpm --filter @insignia/web exec node --test --test-name-pattern publication (success|failed) preserves test/admin/editor-browser.test.mjs",
+      "exitCode": 0,
+      "log": "publication-stress100-source-r3.log",
+      "sha256": "cab881a45970ce00031ded658582dbf0ce4305a1eea7dbcfbb9197828d672c9b"
+    },
+    {
+      "command": "corepack pnpm test:m5-renderer-control",
+      "exitCode": 0,
+      "log": "renderer-control-source-r3.log",
+      "sha256": "79e9352462ffa61e2425393fa17496245459c2eb586729b12b6e352c8c4b280c"
+    }
+  ],
+  "databaseTests": 166,
+  "serverVersionNum": 180006,
+  "v3MigrationAfterExpectedDeniedDown": 1,
+  "v3RowsAfterDeniedDown": 119,
+  "emptyMigrationReapplied": 1,
+  "stress": {
+    "iterationsPerCase": 100,
+    "cases": 4,
+    "passed": 400,
+    "failed": 0
+  },
+  "rendererControl": "EXPECTED_NEGATIVE_CONTROL"
+}

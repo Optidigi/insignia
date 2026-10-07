@@ -361,7 +361,13 @@ export function createPublicationActivation(input: {
       await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
       return null;
     }
-    if ((hold.held === null && hold.before.state !== 'unavailable') || (hold.held && !availabilityV3OwnedHeld(hold))) {
+    if (
+      (hold.held === null &&
+        (hold.before.state !== 'unavailable' ||
+          hold.acquisitionAcknowledgement !== undefined ||
+          !availabilityV3HeldSafe(hold.before))) ||
+      (hold.held && !availabilityV3OwnedHeld(hold))
+    ) {
       await session.save({ ...c.state, kind: 'OPERATOR_HOLD' });
       return null;
     }

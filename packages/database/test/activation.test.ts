@@ -1448,6 +1448,62 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect(await admits(visibleDraft)).toBe(false);
     expect(await admits({ ...visibleDraft, held: null })).toBe(true);
   });
+  it('SQL requires owned held evidence for restoration success and retains unheld incidents', async () => {
+    const f = await fixture();
+    await f.prepareHold();
+    const hold = (await f.restart().read(f.identity))?.state.hold;
+    if (hold?.version !== 'm5-availability-hold-v3' || !hold.held || !hold.acquisitionAcknowledgement)
+      throw new Error('expected acquired v3');
+    const staged = {
+      publicationId: 'gid://shopify/Publication/999',
+      isPublished: false,
+      publishDate: '2099-01-01T00:00:00.000Z',
+    };
+    const draft = hold.held;
+    const incident = {
+      ...hold,
+      before: draft,
+      held: null,
+      acquisitionAcknowledgement: {
+        ...hold.acquisitionAcknowledgement,
+        effectiveVisibility: { ...hold.acquisitionAcknowledgement.effectiveVisibility, publicationEvidence: [staged] },
+      },
+      restorationClaim: {
+        version: 'm5-availability-restoration-claim-v3',
+        operationId: hold.operationId,
+        scope: draft.scope,
+        productId: draft.productId,
+        restoreReserved: true,
+        compensationReserved: true,
+      },
+    };
+    const receipt = {
+      version: 'm5-availability-restoration-receipt-v3',
+      kind: 'RESTORED',
+      acknowledgement: null,
+      current: draft,
+    };
+    const admits = async (value: unknown) =>
+      (
+        await sql<{ admitted: boolean }>`SELECT m5_v3_hold(${JSON.stringify(value)}::jsonb) AS admitted`.execute(
+          database,
+        )
+      ).rows[0]!.admitted;
+    expect(await admits(incident)).toBe(true);
+    expect(await admits({ ...incident, restorationReceipt: receipt })).toBe(false);
+    expect(await admits({ ...incident, restorationReceipt: { ...receipt, kind: 'CONFLICT' } })).toBe(true);
+    const { acquisitionAcknowledgement: _ack, ...clean } = incident;
+    expect(await admits({ ...clean, restorationReceipt: receipt })).toBe(false);
+    expect(await admits({ ...clean, held: draft, restorationReceipt: receipt })).toBe(true);
+    const scheduled = {
+      ...draft,
+      effectiveVisibility: { ...draft.effectiveVisibility, publicationEvidence: [staged] },
+      visibleScheduledOrStaged: [staged],
+    };
+    expect(await admits({ ...clean, before: scheduled, restorationReceipt: { ...receipt, current: scheduled } })).toBe(
+      false,
+    );
+  });
   it('SQL rejects schedule-only ACK success while retaining settled conflict audits', async () => {
     const f = await fixture();
     await f.prepareHold();
