@@ -548,13 +548,26 @@ export class PgProductionPublication {
       if (progress.phase === 'operator-hold') return { kind: 'OPERATOR_HOLD', phase: progress.phase };
       if (progress.phase === 'active') {
         if (progress.reconciliation_kind === 'OPERATOR_HOLD') return { kind: 'OPERATOR_HOLD', phase: 'active' };
-        if (!(await this.current(stored, tx))) return { kind: 'OPERATOR_HOLD', phase: 'active' };
         const activated = await sql<{ status: string; effective_operation_id: string | null }>`
           SELECT o.status, c.effective_operation_id FROM publication_operations o
           JOIN product_configs c ON c.shop_id=o.shop_id AND c.config_id=o.config_id
           WHERE o.shop_id=${shopId} AND o.config_id=${configId} AND o.operation_id=${operationId}`.execute(tx);
         if (activated.rows[0]?.status !== 'activated' || activated.rows[0]?.effective_operation_id !== operationId)
           return { kind: 'OPERATOR_HOLD', phase: 'active' };
+        const holdActive = async (observed: unknown): Promise<PublicationAdvanceResult> =>
+          (await this.save(
+            stored,
+            'active',
+            {
+              observed,
+              adminReconciliation: { version: 'm5-admin-reconciliation-v1', kind: 'OPERATOR_HOLD' },
+            },
+            0,
+            tx,
+          ))
+            ? { kind: 'OPERATOR_HOLD', phase: 'active' }
+            : { kind: 'CONFLICT', phase: 'active' };
+        if (!(await this.current(stored, tx))) return holdActive({ reason: 'durable-premise-drift' });
         const expectedActive = publicationProjection(operation.expectedProjection);
         const observedActive = await this.observe(
           {
@@ -587,18 +600,7 @@ export class PgProductionPublication {
             expectedActive.policy,
           )
           ? { kind: 'ACTIVE', phase: 'active' }
-          : (await this.save(
-                stored,
-                'active',
-                {
-                  ...observedActive,
-                  adminReconciliation: { version: 'm5-admin-reconciliation-v1', kind: 'OPERATOR_HOLD' },
-                },
-                0,
-                tx,
-              ))
-            ? { kind: 'OPERATOR_HOLD', phase: 'active' }
-            : { kind: 'CONFLICT', phase: 'active' };
+          : await holdActive(observedActive);
       }
       if (!(await this.current(stored, tx))) return hold(null);
       const expected = publicationProjection(operation.expectedProjection);

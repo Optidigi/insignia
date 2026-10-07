@@ -11,7 +11,7 @@ import { createServerActivationReadiness } from '../../src/server/admin/release-
 import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
 
 const database = process.env.DATABASE_URL;
-for (const ending of ['release-blocked', 'active-drift'])
+for (const ending of ['release-blocked', 'active-drift', 'active-key-drift', 'active-epoch-drift'])
   test(`real admin HTTP publish commits PG v3 activation and immutable evidence: ${ending}`, {
     skip: !database,
   }, async () => {
@@ -346,8 +346,20 @@ for (const ending of ['release-blocked', 'active-drift'])
       assert.equal(changedEvidence.hold.version, 'm5-availability-hold-v3');
       assert.equal(mutationCount, 4);
       assert.deepEqual(await core.configs.getValidatedPublishedRevision(shopId, revisionId), original);
-      if (ending === 'active-drift') {
-        cells.set('policy', { ...cells.get('policy'), value: 'foreign-provider-policy' });
+      if (ending.startsWith('active-')) {
+        if (ending === 'active-drift')
+          cells.set('policy', { ...cells.get('policy'), value: 'foreign-provider-policy' });
+        else if (ending === 'active-epoch-drift') {
+          await lifecycle.incrementEpoch({ scope, commandKey: 'm5-018-epoch-change', requestDigest: 'e'.repeat(64) });
+        } else {
+          await lifecycle.createPending({
+            scope,
+            keyId: 8,
+            firstDay: 20000,
+            lastDay: 30000,
+            seed: Buffer.alloc(32, 3),
+          });
+        }
         const drift = await (await publish('m5-018-mode-change')).json();
         assert.equal(drift.state, 'OPERATOR_HOLD');
         assert.equal(

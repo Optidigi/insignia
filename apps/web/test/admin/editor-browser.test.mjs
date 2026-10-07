@@ -860,7 +860,11 @@ test('mobile deep link, cookie-free reload, interrupted save, stale conflict, an
     await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
     await page.getByText('Synthetic permission denied').waitFor();
     assert.equal(await page.locator('s-button').filter({ hasText: 'Retry exact save' }).count(), 0);
+    assert.equal(await page.locator('s-section[heading="Synthetic shirt"]').count(), 0);
     mode = 'invalid';
+    await page.reload();
+    await page.getByText('Draft version 4').waitFor();
+    await page.getByLabel('Customization mode').selectOption('required');
     await page.locator('s-button').filter({ hasText: 'Save draft' }).click();
     await page.getByText('Synthetic draft invalid').waitFor();
     assert.equal(await page.locator('s-button').filter({ hasText: 'Retry exact save' }).count(), 0);

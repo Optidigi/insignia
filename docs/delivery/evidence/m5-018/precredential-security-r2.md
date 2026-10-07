@@ -1,0 +1,19 @@
+**CHANGES_REQUESTED — PRE-CREDENTIAL SOURCE GATE**
+
+Reviewed base/effective merge base `407608ab929e703cd2b10972de93cf00c58aa9df` through candidate `0d004d92d9c988b662189b288259cd9699351259`. Local metadata for this review session confirms actual `gpt-6.1-sol`, `high`, read-only sandbox, approval policy `never`.
+
+Examined the full diff/log, every changed source/test, AGENTS, ledger, operating model, relevant plan sections 7/10/M5/G7, full prompt, report/matrix, both original reviews and dispositions. Full-source seams included production admin composition, authentication/online staff grants, HTTP/CSRF/private SSR, editor recovery/refresh/storage, merchant commands, PG tenant/config/publication/activation/recovery, idempotency/outbox, worker dispatch, Shopify catalog/publication/v3 adapters, readiness/release evidence and key lifecycle. Coverage included tenant/install fencing, current-read failures, concurrency, durable atomicity, retention, boundedness and exact-money validation.
+
+Two blocking findings remain at the fixed candidate:
+
+1. **P1 — Key-registry reconciliation refusal is still discarded durably.** [production-publication.ts:551](/home/serveradmin/insignia-m5-018-worktree/packages/database/src/repositories/production-publication.ts:551) returns `OPERATOR_HOLD` when `current()` fails without persisting `adminReconciliation`. Counterexample: complete an ACTIVE/RESTORED publication, add a legitimate pending signing key under the same authorization scope, then repeat the original publish request. The rebuilt public configuration differs, so reentry returns the hold; phase, effective pointer and RESTORED activation remain unchanged. The following GET projects ACTIVE at [activation-state.ts:37](/home/serveradmin/insignia-m5-018-worktree/apps/web/src/server/admin/activation-state.ts:37). The editor immediately refreshes after publishing, replacing the detected hold with ACTIVE. This violates M5-018 §2’s truthful operator-state requirement and §4’s refresh requirement. Persist the scoped diagnostic for this refusal while preserving terminal phase and historical activation/hold JSONB; cover reentry followed by GET.
+
+2. **P2 — The required browser suite retains an incompatible post-denial sequence.** At candidate [editor-browser.test.mjs:864](/home/serveradmin/insignia-m5-018-worktree/apps/web/test/admin/editor-browser.test.mjs:864), the mobile test clicks “Save draft” immediately after a mocked 403. The new denial handling calls `clearPrivate()`, removing the view, draft and editor—and therefore that button. No reload or reauthentication occurs between those actions, so the next click must time out. Separate the scenarios or explicitly reload before testing 422, retaining the private-state clearing assertion. This blocks the browser verification required by M5-018 §§5/7. This is a source-traced counterexample; I did not execute it.
+
+The four original reported cases have concrete corrections and focused regression receipts. The first finding above exposes an additional branch beyond the repaired remote-policy mismatch. I found no further definite security or repository-standard breach; subjective smell concerns are not blockers.
+
+Git-object comparison confirms **2,690 historical evidence paths** and **36 publication/key/availability source and migration paths** unchanged, including tracked historical/raw evidence. External sealed artifacts were not independently rehashed. The diagnostic remains outside historical activation/hold JSONB; terminal SQL fences remain intact.
+
+I inspected existing receipts but ran no tests/builds/SQL or live calls. Full root/PG/eleven-workflow checks are not claimed green. The bounded initial read-only live procedure and deliberately pending matrix are appropriately gated.
+
+Concurrent unstaged edits appeared during review; they are excluded from this SHA-bound verdict. Live access remains closed. This is neither principal approval nor a completed M5 exit review.
