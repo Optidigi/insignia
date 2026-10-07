@@ -1,0 +1,14 @@
+{
+  "approvedMerge": "703cfb21a4262675b088cd06289fe08a421ecdd8",
+  "archive": "reviewed-web-package.tar.gz",
+  "archiveSha256": "f117be50d7bc106f1c943cdf75a8080fa63c26e0edd99b7ba0ddf3eaea697c2b",
+  "bytes": 70310306,
+  "inventorySha256": "a1253bb66ff6abc9d0ca26d607514a73c66ce370015d5492decfd93d2ab910ec",
+  "entries": 21073,
+  "dbmateVersion": "2.36.0",
+  "dbmateSha256": "47e284b3d8cbad1ba5f090495aa05afd1bbd5f35e2ed5577aad06da74ce780ce",
+  "DockerfileSha256": "ca4a0257ce880e26a9fee2bdc97df178ff1eebe1dd4a29a13bfce291c0266927",
+  "secretOrEnvFilesIncluded": false,
+  "imageBuilt": false,
+  "deployed": false
+}

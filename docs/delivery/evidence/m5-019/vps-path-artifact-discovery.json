@@ -1,0 +1,52 @@
+{
+  "/srv/saas/infra/stacks/insignia/compose.yaml": {
+    "exists": true,
+    "mode": "0o664",
+    "uid": 1000,
+    "gid": 1000,
+    "writableByCurrentUser": true
+  },
+  "/srv/saas/infra/stacks/insignia/.env": {
+    "exists": true,
+    "mode": "0o600",
+    "uid": 1000,
+    "gid": 1000,
+    "writableByCurrentUser": true
+  },
+  "/srv/ops/infra/stacks/traefik/compose.yaml": {
+    "exists": true,
+    "mode": "0o644",
+    "uid": 0,
+    "gid": 0,
+    "writableByCurrentUser": false
+  },
+  "/srv/ops/infra/stacks/traefik/cloudflare-aop.dynamic.yml": {
+    "exists": true,
+    "mode": "0o644",
+    "uid": 0,
+    "gid": 0,
+    "writableByCurrentUser": false
+  },
+  "/srv/saas/infra/stacks/insignia-rewrite": {
+    "exists": false
+  },
+  "/srv/saas/secrets": {
+    "exists": false
+  },
+  "/srv/ops/secrets": {
+    "exists": true,
+    "mode": "0o755",
+    "uid": 0,
+    "gid": 0,
+    "writableByCurrentUser": false
+  },
+  "legacyBuildFileListing": "[\"assets\",\"index.js\"]",
+  "legacyImageBinding": {
+    "id": "sha256:b06eae7224abc3bf992b7811086c4e2c572c3d0e45d78145152b14a2a982f7c1",
+    "repoDigests": [
+      "insignia-stitchs-pre-vat@sha256:b06eae7224abc3bf992b7811086c4e2c572c3d0e45d78145152b14a2a982f7c1",
+      "ghcr.io/optidigi/insignia-app@sha256:b06eae7224abc3bf992b7811086c4e2c572c3d0e45d78145152b14a2a982f7c1"
+    ],
+    "revision": "1a2d94bedb7e8a01f1ce65b748deaddce9dd83c3"
+  }
+}

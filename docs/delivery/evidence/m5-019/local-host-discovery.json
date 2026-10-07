@@ -1,0 +1,87 @@
+{
+  "observedAt": "2026-10-07T17:20:47.451213+00:00",
+  "hostname": "llm-shamil",
+  "reverseProxyConfigDirectoriesPresent": {
+    "/etc/nginx": false,
+    "/etc/caddy": false,
+    "/srv/saas/infra/stacks/insignia": false
+  },
+  "dockerCommandPresent": false,
+  "sshConfigPresent": false,
+  "sshFiles": [
+    "authorized_keys"
+  ],
+  "sshAgentIdentities": "The agent has no identities.",
+  "tcpListenerPorts": [
+    22,
+    5173,
+    15433,
+    53,
+    49374,
+    20241,
+    3773
+  ],
+  "publicWebListener80Or443": false,
+  "candidateHostOwnershipEstablished": false,
+  "vpsOwnerStatement": "Owner confirms current legacy Insignia hosting on their VPS, Cloudflare DNS, CURRENT proxy Traefik, and laptop SSH alias prod; this workspace is separate.",
+  "legacyRepository": "Optidigi/insignia-legacy",
+  "legacyTree": "1a2d94bedb7e8a01f1ce65b748deaddce9dd83c3",
+  "legacyDocumentedTopology": {
+    "stack": "/srv/saas/infra/stacks/insignia",
+    "proxy": "Nginx Proxy Manager",
+    "upstream": "insignia-app:3000",
+    "network": "proxy",
+    "historicalIPv6": "2a01:4f9:5a:13da::2",
+    "currentVpsIdentityVerified": false,
+    "outdatedProxy": "Owner says current proxy is Traefik, not documented Nginx Proxy Manager."
+  },
+  "legacyReferenceLimit": "Documentation and owner statement do not establish current host/process/proxy configuration. No remote SSH or NPM operation attempted.",
+  "sharedResourcesUntouched": [
+    "component-workbench:5173",
+    "T3 Code:3773",
+    "T3 Code cloudflared",
+    "unrelated PostgreSQL:15433"
+  ],
+  "hostProbeIncident": {
+    "command": "lxc list --format=json",
+    "unexpectedSideEffect": "/usr/sbin/lxc noninteractive installer triggered lxd snap installation through lxd-installer.socket",
+    "snapChangeId": "10",
+    "snapVersion": "6.9-bf243da",
+    "snapRevision": "40916",
+    "probeTerminated": true,
+    "result": "No valid LXD inventory returned; output parsing failed.",
+    "removalAttempts": [
+      {
+        "command": "snap remove lxd",
+        "exit": 1,
+        "error": "access denied (try with sudo)"
+      },
+      {
+        "command": "sudo -n snap remove lxd",
+        "exit": 1,
+        "error": "interactive authentication is required"
+      }
+    ],
+    "cleanupStatus": "BLOCKED_ADMIN_AUTHENTICATION",
+    "observedDaemon": "snap.lxd.daemon.service active",
+    "requiredCleanup": "sudo snap remove lxd",
+    "noContainerCreatedByOrchestrator": true,
+    "notHostReadinessEvidence": true
+  },
+  "clientAccessProbe": {
+    "environmentId": "68add124-5923-4b07-9c6e-95e859085c16",
+    "environmentLabel": "llm-shamil",
+    "toolCatalog": "No client/laptop shell or SSH transport exposed; terminal is workspace-server exec_command. Simulator/device tools are not arbitrary client-terminal access.",
+    "sshConfigProbe": "ssh -G prod yields literal hostname prod and default serveradmin/port22/identity paths; no configured alias",
+    "localProdNameResolutionExit": 2,
+    "laptopAliasOrKeyImported": false,
+    "externalSshRequests": 1,
+    "pendingFactRequest": "Owner to select supported SSH access setup: forwarded existing agent or temporary public deployment key.",
+    "remoteCommandsExecuted": 0
+  },
+  "currentVpsOwnerSuppliedDestination": {
+    "host": "65.109.22.104",
+    "user": "serveradmin",
+    "port": 22
+  }
+}

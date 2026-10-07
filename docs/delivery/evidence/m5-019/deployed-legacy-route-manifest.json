@@ -1,0 +1,386 @@
+{
+  "compiledChunkSha256": "e56ce9fb3ffb83e175cfd2e592c52c0eadee9a39b34b2f3074888f260c3709be",
+  "routesAnchors": [
+    "const routes = {"
+  ],
+  "routeTableBytes": 12698,
+  "publicPathDefinitions": [
+    "\"/\""
+  ],
+  "routes": [
+    {
+      "id": "root",
+      "path": "",
+      "resolvedPath": "/"
+    },
+    {
+      "id": "routes/api.admin.cron.cleanup-design-fee-charges",
+      "parentId": "root",
+      "path": "api/admin/cron/cleanup-design-fee-charges",
+      "resolvedPath": "/api/admin/cron/cleanup-design-fee-charges"
+    },
+    {
+      "id": "routes/api.admin.design-fees.categories",
+      "parentId": "root",
+      "path": "api/admin/design-fees/categories",
+      "resolvedPath": "/api/admin/design-fees/categories"
+    },
+    {
+      "id": "routes/api.admin.import-shopify-images",
+      "parentId": "root",
+      "path": "api/admin/import-shopify-images",
+      "resolvedPath": "/api/admin/import-shopify-images"
+    },
+    {
+      "id": "routes/api.admin.order-block.$orderId",
+      "parentId": "root",
+      "path": "api/admin/order-block/:orderId",
+      "resolvedPath": "/api/admin/order-block/:orderId"
+    },
+    {
+      "id": "routes/api.admin.cron.cleanup-drafts",
+      "parentId": "root",
+      "path": "api/admin/cron/cleanup-drafts",
+      "resolvedPath": "/api/admin/cron/cleanup-drafts"
+    },
+    {
+      "id": "routes/api.admin.cron.cleanup-slots",
+      "parentId": "root",
+      "path": "api/admin/cron/cleanup-slots",
+      "resolvedPath": "/api/admin/cron/cleanup-slots"
+    },
+    {
+      "id": "routes/api.admin.batch-save-images",
+      "parentId": "root",
+      "path": "api/admin/batch-save-images",
+      "resolvedPath": "/api/admin/batch-save-images"
+    },
+    {
+      "id": "routes/api.admin.batch-upload-urls",
+      "parentId": "root",
+      "path": "api/admin/batch-upload-urls",
+      "resolvedPath": "/api/admin/batch-upload-urls"
+    },
+    {
+      "id": "routes/webhooks.app.scopes_update",
+      "parentId": "root",
+      "path": "webhooks/app/scopes_update",
+      "resolvedPath": "/webhooks/app/scopes_update"
+    },
+    {
+      "id": "routes/api.admin.artwork-upload",
+      "parentId": "root",
+      "path": "api/admin/artwork-upload",
+      "resolvedPath": "/api/admin/artwork-upload"
+    },
+    {
+      "id": "routes/webhooks.app.uninstalled",
+      "parentId": "root",
+      "path": "webhooks/app/uninstalled",
+      "resolvedPath": "/webhooks/app/uninstalled"
+    },
+    {
+      "id": "routes/api.admin.orders.export",
+      "parentId": "root",
+      "path": "api/admin/orders/export",
+      "resolvedPath": "/api/admin/orders/export"
+    },
+    {
+      "id": "routes/webhooks.orders.create",
+      "parentId": "root",
+      "path": "webhooks/orders/create",
+      "resolvedPath": "/webhooks/orders/create"
+    },
+    {
+      "id": "routes/api.admin.upload-url",
+      "parentId": "root",
+      "path": "api/admin/upload-url",
+      "resolvedPath": "/api/admin/upload-url"
+    },
+    {
+      "id": "routes/webhooks.orders.paid",
+      "parentId": "root",
+      "path": "webhooks/orders/paid",
+      "resolvedPath": "/webhooks/orders/paid"
+    },
+    {
+      "id": "routes/api.admin.methods",
+      "parentId": "root",
+      "path": "api/admin/methods",
+      "resolvedPath": "/api/admin/methods"
+    },
+    {
+      "id": "routes/api.admin.methods.$id",
+      "parentId": "routes/api.admin.methods",
+      "path": ":id",
+      "resolvedPath": "/api/admin/methods/:id"
+    },
+    {
+      "id": "routes/api.admin.upload",
+      "parentId": "root",
+      "path": "api/admin/upload",
+      "resolvedPath": "/api/admin/upload"
+    },
+    {
+      "id": "routes/apps.insignia",
+      "parentId": "root",
+      "path": "apps/insignia",
+      "resolvedPath": "/apps/insignia"
+    },
+    {
+      "id": "routes/apps.insignia.design-fees.confirm-charges",
+      "parentId": "routes/apps.insignia",
+      "path": "design-fees/confirm-charges",
+      "resolvedPath": "/apps/insignia/design-fees/confirm-charges"
+    },
+    {
+      "id": "routes/apps.insignia.design-fees.abort-charges",
+      "parentId": "routes/apps.insignia",
+      "path": "design-fees/abort-charges",
+      "resolvedPath": "/apps/insignia/design-fees/abort-charges"
+    },
+    {
+      "id": "routes/apps.insignia.design-fees.sync",
+      "parentId": "routes/apps.insignia",
+      "path": "design-fees/sync",
+      "resolvedPath": "/apps/insignia/design-fees/sync"
+    },
+    {
+      "id": "routes/apps.insignia.customizations",
+      "parentId": "routes/apps.insignia",
+      "path": "customizations",
+      "resolvedPath": "/apps/insignia/customizations"
+    },
+    {
+      "id": "routes/apps.insignia.quote-requests",
+      "parentId": "routes/apps.insignia",
+      "path": "quote-requests",
+      "resolvedPath": "/apps/insignia/quote-requests"
+    },
+    {
+      "id": "routes/apps.insignia.cart-confirm",
+      "parentId": "routes/apps.insignia",
+      "path": "cart-confirm",
+      "resolvedPath": "/apps/insignia/cart-confirm"
+    },
+    {
+      "id": "routes/apps.insignia.prepare",
+      "parentId": "routes/apps.insignia",
+      "path": "prepare",
+      "resolvedPath": "/apps/insignia/prepare"
+    },
+    {
+      "id": "routes/apps.insignia.uploads",
+      "parentId": "routes/apps.insignia",
+      "path": "uploads",
+      "resolvedPath": "/apps/insignia/uploads"
+    },
+    {
+      "id": "routes/apps.insignia.uploads.$id.complete",
+      "parentId": "routes/apps.insignia.uploads",
+      "path": ":id/complete",
+      "resolvedPath": "/apps/insignia/uploads/:id/complete"
+    },
+    {
+      "id": "routes/apps.insignia.uploads.$id.refresh",
+      "parentId": "routes/apps.insignia.uploads",
+      "path": ":id/refresh",
+      "resolvedPath": "/apps/insignia/uploads/:id/refresh"
+    },
+    {
+      "id": "routes/apps.insignia.config",
+      "parentId": "routes/apps.insignia",
+      "path": "config",
+      "resolvedPath": "/apps/insignia/config"
+    },
+    {
+      "id": "routes/apps.insignia.upload",
+      "parentId": "routes/apps.insignia",
+      "path": "upload",
+      "resolvedPath": "/apps/insignia/upload"
+    },
+    {
+      "id": "routes/apps.insignia.modal",
+      "parentId": "routes/apps.insignia",
+      "path": "modal",
+      "resolvedPath": "/apps/insignia/modal"
+    },
+    {
+      "id": "routes/apps.insignia.price",
+      "parentId": "routes/apps.insignia",
+      "path": "price",
+      "resolvedPath": "/apps/insignia/price"
+    },
+    {
+      "id": "routes/webhooks.gdpr",
+      "parentId": "root",
+      "path": "webhooks/gdpr",
+      "resolvedPath": "/webhooks/gdpr"
+    },
+    {
+      "id": "routes/api.health",
+      "parentId": "root",
+      "path": "api/health",
+      "resolvedPath": "/api/health"
+    },
+    {
+      "id": "routes/auth.login",
+      "parentId": "root",
+      "path": "auth/login",
+      "resolvedPath": "/auth/login"
+    },
+    {
+      "id": "routes/privacy",
+      "parentId": "root",
+      "path": "privacy",
+      "resolvedPath": "/privacy"
+    },
+    {
+      "id": "routes/_index",
+      "parentId": "root",
+      "index": true,
+      "resolvedPath": "/"
+    },
+    {
+      "id": "routes/auth.$",
+      "parentId": "root",
+      "path": "auth/*",
+      "resolvedPath": "/auth/*"
+    },
+    {
+      "id": "routes/app",
+      "parentId": "root",
+      "path": "app",
+      "resolvedPath": "/app"
+    },
+    {
+      "id": "routes/app.quote-requests",
+      "parentId": "routes/app",
+      "path": "quote-requests",
+      "resolvedPath": "/app/quote-requests"
+    },
+    {
+      "id": "routes/app.products",
+      "parentId": "routes/app",
+      "path": "products",
+      "resolvedPath": "/app/products"
+    },
+    {
+      "id": "routes/app.products._index",
+      "parentId": "routes/app.products",
+      "index": true,
+      "resolvedPath": "/app/products"
+    },
+    {
+      "id": "routes/app.products.$id",
+      "parentId": "routes/app.products",
+      "path": ":id",
+      "resolvedPath": "/app/products/:id"
+    },
+    {
+      "id": "routes/app.products.$id.placements",
+      "parentId": "routes/app.products.$id",
+      "path": "placements",
+      "resolvedPath": "/app/products/:id/placements"
+    },
+    {
+      "id": "routes/app.products.$id.placements.$placementId",
+      "parentId": "routes/app.products.$id.placements",
+      "path": ":placementId",
+      "resolvedPath": "/app/products/:id/placements/:placementId"
+    },
+    {
+      "id": "routes/app.products.$id._index",
+      "parentId": "routes/app.products.$id",
+      "index": true,
+      "resolvedPath": "/app/products/:id"
+    },
+    {
+      "id": "routes/app.products.$id.images",
+      "parentId": "routes/app.products.$id",
+      "path": "images",
+      "resolvedPath": "/app/products/:id/images"
+    },
+    {
+      "id": "routes/app.products.$id.views",
+      "parentId": "routes/app.products.$id",
+      "path": "views",
+      "resolvedPath": "/app/products/:id/views"
+    },
+    {
+      "id": "routes/app.products.$id.views.$viewId",
+      "parentId": "routes/app.products.$id.views",
+      "path": ":viewId",
+      "resolvedPath": "/app/products/:id/views/:viewId"
+    },
+    {
+      "id": "routes/app.settings",
+      "parentId": "routes/app",
+      "path": "settings",
+      "resolvedPath": "/app/settings"
+    },
+    {
+      "id": "routes/app.methods",
+      "parentId": "routes/app",
+      "path": "methods",
+      "resolvedPath": "/app/methods"
+    },
+    {
+      "id": "routes/app.methods._index",
+      "parentId": "routes/app.methods",
+      "index": true,
+      "resolvedPath": "/app/methods"
+    },
+    {
+      "id": "routes/app.methods.$id",
+      "parentId": "routes/app.methods",
+      "path": ":id",
+      "resolvedPath": "/app/methods/:id"
+    },
+    {
+      "id": "routes/app._index",
+      "parentId": "routes/app",
+      "index": true,
+      "resolvedPath": "/app"
+    },
+    {
+      "id": "routes/app.orders",
+      "parentId": "routes/app",
+      "path": "orders",
+      "resolvedPath": "/app/orders"
+    },
+    {
+      "id": "routes/app.orders.bulk-advance",
+      "parentId": "routes/app.orders",
+      "path": "bulk-advance",
+      "resolvedPath": "/app/orders/bulk-advance"
+    },
+    {
+      "id": "routes/app.orders._index",
+      "parentId": "routes/app.orders",
+      "index": true,
+      "resolvedPath": "/app/orders"
+    },
+    {
+      "id": "routes/app.orders.export",
+      "parentId": "routes/app.orders",
+      "path": "export",
+      "resolvedPath": "/app/orders/export"
+    },
+    {
+      "id": "routes/app.orders.$id",
+      "parentId": "routes/app.orders",
+      "path": ":id",
+      "resolvedPath": "/app/orders/:id"
+    },
+    {
+      "id": "routes/app.orders.$id.print",
+      "parentId": "routes/app.orders.$id",
+      "path": "print",
+      "resolvedPath": "/app/orders/:id/print"
+    }
+  ],
+  "routesCount": 62,
+  "candidatePrefixCollisionCandidates": [],
+  "legacyImageRevision": "1a2d94bedb7e8a01f1ce65b748deaddce9dd83c3"
+}

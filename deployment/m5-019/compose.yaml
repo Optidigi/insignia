@@ -1,0 +1,68 @@
+name: insignia-rewrite-m5-019
+
+services:
+  web:
+    image: ${INSIGNIA_WEB_IMAGE:?Set the qualified immutable web image}
+    pull_policy: never
+    container_name: insignia-rewrite-m5-019-web
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    env_file: runtime.env
+    environment:
+      NODE_ENV: production
+      HOST: 0.0.0.0
+      PORT: "3000"
+      APP_URL: https://insignia.optidigi.nl
+      SHOPIFY_CLIENT_ID: 1443cf6d03d39edae7c101a943c5c684
+      INSIGNIA_SHOPIFY_APP_ID: "429028933633"
+    networks: [proxy, private]
+    depends_on:
+      database:
+        condition: service_healthy
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:3000/live').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    labels:
+      traefik.enable: "${INSIGNIA_ROUTE_ENABLED:-false}"
+      traefik.docker.network: proxy
+      traefik.http.routers.insignia-rewrite-m5-019.entrypoints: websecure
+      traefik.http.routers.insignia-rewrite-m5-019.rule: >-
+        Host(`insignia.optidigi.nl`) && (Path(`/admin/products`) || PathPrefix(`/admin/products/`) || Path(`/api/admin/products`) || PathPrefix(`/api/admin/products/`) || PathPrefix(`/_astro/`))
+      traefik.http.routers.insignia-rewrite-m5-019.priority: "1000"
+      traefik.http.routers.insignia-rewrite-m5-019.tls.certresolver: letsencrypt
+      traefik.http.routers.insignia-rewrite-m5-019.service: insignia-rewrite-m5-019
+      traefik.http.services.insignia-rewrite-m5-019.loadbalancer.server.port: "3000"
+      traefik.http.services.insignia-rewrite-m5-019.loadbalancer.healthcheck.path: /live
+      traefik.http.services.insignia-rewrite-m5-019.loadbalancer.healthcheck.interval: 15s
+      traefik.http.services.insignia-rewrite-m5-019.loadbalancer.healthcheck.timeout: 5s
+
+  database:
+    image: postgres:18.6-bookworm@sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d
+    container_name: insignia-rewrite-m5-019-database
+    restart: unless-stopped
+    env_file: database.env
+    networks: [private]
+    volumes:
+      - database:/var/lib/postgresql
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U insignia_rewrite -d insignia_rewrite"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+networks:
+  proxy:
+    external: true
+    name: proxy
+  private:
+    internal: true
+
+volumes:
+  database:

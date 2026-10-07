@@ -1,3 +1,11 @@
+# Current authorized slice — M5-019
+
+[Principal approval](PR-049-principal-review.md) accepts PR49 as truthful BLOCKED_RELEASE_BOUND M5/G7 evidence and authorizes [M5-019](prompts/M5-019-HOST-READINESS-UNRELEASED-VERSION.md). PR49 normal merge `703cfb21a4262675b088cd06289fe08a421ecdd8` has exact ordered parents `407608ab929e703cd2b10972de93cf00c58aa9df`, `19e069a32c2f97f0316208ebbb7c970ef309c31a` and approved tree `170edf1de05fb07ad42e8f0bc15771996531d2cf`; [receipt](evidence/m5-019/pr49-merge-receipt.json). All eleven final-head attempt-1 successful workflows, both fresh CLEAR actual GPT-6.1-sol/high reviews and external principal approval were reverified before marking ready and merging without changing the head.
+
+Workspace `/home/serveradmin/insignia-m5-019-worktree`, branch `feat/m5-019-host-unreleased-version`, starts from verified remote main. [Report](M5-019-REPORT.md) records current Traefik/VPS ownership, exact origin TLS, deployed legacy62-route/static inventory and zero candidate-prefix overlap. Owner authorized a temporary restricted public SSH key and supplied the matching trusted host fingerprint. The exact compiled web package passes offline standalone HTTP/bootstrap/API/asset qualification after exposing its existing pinned production SDK at the package root. Production source/build bytes remain unchanged. [Deployment configuration](../../deployment/m5-019/README.md) is at predeployment review; route exposure defaults false. No web deployment or Shopify version creation/release has occurred. The full gate is not frozen and the proposal remains NOT_EXECUTE_READY. The unintended local LXD installation and authentication-blocked removal are explicitly recorded. Historical state below remains unchanged.
+
+---
+
 # Current authorized slice — M5-018
 
 [Principal approval](PR-048R-principal-review.md) accepted v3 and authorized [M5-018](prompts/M5-018-M5-EXIT-G7.md). PR48 normal merge `407608ab929e703cd2b10972de93cf00c58aa9df` has ordered parents `4bba14fb4415815557ffa5f1e600427a62128489`, `125e6d452d713acc9ce7eb741c2506f25857cb8f` and approved tree `31ccad58a7a1941fce17451d83ca7326ac712ecc`; [receipt](evidence/m5-018/pr48-merge-receipt.json). All eleven exact-head attempt-1 workflows and both fresh CLEAR actual GPT-6.1-sol/high reviews were reverified before merge.

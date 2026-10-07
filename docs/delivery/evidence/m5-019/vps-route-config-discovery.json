@@ -1,0 +1,62 @@
+{
+  "deployedServerSha256": "075a6da176761a1aede0245595facc1a200602dab4266a94ca94b633843c8aab",
+  "routeTableAnchorFound": false,
+  "routePathAssignments": [],
+  "assetsManifestAssignments": [],
+  "dynamicFileSha256": "c8fc83c0ac5130a5da4c685605f8414be7d9b0d1dbcd5d3a5b55d8c7eee1a55a",
+  "dynamicPublicConfig": "tls:\n  options:\n    siteinabox-cloudflare-aop:\n      minVersion: VersionTLS12\n      sniStrict: true\n      clientAuth:\n        caFiles:\n          - /run/secrets/siteinabox-cloudflare-aop-ca.pem\n        clientAuthType: RequireAndVerifyClientCert\n",
+  "traefikProviderFlags": [
+    "--api.dashboard=true",
+    "--ping=true",
+    "--providers.docker.exposedbydefault=false",
+    "--providers.docker.network=proxy",
+    "--providers.file.directory=/etc/traefik/dynamic",
+    "--providers.file.watch=true",
+    "--entrypoints.web.address=:80",
+    "--entrypoints.web.http.redirections.entrypoint.to=websecure",
+    "--entrypoints.web.http.redirections.entrypoint.scheme=https",
+    "--entrypoints.websecure.address=:443"
+  ],
+  "ownerHomeRewriteSecretMetadata": [
+    {
+      "path": "/srv/saas/infra/stacks/insignia-superfunny/.env.example",
+      "mode": "0o600",
+      "uid": 1000
+    },
+    {
+      "path": "/srv/saas/infra/stacks/insignia-superfunny/.env",
+      "mode": "0o600",
+      "uid": 1000
+    },
+    {
+      "path": "/srv/saas/infra/stacks/insignia-custom/.env",
+      "mode": "0o600",
+      "uid": 1000
+    },
+    {
+      "path": "/srv/saas/infra/stacks/insignia/.env",
+      "mode": "0o600",
+      "uid": 1000
+    },
+    {
+      "path": "/srv/saas/infra/stacks/insignia-stitchs/.env.bak-quote-flow-",
+      "mode": "0o600",
+      "uid": 1000
+    },
+    {
+      "path": "/srv/saas/infra/stacks/insignia-stitchs/.env.example",
+      "mode": "0o600",
+      "uid": 1000
+    },
+    {
+      "path": "/srv/saas/infra/stacks/insignia-stitchs/.env",
+      "mode": "0o600",
+      "uid": 1000
+    },
+    {
+      "path": "/srv/saas/infra/stacks/insignia-stitchs/.env.bak-quote-flow-def",
+      "mode": "0o600",
+      "uid": 1000
+    }
+  ]
+}

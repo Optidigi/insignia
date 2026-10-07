@@ -1,0 +1,14 @@
+{
+  "purpose": "Temporary restricted public key for owner-selected VPS SSH access only",
+  "publicKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIBWzW/7Z6CS/rNNUBmE/eeveBn0u3rVGPMDwW8vsO0y insignia-m5-019-temporary",
+  "restrictOption": true,
+  "privateKeyLocationExcluded": true,
+  "remoteAuthorizationConfirmed": true,
+  "initialLaptopAttempt": "bash ssh prod failed locally: cannot execute binary file; no remote change",
+  "hostKeyTrust": "Require fingerprint from owner existing trusted ssh prod connection; compare ED25519 scan before saving dedicated known-hosts file",
+  "revocationRequired": "Remove exact temporary public key from VPS authorized_keys before handback; delete local private key when no longer needed",
+  "forwardedAgentUsed": false,
+  "hostKeyFingerprint": "SHA256:vttVPAISQypNdyfjFElTJ6ef8Q5S2YlC+XoUn599uq4",
+  "matchesOwnerTrustedFingerprint": true,
+  "verifiedAt": "2026-10-07T17:36:51.699261+00:00"
+}

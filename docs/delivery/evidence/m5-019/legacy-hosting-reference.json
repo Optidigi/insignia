@@ -1,0 +1,33 @@
+{
+  "repository": "Optidigi/insignia-legacy",
+  "tree": "1a2d94bedb7e8a01f1ce65b748deaddce9dd83c3",
+  "files": [
+    {
+      "path": "deploy/README.md",
+      "blob": "0b9204e39b9ae99be821ca96f5a5a8f008de60e0",
+      "sha256": "b7ee75287a8cba7b1e125192b0514acba769c066e9a3c772f64cdd360c1f6376",
+      "sourceUrl": "https://github.com/Optidigi/insignia-legacy/blob/1a2d94bedb7e8a01f1ce65b748deaddce9dd83c3/deploy/README.md",
+      "purpose": "hosting topology reference only; not current deployed configuration"
+    },
+    {
+      "path": "deploy/compose.yaml",
+      "blob": "c419a502e0c42b8aad2ad3f57114f514f3da5b32",
+      "sha256": "418d2441fa7b4b7f5b7dcb0226023223e27835aa76ad7eabf2a1a7a5790d980d",
+      "sourceUrl": "https://github.com/Optidigi/insignia-legacy/blob/1a2d94bedb7e8a01f1ce65b748deaddce9dd83c3/deploy/compose.yaml",
+      "purpose": "hosting topology reference only; not current deployed configuration"
+    },
+    {
+      "path": "docs/ops/multi-instance-deployment.md",
+      "blob": "28af939db39ac5612a4dd6b9a337cfc910a7f2d6",
+      "sha256": "32f37bc426dceb1fe28f69bc85aa012e60895307c58e42d1f05cd00241c07499",
+      "sourceUrl": "https://github.com/Optidigi/insignia-legacy/blob/1a2d94bedb7e8a01f1ce65b748deaddce9dd83c3/docs/ops/multi-instance-deployment.md",
+      "purpose": "hosting topology reference only; not current deployed configuration"
+    }
+  ],
+  "ownerStatement": "Our VPS hosts current legacy Insignia apps; DNS managed at Cloudflare.",
+  "currentHostAccessVerified": false,
+  "currentCloudflareConfigurationMatchesLegacyDocs": false,
+  "discrepancy": "Legacy documents say DNS-only; live response DNS and server headers show Cloudflare-facing addresses. Do not change DNS based on these docs.",
+  "currentProxyOwnerCorrection": "Traefik; legacy Nginx Proxy Manager runbook is outdated.",
+  "currentVpsAccess": "SSH alias prod exists on owner laptop; no corresponding mapping or credentials in workspace."
+}

@@ -1,0 +1,49 @@
+{
+  "productionArtifact": "approved byte-identical standalone build with frozen production dependencies",
+  "credentials": "synthetic offline only",
+  "fetchGuard": "globalThis.fetch fail-closed in test process only",
+  "port": 54279,
+  "routes": [
+    {
+      "path": "/live",
+      "status": 200,
+      "contentType": "application/json",
+      "cacheControl": "no-store",
+      "csp": null,
+      "correctPublicClientPresent": false,
+      "bytes": 17
+    },
+    {
+      "path": "/admin/products",
+      "status": 200,
+      "contentType": "text/html",
+      "cacheControl": "private, no-store",
+      "csp": "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' https: data:; connect-src 'self'; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'",
+      "correctPublicClientPresent": true,
+      "bytes": 6860
+    },
+    {
+      "path": "/api/admin/products",
+      "status": 401,
+      "contentType": "application/json; charset=utf-8",
+      "cacheControl": "private, no-store",
+      "csp": null,
+      "correctPublicClientPresent": false,
+      "bytes": 35
+    },
+    {
+      "path": "/api/admin/products/0/config",
+      "status": 404,
+      "contentType": "application/json; charset=utf-8",
+      "cacheControl": "private, no-store",
+      "csp": null,
+      "correctPublicClientPresent": false,
+      "bytes": 29
+    }
+  ],
+  "exit": "FAIL",
+  "error": "missing_production_assets",
+  "processStopped": true,
+  "guardDenialInLog": false,
+  "webEntrySha256": "5dab1e4f21a7033582c1c2a326c97d6dcadae66ca04566a73a2aca113b4077f7"
+}

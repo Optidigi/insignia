@@ -1,0 +1,16 @@
+[
+  {
+    "file": "diff-whitespace.log",
+    "originalSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "renderedSha256": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
+    "transform": "trailing whitespace stripped for Git display only",
+    "originalRetainedOutsideRepository": true
+  },
+  {
+    "file": "style.log",
+    "originalSha256": "0b630700d2626b172aad44d3090c4a9c7ce3b403ed47a003e78bc92fbb264cc0",
+    "renderedSha256": "4e203269425378c7af7c0f3fca2eeb189d228c5539d41a13311f339d33588c92",
+    "transform": "trailing whitespace stripped for Git display only",
+    "originalRetainedOutsideRepository": true
+  }
+]

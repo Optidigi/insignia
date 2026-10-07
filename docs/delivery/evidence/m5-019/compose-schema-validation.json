@@ -1,0 +1,25 @@
+{
+  "command": "docker compose -f - config --no-env-resolution --no-interpolate --format json",
+  "exit": 0,
+  "hostMutation": false,
+  "services": [
+    "database",
+    "web"
+  ],
+  "webRouterRule": "Host(`insignia.optidigi.nl`) && (Path(`/admin/products`) || PathPrefix(`/admin/products/`) || Path(`/api/admin/products`) || PathPrefix(`/api/admin/products/`) || PathPrefix(`/_astro/`))",
+  "publicPorts": {
+    "database": [],
+    "web": []
+  },
+  "networks": {
+    "private": {
+      "internal": true,
+      "name": "insignia-rewrite-m5-019_private"
+    },
+    "proxy": {
+      "external": true,
+      "name": "proxy"
+    }
+  },
+  "normalizedPrivateValuesRetained": false
+}
