@@ -1,0 +1,18 @@
+{
+  "purpose": "Resolve owner-recalled install domain role; independent public HEAD only, no credentials/query/redirect following or store/provider request",
+  "url": "https://insignia.optidigi.nl/",
+  "reservedAt": "2026-10-07T16:29:53.054934+00:00",
+  "method": "HEAD",
+  "followRedirects": false,
+  "completedAt": "2026-10-07T16:29:53.268749+00:00",
+  "curlExitCode": 0,
+  "headers": {
+    "statusLine": "HTTP/2 200 ",
+    "content-type": "text/html; charset=utf-8",
+    "server": "cloudflare"
+  },
+  "error": "",
+  "cookiesRetained": false,
+  "bodyFetched": false,
+  "identityExtracted": false
+}

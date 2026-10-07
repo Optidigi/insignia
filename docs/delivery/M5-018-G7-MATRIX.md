@@ -1,40 +1,44 @@
 # M5-018 G7 criterion matrix
 
-IN_PROGRESS: local checks and the gated live observation are not final acceptance. Each final criterion receives PASS, BLOCKED_PLATFORM, BLOCKED_RELEASE_BOUND, NOT_APPLICABLE with reason, or FAIL. Local synthetic evidence is kept separate from actual embedded observations. Supported browser coverage remains subject to M10 requalification.
+Overall real embedded-admin acceptance: BLOCKED_RELEASE_BOUND. M5/G7 are not closed. Current Active app version1153019904001 points to https://example.com; one designated-installation cold launch confirmed an Insignia iframe at that URL. No frozen production admin, live draft/save/publish, durable activation or release-bound Function proof was exposed. No fixture/mutation/release was attempted.
 
-| Criterion | Offline seam/evidence | Live obligation |
-|---|---|---|
-| Cold embedded launch | Built Astro shell; hydration, authenticated DTO | Stable designated installation |
-| Product deep link | Actual production-bundle route | Stable embedded product route |
-| Reload | Cookie-free mobile and two-tab browser | Current installation |
-| Back/forward | Two-tab browser native back navigation | Platform navigation where applicable |
-| Mobile/cookie-restricted | Mobile UA/touch viewport, cookie-free bearer transport | Actual supported device/cookie policy |
-| Expired identity | HTTP/auth expiry; mounted page clears private state | Real session expiry where safely available |
-| Installation generation | Fresh install check per auth; stale browser request discarded | No reinstall mutation authorized |
-| Permitted staff | Signed SDK online staff integration | Current permitted staff |
-| Underprivileged staff | Read-only/missing scopes reject mutations | Alternate existing permitted identity, if available |
-| Exact shop/install | Current tenant/install/provider identity binding | Designated installation only |
-| Cross-shop identifiers | Authenticated HTTP negatives and durable tenant fences | No unrelated-shop access |
-| Stale/revoked install | Per-request current installation, no grant cache | No uninstall/revoke operation authorized |
-| Private SSR/fragments | Built shell contains no private DTO; API authenticates every request | Stable app document |
-| Header mutations | Actual HTTP commands require bearer | Real app save/publish only if stable app capable |
-| CSRF/origin/fetch metadata | Missing/wrong Origin and cross-site rejection | Existing chosen bearer model |
-| No long-lived custom session | Cookie-omitting fetch; no browser session workaround | Actual embedded identity |
-| Idempotent save/publish | PG command digest/replay and HTTP activation reentry | Bounded fixture only if required and safe |
-| Ambiguous save | Browser exact durable readback and retained exact request | No blind replay or fabricated result |
-| Polaris/Preact hydration/events | Pinned real custom elements on built bundle | Stable iframe scripts/CSP |
-| Focus/form behavior | Focused numeric input and owner rerender | Actual embedded components |
-| UI/canvas synchronization | Direct Konva owner/scene roundtrip; negative renderer | Actual embedded preview |
-| No React/react-konva | Dependency/boundary checks | Same frozen bundle |
-| Native refresh | Authenticated refresh/reload with local-edit preservation | Stable embedded refresh |
-| Two-tab stale edits | Two real browser tabs, CAS409, explicit winning draft | Existing app state without overwrites |
-| Grant-cache refresh | Current online exchange/install on every auth; expired identity | Current actual grants |
-| Entitlement/readiness refresh | Production Partner projection and mounted refresh fail closed | Current configured commercial policy |
-| Late activation state | Mounted late ACTIVE/pending truth with unsaved edits retained | Actual durable activation if released app capable |
-| Production bundle | Astro production server, SDK bundling, CSP/runtime controls | Frozen build and stable app binding |
-| FIRST_PUBLICATION/MODE_CHANGE v3 | PG HTTP path, production v3 adapter, immutable evidence | Accepted v3 mechanics; no new lifecycle experiment |
-| SAME_MODE no hold | PG HTTP path, no extra status writes | No manufactured hold |
-| Historical v1/v2 recovery | Full application/Shopify/PG compatibility and recovery regression | Historical registers never reopened |
-| Rehold/restoration operator UX | Existing v3 compensation/claim regression plus state projection | No intentional mismatch live |
-| Atomic effective pointer/evidence | PG coordinator transaction/fences | Trusted release required |
-| Requested versus effective | Separate immutable IDs and truthful waiting/held/operator states | Never label request effective early |
+Statuses apply to the named criterion, with the executed local boundary stated separately. PASS rows are source/durable-contract criteria that do not need a new live availability experiment; they do not mark the real merchant lifecycle or full G7 passed. BLOCKED_RELEASE_BOUND rows retain their real embedded obligation even though the local production-bundle/HTTP/PG seam passed. No criterion is silently omitted or treated NOT_APPLICABLE merely because access was blocked.
+
+Local source2c84d8f: full root63web, PG18.6/171, publication/save-recovery stress200/200, expected missing-renderer rejection and100k built read-seam plan controls passed. Chromium153/Playwright1.63 only; supported physical browser matrix remains M10 requalification. [Frozen gate](evidence/m5-018/precredential-gate.json), [native observation](evidence/m5-018/live/observation.json), [closure](evidence/m5-018/live/closed-receipt.json), [bounded proposal and missing facts](M5-018-RELEASE-BOUND-PROPOSAL.md).
+
+| Criterion | Classification | Executed local seam | Real embedded evidence / limitation |
+|---|---|---|---|
+| Cold embedded launch | BLOCKED_RELEASE_BOUND | PASS — Built Astro shell; hydration, authenticated DTO | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Stable designated installation. |
+| Product deep link | BLOCKED_RELEASE_BOUND | PASS — Actual production-bundle route | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Stable embedded product route. |
+| Reload | BLOCKED_RELEASE_BOUND | PASS — Cookie-free mobile and two-tab browser | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Current installation. |
+| Back/forward | BLOCKED_RELEASE_BOUND | PASS — Two-tab browser native back navigation | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Platform navigation where applicable. |
+| Mobile/cookie-restricted | BLOCKED_RELEASE_BOUND | PASS — Mobile UA/touch viewport, cookie-free bearer transport | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Actual supported device/cookie policy. Physical Safari/device and platform cookie-policy behavior not qualified; Chromium/mobile emulation and cookie-free bearer transport are the local boundary. |
+| Expired identity | BLOCKED_RELEASE_BOUND | PASS — HTTP/auth expiry; mounted page clears private state | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Real session expiry where safely available. |
+| Installation generation | BLOCKED_RELEASE_BOUND | PASS — Fresh install check per auth; stale browser request discarded | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. No reinstall mutation authorized. |
+| Permitted staff | BLOCKED_RELEASE_BOUND | PASS — Signed SDK online staff integration | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Current permitted staff. |
+| Underprivileged staff | BLOCKED_RELEASE_BOUND | PASS — Read-only/missing scopes reject mutations | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Alternate existing permitted identity, if available. |
+| Exact shop/install | BLOCKED_RELEASE_BOUND | PASS — Current tenant/install/provider identity binding | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Designated installation only. |
+| Cross-shop identifiers | BLOCKED_RELEASE_BOUND | PASS — Authenticated HTTP negatives and durable tenant fences | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. No unrelated-shop access. |
+| Stale/revoked install | BLOCKED_RELEASE_BOUND | PASS — Per-request current installation, no grant cache | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. No uninstall/revoke operation authorized. |
+| Private SSR/fragments | BLOCKED_RELEASE_BOUND | PASS — Built shell contains no private DTO; API authenticates every request | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Stable app document. Local private SSR/API authorization negatives PASS; cross-origin placeholder iframe contents were not inspected. |
+| Header mutations | BLOCKED_RELEASE_BOUND | PASS — Actual HTTP commands require bearer | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Real app save/publish only if stable app capable. |
+| CSRF/origin/fetch metadata | BLOCKED_RELEASE_BOUND | PASS — Missing/wrong Origin and cross-site rejection | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Existing chosen bearer model. |
+| No long-lived custom session | BLOCKED_RELEASE_BOUND | PASS — Cookie-omitting fetch; no browser session workaround | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Actual embedded identity. |
+| Idempotent save/publish | BLOCKED_RELEASE_BOUND | PASS — PG command digest/replay and HTTP activation reentry | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Bounded fixture only if required and safe. |
+| Ambiguous save | BLOCKED_RELEASE_BOUND | PASS — Browser exact durable readback and retained exact request | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. No blind replay or fabricated result. |
+| Polaris/Preact hydration/events | BLOCKED_RELEASE_BOUND | PASS — Pinned real custom elements on built bundle | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Stable iframe scripts/CSP. |
+| Focus/form behavior | BLOCKED_RELEASE_BOUND | PASS — Focused numeric input and owner rerender | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Actual embedded components. |
+| UI/canvas synchronization | BLOCKED_RELEASE_BOUND | PASS — Direct Konva owner/scene roundtrip; negative renderer | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Actual embedded preview. |
+| No React/react-konva | PASS | PASS — Dependency/boundary checks | Source/contract criterion: real PG/built adapter regressions; no live activation or gate PASS claimed. Historical runs stay closed. |
+| Native refresh | BLOCKED_RELEASE_BOUND | PASS — Authenticated refresh/reload with local-edit preservation | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Stable embedded refresh. |
+| Two-tab stale edits | BLOCKED_RELEASE_BOUND | PASS — Two real browser tabs, CAS409, explicit winning draft | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Existing app state without overwrites. |
+| Grant-cache refresh | BLOCKED_RELEASE_BOUND | PASS — Current online exchange/install on every auth; expired identity | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Current actual grants. |
+| Entitlement/readiness refresh | BLOCKED_RELEASE_BOUND | PASS — Production Partner projection and mounted refresh fail closed | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Current configured commercial policy. Live commercial/calendar/build/release binding UNKNOWN; default runtime intentionally waits. |
+| Late activation state | BLOCKED_RELEASE_BOUND | PASS — Mounted late ACTIVE/pending truth with unsaved edits retained | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Actual durable activation if released app capable. |
+| Production bundle | BLOCKED_RELEASE_BOUND | PASS — Astro production server, SDK bundling, CSP/runtime controls | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. Frozen build and stable app binding. Frozen local artifact tested; current released app is not bound to it. CI generic configuration is not bitwise the app-specific bundle. |
+| FIRST_PUBLICATION/MODE_CHANGE v3 | PASS | PASS — PG HTTP path, production v3 adapter, immutable evidence | Source/contract criterion: real PG/built adapter regressions; no live activation or gate PASS claimed. Historical runs stay closed. |
+| SAME_MODE no hold | PASS | PASS — PG HTTP path, no extra status writes | Source/contract criterion: real PG/built adapter regressions; no live activation or gate PASS claimed. Historical runs stay closed. |
+| Historical v1/v2 recovery | PASS | PASS — Full application/Shopify/PG compatibility and recovery regression | Source/contract criterion: real PG/built adapter regressions; no live activation or gate PASS claimed. Historical runs stay closed. |
+| Rehold/restoration operator UX | BLOCKED_RELEASE_BOUND | PASS — Existing v3 compensation/claim regression plus state projection | Stable installation iframe is https://example.com/, so this real-admin obligation was NOT_RUN; local seam passed. No intentional mismatch live. No live mismatch induced or availability slice reopened. |
+| Atomic effective pointer/evidence | PASS | PASS — PG coordinator transaction/fences | Source/contract criterion: real PG/built adapter regressions; no live activation or gate PASS claimed. Historical runs stay closed. |
+| Requested versus effective | PASS | PASS — Separate immutable IDs and truthful waiting/held/operator states | Source/contract criterion: real PG/built adapter regressions; no live activation or gate PASS claimed. Historical runs stay closed. |

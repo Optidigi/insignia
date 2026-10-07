@@ -1,0 +1,57 @@
+{
+  "classification": "BLOCKED_RELEASE_BOUND",
+  "scope": "Stable embedded admin entry only; current release is a demonstrated blocker, not yet proven sole activation blocker",
+  "activeApp": {
+    "organizationId": "200969036",
+    "appId": "429028933633",
+    "versionId": "1153019904001",
+    "versionName": "insignia-3",
+    "activeBadge": true,
+    "applicationUrl": "https://example.com",
+    "embedded": true,
+    "displayedOptionalScopes": [
+      "write_products",
+      "read_publications",
+      "read_product_listings"
+    ],
+    "displayedRequiredScopes": null,
+    "requiredScopeObservation": "No required scopes displayed in rendered active-version details; absence is not a provider manifest attestation",
+    "apiVersion": "2026-07",
+    "legacyInstallFlow": false,
+    "displayedFunctionExtensions": [],
+    "extensionObservation": "No extension labels or modules displayed; not per-store Function ownership/enablement proof"
+  },
+  "installation": {
+    "shop": "insignia-rewrite-dev.myshopify.com",
+    "stablePath": "https://admin.shopify.com/store/insignia-rewrite-dev/apps/insignia-1",
+    "title": "insignia-rewrite-dev \u00b7 Insignia \u00b7 Shopify",
+    "appIframeTitle": "Insignia",
+    "appIframeSrc": "https://example.com/",
+    "coldLaunchAttempts": 1,
+    "deepLinkAttempts": 0,
+    "reloadAttempts": 0,
+    "productionBundleExposed": false,
+    "iframeContentTextCaptured": false,
+    "authTokenExtracted": false
+  },
+  "fixtureCount": 0,
+  "productConfigWrites": 0,
+  "providerMutations": 0,
+  "directCredentialAccess": 0,
+  "directProviderApiRequests": 0,
+  "appVersionReleases": 0,
+  "scopesChanges": 0,
+  "functionReleases": 0,
+  "sourceAndBuildHashVerification": {
+    "sourceFiles": 396,
+    "buildFiles": 225,
+    "allUnchanged": true
+  },
+  "limitations": [
+    "Current installation generation/current grants/staff authorization and entitlement policy not observable through the placeholder iframe",
+    "Per-store owned Function identities/enablement and trusted release/calendar/build capability not verified",
+    "Full app installation inventory/other-installation impact not verified",
+    "Stable deployment origin not found in repository configuration; owner information requested",
+    "No executable release proposal or sole-blocker claim yet"
+  ]
+}

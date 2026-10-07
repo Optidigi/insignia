@@ -1,0 +1,35 @@
+{
+  "recordedAt": "2026-10-07T16:33:55.919287+00:00",
+  "sourceBuildUnchanged": true,
+  "checks": [
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "command": "corepack pnpm check:style",
+      "exitCode": 0,
+      "log": "final-doc-style.log",
+      "originalSha256": "d9c9572ca6f2de777973eddc3ee4ef814944b5b4546325916561422e02382ac4",
+      "renderedSha256": "99eb1e4429182a25f8d39471023fe050e236cd09ca42fdb36a817a3596cf24a1",
+      "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+    },
+    {
+      "command": "corepack pnpm check:secrets",
+      "exitCode": 0,
+      "log": "final-doc-secrets.log",
+      "originalSha256": "2ced2734aabdbfbb137a95d220a0caa6482a0333296886c24bf6408924709c05",
+      "renderedSha256": "2ced2734aabdbfbb137a95d220a0caa6482a0333296886c24bf6408924709c05",
+      "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+    },
+    {
+      "command": "LD_LIBRARY_PATH=/home/serveradmin/insignia-pg18-tools/root/usr/lib/x86_64-linux-gnu /home/serveradmin/insignia-pg18-tools/root/usr/lib/postgresql/18/bin/pg_ctl -D /home/serveradmin/insignia-m5-018-handoff/postgres -m fast -w stop",
+      "exitCode": 0,
+      "log": "postgres-cleanup.log",
+      "originalSha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+      "renderedSha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+      "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+    }
+  ],
+  "resourceScope": "Only M5-018 synthetic cluster55419; no older cluster or unrelated service touched."
+}

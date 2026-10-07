@@ -1,0 +1,17 @@
+{
+  "slice": "M5-018",
+  "phase": "CLOSED",
+  "initializedAt": "2026-10-07T16:14:57.573812+00:00",
+  "gateSha256": "c14c3ce17d84a11f112c329da74b52e6d3f18689f4cbbac37b286119370c82ee",
+  "shop": "insignia-rewrite-dev.myshopify.com",
+  "appId": "429028933633",
+  "organizationId": "200969036",
+  "fixtureCount": 0,
+  "mutationCount": 0,
+  "directCredentialAccess": 0,
+  "directProviderRequests": 0,
+  "classification": "BLOCKED_RELEASE_BOUND",
+  "closedAt": "2026-10-07T16:23:55.267978+00:00",
+  "nativeBrowserActions": 9,
+  "pendingActions": 0
+}

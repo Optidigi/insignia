@@ -1,0 +1,21 @@
+{
+  "postgres": {
+    "data": "/home/serveradmin/insignia-m5-018-handoff/postgres",
+    "port": 55419,
+    "socket": "/home/serveradmin/insignia-m5-018-handoff/postgres",
+    "database": "insignia_m5_018",
+    "synthetic": true,
+    "owner": "M5-018",
+    "databases": [
+      "insignia_m5_018",
+      "insignia_m5_018_database",
+      "insignia_m5_018_plans"
+    ],
+    "status": "STOPPED",
+    "cleanupExitCode": 0,
+    "cleanupLog": "postgres-cleanup.log"
+  },
+  "sourceWorktree": "/home/serveradmin/insignia-m5-018-worktree",
+  "packageInstall": "frozen lockfile/offline; 464 reused, zero downloaded",
+  "browser": "Playwright 1.63.0 / Chromium headless shell 153.0.8010.12 revision1243"
+}

@@ -1,0 +1,42 @@
+{
+  "root-check-round4.log": {
+    "originalSha256": "3339c3333546e69ad5e8e91440fa14cf20566dd260734e150906130db3fbcf73",
+    "renderedSha256": "57a0a54b1f8f183964cf02617afecd3dca97bbeb2993fc8941ac55e5c7ff408b",
+    "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+  },
+  "postgres18-round4.log": {
+    "originalSha256": "4eb4e6ef2deac3f63f61e88d2f8c114201986cebe444a50511c5110b881421a8",
+    "renderedSha256": "9a31000637789f5f376e38ea5cbad201c90f4f8f5adb8ca1236ce67984440755",
+    "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+  },
+  "stress100-round4.log": {
+    "originalSha256": "6b061d5f86f1fc1fb5559d3ab16cbf78c114bbe04e64871dce60a1ee3c2039b2",
+    "renderedSha256": "6b061d5f86f1fc1fb5559d3ab16cbf78c114bbe04e64871dce60a1ee3c2039b2",
+    "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+  },
+  "renderer-control-round4.log": {
+    "originalSha256": "a8c91746203f440e953d8dfec16f879e3d43a7a8cdff2277e4873f25d99b9fd8",
+    "renderedSha256": "82ccbfb1259043183efd695557f35af3c749a5cf8abe613aec09e3d20fcc64be",
+    "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+  },
+  "query-plan-round4.log": {
+    "originalSha256": "6dad1a84382fa5548ad48664f29c8902a4954f26f98a837d8937e3bd5b8b94d3",
+    "renderedSha256": "6dad1a84382fa5548ad48664f29c8902a4954f26f98a837d8937e3bd5b8b94d3",
+    "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+  },
+  "final-doc-style.log": {
+    "originalSha256": "d9c9572ca6f2de777973eddc3ee4ef814944b5b4546325916561422e02382ac4",
+    "renderedSha256": "99eb1e4429182a25f8d39471023fe050e236cd09ca42fdb36a817a3596cf24a1",
+    "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+  },
+  "final-doc-secrets.log": {
+    "originalSha256": "2ced2734aabdbfbb137a95d220a0caa6482a0333296886c24bf6408924709c05",
+    "renderedSha256": "2ced2734aabdbfbb137a95d220a0caa6482a0333296886c24bf6408924709c05",
+    "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+  },
+  "postgres-cleanup.log": {
+    "originalSha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "renderedSha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "normalization": "ANSI styling and trailing whitespace/blank EOF removed; original neutral log retained"
+  }
+}

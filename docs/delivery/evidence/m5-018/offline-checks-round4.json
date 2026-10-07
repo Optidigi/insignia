@@ -1,0 +1,46 @@
+{
+  "sourceHead": "2c84d8feb95f8ec29ef90ed84d2c99b13aa22d6e",
+  "recordedAt": "2026-10-07T16:12:35.809524+00:00",
+  "checks": [
+    {
+      "command": "PUBLIC_SHOPIFY_API_KEY=1443cf6d03d39edae7c101a943c5c684 PATH=/home/serveradmin/.cargo/bin:$PATH CARGO_NET_OFFLINE=true DATABASE_URL=postgres://serveradmin@127.0.0.1:55419/insignia_m5_018?sslmode=disable INSIGNIA_REQUIRE_POSTGRES_TEST=1 corepack pnpm check",
+      "exitCode": 0,
+      "log": "root-check-round4.log",
+      "webTests": 63,
+      "logSha256": "3339c3333546e69ad5e8e91440fa14cf20566dd260734e150906130db3fbcf73"
+    },
+    {
+      "command": "DATABASE_URL=postgres://serveradmin@127.0.0.1:55419/insignia_m5_018_database?sslmode=disable corepack pnpm check:database",
+      "exitCode": 0,
+      "log": "postgres18-round4.log",
+      "postgresVersion": "18.6",
+      "tests": 171,
+      "files": 11,
+      "logSha256": "4eb4e6ef2deac3f63f61e88d2f8c114201986cebe444a50511c5110b881421a8"
+    },
+    {
+      "command": "corepack pnpm test:m5-renderer-control",
+      "exitCode": 0,
+      "log": "renderer-control-round4.log",
+      "result": "Expected underlying missing-renderer rejection; wrapper PASS",
+      "logSha256": "a8c91746203f440e953d8dfec16f879e3d43a7a8cdff2277e4873f25d99b9fd8"
+    },
+    {
+      "command": "DATABASE_URL=postgres://serveradmin@127.0.0.1:55419/insignia_m5_018_plans?sslmode=disable M5_QUERY_PLAN_OUTPUT=/home/serveradmin/insignia-m5-018-handoff/query-plan-round4.json corepack pnpm test:m5-query-plan",
+      "exitCode": 0,
+      "log": "query-plan-round4.log",
+      "receipt": "query-plan-round4.json",
+      "logSha256": "6dad1a84382fa5548ad48664f29c8902a4954f26f98a837d8937e3bd5b8b94d3"
+    },
+    {
+      "command": "M5_PUBLICATION_STRESS_ITERATIONS=50 corepack pnpm --filter @insignia/web exec node --test --test-name-pattern='publication (success|failed) preserves' test/admin/editor-browser.test.mjs",
+      "exitCode": 0,
+      "log": "stress100-round4.log",
+      "logSha256": "6b061d5f86f1fc1fb5559d3ab16cbf78c114bbe04e64871dce60a1ee3c2039b2",
+      "tests": 200,
+      "pass": 200,
+      "fail": 0,
+      "note": "Filename retains original intended100 label; actual run is200 four-way publication/save-recovery cases."
+    }
+  ]
+}

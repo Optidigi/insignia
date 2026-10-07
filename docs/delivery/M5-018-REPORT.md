@@ -1,6 +1,6 @@
 # M5-018 — integrated admin and G7 candidate
 
-Status: IN_PROGRESS; live qualification remains gated. No provider/credential/store-browser access, fixture or release has occurred in M5-018.
+Status: LOCAL_SOURCE_READY / LIVE BLOCKED_RELEASE_BOUND. The exact active release opens the placeholder URL rather than the frozen admin. M5 exit and complete G7 PASS are not claimed. The bounded browser observation is CLOSED/sealed; fixture/mutation/release counts are zero.
 
 [Authority](prompts/M5-018-M5-EXIT-G7.md) follows [external acceptance of PR48](PR-048R-principal-review.md). The [normal merge receipt](evidence/m5-018/pr48-merge-receipt.json) records merge407608ab929e703cd2b10972de93cf00c58aa9df and exact approved ordered parents/tree. The fresh branch starts from fetched remote main. Availability architecture, sealed runs and historical fixtures remain closed.
 
@@ -18,7 +18,7 @@ The PostgreSQL HTTP integration uses real durable config/publication/activation 
 
 Committed production-bundle browser tests exercise actual Polaris 1.1, Preact hydration, direct Konva events/projection, mobile cookie-free navigation/reload, expired identity, stored-request installation generation, exact interrupted-save recovery, two-tab stale edits and explicit winning-draft review, back navigation, readiness refresh, and mounted late activation with local edits preserved. Existing HTTP/auth negatives cover staff/shop/install and origin/fetch metadata. These local results do not establish unsupported live browser/staff coverage.
 
-## Frozen live procedure
+## Reviewed bounded live procedure
 
 Only after full offline checks, fresh actual GPT-6.1-sol/high full-source reviews CLEAR, natural exact-source CI green and source/build hashes frozen:
 
@@ -31,7 +31,7 @@ Source/build stay frozen during bounded qualification; documentation/evidence in
 
 ## Checks and matrix
 
-Final executed-check receipts, G7 criterion matrix, bounded live results, reviews and final-head CI will replace this IN_PROGRESS disposition before principal handoff. No complete G7/M5 exit is claimed here.
+The final-source [offline check receipt](evidence/m5-018/offline-checks-round4.json), [precredential gate](evidence/m5-018/precredential-gate.json), [exact-source CI](evidence/m5-018/source-ci-round4.json), [G7 matrix](M5-018-G7-MATRIX.md), and [bounded native observation](evidence/m5-018/live/observation.json) distinguish executed local proof from release-blocked real-admin acceptance. Completed-change reviews/final-head CI are bound to the eventual exact final refs in the external principal packet; these cannot be self-referentially committed. No complete G7/M5 exit is claimed.
 
 ## Precredential review correction
 
@@ -54,4 +54,38 @@ Round3 [Spec](evidence/m5-018/precredential-spec-r3.md) and [Standards/security]
 
 The other round3 finding was deterministic public-key registry validation after supported last-key destruction. The pure builder's validation refusal now returns false to the scoped reconciliation path, which durably records OPERATOR_HOLD. Database/provider exceptions remain errors; no arbitrary error becomes fabricated observation evidence. The control uses a synthetic October1 readiness clock and a key whose complete authorization window ends before the actual SQL destruction window. First attempts with the wrong retention fixture did not reproduce the target defect; the qualified [red receipt](evidence/m5-018/destroyed-key-red-qualified.log) does. All six HTTP controls and five focused browser concurrency/operator controls pass in [receipts](evidence/m5-018/review-round3-log-bindings.json).
 
-All findings to date concern admin admission/projection/UI integration or deterministic key-premise refusal. Availability v3 adapter/coordinator contracts and historical v1/v2 availability/recovery sources/migrations remain unchanged. No live qualification or freeze completion is claimed while new exact-source checks/reviews are pending.
+All findings concern admin admission/projection/UI integration or deterministic key-premise refusal. Availability v3 adapter/coordinator contracts and historical v1/v2 availability/recovery sources/migrations remain unchanged. The historical pending-check statements above describe earlier candidates; the following final-source gate supersedes their pending status without rewriting original reviewer or raw failure output.
+
+## Completed source gate
+
+Source2c84d8feb95f8ec29ef90ed84d2c99b13aa22d6e was frozen at2026-10-07T16:14:57.573812Z, before the first native browser action. All396 source/config/test files and225 built files were hashed and remained unchanged at closure. The exact source passed:
+
+| Check | Actual result | Receipt |
+|---|---|---|
+| Full PostgreSQL-enabled root | exit0;63 web tests passed; Rust/Wasm/vectors/operator/compatibility/style/secrets/boundaries included | [root log](evidence/m5-018/root-check-round4.log) |
+| PostgreSQL18.6 | exit0;171 tests,11 files passed | [PG log](evidence/m5-018/postgres18-round4.log) |
+| Production-bundle publication/save recovery stress | exit0;200/200 passed (50 iterations × success/failure × dirty/ambiguous) | [stress log](evidence/m5-018/stress100-round4.log) |
+| Missing-renderer control | wrapper exit0 after expected underlying rejection; no false preview-ready/canvas baseline | [negative control](evidence/m5-018/renderer-control-round4.log) |
+|100k retained revision/operation history | exit0; actual built public read-seam SQL/plans, indexed pointer/fallback/admin reads | [plan receipt](evidence/m5-018/query-plan-round4.json) |
+| Natural exact-source CI |11/11 pull_request workflows successful, attempt1 | [CI receipt](evidence/m5-018/source-ci-round4.json) |
+| Fresh independent full-source reviews | Spec/correctness CLEAR; Standards/security CLEAR; actual GPT-6.1-sol/high, read-only/never | [Spec](evidence/m5-018/precredential-spec-r4.md), [Security](evidence/m5-018/precredential-security-r4.md), separate settings receipts |
+
+The stress filename retains the earlier intended100 label; its actual current-source run is200. [Log bindings](evidence/m5-018/final-offline-log-bindings.json) link neutral original hashes to committed whitespace-rendered logs. The app-specific build uses public clientID1443cf6d03d39edae7c101a943c5c684; CI uses its own generic build configuration. Source identity is exact; bitwise identity between those differently configured bundles is not claimed. All48 required artifact hashes are included in the build manifest. Browser coverage is Chromium153/Playwright1.63; physical Safari/other supported devices remain M10 requalification work.
+
+## Bounded native observation and release boundary
+
+The shared native browser initially redirected to Shopify login. The owner signed in through that browser; no credential/session-token value was extracted. Afterward, the exact app429028933633/org200969036 Versions page marked insignia-3/version1153019904001 Active. Read-only active-version details displayed embedded=true, application_url=https://example.com, optional scopes write_products/read_publications/read_product_listings, legacy flow=false, API2026-07, and no extension/module labels. Required scopes were not displayed. The historical accepted release-form record for this same immutable version records an empty required-scope field; that is separate historical evidence, not a newly read provider manifest.
+
+One cold launch of the exact designated insignia-rewrite-dev installation reached the Shopify Insignia shell with iframe title Insignia and src=https://example.com/. The frozen admin could not be exposed through that release. Top-document App Bridge/Polaris/editor absence is not an inspection of cross-origin iframe contents. No iframe text/production-version attestation, identity token, current installation generation, staff grant, entitlement policy or per-store Function ownership was extracted. Deep link/reload/live config/save/publish were stopped at this release boundary; no diagnostic preview or alternate auth was used.
+
+The [closure](evidence/m5-018/live/closed-receipt.json) records9 durably reserved/settled native actions, pending0, one cold launch, zero fixtures/config/product/provider mutations and zero scopes/app/Function releases. Cleanup is NOT_APPLICABLE because there was no fixture. Authentication redirect query and unrelated snapshot UI were omitted before sealing. No further provider/browser/credential access is authorized by the closed procedure. Historical canonical runs/fixtures were never reopened.
+
+The stable admin entry is empirically BLOCKED_RELEASE_BOUND. It is **not established that one app release is the sole remaining activation blocker**: the actual deployed origin/routing, other-installation inventory/impact, per-store Function identities/enablement, current grant/commercial configuration and trusted build/release/calendar binding remain unverified. Default runtime deliberately waits without that trusted capability. The [single bounded proposal](M5-018-RELEASE-BOUND-PROPOSAL.md) therefore records exact current version, artifact/module delta and rollback boundary while marking unresolved inputs; it is not executable or a request to authorize a speculative release. No host or commercial values are invented. M5 remains technically open for principal adjudication of the candidate and bounded next action.
+
+
+After the Shopify browser phase closed, the owner recalled `insignia.optidigi.nl` as an earlier install link. Two independent public HTTPS reads (HEAD and root GET, no cookies/query/credentials/redirect-following) returned200 and a login form headed “Logo customization for Shopify merchants”; no frozen admin markers were present. These are separate derived public-origin facts, not new Shopify/browser actions or a reopened run. No authentication/install form was submitted. The proposal now names the concrete candidate `https://insignia.optidigi.nl/admin/products`, but host ownership, current application routing/collisions and deployed rewrite identity remain unverified. The existing root/login application is preserved. Supplying this domain did not authorize deployment, repointing the app, a release or a sole-blocker claim.
+
+
+The two review roles ran as independent local `codex exec --sandbox read-only` sessions using actual GPT-6.1-sol/high and approval policy never. Native delegation controls did not expose an enforceable read-only sandbox; this is the recorded local-host fallback, not a claim of T3-owned delegation or credential/network isolation. Same-session turn_context metadata verifies model, effort, directory and sandbox; original reports and settings are preserved. Reviewers inspected receipts and source, personally executed no tests, and did not supply principal approval.
+
+The M5-018 synthetic PostgreSQL cluster on loopback55419 was stopped cleanly after its final tests. [Document/style/secret/resource receipt](evidence/m5-018/final-document-checks.json) records exit0 and scoped cleanup. Other clusters/services were untouched. Final exact refs, fresh completed-change review reports and natural final-head CI are supplied externally so no unreviewed self-referential commit is added to claim a final approval.
