@@ -1,0 +1,85 @@
+{
+  "observedAt": "2026-10-07T23:16:46.981946+00:00",
+  "canonicalHost": "insignia-app.optidigi.nl",
+  "dns": [
+    "188.114.96.0",
+    "188.114.97.0",
+    "2a06:98c1:3120::",
+    "2a06:98c1:3121::"
+  ],
+  "resolvers": [
+    {
+      "name": "optidigi.nl",
+      "type": "NS",
+      "status": 0,
+      "answer": [
+        {
+          "name": "optidigi.nl.",
+          "type": 2,
+          "TTL": 21600,
+          "data": "igor.ns.cloudflare.com."
+        },
+        {
+          "name": "optidigi.nl.",
+          "type": 2,
+          "TTL": 21600,
+          "data": "davina.ns.cloudflare.com."
+        }
+      ]
+    },
+    {
+      "name": "insignia-app.optidigi.nl",
+      "type": "A",
+      "status": 0,
+      "answer": [
+        {
+          "name": "insignia-app.optidigi.nl.",
+          "type": 1,
+          "TTL": 300,
+          "data": "188.114.97.0"
+        },
+        {
+          "name": "insignia-app.optidigi.nl.",
+          "type": 1,
+          "TTL": 300,
+          "data": "188.114.96.0"
+        }
+      ]
+    },
+    {
+      "name": "insignia-app.optidigi.nl",
+      "type": "AAAA",
+      "status": 0,
+      "answer": [
+        {
+          "name": "insignia-app.optidigi.nl.",
+          "type": 28,
+          "TTL": 300,
+          "data": "2a06:98c1:3121::"
+        },
+        {
+          "name": "insignia-app.optidigi.nl.",
+          "type": 28,
+          "TTL": 300,
+          "data": "2a06:98c1:3120::"
+        }
+      ]
+    }
+  ],
+  "tls": {
+    "verified": true,
+    "protocol": "TLSv1.3",
+    "sans": [
+      [
+        "DNS",
+        "optidigi.nl"
+      ],
+      [
+        "DNS",
+        "*.optidigi.nl"
+      ]
+    ],
+    "notAfter": "Dec  6 00:44:49 2026 GMT",
+    "certificateSha256": "12580ffd230c197e6db9a53db77e2c6062bd7c6406797d0c6cf634d71231a29f"
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "observedAt": "2026-10-07T23:12:43.312454+00:00",
+  "sourceHead": "9b0810dd8383ae578a3c960b327786694f1b222e",
+  "containers": [
+    {
+      "name": "/insignia-rewrite-m5-019-web",
+      "id": "fda5d54ce1a12bdbff2acc2d25301612208c2eabbaf2db1af99f1201ca7d3109",
+      "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+      "startedAt": "2026-10-07T18:52:43.804844825Z",
+      "status": "running",
+      "health": "healthy",
+      "hostRules": {
+        "traefik.http.routers.insignia-rewrite-m5-019.rule": "Host(`insignia.optidigi.nl`) && (Path(`/admin/products`) || PathPrefix(`/admin/products/`) || Path(`/api/admin/products`) || PathPrefix(`/api/admin/products/`) || PathPrefix(`/_astro/`))"
+      },
+      "traefikEnabled": "true",
+      "workingDir": "/srv/insignia",
+      "appUrl": [
+        "APP_URL=https://insignia.optidigi.nl"
+      ],
+      "publishedPorts": {
+        "3000/tcp": null
+      }
+    },
+    {
+      "name": "/insignia-rewrite-m5-019-database",
+      "id": "a1a521b36a30dd97c6ece2e3cb79ba05edf963362bc3ce3941e5ffac53cee265",
+      "image": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+      "startedAt": "2026-10-07T18:41:27.552874568Z",
+      "status": "running",
+      "health": "healthy",
+      "hostRules": {},
+      "traefikEnabled": null,
+      "workingDir": "",
+      "appUrl": [],
+      "publishedPorts": {
+        "5432/tcp": null
+      }
+    },
+    {
+      "name": "/insignia-app",
+      "id": "8c08a8e001c7751fa23e865ada27257c201849019e7bad5e8a449306dcf20c9d",
+      "image": "sha256:b06eae7224abc3bf992b7811086c4e2c572c3d0e45d78145152b14a2a982f7c1",
+      "startedAt": "2026-09-28T10:53:23.217714081Z",
+      "status": "running",
+      "health": "healthy",
+      "hostRules": {
+        "traefik.http.routers.insignia.rule": "Host(`insignia.optidigi.nl`)"
+      },
+      "traefikEnabled": "true",
+      "workingDir": "/app",
+      "appUrl": [],
+      "publishedPorts": {
+        "3000/tcp": null
+      }
+    },
+    {
+      "name": "/traefik",
+      "id": "469dd744a48f195207ade272e51109e316901645ef7f8525476d3b5d34abc875",
+      "image": "sha256:f5dba1e65167778cd5f8d1b463fc5d200f49d40c6458fc9f4b391a68ebfb9534",
+      "startedAt": "2026-09-28T10:50:10.540631631Z",
+      "status": "running",
+      "health": null,
+      "hostRules": {
+        "traefik.http.routers.traefik.rule": "Host(`monitor.optidigi.nl`)"
+      },
+      "traefikEnabled": "true",
+      "workingDir": "/",
+      "appUrl": [],
+      "publishedPorts": {
+        "443/tcp": [
+          {
+            "HostIp": "0.0.0.0",
+            "HostPort": "443"
+          },
+          {
+            "HostIp": "::",
+            "HostPort": "443"
+          }
+        ],
+        "80/tcp": [
+          {
+            "HostIp": "0.0.0.0",
+            "HostPort": "80"
+          },
+          {
+            "HostIp": "::",
+            "HostPort": "80"
+          }
+        ]
+      }
+    }
+  ],
+  "publicArtifactFiles": {
+    "compose.yaml": {
+      "sha256": "2d8de9add48a722d7c7c201e7eaf40c41e94eb4a5be46d8a53ebe8b9e70c96c6",
+      "mode": "0o600"
+    },
+    "reviewed-web-package.tar.gz": {
+      "sha256": "f117be50d7bc106f1c943cdf75a8080fa63c26e0edd99b7ba0ddf3eaea697c2b",
+      "mode": "0o600"
+    }
+  },
+  "privateFileModesOnly": {
+    ".env": "0o600",
+    "runtime.env": "0o600",
+    "database.env": "0o600"
+  },
+  "entrySha256": "5dab1e4f21a7033582c1c2a326c97d6dcadae66ca04566a73a2aca113b4077f7",
+  "dockerCanonicalCollisions": [],
+  "fileProviderCanonicalCollision": false,
+  "legacyInternalRootLogin": [
+    {
+      "path": "/",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "h1": [
+        "Logo customization for Shopify merchants"
+      ],
+      "forms": [
+        "/auth/login"
+      ],
+      "bodySha256": "2de089f95976eb7ae2550de4bb262907fb1b3c8da16698320d034b91fe1dd12f"
+    },
+    {
+      "path": "/auth/login",
+      "status": 200,
+      "contentType": "text/html; charset=utf-8",
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "h1": [],
+      "forms": [
+        "/auth/login"
+      ],
+      "bodySha256": "869d3cb23f84f0a071fa81a1b32b229294ca28bd2aaae73a26cfb896b455b76c"
+    }
+  ],
+  "readOnly": true
+}

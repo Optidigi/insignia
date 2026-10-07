@@ -83,7 +83,7 @@ def validate_candidate(source, candidate):
     require(app_file.read_bytes() == (configuration / app_file.name).read_bytes(), 'app_config_changed')
     app = tomllib.loads(app_file.read_text())
     require(app['client_id'] == '1443cf6d03d39edae7c101a943c5c684', 'exact_client_binding')
-    require(app['application_url'] == 'https://insignia.optidigi.com/admin/products', 'canonical_app_url')
+    require(app['application_url'] == 'https://insignia-app.optidigi.nl/admin/products', 'canonical_app_url')
     require(app['name'] == 'Insignia' and app['embedded'] is True, 'canonical_app_identity')
     require(app['access_scopes'] == {'scopes': '', 'optional_scopes': ['write_products', 'read_publications', 'read_product_listings'], 'use_legacy_install_flow': False}, 'canonical_scope_flags')
     require(app['auth'] == {'redirect_urls': []} and app['webhooks']['api_version'] == '2026-07', 'canonical_auth_api')
@@ -167,6 +167,14 @@ def validate_versions(versions):
     require(all((row['status'], row['versionTag']) == expected[row['versionId']] for row in versions), 'active_or_superseded_prestate_changed')
 
 
+def validate_host(host):
+    require(host['classification'] == 'CANONICAL_HOST_READINESS_PASS', 'host_not_ready')
+    require(host['canonicalOrigin'] == host['runtimeAppUrl'] == 'https://insignia-app.optidigi.nl',
+            'canonical_host_origin')
+    require(host['applicationUrl'] == 'https://insignia-app.optidigi.nl/admin/products',
+            'canonical_host_application_url')
+
+
 def validate_gate(gate_path):
     environment = cli_environment()
     gate = json.loads(gate_path.read_text())
@@ -182,7 +190,8 @@ def validate_gate(gate_path):
             'reviewed_head_changed')
     require(not git_output(source, 'status', '--porcelain'), 'worktree_dirty')
     host = json.loads((source / 'docs/delivery/evidence/m5-019r/host-routing-qualification.json').read_text())
-    require(gate['hostClassification'] == host['classification'] == 'CANONICAL_HOST_READINESS_PASS', 'host_not_ready')
+    require(gate['hostClassification'] == host['classification'], 'host_classification_binding')
+    validate_host(host)
     versions = json.loads((NEUTRAL / 'versions-pre-freeze.json').read_text())
     require(gate['activeVersion'] == '1153019904001' and gate['supersededNeverRelease'] == '1158837927937', 'version_authority_binding')
     validate_versions(versions)

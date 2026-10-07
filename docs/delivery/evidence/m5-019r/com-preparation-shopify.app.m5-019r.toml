@@ -2,7 +2,7 @@
 
 client_id = "1443cf6d03d39edae7c101a943c5c684"
 name = "Insignia"
-application_url = "https://insignia-app.optidigi.nl/admin/products"
+application_url = "https://insignia.optidigi.com/admin/products"
 embedded = true
 web_directories = []
 extension_directories = ["extensions/insignia-cart-transform", "extensions/insignia-cart-validation"]

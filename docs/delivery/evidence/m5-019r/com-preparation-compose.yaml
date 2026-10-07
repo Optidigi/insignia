@@ -16,7 +16,7 @@ services:
       NODE_ENV: production
       HOST: 0.0.0.0
       PORT: "3000"
-      APP_URL: https://insignia-app.optidigi.nl
+      APP_URL: https://insignia.optidigi.com
       SHOPIFY_CLIENT_ID: 1443cf6d03d39edae7c101a943c5c684
       INSIGNIA_SHOPIFY_APP_ID: "429028933633"
     networks: [proxy, private]
@@ -33,7 +33,7 @@ services:
       traefik.enable: "${INSIGNIA_ROUTE_ENABLED:-false}"
       traefik.docker.network: proxy
       traefik.http.routers.insignia-canonical-m5-019r.entrypoints: websecure
-      traefik.http.routers.insignia-canonical-m5-019r.rule: Host(`insignia-app.optidigi.nl`)
+      traefik.http.routers.insignia-canonical-m5-019r.rule: Host(`insignia.optidigi.com`)
       traefik.http.routers.insignia-canonical-m5-019r.priority: "1000"
       traefik.http.routers.insignia-canonical-m5-019r.tls.certresolver: letsencrypt
       traefik.http.routers.insignia-canonical-m5-019r.service: insignia-rewrite-m5-019

@@ -1,3 +1,7 @@
+# Current owner origin revision — M5-019R
+
+IN_PROGRESS; same PR50, no merge/release. [Direct owner revision](M5-019R-OWNER-ORIGIN-REVISION.md) supersedes only prior `.com` choice: canonical Insignia is https://insignia-app.optidigi.nl, app URL/admin/products, matching APP_URL and dedicated whole-host router. `.nl` historical evidence and private `.com` stage remain preserved; old inactive1158837927937 NEVERrelease. Additional version attempts0. New DNS/public TLS verify; private stage/config/reviews/CI for this revised hostname are pending. Existing reviewed artifacts/DB/legacy preserved. Current report/proposal carry actual readiness; supplied `.com` lock below is historical and does not overrule this direct owner instruction.
+
 # Current authorized slice — M5-019R
 
 [PR50 principal correction](PR-050-principal-review.md) binds base703cfb21a4262675b088cd06289fe08a421ecdd8/head5157ac8be2a9d1bf3f6765bf449fd6a410ce699c/tree dc59b6e730940a0cbabd304ae51442f384046885, CHANGES_REQUESTED. [Brief](prompts/M5-019R-CANONICAL-PRODUCTION-DOMAIN.md): SAME PR, canonical Insignia.com identity, dedicated whole-host router, unchanged reviewed build/Functions/scopes, exactly one additional unreleased version after fresh frozen gate, no merge/release. Old .nl inactive1158837927937 is permanently SUPERSEDED_WRONG_CANONICAL_ORIGIN_NEVER_RELEASE; original .nl evidence/report/proposal/config immutable. Previous M5-019 run CLOSED.

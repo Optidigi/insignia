@@ -1,0 +1,73 @@
+{
+  "observedAt": "2026-10-07T23:13:56.264075+00:00",
+  "records": [
+    {
+      "resolver": "https://dns.google/resolve",
+      "name": "optidigi.com",
+      "type": "NS",
+      "status": 0,
+      "answer": [
+        {
+          "name": "optidigi.com.",
+          "type": 2,
+          "TTL": 60,
+          "data": "verification2.plaindns.net."
+        },
+        {
+          "name": "optidigi.com.",
+          "type": 2,
+          "TTL": 60,
+          "data": "verification1.plaindns.net."
+        }
+      ]
+    },
+    {
+      "resolver": "https://dns.google/resolve",
+      "name": "insignia.optidigi.com",
+      "type": "A",
+      "status": 0,
+      "answer": [
+        {
+          "name": "insignia.optidigi.com.",
+          "type": 1,
+          "TTL": 60,
+          "data": "81.88.63.46"
+        }
+      ]
+    },
+    {
+      "resolver": "https://cloudflare-dns.com/dns-query",
+      "name": "optidigi.com",
+      "type": "NS",
+      "status": 0,
+      "answer": [
+        {
+          "name": "optidigi.com",
+          "type": 2,
+          "TTL": 60,
+          "data": "verification2.plaindns.net."
+        },
+        {
+          "name": "optidigi.com",
+          "type": 2,
+          "TTL": 60,
+          "data": "verification1.plaindns.net."
+        }
+      ]
+    },
+    {
+      "resolver": "https://cloudflare-dns.com/dns-query",
+      "name": "insignia.optidigi.com",
+      "type": "A",
+      "status": 0,
+      "answer": [
+        {
+          "name": "insignia.optidigi.com",
+          "type": 1,
+          "TTL": 60,
+          "data": "81.88.63.46"
+        }
+      ]
+    }
+  ]
+}

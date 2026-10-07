@@ -26,15 +26,43 @@ def package_fixture(directory):
 
 
 class GateControls(unittest.TestCase):
-    def test_canonical_origin_is_required_even_when_source_and_candidate_agree(self):
+    def test_owner_revised_dedicated_origin_is_accepted(self):
+        import tomllib
         with tempfile.TemporaryDirectory() as directory, patch.object(operator, 'NEUTRAL', Path(directory)):
             candidate = package_fixture(directory)
-            source = Path(directory) / 'source'
-            shutil.copytree(SOURCE / 'deployment/m5-019r', source / 'deployment/m5-019r')
-            for app in [candidate / 'shopify.app.m5-019r.toml', source / 'deployment/m5-019r/shopify.app.m5-019r.toml']:
-                app.write_text(app.read_text().replace('https://insignia.optidigi.com/admin/products', 'https://insignia.optidigi.nl/admin/products'))
-            with self.assertRaisesRegex(ValueError, 'canonical_app_url'):
-                operator.validate_candidate(source, candidate)
+            app = tomllib.loads((candidate / 'shopify.app.m5-019r.toml').read_text())
+            self.assertEqual(app['application_url'], 'https://insignia-app.optidigi.nl/admin/products')
+            self.assertEqual(len(operator.validate_candidate(SOURCE, candidate)), 7)
+
+    def test_canonical_origin_is_required_even_when_source_and_candidate_agree(self):
+        for wrong in ['https://insignia.optidigi.com/admin/products',
+                      'https://insignia.optidigi.nl/admin/products']:
+            with self.subTest(wrong=wrong), tempfile.TemporaryDirectory() as directory, patch.object(operator, 'NEUTRAL', Path(directory)):
+                candidate = package_fixture(directory)
+                source = Path(directory) / 'source'
+                shutil.copytree(SOURCE / 'deployment/m5-019r', source / 'deployment/m5-019r')
+                for app in [candidate / 'shopify.app.m5-019r.toml', source / 'deployment/m5-019r/shopify.app.m5-019r.toml']:
+                    app.write_text(app.read_text().replace('https://insignia-app.optidigi.nl/admin/products', wrong))
+                with self.assertRaisesRegex(ValueError, 'canonical_app_url'):
+                    operator.validate_candidate(source, candidate)
+
+    def test_host_readiness_is_bound_to_owner_revised_origin(self):
+        host = {'classification': 'CANONICAL_HOST_READINESS_PASS',
+                'canonicalOrigin': 'https://insignia-app.optidigi.nl',
+                'applicationUrl': 'https://insignia-app.optidigi.nl/admin/products',
+                'runtimeAppUrl': 'https://insignia-app.optidigi.nl'}
+        with patch.object(operator.subprocess, 'Popen') as transport:
+            operator.validate_host(host)
+            for origin in ['https://insignia.optidigi.com', 'https://insignia.optidigi.nl']:
+                for field in ['canonicalOrigin', 'applicationUrl', 'runtimeAppUrl']:
+                    changed = copy.deepcopy(host)
+                    changed[field] = origin + ('/admin/products' if field == 'applicationUrl' else '')
+                    with self.subTest(origin=origin, field=field), self.assertRaises(ValueError):
+                        operator.validate_host(changed)
+            changed = copy.deepcopy(host); changed['classification'] = 'PRIVATE_STAGE_PASS'
+            with self.assertRaises(ValueError):
+                operator.validate_host(changed)
+            transport.assert_not_called()
 
     def test_superseded_version_must_stay_inactive_and_active_must_stay_exact(self):
         versions = [
