@@ -2,6 +2,7 @@ export * from './active-subscription.js';
 export * from './admin-online-identity.js';
 export * from './availability-hold.js';
 export * from './availability-hold-v2.js';
+export * from './availability-hold-v3.js';
 export * from './catalog.js';
 export * from './contextual-pricing.js';
 export * from './function-ownership.js';

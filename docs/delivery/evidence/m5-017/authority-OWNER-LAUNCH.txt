@@ -1,0 +1,44 @@
+Use the attached `insignia-pr47-approved-m5-017-handoff` package.
+
+Read README.md, PR-047-principal-review.md and M5-017-AVAILABILITY-HOLD-V3.md first.
+
+I authorize NORMAL merge of PR #47 only at:
+base d0efd626222047a2047573f678b019cd7b1802a9
+head 857e0db43918dada608af8aa63654756673c6ba7
+tree dcd5aca2e0f4152b9eb07b7b1616f0d309ecf4a7
+
+Reverify exact refs, all ten attempt-1 workflows, external principal approval and actual normal-merge ordered parents/tree. No squash/rebase/force/protection bypass/fabricated approval.
+
+M5-016/DIRECT_ONLY and the archived fixture are closed. Never reopen them.
+
+Then execute M5-017 exactly.
+
+Architecture decision:
+- v1 and v2 remain historical/immutable;
+- new activation uses v3;
+- v3 does NOT claim complete configured-intent discovery;
+- v3 anchors every Publication actually effective before the hold by exact Publication ID + exact product inclusion;
+- DRAFT held state must have zero effective visibility while those original anchors still include the product;
+- restore must reproduce the original effective Publication-ID set and online-store booleans;
+- a settled restore mismatch triggers exactly one automatic compensating DRAFT rehold, then OPERATOR_HOLD;
+- ambiguous restore never auto-compensates or retries;
+- actual visible scheduled/staged publication remains unsupported/fail-closed;
+- updatedAt remains diagnostic, not CAS/tolerance.
+
+Implement v3 contracts, adapter, activation/evidence/recovery and additive SQL with full v1/v2 compatibility.
+
+Use TDD, full regression, PostgreSQL18, stress100/100, renderer control and fresh full-source reviews.
+
+M5-017 may include one live v3 qualification in the SAME successor PR, but only after production source/build is frozen, precredential reviews are clear, exact-source CI is green and the full gate is frozen.
+
+After live provider access starts, production source/build is immutable. If live evidence exposes a production defect, stop and return; do not patch and continue.
+
+Fresh live run:
+`/home/serveradmin/insignia-m5-017-handoff/run`
+
+Fresh product only. No intentional mismatch. Expected lifecycle:
+DRAFT → ACTIVE → v3 acquire DRAFT → fresh-process observe HELD → v3 restore ACTIVE with original effective membership → ARCHIVED cleanup.
+
+No publication mutation, scope/version change, deletion, inventory/variant/price/media work, production activation, RELEASE_BOUND, G7, M6/M7 or launch.
+
+Return one integrated PR and stop for principal review. Do not merge successor.

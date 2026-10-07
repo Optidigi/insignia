@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify frozen receipts plus v1.1/v1.2/v1.3 archives and the v1.4 record.
 
-Each archived version is checked at its fixed merge. Current v1.4 hashes are
+Each archived version is checked at its fixed merge. Current v1.4 plus M5-017 hashes are
 explicit constants, never learned from the working files being checked.
 """
 
@@ -63,9 +63,21 @@ v1_3_architecture = {
 for path, expected in v1_3_architecture.items():
     assert digest(v1_3(path)) == expected, f"archived v1.3 architecture mismatch: {path}"
 
-current_architecture = {
+pre_m5_017_architecture = {
     "docs/architecture/implementation-plan.md": "cd59fd361d69adc3f307ee9b88ba1f5509ffeefb68aea90a15f9b88757b4e792",
     "docs/architecture/decision-ledger.md": "3d1e8fe50c948822ba3403facfc142402d4fc6631d8d667a2e3341ff6cdbd802",
+    "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+}
+
+# The principal-authorized M5-017 addition preserves the prior approved document binding.
+M5_017_BASE = "4bba14fb4415815557ffa5f1e600427a62128489"
+for path, expected in pre_m5_017_architecture.items():
+    archived = subprocess.check_output(["git", "show", f"{M5_017_BASE}:{path}"], cwd=REPO)
+    assert digest(archived) == expected, f"pre-M5-017 architecture mismatch: {path}"
+
+current_architecture = {
+    "docs/architecture/implementation-plan.md": "c4425cf88b3ef4131f114d54ba367d8a285b340a2e3c1a2182b9172d313d0822",
+    "docs/architecture/decision-ledger.md": "ed8390b3337ce179c5afc810f08cd012ed8ab55ba3ae4a8a67e08fd144ec8f96",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
 }
 for path, expected in current_architecture.items():
@@ -81,6 +93,8 @@ print(json.dumps({
     "archivedV1_2Sha256": v1_2_architecture,
     "archivedV1_3Ref": V1_3_MERGE,
     "archivedV1_3Sha256": v1_3_architecture,
-    "currentArchitectureVersion": "1.4",
+    "preM5_017Ref": M5_017_BASE,
+    "preM5_017Sha256": pre_m5_017_architecture,
+    "currentArchitectureVersion": "1.4 + M5-017",
     "currentArchitectureSha256": current_architecture,
 }, sort_keys=True))

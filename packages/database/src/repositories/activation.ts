@@ -7,12 +7,12 @@ import {
   type ActivationState,
   type ActivationStore,
   activationDigest,
-  availabilityV2HeldSafe,
+  availabilityV3HeldSafe,
   buildPublicConfig,
   classifyPublicationAdmission,
-  isAvailabilityV2,
+  isAvailabilityV3,
   publicKeyFingerprint,
-  sameAvailabilityV2,
+  sameAvailabilityV3,
 } from '@insignia/application';
 import { type Kysely, sql, type Transaction } from 'kysely';
 import type { Database } from '../client/database.js';
@@ -248,8 +248,8 @@ export class PgActivationStore implements ActivationStore {
               evidence.shopId !== identity.shopId ||
               evidence.configId !== identity.configId ||
               evidence.operationId !== identity.operationId ||
-              evidence.version !== 'm5-activation-evidence-v2' ||
-              evidence.decisionVersion !== 2 ||
+              evidence.version !== 'm5-activation-evidence-v3' ||
+              evidence.decisionVersion !== 3 ||
               evidence.revisionId !== candidate.revisionId ||
               evidence.revisionHash !== candidate.revisionHash ||
               evidence.operationSequence !== candidate.operationSequence ||
@@ -268,10 +268,10 @@ export class PgActivationStore implements ActivationStore {
                   !evidence.holdObservation ||
                   evidence.holdObservation.productId !== candidate.productId ||
                   evidence.holdObservation.state !== 'unavailable' ||
-                  evidence.hold.version !== 'm5-availability-hold-v2' ||
-                  !isAvailabilityV2(evidence.holdObservation) ||
-                  !sameAvailabilityV2(evidence.holdObservation, evidence.hold.held) ||
-                  !availabilityV2HeldSafe(evidence.holdObservation) ||
+                  evidence.hold.version !== 'm5-availability-hold-v3' ||
+                  !isAvailabilityV3(evidence.holdObservation) ||
+                  !sameAvailabilityV3(evidence.holdObservation, evidence.hold.held) ||
+                  !availabilityV3HeldSafe(evidence.holdObservation, evidence.hold.before) ||
                   canonicalJson(evidence.holdObservation.scope) !== canonicalJson(candidate.availabilityScope) ||
                   canonicalJson(evidence.hold) !== canonicalJson(candidate.state.hold))
             )

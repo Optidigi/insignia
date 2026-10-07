@@ -1,3 +1,9 @@
+# Current authorization — M5-017
+
+[PR47 external principal approval](PR-047-principal-review.md) was followed by verified normal merge `4bba14fb4415815557ffa5f1e600427a62128489`, with exact ordered parents/tree and all ten reviewed-head attempt1 successful workflows. [Receipt](evidence/m5-017/pr47-merge-receipt.json). M5-016/DIRECT_ONLY and its archived fixture remain permanently closed; all51 historical canonical files are bound unchanged.
+
+[M5-017](prompts/M5-017-AVAILABILITY-HOLD-V3.md) is IN_PROGRESS / LOCAL_OFFLINE. Worktree `/home/serveradmin/insignia-m5-017-worktree`, branch `feat/m5-017-availability-hold-v3`. New v3 uses exact effective Publication anchors and does not claim complete hidden configured-intent discovery. Historical v1/v2 semantics/JSONB/recovery remain unchanged. Fresh canonical `/home/serveradmin/insignia-m5-017-handoff/run` is NOT_INITIALIZED; credentials/provider operations NOT_RUN. A full source/build/review/CI/guard gate must freeze before one authorized fresh live lifecycle. Production source/build are immutable thereafter. Return one integrated successor PR for principal review; no successor merge or next slice.
+
 # Current review boundary — M5-016
 
 PR #46 normally merged at `d0efd626222047a2047573f678b019cd7b1802a9` with approved ordered parents/tree after ten exact-head attempt-1 successful workflows and supplied principal approval. It remains accepted only as truthful STOPPED M5-015R evidence. Historical runs/reports below retain their original execution meaning.

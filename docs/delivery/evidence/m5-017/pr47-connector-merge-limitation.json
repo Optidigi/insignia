@@ -1,0 +1,1 @@
+{"attempt": "GitHub connector normal merge at exact reviewed head", "result": "403 Resource not accessible by integration", "mutationPerformed": false, "fallback": "Previously verified existing authenticated local gh route, same explicit user authorization; no admin/protection bypass"}
