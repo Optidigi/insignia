@@ -197,12 +197,21 @@ def validate_gate(gate_path):
     return gate, candidate
 
 
-def main():
-    gate_path = Path(sys.argv[1]).resolve()
-    gate, candidate = validate_gate(gate_path)
+def establish_accounting_directory():
     CANONICAL.mkdir(mode=0o700, exist_ok=True)
     require(not CANONICAL.is_symlink() and CANONICAL.stat().st_uid == os.getuid(), 'canonical_owner_or_symlink')
     require(CANONICAL.stat().st_mode & 0o777 == 0o700, 'canonical_permissions')
+    fd = os.open(CANONICAL.parent, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
+def main():
+    gate_path = Path(sys.argv[1]).resolve()
+    gate, candidate = validate_gate(gate_path)
+    establish_accounting_directory()
     # The exclusive/fsynced reservation survives failure or crash. No retry or release path exists.
     durable_new(CANONICAL / 'creation-reservation.json', {
         'sourceHead': gate['sourceHead'], 'gateSha256': digest(gate_path),

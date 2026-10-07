@@ -160,6 +160,26 @@ class GateControls(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'frozen_inventory_incomplete'):
                 operator.validate_files([], required)
 
+    def test_new_accounting_parent_sync_precedes_reservation_and_dispatch(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(operator, 'CANONICAL', Path(directory) / 'new-run'):
+            events = []
+            real_open, real_fsync = os.open, os.fsync
+            descriptors = {}
+            def opened(path, flags, *args):
+                fd = real_open(path, flags, *args)
+                descriptors[fd] = str(path)
+                return fd
+            def synced(fd):
+                events.append(descriptors.get(fd))
+                real_fsync(fd)
+            with patch.object(operator.os, 'open', side_effect=opened), patch.object(operator.os, 'fsync', side_effect=synced):
+                operator.establish_accounting_directory()
+                operator.durable_new(operator.CANONICAL / 'creation-reservation.json', {'attempt': 1})
+            self.assertEqual(events[:3], [directory, str(operator.CANONICAL / 'creation-reservation.json'), str(operator.CANONICAL)])
+            with patch.object(operator.os, 'fsync', side_effect=OSError('sync-denied')):
+                with self.assertRaisesRegex(OSError, 'sync-denied'):
+                    operator.establish_accounting_directory()
+
     def test_durable_claim_survives_duplicate(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'reservation.json'
