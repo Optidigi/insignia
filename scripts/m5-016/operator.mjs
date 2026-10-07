@@ -67,8 +67,10 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
         state.prestateVerified &&
         state.fixture?.status === 'ACTIVE' &&
         state.identity &&
+        Date.now() >= state.identity.at &&
         Date.now() - state.identity.at < 30000 &&
         state.ownedAt &&
+        Date.now() >= state.ownedAt &&
         Date.now() - state.ownedAt < 30000 &&
         known() &&
         state.counts.directUpdate === 0,
@@ -148,6 +150,7 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
       state.counts[r.kind] < LIMITS[r.kind] && (r.kind === 'auth' || state.counts.graphql < LIMITS.graphql),
       'ceiling',
     );
+    const observationOrigin = Date.now();
     state.counts[r.kind]++;
     if (r.kind === 'directUpdate') state.counts.graphql++;
     const event = {
@@ -155,6 +158,7 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
       ...r,
       request: r.kind === 'auth' ? { client_id: TARGET.client, grant_type: 'client_credentials' } : body,
       startedAt: new Date().toISOString(),
+      observationOrigin,
       invoked: false,
       settlement: r.mutation ? 'UNKNOWN' : 'PENDING',
     };
@@ -180,7 +184,6 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
           const response = await fetchImpl(url, { ...init, redirect: 'error', signal });
           event.status = response.status;
           const raw = JSON.parse((await bytes(response, signal)).toString('utf8'));
-          requireValue(response.status === 200, 'provider_status');
           return raw;
         } catch (error) {
           if (error instanceof Stop && error.kind === 'body_disposal_unsettled') event.disposalUnsettled = true;
@@ -192,6 +195,7 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
       const raw = await Promise.race([aborted, work]);
       let returned;
       if (r.kind === 'auth') {
+        requireValue(event.status === 200, 'provider_status');
         requireValue(
           typeof raw.access_token === 'string' &&
             raw.access_token.length > 0 &&
@@ -221,7 +225,11 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
           if (raw?.data && typeof raw.data === 'object') {
             if (!r.mutation) {
               event.identity = selectedIdentity(raw.data);
-              if (!hasErrors || raw.data.shop !== undefined || raw.data.currentAppInstallation !== undefined)
+              if (
+                (!hasErrors && event.status === 200) ||
+                raw.data.shop !== undefined ||
+                raw.data.currentAppInstallation !== undefined
+              )
                 identity(raw.data);
             }
             d = selected(raw.data, r.operation);
@@ -231,17 +239,23 @@ export function createOperator({ directory, binding, fetchImpl, assertCurrent })
           if (error.kind === 'identity' || error.kind === 'grants') state.identityFailed = true;
           throw error;
         }
+        event.denied =
+          event.status === 403 &&
+          Array.isArray(raw.errors) &&
+          raw.errors.length > 0 &&
+          raw.errors.every((e) => typeof e?.message === 'string' && e?.extensions?.code === 'ACCESS_DENIED');
+        requireValue(event.status === 200, 'provider_status');
         if (hasErrors) throw new Stop('provider_error');
         requireValue(d, 'provider_shape');
         if (!r.mutation)
           state.identity = {
-            at: Date.now(),
+            at: observationOrigin,
             grants: d.currentAppInstallation.accessScopes.map((n) => n.handle).sort(),
           };
         if (r.operation === 'prestate') {
           state.fixture = visible(d.product, true);
           state.prestateVerified = true;
-          state.ownedAt = Date.now();
+          state.ownedAt = observationOrigin;
         }
         if (r.operation === 'final') state.fixture = owned(d.product);
         if (r.mutation) {

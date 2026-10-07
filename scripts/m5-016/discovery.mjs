@@ -5,8 +5,42 @@ import {
 import { CATALOG, PUBLICATION } from './documents.mjs';
 import { requireValue } from './operator.mjs';
 import { gid, validateCatalog, validatePublication } from './projections.mjs';
+
+function validatePage(c, name, first, priorIds, cursors) {
+  const page = c?.pageInfo;
+  requireValue(
+    Array.isArray(c?.nodes) &&
+      c.nodes.length <= 50 &&
+      typeof page?.hasNextPage === 'boolean' &&
+      typeof page.hasPreviousPage === 'boolean' &&
+      (!first || page.hasPreviousPage === false),
+    'discovery_page',
+  );
+  const seen = new Set(priorIds);
+  for (const node of c.nodes) {
+    if (name === 'publications') validatePublication(node);
+    else {
+      requireValue(node !== null, 'catalog_shape');
+      validateCatalog(node, true);
+      requireValue(node.publication === null || gid('Publication', node.publication?.id), 'catalog_publication');
+    }
+    requireValue(!seen.has(node.id), 'duplicate_discovery_id');
+    seen.add(node.id);
+    requireValue(seen.size <= AVAILABILITY_V2_PUBLICATION_ITEM_LIMIT, 'discovery_items');
+  }
+  if (page.hasNextPage) {
+    requireValue(c.nodes.length > 0, 'empty_discovery_page');
+    requireValue(
+      typeof page.endCursor === 'string' &&
+        page.endCursor.length > 0 &&
+        page.endCursor.length <= 2048 &&
+        !cursors.has(page.endCursor),
+      'discovery_cursor',
+    );
+  }
+}
 export async function enumerate(op, request, query, name, reserve) {
-  const result = { complete: false, nodes: [], pages: [], failure: null };
+  const result = { complete: false, nodes: [], pages: [], failure: null, shapeFailure: null, denied: false };
   const seen = new Set(),
     cursors = new Set();
   let after = null;
@@ -18,38 +52,15 @@ export async function enumerate(op, request, query, name, reserve) {
       const c = data[name],
         page = c?.pageInfo;
       result.pages.push(c);
-      requireValue(
-        Array.isArray(c?.nodes) &&
-          c.nodes.length <= 50 &&
-          typeof page?.hasNextPage === 'boolean' &&
-          typeof page.hasPreviousPage === 'boolean' &&
-          (n !== 0 || page.hasPreviousPage === false),
-        'discovery_page',
-      );
+      validatePage(c, name, n === 0, seen, cursors);
       for (const node of c.nodes) {
-        if (name === 'publications') validatePublication(node);
-        else {
-          requireValue(node !== null, 'catalog_shape');
-          validateCatalog(node, true);
-          requireValue(node.publication === null || gid('Publication', node.publication?.id), 'catalog_publication');
-        }
-        requireValue(!seen.has(node.id), 'duplicate_discovery_id');
         seen.add(node.id);
-        requireValue(seen.size <= AVAILABILITY_V2_PUBLICATION_ITEM_LIMIT, 'discovery_items');
         result.nodes.push(node);
       }
       if (!page.hasNextPage) {
         result.complete = true;
         return result;
       }
-      requireValue(c.nodes.length > 0, 'empty_discovery_page');
-      requireValue(
-        typeof page.endCursor === 'string' &&
-          page.endCursor.length > 0 &&
-          page.endCursor.length <= 2048 &&
-          !cursors.has(page.endCursor),
-        'discovery_cursor',
-      );
       cursors.add(page.endCursor);
       after = page.endCursor;
     }
@@ -57,8 +68,17 @@ export async function enumerate(op, request, query, name, reserve) {
   } catch (error) {
     result.failure = error.kind ?? 'discovery_page_limit';
     const event = op.state().events.at(-1);
-    const partial = event?.failure === 'provider_error' && event.response?.data?.[name];
-    if (partial) result.pages.push(partial);
+    result.denied = event?.operation === name && event.denied === true;
+    const partial = ['provider_error', 'provider_status'].includes(event?.failure) && event.response?.data?.[name];
+    if (partial) {
+      const first = result.pages.length === 0;
+      result.pages.push(partial);
+      try {
+        validatePage(partial, name, first, seen, cursors);
+      } catch (shapeError) {
+        result.shapeFailure = shapeError.kind ?? 'discovery_page';
+      }
+    }
   }
   return result;
 }
@@ -80,7 +100,10 @@ export function classify(direct, publications, catalogs) {
   const observedCatalogs = catalogs.pages.flatMap((page) => (Array.isArray(page?.nodes) ? page.nodes : []));
   const expectedCatalog = JSON.stringify(direct.publication?.catalog);
   const structuralFailure = (result) =>
-    result.failure !== null && !['provider_error', 'discovery_budget', 'NOT_RUN'].includes(result.failure);
+    !!result.shapeFailure ||
+    (result.failure !== null &&
+      !['provider_error', 'discovery_budget', 'NOT_RUN'].includes(result.failure) &&
+      !(result.failure === 'provider_status' && result.denied));
   const ambiguity =
     structuralFailure(publications) ||
     structuralFailure(catalogs) ||
@@ -112,9 +135,9 @@ export function classify(direct, publications, catalogs) {
           : publications.complete && catalogs.complete
             ? 'DIRECT_ONLY'
             : 'UNRESOLVED',
-    explicitAppPublicationTarget: !!p,
-    appCatalogPublicationTarget: !!c,
-    historicalAppCatalogPresent: !!historicalCatalog,
+    explicitAppPublicationTarget: observedPublications.some((node) => node?.id === PUBLICATION),
+    appCatalogPublicationTarget: observedCatalogs.some((node) => node?.publication?.id === PUBLICATION),
+    historicalAppCatalogPresent: observedCatalogs.some((node) => node?.id === CATALOG),
     ambiguity: !!ambiguity,
     provenSurface:
       direct.confirmed && !ambiguity && generic

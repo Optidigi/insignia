@@ -457,3 +457,119 @@ test('identity contradiction in the final read invalidates the classification wi
       assert.equal(f.calls.filter((b) => b.query === FINAL).length, 1);
     },
   ));
+
+for (const [query, status] of [
+  [DIRECT, 500],
+  [CATALOGS, 403],
+])
+  test(`HTTP ${status} error with reported identity drift blocks cleanup`, async () =>
+    exercise(
+      (d, b) => {
+        if (b.query === query) {
+          d.shop.id = 'gid://shopify/Shop/9';
+          return Response.json(
+            { data: d, errors: [{ message: 'denied', extensions: { code: 'ACCESS_DENIED' } }] },
+            { status },
+          );
+        }
+      },
+      (e) => {
+        assert.equal(e.classification, 'UNRESOLVED');
+        assert.equal(e.accounting.directUpdate, 0);
+        assert.equal(e.outcome, 'STOPPED');
+      },
+    ));
+test('a qualified HTTP 403 denial cannot negate a complete independent positive surface', async () =>
+  exercise(
+    (_d, b) => {
+      if (b.query === CATALOGS)
+        return Response.json(
+          { errors: [{ message: 'denied', extensions: { code: 'ACCESS_DENIED' } }] },
+          { status: 403 },
+        );
+    },
+    (e) => {
+      assert.equal(e.classification, 'GENERIC_DISCOVERY_CONFIRMED');
+      assert.equal(e.catalogs.failure, 'provider_status');
+      assert.equal(e.cleanup.outcome, 'FINAL_ARCHIVED_UNPUBLISHED');
+    },
+  ));
+for (const [query, surface] of [
+  [PUBLICATIONS, 'publications'],
+  [CATALOGS, 'catalogs'],
+]) {
+  test(`malformed partial error ${surface} remains coverage ambiguity`, async () =>
+    exercise(
+      (d, b) => {
+        if (b.query === query) {
+          d[surface].nodes = { bad: 'shape' };
+          return Response.json({ data: d, errors: [{ message: 'partial' }] });
+        }
+      },
+      (e) => {
+        assert.equal(e.classification, 'UNRESOLVED');
+        assert.equal(e.ambiguity, true);
+      },
+    ));
+  test(`HTTP error partial ${surface} contradictions remain visible`, async () =>
+    exercise(
+      (d, b) => {
+        if (b.query === query) {
+          if (surface === 'publications') d.publications.nodes[0].supportsFuturePublishing = true;
+          else d.catalogs.nodes[0].status = 'ARCHIVED';
+          return Response.json({ data: d, errors: [{ message: 'partial' }] }, { status: 403 });
+        }
+      },
+      (e) => {
+        assert.equal(e.classification, 'UNRESOLVED');
+        assert.equal(e.ambiguity, true);
+      },
+    ));
+}
+test('ownership freshness starts before I/O and cannot be renewed by slow response completion', async () => {
+  const original = Date.now;
+  let elapsed = 0;
+  const start = original();
+  Date.now = () => start + elapsed;
+  try {
+    await exercise(
+      (d, b) => {
+        elapsed += 7000;
+        if (b.query === CATALOGS) {
+          if (b.variables.after === null)
+            d.catalogs.pageInfo = { hasNextPage: true, hasPreviousPage: false, endCursor: 'next' };
+          else {
+            d.catalogs.nodes = [];
+            d.catalogs.pageInfo = { hasNextPage: false, hasPreviousPage: true, endCursor: null };
+          }
+        }
+      },
+      (e) => {
+        assert.equal(e.accounting.directUpdate, 0);
+        assert.equal(e.stop, 'cleanup_authority');
+      },
+    );
+  } finally {
+    Date.now = original;
+  }
+});
+
+test('a backwards local clock cannot make future observation origins fresh for cleanup', async () => {
+  const original = Date.now;
+  let elapsed = 0;
+  const start = original();
+  Date.now = () => start + elapsed;
+  try {
+    await exercise(
+      () => {
+        elapsed -= 1000;
+      },
+      (e) => {
+        assert.equal(e.accounting.directUpdate, 0);
+        assert.equal(e.stop, 'cleanup_authority');
+      },
+    );
+  } finally {
+    Date.now = original;
+  }
+});

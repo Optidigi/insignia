@@ -159,5 +159,54 @@
     "committedPath": "docs/delivery/evidence/m5-016/focused-r3.log",
     "committedSha256": "82fae2c990a81ecb58fa7f10c46b5250d6d3e358fd30e5dd6e43824ed5b48e61",
     "normalization": "ANSI removal, trailing line blanks and trailing blank lines only; original raw bytes retained"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-016-handoff/root-check-r4.log",
+    "rawSha256": "4ecde6faa8257123b39d63306e6466e40c08d356d59a91c1fd6970dd968b9433",
+    "committedPath": "docs/delivery/evidence/m5-016/root-check-r4.log",
+    "committedSha256": "5e7e520ac307ce4910677def4f452cd8057326ec508f23535273742ea08c0182",
+    "normalization": "ANSI removal, trailing line blanks and trailing blank lines only; original raw bytes retained"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-016-handoff/review-r3-red.log",
+    "rawSha256": "c105385ef5bf0c6ec8de92be95135600f9b777dec80661944412e93d217574c9",
+    "committedPath": "docs/delivery/evidence/m5-016/review-r3-red.log",
+    "committedSha256": "9b0276d8d03b6dafb397744b4c546d6581d4a7b665a111f62abb0313dfae6539",
+    "normalization": "ANSI removal, trailing line blanks and trailing blank lines only; original raw bytes retained"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-016-handoff/focused-r4.log",
+    "rawSha256": "e24acfc826cb6e3c340bc72746904e676a9ad19497df4a896fa6026a58526666",
+    "committedPath": "docs/delivery/evidence/m5-016/focused-r4.log",
+    "committedSha256": "e24acfc826cb6e3c340bc72746904e676a9ad19497df4a896fa6026a58526666",
+    "normalization": "ANSI removal, trailing line blanks and trailing blank lines only; original raw bytes retained"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-016-handoff/clock-regression-red.log",
+    "rawSha256": "b7437385148368c0e486f8edd2caf5242cb967d79c5963904f8bd1a93bd1e689",
+    "committedPath": "docs/delivery/evidence/m5-016/clock-regression-red.log",
+    "committedSha256": "83a2c778b209d3cf23396b9eee91ed6defebb3b01c63a88f05754a69359eadb3",
+    "normalization": "ANSI removal, trailing line blanks and trailing blank lines only; original raw bytes retained"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-016-handoff/focused-r4-final.log",
+    "rawSha256": "7e737aba590195320bdb3068b85989bcb3cc431bc45c982b12ea043acd417418",
+    "committedPath": "docs/delivery/evidence/m5-016/focused-r4-final.log",
+    "committedSha256": "7e737aba590195320bdb3068b85989bcb3cc431bc45c982b12ea043acd417418",
+    "normalization": "ANSI removal, trailing line blanks and trailing blank lines only; original raw bytes retained"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-016-handoff/source-r3-postgresql18.log",
+    "rawSha256": "2cad407b69eb8a87ba1d7313a84548023b98ccf154c4ef88e4eaa23033afe190",
+    "committedPath": "docs/delivery/evidence/m5-016/source-r3-postgresql18.log",
+    "committedSha256": "040ede2f6037c48e8b1ddf24434642e857e3baf8c7cda5c1917ca263eeeab408",
+    "normalization": "ANSI removal, trailing line blanks and trailing blank lines only; original raw bytes retained"
+  },
+  {
+    "rawPath": "/home/serveradmin/insignia-m5-016-handoff/source-r3-runtime.log",
+    "rawSha256": "e1297f2980378c4d0014a184ef0ab1aacb3c7d740ffcb6c5ee7f796227227aa0",
+    "committedPath": "docs/delivery/evidence/m5-016/source-r3-runtime.log",
+    "committedSha256": "f5630f584a01bd7bb9d786a78af552fca9a69c62fe3d981d0c1dadb9b2460aa0",
+    "normalization": "ANSI removal, trailing line blanks and trailing blank lines only; original raw bytes retained"
   }
 ]
