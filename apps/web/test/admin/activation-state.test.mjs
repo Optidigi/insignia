@@ -82,3 +82,15 @@ test('terminal operator hold outranks stale held activation', () => {
     'OPERATOR_HOLD',
   );
 });
+
+test('failed immutable request is explicit while unresolved availability still takes precedence', () => {
+  const failed = {
+    phase: 'operator-hold',
+    operationStatus: 'failed',
+    operationId: 'request',
+    effectiveOperationId: 'prior',
+    activationKind: 'RESOLVED',
+  };
+  assert.equal(projectActivationPublicationState(failed), 'FAILED');
+  assert.equal(projectActivationPublicationState({ ...failed, recoveryFromAnotherOperation: true }), 'OPERATOR_HOLD');
+});

@@ -224,18 +224,14 @@ test('currency precision rejects invalid saved and legacy publication amounts wi
       ];
       badCases.push(tiers);
       for (const [index, bad] of badCases.entries()) {
-        assert.equal(
-          (
-            await service.save(staff, productA, {
-              configId: created.configId,
-              draftVersion: '2',
-              draft: bad,
-              idempotencyKey: 'invalid-money-' + index,
-            })
-          ).kind,
-          'invalid',
-          currency + ' case ' + index,
-        );
+        const invalid = await service.save(staff, productA, {
+          configId: created.configId,
+          draftVersion: '2',
+          draft: bad,
+          idempotencyKey: 'invalid-money-' + index,
+        });
+        assert.equal(invalid.kind, 'invalid', currency + ' case ' + index);
+        assert.ok(invalid.validationIssues.some((issue) => issue.path.startsWith('pricingRules')));
       }
       assert.equal((await core.configs.getConfig(shopId, created.configId)).draftVersion, '2');
       // A draft written before the precision guard must also fail at the public publish command.
@@ -534,6 +530,24 @@ test('durable editor CAS, exact-key replay, independent copy, immutable geometry
     assert.equal(intent.state, 'PUBLISH_REQUESTED');
     assert.equal(intent.sourceDraftVersion, '3');
     assert.equal(intent.requestKey, 'publish-key-01');
+    const durableIntents = await core.outbox.claim(
+      shopId,
+      new Date(),
+      'm5-018-intent-proof',
+      new Date(Date.now() + 30000),
+      100,
+    );
+    const persistedIntent = durableIntents.filter(
+      (event) => event.eventType === 'm5.publication.intent' && event.businessKey === intent.revisionId,
+    );
+    assert.equal(persistedIntent.length, 1, 'Immutable request and outbox commit before provider preparation');
+    assert.deepEqual(persistedIntent[0].payload, {
+      configId: created.configId,
+      revisionId: intent.revisionId,
+      installationGeneration: '1',
+      sourceDraftVersion: '3',
+      idempotencyKey: 'publish-key-01',
+    });
     assert.equal(
       (
         await service.save(staff, productA, {

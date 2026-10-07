@@ -6,18 +6,20 @@ import { SigningKeyLifecycle } from '@insignia/application';
 import { createDurableCore } from '@insignia/database';
 import { createShopifyAvailabilityHoldV3Port } from '@insignia/shopify';
 import { Pool } from 'pg';
+import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createServerActivationReadiness } from '../../src/server/admin/release-evidence.ts';
+import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
 
 const database = process.env.DATABASE_URL;
-test('real PG activation composes trusted release, synthetic Shopify hold and immutable evidence', {
+test('real admin HTTP publish commits PG v3 activation and immutable evidence without reentry writes', {
   skip: !database,
 }, async () => {
   const core = createDurableCore(new Pool({ connectionString: database }));
   try {
-    const shopId = randomUUID(),
+    let shopId = randomUUID(),
       configId = randomUUID(),
-      revisionId = randomUUID(),
-      operationId = randomUUID();
+      revisionId = null,
+      operationId = null;
     const clientId = 'a'.repeat(32),
       appId = '99999001',
       productId = '42';
@@ -34,32 +36,28 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
         configId,
         externalProductId: productId,
         draftSchemaVersion: 'm3-config-draft-v1',
-        draftValue: {},
-      });
-      await core.configs.createValidatedRevision(tx, {
-        shopId,
-        configId,
-        revisionId,
-        mode: 'required',
-        sourceDraftVersion: '1',
-        sourceInstallationGeneration: '1',
-        createdByRef: 'synthetic',
-        publishedValue: {
-          version: 'm2-published-config-v1',
-          shopId,
-          productId,
-          revisionId,
+        draftValue: {
+          version: 'm5-merchant-draft-v1',
+          mode: 'required',
           shopCurrency: 'USD',
-          methods: [],
-          placements: [],
+          methods: [{ id: 'print' }],
+          placements: [
+            { id: 'front', allowedMethodIds: ['print'], allowedStepIds: ['small'], logoLaterAllowed: false },
+          ],
           productionOptions: [],
           pricingRules: [],
+          geometry: {
+            version: 'm5-geometry-v1',
+            views: [
+              {
+                id: 'front',
+                variantImages: [],
+                placements: [{ id: 'front', rect: { centerX: 0.5, centerY: 0.5, width: 0.3, height: 0.3 } }],
+              },
+            ],
+            steps: [{ id: 'small', widthFraction: 0.5, heightFraction: 0.5 }],
+          },
         },
-        geometry: {
-          version: 'm5-geometry-v1',
-          value: { version: 'm5-geometry-v1', views: [{ id: 'front', variantImages: [], placements: [] }], steps: [] },
-        },
-        presentation: { version: 'm5-presentation-v1', labels: {} },
       });
     });
     const scope = await core.tenants.getActiveAuthorizationScope({ shopId, installationGeneration: '1' });
@@ -202,6 +200,8 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
       transform: strip(build.transform),
       validation: strip(build.validation),
     };
+    let releaseReady = true;
+    let eligible = true;
     const readiness = createServerActivationReadiness(
       {
         expectedBuild: { read: async () => build },
@@ -209,17 +209,20 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
         currentDay: () => 20727,
       },
       {
-        read: async () => ({
-          version: 'm5-trusted-release-v1',
-          recordId: 'synthetic-release-1',
-          activeAppVersionRef: 'synthetic-release',
-          attestation: {
-            ...build,
-            evidenceKind: 'RELEASE_BOUND',
-            observedAt: now().toISOString(),
-            expiresAt: '2026-10-02T00:00:00Z',
-          },
-        }),
+        read: async () =>
+          releaseReady
+            ? {
+                version: 'm5-trusted-release-v1',
+                recordId: 'synthetic-release-1',
+                activeAppVersionRef: 'synthetic-release',
+                attestation: {
+                  ...build,
+                  evidenceKind: 'RELEASE_BOUND',
+                  observedAt: now().toISOString(),
+                  expiresAt: '2026-10-02T00:00:00Z',
+                },
+              }
+            : null,
       },
     );
     const activation = core.productionActivations.create({
@@ -231,20 +234,56 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
       now,
       maxObservationAgeMs: 1000,
     });
+    const actor = {
+      shop: 's' + shopId.replaceAll('-', '') + '.myshopify.com',
+      shopId: `gid://shopify/Shop/${providerShop}`,
+      tenantShopId: shopId,
+      installationGeneration: '1',
+      installationId: 'synthetic-install',
+      staffId: 'synthetic-staff',
+      sessionId: 'synthetic-session',
+      expiresAtMs: Date.now() + 60000,
+      canRead: true,
+      canEdit: true,
+    };
+    const catalog = {
+      get: async (_actor, gid) =>
+        gid === `gid://shopify/Product/${productId}`
+          ? { id: gid, title: 'Synthetic admin shirt', status, imageUrl: null, variants: [] }
+          : null,
+      shopCurrency: async () => 'USD',
+    };
+    const configs = createMerchantConfigService({
+      core,
+      catalog,
+      eligibility: async () => ({ allowed: eligible, reason: eligible ? null : 'Synthetic feature revoked' }),
+      publication: () => activation.publications,
+      activation: () => activation,
+    });
+    const services = { appOrigin: 'https://synthetic.example', authenticate: async () => actor, catalog, configs };
+    let draftVersion = '1';
+    const publish = async (key) =>
+      handleAdminRequest(
+        new Request(`https://synthetic.example/api/admin/products/${productId}/config`, {
+          method: 'POST',
+          headers: {
+            Authorization: 'Bearer synthetic-identity',
+            Origin: 'https://synthetic.example',
+            'Content-Type': 'application/json',
+            'Idempotency-Key': key,
+          },
+          body: JSON.stringify({ action: 'publish', configId, draftVersion }),
+        }),
+        services,
+        { kind: 'config', productId: `gid://shopify/Product/${productId}` },
+      );
+    const response = await publish('m5-018-first-publication');
+    assert.equal(response.status, 202);
+    const result = await response.json();
+    assert.equal(result.state, 'ACTIVE');
+    operationId = revisionId = result.revisionId;
     const identity = { shopId, configId, operationId };
-    const publications = activation.publications;
-    await publications.prepare({ ...identity, revisionId, mode: 'required' });
-    assert.equal((await publications.advance(shopId, configId, operationId)).kind, 'ADMISSION_PENDING');
-    assert.equal((await activation.advance(identity)).kind, 'WAITING_HOLD');
-    assert.equal((await activation.advance(identity)).kind, 'HELD');
-    assert.equal(status, 'DRAFT');
-    assert.equal(mutationCount, 1);
-    let result;
-    for (let i = 0; i < 6; i++) result = await publications.advance(shopId, configId, operationId);
-    assert.equal(result.kind, 'REMOTE_READY_ACTIVATION_PENDING');
-    assert.equal((await activation.advance(identity)).kind, 'ACTIVATED_RESTORATION_PENDING');
     assert.equal((await core.configs.getConfig(shopId, configId)).effectiveRevisionId, revisionId);
-    assert.equal((await core.configs.getCurrentPublication(shopId, configId)).activationKind, 'RESTORATION_PENDING');
     const evidence = (await activation.read(identity)).evidence;
     assert.equal(evidence.admissionClass, 'FIRST_PUBLICATION');
     assert.equal(evidence.version, 'm5-activation-evidence-v3');
@@ -256,7 +295,6 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
     assert.equal(evidence.hold.before.effectiveAnchors[0].supportsFuturePublishing, true);
     assert.deepEqual(evidence.hold.held.effectiveVisibility.publishedPublicationIds, []);
     assert.equal(evidence.hold.acquisitionAcknowledgement.version, 'm5-availability-mutation-ack-v3');
-    assert.equal((await activation.advance(identity)).kind, 'ACTIVE');
     assert.equal(status, 'ACTIVE');
     assert.equal((await core.configs.getCurrentPublication(shopId, configId)).activationKind, 'RESTORED');
     assert.equal(await core.configs.getAvailabilityRecovery(shopId, configId), null);
@@ -264,8 +302,58 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
     assert.deepEqual((await activation.read(identity)).evidence, evidence);
     if (process.env.M5_ACTIVATION_EXAMPLE_PATH)
       await writeFile(process.env.M5_ACTIVATION_EXAMPLE_PATH, `${JSON.stringify(evidence, null, 2)}\n`);
-    assert.equal((await activation.advance(identity)).kind, 'ACTIVE');
+    assert.equal((await (await publish('m5-018-first-publication')).json()).revisionId, revisionId);
     assert.equal(mutationCount, 2);
+    assert.equal((await configs.read(actor, `gid://shopify/Product/${productId}`)).config.publication.state, 'ACTIVE');
+    const original = await core.configs.getValidatedPublishedRevision(shopId, revisionId);
+    const save = async (mode) => {
+      const draft = structuredClone((await configs.read(actor, `gid://shopify/Product/${productId}`)).config.draft);
+      draft.mode = mode;
+      const response = await handleAdminRequest(
+        new Request('https://synthetic.example/api/admin/config', {
+          method: 'PUT',
+          headers: {
+            Authorization: 'Bearer synthetic-identity',
+            Origin: 'https://synthetic.example',
+            'Content-Type': 'application/json',
+            'Idempotency-Key': `m5-018-save-${draftVersion}`,
+          },
+          body: JSON.stringify({ action: 'save', configId, draftVersion, draft }),
+        }),
+        services,
+        { kind: 'config', productId: `gid://shopify/Product/${productId}` },
+      );
+      assert.equal(response.status, 200);
+      draftVersion = (await response.json()).draftVersion;
+    };
+    await save('required');
+    const same = await (await publish('m5-018-same-mode')).json();
+    assert.equal(same.state, 'ACTIVE');
+    const sameEvidence = (await activation.read({ shopId, configId, operationId: same.revisionId })).evidence;
+    assert.equal(sameEvidence.version, 'm5-activation-evidence-v3');
+    assert.equal(sameEvidence.admissionClass, 'SAME_MODE');
+    assert.equal(sameEvidence.hold, null);
+    assert.equal(mutationCount, 2);
+    await save('optional');
+    const changed = await (await publish('m5-018-mode-change')).json();
+    assert.equal(changed.state, 'ACTIVE');
+    const changedEvidence = (await activation.read({ shopId, configId, operationId: changed.revisionId })).evidence;
+    assert.equal(changedEvidence.admissionClass, 'MODE_CHANGE');
+    assert.equal(changedEvidence.hold.version, 'm5-availability-hold-v3');
+    assert.equal(mutationCount, 4);
+    assert.deepEqual(await core.configs.getValidatedPublishedRevision(shopId, revisionId), original);
+    await save('required');
+    releaseReady = false;
+    const waiting = await (await publish('m5-018-release-blocked')).json();
+    assert.equal(waiting.state, 'ACTIVATION_WAITING_RELEASE');
+    assert.equal((await core.configs.getConfig(shopId, configId)).effectiveRevisionId, changed.revisionId);
+    const pendingView = await configs.read(actor, `gid://shopify/Product/${productId}`);
+    assert.equal(pendingView.config.publication.revisionId, waiting.revisionId);
+    assert.equal(pendingView.config.publication.activeRevisionId, changed.revisionId);
+    eligible = false;
+    assert.equal((await publish('m5-018-release-blocked')).status, 403);
+    assert.equal(mutationCount, 4);
+    assert.equal((await core.configs.getConfig(shopId, configId)).effectiveRevisionId, changed.revisionId);
   } finally {
     await core.close();
   }

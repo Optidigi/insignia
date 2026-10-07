@@ -1,3 +1,11 @@
+# Current authorized slice — M5-018
+
+[Principal approval](PR-048R-principal-review.md) accepted v3 and authorized [M5-018](prompts/M5-018-M5-EXIT-G7.md). PR48 normal merge `407608ab929e703cd2b10972de93cf00c58aa9df` has ordered parents `4bba14fb4415815557ffa5f1e600427a62128489`, `125e6d452d713acc9ce7eb741c2506f25857cb8f` and approved tree `31ccad58a7a1941fce17451d83ca7326ac712ecc`; [receipt](evidence/m5-018/pr48-merge-receipt.json). All eleven exact-head attempt-1 workflows and both fresh CLEAR actual GPT-6.1-sol/high reviews were reverified before merge.
+
+IN_PROGRESS: integrated real admin and G7 audit from fetched remote main, branch `feat/m5-018-admin-g7-exit`, worktree `/home/serveradmin/insignia-m5-018-worktree`; one orchestrator/writer. No M5-018 provider/credential/browser-store access has occurred. Complete the frozen offline/source/build/review/CI gate first. Availability architecture and all prior canonical runs/fixtures remain closed. No app/scopes/Function release; any sole release blocker needs a bounded proposal and new owner authorization. Successor merge remains unauthorized.
+
+---
+
 # Current review boundary — M5-017R
 
 [PR48](https://github.com/Optidigi/insignia/pull/48) is CHANGES_REQUESTED at reviewed head `2d0b5177add9b412a8e1f9c43309ae6af04f1e1e`; [principal authority](evidence/m5-017r/authority-PR-048-principal-review.md) authorizes the [local timing correction](prompts/M5-017R-ACK-COMPLETION-TIMING-CORRECTION.md) in this same PR. Corrected application/adapter/SQL evaluate legacy ResourcePublication future timing at receivedAt while retaining observedAt for freshness. Legacy false is unsupported non-effective blocking evidence, not V2 staged state. The exact captured-response replay is separately derived RESTORED with no external requests or compensation; original raw live outcome remains STOPPED/CONFLICT.

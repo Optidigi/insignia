@@ -1,0 +1,24 @@
+✖ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (61.601515ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 458.969196
+
+✖ failing tests:
+
+test at test/admin/merchant-config.test.mjs:131:1
+✖ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (61.601515ms)
+  TypeError: Cannot read properties of undefined (reading 'some')
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-018-worktree/apps/web/test/admin/merchant-config.test.mjs:231:44)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-018-
+  │ worktree/apps/web
+

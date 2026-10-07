@@ -972,7 +972,11 @@ test('interrupted publication resumes the identical request after reload and rea
     await page.locator('s-button').filter({ hasText: 'Continue publication' }).click();
     await page.getByText('Remote ready; activation pending').waitFor();
     assert.equal(writes, 3);
-    assert.equal(await page.evaluate(() => sessionStorage.getItem('insignia:m5:publish:111')), null);
+    assert.equal(
+      JSON.parse(await page.evaluate(() => sessionStorage.getItem('insignia:m5:publish:111'))).key,
+      firstKey,
+      'Activation continuation keeps the original request identity',
+    );
   } finally {
     await browser?.close();
     server.child.kill('SIGTERM');
@@ -1603,6 +1607,132 @@ test('empty merchant draft can be configured through typed controls and pass M2 
         pricingRules: saved.draft.pricingRules,
       }),
     );
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('mounted admin refreshes late activation and readiness without overwriting local edits, then clears expired identity', {
+  timeout: 25000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-late-token' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let state = 'HELD_ACTIVATION_PENDING';
+    let expired = false;
+    let writes = 0;
+    await page.route('**/api/admin/products/111/config', (route) => {
+      if (route.request().method() !== 'GET') {
+        writes++;
+        throw new Error('Passive refresh must never mutate');
+      }
+      if (expired) return route.fulfill({ status: 401, json: { error: 'Authentication required' } });
+      const value = response(draft());
+      value.config.publication.state = state;
+      value.config.publication.revisionId = 'requested-revision';
+      value.config.publication.activeRevisionId = state === 'ACTIVE' ? 'requested-revision' : 'previous-revision';
+      value.config.publishEligibility = {
+        allowed: state === 'ACTIVE',
+        reason: state === 'ACTIVE' ? null : 'Readiness unavailable',
+      };
+      return route.fulfill({ json: value });
+    });
+    await page.goto(`${server.base}/admin/products/111/config`);
+    await page.getByText('Product held; activation pending', { exact: true }).waitFor();
+    assert.equal(await page.getByText('Effective revision: requested-revision', { exact: true }).count(), 0);
+    await page.getByRole('button', { name: 'Add fixed price' }).click();
+    await page.getByLabel('Shop amount (USD)').fill('3.25');
+    state = 'ACTIVE';
+    await page.getByText('Active', { exact: true }).waitFor({ timeout: 8000 });
+    assert.equal(await page.getByLabel('Shop amount (USD)').inputValue(), '3.25');
+    await page.getByText('Draft version 1 · dirty', { exact: false }).waitFor();
+    await page.getByText('Effective revision: requested-revision', { exact: true }).waitFor();
+    expired = true;
+    await page.getByText('Authentication required', { exact: true }).waitFor({ timeout: 8000 });
+    assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
+    assert.equal(writes, 0);
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('two production admin tabs keep stale edits and explicitly review the winning CAS draft', {
+  timeout: 25000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const context = await browser.newContext();
+    await context.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-two-tab-token' };
+    });
+    await context.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await context.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let current = draft();
+    let version = '1';
+    let committed = 0;
+    await context.route('**/api/admin/products/111/config', (route) => {
+      const request = route.request();
+      assert.equal(request.headers().authorization, 'Bearer synthetic-two-tab-token');
+      if (request.method() === 'PUT') {
+        const body = request.postDataJSON();
+        if (body.draftVersion !== version)
+          return route.fulfill({
+            status: 409,
+            json: { kind: 'conflict', message: 'Draft changed. Reload and review the current version.' },
+          });
+        current = body.draft;
+        version = '2';
+        committed++;
+        return route.fulfill({ json: { kind: 'saved', draftVersion: version } });
+      }
+      const value = response(current);
+      value.config.draftVersion = version;
+      return route.fulfill({ json: value });
+    });
+    const first = await context.newPage();
+    const second = await context.newPage();
+    for (const page of [first, second]) {
+      await page.goto(`${server.base}/admin/products/111/config`);
+      await page.getByText('Draft version 1', { exact: false }).waitFor();
+      await page.getByRole('button', { name: 'Add fixed price' }).click();
+    }
+    await first.getByLabel('Shop amount (USD)').fill('2.50');
+    await second.getByLabel('Shop amount (USD)').fill('9.00');
+    await first.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await first.getByText('Draft saved.', { exact: true }).waitFor();
+    await second.locator('s-button').filter({ hasText: 'Save draft' }).click();
+    await second.getByText('Another editor changed this draft. Review the latest version.', { exact: true }).waitFor();
+    assert.equal(await second.getByLabel('Shop amount (USD)').inputValue(), '9.00');
+    assert.equal(committed, 1);
+    await first.goto(`${server.base}/admin/products`);
+    await first.goBack();
+    await first.getByText('Draft version 2', { exact: false }).waitFor();
+    assert.equal(await first.getByLabel('Shop amount (USD)').inputValue(), '2.50');
+    await first.reload();
+    await first.getByText('Draft version 2', { exact: false }).waitFor();
+
+    await second.locator('s-button').filter({ hasText: 'Review latest saved draft' }).click();
+    assert.equal(await second.getByLabel('Shop amount (USD)').inputValue(), '2.50');
+    await second.getByText('Draft version 2 · clean', { exact: false }).waitFor();
   } finally {
     await browser?.close();
     server.child.kill('SIGTERM');

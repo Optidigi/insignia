@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { executeCommand } from '@insignia/application';
+import { type ActivationIdentity, type ActivationResult, executeCommand, newOutboxEvent } from '@insignia/application';
 import { currencyExponent } from '@insignia/cart-authorization';
 import { type MerchantDraft, MerchantDraftSchema, PublishedConfigSchema } from '@insignia/contracts';
 import type { DurableTransaction } from '@insignia/database';
@@ -13,7 +13,11 @@ type Outcome =
   | { kind: 'created'; configId: string }
   | { kind: 'saved'; draftVersion: string }
   | { kind: 'accepted'; state: ReturnType<typeof projectActivationPublicationState>; revisionId: string }
-  | { kind: 'conflict' | 'invalid' | 'forbidden'; message: string };
+  | {
+      kind: 'conflict' | 'invalid' | 'forbidden';
+      message: string;
+      validationIssues?: { path: string; message: string }[];
+    };
 type Publication = Pick<ReturnType<DurableCore['productionPublications']['create']>, 'prepare' | 'advance'>;
 const targetOccupied = (error: unknown) =>
   !!error &&
@@ -40,29 +44,67 @@ function draftPublished(draft: MerchantDraft, actor: Actor, productId: string, r
     pricingRules: draft.pricingRules,
   };
 }
+class DraftValidationError extends Error {
+  readonly path: string;
+  constructor(path: string, message: string) {
+    super(message);
+    this.path = path;
+  }
+}
+function invalidDraft(error: unknown): Outcome {
+  return {
+    kind: 'invalid',
+    message: 'Review the configuration validation errors before saving or publishing.',
+    validationIssues:
+      error instanceof DraftValidationError
+        ? [{ path: error.path, message: error.message }]
+        : [{ path: 'configuration', message: 'Configuration choices, references or labels are invalid.' }],
+  };
+}
 function validatedDraft(value: unknown, actor: Actor, productId: string): MerchantDraft {
-  const draft = MerchantDraftSchema.parse(value);
+  const parsed = MerchantDraftSchema.safeParse(value);
+  if (!parsed.success) {
+    const issue = parsed.error.issues[0];
+    const path =
+      issue?.path
+        .map((part) => String(part))
+        .filter((part) => /^[A-Za-z0-9_]+$/.test(part))
+        .join('.') ?? 'configuration';
+    throw new DraftValidationError(path || 'configuration', 'This field does not satisfy the configuration contract.');
+  }
+  const draft = parsed.data;
   const geometry = draft.geometry as GeometryV1;
-  const published = validatePublishedConfig(
-    PublishedConfigSchema.parse(draftPublished(draft, actor, productId, 'draft')),
-  );
   // Check every configured amount, including unselected tiers and overrides.
   // M2 still owns signed-role, range and final allocation semantics; never round
   // a lexical amount to make it fit a currency's precision.
   const shopExponent = currencyExponent(draft.shopCurrency);
   if (shopExponent === undefined) throw new Error('Unsupported shop currency');
-  for (const rule of draft.pricingRules) {
+  for (const [index, rule] of draft.pricingRules.entries()) {
     const amounts = rule.rate.kind === 'fixed' ? [rule.rate.amount] : rule.rate.tiers.map((tier) => tier.amount);
-    for (const amount of amounts) {
-      parseSignedMinor(amount.shopDecimal, shopExponent);
-      for (const override of amount.presentmentOverrides) {
-        const exponent = currencyExponent(override.currency);
-        if (exponent === undefined) throw new Error('Unsupported presentment currency');
-        parseSignedMinor(override.decimal, exponent);
+    try {
+      for (const amount of amounts) {
+        parseSignedMinor(amount.shopDecimal, shopExponent);
+        for (const override of amount.presentmentOverrides) {
+          const exponent = currencyExponent(override.currency);
+          if (exponent === undefined) throw new Error('Unsupported presentment currency');
+          parseSignedMinor(override.decimal, exponent);
+        }
       }
+    } catch {
+      throw new DraftValidationError(
+        `pricingRules.${index}.rate`,
+        'Review amount precision and supported currencies; amounts are never rounded.',
+      );
     }
   }
-  validateGeometryBridge(geometry, published);
+  const published = validatePublishedConfig(
+    PublishedConfigSchema.parse(draftPublished(draft, actor, productId, 'draft')),
+  );
+  try {
+    validateGeometryBridge(geometry, published);
+  } catch {
+    throw new DraftValidationError('geometry', 'Review placement bounds and view, variant and step references.');
+  }
   const references = [
     ['methods', draft.methods.map((item) => item.id)],
     ['placements', draft.placements.map((item) => item.id)],
@@ -187,6 +229,7 @@ export function createMerchantConfigService(input: {
   };
   eligibility(actor: Actor, draft: MerchantDraft): Promise<{ allowed: boolean; reason: string | null }>;
   publication(actor: Actor): Publication;
+  activation?(actor: Actor): { advance(identity: ActivationIdentity): Promise<ActivationResult> };
 }) {
   const { core } = input;
   async function current(actor: Actor): Promise<void> {
@@ -255,6 +298,7 @@ export function createMerchantConfigService(input: {
         effectiveOperationId: config.effectiveOperationId,
         operationId: progress?.operationId ?? null,
         activationKind: progress?.activationKind ?? null,
+        operationStatus: progress?.status,
         recoveryFromAnotherOperation: otherRecovery,
       });
       return {
@@ -273,17 +317,25 @@ export function createMerchantConfigService(input: {
             activeRevisionId: config.effectiveRevisionId,
             reason: otherRecovery
               ? 'A prior installation or publication retains an availability hold. Operator recovery is required.'
-              : publicationState === 'REMOTE_READY_ACTIVATION_PENDING'
-                ? 'Remote fields read back. Function identity and activation admission remain pending.'
-                : publicationState === 'CONFLICT' ||
-                    publicationState === 'OPERATOR_HOLD' ||
-                    publicationState === 'RESTORATION_CONFLICT'
-                  ? 'Publication requires operator review.'
-                  : null,
+              : publicationState === 'FAILED'
+                ? 'This request is terminal. The prior effective revision remains unchanged.'
+                : publicationState === 'REMOTE_READY_ACTIVATION_PENDING'
+                  ? 'Remote fields read back. Function identity and activation admission remain pending.'
+                  : publicationState === 'CONFLICT' ||
+                      publicationState === 'OPERATOR_HOLD' ||
+                      publicationState === 'RESTORATION_CONFLICT'
+                    ? 'Publication requires operator review.'
+                    : null,
             requiresAllChannelHold: progress
               ? progress.priorMode === null || progress.priorMode !== progress.mode
               : null,
-            functionReadiness: progress ? 'UNVERIFIABLE_DEPLOYED_WASM_IDENTITY' : null,
+            functionReadiness: progress
+              ? config.effectiveOperationId === progress.operationId
+                ? 'RELEASE_BOUND'
+                : progress.activationKind === 'WAITING_RELEASE'
+                  ? 'RELEASE_BOUND_REQUIRED'
+                  : 'ACTIVATION_PENDING'
+              : null,
           },
           publishEligibility: otherRecovery
             ? { allowed: false, reason: 'Availability recovery is required before another publication.' }
@@ -349,8 +401,8 @@ export function createMerchantConfigService(input: {
       let draft: MerchantDraft;
       try {
         draft = validatedDraft(data.draft, actor, productId);
-      } catch {
-        return { kind: 'invalid', message: 'Draft does not satisfy M2 configuration and geometry contracts' };
+      } catch (error) {
+        return invalidDraft(error);
       }
       const shopCurrency = await input.catalog.shopCurrency(actor);
       const result = await executeCommand(
@@ -464,8 +516,8 @@ export function createMerchantConfigService(input: {
         let snapshot: MerchantDraft;
         try {
           snapshot = validatedDraft(before.draftValue, actor, productId);
-        } catch {
-          return { kind: 'invalid', message: 'Draft does not satisfy M2 configuration and geometry contracts' };
+        } catch (error) {
+          return invalidDraft(error);
         }
         const shopCurrency = await input.catalog.shopCurrency(actor);
         if (snapshot.shopCurrency !== shopCurrency)
@@ -518,6 +570,29 @@ export function createMerchantConfigService(input: {
             sourceDraftVersion: data.draftVersion,
             idempotencyKey: data.idempotencyKey,
           });
+          const occurredAt = new Date();
+          await core.outbox.add(
+            tx,
+            newOutboxEvent({
+              shopId: actor.tenantShopId,
+              installationGeneration: actor.installationGeneration,
+              eventType: 'm5.publication.intent',
+              schemaVersion: 1,
+              aggregateRef: data.configId,
+              businessKey: revisionId,
+              payload: {
+                configId: data.configId,
+                revisionId,
+                installationGeneration: actor.installationGeneration,
+                sourceDraftVersion: data.draftVersion,
+                idempotencyKey: data.idempotencyKey,
+              },
+              occurredAt,
+              availableAt: occurredAt,
+              retentionClass: 'publication-intent',
+              purgeAfter: new Date(occurredAt.getTime() + 180 * 86400000),
+            }),
+          );
           return `${revisionId}:${draft.mode}`;
         });
         resultRef = result.resultRef;
@@ -538,6 +613,7 @@ export function createMerchantConfigService(input: {
       if (existing && existing.operationId !== revisionId && existing.phase !== 'active')
         return { kind: 'conflict', message: 'A newer publication request exists' };
       if (
+        !input.activation &&
         existing &&
         existing.operationId === revisionId &&
         ['active', 'activation-pending', 'conflict', 'operator-hold'].includes(existing.phase)
@@ -551,6 +627,7 @@ export function createMerchantConfigService(input: {
             effectiveOperationId: recorded?.effectiveOperationId ?? null,
             operationId: revisionId,
             activationKind: existing.activationKind,
+            operationStatus: existing.status,
           }),
         };
       }
@@ -588,12 +665,35 @@ export function createMerchantConfigService(input: {
         mode,
       });
       let phase: string = prepared.phase;
+      const activation = input.activation?.(actor);
+      let progressToken = phase;
       let unchanged = 0;
       for (let attempt = 0; attempt < 16; attempt++) {
+        if (activation) {
+          await current(actor);
+          if (actor.expiresAtMs <= Date.now())
+            return { kind: 'forbidden', message: 'Current staff identity expired. Refresh before continuing.' };
+          const eligibility = await input
+            .eligibility(actor, immutableDraft)
+            .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
+          if (!eligibility.allowed)
+            return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
+        }
         const advanced = await publication.advance(actor.tenantShopId, data.configId, prepared.operationId);
-        unchanged = advanced.phase === phase ? unchanged + 1 : 0;
         phase = advanced.phase;
-        if (advanced.kind !== 'PENDING' || unchanged >= 2) break;
+        if (advanced.kind === 'CONFLICT' || advanced.kind === 'OPERATOR_HOLD') break;
+        const activated = activation
+          ? await activation.advance({
+              shopId: actor.tenantShopId,
+              configId: data.configId,
+              operationId: prepared.operationId,
+            })
+          : null;
+        const token = `${phase}:${activated?.kind ?? advanced.kind}`;
+        unchanged = token === progressToken ? unchanged + 1 : 0;
+        progressToken = token;
+        if (activated && ['WAITING_RELEASE', 'OPERATOR_HOLD', 'ACTIVE'].includes(activated.kind)) break;
+        if ((!activation && advanced.kind !== 'PENDING') || unchanged >= 2) break;
       }
       const observed = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
       const recorded = await core.configs.getConfig(actor.tenantShopId, data.configId);
@@ -601,10 +701,11 @@ export function createMerchantConfigService(input: {
         kind: 'accepted',
         revisionId,
         state: projectActivationPublicationState({
-          phase,
+          phase: activation && observed?.operationId === revisionId ? observed.phase : phase,
           effectiveOperationId: recorded?.effectiveOperationId ?? null,
           operationId: revisionId,
           activationKind: observed?.operationId === revisionId ? observed.activationKind : null,
+          operationStatus: observed?.operationId === revisionId ? observed.status : undefined,
         }),
       };
     },

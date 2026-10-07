@@ -277,8 +277,17 @@ test('production composition uses signed staff SDK, current feature policy and r
       idempotencyKey: 'composition-publish',
     });
     assert.equal(published.kind, 'accepted');
-    assert.equal(published.state, 'PUBLISH_REQUESTED');
-    assert.equal((await services.configs.read(actor, productId)).config.publication.state, 'PUBLISH_REQUESTED');
+    assert.equal(published.state, 'ACTIVATION_WAITING_RELEASE');
+    assert.equal(
+      (await services.configs.read(actor, productId)).config.publication.state,
+      'ACTIVATION_WAITING_RELEASE',
+    );
+    const pending = await core.configs.getConfig(tenantId, created.configId);
+    assert.equal(pending.effectiveRevisionId, null);
+    assert.equal(
+      (await core.configs.getCurrentPublication(tenantId, created.configId)).activationKind,
+      'WAITING_RELEASE',
+    );
     assert.ok(partnerReads >= 7 && sdkExchanges === 1);
     assert.equal(adminMutations, 0, 'Production M4 admission must hold before any remote mutation');
   } finally {

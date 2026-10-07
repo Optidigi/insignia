@@ -1,0 +1,50 @@
+[shopify-api/INFO] version 15.0.0, environment Node v24.21.0
+[shopify-api/INFO] Future flag customerAddressDefaultFix is disabled.
+
+  Enable this flag to change the CustomerAddress classes to expose a 'is_default' property instead of 'default' when fetching data.
+
+[shopify-api/INFO] Future flag unstable_managedPricingSupport is disabled.
+
+  Enable this flag to support managed pricing, so apps can check for payments without needing a billing config. Learn more at https://shopify.dev/docs/apps/launch/billing/managed-pricing
+
+[shopify-api/INFO] Creating new session | {shop: mc5ca335707664deaba3483f62c0fbd3a.myshopify.com, isOnline: true}
+▶ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold
+  ✔ scheduled cancellation boundary 2026-09-30T23:59:59.999Z: allowed=true (13.086449ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.000Z: allowed=false (13.03576ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.001Z: allowed=false (13.316579ms)
+✖ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (585.474404ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 3
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1052.347669
+
+✖ failing tests:
+
+test at test/admin/production-composition.test.mjs:57:1
+✖ production composition uses signed staff SDK, current feature policy and real M4 prepare with admission hold (585.474404ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'PUBLISH_REQUESTED'
+  - 'ACTIVATION_WAITING_RELEASE'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-018-worktree/apps/web/test/admin/production-composition.test.mjs:280:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'PUBLISH_REQUESTED',
+    expected: 'ACTIVATION_WAITING_RELEASE',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-018-
+  │ worktree/apps/web
+

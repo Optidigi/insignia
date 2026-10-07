@@ -61,6 +61,16 @@ const endpoint = (id: string) => `/api/admin/products/${encodeURIComponent(id)}/
 const freshId = (prefix: string) => `${prefix}_${crypto.randomUUID().replaceAll('-', '').slice(0, 12)}`;
 const defaultRect = () => ({ centerX: 0.5, centerY: 0.5, width: 0.3, height: 0.3 });
 const publicationStorageKey = (productId: string) => `insignia:m5:publish:${productId}`;
+const continuingPublication = (state: string) =>
+  [
+    'PUBLISH_REQUESTED',
+    'REMOTE_PENDING',
+    'REMOTE_READY_ACTIVATION_PENDING',
+    'ACTIVATION_WAITING_RELEASE',
+    'ACTIVATION_WAITING_HOLD',
+    'HELD_ACTIVATION_PENDING',
+    'ACTIVATED_RESTORATION_PENDING',
+  ].includes(state);
 function readPublicationRequest(productId: string): PendingRequest | null {
   try {
     return JSON.parse(sessionStorage.getItem(publicationStorageKey(productId)) ?? 'null') as PendingRequest | null;
@@ -110,7 +120,7 @@ function sessionToken(): Promise<string> {
 }
 
 async function jsonResponse<T>(response: Response): Promise<T> {
-  let body: T & { error?: string; message?: string };
+  let body: T & { error?: string; message?: string; validationIssues?: { path: string; message: string }[] };
   try {
     body = (await response.json()) as T & { error?: string; message?: string };
   } catch {
@@ -124,6 +134,7 @@ async function jsonResponse<T>(response: Response): Promise<T> {
   if (!response.ok)
     throw Object.assign(new Error(body.message ?? body.error ?? `Request failed (${response.status})`), {
       status: response.status,
+      validationIssues: body.validationIssues,
     });
   return body;
 }
@@ -137,6 +148,7 @@ async function authenticatedJson<T>(path: string, init: RequestInit = {}): Promi
           Authorization: 'Bearer ' + (await sessionToken()),
         },
         cache: 'no-store',
+        credentials: 'omit',
         redirect: 'error',
         signal,
       });
@@ -248,6 +260,7 @@ function PublicationStatus({ config }: { config: NonNullable<ConfigView['config'
     ACTIVE: 'Active',
     CONFLICT: 'Publication conflict',
     OPERATOR_HOLD: 'Operator hold',
+    FAILED: 'Publication request failed; prior effective revision retained',
   };
   return (
     <s-section heading="Publication">
@@ -279,6 +292,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   const [advancedText, setAdvancedText] = useState('');
   const [advancedError, setAdvancedError] = useState('');
   const [previewStatus, setPreviewStatus] = useState('');
+  const [validationIssues, setValidationIssues] = useState<{ path: string; message: string }[]>([]);
   const [imageSize, setImageSize] = useState<{ width: number; height: number } | null>(null);
   const pending = useRef<PendingRequest | null>(null);
   const publicationPending = useRef<PendingRequest | null>(null);
@@ -287,24 +301,18 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   const saveStateRef = useRef(saveState);
   const visualizerRef = useRef<Visualizer | null>(null);
   const projectRef = useRef(project);
+  const viewRef = useRef(view);
+  const refreshRef = useRef(refreshPublication);
   busyRef.current = busy;
   saveStateRef.current = saveState;
   editorRef.current = editor;
   projectRef.current = project;
+  viewRef.current = view;
+  refreshRef.current = refreshPublication;
 
   function syncPublication(data: ConfigView) {
     if (!productId) return;
-    const terminal = [
-      'REMOTE_READY_ACTIVATION_PENDING',
-      'ACTIVATION_WAITING_RELEASE',
-      'ACTIVATION_WAITING_HOLD',
-      'HELD_ACTIVATION_PENDING',
-      'ACTIVATED_RESTORATION_PENDING',
-      'RESTORATION_CONFLICT',
-      'ACTIVE',
-      'CONFLICT',
-      'OPERATOR_HOLD',
-    ];
+    const terminal = ['RESTORATION_CONFLICT', 'ACTIVE', 'CONFLICT', 'OPERATOR_HOLD', 'FAILED'];
     if (data.config && !terminal.includes(data.config.publication.state)) {
       const stored = readPublicationRequest(productId);
       const body = stored?.body as { action?: string; configId?: string; draftVersion?: string } | undefined;
@@ -337,6 +345,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     setList(null);
     setDraft(null);
     setEditor(null);
+    setValidationIssues([]);
     setStatus('Verifying Shopify Admin session…');
     try {
       if (mode === 'picker') {
@@ -398,6 +407,51 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       document.removeEventListener('visibilitychange', visible);
     };
   }, [mode, productId]);
+  useEffect(() => {
+    if (mode !== 'config') return;
+    let refreshing = false;
+    let stopped = false;
+    const timer = setInterval(async () => {
+      if (stopped || refreshing || document.hidden || busyRef.current || !viewRef.current?.config) return;
+      refreshing = true;
+      try {
+        await refreshRef.current();
+      } catch (error) {
+        if (stopped) return;
+        const status = (error as { status?: number })?.status;
+        if (status === 401 || status === 403) {
+          requestId.current++;
+          visualizerRef.current?.destroy();
+          visualizerRef.current = null;
+          setView(null);
+          setDraft(null);
+          setEditor(null);
+          setLatest(null);
+          pending.current = null;
+          publicationPending.current = null;
+        } else {
+          setView((current) =>
+            current?.config
+              ? {
+                  ...current,
+                  config: {
+                    ...current.config,
+                    publishEligibility: { allowed: false, reason: 'Current readiness could not be verified.' },
+                  },
+                }
+              : current,
+          );
+        }
+        setStatus(error instanceof Error ? error.message : 'Current Admin state unavailable');
+      } finally {
+        refreshing = false;
+      }
+    }, 5_000);
+    return () => {
+      stopped = true;
+      clearInterval(timer);
+    };
+  }, [mode, productId]);
 
   function apply(command: GeometryCommand) {
     const current = editorRef.current;
@@ -433,6 +487,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     if (current) apply({ ...command, baseVersion: current.version } as GeometryCommand);
   }
   function change(next: MerchantDraft) {
+    setValidationIssues([]);
     if (busyRef.current) return;
     setDraft(next);
     setSaveState('dirty');
@@ -611,6 +666,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     } catch (error) {
       const status = (error as { status?: number })?.status;
       if (status && status >= 400 && status < 500 && status !== 409) {
+        const issues = (error as { validationIssues?: { path: string; message: string }[] }).validationIssues;
+        setValidationIssues(Array.isArray(issues) ? issues.slice(0, 20) : []);
         pending.current = null;
         setSaveState('dirty');
         setStatus(error instanceof Error ? error.message : 'Save denied');
@@ -619,8 +676,12 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       const body = request.body as { draftVersion: string; draft: MerchantDraft };
       const result = await authenticatedJson<ConfigView>(endpoint(productId)).catch(() => null);
       if (
+        result?.product.id === view.product.id &&
         result?.config &&
-        result.config.draftVersion !== body.draftVersion &&
+        result.config.configId === view.config.configId &&
+        result.config.installationGeneration === view.config.installationGeneration &&
+        /^[1-9][0-9]*$/.test(result.config.draftVersion) &&
+        BigInt(result.config.draftVersion) === BigInt(body.draftVersion) + 1n &&
         canonical(result.config.draft) === canonical(body.draft)
       ) {
         setView(result);
@@ -643,8 +704,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     }
   }
   async function refreshPublication() {
+    const view = viewRef.current;
     if (!productId || !view?.config) throw new Error('Publication context unavailable');
+    const epoch = requestId.current;
     const data = await authenticatedJson<ConfigView>(endpoint(productId));
+    if (epoch !== requestId.current) return;
     const config = data.config;
     if (
       data.product.id !== view.product.id ||
@@ -652,28 +716,34 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       config.configId !== view.config.configId ||
       config.installationGeneration !== view.config.installationGeneration
     )
-      throw new Error('Publication context changed. Reload before continuing.');
+      throw Object.assign(new Error('Publication context changed. Reload before continuing.'), { status: 403 });
     syncPublication(data);
     const sameSavedDraft =
       config.draftVersion === view.config.draftVersion &&
       canonical(config.draft) === canonical(JSON.parse(JSON.stringify(view.config.draft)));
-    setView({
-      ...view,
-      config: {
-        ...view.config,
-        publication: config.publication,
-        currentShopCurrency: config.currentShopCurrency,
-        publishEligibility: sameSavedDraft
-          ? config.publishEligibility
-          : { allowed: false, reason: 'The saved draft changed. Reload before requesting a new publication.' },
-      },
-    });
+    setView((current) =>
+      current?.config &&
+      current.config.configId === view.config!.configId &&
+      current.config.draftVersion === view.config!.draftVersion
+        ? {
+            ...current,
+            config: {
+              ...current.config,
+              publication: config.publication,
+              currentShopCurrency: config.currentShopCurrency,
+              publishEligibility: sameSavedDraft
+                ? config.publishEligibility
+                : { allowed: false, reason: 'The saved draft changed. Reload before requesting a new publication.' },
+            },
+          }
+        : current,
+    );
     // Continuation refreshes durable progress only: local geometry, edits, CAS base,
     // conflict/latest view and the exact uncertain save request remain owned by save/load.
   }
   async function publish() {
     if (!productId || !view?.config) return;
-    const open = ['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(view.config.publication.state);
+    const open = continuingPublication(view.config.publication.state);
     if (!open && !publicationPending.current && !['clean', 'saved'].includes(saveState)) return;
     const sourceVersion = open ? view.config.publication.sourceDraftVersion : view.config.draftVersion;
     if (!publicationPending.current && !sourceVersion) {
@@ -824,6 +894,15 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
             <>
               <PublicationStatus config={view.config} />
               <s-section heading="Draft editor">
+                {validationIssues.length > 0 && (
+                  <div role="alert">
+                    {validationIssues.map((issue) => (
+                      <p key={issue.path}>
+                        {issue.path}: {issue.message}
+                      </p>
+                    ))}
+                  </div>
+                )}
                 <p>
                   Draft version {view.config.draftVersion} · {saveState}
                 </p>
@@ -1691,13 +1770,12 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                   disabled={
                     busy ||
                     (!publicationPending.current &&
-                      !['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(view.config.publication.state) &&
+                      !continuingPublication(view.config.publication.state) &&
                       (!view.config.publishEligibility.allowed || !['clean', 'saved'].includes(saveState)))
                   }
                   onClick={() => void publish()}
                 >
-                  {publicationPending.current ||
-                  ['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(view.config.publication.state)
+                  {publicationPending.current || continuingPublication(view.config.publication.state)
                     ? 'Continue publication'
                     : 'Request publication'}
                 </s-button>

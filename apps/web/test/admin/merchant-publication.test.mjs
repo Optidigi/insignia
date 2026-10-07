@@ -182,7 +182,7 @@ async function run(mode) {
       assert.equal(phase, 'activation-pending');
       const view = await service.read(actor, productId);
       assert.equal(view.config.publication.state, 'HELD_ACTIVATION_PENDING');
-      assert.equal(view.config.publication.functionReadiness, 'UNVERIFIABLE_DEPLOYED_WASM_IDENTITY');
+      assert.equal(view.config.publication.functionReadiness, 'ACTIVATION_PENDING');
       assert.equal(view.config.publication.activeRevisionId, null);
     } else if (mode === 'conflict') {
       assert.equal((await publication.advance(shopId, created.configId, published.revisionId)).kind, 'CONFLICT');

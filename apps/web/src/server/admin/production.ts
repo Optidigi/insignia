@@ -1,4 +1,9 @@
-import { bindProviderSubscription, type EntitlementPolicyConfig, projectEntitlement } from '@insignia/application';
+import {
+  type ActivationReadinessPort,
+  bindProviderSubscription,
+  type EntitlementPolicyConfig,
+  projectEntitlement,
+} from '@insignia/application';
 import type { MerchantDraft } from '@insignia/contracts';
 import { createDurableCore } from '@insignia/database';
 import {
@@ -9,6 +14,7 @@ import {
   createPartnerGraphqlTransport,
   createPublicationAdminAdapter,
   createPublicationAdminHttpTransport,
+  createShopifyAvailabilityHoldV3Port,
   type OnlineStaffGrant,
   type CatalogProduct as ShopifyCatalogProduct,
 } from '@insignia/shopify';
@@ -16,6 +22,7 @@ import { Pool } from 'pg';
 import { createMerchantConfigService } from '../merchant-config.js';
 import { type AdminInstallation, createAdminAuthenticator } from './auth.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
+import { createServerActivationReadiness } from './release-evidence.js';
 
 function project(value: ShopifyCatalogProduct): CatalogProduct {
   return {
@@ -60,6 +67,8 @@ export function createProductionAdminServices(
   databasePool?: Pool,
   // Inject only provider/entitlement time; identity and online grants keep real time.
   entitlementClock: () => Date = () => new Date(),
+  // Server-owned capability only; never constructed from HTTP or environment JSON.
+  activationReadiness?: Omit<ActivationReadinessPort, 'observeProjection'>,
 ): AdminServices {
   const databaseUrl = required(env, 'DATABASE_URL');
   const apiKey = required(env, 'SHOPIFY_CLIENT_ID');
@@ -70,6 +79,7 @@ export function createProductionAdminServices(
   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
   const grants = new WeakMap<AdminActor, OnlineStaffGrant>();
+  const activations = new WeakMap<AdminActor, ReturnType<typeof core.productionActivations.create>>();
   const policy = featurePolicy(env);
   const partner =
     policy && appGid && env.INSIGNIA_PARTNER_ORGANIZATION_ID && env.INSIGNIA_PARTNER_ACCESS_TOKEN
@@ -134,6 +144,69 @@ export function createProductionAdminServices(
       return currency;
     },
   };
+  function activation(actor: AdminActor) {
+    const cached = activations.get(actor);
+    if (cached) return cached;
+    if (!appId || !/^[1-9][0-9]*$/.test(appId) || !actor.canEdit)
+      throw new Error('Publication configuration unavailable');
+    const credentials = {
+      async acquire(input: { shopId: string; installationGeneration: string }) {
+        if (input.shopId !== actor.tenantShopId || input.installationGeneration !== actor.installationGeneration)
+          return { kind: 'inactive' as const };
+        try {
+          await active(actor);
+        } catch {
+          return { kind: 'inactive' as const };
+        }
+        const online = grant(actor);
+        return {
+          kind: 'usable' as const,
+          shopDomain: actor.shop,
+          accessToken: online.accessToken,
+          accessExpiresAt: new Date(online.expiresAtMs),
+        };
+      },
+    };
+    const remote = createPublicationAdminAdapter({
+      transport: createPublicationAdminHttpTransport({ credentials }),
+    });
+    const coordinator = core.productionActivations.create({
+      appId,
+      appClientId: apiKey,
+      remote,
+      availability: createShopifyAvailabilityHoldV3Port({
+        credentials,
+        isCurrent: async (scope) => {
+          if (
+            scope.shopId !== actor.tenantShopId ||
+            scope.installationGeneration !== actor.installationGeneration ||
+            scope.appClientId !== apiKey ||
+            scope.shopifyShopId !== actor.shopId
+          )
+            return false;
+          try {
+            await active(actor);
+            return true;
+          } catch {
+            return false;
+          }
+        },
+        fetchImpl: globalThis.fetch.bind(globalThis),
+      }),
+      readiness:
+        activationReadiness ??
+        createServerActivationReadiness({
+          expectedBuild: { read: async () => null },
+          observeFunctions: async () => ({ transform: 'unknown', validation: 'unknown', observation: null }),
+          currentDay: () => {
+            throw new Error('Trusted merchant calendar unavailable');
+          },
+        }),
+      maxObservationAgeMs: 30_000,
+    });
+    activations.set(actor, coordinator);
+    return coordinator;
+  }
   const service = createMerchantConfigService({
     core,
     catalog,
@@ -170,32 +243,8 @@ export function createProductionAdminServices(
         needed.every((feature) => entitlement.features.includes(feature));
       return { allowed, reason: allowed ? null : 'Current subscription does not grant every configured feature' };
     },
-    publication(actor) {
-      if (!appId || !/^[1-9][0-9]*$/.test(appId) || !actor.canEdit)
-        throw new Error('Publication configuration unavailable');
-      const credentials = {
-        async acquire(input: { shopId: string; installationGeneration: string }) {
-          if (input.shopId !== actor.tenantShopId || input.installationGeneration !== actor.installationGeneration)
-            return { kind: 'inactive' as const };
-          try {
-            await active(actor);
-          } catch {
-            return { kind: 'inactive' as const };
-          }
-          const online = grant(actor);
-          return {
-            kind: 'usable' as const,
-            shopDomain: actor.shop,
-            accessToken: online.accessToken,
-            accessExpiresAt: new Date(online.expiresAtMs),
-          };
-        },
-      };
-      const remote = createPublicationAdminAdapter({
-        transport: createPublicationAdminHttpTransport({ credentials }),
-      });
-      return core.productionPublications.create({ appId, remote });
-    },
+    publication: (actor) => activation(actor).publications,
+    activation,
   });
   return {
     appOrigin,

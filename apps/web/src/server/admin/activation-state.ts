@@ -5,9 +5,14 @@ export function projectActivationPublicationState(input: {
   effectiveOperationId: string | null;
   operationId: string | null;
   activationKind: string | null;
+  operationStatus?: string;
   recoveryFromAnotherOperation?: boolean;
 }): PublicationState {
   if (input.recoveryFromAnotherOperation) return 'OPERATOR_HOLD';
+  if (input.operationStatus === 'failed' || input.operationStatus === 'superseded')
+    return input.activationKind === null || ['RESOLVED', 'RESTORED'].includes(input.activationKind)
+      ? 'FAILED'
+      : 'OPERATOR_HOLD';
   if (input.phase === 'operator-hold') return 'OPERATOR_HOLD';
   if (input.phase === 'conflict') return 'CONFLICT';
   const active =
