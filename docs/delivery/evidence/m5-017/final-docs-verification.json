@@ -1,0 +1,15 @@
+{
+  "source": "424e4af4133993a6d61579e86f10d9138d3f40c2",
+  "productionModulesUnchanged": 2018,
+  "supplementalArtifactsUnchanged": 96,
+  "historicalCanonicalFilesUnchanged": 51,
+  "canonicalCopiedFilesExact": 9,
+  "originalReviewArtifactsExact": 20,
+  "rawCredentialValueKeys": "NONE",
+  "changes": "DOCS_EVIDENCE_ONLY",
+  "localProductionBuildRepeatedAfterLive": false,
+  "canonicalRun": "CLOSED_SEALED",
+  "providerAccessAfterClose": "NONE",
+  "styleExitCode": 0,
+  "secretCheckExitCode": 0
+}

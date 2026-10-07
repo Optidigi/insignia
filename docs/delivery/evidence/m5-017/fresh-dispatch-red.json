@@ -1,0 +1,7 @@
+{
+  "source": "12c422b5fdba75e92c70df7735b03a3a8ef65469",
+  "originalFile": "fresh-dispatch-red.log",
+  "encoding": "utf-8",
+  "sha256": "75fc8cd68a59bd209355d2229373c59990eed032f32cf21d5cdaa9455526dffa",
+  "raw": "{\"outcome\":\"STOPPED\",\"stop\":\"provider_shape\",\"actualSyntheticCreates\":1,\"clockAgeMs\":30050}\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: freshness expired during final gate work; zero provider create dispatch required\n\n1 !== 0\n\n    at file:///home/serveradmin/insignia-m5-017-handoff/fresh-dispatch-red-probe.mjs:17:9 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: 1,\n  expected: 0,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.21.0\n"
+}

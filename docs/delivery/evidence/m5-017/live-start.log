@@ -1,0 +1,1 @@
+{"outcome":"AWAITING_FRESH_PROCESS","stop":null,"cleanup":{"outcome":"NOT_ATTEMPTED"},"counts":{"auth":1,"graphql":16,"create":1,"directUpdate":1,"adapterMutation":1},"transport":{"invocations":17,"denials":0,"mismatch":false,"reserved":17,"dispatched":17,"denied":0,"matches":true}}

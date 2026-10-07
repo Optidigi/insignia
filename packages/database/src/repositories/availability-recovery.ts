@@ -4,12 +4,15 @@ import {
   type AvailabilityRecoveryResolution,
   type AvailabilityRecoveryResolutionV1,
   type AvailabilityRecoveryResolutionV2,
+  type AvailabilityRecoveryResolutionV3,
   activationDigest,
   assertOriginalAvailabilityObserved,
   availabilitySnapshotIdentityDigest,
   isAvailabilityV2,
-  type VersionedProductAvailabilityHoldPort as ProductAvailabilityHoldPort,
+  isAvailabilityV3,
+  type ProductAvailabilityHoldV3Port as ProductAvailabilityHoldPort,
   sameAvailabilityV2,
+  sameAvailabilityV3,
   type TrustedAvailabilityRecoveryAuthorityPort,
   validateAvailabilityRecoveryDecision,
 } from '@insignia/application';
@@ -101,18 +104,33 @@ export function createAvailabilityRecovery(
         shopifyShopId: `gid://shopify/Shop/${active.shopifyShopId}`,
         appClientId: options.appClientId,
       };
-      const version = state.hold.version === 'm5-availability-hold-v1' ? 'v1' : 'v2';
-      const observed = await options.availability.snapshot(currentScope, state.hold.before.productId, version);
+      const version =
+        state.hold.version === 'm5-availability-hold-v3'
+          ? 'v3'
+          : state.hold.version === 'm5-availability-hold-v1'
+            ? 'v1'
+            : 'v2';
+      const anchors =
+        state.hold.version === 'm5-availability-hold-v3'
+          ? state.hold.before.effectiveAnchors.map((a) => a.publicationId)
+          : [];
+      const observed = await options.availability.snapshot(currentScope, state.hold.before.productId, version, anchors);
       const context: AvailabilityRecoveryContext = { ...request, currentScope, hold: state.hold, observed };
       assertOriginalAvailabilityObserved(context);
       // A separately reviewed settled-write decision is indispensable. Status alone
       // cannot clear an ambiguous write which may still be in flight.
       const authority = await recoveryAuthority.read(context);
-      const readback = await options.availability.snapshot(currentScope, state.hold.before.productId, version);
+      const readback = await options.availability.snapshot(currentScope, state.hold.before.productId, version, anchors);
       if (
-        version === 'v1'
-          ? availabilitySnapshotIdentityDigest(readback) !== availabilitySnapshotIdentityDigest(observed)
-          : !isAvailabilityV2(observed) || !isAvailabilityV2(readback) || !sameAvailabilityV2(observed, readback)
+        version === 'v3'
+          ? !isAvailabilityV3(observed) || !isAvailabilityV3(readback) || !sameAvailabilityV3(observed, readback)
+          : version === 'v1'
+            ? availabilitySnapshotIdentityDigest(readback) !== availabilitySnapshotIdentityDigest(observed)
+            : isAvailabilityV3(observed) ||
+              isAvailabilityV3(readback) ||
+              !isAvailabilityV2(observed) ||
+              !isAvailabilityV2(readback) ||
+              !sameAvailabilityV2(observed, readback)
       )
         throw new Error('Recovery observation drift');
       const finalContext = { ...context, observed: readback };
@@ -135,8 +153,25 @@ export function createAvailabilityRecovery(
         createdAt: at.toISOString(),
       };
       let resolution: AvailabilityRecoveryResolution;
-      if (state.hold.version === 'm5-availability-hold-v2') {
+      if (state.hold.version === 'm5-availability-hold-v3') {
         if (
+          !isAvailabilityV3(observed) ||
+          !isAvailabilityV3(readback) ||
+          decision.version !== 'm5-availability-recovery-decision-v3'
+        )
+          throw new Error('V3 recovery evidence mismatch');
+        resolution = {
+          ...commonResolution,
+          version: 'm5-availability-resolution-v3',
+          originalHold: state.hold,
+          reviewedObservation: observed,
+          observed: readback,
+          decision,
+        } satisfies AvailabilityRecoveryResolutionV3;
+      } else if (state.hold.version === 'm5-availability-hold-v2') {
+        if (
+          isAvailabilityV3(observed) ||
+          isAvailabilityV3(readback) ||
           !isAvailabilityV2(observed) ||
           !isAvailabilityV2(readback) ||
           decision.version !== 'm5-availability-recovery-decision-v2'
@@ -152,6 +187,8 @@ export function createAvailabilityRecovery(
         } satisfies AvailabilityRecoveryResolutionV2;
       } else {
         if (
+          isAvailabilityV3(observed) ||
+          isAvailabilityV3(readback) ||
           isAvailabilityV2(observed) ||
           isAvailabilityV2(readback) ||
           decision.version !== 'm5-availability-recovery-decision-v1'

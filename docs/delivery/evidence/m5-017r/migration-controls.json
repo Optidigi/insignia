@@ -1,0 +1,59 @@
+{
+  "checks": [
+    {
+      "name": "empty-up",
+      "command": [
+        "corepack",
+        "pnpm",
+        "db:migrate"
+      ],
+      "database": "m5_017r_empty",
+      "expectedExit": 0,
+      "actualExit": 0
+    },
+    {
+      "name": "empty-down",
+      "command": [
+        "corepack",
+        "pnpm",
+        "exec",
+        "dbmate",
+        "--no-dump-schema",
+        "--migrations-dir",
+        "packages/database/migrations",
+        "rollback"
+      ],
+      "database": "m5_017r_empty",
+      "expectedExit": 0,
+      "actualExit": 0
+    },
+    {
+      "name": "empty-reup",
+      "command": [
+        "corepack",
+        "pnpm",
+        "db:migrate"
+      ],
+      "database": "m5_017r_empty",
+      "expectedExit": 0,
+      "actualExit": 0
+    },
+    {
+      "name": "populated-down-denied",
+      "command": [
+        "corepack",
+        "pnpm",
+        "exec",
+        "dbmate",
+        "--no-dump-schema",
+        "--migrations-dir",
+        "packages/database/migrations",
+        "rollback"
+      ],
+      "database": "m5_017r_full",
+      "expectedExit": 2,
+      "actualExit": 2
+    }
+  ],
+  "serverVersionAndV3RetainedAfterDeniedDowngrade": "180006|t"
+}

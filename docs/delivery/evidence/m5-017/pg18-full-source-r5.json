@@ -1,0 +1,7 @@
+{
+  "source": "424e4af4133993a6d61579e86f10d9138d3f40c2",
+  "originalFile": "/home/serveradmin/insignia-m5-017-handoff/pg18-full-source-r5.log",
+  "encoding": "utf-8",
+  "sha256": "e1169fb621a383abb313d147a5279ca51187017fa5ac0003ac985261e28cbb31",
+  "raw": "$ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database\n$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up\n$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up\n$ corepack pnpm --filter @insignia/database test\n$ vitest run\n\n RUN  v5.0.2 /home/serveradmin/insignia-m5-017-worktree/packages/database\n\n\n Test Files  10 passed (10)\n      Tests  167 passed (167)\n   Start at  11:55:28\n   Duration  22.13s (tests 76%, import 16%, transform 8%)\n\n"
+}

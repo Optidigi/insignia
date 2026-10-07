@@ -1,0 +1,47 @@
+{
+  "task": "M5-017R",
+  "publicSeamsAuthorizedByBrief": [
+    "availabilityV3AcknowledgementQualified",
+    "validAvailabilityV3/availabilityV3Qualified",
+    "production v3 snapshot/acquire/restore",
+    "SQL v3 functions/hold insert fence",
+    "exact production restore response replay"
+  ],
+  "diagnosis": "Principal-supplied captured interval reproduced at the ACK public seam. Request-start comparison, rather than updatedAt equality or semantic drift, was the confirmed cause. Re-diagnosis against a provider is neither needed nor authorized.",
+  "redGreen": [
+    {
+      "test": "canonical ACK interval",
+      "redExit": 1,
+      "greenExit": 0,
+      "symptom": "expected qualification true, received false"
+    },
+    {
+      "test": "complete interval/equality snapshots",
+      "redExit": 1,
+      "greenExit": 0,
+      "symptom": "validator recomputed false future at observedAt"
+    },
+    {
+      "test": "production snapshot interval/equality",
+      "redExit": 1,
+      "greenExit": 0,
+      "symptom": "old adapter blocker projection rejected by corrected completed-time validator"
+    },
+    {
+      "test": "PostgreSQL18 interval/equality",
+      "redExit": 1,
+      "greenExit": 0,
+      "symptom": "old functions returned snapshot=false, ACK=false, hold=false; corrected functions/insert fence agree with application"
+    }
+  ],
+  "incidentalFailure": {
+    "log": "shopify-focused.log",
+    "exitCode": 1,
+    "cause": "over-broad test-fixture edit added options reference to a fixture without options",
+    "fixedLog": "shopify-focused-fixed.log",
+    "fixedExitCode": 0,
+    "tests": 58
+  },
+  "noProviderOrCredentialAccess": true,
+  "canonicalLiveOutcomeRetained": "STOPPED/CONFLICT"
+}

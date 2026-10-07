@@ -1,0 +1,111 @@
+{
+  "classification": "STOPPED_ACK_REQUEST_START_FUTURE_DATE_CONFLICT",
+  "source": "424e4af4133993a6d61579e86f10d9138d3f40c2",
+  "rawHarnessOutcome": "STOPPED",
+  "rawHarnessStop": "restore_not_exact",
+  "rawProductionRestoreKind": "CONFLICT",
+  "fixture": "gid://shopify/Product/10496636387611",
+  "marker": "insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36",
+  "operationId": "d96162c6-a176-42de-b640-057e11625105",
+  "semanticReadbackEqualsBefore": true,
+  "currentQualified": true,
+  "ackStructurallySettled": "ACKNOWLEDGED",
+  "ackQualified": false,
+  "ackScheduleClassification": [
+    {
+      "publicationId": "gid://shopify/Publication/339456917787",
+      "isPublished": true,
+      "publishDate": "2026-10-07T12:09:56.000Z"
+    }
+  ],
+  "publication": {
+    "publicationId": "gid://shopify/Publication/339456917787",
+    "isPublished": true,
+    "publishDate": "2026-10-07T12:09:56.000Z"
+  },
+  "ackObservedAt": "2026-10-07T12:09:54.968Z",
+  "ackReceivedAt": "2026-10-07T12:09:57.978Z",
+  "publishDateAfterRequestStartMs": 1032,
+  "publishDateBeforeReceiptMs": 1978,
+  "ackUpdatedAt": "2026-10-07T12:09:56.000Z",
+  "readbackUpdatedAt": "2026-10-07T12:09:57.000Z",
+  "updatedAtDeltaMs": 1000,
+  "persistedHeldUpdatedAt": "2026-10-07T12:08:46.000Z",
+  "freshObservedHeldUpdatedAt": "2026-10-07T12:09:17.000Z",
+  "heldDiagnosticDriftMs": 31000,
+  "counterfactualCompletionComparison": {
+    "label": "Offline derived comparator evidence only; no adapter correction or live retry",
+    "visibleEntries": []
+  },
+  "compensationReserved": 1,
+  "compensationProviderAttempts": 0,
+  "allWritesSettled": true,
+  "accounting": {
+    "auth": 2,
+    "graphql": 36,
+    "create": 1,
+    "directUpdate": 2,
+    "adapterMutation": 2
+  },
+  "transportAccounting": {
+    "invocations": 38,
+    "denials": 0,
+    "mismatch": false,
+    "reserved": 38,
+    "dispatched": 38,
+    "denied": 0,
+    "matches": true
+  },
+  "freshProcess": {
+    "initialPid": 1322883,
+    "resumePid": 1325112,
+    "different": true,
+    "persistedHoldHash": "b90a977a2a757d16e9890ee04831ef32f119a11ac7cbbcf46f176a91c0d99495"
+  },
+  "cleanup": "FINAL_ARCHIVED_UNPUBLISHED",
+  "final": {
+    "version": "m5-product-availability-snapshot-v3",
+    "scope": {
+      "shopId": "m5_017_fixture_only",
+      "installationGeneration": "1",
+      "shopifyShopId": "gid://shopify/Shop/105501393179",
+      "appClientId": "1443cf6d03d39edae7c101a943c5c684"
+    },
+    "productId": "gid://shopify/Product/10496636387611",
+    "state": "archived",
+    "providerUpdatedAt": "2026-10-07T12:10:14.000Z",
+    "effectiveVisibility": {
+      "publishedPublicationIds": [],
+      "onlineStore": {
+        "publishedAtPresent": false,
+        "urlPresent": false
+      },
+      "publicationEvidence": [],
+      "publishedAt": null,
+      "onlineStoreUrl": null
+    },
+    "effectiveAnchors": [],
+    "visibleScheduledOrStaged": [],
+    "effectiveDigest": "0bcfa96aee0883f6cef8a95c673080105759b704ccc98b5f6897b9e7299ead6c",
+    "anchorDigest": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "observedAt": "2026-10-07T12:10:15.664Z",
+    "receivedAt": "2026-10-07T12:10:18.000Z"
+  },
+  "pending": null,
+  "futureCapability": {
+    "flag": "FUTURE_CAPABILITY_NOT_OBSERVED",
+    "count": 0,
+    "effectiveAnchors": [
+      {
+        "publicationId": "gid://shopify/Publication/339456917787",
+        "resolved": true,
+        "productIncluded": true,
+        "autoPublish": true,
+        "supportsFuturePublishing": false
+      }
+    ]
+  },
+  "proposal": "Separate conservative request-start freshness provenance from v3 ACK schedule evaluation time. Principal should adjudicate exact completion-time semantics, preserve raw timestamps and actual future/staged failure, add regressions and requalify in a new authorized slice. No tolerance or historical reinterpretation.",
+  "productionPatchedAfterLive": false,
+  "furtherProviderAccess": "FORBIDDEN_CLOSED"
+}

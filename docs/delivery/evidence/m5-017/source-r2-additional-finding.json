@@ -1,0 +1,10 @@
+{
+  "source": "2dde06d0f553508346153ebbcb8139937cc74e6f",
+  "status": "UNRESOLVED; LIVE GATE CLOSED",
+  "finding": "successful persisted HELD can reference structurally valid original before containing visible staged publication",
+  "applicationOwnedHeld": true,
+  "sqlSuccessHoldAdmitted": true,
+  "counterexampleLog": "scheduled-before-red.log",
+  "executed": "synthetic PostgreSQL SELECT and local application predicate only; no provider/credential access",
+  "proposedSmallestCorrection": "successful held qualification must require schedule-free original before; incident hold with held:null can retain staged evidence; reject invalid persisted hold before fresh observe/restore transport"
+}

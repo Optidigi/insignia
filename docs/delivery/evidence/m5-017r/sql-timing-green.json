@@ -1,0 +1,7 @@
+{
+  "check": "sql-timing-green",
+  "commandOrPurpose": "corrected migration in fresh green database",
+  "exitCode": 0,
+  "sha256": "095ad3f1e14234c7f887d86450b90d01eea21f486b8ffa8a5407929b39388bd5",
+  "rawUtf8Output": "\n RUN  v5.0.2 /home/serveradmin/insignia-m5-017-worktree/packages/database\n\n\n Test Files  1 passed (1)\n      Tests  4 passed (4)\n   Start at  12:54:55\n   Duration  852ms (transform 48%, import 40%, tests 11%, worker 1%)\n\n"
+}

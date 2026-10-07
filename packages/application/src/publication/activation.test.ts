@@ -33,9 +33,9 @@ import {
 } from './activation.js';
 import type { AvailabilityScope } from './availability.js';
 import type {
-  VersionedProductAvailabilityHoldPort as ProductAvailabilityHoldPort,
-  ProductAvailabilitySnapshotV2 as ProductAvailabilitySnapshot,
-} from './availability-v2.js';
+  ProductAvailabilityHoldV3Port as ProductAvailabilityHoldPort,
+  ProductAvailabilitySnapshotV3 as ProductAvailabilitySnapshot,
+} from './availability-v3.js';
 
 const now = new Date('2026-10-01T12:00:00.000Z');
 function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'required' | 'optional' = 'required') {
@@ -101,18 +101,22 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   let crashBeforeRestore = false;
   let crashAcquire = false;
   let crashRestore = false;
+  let unsupportedRestorationAck = false;
+  let omitRestorationAck = false;
   let unresolvedRestore: 'pending' | 'throw' | 'original' | null = null;
   let failCommit = false;
   let fenced = false;
+  let observations = 0;
   let acquisitions = 0;
   let restores = 0;
   let current: ProductAvailabilitySnapshot = {
     scope: availabilityScope,
     productId: candidate.productId,
     state: 'available',
-    version: 'm5-product-availability-snapshot-v2',
+    version: 'm5-product-availability-snapshot-v3',
     providerUpdatedAt: '2026-10-01T11:00:00.000Z',
-    configuredIntent: { includedPublicationIds: [], publicationSettings: [], scheduled: [] },
+    effectiveAnchors: [],
+    visibleScheduledOrStaged: [],
     effectiveVisibility: {
       publishedPublicationIds: [],
       onlineStore: { publishedAtPresent: false, urlPresent: false },
@@ -120,7 +124,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       publishedAt: null,
       onlineStoreUrl: null,
     },
-    intentDigest: activationDigest({ includedPublicationIds: [], publicationSettings: [], scheduled: [] }),
+    anchorDigest: activationDigest([]),
     effectiveDigest: activationDigest({
       publishedPublicationIds: [],
       onlineStore: { publishedAtPresent: false, urlPresent: false },
@@ -142,18 +146,37 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
         crashAcquire = false;
         throw new Error('lost acquisition response');
       }
-      return { kind: 'HELD', current, hold: { ...hold, held: current } };
+      return {
+        kind: 'HELD',
+        current,
+        hold: {
+          ...hold,
+          held: current,
+          acquisitionAcknowledgement: {
+            version: 'm5-availability-mutation-ack-v3' as const,
+            scope: current.scope,
+            productId: current.productId,
+            state: current.state,
+            providerUpdatedAt: current.providerUpdatedAt,
+            effectiveVisibility: current.effectiveVisibility,
+            observedAt: current.observedAt,
+            receivedAt: current.receivedAt,
+          },
+        },
+      };
     },
-    observe: async (_scope, hold) =>
-      current.state === 'unavailable'
+    observe: async (_scope, hold) => {
+      observations++;
+      return current.state === 'unavailable'
         ? {
             kind: 'HELD',
             current: { ...current, observedAt: clock.toISOString(), receivedAt: clock.toISOString() },
             hold: { ...hold, held: current },
           }
-        : { kind: 'CONFLICT', current },
+        : { kind: 'CONFLICT', current };
+    },
     restore: async (_scope, hold) => {
-      if (hold.version !== 'm5-availability-hold-v2') throw new Error('new synthetic operation requires v2');
+      if (hold.version !== 'm5-availability-hold-v3') throw new Error('new synthetic operation requires v3');
       stateAtRestore = structuredClone(candidate.state);
       restoreClock = new Date(clock);
       restores++;
@@ -178,7 +201,32 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
         crashRestore = false;
         throw new Error('lost restoration response');
       }
-      return { kind: 'RESTORED', current };
+      if (omitRestorationAck) return { kind: 'RESTORED', current };
+      return {
+        kind: 'RESTORED',
+        current,
+        acknowledgement: {
+          version: 'm5-availability-mutation-ack-v3' as const,
+          scope: current.scope,
+          productId: current.productId,
+          state: current.state,
+          providerUpdatedAt: current.providerUpdatedAt,
+          effectiveVisibility: unsupportedRestorationAck
+            ? {
+                ...current.effectiveVisibility,
+                publicationEvidence: [
+                  {
+                    publicationId: 'gid://shopify/Publication/999',
+                    isPublished: false,
+                    publishDate: '2099-01-01T00:00:00.000Z',
+                  },
+                ],
+              }
+            : current.effectiveVisibility,
+          observedAt: current.observedAt,
+          receivedAt: current.receivedAt,
+        },
+      };
     },
   };
   const artifactScope = { shopId: scope.shopId, installationGeneration: '1', appClientId: 'a'.repeat(32) };
@@ -298,6 +346,72 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   const advance = () => restart().advance({ shopId: scope.shopId, configId: 'config', operationId: 'operation' });
   return {
     advance,
+    persistUnsupportedBefore: () => {
+      const hold = candidate.state.hold;
+      if (hold?.version !== 'm5-availability-hold-v3') throw new Error('expected v3');
+      const unsupported = {
+        publicationId: 'gid://shopify/Publication/999',
+        isPublished: false,
+        publishDate: '2099-01-01T00:00:00.000Z',
+      };
+      candidate = {
+        ...candidate,
+        state: {
+          ...candidate.state,
+          hold: {
+            ...hold,
+            before: {
+              ...hold.before,
+              effectiveVisibility: {
+                ...hold.before.effectiveVisibility,
+                publicationEvidence: [...hold.before.effectiveVisibility.publicationEvidence, unsupported],
+              },
+              visibleScheduledOrStaged: [unsupported],
+            },
+          },
+        },
+      };
+    },
+    get observations() {
+      return observations;
+    },
+    persistUnheldDraftAck: () => {
+      const hold = candidate.state.hold;
+      if (hold?.version !== 'm5-availability-hold-v3' || !hold.held || !hold.acquisitionAcknowledgement)
+        throw new Error('expected acquired v3');
+      const unsupported = {
+        publicationId: 'gid://shopify/Publication/999',
+        isPublished: false,
+        publishDate: '2099-01-01T00:00:00.000Z',
+      };
+      candidate = {
+        ...candidate,
+        state: {
+          ...candidate.state,
+          hold: {
+            ...hold,
+            before: hold.held,
+            held: null,
+            acquisitionAcknowledgement: {
+              ...hold.acquisitionAcknowledgement,
+              effectiveVisibility: {
+                ...hold.acquisitionAcknowledgement.effectiveVisibility,
+                publicationEvidence: [unsupported],
+              },
+            },
+          },
+        },
+      };
+    },
+    set omitRestorationAck(value: boolean) {
+      omitRestorationAck = value;
+    },
+    useOriginalDraft: () => {
+      current = { ...current, state: 'unavailable' };
+    },
+    set unsupportedRestorationAck(value: boolean) {
+      unsupportedRestorationAck = value;
+    },
     persistLegacyHold: () => {
       const before = {
         scope: availabilityScope,
@@ -313,6 +427,33 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
           kind: 'HOLD_INTENT',
           evidenceDigest: null,
           hold: { version: 'm5-availability-hold-v1', operationId: candidate.operationId, before, held: null },
+        },
+      };
+    },
+    persistV2Hold: () => {
+      candidate = {
+        ...candidate,
+        state: {
+          kind: 'RESTORATION_PENDING',
+          evidenceDigest: null,
+          hold: {
+            version: 'm5-availability-hold-v2',
+            operationId: candidate.operationId,
+            before: {
+              version: 'm5-product-availability-snapshot-v2',
+              scope: availabilityScope,
+              productId: candidate.productId,
+              state: 'available',
+              providerUpdatedAt: '2026-10-01T11:00:00.000Z',
+              configuredIntent: { includedPublicationIds: [], publicationSettings: [], scheduled: [] },
+              intentDigest: activationDigest({ includedPublicationIds: [], publicationSettings: [], scheduled: [] }),
+              effectiveVisibility: current.effectiveVisibility,
+              effectiveDigest: current.effectiveDigest,
+              observedAt: now.toISOString(),
+              receivedAt: now.toISOString(),
+            },
+            held: null,
+          },
         },
       };
     },
@@ -421,7 +562,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       fenced = value;
     },
     invalidSnapshot: () => {
-      current = { ...current, intentDigest: '' };
+      current = { ...current, anchorDigest: '' };
     },
     drift: () => {
       current = { ...current, state: 'available' };
@@ -541,6 +682,56 @@ describe('production activation coordinator with injected synthetic boundary fix
     expect(f.current.state).toBe('unavailable');
     expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
     expect(f.evidence).toBeNull();
+    expect(f.acquisitions).toBe(1);
+  });
+  for (const acknowledgement of ['absent', 'qualified', 'unsupported legacy false']) {
+    const unsupportedAck = acknowledgement === 'unsupported legacy false';
+    it(`original DRAFT restoration ${acknowledgement} ACK`, async () => {
+      const f = fixture();
+      f.useOriginalDraft();
+      f.phase = 'prepared';
+      await f.advance();
+      expect((await f.advance()).kind).toBe('HELD');
+      f.phase = 'activation-pending';
+      expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
+      f.unsupportedRestorationAck = unsupportedAck;
+      f.omitRestorationAck = acknowledgement === 'absent';
+      expect((await f.advance()).kind).toBe(unsupportedAck ? 'OPERATOR_HOLD' : 'ACTIVE');
+      const hold = f.candidate.state.hold;
+      if (hold?.version !== 'm5-availability-hold-v3') throw new Error('expected v3');
+      expect(hold.restorationReceipt?.kind).toBe(unsupportedAck ? 'CONFLICT' : 'RESTORED');
+      expect(hold.restorationReceipt?.acknowledgement?.effectiveVisibility.publicationEvidence.length ?? 0).toBe(
+        unsupportedAck ? 1 : 0,
+      );
+      if (acknowledgement === 'absent') expect(hold.restorationReceipt?.acknowledgement).toBeNull();
+      await f.advance();
+      expect(f.restores).toBe(1);
+    });
+  }
+  it('unheld original DRAFT incident cannot regain authority through an observation port', async () => {
+    const f = fixture();
+    f.phase = 'prepared';
+    await f.advance();
+    expect((await f.advance()).kind).toBe('HELD');
+    f.persistUnheldDraftAck();
+    f.phase = 'activation-pending';
+    const observations = f.observations;
+    expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
+    expect(f.observations).toBe(observations);
+    expect(f.evidence).toBeNull();
+    expect(f.restores).toBe(0);
+    expect(f.acquisitions).toBe(1);
+  });
+  it('unsupported legacy false original persisted hold cannot authorize activation or restoration', async () => {
+    const f = fixture();
+    f.phase = 'prepared';
+    await f.advance();
+    expect((await f.advance()).kind).toBe('HELD');
+    f.persistUnsupportedBefore();
+    f.phase = 'activation-pending';
+    expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
+    expect(f.evidence).toBeNull();
+    expect(f.restores).toBe(0);
     expect(f.acquisitions).toBe(1);
   });
   it('crash after hold before publication preserves the owned hold for restart', async () => {
@@ -792,12 +983,12 @@ it('a slow restoration projection read must not dispatch over expired release ob
   expect(f.candidate.state.kind).toBe('RESTORATION_CLAIMED');
 });
 
-it('new coordinator operations persist v2-only hold intents and explicit v2 activation evidence', async () => {
+it('new coordinator operations persist v3-only hold intents and explicit v3 activation evidence', async () => {
   const f = fixture();
   await f.advance();
   await f.advance();
-  expect(f.stateAtAcquisition?.hold?.version).toBe('m5-availability-hold-v2');
-  expect(f.evidence).toMatchObject({ version: 'm5-activation-evidence-v2', decisionVersion: 2 });
+  expect(f.stateAtAcquisition?.hold?.version).toBe('m5-availability-hold-v3');
+  expect(f.evidence).toMatchObject({ version: 'm5-activation-evidence-v3', decisionVersion: 3 });
 });
 
 it('unresolved historical v1 holds are operator-held without adoption or provider dispatch', async () => {
@@ -809,11 +1000,38 @@ it('unresolved historical v1 holds are operator-held without adoption or provide
   expect(f.acquisitions).toBe(0);
   expect(f.restores).toBe(0);
 });
-it('unrelated provider updatedAt advance while held still permits v2 semantic activation and restore', async () => {
+it('unrelated provider updatedAt advance while held still permits v3 semantic activation and restore', async () => {
   const f = fixture();
   await f.advance();
   await f.advance();
   f.advanceDiagnostic();
   expect((await f.advance()).kind).toBe('ACTIVE');
   expect(f.restores).toBe(1);
+});
+
+it('durable restore claim reserves one conditional rehold before dispatch', async () => {
+  const f = fixture();
+  await f.advance();
+  await f.advance();
+  await f.advance();
+  expect(f.stateAtRestore?.hold).toMatchObject({
+    version: 'm5-availability-hold-v3',
+    restorationClaim: {
+      version: 'm5-availability-restoration-claim-v3',
+      operationId: 'operation',
+      productId: 'gid://shopify/Product/42',
+      restoreReserved: true,
+      compensationReserved: true,
+    },
+  });
+});
+
+it('unresolved historical v2 remains byte-equivalent and operator-held without any provider dispatch', async () => {
+  const f = fixture();
+  f.persistV2Hold();
+  const original = JSON.stringify(f.candidate.state.hold);
+  expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
+  expect(JSON.stringify(f.candidate.state.hold)).toBe(original);
+  expect(f.acquisitions).toBe(0);
+  expect(f.restores).toBe(0);
 });

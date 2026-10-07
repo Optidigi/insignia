@@ -1,0 +1,45 @@
+Use the attached `insignia-pr48-changes-requested-m5-017r` package.
+
+Read README.md, PR-048-principal-review.md and M5-017R-ACK-COMPLETION-TIMING-CORRECTION.md first.
+
+PR #48 is CHANGES_REQUESTED at:
+base 4bba14fb4415815557ffa5f1e600427a62128489
+head 2d0b5177add9b412a8e1f9c43309ae6af04f1e1e
+tree 73e516cec289ebd368d4d1e2607886fc285dd30f
+
+Do not merge.
+
+Do not perform ANY Shopify/provider/browser/credential/CLI operation and do not create another fixture.
+
+Correct the same PR locally.
+
+Keep request-start `observedAt` for freshness/provenance, but classify legacy ResourcePublication future timing at completed observation `receivedAt`.
+
+The canonical live restore ACK has:
+observedAt 12:09:54.968Z
+publishDate 12:09:56.000Z
+receivedAt 12:09:57.978Z
+
+That case must qualify on timing with no tolerance.
+
+A genuine `isPublished=true` publication with `publishDate > receivedAt` must remain unqualified.
+
+Also correct the legacy semantic claim: ResourcePublication `isPublished=false` is not ResourcePublicationV2 staged state. If false records remain conservatively blocking, describe/test them as non-effective/unsupported blocking evidence, not staged future intent.
+
+Keep application, adapter and SQL predicates equivalent. Do not change provider documents or request sequence. Preserve v1/v2 exactly.
+
+Use TDD and add exact canonical interval, genuine future, equality, snapshot, SQL, restore, compensation and legacy-false controls.
+
+Then replay the exact sealed M5-017 live restore responses through corrected production source in memory only:
+- zero external requests;
+- result RESTORED;
+- exact semantic readback equal to before;
+- compensation attempts zero.
+
+Never edit the raw sealed live run. Historical live output stays STOPPED/CONFLICT; the corrected replay is separate derived evidence.
+
+Run full regression, PostgreSQL18, 11 applicable workflows, stress400/400, renderer control and two fresh GPT-6.1-sol/high full-source reviews. Final reviews must be CLEAR.
+
+Return the SAME PR #48 for principal rereview and stop.
+
+No merge, no live retry, no production activation, RELEASE_BOUND, G7, M6/M7 or launch.

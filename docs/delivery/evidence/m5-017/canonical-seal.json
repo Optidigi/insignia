@@ -1,0 +1,10 @@
+{
+  "directory": "/home/serveradmin/insignia-m5-017-handoff/run",
+  "registerPhase": "CLOSED",
+  "files": 9,
+  "fileMode": "0400",
+  "directoryMode": "0500",
+  "manifestSha256": "0eb6c0006ad414d9b327f87581b3f3f35fef0ac09c4f67d096f9aa1102d544f2",
+  "sealedAt": "2026-10-07T12:12:05.860920+00:00",
+  "reopen": "FORBIDDEN"
+}

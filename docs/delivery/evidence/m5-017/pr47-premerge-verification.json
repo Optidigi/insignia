@@ -1,0 +1,11 @@
+{
+  "base": "d0efd626222047a2047573f678b019cd7b1802a9",
+  "head": "857e0db43918dada608af8aa63654756673c6ba7",
+  "tree": "dcd5aca2e0f4152b9eb07b7b1616f0d309ecf4a7",
+  "exactWorkflows": 10,
+  "attempt": 1,
+  "externalApproval": "Supplied PR-047-principal-review.md and explicit user authority",
+  "nativeReviews": 0,
+  "mergeable": true,
+  "historicalCanonicalFiles": 51
+}

@@ -1,0 +1,14 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 47,
+  "base": "d0efd626222047a2047573f678b019cd7b1802a9",
+  "head": "857e0db43918dada608af8aa63654756673c6ba7",
+  "tree": "dcd5aca2e0f4152b9eb07b7b1616f0d309ecf4a7",
+  "verdict": "APPROVED",
+  "m5_016": "DIRECT_ONLY",
+  "fixture_final": "ARCHIVED_EFFECTIVELY_UNPUBLISHED",
+  "provider_authority_closed": true,
+  "production_changed": false,
+  "ci": "10/10 success attempt1",
+  "next_slice": "M5-017_AVAILABILITY_HOLD_V3"
+}

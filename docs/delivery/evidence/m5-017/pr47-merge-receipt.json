@@ -1,0 +1,17 @@
+{
+  "pr": 47,
+  "mergeMethod": "merge",
+  "merge": "4bba14fb4415815557ffa5f1e600427a62128489",
+  "orderedParents": [
+    "d0efd626222047a2047573f678b019cd7b1802a9",
+    "857e0db43918dada608af8aa63654756673c6ba7"
+  ],
+  "tree": "dcd5aca2e0f4152b9eb07b7b1616f0d309ecf4a7",
+  "effectiveMergeBase": "d0efd626222047a2047573f678b019cd7b1802a9",
+  "workflows": 10,
+  "attempt": 1,
+  "externalApproval": "Supplied principal package and exact user authority",
+  "nativeApprovalFabricated": false,
+  "protectionBypass": false,
+  "remoteMainMatches": true
+}

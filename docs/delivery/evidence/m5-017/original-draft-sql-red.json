@@ -1,0 +1,7 @@
+{
+  "baseline": "2dde06d0f553508346153ebbcb8139937cc74e6f plus uncommitted round3 scheduled-original corrections",
+  "originalFile": "/home/serveradmin/insignia-m5-017-handoff/original-draft-sql-red.log",
+  "encoding": "utf-8",
+  "sha256": "e75006d206fc972b63d1a7de47b95272d1a9609cdb39d96bb74872abacb696ff",
+  "raw": "\n RUN  v5.0.2 /home/serveradmin/insignia-m5-017-worktree/packages/database\n\n \u276f test/activation.test.ts (111 tests | 1 failed | 110 skipped) 146ms\n   \u276f PG18 scoped production activation (111)\n     \u00d7 SQL denies a successful held record with scheduled original but retains unheld incident evidence 130ms\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  test/activation.test.ts > PG18 scoped production activation > SQL denies a successful held record with scheduled original but retains unheld incident evidence\nAssertionError: expected true to be false // Object.is equality\n\n- Expected\n+ Received\n\n- false\n+ true\n\n \u276f test/activation.test.ts:1432:40\n\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n Test Files  1 failed (1)\n      Tests  1 failed | 110 skipped (111)\n   Start at  11:10:31\n   Duration  1.17s (transform 45%, import 40%, tests 14%)\n\nError: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL\n\n  \u00d7 \"pnpm recursive exec\" failed in /home/serveradmin/insignia-m5-017-\n  \u2502 worktree/packages/database\n\n"
+}

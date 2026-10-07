@@ -1,0 +1,7 @@
+{
+  "check": "application-canonical-green",
+  "commandOrPurpose": "focused canonical ACK after correction",
+  "exitCode": 0,
+  "sha256": "7a028afca5a8c1da482b479809277811a80135bb040b50aba02e8872956ae6ae",
+  "rawUtf8Output": "\n RUN  v5.0.2 /home/serveradmin/insignia-m5-017-worktree/packages/application\n\n\n Test Files  1 passed (1)\n      Tests  1 passed | 5 skipped (6)\n   Start at  12:51:29\n   Duration  271ms (transform 63%, import 31%, worker 3%, tests 3%)\n\n"
+}

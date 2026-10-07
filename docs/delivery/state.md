@@ -1,3 +1,17 @@
+# Current review boundary — M5-017R
+
+[PR48](https://github.com/Optidigi/insignia/pull/48) is CHANGES_REQUESTED at reviewed head `2d0b5177add9b412a8e1f9c43309ae6af04f1e1e`; [principal authority](evidence/m5-017r/authority-PR-048-principal-review.md) authorizes the [local timing correction](prompts/M5-017R-ACK-COMPLETION-TIMING-CORRECTION.md) in this same PR. Corrected application/adapter/SQL evaluate legacy ResourcePublication future timing at receivedAt while retaining observedAt for freshness. Legacy false is unsupported non-effective blocking evidence, not V2 staged state. The exact captured-response replay is separately derived RESTORED with no external requests or compensation; original raw live outcome remains STOPPED/CONFLICT.
+
+[M5-017 report](M5-017-REPORT.md) and [correction evidence](evidence/m5-017r/) distinguish source correction/replay from historical execution. Final fresh CLEAR full-source reviews and all eleven exact-head workflows are required in the external principal packet. M5-017 canonical and fixture10496636387611 remain permanently CLOSED/sealed and ARCHIVED; no provider/credential/Shopify-CLI request, browser provider operation, new fixture, live retry, merge, production activation, RELEASE_BOUND/G7, M6/M7 or launch. Stop for principal rereview.
+
+# Current review boundary — M5-017
+
+[PR48](https://github.com/Optidigi/insignia/pull/48) contains Availability Hold v3 implementation and truthful STOPPED live evidence. [Report](M5-017-REPORT.md) records the exact frozen source, gate, raw lifecycle and unresolved correction. The one fresh product10496636387611 reached HELD, survived a genuine fresh process, and restored exact original effective membership; the adapter returned CONFLICT because a publication timestamp created inside the write interval was compared against request-start time. The authorized cleanup verified ARCHIVED/effectively unpublished. Canonical M5-017 is CLOSED/sealed; no further provider access, production source/build change, retry, fixture, successor merge, activation, RELEASE_BOUND/G7, M6/M7 or launch is authorized.
+
+Frozen source424e4af4133993a6d61579e86f10d9138d3f40c2 passed PostgreSQL-enabled root, database167, stress400/400, renderer control, migration/query plans, two clear actual GPT-6.1-sol/high source reviews and eleven exact-source attempt1 workflows before credentials. Live remained STOPPED; these passes do not override the production classification defect. Original failed observations/reviews and historical v1/v2 meanings remain preserved. Final changes are docs/evidence only. Fresh completed-change reviews and final CI belong in the external principal packet. Principal must adjudicate the smallest correction and any separately authorized next slice; no live PASS or merge readiness is claimed.
+
+PR47's approved normal merge and ordered parents/tree are recorded in [the unchanged receipt](evidence/m5-017/pr47-merge-receipt.json). M5-016/DIRECT_ONLY and all prior fixtures/registers remain permanently closed.
+
 # Current review boundary — M5-016
 
 PR #46 normally merged at `d0efd626222047a2047573f678b019cd7b1802a9` with approved ordered parents/tree after ten exact-head attempt-1 successful workflows and supplied principal approval. It remains accepted only as truthful STOPPED M5-015R evidence. Historical runs/reports below retain their original execution meaning.

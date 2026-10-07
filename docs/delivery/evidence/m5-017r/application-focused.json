@@ -1,0 +1,7 @@
+{
+  "check": "application-focused",
+  "commandOrPurpose": "application/activation/recovery85",
+  "exitCode": 0,
+  "sha256": "daaf30b11846601bcd2220c5db448b33a96538e7eca8baf9552b2a46693af98d",
+  "rawUtf8Output": "\n RUN  v5.0.2 /home/serveradmin/insignia-m5-017-worktree/packages/application\n\n\n Test Files  3 passed (3)\n      Tests  85 passed (85)\n   Start at  12:59:01\n   Duration  532ms (transform 48%, tests 31%, import 20%, worker 2%)\n\n"
+}

@@ -1,0 +1,7 @@
+{
+  "source": "424e4af4133993a6d61579e86f10d9138d3f40c2",
+  "originalFile": "/home/serveradmin/insignia-m5-017-handoff/empty-up-verified-source-r5.log",
+  "encoding": "utf-8",
+  "sha256": "251d76d7b00c85e22557898d355ad8994308c1e8f082e3bfa6648ddb41c18d74",
+  "raw": "$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up\nApplying: 20261007000100_m5_availability_v3.sql\nApplied: 20261007000100_m5_availability_v3.sql in 17.333933ms\n"
+}

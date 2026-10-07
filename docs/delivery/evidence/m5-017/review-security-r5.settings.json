@@ -1,0 +1,17 @@
+{
+  "thread": "01a11637-9bd9-7370-8d6c-bcb57f5fc47f",
+  "role": "security",
+  "sessionFile": "/home/serveradmin/.codex/sessions/2026/10/07/rollout-2026-10-07T11-55-05-01a11637-9bd9-7370-8d6c-bcb57f5fc47f.jsonl",
+  "source": "424e4af4133993a6d61579e86f10d9138d3f40c2",
+  "selectedSameLaunchContext": [
+    {
+      "cwd": "/home/serveradmin/insignia-m5-017-worktree",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "approval_policy": "never"
+    }
+  ]
+}

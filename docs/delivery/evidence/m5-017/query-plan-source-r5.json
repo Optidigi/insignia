@@ -1,0 +1,7 @@
+{
+  "source": "424e4af4133993a6d61579e86f10d9138d3f40c2",
+  "originalFile": "/home/serveradmin/insignia-m5-017-handoff/query-plan-source-r5.log",
+  "encoding": "utf-8",
+  "sha256": "740d4b20a0d85147b625dfd120cd90f0ee84cd2f32858b08b13237cd88a461d7",
+  "raw": "$ node scripts/m5-003/large-history.mjs\n{\n  \"pointer\": {\n    \"planningMs\": 1.085,\n    \"executionMs\": 0.102,\n    \"rows\": 1,\n    \"indexes\": [\n      \"m5_current_publication_pointer_pkey\",\n      \"publication_operations_shop_id_config_id_operation_id_key\",\n      \"m4_publication_progress_pkey\",\n      \"m5_activation_state_pkey\",\n      \"config_revision_geometry_pkey\"\n    ]\n  },\n  \"fallback\": {\n    \"planningMs\": 0.726,\n    \"executionMs\": 1.351,\n    \"rows\": 1,\n    \"indexes\": [\n      \"m5_current_publication_visible_idx\",\n      \"config_revision_presentation_pkey\",\n      \"m5_activation_state_pkey\",\n      \"m4_publication_progress_pkey\"\n    ]\n  },\n  \"adminEffective\": {\n    \"planningMs\": 0.171,\n    \"executionMs\": 0.019,\n    \"rows\": 1,\n    \"indexes\": [\n      \"product_configs_shop_id_external_product_id_key\"\n    ]\n  }\n}\n"
+}
