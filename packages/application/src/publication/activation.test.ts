@@ -101,7 +101,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   let crashBeforeRestore = false;
   let crashAcquire = false;
   let crashRestore = false;
-  let scheduledRestorationAck = false;
+  let unsupportedRestorationAck = false;
   let omitRestorationAck = false;
   let unresolvedRestore: 'pending' | 'throw' | 'original' | null = null;
   let failCommit = false;
@@ -211,7 +211,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
           productId: current.productId,
           state: current.state,
           providerUpdatedAt: current.providerUpdatedAt,
-          effectiveVisibility: scheduledRestorationAck
+          effectiveVisibility: unsupportedRestorationAck
             ? {
                 ...current.effectiveVisibility,
                 publicationEvidence: [
@@ -346,10 +346,10 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
   const advance = () => restart().advance({ shopId: scope.shopId, configId: 'config', operationId: 'operation' });
   return {
     advance,
-    persistScheduledBefore: () => {
+    persistUnsupportedBefore: () => {
       const hold = candidate.state.hold;
       if (hold?.version !== 'm5-availability-hold-v3') throw new Error('expected v3');
-      const staged = {
+      const unsupported = {
         publicationId: 'gid://shopify/Publication/999',
         isPublished: false,
         publishDate: '2099-01-01T00:00:00.000Z',
@@ -364,9 +364,9 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
               ...hold.before,
               effectiveVisibility: {
                 ...hold.before.effectiveVisibility,
-                publicationEvidence: [...hold.before.effectiveVisibility.publicationEvidence, staged],
+                publicationEvidence: [...hold.before.effectiveVisibility.publicationEvidence, unsupported],
               },
-              visibleScheduledOrStaged: [staged],
+              visibleScheduledOrStaged: [unsupported],
             },
           },
         },
@@ -379,7 +379,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
       const hold = candidate.state.hold;
       if (hold?.version !== 'm5-availability-hold-v3' || !hold.held || !hold.acquisitionAcknowledgement)
         throw new Error('expected acquired v3');
-      const staged = {
+      const unsupported = {
         publicationId: 'gid://shopify/Publication/999',
         isPublished: false,
         publishDate: '2099-01-01T00:00:00.000Z',
@@ -396,7 +396,7 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
               ...hold.acquisitionAcknowledgement,
               effectiveVisibility: {
                 ...hold.acquisitionAcknowledgement.effectiveVisibility,
-                publicationEvidence: [staged],
+                publicationEvidence: [unsupported],
               },
             },
           },
@@ -409,8 +409,8 @@ function fixture(priorMode: 'required' | 'optional' | null = null, mode: 'requir
     useOriginalDraft: () => {
       current = { ...current, state: 'unavailable' };
     },
-    set scheduledRestorationAck(value: boolean) {
-      scheduledRestorationAck = value;
+    set unsupportedRestorationAck(value: boolean) {
+      unsupportedRestorationAck = value;
     },
     persistLegacyHold: () => {
       const before = {
@@ -684,8 +684,8 @@ describe('production activation coordinator with injected synthetic boundary fix
     expect(f.evidence).toBeNull();
     expect(f.acquisitions).toBe(1);
   });
-  for (const acknowledgement of ['absent', 'qualified', 'scheduled']) {
-    const scheduledAck = acknowledgement === 'scheduled';
+  for (const acknowledgement of ['absent', 'qualified', 'unsupported legacy false']) {
+    const unsupportedAck = acknowledgement === 'unsupported legacy false';
     it(`original DRAFT restoration ${acknowledgement} ACK`, async () => {
       const f = fixture();
       f.useOriginalDraft();
@@ -694,14 +694,14 @@ describe('production activation coordinator with injected synthetic boundary fix
       expect((await f.advance()).kind).toBe('HELD');
       f.phase = 'activation-pending';
       expect((await f.advance()).kind).toBe('ACTIVATED_RESTORATION_PENDING');
-      f.scheduledRestorationAck = scheduledAck;
+      f.unsupportedRestorationAck = unsupportedAck;
       f.omitRestorationAck = acknowledgement === 'absent';
-      expect((await f.advance()).kind).toBe(scheduledAck ? 'OPERATOR_HOLD' : 'ACTIVE');
+      expect((await f.advance()).kind).toBe(unsupportedAck ? 'OPERATOR_HOLD' : 'ACTIVE');
       const hold = f.candidate.state.hold;
       if (hold?.version !== 'm5-availability-hold-v3') throw new Error('expected v3');
-      expect(hold.restorationReceipt?.kind).toBe(scheduledAck ? 'CONFLICT' : 'RESTORED');
+      expect(hold.restorationReceipt?.kind).toBe(unsupportedAck ? 'CONFLICT' : 'RESTORED');
       expect(hold.restorationReceipt?.acknowledgement?.effectiveVisibility.publicationEvidence.length ?? 0).toBe(
-        scheduledAck ? 1 : 0,
+        unsupportedAck ? 1 : 0,
       );
       if (acknowledgement === 'absent') expect(hold.restorationReceipt?.acknowledgement).toBeNull();
       await f.advance();
@@ -722,12 +722,12 @@ describe('production activation coordinator with injected synthetic boundary fix
     expect(f.restores).toBe(0);
     expect(f.acquisitions).toBe(1);
   });
-  it('scheduled original persisted hold cannot authorize activation or restoration', async () => {
+  it('unsupported legacy false original persisted hold cannot authorize activation or restoration', async () => {
     const f = fixture();
     f.phase = 'prepared';
     await f.advance();
     expect((await f.advance()).kind).toBe('HELD');
-    f.persistScheduledBefore();
+    f.persistUnsupportedBefore();
     f.phase = 'activation-pending';
     expect((await f.advance()).kind).toBe('OPERATOR_HOLD');
     expect(f.evidence).toBeNull();

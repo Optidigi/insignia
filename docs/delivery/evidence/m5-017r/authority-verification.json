@@ -1,0 +1,10 @@
+{
+  "attachmentSha256": "4862e02a1d9d5ad36123d07759f791abceb51c00ed57c94d998429db82f7b0c4",
+  "reviewedBase": "4bba14fb4415815557ffa5f1e600427a62128489",
+  "reviewedHead": "2d0b5177add9b412a8e1f9c43309ae6af04f1e1e",
+  "reviewedTree": "73e516cec289ebd368d4d1e2607886fc285dd30f",
+  "verdict": "CHANGES_REQUESTED",
+  "scope": "LOCAL_CORRECTION_AND_EXACT_MEMORY_REPLAY_ONLY",
+  "mergeAuthorized": false,
+  "providerAuthorized": false
+}

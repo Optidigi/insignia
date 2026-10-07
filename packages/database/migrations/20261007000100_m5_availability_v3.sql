@@ -57,6 +57,8 @@ DECLARE item jsonb; previous text:=NULL; published jsonb:='[]'; BEGIN
  END LOOP;
  RETURN published=candidate#>'{effectiveVisibility,publishedPublicationIds}';
 EXCEPTION WHEN OTHERS THEN RETURN false; END $$;
+-- Legacy ResourcePublication false is unsupported non-effective blocking evidence, not V2 staged state.
+-- Future timing uses exact completed receivedAt; observedAt stays request-start provenance.
 CREATE FUNCTION m5_v3_snapshot(candidate jsonb) RETURNS boolean LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE AS $$
 DECLARE item jsonb; ids jsonb:='[]'; schedules jsonb:='[]'; BEGIN
  IF NOT coalesce(candidate->>'version'='m5-product-availability-snapshot-v3' AND NOT candidate ? 'configuredIntent' AND m5_v3_facts(candidate) AND jsonb_typeof(candidate->'effectiveAnchors')='array' AND jsonb_typeof(candidate->'visibleScheduledOrStaged')='array',false) THEN RETURN false; END IF;
@@ -66,7 +68,7 @@ DECLARE item jsonb; ids jsonb:='[]'; schedules jsonb:='[]'; BEGIN
  END LOOP;
  IF NOT m5_v3_ids(ids,64) OR NOT ids @> (candidate#>'{effectiveVisibility,publishedPublicationIds}') THEN RETURN false; END IF;
  FOR item IN SELECT value FROM jsonb_array_elements(candidate#>'{effectiveVisibility,publicationEvidence}') LOOP
-  IF item->'isPublished'='false'::jsonb OR (item->>'publishDate')::timestamptz>(candidate->>'observedAt')::timestamptz THEN schedules:=schedules||jsonb_build_array(item); END IF;
+  IF item->'isPublished'='false'::jsonb OR (item->>'publishDate')::timestamptz>(candidate->>'receivedAt')::timestamptz THEN schedules:=schedules||jsonb_build_array(item); END IF;
  END LOOP;
  RETURN coalesce(schedules=candidate->'visibleScheduledOrStaged'
   AND candidate->>'anchorDigest'=m5_v3_digest(candidate->'effectiveAnchors')
@@ -91,7 +93,7 @@ CREATE FUNCTION m5_v3_ack(candidate jsonb, original jsonb, state text) RETURNS b
   AND candidate->'scope'=original->'scope' AND candidate->>'productId'=original->>'productId' AND candidate->>'state'=state,false)
 $$;
 CREATE FUNCTION m5_v3_ack_qualified(candidate jsonb) RETURNS boolean LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$
- SELECT coalesce(m5_v3_facts(candidate) AND NOT EXISTS(SELECT FROM jsonb_array_elements(candidate#>'{effectiveVisibility,publicationEvidence}') p WHERE p->'isPublished'='false'::jsonb OR p->>'publishDate'>candidate->>'observedAt'),false)
+ SELECT coalesce(m5_v3_facts(candidate) AND NOT EXISTS(SELECT FROM jsonb_array_elements(candidate#>'{effectiveVisibility,publicationEvidence}') p WHERE p->'isPublished'='false'::jsonb OR p->>'publishDate'>candidate->>'receivedAt'),false)
 $$;
 CREATE FUNCTION m5_v3_mismatch(candidate jsonb, original jsonb) RETURNS jsonb LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE AS $$
 DECLARE result jsonb:='[]'; BEGIN

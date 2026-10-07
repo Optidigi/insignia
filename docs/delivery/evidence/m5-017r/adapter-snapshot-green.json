@@ -1,0 +1,7 @@
+{
+  "check": "adapter-snapshot-green",
+  "commandOrPurpose": "production snapshot after correction",
+  "exitCode": 0,
+  "sha256": "eab2c9e9f800ff39d51c841edd919f3254b44dddce7de6079f4334b6ee647331",
+  "rawUtf8Output": "\n RUN  v5.0.2 /home/serveradmin/insignia-m5-017-worktree/packages/shopify\n\n\n Test Files  1 passed (1)\n      Tests  3 passed | 43 skipped (46)\n   Start at  12:53:33\n   Duration  493ms (transform 66%, import 20%, tests 13%, worker 1%)\n\n"
+}

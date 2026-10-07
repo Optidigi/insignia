@@ -1,0 +1,7 @@
+{
+  "check": "replay-test",
+  "commandOrPurpose": "node --test scripts/m5-017/replay.test.mjs",
+  "exitCode": 0,
+  "sha256": "052af8f011bc204307e83ac4c421247c62cd68ae6c9139605ea9ae37961f885c",
+  "rawUtf8Output": "\u2714 sealed live restore responses replay as RESTORED in a network-denied fresh process without compensation (322.288411ms)\n\u2139 tests 1\n\u2139 suites 0\n\u2139 pass 1\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 429.698266\n"
+}

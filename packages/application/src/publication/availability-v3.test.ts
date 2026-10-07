@@ -6,8 +6,10 @@ import {
   validateAvailabilityRecoveryDecision,
 } from './availability-recovery.js';
 import {
+  availabilityV3AcknowledgementQualified,
   availabilityV3HeldSafe,
   availabilityV3OwnedHeld,
+  availabilityV3Qualified,
   type ProductAvailabilitySnapshotV3,
   sameAvailabilityV3,
   validAvailabilityV3,
@@ -86,16 +88,16 @@ test('v3 semantic equality ignores diagnostic dates and held safety requires ori
   expect(availabilityV3HeldSafe({ ...snapshot, state: 'unavailable' }, snapshot)).toBe(true);
 });
 
-test('structurally valid scheduled original before cannot establish successful held authority', () => {
-  const staged = {
+test('structurally valid unsupported legacy false original before cannot establish successful held authority', () => {
+  const unsupported = {
     publicationId: 'gid://shopify/Publication/999',
     isPublished: false,
     publishDate: '2099-01-01T00:00:00.000Z',
   };
   const before = {
     ...snapshot,
-    effectiveVisibility: { ...snapshot.effectiveVisibility, publicationEvidence: [staged] },
-    visibleScheduledOrStaged: [staged],
+    effectiveVisibility: { ...snapshot.effectiveVisibility, publicationEvidence: [unsupported] },
+    visibleScheduledOrStaged: [unsupported],
   };
   const held = { ...snapshot, state: 'unavailable' as const };
   const ack = {
@@ -159,7 +161,7 @@ test('original DRAFT with effective visibility cannot own a clean held snapshot 
   ).toBe(false);
 });
 
-test('even original held-safe DRAFT cannot ignore an explicitly retained scheduled acquisition ACK', () => {
+test('even original held-safe DRAFT cannot ignore an explicitly retained unsupported legacy false acquisition ACK', () => {
   const before = { ...snapshot, state: 'unavailable' as const };
   const ack = {
     version: 'm5-availability-mutation-ack-v3' as const,
@@ -186,3 +188,90 @@ test('even original held-safe DRAFT cannot ignore an explicitly retained schedul
     }),
   ).toBe(false);
 });
+
+const intervalStart = '2026-10-07T12:09:54.968Z';
+const intervalEnd = '2026-10-07T12:09:57.978Z';
+const intervalPublicationId = 'gid://shopify/Publication/339456917787';
+const intervalAck = {
+  version: 'm5-availability-mutation-ack-v3' as const,
+  scope,
+  productId: snapshot.productId,
+  state: 'available' as const,
+  providerUpdatedAt: '2026-10-07T12:09:56.000Z',
+  effectiveVisibility: {
+    ...snapshot.effectiveVisibility,
+    publishedPublicationIds: [intervalPublicationId],
+    publicationEvidence: [
+      {
+        publicationId: intervalPublicationId,
+        isPublished: true,
+        publishDate: '2026-10-07T12:09:56.000Z',
+      },
+    ],
+  },
+  observedAt: intervalStart,
+  receivedAt: intervalEnd,
+};
+test('canonical publication completed inside the ACK interval qualifies without changing request-start provenance', () => {
+  expect(availabilityV3AcknowledgementQualified(intervalAck)).toBe(true);
+  expect(intervalAck.observedAt).toBe('2026-10-07T12:09:54.968Z');
+});
+
+const timingControls = [
+  { name: 'canonical interval', publishDate: '2026-10-07T12:09:56.000Z', isPublished: true, qualified: true },
+  { name: 'completion equality without tolerance', publishDate: intervalEnd, isPublished: true, qualified: true },
+  {
+    name: 'genuine future one millisecond after completion',
+    publishDate: '2026-10-07T12:09:57.979Z',
+    isPublished: true,
+    qualified: false,
+  },
+  {
+    name: 'legacy false is unsupported non-effective evidence, not V2 staged state',
+    publishDate: '2026-10-07T12:09:56.000Z',
+    isPublished: false,
+    qualified: false,
+  },
+];
+for (const control of timingControls) {
+  const entry = {
+    publicationId: intervalPublicationId,
+    isPublished: control.isPublished,
+    publishDate: control.publishDate,
+  };
+  const effectiveVisibility = {
+    ...intervalAck.effectiveVisibility,
+    publishedPublicationIds: control.isPublished ? [intervalPublicationId] : [],
+    publicationEvidence: [entry],
+  };
+  test(`completed ACK ${control.name}`, () => {
+    expect(availabilityV3AcknowledgementQualified({ ...intervalAck, effectiveVisibility })).toBe(control.qualified);
+  });
+  test(`complete snapshot ${control.name} retains request-start provenance`, () => {
+    const anchors = [
+      {
+        publicationId: intervalPublicationId,
+        resolved: true as const,
+        productIncluded: true as const,
+        autoPublish: true,
+        supportsFuturePublishing: false,
+      },
+    ];
+    const current = {
+      ...snapshot,
+      observedAt: intervalStart,
+      receivedAt: intervalEnd,
+      effectiveVisibility,
+      effectiveAnchors: anchors,
+      anchorDigest: activationDigest(anchors),
+      effectiveDigest: activationDigest({
+        publishedPublicationIds: effectiveVisibility.publishedPublicationIds,
+        onlineStore: effectiveVisibility.onlineStore,
+      }),
+      visibleScheduledOrStaged: control.qualified ? [] : [entry],
+    };
+    expect(validAvailabilityV3(current)).toBe(true);
+    expect(availabilityV3Qualified(current)).toBe(control.qualified);
+    expect(current.observedAt).toBe('2026-10-07T12:09:54.968Z');
+  });
+}

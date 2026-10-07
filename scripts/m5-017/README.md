@@ -1,4 +1,10 @@
-# M5-017 fixed qualification
+# M5-017R offline correction and replay
+
+Current authority is [M5-017R](../../docs/delivery/prompts/M5-017R-ACK-COMPLETION-TIMING-CORRECTION.md). M5-017 is permanently CLOSED/sealed. Never execute `entry.mjs`, reopen/resume its canonical register, access credentials/provider, or touch the archived fixture. The historical operator instructions below describe completed execution only.
+
+After building the corrected local packages, run `node scripts/m5-017/replay.mjs`. It uses the production factory with exact committed restore responses, synthetic in-memory credential premises and an immutable ambient-fetch denial. It emits separate derived JSON; it never writes the canonical files or calls a native transport. The test runs that replay in a fresh process. Historical live output remains STOPPED/CONFLICT; local RESTORED replay is not a second live result.
+
+# Historical M5-017 fixed qualification
 
 Use this operator only under the [M5-017 authorization](../../docs/delivery/prompts/M5-017-AVAILABILITY-HOLD-V3.md). Read the [report](../../docs/delivery/M5-017-REPORT.md) for dispatch ownership, residual guarantees and evidence limits.
 

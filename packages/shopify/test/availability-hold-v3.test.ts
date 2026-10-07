@@ -148,17 +148,19 @@ test('acquire preserves the hidden anchor and accepts distinct ACK/readback upda
 });
 
 type Scenario = {
-  ackSchedule?: 'acquire' | 'restore' | 'compensate';
+  ackNonEffective?: 'acquire' | 'restore' | 'compensate';
+  ackTiming?: { phase: 'acquire' | 'restore' | 'compensate'; publishDate: string; isPublished: boolean };
   missingAfterRestore?: boolean;
   extraAfterRestore?: boolean;
   onlineAfterRestore?: boolean;
-  scheduleAfterRestore?: boolean;
-  scheduledBefore?: boolean;
+  unsupportedAfterRestore?: boolean;
+  unsupportedBefore?: boolean;
   ambiguous?: 'acquire' | 'restore' | 'compensate';
   removedAfterAcquire?: boolean;
   futureCapable?: boolean;
 };
 function lifecycle(options: Scenario = {}) {
+  let clock = options.ackTiming ? new Date('2026-10-07T12:09:54.968Z') : now();
   let state = 'ACTIVE',
     capabilityDrift = false,
     effectWhileHeld = false;
@@ -177,6 +179,9 @@ function lifecycle(options: Scenario = {}) {
         (writes.length === 3 && options.ambiguous === 'compensate')
       )
         throw new Error('synthetic lost response');
+      const timing = options.ackTiming;
+      const timed = timing && writes.length === { acquire: 1, restore: 2, compensate: 3 }[timing.phase];
+      if (timed) clock = new Date('2026-10-07T12:09:57.978Z');
       return new Response(
         JSON.stringify({
           data: {
@@ -184,9 +189,24 @@ function lifecycle(options: Scenario = {}) {
               product: {
                 ...product(state),
                 updatedAt: '2026-10-07T11:00:01Z',
-                ...((writes.length === 1 && options.ackSchedule === 'acquire') ||
-                (writes.length === 2 && options.ackSchedule === 'restore') ||
-                (writes.length === 3 && options.ackSchedule === 'compensate')
+                ...(timed
+                  ? {
+                      resourcePublications: {
+                        nodes: [
+                          ...product(state).resourcePublications.nodes,
+                          {
+                            publication: { id: other },
+                            isPublished: timing.isPublished,
+                            publishDate: timing.publishDate,
+                          },
+                        ],
+                        pageInfo: complete,
+                      },
+                    }
+                  : {}),
+                ...((writes.length === 1 && options.ackNonEffective === 'acquire') ||
+                (writes.length === 2 && options.ackNonEffective === 'restore') ||
+                (writes.length === 3 && options.ackNonEffective === 'compensate')
                   ? {
                       resourcePublications: {
                         nodes: [
@@ -221,8 +241,8 @@ function lifecycle(options: Scenario = {}) {
         publishDate: '2026-10-07T11:30:00Z',
       });
     if (
-      (options.scheduleAfterRestore && writes.includes('ACTIVE') && state === 'ACTIVE') ||
-      (options.scheduledBefore && state === 'ACTIVE')
+      (options.unsupportedAfterRestore && writes.includes('ACTIVE') && state === 'ACTIVE') ||
+      (options.unsupportedBefore && state === 'ACTIVE')
     )
       projected.resourcePublications.nodes.push({
         publication: { id: other },
@@ -257,7 +277,7 @@ function lifecycle(options: Scenario = {}) {
     },
     isCurrent: async () => true,
     fetchImpl: fetchImpl as typeof fetch,
-    now,
+    now: () => clock,
     timeoutMs: 10000,
   };
   const port = createShopifyAvailabilityHoldV3Port(config);
@@ -363,7 +383,7 @@ test('settled active restore with missing membership is compensated once and nev
   expect(writes).toEqual(['DRAFT', 'ACTIVE', 'DRAFT']);
 });
 
-test.each(['extraAfterRestore', 'onlineAfterRestore', 'scheduleAfterRestore'] as const)(
+test.each(['extraAfterRestore', 'onlineAfterRestore', 'unsupportedAfterRestore'] as const)(
   'settled %s mismatch reholds exactly once',
   async (scenario) => {
     const f = await acquiredFixture({ [scenario]: true });
@@ -403,8 +423,8 @@ test('lost acquisition is unattributable and adapter is quarantined without anot
   expect(f.requests).toHaveLength(count);
   expect(f.writes).toEqual(['DRAFT']);
 });
-test('visible scheduled prestate blocks acquire with zero status writes', async () => {
-  const f = lifecycle({ scheduledBefore: true }),
+test('unsupported legacy false prestate blocks acquire with zero status writes', async () => {
+  const f = lifecycle({ unsupportedBefore: true }),
     before = await f.port.snapshot(scope, productId);
   if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong snapshot');
   expect(
@@ -624,8 +644,8 @@ test('quiescent wall-clock deadline expiry also denies every later provider requ
 });
 
 for (const phase of ['acquire', 'restore'] as const) {
-  test(`ACK-only visible schedule during ${phase} blocks success while retaining the settled receipt`, async () => {
-    const f = lifecycle({ ackSchedule: phase });
+  test(`ACK-only unsupported legacy false evidence during ${phase} blocks success while retaining the settled receipt`, async () => {
+    const f = lifecycle({ ackNonEffective: phase });
     const before = await f.port.snapshot(scope, productId);
     if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong version');
     const acquired = await f.port.acquire(scope, {
@@ -660,8 +680,8 @@ for (const phase of ['acquire', 'restore'] as const) {
     }
   });
 }
-test('ACK-only schedule during compensation retains pending audit rather than claiming qualified rehold', async () => {
-  const f = await acquiredFixture({ missingAfterRestore: true, ackSchedule: 'compensate' });
+test('ACK-only unsupported legacy false evidence during compensation retains pending audit rather than claiming qualified rehold', async () => {
+  const f = await acquiredFixture({ missingAfterRestore: true, ackNonEffective: 'compensate' });
   const result = await f.port.restore(scope, f.hold, f.current, () => true);
   expect(result.kind).toBe('RESTORATION_PENDING');
   expect(
@@ -670,7 +690,7 @@ test('ACK-only schedule during compensation retains pending audit rather than cl
   expect(f.writes).toEqual(['DRAFT', 'ACTIVE', 'DRAFT']);
 });
 
-test('a persisted HELD record cannot adopt scheduled acquisition ACK evidence on a fresh adapter', async () => {
+test('a persisted HELD record cannot adopt unsupported legacy false acquisition ACK evidence on a fresh adapter', async () => {
   const f = await acquiredFixture();
   const ack = f.hold.acquisitionAcknowledgement;
   if (!ack) throw new Error('missing acquisition ACK');
@@ -700,9 +720,9 @@ test('a persisted HELD record cannot adopt scheduled acquisition ACK evidence on
   expect(f.writes).toEqual(['DRAFT']);
 });
 
-test('a scheduled original in persisted HELD state blocks fresh observe and restore before transport', async () => {
+test('an unsupported legacy false original in persisted HELD state blocks fresh observe and restore before transport', async () => {
   const f = await acquiredFixture();
-  const staged = {
+  const unsupported = {
     publicationId: 'gid://shopify/Publication/999',
     isPublished: false,
     publishDate: '2099-01-01T00:00:00.000Z',
@@ -713,9 +733,9 @@ test('a scheduled original in persisted HELD state blocks fresh observe and rest
       ...f.hold.before,
       effectiveVisibility: {
         ...f.hold.before.effectiveVisibility,
-        publicationEvidence: [...f.hold.before.effectiveVisibility.publicationEvidence, staged],
+        publicationEvidence: [...f.hold.before.effectiveVisibility.publicationEvidence, unsupported],
       },
-      visibleScheduledOrStaged: [staged],
+      visibleScheduledOrStaged: [unsupported],
     },
   };
   const requests = f.requests.length;
@@ -748,8 +768,8 @@ test('a retained acquisition ACK without an owned held receipt cannot recreate a
   expect(f.writes).toEqual(['DRAFT']);
 });
 
-for (const scheduledAck of [false, true]) {
-  test(`unheld original DRAFT with retained ${scheduledAck ? 'scheduled' : 'qualified'} ACK cannot regain authority`, async () => {
+for (const unsupportedAck of [false, true]) {
+  test(`unheld original DRAFT with retained ${unsupportedAck ? 'unsupported legacy false' : 'qualified'} ACK cannot regain authority`, async () => {
     const f = await acquiredFixture();
     const ack = f.hold.acquisitionAcknowledgement;
     if (!ack) throw new Error('expected ACK');
@@ -757,7 +777,7 @@ for (const scheduledAck of [false, true]) {
       ...f.hold,
       before: f.current,
       held: null,
-      acquisitionAcknowledgement: scheduledAck
+      acquisitionAcknowledgement: unsupportedAck
         ? {
             ...ack,
             effectiveVisibility: {
@@ -787,4 +807,85 @@ for (const scheduledAck of [false, true]) {
     expect(f.requests).toHaveLength(requests);
     expect(f.writes).toEqual(['DRAFT']);
   });
+}
+
+for (const [publishDate, blocking] of [
+  ['2026-10-07T12:09:56.000Z', false],
+  ['2026-10-07T12:09:57.978Z', false],
+  ['2026-10-07T12:09:57.979Z', true],
+] as const) {
+  test(`production snapshot classifies publication ${publishDate} at completed receipt`, async () => {
+    let clock = new Date('2026-10-07T12:09:54.968Z');
+    const fetchImpl = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      const request = JSON.parse(String(init?.body));
+      const node = product();
+      node.resourcePublications.nodes[0]!.publishDate = publishDate;
+      clock = new Date('2026-10-07T12:09:57.978Z');
+      return Response.json({
+        data: request.query.includes('publication(id:')
+          ? { ...identity, publication: anchor() }
+          : { ...identity, node },
+      });
+    });
+    const port = createShopifyAvailabilityHoldV3Port({
+      credentials,
+      isCurrent: async () => true,
+      fetchImpl: fetchImpl as typeof fetch,
+      now: () => clock,
+    });
+    const current = await port.snapshot(scope, productId);
+    if (current.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong version');
+    expect(current.observedAt).toBe('2026-10-07T12:09:54.968Z');
+    expect(current.receivedAt).toBe('2026-10-07T12:09:57.978Z');
+    expect(current.visibleScheduledOrStaged).toHaveLength(blocking ? 1 : 0);
+    expect(fetchImpl.mock.calls.every((call) => !String(call[1]?.body).includes('mutation '))).toBe(true);
+  });
+}
+
+for (const phase of ['acquire', 'restore', 'compensate'] as const) {
+  for (const control of [
+    { name: 'canonical interval', publishDate: '2026-10-07T12:09:56.000Z', isPublished: true, qualified: true },
+    { name: 'exact completion equality', publishDate: '2026-10-07T12:09:57.978Z', isPublished: true, qualified: true },
+    { name: 'genuine future', publishDate: '2026-10-07T12:09:57.979Z', isPublished: true, qualified: false },
+    {
+      name: 'legacy false unsupported non-effective record',
+      publishDate: '2026-10-07T12:09:56.000Z',
+      isPublished: false,
+      qualified: false,
+    },
+  ]) {
+    test(`${phase} ACK completed timing: ${control.name}`, async () => {
+      const options = {
+        ackTiming: { phase, publishDate: control.publishDate, isPublished: control.isPublished },
+        missingAfterRestore: phase === 'compensate',
+      };
+      if (phase === 'acquire') {
+        const f = lifecycle(options);
+        const before = await f.port.snapshot(scope, productId);
+        if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong version');
+        const acquired = await f.port.acquire(scope, {
+          version: 'm5-availability-hold-v3',
+          operationId: 'timed-acquire',
+          before,
+          held: null,
+        });
+        expect(acquired.kind).toBe(control.qualified ? 'HELD' : 'CONFLICT');
+        expect(f.writes).toEqual(['DRAFT']);
+      } else {
+        const f = await acquiredFixture(options);
+        const restored = await f.port.restore(scope, f.hold, f.current, () => true);
+        expect(restored.kind).toBe(
+          phase === 'restore'
+            ? control.qualified
+              ? 'RESTORED'
+              : 'CONFLICT'
+            : control.qualified
+              ? 'REHELD_CONFLICT'
+              : 'RESTORATION_PENDING',
+        );
+        expect(f.writes).toEqual(phase === 'restore' ? ['DRAFT', 'ACTIVE'] : ['DRAFT', 'ACTIVE', 'DRAFT']);
+        if (phase === 'restore') expect(restored.compensation).toBeUndefined();
+      }
+    });
+  }
 }

@@ -16,6 +16,7 @@ export type EffectivePublicationAnchorV3 = Readonly<{
   autoPublish: boolean;
   supportsFuturePublishing: boolean;
 }>;
+/** Historical export name covers future schedules and unsupported legacy non-effective records. */
 export type VisiblePublicationScheduleV3 = Readonly<{
   publicationId: string;
   isPublished: boolean;
@@ -28,6 +29,7 @@ export type ProductAvailabilitySnapshotV3 = Readonly<{
   state: ProductAvailabilitySnapshot['state'];
   providerUpdatedAt: string;
   effectiveVisibility: EffectiveProductVisibility;
+  /** Compatibility field name: true future schedules OR unsupported legacy false records; not V2 staged state. */
   visibleScheduledOrStaged: readonly VisiblePublicationScheduleV3[];
   effectiveAnchors: readonly EffectivePublicationAnchorV3[];
   effectiveDigest: string;
@@ -131,8 +133,10 @@ export const canonicalPublicationIdsV3 = (v: unknown): v is readonly string[] =>
 export function effectiveSemanticsV3(v: EffectiveProductVisibility) {
   return { publishedPublicationIds: v.publishedPublicationIds, onlineStore: v.onlineStore };
 }
-export function visibleSchedulesV3(v: EffectiveProductVisibility, observedAt: string): VisiblePublicationScheduleV3[] {
-  return v.publicationEvidence.filter((p) => !p.isPublished || p.publishDate > observedAt).map((p) => ({ ...p }));
+/** Legacy ResourcePublication: true may be scheduled; false is non-effective, not V2 staged intent.
+ * False records remain unsupported blocking evidence. Classify timing at completed receipt, without tolerance. */
+export function visibleSchedulesV3(v: EffectiveProductVisibility, receivedAt: string): VisiblePublicationScheduleV3[] {
+  return v.publicationEvidence.filter((p) => !p.isPublished || p.publishDate > receivedAt).map((p) => ({ ...p }));
 }
 export function scheduleSemanticsV3(v: readonly VisiblePublicationScheduleV3[]) {
   return v.map((p) => ({ publicationId: p.publicationId, isPublished: p.isPublished }));
@@ -237,7 +241,7 @@ export function validAvailabilityV3(value: unknown): value is ProductAvailabilit
         s.effectiveAnchors.some((p) => p.publicationId === id),
       ) &&
       activationDigest(s.visibleScheduledOrStaged) ===
-        activationDigest(visibleSchedulesV3(s.effectiveVisibility, s.observedAt)) &&
+        activationDigest(visibleSchedulesV3(s.effectiveVisibility, s.receivedAt)) &&
       s.anchorDigest === activationDigest(s.effectiveAnchors) &&
       s.effectiveDigest === activationDigest(effectiveSemanticsV3(s.effectiveVisibility))
     );
@@ -288,7 +292,7 @@ export function sameAvailabilityV3(a: ProductAvailabilitySnapshotV3, b: ProductA
 export function availabilityV3AcknowledgementQualified(value: unknown): value is AvailabilityMutationAcknowledgementV3 {
   return (
     validAvailabilityAcknowledgementV3(value) &&
-    visibleSchedulesV3(value.effectiveVisibility, value.observedAt).length === 0
+    visibleSchedulesV3(value.effectiveVisibility, value.receivedAt).length === 0
   );
 }
 

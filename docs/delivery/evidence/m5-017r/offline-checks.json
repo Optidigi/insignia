@@ -1,0 +1,28 @@
+{
+  "scope": "M5-017R_LOCAL_ONLY",
+  "root": "PASS_WITH_POSTGRES_REQUIRED",
+  "postgres": "18.6 / 180006",
+  "databaseTests": 171,
+  "focusedApplicationActivationRecovery": 85,
+  "focusedShopifyV3": 58,
+  "timingAndInsertFenceCases": 4,
+  "stress": "400/400 (100 in each of four publication cases)",
+  "rendererControl": "EXPECTED_NEGATIVE; wrapper exit0, missing renderer never ready",
+  "queryPlans": "100k actual built seam SQL PASS",
+  "migration": "empty down/up PASS; populated downgrade denied exit2 with v3 version retained",
+  "replay": "RESTORED; exact original ACK and semantic readback; compensation0; external0",
+  "network": "in-memory transport only, immutable global fetch denial, no native transport captured",
+  "historicalLive": "STOPPED/CONFLICT unchanged",
+  "reviews": "fresh final-source required, originals will be published externally",
+  "ci": "eleven natural exact-head attempt1 workflows required, receipts external",
+  "sourceHashes": {
+    "packages/application/src/publication/availability-v3.ts": "e0c9d50284bb100c20a2f361488ee22aa2e83283a94f9a3d183313ab57a9cbe0",
+    "packages/shopify/src/availability-hold-v3.ts": "e61a3e9d553ef3818ea1513cadb46fb0ba579b510289df53a502a3da4e71dd86",
+    "packages/database/migrations/20261007000100_m5_availability_v3.sql": "e82c25a86c584908b6cc7567b4f87edd7b7def0f15ce86da0693aef8860597b2"
+  },
+  "buildHashes": {
+    "packages/application/dist/publication/availability-v3.js": "5556ea20acb8bd8163a9e81355620ae667ede3c83afebabef748ae8a101da7c4",
+    "packages/shopify/dist/availability-hold-v3.js": "e5be850213225b0fd45bd36884f8eb1be1d496770369387181902d9822d7f112"
+  },
+  "newLiveRun": "NONE"
+}

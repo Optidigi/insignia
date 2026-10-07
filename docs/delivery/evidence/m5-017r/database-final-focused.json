@@ -1,0 +1,6 @@
+{
+  "command": "DATABASE_URL=loopback m5_017r_full corepack pnpm --filter @insignia/database exec vitest run test/activation.test.ts test/availability-v3-timing.test.ts",
+  "exitCode": 0,
+  "sha256": "f2147bda5b230ba19a69083f9786cf7f0607509e44aedd362979e00cb86aa7f3",
+  "rawUtf8Output": "\n RUN  v5.0.2 /home/serveradmin/insignia-m5-017-worktree/packages/database\n\n\n Test Files  2 passed (2)\n      Tests  116 passed (116)\n   Start at  13:09:12\n   Duration  16.22s (tests 89%, transform 6%, import 5%)\n\n"
+}

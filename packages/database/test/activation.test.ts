@@ -800,7 +800,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const receipt = v3.restorationReceipt,
       compensation = receipt.compensation!,
       ack = compensation.acknowledgement!;
-    const scheduled = {
+    const unsupportedLegacy = {
       ...v3,
       restorationReceipt: {
         ...receipt,
@@ -829,11 +829,11 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
           database,
         )
       ).rows[0]!.admitted;
-    expect(await admits(scheduled)).toBe(false);
+    expect(await admits(unsupportedLegacy)).toBe(false);
     expect(
       await admits({
-        ...scheduled,
-        restorationReceipt: { ...scheduled.restorationReceipt, kind: 'RESTORATION_PENDING' },
+        ...unsupportedLegacy,
+        restorationReceipt: { ...unsupportedLegacy.restorationReceipt, kind: 'RESTORATION_PENDING' },
       }),
     ).toBe(true);
     expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE', 'DRAFT']);
@@ -1398,25 +1398,25 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       if (transition === 'optional-to-required') await publishMode('required');
     },
   );
-  it('SQL denies a successful held record with scheduled original but retains unheld incident evidence', async () => {
+  it('SQL denies a successful held record with unsupported legacy false original but retains unheld incident evidence', async () => {
     const f = await fixture();
     await f.prepareHold();
     const hold = (await f.restart().read(f.identity))?.state.hold;
     if (hold?.version !== 'm5-availability-hold-v3') throw new Error('expected v3');
-    const staged = {
+    const unsupported = {
       publicationId: 'gid://shopify/Publication/999',
       isPublished: false,
       publishDate: '2099-01-01T00:00:00.000Z',
     };
-    const scheduled = {
+    const unsupportedLegacy = {
       ...hold,
       before: {
         ...hold.before,
         effectiveVisibility: {
           ...hold.before.effectiveVisibility,
-          publicationEvidence: [...hold.before.effectiveVisibility.publicationEvidence, staged],
+          publicationEvidence: [...hold.before.effectiveVisibility.publicationEvidence, unsupported],
         },
-        visibleScheduledOrStaged: [staged],
+        visibleScheduledOrStaged: [unsupported],
       },
     };
     const admits = async (value: unknown) =>
@@ -1425,8 +1425,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
           database,
         )
       ).rows[0]!.admitted;
-    expect(await admits(scheduled)).toBe(false);
-    expect(await admits({ ...scheduled, held: null })).toBe(true);
+    expect(await admits(unsupportedLegacy)).toBe(false);
+    expect(await admits({ ...unsupportedLegacy, held: null })).toBe(true);
     const onlineStore = { publishedAtPresent: true, urlPresent: true };
     const visibleDraft = {
       ...hold,
@@ -1454,7 +1454,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     const hold = (await f.restart().read(f.identity))?.state.hold;
     if (hold?.version !== 'm5-availability-hold-v3' || !hold.held || !hold.acquisitionAcknowledgement)
       throw new Error('expected acquired v3');
-    const staged = {
+    const unsupported = {
       publicationId: 'gid://shopify/Publication/999',
       isPublished: false,
       publishDate: '2099-01-01T00:00:00.000Z',
@@ -1466,7 +1466,10 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       held: null,
       acquisitionAcknowledgement: {
         ...hold.acquisitionAcknowledgement,
-        effectiveVisibility: { ...hold.acquisitionAcknowledgement.effectiveVisibility, publicationEvidence: [staged] },
+        effectiveVisibility: {
+          ...hold.acquisitionAcknowledgement.effectiveVisibility,
+          publicationEvidence: [unsupported],
+        },
       },
       restorationClaim: {
         version: 'm5-availability-restoration-claim-v3',
@@ -1497,29 +1500,33 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect(await admits({ ...clean, held: draft, restorationReceipt: receipt })).toBe(true);
     const owned = { ...clean, held: draft };
     const qualifiedAck = hold.acquisitionAcknowledgement;
-    const stagedAck = incident.acquisitionAcknowledgement;
+    const unsupportedAck = incident.acquisitionAcknowledgement;
     expect(await admits({ ...owned, restorationReceipt: { ...receipt, acknowledgement: qualifiedAck } })).toBe(true);
-    expect(await admits({ ...owned, restorationReceipt: { ...receipt, acknowledgement: stagedAck } })).toBe(false);
+    expect(await admits({ ...owned, restorationReceipt: { ...receipt, acknowledgement: unsupportedAck } })).toBe(false);
     expect(
-      await admits({ ...owned, restorationReceipt: { ...receipt, kind: 'CONFLICT', acknowledgement: stagedAck } }),
+      await admits({ ...owned, restorationReceipt: { ...receipt, kind: 'CONFLICT', acknowledgement: unsupportedAck } }),
     ).toBe(true);
 
-    const scheduled = {
+    const unsupportedLegacy = {
       ...draft,
-      effectiveVisibility: { ...draft.effectiveVisibility, publicationEvidence: [staged] },
-      visibleScheduledOrStaged: [staged],
+      effectiveVisibility: { ...draft.effectiveVisibility, publicationEvidence: [unsupported] },
+      visibleScheduledOrStaged: [unsupported],
     };
-    expect(await admits({ ...clean, before: scheduled, restorationReceipt: { ...receipt, current: scheduled } })).toBe(
-      false,
-    );
+    expect(
+      await admits({
+        ...clean,
+        before: unsupportedLegacy,
+        restorationReceipt: { ...receipt, current: unsupportedLegacy },
+      }),
+    ).toBe(false);
   });
-  it('SQL rejects schedule-only ACK success while retaining settled conflict audits', async () => {
+  it('SQL rejects unsupported legacy false ACK success while retaining settled conflict audits', async () => {
     const f = await fixture();
     await f.prepareHold();
     const held = (await f.restart().read(f.identity))?.state.hold;
     if (!held || held.version !== 'm5-availability-hold-v3' || !held.acquisitionAcknowledgement)
       throw new Error('expected held v3');
-    const scheduled = (ack: NonNullable<typeof held.acquisitionAcknowledgement>) => ({
+    const unsupportedLegacy = (ack: NonNullable<typeof held.acquisitionAcknowledgement>) => ({
       ...ack,
       effectiveVisibility: {
         ...ack.effectiveVisibility,
@@ -1540,17 +1547,21 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         )
       ).rows[0]!.admitted;
     expect(await admits(held)).toBe(true);
-    expect(await admits({ ...held, acquisitionAcknowledgement: scheduled(held.acquisitionAcknowledgement) })).toBe(
-      false,
-    );
     expect(
-      await admits({ ...held, held: null, acquisitionAcknowledgement: scheduled(held.acquisitionAcknowledgement) }),
+      await admits({ ...held, acquisitionAcknowledgement: unsupportedLegacy(held.acquisitionAcknowledgement) }),
+    ).toBe(false);
+    expect(
+      await admits({
+        ...held,
+        held: null,
+        acquisitionAcknowledgement: unsupportedLegacy(held.acquisitionAcknowledgement),
+      }),
     ).toBe(true);
     expect(
       await admits({
         ...held,
         before: held.held,
-        acquisitionAcknowledgement: scheduled(held.acquisitionAcknowledgement),
+        acquisitionAcknowledgement: unsupportedLegacy(held.acquisitionAcknowledgement),
       }),
     ).toBe(false);
     await f.publish();
@@ -1561,7 +1572,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       throw new Error('expected restored v3');
     const receipt = {
       ...restored.restorationReceipt,
-      acknowledgement: scheduled(restored.restorationReceipt.acknowledgement),
+      acknowledgement: unsupportedLegacy(restored.restorationReceipt.acknowledgement),
     };
     expect(await admits({ ...restored, restorationReceipt: receipt })).toBe(false);
     expect(await admits({ ...restored, restorationReceipt: { ...receipt, kind: 'CONFLICT' } })).toBe(true);

@@ -362,7 +362,7 @@ export function createShopifyAvailabilityHoldV3Port(
   const frame = (p: ReturnType<typeof productProjection>, at: string) => ({
     state: p.state,
     effective: effectiveSemanticsV3(p.effectiveVisibility),
-    staged: visibleSchedulesV3(p.effectiveVisibility, at).map((s) => ({
+    blockers: visibleSchedulesV3(p.effectiveVisibility, at).map((s) => ({
       publicationId: s.publicationId,
       isPublished: s.isPublished,
     })),
@@ -402,11 +402,13 @@ export function createShopifyAvailabilityHoldV3Port(
         supportsFuturePublishing: pub.supportsFuturePublishing,
       });
     }
+    let receivedAt = time();
     if (ids.length) {
       const final = await execute(scope, budget, READ, { productId });
       identity(final, scope);
       const after = productProjection(final.node, productId);
-      if (activationDigest(frame(projection, observedAt)) !== activationDigest(frame(after, observedAt)))
+      receivedAt = time();
+      if (activationDigest(frame(projection, receivedAt)) !== activationDigest(frame(after, receivedAt)))
         return fail('readback_mismatch');
       projection = after;
     }
@@ -416,11 +418,11 @@ export function createShopifyAvailabilityHoldV3Port(
       productId,
       ...projection,
       effectiveAnchors: anchors,
-      visibleScheduledOrStaged: visibleSchedulesV3(projection.effectiveVisibility, observedAt),
+      visibleScheduledOrStaged: visibleSchedulesV3(projection.effectiveVisibility, receivedAt),
       effectiveDigest: activationDigest(effectiveSemanticsV3(projection.effectiveVisibility)),
       anchorDigest: activationDigest(anchors),
       observedAt,
-      receivedAt: time(),
+      receivedAt,
     };
     if (!validAvailabilityV3(snapshot)) return fail('provider_shape');
     return snapshot;
