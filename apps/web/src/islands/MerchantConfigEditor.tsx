@@ -11,7 +11,7 @@ import {
   validateRect,
 } from '@insignia/visualizer/geometry';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import type { CatalogProduct, ConfigView } from '../shared/admin-view.js';
+import type { CatalogProduct, ConfigView, PublicationState } from '../shared/admin-view.js';
 
 type Props = { mode: 'picker' | 'config'; productId?: string };
 // Preserve typed spelling until blur; only validated numeric values become geometry.
@@ -244,6 +244,9 @@ function canonical(value: unknown): string {
       '}'
     );
   return JSON.stringify(value);
+}
+function operatorPublication(state: PublicationState) {
+  return ['OPERATOR_HOLD', 'RESTORATION_CONFLICT', 'CONFLICT'].includes(state);
 }
 function PublicationStatus({ config }: { config: NonNullable<ConfigView['config']> }) {
   const publication = config.publication;
@@ -798,7 +801,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     // conflict/latest view and the exact uncertain save request remain owned by save/load.
   }
   async function publish() {
-    if (!productId || !view?.config) return;
+    if (!productId || !view?.config || operatorPublication(view.config.publication.state)) return;
     const open = continuingPublication(view.config.publication.state);
     if (!open && !publicationPending.current && !['clean', 'saved'].includes(saveState)) return;
     const sourceVersion = open ? view.config.publication.sourceDraftVersion : view.config.draftVersion;
@@ -1835,6 +1838,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                 <s-button
                   disabled={
                     busy ||
+                    operatorPublication(view.config.publication.state) ||
                     (!publicationPending.current &&
                       !continuingPublication(view.config.publication.state) &&
                       (!view.config.publishEligibility.allowed || !['clean', 'saved'].includes(saveState)))

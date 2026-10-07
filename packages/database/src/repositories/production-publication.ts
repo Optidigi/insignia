@@ -495,21 +495,28 @@ export class PgProductionPublication {
         AND authorization_generation=${row.authorization_generation}::uuid
       ORDER BY key_id`.execute(database);
     if (keys.rows.some((key) => publicKeyFingerprint(key.public_key) !== key.public_key_fingerprint)) return false;
-    const currentConfig = buildPublicConfig({
-      scope: {
-        shopId: input.operation.shopId,
-        installationGeneration: row.generation,
-        authorizationGeneration: row.authorization_generation,
-        authorizationEpoch: Number(row.epoch),
-      },
-      keys: keys.rows.map((key) => ({
-        id: key.key_id,
-        publicKey: key.public_key,
-        state: key.state,
-        firstDay: key.first_valid_day,
-        lastDay: key.last_valid_day,
-      })),
-    });
+    let currentConfig: ReturnType<typeof buildPublicConfig>;
+    try {
+      currentConfig = buildPublicConfig({
+        scope: {
+          shopId: input.operation.shopId,
+          installationGeneration: row.generation,
+          authorizationGeneration: row.authorization_generation,
+          authorizationEpoch: Number(row.epoch),
+        },
+        keys: keys.rows.map((key) => ({
+          id: key.key_id,
+          publicKey: key.public_key,
+          state: key.state,
+          firstDay: key.first_valid_day,
+          lastDay: key.last_valid_day,
+        })),
+      });
+    } catch {
+      // The pure registry builder rejects deterministic invalid premises.
+      // Database/provider failures still escape rather than becoming false evidence.
+      return false;
+    }
     return currentConfig.value === expected.publicConfig;
   }
 

@@ -11,7 +11,14 @@ import { createServerActivationReadiness } from '../../src/server/admin/release-
 import { createMerchantConfigService } from '../../src/server/merchant-config.ts';
 
 const database = process.env.DATABASE_URL;
-for (const ending of ['release-blocked', 'active-drift', 'active-key-drift', 'active-epoch-drift'])
+for (const ending of [
+  'release-blocked',
+  'active-drift',
+  'active-key-drift',
+  'active-epoch-drift',
+  'active-destroyed-key',
+  'restoration-pending',
+])
   test(`real admin HTTP publish commits PG v3 activation and immutable evidence: ${ending}`, {
     skip: !database,
   }, async () => {
@@ -67,7 +74,13 @@ for (const ending of ['release-blocked', 'active-drift', 'active-key-drift', 'ac
         currentKeyId: 'synthetic-wrap',
         keys: { 'synthetic-wrap': Buffer.alloc(32, 1) },
       });
-      await lifecycle.createPending({ scope, keyId: 7, firstDay: 20000, lastDay: 30000, seed: Buffer.alloc(32, 2) });
+      await lifecycle.createPending({
+        scope,
+        keyId: 7,
+        firstDay: 20000,
+        lastDay: ending === 'active-destroyed-key' ? 20730 : 30000,
+        seed: Buffer.alloc(32, 2),
+      });
       await lifecycle.activate(scope, 7);
       const cells = new Map();
       const keys = {
@@ -144,6 +157,8 @@ for (const ending of ['release-blocked', 'active-drift', 'active-key-drift', 'ac
             status = body.variables.product.status;
             version++;
             mutationCount++;
+            if (ending === 'restoration-pending' && status === 'ACTIVE')
+              throw new Error('Synthetic lost restore response');
             return Response.json({ data: { productUpdate: { product: product(), userErrors: [] } } });
           }
           return Response.json({
@@ -279,6 +294,34 @@ for (const ending of ['release-blocked', 'active-drift', 'active-key-drift', 'ac
           { kind: 'config', productId: `gid://shopify/Product/${productId}` },
         );
       const response = await publish('m5-018-first-publication');
+      if (ending === 'restoration-pending') {
+        assert.equal(response.status, 503, 'A lost restore response remains unavailable');
+        const oldPointer = await core.configs.getCurrentPublication(shopId, configId);
+        assert.equal(
+          (await configs.read(actor, `gid://shopify/Product/${productId}`)).config.publication.state,
+          'ACTIVATED_RESTORATION_PENDING',
+        );
+        assert.equal((await publish('m5-018-new-during-restoration')).status, 409);
+        assert.equal((await core.configs.getCurrentPublication(shopId, configId)).operationId, oldPointer.operationId);
+        assert.equal((await publish('m5-018-first-publication')).status, 503);
+        assert.equal(
+          (await configs.read(actor, `gid://shopify/Product/${productId}`)).config.publication.state,
+          'ACTIVATED_RESTORATION_PENDING',
+        );
+        const events = await core.outbox.claim(
+          shopId,
+          new Date(),
+          'm5-018-restoration-proof',
+          new Date(Date.now() + 30000),
+          100,
+        );
+        const intents = events.filter((event) => event.eventType === 'm5.publication.intent');
+        assert.equal(intents.length, 1, 'Rejected admission creates no second revision intent/outbox');
+        assert.equal(intents[0].businessKey, oldPointer.operationId);
+        assert.equal((await core.configs.getConfig(shopId, configId)).effectiveRevisionId, oldPointer.operationId);
+        assert.equal(mutationCount, 2, 'Unsettled restore is never replayed');
+        return;
+      }
       assert.equal(response.status, 202);
       const result = await response.json();
       assert.equal(result.state, 'ACTIVE');
@@ -351,6 +394,9 @@ for (const ending of ['release-blocked', 'active-drift', 'active-key-drift', 'ac
           cells.set('policy', { ...cells.get('policy'), value: 'foreign-provider-policy' });
         else if (ending === 'active-epoch-drift') {
           await lifecycle.incrementEpoch({ scope, commandKey: 'm5-018-epoch-change', requestDigest: 'e'.repeat(64) });
+        } else if (ending === 'active-destroyed-key') {
+          await lifecycle.revoke(scope, 7, 'm5-018-revocation', 'Synthetic expired key');
+          await lifecycle.destroy(scope, 7);
         } else {
           await lifecycle.createPending({
             scope,

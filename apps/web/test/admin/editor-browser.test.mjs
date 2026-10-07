@@ -1906,3 +1906,46 @@ test('a pre-command passive observation cannot overwrite a newer pending publica
     await server.exited;
   }
 });
+
+test('operator and restoration conflicts cannot initiate another publication from a saved eligible draft', {
+  timeout: 15000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-operator-token' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    let state = 'OPERATOR_HOLD';
+    let writes = 0;
+    await page.route('**/api/admin/products/111/config', (route) => {
+      if (route.request().method() !== 'GET') {
+        writes++;
+        return route.fulfill({ status: 409, json: { message: 'Operator recovery required' } });
+      }
+      const value = response(draft());
+      value.config.publishEligibility = { allowed: true, reason: null };
+      value.config.publication.state = state;
+      return route.fulfill({ json: value });
+    });
+    for (const next of ['OPERATOR_HOLD', 'RESTORATION_CONFLICT', 'CONFLICT']) {
+      state = next;
+      await page.goto(`${server.base}/admin/products/111/config`);
+      await page.getByText('Draft version 1', { exact: false }).waitFor();
+      const button = page.locator('s-button').filter({ hasText: 'Request publication' });
+      assert.equal(await button.evaluate((element) => element.disabled), true, next);
+    }
+    assert.equal(writes, 0);
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});

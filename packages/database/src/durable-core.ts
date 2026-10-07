@@ -156,6 +156,11 @@ export interface DurableCore {
       shopId: string,
       configId: string,
     ): Promise<{ operationId: string; kind: string; installationGeneration: string } | null>;
+    getAvailabilityRecoveryInTransaction(
+      transaction: DurableTransaction,
+      shopId: string,
+      configId: string,
+    ): ReturnType<DurableCore['configs']['getAvailabilityRecovery']>;
     getCurrentPublicationInTransaction(
       transaction: DurableTransaction,
       shopId: string,
@@ -264,6 +269,18 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   const tenants = createTenantRepository(database);
   const webhooks = createShopifyWebhookRepository(database);
   const credentials = createShopCredentialRepository(database, options.credentialKeys);
+  async function availabilityRecovery(executor: DatabaseExecutor, shopId: string, configId: string) {
+    // An owned hold survives reinstall/supersession; never hide it behind the new generation's pointer.
+    const rows = await sql<{ operation_id: string; kind: string; installation_generation: string }>`
+          SELECT state.operation_id, state.kind, operation.installation_generation::text
+          FROM m5_activation_state state JOIN publication_operations operation USING (shop_id, config_id, operation_id)
+          WHERE state.shop_id=${shopId} AND state.config_id=${configId}
+            AND state.hold IS NOT NULL AND state.kind NOT IN ('RESTORED','RESOLVED') LIMIT 1`.execute(executor);
+    const row = rows.rows[0];
+    return row
+      ? { operationId: row.operation_id, kind: row.kind, installationGeneration: row.installation_generation }
+      : null;
+  }
   async function currentPublication(executor: DatabaseExecutor, shopId: string, configId: string) {
     const pointer = await sql<{
       revision_id: string;
@@ -538,18 +555,9 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           ? { draftVersion: rows.rows[0].draft_version, installationGeneration: rows.rows[0].installation_generation }
           : null;
       },
-      getAvailabilityRecovery: async (shopId, configId) => {
-        // An owned hold survives reinstall/supersession; never hide it behind the new generation's pointer.
-        const rows = await sql<{ operation_id: string; kind: string; installation_generation: string }>`
-          SELECT state.operation_id, state.kind, operation.installation_generation::text
-          FROM m5_activation_state state JOIN publication_operations operation USING (shop_id, config_id, operation_id)
-          WHERE state.shop_id=${shopId} AND state.config_id=${configId}
-            AND state.hold IS NOT NULL AND state.kind NOT IN ('RESTORED','RESOLVED') LIMIT 1`.execute(database);
-        const row = rows.rows[0];
-        return row
-          ? { operationId: row.operation_id, kind: row.kind, installationGeneration: row.installation_generation }
-          : null;
-      },
+      getAvailabilityRecovery: (shopId, configId) => availabilityRecovery(database, shopId, configId),
+      getAvailabilityRecoveryInTransaction: (handle, shopId, configId) =>
+        availabilityRecovery(resolve(handle), shopId, configId),
       getCurrentPublication: (shopId, configId) => currentPublication(database, shopId, configId),
       getCurrentPublicationInTransaction: async (handle, shopId, configId) =>
         currentPublication(resolve(handle), shopId, configId),

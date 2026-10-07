@@ -1,0 +1,13 @@
+✔ two production admin tabs keep stale edits and explicitly review the winning CAS draft: 9.00 (1725.590488ms)
+✔ two production admin tabs keep stale edits and explicitly review the winning CAS draft: 2.50 (1480.073461ms)
+✔ authorization denial fences a save already in flight from repopulating private editor state (5885.773676ms)
+✔ a pre-command passive observation cannot overwrite a newer pending publication or its stored request (5975.234397ms)
+✔ operator and restoration conflicts cannot initiate another publication from a saved eligible draft (1011.455415ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16527.828277

@@ -25,6 +25,15 @@ const targetOccupied = (error: unknown) =>
   (error as { code?: string; constraint?: string }).code === '23505' &&
   (error as { constraint?: string }).constraint === 'product_configs_shop_id_external_product_id_key';
 
+function publicationSettled(progress: Awaited<ReturnType<DurableCore['configs']['getCurrentPublication']>>) {
+  return (
+    !progress ||
+    (progress.phase === 'active' &&
+      progress.reconciliationKind !== 'OPERATOR_HOLD' &&
+      (progress.activationKind === null || progress.activationKind === 'RESTORED'))
+  );
+}
+
 function productNumber(gid: string): string {
   const match = /^gid:\/\/shopify\/Product\/([1-9][0-9]*)$/.exec(gid);
   if (!match?.[1]) throw new Error('Invalid Shopify product ID');
@@ -505,7 +514,10 @@ export function createMerchantConfigService(input: {
       let resultRef = prior?.status === 'completed' ? prior.resultRef : null;
       if (!resultRef) {
         const priorProgress = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
-        if (priorProgress && (priorProgress.phase !== 'active' || priorProgress.reconciliationKind === 'OPERATOR_HOLD'))
+        if (
+          !publicationSettled(priorProgress) ||
+          (await core.configs.getAvailabilityRecovery(actor.tenantShopId, data.configId))
+        )
           return { kind: 'conflict', message: 'A publication request is already in progress' };
         const before = await core.configs.getConfig(actor.tenantShopId, data.configId);
         if (
@@ -543,8 +555,8 @@ export function createMerchantConfigService(input: {
             data.configId,
           );
           if (
-            currentPublication &&
-            (currentPublication.phase !== 'active' || currentPublication.reconciliationKind === 'OPERATOR_HOLD')
+            !publicationSettled(currentPublication) ||
+            (await core.configs.getAvailabilityRecoveryInTransaction(tx, actor.tenantShopId, data.configId))
           )
             return 'open';
           const draft = validatedDraft(config.draftValue, actor, productId);

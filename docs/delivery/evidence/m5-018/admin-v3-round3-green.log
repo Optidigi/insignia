@@ -1,0 +1,14 @@
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: release-blocked (1354.938558ms)
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: active-drift (1262.022992ms)
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: active-key-drift (1129.833899ms)
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: active-epoch-drift (1084.84311ms)
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: active-destroyed-key (1217.971586ms)
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: restoration-pending (476.190235ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7042.253175
