@@ -1,0 +1,85 @@
+{
+  "observedAt": "2026-10-07T22:16:39.543335+00:00",
+  "canonical": "insignia.optidigi.com",
+  "dns": {
+    "insignia.optidigi.com": [
+      "81.88.63.46"
+    ],
+    "insignia-m5-019r-37ba2cd1af.optidigi.com": [
+      "81.88.63.46"
+    ],
+    "insignia.optidigi.nl": [
+      "188.114.96.0",
+      "188.114.97.0",
+      "2a06:98c1:3120::5",
+      "2a06:98c1:3121::5"
+    ]
+  },
+  "tls": {
+    "insignia.optidigi.com": {
+      "verified": false,
+      "error": "SSLCertVerificationError"
+    },
+    "insignia.optidigi.nl": {
+      "verified": true,
+      "protocol": "TLSv1.3",
+      "sans": [
+        [
+          "DNS",
+          "optidigi.nl"
+        ],
+        [
+          "DNS",
+          "*.optidigi.nl"
+        ]
+      ],
+      "notBefore": "Sep  6 23:47:23 2026 GMT",
+      "notAfter": "Dec  6 00:44:49 2026 GMT",
+      "certificateSha256": "12580ffd230c197e6db9a53db77e2c6062bd7c6406797d0c6cf634d71231a29f"
+    }
+  },
+  "http": [
+    {
+      "host": "insignia.optidigi.com",
+      "path": "/admin/products",
+      "error": "URLError"
+    },
+    {
+      "host": "insignia.optidigi.com",
+      "path": "/api/admin/products",
+      "error": "URLError"
+    },
+    {
+      "host": "insignia.optidigi.com",
+      "path": "/_astro/m5-019r-nonexistent.js",
+      "error": "URLError"
+    },
+    {
+      "host": "insignia.optidigi.com",
+      "path": "/live",
+      "error": "URLError"
+    },
+    {
+      "host": "insignia.optidigi.nl",
+      "path": "/",
+      "status": 403,
+      "contentType": "text/plain; charset=UTF-8",
+      "cacheControl": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+      "csp": null,
+      "server": "cloudflare",
+      "bodyBytes": 17,
+      "bodySha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c"
+    },
+    {
+      "host": "insignia.optidigi.nl",
+      "path": "/auth/login",
+      "status": 403,
+      "contentType": "text/plain; charset=UTF-8",
+      "cacheControl": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+      "csp": null,
+      "server": "cloudflare",
+      "bodyBytes": 17,
+      "bodySha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c"
+    }
+  ]
+}

@@ -1,3 +1,11 @@
+# Current authorized slice — M5-019R
+
+[PR50 principal correction](PR-050-principal-review.md) binds base703cfb21a4262675b088cd06289fe08a421ecdd8/head5157ac8be2a9d1bf3f6765bf449fd6a410ce699c/tree dc59b6e730940a0cbabd304ae51442f384046885, CHANGES_REQUESTED. [Brief](prompts/M5-019R-CANONICAL-PRODUCTION-DOMAIN.md): SAME PR, canonical Insignia.com identity, dedicated whole-host router, unchanged reviewed build/Functions/scopes, exactly one additional unreleased version after fresh frozen gate, no merge/release. Old .nl inactive1158837927937 is permanently SUPERSEDED_WRONG_CANONICAL_ORIGIN_NEVER_RELEASE; original .nl evidence/report/proposal/config immutable. Previous M5-019 run CLOSED.
+
+[Report](M5-019R-REPORT.md) / [proposal](M5-019R-RELEASE-PROPOSAL.md): NOT_EXECUTE_READY. Current Google/Cloudflare DNS agrees .com A81.88.63.46 and NSverification1/2.plaindns.net; TLS hostname mismatch. Known VPS65.109.22.104. Owner DNS location and fresh restricted temporary-key authorization pending; no agent identities. Local canonical config/whole-host route and14 guard controls/actual unchanged standalone .com env proof PASS with synthetic creds/global fetch0. No live deployment/additional version/release attempted. Continue independent safe work; credentials/provider mutation require actual cleared gates. LXD cleanup administrator housekeeping, not product-release blocker. Historical state below unchanged.
+
+---
+
 # Current authorized slice — M5-019
 
 PR49 normal merge703cfb21a4262675b088cd06289fe08a421ecdd8 has exact ordered parents407608ab929e703cd2b10972de93cf00c58aa9df,19e069a32c2f97f0316208ebbb7c970ef309c31a and tree170edf1de05fb07ad42e8f0bc15771996531d2cf; all11 entry workflows/both CLEAR reviews/external principal approval reverified. [Receipt](evidence/m5-019/pr49-merge-receipt.json).
