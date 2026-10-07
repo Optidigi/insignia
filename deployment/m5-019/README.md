@@ -79,3 +79,19 @@ the exact three optional scopes. Inspect provider UID/module identity and
 active-version equality after the single no-release attempt.
 This directory does not release an app or Function, create a fixture, mutate
 availability/publications, change scopes or authorize M6/M7/launch.
+
+Before freezing the creation gate, run the local operator controls with the
+accepted Function build artifacts present:
+
+```
+python3 -B deployment/m5-019/create-unreleased-version.test.py -v
+```
+
+The creation wrapper enforces complete manifest membership and module hashes,
+distinct actual reviewer sessions, and all ten naturally applicable exact-head
+workflows through explicit failures that survive Python optimization. Keep the
+seven-file final upload candidate separate from the CLI read context; empty
+CLI-generated project metadata is not an additional reviewed payload. Freeze
+the source/config/reviews/CI/host/Active receipts outside Git, then execute the
+wrapper once. The durable reservation prevents a second dispatch after failure
+or ambiguity. Current source does not grant app/Function release authority.

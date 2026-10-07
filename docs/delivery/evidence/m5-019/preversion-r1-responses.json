@@ -1,0 +1,29 @@
+{
+  "reviewedHead": "2b8473a52dce01564901eae3b075a38adf62fd6b",
+  "priorSpec": "CHANGES_REQUESTED",
+  "priorStandardsSecurity": "CHANGES_REQUESTED",
+  "findings": [
+    {
+      "id": "OPTIMIZED_ASSERT_BYPASS",
+      "correction": "Explicit require failures remain active under -O/PYTHONOPTIMIZE; subprocess negative control fails before reservation/Shopify dispatch."
+    },
+    {
+      "id": "INCOMPLETE_FROZEN_INVENTORY",
+      "correction": "Derive exact unique mandatory membership from all tracked files,621 accepted source/build rows, complete7-file candidate, pinnedCLI anchors,Node,both distinct review reports/settings and fresh CI/Active/control receipts. Directly qualify UID/config/query/Wasm/extra/symlink controls before reservation."
+    },
+    {
+      "id": "DUPLICATE_CI_ROWS",
+      "correction": "Exact10 workflow names,10 unique run IDs, exact repository/run URL, current head/attempt1/completed success and frozen receipt equality required."
+    }
+  ],
+  "offlineControls": {
+    "tests": 7,
+    "result": "PASS",
+    "shopifyCliDispatches": 0,
+    "externalRequests": 0
+  },
+  "originalTestFailures": "Strict seven-file validation caught two empty officialCLI context metadata files; failed logs preserved. Verified empty generated metadata removed locally. Tests now package source-bound temporary fixtures and do not depend on mutable dispatch metadata.",
+  "creationAttempts": 0,
+  "releaseAttempts": 0,
+  "nextGate": "Fresh full-source/config/operator reviews and all10 natural exact-corrected-head workflows before freeze/creation."
+}
