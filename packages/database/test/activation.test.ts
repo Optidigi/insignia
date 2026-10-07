@@ -1398,6 +1398,56 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       if (transition === 'optional-to-required') await publishMode('required');
     },
   );
+  it('SQL denies a successful held record with scheduled original but retains unheld incident evidence', async () => {
+    const f = await fixture();
+    await f.prepareHold();
+    const hold = (await f.restart().read(f.identity))?.state.hold;
+    if (hold?.version !== 'm5-availability-hold-v3') throw new Error('expected v3');
+    const staged = {
+      publicationId: 'gid://shopify/Publication/999',
+      isPublished: false,
+      publishDate: '2099-01-01T00:00:00.000Z',
+    };
+    const scheduled = {
+      ...hold,
+      before: {
+        ...hold.before,
+        effectiveVisibility: {
+          ...hold.before.effectiveVisibility,
+          publicationEvidence: [...hold.before.effectiveVisibility.publicationEvidence, staged],
+        },
+        visibleScheduledOrStaged: [staged],
+      },
+    };
+    const admits = async (value: unknown) =>
+      (
+        await sql<{ admitted: boolean }>`SELECT m5_v3_hold(${JSON.stringify(value)}::jsonb) AS admitted`.execute(
+          database,
+        )
+      ).rows[0]!.admitted;
+    expect(await admits(scheduled)).toBe(false);
+    expect(await admits({ ...scheduled, held: null })).toBe(true);
+    const onlineStore = { publishedAtPresent: true, urlPresent: true };
+    const visibleDraft = {
+      ...hold,
+      before: {
+        ...hold.before,
+        state: 'unavailable' as const,
+        effectiveVisibility: {
+          ...hold.before.effectiveVisibility,
+          onlineStore,
+          publishedAt: '2026-10-01T11:00:00.000Z',
+          onlineStoreUrl: 'https://synthetic.example/products/fixture',
+        },
+        effectiveDigest: activationDigest({
+          publishedPublicationIds: hold.before.effectiveVisibility.publishedPublicationIds,
+          onlineStore,
+        }),
+      },
+    };
+    expect(await admits(visibleDraft)).toBe(false);
+    expect(await admits({ ...visibleDraft, held: null })).toBe(true);
+  });
   it('SQL rejects schedule-only ACK success while retaining settled conflict audits', async () => {
     const f = await fixture();
     await f.prepareHold();
@@ -1431,6 +1481,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect(
       await admits({ ...held, held: null, acquisitionAcknowledgement: scheduled(held.acquisitionAcknowledgement) }),
     ).toBe(true);
+    expect(
+      await admits({
+        ...held,
+        before: held.held,
+        acquisitionAcknowledgement: scheduled(held.acquisitionAcknowledgement),
+      }),
+    ).toBe(false);
     await f.publish();
     await f.restart().advance(f.identity);
     await f.restart().advance(f.identity);

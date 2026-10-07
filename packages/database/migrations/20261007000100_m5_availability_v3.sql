@@ -84,7 +84,7 @@ CREATE FUNCTION m5_v3_held(candidate jsonb, original jsonb) RETURNS boolean LANG
   AND candidate->'scope'=original->'scope' AND candidate->>'productId'=original->>'productId'
   AND candidate->>'state'='unavailable' AND candidate#>'{effectiveVisibility,publishedPublicationIds}'='[]'::jsonb
   AND candidate#>'{effectiveVisibility,onlineStore}'='{"publishedAtPresent":false,"urlPresent":false}'::jsonb
-  AND candidate->'visibleScheduledOrStaged'='[]'::jsonb AND candidate->'effectiveAnchors'=original->'effectiveAnchors' AND candidate->>'anchorDigest'=original->>'anchorDigest',false)
+  AND candidate->'visibleScheduledOrStaged'='[]'::jsonb AND original->'visibleScheduledOrStaged'='[]'::jsonb AND candidate->'effectiveAnchors'=original->'effectiveAnchors' AND candidate->>'anchorDigest'=original->>'anchorDigest',false)
 $$;
 CREATE FUNCTION m5_v3_ack(candidate jsonb, original jsonb, state text) RETURNS boolean LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$
  SELECT coalesce(candidate->>'version'='m5-availability-mutation-ack-v3' AND m5_v3_facts(candidate)
@@ -104,7 +104,10 @@ END $$;
 CREATE FUNCTION m5_v3_hold(candidate jsonb) RETURNS boolean LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE AS $$
 DECLARE original jsonb:=candidate->'before'; receipt jsonb:=candidate->'restorationReceipt'; compensation jsonb:=receipt->'compensation'; claim jsonb:=candidate->'restorationClaim'; BEGIN
  IF NOT coalesce(m5_v3_keys(candidate,ARRAY['version','operationId','before','held'],ARRAY['acquisitionAcknowledgement','restorationClaim','restorationReceipt']) AND candidate->>'version'='m5-availability-hold-v3' AND (candidate->>'operationId') ~ '^[A-Za-z0-9_-]{1,128}$' AND m5_v3_snapshot(original) AND (candidate->'held'='null'::jsonb OR m5_v3_held(candidate->'held',original)),false) THEN RETURN false; END IF;
- IF candidate->'held'<>'null'::jsonb AND original->>'state'<>'unavailable' AND NOT coalesce(candidate ? 'acquisitionAcknowledgement' AND m5_v3_ack_qualified(candidate->'acquisitionAcknowledgement'),false) THEN RETURN false; END IF;
+ IF candidate->'held'<>'null'::jsonb THEN
+  IF original->>'state'='unavailable' AND NOT m5_v3_held(original,original) THEN RETURN false; END IF;
+  IF (original->>'state'<>'unavailable' OR candidate ? 'acquisitionAcknowledgement') AND NOT coalesce(candidate ? 'acquisitionAcknowledgement' AND m5_v3_ack_qualified(candidate->'acquisitionAcknowledgement'),false) THEN RETURN false; END IF;
+ END IF;
  IF candidate ? 'acquisitionAcknowledgement' AND NOT m5_v3_ack(candidate->'acquisitionAcknowledgement',original,'unavailable') THEN RETURN false; END IF;
  IF candidate ? 'restorationClaim' AND NOT coalesce(m5_v3_keys(claim,ARRAY['version','operationId','scope','productId','restoreReserved','compensationReserved']) AND claim->>'version'='m5-availability-restoration-claim-v3' AND claim->>'operationId'=candidate->>'operationId' AND claim->'scope'=original->'scope' AND claim->>'productId'=original->>'productId' AND claim->'restoreReserved'='true'::jsonb AND claim->'compensationReserved'='true'::jsonb,false) THEN RETURN false; END IF;
  IF candidate ? 'restorationReceipt' THEN

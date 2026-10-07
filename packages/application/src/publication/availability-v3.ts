@@ -264,7 +264,7 @@ export function availabilityV3HeldSafe(
     !value.effectiveVisibility.onlineStore.publishedAtPresent &&
     !value.effectiveVisibility.onlineStore.urlPresent &&
     (!before ||
-      (validAvailabilityV3(before) &&
+      (availabilityV3Qualified(before) &&
         activationDigest(value.scope) === activationDigest(before.scope) &&
         value.productId === before.productId &&
         value.anchorDigest === before.anchorDigest))
@@ -298,10 +298,12 @@ export function availabilityV3OwnedHeld(hold: AvailabilityHoldV3): boolean {
   return Boolean(
     hold.held &&
       availabilityV3HeldSafe(hold.held, hold.before) &&
-      (hold.before.state === 'unavailable' ||
-        (availabilityV3AcknowledgementQualified(ack) &&
+      (hold.before.state !== 'unavailable' || availabilityV3HeldSafe(hold.before)) &&
+      (ack === undefined
+        ? hold.before.state === 'unavailable'
+        : availabilityV3AcknowledgementQualified(ack) &&
           ack.state === 'unavailable' &&
           ack.productId === hold.before.productId &&
-          activationDigest(ack.scope) === activationDigest(hold.before.scope))),
+          activationDigest(ack.scope) === activationDigest(hold.before.scope)),
   );
 }

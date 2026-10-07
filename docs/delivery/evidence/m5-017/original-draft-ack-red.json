@@ -1,0 +1,7 @@
+{
+  "baseline": "2dde06d0f553508346153ebbcb8139937cc74e6f plus uncommitted round3 scheduled-original corrections",
+  "originalFile": "/home/serveradmin/insignia-m5-017-handoff/original-draft-ack-red.log",
+  "encoding": "utf-8",
+  "sha256": "94cc8de1950d10ce950956ddddf6c7d96f15a191a919743c24a2fa4908846e94",
+  "raw": "\n RUN  v5.0.2 /home/serveradmin/insignia-m5-017-worktree/packages/application\n\n \u276f src/publication/availability-v3.test.ts (5 tests | 1 failed | 4 skipped) 11ms\n   \u00d7 even original held-safe DRAFT cannot ignore an explicitly retained scheduled acquisition ACK 10ms\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af Failed Tests 1 \u23af\u23af\u23af\u23af\u23af\u23af\u23af\n\n FAIL  src/publication/availability-v3.test.ts > even original held-safe DRAFT cannot ignore an explicitly retained scheduled acquisition ACK\nAssertionError: expected true to be false // Object.is equality\n\n- Expected\n+ Received\n\n- false\n+ true\n\n \u276f src/publication/availability-v3.test.ts:136:156\n\n\n\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af\u23af[1/1]\u23af\n\n\n Test Files  1 failed (1)\n      Tests  1 failed | 4 skipped (5)\n   Start at  11:12:46\n   Duration  292ms (transform 60%, import 30%, tests 7%, worker 3%)\n\nError: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL\n\n  \u00d7 \"pnpm recursive exec\" failed in /home/serveradmin/insignia-m5-017-\n  \u2502 worktree/packages/application\n\n"
+}

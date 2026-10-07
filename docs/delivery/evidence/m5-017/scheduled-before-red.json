@@ -1,0 +1,7 @@
+{
+  "source": "2dde06d0f553508346153ebbcb8139937cc74e6f",
+  "originalFile": "scheduled-before-red.log",
+  "encoding": "utf-8",
+  "sha256": "892ab9c4b52762b6d84b7648e0ffa1c946d6e7c6440fe29ba0470f17f17512d8",
+  "raw": "{\"structurallyValidBefore\":true,\"applicationOwnedHeld\":true,\"sqlSuccessHoldAdmitted\":true,\"source\":\"2dde06d0f553508346153ebbcb8139937cc74e6f\"}\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: scheduled original before cannot establish an automatic held claim\n\ntrue !== false\n\n    at file:///home/serveradmin/insignia-m5-017-handoff/scheduled-before-red-probe.mjs:14:9\n    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: true,\n  expected: false,\n  operator: 'strictEqual',\n  diff: 'simple'\n}\n\nNode.js v24.21.0\n"
+}

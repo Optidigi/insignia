@@ -30,7 +30,7 @@ const gate = () => ({
     url: `https://github.com/Optidigi/insignia/actions/runs/${i + 1}`,
   })),
 });
-test('gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows', () => {
+test('gate demands exact source/tree/binding, two actual model reviews and eleven unique attempt-one workflows', () => {
   checkGateRecord(binding, gate());
   for (const change of [
     (g) => (g.source = '0'.repeat(40)),
@@ -54,4 +54,23 @@ test('gate demands exact source/tree/binding, two actual model reviews and ten u
     () => checkGateRecord({ ...binding, modules: { 'production.js': '9'.repeat(64) } }, gate()),
     /offline_gate/,
   );
+});
+
+test('the slice-specific history workflow is mandatory rather than optional diagnostic CI', () => {
+  const name = 'M0-007 policy and Function boundary checks';
+  const missing = gate();
+  missing.ci = missing.ci.filter((x) => x.workflowName !== name);
+  assert.throws(() => checkGateRecord(binding, missing), /offline_gate/);
+  assert.equal(WORKFLOWS.length, 11);
+  checkGateRecord(binding, gate());
+  for (const fault of ['pending', 'failed', 'wrong-head', 'second-attempt']) {
+    const g = gate(),
+      row = g.ci.find((x) => x.workflowName === name);
+    assert.ok(row);
+    if (fault === 'pending') row.status = 'in_progress';
+    if (fault === 'failed') row.conclusion = 'failure';
+    if (fault === 'wrong-head') row.headSha = '0'.repeat(40);
+    if (fault === 'second-attempt') row.runAttempt = 2;
+    assert.throws(() => checkGateRecord(binding, g), /offline_gate/);
+  }
 });

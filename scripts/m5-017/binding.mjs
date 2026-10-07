@@ -1,10 +1,11 @@
 import { execFileSync } from 'node:child_process';
 import { lstatSync, readdirSync, readFileSync, readlinkSync, realpathSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { WORKFLOWS } from '../m5-004/binding.mjs';
+import { WORKFLOWS as HISTORICAL_WORKFLOWS } from '../m5-004/binding.mjs';
 import { digest, requireValue } from './operator.mjs';
 
-export { digest, WORKFLOWS };
+export { digest };
+export const WORKFLOWS = Object.freeze([...HISTORICAL_WORKFLOWS, 'M0-007 policy and Function boundary checks']);
 export const BASE = '4bba14fb4415815557ffa5f1e600427a62128489';
 export const EVIDENCE_ROOT = '/home/serveradmin/insignia-m5-017-handoff';
 const git = (root, args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();

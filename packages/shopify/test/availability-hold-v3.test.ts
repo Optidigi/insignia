@@ -95,19 +95,6 @@ test('acquire preserves the hidden anchor and accepts distinct ACK/readback upda
               product: {
                 ...product(state),
                 updatedAt: '2026-10-07T11:00:01Z',
-                ...((writes.length === 1 && options.ackSchedule === 'acquire') ||
-                (writes.length === 2 && options.ackSchedule === 'restore') ||
-                (writes.length === 3 && options.ackSchedule === 'compensate')
-                  ? {
-                      resourcePublications: {
-                        nodes: [
-                          ...product(state).resourcePublications.nodes,
-                          { publication: { id: other }, isPublished: false, publishDate: '2099-01-01T00:00:00Z' },
-                        ],
-                        pageInfo: complete,
-                      },
-                    }
-                  : {}),
               },
               userErrors: [],
             },
@@ -709,6 +696,54 @@ test('a persisted HELD record cannot adopt scheduled acquisition ACK evidence on
   await expect(f.fresh().restore(scope, hold, f.current, () => true)).rejects.toMatchObject({
     kind: 'invalid_request',
   });
+  expect(f.requests).toHaveLength(requests);
+  expect(f.writes).toEqual(['DRAFT']);
+});
+
+test('a scheduled original in persisted HELD state blocks fresh observe and restore before transport', async () => {
+  const f = await acquiredFixture();
+  const staged = {
+    publicationId: 'gid://shopify/Publication/999',
+    isPublished: false,
+    publishDate: '2099-01-01T00:00:00.000Z',
+  };
+  const hold = {
+    ...f.hold,
+    before: {
+      ...f.hold.before,
+      effectiveVisibility: {
+        ...f.hold.before.effectiveVisibility,
+        publicationEvidence: [...f.hold.before.effectiveVisibility.publicationEvidence, staged],
+      },
+      visibleScheduledOrStaged: [staged],
+    },
+  };
+  const requests = f.requests.length;
+  await expect(f.fresh().observe(scope, hold)).rejects.toMatchObject({ kind: 'invalid_request' });
+  await expect(f.fresh().restore(scope, hold, f.current, () => true)).rejects.toMatchObject({
+    kind: 'invalid_request',
+  });
+  expect(f.requests).toHaveLength(requests);
+  expect(f.writes).toEqual(['DRAFT']);
+});
+
+test('persisted original DRAFT must itself be held-safe before no-write restore can be attributed', async () => {
+  const f = await acquiredFixture();
+  const hold = { ...f.hold, before: { ...f.hold.before, state: 'unavailable' as const } };
+  const requests = f.requests.length;
+  await expect(f.fresh().observe(scope, hold)).rejects.toMatchObject({ kind: 'invalid_request' });
+  await expect(f.fresh().restore(scope, hold, f.current, () => true)).rejects.toMatchObject({
+    kind: 'invalid_request',
+  });
+  expect(f.requests).toHaveLength(requests);
+  expect(f.writes).toEqual(['DRAFT']);
+});
+
+test('a retained acquisition ACK without an owned held receipt cannot recreate acquisition on a fresh port', async () => {
+  const f = await acquiredFixture();
+  const requests = f.requests.length;
+  const result = await f.fresh().acquire(scope, { ...f.hold, held: null });
+  expect(result).toEqual({ kind: 'CONFLICT', current: null, acknowledgement: f.hold.acquisitionAcknowledgement });
   expect(f.requests).toHaveLength(requests);
   expect(f.writes).toEqual(['DRAFT']);
 });

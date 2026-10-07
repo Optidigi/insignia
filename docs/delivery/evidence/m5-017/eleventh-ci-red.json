@@ -1,0 +1,7 @@
+{
+  "source": "2dde06d0f553508346153ebbcb8139937cc74e6f",
+  "originalFile": "eleventh-ci-red.log",
+  "encoding": "utf-8",
+  "sha256": "1745799e4132d2267bdf9df3ecfc34aba9f85516e3ba55e228afd134e845e77c",
+  "raw": "\u2714 gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.25503ms)\n\u2716 the slice-specific history workflow is mandatory rather than optional diagnostic CI (0.870243ms)\n\u2139 tests 2\n\u2139 suites 0\n\u2139 pass 1\n\u2139 fail 1\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 251.792147\n\n\u2716 failing tests:\n\ntest at scripts/m5-017/binding.test.mjs:59:1\n\u2716 the slice-specific history workflow is mandatory rather than optional diagnostic CI (0.870243ms)\n  AssertionError [ERR_ASSERTION]: Missing expected exception.\n      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-017-worktree/scripts/m5-017/binding.test.mjs:62:10)\n      at Test.runInAsyncScope (node:async_hooks:227:14)\n      at Test.run (node:internal/test_runner/test:1402:25)\n      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)\n      at Test.postRun (node:internal/test_runner/test:1542:19)\n      at Test.run (node:internal/test_runner/test:1467:12)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {\n    generatedMessage: false,\n    code: 'ERR_ASSERTION',\n    actual: undefined,\n    expected: /offline_gate/,\n    operator: 'throws',\n    diff: 'simple'\n  }\n"
+}

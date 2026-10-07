@@ -9,6 +9,7 @@ import {
   activationDigest,
   availabilityV3AcknowledgementQualified,
   availabilityV3HeldSafe,
+  availabilityV3OwnedHeld,
   availabilityV3Qualified,
   canonicalPublicationIdsV3,
   effectiveSemanticsV3,
@@ -441,12 +442,7 @@ export function createShopifyAvailabilityHoldV3Port(
         hold.held.receivedAt > time())
     )
       return fail('invalid_request');
-    if (
-      hold.held &&
-      hold.before.state !== 'unavailable' &&
-      !availabilityV3AcknowledgementQualified(hold.acquisitionAcknowledgement)
-    )
-      return fail('invalid_request');
+    if (hold.held && !availabilityV3OwnedHeld(hold)) return fail('invalid_request');
     const ack = hold.acquisitionAcknowledgement;
     if (
       ack &&
@@ -518,6 +514,8 @@ export function createShopifyAvailabilityHoldV3Port(
   ): Promise<AvailabilityObservationV3> {
     validate(scope, hold);
     if (hold.held) return observe(scope, hold, budget);
+    if (hold.acquisitionAcknowledgement)
+      return { kind: 'CONFLICT', current: null, acknowledgement: hold.acquisitionAcknowledgement }; // A prior settled attempt is never reacquired without an owned held receipt.
     const key = attemptKey(scope, hold);
     if (acquisitionAttempts.has(key)) return fail('ambiguous_write');
     const before = await read(scope, hold.before.productId, budget, originalAnchors(hold));

@@ -2,6 +2,7 @@ import {
   type ActivationReadinessPort,
   activationDigest,
   availabilityV3HeldSafe,
+  availabilityV3OwnedHeld,
   createPublicationActivation,
   isAvailabilityV3,
   type ProductAvailabilityHoldV3Port as ProductAvailabilityHoldPort,
@@ -79,6 +80,7 @@ export function createProductionActivation(database: Kysely<Database>, options: 
         record?.state.kind !== 'HELD' ||
         hold?.version !== 'm5-availability-hold-v3' ||
         !hold?.held ||
+        !availabilityV3OwnedHeld(hold) ||
         hold.operationId !== identity.operationId ||
         hold.before.productId !== identity.productId ||
         hold.before.scope.shopId !== identity.shopId ||
