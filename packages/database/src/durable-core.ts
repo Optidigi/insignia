@@ -150,6 +150,7 @@ export interface DurableCore {
       priorMode: 'required' | 'optional' | null;
       status: string;
       activationKind: string | null;
+      reconciliationKind?: string | null;
     } | null>;
     getAvailabilityRecovery(
       shopId: string,
@@ -274,9 +275,12 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       prior_mode: 'required' | 'optional' | null;
       status: string | null;
       activation_kind: string | null;
+      reconciliation_kind: string | null;
     }>`SELECT pointer.revision_id, pointer.source_draft_version::text,
         pointer.idempotency_key, geometry.mode, operation.operation_id,
-        progress.phase, progress.prior_mode, operation.status, activation.kind AS activation_kind
+        progress.phase, progress.prior_mode, operation.status, activation.kind AS activation_kind,
+        CASE WHEN progress.last_observed->'adminReconciliation'->>'version'='m5-admin-reconciliation-v1'
+          THEN progress.last_observed->'adminReconciliation'->>'kind' END AS reconciliation_kind
       FROM m5_current_publication_pointer pointer
       JOIN shops shop ON shop.shop_id=pointer.shop_id
         AND shop.current_generation=pointer.installation_generation
@@ -306,6 +310,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
         priorMode: selected.prior_mode,
         status: selected.status ?? 'intent',
         activationKind: selected.activation_kind,
+        reconciliationKind: selected.reconciliation_kind,
       };
     }
     const historical = await sql<{
@@ -316,9 +321,12 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       prior_mode: 'required' | 'optional' | null;
       status: string;
       activation_kind: string | null;
+      reconciliation_kind: string | null;
       source_draft_version: string | null;
     }>`SELECT operation.operation_id, operation.revision_id,
         progress.phase, progress.mode, progress.prior_mode, operation.status, activation.kind AS activation_kind,
+        CASE WHEN progress.last_observed->'adminReconciliation'->>'version'='m5-admin-reconciliation-v1'
+          THEN progress.last_observed->'adminReconciliation'->>'kind' END AS reconciliation_kind,
         presentation.source_draft_version::text
       FROM publication_operations operation
       JOIN m4_publication_progress progress
@@ -347,6 +355,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
           priorMode: row.prior_mode,
           status: row.status,
           activationKind: row.activation_kind,
+          reconciliationKind: row.reconciliation_kind,
         }
       : null;
   }

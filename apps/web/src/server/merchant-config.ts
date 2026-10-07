@@ -298,6 +298,7 @@ export function createMerchantConfigService(input: {
         effectiveOperationId: config.effectiveOperationId,
         operationId: progress?.operationId ?? null,
         activationKind: progress?.activationKind ?? null,
+        reconciliationKind: progress?.reconciliationKind,
         operationStatus: progress?.status,
         recoveryFromAnotherOperation: otherRecovery,
       });
@@ -504,7 +505,7 @@ export function createMerchantConfigService(input: {
       let resultRef = prior?.status === 'completed' ? prior.resultRef : null;
       if (!resultRef) {
         const priorProgress = await core.configs.getCurrentPublication(actor.tenantShopId, data.configId);
-        if (priorProgress && priorProgress.phase !== 'active')
+        if (priorProgress && (priorProgress.phase !== 'active' || priorProgress.reconciliationKind === 'OPERATOR_HOLD'))
           return { kind: 'conflict', message: 'A publication request is already in progress' };
         const before = await core.configs.getConfig(actor.tenantShopId, data.configId);
         if (
@@ -541,7 +542,11 @@ export function createMerchantConfigService(input: {
             actor.tenantShopId,
             data.configId,
           );
-          if (currentPublication && currentPublication.phase !== 'active') return 'open';
+          if (
+            currentPublication &&
+            (currentPublication.phase !== 'active' || currentPublication.reconciliationKind === 'OPERATOR_HOLD')
+          )
+            return 'open';
           const draft = validatedDraft(config.draftValue, actor, productId);
           if (draft.shopCurrency !== shopCurrency) return 'currency';
           const geometry = draft.geometry as GeometryV1;
@@ -627,6 +632,7 @@ export function createMerchantConfigService(input: {
             effectiveOperationId: recorded?.effectiveOperationId ?? null,
             operationId: revisionId,
             activationKind: existing.activationKind,
+            reconciliationKind: existing.reconciliationKind,
             operationStatus: existing.status,
           }),
         };
@@ -666,6 +672,7 @@ export function createMerchantConfigService(input: {
       });
       let phase: string = prepared.phase;
       const activation = input.activation?.(actor);
+      let reconciliationFailure: 'CONFLICT' | 'OPERATOR_HOLD' | null = null;
       let progressToken = phase;
       let unchanged = 0;
       for (let attempt = 0; attempt < 16; attempt++) {
@@ -681,7 +688,10 @@ export function createMerchantConfigService(input: {
         }
         const advanced = await publication.advance(actor.tenantShopId, data.configId, prepared.operationId);
         phase = advanced.phase;
-        if (advanced.kind === 'CONFLICT' || advanced.kind === 'OPERATOR_HOLD') break;
+        if (advanced.kind === 'CONFLICT' || advanced.kind === 'OPERATOR_HOLD') {
+          reconciliationFailure = advanced.kind;
+          break;
+        }
         const activated = activation
           ? await activation.advance({
               shopId: actor.tenantShopId,
@@ -700,13 +710,16 @@ export function createMerchantConfigService(input: {
       return {
         kind: 'accepted',
         revisionId,
-        state: projectActivationPublicationState({
-          phase: activation && observed?.operationId === revisionId ? observed.phase : phase,
-          effectiveOperationId: recorded?.effectiveOperationId ?? null,
-          operationId: revisionId,
-          activationKind: observed?.operationId === revisionId ? observed.activationKind : null,
-          operationStatus: observed?.operationId === revisionId ? observed.status : undefined,
-        }),
+        state:
+          reconciliationFailure ??
+          projectActivationPublicationState({
+            phase: activation && observed?.operationId === revisionId ? observed.phase : phase,
+            effectiveOperationId: recorded?.effectiveOperationId ?? null,
+            operationId: revisionId,
+            activationKind: observed?.operationId === revisionId ? observed.activationKind : null,
+            reconciliationKind: observed?.operationId === revisionId ? observed.reconciliationKind : null,
+            operationStatus: observed?.operationId === revisionId ? observed.status : undefined,
+          }),
       };
     },
   };

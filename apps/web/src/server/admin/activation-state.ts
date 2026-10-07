@@ -6,8 +6,10 @@ export function projectActivationPublicationState(input: {
   operationId: string | null;
   activationKind: string | null;
   operationStatus?: string;
+  reconciliationKind?: string | null;
   recoveryFromAnotherOperation?: boolean;
 }): PublicationState {
+  if (input.reconciliationKind === 'OPERATOR_HOLD') return 'OPERATOR_HOLD';
   if (input.recoveryFromAnotherOperation) return 'OPERATOR_HOLD';
   if (input.operationStatus === 'failed' || input.operationStatus === 'superseded')
     return input.activationKind === null || ['RESOLVED', 'RESTORED'].includes(input.activationKind)

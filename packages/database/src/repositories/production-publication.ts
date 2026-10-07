@@ -57,6 +57,7 @@ type Progress = {
   prior_public_config_digest: string | null;
   prior_mode: ProductPolicyMode | null;
   retry_count: number;
+  reconciliation_kind: string | null;
 };
 type Stored = {
   operation: {
@@ -174,10 +175,13 @@ export class PgProductionPublication {
       prior_public_config_digest: string | null;
       prior_mode: ProductPolicyMode | null;
       retry_count: number;
+      reconciliation_kind: string | null;
     }>`SELECT o.shop_id, o.config_id, o.operation_id, o.revision_id,
       o.installation_generation::text, o.operation_sequence::text, o.expected_projection,
       p.phase, p.version::text, p.mode, p.prior_registration_digest, p.prior_policy_digest,
-      p.prior_public_config_digest, p.prior_mode, p.retry_count
+      p.prior_public_config_digest, p.prior_mode, p.retry_count,
+      CASE WHEN p.last_observed->'adminReconciliation'->>'version'='m5-admin-reconciliation-v1'
+        THEN p.last_observed->'adminReconciliation'->>'kind' END AS reconciliation_kind
       FROM publication_operations o JOIN m4_publication_progress p USING (shop_id, config_id, operation_id)
       WHERE o.shop_id=${shopId} AND o.config_id=${configId} AND o.operation_id=${operationId}`.execute(database);
     const row = result.rows[0];
@@ -543,6 +547,7 @@ export class PgProductionPublication {
       if (progress.phase === 'conflict') return { kind: 'CONFLICT', phase: progress.phase };
       if (progress.phase === 'operator-hold') return { kind: 'OPERATOR_HOLD', phase: progress.phase };
       if (progress.phase === 'active') {
+        if (progress.reconciliation_kind === 'OPERATOR_HOLD') return { kind: 'OPERATOR_HOLD', phase: 'active' };
         if (!(await this.current(stored, tx))) return { kind: 'OPERATOR_HOLD', phase: 'active' };
         const activated = await sql<{ status: string; effective_operation_id: string | null }>`
           SELECT o.status, c.effective_operation_id FROM publication_operations o
@@ -582,7 +587,18 @@ export class PgProductionPublication {
             expectedActive.policy,
           )
           ? { kind: 'ACTIVE', phase: 'active' }
-          : { kind: 'OPERATOR_HOLD', phase: 'active' };
+          : (await this.save(
+                stored,
+                'active',
+                {
+                  ...observedActive,
+                  adminReconciliation: { version: 'm5-admin-reconciliation-v1', kind: 'OPERATOR_HOLD' },
+                },
+                0,
+                tx,
+              ))
+            ? { kind: 'OPERATOR_HOLD', phase: 'active' }
+            : { kind: 'CONFLICT', phase: 'active' };
       }
       if (!(await this.current(stored, tx))) return hold(null);
       const expected = publicationProjection(operation.expectedProjection);

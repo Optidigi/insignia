@@ -297,6 +297,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   const pending = useRef<PendingRequest | null>(null);
   const publicationPending = useRef<PendingRequest | null>(null);
   const requestId = useRef(0);
+  const observationId = useRef(0);
   const busyRef = useRef(false);
   const saveStateRef = useRef(saveState);
   const visualizerRef = useRef<Visualizer | null>(null);
@@ -309,6 +310,35 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   projectRef.current = project;
   viewRef.current = view;
   refreshRef.current = refreshPublication;
+
+  function clearPrivate() {
+    requestId.current++;
+    visualizerRef.current?.destroy();
+    visualizerRef.current = null;
+    viewRef.current = null;
+    editorRef.current = null;
+    pending.current = null;
+    publicationPending.current = null;
+    setView(null);
+    setList(null);
+    setDraft(null);
+    setEditor(null);
+    setLatest(null);
+    setAdvancedText('');
+    setAdvancedError('');
+    setCopyTarget('');
+    setValidationIssues([]);
+    setPreviewStatus('');
+    setImageSize(null);
+    setBusy(false);
+  }
+  function authorizationDenied(error: unknown) {
+    const status = (error as { status?: number })?.status;
+    if (status !== 401 && status !== 403) return false;
+    clearPrivate();
+    setStatus(error instanceof Error ? error.message : 'Current authorization required');
+    return true;
+  }
 
   function syncPublication(data: ConfigView) {
     if (!productId) return;
@@ -382,14 +412,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       window.history.replaceState(window.history.state, '', launchUrl.pathname + launchUrl.search + launchUrl.hash);
     }
     void load(null, '');
-    const clear = () => {
-      requestId.current++;
-      visualizerRef.current?.destroy();
-      visualizerRef.current = null;
-      setView(null);
-      setDraft(null);
-      setEditor(null);
-    };
+    const clear = clearPrivate;
     const visible = () => {
       if (
         !document.hidden &&
@@ -420,15 +443,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         if (stopped) return;
         const status = (error as { status?: number })?.status;
         if (status === 401 || status === 403) {
-          requestId.current++;
-          visualizerRef.current?.destroy();
-          visualizerRef.current = null;
-          setView(null);
-          setDraft(null);
-          setEditor(null);
-          setLatest(null);
-          pending.current = null;
-          publicationPending.current = null;
+          clearPrivate();
         } else {
           setView((current) =>
             current?.config
@@ -590,11 +605,15 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     });
   }
   async function create() {
+    const epoch = requestId.current;
+    observationId.current++;
     setBusy(true);
     try {
       await send({ method: 'POST', body: { action: 'create' }, key: crypto.randomUUID() });
+      if (epoch !== requestId.current) return;
       await load();
     } catch (error) {
+      if (epoch !== requestId.current || authorizationDenied(error)) return;
       setStatus(error instanceof Error ? error.message : 'Create failed');
     } finally {
       setBusy(false);
@@ -615,11 +634,14 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
             },
             key: crypto.randomUUID(),
           };
+    const epoch = requestId.current;
+    observationId.current++;
     pending.current = request;
     setSaveState('saving');
     setBusy(true);
     try {
       const response = await send(request);
+      if (epoch !== requestId.current) return;
       if (
         response.kind !== 'saved' ||
         typeof response.draftVersion !== 'string' ||
@@ -647,6 +669,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       pending.current = null;
       try {
         const refreshed = await authenticatedJson<ConfigView>(endpoint(productId));
+        if (epoch !== requestId.current) return;
         const config = refreshed.config;
         if (
           refreshed.product.id !== view.product.id ||
@@ -660,10 +683,12 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         )
           throw new Error('Publication eligibility does not match the saved draft');
         setView(refreshed);
-      } catch {
+      } catch (error) {
+        if (epoch !== requestId.current || authorizationDenied(error)) return;
         setStatus('Draft saved. Publication eligibility could not be verified. Reload before publishing.');
       }
     } catch (error) {
+      if (epoch !== requestId.current || authorizationDenied(error)) return;
       const status = (error as { status?: number })?.status;
       if (status && status >= 400 && status < 500 && status !== 409) {
         const issues = (error as { validationIssues?: { path: string; message: string }[] }).validationIssues;
@@ -674,7 +699,29 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         return;
       }
       const body = request.body as { draftVersion: string; draft: MerchantDraft };
-      const result = await authenticatedJson<ConfigView>(endpoint(productId)).catch(() => null);
+      const result = await authenticatedJson<ConfigView>(endpoint(productId)).catch((readError) => {
+        if (epoch === requestId.current) authorizationDenied(readError);
+        return null;
+      });
+      if (epoch !== requestId.current) return;
+      if (
+        result &&
+        (result.product.id !== view.product.id ||
+          result.config?.configId !== view.config.configId ||
+          result.config.installationGeneration !== view.config.installationGeneration)
+      ) {
+        authorizationDenied(
+          Object.assign(new Error('Save context changed. Reload before continuing.'), { status: 403 }),
+        );
+        return;
+      }
+      if (status === 409) {
+        pending.current = null;
+        setLatest(result?.config ?? null);
+        setSaveState('conflict');
+        setStatus('Another editor changed this draft. Review the latest version.');
+        return;
+      }
       if (
         result?.product.id === view.product.id &&
         result?.config &&
@@ -707,8 +754,17 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     const view = viewRef.current;
     if (!productId || !view?.config) throw new Error('Publication context unavailable');
     const epoch = requestId.current;
-    const data = await authenticatedJson<ConfigView>(endpoint(productId));
-    if (epoch !== requestId.current) return;
+    const observation = ++observationId.current;
+    let data: ConfigView;
+    try {
+      data = await authenticatedJson<ConfigView>(endpoint(productId));
+    } catch (error) {
+      if (epoch !== requestId.current) return;
+      const status = (error as { status?: number })?.status;
+      if (observation !== observationId.current && status !== 401 && status !== 403) return;
+      throw error;
+    }
+    if (epoch !== requestId.current || observation !== observationId.current) return;
     const config = data.config;
     if (
       data.product.id !== view.product.id ||
@@ -761,6 +817,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
             ? view.config.publication.requestKey
             : `m5pub_${view.config.configId}_${view.config.installationGeneration}_${sourceVersion}`,
       } satisfies PendingRequest);
+    const epoch = requestId.current;
+    observationId.current++;
     publicationPending.current = request;
     writePublicationRequest(productId, request);
     setBusy(true);
@@ -768,15 +826,19 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       let phase = '';
       for (let attempt = 0; attempt < 3; attempt++) {
         const result = await send(request);
+        if (epoch !== requestId.current) return;
         phase = String(result.state ?? '');
         if (!['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(phase)) break;
       }
       await refreshPublication();
+      if (epoch !== requestId.current) return;
       if (['PUBLISH_REQUESTED', 'REMOTE_PENDING'].includes(phase))
         setStatus('Publication is pending. Continue the same request when ready.');
       else setStatus('Publication state refreshed.');
     } catch (error) {
-      await refreshPublication().catch(() => {});
+      if (epoch !== requestId.current || authorizationDenied(error)) return;
+      await refreshPublication().catch((refreshError) => authorizationDenied(refreshError));
+      if (epoch !== requestId.current) return;
       setStatus(
         error instanceof Error
           ? `${error.message}. Continue the same publication request after checking its current state.`
@@ -792,6 +854,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       setStatus('Enter a Shopify product number.');
       return;
     }
+    const epoch = requestId.current;
+    observationId.current++;
     setBusy(true);
     try {
       await send({
@@ -799,8 +863,10 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         body: { action: 'copy', targetProductId: `gid://shopify/Product/${target}` },
         key: crypto.randomUUID(),
       });
+      if (epoch !== requestId.current) return;
       window.location.assign(`/admin/products/${target}/config`);
     } catch (error) {
+      if (epoch !== requestId.current || authorizationDenied(error)) return;
       setStatus(error instanceof Error ? error.message : 'Copy failed');
     } finally {
       setBusy(false);

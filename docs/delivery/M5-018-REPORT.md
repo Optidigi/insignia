@@ -32,3 +32,16 @@ Source/build stay frozen during bounded qualification; documentation/evidence in
 ## Checks and matrix
 
 Final executed-check receipts, G7 criterion matrix, bounded live results, reviews and final-head CI will replace this IN_PROGRESS disposition before principal handoff. No complete G7/M5 exit is claimed here.
+
+## Precredential review correction
+
+The original fresh [Spec](evidence/m5-018/precredential-spec-r1.md) and [Standards/security](evidence/m5-018/precredential-security-r1.md) verdicts at candidate9c2262 were CHANGES_REQUESTED. Their original reports and actual same-session model/effort/read-only settings are preserved. Four concrete findings were independently reproduced and corrected:
+
+- An exact-key ACTIVE reentry detected policy drift but returned ACTIVE. The handler now honors the reconciliation result. The existing progress diagnostic stores a versioned admin reconciliation hold; future GET/reentry exposes OPERATOR_HOLD and new requests are rejected before intent creation. Historical terminal phase, immutable activation evidence and effective pointer remain unchanged. No availability adapter, hold semantics, migration or sealed JSONB is modified.
+- Passive authorization denial followed by delayed save restored the private product header. Authorization epochs now fence every save success/recovery/follow-up read and other asynchronous commands. Denial clears private state and renderer. The original price-control-only probe passed despite the header leak; the sharpened header assertion reproduces the exact defect.
+- An explicit stale-save409 with independently identical content was accepted as interrupted-response recovery.409 stays conflict with explicit latest-draft review; content recovery applies only to ambiguous results. Two tabs now cover equal and unequal edits with independent command keys.
+- A delayed pre-command ACTIVE poll replaced a newer pending publication and erased its retained request. Ordered observation epochs fence obsolete successes/readiness failures; authorization rejection still invalidates in-flight private commands. A production-bundle reordered-response test locks this behavior.
+
+[Regression receipts](evidence/m5-018/review-regression-log-bindings.json) bind original neutral logs to whitespace-rendered committed logs. The first attempted active-phase→operator-hold correction was rejected by the unchanged terminal SQL fence; the final correction uses diagnostic state and preserves that fence. All four browser regressions and both HTTP/v3 lifecycle controls passed before broad requalification.
+
+M0-007 previously did not naturally trigger for admin/database changes (10/10 applicable initial workflows passed). Its existing checks are unchanged; PR/push path filters now also include `apps/web/**` and `packages/database/**`, making the required eleven-workflow M5 admin/activation gate run naturally. No dispatch, rerun, protection change or historical receipt edit is used.
