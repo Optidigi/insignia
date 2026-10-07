@@ -1,0 +1,6 @@
+{
+  "exit": 1,
+  "expectedFailure": "gate frozen assertion before any Git/Node/CLI subprocess or reservation",
+  "creationReservationPresent": false,
+  "operatorProviderDispatches": 0
+}
