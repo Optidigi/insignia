@@ -1,0 +1,37 @@
+{
+  "classification": "EXACT_ONE_INACTIVE_VERSION_CREATED",
+  "sourceHead": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+  "sourceTree": "cf9c7bb08efcd389ec7dd668c386c27072322a67",
+  "gateSha256": "409492912d1dda13f3787b3322679e11504a0745d96a9a520b3768b64ea47f8b",
+  "gateLocalValidation": "PASS BEFORE RESERVATION/DISPATCH",
+  "creationReservation": {
+    "sourceHead": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+    "gateSha256": "409492912d1dda13f3787b3322679e11504a0745d96a9a520b3768b64ea47f8b",
+    "attempt": 1,
+    "ceiling": 1,
+    "noBuild": true,
+    "noRelease": true,
+    "versionTag": "m5-019-a9717e1265ef"
+  },
+  "dispatchResult": {
+    "dispatches": 1,
+    "exit": 0,
+    "outcome": "CLI_COMPLETED_READBACK_REQUIRED"
+  },
+  "versionId": "1158837927937",
+  "versionTag": "m5-019-a9717e1265ef",
+  "status": "inactive",
+  "activeVersionId": "1153019904001",
+  "activeVersionTag": "insignia-3",
+  "activeUrl": "https://example.com",
+  "releases": 0,
+  "sourceBuildHashesUnchanged": 621,
+  "uploadedInputsUnchanged": 7,
+  "nativeVersionConfigEquality": "PASS visible public fields and both exact UIDs",
+  "requiredScopesAndRedirects": "Exact frozen CLI upload manifest empty scopes/redirect allowlist; native page omits empty rows",
+  "moduleByteEquality": "PASS strict base64-decoded bundle Wasm and exact input queries",
+  "providerChecksumLimit": "No independent server-byte attestation exposed by supported version page",
+  "sourceChangesAfterGate": "Docs/evidence integration only; production/build/config/operator immutable",
+  "readbackInitialControlFailure": "Encoded text initially compared as raw binary; corrected strict decoding. Input path correction remained local read-only. No provider retry.",
+  "providerPhase": "CLOSED; no further provider access"
+}

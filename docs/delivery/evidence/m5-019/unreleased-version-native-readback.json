@@ -1,0 +1,6 @@
+{
+  "moduleLinks": [],
+  "path": "/dashboard/200969036/apps/429028933633/versions/1158837927937",
+  "text": "/\nInsignia\n/\nVersions\n/\nm5-019-a9717e1265ef\nRelease\nApp details\nname\nInsignia\napplication_url\nhttps://insignia.optidigi.nl/admin/products\nembedded\ntrue\nAccess scopes\noptional_scopes\nwrite_products,read_publications,read_product_listings\nuse_legacy_install_flow\nfalse\nWebhooks\napi_version\n2026-07\nFunctions\n2\nhandle\ninsignia-experimental-v2-transform\nuid\nc56038d4-146a-405e-b47d-a055249eeeb3\nhandle\ninsignia-experimental-v2-validation\nuid\n552059da-2dc1-47f8-8fc0-14a5ccb6f665",
+  "title": "m5-019-a9717e1265ef · Insignia · Dev Dashboard"
+}
