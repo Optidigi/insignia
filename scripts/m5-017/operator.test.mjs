@@ -6,9 +6,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { IDENTITY, productionDocuments, TARGET } from './documents.mjs';
-import { createOperator, LIMITS } from './operator.mjs';
+import { createGuardedOperator } from './guard.mjs';
+import { createOperator, LIMITS, Stop } from './operator.mjs';
 import { provider } from './provider.fixture.mjs';
-import { qualify, ROOT, runSynthetic } from './qualification.mjs';
+import { ROOT, runSynthetic } from './qualification.mjs';
 
 function directory() {
   return mkdtempSync(join(tmpdir(), 'insignia-m5-017-'));
@@ -166,6 +167,7 @@ test('fresh register cannot be started twice even without provider access', () =
       phase: 'start',
       synthetic: true,
       fetchImpl: fake.fetchImpl,
+      monotonicNow: () => performance.now(),
       assertCurrent: () => {},
     };
   try {
@@ -198,6 +200,7 @@ test('global GraphQL ceiling and closed register reject before another injected 
     phase: 'start',
     synthetic: true,
     fetchImpl: fake.fetchImpl,
+    monotonicNow: () => performance.now(),
     assertCurrent: () => {},
   });
   try {
@@ -229,3 +232,214 @@ test('global GraphQL ceiling and closed register reject before another injected 
     rmSync(path, { recursive: true, force: true });
   }
 });
+
+for (const fault of [
+  'freshness-at-dispatch',
+  'transport-expiry',
+  'elapsed-freshness',
+  'backward-clock',
+  'slow-identity',
+  'source-gate-denial',
+]) {
+  test(`guarded dispatch denies ${fault} without a native create and preserves known unsent accounting`, async () => {
+    const path = directory(),
+      originalNow = Date.now,
+      base = originalNow();
+    let wall = base,
+      elapsed = 0;
+    Date.now = () => wall;
+    const fake = provider();
+    try {
+      const result = await runSynthetic({
+        directory: path,
+        phase: 'start',
+        fetchImpl: async (url, init) => {
+          const response = await fake.fetchImpl(url, init);
+          if (fault === 'slow-identity' && JSON.parse(init.body).query === IDENTITY) {
+            wall += 35000;
+            elapsed += 35000;
+          }
+          return response;
+        },
+        credentialLoader: () => ({ secret: 'synthetic-secret' }),
+        monotonicNow: () => elapsed,
+        assertCurrent: () => {
+          let state;
+          try {
+            state = JSON.parse(readFileSync(join(path, 'register.json')));
+          } catch {
+            return;
+          }
+          const e = state.events.at(-1);
+          if (e?.operation === 'identity' && e.settlement === 'SETTLED' && !state.fixture) {
+            if (fault === 'elapsed-freshness') {
+              elapsed = 35000;
+              wall = base + 20000;
+            }
+            if (fault === 'backward-clock') wall = base - 1000;
+          }
+          if (e?.operation === 'create' && e.invoked) {
+            if (fault === 'freshness-at-dispatch') {
+              wall = base + 30050;
+              elapsed = 30050;
+            }
+            if (fault === 'transport-expiry') {
+              wall = base + 8050;
+              elapsed = 8050;
+            }
+            if (fault === 'source-gate-denial') throw new Stop('source_binding');
+          }
+        },
+      });
+      const state = JSON.parse(readFileSync(join(path, 'register.json')));
+      assert.equal(fake.calls.filter((c) => c.body.query?.includes('productCreate(')).length, 0);
+      assert.equal(result.outcome, 'STOPPED');
+      assert.equal(state.events.filter((e) => e.mutation && e.settlement === 'UNKNOWN').length, 0);
+      assert.equal(result.transportAccounting.matches, true);
+      assert.equal(result.transportAccounting.dispatched, fake.calls.length);
+      assert.equal(
+        result.transportAccounting.reserved,
+        result.transportAccounting.dispatched + result.transportAccounting.denied,
+      );
+      if (['freshness-at-dispatch', 'transport-expiry', 'source-gate-denial'].includes(fault)) {
+        assert.equal(state.events.find((e) => e.operation === 'create').settlement, 'NOT_DISPATCHED');
+        assert.equal(result.transportAccounting.denied, 1);
+      }
+    } finally {
+      Date.now = originalNow;
+      rmSync(path, { recursive: true, force: true });
+    }
+  });
+}
+
+for (const variant of ['freshness', 'operation-deadline']) {
+  test(`final transport fence rejects ${variant} crossing 29950 to 30050ms independently of the eight-second request timer`, async () => {
+    const path = directory(),
+      originalNow = Date.now,
+      base = originalNow();
+    let wall = base,
+      elapsed = 0,
+      crossing = false;
+    Date.now = () => wall;
+    const fake = provider();
+    let op;
+    try {
+      op = createGuardedOperator({
+        directory: path,
+        phase: 'start',
+        synthetic: true,
+        binding: { synthetic: true },
+        documents: productionDocuments(ROOT),
+        fetchImpl: fake.fetchImpl,
+        monotonicNow: () => elapsed,
+        assertCurrent: () => {
+          const pending = op?.state();
+          const e = pending?.events.at(-1);
+          if (
+            crossing &&
+            e?.invoked &&
+            pending.pending === e.index &&
+            e.operation === (variant === 'freshness' ? 'create' : 'before-read')
+          ) {
+            wall = base + 30050;
+            elapsed = 30050;
+          }
+        },
+      });
+      const auth = await (
+        await op.fetch(`https://${TARGET.domain}/admin/oauth/access_token`, {
+          method: 'POST',
+          body: JSON.stringify({
+            client_id: TARGET.client,
+            client_secret: 'synthetic-secret',
+            grant_type: 'client_credentials',
+          }),
+        })
+      ).json();
+      op.setToken({ accessToken: auth.access_token, expiresAt: wall + auth.expires_in * 1000 });
+      const request = (query, variables = {}) =>
+        op.fetch(`https://${TARGET.domain}/admin/api/2026-07/graphql.json`, {
+          method: 'POST',
+          headers: { 'x-shopify-access-token': auth.access_token },
+          body: JSON.stringify({ query, variables }),
+        });
+      await request(IDENTITY);
+      op.mode('create');
+      if (variant === 'freshness') {
+        wall = base + 29950;
+        elapsed = 29950;
+        crossing = true;
+        const marker = op.state().marker;
+        await assert.rejects(
+          request((await import('./documents.mjs')).CREATE, {
+            product: { title: marker, handle: marker, tags: [marker], status: 'DRAFT' },
+          }),
+          /stale_identity/,
+        );
+        assert.equal(fake.calls.filter((c) => c.body.query?.includes('productCreate(')).length, 0);
+      } else {
+        const marker = op.state().marker;
+        await request((await import('./documents.mjs')).CREATE, {
+          product: { title: marker, handle: marker, tags: [marker], status: 'DRAFT' },
+        });
+        op.mode('before');
+        wall = base + 29950;
+        elapsed = 29950;
+        await request((await import('./documents.mjs')).OWNED, { id: op.state().fixture.id });
+        crossing = true;
+        await assert.rejects(
+          request(productionDocuments(ROOT).read, { productId: op.state().fixture.id }),
+          /operation_deadline/,
+        );
+        assert.equal(fake.calls.filter((c) => c.body.query?.startsWith('query InsigniaAvailabilityV3')).length, 0);
+      }
+      const state = op.state();
+      assert.equal(state.events.at(-1).settlement, variant === 'freshness' ? 'NOT_DISPATCHED' : 'FAILED');
+      assert.equal(op.transportAudit().denied, 1);
+      assert.equal(op.transportAudit().matches, true);
+      await assert.rejects(request(IDENTITY), /closed_or_poisoned/);
+    } finally {
+      Date.now = originalNow;
+      rmSync(path, { recursive: true, force: true });
+    }
+  });
+}
+for (const variant of ['malformed-product', 'http-error']) {
+  test(`reported identity drift with ${variant} stops before cleanup without renewing old ownership`, async () => {
+    const fake = provider({
+      snapshot: (d) => {
+        d.shop.id = 'gid://shopify/Shop/999';
+        d.node = null;
+      },
+    });
+    const path = directory();
+    try {
+      const result = await runSynthetic({
+        directory: path,
+        phase: 'start',
+        credentialLoader: () => ({ secret: 'synthetic-secret' }),
+        fetchImpl: async (url, init) => {
+          const response = await fake.fetchImpl(url, init);
+          if (variant === 'http-error' && JSON.parse(init.body).query?.startsWith('query InsigniaAvailabilityV3'))
+            return new Response(
+              JSON.stringify({
+                data: await response.json().then((r) => r.data),
+                errors: [{ message: 'synthetic denied' }],
+              }),
+              { status: 500 },
+            );
+          return response;
+        },
+      });
+      const state = JSON.parse(readFileSync(join(path, 'register.json')));
+      assert.equal(result.outcome, 'STOPPED');
+      assert.equal(state.counts.directUpdate, 0);
+      assert.equal(state.poisoned, true);
+      const badRead = fake.calls.findIndex((c) => c.body.query?.startsWith('query InsigniaAvailabilityV3'));
+      assert.equal(fake.calls.length, badRead + 1, 'identity contradiction permits no subsequent provider request');
+      assert.equal(result.cleanup.outcome, 'NOT_AUTHORIZED_UNSETTLED_OR_NO_FIXTURE');
+    } finally {
+      rmSync(path, { recursive: true, force: true });
+    }
+  });
+}

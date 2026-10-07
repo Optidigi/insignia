@@ -1,0 +1,43 @@
+{
+  "source": "12c422b5fdba75e92c70df7735b03a3a8ef65469",
+  "tree": "f708e3d00b0f709d2df19584ea5b9f85fb6d641e",
+  "base": "4bba14fb4415815557ffa5f1e600427a62128489",
+  "checks": [
+    {
+      "command": "PATH=/home/serveradmin/.cargo/bin:$PATH corepack pnpm check",
+      "exitCode": 0,
+      "log": "root-check-exact-source.log"
+    },
+    {
+      "command": "DATABASE_URL=<isolated pg18 m5_017_r4> corepack pnpm check:database",
+      "exitCode": 0,
+      "tests": 164,
+      "log": "pg18-full-exact-source.log"
+    },
+    {
+      "command": "DATABASE_URL=<isolated pg18 m5_017_r4> M5_QUERY_PLAN_OUTPUT=<neutral>/query-plan-exact-source.json corepack pnpm test:m5-query-plan",
+      "exitCode": 0,
+      "log": "query-plan-exact-source.log"
+    },
+    {
+      "command": "isolated empty dbmate up / rollback / up",
+      "exitCode": 0,
+      "logs": [
+        "pg18-empty-up.log",
+        "pg18-empty-down.log",
+        "pg18-empty-reup.log"
+      ]
+    }
+  ],
+  "unresolved": [
+    {
+      "check": "M3-002 exact-head CI",
+      "run": 37606961242,
+      "result": "failure",
+      "localReproduction": "web-v3-integration-red.log",
+      "reason": "two new-activation web fixtures still inject v2 snapshots; correction pending fresh candidate"
+    }
+  ],
+  "live": "NOT_RUN",
+  "canonicalRunExists": false
+}

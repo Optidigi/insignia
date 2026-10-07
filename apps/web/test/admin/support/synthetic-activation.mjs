@@ -70,9 +70,10 @@ export function createSyntheticActivation({ core, appId, remote, shopId, shopify
     scope: availabilityScope,
     productId,
     state: 'available',
-    version: 'm5-product-availability-snapshot-v2',
+    version: 'm5-product-availability-snapshot-v3',
     providerUpdatedAt: '2026-10-01T11:00:00.000Z',
-    configuredIntent: { includedPublicationIds: [], publicationSettings: [], scheduled: [] },
+    effectiveAnchors: [],
+    visibleScheduledOrStaged: [],
     effectiveVisibility: {
       publishedPublicationIds: [],
       onlineStore: { publishedAtPresent: false, urlPresent: false },
@@ -80,7 +81,7 @@ export function createSyntheticActivation({ core, appId, remote, shopId, shopify
       publishedAt: null,
       onlineStoreUrl: null,
     },
-    intentDigest: activationDigest({ includedPublicationIds: [], publicationSettings: [], scheduled: [] }),
+    anchorDigest: activationDigest([]),
     effectiveDigest: activationDigest({
       publishedPublicationIds: [],
       onlineStore: { publishedAtPresent: false, urlPresent: false },
@@ -99,7 +100,19 @@ export function createSyntheticActivation({ core, appId, remote, shopId, shopify
       assert.deepEqual(hold.before, current);
       assert.equal(hold.held, null);
       current = { ...current, state: 'unavailable', providerUpdatedAt: '2026-10-01T11:01:00.000Z' };
-      return { kind: 'HELD', hold: { ...hold, held: structuredClone(current) }, current: structuredClone(current) };
+      const {
+        effectiveAnchors: _anchors,
+        visibleScheduledOrStaged: _schedules,
+        anchorDigest: _anchorDigest,
+        effectiveDigest: _effectiveDigest,
+        ...facts
+      } = current;
+      const acknowledgement = { ...facts, version: 'm5-availability-mutation-ack-v3' };
+      return {
+        kind: 'HELD',
+        hold: { ...hold, held: structuredClone(current), acquisitionAcknowledgement: acknowledgement },
+        current: structuredClone(current),
+      };
     },
     async observe(supplied, hold) {
       assert.deepEqual(supplied, availabilityScope);

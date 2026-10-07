@@ -90,6 +90,9 @@ CREATE FUNCTION m5_v3_ack(candidate jsonb, original jsonb, state text) RETURNS b
  SELECT coalesce(candidate->>'version'='m5-availability-mutation-ack-v3' AND m5_v3_facts(candidate)
   AND candidate->'scope'=original->'scope' AND candidate->>'productId'=original->>'productId' AND candidate->>'state'=state,false)
 $$;
+CREATE FUNCTION m5_v3_ack_qualified(candidate jsonb) RETURNS boolean LANGUAGE sql IMMUTABLE PARALLEL SAFE AS $$
+ SELECT coalesce(m5_v3_facts(candidate) AND NOT EXISTS(SELECT FROM jsonb_array_elements(candidate#>'{effectiveVisibility,publicationEvidence}') p WHERE p->'isPublished'='false'::jsonb OR p->>'publishDate'>candidate->>'observedAt'),false)
+$$;
 CREATE FUNCTION m5_v3_mismatch(candidate jsonb, original jsonb) RETURNS jsonb LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE AS $$
 DECLARE result jsonb:='[]'; BEGIN
  IF candidate#>'{effectiveVisibility,publishedPublicationIds}' IS DISTINCT FROM original#>'{effectiveVisibility,publishedPublicationIds}' THEN result:=result||jsonb_build_array('effective_publication_ids'); END IF;
@@ -101,15 +104,15 @@ END $$;
 CREATE FUNCTION m5_v3_hold(candidate jsonb) RETURNS boolean LANGUAGE plpgsql IMMUTABLE PARALLEL SAFE AS $$
 DECLARE original jsonb:=candidate->'before'; receipt jsonb:=candidate->'restorationReceipt'; compensation jsonb:=receipt->'compensation'; claim jsonb:=candidate->'restorationClaim'; BEGIN
  IF NOT coalesce(m5_v3_keys(candidate,ARRAY['version','operationId','before','held'],ARRAY['acquisitionAcknowledgement','restorationClaim','restorationReceipt']) AND candidate->>'version'='m5-availability-hold-v3' AND (candidate->>'operationId') ~ '^[A-Za-z0-9_-]{1,128}$' AND m5_v3_snapshot(original) AND (candidate->'held'='null'::jsonb OR m5_v3_held(candidate->'held',original)),false) THEN RETURN false; END IF;
- IF candidate->'held'<>'null'::jsonb AND original->>'state'<>'unavailable' AND NOT candidate ? 'acquisitionAcknowledgement' THEN RETURN false; END IF;
+ IF candidate->'held'<>'null'::jsonb AND original->>'state'<>'unavailable' AND NOT coalesce(candidate ? 'acquisitionAcknowledgement' AND m5_v3_ack_qualified(candidate->'acquisitionAcknowledgement'),false) THEN RETURN false; END IF;
  IF candidate ? 'acquisitionAcknowledgement' AND NOT m5_v3_ack(candidate->'acquisitionAcknowledgement',original,'unavailable') THEN RETURN false; END IF;
  IF candidate ? 'restorationClaim' AND NOT coalesce(m5_v3_keys(claim,ARRAY['version','operationId','scope','productId','restoreReserved','compensationReserved']) AND claim->>'version'='m5-availability-restoration-claim-v3' AND claim->>'operationId'=candidate->>'operationId' AND claim->'scope'=original->'scope' AND claim->>'productId'=original->>'productId' AND claim->'restoreReserved'='true'::jsonb AND claim->'compensationReserved'='true'::jsonb,false) THEN RETURN false; END IF;
  IF candidate ? 'restorationReceipt' THEN
   IF NOT coalesce(m5_v3_keys(receipt,ARRAY['version','kind','acknowledgement','current'],ARRAY['compensation']) AND candidate ? 'restorationClaim' AND receipt->>'version'='m5-availability-restoration-receipt-v3' AND receipt->>'kind' IN ('RESTORED','NOT_DISPATCHED','RESTORATION_PENDING','CONFLICT','REHELD_CONFLICT') AND (receipt->'acknowledgement'='null'::jsonb OR m5_v3_ack(receipt->'acknowledgement',original,original->>'state')) AND (receipt->'current'='null'::jsonb OR (m5_v3_snapshot(receipt->'current') AND receipt#>'{current,scope}'=original->'scope' AND receipt#>>'{current,productId}'=original->>'productId')),false) THEN RETURN false; END IF;
-  IF receipt->>'kind'='RESTORED' AND NOT coalesce(m5_v3_same(receipt->'current',original,original->'scope') AND (original->>'state'='unavailable' OR m5_v3_ack(receipt->'acknowledgement',original,original->>'state')),false) THEN RETURN false; END IF;
+  IF receipt->>'kind'='RESTORED' AND NOT coalesce(m5_v3_same(receipt->'current',original,original->'scope') AND (original->>'state'='unavailable' OR (m5_v3_ack(receipt->'acknowledgement',original,original->>'state') AND m5_v3_ack_qualified(receipt->'acknowledgement'))),false) THEN RETURN false; END IF;
   IF receipt ? 'compensation' THEN
    IF NOT coalesce(m5_v3_keys(compensation,ARRAY['version','restoreAcknowledgement','restored','mismatch','acknowledgement','current']) AND compensation->>'version'='m5-availability-compensation-receipt-v3' AND compensation->'restoreAcknowledgement'=receipt->'acknowledgement' AND m5_v3_ack(compensation->'restoreAcknowledgement',original,original->>'state') AND m5_v3_snapshot(compensation->'restored') AND compensation#>'{restored,scope}'=original->'scope' AND compensation#>>'{restored,productId}'=original->>'productId' AND compensation#>>'{restored,state}'=original->>'state' AND compensation#>>'{restored,state}' IN ('available','unlisted') AND jsonb_typeof(compensation->'mismatch')='array' AND jsonb_array_length(compensation->'mismatch') BETWEEN 1 AND 4 AND compensation->'mismatch'=m5_v3_mismatch(compensation->'restored',original) AND (compensation->'acknowledgement'='null'::jsonb OR m5_v3_ack(compensation->'acknowledgement',original,'unavailable')) AND compensation->'current'=receipt->'current',false) THEN RETURN false; END IF;
-   IF receipt->>'kind'='REHELD_CONFLICT' AND NOT coalesce(m5_v3_ack(compensation->'acknowledgement',original,'unavailable') AND m5_v3_held(compensation->'current',original),false) THEN RETURN false; END IF;
+   IF receipt->>'kind'='REHELD_CONFLICT' AND NOT coalesce(m5_v3_ack(compensation->'acknowledgement',original,'unavailable') AND m5_v3_ack_qualified(compensation->'acknowledgement') AND m5_v3_held(compensation->'current',original),false) THEN RETURN false; END IF;
   ELSIF receipt->>'kind'='REHELD_CONFLICT' THEN RETURN false;
   END IF;
  END IF;
@@ -404,6 +407,7 @@ ALTER TABLE m5_availability_resolutions ADD CONSTRAINT m5_014_resolution_version
     AND (resolution#>>'{reviewedObservation,effectiveDigest}') IS NOT DISTINCT FROM (resolution#>>'{observed,effectiveDigest}')),false));
 DROP FUNCTION m5_v3_hold(jsonb);
 DROP FUNCTION m5_v3_mismatch(jsonb,jsonb);
+DROP FUNCTION m5_v3_ack_qualified(jsonb);
 DROP FUNCTION m5_v3_ack(jsonb,jsonb,text);
 DROP FUNCTION m5_v3_held(jsonb,jsonb);
 DROP FUNCTION m5_v3_same(jsonb,jsonb,jsonb);

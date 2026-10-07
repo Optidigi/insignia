@@ -794,6 +794,48 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
         },
       },
     });
+    const v3 = record?.state.hold;
+    if (v3?.version !== 'm5-availability-hold-v3' || !v3.restorationReceipt?.compensation?.acknowledgement)
+      throw new Error('expected complete compensation audit');
+    const receipt = v3.restorationReceipt,
+      compensation = receipt.compensation!,
+      ack = compensation.acknowledgement!;
+    const scheduled = {
+      ...v3,
+      restorationReceipt: {
+        ...receipt,
+        compensation: {
+          ...compensation,
+          acknowledgement: {
+            ...ack,
+            effectiveVisibility: {
+              ...ack.effectiveVisibility,
+              publicationEvidence: [
+                ...ack.effectiveVisibility.publicationEvidence,
+                {
+                  publicationId: 'gid://shopify/Publication/999',
+                  isPublished: false,
+                  publishDate: '2099-01-01T00:00:00.000Z',
+                },
+              ],
+            },
+          },
+        },
+      },
+    };
+    const admits = async (hold: unknown) =>
+      (
+        await sql<{ admitted: boolean }>`SELECT m5_v3_hold(${JSON.stringify(hold)}::jsonb) AS admitted`.execute(
+          database,
+        )
+      ).rows[0]!.admitted;
+    expect(await admits(scheduled)).toBe(false);
+    expect(
+      await admits({
+        ...scheduled,
+        restorationReceipt: { ...scheduled.restorationReceipt, kind: 'RESTORATION_PENDING' },
+      }),
+    ).toBe(true);
     expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE', 'DRAFT']);
     expect((await f.freshProviderRestart().advance(f.identity)).kind).toBe('OPERATOR_HOLD');
     expect(f.providerWrites).toEqual(['DRAFT', 'ACTIVE', 'DRAFT']);
@@ -1356,6 +1398,52 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       if (transition === 'optional-to-required') await publishMode('required');
     },
   );
+  it('SQL rejects schedule-only ACK success while retaining settled conflict audits', async () => {
+    const f = await fixture();
+    await f.prepareHold();
+    const held = (await f.restart().read(f.identity))?.state.hold;
+    if (!held || held.version !== 'm5-availability-hold-v3' || !held.acquisitionAcknowledgement)
+      throw new Error('expected held v3');
+    const scheduled = (ack: NonNullable<typeof held.acquisitionAcknowledgement>) => ({
+      ...ack,
+      effectiveVisibility: {
+        ...ack.effectiveVisibility,
+        publicationEvidence: [
+          ...ack.effectiveVisibility.publicationEvidence,
+          {
+            publicationId: 'gid://shopify/Publication/999',
+            isPublished: false,
+            publishDate: '2099-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+    });
+    const admits = async (hold: unknown) =>
+      (
+        await sql<{ admitted: boolean }>`SELECT m5_v3_hold(${JSON.stringify(hold)}::jsonb) AS admitted`.execute(
+          database,
+        )
+      ).rows[0]!.admitted;
+    expect(await admits(held)).toBe(true);
+    expect(await admits({ ...held, acquisitionAcknowledgement: scheduled(held.acquisitionAcknowledgement) })).toBe(
+      false,
+    );
+    expect(
+      await admits({ ...held, held: null, acquisitionAcknowledgement: scheduled(held.acquisitionAcknowledgement) }),
+    ).toBe(true);
+    await f.publish();
+    await f.restart().advance(f.identity);
+    await f.restart().advance(f.identity);
+    const restored = (await f.restart().read(f.identity))?.state.hold;
+    if (!restored || restored.version !== 'm5-availability-hold-v3' || !restored.restorationReceipt?.acknowledgement)
+      throw new Error('expected restored v3');
+    const receipt = {
+      ...restored.restorationReceipt,
+      acknowledgement: scheduled(restored.restorationReceipt.acknowledgement),
+    };
+    expect(await admits({ ...restored, restorationReceipt: receipt })).toBe(false);
+    expect(await admits({ ...restored, restorationReceipt: { ...receipt, kind: 'CONFLICT' } })).toBe(true);
+  });
   it('a failure after evidence insert rolls evidence and effective activation back atomically', async () => {
     const f = await fixture();
     await f.prepareHold();

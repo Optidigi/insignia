@@ -8,6 +8,7 @@ import { CREATE, IDENTITY, OWNED, SCOPE, STATUS, TARGET } from './documents.mjs'
 export { digest, requireValue, Stop };
 export const LIVE_DIRECTORY = '/home/serveradmin/insignia-m5-017-handoff/run';
 export const LIMITS = Object.freeze({ auth: 2, graphql: 128, create: 1, directUpdate: 2, adapterMutation: 3 });
+export const OPERATION_MS = 30000;
 const keys = (v, names) =>
   v &&
   typeof v === 'object' &&
@@ -154,6 +155,23 @@ function adapterData(data) {
       : {}),
   };
 }
+function adapterIdentity(data) {
+  requireValue(
+    data?.shop?.id === TARGET.shop && data.currentAppInstallation?.app?.apiKey === TARGET.client,
+    'identity',
+  );
+  const scopes = data.currentAppInstallation.accessScopes;
+  requireValue(
+    Array.isArray(scopes) &&
+      scopes.length <= 250 &&
+      scopes.every(
+        (g) => keys(g, ['handle']) && typeof g.handle === 'string' && /^[a-z][a-z0-9_]{0,127}$/.test(g.handle),
+      ) &&
+      new Set(scopes.map((g) => g.handle)).size === scopes.length &&
+      ['read_products', 'write_products', 'read_publications'].every((h) => scopes.some((g) => g.handle === h)),
+    'grants',
+  );
+}
 async function bytes(response, signal) {
   requireValue(response.body, 'body_missing');
   const reader = response.body.getReader();
@@ -187,7 +205,17 @@ async function bytes(response, signal) {
   requireValue(!signal.aborted, 'transport_timeout');
   return Buffer.concat(chunks, size);
 }
-export function createOperator({ directory, binding, documents, phase, synthetic = false, fetchImpl, assertCurrent }) {
+export function createOperator({
+  directory,
+  binding,
+  documents,
+  phase,
+  synthetic = false,
+  fetchImpl,
+  assertCurrent,
+  monotonicNow,
+}) {
+  requireValue(typeof monotonicNow === 'function', 'monotonic_clock');
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const info = lstatSync(directory);
   requireValue(
@@ -212,13 +240,15 @@ export function createOperator({ directory, binding, documents, phase, synthetic
       phase: 'STARTED',
       closed: false,
       counts: { auth: 0, graphql: 0, create: 0, directUpdate: 0, adapterMutation: 0 },
-      transport: { invocations: 0, mismatch: false },
+      transport: { invocations: 0, denials: 0, mismatch: false },
       calls: { acquire: 0, observe: 0, restore: 0, setup: 0, cleanup: 0, compensation: 0 },
       events: [],
       pending: null,
       fixture: null,
       identity: null,
       ownedAt: null,
+      ownedMonotonicAt: null,
+      poisoned: false,
       evidence: { outcome: 'STOPPED', cleanup: { outcome: 'NOT_ATTEMPTED' } },
     };
   } else {
@@ -251,16 +281,40 @@ export function createOperator({ directory, binding, documents, phase, synthetic
   }
   let busy = false,
     token = null,
+    tokenMonotonicExpiry = null,
+    modeDeadline = null,
     mode = 'startup';
   const save = () => saveJSON(directory, 'register.json', state);
   save();
-  const fresh = () => requireValue(state.identity && Date.now() - state.identity.at < 30000, 'stale_identity');
+  const current = () => {
+    assertCurrent();
+    requireValue(
+      !state.closed && !state.poisoned && !state.transport.mismatch && state.transport.denials === 0,
+      'closed_or_poisoned',
+    );
+  };
+  const ageIsFresh = (wallOrigin, elapsedOrigin) => {
+    const wall = Date.now(),
+      elapsed = monotonicNow();
+    return (
+      Number.isFinite(wallOrigin) &&
+      Number.isFinite(elapsedOrigin) &&
+      Number.isFinite(elapsed) &&
+      wall >= wallOrigin &&
+      wall - wallOrigin < OPERATION_MS &&
+      elapsed >= elapsedOrigin &&
+      elapsed - elapsedOrigin < OPERATION_MS
+    );
+  };
+  const fresh = () =>
+    requireValue(state.identity && ageIsFresh(state.identity.at, state.identity.monotonicAt), 'stale_identity');
   const freshOwned = () => {
     fresh();
-    requireValue(state.fixture && state.ownedAt && Date.now() - state.ownedAt < 30000, 'stale_ownership');
+    requireValue(state.fixture && ageIsFresh(state.ownedAt, state.ownedMonotonicAt), 'stale_ownership');
   };
   const allWritesSettled = () =>
     state.pending === null &&
+    !state.poisoned &&
     !state.transport.mismatch &&
     state.events
       .filter((e) => e.mutation)
@@ -269,7 +323,7 @@ export function createOperator({ directory, binding, documents, phase, synthetic
       );
   function classify(url, init, body) {
     requireValue(!busy && !state.closed && state.pending === null, 'closed_or_parallel');
-    assertCurrent();
+    current();
     requireValue(init?.method === 'POST' && typeof init.body === 'string', 'request_shape');
     if (url === `https://${TARGET.domain}/admin/oauth/access_token`) {
       requireValue(
@@ -399,6 +453,9 @@ export function createOperator({ directory, binding, documents, phase, synthetic
     throw new Stop('document_denied');
   }
   async function fetch(url, init) {
+    const observationOrigin = Date.now(),
+      observationMonotonicOrigin = monotonicNow();
+    requireValue(Number.isFinite(observationMonotonicOrigin), 'monotonic_clock');
     let body;
     try {
       body = JSON.parse(init.body);
@@ -417,6 +474,8 @@ export function createOperator({ directory, binding, documents, phase, synthetic
       phase: state.phase,
       ...r,
       startedAt: new Date().toISOString(),
+      observationOrigin,
+      observationMonotonicOrigin,
       request: r.kind === 'auth' ? { client_id: TARGET.client, grant_type: 'client_credentials' } : body,
       invoked: false,
       settlement: r.mutation ? 'UNKNOWN' : 'PENDING',
@@ -428,7 +487,7 @@ export function createOperator({ directory, binding, documents, phase, synthetic
     let underlyingSettled = true;
     const signal = AbortSignal.any([AbortSignal.timeout(8000), ...(init.signal ? [init.signal] : [])]);
     try {
-      assertCurrent();
+      current();
       requireValue(!signal.aborted, 'transport_timeout');
       const aborted = new Promise((_resolve, reject) =>
         signal.addEventListener('abort', () => reject(new Stop('transport_timeout')), { once: true }),
@@ -443,7 +502,6 @@ export function createOperator({ directory, binding, documents, phase, synthetic
           const response = await fetchImpl(url, { ...init, redirect: 'error', signal });
           event.status = response.status;
           const raw = JSON.parse((await bytes(response, signal)).toString('utf8'));
-          requireValue(response.status === 200, 'provider_status');
           return raw;
         } catch (error) {
           if (error instanceof Stop && error.kind === 'body_disposal_unsettled') event.disposalUnsettled = true;
@@ -453,8 +511,22 @@ export function createOperator({ directory, binding, documents, phase, synthetic
         }
       })();
       const raw = await Promise.race([aborted, work]);
+      const completedElapsed = monotonicNow(),
+        completedWall = Date.now();
+      if (
+        signal.aborted ||
+        !Number.isFinite(completedElapsed) ||
+        completedElapsed < observationMonotonicOrigin ||
+        completedElapsed - observationMonotonicOrigin >= 8000 ||
+        completedWall < observationOrigin ||
+        completedWall - observationOrigin >= 8000
+      ) {
+        state.poisoned = true;
+        throw new Stop('transport_timeout');
+      }
       let returned;
       if (r.kind === 'auth') {
+        requireValue(event.status === 200, 'provider_status');
         requireValue(
           typeof raw.access_token === 'string' &&
             raw.access_token.length > 0 &&
@@ -467,20 +539,44 @@ export function createOperator({ directory, binding, documents, phase, synthetic
         event.observation = { hasToken: true, expiresIn: raw.expires_in };
         returned = raw;
       } else {
+        // Reported identity is independent evidence, including a failed HTTP or
+        // GraphQL envelope and a malformed operation projection. Never reuse old
+        // ownership authority after an observed identity/grant contradiction.
+        if (!r.mutation && raw?.data && typeof raw.data === 'object' && !Array.isArray(raw.data)) {
+          try {
+            if (r.operation === 'identity' || r.operation === 'owned') identity(raw.data);
+            else if (
+              r.adapter &&
+              (event.status === 200 ||
+                Object.hasOwn(raw.data, 'shop') ||
+                Object.hasOwn(raw.data, 'currentAppInstallation'))
+            )
+              adapterIdentity(raw.data);
+          } catch (error) {
+            if (['identity', 'grants'].includes(error.kind)) {
+              state.poisoned = true;
+              event.identityContradiction = true;
+            }
+            throw error;
+          }
+        }
+        requireValue(event.status === 200, 'provider_status');
         requireValue(raw?.data && !Object.hasOwn(raw, 'errors'), 'provider_error');
         const d = raw.data;
         if (r.operation === 'identity' || r.operation === 'owned') {
           const selected = identity(d);
           state.identity = {
             grants: selected.currentAppInstallation.accessScopes.map((g) => g.handle).sort(),
-            at: Date.now(),
+            at: observationOrigin,
+            monotonicAt: observationMonotonicOrigin,
           };
           returned = { data: selected };
         }
         if (r.operation === 'owned') {
           const p = owned(d.product, state);
           state.fixture = p;
-          state.ownedAt = Date.now();
+          state.ownedAt = observationOrigin;
+          state.ownedMonotonicAt = observationMonotonicOrigin;
           returned.data.product = p;
         }
         if (r.operation === 'create' || r.kind === 'directUpdate') {
@@ -492,7 +588,8 @@ export function createOperator({ directory, binding, documents, phase, synthetic
             'mutation_state',
           );
           state.fixture = p;
-          state.ownedAt = Date.now();
+          state.ownedAt = observationOrigin;
+          state.ownedMonotonicAt = observationMonotonicOrigin;
           returned = {
             data: { [r.operation === 'create' ? 'productCreate' : 'productUpdate']: { product: p, userErrors: [] } },
           };
@@ -519,6 +616,7 @@ export function createOperator({ directory, binding, documents, phase, synthetic
     } catch (error) {
       event.failure = error instanceof Stop ? error.kind : 'transport_or_shape';
       if (!event.invoked && r.mutation) event.settlement = 'NOT_DISPATCHED';
+      if (!r.mutation) event.settlement = 'FAILED';
       event.completedAt = new Date().toISOString();
       save();
       throw new Stop(event.failure);
@@ -536,18 +634,20 @@ export function createOperator({ directory, binding, documents, phase, synthetic
     setToken(value) {
       requireValue(token === null, 'token_replacement');
       token = value;
+      tokenMonotonicExpiry = monotonicNow() + value.expiresAt - Date.now();
     },
     isCurrent(scope) {
-      assertCurrent();
+      current();
       return (
         JSON.stringify(scope) === JSON.stringify(SCOPE) &&
         state.identity &&
-        Date.now() - state.identity.at < 30000 &&
+        ageIsFresh(state.identity.at, state.identity.monotonicAt) &&
         state.pending === null
       );
     },
     mode(value) {
       mode = value;
+      modeDeadline = { wall: Date.now() + OPERATION_MS, elapsed: monotonicNow() + OPERATION_MS };
     },
     reserve(name) {
       requireValue(Object.hasOwn(state.calls, name) && state.calls[name] === 0 && !state.closed, 'call_reentry');
@@ -559,6 +659,65 @@ export function createOperator({ directory, binding, documents, phase, synthetic
       save();
     },
     allWritesSettled,
+    assertDispatch(index, signal) {
+      // Called after all synchronous gate/fsync/accounting work, immediately before
+      // the private native capability. Timer callbacks may still be blocked.
+      const event = state.events[index],
+        elapsed = monotonicNow(),
+        wall = Date.now();
+      requireValue(
+        !state.closed &&
+          !state.poisoned &&
+          !state.transport.mismatch &&
+          state.transport.denials === 0 &&
+          event?.invoked &&
+          state.pending === index,
+        'dispatch_authority',
+      );
+      requireValue(
+        !signal?.aborted &&
+          Number.isFinite(elapsed) &&
+          elapsed >= event.observationMonotonicOrigin &&
+          elapsed - event.observationMonotonicOrigin < 8000 &&
+          wall >= event.observationOrigin &&
+          wall - event.observationOrigin < 8000,
+        'transport_timeout',
+      );
+      if (event.kind !== 'auth') {
+        requireValue(
+          token && wall + OPERATION_MS < token.expiresAt && elapsed + OPERATION_MS < tokenMonotonicExpiry,
+          'credential_fence',
+        );
+        if (event.operation === 'create') fresh();
+        else if (event.operation !== 'identity' && event.operation !== 'owned') freshOwned();
+      }
+      if (event.adapter)
+        requireValue(modeDeadline && wall < modeDeadline.wall && elapsed < modeDeadline.elapsed, 'operation_deadline');
+      if (event.operation === 'setup')
+        requireValue(state.fixture.status === 'DRAFT' && state.calls.setup === 1, 'status_authority');
+      if (event.operation === 'cleanup')
+        requireValue(
+          state.calls.cleanup === 1 &&
+            state.events
+              .filter((e) => e.mutation && e.index !== index)
+              .every(
+                (e) =>
+                  e.settlement === 'ACKNOWLEDGED' &&
+                  (e.kind !== 'adapterMutation' || e.validatedAcknowledgement === true),
+              ),
+          'cleanup_authority',
+        );
+    },
+    rejectDispatch(index, kind) {
+      const event = state.events[index];
+      requireValue(event?.invoked && state.pending === index && !event.nativeDenied, 'transport_accounting_mismatch');
+      event.nativeDenied = true;
+      event.failure = kind;
+      event.settlement = event.mutation ? 'NOT_DISPATCHED' : 'FAILED';
+      state.transport.denials++;
+      state.poisoned = true;
+      save();
+    },
     close() {
       requireValue(!busy, 'busy_close');
       state.closed = true;

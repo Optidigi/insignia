@@ -7,6 +7,7 @@ import {
   type AvailabilityRestoreResultV3,
   type AvailabilityScope,
   activationDigest,
+  availabilityV3AcknowledgementQualified,
   availabilityV3HeldSafe,
   availabilityV3Qualified,
   canonicalPublicationIdsV3,
@@ -440,7 +441,11 @@ export function createShopifyAvailabilityHoldV3Port(
         hold.held.receivedAt > time())
     )
       return fail('invalid_request');
-    if (hold.held && hold.before.state !== 'unavailable' && !hold.acquisitionAcknowledgement)
+    if (
+      hold.held &&
+      hold.before.state !== 'unavailable' &&
+      !availabilityV3AcknowledgementQualified(hold.acquisitionAcknowledgement)
+    )
       return fail('invalid_request');
     const ack = hold.acquisitionAcknowledgement;
     if (
@@ -532,6 +537,7 @@ export function createShopifyAvailabilityHoldV3Port(
       quarantined = true;
       return fail('ambiguous_write');
     }
+    if (!availabilityV3AcknowledgementQualified(ack)) return { kind: 'CONFLICT', current: null, acknowledgement: ack };
     let current: ProductAvailabilitySnapshotV3;
     try {
       current = await read(scope, hold.before.productId, budget, originalAnchors(hold));
@@ -595,7 +601,11 @@ export function createShopifyAvailabilityHoldV3Port(
       throw error;
     }
     if (sameAvailabilityV3(after, hold.before) && availabilityV3Qualified(after))
-      return { kind: 'RESTORED', current: after, acknowledgement };
+      return {
+        kind: availabilityV3AcknowledgementQualified(acknowledgement) ? 'RESTORED' : 'CONFLICT',
+        current: after,
+        acknowledgement,
+      };
     // Only a settled ACK plus exact requested status authorizes conditional rehold.
     if (after.state !== hold.before.state || !['available', 'unlisted'].includes(after.state))
       return { kind: 'CONFLICT', current: after, acknowledgement };
@@ -642,7 +652,10 @@ export function createShopifyAvailabilityHoldV3Port(
     }
     receipt = { ...receipt, current: reheld };
     return {
-      kind: availabilityV3HeldSafe(reheld, hold.before) ? 'REHELD_CONFLICT' : 'RESTORATION_PENDING',
+      kind:
+        availabilityV3HeldSafe(reheld, hold.before) && availabilityV3AcknowledgementQualified(compensationAck)
+          ? 'REHELD_CONFLICT'
+          : 'RESTORATION_PENDING',
       current: reheld,
       acknowledgement,
       compensation: receipt,

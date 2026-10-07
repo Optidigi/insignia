@@ -91,7 +91,26 @@ test('acquire preserves the hidden anchor and accepts distinct ACK/readback upda
       return new Response(
         JSON.stringify({
           data: {
-            productUpdate: { product: { ...product(state), updatedAt: '2026-10-07T11:00:01Z' }, userErrors: [] },
+            productUpdate: {
+              product: {
+                ...product(state),
+                updatedAt: '2026-10-07T11:00:01Z',
+                ...((writes.length === 1 && options.ackSchedule === 'acquire') ||
+                (writes.length === 2 && options.ackSchedule === 'restore') ||
+                (writes.length === 3 && options.ackSchedule === 'compensate')
+                  ? {
+                      resourcePublications: {
+                        nodes: [
+                          ...product(state).resourcePublications.nodes,
+                          { publication: { id: other }, isPublished: false, publishDate: '2099-01-01T00:00:00Z' },
+                        ],
+                        pageInfo: complete,
+                      },
+                    }
+                  : {}),
+              },
+              userErrors: [],
+            },
           },
         }),
       );
@@ -142,6 +161,7 @@ test('acquire preserves the hidden anchor and accepts distinct ACK/readback upda
 });
 
 type Scenario = {
+  ackSchedule?: 'acquire' | 'restore' | 'compensate';
   missingAfterRestore?: boolean;
   extraAfterRestore?: boolean;
   onlineAfterRestore?: boolean;
@@ -173,7 +193,26 @@ function lifecycle(options: Scenario = {}) {
       return new Response(
         JSON.stringify({
           data: {
-            productUpdate: { product: { ...product(state), updatedAt: '2026-10-07T11:00:01Z' }, userErrors: [] },
+            productUpdate: {
+              product: {
+                ...product(state),
+                updatedAt: '2026-10-07T11:00:01Z',
+                ...((writes.length === 1 && options.ackSchedule === 'acquire') ||
+                (writes.length === 2 && options.ackSchedule === 'restore') ||
+                (writes.length === 3 && options.ackSchedule === 'compensate')
+                  ? {
+                      resourcePublications: {
+                        nodes: [
+                          ...product(state).resourcePublications.nodes,
+                          { publication: { id: other }, isPublished: false, publishDate: '2099-01-01T00:00:00Z' },
+                        ],
+                        pageInfo: complete,
+                      },
+                    }
+                  : {}),
+              },
+              userErrors: [],
+            },
           },
         }),
       );
@@ -595,4 +634,81 @@ test('quiescent wall-clock deadline expiry also denies every later provider requ
   await expect(port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'network_or_timeout' });
   await expect(port.snapshot(scope, productId)).rejects.toMatchObject({ kind: 'ambiguous_write' });
   expect(fetchImpl).not.toHaveBeenCalled();
+});
+
+for (const phase of ['acquire', 'restore'] as const) {
+  test(`ACK-only visible schedule during ${phase} blocks success while retaining the settled receipt`, async () => {
+    const f = lifecycle({ ackSchedule: phase });
+    const before = await f.port.snapshot(scope, productId);
+    if (before.version !== 'm5-product-availability-snapshot-v3') throw new Error('wrong version');
+    const acquired = await f.port.acquire(scope, {
+      version: 'm5-availability-hold-v3',
+      operationId: 'ack-schedule',
+      before,
+      held: null,
+    });
+    if (phase === 'acquire') {
+      expect(acquired.kind).toBe('CONFLICT');
+      if (acquired.kind !== 'CONFLICT') throw new Error('expected conflict');
+      expect(acquired.acknowledgement?.effectiveVisibility.publicationEvidence.some((p) => !p.isPublished)).toBe(true);
+      expect(f.writes).toEqual(['DRAFT']);
+    } else {
+      if (acquired.kind !== 'HELD' || acquired.hold.version !== 'm5-availability-hold-v3') throw new Error('not held');
+      const hold = {
+        ...acquired.hold,
+        restorationClaim: {
+          version: 'm5-availability-restoration-claim-v3' as const,
+          operationId: 'ack-schedule',
+          scope,
+          productId,
+          restoreReserved: true as const,
+          compensationReserved: true as const,
+        },
+      };
+      const restored = await f.port.restore(scope, hold, acquired.current, () => true);
+      expect(restored.kind).toBe('CONFLICT');
+      expect(restored.acknowledgement?.effectiveVisibility.publicationEvidence.some((p) => !p.isPublished)).toBe(true);
+      expect(restored.compensation).toBeUndefined();
+      expect(f.writes).toEqual(['DRAFT', 'ACTIVE']);
+    }
+  });
+}
+test('ACK-only schedule during compensation retains pending audit rather than claiming qualified rehold', async () => {
+  const f = await acquiredFixture({ missingAfterRestore: true, ackSchedule: 'compensate' });
+  const result = await f.port.restore(scope, f.hold, f.current, () => true);
+  expect(result.kind).toBe('RESTORATION_PENDING');
+  expect(
+    result.compensation?.acknowledgement?.effectiveVisibility.publicationEvidence.some((p) => !p.isPublished),
+  ).toBe(true);
+  expect(f.writes).toEqual(['DRAFT', 'ACTIVE', 'DRAFT']);
+});
+
+test('a persisted HELD record cannot adopt scheduled acquisition ACK evidence on a fresh adapter', async () => {
+  const f = await acquiredFixture();
+  const ack = f.hold.acquisitionAcknowledgement;
+  if (!ack) throw new Error('missing acquisition ACK');
+  const hold = {
+    ...f.hold,
+    acquisitionAcknowledgement: {
+      ...ack,
+      effectiveVisibility: {
+        ...ack.effectiveVisibility,
+        publicationEvidence: [
+          ...ack.effectiveVisibility.publicationEvidence,
+          {
+            publicationId: 'gid://shopify/Publication/999',
+            isPublished: false,
+            publishDate: '2099-01-01T00:00:00.000Z',
+          },
+        ],
+      },
+    },
+  };
+  const requests = f.requests.length;
+  await expect(f.fresh().observe(scope, hold)).rejects.toMatchObject({ kind: 'invalid_request' });
+  await expect(f.fresh().restore(scope, hold, f.current, () => true)).rejects.toMatchObject({
+    kind: 'invalid_request',
+  });
+  expect(f.requests).toHaveLength(requests);
+  expect(f.writes).toEqual(['DRAFT']);
 });

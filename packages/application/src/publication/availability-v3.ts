@@ -284,6 +284,14 @@ export function sameAvailabilityV3(a: ProductAvailabilitySnapshotV3, b: ProductA
   );
 }
 
+/** Structurally settled ACKs remain evidence even when scheduling prevents success. */
+export function availabilityV3AcknowledgementQualified(value: unknown): value is AvailabilityMutationAcknowledgementV3 {
+  return (
+    validAvailabilityAcknowledgementV3(value) &&
+    visibleSchedulesV3(value.effectiveVisibility, value.observedAt).length === 0
+  );
+}
+
 /** A safe status read never attributes a previously ambiguous acquisition. */
 export function availabilityV3OwnedHeld(hold: AvailabilityHoldV3): boolean {
   const ack = hold.acquisitionAcknowledgement;
@@ -291,7 +299,7 @@ export function availabilityV3OwnedHeld(hold: AvailabilityHoldV3): boolean {
     hold.held &&
       availabilityV3HeldSafe(hold.held, hold.before) &&
       (hold.before.state === 'unavailable' ||
-        (validAvailabilityAcknowledgementV3(ack) &&
+        (availabilityV3AcknowledgementQualified(ack) &&
           ack.state === 'unavailable' &&
           ack.productId === hold.before.productId &&
           activationDigest(ack.scope) === activationDigest(hold.before.scope))),

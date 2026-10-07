@@ -1,0 +1,16 @@
+{
+  "thread": "01a115e2-8ed4-79e0-bc5b-665ee35ccee3",
+  "role": "spec",
+  "launch": "Codex exec independent child review; T3 lacks enforced read-only task schema",
+  "selectedSameLaunchContext": [
+    {
+      "cwd": "/home/serveradmin/insignia-m5-017-worktree",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox_policy": {
+        "type": "read-only"
+      },
+      "approval_policy": "never"
+    }
+  ]
+}

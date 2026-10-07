@@ -29,13 +29,13 @@ import type {
 } from './availability-v3.js';
 import {
   type AvailabilityHoldV3,
+  availabilityV3AcknowledgementQualified,
   availabilityV3HeldSafe,
   availabilityV3OwnedHeld,
   availabilityV3Qualified,
   isAvailabilityV3,
   type ProductAvailabilitySnapshotV3,
   sameAvailabilityV3,
-  validAvailabilityAcknowledgementV3,
   validAvailabilityV3,
 } from './availability-v3.js';
 import type { ProductPolicyMode } from './projection.js';
@@ -578,7 +578,7 @@ export function createPublicationActivation(input: {
               isAvailabilityV3(c.state.hold.before) &&
               sameAvailabilityV3(restored.current, c.state.hold.before) &&
               (c.state.hold.before.state === 'unavailable' ||
-                (validAvailabilityAcknowledgementV3(restored.acknowledgement) &&
+                (availabilityV3AcknowledgementQualified(restored.acknowledgement) &&
                   restored.acknowledgement.productId === c.productId &&
                   restored.acknowledgement.state === c.state.hold.before.state &&
                   activationDigest(restored.acknowledgement.scope) === activationDigest(c.availabilityScope)));

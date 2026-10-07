@@ -4,7 +4,7 @@ import { writeFile } from 'node:fs/promises';
 import { test } from 'node:test';
 import { SigningKeyLifecycle } from '@insignia/application';
 import { createDurableCore } from '@insignia/database';
-import { createShopifyAvailabilityHoldV2Port } from '@insignia/shopify';
+import { createShopifyAvailabilityHoldV3Port } from '@insignia/shopify';
 import { Pool } from 'pg';
 import { createServerActivationReadiness } from '../../src/server/admin/release-evidence.ts';
 
@@ -102,10 +102,21 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
       updatedAt: `2026-10-01T11:00:0${version}.000Z`,
       publishedAt: null,
       onlineStoreUrl: null,
-      resourcePublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
-      unpublishedPublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
+      resourcePublications: {
+        nodes:
+          status === 'ACTIVE'
+            ? [
+                {
+                  publication: { id: 'gid://shopify/Publication/303' },
+                  isPublished: true,
+                  publishDate: '2026-10-01T11:00:00Z',
+                },
+              ]
+            : [],
+        pageInfo: { hasNextPage: false, hasPreviousPage: false },
+      },
     });
-    const availability = createShopifyAvailabilityHoldV2Port({
+    const availability = createShopifyAvailabilityHoldV3Port({
       now,
       isCurrent: async (supplied) => {
         const active = await core.tenants.getActiveAuthorizationScope({
@@ -148,7 +159,20 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
               ],
             },
             node: product(),
-            publications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false, endCursor: null } },
+            ...(body.query.includes('publication(id:')
+              ? {
+                  publication: {
+                    __typename: 'Publication',
+                    id: body.variables.publicationId,
+                    autoPublish: true,
+                    supportsFuturePublishing: true,
+                    includedProducts: {
+                      nodes: [{ id: `gid://shopify/Product/${productId}` }],
+                      pageInfo: { hasNextPage: false, hasPreviousPage: false },
+                    },
+                  },
+                }
+              : {}),
           },
         });
       },
@@ -223,9 +247,15 @@ test('real PG activation composes trusted release, synthetic Shopify hold and im
     assert.equal((await core.configs.getCurrentPublication(shopId, configId)).activationKind, 'RESTORATION_PENDING');
     const evidence = (await activation.read(identity)).evidence;
     assert.equal(evidence.admissionClass, 'FIRST_PUBLICATION');
-    assert.equal(evidence.version, 'm5-activation-evidence-v2');
-    assert.equal(evidence.decisionVersion, 2);
-    assert.equal(evidence.hold.version, 'm5-availability-hold-v2');
+    assert.equal(evidence.version, 'm5-activation-evidence-v3');
+    assert.equal(evidence.decisionVersion, 3);
+    assert.equal(evidence.hold.version, 'm5-availability-hold-v3');
+    assert.deepEqual(evidence.hold.before.effectiveVisibility.publishedPublicationIds, [
+      'gid://shopify/Publication/303',
+    ]);
+    assert.equal(evidence.hold.before.effectiveAnchors[0].supportsFuturePublishing, true);
+    assert.deepEqual(evidence.hold.held.effectiveVisibility.publishedPublicationIds, []);
+    assert.equal(evidence.hold.acquisitionAcknowledgement.version, 'm5-availability-mutation-ack-v3');
     assert.equal((await activation.advance(identity)).kind, 'ACTIVE');
     assert.equal(status, 'ACTIVE');
     assert.equal((await core.configs.getCurrentPublication(shopId, configId)).activationKind, 'RESTORED');

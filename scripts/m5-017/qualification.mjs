@@ -18,7 +18,7 @@ import { protectedCredentials } from '../m5-004/qualification.mjs';
 import { EVIDENCE_ROOT, verifyGate } from './binding.mjs';
 import { CREATE, IDENTITY, OWNED, productionDocuments, SCOPE, STATUS, TARGET } from './documents.mjs';
 import { assertGuard, createGuardedOperator } from './guard.mjs';
-import { atomic, digest, LIVE_DIRECTORY, requireValue, Stop, saveJSON } from './operator.mjs';
+import { atomic, digest, LIVE_DIRECTORY, OPERATION_MS, requireValue, Stop, saveJSON } from './operator.mjs';
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const failure = (error) =>
   error?.code === 'network_escape_denied'
@@ -72,7 +72,17 @@ export async function qualify({ root = ROOT, directory = LIVE_DIRECTORY, phase }
   }
   return run({ directory, binding, phase, credentialLoader: protectedCredentials, assertCurrent, gate });
 }
-async function run({ directory, binding, phase, fetchImpl, credentialLoader, assertCurrent, synthetic = false, gate }) {
+async function run({
+  directory,
+  binding,
+  phase,
+  fetchImpl,
+  credentialLoader,
+  assertCurrent,
+  monotonicNow,
+  synthetic = false,
+  gate,
+}) {
   requireValue(['start', 'resume'].includes(phase), 'phase');
   assertCurrent();
   const op = createGuardedOperator({
@@ -82,6 +92,7 @@ async function run({ directory, binding, phase, fetchImpl, credentialLoader, ass
     phase,
     synthetic,
     fetchImpl,
+    monotonicNow,
     assertCurrent,
   });
   if (!synthetic && phase === 'start') {
@@ -266,7 +277,7 @@ async function run({ directory, binding, phase, fetchImpl, credentialLoader, ass
     evidence.identity = await request(IDENTITY);
     save();
     port = createShopifyAvailabilityHoldV3Port({
-      timeoutMs: 30000,
+      timeoutMs: OPERATION_MS,
       fetchImpl: op.fetch,
       isCurrent: (scope) => op.isCurrent(scope),
       credentials: {

@@ -36,7 +36,7 @@ for (const variant of ['missing', 'misspelled', 'imports', 'correct']) {
         assert.equal(result.nativeCalls, 10);
         assert.equal(outbound, 10);
         assert.equal(result.events, 10);
-        assert.deepEqual(result.audit, { reserved: 10, dispatched: 10, matches: true });
+        assert.deepEqual(result.audit, { reserved: 10, dispatched: 10, denied: 0, matches: true });
       } else {
         if (variant !== 'imports') assert.equal(result.denial, 'network_escape_denied');
         assert.equal(result.nativeCalls, 0);
