@@ -1,0 +1,11 @@
+{
+  "observedAt": "2026-10-07T23:40:25.084836+00:00",
+  "classification": "ROLLBACK_WEB_STOP_SETTLED_PUBLIC_READ_REQUIRED",
+  "container": "c81927922a3b9b3b7f37e305e4f1bc6dde730c3b42cbcd5af457415b01230621",
+  "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+  "status": "exited",
+  "databaseLegacyAndTraefikUnchanged": true,
+  "legacyOrComRewriteRoutesRestored": false,
+  "shopifyVersionCreates": 0,
+  "releases": 0
+}

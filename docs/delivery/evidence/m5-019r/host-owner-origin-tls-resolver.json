@@ -1,0 +1,9 @@
+{
+  "observedAt": "2026-10-07T23:36:28.485047+00:00",
+  "readOnlyTLSLogs": [
+    "\u001b[90m2026-10-07T23:35:40Z\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mObtaining bundled SAN certificate.\u001b[0m \u001b[36mdomains=\u001b[0minsignia-app.optidigi.nl \u001b[36mlib=\u001b[0mlego",
+    "\u001b[90m2026-10-07T23:35:44Z\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mValidations succeeded; requesting certificates.\u001b[0m \u001b[36mdomains=\u001b[0minsignia-app.optidigi.nl \u001b[36mlib=\u001b[0mlego",
+    "\u001b[90m2026-10-07T23:35:46Z\u001b[0m \u001b[32mINF\u001b[0m \u001b[1mServer responded with a certificate.\u001b[0m \u001b[36mdomains=\u001b[0minsignia-app.optidigi.nl \u001b[36mlib=\u001b[0mlego"
+  ],
+  "secretOrCertificatePrivateKeyRead": false
+}

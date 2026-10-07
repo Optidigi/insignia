@@ -1,0 +1,25 @@
+{
+  "canonical": {
+    "observedAt": "2026-10-07T23:40:56.999Z",
+    "origin": "https://insignia-app.optidigi.nl",
+    "status": 404,
+    "bodySha256": "b16e15764b8bc06c5c3f9f19bc8b99fa48e7894aa5a6ccdad65da49bbf564793",
+    "correctRewriteClient": false,
+    "publicTLSOverride": false
+  },
+  "legacy": {
+    "origin": "https://insignia.optidigi.nl",
+    "rows": [
+      {
+        "path": "/",
+        "status": 200,
+        "bodySha256": "2de089f95976eb7ae2550de4bb262907fb1b3c8da16698320d034b91fe1dd12f"
+      },
+      {
+        "path": "/auth/login",
+        "status": 200,
+        "bodySha256": "869d3cb23f84f0a071fa81a1b32b229294ca28bd2aaae73a26cfb896b455b76c"
+      }
+    ]
+  }
+}

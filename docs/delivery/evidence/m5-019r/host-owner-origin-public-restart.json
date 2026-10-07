@@ -1,0 +1,14 @@
+{
+  "observedAt": "2026-10-07T23:38:42.147639+00:00",
+  "classification": "OWNER_REVISED_CANONICAL_PUBLIC_RESTART_RECOVERY_PASS",
+  "container": "c81927922a3b9b3b7f37e305e4f1bc6dde730c3b42cbcd5af457415b01230621",
+  "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+  "startedAtBefore": "2026-10-07T23:35:34.076689861Z",
+  "startedAtAfter": "2026-10-07T23:38:36.850932135Z",
+  "health": "healthy",
+  "appUrl": "https://insignia-app.optidigi.nl",
+  "canonicalRoutingEnabledPersisted": true,
+  "databaseLegacyAndTraefikUnchanged": true,
+  "restartAttempts": 1,
+  "providerRequests": 0
+}

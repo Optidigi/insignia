@@ -1,0 +1,18 @@
+{
+  "observedAt": "2026-10-07T23:34:05.434721+00:00",
+  "classification": "OWNER_REVISED_CANONICAL_PRIVATE_STAGE_PASS_PUBLIC_ROUTING_PENDING",
+  "composeSha256": "2cf6a39677b760570be3406e3d76280ec152ca40c4c01ba46e1ef2e4396faa4e",
+  "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+  "entrySha256": "5dab1e4f21a7033582c1c2a326c97d6dcadae66ca04566a73a2aca113b4077f7",
+  "webContainer": "de0e5466de48ff77c653248656cf3ce982d2b5d8d01dd428a4215763f1308bf4",
+  "health": "healthy",
+  "appUrl": "https://insignia-app.optidigi.nl",
+  "traefikExposed": false,
+  "canonicalRule": "Host(`insignia-app.optidigi.nl`)",
+  "rewriteNlRouterRemoved": true,
+  "databaseLegacyAndTraefikIdentitiesUnchanged": true,
+  "privateBackupMode": "0o700",
+  "buildAttempts": 0,
+  "databaseMigrations": 0,
+  "providerRequests": 0
+}

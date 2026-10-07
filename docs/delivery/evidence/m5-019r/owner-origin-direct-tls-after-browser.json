@@ -1,0 +1,17 @@
+{
+  "observedAt": "2026-10-07T23:36:55.537086+00:00",
+  "host": "insignia-app.optidigi.nl",
+  "originAddress": "65.109.22.104",
+  "tlsOverride": false,
+  "scope": "Owned origin TLS observation after public browser PASS",
+  "verified": true,
+  "protocol": "TLSv1.3",
+  "sans": [
+    [
+      "DNS",
+      "insignia-app.optidigi.nl"
+    ]
+  ],
+  "notAfter": "Jan  5 22:37:14 2027 GMT",
+  "certificateSha256": "631d48d425bb77d6cd636f9d88659d819b85915ced040ac6f860e37395e9cd51"
+}

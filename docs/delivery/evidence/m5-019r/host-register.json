@@ -1,0 +1,170 @@
+{
+  "slice": "M5-019R",
+  "closed": true,
+  "sourceHead": "9b0810dd8383ae578a3c960b327786694f1b222e",
+  "events": [
+    {
+      "kind": "exact-reviewed-prestate",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:12:41.843918+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:12:43.333664+00:00",
+      "receipt": "host-prestate.json"
+    },
+    {
+      "kind": "canonical-private-stage",
+      "mutation": true,
+      "reservedAt": "2026-10-07T23:13:16.234859+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:13:33.306625+00:00",
+      "receipt": "host-stage.json"
+    },
+    {
+      "kind": "canonical-private-http-before-restart",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:14:37.971200+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:14:39.565153+00:00",
+      "receipt": "host-private-http-before-restart.json"
+    },
+    {
+      "kind": "canonical-private-restart",
+      "mutation": true,
+      "reservedAt": "2026-10-07T23:15:11.364947+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:15:27.836134+00:00",
+      "receipt": "host-restart.json"
+    },
+    {
+      "kind": "canonical-private-http-after-restart",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:15:40.250327+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:15:41.840957+00:00",
+      "receipt": "host-private-http-after-restart.json"
+    },
+    {
+      "kind": "owner-origin-prestate",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:22:54.092647+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:22:55.583770+00:00",
+      "receipt": "host-owner-origin-prestate.json"
+    },
+    {
+      "kind": "owner-origin-private-stage",
+      "mutation": true,
+      "reservedAt": "2026-10-07T23:33:48.143959+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:34:05.456631+00:00",
+      "receipt": "host-owner-origin-stage.json"
+    },
+    {
+      "kind": "owner-origin-private-http",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:35:01.692625+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:35:03.289396+00:00",
+      "receipt": "host-owner-origin-private-http.json"
+    },
+    {
+      "kind": "owner-origin-dedicated-host-exposure",
+      "mutation": true,
+      "reservedAt": "2026-10-07T23:35:22.358938+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:35:39.397069+00:00",
+      "receipt": "host-owner-origin-exposure.json"
+    },
+    {
+      "kind": "owner-origin-tls-resolver-readonly",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:36:27.163422+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:36:28.504374+00:00",
+      "receipt": "host-owner-origin-tls-resolver.json"
+    },
+    {
+      "kind": "owner-origin-final-public-restart",
+      "mutation": true,
+      "reservedAt": "2026-10-07T23:38:25.529018+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:38:42.170165+00:00",
+      "receipt": "host-owner-origin-public-restart.json"
+    },
+    {
+      "kind": "owner-origin-rollback-stop",
+      "mutation": true,
+      "reservedAt": "2026-10-07T23:40:13.726558+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:40:25.108992+00:00",
+      "receipt": "host-owner-origin-rollback-stop.json"
+    },
+    {
+      "kind": "owner-origin-rollback-start",
+      "mutation": true,
+      "reservedAt": "2026-10-07T23:41:09.276340+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:41:15.478617+00:00",
+      "receipt": "host-owner-origin-rollback-start.json"
+    },
+    {
+      "kind": "owner-origin-final-internal-http",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:41:52.488127+00:00",
+      "outcome": "STOPPED_ERROR_REQUIRES_READ_ONLY_RESOLUTION",
+      "exitCode": 1,
+      "settledAt": "2026-10-07T23:41:54.058721+00:00"
+    },
+    {
+      "kind": "owner-origin-final-readonly-phase-resolution",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:43:32.266368+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:43:33.784294+00:00",
+      "receipt": "host-owner-origin-final-readonly-resolution.json"
+    },
+    {
+      "kind": "owner-origin-final-owned-metadata",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:44:33.437191+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:44:34.637135+00:00",
+      "receipt": "host-owner-origin-final-metadata.json"
+    },
+    {
+      "kind": "owner-origin-temporary-key-cleanup",
+      "mutation": true,
+      "reservedAt": "2026-10-07T23:49:08.757123+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:49:09.860299+00:00",
+      "receipt": "owner-origin-key-cleanup.json"
+    }
+  ],
+  "hostMutationAttempts": 8,
+  "appVersionCreates": 0,
+  "releases": 0,
+  "closedAt": "2026-10-07T23:49:19.681253+00:00",
+  "finalCanonicalOrigin": "https://insignia-app.optidigi.nl",
+  "ownerRevisedDeploymentHead": "9155b4a6f9f1c7988a2dc44c4041d67c03d52bd3",
+  "finalQualification": "CANONICAL_HOST_READINESS_PASS",
+  "temporaryVpsKeyRevoked": true,
+  "localTemporaryPrivateKeyRemoved": true,
+  "providerAccessAfterHostClosure": "NONE_AUTHORIZED_BY_HOST_REGISTER",
+  "readOnlyControlFailureResolution": "Original private-only false-routing assertion failed after exposure; distinct final read-only resolution passed, no ambiguous write"
+}

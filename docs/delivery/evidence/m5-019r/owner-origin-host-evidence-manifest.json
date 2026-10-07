@@ -1,0 +1,184 @@
+{
+  "observedAt": "2026-10-07T23:50:36.630689+00:00",
+  "productionSourceHead": "9155b4a6f9f1c7988a2dc44c4041d67c03d52bd3",
+  "files": [
+    {
+      "path": "host-routing-qualification.json",
+      "sha256": "4e9a9c04825332fa8dac023d345a1ca471498e61ac8fe79353625ddc28d3cfdc"
+    },
+    {
+      "path": "host-register.json",
+      "sha256": "98fbcbe324347f11bd4cc48deb2ca02d3758471e8a532eaaa6c07114b75a95b2"
+    },
+    {
+      "path": "host-operator.py",
+      "sha256": "c4dd072d0f91745818ee7725d5420ddf13444a050c988796a991e4eb38a82921"
+    },
+    {
+      "path": "owner-origin-key-cleanup.json",
+      "sha256": "88d007ba870243e9d96ae011c4b5b887d47182d0e1834e3df4e78896d4f4ca2f"
+    },
+    {
+      "path": "host-owner-origin-key-cleanup.py",
+      "sha256": "edf89f3accf41a50e2b420cd3bf511e2827b497cf19b9a5b392a01a43dece4d5"
+    },
+    {
+      "path": "owner-origin-predeployment-ci-current.json",
+      "sha256": "e586716d022a81b9104c8278092101f577d6f2f8e384010e925dac5fb44edb34"
+    },
+    {
+      "path": "owner-origin-predeployment-freeze.json",
+      "sha256": "f5137b6e2b86e3a35e190a23ece364bd05062a951482b39571f2dc56568d0e38"
+    },
+    {
+      "path": "owner-origin-host-exposure-gate.json",
+      "sha256": "3bbb6c9afd3bcfb9d1659cb5e62082bd65ab624eb1d4d14f446628e74c5fee00"
+    },
+    {
+      "path": "owner-origin-candidate-materialization.json",
+      "sha256": "96c8306e3acfd1329e647c36e77756cb4d18142a5c70bc7fc9de9960522b51bc"
+    },
+    {
+      "path": "owner-origin-browser-probe.js",
+      "sha256": "3c0aed62c89437e7cd7f0188645ff577f8cef0ccad7a623579e7613daab8d26c"
+    },
+    {
+      "path": "versions-pre-freeze.json",
+      "sha256": "5f9713425f0987904793fa69c71c8c7a8b67d7261dfc1e13185f59d7c5b21166"
+    },
+    {
+      "path": "host-owner-origin-prestate.json",
+      "sha256": "5f6278aec084ca263145832ee1d05d4185883e909cc188f868f5dec0d4d49da0"
+    },
+    {
+      "path": "host-owner-origin-stage.json",
+      "sha256": "bc7d5827ecaec73f8250f763e65680aff4b07d70dceebdcdee86b8705e6d7348"
+    },
+    {
+      "path": "host-owner-origin-private-http.json",
+      "sha256": "1df49155979074db3e520ed6e93b4bf7c7083202b6996fa0148db1a6d1451b2e"
+    },
+    {
+      "path": "host-owner-origin-exposure.json",
+      "sha256": "e5ab6fe31467805c38b0aae248c74df2ea7aa3a36dff5df5284792c99d8856a7"
+    },
+    {
+      "path": "host-owner-origin-public-restart.json",
+      "sha256": "05162f36076d16a69c7b145c4f8ffe43c6cd9efe94a96b5104b937c099ae3f64"
+    },
+    {
+      "path": "host-owner-origin-rollback-stop.json",
+      "sha256": "b4bcd356d8ef550a1fffd04a1a2730cffc4a744e8a96da893dc2509896601e0d"
+    },
+    {
+      "path": "host-owner-origin-rollback-start.json",
+      "sha256": "366f0cbff49d40cfe40a4bb84f0649e110bb8bbeff6c13549fbbe6fadbe515ae"
+    },
+    {
+      "path": "host-owner-origin-final-readonly-resolution.json",
+      "sha256": "d2b7a4d7cfa7a985701fb232963df2a5c10afcb2b5bb8fb2bdf9e121e102a7c9"
+    },
+    {
+      "path": "host-owner-origin-final-metadata.json",
+      "sha256": "d5b65f91db27ac3e3c9701acbc9ecbcfb7342c50ca96cacb5347b4d5cb872411"
+    },
+    {
+      "path": "host-owner-origin-tls-resolver.json",
+      "sha256": "4bad396d58af62e4d6eb08ce5a427875bb60bacd576b418e59ea9c69adf9170e"
+    },
+    {
+      "path": "host-owner-origin-prestate.py",
+      "sha256": "acdc9d1aac678ccc2da401c6a0bd54db7175111fd251ea1b50feb7aa32c51134"
+    },
+    {
+      "path": "host-owner-origin-stage.py",
+      "sha256": "0b30614665b61efc00e801316a55a56622ab39b6aaeb45dd62e78bd9b970dceb"
+    },
+    {
+      "path": "host-owner-origin-enable.py",
+      "sha256": "a1dd3bb505633463d6a79a2c9e8f7a842077344b84fe9b3cc254413d722806d2"
+    },
+    {
+      "path": "host-owner-origin-restart.py",
+      "sha256": "2a02c3477a1f2b2074b2ef03b49b8142569b0735897319fce25e1ed9634bffff"
+    },
+    {
+      "path": "host-owner-origin-rollback-stop.py",
+      "sha256": "21522106054cc989be8c9f2753cbf6a9af8d5ff3aeb962815eb5905d83b2629f"
+    },
+    {
+      "path": "host-owner-origin-rollback-start.py",
+      "sha256": "b16e5924d4ecc887697bdee1cbf3036567a00d8f9f26a4ac9437ee790cfabb14"
+    },
+    {
+      "path": "host-owner-origin-final-http-resolution.py",
+      "sha256": "5a7e7d27f1345d8a9794fc846a7c173f3127f1e1e49b056851c2b95c4d9770c1"
+    },
+    {
+      "path": "host-owner-origin-final-metadata.py",
+      "sha256": "3825199f9ce046e4e2de2650576ec180758137d22d6bd9e70127cdeae036e2d8"
+    },
+    {
+      "path": "host-owner-origin-tls-logs.py",
+      "sha256": "01389bfa260d741a9cc5cd9b2f93bb16718d09a5f548905ed3c7e6da3ea01df2"
+    },
+    {
+      "path": "owner-origin-direct-tls.json",
+      "sha256": "ea4c55baa84ef1427dabb0c267651c00c5f924c0c60ac00271770bc6e06321ee"
+    },
+    {
+      "path": "owner-origin-direct-tls-after-browser.json",
+      "sha256": "27b94f78c9020c1abbb8c3d725ccd33a54731fe27a1c5c23af693ad0fe4a7c38"
+    },
+    {
+      "path": "owner-origin-public-browser-before-restart.json",
+      "sha256": "8997f5da859a8b4100b2a3345ace03c8e844eaf9c0c4149f20536c3b71baba68"
+    },
+    {
+      "path": "owner-origin-public-browser-final.json",
+      "sha256": "c3fb9a206b13742a8e68e5a68e11436e812b4f2a46d82bfb8ea02b4dbc4c6b46"
+    },
+    {
+      "path": "owner-origin-public-http-prestate.json",
+      "sha256": "bdc9dd8dd0fd965a4cebe456ce4fcbaa1e73735794630883637250850709ae4f"
+    },
+    {
+      "path": "owner-origin-public-edge-diagnostic.json",
+      "sha256": "e58965798edde45656f3ae22f96612b64fe9294aaa48c32c7e44e4bedffd83cb"
+    },
+    {
+      "path": "owner-origin-legacy-public-prestate.json",
+      "sha256": "90ee0d851e7469df08410acb43495419ef3a68290c2ea59ce7cce20e9f9a37e5"
+    },
+    {
+      "path": "owner-origin-legacy-public-final.json",
+      "sha256": "3b3cdb98ccc6800e42ce08a01415465d7eebd01c109f55a274ee95e8feb6e104"
+    },
+    {
+      "path": "owner-origin-public-rollback.json",
+      "sha256": "3829d960c3f5bfa6d330dcce3bcd18abefe2682d251e17daa9ba0f260ecdcbcb"
+    },
+    {
+      "path": "owner-origin-predeployment-spec-r3.md",
+      "sha256": "99c4b2b68afebd556f9aab7364d0091a816e0675dad434503037e9ea8f5560d0"
+    },
+    {
+      "path": "owner-origin-predeployment-spec-r3.settings.json",
+      "sha256": "c1e0747110ebc02fce1d4b3ff7fccd68c3a621a5f7c67cf49c4d2a81db2a4532"
+    },
+    {
+      "path": "owner-origin-predeployment-security-r3.md",
+      "sha256": "f111e39dfb05b1ac9ed45b01998908e96e902b383917aaba0bc0ee893e754262"
+    },
+    {
+      "path": "owner-origin-predeployment-security-r3.settings.json",
+      "sha256": "6b8feb0ba8d7cbf7fce338a1fa1b35513201d7bfe63ca1c2330a0503b3c68840"
+    },
+    {
+      "path": "owner-origin-candidate-app-info.json",
+      "sha256": "1f6c95979a1fd00ab5ba6a38cdfd7f8513a60c6760dd2d513103275991a13706"
+    }
+  ],
+  "privateLogsOrKeysIncluded": false,
+  "versionMutationAttempts": 0
+}

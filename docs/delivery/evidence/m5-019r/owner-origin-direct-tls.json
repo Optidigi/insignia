@@ -1,0 +1,9 @@
+{
+  "observedAt": "2026-10-07T23:35:40.096730+00:00",
+  "host": "insignia-app.optidigi.nl",
+  "originAddress": "65.109.22.104",
+  "tlsOverride": false,
+  "scope": "Owned origin TLS diagnostic, not substitute for public DNS/browser readiness",
+  "verified": false,
+  "error": "SSLCertVerificationError"
+}

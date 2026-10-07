@@ -1,0 +1,7 @@
+{
+  "classification": "TEMPORARY_KEY_REVOKED",
+  "removedExactAuthorizedKeyLines": 1,
+  "otherAuthorizedKeyBytesPreserved": true,
+  "trustedHostFingerprint": "SHA256:vttVPAISQypNdyfjFElTJ6ef8Q5S2YlC+XoUn599uq4",
+  "mode": "0o600"
+}

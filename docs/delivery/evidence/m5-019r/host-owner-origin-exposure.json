@@ -1,0 +1,19 @@
+{
+  "observedAt": "2026-10-07T23:35:39.376360+00:00",
+  "classification": "OWNER_REVISED_CANONICAL_TRAEFIK_EXPOSURE_SETTLED_PUBLIC_QUALIFICATION_REQUIRED",
+  "canonicalOrigin": "https://insignia-app.optidigi.nl",
+  "runtimeAppUrl": "https://insignia-app.optidigi.nl",
+  "applicationUrl": "https://insignia-app.optidigi.nl/admin/products",
+  "composeSha256": "2cf6a39677b760570be3406e3d76280ec152ca40c4c01ba46e1ef2e4396faa4e",
+  "webContainer": "c81927922a3b9b3b7f37e305e4f1bc6dde730c3b42cbcd5af457415b01230621",
+  "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+  "health": "healthy",
+  "routeEnabled": true,
+  "rule": "Host(`insignia-app.optidigi.nl`)",
+  "databaseLegacyAndTraefikUnchanged": true,
+  "supersededRewriteRoutesRemoved": true,
+  "tlsResolver": "existing_letsencrypt_HTTP_challenge_public_qualification_pending",
+  "shopifyVersionCreates": 0,
+  "releases": 0,
+  "buildAttempts": 0
+}

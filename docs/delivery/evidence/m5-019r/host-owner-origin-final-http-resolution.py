@@ -1,0 +1,16 @@
+import subprocess,json,datetime,hashlib,pathlib
+web='insignia-rewrite-m5-019-web'
+js="""(async()=>{let rows=[];for(let p of ['/live','/admin/products','/api/admin/products','/api/admin/products/1/config','/_astro/MerchantConfigEditor.DP-cRyvJ.js']){let r=await fetch('http://127.0.0.1:3000'+p);let t=await r.text();let row={path:p,status:r.status,cacheControl:r.headers.get('cache-control'),contentType:r.headers.get('content-type'),csp:r.headers.get('content-security-policy'),bodySha256:require('crypto').createHash('sha256').update(t).digest('hex'),bodyBytes:Buffer.byteLength(t)};if(p==='/admin/products')row.correctClient=t.includes('1443cf6d03d39edae7c101a943c5c684');rows.push(row)};console.log(JSON.stringify(rows))})().catch(()=>process.exit(1))"""
+rows=json.loads(subprocess.check_output(['docker','exec',web,'node','-e',js],text=True))
+assert [r['status'] for r in rows]==[200,200,401,401,200]
+assert rows[1]['cacheControl']=='private, no-store' and rows[1]['correctClient'] and 'frame-ancestors https://admin.shopify.com https://*.myshopify.com' in rows[1]['csp']
+assert rows[2]['cacheControl']==rows[3]['cacheControl']=='private, no-store'
+assert rows[4]['cacheControl']=='public, max-age=31536000, immutable'
+dbjs="""(async()=>{let c=new(require('pg').Client)({connectionString:process.env.DATABASE_URL});await c.connect();let r=await c.query('select current_user as role, rolsuper, rolcreaterole, rolcreatedb, rolreplication, rolbypassrls from pg_roles where rolname=current_user');let t=await c.query('select 1 as reachable');await c.end();console.log(JSON.stringify({role:r.rows[0],databaseReachable:t.rows[0].reachable===1}))})().catch(()=>process.exit(1))"""
+db=json.loads(subprocess.check_output(['docker','exec',web,'node','-e',dbjs],text=True)); assert db['databaseReachable'] and db['role']['role']=='insignia_runtime' and not any(db['role'][x] for x in ['rolsuper','rolcreaterole','rolcreatedb','rolreplication','rolbypassrls'])
+legacyjs="""(async()=>{let rows=[];for(let p of ['/', '/auth/login']){let r=await fetch('http://127.0.0.1:3000'+p);let t=await r.text();rows.push({path:p,status:r.status,bodySha256:require('crypto').createHash('sha256').update(t).digest('hex')})};console.log(JSON.stringify(rows))})().catch(()=>process.exit(1))"""
+legacy=json.loads(subprocess.check_output(['docker','exec','insignia-app','node','-e',legacyjs],text=True)); assert all(r['status']==200 for r in legacy)
+cs=json.loads(subprocess.check_output(['docker','inspect',web,'insignia-rewrite-m5-019-database','insignia-app','traefik'],text=True));ids=[{'name':c['Name'],'id':c['Id'],'image':c['Image'],'startedAt':c['State']['StartedAt'],'health':c['State'].get('Health',{}).get('Status')} for c in cs]
+assert cs[0]['Config']['Labels']['traefik.enable']=='true'
+assert 'APP_URL=https://insignia-app.optidigi.nl' in cs[0]['Config']['Env']
+print(json.dumps({'observedAt':datetime.datetime.now(datetime.timezone.utc).isoformat(),'classification':'CANONICAL_FINAL_INTERNAL_WEB_DATABASE_METADATA_PASS','routes':rows,'readOnlyDatabase':db,'legacyRootLogin':legacy,'containers':ids,'providerRequests':0,'newDatabaseMigrations':0,'publicReadiness':'OBSERVED_SEPARATELY_IN_PUBLIC_BROWSER_RECEIPT'},indent=2))
