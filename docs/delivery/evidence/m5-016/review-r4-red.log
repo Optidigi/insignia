@@ -1,0 +1,450 @@
+✖ falsy malformed publications false is coverage ambiguity (28.078766ms)
+✖ falsy malformed publications 0 is coverage ambiguity (11.243563ms)
+✖ falsy malformed publications "" is coverage ambiguity (10.877666ms)
+✖ malformed publications error envelope empty-array cannot qualify generic discovery (10.610656ms)
+✖ malformed publications error envelope object cannot qualify generic discovery (11.041858ms)
+✖ malformed publications error envelope null cannot qualify generic discovery (9.388327ms)
+✖ malformed publications error envelope null-member cannot qualify generic discovery (9.535536ms)
+✖ malformed publications error envelope numeric-message cannot qualify generic discovery (10.287912ms)
+✖ malformed publications error envelope empty-message cannot qualify generic discovery (10.824321ms)
+✖ malformed publications error envelope nonobject-extensions cannot qualify generic discovery (9.038041ms)
+✖ falsy malformed catalogs false is coverage ambiguity (9.389138ms)
+✖ falsy malformed catalogs 0 is coverage ambiguity (9.124195ms)
+✖ falsy malformed catalogs "" is coverage ambiguity (10.20559ms)
+✖ malformed catalogs error envelope empty-array cannot qualify generic discovery (8.849813ms)
+✖ malformed catalogs error envelope object cannot qualify generic discovery (8.580949ms)
+✖ malformed catalogs error envelope null cannot qualify generic discovery (9.581445ms)
+✖ malformed catalogs error envelope null-member cannot qualify generic discovery (12.106412ms)
+✖ malformed catalogs error envelope numeric-message cannot qualify generic discovery (8.981294ms)
+✖ malformed catalogs error envelope empty-message cannot qualify generic discovery (8.702315ms)
+✖ malformed catalogs error envelope nonobject-extensions cannot qualify generic discovery (8.775677ms)
+✖ archive freshness is rechecked after reservation immediately before native dispatch (10.556725ms)
+ℹ tests 21
+ℹ suites 0
+ℹ pass 0
+ℹ fail 21
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 475.570197
+
+✖ failing tests:
+
+test at scripts/m5-016/operator.test.mjs:578:39
+✖ falsy malformed publications false is coverage ambiguity (28.078766ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:580:22
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:578:39
+✖ falsy malformed publications 0 is coverage ambiguity (11.243563ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:580:22
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:578:39
+✖ falsy malformed publications "" is coverage ambiguity (10.877666ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:580:22
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed publications error envelope empty-array cannot qualify generic discovery (10.610656ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed publications error envelope object cannot qualify generic discovery (11.041858ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed publications error envelope null cannot qualify generic discovery (9.388327ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed publications error envelope null-member cannot qualify generic discovery (9.535536ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed publications error envelope numeric-message cannot qualify generic discovery (10.287912ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed publications error envelope empty-message cannot qualify generic discovery (10.824321ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed publications error envelope nonobject-extensions cannot qualify generic discovery (9.038041ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:578:39
+✖ falsy malformed catalogs false is coverage ambiguity (9.389138ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:580:22
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:578:39
+✖ falsy malformed catalogs 0 is coverage ambiguity (9.124195ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:580:22
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:578:39
+✖ falsy malformed catalogs "" is coverage ambiguity (10.20559ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:580:22
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed catalogs error envelope empty-array cannot qualify generic discovery (8.849813ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed catalogs error envelope object cannot qualify generic discovery (8.580949ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed catalogs error envelope null cannot qualify generic discovery (9.581445ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed catalogs error envelope null-member cannot qualify generic discovery (12.106412ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed catalogs error envelope numeric-message cannot qualify generic discovery (8.981294ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed catalogs error envelope empty-message cannot qualify generic discovery (8.702315ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:582:5
+✖ malformed catalogs error envelope nonobject-extensions cannot qualify generic discovery (8.775677ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'GENERIC_DISCOVERY_CONFIRMED'
+  - 'UNRESOLVED'
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:584:24
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'GENERIC_DISCOVERY_CONFIRMED',
+    expected: 'UNRESOLVED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-016/operator.test.mjs:586:1
+✖ archive freshness is rechecked after reservation immediately before native dispatch (10.556725ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 0
+
+      at file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:589:23
+      at exercise (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:21:11)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/operator.test.mjs:588:9)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

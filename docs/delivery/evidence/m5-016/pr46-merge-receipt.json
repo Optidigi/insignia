@@ -1,0 +1,16 @@
+{
+  "pr": 46,
+  "mergeMethod": "merge",
+  "merge": "d0efd626222047a2047573f678b019cd7b1802a9",
+  "orderedParents": [
+    "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+    "38bac0cfabf96632e533e11df2ccfda9c513dea3"
+  ],
+  "tree": "b54b0f83beee01a06a5218af0a18f604f6e3482b",
+  "effectiveMergeBase": "6a186bea8e5d1c01a66f7ab683c06393fe81e991",
+  "workflows": 10,
+  "attempt": 1,
+  "externalApproval": "user attachment PR-046-principal-review.md; explicit exact-ref user authority",
+  "nativeReviewFabricated": false,
+  "remoteMainMatches": true
+}

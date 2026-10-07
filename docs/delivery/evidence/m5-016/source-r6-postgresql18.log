@@ -1,0 +1,1198 @@
+durable-core	Set up job	﻿2026-10-07T00:38:06.5323196Z Current runner version: '2.337.0'
+durable-core	Set up job	2026-10-07T00:38:06.5348500Z ##[group]Runner Image Provisioner
+durable-core	Set up job	2026-10-07T00:38:06.5349730Z Hosted Compute Agent
+durable-core	Set up job	2026-10-07T00:38:06.5350323Z Version: 20260901.588
+durable-core	Set up job	2026-10-07T00:38:06.5351046Z Commit: f88ec8081b781fac6c440065ac7ff9e710ce3d0b
+durable-core	Set up job	2026-10-07T00:38:06.5351811Z Build Date: 2026-09-01T19:56:44Z
+durable-core	Set up job	2026-10-07T00:38:06.5352528Z Worker ID: {12a0bd8f-6252-4f05-9fca-8427c31a9654}
+durable-core	Set up job	2026-10-07T00:38:06.5353287Z Azure Region: westus
+durable-core	Set up job	2026-10-07T00:38:06.5353833Z ##[endgroup]
+durable-core	Set up job	2026-10-07T00:38:06.5355365Z ##[group]Operating System
+durable-core	Set up job	2026-10-07T00:38:06.5356062Z Ubuntu
+durable-core	Set up job	2026-10-07T00:38:06.5356642Z 24.04.5
+durable-core	Set up job	2026-10-07T00:38:06.5357166Z LTS
+durable-core	Set up job	2026-10-07T00:38:06.5357683Z ##[endgroup]
+durable-core	Set up job	2026-10-07T00:38:06.5358343Z ##[group]Runner Image
+durable-core	Set up job	2026-10-07T00:38:06.5359232Z Image: ubuntu-24.04
+durable-core	Set up job	2026-10-07T00:38:06.5359793Z Version: 20260927.320.1
+durable-core	Set up job	2026-10-07T00:38:06.5360979Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260927.320/images/ubuntu/Ubuntu2404-Readme.md
+durable-core	Set up job	2026-10-07T00:38:06.5362762Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260927.320
+durable-core	Set up job	2026-10-07T00:38:06.5363781Z ##[endgroup]
+durable-core	Set up job	2026-10-07T00:38:06.5364957Z ##[group]GITHUB_TOKEN Permissions
+durable-core	Set up job	2026-10-07T00:38:06.5366958Z Contents: read
+durable-core	Set up job	2026-10-07T00:38:06.5367652Z Metadata: read
+durable-core	Set up job	2026-10-07T00:38:06.5368276Z ##[endgroup]
+durable-core	Set up job	2026-10-07T00:38:06.5370656Z Secret source: Actions
+durable-core	Set up job	2026-10-07T00:38:06.5371726Z Cache mode: write
+durable-core	Set up job	2026-10-07T00:38:06.5372485Z Prepare workflow directory
+durable-core	Set up job	2026-10-07T00:38:06.5871790Z Prepare all required actions
+durable-core	Set up job	2026-10-07T00:38:06.5918955Z Getting action download info
+durable-core	Set up job	2026-10-07T00:38:06.9452194Z Download action repository 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' (SHA:11bd71901bbe5b1630ceea73d27597364c9af683)
+durable-core	Set up job	2026-10-07T00:38:07.0773766Z Download action repository 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' (SHA:49933ea5288caeca8642d1e84afbd3f7d6820020)
+durable-core	Set up job	2026-10-07T00:38:07.1670809Z Download action repository 'actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+durable-core	Set up job	2026-10-07T00:38:07.3837466Z Complete job name: durable-core
+durable-core	Initialize containers	﻿2026-10-07T00:38:07.4386125Z ##[group]Checking docker version
+durable-core	Initialize containers	2026-10-07T00:38:07.4399629Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+durable-core	Initialize containers	2026-10-07T00:38:07.5237447Z '1.48'
+durable-core	Initialize containers	2026-10-07T00:38:07.5254477Z Docker daemon API version: '1.48'
+durable-core	Initialize containers	2026-10-07T00:38:07.5255339Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+durable-core	Initialize containers	2026-10-07T00:38:07.5439525Z '1.48'
+durable-core	Initialize containers	2026-10-07T00:38:07.5454963Z Docker client API version: '1.48'
+durable-core	Initialize containers	2026-10-07T00:38:07.5461268Z ##[endgroup]
+durable-core	Initialize containers	2026-10-07T00:38:07.5464378Z ##[group]Clean up resources from previous jobs
+durable-core	Initialize containers	2026-10-07T00:38:07.5470817Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=da7e19"
+durable-core	Initialize containers	2026-10-07T00:38:07.5620021Z ##[command]/usr/bin/docker network prune --force --filter "label=da7e19"
+durable-core	Initialize containers	2026-10-07T00:38:07.5753839Z ##[endgroup]
+durable-core	Initialize containers	2026-10-07T00:38:07.5754445Z ##[group]Create local container network
+durable-core	Initialize containers	2026-10-07T00:38:07.5764704Z ##[command]/usr/bin/docker network create --label da7e19 github_network_f6a2d4cbb62445bf933bcc1713dbb407
+durable-core	Initialize containers	2026-10-07T00:38:07.6386830Z 1a37bba02aed7e45174def937c0c342e751c1a27e393236b20c7cb388f0d2daf
+durable-core	Initialize containers	2026-10-07T00:38:07.6427845Z ##[endgroup]
+durable-core	Initialize containers	2026-10-07T00:38:07.6452759Z ##[group]Starting postgres service container
+durable-core	Initialize containers	2026-10-07T00:38:07.6475755Z ##[command]/usr/bin/docker pull postgres:18
+durable-core	Initialize containers	2026-10-07T00:38:08.5475285Z 18: Pulling from library/postgres
+durable-core	Initialize containers	2026-10-07T00:38:08.8134496Z ecc510c1e359: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8144259Z 4a3cafbebf6d: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8145143Z 28ced28a309b: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8145686Z ab69e2551985: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8146052Z 1f04dfa92b9f: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8146389Z 5a487c9461a5: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8146688Z e0d4a6e58470: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8147007Z 496ce2ef5b2f: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8147304Z c8145e79cc2b: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8147971Z 06ea90d3bcc9: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8148273Z dc25540d793f: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8148847Z 7967f593457f: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8149257Z d23c975c4693: Pulling fs layer
+durable-core	Initialize containers	2026-10-07T00:38:08.8149551Z 496ce2ef5b2f: Waiting
+durable-core	Initialize containers	2026-10-07T00:38:08.8149850Z c8145e79cc2b: Waiting
+durable-core	Initialize containers	2026-10-07T00:38:08.8150126Z 06ea90d3bcc9: Waiting
+durable-core	Initialize containers	2026-10-07T00:38:08.8150382Z ab69e2551985: Waiting
+durable-core	Initialize containers	2026-10-07T00:38:08.8150628Z 1f04dfa92b9f: Waiting
+durable-core	Initialize containers	2026-10-07T00:38:08.8150889Z 5a487c9461a5: Waiting
+durable-core	Initialize containers	2026-10-07T00:38:08.8151137Z e0d4a6e58470: Waiting
+durable-core	Initialize containers	2026-10-07T00:38:08.8151387Z dc25540d793f: Waiting
+durable-core	Initialize containers	2026-10-07T00:38:08.8151632Z 7967f593457f: Waiting
+durable-core	Initialize containers	2026-10-07T00:38:08.8151873Z d23c975c4693: Waiting
+durable-core	Initialize containers	2026-10-07T00:38:09.0271961Z 4a3cafbebf6d: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.0624018Z 28ced28a309b: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:09.0627178Z 28ced28a309b: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.1274985Z ecc510c1e359: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:09.1276413Z ecc510c1e359: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.2507449Z ab69e2551985: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:09.2510960Z ab69e2551985: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.3223809Z 1f04dfa92b9f: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:09.3224331Z 1f04dfa92b9f: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.3475174Z 5a487c9461a5: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:09.3476121Z 5a487c9461a5: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.4735913Z e0d4a6e58470: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:09.4739335Z e0d4a6e58470: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.5513300Z 496ce2ef5b2f: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:09.5514182Z 496ce2ef5b2f: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.7026382Z 06ea90d3bcc9: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:09.7027948Z 06ea90d3bcc9: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.7729766Z dc25540d793f: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:09.7730453Z dc25540d793f: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.9154378Z 7967f593457f: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:09.9976974Z d23c975c4693: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:09.9977729Z d23c975c4693: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:10.0183104Z c8145e79cc2b: Verifying Checksum
+durable-core	Initialize containers	2026-10-07T00:38:10.0183903Z c8145e79cc2b: Download complete
+durable-core	Initialize containers	2026-10-07T00:38:10.2554151Z ecc510c1e359: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:13.0396964Z 4a3cafbebf6d: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:13.2115491Z 28ced28a309b: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:13.2561570Z ab69e2551985: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:13.5619802Z 1f04dfa92b9f: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:13.6396067Z 5a487c9461a5: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:13.6529696Z e0d4a6e58470: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:13.6633839Z 496ce2ef5b2f: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:16.7536186Z c8145e79cc2b: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:16.7657976Z 06ea90d3bcc9: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:16.7860278Z dc25540d793f: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:16.7968133Z 7967f593457f: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:16.8049978Z d23c975c4693: Pull complete
+durable-core	Initialize containers	2026-10-07T00:38:16.8086800Z Digest: sha256:fc973eb97c9fd04bfa1840e0f510719a584ccb3be8debfe6a4144637a9dfe8cf
+durable-core	Initialize containers	2026-10-07T00:38:16.8100164Z Status: Downloaded newer image for postgres:18
+durable-core	Initialize containers	2026-10-07T00:38:16.8108990Z docker.io/library/postgres:18
+durable-core	Initialize containers	2026-10-07T00:38:16.8169879Z ##[command]/usr/bin/docker create --name 817bc611b6c046ed83311aff09848c53_postgres18_683e50 --label da7e19 --network github_network_f6a2d4cbb62445bf933bcc1713dbb407 --network-alias postgres -p 5432:5432 --health-cmd "pg_isready -U insignia_test -d insignia_test" --health-interval 5s --health-timeout 5s --health-retries 10 -e "POSTGRES_USER=insignia_test" -e "POSTGRES_PASSWORD=insignia_test" -e "POSTGRES_DB=insignia_test" -e GITHUB_ACTIONS=true -e CI=true postgres:18
+durable-core	Initialize containers	2026-10-07T00:38:16.8424166Z c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672
+durable-core	Initialize containers	2026-10-07T00:38:16.8449038Z ##[command]/usr/bin/docker start c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672
+durable-core	Initialize containers	2026-10-07T00:38:17.0564802Z c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672
+durable-core	Initialize containers	2026-10-07T00:38:17.0587930Z ##[command]/usr/bin/docker ps --all --filter id=c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672 --filter status=running --no-trunc --format "{{.ID}} {{.Status}}"
+durable-core	Initialize containers	2026-10-07T00:38:17.0727019Z c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672 Up Less than a second (health: starting)
+durable-core	Initialize containers	2026-10-07T00:38:17.0749892Z ##[command]/usr/bin/docker port c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672
+durable-core	Initialize containers	2026-10-07T00:38:17.0901358Z 5432/tcp -> 0.0.0.0:5432
+durable-core	Initialize containers	2026-10-07T00:38:17.0932129Z 5432/tcp -> [::]:5432
+durable-core	Initialize containers	2026-10-07T00:38:17.1045435Z ##[endgroup]
+durable-core	Initialize containers	2026-10-07T00:38:17.1055052Z ##[group]Waiting for all services to be ready
+durable-core	Initialize containers	2026-10-07T00:38:17.1069192Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672
+durable-core	Initialize containers	2026-10-07T00:38:17.1215116Z starting
+durable-core	Initialize containers	2026-10-07T00:38:17.1237982Z postgres service is starting, waiting 2 seconds before checking again.
+durable-core	Initialize containers	2026-10-07T00:38:19.1226521Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672
+durable-core	Initialize containers	2026-10-07T00:38:19.1354059Z starting
+durable-core	Initialize containers	2026-10-07T00:38:19.1370606Z postgres service is starting, waiting 3 seconds before checking again.
+durable-core	Initialize containers	2026-10-07T00:38:22.8330369Z ##[command]/usr/bin/docker inspect --format="{{if .Config.Healthcheck}}{{print .State.Health.Status}}{{end}}" c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672
+durable-core	Initialize containers	2026-10-07T00:38:22.8468504Z healthy
+durable-core	Initialize containers	2026-10-07T00:38:22.8488383Z postgres service is healthy.
+durable-core	Initialize containers	2026-10-07T00:38:22.8489423Z ##[endgroup]
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	﻿2026-10-07T00:38:22.8787438Z ##[group]Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8788121Z with:
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8788325Z   fetch-depth: 0
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8788546Z   repository: Optidigi/insignia
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8791376Z   token: ***
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8791593Z   ssh-strict: true
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8791796Z   ssh-user: git
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8792018Z   persist-credentials: true
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8792247Z   clean: true
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8792459Z   sparse-checkout-cone-mode: true
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8792710Z   fetch-tags: false
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8792911Z   show-progress: true
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8793112Z   lfs: false
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8793294Z   submodules: false
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8793497Z   set-safe-directory: true
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8793987Z env:
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8794496Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.8794837Z ##[endgroup]
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.9819241Z Syncing repository: Optidigi/insignia
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.9821250Z ##[group]Getting Git version info
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.9821979Z Working directory is '/home/runner/work/insignia/insignia'
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.9822905Z [command]/usr/bin/git version
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.9898442Z git version 2.55.0
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.9925367Z ##[endgroup]
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.9941798Z Temporarily overriding HOME='/home/runner/work/_temp/bf2750da-6bd2-4968-85c7-b197f47cb39f' before making global git config changes
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.9943253Z Adding repository directory to the temporary git global config as a safe directory
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:22.9948403Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/insignia/insignia
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0004624Z Deleting the contents of '/home/runner/work/insignia/insignia'
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0009385Z ##[group]Initializing the repository
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0014862Z [command]/usr/bin/git init /home/runner/work/insignia/insignia
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0121837Z hint: Using 'master' as the name for the initial branch. This default branch name
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0123178Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0124418Z hint: to use in all of your new repositories, which will suppress this warning,
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0125249Z hint: call:
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0125498Z hint:
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0125883Z hint: 	git config --global init.defaultBranch <name>
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0126538Z hint:
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0126924Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0127839Z hint: 'development'. The just-created branch can be renamed via this command:
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0128511Z hint:
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0129162Z hint: 	git branch -m <name>
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0129592Z hint:
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0130193Z hint: Disable this message with "git config set advice.defaultBranchName false"
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0131246Z Initialized empty Git repository in /home/runner/work/insignia/insignia/.git/
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0139526Z [command]/usr/bin/git remote add origin https://github.com/Optidigi/insignia
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0190681Z ##[endgroup]
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0191390Z ##[group]Disabling automatic garbage collection
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0194923Z [command]/usr/bin/git config --local gc.auto 0
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0227734Z ##[endgroup]
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0228333Z ##[group]Setting up auth
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0235586Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0271880Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0659647Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0702319Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.0962316Z [command]/usr/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.1005152Z ##[endgroup]
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.1006068Z ##[group]Fetching the repository
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:23.1016766Z [command]/usr/bin/git -c protocol.version=2 fetch --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/* +6830c6f7234dae85112cd134af41a7910be3eab3:refs/remotes/pull/47/merge
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2583465Z From https://github.com/Optidigi/insignia
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2584607Z  * [new branch]      continuation/public-app-auth-provider    -> origin/continuation/public-app-auth-provider
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2585567Z  * [new branch]      docs/pf-001r-preflight-bootstrap         -> origin/docs/pf-001r-preflight-bootstrap
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2586723Z  * [new branch]      docs/pf-002-readiness-closure            -> origin/docs/pf-002-readiness-closure
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2587721Z  * [new branch]      feat/m1-001-foundation                   -> origin/feat/m1-001-foundation
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2588948Z  * [new branch]      feat/m2-001-domain-pricing               -> origin/feat/m2-001-domain-pricing
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2589803Z  * [new branch]      feat/m3-001-postgres-durable             -> origin/feat/m3-001-postgres-durable
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2590434Z  * [new branch]      feat/m3-002-runtime                      -> origin/feat/m3-002-runtime
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2591061Z  * [new branch]      feat/m4-001-context-entitlement          -> origin/feat/m4-001-context-entitlement
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2591723Z  * [new branch]      feat/m4-002-accepted-quote               -> origin/feat/m4-002-accepted-quote
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2592350Z  * [new branch]      feat/m4-003-keys-publication             -> origin/feat/m4-003-keys-publication
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2593246Z  * [new branch]      feat/m5-001-admin-visualizer-publication -> origin/feat/m5-001-admin-visualizer-publication
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2594167Z  * [new branch]      feat/m5-002-embedded-g7-artifact-attestation -> origin/feat/m5-002-embedded-g7-artifact-attestation
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2595169Z  * [new branch]      feat/m5-003-activation-admission         -> origin/feat/m5-003-activation-admission
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2596025Z  * [new branch]      feat/m5-004-availability-qualification   -> origin/feat/m5-004-availability-qualification
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2597033Z  * [new branch]      feat/m5-005-scope-provenance             -> origin/feat/m5-005-scope-provenance
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2597852Z  * [new branch]      feat/m5-006-released-configuration-checkpoint -> origin/feat/m5-006-released-configuration-checkpoint
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2599062Z  * [new branch]      feat/m5-007-readonly-configuration-capture -> origin/feat/m5-007-readonly-configuration-capture
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2599954Z  * [new branch]      feat/m5-007r-cli-launch-boundary         -> origin/feat/m5-007r-cli-launch-boundary
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2600642Z  * [new branch]      feat/m5-007r4-config-capture             -> origin/feat/m5-007r4-config-capture
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2601300Z  * [new branch]      feat/m5-008-product-access               -> origin/feat/m5-008-product-access
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2602348Z  * [new branch]      feat/m5-008r-combined-release            -> origin/feat/m5-008r-combined-release
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2603082Z  * [new branch]      feat/m5-008s-optional-product-grant      -> origin/feat/m5-008s-optional-product-grant
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2603922Z  * [new branch]      feat/m5-009-availability-qualification   -> origin/feat/m5-009-availability-qualification
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2604730Z  * [new branch]      feat/m5-010-publication-read-qualification -> origin/feat/m5-010-publication-read-qualification
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2605500Z  * [new branch]      feat/m5-011-published-state-adjudication -> origin/feat/m5-011-published-state-adjudication
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2606234Z  * [new branch]      feat/m5-012-publication-intent-cleanup   -> origin/feat/m5-012-publication-intent-cleanup
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2607143Z  * [new branch]      feat/m5-013-disposable-cleanup           -> origin/feat/m5-013-disposable-cleanup
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2607901Z  * [new branch]      feat/m5-014-availability-hold-v2         -> origin/feat/m5-014-availability-hold-v2
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2608940Z  * [new branch]      feat/m5-015-live-v2-qualification        -> origin/feat/m5-015-live-v2-qualification
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2609639Z  * [new branch]      feat/m5-015r-live-v2-qualification       -> origin/feat/m5-015r-live-v2-qualification
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2610300Z  * [new branch]      feat/m5-016-publication-coverage         -> origin/feat/m5-016-publication-coverage
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2610866Z  * [new branch]      main                                     -> origin/main
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2611479Z  * [new branch]      setup/new-public-app                     -> origin/setup/new-public-app
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2612081Z  * [new branch]      spike/m0-001-same-variant                -> origin/spike/m0-001-same-variant
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2612678Z  * [new branch]      spike/m0-002-real-lifecycle              -> origin/spike/m0-002-real-lifecycle
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2613314Z  * [new branch]      spike/m0-003-fulfillment-diagnosis       -> origin/spike/m0-003-fulfillment-diagnosis
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2613952Z  * [new branch]      spike/m0-003r-native-outcome             -> origin/spike/m0-003r-native-outcome
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2614582Z  * [new branch]      spike/m0-004-local-authorization         -> origin/spike/m0-004-local-authorization
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2615179Z  * [new branch]      spike/m0-005-whole-quote                 -> origin/spike/m0-005-whole-quote
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2615763Z  * [new branch]      spike/m0-006-live-carrier                -> origin/spike/m0-006-live-carrier
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2616392Z  * [new branch]      spike/m0-007-policy-boundary             -> origin/spike/m0-007-policy-boundary
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2617065Z  * [new branch]      spike/m0-008-publication-recovery        -> origin/spike/m0-008-publication-recovery
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2617722Z  * [new branch]      spike/m0-009-embedded-admin              -> origin/spike/m0-009-embedded-admin
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2618336Z  * [new branch]      spike/m0-010-hybrid-billing              -> origin/spike/m0-010-hybrid-billing
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2619120Z  * [new branch]      spike/m0-011-provider-transport          -> origin/spike/m0-011-provider-transport
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2619917Z  * [new branch]      spike/m0-012-real-contract               -> origin/spike/m0-012-real-contract
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2620561Z  * [new branch]      spike/m0-013-protocol-capacity           -> origin/spike/m0-013-protocol-capacity
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2621257Z  * [new branch]      spike/m0-014-public-app-checkout         -> origin/spike/m0-014-public-app-checkout
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2621857Z  * [new ref]         6830c6f7234dae85112cd134af41a7910be3eab3 -> pull/47/merge
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2623248Z ##[endgroup]
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2623606Z ##[group]Determining the checkout info
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2624009Z ##[endgroup]
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2624260Z [command]/usr/bin/git sparse-checkout disable
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2658555Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2692091Z ##[group]Checking out the ref
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.2696893Z [command]/usr/bin/git checkout --progress --force refs/remotes/pull/47/merge
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4814505Z Note: switching to 'refs/remotes/pull/47/merge'.
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4815028Z
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4815400Z You are in 'detached HEAD' state. You can look around, make experimental
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4816277Z changes and commit them, and you can discard any commits you make in this
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4817145Z state without impacting any branches by switching back to a branch.
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4817664Z
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4817963Z If you want to create a new branch to retain commits you create, you may
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4818960Z do so (now or later) by using -c with the switch command. Example:
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4819740Z
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4819908Z   git switch -c <new-branch-name>
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4820207Z
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4820369Z Or undo this operation with:
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4820665Z
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4820805Z   git switch -
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4821016Z
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4821379Z Turn off this advice by setting config variable advice.detachedHead to false
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4821942Z
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4822569Z HEAD is now at 6830c6f Merge 59593cae97fef72f1aa1260eee773fbc251a6f0e into d0efd626222047a2047573f678b019cd7b1802a9
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4837786Z ##[endgroup]
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4894742Z [command]/usr/bin/git log -1 --format=%H
+durable-core	Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:38:24.4922597Z 6830c6f7234dae85112cd134af41a7910be3eab3
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	﻿2026-10-07T00:38:24.5180376Z ##[group]Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.5180779Z with:
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.5180971Z   node-version: 24.21.0
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.5181191Z   always-auth: false
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.5181397Z   check-latest: false
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.5183817Z   token: ***
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.5184009Z env:
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.5184461Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.5184793Z ##[endgroup]
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.6550094Z Found in cache @ /opt/hostedtoolcache/node/24.21.0/x64
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.6554856Z (node:2678) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.6556208Z (Use `node --trace-deprecation ...` to show where the warning was created)
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:24.6558138Z ##[group]Environment details
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:25.0827438Z node: v24.21.0
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:25.0827833Z npm: 11.19.0
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:25.0828301Z yarn: 1.22.22
+durable-core	Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:38:25.0829499Z ##[endgroup]
+durable-core	Run corepack pnpm install --frozen-lockfile	﻿2026-10-07T00:38:25.0975528Z ##[group]Run corepack pnpm install --frozen-lockfile
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:25.0976013Z ^[[36;1mcorepack pnpm install --frozen-lockfile^[[0m
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:25.1200189Z shell: /usr/bin/bash -e {0}
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:25.1200551Z env:
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:25.1201297Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:25.1201804Z ##[endgroup]
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:25.9346747Z Downloading the pnpm 12.6.0 binary for linux-x64...
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:26.7320338Z Scope: all 12 workspace projects
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:26.7575245Z ? Verifying lockfile against supply-chain policies (596 entries)...
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:26.9610241Z Packages are hard linked from the content-addressable store to the virtual store.
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:26.9612401Z   Content-addressable store is at: /home/runner/.local/share/pnpm/store/v11
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:26.9613481Z   Virtual store is at:             node_modules/.pnpm
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:26.9710992Z Downloading @biomejs/cli-linux-x64@2.5.14: 0.00 B/24.14 MB
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:27.2404482Z Downloading @dbmate/linux-x64@2.36.0: 0.00 B/12.43 MB
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:27.7426030Z Downloading @rolldown/binding-linux-x64-gnu@1.2.11: 0.00 B/7.94 MB
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:27.8534114Z Downloading @img/sharp-libvips-linux-x64@1.3.3: 0.00 B/8.17 MB
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:28.8568432Z Progress: resolved 464, reused 0, downloaded 459, added 448
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.0720817Z ✓ Lockfile passes supply-chain policies (596 entries in 2.3s)
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.0739759Z Lockfile is up to date, resolution step is skipped
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.1457148Z Packages: +464
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.1458326Z ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.1894902Z Progress: resolved 464, reused 0, downloaded 464, added 464, done
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.1947253Z .../esbuild@0.28.2/node_modules/esbuild postinstall$ node install.js
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.1949031Z .../esbuild@0.25.12/node_modules/esbuild postinstall$ node install.js
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.2511635Z .../esbuild@0.28.2/node_modules/esbuild postinstall: Done
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.2526569Z .../esbuild@0.25.12/node_modules/esbuild postinstall: Done
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.3298333Z
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.3299309Z devDependencies:
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.3299810Z + @biomejs/biome 2.5.14
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.3300243Z + @types/node 24.10.0
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.3300622Z + dbmate 2.36.0
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.3301027Z + dependency-cruiser 18.4.0
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.3301467Z + esbuild 0.25.12
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.3301841Z + typescript 5.9.3
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.3302062Z
+durable-core	Run corepack pnpm install --frozen-lockfile	2026-10-07T00:38:29.3397699Z Done in 2.6s using pnpm v12.6.0
+durable-core	Inspect migration state	﻿2026-10-07T00:38:29.3766737Z ##[group]Run corepack pnpm exec dbmate --migrations-dir packages/database/migrations status
+durable-core	Inspect migration state	2026-10-07T00:38:29.3767457Z ^[[36;1mcorepack pnpm exec dbmate --migrations-dir packages/database/migrations status^[[0m
+durable-core	Inspect migration state	2026-10-07T00:38:29.3832370Z shell: /usr/bin/bash -e {0}
+durable-core	Inspect migration state	2026-10-07T00:38:29.3832645Z env:
+durable-core	Inspect migration state	2026-10-07T00:38:29.3833233Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Inspect migration state	2026-10-07T00:38:29.3833618Z ##[endgroup]
+durable-core	Inspect migration state	2026-10-07T00:38:29.5086142Z [ ] 20260929000100_durable_core.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5086719Z [ ] 20260929000200_runtime_ingress_credentials.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5087258Z [ ] 20260929000300_authorization_generation.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5087647Z [ ] 20260929000400_accepted_quote.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5087990Z [ ] 20260930000100_m4_key_lifecycle.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5088340Z [ ] 20260930000200_publication_progress.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5088991Z [ ] 20260930000300_m5_revision_geometry.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5089404Z [ ] 20260930000400_m5_revision_presentation.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5089949Z [ ] 20260930000500_m5_publication_source_version.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5090413Z [ ] 20260930000600_m5_publication_intent_generation.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5090994Z [ ] 20260930000700_m5_publication_intent_lookup.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5091716Z [ ] 20260930000800_m5_current_publication_pointer.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5092317Z [ ] 20260930000900_m5_activation.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5092847Z [ ] 20261006000100_m5_availability_v2.sql
+durable-core	Inspect migration state	2026-10-07T00:38:29.5093177Z
+durable-core	Inspect migration state	2026-10-07T00:38:29.5093337Z Applied: 0
+durable-core	Inspect migration state	2026-10-07T00:38:29.5093693Z Pending: 14
+durable-core	Run corepack pnpm build	﻿2026-10-07T00:38:29.5225508Z ##[group]Run corepack pnpm build
+durable-core	Run corepack pnpm build	2026-10-07T00:38:29.5225833Z ^[[36;1mcorepack pnpm build^[[0m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:29.5290365Z shell: /usr/bin/bash -e {0}
+durable-core	Run corepack pnpm build	2026-10-07T00:38:29.5290614Z env:
+durable-core	Run corepack pnpm build	2026-10-07T00:38:29.5291145Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Run corepack pnpm build	2026-10-07T00:38:29.5291491Z ##[endgroup]
+durable-core	Run corepack pnpm build	2026-10-07T00:38:29.6140452Z $ corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build
+durable-core	Run corepack pnpm build	2026-10-07T00:38:29.6924410Z packages/cart-authorization build$ tsc -p tsconfig.json
+durable-core	Run corepack pnpm build	2026-10-07T00:38:29.6925191Z packages/domain build$ tsc -p tsconfig.json
+durable-core	Run corepack pnpm build	2026-10-07T00:38:29.6926046Z packages/observability build$ tsc -p tsconfig.json
+durable-core	Run corepack pnpm build	2026-10-07T00:38:29.6931712Z packages/contracts build$ tsc -p tsconfig.json
+durable-core	Run corepack pnpm build	2026-10-07T00:38:31.3876019Z packages/domain build: Done
+durable-core	Run corepack pnpm build	2026-10-07T00:38:31.3902594Z packages/visualizer build$ tsc -p tsconfig.json
+durable-core	Run corepack pnpm build	2026-10-07T00:38:31.5416484Z packages/contracts build: Done
+durable-core	Run corepack pnpm build	2026-10-07T00:38:31.5502591Z packages/application build$ tsc -p tsconfig.json
+durable-core	Run corepack pnpm build	2026-10-07T00:38:31.8140088Z packages/cart-authorization build: Done
+durable-core	Run corepack pnpm build	2026-10-07T00:38:31.8725822Z packages/observability build: Done
+durable-core	Run corepack pnpm build	2026-10-07T00:38:32.7180176Z packages/visualizer build: Done
+durable-core	Run corepack pnpm build	2026-10-07T00:38:33.3184087Z packages/application build: Done
+durable-core	Run corepack pnpm build	2026-10-07T00:38:33.3186010Z packages/shopify build$ tsc -p tsconfig.json
+durable-core	Run corepack pnpm build	2026-10-07T00:38:34.7531161Z packages/shopify build: Done
+durable-core	Run corepack pnpm build	2026-10-07T00:38:34.7532487Z packages/database build$ tsc -p tsconfig.json
+durable-core	Run corepack pnpm build	2026-10-07T00:38:37.2721445Z packages/database build: Done
+durable-core	Run corepack pnpm build	2026-10-07T00:38:37.3624722Z apps/storefront build$ tsc --noEmit && vite build && node scripts/copy-theme-asset.mjs
+durable-core	Run corepack pnpm build	2026-10-07T00:38:37.3626045Z apps/worker build$ tsc -p tsconfig.json
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.3483335Z apps/worker build: Done
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.3511746Z apps/web build$ astro check && astro build
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.4111950Z apps/storefront build: ^[[36mvite v8.3.1 ^[[32mbuilding client environment for production...^[[36m^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.4209913Z apps/storefront build: transforming...
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.4267503Z apps/storefront build: ✓ 5 modules transformed.
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.4309285Z apps/storefront build: rendering chunks...
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.4369228Z apps/storefront build: computing gzip size...
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.4375407Z apps/storefront build: dist/insignia-storefront.js  14.03 kB │ gzip: 5.93 kB
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.4376310Z apps/storefront build:
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.4377781Z apps/storefront build: ^[[32m✓ built in 25ms^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:39.4770730Z apps/storefront build: Done
+durable-core	Run corepack pnpm build	2026-10-07T00:38:41.0881818Z apps/web build: ^[[2m00:38:41^[[22m ^[[34m[@astrojs/node]^[[39m Enabling sessions with filesystem storage
+durable-core	Run corepack pnpm build	2026-10-07T00:38:41.3488002Z apps/web build: ^[[2m00:38:41^[[22m ^[[34m[types]^[[39m Generated ^[[2m258ms^[[22m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:41.3569724Z apps/web build: ^[[2m00:38:41^[[22m ^[[34m[check]^[[39m Getting diagnostics for Astro files in /home/runner/work/insignia/insignia/apps/web...
+durable-core	Run corepack pnpm build	2026-10-07T00:38:45.7249911Z apps/web build: Result (28 files):
+durable-core	Run corepack pnpm build	2026-10-07T00:38:45.7250967Z apps/web build: - 0 errors
+durable-core	Run corepack pnpm build	2026-10-07T00:38:45.7251701Z apps/web build: - 0 warnings
+durable-core	Run corepack pnpm build	2026-10-07T00:38:45.7252352Z apps/web build: - 0 hints
+durable-core	Run corepack pnpm build	2026-10-07T00:38:45.7252965Z apps/web build:
+durable-core	Run corepack pnpm build	2026-10-07T00:38:46.8171163Z apps/web build: ^[[2m00:38:46^[[22m ^[[34m[@astrojs/node]^[[39m Enabling sessions with filesystem storage
+durable-core	Run corepack pnpm build	2026-10-07T00:38:46.9380664Z apps/web build: ^[[2m00:38:46^[[22m ^[[34m[types]^[[39m Generated ^[[2m68ms^[[22m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:46.9383948Z apps/web build: ^[[2m00:38:46^[[22m ^[[34m[build]^[[39m output: ^[[34m"server"^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:46.9385282Z apps/web build: ^[[2m00:38:46^[[22m ^[[34m[build]^[[39m mode: ^[[34m"server"^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:46.9387017Z apps/web build: ^[[2m00:38:46^[[22m ^[[34m[build]^[[39m directory: ^[[34m/home/runner/work/insignia/insignia/apps/web/dist/^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:46.9410788Z apps/web build: ^[[2m00:38:46^[[22m ^[[34m[build]^[[39m adapter: ^[[32m@astrojs/node^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:46.9412659Z apps/web build: ^[[2m00:38:46^[[22m ^[[34m[build]^[[39m Collecting build info...
+durable-core	Run corepack pnpm build	2026-10-07T00:38:46.9414898Z apps/web build: ^[[2m00:38:46^[[22m ^[[34m[build]^[[39m ^[[32m✓ Completed in 129ms.^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:46.9416539Z apps/web build: ^[[2m00:38:46^[[22m ^[[34m[build]^[[39m Building server entrypoints...
+durable-core	Run corepack pnpm build	2026-10-07T00:38:47.2223348Z apps/web build: ^[[2m00:38:47^[[22m ^[[34m[vite]^[[39m ^[[32m✓ built in 244ms^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:48.8956256Z apps/web build: ^[[2m00:38:48^[[22m ^[[34m[vite]^[[39m ^[[32m✓ built in 1.67s^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:49.1084783Z apps/web build: ^[[2m00:38:49^[[22m ^[[34m[vite]^[[39m ^[[32m✓ built in 203ms^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:49.1205793Z apps/web build: ^[[2m00:38:49^[[22m ^[[34m[build]^[[39m Rearranging server assets...
+durable-core	Run corepack pnpm build	2026-10-07T00:38:49.1216005Z apps/web build: ^[[2m00:38:49^[[22m ^[[34m[build]^[[39m ^[[32m✓ Completed in 2.18s.^[[39m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:49.1222637Z apps/web build: ^[[2m00:38:49^[[22m ^[[34m[build]^[[39m Server built in ^[[1m2.31s^[[22m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:49.1223631Z apps/web build: ^[[2m00:38:49^[[22m ^[[34m[build]^[[39m ^[[1mComplete!^[[22m
+durable-core	Run corepack pnpm build	2026-10-07T00:38:49.1593440Z apps/web build: Done
+durable-core	Run corepack pnpm check:style	﻿2026-10-07T00:38:49.1848190Z ##[group]Run corepack pnpm check:style
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:49.1848541Z ^[[36;1mcorepack pnpm check:style^[[0m
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:49.1912179Z shell: /usr/bin/bash -e {0}
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:49.1912438Z env:
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:49.1912997Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:49.1913353Z ##[endgroup]
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:49.2717440Z $ biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002 scripts/m5-003 scripts/m5-004 scripts/m5-005 scripts/m5-009 scripts/m5-010 scripts/m5-011 scripts/m5-012 scripts/m5-013 scripts/m5-015 scripts/m5-015r scripts/m5-016
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0162405Z apps/web/src/server/admin/production.ts:69:57 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0162897Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0163137Z   i Template literals are preferred over string concatenation.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0163505Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0164248Z     67 │   const appOrigin = required(env, 'APP_URL');
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0165101Z     68 │   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0166258Z   > 69 │   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0167500Z        │                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0168301Z     70 │   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0170011Z     71 │   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0170844Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0171240Z   i Unsafe fix: Use a template literal.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0171690Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0172271Z      67  67 │     const appOrigin = required(env, 'APP_URL');
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0173125Z      68  68 │     const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0174646Z      69     │ - ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·'gid://shopify/App/'·+·appId·:·null;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0175536Z          69 │ + ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·`gid://shopify/App/${appId}`·:·null;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0176412Z      70  70 │     const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0177291Z      71  71 │     const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0177789Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0178044Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0192190Z apps/web/src/server/admin/production.ts:89:54 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0192947Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0193342Z   i Template literals are preferred over string concatenation.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0194411Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0195110Z     87 │       installationGeneration: actor.installationGeneration,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0195809Z     88 │     });
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0196900Z   > 89 │     if (!scope || scope.shopDomain !== actor.shop || 'gid://shopify/Shop/' + scope.shopifyShopId !== actor.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0198207Z        │                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0199333Z     90 │       throw new Error('Admin installation changed');
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0199949Z     91 │   }
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0200271Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0200657Z   i Unsafe fix: Use a template literal.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0201437Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0202140Z      87  87 │         installationGeneration: actor.installationGeneration,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0202862Z      88  88 │       });
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0204117Z      89     │ - ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·'gid://shopify/Shop/'·+·scope.shopifyShopId·!==·actor.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0205950Z          89 │ + ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·`gid://shopify/Shop/${scope.shopifyShopId}`·!==·actor.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0207223Z      90  90 │         throw new Error('Admin installation changed');
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0207856Z      91  91 │     }
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0208187Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0208348Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0209567Z apps/web/src/server/admin/production.ts:214:51 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0210283Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0210647Z   i Template literals are preferred over string concatenation.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0211233Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0211965Z     212 │           const provider = await shopify.readInstallation(online);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0213076Z     213 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0214530Z   > 214 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0215847Z         │                                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0216761Z     215 │             throw new Error('Tenant installation mismatch');
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0217940Z     216 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0219098Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0219501Z   i Unsafe fix: Use a template literal.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0219948Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0220662Z     212 212 │             const provider = await shopify.readInstallation(online);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0221802Z     213 213 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0223428Z     214     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0225268Z         214 │ + ··········if·(!tenant·||·!tenant.shopifyShopId·||·`gid://shopify/Shop/${tenant.shopifyShopId}`·!==·provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0226599Z     215 215 │               throw new Error('Tenant installation mismatch');
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0227831Z     216 216 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0228899Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0229081Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0229994Z apps/web/src/server/admin/auth.ts:48:48 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0230684Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0230897Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0231330Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0232074Z     46 │     let identity: VerifiedAdminIdentity;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0232671Z     47 │     try {
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0233327Z   > 48 │       identity = await port.verifySessionToken(match[1]!);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0234173Z        │                                                ^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0234719Z     49 │     } catch {
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0235145Z     50 │       return null;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0235745Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0235917Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0236820Z apps/web/src/server/admin/auth.ts:61:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0237718Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0237940Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0238352Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0238938Z     59 │     )
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0239352Z     60 │       return null;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0240152Z   > 61 │     const grant = await port.exchangeOnlineGrant(match[1]!, identity);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0241057Z        │                                                  ^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0241609Z     62 │     if (
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0242457Z     63 │       grant.shop !== identity.shop ||
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0242932Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0243092Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0244006Z apps/web/src/server/admin/preview.ts:109:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0244712Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0244922Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0245364Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0245994Z     107 │             .then((found) => (found ? project(found) : null)),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0246629Z     108 │         );
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0247174Z   > 109 │       const result = await map.get(id)!;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0247830Z         │                            ^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0248429Z     110 │       await active(actor);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0249215Z     111 │       return result;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0249614Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0249777Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0250684Z apps/web/src/server/admin/preview.ts:116:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0251389Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0251604Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0252026Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0252448Z     114 │       await active(actor);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0253427Z     115 │       if (!currencies.has(actor)) currencies.set(actor, reader(actor).shopCurrency());
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0254444Z   > 116 │       const result = await currencies.get(actor)!;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0255319Z         │                            ^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0256075Z     117 │       await active(actor);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0256622Z     118 │       return result;
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0257009Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0257192Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0258119Z apps/web/src/server/admin/preview.ts:163:34 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0259046Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0259273Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0259698Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0260193Z     161 │                   shopId: randomUUID(),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0260875Z     162 │                   shopDomain: shop,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0261652Z   > 163 │                   shopifyShopId: shopId.split('/').at(-1)!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0262468Z         │                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0263337Z     164 │                   externalInstallationId: provider.installationId,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0264183Z     165 │                 }),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0264568Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0264742Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0265649Z apps/web/src/server/admin/preview.ts:223:26 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0266370Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0266585Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0266994Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0267698Z     221 │                   installationGeneration: bound.installationGeneration,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0268867Z     222 │                   shopifyShopId: shopId,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0269667Z   > 223 │                   appId: env.INSIGNIA_M5_002_APP_RESOURCE!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0270479Z         │                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0271054Z     224 │                 },
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0271496Z     225 │                 {
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0271856Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0272018Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0272906Z apps/web/src/server/admin/preview.ts:227:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0273990Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0274209Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0274640Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0275012Z     225 │                 {
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0275533Z     226 │                   appKey: client,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0276518Z   > 227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0277678Z         │                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0278982Z     228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0280073Z     229 │                 },
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0280450Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0280622Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0281656Z apps/web/src/server/admin/preview.ts:228:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0282372Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0282588Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0283112Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0283576Z     226 │                   appKey: client,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0284571Z     227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0285857Z   > 228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0286960Z         │                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0287440Z     229 │                 },
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0287708Z     230 │               );
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0287947Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0288054Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0288884Z apps/web/src/server/admin/production.ts:214:15 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0289319Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0289450Z   ! Change to an optional chain.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0289689Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0290085Z     212 │           const provider = await shopify.readInstallation(online);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0290711Z     213 │           const tenant = await core.tenants.getShopByDomain(provider.shop);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0291535Z   > 214 │           if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0292156Z         │               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0292594Z     215 │             throw new Error('Tenant installation mismatch');
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0293248Z     216 │           const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0293696Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0293947Z   i Unsafe fix: Change to an optional chain.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0294215Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0294596Z     212 212 │             const provider = await shopify.readInstallation(online);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0295226Z     213 213 │             const tenant = await core.tenants.getShopByDomain(provider.shop);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0296128Z     214     │ - ··········if·(!tenant·||·!tenant.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0297104Z         214 │ + ··········if·(!tenant?.shopifyShopId·||·'gid://shopify/Shop/'·+·tenant.shopifyShopId·!==·provider.shopId)
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0297784Z     215 215 │               throw new Error('Tenant installation mismatch');
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0298459Z     216 216 │             const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0299094Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0299193Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0299746Z apps/web/src/server/merchant-config.ts:123:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0300150Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0300275Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0300513Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0300822Z     121 │         option.allowedValueIds.flatMap((id) => {
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0301238Z     122 │           const label = oldLabels?.[id];
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0301672Z   > 123 │           return label ? [[values.get(id)!, label]] : [];
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0302273Z         │                            ^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0302571Z     124 │         }),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0302798Z     125 │       );
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0302982Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0303078Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0303568Z apps/web/src/server/merchant-config.ts:126:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0303956Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0304072Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0304313Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0304508Z     124 │         }),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0304732Z     125 │       );
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0305346Z   > 126 │       return Object.keys(remapped).length ? [[options.get(option.id)!, remapped]] : [];
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0305915Z         │                                               ^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0306245Z     127 │     }),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0306468Z     128 │   );
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0306648Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0306748Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0307243Z apps/web/src/server/merchant-config.ts:132:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0307627Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0307745Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0307981Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0308182Z     130 │     ...source,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0308428Z     131 │     labels,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0309137Z   > 132 │     methods: source.methods.map((item) => ({ id: methods.get(item.id)! })),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0309682Z         │                                                  ^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0310135Z     133 │     placements: source.placements.map((item) => ({
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0310494Z     134 │       ...item,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0310704Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0310796Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0311291Z apps/web/src/server/merchant-config.ts:135:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0311672Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0311794Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0312036Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0312352Z     133 │     placements: source.placements.map((item) => ({
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0312692Z     134 │       ...item,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0313000Z   > 135 │       id: placements.get(item.id)!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0313347Z         │           ^^^^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0313846Z     136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0314469Z     137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0314838Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0314936Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0315424Z apps/web/src/server/merchant-config.ts:136:59 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0315815Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0315935Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0316170Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0316369Z     134 │       ...item,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0316671Z     135 │       id: placements.get(item.id)!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0317343Z   > 136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0317895Z         │                                                           ^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0318421Z     137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0319057Z     138 │     })),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0319247Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0319347Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0319835Z apps/web/src/server/merchant-config.ts:137:55 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0320229Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0320349Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0320730Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0320999Z     135 │       id: placements.get(item.id)!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0321516Z     136 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0322130Z   > 137 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0322643Z         │                                                       ^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0322983Z     138 │     })),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0323392Z     139 │     productionOptions: source.productionOptions.map((item) => ({
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0323762Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0323859Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0324349Z apps/web/src/server/merchant-config.ts:140:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0324734Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0324850Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0325090Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0325283Z     138 │     })),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0325683Z     139 │     productionOptions: source.productionOptions.map((item) => ({
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0326148Z   > 140 │       id: options.get(item.id)!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0326474Z         │           ^^^^^^^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0327055Z     141 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0327615Z     142 │     })),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0327876Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0328161Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0329082Z apps/web/src/server/merchant-config.ts:141:57 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0329524Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0329718Z   ! Forbidden non-null assertion.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0330160Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0330668Z     139 │     productionOptions: source.productionOptions.map((item) => ({
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0331213Z     140 │       id: options.get(item.id)!,
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0331917Z   > 141 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0332553Z         │                                                         ^^^^^^^^^^^^^^^
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0333073Z     142 │     })),
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0333533Z     143 │     pricingRules: source.pricingRules.map((rule) => ({
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0333936Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0334158Z
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0334648Z The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0349008Z Diagnostics not shown: 125.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0349654Z Checked 271 files in 703ms. No fixes applied.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0350161Z Found 62 warnings.
+durable-core	Run corepack pnpm check:style	2026-10-07T00:38:50.0350504Z Found 83 infos.
+durable-core	Run corepack pnpm check:boundaries	﻿2026-10-07T00:38:50.0658261Z ##[group]Run corepack pnpm check:boundaries
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:38:50.0658969Z ^[[36;1mcorepack pnpm check:boundaries^[[0m
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:38:50.0723484Z shell: /usr/bin/bash -e {0}
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:38:50.0723747Z env:
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:38:50.0724490Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:38:50.0724850Z ##[endgroup]
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:38:50.1543637Z $ node scripts/boundaries/check.mjs && node scripts/boundaries/check-database-api.mjs && node scripts/boundaries/check-domain-effects.mjs && node --test scripts/boundaries/domain-effects.test.mjs
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:10.4511029Z Boundary checks passed: 191 real modules, 4 browser modules, 19 negative source fixtures, 2 rejected browser bundles and exports.
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:21.8112656Z Database public API rejects 19 compiler probes and 4 runtime deep imports.
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:22.3925289Z 6 production domain modules have no prohibited ambient effects
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3320455Z ✔ Date.now is rejected in a production domain helper (7.708873ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3329424Z ✔ new Date is rejected in a production domain helper (0.761269ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3330774Z ✔ Math.random is rejected in a production domain helper (0.438333ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3331957Z ✔ globalThis.Date.now is rejected in a production domain helper (0.591791ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3333282Z ✔ fetch is rejected in a production domain helper (1.180676ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3341392Z ✔ globalThis.crypto is rejected in a production domain helper (0.443743ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3342097Z ✔ computed random is rejected in a production domain helper (0.81447ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3343016Z ✔ template random is rejected in a production domain helper (0.683783ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3344136Z ✔ dynamic Math member is rejected in a production domain helper (1.2407ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3345244Z ✔ spread Date is rejected in a production domain helper (1.440905ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3346356Z ✔ random destructuring is rejected in a production domain helper (0.7401ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3347459Z ✔ date alias is rejected in a production domain helper (0.359315ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3348473Z ✔ math alias is rejected in a production domain helper (0.45261ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3349732Z ✔ import meta is rejected in a production domain helper (0.450767ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3350842Z ✔ process environment is rejected in a production domain helper (0.261521ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3352069Z ✔ deterministic numeric and explicit-value operations stay allowed (1.246451ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3353206Z ✔ type-only properties are not ambient API references (2.047664ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3354506Z ✔ compiled graph includes an imported module with an excluded test-like filename (590.296201ms)
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3786553Z ℹ tests 18
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3787167Z ℹ suites 0
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3787616Z ℹ pass 18
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3788012Z ℹ fail 0
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3788448Z ℹ cancelled 0
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3789163Z ℹ skipped 0
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3789540Z ℹ todo 0
+durable-core	Run corepack pnpm check:boundaries	2026-10-07T00:39:23.3790020Z ℹ duration_ms 945.481987
+durable-core	Run corepack pnpm check:secrets	﻿2026-10-07T00:39:23.3955900Z ##[group]Run corepack pnpm check:secrets
+durable-core	Run corepack pnpm check:secrets	2026-10-07T00:39:23.3956272Z ^[[36;1mcorepack pnpm check:secrets^[[0m
+durable-core	Run corepack pnpm check:secrets	2026-10-07T00:39:23.4019998Z shell: /usr/bin/bash -e {0}
+durable-core	Run corepack pnpm check:secrets	2026-10-07T00:39:23.4020264Z env:
+durable-core	Run corepack pnpm check:secrets	2026-10-07T00:39:23.4020846Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Run corepack pnpm check:secrets	2026-10-07T00:39:23.4021198Z ##[endgroup]
+durable-core	Run corepack pnpm check:secrets	2026-10-07T00:39:23.4864261Z $ node scripts/boundaries/check-secrets.mjs
+durable-core	Run corepack pnpm check:secrets	2026-10-07T00:39:23.5300978Z Secret/fixture provenance check passed: 110 production source files, 83 separately scanned test/fixture files, 2 browser artifacts, 2 explicitly synthetic seeds.
+durable-core	Run corepack pnpm check:database	﻿2026-10-07T00:39:23.5447093Z ##[group]Run corepack pnpm check:database
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.5447469Z ^[[36;1mcorepack pnpm check:database^[[0m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.5509491Z shell: /usr/bin/bash -e {0}
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.5509749Z env:
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.5510298Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.5510652Z ##[endgroup]
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.6375499Z $ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.7131402Z $ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.7797995Z Applying: 20260929000100_durable_core.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8079203Z Applied: 20260929000100_durable_core.sql in 27.313832ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8081475Z Applying: 20260929000200_runtime_ingress_credentials.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8164536Z Applied: 20260929000200_runtime_ingress_credentials.sql in 9.319016ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8165503Z Applying: 20260929000300_authorization_generation.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8212719Z Applied: 20260929000300_authorization_generation.sql in 4.812715ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8213638Z Applying: 20260929000400_accepted_quote.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8308895Z Applied: 20260929000400_accepted_quote.sql in 9.579406ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8309871Z Applying: 20260930000100_m4_key_lifecycle.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8397771Z Applied: 20260930000100_m4_key_lifecycle.sql in 8.886011ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8398810Z Applying: 20260930000200_publication_progress.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8443426Z Applied: 20260930000200_publication_progress.sql in 4.568818ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8444315Z Applying: 20260930000300_m5_revision_geometry.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8480000Z Applied: 20260930000300_m5_revision_geometry.sql in 3.624708ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8480814Z Applying: 20260930000400_m5_revision_presentation.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8514653Z Applied: 20260930000400_m5_revision_presentation.sql in 3.469346ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8515505Z Applying: 20260930000500_m5_publication_source_version.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8533920Z Applied: 20260930000500_m5_publication_source_version.sql in 1.935164ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8534921Z Applying: 20260930000600_m5_publication_intent_generation.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8552123Z Applied: 20260930000600_m5_publication_intent_generation.sql in 1.814394ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8553176Z Applying: 20260930000700_m5_publication_intent_lookup.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8574005Z Applied: 20260930000700_m5_publication_intent_lookup.sql in 2.163914ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8575020Z Applying: 20260930000800_m5_current_publication_pointer.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8615444Z Applied: 20260930000800_m5_current_publication_pointer.sql in 4.083985ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8616324Z Applying: 20260930000900_m5_activation.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8761573Z Applied: 20260930000900_m5_activation.sql in 14.592859ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8762418Z Applying: 20261006000100_m5_availability_v2.sql
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.8872648Z Applied: 20261006000100_m5_availability_v2.sql in 11.062432ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:23.9725915Z $ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:24.1147723Z $ corepack pnpm --filter @insignia/database test
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:24.1947275Z $ vitest run
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:24.4974522Z
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:24.4979200Z ^[[1m^[[30m^[[46m RUN ^[[49m^[[39m^[[22m ^[[36mv5.0.2 ^[[39m^[[90m/home/runner/work/insignia/insignia/packages/database^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:24.4980280Z
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:26.1399305Z  ^[[32m✓^[[39m test/accepted-quote.test.ts ^[[2m(^[[22m^[[2m2 tests^[[22m^[[2m)^[[22m^[[33m 642^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:26.1400734Z    ^[[32m✓^[[39m accepted quote PostgreSQL authority ^[[2m(2)^[[22m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:26.1402158Z      ^[[33m^[[2m✓^[[22m^[[39m stores one complete quote/set, replays the same key, and forbids mutation^[[33m 472^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:26.2879360Z  ^[[32m✓^[[39m test/runtime.test.ts ^[[2m(^[[22m^[[2m11 tests^[[22m^[[2m)^[[22m^[[33m 792^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:27.0429135Z  ^[[32m✓^[[39m test/config.test.ts ^[[2m(^[[22m^[[2m9 tests^[[22m^[[2m)^[[22m^[[33m 316^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:27.6738047Z  ^[[32m✓^[[39m test/production-publication.test.ts ^[[2m(^[[22m^[[2m10 tests^[[22m^[[2m)^[[22m^[[33m 835^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:28.1952661Z  ^[[32m✓^[[39m test/delivery/pg-delivery-repository.test.ts ^[[2m(^[[22m^[[2m10 tests^[[22m^[[2m)^[[22m^[[33m 564^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:28.6627022Z  ^[[32m✓^[[39m test/command/pg-command-repository.test.ts ^[[2m(^[[22m^[[2m6 tests^[[22m^[[2m)^[[22m^[[33m 372^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:28.9708160Z  ^[[32m✓^[[39m test/signing-keys.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[32m 223^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.5604703Z  ^[[32m✓^[[39m test/authorization-generation.test.ts ^[[2m(^[[22m^[[2m1 test^[[22m^[[2m)^[[22m^[[32m 105^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.6046139Z  ^[[32m✓^[[39m test/public-admission.test.ts ^[[2m(^[[22m^[[2m3 tests^[[22m^[[2m)^[[22m^[[32m 205^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.6253110Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay 0 ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.6256042Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVE","evidenceDigest":"3ea7e92b62b67ea6a8ea769fb6af6f5f2cdcc9186c83ea63fb31576b096a30ac"},"statusMutations":["DRAFT","ACTIVE"]}
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.6257465Z
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.7559363Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay 999 ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.7562224Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVE","evidenceDigest":"ca3b2c89e551dfa21f59811e9258311e504e7a3d59f4e59b84b5a20eb11801a1"},"statusMutations":["DRAFT","ACTIVE"]}
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.7563528Z
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.8810623Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay 1000 ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.8812506Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVE","evidenceDigest":"de76f17176f961d5c0857816f7f8121e767da5f03c39a939cccd96e732c89957"},"statusMutations":["DRAFT","ACTIVE"]}
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:29.8813459Z
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:30.0047136Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay 1001 ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:30.0049679Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVATED_RESTORATION_PENDING","evidenceDigest":"307e46f149abd95877ee7febac747a5be2fa169269db3465bb4f465fc7a96be8"},"statusMutations":["DRAFT"]}
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:30.0050603Z
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:30.1235380Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay 2000 ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:30.1239036Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVATED_RESTORATION_PENDING","evidenceDigest":"79bef57eb076868c614f8dc5ee3a362bd1b7abd4d0e2449f5339798afcabc65d"},"statusMutations":["DRAFT"]}
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:30.1240616Z
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:30.2510199Z ^[[90mstdout^[[2m | test/activation.test.ts^[[2m > ^[[22m^[[2mPG18 scoped production activation^[[2m > ^[[22m^[[2mR1-T real restoration credential delay -1 ms
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:30.2512935Z ^[[22m^[[39mR1_T_RESTORE_HTTP_OBSERVATION {"result":{"kind":"ACTIVATED_RESTORATION_PENDING","evidenceDigest":"5933f1c7c5f9dd4c8c3fb122f0e70ce0326e76f77dce9a10054873704dbebddf"},"statusMutations":["DRAFT"]}
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:30.2513715Z
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:37.0359484Z  ^[[32m✓^[[39m test/activation.test.ts ^[[2m(^[[22m^[[2m106 tests^[[22m^[[2m)^[[22m^[[33m 11434^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:37.0360258Z    ^[[32m✓^[[39m PG18 scoped production activation ^[[2m(106)^[[22m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:37.0361175Z      ^[[33m^[[2m✓^[[22m^[[39m v2 hold/evidence/restoration audit JSONB roundtrips, remains immutable, and rejects v1 decision semantics^[[33m 353^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:37.0362174Z      ^[[33m^[[2m✓^[[22m^[[39m policy transition requires its own hold (optional-to-required)^[[33m 305^[[2mms^[[22m^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:37.0414710Z
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:37.0419999Z ^[[2m Test Files ^[[22m ^[[1m^[[32m10 passed^[[39m^[[22m^[[90m (10)^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:37.0449924Z ^[[2m      Tests ^[[22m ^[[1m^[[32m161 passed^[[39m^[[22m^[[90m (161)^[[39m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:37.0450729Z ^[[2m   Start at ^[[22m 00:39:24
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:37.0451544Z ^[[2m   Duration ^[[22m 12.53s^[[2m (tests 73%, import 19%, transform 7%)^[[22m
+durable-core	Run corepack pnpm check:database	2026-10-07T00:39:37.0452004Z
+durable-core	M5 100k actual read-seam query plans	﻿2026-10-07T00:39:37.1105161Z ##[group]Run M5_QUERY_PLAN_OUTPUT=/tmp/m5-query-plan.json corepack pnpm test:m5-query-plan
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:39:37.1105831Z ^[[36;1mM5_QUERY_PLAN_OUTPUT=/tmp/m5-query-plan.json corepack pnpm test:m5-query-plan^[[0m
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:39:37.1171153Z shell: /usr/bin/bash -e {0}
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:39:37.1171438Z env:
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:39:37.1172065Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:39:37.1172441Z ##[endgroup]
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:39:37.2020639Z $ node scripts/m5-003/large-history.mjs
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0668015Z {
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0668378Z   "pointer": {
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0668982Z     "planningMs": 0.986,
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0669316Z     "executionMs": 0.094,
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0669790Z     "rows": 1,
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0670181Z     "indexes": [
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0671273Z       "m5_current_publication_pointer_pkey",
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0672323Z       "publication_operations_shop_id_config_id_operation_id_key",
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0673467Z       "m4_publication_progress_pkey",
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0674639Z       "m5_activation_state_pkey",
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0675451Z       "config_revision_geometry_pkey"
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0676200Z     ]
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0676556Z   },
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0677026Z   "fallback": {
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0677737Z     "planningMs": 0.673,
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0678414Z     "executionMs": 1.342,
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0679410Z     "rows": 1,
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0679966Z     "indexes": [
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0680706Z       "m5_current_publication_visible_idx",
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0681608Z       "m5_activation_state_pkey",
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0682346Z       "m4_publication_progress_pkey"
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0683066Z     ]
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0683607Z   },
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0684054Z   "adminEffective": {
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0684571Z     "planningMs": 0.126,
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0685109Z     "executionMs": 0.013,
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0685624Z     "rows": 1,
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0686073Z     "indexes": [
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0686769Z       "product_configs_shop_id_external_product_id_key"
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0687398Z     ]
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0687712Z   }
+durable-core	M5 100k actual read-seam query plans	2026-10-07T00:40:06.0688063Z }
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	﻿2026-10-07T00:40:06.1004449Z ##[group]Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1004893Z with:
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1005208Z   name: m5-003-query-plans-6830c6f7234dae85112cd134af41a7910be3eab3
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1005591Z   path: /tmp/m5-query-plan.json
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1005861Z   if-no-files-found: error
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1006114Z   retention-days: 14
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1006324Z   overwrite: false
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1006533Z   compression-level: 6
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1006762Z   include-hidden-files: false
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1006996Z env:
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1007528Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.1007891Z ##[endgroup]
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.2739646Z (node:5481) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.2741241Z (Use `node --trace-deprecation ...` to show where the warning was created)
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.2786568Z With the provided path, there will be 1 file uploaded
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.2793448Z Artifact name is valid!
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.2813447Z Root directory input is valid!
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.6632854Z Beginning upload of artifact content to blob storage
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.6854710Z (node:5481) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:06.9675239Z Uploaded bytes 4335
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:07.0459322Z Finished uploading artifact content to blob storage!
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:07.0460571Z SHA256 digest of uploaded artifact zip is 2553d58830dfbef5c6fc23ed53ccb927324a7e9aa17f0fc2c7d6d68b54366e3b
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:07.0461742Z Finalizing artifact upload
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:07.2958992Z Artifact m5-003-query-plans-6830c6f7234dae85112cd134af41a7910be3eab3.zip successfully finalized. Artifact ID 11453486506
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:07.2961194Z Artifact m5-003-query-plans-6830c6f7234dae85112cd134af41a7910be3eab3 has been successfully uploaded! Final size is 4335 bytes. Artifact ID is 11453486506
+durable-core	Preserve actual M5 PostgreSQL plans and build hashes	2026-10-07T00:40:07.2965809Z Artifact download URL: https://github.com/Optidigi/insignia/actions/runs/37552982244/artifacts/11453486506
+durable-core	Rehearse disposable down and up	﻿2026-10-07T00:40:07.3089216Z ##[group]Run corepack pnpm exec dbmate create
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.3089655Z ^[[36;1mcorepack pnpm exec dbmate create^[[0m
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.3089971Z ^[[36;1mcorepack pnpm db:migrate^[[0m
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.3090474Z ^[[36;1mcorepack pnpm exec dbmate --no-dump-schema --migrations-dir packages/database/migrations rollback^[[0m
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.3090987Z ^[[36;1mcorepack pnpm db:migrate^[[0m
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.3153766Z shell: /usr/bin/bash -e {0}
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.3154023Z env:
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.3154640Z   DATABASE_URL: ***localhost:5432/insignia_migration_rehearsal?sslmode=disable
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.3155042Z ##[endgroup]
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.4382060Z Creating: insignia_migration_rehearsal
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.5790397Z $ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.6435688Z Applying: 20260929000100_durable_core.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.6695876Z Applied: 20260929000100_durable_core.sql in 26.002197ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.6697065Z Applying: 20260929000200_runtime_ingress_credentials.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.6796169Z Applied: 20260929000200_runtime_ingress_credentials.sql in 10.012481ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.6797232Z Applying: 20260929000300_authorization_generation.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.6842132Z Applied: 20260929000300_authorization_generation.sql in 4.632698ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.6842887Z Applying: 20260929000400_accepted_quote.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.6937498Z Applied: 20260929000400_accepted_quote.sql in 9.50348ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.6938009Z Applying: 20260930000100_m4_key_lifecycle.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7026463Z Applied: 20260930000100_m4_key_lifecycle.sql in 8.867148ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7027335Z Applying: 20260930000200_publication_progress.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7070809Z Applied: 20260930000200_publication_progress.sql in 4.465173ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7071825Z Applying: 20260930000300_m5_revision_geometry.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7107413Z Applied: 20260930000300_m5_revision_geometry.sql in 3.644773ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7108180Z Applying: 20260930000400_m5_revision_presentation.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7141229Z Applied: 20260930000400_m5_revision_presentation.sql in 3.350176ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7142050Z Applying: 20260930000500_m5_publication_source_version.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7159619Z Applied: 20260930000500_m5_publication_source_version.sql in 1.837412ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7160437Z Applying: 20260930000600_m5_publication_intent_generation.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7179259Z Applied: 20260930000600_m5_publication_intent_generation.sql in 1.967124ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7180187Z Applying: 20260930000700_m5_publication_intent_lookup.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7200037Z Applied: 20260930000700_m5_publication_intent_lookup.sql in 2.056922ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7201033Z Applying: 20260930000800_m5_current_publication_pointer.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7240001Z Applied: 20260930000800_m5_current_publication_pointer.sql in 3.943384ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7240905Z Applying: 20260930000900_m5_activation.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7416481Z Applied: 20260930000900_m5_activation.sql in 17.622525ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7417353Z Applying: 20261006000100_m5_availability_v2.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.7522197Z Applied: 20261006000100_m5_availability_v2.sql in 10.571998ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.8909158Z Rolling back: 20261006000100_m5_availability_v2.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.8989610Z Rolled back: 20261006000100_m5_availability_v2.sql in 8.151001ms
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:07.9857445Z $ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:08.0431749Z Applying: 20261006000100_m5_availability_v2.sql
+durable-core	Rehearse disposable down and up	2026-10-07T00:40:08.0574602Z Applied: 20261006000100_m5_availability_v2.sql in 14.275983ms
+durable-core	Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	﻿2026-10-07T00:40:08.0774997Z Post job cleanup.
+durable-core	Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:40:08.2053731Z (node:5684) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+durable-core	Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020	2026-10-07T00:40:08.2054703Z (Use `node --trace-deprecation ...` to show where the warning was created)
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	﻿2026-10-07T00:40:08.2277205Z Post job cleanup.
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3179619Z [command]/usr/bin/git version
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3224629Z git version 2.55.0
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3267917Z Temporarily overriding HOME='/home/runner/work/_temp/9dbd664e-7f71-4a27-ac08-fa1bc39b6a0e' before making global git config changes
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3269976Z Adding repository directory to the temporary git global config as a safe directory
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3274094Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/insignia/insignia
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3317340Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3360082Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3617519Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3647572Z http.https://github.com/.extraheader
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3660796Z [command]/usr/bin/git config --local --unset-all http.https://github.com/.extraheader
+durable-core	Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683	2026-10-07T00:40:08.3705782Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+durable-core	Stop containers	﻿2026-10-07T00:40:08.4183368Z Print service container logs: 817bc611b6c046ed83311aff09848c53_postgres18_683e50
+durable-core	Stop containers	2026-10-07T00:40:08.4190668Z ##[command]/usr/bin/docker logs --details c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672
+durable-core	Stop containers	2026-10-07T00:40:08.4344183Z  initdb: warning: enabling "trust" authentication for local connections
+durable-core	Stop containers	2026-10-07T00:40:08.4346038Z  initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+durable-core	Stop containers	2026-10-07T00:40:08.4348495Z  2026-10-07 00:38:18.042 UTC [1] LOG:  starting PostgreSQL 18.6 (Debian 18.6-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+durable-core	Stop containers	2026-10-07T00:40:08.4350192Z  The files belonging to this database system will be owned by user "postgres".
+durable-core	Stop containers	2026-10-07T00:40:08.4351007Z  This user must also own the server process.
+durable-core	Stop containers	2026-10-07T00:40:08.4351536Z
+durable-core	Stop containers	2026-10-07T00:40:08.4352040Z  The database cluster will be initialized with locale "en_US.utf8".
+durable-core	Stop containers	2026-10-07T00:40:08.4352925Z  The default database encoding has accordingly been set to "UTF8".
+durable-core	Stop containers	2026-10-07T00:40:08.4353593Z  The default text search configuration will be set to "english".
+durable-core	Stop containers	2026-10-07T00:40:08.4353927Z
+durable-core	Stop containers	2026-10-07T00:40:08.4354258Z  Data page checksums are enabled.
+durable-core	Stop containers	2026-10-07T00:40:08.4354601Z
+durable-core	Stop containers	2026-10-07T00:40:08.4354990Z  fixing permissions on existing directory /var/lib/postgresql/18/docker ... ok
+durable-core	Stop containers	2026-10-07T00:40:08.4355781Z  creating subdirectories ... ok
+durable-core	Stop containers	2026-10-07T00:40:08.4356356Z  selecting dynamic shared memory implementation ... posix
+durable-core	Stop containers	2026-10-07T00:40:08.4356989Z  selecting default "max_connections" ... 100
+durable-core	Stop containers	2026-10-07T00:40:08.4357531Z  selecting default "shared_buffers" ... 128MB
+durable-core	Stop containers	2026-10-07T00:40:08.4358092Z  selecting default time zone ... Etc/UTC
+durable-core	Stop containers	2026-10-07T00:40:08.4358798Z  creating configuration files ... ok
+durable-core	Stop containers	2026-10-07T00:40:08.4359289Z  running bootstrap script ... ok
+durable-core	Stop containers	2026-10-07T00:40:08.4359813Z  performing post-bootstrap initialization ... ok
+durable-core	Stop containers	2026-10-07T00:40:08.4360361Z  syncing data to disk ... ok
+durable-core	Stop containers	2026-10-07T00:40:08.4360758Z
+durable-core	Stop containers	2026-10-07T00:40:08.4361060Z
+durable-core	Stop containers	2026-10-07T00:40:08.4361441Z  Success. You can now start the database server using:
+durable-core	Stop containers	2026-10-07T00:40:08.4361918Z
+durable-core	Stop containers	2026-10-07T00:40:08.4362302Z      pg_ctl -D /var/lib/postgresql/18/docker -l logfile start
+durable-core	Stop containers	2026-10-07T00:40:08.4362809Z
+durable-core	Stop containers	2026-10-07T00:40:08.4363955Z  waiting for server to start....2026-10-07 00:38:17.722 UTC [54] LOG:  starting PostgreSQL 18.6 (Debian 18.6-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit
+durable-core	Stop containers	2026-10-07T00:40:08.4365640Z  2026-10-07 00:38:17.723 UTC [54] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+durable-core	Stop containers	2026-10-07T00:40:08.4366704Z  2026-10-07 00:38:17.726 UTC [60] LOG:  database system was shut down at 2026-10-07 00:38:17 UTC
+durable-core	Stop containers	2026-10-07T00:40:08.4367617Z  2026-10-07 00:38:17.729 UTC [54] LOG:  database system is ready to accept connections
+durable-core	Stop containers	2026-10-07T00:40:08.4368205Z   done
+durable-core	Stop containers	2026-10-07T00:40:08.4368489Z  server started
+durable-core	Stop containers	2026-10-07T00:40:08.4368997Z  CREATE DATABASE
+durable-core	Stop containers	2026-10-07T00:40:08.4369308Z
+durable-core	Stop containers	2026-10-07T00:40:08.4370008Z
+durable-core	Stop containers	2026-10-07T00:40:08.4370582Z  /usr/local/bin/docker-entrypoint.sh: ignoring /docker-entrypoint-initdb.d/*
+durable-core	Stop containers	2026-10-07T00:40:08.4371297Z
+durable-core	Stop containers	2026-10-07T00:40:08.4371726Z  2026-10-07 00:38:17.920 UTC [54] LOG:  received fast shutdown request
+durable-core	Stop containers	2026-10-07T00:40:08.4372656Z  waiting for server to shut down....2026-10-07 00:38:17.920 UTC [54] LOG:  aborting any active transactions
+durable-core	Stop containers	2026-10-07T00:40:08.4375621Z  2026-10-07 00:38:17.923 UTC [54] LOG:  background worker "logical replication launcher" (PID 63) exited with exit code 1
+durable-core	Stop containers	2026-10-07T00:40:08.4376653Z  2026-10-07 00:38:17.923 UTC [58] LOG:  shutting down
+durable-core	Stop containers	2026-10-07T00:40:08.4377355Z  2026-10-07 00:38:17.923 UTC [58] LOG:  checkpoint starting: shutdown immediate
+durable-core	Stop containers	2026-10-07T00:40:08.4379772Z  2026-10-07 00:38:17.937 UTC [58] LOG:  checkpoint complete: wrote 943 buffers (5.8%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.012 s, sync=0.002 s, total=0.015 s; sync files=303, longest=0.001 s, average=0.001 s; distance=4352 kB, estimate=4352 kB; lsn=0/1BA1BE8, redo lsn=0/1BA1BE8
+durable-core	Stop containers	2026-10-07T00:40:08.4381254Z  2026-10-07 00:38:17.948 UTC [54] LOG:  database system is shut down
+durable-core	Stop containers	2026-10-07T00:40:08.4381584Z   done
+durable-core	Stop containers	2026-10-07T00:40:08.4381769Z  server stopped
+durable-core	Stop containers	2026-10-07T00:40:08.4381962Z
+durable-core	Stop containers	2026-10-07T00:40:08.4382205Z  PostgreSQL init process complete; ready for start up.
+durable-core	Stop containers	2026-10-07T00:40:08.4382503Z
+durable-core	Stop containers	2026-10-07T00:40:08.4382839Z  2026-10-07 00:38:18.042 UTC [1] LOG:  listening on IPv4 address "0.0.0.0", port 5432
+durable-core	Stop containers	2026-10-07T00:40:08.4383308Z  2026-10-07 00:38:18.042 UTC [1] LOG:  listening on IPv6 address "::", port 5432
+durable-core	Stop containers	2026-10-07T00:40:08.4383831Z  2026-10-07 00:38:18.043 UTC [1] LOG:  listening on Unix socket "/var/run/postgresql/.s.PGSQL.5432"
+durable-core	Stop containers	2026-10-07T00:40:08.4384393Z  2026-10-07 00:38:18.047 UTC [76] LOG:  database system was shut down at 2026-10-07 00:38:17 UTC
+durable-core	Stop containers	2026-10-07T00:40:08.4384910Z  2026-10-07 00:38:18.050 UTC [1] LOG:  database system is ready to accept connections
+durable-core	Stop containers	2026-10-07T00:40:08.4385413Z  2026-10-07 00:39:25.862 UTC [206] ERROR:  canceling statement due to lock timeout
+durable-core	Stop containers	2026-10-07T00:40:08.4385992Z  2026-10-07 00:39:25.862 UTC [206] CONTEXT:  while locking tuple (0,2) in relation "installation_generations"
+durable-core	Stop containers	2026-10-07T00:40:08.4386676Z  2026-10-07 00:39:25.862 UTC [206] STATEMENT:  UPDATE installation_generations SET authorization_epoch = $1
+durable-core	Stop containers	2026-10-07T00:40:08.4387206Z  	              WHERE shop_id = $2 AND generation = $3::bigint
+durable-core	Stop containers	2026-10-07T00:40:08.4387658Z  2026-10-07 00:39:25.877 UTC [204] ERROR:  v2 availability audit is immutable or out of phase
+durable-core	Stop containers	2026-10-07T00:40:08.4388263Z  2026-10-07 00:39:25.877 UTC [204] CONTEXT:  PL/pgSQL function enforce_activation_v2_audit() line 8 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4389594Z  2026-10-07 00:39:25.877 UTC [204] STATEMENT:  UPDATE m5_activation_state SET hold=jsonb_set(hold,'{acquisitionAcknowledgement,providerUpdatedAt}','"2026-10-01T11:59:00.000Z"'::jsonb),version=version+1 WHERE shop_id=$1
+durable-core	Stop containers	2026-10-07T00:40:08.4390570Z  2026-10-07 00:39:25.935 UTC [205] ERROR:  accepted quote and authorization rows are immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4391155Z  2026-10-07 00:39:25.935 UTC [205] CONTEXT:  PL/pgSQL function reject_quote_mutation() line 3 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4391811Z  2026-10-07 00:39:25.935 UTC [205] STATEMENT:  UPDATE accepted_quotes SET total_minor = 1 WHERE quote_id = $1::uuid
+durable-core	Stop containers	2026-10-07T00:40:08.4392422Z  2026-10-07 00:39:25.938 UTC [205] ERROR:  accepted quote and authorization rows are immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4392985Z  2026-10-07 00:39:25.938 UTC [205] CONTEXT:  PL/pgSQL function reject_quote_mutation() line 3 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4393576Z  2026-10-07 00:39:25.938 UTC [205] STATEMENT:  DELETE FROM accepted_quotes WHERE quote_id = $1::uuid
+durable-core	Stop containers	2026-10-07T00:40:08.4394168Z  2026-10-07 00:39:25.939 UTC [205] ERROR:  invalid input syntax for type integer: "other" at character 46
+durable-core	Stop containers	2026-10-07T00:40:08.4394847Z  2026-10-07 00:39:25.939 UTC [205] STATEMENT:  UPDATE quote_authorization_sets SET key_id = 'other' WHERE set_id = $1::uuid
+durable-core	Stop containers	2026-10-07T00:40:08.4395643Z  2026-10-07 00:39:25.940 UTC [205] ERROR:  accepted quote and authorization rows are immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4396201Z  2026-10-07 00:39:25.940 UTC [205] CONTEXT:  PL/pgSQL function reject_quote_mutation() line 3 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4396811Z  2026-10-07 00:39:25.940 UTC [205] STATEMENT:  DELETE FROM quote_authorization_sets WHERE set_id = $1::uuid
+durable-core	Stop containers	2026-10-07T00:40:08.4397363Z  2026-10-07 00:39:25.966 UTC [192] ERROR:  accepted quote installation fence failed
+durable-core	Stop containers	2026-10-07T00:40:08.4397931Z  2026-10-07 00:39:25.966 UTC [192] CONTEXT:  PL/pgSQL function enforce_accepted_quote_insert() line 15 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4398415Z  2026-10-07 00:39:25.966 UTC [192] STATEMENT:
+durable-core	Stop containers	2026-10-07T00:40:08.4398935Z  	        /* m4_002_direct_guard_race */
+durable-core	Stop containers	2026-10-07T00:40:08.4399416Z  	        INSERT INTO accepted_quotes (quote_id, shop_id, installation_generation, authorization_generation,
+durable-core	Stop containers	2026-10-07T00:40:08.4400106Z  	          authorization_epoch, idempotency_key, request_digest, schema_version, accepted_at, accepted_date,
+durable-core	Stop containers	2026-10-07T00:40:08.4400890Z  	          accepted_day, valid_through_day, country, market_id, shop_currency, shop_timezone,
+durable-core	Stop containers	2026-10-07T00:40:08.4401466Z  	          presentment_currency, presentment_exponent, policy_version, recognized_policy_id,
+durable-core	Stop containers	2026-10-07T00:40:08.4402049Z  	          trial, qualifying_usage_disposition, customized_quantity, total_minor, quote_value)
+durable-core	Stop containers	2026-10-07T00:40:08.4402484Z  	        VALUES ($1::uuid, $2, $3::bigint,
+durable-core	Stop containers	2026-10-07T00:40:08.4402753Z  	          $4::uuid, $5::bigint,
+durable-core	Stop containers	2026-10-07T00:40:08.4403021Z  	          'direct-race', $6, $7, $8::timestamptz,
+durable-core	Stop containers	2026-10-07T00:40:08.4403310Z  	          $9::date, $10, $11,
+durable-core	Stop containers	2026-10-07T00:40:08.4403546Z  	          $12, $13::numeric, $14,
+durable-core	Stop containers	2026-10-07T00:40:08.4403785Z  	          $15, $16, $17,
+durable-core	Stop containers	2026-10-07T00:40:08.4404001Z  	          $18, $19, $20,
+durable-core	Stop containers	2026-10-07T00:40:08.4404206Z  	          $21, $22,
+durable-core	Stop containers	2026-10-07T00:40:08.4404419Z  	          $23::numeric, $24::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4404796Z  2026-10-07 00:39:25.968 UTC [206] ERROR:  authorization set installation fence failed
+durable-core	Stop containers	2026-10-07T00:40:08.4405423Z  2026-10-07 00:39:25.968 UTC [206] CONTEXT:  PL/pgSQL function enforce_quote_authorization_insert() line 16 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4405933Z  2026-10-07 00:39:25.968 UTC [206] STATEMENT:
+durable-core	Stop containers	2026-10-07T00:40:08.4406218Z  	        /* m4_002_set_guard_race */
+durable-core	Stop containers	2026-10-07T00:40:08.4406646Z  	        INSERT INTO quote_authorization_sets (set_id, quote_id, shop_id, installation_generation,
+durable-core	Stop containers	2026-10-07T00:40:08.4407231Z  	          authorization_generation, authorization_epoch, key_id, public_key_fingerprint,
+durable-core	Stop containers	2026-10-07T00:40:08.4407812Z  	          first_valid_day, last_valid_day, valid_through_day, envelope_carrier, member_carriers)
+durable-core	Stop containers	2026-10-07T00:40:08.4408273Z  	        VALUES ($1::uuid, $2::uuid, $3, $4::bigint,
+durable-core	Stop containers	2026-10-07T00:40:08.4408872Z  	          $5::uuid, $6::bigint,
+durable-core	Stop containers	2026-10-07T00:40:08.4409132Z  	          $7, $8, $9,
+durable-core	Stop containers	2026-10-07T00:40:08.4409350Z  	          $10, $11, $12,
+durable-core	Stop containers	2026-10-07T00:40:08.4409567Z  	          $13::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4409887Z  2026-10-07 00:39:25.969 UTC [221] WARNING:  there is no transaction in progress
+durable-core	Stop containers	2026-10-07T00:40:08.4410378Z  2026-10-07 00:39:25.975 UTC [205] ERROR:  authorization set installation fence failed
+durable-core	Stop containers	2026-10-07T00:40:08.4410970Z  2026-10-07 00:39:25.975 UTC [205] CONTEXT:  PL/pgSQL function enforce_quote_authorization_insert() line 16 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4411732Z  2026-10-07 00:39:25.975 UTC [205] STATEMENT:  INSERT INTO quote_authorization_sets (set_id, quote_id, shop_id, installation_generation,
+durable-core	Stop containers	2026-10-07T00:40:08.4412439Z  	        authorization_generation, authorization_epoch, key_id, public_key_fingerprint,
+durable-core	Stop containers	2026-10-07T00:40:08.4413006Z  	        first_valid_day, last_valid_day, valid_through_day, envelope_carrier, member_carriers)
+durable-core	Stop containers	2026-10-07T00:40:08.4413489Z  	      VALUES ($1::uuid, $2::uuid, $3, $4::bigint,
+durable-core	Stop containers	2026-10-07T00:40:08.4413990Z  	        $5::uuid, $6::bigint,
+durable-core	Stop containers	2026-10-07T00:40:08.4414439Z  	        $7, $8, $9,
+durable-core	Stop containers	2026-10-07T00:40:08.4414770Z  	        $10, $11, $12,
+durable-core	Stop containers	2026-10-07T00:40:08.4415225Z  	        $13::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4430262Z  2026-10-07 00:39:26.006 UTC [224] ERROR:  synthetic inbox failure
+durable-core	Stop containers	2026-10-07T00:40:08.4430940Z  2026-10-07 00:39:26.006 UTC [224] CONTEXT:  PL/pgSQL function test_uninstall_5615db79f6ef4351() line 1 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4431800Z  2026-10-07 00:39:26.006 UTC [224] STATEMENT:  update "inbox_messages" set "state" = $1, "last_error_class" = $2, "attempts" = "attempts" + $3 where "id" = $4
+durable-core	Stop containers	2026-10-07T00:40:08.4432548Z  2026-10-07 00:39:26.059 UTC [204] ERROR:  v2 availability audit is immutable or out of phase
+durable-core	Stop containers	2026-10-07T00:40:08.4433163Z  2026-10-07 00:39:26.059 UTC [204] CONTEXT:  PL/pgSQL function enforce_activation_v2_audit() line 8 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4434066Z  2026-10-07 00:39:26.059 UTC [204] STATEMENT:  UPDATE m5_activation_state SET hold=jsonb_set(hold,'{restorationReceipt,kind}','"CONFLICT"'::jsonb),version=version+1 WHERE shop_id=$1
+durable-core	Stop containers	2026-10-07T00:40:08.4435342Z  2026-10-07 00:39:26.087 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_identity"
+durable-core	Stop containers	2026-10-07T00:40:08.4437184Z  2026-10-07 00:39:26.087 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, 4a215489cb752d7a37ff093910c37317f519dfa51b738d6262a5dab10d2b7976, {"hold": null, "shopId": "41208097-366b-4f78-8a50-3e22f774c67a",..., 2026-10-07 00:39:26.086833+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4439920Z  2026-10-07 00:39:26.087 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4441379Z  2026-10-07 00:39:26.091 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_hold"
+durable-core	Stop containers	2026-10-07T00:40:08.4443202Z  2026-10-07 00:39:26.091 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, deaf1450d322d900f02c58ffc42b557f209d70e2b357d998263a8c2362563d3b, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.090117+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4445589Z  2026-10-07 00:39:26.091 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4447015Z  2026-10-07 00:39:26.094 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_hold"
+durable-core	Stop containers	2026-10-07T00:40:08.4449030Z  2026-10-07 00:39:26.094 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, 8025e2b4eaf6d02fc424653e40d794d4492b7ba0243fcee80b429eb7eeb73e58, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.093919+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4451440Z  2026-10-07 00:39:26.094 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4452883Z  2026-10-07 00:39:26.099 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_hold"
+durable-core	Stop containers	2026-10-07T00:40:08.4454699Z  2026-10-07 00:39:26.099 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, 6a15a5d1640bee1d1b7c53db5c534ea6e09cbdaa2be25964881ad8ce019f0c7a, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.097523+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4457266Z  2026-10-07 00:39:26.099 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4458896Z  2026-10-07 00:39:26.104 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_hold"
+durable-core	Stop containers	2026-10-07T00:40:08.4460798Z  2026-10-07 00:39:26.104 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, 41beac990ba317e41e0ef0eb95353ae43a45ea82118eaae33650b2220b35f044, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.103487+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4463325Z  2026-10-07 00:39:26.104 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4464768Z  2026-10-07 00:39:26.110 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4466570Z  2026-10-07 00:39:26.110 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, c03a3592e65cc6e2105d3d39082259536b659fd5fdadfa5691c0bff0fcb9f65f, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.110128+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4469270Z  2026-10-07 00:39:26.110 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4470714Z  2026-10-07 00:39:26.114 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4472501Z  2026-10-07 00:39:26.114 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, c2e1f197c1044d690b9f76d8824b80034f98e435a4f59b45a8532c17d353d037, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.1135+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4474881Z  2026-10-07 00:39:26.114 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4476313Z  2026-10-07 00:39:26.118 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4478100Z  2026-10-07 00:39:26.118 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, 270894755b50b958347ddf3d7bbe914d1b98a533fc54b6987781c9179de41e57, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.11741+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4480905Z  2026-10-07 00:39:26.118 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4482343Z  2026-10-07 00:39:26.120 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4484141Z  2026-10-07 00:39:26.120 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, 6d754a2f694a3180cfc255b60b79733f48dd49af384f7a4217722e658eabc800, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.120106+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4486698Z  2026-10-07 00:39:26.120 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4488129Z  2026-10-07 00:39:26.123 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4490146Z  2026-10-07 00:39:26.123 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, 0322306bc6b3b28bf274d08078a665e15473cceb32f188dabf03ea75e4c233e5, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.122332+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4492524Z  2026-10-07 00:39:26.123 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4493951Z  2026-10-07 00:39:26.126 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4495743Z  2026-10-07 00:39:26.126 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, 2a96d0b9db78128346b0a6afcf654bb411915230872823ee1a360b0bca57d39f, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.125644+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4498121Z  2026-10-07 00:39:26.126 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4499739Z  2026-10-07 00:39:26.140 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4501531Z  2026-10-07 00:39:26.140 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, 3a574198cb6b01330cd9b510446cf435b742e3fdcd7a5a5774d81aa7866c1adf, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.139191+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4504047Z  2026-10-07 00:39:26.140 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4505476Z  2026-10-07 00:39:26.144 UTC [204] ERROR:  new row for relation "m5_activation_evidence" violates check constraint "m5_014_evidence_v2_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4507267Z  2026-10-07 00:39:26.144 UTC [204] DETAIL:  Failing row contains (41208097-366b-4f78-8a50-3e22f774c67a, 79275a00-21cf-4fa8-8f46-6a23d4992352, 1312048c-abc1-4171-a4f8-c67101f166b1, dbc288fd-3c79-4ae9-a4fd-40943cd1a6fc, 1, 1, f4b7d835-1069-4e30-b88f-0927e5b0e1fd, 0, 7, 7bf9f672a4e1e080d48db5f63b5451822c1665926f3e903ca0139053e85711c8, {"hold": {"held": {"scope": {"shopId": "41208097-366b-4f78-8a50-..., 2026-10-07 00:39:26.143677+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4509872Z  2026-10-07 00:39:26.144 UTC [204] STATEMENT:  INSERT INTO m5_activation_evidence(shop_id,config_id,operation_id,revision_id,installation_generation,operation_sequence,authorization_generation,authorization_epoch,selected_key_id,evidence_digest,evidence) VALUES ($1,$2,$3,$4,1,1,$5::uuid,$6,7,$7,$8::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4511454Z  2026-10-07 00:39:26.786 UTC [234] ERROR:  duplicate key value violates unique constraint "product_configs_shop_id_external_product_id_key"
+durable-core	Stop containers	2026-10-07T00:40:08.4512432Z  2026-10-07 00:39:26.786 UTC [234] DETAIL:  Key (shop_id, external_product_id)=(fc984d17-db1f-44e1-9518-f6cff20b203e, 72d07e48-4e73-47f7-8606-247654b6a5fb) already exists.
+durable-core	Stop containers	2026-10-07T00:40:08.4513759Z  2026-10-07 00:39:26.786 UTC [234] STATEMENT:  insert into "product_configs" ("shop_id", "config_id", "external_product_id", "draft_schema_version", "draft_value", "effective_revision_id", "effective_operation_id") values ($1, $2, $3, $4, $5, $6, $7) returning *
+durable-core	Stop containers	2026-10-07T00:40:08.4515154Z  2026-10-07 00:39:26.812 UTC [234] ERROR:  insert or update on table "publication_operations" violates foreign key constraint "publication_operations_shop_id_config_id_revision_id_fkey"
+durable-core	Stop containers	2026-10-07T00:40:08.4516519Z  2026-10-07 00:39:26.812 UTC [234] DETAIL:  Key (shop_id, config_id, revision_id)=(fc984d17-db1f-44e1-9518-f6cff20b203e, b9535a6d-3e5e-4114-b5c5-b0c9dfdd7b5b, e3e0b182-0417-4614-8d99-ba90212df91a) is not present in table "config_revisions".
+durable-core	Stop containers	2026-10-07T00:40:08.4517537Z  2026-10-07 00:39:26.812 UTC [234] STATEMENT:  INSERT INTO publication_operations (
+durable-core	Stop containers	2026-10-07T00:40:08.4518096Z  	      shop_id, config_id, operation_id, revision_id, installation_generation, operation_sequence,
+durable-core	Stop containers	2026-10-07T00:40:08.4518847Z  	      expected_projection, expected_projection_digest
+durable-core	Stop containers	2026-10-07T00:40:08.4519215Z  	    ) VALUES ($1, $2, $3, $4, 1, 1, '{}'::jsonb, $5)
+durable-core	Stop containers	2026-10-07T00:40:08.4519585Z  2026-10-07 00:39:26.868 UTC [234] ERROR:  config revisions are immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4520109Z  2026-10-07 00:39:26.868 UTC [234] CONTEXT:  PL/pgSQL function reject_revision_mutation() line 3 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4520838Z  2026-10-07 00:39:26.868 UTC [234] STATEMENT:  UPDATE config_revisions SET content_hash = $1 WHERE shop_id = $2 AND revision_id = $3
+durable-core	Stop containers	2026-10-07T00:40:08.4521455Z  2026-10-07 00:39:26.869 UTC [234] ERROR:  config revisions are immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4521961Z  2026-10-07 00:39:26.869 UTC [234] CONTEXT:  PL/pgSQL function reject_revision_mutation() line 3 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4522617Z  2026-10-07 00:39:26.869 UTC [234] STATEMENT:  DELETE FROM config_revisions WHERE shop_id = $1 AND revision_id = $2
+durable-core	Stop containers	2026-10-07T00:40:08.4523251Z  2026-10-07 00:39:26.973 UTC [234] ERROR:  publication activation preconditions not met
+durable-core	Stop containers	2026-10-07T00:40:08.4523839Z  2026-10-07 00:39:26.973 UTC [234] CONTEXT:  PL/pgSQL function enforce_effective_activation() line 31 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4524684Z  2026-10-07 00:39:26.973 UTC [234] STATEMENT:  UPDATE product_configs SET effective_revision_id = $1, effective_operation_id = $2 WHERE shop_id = $3 AND config_id = $4
+durable-core	Stop containers	2026-10-07T00:40:08.4525588Z  2026-10-07 00:39:27.032 UTC [234] ERROR:  publication sequence cannot decrease
+durable-core	Stop containers	2026-10-07T00:40:08.4526145Z  2026-10-07 00:39:27.032 UTC [234] CONTEXT:  PL/pgSQL function enforce_effective_activation() line 6 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4527078Z  2026-10-07 00:39:27.032 UTC [234] STATEMENT:  UPDATE product_configs SET publication_sequence = 1, effective_revision_id = $1, effective_operation_id = $2 WHERE shop_id = $3 AND config_id = $4
+durable-core	Stop containers	2026-10-07T00:40:08.4528063Z  2026-10-07 00:39:27.817 UTC [243] ERROR:  new row for relation "inbox_messages" violates check constraint "inbox_messages_check2"
+durable-core	Stop containers	2026-10-07T00:40:08.4529997Z  2026-10-07 00:39:27.817 UTC [243] DETAIL:  Failing row contains (f4e1cb7c-1b77-4834-8f59-6d42b1aee9ee, synthetic.provider, e5f69678-0f98-4c3e-a837-a036bb9d1493, dc81c2e2-77eb-4f51-9ecd-e8ce285c6b16, null, \x7b7d, 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a, 2099-01-01 00:00:00+00, 2026-10-07 00:39:27.817295+00, pending, 0, null, null, null, test-transient, 2099-06-29 00:00:00+00, retained).
+durable-core	Stop containers	2026-10-07T00:40:08.4532683Z  2026-10-07 00:39:27.817 UTC [243] STATEMENT:  insert into "inbox_messages" ("id", "source", "external_delivery_id", "shop_id", "installation_generation", "payload", "payload_sha256", "received_at", "state", "attempts", "last_error_class", "retention_class", "purge_after", "lease_owner", "lease_until", "erasure_state") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) on conflict do nothing returning "id"
+durable-core	Stop containers	2026-10-07T00:40:08.4534145Z  2026-10-07 00:39:27.832 UTC [243] ERROR:  payload collection time is immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4534710Z  2026-10-07 00:39:27.832 UTC [243] CONTEXT:  PL/pgSQL function enforce_payload_collection_time() line 6 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4535448Z  2026-10-07 00:39:27.832 UTC [243] STATEMENT:  UPDATE inbox_messages SET collected_at = '2099-01-01'::timestamptz WHERE id = $1::uuid
+durable-core	Stop containers	2026-10-07T00:40:08.4536245Z  2026-10-07 00:39:27.835 UTC [243] ERROR:  new row for relation "inbox_messages" violates check constraint "inbox_messages_check2"
+durable-core	Stop containers	2026-10-07T00:40:08.4537991Z  2026-10-07 00:39:27.835 UTC [243] DETAIL:  Failing row contains (21e93ba2-fbd0-4fc7-b4cc-6134db2bc4a5, synthetic.provider, 21261458-9f4a-4ccf-a07a-261b48195049, dc81c2e2-77eb-4f51-9ecd-e8ce285c6b16, null, \x7b7d, 44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a, 2026-10-07 00:39:27.814+00, 2026-10-07 00:39:27.830006+00, pending, 0, null, null, null, test-transient, 2027-04-06 00:39:27.830006+00, retained).
+durable-core	Stop containers	2026-10-07T00:40:08.4540006Z  2026-10-07 00:39:27.835 UTC [243] STATEMENT:  UPDATE inbox_messages SET purge_after = collected_at + interval '181 days' WHERE id = $1::uuid
+durable-core	Stop containers	2026-10-07T00:40:08.4540822Z  2026-10-07 00:39:27.877 UTC [243] ERROR:  new row for relation "outbox_events" violates check constraint "outbox_events_check1"
+durable-core	Stop containers	2026-10-07T00:40:08.4542717Z  2026-10-07 00:39:27.877 UTC [243] DETAIL:  Failing row contains (6b7f50be-7759-4b17-b3ea-9ab52cad27d0, dc81c2e2-77eb-4f51-9ecd-e8ce285c6b16, null, synthetic.processed, 1, 7c3071f1-acef-4213-8ec8-f056155e6b9d, {"businessKey": "7c3071f1-acef-4213-8ec8-f056155e6b9d"}, 7c3071f1-acef-4213-8ec8-f056155e6b9d, 2099-01-01 00:00:00+00, 2026-10-07 00:39:27.877137+00, 2099-01-01 00:00:00+00, pending, 0, null, null, null, test-transient, 2099-06-29 00:00:00+00, retained, 2026-10-07 00:39:27.875+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4545614Z  2026-10-07 00:39:27.877 UTC [243] STATEMENT:  insert into "outbox_events" ("id", "shop_id", "installation_generation", "event_type", "schema_version", "aggregate_ref", "payload", "business_key", "occurred_at", "available_at", "state", "attempts", "last_error_class", "lease_owner", "lease_until", "retention_class", "purge_after", "erasure_state", "created_at") values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) on conflict do nothing returning "id"
+durable-core	Stop containers	2026-10-07T00:40:08.4547357Z  2026-10-07 00:39:27.889 UTC [243] ERROR:  new row for relation "outbox_events" violates check constraint "outbox_events_check1"
+durable-core	Stop containers	2026-10-07T00:40:08.4549755Z  2026-10-07 00:39:27.889 UTC [243] DETAIL:  Failing row contains (0abc6db3-10c2-431e-828b-9786cae46027, dc81c2e2-77eb-4f51-9ecd-e8ce285c6b16, null, synthetic.processed, 1, db48c3b6-aeb4-4277-b555-179ab4fd02e1, {"businessKey": "db48c3b6-aeb4-4277-b555-179ab4fd02e1"}, db48c3b6-aeb4-4277-b555-179ab4fd02e1, 2026-10-07 00:39:27.879+00, 2026-10-07 00:39:27.882055+00, 2026-10-07 00:39:27.879+00, pending, 0, null, null, null, test-transient, 2027-04-06 00:39:27.882055+00, retained, 2026-10-07 00:39:27.881+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4551774Z  2026-10-07 00:39:27.889 UTC [243] STATEMENT:  UPDATE outbox_events SET purge_after = collected_at + interval '181 days' WHERE id = $1::uuid
+durable-core	Stop containers	2026-10-07T00:40:08.4552478Z  2026-10-07 00:39:29.521 UTC [279] ERROR:  installation authorization generation is immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4553098Z  2026-10-07 00:39:29.521 UTC [279] CONTEXT:  PL/pgSQL function enforce_authorization_identity() line 4 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4554072Z  2026-10-07 00:39:29.521 UTC [279] STATEMENT:  update "installation_generations" set "authorization_generation" = $1 where "shop_id" = $2 and "generation" = $3
+durable-core	Stop containers	2026-10-07T00:40:08.4555114Z  2026-10-07 00:39:29.543 UTC [279] ERROR:  new row for relation "installation_generations" violates check constraint "installation_generations_authorization_epoch_check"
+durable-core	Stop containers	2026-10-07T00:40:08.4556334Z  2026-10-07 00:39:29.543 UTC [279] DETAIL:  Failing row contains (2bc9d65a-e1d5-4fd1-9dd5-a81c31f6cce0, 2, null, 2026-10-07 00:39:29.528377+00, 2026-10-07 00:39:29.528377+00, null, 6eb607ee-b016-4a2c-8759-664f2b45387a, 4294967296).
+durable-core	Stop containers	2026-10-07T00:40:08.4557481Z  2026-10-07 00:39:29.543 UTC [279] STATEMENT:  update "installation_generations" set "authorization_epoch" = $1 where "shop_id" = $2 and "generation" = $3
+durable-core	Stop containers	2026-10-07T00:40:08.4558193Z  2026-10-07 00:39:33.334 UTC [204] ERROR:  activation evidence is immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4559066Z  2026-10-07 00:39:33.334 UTC [204] CONTEXT:  PL/pgSQL function reject_activation_evidence_mutation() line 3 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4559826Z  2026-10-07 00:39:33.334 UTC [204] STATEMENT:  UPDATE m5_activation_evidence SET evidence='{}'::jsonb WHERE shop_id=$1
+durable-core	Stop containers	2026-10-07T00:40:08.4560424Z  2026-10-07 00:39:33.335 UTC [204] ERROR:  activation evidence is immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4560991Z  2026-10-07 00:39:33.335 UTC [204] CONTEXT:  PL/pgSQL function reject_activation_evidence_mutation() line 3 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4561636Z  2026-10-07 00:39:33.335 UTC [204] STATEMENT:  DELETE FROM m5_activation_evidence WHERE shop_id=$1
+durable-core	Stop containers	2026-10-07T00:40:08.4562144Z  2026-10-07 00:39:34.219 UTC [291] ERROR:  synthetic activation crash
+durable-core	Stop containers	2026-10-07T00:40:08.4562652Z  2026-10-07 00:39:34.219 UTC [291] CONTEXT:  PL/pgSQL function m5_test_activation_fail() line 3 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4563447Z  2026-10-07 00:39:34.219 UTC [291] STATEMENT:  update "publication_operations" set "status" = $1, "activated_at" = $2 where "shop_id" = $3 and "operation_id" = $4
+durable-core	Stop containers	2026-10-07T00:40:08.4564412Z  2026-10-07 00:39:34.832 UTC [204] ERROR:  new row for relation "m5_availability_resolutions" violates check constraint "m5_014_resolution_v2_hold_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4566136Z  2026-10-07 00:39:34.832 UTC [204] DETAIL:  Failing row contains (d7c6bbac-2f2f-4996-843e-65f934dc7cd2, 6accb91a-b7df-42ba-aad4-5a1e1a3099c8, d1d17d3e-3a89-4cc5-84f9-1cd918db938b, resolution-json-guard, 76ab3bf13ca2a45e92121612f5343c5fc3a19aeafd33a54fb9291d5d6a2e7fa7, {"shopId": "d7c6bbac-2f2f-4996-843e-65f934dc7cd2", "outcome": "O..., 2026-10-07 00:39:34.832474+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4568002Z  2026-10-07 00:39:34.832 UTC [204] STATEMENT:  INSERT INTO m5_availability_resolutions(shop_id,config_id,operation_id,command_key,resolution_digest,resolution) VALUES ($1,$2,$3,$4,$5,$6::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4569189Z  2026-10-07 00:39:34.834 UTC [204] ERROR:  new row for relation "m5_availability_resolutions" violates check constraint "m5_014_resolution_v2_hold_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4570893Z  2026-10-07 00:39:34.834 UTC [204] DETAIL:  Failing row contains (d7c6bbac-2f2f-4996-843e-65f934dc7cd2, 6accb91a-b7df-42ba-aad4-5a1e1a3099c8, d1d17d3e-3a89-4cc5-84f9-1cd918db938b, resolution-json-guard, 8cf6efa638f29bde4fd7adb229c70562cdc0b13041f7b0a69add1161f8f8eac5, {"shopId": "d7c6bbac-2f2f-4996-843e-65f934dc7cd2", "outcome": "O..., 2026-10-07 00:39:34.833918+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4572890Z  2026-10-07 00:39:34.834 UTC [204] STATEMENT:  INSERT INTO m5_availability_resolutions(shop_id,config_id,operation_id,command_key,resolution_digest,resolution) VALUES ($1,$2,$3,$4,$5,$6::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4573955Z  2026-10-07 00:39:34.835 UTC [204] ERROR:  new row for relation "m5_availability_resolutions" violates check constraint "m5_014_resolution_v2_hold_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4575674Z  2026-10-07 00:39:34.835 UTC [204] DETAIL:  Failing row contains (d7c6bbac-2f2f-4996-843e-65f934dc7cd2, 6accb91a-b7df-42ba-aad4-5a1e1a3099c8, d1d17d3e-3a89-4cc5-84f9-1cd918db938b, resolution-json-guard, ee4ecdf20d5b2d50936279d0cb6a4330a6fa036f4d38f87cebaaf4642abc0d57, {"shopId": "d7c6bbac-2f2f-4996-843e-65f934dc7cd2", "outcome": "O..., 2026-10-07 00:39:34.835244+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4577625Z  2026-10-07 00:39:34.835 UTC [204] STATEMENT:  INSERT INTO m5_availability_resolutions(shop_id,config_id,operation_id,command_key,resolution_digest,resolution) VALUES ($1,$2,$3,$4,$5,$6::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4578819Z  2026-10-07 00:39:34.842 UTC [204] ERROR:  new row for relation "m5_availability_resolutions" violates check constraint "m5_014_resolution_v2_hold_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4580507Z  2026-10-07 00:39:34.842 UTC [204] DETAIL:  Failing row contains (d7c6bbac-2f2f-4996-843e-65f934dc7cd2, 6accb91a-b7df-42ba-aad4-5a1e1a3099c8, d1d17d3e-3a89-4cc5-84f9-1cd918db938b, resolution-json-guard, c3f7d6c33510cab6a6009fde02a204959c04095a814254addc9742619f216a64, {"shopId": "d7c6bbac-2f2f-4996-843e-65f934dc7cd2", "outcome": "O..., 2026-10-07 00:39:34.841648+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4582345Z  2026-10-07 00:39:34.842 UTC [204] STATEMENT:  INSERT INTO m5_availability_resolutions(shop_id,config_id,operation_id,command_key,resolution_digest,resolution) VALUES ($1,$2,$3,$4,$5,$6::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4583422Z  2026-10-07 00:39:34.843 UTC [204] ERROR:  new row for relation "m5_availability_resolutions" violates check constraint "m5_014_resolution_v2_hold_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4585116Z  2026-10-07 00:39:34.843 UTC [204] DETAIL:  Failing row contains (d7c6bbac-2f2f-4996-843e-65f934dc7cd2, 6accb91a-b7df-42ba-aad4-5a1e1a3099c8, d1d17d3e-3a89-4cc5-84f9-1cd918db938b, resolution-json-guard, f9bfb7ec4d30255a54b92ffaf1525350c33917fe88a35745706e6b3d1af4756f, {"shopId": "d7c6bbac-2f2f-4996-843e-65f934dc7cd2", "outcome": "O..., 2026-10-07 00:39:34.843097+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4586950Z  2026-10-07 00:39:34.843 UTC [204] STATEMENT:  INSERT INTO m5_availability_resolutions(shop_id,config_id,operation_id,command_key,resolution_digest,resolution) VALUES ($1,$2,$3,$4,$5,$6::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4588014Z  2026-10-07 00:39:34.844 UTC [204] ERROR:  new row for relation "m5_availability_resolutions" violates check constraint "m5_014_resolution_v2_hold_audit"
+durable-core	Stop containers	2026-10-07T00:40:08.4590193Z  2026-10-07 00:39:34.844 UTC [204] DETAIL:  Failing row contains (d7c6bbac-2f2f-4996-843e-65f934dc7cd2, 6accb91a-b7df-42ba-aad4-5a1e1a3099c8, d1d17d3e-3a89-4cc5-84f9-1cd918db938b, resolution-json-guard, 7b8a29a0e5b0b68ec6104a6e89e3c92b0374458d7353e310347c73c0c8a74afe, {"shopId": "d7c6bbac-2f2f-4996-843e-65f934dc7cd2", "outcome": "O..., 2026-10-07 00:39:34.844414+00).
+durable-core	Stop containers	2026-10-07T00:40:08.4592046Z  2026-10-07 00:39:34.844 UTC [204] STATEMENT:  INSERT INTO m5_availability_resolutions(shop_id,config_id,operation_id,command_key,resolution_digest,resolution) VALUES ($1,$2,$3,$4,$5,$6::jsonb)
+durable-core	Stop containers	2026-10-07T00:40:08.4592980Z  2026-10-07 00:39:36.699 UTC [204] ERROR:  availability disposition requires immutable resolved evidence
+durable-core	Stop containers	2026-10-07T00:40:08.4593661Z  2026-10-07 00:39:36.699 UTC [204] CONTEXT:  PL/pgSQL function enforce_availability_resolution_marker() line 16 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4594495Z  2026-10-07 00:39:36.699 UTC [204] STATEMENT:  UPDATE publication_operations SET availability_resolved_at=NULL WHERE shop_id=$1 AND operation_id=$2
+durable-core	Stop containers	2026-10-07T00:40:08.4595374Z  2026-10-07 00:39:36.700 UTC [204] ERROR:  terminal publication operation is immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4595967Z  2026-10-07 00:39:36.700 UTC [204] CONTEXT:  PL/pgSQL function enforce_publication_transition() line 13 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4596779Z  2026-10-07 00:39:36.700 UTC [204] STATEMENT:  UPDATE publication_operations SET failure_class='rewrite-history' WHERE shop_id=$1 AND operation_id=$2
+durable-core	Stop containers	2026-10-07T00:40:08.4597471Z  2026-10-07 00:39:36.701 UTC [204] ERROR:  activation evidence is immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4598040Z  2026-10-07 00:39:36.701 UTC [204] CONTEXT:  PL/pgSQL function reject_activation_evidence_mutation() line 3 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4599009Z  2026-10-07 00:39:36.701 UTC [204] STATEMENT:  UPDATE m5_availability_resolutions SET resolution=resolution WHERE shop_id=$1 AND operation_id=$2
+durable-core	Stop containers	2026-10-07T00:40:08.4599811Z  2026-10-07 00:39:36.702 UTC [204] ERROR:  activation evidence is immutable
+durable-core	Stop containers	2026-10-07T00:40:08.4600382Z  2026-10-07 00:39:36.702 UTC [204] CONTEXT:  PL/pgSQL function reject_activation_evidence_mutation() line 3 at RAISE
+durable-core	Stop containers	2026-10-07T00:40:08.4601120Z  2026-10-07 00:39:36.702 UTC [204] STATEMENT:  DELETE FROM m5_availability_resolutions WHERE shop_id=$1 AND operation_id=$2
+durable-core	Stop containers	2026-10-07T00:40:08.4601700Z  2026-10-07 00:40:02.250 UTC [74] LOG:  checkpoint starting: wal
+durable-core	Stop containers	2026-10-07T00:40:08.4608173Z Stop and remove container: 817bc611b6c046ed83311aff09848c53_postgres18_683e50
+durable-core	Stop containers	2026-10-07T00:40:08.4613655Z ##[command]/usr/bin/docker rm --force c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672
+durable-core	Stop containers	2026-10-07T00:40:08.6337726Z c0cfe98e4621989eb5ecc146f7b2708cb3de128a59424ffd8e8f189c57619672
+durable-core	Stop containers	2026-10-07T00:40:08.6369628Z Remove container network: github_network_f6a2d4cbb62445bf933bcc1713dbb407
+durable-core	Stop containers	2026-10-07T00:40:08.6374002Z ##[command]/usr/bin/docker network rm github_network_f6a2d4cbb62445bf933bcc1713dbb407
+durable-core	Stop containers	2026-10-07T00:40:08.7563983Z github_network_f6a2d4cbb62445bf933bcc1713dbb407
+durable-core	Complete job	﻿2026-10-07T00:40:08.7640508Z Cleaning up orphan processes
+durable-core	Complete job	2026-10-07T00:40:08.8151609Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683, actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020, actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

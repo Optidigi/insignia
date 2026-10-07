@@ -1,0 +1,1 @@
+{"outcome":"PHASE_A_SETTLED","classification":"DIRECT_ONLY","cleanup":{"outcome":"FINAL_ARCHIVED_UNPUBLISHED","acknowledgedUpdatedAt":"2026-10-07T01:00:37Z","readbackUpdatedAt":"2026-10-07T01:00:37Z","deltaMilliseconds":0},"counts":{"auth":1,"graphql":6,"directUpdate":1,"create":0,"adapterMutation":0},"transport":{"reserved":7,"dispatched":7,"denied":0,"matches":true}}

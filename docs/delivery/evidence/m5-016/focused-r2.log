@@ -1,0 +1,42 @@
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.827885ms)
+✔ missing adapter transport / import proof uses only the guarded operator or denies locally (253.945943ms)
+✔ misspelled adapter transport / import proof uses only the guarded operator or denies locally (224.582722ms)
+✔ imports adapter transport / import proof uses only the guarded operator or denies locally (204.328952ms)
+✔ correct adapter transport / import proof uses only the guarded operator or denies locally (302.750864ms)
+✔ complete explicit APP discovery and exact inclusion authorize only the fixed archival cleanup (31.586042ms)
+✔ direct inclusion without either generic discovery surface classifies DIRECT_ONLY and still cleans the disposable fixture (10.94253ms)
+✔ complete APP catalogs independently establish the generic surface when typed publications omit the target (9.842241ms)
+✔ a denied second discovery surface is retained but cannot negate independently complete positive generic evidence (10.801034ms)
+✔ denied generic reads without complete positive evidence classify UNRESOLVED without retries (10.400404ms)
+✔ direct null remains UNRESOLVED despite generic positives (11.491002ms)
+✔ direct not-included remains UNRESOLVED despite generic positives (9.047884ms)
+✔ direct incomplete remains UNRESOLVED despite generic positives (10.082334ms)
+✔ direct error remains UNRESOLVED despite generic positives (9.040756ms)
+✔ capability drift between direct and generic observations is coverage ambiguity (11.094126ms)
+✔ multiple APP catalogs claiming the target Publication are coverage ambiguity (8.990336ms)
+✔ observed conflicting catalogs followed by a denied page remain UNRESOLVED despite complete positive publications (10.578707ms)
+✔ empty nonterminal publications page fails before any continuation (8.929333ms)
+✔ empty nonterminal catalogs page fails before any continuation (10.352945ms)
+✔ duplicate generic IDs and repeated cursors fail closed with cleanup capacity preserved (11.119826ms)
+✔ infinite unique discovery pages reserve one catalog attempt and exact cleanup/final read within sixteen GraphQL attempts (37.490913ms)
+✔ prestate identity drift stops before discovery or mutation (2.180721ms)
+✔ prestate ownership drift stops before discovery or mutation (1.970673ms)
+✔ prestate status drift stops before discovery or mutation (2.056872ms)
+✔ prestate target-effective drift stops before discovery or mutation (2.2486ms)
+✔ prestate connection drift stops before discovery or mutation (1.974902ms)
+✔ identity drift in discovery revokes cleanup before any mutation (3.550833ms)
+✔ identity mismatch combined with malformed operation data latches the fence before projection (3.314876ms)
+✔ lost archive acknowledgement gets exactly one final classification read and never a resend (9.622382ms)
+✔ final exact state settlement records updatedAt difference without timestamp equality (9.441114ms)
+✔ a failed final publication predicate closes STOPPED without another mutation or read (10.488413ms)
+✔ source drift before credentials produces no provider request (0.777931ms)
+✔ corrupt reservation accounting denies the captured transport before its first native call (1.243911ms)
+✔ canonical entry exposes no resume phase and a closed synthetic register cannot be reopened (9.166119ms)
+ℹ tests 34
+ℹ suites 0
+ℹ pass 34
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1096.217208

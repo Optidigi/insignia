@@ -1,0 +1,103 @@
+{
+  "source": "59593cae97fef72f1aa1260eee773fbc251a6f0e",
+  "tree": "b8eb2de66a085544df485030d162d710f4aac3b9",
+  "classification": "DIRECT_ONLY",
+  "canonicalDirectory": "/home/serveradmin/insignia-m5-016-handoff/run",
+  "rawFiles": {
+    "binding.json": "8fe7111abfa4042db9b3fee13a8309ffd39c57ac79a6f77876caa66a2a279ada",
+    "gate.json": "02563e77548b0479a875a1e614d0283b6a5464faef200dd8df66339e61595d62",
+    "initialized.once": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "qualification.json": "6f2a1d51c2094c24878bf9ce9324311e5dda715d5e24c6c78a5684ad62dd24b7",
+    "register.json": "3bd8807c39e95398df094788857ca4228ce6245e49b614b7003f0a8e5354e1c9"
+  },
+  "mode": "0400 owner-read-only",
+  "events": 7,
+  "counts": {
+    "auth": 1,
+    "graphql": 6,
+    "directUpdate": 1,
+    "create": 0,
+    "adapterMutation": 0
+  },
+  "transport": {
+    "reserved": 7,
+    "dispatched": 7,
+    "denied": 0,
+    "matches": true
+  },
+  "pending": null,
+  "unknownMutations": 0,
+  "historicalFilesExact": 46,
+  "final": {
+    "id": "gid://shopify/Product/10495813091611",
+    "status": "ARCHIVED",
+    "updatedAt": "2026-10-07T01:00:37Z",
+    "publishedAt": null,
+    "onlineStoreUrl": null,
+    "publishedOnPublication": false
+  },
+  "effectiveMembership": [],
+  "productionCorrection": "NOT_AUTHORIZED: DIRECT_ONLY",
+  "providerAuthority": false,
+  "grants": [
+    {
+      "handle": "read_publications"
+    },
+    {
+      "handle": "read_product_listings"
+    },
+    {
+      "handle": "write_products"
+    },
+    {
+      "handle": "read_products"
+    }
+  ],
+  "eventOperations": [
+    {
+      "index": 0,
+      "operation": "auth",
+      "settlement": "SETTLED",
+      "nativeOrdinal": 1
+    },
+    {
+      "index": 1,
+      "operation": "prestate",
+      "settlement": "SETTLED",
+      "nativeOrdinal": 2
+    },
+    {
+      "index": 2,
+      "operation": "direct",
+      "settlement": "SETTLED",
+      "nativeOrdinal": 3
+    },
+    {
+      "index": 3,
+      "operation": "publications",
+      "settlement": "SETTLED",
+      "nativeOrdinal": 4
+    },
+    {
+      "index": 4,
+      "operation": "catalogs",
+      "settlement": "SETTLED",
+      "nativeOrdinal": 5
+    },
+    {
+      "index": 5,
+      "operation": "archive",
+      "settlement": "ACKNOWLEDGED",
+      "nativeOrdinal": 6
+    },
+    {
+      "index": 6,
+      "operation": "final",
+      "settlement": "SETTLED",
+      "nativeOrdinal": 7
+    }
+  ],
+  "verifiedAt": "2026-10-07T01:05:50.300183+00:00",
+  "timestampMeaning": "External file/hash/closure verification time, not an invented canonical close timestamp.",
+  "lastEventCompletedAt": "2026-10-07T01:00:38.814Z"
+}

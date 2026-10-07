@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-07T01:00:16.709Z",
+  "source": "59593cae97fef72f1aa1260eee773fbc251a6f0e",
+  "tree": "b8eb2de66a085544df485030d162d710f4aac3b9",
+  "base": "d0efd626222047a2047573f678b019cd7b1802a9",
+  "binding": {
+    "path": "/home/serveradmin/insignia-m5-016-handoff/binding.json",
+    "sha256": "8fe7111abfa4042db9b3fee13a8309ffd39c57ac79a6f77876caa66a2a279ada"
+  },
+  "gate": {
+    "path": "/home/serveradmin/insignia-m5-016-handoff/gate.json",
+    "sha256": "02563e77548b0479a875a1e614d0283b6a5464faef200dd8df66339e61595d62"
+  },
+  "sourceBuildHashes": 3288,
+  "historicalFiles": 46,
+  "canonicalInitialized": false,
+  "shopifyCredentialAccess": false,
+  "shopifyRequests": 0,
+  "verdict": "FULL_OFFLINE_GATE_VERIFIED"
+}

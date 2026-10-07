@@ -1,0 +1,12 @@
+✔ missing adapter transport / import proof uses only the guarded operator or denies locally (223.424117ms)
+✔ misspelled adapter transport / import proof uses only the guarded operator or denies locally (217.403802ms)
+✔ imports adapter transport / import proof uses only the guarded operator or denies locally (206.883929ms)
+✔ correct adapter transport / import proof uses only the guarded operator or denies locally (298.882517ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1047.353876

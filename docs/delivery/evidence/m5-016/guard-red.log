@@ -1,0 +1,118 @@
+✖ missing adapter transport / import proof uses only the guarded operator or denies locally (52.907621ms)
+✖ misspelled adapter transport / import proof uses only the guarded operator or denies locally (39.870344ms)
+✖ imports adapter transport / import proof uses only the guarded operator or denies locally (33.456413ms)
+✖ correct adapter transport / import proof uses only the guarded operator or denies locally (40.67601ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 0
+ℹ fail 4
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 267.722723
+
+✖ failing tests:
+
+test at scripts/m5-016/guard.test.mjs:8:3
+✖ missing adapter transport / import proof uses only the guarded operator or denies locally (52.907621ms)
+  Error: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/guard.fixture.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at ChildProcess.<anonymous> (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/guard.test.mjs:33:85)
+      at ChildProcess.emit (node:events:514:28)
+      at maybeClose (node:internal/child_process:1141:16)
+      at ChildProcess._handle.onexit (node:internal/child_process:306:5)
+
+test at scripts/m5-016/guard.test.mjs:8:3
+✖ misspelled adapter transport / import proof uses only the guarded operator or denies locally (39.870344ms)
+  Error: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/guard.fixture.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at ChildProcess.<anonymous> (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/guard.test.mjs:33:85)
+      at ChildProcess.emit (node:events:514:28)
+      at maybeClose (node:internal/child_process:1141:16)
+      at ChildProcess._handle.onexit (node:internal/child_process:306:5)
+
+test at scripts/m5-016/guard.test.mjs:8:3
+✖ imports adapter transport / import proof uses only the guarded operator or denies locally (33.456413ms)
+  Error: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/guard.fixture.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at ChildProcess.<anonymous> (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/guard.test.mjs:33:85)
+      at ChildProcess.emit (node:events:514:28)
+      at maybeClose (node:internal/child_process:1141:16)
+      at ChildProcess._handle.onexit (node:internal/child_process:306:5)
+
+test at scripts/m5-016/guard.test.mjs:8:3
+✖ correct adapter transport / import proof uses only the guarded operator or denies locally (40.67601ms)
+  Error: node:internal/modules/cjs/loader:1568
+    throw err;
+    ^
+
+  Error: Cannot find module '/home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/guard.fixture.mjs'
+      at Module._resolveFilename (node:internal/modules/cjs/loader:1564:15)
+      at wrapResolveFilename (node:internal/modules/cjs/loader:1118:27)
+      at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1142:10)
+      at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1169:12)
+      at Module._load (node:internal/modules/cjs/loader:1341:5)
+      at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)
+      at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+      at node:internal/main/run_main_module:33:47 {
+    code: 'MODULE_NOT_FOUND',
+    requireStack: []
+  }
+
+  Node.js v24.21.0
+
+      at ChildProcess.<anonymous> (file:///home/serveradmin/insignia-m5-016-worktree/scripts/m5-016/guard.test.mjs:33:85)
+      at ChildProcess.emit (node:events:514:28)
+      at maybeClose (node:internal/child_process:1141:16)
+      at ChildProcess._handle.onexit (node:internal/child_process:306:5)

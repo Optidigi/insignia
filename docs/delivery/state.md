@@ -1,3 +1,13 @@
+# Current review boundary — M5-016
+
+PR #46 normally merged at `d0efd626222047a2047573f678b019cd7b1802a9` with approved ordered parents/tree after ten exact-head attempt-1 successful workflows and supplied principal approval. It remains accepted only as truthful STOPPED M5-015R evidence. Historical runs/reports below retain their original execution meaning.
+
+[M5-016](M5-016-REPORT.md) Phase A is **CLOSED / SEALED — DIRECT_ONLY**. Exact Publication `339456917787` directly confirmed inclusion of exact owned ACTIVE fixture `10495813091611`. Complete explicit APP publications and complete APP catalogs each returned three nodes but omitted the target Publication and historical AppCatalog `188090286363`. Generic complete configured-intent discovery remains unqualified; **no production correction is authorized or implemented**.
+
+The fixture was archived exactly once with a status-only update. One final read confirmed ARCHIVED, target publishedOnPublication=false, complete empty effective membership, onlineStoreUrl=null and publishedAt=null. ACK/readback updatedAt both `2026-10-07T01:00:37Z` (delta0ms). All seven actual requests match durable accounting: auth1/GraphQL6/status-only update1/all other mutation categories0, pending=null/unknown0. Canonical `/home/serveradmin/insignia-m5-016-handoff/run` is closed, byte-preserved and owner-read-only; provider authority is permanently closed. M5-015R was never reopened or relabelled.
+
+[PR #47](https://github.com/Optidigi/insignia/pull/47), branch `feat/m5-016-publication-coverage`, worktree `/home/serveradmin/insignia-m5-016-worktree`, integrates only the fixed guarded experiment operator, regressions and truthful evidence. Frozen precredential/live source `59593cae97fef72f1aa1260eee773fbc251a6f0e` passed the full offline source/build/review/CI gate before credentials. Exact completed-change candidate refs, fresh full-source reviews and final CI are supplied in the external principal packet. Return for principal review and stop; no PR #47 merge, further provider/fixture access, live hold qualification, production correction, activation, RELEASE_BOUND/G7, M6/M7 or launch.
+
 # Current review boundary — M5-015R
 
 [PR45 approval](PR-045-principal-review.md) was followed by exact normal merge `6a186bea8e5d1c01a66f7ab683c06393fe81e991`; ordered parents/tree and remote main matched. M5-015 remains permanently STOPPED and its historical state below is unchanged.
