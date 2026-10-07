@@ -45,7 +45,8 @@ def git_output(source, *arguments):
 
 
 def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    data = os.fsencode(os.readlink(path)) if path.is_symlink() else path.read_bytes()
+    return hashlib.sha256(data).hexdigest()
 
 
 def durable_new(path, value):
@@ -129,14 +130,18 @@ def mandatory_files(source, candidate_files, reviews):
     for review in reviews:
         paths.update([Path(review['settings']), Path(review['report'])])
     paths.update(NEUTRAL / name for name in ['preversion-ci.json', 'versions-pre-freeze.json', 'reservation-control.json'])
-    return {path.resolve() for path in paths}
+    for path in paths:
+        if path.is_symlink():
+            require(path.resolve().is_relative_to(source), 'tracked_symlink_escape')
+    return {Path(os.path.abspath(path)) for path in paths}
 
 
 def validate_files(rows, required):
-    paths = [Path(row['path']).resolve() for row in rows]
+    paths = [Path(os.path.abspath(row['path'])) for row in rows]
     require(len(paths) == len(set(paths)), 'frozen_inventory_duplicate')
     require(set(paths) == required, 'frozen_inventory_incomplete_or_extra')
     for path, row in zip(paths, rows, strict=True):
+        require(row.get('kind', 'file') == ('symlink' if path.is_symlink() else 'file'), 'frozen_file_kind_changed')
         require(digest(path) == row['sha256'], 'frozen_file_changed')
 
 

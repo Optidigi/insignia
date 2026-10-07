@@ -160,6 +160,26 @@ class GateControls(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, 'frozen_inventory_incomplete'):
                 operator.validate_files([], required)
 
+    def test_tracked_directory_symlink_and_full_inventory_round_trip(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(operator, 'NEUTRAL', Path(directory)):
+            candidate = package_fixture(directory)
+            modules = operator.validate_candidate(SOURCE, candidate)
+            for name in ['preversion-ci.json', 'versions-pre-freeze.json', 'reservation-control.json']:
+                (Path(directory) / name).write_text('{}')
+            required = operator.mandatory_files(SOURCE, modules, [])
+            link = SOURCE / 'spikes/m0-013/rust/extensions/transform'
+            self.assertTrue(link.is_symlink())
+            self.assertIn(link, required)
+            rows = [{'path': str(path), 'kind': 'symlink' if path.is_symlink() else 'file',
+                     'sha256': operator.digest(path)} for path in sorted(required)]
+            operator.validate_files(rows, required)
+            link_row = next(row for row in rows if row['path'] == str(link))
+            changed = copy.deepcopy(rows)
+            next(row for row in changed if row['path'] == str(link))['kind'] = 'file'
+            with self.assertRaisesRegex(ValueError, 'frozen_file_kind_changed'):
+                operator.validate_files(changed, required)
+            self.assertEqual(link_row['sha256'], operator.digest(link))
+
     def test_new_accounting_parent_sync_precedes_reservation_and_dispatch(self):
         with tempfile.TemporaryDirectory() as directory, patch.object(operator, 'CANONICAL', Path(directory) / 'new-run'):
             events = []
