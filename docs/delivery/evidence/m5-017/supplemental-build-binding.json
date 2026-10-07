@@ -1,0 +1,391 @@
+{
+  "source": "424e4af4133993a6d61579e86f10d9138d3f40c2",
+  "tree": "dbd32e6e63ebff9ebd68ecb669f6900e3bb46da5",
+  "purpose": "Supplementary complete generated-build immutability evidence; all tracked source and packages/dist bound separately by executable gate",
+  "artifacts": {
+    "apps/web/dist/client/_astro/LocalInteraction.D-9BgpqP.js": {
+      "bytes": 335,
+      "sha256": "a52edf6450d1e99dbe84d346b8e807227906e0363e90bc7f12cb5b8131ccf6ea"
+    },
+    "apps/web/dist/client/_astro/MerchantConfigEditor.DOsYqeu8.js": {
+      "bytes": 30565,
+      "sha256": "09e5626fc80e2a3bae8a7b714c727d64cc9682bb755964f44495cd3074fa698f"
+    },
+    "apps/web/dist/client/_astro/client.B5qj8B8N.js": {
+      "bytes": 1442,
+      "sha256": "10566ea3746d0707e83aa5088839123050ba5dc2b37d202d3bde8b5c1ddd5fc2"
+    },
+    "apps/web/dist/client/_astro/dist.BdBizT5T.js": {
+      "bytes": 4438,
+      "sha256": "4be7c05dbc15d33b1a1e490bde1b6711508238cee88ba91d1053fc4dc5912d16"
+    },
+    "apps/web/dist/client/_astro/geometry.CF6l8D5U.js": {
+      "bytes": 5899,
+      "sha256": "16de2fa32f93c6d2ee25f75112ec335e982eba20ab88a4eb7fe273d797acc480"
+    },
+    "apps/web/dist/client/_astro/hooks.module.U3JihANK.js": {
+      "bytes": 2684,
+      "sha256": "c64f602823aae3a9e6d1947a2a75bd7b62704f967fbf60f7d6bf2a3326eeb299"
+    },
+    "apps/web/dist/client/_astro/jsxRuntime.module.Bfdc-KV3.js": {
+      "bytes": 430,
+      "sha256": "e53e6c0da7da5de23f92c67d3bfd6c702c4f9dc34037c9f70d24825a060ea7d7"
+    },
+    "apps/web/dist/client/_astro/lib.aUo15O7C.js": {
+      "bytes": 186112,
+      "sha256": "d51a8a5af473e40ca6b54363f98456b036652f29a9748f275f94f49a8409339f"
+    },
+    "apps/web/dist/client/_astro/preact.module.Bl7PEaKa.js": {
+      "bytes": 10470,
+      "sha256": "939c4dbc74210db259cef14ba3fd5403c3ee370b7ea52c0e114df520760f3ffe"
+    },
+    "apps/web/dist/client/_astro/preload-helper.B3nfOi5I.js": {
+      "bytes": 1364,
+      "sha256": "298e58483be1903930c5a1661df3e66b3ef02723b34237990ad3a5f5e6052628"
+    },
+    "apps/web/dist/client/_astro/signals.module.CIxWfL0_.js": {
+      "bytes": 7798,
+      "sha256": "a0f83797412c2e82ee2cdfee67403c34665c247ebc28e7e80231859bfa2375f6"
+    },
+    "apps/web/dist/server/chunks/_virtual_astro_server-island-manifest_C1Q2srgE.mjs": {
+      "bytes": 217,
+      "sha256": "701223b7e6b831cce52ae1f46dfef5b83aefb2a1f4a8b51cb32c2fd11cb25952"
+    },
+    "apps/web/dist/server/chunks/_virtual_astro_session-driver_BBlqJEPF.mjs": {
+      "bytes": 4121,
+      "sha256": "0aea6031d56c5e7fa1ad8fbe67b05148d09f45f1ecf2bdc72187bccaa5a0f697"
+    },
+    "apps/web/dist/server/chunks/admin-editor_DB9vypw4.mjs": {
+      "bytes": 57166,
+      "sha256": "96d5d643139d523a4100b3627078a189a2fa7dfa17d20899ae87f72f2cfc5cc9"
+    },
+    "apps/web/dist/server/chunks/compiler_D-EIFSOY.mjs": {
+      "bytes": 1253,
+      "sha256": "c45404bc1901ea5b55812e389fdfcb50d13fe41360ceaa536bbf8bd86feb8684"
+    },
+    "apps/web/dist/server/chunks/config_Bv8Lw_LG.mjs": {
+      "bytes": 815,
+      "sha256": "ce2f1a1c001e43e1c657d096f536da1e65b8bf21ff90caf55003768d7376cf2a"
+    },
+    "apps/web/dist/server/chunks/config_CQNy970U.mjs": {
+      "bytes": 2821,
+      "sha256": "4e1ed361be5ac0e097a71f1256d5fe7cc35b89f1cfc4988bb94591faa371591b"
+    },
+    "apps/web/dist/server/chunks/console_CXWAhm8w.mjs": {
+      "bytes": 4822,
+      "sha256": "3ae4b6aab31a6a8b4b07ae67b38ee8f0848f92f9fe1125906f202730a5c1d088"
+    },
+    "apps/web/dist/server/chunks/dist_B41OUwSX.mjs": {
+      "bytes": 8865,
+      "sha256": "5c45b00542b1d8d084b14ccae9fa4d7d1f6c2ce684ee750bf76b84d3af3de4fa"
+    },
+    "apps/web/dist/server/chunks/dist_BymXhdbK.mjs": {
+      "bytes": 16257,
+      "sha256": "5d8df44772717929f145a1aa6f1c28293dfbd00ffe062ebb911bf787e00a2491"
+    },
+    "apps/web/dist/server/chunks/dist_DeBH-yAe.mjs": {
+      "bytes": 754920,
+      "sha256": "f3a6eceaa685997d7b06e8e594e0eea3ee3f9b8ad4c61364c44fec3decfbc767"
+    },
+    "apps/web/dist/server/chunks/dist_a46dbdGI.mjs": {
+      "bytes": 325933,
+      "sha256": "1fbe627daa8511f234631cb78f2d9bba17462a1216caa394a3afa13430f40664"
+    },
+    "apps/web/dist/server/chunks/errors_B3b057s2.mjs": {
+      "bytes": 23301,
+      "sha256": "9bc07d958658cfe786cf97563de975524ef5e9ccb618c44518a4e4789eef7d05"
+    },
+    "apps/web/dist/server/chunks/geometry_z05qncqA.mjs": {
+      "bytes": 11529,
+      "sha256": "eb7e46bd0ff55374add6d170c8e6f803b83535c56c086790c5aae6b83a973815"
+    },
+    "apps/web/dist/server/chunks/index_BUbHz_5A.mjs": {
+      "bytes": 2580,
+      "sha256": "d16473160d8b877ebe90203056ddbabee3040a59dc61a3ea1769790f80e4e21b"
+    },
+    "apps/web/dist/server/chunks/index_D05ACarp.mjs": {
+      "bytes": 1392,
+      "sha256": "9601ce52dfd5b0d9d8a3826c5730f7612923d5cc99360d4dec483bde434c109f"
+    },
+    "apps/web/dist/server/chunks/interaction_OQW-s_YF.mjs": {
+      "bytes": 2074,
+      "sha256": "b6451fd736584bc5fec13b77cc320f3fc641999edbd62a762cd8c8764671af6a"
+    },
+    "apps/web/dist/server/chunks/lib_g0JOjpt8.mjs": {
+      "bytes": 489524,
+      "sha256": "1c8fdbdaf5cc565b044bacb17506bc9d0920c8f122b53c7c82ccbde1bbdf3a9c"
+    },
+    "apps/web/dist/server/chunks/live_DyM1sNx6.mjs": {
+      "bytes": 457,
+      "sha256": "44c0c48dcbc785e93e50b3820f52a730aae39a775db171f59d5dc4f3ef52b948"
+    },
+    "apps/web/dist/server/chunks/metrics_DvwbloFZ.mjs": {
+      "bytes": 1450,
+      "sha256": "c58b5df3130b8ebc04903f6a760eda8fd154584f164c36fd63441c857ff6863f"
+    },
+    "apps/web/dist/server/chunks/node_B2u5zVRU.mjs": {
+      "bytes": 79884,
+      "sha256": "e6f82a6d6902b2e3fb15849206c17927d8fb72aaea8b4eed3763dbce5ccc4a5d"
+    },
+    "apps/web/dist/server/chunks/noop-entrypoint_Z3zFhrGC.mjs": {
+      "bytes": 99,
+      "sha256": "bd2ec101a0d5a25d65500dc8969837e0e86deff0649acbb1893633559c438253"
+    },
+    "apps/web/dist/server/chunks/products_6-SM6xO_.mjs": {
+      "bytes": 502,
+      "sha256": "0da97ac8ced79d0d61a2872c24f56355bebcc1a956112a87bc9967174d2f74eb"
+    },
+    "apps/web/dist/server/chunks/remote_BoBd8fvk.mjs": {
+      "bytes": 6813,
+      "sha256": "5a0be95612e7615f70c989ed41d3cf682a1d9a8761c7af2d772aff5a682ea289"
+    },
+    "apps/web/dist/server/chunks/rolldown-runtime_BMI-E3GI.mjs": {
+      "bytes": 1928,
+      "sha256": "efc57dcff870d1e3f2f361b3ba80eb84330c649bef8f1529736019ea7e961346"
+    },
+    "apps/web/dist/server/chunks/runtime_C6Xve_3i.mjs": {
+      "bytes": 94781,
+      "sha256": "a900c0937f1428b7b398f71760530b44748faf0f4f0d2eb820035f814192d019"
+    },
+    "apps/web/dist/server/chunks/runtime_D4WxeHjH.mjs": {
+      "bytes": 1339437,
+      "sha256": "9c8ee96fafa0c930105475ca5e72536dfad337f3d8bfb467b241410c6654050c"
+    },
+    "apps/web/dist/server/chunks/schemas_CmYzIlib.mjs": {
+      "bytes": 182341,
+      "sha256": "53e7bf634746d106d15bb7547f082ec45462d2aa6557441434aecaa9b501a9c6"
+    },
+    "apps/web/dist/server/chunks/server_DiNsQ1rA.mjs": {
+      "bytes": 118391,
+      "sha256": "8d63249898e47ab5dc281c94061e6e0c3b0a9b14620cdef96e7db2db93f0a8e9"
+    },
+    "apps/web/dist/server/chunks/sharp_mXOnv5Kr.mjs": {
+      "bytes": 5262,
+      "sha256": "dc8b698e52b115f1be9301e7e13d3acd76a3c0c8efa3d89c748a69818f43dacc"
+    },
+    "apps/web/dist/server/chunks/shopify_C67N-1zs.mjs": {
+      "bytes": 9785,
+      "sha256": "d3d52e99d848cd58a768f5599f2809d414fbaf0a25297969c2685c16daa31ce8"
+    },
+    "apps/web/dist/server/entry.mjs": {
+      "bytes": 636959,
+      "sha256": "f49ac29d1f42936d8e9796c6652e0da2f89c2cde6e687050c89450af60164d23"
+    },
+    "apps/web/dist/server/virtual_astro_middleware.mjs": {
+      "bytes": 100,
+      "sha256": "0b970d096170a7546c295ef2eef55877ad7ed9e93047632cdc7917af5f6088f5"
+    },
+    "apps/storefront/dist/insignia-storefront.js": {
+      "bytes": 14038,
+      "sha256": "7264d4d9a709ff62cc7cc1bf41224dedc9708f520679d921c58a210c952f65f9"
+    },
+    "apps/worker/dist/config.d.ts": {
+      "bytes": 267,
+      "sha256": "a90dddbf9b389e1b496b481e5a132a4590526182f860444e18d69afe619ba6e7"
+    },
+    "apps/worker/dist/config.js": {
+      "bytes": 1918,
+      "sha256": "1ad1df21daaadec03fb2e256b3551c37edda34661bc91bf7f8f695e81c6e12ee"
+    },
+    "apps/worker/dist/diagnostic.d.ts": {
+      "bytes": 347,
+      "sha256": "f66d07af9e264e0af1086b0555b2caf043dd8c6746a3c9df5ff7b94212b211c1"
+    },
+    "apps/worker/dist/diagnostic.js": {
+      "bytes": 1024,
+      "sha256": "170ae3a6db56675961cda12e77d1fa5b2079c24877e343978e44f494c1994881"
+    },
+    "apps/worker/dist/handlers.d.ts": {
+      "bytes": 872,
+      "sha256": "d1a82c8a2513b37cf8767e6914d458da0db5e996b11811b753d488ce395272d0"
+    },
+    "apps/worker/dist/handlers.js": {
+      "bytes": 2886,
+      "sha256": "76f03d08bdd1ac29ead6f432498779bf62e0a82b64c7f95cf5534900d09ddddc"
+    },
+    "apps/worker/dist/health.d.ts": {
+      "bytes": 405,
+      "sha256": "63d5bf12887171300ca37ba89831741c19c423ac973320a87fc94145d36de651"
+    },
+    "apps/worker/dist/health.js": {
+      "bytes": 2381,
+      "sha256": "397d5145fb609e11e0e0f2187c158083e4329baa8fae78bf0111c725a6a8907f"
+    },
+    "apps/worker/dist/main.d.ts": {
+      "bytes": 11,
+      "sha256": "8e609bb71c20b858c77f0e9f90bb1319db8477b13f9f965f1a1e18524bf50881"
+    },
+    "apps/worker/dist/main.js": {
+      "bytes": 2519,
+      "sha256": "ecccdd8fea5b1a8b93024c2bd4986b46845295deee013d75abe908fc80881968"
+    },
+    "apps/worker/dist/process.d.ts": {
+      "bytes": 382,
+      "sha256": "edc3fbe01a5141c98aadc77575f67a08305c5acaab05746ca663dfb431e11814"
+    },
+    "apps/worker/dist/process.js": {
+      "bytes": 1220,
+      "sha256": "9e88aa662028113523765f358a7831732527f71bf0266ad6760cc118c70f009a"
+    },
+    "apps/worker/dist/runtime.d.ts": {
+      "bytes": 1987,
+      "sha256": "70f2f5aab8730c6cfad8d4bf26e9ae60f4842aa2fe92c3653b0de2c438f77a46"
+    },
+    "apps/worker/dist/runtime.js": {
+      "bytes": 10727,
+      "sha256": "16d1d5417114d69041107364a244d31090aad95874ad83981e9da7118228c129"
+    },
+    ".m1-artifacts/m4-003-public-config-replay.json": {
+      "bytes": 2306,
+      "sha256": "9a1805808645fbf864e65b80bb737045f808540fd2db898a841d3bffa6c0c502"
+    },
+    ".m1-artifacts/manifest.json": {
+      "bytes": 8153,
+      "sha256": "a73001f01245fddfd1e624b9bea3baf850b21f1665f41539d9c3a9f4bfad6969"
+    },
+    ".m1-artifacts/replay.json": {
+      "bytes": 6415,
+      "sha256": "4a387867dc837964d982002a76c2bbb19b6c4dda2e77cfec62d1b9b443bf3331"
+    },
+    ".m1-artifacts/tools/function-runner-9.2.2": {
+      "bytes": 41102560,
+      "sha256": "728bedbcf86f57680051208f9056642c9dfb07766a21891624bf18f372e4c29b"
+    },
+    ".m1-artifacts/valid-browser.js": {
+      "bytes": 21540,
+      "sha256": "4bddeaf3720a0611cd2c3f2eb0c685d897228e1eefadb1a0608532e61f0273fd"
+    },
+    ".m1-artifacts/valid-visualizer-browser.js": {
+      "bytes": 500336,
+      "sha256": "3a9699c91f246a5ae7b47ea6dbd4c3ba5ba84e3f214e9e5f0995cb06da4af0bb"
+    },
+    ".m4-002-artifacts/production-vectors-replay.json": {
+      "bytes": 222609,
+      "sha256": "4fe43fa398f6f8193516bf1d3f8ff916df4a17d9243bbac1c8a97721517c49b5"
+    },
+    "Cargo.lock": {
+      "bytes": 16856,
+      "sha256": "cf546a89bea55a5a83ae05e57a8a5bee30ab493afbd8f68a16da1b01095ed7b2"
+    },
+    "apps/web/src/server/quote-composition.ts": {
+      "bytes": 7805,
+      "sha256": "3bb8a923e92ac8aa902dac2ac27ae36b829309732d84c6edf00616eab828ebca"
+    },
+    "crates/cart-authorization/src/lib.rs": {
+      "bytes": 5862,
+      "sha256": "1e3574e549d53e8267ec329c3454eb0c9b44b0264107ec977297e9948c12fe74"
+    },
+    "crates/cart-authorization/src/whole.rs": {
+      "bytes": 10525,
+      "sha256": "c38e4db49eaf28e4c6514a7dfaa3a02f3097f60efb61a32ac7965d9d285c4ee2"
+    },
+    "crates/cart-authorization/tests/currency_matrix.rs": {
+      "bytes": 1289,
+      "sha256": "f43a13fb27ba0b5180476e5754f7017ffd4086e9f3e89cb77d406463493e38e6"
+    },
+    "crates/cart-authorization/tests/production_vectors.rs": {
+      "bytes": 5935,
+      "sha256": "2e66db63f98d10332245a75765f6100f1bbb0ac9f1fa06e744f356fdc3582eea"
+    },
+    "crates/cart-transform/src/main.rs": {
+      "bytes": 20316,
+      "sha256": "930d79c1853ca3c9c3bc506906618c8a975624940f4d4a6936f6d7cbdb7b493f"
+    },
+    "crates/cart-validation/src/main.rs": {
+      "bytes": 25267,
+      "sha256": "6f14b1ba24d83aa5f8c759046f06a87c7feeed0cd770913e4d96ae3874ac6988"
+    },
+    "extensions/insignia-cart-transform/schema.graphql": {
+      "bytes": 95391,
+      "sha256": "6e8851bc6c53bb8dae6620b2a98082aac10f88a5015b7cc2b57a9a49dd2e1aa4"
+    },
+    "extensions/insignia-cart-transform/src/cart_transform_run.graphql": {
+      "bytes": 764,
+      "sha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053"
+    },
+    "extensions/insignia-cart-transform/target/cart-transform.raw.wasm": {
+      "bytes": 184312,
+      "sha256": "c20cbda370e8ce19c309a49a71f497edb36e2f2db6b4667eced22073cb76fc17"
+    },
+    "extensions/insignia-cart-transform/target/cart-transform.wasm": {
+      "bytes": 181378,
+      "sha256": "49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576"
+    },
+    "extensions/insignia-cart-validation/schema.graphql": {
+      "bytes": 97518,
+      "sha256": "4a782ed2a026b1f62a3c3466e0d9ddcc6b2e77e62a38feddfc524249fcf026f4"
+    },
+    "extensions/insignia-cart-validation/src/cart_validations_generate_run.graphql": {
+      "bytes": 833,
+      "sha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5"
+    },
+    "extensions/insignia-cart-validation/target/cart-validation.raw.wasm": {
+      "bytes": 185960,
+      "sha256": "1c2e43c03c62fb1983089d3b8623eeb6a3ffc90211893c9abb7a2b67fa9ad763"
+    },
+    "extensions/insignia-cart-validation/target/cart-validation.wasm": {
+      "bytes": 182968,
+      "sha256": "3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6"
+    },
+    "extensions/insignia-theme/assets/insignia-storefront.js": {
+      "bytes": 14038,
+      "sha256": "7264d4d9a709ff62cc7cc1bf41224dedc9708f520679d921c58a210c952f65f9"
+    },
+    "packages/application/src/keys/public-config.ts": {
+      "bytes": 3077,
+      "sha256": "cea9b547ba72df498574d55f178a85f22845cbaabfc5741cd0721fb0ca14b1fc"
+    },
+    "packages/application/src/quote/accept-quote.ts": {
+      "bytes": 29058,
+      "sha256": "64d54207be791ed4e16e7a557a651014f6b86df58cf5231604391fc756b73cca"
+    },
+    "packages/cart-authorization/fixtures/currency-matrix-v1.json": {
+      "bytes": 674,
+      "sha256": "17694a14ef5a8f5a5f0602ee2f8616b6e31da387ccb030035e0e397a6816c557"
+    },
+    "packages/cart-authorization/fixtures/whole-quote-v2.json": {
+      "bytes": 23966,
+      "sha256": "7f0046b88183b79cbccc305c883aab0483a6cda1eddb191297e2295c35ac1eda"
+    },
+    "packages/cart-authorization/src/admission.ts": {
+      "bytes": 3461,
+      "sha256": "2fa43572e3798f735f02d259fbebc4d0c80f9742b60eea197ccd449990c2fd0e"
+    },
+    "packages/cart-authorization/src/currency.ts": {
+      "bytes": 868,
+      "sha256": "175725b88145bb2ae298f816a2a26aaa6f1e044eabf4f686a2b06e13d9aa1a76"
+    },
+    "packages/cart-authorization/src/whole-quote.ts": {
+      "bytes": 10380,
+      "sha256": "df66abecaead4fa476efe79553eef32db6e321346dac878bac2e5409baf470e2"
+    },
+    "packages/database/migrations/20260929000300_authorization_generation.sql": {
+      "bytes": 1519,
+      "sha256": "5f42d019f2dc650d4f539e95a40238efecd03d08807087a43cbebfc6ffd7fd01"
+    },
+    "packages/database/migrations/20260929000400_accepted_quote.sql": {
+      "bytes": 10678,
+      "sha256": "21aa761334d6e7c617ef929b865a5eeb8b46304cd305fda333f85a726032b267"
+    },
+    "packages/shopify/src/open-exchange-rates.ts": {
+      "bytes": 11249,
+      "sha256": "0a0ac3ecdd8fbfabdb7f5e7ee05277a10d7863e4dced5ad496975a970f905797"
+    },
+    "packages/shopify/src/shop-context.ts": {
+      "bytes": 5929,
+      "sha256": "7ef4587b21a9f5f75ca0856156aedef48bf734cdf11796d57750abdb9596e5cd"
+    },
+    "pnpm-lock.yaml": {
+      "bytes": 187035,
+      "sha256": "2c381b84c3d3a5eb6ac84313b030b1802dc7d3826b014420ccfa8dcb77a68881"
+    },
+    "scripts/m4-002/replay-production-vectors.py": {
+      "bytes": 16414,
+      "sha256": "ac17867b0aa4455fa0af9f251aa492a760541fee507f732616157fcabf70090a"
+    },
+    "scripts/m4-003/replay-public-config.mjs": {
+      "bytes": 5051,
+      "sha256": "cd4d67a761513b9d4bb0c067d84fa3f998f3993b7e661e2592ea117236e59e7b"
+    }
+  }
+}

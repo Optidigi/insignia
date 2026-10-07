@@ -1,6 +1,6 @@
 # M5-017 — Availability Hold v3
 
-Status: LOCAL_OFFLINE. Production implementation and the fresh-run harness are under qualification. Source reviews, exact-source CI and the live lifecycle remain pending. No M5-017 canonical run or credential access has occurred.
+Status: STOPPED. The one authorized live v3 qualification returned `CONFLICT` at restore because an ACK publication time inside the write interval was compared with the request-start clock. Acquire and fresh-process observe were HELD; exact original effective membership returned. The fixture was safely archived once and verified effectively unpublished. Canonical run is closed/sealed. No production source/build was changed after live access. [PR48](https://github.com/Optidigi/insignia/pull/48) is for principal review; the live qualification is not PASS.
 
 ## Authority and entry
 
@@ -42,7 +42,9 @@ V3 protects the exact Publications observed effective before the hold. It does n
 
 A synthetic lifecycle is labelled `PASS_V3_SYNTHETIC`. It is not live qualification, production activation, RELEASE_BOUND, G7, M6/M7 or launch evidence. Live authority opens only after completed source/build, clear fresh full-source GPT-6.1-sol/high reviews, green exact-source CI, a frozen gate and locally proven guard. Production source/build become immutable at first provider access; a live defect stops for principal review.
 
-## Precredential review corrections
+## Precredential review corrections — historical checkpoints
+
+The following entries preserve what was pending at each source checkpoint. The completed frozen gate and actual live outcome follow below.
 
 [Round1 findings and responses](evidence/m5-017/review-findings-responses.md) retain the original independent reports and exact failed CI/TDD evidence. The revised candidate closes v2 web-fixture integration, schedule evidence in settled ACKs, conservative monotonic freshness, and final native-dispatch deadline/freshness gaps. Identity/grant contradictions independently poison the operator before projection/envelope errors. Known unsent reservations are counted as local denials; actual dispatch accounting is `reserved = dispatched + denied` with zero unknown attribution from a denial.
 
@@ -58,3 +60,32 @@ The same ownership fence rejects original DRAFT visibility and retained schedule
 Round3 identified the remaining unheld original-DRAFT ACK fallback. Adapter observation/restoration and coordinator admission now reject retained acquisition ACKs without a held receipt before transport; SQL denies successful restoration/rehold receipts on unheld incidents. ACK-free safe original DRAFT still needs no mutation. Original reports, failing synthetic/SQL probes and successful regression evidence remain separate. Round3 full checks and eleven CI workflows passed, but its review verdict was NOT CLEAR. Revised-source round4 qualification is pending.
 
 Round4's security review found a remaining original-DRAFT restoration-ACK boundary bypass despite a clear Spec verdict. The coordinator now classifies a supplied unqualified ACK as CONFLICT before persisting it; SQL requires qualification for every non-null successful restoration ACK. ACK-free original DRAFT remains supported, and raw scheduled conflict evidence is retained. The failing SQL/coordinator probes and original reports remain preserved. Fresh round5 full qualification is pending; credentials remain closed.
+
+
+## Frozen source and completed offline gate
+
+Live used source `424e4af4133993a6d61579e86f10d9138d3f40c2`, tree `dbd32e6e63ebff9ebd68ecb669f6900e3bb46da5`, base/effective merge base `4bba14fb4415815557ffa5f1e600427a62128489`. [Executable gate](evidence/m5-017/gate.json) binds 3,460 tracked-source/package-build modules with digest `5d7be7dfe7ee8456cda40410dcd629a6252350deef9b5f6fd85384140c24003a`; the supplementary manifest binds 96 other generated artifacts. Both fresh full-source round5 reviews were clear: Spec `01a11637-9b8e-7dd3-8ef5-ce71a3f27ce0`, Standards/security `01a11637-9bd9-7370-8d6c-bcb57f5fc47f`, actual GPT-6.1-sol/high, enforced read-only/never local Codex exec fallback. Original reports and same-launch settings remain exact. T3 delegated-task controls did not provide an enforced read-only schema; the fallback is not OS credential/network isolation or native principal approval.
+
+[Offline report](evidence/m5-017/offline-report.json) records PostgreSQL-enabled root exit0, PostgreSQL18.6 database167, actual 100k read-seam query plans, empty down/up, populated downgrade expected exit2 with v3 migration retained, stress400/400 (100 per four cases), renderer expected negative control, process guard24 and historical source/register SHA checks. All eleven applicable natural exact-source workflows passed at attempt1. Original first CI failure and four NOT_CLEAR review rounds remain preserved, not relabelled. Local mocks and successful CI did not establish live restore qualification.
+
+## Exact live lifecycle and STOPPED classification
+
+Fresh canonical `/home/serveradmin/insignia-m5-017-handoff/run` used product `gid://shopify/Product/10496636387611`, marker `insignia-m5-017-8f834f0f-71b3-426e-a4cf-181048902f36`, operation `d96162c6-a176-42de-b640-057e11625105`. Exact development shop/app/install/grants and ownership passed. Create produced DRAFT; production v3 DRAFT snapshot was held-safe. One direct ACTIVE setup exposed Publication `gid://shopify/Publication/339456917787`; exact direct resolution confirmed inclusion, `autoPublish=true`, `supportsFuturePublishing=false`. No generic Publication/Catalog enumeration or publication mutation occurred.
+
+Fsynced v3 intent preceded one acquisition. HELD DRAFT had zero effective visibility and the original anchor still included the product. Exact returned held bytes: 2,823 bytes, SHA256 `b90a977a2a757d16e9890ee04831ef32f119a11ac7cbbcf46f176a91c0d99495`. Initial PID1322883 terminated; fresh PID1325112 verified those bytes/hash and observed HELD once. Its product updatedAt had advanced from `12:08:46Z` to `12:09:17Z` without semantic drift; the 31,000ms diagnostic change did not block observation.
+
+One production restore was ACKNOWLEDGED to ACTIVE. Complete readback returned the exact original effective Publication-ID set, online-store presence booleans and anchors, with no visible scheduled/staged record. The frozen shared semantic comparator returns true. The ACK and readback updatedAt differ exactly 1,000ms (`12:09:56Z` versus `12:09:57Z`); this was diagnostic and was not the conflict cause.
+
+The production result was nevertheless `CONFLICT`. Its ACK showed `isPublished=true`, publication date `2026-10-07T12:09:56.000Z`, request-start observedAt `12:09:54.968Z` and receivedAt `12:09:57.978Z`. The classifier uses publishDate > observedAt, so it marked the newly effective publication as future: 1,032ms after request start, yet 1,978ms before ACK receipt. [Derived adjudication](evidence/m5-017/live-adjudication.json) is separate from unchanged raw execution. Raw harness outcome remains `STOPPED`, stop `restore_not_exact`; raw adapter result remains `CONFLICT`. This is a confirmed production classification defect, not evidence of an intentionally induced mismatch or unresolved write.
+
+No compensation request occurred because complete effective availability matched the original. The compensation slot was reserved/consumed (`calls.compensation=1`); that is not a provider attempt. Independently exact ownership/current ACTIVE and all settled writes allowed the brief's single ARCHIVED cleanup. Final production v3 readback was ARCHIVED, zero effective Publication IDs, no online-store presence, `onlineStoreUrl=null`. Cleanup ACK/readback updatedAt both `12:10:14Z`. All five writes settled, pending=null. Future-capable anchor coverage was NOT_OBSERVED; no case was manufactured.
+
+## Accounting, closure and remaining correction
+
+Actual counts: auth2/2, GraphQL36/128, create1/1, direct setup/cleanup updates2/2, adapter mutations2/3 (acquire1, restore1, compensation0). All prohibited mutations were zero. Every one of 38 native transport invocations has its durable event; reserved=dispatched=38, denied0, mismatch=false. No retries, extra create or further provider access after closure. Raw register/qualification/intent/held/binding/gate and phase markers are copied byte-for-byte under [live-run](evidence/m5-017/live-run). Original canonical nine files are chmod0400, directory0500, register CLOSED, with an external seal/manifest. The copied raw register is an evidence snapshot, not a runnable canonical destination.
+
+[Immutability check](evidence/m5-017/postlive-immutability.json) verified all 3,460 frozen modules, 96 supplementary artifacts and 51 historical canonical files unchanged immediately after closure, before final docs/evidence. Production source/build remain immutable; final changes are documentation/evidence only. No historical fixture/register was reopened.
+
+The smallest proposed correction is to separate conservative request-start freshness provenance from v3 ACK schedule evaluation time. Principal must adjudicate an exact completed-observation endpoint while retaining raw timestamps, actual future/unpublished/staged failure and no tolerance. Add published-during-write ACK controls plus actual future controls and requalify only in a separately authorized slice. No correction was implemented after live access; no second lifecycle is authorized. This known defect remains unresolved in the submitted source, and merge/activation readiness is not claimed.
+
+Fresh completed-change full-source/evidence reviews and final-head CI receipts are supplied in the external PR/portable principal packet after committing this evidence. Principal approval remains external. No successor merge, production activation, RELEASE_BOUND/G7, M6/M7 or launch.

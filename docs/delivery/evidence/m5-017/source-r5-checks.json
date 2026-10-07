@@ -1,0 +1,74 @@
+{
+  "source": "424e4af4133993a6d61579e86f10d9138d3f40c2",
+  "tree": "dbd32e6e63ebff9ebd68ecb669f6900e3bb46da5",
+  "checks": [
+    {
+      "command": "PATH Cargo; DATABASE_URL=m5_017_r9; INSIGNIA_REQUIRE_POSTGRES_TEST=1 corepack pnpm check",
+      "exitCode": 0,
+      "log": "root-check-source-r5.log",
+      "sha256": "f1a9802677b1c086bf6853faa849cfeef086815a2644bfa74aa3c57094d584f6"
+    },
+    {
+      "command": "DATABASE_URL=m5_017_r9 corepack pnpm check:database",
+      "exitCode": 0,
+      "log": "pg18-full-source-r5.log",
+      "sha256": "e1169fb621a383abb313d147a5279ca51187017fa5ac0003ac985261e28cbb31"
+    },
+    {
+      "command": "DATABASE_URL=m5_017_r9 M5_QUERY_PLAN_OUTPUT=query-plan-source-r5.json corepack pnpm test:m5-query-plan",
+      "exitCode": 0,
+      "log": "query-plan-source-r5.log",
+      "sha256": "740d4b20a0d85147b625dfd120cd90f0ee84cd2f32858b08b13237cd88a461d7"
+    },
+    {
+      "command": "empty m5_017_rehearsal_r5 dbmate rollback; explicit verified exit",
+      "exitCode": 0,
+      "log": "empty-down-verified-source-r5.log",
+      "sha256": "93c532074c59c25b3a3142908691f857c8bc024098bf3fe94b7f4d1ddababaaf"
+    },
+    {
+      "command": "empty m5_017_rehearsal_r5 corepack pnpm db:migrate; explicit verified exit",
+      "exitCode": 0,
+      "log": "empty-up-verified-source-r5.log",
+      "sha256": "251d76d7b00c85e22557898d355ad8994308c1e8f082e3bfa6648ddb41c18d74"
+    },
+    {
+      "command": "populated m5_017_r9 dbmate rollback; expected deny",
+      "exitCode": 2,
+      "log": "populated-down-source-r5.log",
+      "sha256": "733c06a8b78dc5e0c67736e1f90239083cd8fa5daaab1c623f374592b60668b7"
+    },
+    {
+      "command": "M5_PUBLICATION_STRESS_ITERATIONS=100 pnpm --filter @insignia/web exec node --test --test-name-pattern publication (success|failed) preserves test/admin/editor-browser.test.mjs",
+      "exitCode": 0,
+      "log": "publication-stress100-source-r5.log",
+      "sha256": "625dd45cc0efecc40bab83c8d77a2e4c2d3e4a95c04fbb89810cb9733e349d18"
+    },
+    {
+      "command": "corepack pnpm test:m5-renderer-control",
+      "exitCode": 0,
+      "log": "renderer-control-source-r5.log",
+      "sha256": "bbec30a3fd6c6ac18de512892946c618ee2e237c877357dd82cadbd5bb3b4292"
+    }
+  ],
+  "databaseTests": 167,
+  "postgresVersionNum": 180006,
+  "v3MigrationRetainedAfterDeniedDown": 1,
+  "v3RowsAfterDeniedDown": 122,
+  "emptyMigrationReapplied": 1,
+  "stress": {
+    "iterationsPerCase": 100,
+    "cases": 4,
+    "passed": 400,
+    "failed": 0
+  },
+  "rendererControl": "EXPECTED_NEGATIVE_CONTROL",
+  "reviews": {
+    "spec": "no unresolved material finding",
+    "security": "no unresolved material finding"
+  },
+  "ci": "all11 natural exact-head attempt1 success",
+  "credentialAccess": "NOT_RUN",
+  "canonicalRun": "ABSENT",
+  "emptyRehearsalNote": "Initial set-e chain process handle expired before explicit completion retrieval; original output retained. Empty down/up repeated with recorded exit0 and final version check."
+}

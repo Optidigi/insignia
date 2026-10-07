@@ -1,0 +1,38 @@
+{
+  "binding.json": {
+    "sha256": "eb973f98220b324d865472b30a38650c4ed80d953f40d0c072d432bff7abe84e",
+    "bytes": 454504
+  },
+  "gate.json": {
+    "sha256": "6c229cbf1a386eb51fa6ef01035051d12cd892208f80328b65ee1792d3e6a87a",
+    "bytes": 5937
+  },
+  "held.json": {
+    "sha256": "b90a977a2a757d16e9890ee04831ef32f119a11ac7cbbcf46f176a91c0d99495",
+    "bytes": 2823
+  },
+  "hold-intent.json": {
+    "sha256": "c52e2ae6d070a2d8013603bedc5f1897043a844769619ba3b23d4fb822ad112b",
+    "bytes": 1583
+  },
+  "initialized.once": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "qualification.json": {
+    "sha256": "0bcacd3b8ca45288a9332a1812f69cb05c36f1e8ba71face9bdf93bb25c3588d",
+    "bytes": 29866
+  },
+  "register.json": {
+    "sha256": "5d6f936407bd09bc8acbb8b7d9dd87de3781dac81ec600c766e31236dc2f22fa",
+    "bytes": 573144
+  },
+  "restore-intent.json": {
+    "sha256": "adf8478c04c054b417b2ad6d4d263e37216942808efd97819a45157f84e173e0",
+    "bytes": 4062
+  },
+  "resume.once": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+}

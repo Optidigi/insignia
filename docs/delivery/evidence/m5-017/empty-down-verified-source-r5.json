@@ -1,0 +1,7 @@
+{
+  "source": "424e4af4133993a6d61579e86f10d9138d3f40c2",
+  "originalFile": "/home/serveradmin/insignia-m5-017-handoff/empty-down-verified-source-r5.log",
+  "encoding": "utf-8",
+  "sha256": "93c532074c59c25b3a3142908691f857c8bc024098bf3fe94b7f4d1ddababaaf",
+  "raw": "Rolling back: 20261007000100_m5_availability_v3.sql\nRolled back: 20261007000100_m5_availability_v3.sql in 15.098317ms\n"
+}
