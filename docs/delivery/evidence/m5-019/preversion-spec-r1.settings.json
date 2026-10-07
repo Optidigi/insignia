@@ -23,6 +23,8 @@
   ],
   "readOnlyRuntime": true,
   "credentialOrNetworkIsolation": false,
-  "reportSha256": "e692aa61e455c68d3cd299fe8166d5864645924fbcb916ebe40be079334ecc2c",
-  "verdict": "CHANGES_REQUESTED"
+  "reportSha256": "1c7b16ebb21268e735e76750f2ab01178253a75df23e8005f35e09f39eba689a",
+  "verdict": "CHANGES_REQUESTED",
+  "originalReportSha256": "e692aa61e455c68d3cd299fe8166d5864645924fbcb916ebe40be079334ecc2c",
+  "rendering": "Git copy trims Markdown trailing-space hard breaks only; neutral original retained byte-for-byte"
 }
