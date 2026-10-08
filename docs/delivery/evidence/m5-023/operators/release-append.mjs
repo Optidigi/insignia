@@ -39,6 +39,10 @@ let writeAttempted = false;
 let writeAcknowledged = false;
 let runtime;
 let operator;
+let operatorClient;
+let transactionOpened = false;
+let commitAttempted = false;
+let rollbackAcknowledged = false;
 try {
   let size = 0;
   const chunks = [];
@@ -142,27 +146,45 @@ try {
   const address = new URL(process.env.DATABASE_URL);
   address.username = input.operator.user;
   address.password = input.operator.password;
-  operator = new Pool({ connectionString: address.href });
-  const appendAt = Date.now();
-  assert.ok(appendAt >= observedMs && appendAt >= observations.functionObservedMs
-    && appendAt < Date.parse(observations.expiresAt), 'Authority expired before append');
+  const deadline = Date.parse(observations.expiresAt);
+  function remainingAuthority() {
+    const now = Date.now();
+    assert.ok(now >= observedMs && now >= observations.functionObservedMs && now < deadline,
+      'Original authority expired before append');
+    return deadline - now;
+  }
+  const connectionBudget = remainingAuthority();
+  operator = new Pool({ connectionString: address.href, connectionTimeoutMillis: connectionBudget,
+    query_timeout: connectionBudget,
+    options: `-c statement_timeout=${connectionBudget}ms -c lock_timeout=${connectionBudget}ms` });
+  operatorClient = await operator.connect();
+  remainingAuthority();
+  await operatorClient.query('BEGIN');
+  transactionOpened = true;
+  const writeBudget = remainingAuthority();
+  await operatorClient.query(`SET LOCAL statement_timeout = '${writeBudget}ms'; SET LOCAL lock_timeout = '${writeBudget}ms'`);
+  remainingAuthority();
   writeAttempted = true;
-  const inserted = await operator.query(
-    'INSERT INTO trusted_release_records(record_id,shop_id,installation_generation,app_client_id,active_app_version_ref,expected_build,trusted_record,active_version_observed_at,active_version_evidence_sha256,evidence_digest) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
-    [
-      recordId,
-      state.shopId,
-      state.currentGeneration,
-      scope.appClientId,
-      expected.appVersionRef,
-      expected,
-      record,
-      observedAt,
-      proof,
-      digest,
-    ],
+  const inserted = await operatorClient.query(
+    `INSERT INTO trusted_release_records(record_id,shop_id,installation_generation,app_client_id,active_app_version_ref,expected_build,trusted_record,active_version_observed_at,active_version_evidence_sha256,evidence_digest)
+     SELECT $1,$2,$3::bigint,$4,$5,$6::jsonb,$7::jsonb,$8::timestamptz,$9,$10
+     WHERE clock_timestamp() >= $8::timestamptz AND clock_timestamp() >= $11::timestamptz
+       AND clock_timestamp() < $12::timestamptz`,
+    [recordId,state.shopId,state.currentGeneration,scope.appClientId,expected.appVersionRef,
+      expected,record,observedAt,proof,digest,observations.functionObservedAt,observations.expiresAt],
   );
   assert.equal(inserted.rowCount, 1);
+  // A foreign-key/trigger wait can follow SELECT evaluation. Recheck in the
+  // database after INSERT has fully completed; expiry rolls back the candidate.
+  const current = await operatorClient.query(
+    `SELECT clock_timestamp() >= $1::timestamptz AND clock_timestamp() >= $2::timestamptz
+      AND clock_timestamp() < $3::timestamptz AS authority_current`,
+    [observedAt,observations.functionObservedAt,observations.expiresAt]);
+  assert.equal(current.rows[0]?.authority_current, true);
+  remainingAuthority();
+  commitAttempted = true;
+  await operatorClient.query('COMMIT');
+  transactionOpened = false;
   writeAcknowledged = true;
   const qualified = await runtime.trustedReleaseRecords.read({
     scope,
@@ -190,13 +212,21 @@ try {
     }),
   );
 } catch {
+  if (transactionOpened && operatorClient) {
+    try { await operatorClient.query('ROLLBACK'); rollbackAcknowledged = true; }
+    catch { rollbackAcknowledged = false; }
+    transactionOpened = false;
+  }
   console.log(
     JSON.stringify({
       classification: 'TRUSTED_RELEASE_APPEND_STOPPED',
       recordId,
       writeAttempted,
       writeAcknowledged,
-      ambiguousWrite: writeAttempted && !writeAcknowledged,
+      commitAttempted,
+      rollbackAcknowledged,
+      writeSettledNoAppend: writeAttempted && !commitAttempted && rollbackAcknowledged,
+      ambiguousWrite: !writeAcknowledged && (commitAttempted || (writeAttempted && !rollbackAcknowledged)),
       retryAuthorized: false,
       providerRequests: 0,
       secretValuesLogged: false,
@@ -204,6 +234,7 @@ try {
   );
   process.exitCode = 1;
 } finally {
+  operatorClient?.release(true);
   await operator?.end();
   await runtime?.close();
 }

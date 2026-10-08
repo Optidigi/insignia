@@ -181,7 +181,7 @@ class GuardControls(unittest.TestCase):
 
     def test_only_exact_ready_worker_and_queue_qualify(self):
         operator.qualify_lifecycle = original_qualification
-        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid', 'config-mount', 'secret-mount', 'inherited-mount', 'hosts-override', 'dns-override', 'lifecycle-hook', 'mislabeled-nearer-dependency', 'readonly-worker-code', 'post-pass-worker-disappearance', 'post-pass-privilege-loss', 'worker-privileged', 'worker-cap-add', 'worker-security-override']:
+        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid', 'config-mount', 'secret-mount', 'inherited-mount', 'hosts-override', 'dns-override', 'lifecycle-hook', 'mislabeled-nearer-dependency', 'readonly-worker-code', 'post-pass-worker-disappearance', 'post-pass-privilege-loss', 'worker-privileged', 'worker-cap-add', 'worker-security-override', 'dba-route-env', 'dba-session-schema', 'dba-session-role', 'dba-session-endpoint']:
             with self.subTest(failure=failure):
                 path = operator.ROOT / 'lifecycle-settled.json'
                 if path.exists():
@@ -205,7 +205,7 @@ class GuardControls(unittest.TestCase):
                     return {'NetworkSettings': {'Networks': {'backend': {'NetworkID': identity, 'IPAddress': ip, 'GlobalIPv6Address': 'fd00::' + ip.rsplit('.',1)[1], 'Aliases': ['database']}}}}
                 web.update({'Id': 'synthetic-web', **network('10.0.0.3')})
                 worker.update(network('10.0.0.4', 'other-backend' if failure == 'separate-network' else 'exact-backend'))
-                database = {'Id': 'synthetic-database', **network('10.0.0.2')}
+                database = {'Id': 'synthetic-database', 'Config': {'Env': ['PGHOST=redirected-synthetic-host'] if failure == 'dba-route-env' else []}, **network('10.0.0.2')}
                 operator.prestate = lambda: [web, database]
                 inspector = b'function inspectWorkerFromStdin() {}'
                 inventory = b'{"version":"synthetic-only"}'
@@ -263,6 +263,8 @@ class GuardControls(unittest.TestCase):
                             return json.dumps({'exact': failure not in ['artifact', 'dependency', 'mislabeled-nearer-dependency']}).encode()
                         return json.dumps({'status': 503 if failure == 'health' else 200, 'body': {'durableReady': True}}).encode()
                     if 'psql' in args:
+                        if b'dbaSessionQualified' in stdin:
+                            return json.dumps({'dbaSessionQualified': failure not in ['dba-session-schema','dba-session-role','dba-session-endpoint']}).encode()
                         result = {'queueSchemaPresent': True, 'queueRuntimeUsable': failure != 'queue'}
                         if b'uninstallRuntimeUsable' in stdin:
                             result['uninstallRuntimeUsable'] = failure != 'application-rights' and not (phase['changed'] and failure == 'post-pass-privilege-loss')
@@ -275,6 +277,11 @@ class GuardControls(unittest.TestCase):
                 self.assertEqual(value['databaseWrites'], 0)
                 self.assertFalse(list(operator.ROOT.glob('*-reserved.json')))
                 self.assertNotIn('synthetic-secret', json.dumps(value))
+                if failure and failure.startswith('dba-'):
+                    for action in [operator.backup, operator.provision, operator.deploy, operator.restart, operator.append]:
+                        with self.assertRaisesRegex(RuntimeError, 'Uninstall processor readiness unqualified'):
+                            action()
+                        self.assertFalse(list(operator.ROOT.glob('*-reserved.json')))
                 if failure and failure.startswith('post-pass-'):
                     phase['changed'] = True
                     for action in [operator.require_lifecycle, operator.backup, operator.provision, operator.deploy, operator.restart, operator.append, lambda: operator.compose_web(operator.OLD_IMAGE)]:

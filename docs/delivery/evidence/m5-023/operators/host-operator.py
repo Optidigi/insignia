@@ -150,9 +150,38 @@ def identities(containers):
     return {c['Name']: [c['Id'], c['Image'], c['State']['StartedAt']] for c in containers}
 
 
+def dba_command(tool, arguments):
+    require(tool in ['psql', 'pg_dump', 'pg_dumpall', 'pg_restore'], 'Unknown fixed DBA client')
+    # Clear inherited libpq/service/passfile/startup routing and use only the
+    # designated container's fixed local socket. A missing socket fails closed.
+    command = ['docker', 'exec', '-i', DB, 'env', '-i',
+        'PATH=/usr/lib/postgresql/18/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
+        'PGOPTIONS=-c search_path=public', tool]
+    if tool != 'pg_restore':
+        command += ['--host=/var/run/postgresql', '--port=5432', '--username=insignia_rewrite', '--no-password',
+            '--database=insignia_rewrite' if tool == 'pg_dumpall' else '--dbname=insignia_rewrite']
+    return command + arguments
+
+
 def sql(statement):
-    return run(['docker', 'exec', '-i', DB, 'psql', '-X', '-qAt', '-v', 'ON_ERROR_STOP=1',
-                '-U', 'insignia_rewrite', '-d', 'insignia_rewrite'], statement.encode())
+    return run(dba_command('psql', ['-X', '-qAt', '-v', 'ON_ERROR_STOP=1']), statement.encode())
+
+
+def qualify_dba(database):
+    metadata_keys = {'PGDATA', 'PG_MAJOR', 'PG_VERSION', 'PG_SHA256'}
+    values = dict(value.split('=', 1) for value in database.get('Config', {}).get('Env', []))
+    if any(key.startswith('PG') and key not in metadata_keys and value for key, value in values.items()):
+        return False
+    result = json.loads(sql("""BEGIN READ ONLY; SELECT json_build_object('dbaSessionQualified',
+      current_database()='insignia_rewrite' AND current_user='insignia_rewrite'
+      AND session_user='insignia_rewrite' AND current_schema()='public'
+      AND current_setting('search_path')='public' AND inet_server_addr() IS NULL
+      AND current_setting('port')='5432' AND current_setting('server_version_num')::integer/10000=18
+      AND NOT EXISTS(SELECT 1 FROM unnest(ARRAY['shops','installation_generations','shop_credentials',
+        'product_configs','publication_operations','inbox_messages','shopify_webhook_deliveries']) AS required(name)
+        WHERE to_regclass(required.name) IS DISTINCT FROM to_regclass('public.'||required.name)
+          OR to_regclass('public.'||required.name) IS NULL)); COMMIT;"""))
+    return result.get('dbaSessionQualified') is True
 
 
 def event(action, payload):
@@ -239,8 +268,14 @@ def qualify_lifecycle():
     checks = {'candidateMatchesRuntime': candidate_matches_runtime(web, candidate, candidate_networks), 'exactWorkerArtifact': False, 'workerReady': False, 'workerKeyConfigurationPresent': False,
               'runtimeRoleExact': target.username == 'insignia_runtime', 'workerRoleExact': False,
               'sameDatabaseEndpoint': False, 'runtimeDatabaseExact': False,
+              'dbaSessionQualified': len(current) > 1 and qualify_dba(current[1]),
               'webhookSecretMatchesApp': bool(environment.get('SHOPIFY_WEBHOOK_SECRET'))
                 and environment.get('SHOPIFY_WEBHOOK_SECRET') == environment.get('SHOPIFY_CLIENT_SECRET')}
+    if not checks['dbaSessionQualified']:
+        return {'classification': 'BLOCKED_UNINSTALL_PROCESSOR_READINESS', 'checks': checks,
+            'candidateConfigSha256': candidate_digest, 'candidateCount': len(candidates),
+            'providerRequests': 0, 'databaseWrites': 0, 'workerDeployments': 0,
+            'runtimeEnvironmentValuesLogged': False}
     if len(candidates) == 1:
         worker, command, values = candidates[0]
         entry = Path(command[1])
@@ -359,11 +394,11 @@ def backup():
         data = (APP / name).read_bytes()
         exclusive(target / name, data)
         hashes[name] = sha(data)
-    dump = run(['docker', 'exec', DB, 'pg_dump', '-Fc', '-U', 'insignia_rewrite', '-d', 'insignia_rewrite'], timeout=120)
+    dump = run(dba_command('pg_dump', ['--format=custom']), timeout=120)
     require(dump.startswith(b'PGDMP'), 'Backup format mismatch')
     exclusive(target / 'database.dump', dump)
-    run(['docker', 'exec', '-i', DB, 'pg_restore', '--list'], dump)
-    globals_bytes = run(['docker', 'exec', DB, 'pg_dumpall', '--globals-only', '--no-role-passwords', '-U', 'insignia_rewrite'])
+    run(dba_command('pg_restore', ['--list']), dump)
+    globals_bytes = run(dba_command('pg_dumpall', ['--globals-only', '--no-role-passwords']))
     exclusive(target / 'roles.sql', globals_bytes)
     hashes.update({'database.dump': sha(dump), 'roles.sql': sha(globals_bytes)})
     finish('backup', {'backupHashes': hashes, 'dumpListVerified': True, 'oldImage': OLD_IMAGE,
@@ -489,6 +524,7 @@ def restart():
 def state():
     verify_compose_source()
     current = prestate()
+    require(len(current) > 1 and qualify_dba(current[1]), 'DBA session identity unqualified')
     data = json.loads(sql("""BEGIN READ ONLY; SELECT json_build_object(
       'tenant',(SELECT row_to_json(t) FROM (SELECT s.shop_id,s.shop_domain,s.shopify_shop_id,
         s.current_generation,i.external_installation_id,(i.deactivated_at IS NULL) AS active

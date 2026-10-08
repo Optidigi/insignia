@@ -1,0 +1,5 @@
+{"control":"table","lockObserved":true,"exit":1,"classification":"TRUSTED_RELEASE_APPEND_STOPPED","writeAttempted":true,"writeAcknowledged":false,"commitAttempted":false,"rollbackAcknowledged":true,"ambiguousWrite":false,"rows":0,"providerRequests":0,"productionWrites":0}
+{"control":"foreign-key","lockObserved":true,"exit":1,"classification":"TRUSTED_RELEASE_APPEND_STOPPED","writeAttempted":true,"writeAcknowledged":false,"commitAttempted":false,"rollbackAcknowledged":true,"ambiguousWrite":false,"rows":0,"providerRequests":0,"productionWrites":0}
+{"control":"none","lockObserved":false,"exit":0,"classification":"TRUSTED_RELEASE_APPEND_ACK_RUNTIME_QUALIFIED","writeAttempted":true,"writeAcknowledged":true,"rows":1,"providerRequests":0,"productionWrites":0}
+{"classification":"LOCAL_SYNTHETIC_PG18_DEADLINE_TABLE_FK_AND_FRESH_PASS","fixtureProvenance":"Synthetic local bootstrap/Function/Active; not native/provider/owner evidence","providerRequests":0,"productionWrites":0}
+Control process exit: 0

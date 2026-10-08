@@ -1,0 +1,31 @@
+{
+  "axis": "security",
+  "head": "4b6778ac66ed034bb514a69c84fdf6f1a5136906",
+  "verdict": "CHANGES_REQUESTED",
+  "session": "01a11ce1-52ee-7d90-b37a-db4be9d39dfe",
+  "actualTurnContexts": [
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-023-worktree",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      }
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-023-worktree",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      }
+    }
+  ],
+  "reportSha256": "afb8e2e050cd68c1d837f372c211f37d5caa418c6303547fb37bede8cdd1e7f6",
+  "readOnlyEnforced": true,
+  "credentialNetworkIsolation": false,
+  "provider": "Codex CLI0.161.0 actual runtime",
+  "source": "Actual session turn_context; not reviewer self-report"
+}
