@@ -1,0 +1,1 @@
+PASS actual qualifier: original timestamps/bytes preserved, both receipt hashes bound, earliest expiry, exact30s/future/invalid/missing rejection and equality; DB/provider calls0

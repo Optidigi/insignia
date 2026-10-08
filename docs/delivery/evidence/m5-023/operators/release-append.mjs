@@ -7,6 +7,33 @@ import { createHash } from 'node:crypto';
 import { createDurableCore, sha256CanonicalJson } from '@insignia/database';
 import { Pool } from 'pg';
 
+/** Bound original observations; a fresh Active read cannot restamp Function evidence. */
+export function qualifyReleaseObservations(activeObservation, functionObservation, now) {
+  assert.ok(Number.isFinite(now));
+  const observedAt = activeObservation.observedAt;
+  const functionObservedAt = functionObservation.observedAt;
+  assert.equal(typeof observedAt, 'string');
+  assert.equal(typeof functionObservedAt, 'string');
+  const observedMs = Date.parse(observedAt);
+  const functionObservedMs = Date.parse(functionObservedAt);
+  for (const value of [observedMs, functionObservedMs])
+    assert.ok(Number.isFinite(value) && value <= now && now - value < 30_000);
+  assert.deepEqual(new Set(Object.keys(functionObservation)),
+    new Set(['shopId','installationGeneration','appClientId','observedAt','transform','validation']));
+  for (const kind of ['transform','validation'])
+    assert.deepEqual(new Set(Object.keys(functionObservation[kind])),
+      new Set(['functionId','handle','apiType','apiVersion','inputQuerySha256']));
+  const hash = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex');
+  return {
+    observedAt, observedMs, functionObservedAt, functionObservedMs,
+    expiresAt: new Date(Math.min(observedMs,functionObservedMs) + 30_000).toISOString(),
+    activeObservationEvidenceSha256: hash(activeObservation),
+    functionObservationEvidenceSha256: hash(functionObservation),
+    // This exact composite receipt contains both original timestamps/identities.
+    proof: hash({version:'m5-release-observations-v1',activeObservation,functionObservation}),
+  };
+}
+
 let recordId = null;
 let writeAttempted = false;
 let writeAcknowledged = false;
@@ -43,11 +70,12 @@ try {
   assert.equal(versions.filter((v) => v.status === 'active').length, 1);
   assert.ok(versions.every((v) => v.status === (v.versionId.endsWith('/1158986629121') ? 'active' : 'inactive')));
   assert.equal(versions.find((v) => v.status === 'active').versionTag, 'm5-019r-9b94149272d1');
-  const proof = createHash('sha256').update(JSON.stringify(input.activeObservation)).digest('hex');
   const readiness = input.readiness;
   assert.equal(readiness.version, 'm5-admin-technical-readiness-v1');
   assert.equal(readiness.shop, 'insignia-rewrite-dev.myshopify.com');
   assert.equal(readiness.functions.observation.appClientId, '1443cf6d03d39edae7c101a943c5c684');
+  const observations = qualifyReleaseObservations(input.activeObservation, readiness.functions.observation, Date.now());
+  const proof = observations.proof;
   runtime = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
   const state = await runtime.tenants.getManagedInstallationState(readiness.shop);
   assert.ok(state?.active);
@@ -102,7 +130,7 @@ try {
       ...expected,
       evidenceKind: 'RELEASE_BOUND',
       observedAt,
-      expiresAt: new Date(observedMs + 30_000).toISOString(),
+      expiresAt: observations.expiresAt,
     },
   };
   const digest = sha256CanonicalJson({
@@ -115,7 +143,9 @@ try {
   address.username = input.operator.user;
   address.password = input.operator.password;
   operator = new Pool({ connectionString: address.href });
-  assert.ok(Date.now() - observedMs < 30_000, 'Authority expired before append');
+  const appendAt = Date.now();
+  assert.ok(appendAt >= observedMs && appendAt >= observations.functionObservedMs
+    && appendAt < Date.parse(observations.expiresAt), 'Authority expired before append');
   writeAttempted = true;
   const inserted = await operator.query(
     'INSERT INTO trusted_release_records(record_id,shop_id,installation_generation,app_client_id,active_app_version_ref,expected_build,trusted_record,active_version_observed_at,active_version_evidence_sha256,evidence_digest) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)',
@@ -150,6 +180,10 @@ try {
       providerRequests: 0,
       observedAt,
       activeVersionEvidenceSha256: proof,
+      activeObservationEvidenceSha256: observations.activeObservationEvidenceSha256,
+      functionObservationEvidenceSha256: observations.functionObservationEvidenceSha256,
+      functionObservedAt: observations.functionObservedAt,
+      authorityExpiresAt: observations.expiresAt,
       evidenceDigest: digest,
       expectedBuild: expected,
       trustedRecord: record,

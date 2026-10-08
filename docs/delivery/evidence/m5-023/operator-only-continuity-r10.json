@@ -1,0 +1,26 @@
+{
+  "applicationChanged": false,
+  "buildChanged": false,
+  "providerChanged": false,
+  "sourceBaseline": "20d5e09df2123cfdbf46ab35f867563c248bb3f2",
+  "changedMappedPaths": [
+    "docs/delivery/evidence/m5-023/operators/host-operator-controls.py",
+    "docs/delivery/evidence/m5-023/operators/host-operator.py",
+    "docs/delivery/evidence/m5-023/operators/release-append-controls.mjs",
+    "docs/delivery/evidence/m5-023/operators/release-append.mjs",
+    "docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs"
+  ],
+  "archiveSha256": "ec9e7e9c91c7d7344346c5f859b91b2d18f272faa205320dfe8f8564629ed1c0",
+  "workerInventorySha256": "2a05e47acebb36bc1628fb2d36c9cb065cd21bdd99d1462c1a9d33e011886f26",
+  "sourceBuildMappedFiles": 710,
+  "providerInputs": 7,
+  "priorApplicationQualification": "r9 isolated full-root86/PG198/publication100/renderer/portable6",
+  "freshOperatorQualification": {
+    "workerControls": 15,
+    "hostMethods": 11,
+    "hostVariants": 31,
+    "appendFailureGuards": 7,
+    "syntheticPgAppendAndRuntimeRead": true
+  },
+  "liveAccessStarted": false
+}

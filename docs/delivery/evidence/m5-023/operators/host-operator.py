@@ -67,8 +67,12 @@ def inspect(names):
     return json.loads(run(['docker', 'inspect', *names]))
 
 
-def compose_configuration(image):
+def verify_compose_source():
     require(sha((APP / 'compose.yaml').read_bytes()) == COMPOSE_SHA256, 'Reviewed Compose source drift')
+
+
+def compose_configuration(image):
+    verify_compose_source()
     require(re.fullmatch(r'sha256:[0-9a-f]{64}', image) is not None, 'Reviewed image identity invalid')
     environment = {key: os.environ[key] for key in ('PATH', 'HOME') if key in os.environ}
     environment.update({'INSIGNIA_WEB_IMAGE': image, 'INSIGNIA_ROUTE_ENABLED': 'true'})
@@ -210,6 +214,7 @@ def same_database_endpoint(web, worker, database, address):
 
 def lifecycle():
     """Read-only qualification; never install/start a missing worker or seed queue state."""
+    verify_compose_source()
     current = prestate()
     web = current[0]
     environment = dict(value.split('=', 1) for value in web['Config']['Env'])
@@ -251,7 +256,8 @@ def lifecycle():
             and (len(command) == 2 or re.fullmatch(r'--port=[0-9]+', command[2]))
         immutable_code = worker.get('HostConfig', {}).get('ReadonlyRootfs') is True \
             and worker['Config'].get('User') == 'node' and entry.is_absolute() and entry.parts[1] != 'tmp' \
-            and not any(mount.get('RW') and mount.get('Destination') != '/tmp' for mount in worker.get('Mounts', []))
+            and not any(mount.get('Destination') != '/tmp' for mount in worker.get('Mounts', [])) \
+            and set((worker.get('HostConfig', {}).get('Tmpfs') or {}).keys()).issubset({'/tmp'})
         preload_absent = not any(value and (key in ('NODE_OPTIONS', 'NODE_PATH') or key.startswith(('LD_', 'DYLD_')))
             for key, value in values.items())
         if command_exact and immutable_code and preload_absent:
@@ -259,7 +265,7 @@ def lifecycle():
                 inspector.decode() + '\ninspectWorkerFromStdin();'],
                 json.dumps({'entry': str(entry), 'inventory': json.loads(inventory_bytes), 'command': command,
                     'writablePaths': ['/tmp', '/dev', '/proc', '/sys',
-                        *[mount['Destination'] for mount in worker.get('Mounts', []) if mount.get('RW')],
+                        *[mount['Destination'] for mount in worker.get('Mounts', [])],
                         *(worker.get('HostConfig', {}).get('Tmpfs') or {}).keys()]}).encode(), timeout=30))
             checks['exactWorkerArtifact'] = artifact.get('exact') is True
         checks['workerKeyConfigurationPresent'] = all(values.get(key) for key in

@@ -131,3 +131,17 @@ test('effective process requires exact arguments, binary and absent preload flag
     {...exact,nodeMatches:false}, {...exact,preloadAbsent:false},
   ]) assert.equal(workerProcessMatches(actual,command),false);
 });
+
+test('loaded synthetic module differs from replaced read-only-mount files; mounted executable roots cannot qualify',()=>fixture(({entry,database})=>{
+  const module = join(database,'dist/index.js');
+  writeFileSync(module,"module.exports = { identity: 'loaded-old' };\n");
+  const loaded = createRequire(entry)(module);
+  writeFileSync(module,"module.exports = { identity: 'reviewed-current-files' };\n");
+  const inventory = collectWorkerInventory(entry);
+  assert.equal(loaded.identity,'loaded-old');
+  assert.equal(workerInventoryMatches(entry,inventory),true);
+  // The host transport declares an effective RO mount. It must be included in
+  // the executable overlap set just like a writable mount; no privileged mount
+  // or real worker/dependency/provider code is used in this filesystem control.
+  assert.throws(()=>workerInventoryMatches(entry,inventory,[database]),/overlap/);
+}));

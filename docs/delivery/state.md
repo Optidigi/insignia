@@ -12,6 +12,8 @@ Seventh-round candidate mounts/routing findings now reject through an explicit f
 
 Eighth-round nearer dependency and first-create signed-ingress findings now have actual Node/PG red/green controls. Application source changed, so the complete source/build/package/review/CI gate is being requalified;198 PG tests,14 worker controls and11 host methods/30 variants pass. Local shared-queue failure is retained with fresh isolated-database control evidence. No renewed access/live operation; gate unfrozen.
 
+Ninth-round operator findings now reject read-only host-mutable worker code, stale Function observations and Compose drift before lifecycle's first Docker command. Actual local controls preserve original Function/Active times and expire at the earlier exact30second deadline; synthetic PG append/SELECT qualifies. Application/build/provider bytes unchanged; gate still unfrozen pending new reviews/CI.
+
 ---
 
 # Current M5-022R — same-PR correction; principal rereview required

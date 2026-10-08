@@ -63,7 +63,7 @@ class GuardControls(unittest.TestCase):
         self.qualified_receipt()
         with (operator.APP / 'compose.yaml').open('ab') as stream:
             stream.write(b'\n# unreviewed source change\n')
-        for action in [operator.backup, operator.provision, operator.deploy]:
+        for action in [operator.lifecycle, operator.backup, operator.provision, operator.deploy]:
             with self.assertRaisesRegex(RuntimeError, 'Reviewed Compose source drift'):
                 action()
         self.assertEqual(self.calls, [])
@@ -173,7 +173,7 @@ class GuardControls(unittest.TestCase):
         self.assertNotIn('synthetic@', json.dumps(value))
 
     def test_only_exact_ready_worker_and_queue_qualify(self):
-        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid', 'config-mount', 'secret-mount', 'inherited-mount', 'hosts-override', 'dns-override', 'lifecycle-hook', 'mislabeled-nearer-dependency']:
+        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid', 'config-mount', 'secret-mount', 'inherited-mount', 'hosts-override', 'dns-override', 'lifecycle-hook', 'mislabeled-nearer-dependency', 'readonly-worker-code']:
             with self.subTest(failure=failure):
                 path = operator.ROOT / 'lifecycle-settled.json'
                 if path.exists():
@@ -186,6 +186,8 @@ class GuardControls(unittest.TestCase):
                     'Env': ['DATABASE_URL=postgres://' + ('underprivileged_worker' if failure == 'role' else 'insignia_runtime') + '@database:5432/insignia_rewrite',
                         'SHOPIFY_CLIENT_ID=synthetic-client', 'SHOPIFY_CLIENT_SECRET=synthetic-secret',
                         'INSIGNIA_CREDENTIAL_KEY_ID=synthetic-key', 'INSIGNIA_CREDENTIAL_KEY_BASE64=synthetic-key-bytes']}}
+                if failure == 'readonly-worker-code':
+                    worker['Mounts'] = [{'RW': False, 'Destination': '/srv/worker', 'Type': 'bind'}]
                 if failure == 'db-query-override':
                     web['Config']['Env'][0] += '?host=unrelated-database'
                     worker['Config']['Env'][0] += '?host=unrelated-database'
