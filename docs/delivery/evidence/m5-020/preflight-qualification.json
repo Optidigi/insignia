@@ -52,7 +52,7 @@
   "providerPhaseClosed": true,
   "activeVersion": "1158986629121",
   "rollbackVersion": "1153019904001",
-  "nativePostReleaseConfig": "AGENT_BLOCKED_OWNER_REFRESH_PENDING",
+  "nativePostReleaseConfig": "CONFIRMED_BY_FRESH_OWNER_NATIVE_VERSION_PAGE_READBACK",
   "g7": "BLOCKED_SHARED_BROWSER_HUMAN_VERIFICATION",
   "sourceGateHead": "e750a67bec40dd4ffa447681d6ee04fb631922e3",
   "sourceGateReviews": "CLEAR_CLEAR",
@@ -74,5 +74,9 @@
       "committedLog": "final-secrets.log",
       "rendering": "Trailing whitespace removed; raw retained neutral"
     }
-  ]
+  ],
+  "ownerPostReleaseAttestation": "post-release-owner-native-attestation.json",
+  "agentNativePostReleaseConfig": "BLOCKED_BY_HUMAN_VERIFICATION_UNCHANGED_HISTORICAL_RECEIPT",
+  "ownerPostReleaseInstallationPresence": "DESIGNATED_INSTALLATION_PRESENCE_CONFIRMED_BY_OWNER",
+  "ownerPostReleaseEvidenceDoesNotQualifyG7": true
 }

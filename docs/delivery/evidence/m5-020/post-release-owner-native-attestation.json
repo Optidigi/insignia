@@ -1,0 +1,60 @@
+{
+  "classification": "FRESH_POST_RELEASE_OWNER_NATIVE_VERSION_READBACK_CONFIRMED",
+  "recordedAt": "2026-10-08T02:39:53.123500+00:00",
+  "ownerObservedAt": null,
+  "source": "Direct owner reply to the exact-version 1158986629121 post-release refresh question; manual native version-page readback, not an agent browser receipt",
+  "versionId": "1158986629121",
+  "versionTag": "m5-019r-9b94149272d1",
+  "ownerNativeVersionPageReadback": {
+    "status": "Active",
+    "name": "Insignia",
+    "application_url": "https://insignia-app.optidigi.nl/admin/products",
+    "embedded": true,
+    "optional_scopes": "write_products,read_publications,read_product_listings",
+    "use_legacy_install_flow": false,
+    "api_version": "2026-07",
+    "functions": [
+      {
+        "handle": "insignia-experimental-v2-validation",
+        "uid": "552059da-2dc1-47f8-8fc0-14a5ccb6f665"
+      },
+      {
+        "handle": "insignia-experimental-v2-transform",
+        "uid": "c56038d4-146a-405e-b47d-a055249eeeb3"
+      }
+    ]
+  },
+  "ownerStatusAndInstallationQuote": "is active and stil installed to same dev store",
+  "designatedInstallationPresence": {
+    "classification": "DESIGNATED_INSTALLATION_PRESENCE_CONFIRMED_BY_OWNER",
+    "shop": "insignia-rewrite-dev.myshopify.com",
+    "identityProvenance": "The owner previously identified the store explicitly as insignia-rewrite-dev and now confirms the same dev store",
+    "freshInstallationCounter": null,
+    "completeInstallationInventory": false,
+    "perStoreVersionEqualityClaim": false
+  },
+  "independentProviderEvidence": "versions-post-release.json already proves candidate Active and previous/superseded versions inactive; no new provider request",
+  "agentNativeNavigation": "Historical post-release-browser-blocker.json remains unchanged: human verification before native fields or designated app iframe",
+  "notSupplied": [
+    "owner observation timestamp",
+    "screenshots",
+    "PDFs",
+    "provider-native artifact files",
+    "fresh required-scopes or redirect fields",
+    "Function binary checksums",
+    "complete installation inventory"
+  ],
+  "notEstablished": [
+    "authenticated embedded admin boot",
+    "shop/install generation",
+    "current grants",
+    "staff authorization",
+    "trusted release/build/calendar readiness",
+    "per-store Function enablement",
+    "real G7 or merchant-flow acceptance"
+  ],
+  "providerPhaseReopened": false,
+  "newProviderOperations": 0,
+  "newReleaseAttempts": 0,
+  "g7": "BLOCKED_SHARED_BROWSER_SHOPIFY_HUMAN_VERIFICATION / M5_G7_NOT_PASSED"
+}

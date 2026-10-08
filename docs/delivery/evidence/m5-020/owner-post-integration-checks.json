@@ -1,0 +1,46 @@
+{
+  "classification": "POST_RELEASE_OWNER_EVIDENCE_LOCAL_INTEGRATION_CHECKS_PASS",
+  "recordedAt": "2026-10-08T02:41:13.032176+00:00",
+  "priorCompletedChangeHead": "6266cda322d7393dbfabb19dd5bc8aad172dcc84",
+  "sourceGateHead": "e750a67bec40dd4ffa447681d6ee04fb631922e3",
+  "localChecks": [
+    {
+      "check": "style",
+      "command": "biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002 scripts/m5-003 scripts/m5-004 scripts/m5-005 scripts/m5-009 scripts/m5-010 scripts/m5-011 scripts/m5-012 scripts/m5-013 scripts/m5-015 scripts/m5-015r scripts/m5-016 scripts/m5-017",
+      "cwd": "/home/serveradmin/insignia-m5-020-worktree",
+      "exitCode": 0,
+      "logSha256": "c8124a2131a42a44cd00eda296fafdeb74e298fa38c00ad216d16beddbbe6c08",
+      "log": "owner-post-integration-style.log"
+    },
+    {
+      "check": "secrets",
+      "command": "node scripts/boundaries/check-secrets.mjs",
+      "cwd": "/home/serveradmin/insignia-m5-020-worktree",
+      "exitCode": 0,
+      "logSha256": "734ad029dfb172476895db6bfed720780ab49d9f14cd4a7cb18d3adec5a2bcc2",
+      "log": "owner-post-integration-secrets.log"
+    },
+    {
+      "check": "history",
+      "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+      "cwd": "/home/serveradmin/insignia-m5-020-worktree",
+      "exitCode": 0,
+      "logSha256": "47bb033a26cda6c97e0332451c130c56e663d35ab94aa6dda8c61a8a44ef4658",
+      "log": "owner-post-integration-history.log"
+    }
+  ],
+  "sourceHashesMatched": 396,
+  "buildHashesMatched": 225,
+  "providerInputsMatched": 7,
+  "releaseControllerFilesMatched": 4,
+  "sealedProviderFilesMatched": 7,
+  "existingRawEvidenceUnchanged": true,
+  "historicalStateSuffixUnchanged": true,
+  "realG7CriteriaRemainBlockedOrNotRun": 34,
+  "currentDocumentJsonLinksWhitespaceAndChangedContentSecretChecks": "PASS",
+  "newProviderOperations": 0,
+  "productionSourceChanges": 0,
+  "newBuilds": 0,
+  "newReleaseAttempts": 0,
+  "notes": "Exact unchanged package scripts executed directly with existing pinned binaries; no pnpm setup success or authenticated G7 result inferred. Local log hashes refer to retained neutral output. Link check applies to current documents/state prefix; first broader check found a pre-existing missing historical PR-026 link in the unchanged state suffix, left historical evidence untouched."
+}
