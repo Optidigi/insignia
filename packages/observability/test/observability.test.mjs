@@ -96,4 +96,27 @@ test('admin auth diagnostics emit only a bounded stage and independent correlati
   );
   assert.throws(() => logger.info('admin_authentication', { authStage: record.authStage, correlationId: 'SECRET' }));
   assert.doesNotMatch(output, /SECRET/);
+  for (const stage of [
+    'INSTALLATION_BOOTSTRAP_CREATED_SUCCEEDED',
+    'INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED',
+    'INSTALLATION_BOOTSTRAP_REINSTALLED_SUCCEEDED',
+    'INSTALLATION_BOOTSTRAP_IDENTITY_MISMATCH',
+    'INSTALLATION_BOOTSTRAP_STALE_STATE',
+    'INSTALLATION_BOOTSTRAP_CONFIRMATION_REQUIRED',
+    'INSTALLATION_BOOTSTRAP_WRITE_FAILED',
+  ]) {
+    output = '';
+    logger.info('admin_authentication', {
+      authStage: stage,
+      correlationId: record.correlationId,
+      accessToken: 'SECRET',
+      staffId: 'SECRET',
+      error: new Error('SECRET'),
+    });
+    const result = JSON.parse(output.trim());
+    assert.equal(result.authStage, stage);
+    assert.equal(result.statusClass, stage.endsWith('_SUCCEEDED') ? 'success' : 'failure');
+    assert.deepEqual(Object.keys(result).sort(), Object.keys(record).sort());
+    assert.doesNotMatch(output, /SECRET|staffId|error/);
+  }
 });

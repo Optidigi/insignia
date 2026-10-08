@@ -1,0 +1,56 @@
+{
+  "root": {
+    "exit": 0,
+    "log": "full-root2.log",
+    "webTests": 85,
+    "webSkipped": 0
+  },
+  "postgres18": {
+    "version": "18.6",
+    "exit": 0,
+    "tests": 186,
+    "log": "full-pg18.log"
+  },
+  "concurrency": {
+    "firstSessions": 100,
+    "reinstallSessions": 100,
+    "tests": 10,
+    "log": "unique-controls-green.log"
+  },
+  "productionSDKPGHTTP": {
+    "tests": 10,
+    "log": "readiness-controls.log"
+  },
+  "publicationStress": {
+    "pass": 100,
+    "total": 100,
+    "log": "publication-stress100-r4.log"
+  },
+  "renderer": {
+    "expectedNegative": true,
+    "log": "renderer-control-r3.log"
+  },
+  "roles": {
+    "genuineLogins": true,
+    "operatorAppend": true,
+    "runtimeQualified": true,
+    "log": "roles-rehearsal3.log"
+  },
+  "hostFailureControls": {
+    "tests": 4,
+    "log": "host-operator-controls2.log"
+  },
+  "portableRuntime": {
+    "pass": true,
+    "log": "portable-runtime-r3.json"
+  },
+  "productionOperations": 0,
+  "shopifyRequests": 0,
+  "fixtureCreates": 0,
+  "trustedAppendGuards": {
+    "tests": 3,
+    "dbConnections": 0,
+    "writes": 0,
+    "log": "release-append-controls2.log"
+  }
+}

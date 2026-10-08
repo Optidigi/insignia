@@ -1,0 +1,219 @@
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":1,"saveMode":"dirty","publishMode":"success","observation":{}}
+✖ publication success preserves dirty local edits and exact save recovery [1/25] (5530.815439ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":1,"saveMode":"dirty","publishMode":"failed","observation":{}}
+✖ publication failed preserves dirty local edits and exact save recovery [1/25] (5533.217911ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":1,"saveMode":"ambiguous","publishMode":"success","observation":{}}
+✖ publication success preserves ambiguous local edits and exact save recovery [1/25] (5461.891978ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":1,"saveMode":"ambiguous","publishMode":"failed","observation":{}}
+✖ publication failed preserves ambiguous local edits and exact save recovery [1/25] (5533.964117ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":2,"saveMode":"dirty","publishMode":"success","observation":{}}
+✖ publication success preserves dirty local edits and exact save recovery [2/25] (5460.856694ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":2,"saveMode":"dirty","publishMode":"failed","observation":{}}
+✖ publication failed preserves dirty local edits and exact save recovery [2/25] (5460.011303ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":2,"saveMode":"ambiguous","publishMode":"success","observation":{}}
+✖ publication success preserves ambiguous local edits and exact save recovery [2/25] (5458.065278ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":2,"saveMode":"ambiguous","publishMode":"failed","observation":{}}
+✖ publication failed preserves ambiguous local edits and exact save recovery [2/25] (5459.635096ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":3,"saveMode":"dirty","publishMode":"success","observation":{}}
+✖ publication success preserves dirty local edits and exact save recovery [3/25] (5467.380181ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":3,"saveMode":"dirty","publishMode":"failed","observation":{}}
+✖ publication failed preserves dirty local edits and exact save recovery [3/25] (5545.871684ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":3,"saveMode":"ambiguous","publishMode":"success","observation":{}}
+✖ publication success preserves ambiguous local edits and exact save recovery [3/25] (5507.433337ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":3,"saveMode":"ambiguous","publishMode":"failed","observation":{}}
+✖ publication failed preserves ambiguous local edits and exact save recovery [3/25] (5524.822514ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":4,"saveMode":"dirty","publishMode":"success","observation":{}}
+✖ publication success preserves dirty local edits and exact save recovery [4/25] (5456.131413ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":4,"saveMode":"dirty","publishMode":"failed","observation":{}}
+✖ publication failed preserves dirty local edits and exact save recovery [4/25] (5444.380523ms)
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":4,"saveMode":"ambiguous","publishMode":"success","observation":{}}
+✖ publication success preserves ambiguous local edits and exact save recovery [4/25] (5453.357781ms)
+
+Interrupted while running:
+
+⚠ test/admin/editor-browser.test.mjs (test/admin/editor-browser.test.mjs:1:1)
+✖ test/admin/editor-browser.test.mjs (84672.413437ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 0
+ℹ fail 15
+ℹ cancelled 1
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 84680.732326
+
+✖ failing tests:
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication success preserves dirty local edits and exact save recovery [1/25] (5530.815439ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication failed preserves dirty local edits and exact save recovery [1/25] (5533.217911ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication success preserves ambiguous local edits and exact save recovery [1/25] (5461.891978ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication failed preserves ambiguous local edits and exact save recovery [1/25] (5533.964117ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication success preserves dirty local edits and exact save recovery [2/25] (5460.856694ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication failed preserves dirty local edits and exact save recovery [2/25] (5460.011303ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication success preserves ambiguous local edits and exact save recovery [2/25] (5458.065278ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication failed preserves ambiguous local edits and exact save recovery [2/25] (5459.635096ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication success preserves dirty local edits and exact save recovery [3/25] (5467.380181ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication failed preserves dirty local edits and exact save recovery [3/25] (5545.871684ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication success preserves ambiguous local edits and exact save recovery [3/25] (5507.433337ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication failed preserves ambiguous local edits and exact save recovery [3/25] (5524.822514ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication success preserves dirty local edits and exact save recovery [4/25] (5456.131413ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication failed preserves dirty local edits and exact save recovery [4/25] (5444.380523ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1146:7
+✖ publication success preserves ambiguous local edits and exact save recovery [4/25] (5453.357781ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Draft version 2') to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1238:51) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Draft version 2') to be visible" ]
+  }
+
+test at test/admin/editor-browser.test.mjs:1:1
+✖ test/admin/editor-browser.test.mjs (84672.413437ms)
+  'Promise resolution is still pending but the event loop has already resolved'
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-023-
+  │ worktree/apps/web
+

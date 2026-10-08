@@ -1,0 +1,16 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Missing expected rejection.
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///home/serveradmin/insignia-m5-023-worktree/apps/web/[eval1]:24:234 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: undefined,
+  expected: { code: '42501' },
+  operator: 'rejects',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

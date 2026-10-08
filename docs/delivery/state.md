@@ -1,3 +1,9 @@
+# Current M5-023 — managed-install bootstrap and trusted provisioning in progress
+
+[Authority](prompts/M5-023-INSTALL-BOOTSTRAP-TRUSTED-PROVISIONING.md), [PR53 approval](PR-053R-principal-review.md), [normal merge](evidence/m5-023/pr53-merge-receipt.json) 66983f7a959c67cea8e03e79e16761613b73a9b2 with exact approved ordered parents/tree. Source work offline first; full frozen reviews/CI required before owner-authorized restricted VPS renewal. Permanent provider-authoritative tenant/install lifecycle, no manual seed. Commercial eligibility remains owner-controlled; no fixture absent legitimate eligibility. Preserve historical runs/semantics; no app version/release/rollback/scopes, M6/M7 or merchant rollout. Successor merge not authorized.
+
+---
+
 # Current M5-022R — same-PR correction; principal rereview required
 
 [PR53 CHANGES_REQUESTED](PR-053-principal-review.md), [correction](prompts/M5-022R-TRUSTED-EVIDENCE-DOWN-GUARD.md), [report](M5-022R-REPORT.md). Entry base e132c108a2108aea830ac2a5229b410f93a61a7d/head cfd43482d2b8e8f30bd21d91bf00e95d0663a3e0/tree e587a7c5c652ae286631d1d711fd8a58e73f5cbd. SAME PR53 only; no merge approval. Migration down locks before checking and refuses any trusted record; failed transaction preserves records, schema/history and rewrite guards. Empty down/up remains supported. [Unexecuted successor proposal](M5-022-PROVISIONING-PROPOSAL.md) replaces ad-hoc tenant repair with provider-authoritative, concurrent/idempotent managed-install bootstrap, reviewed generation transitions and existing encrypted expiring-offline lifecycle where needed. Commercial values remain owner-controlled; real publish awaits actual commercial authority or a separately approved dev-only entitlement.

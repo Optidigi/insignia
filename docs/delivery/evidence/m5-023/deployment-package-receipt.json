@@ -1,0 +1,13 @@
+{
+  "filesAndLinks": 21074,
+  "archiveSha256": "0e1b5950f3c5cbdc0840804276119542c51fe5f534e3a1d6899bd7781874e25c",
+  "archiveBytes": 37340809,
+  "inventorySha256": "ba79067bb690c819877718e3064572d0bc1c729e4fa401e6bb5cfe020544989d",
+  "entrySha256": "5ad5fbed3a809261d44358813b58773df78d72f2002de37742b3ed8fcfedfb28",
+  "dockerfileSha256": "ca4a0257ce880e26a9fee2bdc97df178ff1eebe1dd4a29a13bfce291c0266927",
+  "dbmateSha256": "47e284b3d8cbad1ba5f090495aa05afd1bbd5f35e2ed5577aad06da74ce780ce",
+  "providerRequests": 0,
+  "productionDeployed": false,
+  "envFilesIncluded": false,
+  "loopback": "portable-runtime-r3.json"
+}

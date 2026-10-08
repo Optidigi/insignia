@@ -1,0 +1,13 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/53",
+  "merge": "66983f7a959c67cea8e03e79e16761613b73a9b2",
+  "orderedParents": [
+    "e132c108a2108aea830ac2a5229b410f93a61a7d",
+    "e5d93a42ec06090b53f63088bcdb03c29d4a6a16"
+  ],
+  "tree": "33f3e69107dce64018e9504609510206b22e37ae",
+  "method": "NORMAL_MERGE",
+  "externalApproval": "authority/PR-053R-principal-review.md",
+  "nativeApprovalFabricated": false,
+  "protectionBypass": false
+}

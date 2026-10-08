@@ -1,0 +1,13 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 53,
+  "base": "e132c108a2108aea830ac2a5229b410f93a61a7d",
+  "head": "e5d93a42ec06090b53f63088bcdb03c29d4a6a16",
+  "tree": "33f3e69107dce64018e9504609510206b22e37ae",
+  "verdict": "APPROVED_NORMAL_MERGE",
+  "ci": "11/11 natural success attempt1",
+  "fresh_reviews": "CLEAR/CLEAR",
+  "correction": "trusted release populated down migration fails closed",
+  "m5_status": "BLOCKED_PRODUCTION_PROVISIONING_REQUIRED",
+  "next": "M5-023_MANAGED_INSTALL_BOOTSTRAP_TRUSTED_PROVISIONING"
+}

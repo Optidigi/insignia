@@ -2,7 +2,7 @@ import { CommandDigestConflictError } from '@insignia/application';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor, AdminServices, CommandOutcome } from './contracts.js';
 
-export type AdminRoute = { kind: 'list' } | { kind: 'config'; productId: string };
+export type AdminRoute = { kind: 'list' } | { kind: 'config'; productId: string } | { kind: 'readiness' };
 const PRODUCT_ID = /^gid:\/\/shopify\/Product\/[1-9][0-9]*$/;
 const CONFIG_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const VERSION = /^(0|[1-9][0-9]{0,18})$/;
@@ -126,6 +126,10 @@ export async function handleAdminRequest(
 
   try {
     if (request.method === 'GET') {
+      if (route.kind === 'readiness')
+        return services.inspectReadiness
+          ? adminJson(200, await services.inspectReadiness(actor))
+          : adminJson(503, { error: 'Readiness service unavailable' });
       if (route.kind === 'list') {
         const query = (url.searchParams.get('q') ?? '').trim();
         const cursor = url.searchParams.get('cursor');

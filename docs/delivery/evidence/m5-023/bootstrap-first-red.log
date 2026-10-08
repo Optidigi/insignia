@@ -1,0 +1,31 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/database
+
+ ❯ test/managed-installation.test.ts (1 test | 1 failed) 9ms
+   × first authenticated provider installation creates one durable tenant and generation, then reuses it 8ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/managed-installation.test.ts > first authenticated provider installation creates one durable tenant and generation, then reuses it
+TypeError: core.tenants.getManagedInstallationState is not a function
+ ❯ test/managed-installation.test.ts:20:41
+     18|   const provider = identity();
+     19|   try {
+     20|     const expected = await core.tenants.getManagedInstallationState(pr…
+       |                                         ^
+     21|     expect(expected).toBeNull();
+     22|     const created = await core.transactions.run((tx) =>
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed (1)
+   Start at  12:47:51
+   Duration  752ms (transform 52%, import 46%, tests 1%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-023-
+  │ worktree/packages/database
+
