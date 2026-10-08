@@ -1,35 +1,35 @@
 {
   "root": {
     "exit": 0,
-    "log": "full-root-r4.log",
+    "log": "full-root-r9-isolated.log",
     "webTests": 86,
     "webSkipped": 0
   },
   "postgres18": {
     "version": "18.6",
     "exit": 0,
-    "tests": 197,
-    "log": "full-pg18-r4.log"
+    "tests": 198,
+    "log": "full-pg18-r9-isolated.log"
   },
   "concurrency": {
     "firstSessions": 100,
     "reinstallSessions": 100,
-    "tests": 10,
-    "log": "full-pg18-r4.log"
+    "tests": 11,
+    "log": "full-pg18-r9-isolated.log"
   },
   "productionSDKPGHTTP": {
     "tests": 11,
-    "log": "full-root-r4.log",
+    "log": "full-root-r9-isolated.log",
     "withinFullRoot": true
   },
   "publicationStress": {
     "pass": 100,
     "total": 100,
-    "log": "publication-stress-r4.log"
+    "log": "publication-stress-r9.log"
   },
   "renderer": {
     "expectedNegative": true,
-    "log": "renderer-r4.log"
+    "log": "renderer-r9.log"
   },
   "roles": {
     "genuineLogins": true,
@@ -38,13 +38,13 @@
     "log": "roles-rehearsal3.log"
   },
   "hostFailureControls": {
-    "tests": 9,
-    "log": "host-controls-r5.log",
-    "qualificationVariants": 14
+    "tests": 11,
+    "log": "host-controls-r9-current.log",
+    "qualificationVariants": 30
   },
   "portableRuntime": {
     "pass": true,
-    "log": "portable-runtime-r4.json"
+    "log": "portable-runtime-r9.json"
   },
   "productionOperations": 0,
   "shopifyRequests": 0,
@@ -64,15 +64,17 @@
     "ingressBootstrapIndependentRevocations": 5
   },
   "workerInventory": {
-    "tests": 11,
+    "tests": 14,
     "changedDependencyWithSameMainHandlersRejected": true,
     "internalPathExtraCodeEscapePreloadRejected": true,
     "dependencyCodeExecuted": false,
-    "log": "worker-controls-r4.log",
+    "log": "worker-controls-r9-current.log",
     "nearerShadowRejected": true,
     "mutableRootAliasRejected": true,
     "actualUnrelatedProcessRejected": true,
-    "qualifiedNestedBytesBound": true
+    "qualifiedNestedBytesBound": true,
+    "mislabeledOwnedRootRejected": true,
+    "missingManifestAndLegacyFileRejected": true
   },
   "logSha256": {
     "review-r2-uninstall-red.log": "89394afb1f4d1324ac08130e61d79f1134040f724a6d06a70064ed9cbc1f7664",
@@ -119,6 +121,33 @@
     "dns-AAAA-red.log": "ba8a49ac9a001152f2603a48d08647cbc79f3c32a7e9781f817fbd48192499dc",
     "host-controls-r5.log": "824dbf43f581ae816a745e093e3009361f77928738e634fe8587208424aaf7dd",
     "lifecycle-ingress-bootstrap-rights-red.log": "297dabde72ea5c86a76f003fd18c931b6f6f7166f736c8604cdac7ce7015d7c0",
-    "lifecycle-ingress-bootstrap-rights-green.log": "f981f90dfd44d2874bbe66478f147590990f29846ca775e3dab400ce883063e4"
+    "lifecycle-ingress-bootstrap-rights-green.log": "f981f90dfd44d2874bbe66478f147590990f29846ca775e3dab400ce883063e4",
+    "full-root-r9-isolated.log": "9c59a6d01b7805c210627ae0cda1e5e3002c794c0a1eb3a978583fe755eb5ecd",
+    "full-pg18-r9-isolated.log": "3ed3ad708a69ba640f4157231c22095dc19269fbfd15b1eb3540d0d8ea3220b7",
+    "fresh-root-db-migrations-r9.log": "b1f5a10b6f13cedbe0e62ca10a9461ff839c0bf8975d4c13d489944db7186077",
+    "fresh-pg-db-migrations-r9.log": "7385388be38fbdac61de07b5e7aad0082df6289a3883d85f980462e511534f9c",
+    "publication-stress-r9.log": "91b8f492116da92e97a57194ed3f4a3d09af3d622530df1aae39fc579984f1d1",
+    "renderer-r9.log": "24bd66a5662656e116a4ada3b7050430eda5a828a60e37fd893a2598d6deb7d2",
+    "portable-runtime-r9.json": "b790fd28df3240d6f71a4fc1b92b9ee943c295063feaca55fcb6c7ebd68acb54",
+    "package-decoder-r9-green.log": "97a8c1173914cd8bc26518cae1c3eb19fe26fac486837110f64378bea4830b18",
+    "worker-controls-r9-current.log": "88102da9b080bae4b60bec17b653d5eaea6e5105344830b2de9583dc0f42270c",
+    "host-controls-r9-current.log": "61ed9966534156a6be1ccac8da6145ea4ac414452c5e8e3beae814089d289329",
+    "first-create-barrier-first-green.log": "a46b539d3eff9b5e9030f4284cccd17f1b9ba89637cc89378eab6b2d9e1c1bc7",
+    "first-create-barrier-red.log": "86b9c52c618842c067982c8371f458cae9b3174ee7e915cf8845ae0153496134",
+    "fresh-http-db-migrations-r9.log": "ccdcc957769ac3423ef80e2b5e06b076ee5adec49a9c02b1362eeff9f66d7b32",
+    "fresh-http-r9.log": "d4b5da7eeed2f242ee68d971d0f9b4a906aaaef6cc90e67eb91a1ef7f7c92aa0",
+    "full-pg18-r9.log": "37e5b486854e30a00d3dea53844e0d1e6730c938f8c9c74b95e89d32b92a5fe8",
+    "full-root-r9.log": "af550db8aad38c321fca70c40a065b7a63f682fa9f72ddeb39689163f7c64f81",
+    "host-controls-r9.log": "0665684538ee29b23edb6e8e58bb935cb1849b2cf08f7a3c93abad283336a931",
+    "mislabeled-worker-shadow-red.log": "b8bf27f90b339b447247d47413645e5c39fcaff52d925ecf43b66c80294593c9",
+    "secrets-r9-final.log": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "style-r9-final.log": "65fe1dacf56b29e6d0a77ea7ee7ee5d015df5d014c5ba71415078f58d452e753",
+    "worker-controls-r9.log": "c7acb2374ec75c383ad44e0bfa97035008204e62819bed54260e207b96685bdf"
+  },
+  "resourceIsolation": {
+    "root": "insignia_m5_023_r9_root",
+    "database": "insignia_m5_023_r9_pg",
+    "focusedHTTP": "insignia_m5_023_r9_http",
+    "oldDatabasePreserved": true
   }
 }

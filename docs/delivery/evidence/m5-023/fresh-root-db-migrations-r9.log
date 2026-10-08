@@ -1,0 +1,32 @@
+Applying: 20260929000100_durable_core.sql
+Applied: 20260929000100_durable_core.sql in 31.41953ms
+Applying: 20260929000200_runtime_ingress_credentials.sql
+Applied: 20260929000200_runtime_ingress_credentials.sql in 9.397041ms
+Applying: 20260929000300_authorization_generation.sql
+Applied: 20260929000300_authorization_generation.sql in 5.253007ms
+Applying: 20260929000400_accepted_quote.sql
+Applied: 20260929000400_accepted_quote.sql in 10.733366ms
+Applying: 20260930000100_m4_key_lifecycle.sql
+Applied: 20260930000100_m4_key_lifecycle.sql in 46.689675ms
+Applying: 20260930000200_publication_progress.sql
+Applied: 20260930000200_publication_progress.sql in 6.466567ms
+Applying: 20260930000300_m5_revision_geometry.sql
+Applied: 20260930000300_m5_revision_geometry.sql in 5.676279ms
+Applying: 20260930000400_m5_revision_presentation.sql
+Applied: 20260930000400_m5_revision_presentation.sql in 4.845074ms
+Applying: 20260930000500_m5_publication_source_version.sql
+Applied: 20260930000500_m5_publication_source_version.sql in 2.877141ms
+Applying: 20260930000600_m5_publication_intent_generation.sql
+Applied: 20260930000600_m5_publication_intent_generation.sql in 2.639182ms
+Applying: 20260930000700_m5_publication_intent_lookup.sql
+Applied: 20260930000700_m5_publication_intent_lookup.sql in 3.025993ms
+Applying: 20260930000800_m5_current_publication_pointer.sql
+Applied: 20260930000800_m5_current_publication_pointer.sql in 5.978794ms
+Applying: 20260930000900_m5_activation.sql
+Applied: 20260930000900_m5_activation.sql in 23.036923ms
+Applying: 20261006000100_m5_availability_v2.sql
+Applied: 20261006000100_m5_availability_v2.sql in 18.722279ms
+Applying: 20261007000100_m5_availability_v3.sql
+Applied: 20261007000100_m5_availability_v3.sql in 19.426871ms
+Applying: 20261008000100_m5_trusted_release.sql
+Applied: 20261008000100_m5_trusted_release.sql in 11.402165ms

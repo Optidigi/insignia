@@ -1,17 +1,34 @@
 /** Read/hash only. Never import worker/provider modules or open a transport. */
 import { createHash } from 'node:crypto';
-import { readFileSync, readdirSync, realpathSync, statSync } from 'node:fs';
+import { readFileSync, readdirSync, realpathSync, statSync, lstatSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { basename, dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 function packageRoot(requireFrom, name) {
   if (!/^(?:@[a-z0-9_.-]+\/)?[a-z0-9_.-]+$/i.test(name)) throw new Error('Invalid dependency name');
+  function present(path) {
+    try { lstatSync(path); return true; }
+    catch (error) {
+      if (error.code === 'ENOENT' || error.code === 'ENOTDIR') return false;
+      throw new Error('Unqualified dependency candidate');
+    }
+  }
   for (const directory of requireFrom.resolve.paths(name) ?? []) {
+    const candidate = join(directory,name);
+    // CJS also tests legacy files before package directories. Existing nearer
+    // candidates never fall through to an unrelated outer reviewed package.
+    if (['.js','.json','.node'].some(extension=>present(candidate + extension)))
+      throw new Error('Unqualified dependency candidate');
+    if (!present(candidate)) continue;
+    let root;
+    let manifest;
     try {
-      const root = realpathSync(join(directory, name));
-      if (JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).name === name) return root;
-    } catch { /* An absent lookup path is not a dependency. */ }
+      root = realpathSync(candidate);
+      manifest = JSON.parse(readFileSync(join(root,'package.json'),'utf8'));
+    } catch { throw new Error('Unqualified dependency candidate'); }
+    if (manifest.name !== name) throw new Error('Unqualified dependency candidate');
+    return root;
   }
   return null;
 }

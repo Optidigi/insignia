@@ -173,7 +173,7 @@ class GuardControls(unittest.TestCase):
         self.assertNotIn('synthetic@', json.dumps(value))
 
     def test_only_exact_ready_worker_and_queue_qualify(self):
-        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid', 'config-mount', 'secret-mount', 'inherited-mount', 'hosts-override', 'dns-override', 'lifecycle-hook']:
+        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid', 'config-mount', 'secret-mount', 'inherited-mount', 'hosts-override', 'dns-override', 'lifecycle-hook', 'mislabeled-nearer-dependency']:
             with self.subTest(failure=failure):
                 path = operator.ROOT / 'lifecycle-settled.json'
                 if path.exists():
@@ -247,7 +247,7 @@ class GuardControls(unittest.TestCase):
                                 return b'["10.0.0.2"]'
                             return b'["10.0.0.2","fd00::999"]' if failure == 'divergent-AAAA' else b'["10.0.0.2","fd00::2"]'
                         if 'inspectWorkerFromStdin' in args[args.index('-e') + 1]:
-                            return json.dumps({'exact': failure not in ['artifact', 'dependency']}).encode()
+                            return json.dumps({'exact': failure not in ['artifact', 'dependency', 'mislabeled-nearer-dependency']}).encode()
                         return json.dumps({'status': 503 if failure == 'health' else 200, 'body': {'durableReady': True}}).encode()
                     if 'psql' in args:
                         result = {'queueSchemaPresent': True, 'queueRuntimeUsable': failure != 'queue'}
@@ -260,6 +260,7 @@ class GuardControls(unittest.TestCase):
                 value = json.loads(path.read_text())
                 self.assertEqual(value['classification'], 'PASS_UNINSTALL_PROCESSOR' if failure is None else 'BLOCKED_UNINSTALL_PROCESSOR_READINESS')
                 self.assertEqual(value['databaseWrites'], 0)
+                self.assertFalse(list(operator.ROOT.glob('*-reserved.json')))
                 self.assertNotIn('synthetic-secret', json.dumps(value))
 
 

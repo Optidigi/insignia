@@ -73,6 +73,32 @@ test('nearer dist dependency shadow cannot qualify the reviewed root package',()
   assert.equal(createRequire(entry).resolve('@insignia/database'),join(shadow,'index.js'));
   assert.equal(workerInventoryMatches(entry,expected),false);
 }));
+test('mislabeled nearer owned-root dependency is rejected at the Node lookup boundary',()=>fixture(({entry,worker})=>{
+  const expected = collectWorkerInventory(entry);
+  const shadow = join(worker,'node_modules/@insignia/database');
+  mkdirSync(shadow,{recursive:true});
+  writeFileSync(join(shadow,'package.json'),JSON.stringify({name:'shadow',version:'0.0.0',exports:'./index.js'}));
+  writeFileSync(join(shadow,'index.js'),"throw new Error('Unreviewed shadow must never execute');");
+  assert.equal(createRequire(entry).resolve('@insignia/database'),join(shadow,'index.js'));
+  assert.throws(()=>workerInventoryMatches(entry,expected),/Unqualified dependency candidate/);
+}));
+test('nearer legacy directory without metadata cannot fall through to the outer package',()=>fixture(({entry,worker})=>{
+  const expected = collectWorkerInventory(entry);
+  const shadow = join(worker,'node_modules/@insignia/database');
+  mkdirSync(shadow,{recursive:true});
+  writeFileSync(join(shadow,'index.js'),"throw new Error('Legacy shadow must never execute');");
+  assert.equal(createRequire(entry).resolve('@insignia/database'),join(shadow,'index.js'));
+  assert.throws(()=>workerInventoryMatches(entry,expected),/Unqualified dependency candidate/);
+}));
+test('nearer CJS file cannot fall through to the outer package',()=>fixture(({entry,worker})=>{
+  const expected = collectWorkerInventory(entry);
+  const directory = join(worker,'node_modules/@insignia');
+  mkdirSync(directory,{recursive:true});
+  const shadow = join(directory,'database.js');
+  writeFileSync(shadow,"throw new Error('CJS file shadow must never execute');");
+  assert.equal(createRequire(entry).resolve('@insignia/database'),shadow);
+  assert.throws(()=>workerInventoryMatches(entry,expected),/Unqualified dependency candidate/);
+}));
 test('qualified nested module files remain bound and any change fails',()=>fixture(({entry,worker})=>{
   const nested = join(worker,'dist/fixtures/node_modules/qualified');
   mkdirSync(nested,{recursive:true});

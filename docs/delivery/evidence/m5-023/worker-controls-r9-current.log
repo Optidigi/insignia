@@ -1,0 +1,22 @@
+✔ complete inventory accepts exact dependencies without executing them (806.589066ms)
+✔ changed database dependency fails despite identical entry and handler bytes (783.286933ms)
+✔ additional executable file fails exact inventory (803.126515ms)
+✔ changed internal module path fails despite unchanged file bytes (789.929133ms)
+✔ escaping executable link is rejected before reading or executing it (3.781209ms)
+✔ preload and lookup overrides cannot qualify (390.168388ms)
+✔ nearer dist dependency shadow cannot qualify the reviewed root package (789.588153ms)
+✔ mislabeled nearer owned-root dependency is rejected at the Node lookup boundary (393.80022ms)
+✔ nearer legacy directory without metadata cannot fall through to the outer package (387.534583ms)
+✔ nearer CJS file cannot fall through to the outer package (392.867812ms)
+✔ qualified nested module files remain bound and any change fails (1173.238687ms)
+✔ root alias into writable storage fails even with exact package bytes (393.416022ms)
+✔ inventory alone cannot qualify a different actually running process (456.848543ms)
+✔ effective process requires exact arguments, binary and absent preload flags (0.434411ms)
+ℹ tests 14
+ℹ suites 0
+ℹ pass 14
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7670.947939

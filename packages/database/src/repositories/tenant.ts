@@ -197,6 +197,8 @@ export function createTenantRepository(executor: DatabaseExecutor) {
           await sql`RELEASE SAVEPOINT managed_installation_create`.execute(transaction);
           const state = await managedInstallationState(transaction, input.shopDomain);
           if (!state) throw new ManagedInstallationError('state_changed');
+          // A first INSERT can wait while signed ingress commits without a tenant.
+          await assertNoObservedUninstall(transaction, input);
           return { outcome: 'CREATED', state };
         } catch (error) {
           if (!error || typeof error !== 'object' || !('code' in error) || error.code !== '23505') throw error;

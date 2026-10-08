@@ -1,0 +1,102 @@
+{
+  "first-create-barrier-first-green.log": {
+    "rawSha256": "6907a33a744704739e18c6b9ad4a5434464383999a601a984ac13190ec11c20a",
+    "repositorySha256": "a46b539d3eff9b5e9030f4284cccd17f1b9ba89637cc89378eab6b2d9e1c1bc7",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "first-create-barrier-red.log": {
+    "rawSha256": "46f8aeedfa777d2599ec7c8176635bc308899468c7615aceb08c0aee93babca8",
+    "repositorySha256": "86b9c52c618842c067982c8371f458cae9b3174ee7e915cf8845ae0153496134",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "fresh-http-db-migrations-r9.log": {
+    "rawSha256": "ccdcc957769ac3423ef80e2b5e06b076ee5adec49a9c02b1362eeff9f66d7b32",
+    "repositorySha256": "ccdcc957769ac3423ef80e2b5e06b076ee5adec49a9c02b1362eeff9f66d7b32",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "fresh-http-r9.log": {
+    "rawSha256": "d4b5da7eeed2f242ee68d971d0f9b4a906aaaef6cc90e67eb91a1ef7f7c92aa0",
+    "repositorySha256": "d4b5da7eeed2f242ee68d971d0f9b4a906aaaef6cc90e67eb91a1ef7f7c92aa0",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "fresh-pg-db-migrations-r9.log": {
+    "rawSha256": "7385388be38fbdac61de07b5e7aad0082df6289a3883d85f980462e511534f9c",
+    "repositorySha256": "7385388be38fbdac61de07b5e7aad0082df6289a3883d85f980462e511534f9c",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "fresh-root-db-migrations-r9.log": {
+    "rawSha256": "b1f5a10b6f13cedbe0e62ca10a9461ff839c0bf8975d4c13d489944db7186077",
+    "repositorySha256": "b1f5a10b6f13cedbe0e62ca10a9461ff839c0bf8975d4c13d489944db7186077",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "full-pg18-r9-isolated.log": {
+    "rawSha256": "823ab096bf7e07eee74162e5c6d5e590f4acdc2f291cab80c48bceec251fc86f",
+    "repositorySha256": "3ed3ad708a69ba640f4157231c22095dc19269fbfd15b1eb3540d0d8ea3220b7",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "full-pg18-r9.log": {
+    "rawSha256": "0e937899517625f7cfb95d4fd5b1b607d9ce99f28777daed02fae84abb52c2ee",
+    "repositorySha256": "37e5b486854e30a00d3dea53844e0d1e6730c938f8c9c74b95e89d32b92a5fe8",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "full-root-r9-isolated.log": {
+    "rawSha256": "2a38be4881a50a4e5e1917a5177869af7cee2c8ea4412a08ce58e39b7342e204",
+    "repositorySha256": "9c59a6d01b7805c210627ae0cda1e5e3002c794c0a1eb3a978583fe755eb5ecd",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "full-root-r9.log": {
+    "rawSha256": "ebebc40ac9490a6bc1a6c0faafef36fa900f283167ba7aee62b051a34c14994f",
+    "repositorySha256": "af550db8aad38c321fca70c40a065b7a63f682fa9f72ddeb39689163f7c64f81",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "host-controls-r9-current.log": {
+    "rawSha256": "61ed9966534156a6be1ccac8da6145ea4ac414452c5e8e3beae814089d289329",
+    "repositorySha256": "61ed9966534156a6be1ccac8da6145ea4ac414452c5e8e3beae814089d289329",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "host-controls-r9.log": {
+    "rawSha256": "0665684538ee29b23edb6e8e58bb935cb1849b2cf08f7a3c93abad283336a931",
+    "repositorySha256": "0665684538ee29b23edb6e8e58bb935cb1849b2cf08f7a3c93abad283336a931",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "mislabeled-worker-shadow-red.log": {
+    "rawSha256": "b8bf27f90b339b447247d47413645e5c39fcaff52d925ecf43b66c80294593c9",
+    "repositorySha256": "b8bf27f90b339b447247d47413645e5c39fcaff52d925ecf43b66c80294593c9",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "package-decoder-r9-green.log": {
+    "rawSha256": "97a8c1173914cd8bc26518cae1c3eb19fe26fac486837110f64378bea4830b18",
+    "repositorySha256": "97a8c1173914cd8bc26518cae1c3eb19fe26fac486837110f64378bea4830b18",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "publication-stress-r9.log": {
+    "rawSha256": "91b8f492116da92e97a57194ed3f4a3d09af3d622530df1aae39fc579984f1d1",
+    "repositorySha256": "91b8f492116da92e97a57194ed3f4a3d09af3d622530df1aae39fc579984f1d1",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "renderer-r9.log": {
+    "rawSha256": "799e83ab5351a3336c824c516a643d0aaeb2a80bbd2667e5c7ad8b25ccbff4c0",
+    "repositorySha256": "24bd66a5662656e116a4ada3b7050430eda5a828a60e37fd893a2598d6deb7d2",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "secrets-r9-final.log": {
+    "rawSha256": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "repositorySha256": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "style-r9-final.log": {
+    "rawSha256": "d4903966f2307268791436cdf8e31f1d718a5f9ca6061b273fbfa36efc030889",
+    "repositorySha256": "65fe1dacf56b29e6d0a77ea7ee7ee5d015df5d014c5ba71415078f58d452e753",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "worker-controls-r9-current.log": {
+    "rawSha256": "88102da9b080bae4b60bec17b653d5eaea6e5105344830b2de9583dc0f42270c",
+    "repositorySha256": "88102da9b080bae4b60bec17b653d5eaea6e5105344830b2de9583dc0f42270c",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  },
+  "worker-controls-r9.log": {
+    "rawSha256": "c7acb2374ec75c383ad44e0bfa97035008204e62819bed54260e207b96685bdf",
+    "repositorySha256": "c7acb2374ec75c383ad44e0bfa97035008204e62819bed54260e207b96685bdf",
+    "normalization": "Trailing line whitespace and blank EOF only; private original preserved at handoff path with same basename"
+  }
+}

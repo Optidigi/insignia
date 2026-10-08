@@ -10,6 +10,8 @@ Sixth-round required-function and initial-runtime-isolation findings now have tw
 
 Seventh-round candidate mounts/routing findings now reject through an explicit field surface and exact already-reviewed canonical Compose bytes, with eleven host methods/29 variants. Current-host equivalence remains unproven until gated access. Fresh review/CI required; no live authority used.
 
+Eighth-round nearer dependency and first-create signed-ingress findings now have actual Node/PG red/green controls. Application source changed, so the complete source/build/package/review/CI gate is being requalified;198 PG tests,14 worker controls and11 host methods/30 variants pass. Local shared-queue failure is retained with fresh isolated-database control evidence. No renewed access/live operation; gate unfrozen.
+
 ---
 
 # Current M5-022R — same-PR correction; principal rereview required

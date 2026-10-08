@@ -8,6 +8,69 @@ import { openTestDatabase } from './support/postgres.js';
 
 const connectionString = process.env.DATABASE_URL;
 
+test('first creation rolls back when matching uninstall commits during the initial INSERT wait', async () => {
+  const provider = identity();
+  const appName = `first-create-uninstall-${randomUUID()}`;
+  const pool = new Pool({ connectionString });
+  const blocker = await pool.connect();
+  const candidate = createDurableCore(new Pool({ connectionString, application_name: appName }));
+  const ingress = createDurableCore(new Pool({ connectionString }));
+  let attempt: Promise<unknown> | undefined;
+  try {
+    await blocker.query('BEGIN; LOCK TABLE shops IN SHARE MODE');
+    const observationStartedAt = new Date();
+    attempt = candidate.transactions.run((tx) =>
+      candidate.tenants.ensureManagedInstallation(tx, { ...provider, expected: null, observationStartedAt }),
+    );
+    const settled = attempt.then(
+      (value) => ({ value }),
+      (error: unknown) => ({ error }),
+    );
+    let waiting = false;
+    for (let i = 0; i < 500; i++) {
+      const row = await pool.query(
+        "SELECT 1 FROM pg_stat_activity WHERE application_name=$1 AND wait_event_type='Lock' AND query LIKE '%insert into \"shops\"%'",
+        [appName],
+      );
+      if (row.rowCount === 1) {
+        waiting = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    expect(waiting).toBe(true);
+    const receipt = await ingress.webhooks.receive({
+      shopDomain: provider.shopDomain,
+      deliveryId: randomUUID(),
+      topic: 'app/uninstalled',
+      apiVersion: '2026-07',
+      triggeredAt: new Date(),
+      eventId: randomUUID(),
+      name: null,
+      rawBody: Buffer.from(JSON.stringify({ id: provider.shopifyShopId, myshopify_domain: provider.shopDomain })),
+    });
+    expect(await ingress.webhooks.processUninstall(receipt.id)).toBe('unresolved');
+    await blocker.query('COMMIT');
+    expect(await settled).toMatchObject({ error: { kind: 'state_changed' } });
+    expect(await candidate.tenants.getShopByDomain(provider.shopDomain)).toBeNull();
+    expect(await candidate.tenants.getManagedInstallationState(provider.shopDomain)).toBeNull();
+    expect(await ingress.webhooks.getById(receipt.id)).toMatchObject({
+      id: receipt.id,
+      state: 'pending',
+      resolution: 'unresolved',
+      shopId: null,
+      installationGeneration: null,
+    });
+  } finally {
+    await blocker.query('ROLLBACK');
+    await attempt?.catch(() => {});
+    blocker.release();
+    await candidate.close();
+    await ingress.close();
+    await pool.end();
+  }
+});
+
 test.each(['current', 'historical', 'wrong-signed-shop'])(
   'inactive predecessor and processed uninstall cannot resurrect a removed installation: %s',
   async (era) => {

@@ -1,0 +1,45 @@
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/database
+
+ ❯ test/managed-installation.test.ts (22 tests | 1 failed) 1219ms
+   × first creation rolls back when matching uninstall commits during the initial INSERT wait 99ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/managed-installation.test.ts > first creation rolls back when matching uninstall commits during the initial INSERT wait
+AssertionError: expected { kind: 'duplicate', …(7) } to match object { state: 'pending', …(1) }
+(6 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "kind": {
+-     "kind": "unresolved",
+-   },
++   "kind": "duplicate",
+    "state": "pending",
+  }
+
+ ❯ test/managed-installation.test.ts:49:56
+     47|     expect(await candidate.tenants.getShopByDomain(provider.shopDomain…
+     48|     expect(await candidate.tenants.getManagedInstallationState(provide…
+     49|     expect(await ingress.webhooks.getById(receipt.id)).toMatchObject({…
+       |                                                        ^
+     50|   } finally {
+     51|     await blocker.query('ROLLBACK');
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 12 passed (13)
+      Tests  1 failed | 197 passed (198)
+   Start at  17:17:41
+   Duration  17.77s (tests 80%, import 15%, transform 5%)
+
+[ELIFECYCLE] Test failed. See above for more details.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in /home/serveradmin/insignia-m5-023-worktree/
+  │ packages/database

@@ -1,0 +1,13 @@
+{
+  "node": "v24.21.0",
+  "nodeExecutableSha256": "7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c",
+  "platform": "linux",
+  "arch": "x64",
+  "packages": 66,
+  "files": 9030,
+  "bytes": 1503528,
+  "sha256": "2a05e47acebb36bc1628fb2d36c9cb065cd21bdd99d1462c1a9d33e011886f26",
+  "providerRequests": 0,
+  "dependencyCodeExecuted": false,
+  "source": "New portable runtime after first-create correction; current strict nearer-candidate inspector"
+}

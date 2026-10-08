@@ -1,0 +1,21 @@
+{
+  "classification": "LOCAL_SHARED_QUEUE_FIXTURE_INTERFERENCE",
+  "productionOperations": 0,
+  "originalDatabase": "insignia_m5_023",
+  "pendingQueueJobs": 5,
+  "newestFailedFixtureJobState": "created",
+  "newestFailedFixtureJobStartedAt": null,
+  "workerBatchSize": 1,
+  "testPollBudgetMs": 10000,
+  "failedFixtureTriggeredAt": "2026-10-08T17:23:16.200Z",
+  "failedFixtureActivatedAt": "2026-10-08T17:23:16.177757Z",
+  "strictTimestampDeltaMs": 22.243,
+  "freshIsolatedDatabase": "insignia_m5_023_r9_http",
+  "unchangedFocusedControl": {
+    "pass": 1,
+    "fail": 0,
+    "skip": 0,
+    "log": "fresh-http-r9.log"
+  },
+  "limits": "Old queue processing not replayed; no claim of permanent delivery loss or provider defect. Fresh database removes accumulated test jobs. No timeout, timestamp or runtime change; old database/evidence preserved."
+}

@@ -1,0 +1,42 @@
+✔ complete inventory accepts exact dependencies without executing them (779.0492ms)
+✔ changed database dependency fails despite identical entry and handler bytes (764.31223ms)
+✔ additional executable file fails exact inventory (778.752745ms)
+✔ changed internal module path fails despite unchanged file bytes (786.061992ms)
+✔ escaping executable link is rejected before reading or executing it (3.370311ms)
+✔ preload and lookup overrides cannot qualify (390.241391ms)
+✔ nearer dist dependency shadow cannot qualify the reviewed root package (787.375052ms)
+✖ mislabeled nearer owned-root dependency is rejected at the Node lookup boundary (786.862847ms)
+✔ qualified nested module files remain bound and any change fails (1172.13484ms)
+✔ root alias into writable storage fails even with exact package bytes (390.94033ms)
+✔ inventory alone cannot qualify a different actually running process (447.787091ms)
+✔ effective process requires exact arguments, binary and absent preload flags (0.467293ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 11
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 7185.676215
+
+✖ failing tests:
+
+test at docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:76:1
+✖ mislabeled nearer owned-root dependency is rejected at the Node lookup boundary (786.862847ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:83:10
+      at fixture (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:28:9)
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:76:92)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Unqualified dependency candidate/,
+    operator: 'throws',
+    diff: 'simple'
+  }
