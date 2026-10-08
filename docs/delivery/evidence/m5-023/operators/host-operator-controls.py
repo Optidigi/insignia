@@ -68,7 +68,7 @@ class GuardControls(unittest.TestCase):
         self.qualified_receipt()
         with (operator.APP / 'compose.yaml').open('ab') as stream:
             stream.write(b'\n# unreviewed source change\n')
-        for action in [operator.lifecycle, operator.backup, operator.provision, operator.deploy]:
+        for action in [operator.lifecycle, operator.backup, operator.provision, operator.deploy, operator.restart, operator.state, operator.append]:
             with self.assertRaisesRegex(RuntimeError, 'Reviewed Compose source drift'):
                 action()
         self.assertEqual(self.calls, [])

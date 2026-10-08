@@ -487,6 +487,7 @@ def restart():
 
 
 def state():
+    verify_compose_source()
     current = prestate()
     data = json.loads(sql("""BEGIN READ ONLY; SELECT json_build_object(
       'tenant',(SELECT row_to_json(t) FROM (SELECT s.shop_id,s.shop_domain,s.shopify_shop_id,

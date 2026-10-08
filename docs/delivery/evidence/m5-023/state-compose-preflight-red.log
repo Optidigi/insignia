@@ -1,0 +1,23 @@
+F
+======================================================================
+FAIL: test_changed_compose_source_stops_before_any_external_command (__main__.GuardControls.test_changed_compose_source_stops_before_any_external_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 73, in test_changed_compose_source_stops_before_any_external_command
+    action()
+    ~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 490, in state
+    current = prestate()
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 170, in prestate
+    current = inspect([WEB, *OTHERS])
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 67, in inspect
+    return json.loads(run(['docker', 'inspect', *names]))
+                      ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 40, in denied
+    raise AssertionError('External command forbidden in local controls')
+AssertionError: External command forbidden in local controls
+
+----------------------------------------------------------------------
+Ran 1 test in 0.002s
+
+FAILED (failures=1)
