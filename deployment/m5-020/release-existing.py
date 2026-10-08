@@ -66,7 +66,8 @@ def validate_versions(rows):
 
 
 def required_files(reviews):
-    paths = {ROOT / p for p in git('ls-files', '-z').split('\0') if p and (ROOT / p).is_file()}
+    paths = {ROOT / p for p in git('ls-files', '-z').split('\0') if p}
+    require(all(p.is_file() or p.is_symlink() for p in paths), 'tracked_input_missing_or_kind_changed')
     accepted = json.loads((ROOT / 'docs/delivery/evidence/m5-018/freeze-round4-inventory.json').read_text())
     rows = accepted['source'] + accepted['build']
     require(len(rows) == 621, 'accepted_inventory_count')
@@ -83,7 +84,29 @@ def required_files(reviews):
     paths.update(NEUTRAL / s for s in ['versions-prestate.json', 'canonical-public-host.json',
                  'fresh-native-readback.json', 'pre-release-ci.json', 'release-controls-green.log', 'release-controls.json',
                  'pre-release-review-bindings.json'])
+    validate_links(paths)
     return paths
+
+
+def validate_links(paths):
+    executable_roots = [CLI_ROOT, NEUTRAL / 'cli-runtime-dependencies', CONTEXT]
+    for path in paths:
+        if not path.is_symlink():
+            continue
+        try:
+            target = path.resolve(strict=True)
+        except (OSError, RuntimeError):
+            raise ValueError('input_symlink_unresolved') from None
+        if any(path.is_relative_to(root) for root in executable_roots):
+            require(any(target.is_relative_to(root) for root in executable_roots),
+                    'executable_symlink_outside_inventory_roots')
+            if target.is_file():
+                require(target in paths, 'executable_symlink_target_not_frozen')
+            else:
+                require(target.is_dir() and all(p in paths for p in target.rglob('*')
+                        if p.is_file() or p.is_symlink()), 'executable_directory_target_not_frozen')
+        else:
+            require(target.is_relative_to(ROOT), 'source_symlink_escape')
 
 
 def validate_context():
@@ -159,7 +182,7 @@ def validate_gate_data(g):
                 and r['url'] == 'https://github.com/Optidigi/insignia/actions/runs/' + str(r['databaseId'])
                 for r in ci), 'ci_not_exact_source_attempt_one_success')
     controls = json.loads((NEUTRAL / 'release-controls.json').read_text())
-    require(controls['exitCode'] == 0 and controls['tests'] == 9
+    require(controls['exitCode'] == 0 and controls['tests'] == 11
             and controls['operatorSha256'] == digest(ROOT / 'deployment/m5-020/release-existing.py')
             and controls['testSha256'] == digest(ROOT / 'deployment/m5-020/release-existing.test.py')
             and controls['logSha256'] == digest(NEUTRAL / 'release-controls-green.log'), 'offline_release_controls_not_bound')
@@ -182,11 +205,10 @@ def validate_gate_data(g):
     require(len(set(sessions)) == 2, 'review_session_duplicate')
     rows = g['files'];paths = [Path(r['path']) for r in rows]
     require(len(set(paths)) == len(paths) and set(paths) == required_files(reviews), 'frozen_inventory_incomplete')
+    validate_links(set(paths))
     for p, r in zip(paths, rows, strict=True):
         require(r['kind'] == ('symlink' if p.is_symlink() else 'file') and digest(p) == r['sha256'],
                 'frozen_input_changed')
-        if p.is_symlink():
-            require(p.resolve().is_relative_to(ROOT) or p.resolve().is_relative_to(NEUTRAL), 'input_symlink_escape')
     require(json.loads((CLI_ROOT / 'package.json').read_text())['version'] == '4.8.2', 'cli_pin')
     require(subprocess.check_output([str(NODE), '--version'], env=environment(), text=True).strip() == 'v24.21.0', 'node_pin')
     require(not Path('/home/serveradmin/.local/share/@shopify/cli/package.json').exists(), 'external_cli_plugin_registry')

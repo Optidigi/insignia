@@ -1,0 +1,48 @@
+{
+  "slice": "M5-020",
+  "classification": "FRESH_NATIVE_VERSION_CONFIG_AND_INSTALLATION_CONFIRMED",
+  "source": "Fresh direct owner native version-page readback and subsequent exact-store confirmation in this thread for M5-020",
+  "recordedAt": "2026-10-08T01:38:32.234939+00:00",
+  "ownerObservedAt": null,
+  "nativeVersionPageReadback": {
+    "versionId": "1158986629121",
+    "name": "Insignia",
+    "application_url": "https://insignia-app.optidigi.nl/admin/products",
+    "embedded": true,
+    "optional_scopes": "write_products,read_publications,read_product_listings",
+    "use_legacy_install_flow": false,
+    "api_version": "2026-07",
+    "functions": [
+      {
+        "handle": "insignia-experimental-v2-validation",
+        "uid": "552059da-2dc1-47f8-8fc0-14a5ccb6f665"
+      },
+      {
+        "handle": "insignia-experimental-v2-transform",
+        "uid": "c56038d4-146a-405e-b47d-a055249eeeb3"
+      }
+    ]
+  },
+  "designatedInstallationClassification": "DESIGNATED_INSTALLATION_PRESENCE_CONFIRMED_BY_OWNER",
+  "designatedInstallation": {
+    "store": "insignia-rewrite-dev.myshopify.com",
+    "appName": "Insignia",
+    "ownerConfirmation": "Yes, insignia-rewrite-dev",
+    "candidateVersionEqualityEvidence": false
+  },
+  "ownerObservedInstallationCounter": 1,
+  "completeInstallationInventoryKnown": false,
+  "inactiveCandidate": true,
+  "inactiveCandidateSource": "Fresh supported CLI versions-prestate.json; owner did not separately state status",
+  "candidateVersionEqualityClaim": false,
+  "screenshotsSupplied": false,
+  "pdfsSupplied": false,
+  "independentProviderArtifactSupplied": false,
+  "observationTimeQualification": "No owner observation timestamp supplied; recordedAt is ingestion time only",
+  "notSuppliedByOwner": [
+    "required scopes",
+    "redirect URLs",
+    "server artifact checksums",
+    "complete installation inventory"
+  ]
+}

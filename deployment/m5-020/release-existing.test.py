@@ -14,6 +14,55 @@ spec.loader.exec_module(op)
 
 
 class ReleaseControls(unittest.TestCase):
+    def inventory_fixture(self, directory):
+        root = Path(directory) / 'source'
+        neutral = Path(directory) / 'neutral'
+        cli = neutral / 'cli'
+        context = neutral / 'context'
+        dependencies = neutral / 'cli-runtime-dependencies'
+        for p in [root, cli, context, dependencies]:
+            p.mkdir(parents=True)
+        source = root / 'source.py'
+        source.write_text('synthetic source')
+        manifest = root / 'docs/delivery/evidence/m5-018/freeze-round4-inventory.json'
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text(json.dumps({'source': [{'path': 'source.py', 'sha256': op.digest(source)}] * 621, 'build': []}))
+        return root, neutral, cli, context, dependencies
+
+    def test_executable_link_outside_inventoried_roots_is_denied(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, neutral, cli, context, dependencies = self.inventory_fixture(directory)
+            shared = neutral / 'shared-dependency'
+            shared.mkdir()
+            (shared / 'index.js').write_text('synthetic executable')
+            (cli / 'dependency').symlink_to(shared, target_is_directory=True)
+            with patch.object(op, 'ROOT', root), patch.object(op, 'NEUTRAL', neutral), \
+                 patch.object(op, 'CLI_ROOT', cli), patch.object(op, 'CONTEXT', context), \
+                 patch.object(op, 'git', return_value='source.py'):
+                with self.assertRaisesRegex(ValueError, 'executable_symlink_outside_inventory_roots'):
+                    op.required_files([])
+
+    def test_tracked_directory_links_and_runtime_target_bytes_are_frozen(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, neutral, cli, context, dependencies = self.inventory_fixture(directory)
+            (root / 'extension').mkdir()
+            (root / 'tracked-link').symlink_to('extension', target_is_directory=True)
+            target = dependencies / 'module.js'
+            target.write_text('first exact bytes')
+            link = cli / 'module.js'
+            link.symlink_to(target)
+            with patch.object(op, 'ROOT', root), patch.object(op, 'NEUTRAL', neutral), \
+                 patch.object(op, 'CLI_ROOT', cli), patch.object(op, 'CONTEXT', context), \
+                 patch.object(op, 'git', return_value='source.py\0tracked-link'):
+                paths = op.required_files([])
+                self.assertIn(root / 'tracked-link', paths)
+                self.assertIn(target, paths)
+                old_link, old_target = op.digest(link), op.digest(target)
+                target.write_text('changed executable bytes')
+                self.assertEqual(op.digest(link), old_link)
+                self.assertNotEqual(op.digest(target), old_target)
+
+
     def test_prestate_rejects_new_active_or_candidate(self):
         rows = op.expected_versions()
         op.validate_versions(rows)
