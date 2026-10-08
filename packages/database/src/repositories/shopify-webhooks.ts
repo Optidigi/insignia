@@ -133,14 +133,25 @@ async function resolveLocked(
       .innerJoin('installation_generations as i', (join) =>
         join.onRef('i.shop_id', '=', 'shops.shop_id').onRef('i.generation', '=', 'shops.current_generation'),
       )
-      .select(['shops.current_generation', 'i.deactivated_at'])
+      .select(['shops.current_generation', 'i.deactivated_at', 'i.activated_at'])
       .where('shops.shop_id', '=', locked.inbox.shop_id)
       .executeTakeFirst();
     const resolution =
       current?.current_generation === locked.inbox.installation_generation && current.deactivated_at === null
         ? 'resolved'
         : 'stale';
-    return { shopId: locked.inbox.shop_id, generation: locked.inbox.installation_generation, resolution };
+    if (
+      resolution === 'resolved' ||
+      locked.routing.topic !== 'app/uninstalled' ||
+      !current ||
+      current.deactivated_at !== null ||
+      current.current_generation === locked.inbox.installation_generation ||
+      locked.routing.triggered_at < current.activated_at
+    )
+      return { shopId: locked.inbox.shop_id, generation: locked.inbox.installation_generation, resolution };
+    // A managed reinstall may persist after a signed uninstall was initially
+    // routed to the prior durable generation. Re-resolve identity/time under
+    // the shop lock; genuinely older deliveries remain stale above.
   }
   const current = await tx
     .selectFrom('shops')

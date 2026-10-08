@@ -4,6 +4,48 @@ import { expect, test } from 'vitest';
 import { createDurableCore } from '../src/index.js';
 
 const connectionString = process.env.DATABASE_URL;
+
+test.each(['current', 'historical'])('first bootstrap preserves uninstall ordering: %s', async (era) => {
+  const core = createDurableCore(new Pool({ connectionString }));
+  const provider = identity();
+  // The trusted server starts a provider observation. The signed uninstall
+  // arrives after that observation but before the tenant transaction exists.
+  const observationStartedAt = new Date(Date.now() - 1000);
+  const triggeredAt = new Date(observationStartedAt.getTime() + (era === 'current' ? 500 : -500));
+  try {
+    expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toBeNull();
+    const delivery = await core.webhooks.receive({
+      shopDomain: provider.shopDomain,
+      deliveryId: randomUUID(),
+      topic: 'app/uninstalled',
+      apiVersion: '2026-07',
+      triggeredAt,
+      eventId: randomUUID(),
+      name: null,
+      rawBody: Buffer.from(
+        JSON.stringify({ id: Number(provider.shopifyShopId), myshopify_domain: provider.shopDomain }),
+      ),
+    });
+    expect(await core.webhooks.processUninstall(delivery.id)).toBe('unresolved');
+    const installed = await core.transactions.run((tx) =>
+      core.tenants.ensureManagedInstallation(tx, { ...provider, expected: null, observationStartedAt }),
+    );
+    expect(await core.webhooks.processUninstall(delivery.id)).toBe(era === 'current' ? 'processed' : 'stale');
+    expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toMatchObject({
+      shopId: installed.state.shopId,
+      currentGeneration: '1',
+      active: era === 'historical',
+    });
+    if (era === 'current')
+      await expect(
+        core.transactions.run((tx) =>
+          core.tenants.ensureManagedInstallation(tx, { ...provider, expected: installed.state, observationStartedAt }),
+        ),
+      ).rejects.toThrow('Managed installation state changed');
+  } finally {
+    await core.close();
+  }
+});
 function identity() {
   const value = randomUUID().replaceAll('-', '');
   return {
@@ -13,6 +55,70 @@ function identity() {
   };
 }
 
+test.each(['current', 'historical'])('confirmed reinstall preserves uninstall ordering: %s', async (era) => {
+  const core = createDurableCore(new Pool({ connectionString }));
+  const provider = identity();
+  try {
+    const first = await core.transactions.run((tx) =>
+      core.tenants.ensureManagedInstallation(tx, {
+        ...provider,
+        expected: null,
+        observationStartedAt: new Date(),
+      }),
+    );
+    const next = { ...provider, externalInstallationId: `${provider.externalInstallationId}8` };
+    const observationStartedAt = new Date();
+    const triggeredAt = new Date(observationStartedAt.getTime() + (era === 'current' ? 0 : -1000));
+    const delivery = await core.webhooks.receive({
+      shopDomain: provider.shopDomain,
+      deliveryId: randomUUID(),
+      topic: 'app/uninstalled',
+      apiVersion: '2026-07',
+      triggeredAt,
+      eventId: randomUUID(),
+      name: null,
+      rawBody: Buffer.from(
+        JSON.stringify({ id: Number(provider.shopifyShopId), myshopify_domain: provider.shopDomain }),
+      ),
+    });
+    const installed = await core.transactions.run((tx) =>
+      core.tenants.ensureManagedInstallation(tx, {
+        ...next,
+        expected: first.state,
+        confirmation: next,
+        observationStartedAt,
+      }),
+    );
+    expect(installed.state.currentGeneration).toBe('2');
+    expect(await core.webhooks.processUninstall(delivery.id)).toBe(era === 'current' ? 'processed' : 'stale');
+    expect((await core.tenants.getManagedInstallationState(provider.shopDomain))?.active).toBe(era === 'historical');
+  } finally {
+    await core.close();
+  }
+});
+
+test.each([new Date(Number.NaN), new Date('2099-01-01T00:00:00Z')])(
+  'untrusted invalid/future observation time cannot create a tenant',
+  async (observationStartedAt) => {
+    const core = createDurableCore(new Pool({ connectionString }));
+    const provider = identity();
+    try {
+      await expect(
+        core.transactions.run((tx) =>
+          core.tenants.ensureManagedInstallation(tx, {
+            ...provider,
+            expected: null,
+            observationStartedAt,
+          }),
+        ),
+      ).rejects.toThrow(/Managed installation/);
+      expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toBeNull();
+    } finally {
+      await core.close();
+    }
+  },
+);
+
 test('first authenticated provider installation creates one durable tenant and generation, then reuses it', async () => {
   const core = createDurableCore(new Pool({ connectionString }));
   const provider = identity();
@@ -20,13 +126,17 @@ test('first authenticated provider installation creates one durable tenant and g
     const expected = await core.tenants.getManagedInstallationState(provider.shopDomain);
     expect(expected).toBeNull();
     const created = await core.transactions.run((tx) =>
-      core.tenants.ensureManagedInstallation(tx, { ...provider, expected }),
+      core.tenants.ensureManagedInstallation(tx, { observationStartedAt: new Date(), ...provider, expected }),
     );
     expect(created.outcome).toBe('CREATED');
     expect(created.state).toMatchObject({ ...provider, currentGeneration: '1', active: true });
     expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toEqual(created.state);
     const again = await core.transactions.run((tx) =>
-      core.tenants.ensureManagedInstallation(tx, { ...provider, expected: created.state }),
+      core.tenants.ensureManagedInstallation(tx, {
+        observationStartedAt: new Date(),
+        ...provider,
+        expected: created.state,
+      }),
     );
     expect(again).toEqual({ outcome: 'REUSED', state: created.state });
   } finally {
@@ -39,11 +149,16 @@ test('confirmed reinstall advances once through the reviewed lifecycle and old i
   const provider = identity();
   try {
     const first = await core.transactions.run((tx) =>
-      core.tenants.ensureManagedInstallation(tx, { ...provider, expected: null }),
+      core.tenants.ensureManagedInstallation(tx, { observationStartedAt: new Date(), ...provider, expected: null }),
     );
     const next = { ...provider, externalInstallationId: `${provider.externalInstallationId}1` };
     const installed = await core.transactions.run((tx) =>
-      core.tenants.ensureManagedInstallation(tx, { ...next, expected: first.state, confirmation: next }),
+      core.tenants.ensureManagedInstallation(tx, {
+        observationStartedAt: new Date(),
+        ...next,
+        expected: first.state,
+        confirmation: next,
+      }),
     );
     expect(installed.outcome).toBe('REINSTALLED');
     expect(installed.state).toMatchObject({
@@ -53,12 +168,22 @@ test('confirmed reinstall advances once through the reviewed lifecycle and old i
       externalInstallationId: next.externalInstallationId,
     });
     const replay = await core.transactions.run((tx) =>
-      core.tenants.ensureManagedInstallation(tx, { ...next, expected: first.state, confirmation: next }),
+      core.tenants.ensureManagedInstallation(tx, {
+        observationStartedAt: new Date(),
+        ...next,
+        expected: first.state,
+        confirmation: next,
+      }),
     );
     expect(replay).toEqual({ outcome: 'REUSED', state: installed.state });
     await expect(
       core.transactions.run((tx) =>
-        core.tenants.ensureManagedInstallation(tx, { ...provider, expected: installed.state, confirmation: provider }),
+        core.tenants.ensureManagedInstallation(tx, {
+          observationStartedAt: new Date(),
+          ...provider,
+          expected: installed.state,
+          confirmation: provider,
+        }),
       ),
     ).rejects.toThrow('Managed installation state changed');
     expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toEqual(installed.state);
@@ -106,7 +231,11 @@ test.each(['matching', 'wrong-shop-id', 'wrong-installation', 'wrong-domain', 'i
         }),
       ]);
       loser = candidate.transactions.run((tx) =>
-        candidate.tenants.ensureManagedInstallation(tx, { ...provider, expected: null }),
+        candidate.tenants.ensureManagedInstallation(tx, {
+          observationStartedAt: new Date(),
+          ...provider,
+          expected: null,
+        }),
       );
       const settled = loser.then(
         (value) => ({ value }),
@@ -165,7 +294,9 @@ test('concurrent first sessions and concurrent reinstall converge without extra 
   try {
     const first = await Promise.all(
       Array.from({ length: sessions }, () =>
-        core.transactions.run((tx) => core.tenants.ensureManagedInstallation(tx, { ...provider, expected: null })),
+        core.transactions.run((tx) =>
+          core.tenants.ensureManagedInstallation(tx, { observationStartedAt: new Date(), ...provider, expected: null }),
+        ),
       ),
     );
     expect(first.filter((x) => x.outcome === 'CREATED')).toHaveLength(1);
@@ -176,7 +307,12 @@ test('concurrent first sessions and concurrent reinstall converge without extra 
     const installed = await Promise.all(
       Array.from({ length: sessions }, () =>
         core.transactions.run((tx) =>
-          core.tenants.ensureManagedInstallation(tx, { ...next, expected: before, confirmation: next }),
+          core.tenants.ensureManagedInstallation(tx, {
+            observationStartedAt: new Date(),
+            ...next,
+            expected: before,
+            confirmation: next,
+          }),
         ),
       ),
     );
@@ -195,7 +331,7 @@ test('identity disagreement, unconfirmed reinstall, stale state and inactive old
   const provider = identity();
   try {
     const first = await core.transactions.run((tx) =>
-      core.tenants.ensureManagedInstallation(tx, { ...provider, expected: null }),
+      core.tenants.ensureManagedInstallation(tx, { observationStartedAt: new Date(), ...provider, expected: null }),
     );
     for (const mismatch of [
       { ...provider, shopifyShopId: `${provider.shopifyShopId}1` },
@@ -203,36 +339,71 @@ test('identity disagreement, unconfirmed reinstall, stale state and inactive old
     ])
       await expect(
         core.transactions.run((tx) =>
-          core.tenants.ensureManagedInstallation(tx, { ...mismatch, expected: first.state }),
+          core.tenants.ensureManagedInstallation(tx, {
+            observationStartedAt: new Date(),
+            ...mismatch,
+            expected: first.state,
+          }),
         ),
       ).rejects.toThrow('Managed installation identity mismatch');
     const next = { ...provider, externalInstallationId: `${provider.externalInstallationId}3` };
     await expect(
-      core.transactions.run((tx) => core.tenants.ensureManagedInstallation(tx, { ...next, expected: first.state })),
+      core.transactions.run((tx) =>
+        core.tenants.ensureManagedInstallation(tx, {
+          observationStartedAt: new Date(),
+          ...next,
+          expected: first.state,
+        }),
+      ),
     ).rejects.toThrow('Managed installation confirmation required');
     await expect(
       core.transactions.run((tx) =>
-        core.tenants.ensureManagedInstallation(tx, { ...next, expected: first.state, confirmation: provider }),
+        core.tenants.ensureManagedInstallation(tx, {
+          observationStartedAt: new Date(),
+          ...next,
+          expected: first.state,
+          confirmation: provider,
+        }),
       ),
     ).rejects.toThrow('Managed installation confirmation required');
     const installed = await core.transactions.run((tx) =>
-      core.tenants.ensureManagedInstallation(tx, { ...next, expected: first.state, confirmation: next }),
+      core.tenants.ensureManagedInstallation(tx, {
+        observationStartedAt: new Date(),
+        ...next,
+        expected: first.state,
+        confirmation: next,
+      }),
     );
     const newer = { ...provider, externalInstallationId: `${provider.externalInstallationId}4` };
     await expect(
       core.transactions.run((tx) =>
-        core.tenants.ensureManagedInstallation(tx, { ...newer, expected: first.state, confirmation: newer }),
+        core.tenants.ensureManagedInstallation(tx, {
+          observationStartedAt: new Date(),
+          ...newer,
+          expected: first.state,
+          confirmation: newer,
+        }),
       ),
     ).rejects.toThrow('Managed installation state changed');
     await core.transactions.run((tx) => core.tenants.deactivateCurrent(tx, installed.state.shopId, '2'));
     await expect(
       core.transactions.run((tx) =>
-        core.tenants.ensureManagedInstallation(tx, { ...next, expected: installed.state, confirmation: next }),
+        core.tenants.ensureManagedInstallation(tx, {
+          observationStartedAt: new Date(),
+          ...next,
+          expected: installed.state,
+          confirmation: next,
+        }),
       ),
     ).rejects.toThrow('Managed installation state changed');
     const inactive = await core.tenants.getManagedInstallationState(provider.shopDomain);
     const reinstalled = await core.transactions.run((tx) =>
-      core.tenants.ensureManagedInstallation(tx, { ...newer, expected: inactive, confirmation: newer }),
+      core.tenants.ensureManagedInstallation(tx, {
+        observationStartedAt: new Date(),
+        ...newer,
+        expected: inactive,
+        confirmation: newer,
+      }),
     );
     expect(reinstalled.state).toMatchObject({
       currentGeneration: '3',
@@ -250,7 +421,11 @@ test('bootstrap transaction failure leaves no partial durable tenant', async () 
   try {
     await expect(
       core.transactions.run(async (tx) => {
-        await core.tenants.ensureManagedInstallation(tx, { ...provider, expected: null });
+        await core.tenants.ensureManagedInstallation(tx, {
+          observationStartedAt: new Date(),
+          ...provider,
+          expected: null,
+        });
         throw new Error('synthetic transaction abort');
       }),
     ).rejects.toThrow('synthetic transaction abort');

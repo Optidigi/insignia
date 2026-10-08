@@ -202,6 +202,37 @@ test(
 );
 
 test(
+  'uninstall during the first provider observation fences the bootstrapped generation',
+  { skip: !database, timeout: 30000 },
+  async () =>
+    fixture(async ({ core, services, model, shop, numericId, request }) => {
+      let receipt;
+      model.afterRead = async () => {
+        receipt = await core.webhooks.receive({
+          shopDomain: shop,
+          deliveryId: randomUUID(),
+          topic: 'app/uninstalled',
+          apiVersion: '2026-07',
+          triggeredAt: new Date(),
+          eventId: randomUUID(),
+          name: null,
+          rawBody: Buffer.from(JSON.stringify({ id: Number(numericId), myshopify_domain: shop })),
+        });
+        assert.equal(await core.webhooks.processUninstall(receipt.id), 'unresolved');
+      };
+      const actor = await services.authenticate(request());
+      assert.equal(await core.webhooks.processUninstall(receipt.id), 'processed');
+      assert.equal((await core.tenants.getManagedInstallationState(shop)).active, false);
+      await assert.rejects(services.catalog.list(actor, { query: '', cursor: null, limit: 10 }), {
+        message: 'Admin installation changed',
+      });
+      model.afterRead = null;
+      await assert.rejects(services.authenticate(request()), { message: 'Authentication unavailable' });
+      assert.equal(model.catalogReads, 0);
+    }),
+);
+
+test(
   'production confirms a reinstall twice, advances once and rejects historical stale sessions',
   { skip: !database, timeout: 30000 },
   async () =>

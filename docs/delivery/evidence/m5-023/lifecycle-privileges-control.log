@@ -1,0 +1,4 @@
+{"queueSchemaPresent" : true, "queueRuntimeUsable" : false}
+ERROR:  "pg_toast_21709" is not a sequence
+
+exit=3

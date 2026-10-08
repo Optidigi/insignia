@@ -2,6 +2,8 @@
 
 [Authority](prompts/M5-023-INSTALL-BOOTSTRAP-TRUSTED-PROVISIONING.md), [PR53 approval](PR-053R-principal-review.md), [normal merge](evidence/m5-023/pr53-merge-receipt.json) 66983f7a959c67cea8e03e79e16761613b73a9b2 with exact approved ordered parents/tree. Source work offline first; full frozen reviews/CI required before owner-authorized restricted VPS renewal. Permanent provider-authoritative tenant/install lifecycle, no manual seed. Commercial eligibility remains owner-controlled; no fixture absent legitimate eligibility. Preserve historical runs/semantics; no app version/release/rollback/scopes, M6/M7 or merchant rollout. Successor merge not authorized.
 
+Preproduction reviews identified uninstall/persistence overlap and Compose override defects; local regressions now qualify the corrections. The revised production plan requires an existing exact-source durable uninstall processor, webhook secret and queue/runtime privileges to pass read-only host qualification before any backup/provision/deployment/Search. An unqualified prerequisite stops as `BLOCKED_UNINSTALL_PROCESSOR_READINESS`; no worker deployment is authorized. Fresh full-source review/CI gate is still required.
+
 ---
 
 # Current M5-022R — same-PR correction; principal rereview required

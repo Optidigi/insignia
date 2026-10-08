@@ -1,19 +1,23 @@
 """Offline failure-boundary controls only; never invoke Docker, SSH or SQL."""
 import importlib.util
 import json
+import os
 from pathlib import Path
 import tempfile
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('host_operator', Path(__file__).with_name('host-operator.py'))
 operator = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(operator)
+original_prestate = operator.prestate
 
 
 class GuardControls(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         operator.ROOT = Path(self.directory.name)
+        operator.prestate = original_prestate
         self.calls = []
         def denied(args, *unused, **kwargs):
             self.calls.append(args)
@@ -24,11 +28,13 @@ class GuardControls(unittest.TestCase):
         self.directory.cleanup()
 
     def test_provision_requires_backup_before_external_command(self):
+        (operator.ROOT / 'lifecycle-settled.json').write_text('{"classification":"PASS_UNINSTALL_PROCESSOR"}')
         with self.assertRaisesRegex(RuntimeError, 'Backup receipt missing'):
             operator.provision()
         self.assertEqual(self.calls, [])
 
     def test_deploy_requires_provision_before_external_command(self):
+        (operator.ROOT / 'lifecycle-settled.json').write_text('{"classification":"PASS_UNINSTALL_PROCESSOR"}')
         with self.assertRaisesRegex(RuntimeError, 'Provisioning receipt missing'):
             operator.deploy()
         self.assertEqual(self.calls, [])
@@ -44,6 +50,7 @@ class GuardControls(unittest.TestCase):
         self.assertEqual(self.calls, [])
 
     def test_changed_provisioning_input_stops_before_sql(self):
+        (operator.ROOT / 'lifecycle-settled.json').write_text('{"classification":"PASS_UNINSTALL_PROCESSOR"}')
         (operator.ROOT / 'backup-settled.json').write_text('{}')
         (operator.ROOT / 'expected-inputs.json').write_text(json.dumps({'migrationSha256': '0' * 64, 'rolesSha256': '0' * 64}))
         (operator.ROOT / 'migration16.sql').write_text('changed input')
@@ -53,6 +60,103 @@ class GuardControls(unittest.TestCase):
             operator.provision()
         self.assertEqual(self.calls, [])
         self.assertFalse((operator.ROOT / 'provision-reserved.json').exists())
+
+    def test_inherited_compose_override_cannot_select_unreviewed_image(self):
+        # External Compose boundary: its environment takes precedence over .env.
+        # A configuration mismatch must stop before the mutating `up` command.
+        def compose(args, stdin=None, timeout=60, env=None):
+            self.calls.append(args)
+            effective = {**os.environ, **(env or {})}
+            if 'config' in args:
+                return json.dumps({'services': {'web': {
+                    'image': effective['INSIGNIA_WEB_IMAGE'],
+                    'environment': {'APP_URL': operator.ORIGIN},
+                    'labels': {'traefik.enable': effective['INSIGNIA_ROUTE_ENABLED'],
+                               'traefik.http.routers.insignia-canonical-m5-019r.rule': 'Host(`insignia-app.optidigi.nl`)'},
+                }}}).encode()
+            self.assertEqual(effective['INSIGNIA_WEB_IMAGE'], 'sha256:' + '1' * 64)
+            self.assertEqual(effective['INSIGNIA_ROUTE_ENABLED'], 'true')
+            return b''
+        operator.run = compose
+        with patch.dict(os.environ, {'INSIGNIA_WEB_IMAGE': 'unreviewed', 'INSIGNIA_ROUTE_ENABLED': 'false'}):
+            operator.compose_web('sha256:' + '1' * 64)
+        self.assertEqual(len(self.calls), 2)
+        self.assertIn('up', self.calls[1])
+
+    def test_resolved_compose_drift_stops_before_up(self):
+        def drift(args, *unused, **kwargs):
+            self.calls.append(args)
+            return json.dumps({'services': {'web': {'image': 'unreviewed'}}}).encode()
+        operator.run = drift
+        with self.assertRaisesRegex(RuntimeError, 'Resolved Compose'):
+            operator.compose_web('sha256:' + '1' * 64)
+        self.assertEqual(len(self.calls), 1)
+        self.assertNotIn('up', self.calls[0])
+
+    def test_unqualified_lifecycle_stops_before_any_backup_or_deploy_command(self):
+        for action in [operator.backup, operator.provision, operator.deploy]:
+            with self.assertRaisesRegex(RuntimeError, 'Uninstall processor readiness unqualified'):
+                action()
+        self.assertEqual(self.calls, [])
+
+    def test_read_only_missing_worker_classifies_and_never_provisions(self):
+        environment = ['DATABASE_URL=postgres://synthetic@database:5432/synthetic',
+                       'SHOPIFY_CLIENT_SECRET=synthetic', 'SHOPIFY_WEBHOOK_SECRET=synthetic']
+        web = {'Config': {'Env': environment, 'Cmd': ['node', 'entry.mjs']}}
+        operator.prestate = lambda: [web]
+        (operator.ROOT / 'expected-inputs.json').write_text('{}')
+        def boundary(args, *unused, **kwargs):
+            self.calls.append(args)
+            if args[:3] == ['docker', 'ps', '-q']:
+                return b'synthetic-container\n'
+            if args[:2] == ['docker', 'inspect']:
+                return json.dumps([web]).encode()
+            if 'psql' in args:
+                return b'{"queueSchemaPresent":false,"queueRuntimeUsable":false}'
+            raise AssertionError('Unexpected external command')
+        operator.run = boundary
+        operator.lifecycle()
+        value = json.loads((operator.ROOT / 'lifecycle-settled.json').read_text())
+        self.assertEqual(value['classification'], 'BLOCKED_UNINSTALL_PROCESSOR_READINESS')
+        self.assertEqual(value['candidateCount'], 0)
+        self.assertEqual(value['databaseWrites'], 0)
+        self.assertFalse((operator.ROOT / 'provision-reserved.json').exists())
+        self.assertNotIn('synthetic@', json.dumps(value))
+
+    def test_only_exact_ready_worker_and_queue_qualify(self):
+        for failure in [None, 'artifact', 'secret', 'queue', 'health']:
+            with self.subTest(failure=failure):
+                path = operator.ROOT / 'lifecycle-settled.json'
+                if path.exists():
+                    path.unlink()
+                web = {'Config': {'Env': ['DATABASE_URL=postgres://synthetic@database:5432/synthetic',
+                    'SHOPIFY_CLIENT_ID=synthetic-client', 'SHOPIFY_CLIENT_SECRET=synthetic-secret',
+                    'SHOPIFY_WEBHOOK_SECRET=' + ('wrong' if failure == 'secret' else 'synthetic-secret')]}}
+                worker = {'Id': 'synthetic-worker', 'Config': {'Cmd': ['node', '/srv/worker/main.js'],
+                    'Env': ['DATABASE_URL=postgres://worker@database:5432/synthetic',
+                        'SHOPIFY_CLIENT_ID=synthetic-client', 'SHOPIFY_CLIENT_SECRET=synthetic-secret',
+                        'INSIGNIA_CREDENTIAL_KEY_ID=synthetic-key', 'INSIGNIA_CREDENTIAL_KEY_BASE64=synthetic-key-bytes']}}
+                operator.prestate = lambda: [web]
+                (operator.ROOT / 'expected-inputs.json').write_text(json.dumps({
+                    'workerEntrySha256': '1' * 64, 'workerHandlersSha256': '2' * 64}))
+                def boundary(args, *unused, **kwargs):
+                    if args[:3] == ['docker', 'ps', '-q']:
+                        return b'synthetic-worker'
+                    if args[:2] == ['docker', 'inspect']:
+                        return json.dumps([worker]).encode()
+                    if 'sha256sum' in args:
+                        return ((('0' if failure == 'artifact' else '1') * 64) + '  main.js\n' + '2' * 64 + '  handlers.js\n').encode()
+                    if '-e' in args:
+                        return json.dumps({'status': 503 if failure == 'health' else 200, 'body': {'durableReady': True}}).encode()
+                    if 'psql' in args:
+                        return json.dumps({'queueSchemaPresent': True, 'queueRuntimeUsable': failure != 'queue'}).encode()
+                    raise AssertionError('Unexpected external command')
+                operator.run = boundary
+                operator.lifecycle()
+                value = json.loads(path.read_text())
+                self.assertEqual(value['classification'], 'PASS_UNINSTALL_PROCESSOR' if failure is None else 'BLOCKED_UNINSTALL_PROCESSOR_READINESS')
+                self.assertEqual(value['databaseWrites'], 0)
+                self.assertNotIn('synthetic-secret', json.dumps(value))
 
 
 if __name__ == '__main__':

@@ -1,0 +1,1581 @@
+{
+  "changes": [
+    {
+      "package": "non-error",
+      "quarantinedVersion": "0.1.0",
+      "workspaceAliasVersion": "0.1.0"
+    },
+    {
+      "package": "css-what",
+      "quarantinedVersion": "7.0.0",
+      "workspaceAliasVersion": "7.0.0"
+    },
+    {
+      "package": "dset",
+      "quarantinedVersion": "3.1.4",
+      "workspaceAliasVersion": "3.1.4"
+    },
+    {
+      "package": "readdirp",
+      "quarantinedVersion": "5.1.1",
+      "workspaceAliasVersion": "4.1.2"
+    },
+    {
+      "package": "simple-code-frame",
+      "quarantinedVersion": "1.3.0",
+      "workspaceAliasVersion": "1.3.0"
+    },
+    {
+      "package": "temporal-spec",
+      "quarantinedVersion": "1.0.1",
+      "workspaceAliasVersion": "1.0.1"
+    },
+    {
+      "package": "thread-stream",
+      "quarantinedVersion": "4.2.0",
+      "workspaceAliasVersion": "4.2.0"
+    },
+    {
+      "package": "preact",
+      "quarantinedVersion": "10.29.8",
+      "workspaceAliasVersion": "10.29.8"
+    },
+    {
+      "package": "vite-prerender-plugin",
+      "quarantinedVersion": "0.5.14",
+      "workspaceAliasVersion": "0.5.14"
+    },
+    {
+      "package": "fdir",
+      "quarantinedVersion": "6.5.0",
+      "workspaceAliasVersion": "6.5.0"
+    },
+    {
+      "package": "lru-cache",
+      "quarantinedVersion": "11.5.3",
+      "workspaceAliasVersion": "11.5.3"
+    },
+    {
+      "package": "radix3",
+      "quarantinedVersion": "1.1.2",
+      "workspaceAliasVersion": "1.1.2"
+    },
+    {
+      "package": "pg-types",
+      "quarantinedVersion": "2.2.0",
+      "workspaceAliasVersion": "2.2.0"
+    },
+    {
+      "package": "yargs-parser",
+      "quarantinedVersion": "22.0.0",
+      "workspaceAliasVersion": "22.0.0"
+    },
+    {
+      "package": "on-finished",
+      "quarantinedVersion": "2.4.1",
+      "workspaceAliasVersion": "2.4.1"
+    },
+    {
+      "package": "pino",
+      "quarantinedVersion": "10.3.1",
+      "workspaceAliasVersion": "10.3.1"
+    },
+    {
+      "package": "semver",
+      "quarantinedVersion": "6.3.1",
+      "workspaceAliasVersion": "7.8.5"
+    },
+    {
+      "package": "chokidar",
+      "quarantinedVersion": "5.0.0",
+      "workspaceAliasVersion": "4.0.3"
+    },
+    {
+      "package": "cron-parser",
+      "quarantinedVersion": "5.10.1",
+      "workspaceAliasVersion": "5.10.1"
+    },
+    {
+      "package": "konva",
+      "quarantinedVersion": "10.7.0",
+      "workspaceAliasVersion": "10.7.0"
+    },
+    {
+      "package": "node-fetch-native",
+      "quarantinedVersion": "1.6.7",
+      "workspaceAliasVersion": "1.6.7"
+    },
+    {
+      "package": "shiki",
+      "quarantinedVersion": "4.4.3",
+      "workspaceAliasVersion": "4.4.3"
+    },
+    {
+      "package": "css-tree",
+      "quarantinedVersion": "3.2.1",
+      "workspaceAliasVersion": "3.2.1"
+    },
+    {
+      "package": "piccolore",
+      "quarantinedVersion": "0.1.3",
+      "workspaceAliasVersion": "0.1.3"
+    },
+    {
+      "package": "mdast-util-to-hast",
+      "quarantinedVersion": "13.2.1",
+      "workspaceAliasVersion": "13.2.1"
+    },
+    {
+      "package": "gensync",
+      "quarantinedVersion": "1.0.0-beta.2",
+      "workspaceAliasVersion": "1.0.0-beta.2"
+    },
+    {
+      "package": "zod",
+      "quarantinedVersion": "4.6.5",
+      "workspaceAliasVersion": "4.6.5"
+    },
+    {
+      "package": "fast-wrap-ansi",
+      "quarantinedVersion": "0.2.2",
+      "workspaceAliasVersion": "0.2.2"
+    },
+    {
+      "package": "prismjs",
+      "quarantinedVersion": "1.30.0",
+      "workspaceAliasVersion": "1.30.0"
+    },
+    {
+      "package": "ee-first",
+      "quarantinedVersion": "1.1.1",
+      "workspaceAliasVersion": "1.1.1"
+    },
+    {
+      "package": "sax",
+      "quarantinedVersion": "1.6.1",
+      "workspaceAliasVersion": "1.6.1"
+    },
+    {
+      "package": "json5",
+      "quarantinedVersion": "2.2.3",
+      "workspaceAliasVersion": "2.2.3"
+    },
+    {
+      "package": "pg-protocol",
+      "quarantinedVersion": "1.16.0",
+      "workspaceAliasVersion": "1.16.0"
+    },
+    {
+      "package": "postgres-array",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "pino-abstract-transport",
+      "quarantinedVersion": "3.0.0",
+      "workspaceAliasVersion": "3.0.0"
+    },
+    {
+      "package": "caniuse-lite",
+      "quarantinedVersion": "1.0.30001812",
+      "workspaceAliasVersion": "1.0.30001812"
+    },
+    {
+      "package": "pg-pool",
+      "quarantinedVersion": "3.14.0",
+      "workspaceAliasVersion": "3.14.0"
+    },
+    {
+      "package": "defu",
+      "quarantinedVersion": "6.1.7",
+      "workspaceAliasVersion": "6.1.7"
+    },
+    {
+      "package": "yallist",
+      "quarantinedVersion": "3.1.1",
+      "workspaceAliasVersion": "3.1.1"
+    },
+    {
+      "package": "resolve-pkg-maps",
+      "quarantinedVersion": "1.0.0",
+      "workspaceAliasVersion": "1.0.0"
+    },
+    {
+      "package": "trough",
+      "quarantinedVersion": "2.2.0",
+      "workspaceAliasVersion": "2.2.0"
+    },
+    {
+      "package": "p-queue",
+      "quarantinedVersion": "9.3.3",
+      "workspaceAliasVersion": "9.3.3"
+    },
+    {
+      "package": "inherits",
+      "quarantinedVersion": "2.0.4",
+      "workspaceAliasVersion": "2.0.4"
+    },
+    {
+      "package": "unist-util-position",
+      "quarantinedVersion": "5.0.0",
+      "workspaceAliasVersion": "5.0.0"
+    },
+    {
+      "package": "iron-webcrypto",
+      "quarantinedVersion": "1.2.1",
+      "workspaceAliasVersion": "1.2.1"
+    },
+    {
+      "package": "picomatch",
+      "quarantinedVersion": "4.0.7",
+      "workspaceAliasVersion": "4.0.7"
+    },
+    {
+      "package": "retext-smartypants",
+      "quarantinedVersion": "6.2.0",
+      "workspaceAliasVersion": "6.2.0"
+    },
+    {
+      "package": "css-select",
+      "quarantinedVersion": "6.0.0",
+      "workspaceAliasVersion": "6.0.0"
+    },
+    {
+      "package": "ofetch",
+      "quarantinedVersion": "1.5.1",
+      "workspaceAliasVersion": "1.5.1"
+    },
+    {
+      "package": "he",
+      "quarantinedVersion": "1.2.0",
+      "workspaceAliasVersion": "1.2.0"
+    },
+    {
+      "package": "debug",
+      "quarantinedVersion": "4.4.3",
+      "workspaceAliasVersion": "4.4.3"
+    },
+    {
+      "package": "jsonc-parser",
+      "quarantinedVersion": "3.3.1",
+      "workspaceAliasVersion": "3.3.1"
+    },
+    {
+      "package": "devlop",
+      "quarantinedVersion": "1.1.0",
+      "workspaceAliasVersion": "1.1.0"
+    },
+    {
+      "package": "comma-separated-tokens",
+      "quarantinedVersion": "2.0.3",
+      "workspaceAliasVersion": "2.0.3"
+    },
+    {
+      "package": "dequal",
+      "quarantinedVersion": "2.0.3",
+      "workspaceAliasVersion": "2.0.3"
+    },
+    {
+      "package": "postgres-interval",
+      "quarantinedVersion": "1.2.0",
+      "workspaceAliasVersion": "1.2.0"
+    },
+    {
+      "package": "mdn-data",
+      "quarantinedVersion": "2.27.1",
+      "workspaceAliasVersion": "2.27.1"
+    },
+    {
+      "package": "ultrahtml",
+      "quarantinedVersion": "1.7.0",
+      "workspaceAliasVersion": "1.7.0"
+    },
+    {
+      "package": "postgres-date",
+      "quarantinedVersion": "1.0.7",
+      "workspaceAliasVersion": "1.0.7"
+    },
+    {
+      "package": "luxon",
+      "quarantinedVersion": "3.7.2",
+      "workspaceAliasVersion": "3.7.2"
+    },
+    {
+      "package": "unist-util-visit-parents",
+      "quarantinedVersion": "6.0.2",
+      "workspaceAliasVersion": "6.0.2"
+    },
+    {
+      "package": "package-manager-detector",
+      "quarantinedVersion": "1.8.0",
+      "workspaceAliasVersion": "1.8.0"
+    },
+    {
+      "package": "axobject-query",
+      "quarantinedVersion": "4.1.0",
+      "workspaceAliasVersion": "4.1.0"
+    },
+    {
+      "package": "micromark-util-types",
+      "quarantinedVersion": "2.0.3",
+      "workspaceAliasVersion": "2.0.3"
+    },
+    {
+      "package": "magic-string",
+      "quarantinedVersion": "0.30.21",
+      "workspaceAliasVersion": "1.4.2"
+    },
+    {
+      "package": "astro",
+      "quarantinedVersion": "7.3.5",
+      "workspaceAliasVersion": "7.3.5"
+    },
+    {
+      "package": "source-map-js",
+      "quarantinedVersion": "1.2.1",
+      "workspaceAliasVersion": "1.2.1"
+    },
+    {
+      "package": "jose",
+      "quarantinedVersion": "5.10.0",
+      "workspaceAliasVersion": "5.10.0"
+    },
+    {
+      "package": "convert-source-map",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "vitefu",
+      "quarantinedVersion": "1.1.3",
+      "workspaceAliasVersion": "1.1.3"
+    },
+    {
+      "package": "update-browserslist-db",
+      "quarantinedVersion": "1.3.3",
+      "workspaceAliasVersion": "1.3.3"
+    },
+    {
+      "package": "js-tokens",
+      "quarantinedVersion": "4.0.0",
+      "workspaceAliasVersion": "4.0.0"
+    },
+    {
+      "package": "depd",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "on-exit-leak-free",
+      "quarantinedVersion": "2.1.2",
+      "workspaceAliasVersion": "2.1.2"
+    },
+    {
+      "package": "fontkitten",
+      "quarantinedVersion": "1.0.3",
+      "workspaceAliasVersion": "1.0.3"
+    },
+    {
+      "package": "encodeurl",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "flattie",
+      "quarantinedVersion": "1.1.1",
+      "workspaceAliasVersion": "1.1.1"
+    },
+    {
+      "package": "lightningcss",
+      "quarantinedVersion": "1.33.0",
+      "workspaceAliasVersion": "1.33.0"
+    },
+    {
+      "package": "sisteransi",
+      "quarantinedVersion": "1.0.5",
+      "workspaceAliasVersion": "1.0.5"
+    },
+    {
+      "package": "magicast",
+      "quarantinedVersion": "0.5.5",
+      "workspaceAliasVersion": "0.5.5"
+    },
+    {
+      "package": "preact-render-to-string",
+      "quarantinedVersion": "6.7.0",
+      "workspaceAliasVersion": "6.7.0"
+    },
+    {
+      "package": "vite",
+      "quarantinedVersion": "8.3.1",
+      "workspaceAliasVersion": "8.3.1"
+    },
+    {
+      "package": "tagged-tag",
+      "quarantinedVersion": "1.0.0",
+      "workspaceAliasVersion": "1.0.0"
+    },
+    {
+      "package": "mrmime",
+      "quarantinedVersion": "2.0.1",
+      "workspaceAliasVersion": "2.0.1"
+    },
+    {
+      "package": "yaml",
+      "quarantinedVersion": "2.9.1",
+      "workspaceAliasVersion": "2.9.1"
+    },
+    {
+      "package": "bail",
+      "quarantinedVersion": "2.0.2",
+      "workspaceAliasVersion": "2.0.2"
+    },
+    {
+      "package": "xxhash-wasm",
+      "quarantinedVersion": "1.1.0",
+      "workspaceAliasVersion": "1.1.0"
+    },
+    {
+      "package": "dom-serializer",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "tdigest",
+      "quarantinedVersion": "0.1.3",
+      "workspaceAliasVersion": "0.1.3"
+    },
+    {
+      "package": "fontace",
+      "quarantinedVersion": "0.4.1",
+      "workspaceAliasVersion": "0.4.1"
+    },
+    {
+      "package": "toidentifier",
+      "quarantinedVersion": "1.0.1",
+      "workspaceAliasVersion": "1.0.1"
+    },
+    {
+      "package": "tinyexec",
+      "quarantinedVersion": "1.3.1",
+      "workspaceAliasVersion": "1.3.1"
+    },
+    {
+      "package": "picocolors",
+      "quarantinedVersion": "1.1.1",
+      "workspaceAliasVersion": "1.1.1"
+    },
+    {
+      "package": "micromark-util-encode",
+      "quarantinedVersion": "2.0.1",
+      "workspaceAliasVersion": "2.0.1"
+    },
+    {
+      "package": "unist-util-stringify-position",
+      "quarantinedVersion": "4.0.0",
+      "workspaceAliasVersion": "4.0.0"
+    },
+    {
+      "package": "rolldown",
+      "quarantinedVersion": "1.2.11",
+      "workspaceAliasVersion": "1.2.11"
+    },
+    {
+      "package": "eventemitter3",
+      "quarantinedVersion": "5.0.4",
+      "workspaceAliasVersion": "5.0.4"
+    },
+    {
+      "package": "space-separated-tokens",
+      "quarantinedVersion": "2.0.2",
+      "workspaceAliasVersion": "2.0.2"
+    },
+    {
+      "package": "estree-walker",
+      "quarantinedVersion": "2.0.2",
+      "workspaceAliasVersion": "3.0.3"
+    },
+    {
+      "package": "devalue",
+      "quarantinedVersion": "5.9.4",
+      "workspaceAliasVersion": "5.9.4"
+    },
+    {
+      "package": "hast-util-whitespace",
+      "quarantinedVersion": "3.0.0",
+      "workspaceAliasVersion": "3.0.0"
+    },
+    {
+      "package": "undici",
+      "quarantinedVersion": "8.11.2",
+      "workspaceAliasVersion": "8.11.2"
+    },
+    {
+      "package": "unified",
+      "quarantinedVersion": "11.0.5",
+      "workspaceAliasVersion": "11.0.5"
+    },
+    {
+      "package": "sharp",
+      "quarantinedVersion": "0.35.4",
+      "workspaceAliasVersion": "0.35.4"
+    },
+    {
+      "package": "get-tsconfig",
+      "quarantinedVersion": "5.0.0-beta.4",
+      "workspaceAliasVersion": "5.0.0-beta.4"
+    },
+    {
+      "package": "clsx",
+      "quarantinedVersion": "2.1.1",
+      "workspaceAliasVersion": "2.1.1"
+    },
+    {
+      "package": "kysely",
+      "quarantinedVersion": "0.29.6",
+      "workspaceAliasVersion": "0.29.6"
+    },
+    {
+      "package": "trim-lines",
+      "quarantinedVersion": "3.0.1",
+      "workspaceAliasVersion": "3.0.1"
+    },
+    {
+      "package": "property-information",
+      "quarantinedVersion": "7.2.0",
+      "workspaceAliasVersion": "7.2.0"
+    },
+    {
+      "package": "escape-html",
+      "quarantinedVersion": "1.0.3",
+      "workspaceAliasVersion": "1.0.3"
+    },
+    {
+      "package": "babel-plugin-transform-hook-names",
+      "quarantinedVersion": "1.0.2",
+      "workspaceAliasVersion": "1.0.2"
+    },
+    {
+      "package": "zwitch",
+      "quarantinedVersion": "2.0.4",
+      "workspaceAliasVersion": "2.0.4"
+    },
+    {
+      "package": "ci-info",
+      "quarantinedVersion": "4.4.0",
+      "workspaceAliasVersion": "4.4.0"
+    },
+    {
+      "package": "rrule-temporal",
+      "quarantinedVersion": "2.2.7",
+      "workspaceAliasVersion": "2.2.7"
+    },
+    {
+      "package": "am-i-vibing",
+      "quarantinedVersion": "0.4.0",
+      "workspaceAliasVersion": "0.4.0"
+    },
+    {
+      "package": "ufo",
+      "quarantinedVersion": "1.6.4",
+      "workspaceAliasVersion": "1.6.4"
+    },
+    {
+      "package": "prom-client",
+      "quarantinedVersion": "15.1.3",
+      "workspaceAliasVersion": "15.1.3"
+    },
+    {
+      "package": "pino-std-serializers",
+      "quarantinedVersion": "7.1.0",
+      "workspaceAliasVersion": "7.1.0"
+    },
+    {
+      "package": "tinyglobby",
+      "quarantinedVersion": "0.2.17",
+      "workspaceAliasVersion": "0.2.17"
+    },
+    {
+      "package": "pg-connection-string",
+      "quarantinedVersion": "2.14.0",
+      "workspaceAliasVersion": "2.14.0"
+    },
+    {
+      "package": "is-plain-obj",
+      "quarantinedVersion": "4.1.0",
+      "workspaceAliasVersion": "4.1.0"
+    },
+    {
+      "package": "detect-libc",
+      "quarantinedVersion": "2.1.2",
+      "workspaceAliasVersion": "2.1.2"
+    },
+    {
+      "package": "tslib",
+      "quarantinedVersion": "2.8.1",
+      "workspaceAliasVersion": "2.8.1"
+    },
+    {
+      "package": "has-flag",
+      "quarantinedVersion": "4.0.0",
+      "workspaceAliasVersion": "4.0.0"
+    },
+    {
+      "package": "node-html-parser",
+      "quarantinedVersion": "6.1.13",
+      "workspaceAliasVersion": "6.1.13"
+    },
+    {
+      "package": "tiny-inflate",
+      "quarantinedVersion": "1.0.3",
+      "workspaceAliasVersion": "1.0.3"
+    },
+    {
+      "package": "micromark-util-symbol",
+      "quarantinedVersion": "2.0.1",
+      "workspaceAliasVersion": "2.0.1"
+    },
+    {
+      "package": "mime-db",
+      "quarantinedVersion": "1.54.0",
+      "workspaceAliasVersion": "1.54.0"
+    },
+    {
+      "package": "domutils",
+      "quarantinedVersion": "3.2.2",
+      "workspaceAliasVersion": "3.2.2"
+    },
+    {
+      "package": "argparse",
+      "quarantinedVersion": "2.0.1",
+      "workspaceAliasVersion": "2.0.1"
+    },
+    {
+      "package": "nth-check",
+      "quarantinedVersion": "2.1.1",
+      "workspaceAliasVersion": "2.1.1"
+    },
+    {
+      "package": "pg-int8",
+      "quarantinedVersion": "1.0.1",
+      "workspaceAliasVersion": "1.0.1"
+    },
+    {
+      "package": "find-proc",
+      "quarantinedVersion": "0.2.0",
+      "workspaceAliasVersion": "0.2.0"
+    },
+    {
+      "package": "commander",
+      "quarantinedVersion": "11.1.0",
+      "workspaceAliasVersion": "15.0.0"
+    },
+    {
+      "package": "etag",
+      "quarantinedVersion": "1.8.1",
+      "workspaceAliasVersion": "1.8.1"
+    },
+    {
+      "package": "oniguruma-to-es",
+      "quarantinedVersion": "4.3.6",
+      "workspaceAliasVersion": "4.3.6"
+    },
+    {
+      "package": "character-entities-legacy",
+      "quarantinedVersion": "3.0.0",
+      "workspaceAliasVersion": "3.0.0"
+    },
+    {
+      "package": "escalade",
+      "quarantinedVersion": "3.2.0",
+      "workspaceAliasVersion": "3.2.0"
+    },
+    {
+      "package": "regex-utilities",
+      "quarantinedVersion": "2.3.0",
+      "workspaceAliasVersion": "2.3.0"
+    },
+    {
+      "package": "server-destroy",
+      "quarantinedVersion": "1.0.1",
+      "workspaceAliasVersion": "1.0.1"
+    },
+    {
+      "package": "micromark-util-sanitize-uri",
+      "quarantinedVersion": "2.0.1",
+      "workspaceAliasVersion": "2.0.1"
+    },
+    {
+      "package": "setprototypeof",
+      "quarantinedVersion": "1.2.0",
+      "workspaceAliasVersion": "1.2.0"
+    },
+    {
+      "package": "domelementtype",
+      "quarantinedVersion": "2.3.0",
+      "workspaceAliasVersion": "2.3.0"
+    },
+    {
+      "package": "sonic-boom",
+      "quarantinedVersion": "4.2.1",
+      "workspaceAliasVersion": "4.2.1"
+    },
+    {
+      "package": "pg-boss",
+      "quarantinedVersion": "12.35.0",
+      "workspaceAliasVersion": "12.35.0"
+    },
+    {
+      "package": "html-void-elements",
+      "quarantinedVersion": "3.0.0",
+      "workspaceAliasVersion": "3.0.0"
+    },
+    {
+      "package": "smol-toml",
+      "quarantinedVersion": "1.9.0",
+      "workspaceAliasVersion": "1.9.0"
+    },
+    {
+      "package": "ms",
+      "quarantinedVersion": "2.1.3",
+      "workspaceAliasVersion": "2.1.3"
+    },
+    {
+      "package": "unstorage",
+      "quarantinedVersion": "1.17.5",
+      "workspaceAliasVersion": "1.17.5"
+    },
+    {
+      "package": "character-entities-html4",
+      "quarantinedVersion": "2.1.0",
+      "workspaceAliasVersion": "2.1.0"
+    },
+    {
+      "package": "p-limit",
+      "quarantinedVersion": "7.3.3",
+      "workspaceAliasVersion": "7.3.3"
+    },
+    {
+      "package": "stack-trace",
+      "quarantinedVersion": "1.0.0",
+      "workspaceAliasVersion": "1.0.0"
+    },
+    {
+      "package": "fast-string-width",
+      "quarantinedVersion": "3.0.2",
+      "workspaceAliasVersion": "3.0.2"
+    },
+    {
+      "package": "nanoid",
+      "quarantinedVersion": "3.3.19",
+      "workspaceAliasVersion": "3.3.19"
+    },
+    {
+      "package": "serialize-error",
+      "quarantinedVersion": "13.0.2",
+      "workspaceAliasVersion": "13.0.2"
+    },
+    {
+      "package": "common-ancestor-path",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "process-ancestry",
+      "quarantinedVersion": "0.1.0",
+      "workspaceAliasVersion": "0.1.0"
+    },
+    {
+      "package": "node-mock-http",
+      "quarantinedVersion": "1.0.5",
+      "workspaceAliasVersion": "1.0.5"
+    },
+    {
+      "package": "supports-color",
+      "quarantinedVersion": "7.2.0",
+      "workspaceAliasVersion": "7.2.0"
+    },
+    {
+      "package": "aria-query",
+      "quarantinedVersion": "5.3.2",
+      "workspaceAliasVersion": "5.3.2"
+    },
+    {
+      "package": "neotraverse",
+      "quarantinedVersion": "1.0.1",
+      "workspaceAliasVersion": "1.0.1"
+    },
+    {
+      "package": "vfile",
+      "quarantinedVersion": "6.0.3",
+      "workspaceAliasVersion": "6.0.3"
+    },
+    {
+      "package": "split2",
+      "quarantinedVersion": "4.2.0",
+      "workspaceAliasVersion": "4.2.0"
+    },
+    {
+      "package": "postcss",
+      "quarantinedVersion": "8.5.28",
+      "workspaceAliasVersion": "8.5.28"
+    },
+    {
+      "package": "satteri",
+      "quarantinedVersion": "0.10.5",
+      "workspaceAliasVersion": "0.10.5"
+    },
+    {
+      "package": "http-errors",
+      "quarantinedVersion": "2.0.1",
+      "workspaceAliasVersion": "2.0.1"
+    },
+    {
+      "package": "regex-recursion",
+      "quarantinedVersion": "6.0.2",
+      "workspaceAliasVersion": "6.0.2"
+    },
+    {
+      "package": "extend",
+      "quarantinedVersion": "3.0.2",
+      "workspaceAliasVersion": "3.0.2"
+    },
+    {
+      "package": "unist-util-is",
+      "quarantinedVersion": "6.0.1",
+      "workspaceAliasVersion": "6.0.1"
+    },
+    {
+      "package": "lossless-json",
+      "quarantinedVersion": "4.3.1",
+      "workspaceAliasVersion": "4.3.1"
+    },
+    {
+      "package": "mime-types",
+      "quarantinedVersion": "3.0.2",
+      "workspaceAliasVersion": "3.0.2"
+    },
+    {
+      "package": "vfile-message",
+      "quarantinedVersion": "4.0.3",
+      "workspaceAliasVersion": "4.0.3"
+    },
+    {
+      "package": "es-module-lexer",
+      "quarantinedVersion": "2.3.2",
+      "workspaceAliasVersion": "2.3.2"
+    },
+    {
+      "package": "cookie-es",
+      "quarantinedVersion": "1.2.3",
+      "workspaceAliasVersion": "1.2.3"
+    },
+    {
+      "package": "real-require",
+      "quarantinedVersion": "0.2.0",
+      "workspaceAliasVersion": "0.2.0"
+    },
+    {
+      "package": "stringify-entities",
+      "quarantinedVersion": "4.0.4",
+      "workspaceAliasVersion": "4.0.4"
+    },
+    {
+      "package": "baseline-browser-mapping",
+      "quarantinedVersion": "2.11.26",
+      "workspaceAliasVersion": "2.11.26"
+    },
+    {
+      "package": "diff",
+      "quarantinedVersion": "9.0.0",
+      "workspaceAliasVersion": "9.0.0"
+    },
+    {
+      "package": "oniguruma-parser",
+      "quarantinedVersion": "0.12.2",
+      "workspaceAliasVersion": "0.12.2"
+    },
+    {
+      "package": "micromark-util-character",
+      "quarantinedVersion": "2.1.1",
+      "workspaceAliasVersion": "2.1.1"
+    },
+    {
+      "package": "github-slugger",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "h3",
+      "quarantinedVersion": "1.15.11",
+      "workspaceAliasVersion": "1.15.11"
+    },
+    {
+      "package": "postgres-bytea",
+      "quarantinedVersion": "1.0.1",
+      "workspaceAliasVersion": "1.0.1"
+    },
+    {
+      "package": "regex",
+      "quarantinedVersion": "6.1.0",
+      "workspaceAliasVersion": "6.1.0"
+    },
+    {
+      "package": "kolorist",
+      "quarantinedVersion": "1.8.0",
+      "workspaceAliasVersion": "1.8.0"
+    },
+    {
+      "package": "unist-util-visit",
+      "quarantinedVersion": "5.1.0",
+      "workspaceAliasVersion": "5.1.0"
+    },
+    {
+      "package": "send",
+      "quarantinedVersion": "1.2.1",
+      "workspaceAliasVersion": "1.2.1"
+    },
+    {
+      "package": "obug",
+      "quarantinedVersion": "3.0.0",
+      "workspaceAliasVersion": "3.0.0"
+    },
+    {
+      "package": "electron-to-chromium",
+      "quarantinedVersion": "1.5.439",
+      "workspaceAliasVersion": "1.5.439"
+    },
+    {
+      "package": "ohash",
+      "quarantinedVersion": "2.0.12",
+      "workspaceAliasVersion": "2.0.12"
+    },
+    {
+      "package": "normalize-path",
+      "quarantinedVersion": "3.0.0",
+      "workspaceAliasVersion": "3.0.0"
+    },
+    {
+      "package": "entities",
+      "quarantinedVersion": "4.5.0",
+      "workspaceAliasVersion": "4.5.0"
+    },
+    {
+      "package": "isbot",
+      "quarantinedVersion": "5.2.2",
+      "workspaceAliasVersion": "5.2.2"
+    },
+    {
+      "package": "pg",
+      "quarantinedVersion": "8.23.0",
+      "workspaceAliasVersion": "8.23.0"
+    },
+    {
+      "package": "process-warning",
+      "quarantinedVersion": "5.1.0",
+      "workspaceAliasVersion": "5.1.0"
+    },
+    {
+      "package": "browserslist",
+      "quarantinedVersion": "4.29.2",
+      "workspaceAliasVersion": "4.29.2"
+    },
+    {
+      "package": "statuses",
+      "quarantinedVersion": "2.0.2",
+      "workspaceAliasVersion": "2.0.2"
+    },
+    {
+      "package": "svgo",
+      "quarantinedVersion": "4.1.0",
+      "workspaceAliasVersion": "4.1.0"
+    },
+    {
+      "package": "anymatch",
+      "quarantinedVersion": "3.1.3",
+      "workspaceAliasVersion": "3.1.3"
+    },
+    {
+      "package": "ccount",
+      "quarantinedVersion": "2.0.1",
+      "workspaceAliasVersion": "2.0.1"
+    },
+    {
+      "package": "xtend",
+      "quarantinedVersion": "4.0.2",
+      "workspaceAliasVersion": "4.0.2"
+    },
+    {
+      "package": "atomic-sleep",
+      "quarantinedVersion": "1.0.0",
+      "workspaceAliasVersion": "1.0.0"
+    },
+    {
+      "package": "zimmerframe",
+      "quarantinedVersion": "1.1.5",
+      "workspaceAliasVersion": "1.1.5"
+    },
+    {
+      "package": "crossws",
+      "quarantinedVersion": "0.3.5",
+      "workspaceAliasVersion": "0.3.5"
+    },
+    {
+      "package": "compare-versions",
+      "quarantinedVersion": "6.1.1",
+      "workspaceAliasVersion": "6.1.1"
+    },
+    {
+      "package": "source-map",
+      "quarantinedVersion": "0.7.6",
+      "workspaceAliasVersion": "0.7.6"
+    },
+    {
+      "package": "verkit",
+      "quarantinedVersion": "0.4.1",
+      "workspaceAliasVersion": "0.4.1"
+    },
+    {
+      "package": "quick-format-unescaped",
+      "quarantinedVersion": "4.0.4",
+      "workspaceAliasVersion": "4.0.4"
+    },
+    {
+      "package": "range-parser",
+      "quarantinedVersion": "1.3.0",
+      "workspaceAliasVersion": "1.3.0"
+    },
+    {
+      "package": "type-fest",
+      "quarantinedVersion": "5.10.0",
+      "workspaceAliasVersion": "5.10.0"
+    },
+    {
+      "package": "http-cache-semantics",
+      "quarantinedVersion": "4.2.0",
+      "workspaceAliasVersion": "4.2.0"
+    },
+    {
+      "package": "pgpass",
+      "quarantinedVersion": "1.0.5",
+      "workspaceAliasVersion": "1.0.5"
+    },
+    {
+      "package": "fresh",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "safe-stable-stringify",
+      "quarantinedVersion": "2.5.0",
+      "workspaceAliasVersion": "2.5.0"
+    },
+    {
+      "package": "bintrees",
+      "quarantinedVersion": "1.0.2",
+      "workspaceAliasVersion": "1.0.2"
+    },
+    {
+      "package": "domhandler",
+      "quarantinedVersion": "5.0.3",
+      "workspaceAliasVersion": "5.0.3"
+    },
+    {
+      "package": "tinyclip",
+      "quarantinedVersion": "1.0.3",
+      "workspaceAliasVersion": "1.0.3"
+    },
+    {
+      "package": "p-timeout",
+      "quarantinedVersion": "7.0.2",
+      "workspaceAliasVersion": "7.0.2"
+    },
+    {
+      "package": "hast-util-to-html",
+      "quarantinedVersion": "9.0.5",
+      "workspaceAliasVersion": "9.0.5"
+    },
+    {
+      "package": "undici-types",
+      "quarantinedVersion": "7.16.0",
+      "workspaceAliasVersion": "7.16.0"
+    },
+    {
+      "package": "boolbase",
+      "quarantinedVersion": "1.0.0",
+      "workspaceAliasVersion": "1.0.0"
+    },
+    {
+      "package": "cookie",
+      "quarantinedVersion": "2.0.1",
+      "workspaceAliasVersion": "2.0.1"
+    },
+    {
+      "package": "html-escaper",
+      "quarantinedVersion": "3.0.3",
+      "workspaceAliasVersion": "3.0.3"
+    },
+    {
+      "package": "csso",
+      "quarantinedVersion": "5.0.5",
+      "workspaceAliasVersion": "5.0.5"
+    },
+    {
+      "package": "fast-string-truncated-width",
+      "quarantinedVersion": "3.0.3",
+      "workspaceAliasVersion": "3.0.3"
+    },
+    {
+      "package": "uncrypto",
+      "quarantinedVersion": "0.1.3",
+      "workspaceAliasVersion": "0.1.3"
+    },
+    {
+      "package": "yocto-queue",
+      "quarantinedVersion": "1.2.2",
+      "workspaceAliasVersion": "1.2.2"
+    },
+    {
+      "package": "destr",
+      "quarantinedVersion": "2.0.5",
+      "workspaceAliasVersion": "2.0.5"
+    },
+    {
+      "package": "node-releases",
+      "quarantinedVersion": "2.0.57",
+      "workspaceAliasVersion": "2.0.57"
+    },
+    {
+      "package": "is-docker",
+      "quarantinedVersion": "4.0.0",
+      "workspaceAliasVersion": "4.0.0"
+    },
+    {
+      "package": "js-yaml",
+      "quarantinedVersion": "4.3.2",
+      "workspaceAliasVersion": "4.3.2"
+    },
+    {
+      "package": "unifont",
+      "quarantinedVersion": "0.7.5",
+      "workspaceAliasVersion": "0.7.5"
+    },
+    {
+      "package": "jsesc",
+      "quarantinedVersion": "3.1.0",
+      "workspaceAliasVersion": "3.1.0"
+    },
+    {
+      "package": "nlcst-to-string",
+      "quarantinedVersion": "4.0.0",
+      "workspaceAliasVersion": "4.0.0"
+    },
+    {
+      "package": "@shopify/shopify-api",
+      "quarantinedVersion": "15.0.0",
+      "workspaceAliasVersion": "15.0.0"
+    },
+    {
+      "package": "@shopify/admin-api-client",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "@shopify/storefront-api-client",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "@shopify/graphql-client",
+      "quarantinedVersion": "2.0.0",
+      "workspaceAliasVersion": "2.0.0"
+    },
+    {
+      "package": "@capsizecss/unpack",
+      "quarantinedVersion": "4.0.1",
+      "workspaceAliasVersion": "4.0.1"
+    },
+    {
+      "package": "@rollup/pluginutils",
+      "quarantinedVersion": "4.2.1",
+      "workspaceAliasVersion": "5.4.0"
+    },
+    {
+      "package": "@shikijs/primitive",
+      "quarantinedVersion": "4.4.3",
+      "workspaceAliasVersion": "4.4.3"
+    },
+    {
+      "package": "@shikijs/engine-oniguruma",
+      "quarantinedVersion": "4.4.3",
+      "workspaceAliasVersion": "4.4.3"
+    },
+    {
+      "package": "@shikijs/engine-javascript",
+      "quarantinedVersion": "4.4.3",
+      "workspaceAliasVersion": "4.4.3"
+    },
+    {
+      "package": "@shikijs/langs",
+      "quarantinedVersion": "4.4.3",
+      "workspaceAliasVersion": "4.4.3"
+    },
+    {
+      "package": "@shikijs/core",
+      "quarantinedVersion": "4.4.3",
+      "workspaceAliasVersion": "4.4.3"
+    },
+    {
+      "package": "@shikijs/themes",
+      "quarantinedVersion": "4.4.3",
+      "workspaceAliasVersion": "4.4.3"
+    },
+    {
+      "package": "@shikijs/types",
+      "quarantinedVersion": "4.4.3",
+      "workspaceAliasVersion": "4.4.3"
+    },
+    {
+      "package": "@shikijs/vscode-textmate",
+      "quarantinedVersion": "10.0.2",
+      "workspaceAliasVersion": "10.0.2"
+    },
+    {
+      "package": "@insignia/worker",
+      "quarantinedVersion": "0.0.0",
+      "workspaceAliasVersion": "0.0.0"
+    },
+    {
+      "package": "@insignia/observability",
+      "quarantinedVersion": "0.0.1",
+      "workspaceAliasVersion": "0.0.1"
+    },
+    {
+      "package": "@insignia/database",
+      "quarantinedVersion": "0.0.1",
+      "workspaceAliasVersion": "0.0.1"
+    },
+    {
+      "package": "@insignia/cart-authorization",
+      "quarantinedVersion": "0.0.1",
+      "workspaceAliasVersion": "0.0.1"
+    },
+    {
+      "package": "@insignia/contracts",
+      "quarantinedVersion": "0.0.1",
+      "workspaceAliasVersion": "0.0.1"
+    },
+    {
+      "package": "@insignia/visualizer",
+      "quarantinedVersion": "0.0.1",
+      "workspaceAliasVersion": "0.0.1"
+    },
+    {
+      "package": "@insignia/domain",
+      "quarantinedVersion": "0.0.1",
+      "workspaceAliasVersion": "0.0.1"
+    },
+    {
+      "package": "@insignia/application",
+      "quarantinedVersion": "0.0.1",
+      "workspaceAliasVersion": "0.0.1"
+    },
+    {
+      "package": "@insignia/shopify",
+      "quarantinedVersion": "0.0.1",
+      "workspaceAliasVersion": "0.0.1"
+    },
+    {
+      "package": "@babel/generator",
+      "quarantinedVersion": "7.29.8",
+      "workspaceAliasVersion": "7.29.8"
+    },
+    {
+      "package": "@babel/helper-globals",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/helper-string-parser",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/helper-compilation-targets",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/core",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/parser",
+      "quarantinedVersion": "7.29.9",
+      "workspaceAliasVersion": "7.29.9"
+    },
+    {
+      "package": "@babel/template",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/plugin-transform-react-jsx",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/helper-annotate-as-pure",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/compat-data",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/helper-module-imports",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/code-frame",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/helpers",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/types",
+      "quarantinedVersion": "7.29.8",
+      "workspaceAliasVersion": "7.29.8"
+    },
+    {
+      "package": "@babel/plugin-syntax-jsx",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/helper-plugin-utils",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/plugin-transform-react-jsx-development",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/traverse",
+      "quarantinedVersion": "7.29.8",
+      "workspaceAliasVersion": "7.29.8"
+    },
+    {
+      "package": "@babel/helper-validator-option",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/helper-module-transforms",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@babel/helper-validator-identifier",
+      "quarantinedVersion": "7.29.7",
+      "workspaceAliasVersion": "7.29.7"
+    },
+    {
+      "package": "@clack/core",
+      "quarantinedVersion": "1.5.1",
+      "workspaceAliasVersion": "1.5.1"
+    },
+    {
+      "package": "@clack/prompts",
+      "quarantinedVersion": "1.8.1",
+      "workspaceAliasVersion": "1.8.1"
+    },
+    {
+      "package": "@astrojs/preact",
+      "quarantinedVersion": "6.0.5",
+      "workspaceAliasVersion": "6.0.5"
+    },
+    {
+      "package": "@astrojs/internal-helpers",
+      "quarantinedVersion": "0.11.0",
+      "workspaceAliasVersion": "0.11.0"
+    },
+    {
+      "package": "@astrojs/compiler-binding",
+      "quarantinedVersion": "0.5.1",
+      "workspaceAliasVersion": "0.5.1"
+    },
+    {
+      "package": "@astrojs/compiler-rs",
+      "quarantinedVersion": "0.5.1",
+      "workspaceAliasVersion": "0.5.1"
+    },
+    {
+      "package": "@astrojs/node",
+      "quarantinedVersion": "11.1.6",
+      "workspaceAliasVersion": "11.1.6"
+    },
+    {
+      "package": "@astrojs/prism",
+      "quarantinedVersion": "4.0.2",
+      "workspaceAliasVersion": "4.0.2"
+    },
+    {
+      "package": "@astrojs/markdown-satteri",
+      "quarantinedVersion": "0.4.2",
+      "workspaceAliasVersion": "0.4.2"
+    },
+    {
+      "package": "@astrojs/telemetry",
+      "quarantinedVersion": "3.3.3",
+      "workspaceAliasVersion": "3.3.3"
+    },
+    {
+      "package": "@prefresh/babel-plugin",
+      "quarantinedVersion": "0.5.4",
+      "workspaceAliasVersion": "0.5.4"
+    },
+    {
+      "package": "@prefresh/vite",
+      "quarantinedVersion": "2.4.12",
+      "workspaceAliasVersion": "2.4.12"
+    },
+    {
+      "package": "@prefresh/core",
+      "quarantinedVersion": "1.5.11",
+      "workspaceAliasVersion": "1.5.11"
+    },
+    {
+      "package": "@prefresh/utils",
+      "quarantinedVersion": "1.2.1",
+      "workspaceAliasVersion": "1.2.1"
+    },
+    {
+      "package": "@opentelemetry/api",
+      "quarantinedVersion": "1.9.1",
+      "workspaceAliasVersion": "1.9.1"
+    },
+    {
+      "package": "@oslojs/encoding",
+      "quarantinedVersion": "1.1.0",
+      "workspaceAliasVersion": "1.1.0"
+    },
+    {
+      "package": "@pinojs/redact",
+      "quarantinedVersion": "0.4.0",
+      "workspaceAliasVersion": "0.4.0"
+    },
+    {
+      "package": "@noble/hashes",
+      "quarantinedVersion": "2.4.0",
+      "workspaceAliasVersion": "2.4.0"
+    },
+    {
+      "package": "@noble/curves",
+      "quarantinedVersion": "2.4.0",
+      "workspaceAliasVersion": "2.4.0"
+    },
+    {
+      "package": "@ungap/structured-clone",
+      "quarantinedVersion": "1.4.0",
+      "workspaceAliasVersion": "1.4.0"
+    },
+    {
+      "package": "@jridgewell/remapping",
+      "quarantinedVersion": "2.3.5",
+      "workspaceAliasVersion": "2.3.5"
+    },
+    {
+      "package": "@jridgewell/gen-mapping",
+      "quarantinedVersion": "0.3.13",
+      "workspaceAliasVersion": "0.3.13"
+    },
+    {
+      "package": "@jridgewell/resolve-uri",
+      "quarantinedVersion": "3.1.2",
+      "workspaceAliasVersion": "3.1.2"
+    },
+    {
+      "package": "@jridgewell/trace-mapping",
+      "quarantinedVersion": "0.3.31",
+      "workspaceAliasVersion": "0.3.31"
+    },
+    {
+      "package": "@jridgewell/sourcemap-codec",
+      "quarantinedVersion": "1.6.0",
+      "workspaceAliasVersion": "1.6.0"
+    },
+    {
+      "package": "@rolldown/pluginutils",
+      "quarantinedVersion": "1.0.1",
+      "workspaceAliasVersion": "1.0.1"
+    },
+    {
+      "package": "@oxc-project/types",
+      "quarantinedVersion": "0.151.0",
+      "workspaceAliasVersion": "0.151.0"
+    },
+    {
+      "package": "@types/mdast",
+      "quarantinedVersion": "4.0.4",
+      "workspaceAliasVersion": "4.0.4"
+    },
+    {
+      "package": "@types/nlcst",
+      "quarantinedVersion": "2.0.3",
+      "workspaceAliasVersion": "2.0.3"
+    },
+    {
+      "package": "@types/estree-jsx",
+      "quarantinedVersion": "1.0.5",
+      "workspaceAliasVersion": "1.0.5"
+    },
+    {
+      "package": "@types/estree",
+      "quarantinedVersion": "1.0.9",
+      "workspaceAliasVersion": "1.0.9"
+    },
+    {
+      "package": "@types/unist",
+      "quarantinedVersion": "3.0.3",
+      "workspaceAliasVersion": "3.0.3"
+    },
+    {
+      "package": "@types/hast",
+      "quarantinedVersion": "3.0.5",
+      "workspaceAliasVersion": "3.0.5"
+    },
+    {
+      "package": "@preact/preset-vite",
+      "quarantinedVersion": "2.10.6",
+      "workspaceAliasVersion": "2.10.6"
+    },
+    {
+      "package": "@preact/signals",
+      "quarantinedVersion": "2.11.2",
+      "workspaceAliasVersion": "2.11.2"
+    },
+    {
+      "package": "@preact/signals-core",
+      "quarantinedVersion": "1.14.4",
+      "workspaceAliasVersion": "1.14.4"
+    },
+    {
+      "package": "@img/colour",
+      "quarantinedVersion": "1.1.0",
+      "workspaceAliasVersion": "1.1.0"
+    }
+  ],
+  "rootPackageAndLockfileChanges": 0,
+  "providerRequests": 0
+}

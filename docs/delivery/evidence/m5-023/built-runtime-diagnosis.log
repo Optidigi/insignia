@@ -1,0 +1,71 @@
+14:05:46 [@astrojs/node] Server listening on http://127.0.0.1:37649
+There was an uncaught error in the middle of the stream while rendering /admin/products. TypeError: Cannot read properties of undefined (reading '__H')
+    at s (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/preact@10.29.8_preact-render-to-string@6.7.0/node_modules/preact/hooks/dist/hooks.mjs:1:164)
+    at y (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/preact@10.29.8_preact-render-to-string@6.7.0/node_modules/preact/hooks/dist/hooks.mjs:1:293)
+    at d (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/preact@10.29.8_preact-render-to-string@6.7.0/node_modules/preact/hooks/dist/hooks.mjs:1:262)
+    at Object.MerchantConfigEditor (file:///home/serveradmin/insignia-m5-023-worktree/apps/web/dist/server/chunks/admin-editor_BvcMg2J8.mjs:258:30)
+    at R (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/preact-render-to-string/dist/index.mjs:1:6044)
+    at file:///home/serveradmin/insignia-m5-023-worktree/node_modules/preact-render-to-string/dist/index.mjs:1:3482
+    at T (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/preact-render-to-string/dist/index.mjs:1:3219)
+    at Z (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/preact-render-to-string/dist/index.mjs:1:3446)
+    at Object.renderToStaticMarkup (file:///home/serveradmin/insignia-m5-023-worktree/apps/web/dist/server/entry.mjs:278:15)
+    at renderFrameworkComponent (file:///home/serveradmin/insignia-m5-023-worktree/apps/web/dist/server/chunks/server_D4rRvVGK.mjs:2154:62)
+
+✖ complete built server reproduces CLI development-mode CSP rejection (302.387159ms)
+14:05:46 [@astrojs/node] Server listening on http://127.0.0.1:44997
+
+✖ actual launcher runtime preparation admits built hydration without widening CSP (260.583693ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 0
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 686.279105
+
+✖ failing tests:
+
+test at ../insignia-m5-023-handoff/built-runtime-diagnosis.mjs:47:1
+✖ complete built server reproduces CLI development-mode CSP rejection (302.387159ms)
+  TypeError: terminated
+      at Fetch.onAborted (node:internal/deps/undici/undici:13877:53)
+      at Fetch.emit (node:events:514:28)
+      at Fetch.terminate (node:internal/deps/undici/undici:13007:14)
+      at Object.onError (node:internal/deps/undici/undici:14011:38)
+      at Request.onError (node:internal/deps/undici/undici:3121:31)
+      at Object.errorRequest (node:internal/deps/undici/undici:1942:17)
+      at Socket.onHttpSocketClose (node:internal/deps/undici/undici:7860:14)
+      at Socket.emit (node:events:526:24)
+      at TCP.<anonymous> (node:net:362:12) {
+    [cause]: Error [SocketError]: other side closed
+        at Socket.onHttpSocketEnd (node:internal/deps/undici/undici:7833:26)
+        at Socket.emit (node:events:526:24)
+        at endReadableNT (node:internal/streams/readable:1764:12)
+        at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+      code: 'UND_ERR_SOCKET',
+      socket: { localAddress: '127.0.0.1', localPort: 38660, remoteAddress: '127.0.0.1', remotePort: 37649, remoteFamily: 'IPv4', timeout: undefined, bytesWritten: 184, bytesRead: 654 }
+    }
+  }
+
+test at ../insignia-m5-023-handoff/built-runtime-diagnosis.mjs:51:1
+✖ actual launcher runtime preparation admits built hydration without widening CSP (260.583693ms)
+  TypeError: terminated
+      at Fetch.onAborted (node:internal/deps/undici/undici:13877:53)
+      at Fetch.emit (node:events:514:28)
+      at Fetch.terminate (node:internal/deps/undici/undici:13007:14)
+      at Object.onError (node:internal/deps/undici/undici:14011:38)
+      at Request.onError (node:internal/deps/undici/undici:3121:31)
+      at Object.errorRequest (node:internal/deps/undici/undici:1942:17)
+      at Socket.onHttpSocketClose (node:internal/deps/undici/undici:7860:14)
+      at Socket.emit (node:events:526:24)
+      at TCP.<anonymous> (node:net:362:12) {
+    [cause]: Error [SocketError]: other side closed
+        at Socket.onHttpSocketEnd (node:internal/deps/undici/undici:7833:26)
+        at Socket.emit (node:events:526:24)
+        at endReadableNT (node:internal/streams/readable:1764:12)
+        at process.processTicksAndRejections (node:internal/process/task_queues:90:21) {
+      code: 'UND_ERR_SOCKET',
+      socket: { localAddress: '127.0.0.1', localPort: 39924, remoteAddress: '127.0.0.1', remotePort: 44997, remoteFamily: 'IPv4', timeout: undefined, bytesWritten: 184, bytesRead: 654 }
+    }
+  }

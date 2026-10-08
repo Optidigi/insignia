@@ -1,0 +1,23 @@
+...E.E
+======================================================================
+ERROR: test_inherited_compose_override_cannot_select_unreviewed_image (__main__.GuardControls.test_inherited_compose_override_cannot_select_unreviewed_image)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 75, in test_inherited_compose_override_cannot_select_unreviewed_image
+    operator.compose_web('sha256:' + '1' * 64)
+    ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'host_operator' has no attribute 'compose_web'
+
+======================================================================
+ERROR: test_resolved_compose_drift_stops_before_up (__main__.GuardControls.test_resolved_compose_drift_stops_before_up)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 85, in test_resolved_compose_drift_stops_before_up
+    operator.compose_web('sha256:' + '1' * 64)
+    ^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'host_operator' has no attribute 'compose_web'
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.003s
+
+FAILED (errors=2)

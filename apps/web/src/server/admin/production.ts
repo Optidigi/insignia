@@ -289,6 +289,7 @@ export function createProductionAdminServices(
             const expected = await core.tenants.getManagedInstallationState(current.shop).catch(() => {
               throw new AdminInstallationReconciliationError('TENANT_READ_FAILED');
             });
+            const observationStartedAt = new Date();
             const provider = await shopify.readInstallation(online);
             diagnostic('INSTALLATION_PROVIDER_READ_SUCCEEDED');
             merchantTimezone = provider.ianaTimezone;
@@ -312,7 +313,14 @@ export function createProductionAdminServices(
               };
             }
             const installed = await core.transactions
-              .run((tx) => core.tenants.ensureManagedInstallation(tx, { ...identity, expected, confirmation }))
+              .run((tx) =>
+                core.tenants.ensureManagedInstallation(tx, {
+                  ...identity,
+                  expected,
+                  confirmation,
+                  observationStartedAt,
+                }),
+              )
               .catch((error: unknown) => {
                 const stages = {
                   identity_mismatch: 'INSTALLATION_BOOTSTRAP_IDENTITY_MISMATCH',

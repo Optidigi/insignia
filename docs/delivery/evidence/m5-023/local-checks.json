@@ -1,15 +1,15 @@
 {
   "root": {
     "exit": 0,
-    "log": "full-root2.log",
-    "webTests": 85,
+    "log": "full-root-clean-install.log",
+    "webTests": 86,
     "webSkipped": 0
   },
   "postgres18": {
     "version": "18.6",
     "exit": 0,
-    "tests": 186,
-    "log": "full-pg18.log"
+    "tests": 192,
+    "log": "full-pg18-review-fixes.log"
   },
   "concurrency": {
     "firstSessions": 100,
@@ -18,17 +18,17 @@
     "log": "unique-controls-green.log"
   },
   "productionSDKPGHTTP": {
-    "tests": 10,
-    "log": "readiness-controls.log"
+    "tests": 11,
+    "log": "production-uninstall-green.log"
   },
   "publicationStress": {
     "pass": 100,
     "total": 100,
-    "log": "publication-stress100-r4.log"
+    "log": "publication-stress-review-fixes.log"
   },
   "renderer": {
     "expectedNegative": true,
-    "log": "renderer-control-r3.log"
+    "log": "renderer-review-fixes2.log"
   },
   "roles": {
     "genuineLogins": true,
@@ -37,12 +37,12 @@
     "log": "roles-rehearsal3.log"
   },
   "hostFailureControls": {
-    "tests": 4,
-    "log": "host-operator-controls2.log"
+    "tests": 9,
+    "log": "lifecycle-controls-current.log"
   },
   "portableRuntime": {
     "pass": true,
-    "log": "portable-runtime-r3.json"
+    "log": "portable-runtime-review-fixes.json"
   },
   "productionOperations": 0,
   "shopifyRequests": 0,
@@ -52,5 +52,11 @@
     "dbConnections": 0,
     "writes": 0,
     "log": "release-append-controls2.log"
+  },
+  "lifecycleRights": {
+    "actualPostgreSQL": true,
+    "partialTableAndSequenceRightsRejected": true,
+    "localDDLTransactionRolledBack": true,
+    "log": "lifecycle-privileges-control2.log"
   }
 }

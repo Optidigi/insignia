@@ -1,0 +1,13 @@
+CHANGES_REQUESTED
+
+PR54 reviewed at head `8112726ba1f5e150a151f56249b0d5b914e24f2d`, base/effective merge-base `66983f7a959c67cea8e03e79e16761613b73a9b2`, tree `4f9fa7ee4ab0729c1aa33bb7695461989ac2e551`. Refs match; working tree is clean.
+
+Two material Spec/security findings:
+
+- **P1 — Bootstrap can discard a current uninstall.** [tenant.ts:156](/home/serveradmin/insignia-m5-023-worktree/packages/database/src/repositories/tenant.ts:156) creates the generation after provider IO, with `activated_at` defaulting to transaction time. Counterexample: provider returns installation A; A is uninstalled and its signed delivery arrives; bootstrap then creates generation1. [shopify-webhooks.ts:169](/home/serveradmin/insignia-m5-023-worktree/packages/database/src/repositories/shopify-webhooks.ts:169) classifies that delivery as stale because it predates local activation, leaving A active. This violates uninstall fencing. Fence bootstrap against uninstalls overlapping its trusted provider observation, while preserving rejection of genuinely older deliveries. Add a barrier regression for this ordering; existing preinstall-uninstall tests do not cover it.
+
+- **P1 — The deployment plan lacks an uninstall processor.** [M5-023-PRODUCTION-PLAN.md:8](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/M5-023-PRODUCTION-PLAN.md:8) retains the web/database topology and deploys only web. Webhook HTTP only enqueues; deactivation occurs in [worker/handlers.ts:35](/home/serveradmin/insignia-m5-023-worktree/apps/worker/src/handlers.ts:35). Consequently, a successfully bootstrapped installation has no configured consumer to deactivate it after uninstall. Queue/schema privileges and webhook-secret readiness are also unqualified by this plan. Provide and qualify an authorized durable uninstall-processing path before freezing live bootstrap, or record this technical blocker explicitly. Local uninstall processing requires no offline Admin credential.
+
+Static coverage included tenant/facade/transaction/migrations, uninstall/credentials, production auth/HTTP/actor/calendar/observability/readiness, Function/public-config/release authority, v1/v2/v3 activation/recovery, offline consumers, operators/roles/Dockerfile and historical host references. No additional material Standards or smell finding.
+
+Parent evidence records PG186/186, root/web85, concurrency/publication stress, role/append guards and portable routes. I executed none of those checks and preserved the reported failures. Natural exact-head CI remains pending; no frozen gate, live outcome, principal approval or merge is granted.

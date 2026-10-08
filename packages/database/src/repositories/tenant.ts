@@ -17,6 +17,8 @@ export type ManagedInstallationIdentity = {
 };
 export type ManagedInstallationInput = ManagedInstallationIdentity & {
   expected: ManagedInstallationState | null;
+  /** Trusted server time immediately before provider IO; never request input. */
+  observationStartedAt: Date;
   /** A second matching provider observation; never a browser assertion. */
   confirmation?: ManagedInstallationIdentity;
 };
@@ -125,11 +127,15 @@ export function createTenantRepository(executor: DatabaseExecutor) {
       input: ManagedInstallationInput,
     ): Promise<ManagedInstallationResult> {
       if (
+        !(input.observationStartedAt instanceof Date) ||
+        !Number.isFinite(input.observationStartedAt.getTime()) ||
         !/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(input.shopDomain) ||
         !/^[1-9][0-9]{0,19}$/.test(input.shopifyShopId) ||
         !/^gid:\/\/shopify\/AppInstallation\/[1-9][0-9]*$/.test(input.externalInstallationId)
       )
         throw new ManagedInstallationError('identity_mismatch');
+      const time = await sql<{ now: Date }>`SELECT clock_timestamp() AS now`.execute(transaction);
+      if (input.observationStartedAt > time.rows[0]!.now) throw new ManagedInstallationError('state_changed');
       // Shared provider/domain locks serialize both first creation and alias races.
       for (const key of [
         `insignia:managed-install:domain:${input.shopDomain}`,
@@ -158,6 +164,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
             shopDomain: input.shopDomain,
             shopifyShopId: input.shopifyShopId,
             externalInstallationId: input.externalInstallationId,
+            activatedAt: input.observationStartedAt,
           });
           await sql`RELEASE SAVEPOINT managed_installation_create`.execute(transaction);
           const state = await managedInstallationState(transaction, input.shopDomain);
@@ -222,6 +229,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
         transaction,
         state.shopId,
         input.externalInstallationId,
+        input.observationStartedAt,
       );
       const installed = await managedInstallationState(transaction, input.shopDomain);
       if (!installed) throw new ManagedInstallationError('state_changed');
@@ -298,7 +306,13 @@ export function createTenantRepository(executor: DatabaseExecutor) {
 
     async createShop(
       transaction: Transaction<Database>,
-      input: { shopId: string; shopDomain: string; shopifyShopId?: string; externalInstallationId?: string },
+      input: {
+        shopId: string;
+        shopDomain: string;
+        shopifyShopId?: string;
+        externalInstallationId?: string;
+        activatedAt?: Date;
+      },
     ): Promise<ShopRecord> {
       const domain = input.shopDomain.trim().toLowerCase();
       if (input.shopifyShopId !== undefined && !/^[1-9][0-9]{0,19}$/.test(input.shopifyShopId))
@@ -318,6 +332,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
           shop_id: input.shopId,
           generation: '1',
           external_installation_id: input.externalInstallationId ?? null,
+          ...(input.activatedAt ? { activated_at: input.activatedAt } : {}),
           deactivated_at: null,
         })
         .execute();
@@ -334,6 +349,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
       transaction: Transaction<Database>,
       shopId: string,
       externalInstallationId?: string,
+      activatedAt?: Date,
     ): Promise<string> {
       const shop = await transaction
         .selectFrom('shops')
@@ -368,6 +384,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
           shop_id: shopId,
           generation,
           external_installation_id: externalInstallationId ?? null,
+          ...(activatedAt ? { activated_at: activatedAt } : {}),
           deactivated_at: null,
         })
         .execute();

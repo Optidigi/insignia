@@ -14,6 +14,7 @@ import secrets
 import subprocess
 import sys
 import time
+from urllib.parse import urlsplit
 
 ROOT = Path('/home/serveradmin/insignia-m5-023-run')
 APP = Path('/home/serveradmin/insignia-rewrite-m5-019')
@@ -51,14 +52,33 @@ def exclusive(path, data):
     syncdir(path.parent)
 
 
-def run(args, stdin=None, timeout=60):
-    result = subprocess.run(args, input=stdin, capture_output=True, timeout=timeout)
+def run(args, stdin=None, timeout=60, env=None):
+    environment = env if env is not None else {key: value for key, value in os.environ.items()
+        if not key.startswith(('DOCKER_', 'COMPOSE_'))}
+    command = ['docker', '--context', 'default', *args[1:]] if args[0] == 'docker' and args[1] != '--context' else args
+    result = subprocess.run(command, input=stdin, capture_output=True, timeout=timeout, env=environment)
     require(result.returncode == 0, 'Host command failed; stop without retry')
     return result.stdout
 
 
 def inspect(names):
     return json.loads(run(['docker', 'inspect', *names]))
+
+
+def compose_web(image):
+    require(re.fullmatch(r'sha256:[0-9a-f]{64}', image) is not None, 'Reviewed image identity invalid')
+    environment = {key: value for key, value in os.environ.items()
+                   if not key.startswith(('INSIGNIA_', 'COMPOSE_', 'DOCKER_'))}
+    environment.update({'INSIGNIA_WEB_IMAGE': image, 'INSIGNIA_ROUTE_ENABLED': 'true'})
+    command = ['docker', '--context', 'default', 'compose', '--project-name', 'insignia-rewrite-m5-019',
+               '--project-directory', str(APP), '--env-file', str(APP / '.env'), '-f', str(APP / 'compose.yaml')]
+    resolved = json.loads(run([*command, 'config', '--format', 'json'], env=environment))
+    web = resolved.get('services', {}).get('web', {})
+    require(web.get('image') == image and web.get('environment', {}).get('APP_URL') == ORIGIN
+            and web.get('labels', {}).get('traefik.enable') == 'true'
+            and web.get('labels', {}).get('traefik.http.routers.insignia-canonical-m5-019r.rule')
+            == 'Host(`insignia-app.optidigi.nl`)', 'Resolved Compose web identity drift')
+    run([*command, 'up', '-d', '--no-deps', '--no-build', '--pull', 'never', 'web'], timeout=120, env=environment)
 
 
 def identities(containers):
@@ -91,7 +111,67 @@ def prestate():
     return current
 
 
+def lifecycle():
+    """Read-only qualification; never install/start a missing worker or seed queue state."""
+    web = prestate()[0]
+    environment = dict(value.split('=', 1) for value in web['Config']['Env'])
+    expected = json.loads((ROOT / 'expected-inputs.json').read_text())
+    target = urlsplit(environment.get('DATABASE_URL', ''))
+    require(target.hostname is not None and target.path, 'Runtime database identity unavailable')
+    ids = run(['docker', 'ps', '-q']).decode().split()
+    require(len(ids) <= 200, 'Container inventory exceeds fixed bound')
+    containers = inspect(ids) if ids else []
+    candidates = []
+    for container in containers:
+        command = container['Config'].get('Cmd') or []
+        if len(command) < 2 or Path(command[0]).name != 'node' or Path(command[1]).name != 'main.js':
+            continue
+        values = dict(value.split('=', 1) for value in container['Config'].get('Env', []))
+        address = urlsplit(values.get('DATABASE_URL', ''))
+        if (address.hostname, address.port, address.path) != (target.hostname, target.port, target.path):
+            continue
+        candidates.append((container, command, values))
+    checks = {'exactWorkerArtifact': False, 'workerReady': False, 'workerKeyConfigurationPresent': False,
+              'webhookSecretMatchesApp': bool(environment.get('SHOPIFY_WEBHOOK_SECRET'))
+                and environment.get('SHOPIFY_WEBHOOK_SECRET') == environment.get('SHOPIFY_CLIENT_SECRET')}
+    if len(candidates) == 1:
+        worker, command, values = candidates[0]
+        entry = Path(command[1])
+        hashes = run(['docker', 'exec', worker['Id'], 'sha256sum', str(entry), str(entry.with_name('handlers.js'))]).decode().splitlines()
+        checks['exactWorkerArtifact'] = len(hashes) == 2 and [line.split()[0] for line in hashes] == [expected['workerEntrySha256'], expected['workerHandlersSha256']]
+        checks['workerKeyConfigurationPresent'] = all(values.get(key) for key in
+            ['INSIGNIA_CREDENTIAL_KEY_ID', 'INSIGNIA_CREDENTIAL_KEY_BASE64', 'SHOPIFY_CLIENT_ID', 'SHOPIFY_CLIENT_SECRET'])
+        checks['workerKeyConfigurationPresent'] = bool(checks['workerKeyConfigurationPresent']
+            and values.get('SHOPIFY_CLIENT_ID') == environment.get('SHOPIFY_CLIENT_ID'))
+        port = next((arg.split('=', 1)[1] for arg in command[2:] if arg.startswith('--port=')), '4301')
+        require(port.isdigit() and 0 < int(port) <= 65535, 'Worker health port invalid')
+        if checks['exactWorkerArtifact']:
+            probe = "fetch('http://127.0.0.1:" + port + "/ready').then(async r=>console.log(JSON.stringify({status:r.status,body:await r.json()}))).catch(()=>console.log(JSON.stringify({status:503})))"
+            health = json.loads(run(['docker', 'exec', worker['Id'], 'node', '-e', probe], timeout=10))
+            checks['workerReady'] = health.get('status') == 200 and health.get('body', {}).get('durableReady') is True
+    rights = json.loads(sql("""BEGIN READ ONLY; SELECT json_build_object(
+      'queueSchemaPresent', EXISTS(SELECT 1 FROM pg_namespace WHERE nspname='pgboss'),
+      'queueRuntimeUsable',COALESCE((SELECT has_schema_privilege('insignia_runtime',oid,'USAGE') FROM pg_namespace WHERE nspname='pgboss'),false)
+        AND EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='pgboss' AND c.relkind IN ('r','p'))
+        AND NOT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+          WHERE n.nspname='pgboss' AND c.relkind IN ('r','p') AND EXISTS(SELECT 1 FROM unnest(ARRAY['SELECT','INSERT','UPDATE','DELETE']) AS privilege(name) WHERE NOT CASE WHEN n.nspname='pgboss' AND c.relkind IN ('r','p') THEN has_table_privilege('insignia_runtime',c.oid,privilege.name) ELSE true END))
+        AND NOT EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='pgboss' AND c.relkind='S' AND NOT CASE WHEN n.nspname='pgboss' AND c.relkind='S' THEN has_sequence_privilege('insignia_runtime',c.oid,'USAGE') ELSE true END)
+        AND NOT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='pgboss' AND NOT has_function_privilege('insignia_runtime',p.oid,'EXECUTE'))); COMMIT;"""))
+    checks.update(rights)
+    passed = len(candidates) == 1 and all(checks.values())
+    finish('lifecycle', {'classification': 'PASS_UNINSTALL_PROCESSOR' if passed else 'BLOCKED_UNINSTALL_PROCESSOR_READINESS',
+                        'checks': checks, 'candidateCount': len(candidates), 'providerRequests': 0,
+                        'databaseWrites': 0, 'workerDeployments': 0, 'runtimeEnvironmentValuesLogged': False})
+
+
+def require_lifecycle():
+    receipt = ROOT / 'lifecycle-settled.json'
+    require(receipt.is_file() and json.loads(receipt.read_text()).get('classification') == 'PASS_UNINSTALL_PROCESSOR',
+            'Uninstall processor readiness unqualified; no provisioning/deployment')
+
+
 def backup():
+    require_lifecycle()
     current = prestate()
     require(current[0]['Image'] == OLD_IMAGE, 'Entry image drift')
     event('backup-reserved', {'oldImage': OLD_IMAGE, 'unrelatedIdentities': identities(current[1:])})
@@ -117,6 +197,7 @@ def backup():
 
 
 def provision():
+    require_lifecycle()
     require((ROOT / 'backup-settled.json').is_file(), 'Backup receipt missing')
     require(prestate()[0]['Image'] == OLD_IMAGE, 'Image drift before provisioning')
     expected = json.loads((ROOT / 'expected-inputs.json').read_text())
@@ -154,6 +235,7 @@ def provision():
 
 
 def deploy():
+    require_lifecycle()
     require((ROOT / 'provision-settled.json').is_file(), 'Provisioning receipt missing')
     expected = json.loads((ROOT / 'expected-inputs.json').read_text())
     current = prestate()
@@ -191,8 +273,7 @@ def deploy():
     exclusive(temporary, ('\n'.join(lines) + '\n').encode())
     os.replace(temporary, APP / '.env')
     syncdir(APP)
-    run(['docker', 'compose', '--project-directory', str(APP), '-f', str(APP / 'compose.yaml'),
-         'up', '-d', '--no-deps', '--no-build', '--pull', 'never', 'web'], timeout=120)
+    compose_web(image['Id'])
     for _ in range(45):
         web = inspect([WEB])[0]
         if web['State'].get('Health', {}).get('Status') == 'healthy':
@@ -264,8 +345,9 @@ def append():
     action = 'trusted-append-' + payload['recordId']
     event(action + '-reserved', {'recordId': payload['recordId'], 'publicInputSha256': sha(raw)})
     payload['operator'] = json.loads((ROOT / 'release-operator-credential.json').read_text())
-    response = subprocess.run(['docker', 'exec', '-i', WEB, 'node', '--input-type=module', '-e', source.decode()],
-                              input=json.dumps(payload).encode(), capture_output=True, timeout=30)
+    response = subprocess.run(['docker', '--context', 'default', 'exec', '-i', WEB, 'node', '--input-type=module', '-e', source.decode()],
+                              input=json.dumps(payload).encode(), capture_output=True, timeout=30,
+                              env={key: value for key, value in os.environ.items() if not key.startswith(('DOCKER_', 'COMPOSE_'))})
     require(len(response.stdout) <= 32_000, 'Append result too large; settlement unknown')
     result = json.loads(response.stdout)
     require(result.get('recordId') == payload['recordId'], 'Append result identity mismatch')
@@ -277,7 +359,7 @@ def append():
         sys.exit(1)
 
 
-actions = {'backup': backup, 'provision': provision, 'deploy': deploy, 'restart': restart, 'state': state, 'append': append}
+actions = {'lifecycle': lifecycle, 'backup': backup, 'provision': provision, 'deploy': deploy, 'restart': restart, 'state': state, 'append': append}
 if __name__ == '__main__':
     try:
         require(len(sys.argv) == 2 and sys.argv[1] in actions, 'Unknown host action')
