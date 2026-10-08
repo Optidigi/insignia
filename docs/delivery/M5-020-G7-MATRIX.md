@@ -1,6 +1,6 @@
 # M5-020 — complete G7 matrix
 
-Overall: NOT_RUN_PRE_RELEASE_GATE. This current matrix enumerates every accepted M5-018 criterion without carrying historical source-only passes forward as real embedded acceptance. Candidate remains inactive in the fresh CLI observation. Fresh native configuration/installation proof is pending; no release, fixture or real admin write has run. [Accepted source/control evidence](M5-018-G7-MATRIX.md) remains historical. Current source checks/CI belong in the final exact-head packet.
+Overall: NOT_RUN_PRE_RELEASE_GATE. This current matrix enumerates every accepted M5-018 criterion without carrying historical source-only passes forward as real embedded acceptance. Candidate remains inactive in the fresh CLI observation. Fresh owner-native candidate configuration and exact designated-installation presence match; corrected-source reviews/CI and full freeze are pending; no release, fixture or real admin write has run. [Accepted source/control evidence](M5-018-G7-MATRIX.md) remains historical. Current source checks/CI belong in the final exact-head packet.
 
 | Criterion | M5-020 real observation | Boundary |
 |---|---|---|
@@ -54,4 +54,4 @@ Overall: NOT_RUN_PRE_RELEASE_GATE. This current matrix enumerates every accepted
 | Refresh/reopen exact effective revision | NOT_RUN |
 | Status-only archive / exact effectively-unpublished final read | NOT_APPLICABLE_NO_FIXTURE_CREATED |
 
-No M5/G7 PASS, production activation, release-bound trust, current grants/staff or Function enablement is inferred from host health, CLI version existence or old owner installation presence. Missing provisioning is a stop condition, not permission to implement/provision it. No M7 cart work, M6 or merchant rollout.
+No M5/G7 PASS, production activation, release-bound trust, current grants/staff or Function enablement is inferred from host health, CLI version existence or fresh owner installation presence. Missing provisioning is a stop condition, not permission to implement/provision it. No M7 cart work, M6 or merchant rollout.

@@ -62,6 +62,41 @@ class ReleaseControls(unittest.TestCase):
                 self.assertEqual(op.digest(link), old_link)
                 self.assertNotEqual(op.digest(target), old_target)
 
+    def test_intermediate_unfrozen_link_between_frozen_targets_is_denied(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root, neutral, cli, context, dependencies = self.inventory_fixture(directory)
+            first, second = dependencies / 'A.js', dependencies / 'B.js'
+            first.write_text('first frozen executable')
+            second.write_text('second frozen executable')
+            middle = neutral / 'shared-link.js'
+            middle.symlink_to(first)
+            (cli / 'module.js').symlink_to(middle)
+            with patch.object(op, 'ROOT', root), patch.object(op, 'NEUTRAL', neutral), \
+                 patch.object(op, 'CLI_ROOT', cli), patch.object(op, 'CONTEXT', context), \
+                 patch.object(op, 'git', return_value='source.py'):
+                for target in [first, second]:
+                    middle.unlink();middle.symlink_to(target)
+                    with self.assertRaisesRegex(ValueError, 'input_symlink_hop_not_frozen'):
+                        op.required_files([])
+                # Directory-component escape, an allowed complete chain, and a cycle.
+                (cli / 'module.js').unlink()
+                middle.unlink();middle.symlink_to(dependencies, target_is_directory=True)
+                (cli / 'module.js').symlink_to(middle / 'A.js')
+                with self.assertRaisesRegex(ValueError, 'input_symlink_hop_not_frozen'):
+                    op.required_files([])
+                (cli / 'module.js').unlink()
+                middle.unlink()
+                allowed = dependencies / 'alias.js'
+                allowed.symlink_to('A.js')
+                (cli / 'module.js').symlink_to(allowed)
+                paths = op.required_files([])
+                self.assertIn(first, paths)
+                self.assertIn(allowed, paths)
+                allowed.unlink();allowed.symlink_to(cli / 'module.js')
+                with self.assertRaisesRegex(ValueError, 'input_symlink_unresolved'):
+                    op.required_files([])
+
+
 
     def test_prestate_rejects_new_active_or_candidate(self):
         rows = op.expected_versions()

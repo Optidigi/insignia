@@ -12,6 +12,7 @@ import signal
 import subprocess
 import sys
 import tomllib
+from collections import deque
 
 ROOT = Path('/home/serveradmin/insignia-m5-020-worktree')
 NEUTRAL = Path('/home/serveradmin/insignia-m5-020-handoff')
@@ -93,10 +94,7 @@ def validate_links(paths):
     for path in paths:
         if not path.is_symlink():
             continue
-        try:
-            target = path.resolve(strict=True)
-        except (OSError, RuntimeError):
-            raise ValueError('input_symlink_unresolved') from None
+        target = resolve_frozen_links(path, paths)
         if any(path.is_relative_to(root) for root in executable_roots):
             require(any(target.is_relative_to(root) for root in executable_roots),
                     'executable_symlink_outside_inventory_roots')
@@ -107,6 +105,36 @@ def validate_links(paths):
                         if p.is_file() or p.is_symlink()), 'executable_directory_target_not_frozen')
         else:
             require(target.is_relative_to(ROOT), 'source_symlink_escape')
+
+
+def resolve_frozen_links(path, paths):
+    """Resolve each component, binding every traversed link before following it."""
+    require(path.is_absolute(), 'input_path_not_absolute')
+    pending = deque(path.parts[1:])
+    current = Path('/')
+    hops = 0
+    while pending:
+        part = pending.popleft()
+        if part == '.':
+            continue
+        if part == '..':
+            current = current.parent
+            continue
+        candidate = current / part
+        if candidate.is_symlink():
+            require(candidate in paths, 'input_symlink_hop_not_frozen')
+            hops += 1
+            require(hops <= 40, 'input_symlink_unresolved')
+            target = Path(os.readlink(candidate))
+            if target.is_absolute():
+                current = Path('/')
+                pending.extendleft(reversed(target.parts[1:]))
+            else:
+                pending.extendleft(reversed(target.parts))
+        else:
+            require(candidate.exists(), 'input_symlink_unresolved')
+            current = candidate
+    return current
 
 
 def validate_context():
@@ -182,7 +210,7 @@ def validate_gate_data(g):
                 and r['url'] == 'https://github.com/Optidigi/insignia/actions/runs/' + str(r['databaseId'])
                 for r in ci), 'ci_not_exact_source_attempt_one_success')
     controls = json.loads((NEUTRAL / 'release-controls.json').read_text())
-    require(controls['exitCode'] == 0 and controls['tests'] == 11
+    require(controls['exitCode'] == 0 and controls['tests'] == 12
             and controls['operatorSha256'] == digest(ROOT / 'deployment/m5-020/release-existing.py')
             and controls['testSha256'] == digest(ROOT / 'deployment/m5-020/release-existing.test.py')
             and controls['logSha256'] == digest(NEUTRAL / 'release-controls-green.log'), 'offline_release_controls_not_bound')

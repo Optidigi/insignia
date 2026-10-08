@@ -1,8 +1,8 @@
 {
   "exitCode": 0,
-  "tests": 11,
-  "operatorSha256": "75e6b866f1d3773b37a957d9127aa84fe441cad91ae1e3337d37d35e0ffc5302",
-  "testSha256": "2bde2a8d6f3eb427e8d40a93e92639cd79b069a103efa213ab772833e12b0d99",
-  "logSha256": "243d9f12aca1e6da8aa0f7b3bcf5ccd1e5fc47e87caff6bc6b68009466b67934",
+  "tests": 12,
+  "operatorSha256": "982d1b42d292cd74f17ea86ece0e6f04521003408643a79c636582b74b094b41",
+  "testSha256": "a7dd10063f58d5d79613f161e31f39c0a4206ea1d7dfe47fb7516ff1c92002d7",
+  "logSha256": "e891d0175fce4ebf8926485bfb1c06e55cfd9657024cce2536a043d3a14e2b2f",
   "transport": "Fake subprocess only; no network or provider calls"
 }
