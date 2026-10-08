@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-handoff/package-decoder-control.py", line 16, in <module>
+    try:o.deploy()
+        ~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 329, in deploy
+    if record['kind'] == 'symlink':
+       ~~~~~~^^^^^^^^
+KeyError: 'kind'

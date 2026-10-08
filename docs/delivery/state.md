@@ -4,6 +4,8 @@
 
 Preproduction reviews identified uninstall/persistence overlap and Compose override defects; local regressions qualify first-round corrections; second-round controls now cover retained processed uninstall evidence, fresh observation after shop-lock wait, complete worker dependency identity and actual role/application privileges. Third-round worker shadowing/network/launcher/writable-root findings and a root uniqueness-wait uninstall reproduction require further qualification. Fourth-round ingress/bootstrap permission and dual-stack routing checks now have focused controls; fresh complete review/CI remains pending. The revised production plan requires an existing exact-source durable uninstall processor, webhook secret and queue/runtime privileges to pass read-only host qualification before any backup/provision/deployment/Search. An unqualified prerequisite stops as `BLOCKED_UNINSTALL_PROCESSOR_READINESS`; no worker deployment is authorized. Fresh full-source review/CI gate is still required.
 
+Fifth-round candidate-configuration/indirect-trigger findings plus root runtime-schema and package-decoder objections now have focused failing/passing controls. No application/build/provider input changed. The full fresh review/CI gate remains unfrozen; no renewed host access or live operation has begun.
+
 ---
 
 # Current M5-022R — same-PR correction; principal rereview required

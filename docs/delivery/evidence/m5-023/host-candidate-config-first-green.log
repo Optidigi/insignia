@@ -1,0 +1,129 @@
+FF.E.FF..
+======================================================================
+ERROR: test_inherited_compose_override_cannot_select_unreviewed_image (__main__.GuardControls.test_inherited_compose_override_cannot_select_unreviewed_image)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 82, in test_inherited_compose_override_cannot_select_unreviewed_image
+    operator.compose_web('sha256:' + '1' * 64)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 110, in compose_web
+    command, environment, _, _, digest = candidate_config(image)
+                                         ~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 90, in candidate_config
+    require(networks and all(isinstance(value, dict) and value.get('name') for value in networks.values()),
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            'Resolved Compose networks unqualified')
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 33, in require
+    raise RuntimeError(message)
+RuntimeError: Resolved Compose networks unqualified
+
+======================================================================
+FAIL: test_changed_provisioning_input_stops_before_sql (__main__.GuardControls.test_changed_provisioning_input_stops_before_sql)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 60, in test_changed_provisioning_input_stops_before_sql
+    operator.provision()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 304, in provision
+    require_lifecycle()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 273, in require_lifecycle
+    _, _, _, _, digest = candidate_config(OLD_IMAGE)
+                         ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 85, in candidate_config
+    command, environment, resolved = compose_configuration(image)
+                                     ~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 75, in compose_configuration
+    resolved = json.loads(run([*command, 'config', '--format', 'json'], env=environment))
+                          ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 24, in denied
+    raise AssertionError('External command forbidden in local controls')
+AssertionError: External command forbidden in local controls
+
+======================================================================
+FAIL: test_deploy_requires_provision_before_external_command (__main__.GuardControls.test_deploy_requires_provision_before_external_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 39, in test_deploy_requires_provision_before_external_command
+    operator.deploy()
+    ~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 342, in deploy
+    require_lifecycle()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 273, in require_lifecycle
+    _, _, _, _, digest = candidate_config(OLD_IMAGE)
+                         ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 85, in candidate_config
+    command, environment, resolved = compose_configuration(image)
+                                     ~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 75, in compose_configuration
+    resolved = json.loads(run([*command, 'config', '--format', 'json'], env=environment))
+                          ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 24, in denied
+    raise AssertionError('External command forbidden in local controls')
+AssertionError: External command forbidden in local controls
+
+======================================================================
+FAIL: test_provision_requires_backup_before_external_command (__main__.GuardControls.test_provision_requires_backup_before_external_command)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 33, in test_provision_requires_backup_before_external_command
+    operator.provision()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 304, in provision
+    require_lifecycle()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 273, in require_lifecycle
+    _, _, _, _, digest = candidate_config(OLD_IMAGE)
+                         ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 85, in candidate_config
+    command, environment, resolved = compose_configuration(image)
+                                     ~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 75, in compose_configuration
+    resolved = json.loads(run([*command, 'config', '--format', 'json'], env=environment))
+                          ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 24, in denied
+    raise AssertionError('External command forbidden in local controls')
+AssertionError: External command forbidden in local controls
+
+======================================================================
+FAIL: test_read_only_missing_worker_classifies_and_never_provisions (__main__.GuardControls.test_read_only_missing_worker_classifies_and_never_provisions)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 118, in test_read_only_missing_worker_classifies_and_never_provisions
+    operator.lifecycle()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 200, in lifecycle
+    _, _, candidate, candidate_networks, candidate_digest = candidate_config(OLD_IMAGE)
+                                                            ~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 85, in candidate_config
+    command, environment, resolved = compose_configuration(image)
+                                     ~~~~~~~~~~~~~~~~~~~~~^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 75, in compose_configuration
+    resolved = json.loads(run([*command, 'config', '--format', 'json'], env=environment))
+                          ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 116, in boundary
+    raise AssertionError('Unexpected external command')
+AssertionError: Unexpected external command
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.019s
+
+FAILED (failures=4, errors=1)
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.539053+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": true, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": true}, "classification": "PASS_UNINSTALL_PROCESSOR", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.539767+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": false, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": false, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": false, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.540530+00:00", "candidateConfigSha256": "f2b8dfc7a6830153ac6378fad3a6825d5dda301994fa73dd5352697509a81c90", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": true, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": false, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.541311+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": true, "queueRuntimeUsable": false, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": true, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.542084+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": true, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": false, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.542753+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": false, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": false, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": false, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.543541+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": true, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": false}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.544302+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": true, "uninstallRuntimeUsable": false, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.544905+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": false, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": false, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": false, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.545529+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": false, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": false, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": false, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.546221+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": false, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.546986+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": false, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.547703+00:00", "candidateConfigSha256": "dddbbc13d1d77d13867695b5e059eecf7f90e51e6fc152bb1eca6c910e0b4665", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": false, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.548434+00:00", "candidateConfigSha256": "99296dd356aa1950dadf72dad38d8ea1e86b2d8a3803f2ea4a2f174f23601a09", "candidateCount": 1, "checks": {"candidateMatchesRuntime": true, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": false, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.549179+00:00", "candidateConfigSha256": "5c820d8387ae2a606f54d55a0ee49d1d266aa1be903604d51e0e0dde3f189f3a", "candidateCount": 1, "checks": {"candidateMatchesRuntime": false, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": true, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}
+{"action": "lifecycle-settled", "at": "2026-10-08T16:21:56.549917+00:00", "candidateConfigSha256": "7f8d479a4727c3fa154b807c0b0a7dcc85e9bc2cc689e13c7bc8d1372b0cbf5e", "candidateCount": 1, "checks": {"candidateMatchesRuntime": false, "exactWorkerArtifact": true, "queueRuntimeUsable": true, "queueSchemaPresent": true, "runtimeRoleExact": true, "sameDatabaseEndpoint": true, "uninstallRuntimeUsable": true, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": true, "workerReady": true, "workerRoleExact": true}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}

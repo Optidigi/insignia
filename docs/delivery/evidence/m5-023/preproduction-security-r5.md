@@ -1,0 +1,11 @@
+CHANGES_REQUESTED
+
+Bound to PR54 head `95517ae89702f41cf7f273ca56ab6e70522f502d`.
+
+- **P1 — Lifecycle qualification misses an indirect uninstall privilege.** [host-operator.py:218](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py:218) checks `product_configs` privileges but omits `publication_operations SELECT`. Counterexample: revoke that privilege while retaining every checked permission. Preflight can report PASS, yet uninstall of an installation with an effective published config reaches [tenant.ts:473](/home/serveradmin/insignia-m5-023-worktree/packages/database/src/repositories/tenant.ts:473), whose invoker trigger reads [publication_operations:101](/home/serveradmin/insignia-m5-023-worktree/packages/database/migrations/20260929000200_runtime_ingress_credentials.sql:101). Permission denial rolls back deactivation and credential revocation. This violates the production plan’s requirement to qualify every required application privilege before host mutation. Smallest correction: add that SELECT privilege to qualification and preserve an independent PostgreSQL revocation control covering an effective published config.
+
+Static coverage included authority, all preserved round-one through round-four reports/settings/responses and root objections; full interacting bootstrap, transaction, uninstall, credentials, SDK/auth/session, readiness, trusted-release, v1/v2/v3 activation/recovery, offline consumers, operator, deployment and rollback paths. Earlier reported counterexamples are addressed by the current controls. I found no additional material standards/security finding.
+
+Parent’s root/PG/concurrency/SDK/stress/portable-runtime and focused operator results are supplied execution evidence, not checks I executed. My work was static and read-only; no tests, builds, imports, network operations, credential inspection or delegation occurred.
+
+Exact-head natural CI remains pending in supplied evidence. Existing live processor qualification and live readiness remain unproven. This is neither principal approval nor authorization to merge or deploy.

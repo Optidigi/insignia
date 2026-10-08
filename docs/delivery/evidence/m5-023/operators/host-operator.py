@@ -66,10 +66,9 @@ def inspect(names):
     return json.loads(run(['docker', 'inspect', *names]))
 
 
-def compose_web(image):
+def compose_configuration(image):
     require(re.fullmatch(r'sha256:[0-9a-f]{64}', image) is not None, 'Reviewed image identity invalid')
-    environment = {key: value for key, value in os.environ.items()
-                   if not key.startswith(('INSIGNIA_', 'COMPOSE_', 'DOCKER_'))}
+    environment = {key: os.environ[key] for key in ('PATH', 'HOME') if key in os.environ}
     environment.update({'INSIGNIA_WEB_IMAGE': image, 'INSIGNIA_ROUTE_ENABLED': 'true'})
     command = ['docker', '--context', 'default', 'compose', '--project-name', 'insignia-rewrite-m5-019',
                '--project-directory', str(APP), '--env-file', str(APP / '.env'), '-f', str(APP / 'compose.yaml')]
@@ -79,7 +78,53 @@ def compose_web(image):
             and web.get('labels', {}).get('traefik.enable') == 'true'
             and web.get('labels', {}).get('traefik.http.routers.insignia-canonical-m5-019r.rule')
             == 'Host(`insignia-app.optidigi.nl`)', 'Resolved Compose web identity drift')
-    run([*command, 'up', '-d', '--no-deps', '--no-build', '--pull', 'never', 'web'], timeout=120, env=environment)
+    return command, environment, resolved
+
+
+def candidate_config(image):
+    command, environment, resolved = compose_configuration(image)
+    web = resolved['services']['web']
+    normalized = {**web, 'image': '<reviewed-image>'}
+    network_names = web.get('networks') or {}
+    networks = {name: resolved.get('networks', {}).get(name) for name in network_names}
+    require(networks and all(isinstance(value, dict) and value.get('name') for value in networks.values()),
+            'Resolved Compose networks unqualified')
+    digest = sha(json.dumps({'web': normalized, 'networks': networks}, sort_keys=True, separators=(',', ':')).encode())
+    return command, environment, web, networks, digest, resolved
+
+
+def candidate_matches_runtime(web, candidate, networks):
+    current = dict(value.split('=', 1) for value in web['Config']['Env'])
+    environment = candidate.get('environment') or {}
+    critical = ['DATABASE_URL', 'APP_URL', 'SHOPIFY_CLIENT_ID', 'SHOPIFY_CLIENT_SECRET', 'SHOPIFY_WEBHOOK_SECRET']
+    actual_networks = set(web.get('NetworkSettings', {}).get('Networks', {}))
+    return (all(environment.get(key) and environment[key] == current.get(key) for key in critical)
+        and all(current.get(key) == value for key, value in environment.items())
+        and all(environment.get(key) == value for key, value in current.items() if key.startswith('PG'))
+        and {value['name'] for value in networks.values()} == actual_networks
+        and candidate.get('read_only') is True and not candidate.get('volumes')
+        and not candidate.get('entrypoint') and not candidate.get('command'))
+
+
+def compose_web(image):
+    command, environment, _, _, digest, resolved = candidate_config(image)
+    receipt = json.loads((ROOT / 'lifecycle-settled.json').read_text())
+    require(receipt.get('candidateConfigSha256') == digest, 'Qualified candidate configuration drift')
+    # Consume the privately qualified resolved bytes, never reread mutable runtime.env.
+    for service in resolved['services'].values():
+        service.pop('env_file', None)
+    def literal(value):
+        if isinstance(value, str):
+            return value.replace('$', '$$')
+        if isinstance(value, list):
+            return [literal(item) for item in value]
+        if isinstance(value, dict):
+            return {key: literal(item) for key, item in value.items()}
+        return value
+    command[command.index('--env-file') + 1] = '/dev/null'
+    command[-1] = '-'
+    run([*command, 'up', '-d', '--no-deps', '--no-build', '--pull', 'never', 'web'],
+        stdin=json.dumps(literal(resolved)).encode(), timeout=120, env=environment)
 
 
 def identities(containers):
@@ -166,9 +211,10 @@ def lifecycle():
         if (address.hostname, address.port, address.path) != (target.hostname, target.port, target.path):
             continue
         candidates.append((container, command, values))
-    checks = {'exactWorkerArtifact': False, 'workerReady': False, 'workerKeyConfigurationPresent': False,
+    _, _, candidate, candidate_networks, candidate_digest, _ = candidate_config(OLD_IMAGE)
+    checks = {'candidateMatchesRuntime': candidate_matches_runtime(web, candidate, candidate_networks), 'exactWorkerArtifact': False, 'workerReady': False, 'workerKeyConfigurationPresent': False,
               'runtimeRoleExact': target.username == 'insignia_runtime', 'workerRoleExact': False,
-              'sameDatabaseEndpoint': False,
+              'sameDatabaseEndpoint': False, 'runtimeDatabaseExact': False,
               'webhookSecretMatchesApp': bool(environment.get('SHOPIFY_WEBHOOK_SECRET'))
                 and environment.get('SHOPIFY_WEBHOOK_SECRET') == environment.get('SHOPIFY_CLIENT_SECRET')}
     if len(candidates) == 1:
@@ -206,6 +252,19 @@ def lifecycle():
         require(port.isdigit() and 0 < int(port) <= 65535, 'Worker health port invalid')
         if checks['exactWorkerArtifact']:
             checks['sameDatabaseEndpoint'] = len(current) > 1 and same_database_endpoint(web, worker, current[1], target)
+            if checks['sameDatabaseEndpoint']:
+                source = (ROOT / 'runtime-database.mjs').read_bytes()
+                require(sha(source) == expected['runtimeDatabaseSha256'], 'Runtime database probe drift')
+                addresses = sorted({value for network in current[1]['NetworkSettings']['Networks'].values()
+                    for value in (network.get('IPAddress'), network.get('GlobalIPv6Address')) if value})
+                probes = []
+                for container, module_entry in [(web, '/srv/insignia/dist/server/entry.mjs'), (worker, str(entry))]:
+                    script = source.decode() + '\nconsole.log(JSON.stringify(await qualifyRuntimeDatabase(' \
+                        + json.dumps({'entry': module_entry, 'serverAddresses': addresses}) + ')));'
+                    proof = json.loads(run(['docker', 'exec', container['Id'], '/usr/local/bin/node',
+                        '--input-type=module', '-e', script], timeout=20))
+                    probes.append(proof.get('qualified') is True)
+                checks['runtimeDatabaseExact'] = all(probes)
             probe = "fetch('http://127.0.0.1:" + port + "/ready').then(async r=>console.log(JSON.stringify({status:r.status,body:await r.json()}))).catch(()=>console.log(JSON.stringify({status:503})))"
             health = json.loads(run(['docker', 'exec', worker['Id'], '/usr/local/bin/node', '-e', probe], timeout=10))
             checks['workerReady'] = health.get('status') == 200 and health.get('body', {}).get('durableReady') is True
@@ -215,7 +274,7 @@ def lifecycle():
           ('shops','SELECT'),('shops','INSERT'),('shops','UPDATE'),
           ('installation_generations','SELECT'),('installation_generations','INSERT'),('installation_generations','UPDATE'),
           ('shop_credentials','SELECT'),('shop_credentials','UPDATE'),
-          ('product_configs','SELECT'),('product_configs','UPDATE'),
+          ('product_configs','SELECT'),('product_configs','UPDATE'),('publication_operations','SELECT'),
           ('inbox_messages','SELECT'),('inbox_messages','INSERT'),('inbox_messages','UPDATE'),('inbox_messages','DELETE'),
           ('shopify_webhook_deliveries','SELECT'),('shopify_webhook_deliveries','INSERT')) AS required(relation,privilege)
           WHERE NOT has_table_privilege('insignia_runtime','public.'||required.relation,required.privilege)),
@@ -229,7 +288,7 @@ def lifecycle():
     checks.update(rights)
     passed = len(candidates) == 1 and all(checks.values())
     finish('lifecycle', {'classification': 'PASS_UNINSTALL_PROCESSOR' if passed else 'BLOCKED_UNINSTALL_PROCESSOR_READINESS',
-                        'checks': checks, 'candidateCount': len(candidates), 'providerRequests': 0,
+                        'checks': checks, 'candidateConfigSha256': candidate_digest, 'candidateCount': len(candidates), 'providerRequests': 0,
                         'databaseWrites': 0, 'workerDeployments': 0, 'runtimeEnvironmentValuesLogged': False})
 
 
@@ -237,6 +296,9 @@ def require_lifecycle():
     receipt = ROOT / 'lifecycle-settled.json'
     require(receipt.is_file() and json.loads(receipt.read_text()).get('classification') == 'PASS_UNINSTALL_PROCESSOR',
             'Uninstall processor readiness unqualified; no provisioning/deployment')
+    qualified = json.loads(receipt.read_text())
+    _, _, _, _, digest, _ = candidate_config(OLD_IMAGE)
+    require(qualified.get('candidateConfigSha256') == digest, 'Qualified candidate configuration drift')
 
 
 def backup():
@@ -326,14 +388,16 @@ def deploy():
     for relative, record in inventory.items():
         file = context / relative
         require(file.resolve().is_relative_to(context.resolve()), 'Context link escape')
-        if record['kind'] == 'symlink':
-            require(file.is_symlink() and str(file.readlink()) == record['target'], 'Context link drift')
+        if set(record) == {'link'}:
+            require(file.is_symlink() and str(file.readlink()) == record['link'], 'Context link drift')
         else:
+            require(set(record) == {'sha256'}, 'Context inventory record invalid')
             require(file.is_file() and not file.is_symlink() and sha(file.read_bytes()) == record['sha256'], 'Context file drift')
     tag = 'insignia-rewrite-m5-023:' + expected['sourceCommit'][:12]
     run(['docker', 'build', '--network=none', '--pull=false', '-t', tag, str(context)], timeout=240)
     image = json.loads(run(['docker', 'image', 'inspect', tag]))[0]
     require(image['Config']['User'] == 'node' and image['Config']['WorkingDir'] == '/srv/insignia', 'Image runtime mismatch')
+    require_lifecycle()
     lines = (APP / '.env').read_text().splitlines()
     positions = [i for i, line in enumerate(lines) if line.startswith('INSIGNIA_WEB_IMAGE=')]
     require(len(positions) == 1, 'Image configuration ambiguous')
