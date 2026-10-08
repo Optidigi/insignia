@@ -1,3 +1,43 @@
+# M5-023 — managed-install bootstrap; production prerequisite blocked
+
+**BLOCKED_UNINSTALL_PROCESSOR_READINESS / M5_G7_NOT_PASSED.** The permanent provider-authoritative bootstrap is implemented and qualified locally. The complete preproduction gate froze before renewed owner-restricted VPS access. Its first read-only lifecycle observation stopped before backup, migration16, role provisioning, web deployment, owner Search, trusted-release append or fixture. The existing web image remains the historical M5-019 image; the corrected runtime was not deployed. Return [PR54](https://github.com/Optidigi/insignia/pull/54) for principal review; successor merge and worker deployment are not authorized.
+
+## Actual frozen gate and production observation
+
+[Frozen receipt](evidence/m5-023/frozen-preproduction-gate.json) binds source `408367ae92f8ba02850c40a3de83ef7e61bc61ff`, tree `713200b1ee3d175ab57f4d2d019fabd4781ce69d`, base/effective merge-base `66983f7a959c67cea8e03e79e16761613b73a9b2`,716 source/build inputs, seven provider-public inputs and exact package/operator hashes. Round16 NEW actual GPT-6.1-sol/high enforced read-only [Spec](evidence/m5-023/preproduction-spec-r16.md) and [security](evidence/m5-023/preproduction-security-r16.md) are CLEAR/CLEAR; [eleven natural exact-head workflows](evidence/m5-023/source-ci-r16-completed.json) succeeded on attempt1. Full root86web/no skips, PostgreSQL18.6 198/198 with100 first-session/100 reinstall stress, publication100/100, renderer negative, portable six routes and focused operator controls are local evidence. Neither review nor local testing establishes live authentication or commercial readiness.
+
+The owner added this slice's restricted public key and supplied the trusted fingerprint `SHA256:vttVPAISQypNdyfjFElTJ6ef8Q5S2YlC+XoUn599uq4`. Keyscan matched it; all authenticated connections used strict known-host verification, BatchMode and IdentitiesOnly. Six frozen public inputs plus their manifest were transferred into a fresh0700 host run, with hashes checked before execution. No private key, runtime environment values, token, staff identity or raw provider body was published.
+
+The [raw lifecycle receipt](evidence/m5-023/lifecycle-settled.json) at `2026-10-08T20:16:44.643051+00:00` records:
+
+| Premise | Actual bounded observation |
+|---|---|
+| Designated DBA | Qualified PostgreSQL18/local socket/database/user/public relation identity. |
+| Existing matching worker | Zero candidates in the observed running Docker topology. This does not prove absence of all host processes or another deployment shape. |
+| pg-boss queue | Schema absent; queue usability false in the qualified designated database. |
+| Runtime role/application rights | Intended runtime URL role and required application privileges qualify. Actual web/worker pg-session routing probes did not execute because no candidate worker qualified. |
+| Webhook verification parity | Nonempty webhook-secret/client-secret equality did not qualify. No values or exact missing-versus-mismatch attribution were recorded. |
+| Candidate web configuration | Reviewed comparison to current runtime returned false; only the effective candidate digest was retained, not a failing-field diagnosis. |
+| Worker artifact/health/keys/role/endpoint | Unqualified defaults; candidate-dependent probes were NOT_RUN, not independently observed worker failures. |
+
+[Host outcome](evidence/m5-023/host-readonly-outcome.json) preserves the receipt hash and bounded service metadata. Web is healthy at image `sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5`; observed database and legacy service are healthy. No service/schema/configuration mutation followed the stop. The [processor proposal](M5-023-UNINSTALL-PROCESSOR-PROPOSAL.md) remains unexecuted: qualify an existing independently reviewed deployment shape or separately authorize the existing M3 worker/queue/verification configuration. Do not improvise worker deployment or classify this as a commercial-only blocker.
+
+## Closure, remaining work and provenance
+
+[Closed accounting](evidence/m5-023/closed-accounting.json): six authenticated SSH command connections; two denied revocation-verification connections; one read-only lifecycle observation and two read-only DBA transactions. Run-directory/public-file/receipt preparation and removal of the temporary authorization are the only host file changes. Production database writes, backups, provisioning, deployment/restart, provider requests, app operations, owner Search, trusted appends, product/config creation and cleanup attempts are all zero. No task-authorized database/provider write is unresolved.
+
+[Access closure](evidence/m5-023/access-closure.json) proves exactly this temporary key line was removed, other key lines preserved, a fresh connection denied and the local private key removed. The first verification harness required overly narrow publickey-only wording; its assertion failed. One additional verification accepted the actual `Permission denied (publickey,password)` result. Removal was not repeated and no alternate identity or privilege fallback was used.
+
+The [34-criterion G7 matrix](M5-023-G7-MATRIX.md) preserves six historically accepted source-contract controls separately from28 blocked native criteria. All real merchant flow, authenticated tenant/install/staff/Search, current Function/signing/release/timezone readiness and commercial eligibility remain NOT_RUN in this slice. Product/config fixture and archival cleanup are NOT_APPLICABLE_NO_FIXTURE. Active1158986629121, rollback1153019904001 and NEVER_RELEASE1158837927937 remain accepted historical identities; no fresh Shopify observation or version-equality claim was made. No commercial values are invented.
+
+Final docs/evidence/instruction integration changes no frozen application, operator, migration, archive, Function or provider input. Final completed-change reviews and natural exact-head CI bind the final PR packet separately; the preproduction source is not relabeled as the final documentation head. Stop for principal review. No merge, further live access, worker provisioning, Shopify release/version/scope mutation, fixture, M6/M7, availability research or merchant rollout.
+
+---
+
+## Historical offline progress
+
+The following progress entries retain their original pending/unfrozen statements as historical observations; the actual final preproduction gate and live stop are recorded above.
+
 # M5-023 — managed-install bootstrap and trusted provisioning
 
 **OFFLINE_GATE_IN_PROGRESS / LIVE_NOT_STARTED / M5_G7_NOT_PASSED.** [Authority](prompts/M5-023-INSTALL-BOOTSTRAP-TRUSTED-PROVISIONING.md) and supplied [principal approval](PR-053R-principal-review.md) authorize the implementation, then a frozen-gate web/schema deployment and one owner Search. Renewed restricted VPS access has not yet been requested or used. No manual production seed, Shopify app operation, fixture or commercial assumption.

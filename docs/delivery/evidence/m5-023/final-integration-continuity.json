@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-08T20:21:35.413907+00:00",
+  "classification": "FINAL_DOCS_EVIDENCE_ONLY_CONTINUITY_PASS",
+  "frozenSource": "408367ae92f8ba02850c40a3de83ef7e61bc61ff",
+  "sourceBuildInputsUnchanged": 716,
+  "providerPublicInputsUnchanged": 7,
+  "historicalEvidenceFilesByteExact": 1694,
+  "historicalStateSuffixByteExact": true,
+  "preproductionReportsAndBindingsByteExact": true,
+  "archiveInventoryEntryWorkerInputsByteExact": true,
+  "productionSourcePatchAfterLive": false
+}
