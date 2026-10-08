@@ -1,0 +1,31 @@
+Fresh operator connection passes with PUBLIC CONNECT revoked
+{"operatorFunctions":{"clock":false,"shape":true},"publicExecuteRevoked":true}
+/home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/pg@8.23.0/node_modules/pg/lib/client.js:694
+          Error.captureStackTrace(err)
+                ^
+
+error: permission denied for function clock_timestamp
+    at /home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/pg@8.23.0/node_modules/pg/lib/client.js:694:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/trusted-release-connect-control.mjs:41:3 {
+  length: 106,
+  severity: 'ERROR',
+  code: '42501',
+  detail: undefined,
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'aclchk.c',
+  line: '2793',
+  routine: 'aclcheck_error'
+}
+
+Node.js v24.21.0
+Control process exit: 1
