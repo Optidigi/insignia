@@ -14,6 +14,8 @@ Eighth-round nearer dependency and first-create signed-ingress findings now have
 
 Ninth-round operator findings now reject read-only host-mutable worker code, stale Function observations and Compose drift before lifecycle's first Docker command. Actual local controls preserve original Function/Active times and expire at the earlier exact30second deadline; synthetic PG append/SELECT qualifies. Application/build/provider bytes unchanged; gate still unfrozen pending new reviews/CI.
 
+Tenth-round Spec is CLEAR; security's cached-lifecycle finding now has fresh read-only qualification before later mutations and actual post-PASS/late-image-write controls. Worker isolation also rejects three unsafe configurations. Application/build/provider inputs unchanged; full fresh review/CI gate remains unfrozen, with no live access.
+
 ---
 
 # Current M5-022R — same-PR correction; principal rereview required

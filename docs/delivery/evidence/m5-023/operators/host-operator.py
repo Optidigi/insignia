@@ -125,6 +125,7 @@ def candidate_matches_runtime(web, candidate, networks):
 
 
 def compose_web(image):
+    require_lifecycle()
     command, environment, _, _, digest, resolved = candidate_config(image)
     receipt = json.loads((ROOT / 'lifecycle-settled.json').read_text())
     require(receipt.get('candidateConfigSha256') == digest, 'Qualified candidate configuration drift')
@@ -212,8 +213,8 @@ def same_database_endpoint(web, worker, database, address):
     return True
 
 
-def lifecycle():
-    """Read-only qualification; never install/start a missing worker or seed queue state."""
+def qualify_lifecycle():
+    """Repeatable read-only observation; never start workers or seed queue state."""
     verify_compose_source()
     current = prestate()
     web = current[0]
@@ -255,6 +256,10 @@ def lifecycle():
         command_exact = not worker['Config'].get('Entrypoint') and len(command) in (2, 3) \
             and (len(command) == 2 or re.fullmatch(r'--port=[0-9]+', command[2]))
         immutable_code = worker.get('HostConfig', {}).get('ReadonlyRootfs') is True \
+            and worker.get('HostConfig', {}).get('Privileged') is not True \
+            and set(worker.get('HostConfig', {}).get('CapDrop') or []) == {'ALL'} \
+            and not worker.get('HostConfig', {}).get('CapAdd') \
+            and set(worker.get('HostConfig', {}).get('SecurityOpt') or []) == {'no-new-privileges:true'} \
             and worker['Config'].get('User') == 'node' and entry.is_absolute() and entry.parts[1] != 'tmp' \
             and not any(mount.get('Destination') != '/tmp' for mount in worker.get('Mounts', [])) \
             and set((worker.get('HostConfig', {}).get('Tmpfs') or {}).keys()).issubset({'/tmp'})
@@ -318,9 +323,13 @@ def lifecycle():
         AND NOT EXISTS(SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='pgboss' AND NOT has_function_privilege('insignia_runtime',p.oid,'EXECUTE'))); COMMIT;"""))
     checks.update(rights)
     passed = len(candidates) == 1 and all(checks.values())
-    finish('lifecycle', {'classification': 'PASS_UNINSTALL_PROCESSOR' if passed else 'BLOCKED_UNINSTALL_PROCESSOR_READINESS',
-                        'checks': checks, 'candidateConfigSha256': candidate_digest, 'candidateCount': len(candidates), 'providerRequests': 0,
-                        'databaseWrites': 0, 'workerDeployments': 0, 'runtimeEnvironmentValuesLogged': False})
+    return {'classification': 'PASS_UNINSTALL_PROCESSOR' if passed else 'BLOCKED_UNINSTALL_PROCESSOR_READINESS',
+            'checks': checks, 'candidateConfigSha256': candidate_digest, 'candidateCount': len(candidates), 'providerRequests': 0,
+            'databaseWrites': 0, 'workerDeployments': 0, 'runtimeEnvironmentValuesLogged': False}
+
+
+def lifecycle():
+    finish('lifecycle', qualify_lifecycle())
 
 
 def require_lifecycle():
@@ -328,14 +337,18 @@ def require_lifecycle():
     require(receipt.is_file() and json.loads(receipt.read_text()).get('classification') == 'PASS_UNINSTALL_PROCESSOR',
             'Uninstall processor readiness unqualified; no provisioning/deployment')
     qualified = json.loads(receipt.read_text())
-    _, _, _, _, digest, _ = candidate_config(OLD_IMAGE)
-    require(qualified.get('candidateConfigSha256') == digest, 'Qualified candidate configuration drift')
+    current = qualify_lifecycle()
+    event('lifecycle-current-' + secrets.token_hex(8), current)
+    require(current.get('classification') == 'PASS_UNINSTALL_PROCESSOR',
+            'Current uninstall processor readiness unqualified; no host mutation')
+    require(qualified.get('candidateConfigSha256') == current.get('candidateConfigSha256'), 'Qualified candidate configuration drift')
 
 
 def backup():
     require_lifecycle()
     current = prestate()
     require(current[0]['Image'] == OLD_IMAGE, 'Entry image drift')
+    require_lifecycle()
     event('backup-reserved', {'oldImage': OLD_IMAGE, 'unrelatedIdentities': identities(current[1:])})
     target = ROOT / 'backup'
     target.mkdir(mode=0o700)
@@ -370,6 +383,7 @@ def provision():
     require(versions == expected['priorMigrationVersions'], 'Schema history drift')
     require(sql("SELECT to_regclass('public.trusted_release_records') IS NULL;").strip() == b't', 'Unexpected trusted relation')
     require(sql("SELECT count(*) FROM pg_auth_members WHERE member=(SELECT oid FROM pg_roles WHERE rolname='insignia_runtime');").strip() == b'0', 'Runtime role membership drift')
+    require_lifecycle()
     event('provision-reserved', {'migration': MIGRATION, 'migrationSha256': sha(migration), 'rolesSha256': sha(roles)})
     password = secrets.token_urlsafe(48)
     require(re.fullmatch('[A-Za-z0-9_-]{64}', password) is not None, 'Operator credential generation failed')
@@ -402,7 +416,6 @@ def deploy():
     expected = json.loads((ROOT / 'expected-inputs.json').read_text())
     current = prestate()
     require(current[0]['Image'] == OLD_IMAGE, 'Web image drift before deployment')
-    event('deploy-reserved', {'archiveSha256': expected['archiveSha256'], 'oldImage': OLD_IMAGE})
     archive = ROOT / 'reviewed-web-package.tar.gz'
     require(sha(archive.read_bytes()) == expected['archiveSha256'], 'Reviewed archive mismatch')
     context = ROOT / 'build-context'
@@ -425,6 +438,8 @@ def deploy():
             require(set(record) == {'sha256'}, 'Context inventory record invalid')
             require(file.is_file() and not file.is_symlink() and sha(file.read_bytes()) == record['sha256'], 'Context file drift')
     tag = 'insignia-rewrite-m5-023:' + expected['sourceCommit'][:12]
+    require_lifecycle()
+    event('deploy-reserved', {'archiveSha256': expected['archiveSha256'], 'oldImage': OLD_IMAGE})
     run(['docker', 'build', '--network=none', '--pull=false', '-t', tag, str(context)], timeout=240)
     image = json.loads(run(['docker', 'image', 'inspect', tag]))[0]
     require(image['Config']['User'] == 'node' and image['Config']['WorkingDir'] == '/srv/insignia', 'Image runtime mismatch')
@@ -453,8 +468,10 @@ def deploy():
 
 
 def restart():
+    require_lifecycle()
     require((ROOT / 'deploy-settled.json').is_file(), 'Deployment receipt missing')
     before = prestate()
+    require_lifecycle()
     event('restart-reserved', {'image': before[0]['Image']})
     run(['docker', 'restart', '--time', '10', WEB], timeout=45)
     for _ in range(45):
@@ -489,6 +506,7 @@ def state():
 
 
 def append():
+    require_lifecycle()
     require((ROOT / 'owner-search-settled.json').is_file(), 'Owner Search qualification missing')
     owner = json.loads((ROOT / 'owner-search-settled.json').read_text())
     require(owner.get('classification') == 'PASS_AUTH' and owner.get('exactDomain') == DOMAIN, 'Owner Search not qualified')
@@ -508,6 +526,7 @@ def append():
     require(set(payload) == {'recordId', 'activeObservation', 'readiness'}, 'Append envelope invalid')
     require(re.fullmatch('[0-9a-f-]{36}', payload['recordId']) is not None, 'Append record ID invalid')
     action = 'trusted-append-' + payload['recordId']
+    require_lifecycle()
     event(action + '-reserved', {'recordId': payload['recordId'], 'publicInputSha256': sha(raw)})
     payload['operator'] = json.loads((ROOT / 'release-operator-credential.json').read_text())
     response = subprocess.run(['docker', '--context', 'default', 'exec', '-i', WEB, 'node', '--input-type=module', '-e', source.decode()],

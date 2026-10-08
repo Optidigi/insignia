@@ -39,8 +39,11 @@
   },
   "hostFailureControls": {
     "tests": 11,
-    "log": "host-controls-r10.log",
-    "qualificationVariants": 31
+    "log": "host-controls-r11-final.log",
+    "qualificationVariants": 36,
+    "currentWorkerRequalified": true,
+    "postPassLossAndPrivilegesBlocked": true,
+    "postBuildLossBeforeImageWriteBlocked": true
   },
   "portableRuntime": {
     "pass": true,
@@ -144,7 +147,20 @@
     "mislabeled-worker-shadow-red.log": "b8bf27f90b339b447247d47413645e5c39fcaff52d925ecf43b66c80294593c9",
     "secrets-r9-final.log": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
     "style-r9-final.log": "65fe1dacf56b29e6d0a77ea7ee7ee5d015df5d014c5ba71415078f58d452e753",
-    "worker-controls-r9.log": "c7acb2374ec75c383ad44e0bfa97035008204e62819bed54260e207b96685bdf"
+    "worker-controls-r9.log": "c7acb2374ec75c383ad44e0bfa97035008204e62819bed54260e207b96685bdf",
+    "host-controls-r11.log": "cfc22377884766551d5cbffc23aa64efadfb97031919da5b50087ffbfb37ba30",
+    "secrets-r11-final.log": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "worker-loss-before-image-red.log": "4875d1313881a08442d47b63235a1f404c30199b825d1cd319192c0d9b4d271c",
+    "host-controls-r11-final.log": "32c8452b2550fdddb61fcfb7e87653ce73c2ace262182dad8b12d3328019ea26",
+    "package-decoder-r11.log": "97a8c1173914cd8bc26518cae1c3eb19fe26fac486837110f64378bea4830b18",
+    "style-r11-final.log": "331754b6cededd0b016f163a22f343faf7c78cdca5c007cf7424ef80ad0ade0d",
+    "post-pass-worker-first-green.log": "fcc476c1d8062bab18529f978d0bd0678748921da6a47060b756222ef8fc055e",
+    "worker-loss-before-image-green.log": "546ce5deaa44699ace3e00f2d387621e2eb63c64ac34afaf3f1c5dd5219563ec",
+    "post-pass-worker-red.log": "c19eda0241c1d2697cc91da53c2319938c600845381ea0262b6cedd9d33025ca",
+    "secrets-r11.log": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "worker-loss-before-image-r11-final.log": "546ce5deaa44699ace3e00f2d387621e2eb63c64ac34afaf3f1c5dd5219563ec",
+    "worker-isolation-root-red.log": "454ba373f1e34a2434f0a217efb53c86fb61e7c78bbccad7183261e9f36ada45",
+    "style-r11.log": "382e8edf6c9731e1593cd645fd288afa4351181e8f4a55e9967553118feae3f0"
   },
   "resourceIsolation": {
     "root": "insignia_m5_023_r9_root",

@@ -1,0 +1,23 @@
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-loss-before-image-control.py", line 28, in <module>
+    try:op.deploy()
+        ~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-handoff/host-operator-before-current-worker.py", line 440, in deploy
+    compose_web(image['Id'])
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-handoff/host-operator-before-current-worker.py", line 144, in compose_web
+    run([*command, 'up', '-d', '--no-deps', '--no-build', '--pull', 'never', 'web'],
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        stdin=json.dumps(literal(resolved)).encode(), timeout=120, env=environment)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-loss-before-image-control.py", line 26, in boundary
+    raise RuntimeError('UNEXPECTED_DOCKER_UP_AFTER_WORKER_LOSS')
+RuntimeError: UNEXPECTED_DOCKER_UP_AFTER_WORKER_LOSS
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-loss-before-image-control.py", line 30, in <module>
+    assert str(error).startswith('Current uninstall processor readiness unqualified'),str(error)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: UNEXPECTED_DOCKER_UP_AFTER_WORKER_LOSS

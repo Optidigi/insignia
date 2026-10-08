@@ -11,6 +11,7 @@ spec = importlib.util.spec_from_file_location('host_operator', Path(__file__).wi
 operator = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(operator)
 original_prestate = operator.prestate
+original_qualification = operator.qualify_lifecycle
 
 
 class GuardControls(unittest.TestCase):
@@ -21,6 +22,10 @@ class GuardControls(unittest.TestCase):
         operator.APP.mkdir()
         (operator.APP / 'compose.yaml').write_bytes(Path(__file__).with_name('expected-compose.yaml').read_bytes())
         operator.prestate = original_prestate
+        # Current-qualification seam for reservation/configuration unit controls;
+        # the full lifecycle transition controls below use the actual qualifier.
+        operator.qualify_lifecycle = lambda: {'classification': 'PASS_UNINSTALL_PROCESSOR',
+            'candidateConfigSha256': operator.candidate_config(operator.OLD_IMAGE)[4]}
         self.calls = []
         self.config = {'services': {'web': {'image': operator.OLD_IMAGE,
             'environment': {'APP_URL': operator.ORIGIN},
@@ -115,10 +120,11 @@ class GuardControls(unittest.TestCase):
         operator.run = compose
         with patch.dict(os.environ, {'INSIGNIA_WEB_IMAGE': 'unreviewed', 'INSIGNIA_ROUTE_ENABLED': 'false'}):
             operator.compose_web('sha256:' + '1' * 64)
-        self.assertEqual(len(self.calls), 2)
-        self.assertIn('up', self.calls[1])
+        self.assertEqual(len(self.calls), 3)
+        self.assertIn('up', self.calls[2])
 
     def test_resolved_compose_drift_stops_before_up(self):
+        self.qualified_receipt()
         def drift(args, *unused, **kwargs):
             self.calls.append(args)
             return json.dumps({'services': {'web': {'image': 'unreviewed'}}}).encode()
@@ -147,6 +153,7 @@ class GuardControls(unittest.TestCase):
         self.assertTrue(all('config' in call for call in self.calls))
 
     def test_read_only_missing_worker_classifies_and_never_provisions(self):
+        operator.qualify_lifecycle = original_qualification
         environment = ['DATABASE_URL=postgres://synthetic@database:5432/insignia_rewrite',
                        'SHOPIFY_CLIENT_SECRET=synthetic', 'SHOPIFY_WEBHOOK_SECRET=synthetic']
         web = {'Config': {'Env': environment, 'Cmd': ['node', 'entry.mjs']}}
@@ -173,7 +180,8 @@ class GuardControls(unittest.TestCase):
         self.assertNotIn('synthetic@', json.dumps(value))
 
     def test_only_exact_ready_worker_and_queue_qualify(self):
-        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid', 'config-mount', 'secret-mount', 'inherited-mount', 'hosts-override', 'dns-override', 'lifecycle-hook', 'mislabeled-nearer-dependency', 'readonly-worker-code']:
+        operator.qualify_lifecycle = original_qualification
+        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid', 'config-mount', 'secret-mount', 'inherited-mount', 'hosts-override', 'dns-override', 'lifecycle-hook', 'mislabeled-nearer-dependency', 'readonly-worker-code', 'post-pass-worker-disappearance', 'post-pass-privilege-loss', 'worker-privileged', 'worker-cap-add', 'worker-security-override']:
             with self.subTest(failure=failure):
                 path = operator.ROOT / 'lifecycle-settled.json'
                 if path.exists():
@@ -181,7 +189,9 @@ class GuardControls(unittest.TestCase):
                 web = {'Config': {'Env': ['DATABASE_URL=postgres://insignia_runtime@database:5432/insignia_rewrite',
                     'APP_URL=' + operator.ORIGIN, 'SHOPIFY_CLIENT_ID=synthetic-client', 'SHOPIFY_CLIENT_SECRET=synthetic-secret',
                     'SHOPIFY_WEBHOOK_SECRET=' + ('wrong' if failure == 'secret' else 'synthetic-secret')]}}
-                worker = {'Id': 'synthetic-worker', 'HostConfig': {'ReadonlyRootfs': failure != 'writable-code'},
+                worker = {'Id': 'synthetic-worker', 'HostConfig': {'ReadonlyRootfs': failure != 'writable-code', 'Privileged': failure == 'worker-privileged',
+                        'CapDrop': ['ALL'], 'CapAdd': ['SYS_ADMIN'] if failure == 'worker-cap-add' else [],
+                        'SecurityOpt': ['no-new-privileges:false'] if failure == 'worker-security-override' else ['no-new-privileges:true']},
                     'Mounts': [], 'Config': {'Entrypoint': ['/opt/unreviewed-wrapper'] if failure == 'custom-launcher' else [], 'User': 'node', 'Cmd': ['node', '/srv/worker/main.js'],
                     'Env': ['DATABASE_URL=postgres://' + ('underprivileged_worker' if failure == 'role' else 'insignia_runtime') + '@database:5432/insignia_rewrite',
                         'SHOPIFY_CLIENT_ID=synthetic-client', 'SHOPIFY_CLIENT_SECRET=synthetic-secret',
@@ -206,6 +216,7 @@ class GuardControls(unittest.TestCase):
                 (operator.ROOT / 'expected-inputs.json').write_text(json.dumps({
                     'workerInspectorSha256': operator.sha(inspector), 'workerInventorySha256': operator.sha(inventory),
                     'runtimeDatabaseSha256': operator.sha(database_probe)}))
+                phase = {'changed': False}
                 def boundary(args, stdin=None, **kwargs):
                     if 'config' in args:
                         environment = dict(value.split('=', 1) for value in web['Config']['Env'])
@@ -234,7 +245,7 @@ class GuardControls(unittest.TestCase):
                             'pid': 'host' if failure == 'host-pid' else None}},
                             'networks': {'backend': {'name': 'backend'}}}).encode()
                     if args[:3] == ['docker', 'ps', '-q']:
-                        return b'synthetic-worker'
+                        return b'' if phase['changed'] and failure == 'post-pass-worker-disappearance' else b'synthetic-worker'
                     if args[:2] == ['docker', 'inspect']:
                         return json.dumps([worker]).encode()
                     if 'sha256sum' in args:
@@ -254,16 +265,23 @@ class GuardControls(unittest.TestCase):
                     if 'psql' in args:
                         result = {'queueSchemaPresent': True, 'queueRuntimeUsable': failure != 'queue'}
                         if b'uninstallRuntimeUsable' in stdin:
-                            result['uninstallRuntimeUsable'] = failure != 'application-rights'
+                            result['uninstallRuntimeUsable'] = failure != 'application-rights' and not (phase['changed'] and failure == 'post-pass-privilege-loss')
                         return json.dumps(result).encode()
                     raise AssertionError('Unexpected external command')
                 operator.run = boundary
                 operator.lifecycle()
                 value = json.loads(path.read_text())
-                self.assertEqual(value['classification'], 'PASS_UNINSTALL_PROCESSOR' if failure is None else 'BLOCKED_UNINSTALL_PROCESSOR_READINESS')
+                self.assertEqual(value['classification'], 'PASS_UNINSTALL_PROCESSOR' if failure is None or failure.startswith('post-pass-') else 'BLOCKED_UNINSTALL_PROCESSOR_READINESS')
                 self.assertEqual(value['databaseWrites'], 0)
                 self.assertFalse(list(operator.ROOT.glob('*-reserved.json')))
                 self.assertNotIn('synthetic-secret', json.dumps(value))
+                if failure and failure.startswith('post-pass-'):
+                    phase['changed'] = True
+                    for action in [operator.require_lifecycle, operator.backup, operator.provision, operator.deploy, operator.restart, operator.append, lambda: operator.compose_web(operator.OLD_IMAGE)]:
+                        with self.assertRaisesRegex(RuntimeError, 'Current uninstall processor readiness unqualified'):
+                            action()
+                        self.assertFalse(list(operator.ROOT.glob('*-reserved.json')))
+
 
 
 if __name__ == '__main__':
