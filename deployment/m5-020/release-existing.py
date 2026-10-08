@@ -87,6 +87,8 @@ def required_files(reviews):
 
 
 def validate_context():
+    require(CONTEXT.is_dir() and not CONTEXT.is_symlink()
+            and not any(p.is_symlink() for p in CONTEXT.rglob('*')), 'context_symlink_denied')
     configuration = ROOT / 'deployment/m5-019r'
     app_file = CONTEXT / 'shopify.app.m5-019r.toml'
     require(app_file.read_bytes() == (configuration / app_file.name).read_bytes(), 'context_app_config_drift')
@@ -157,7 +159,7 @@ def validate_gate_data(g):
                 and r['url'] == 'https://github.com/Optidigi/insignia/actions/runs/' + str(r['databaseId'])
                 for r in ci), 'ci_not_exact_source_attempt_one_success')
     controls = json.loads((NEUTRAL / 'release-controls.json').read_text())
-    require(controls['exitCode'] == 0 and controls['tests'] == 8
+    require(controls['exitCode'] == 0 and controls['tests'] == 9
             and controls['operatorSha256'] == digest(ROOT / 'deployment/m5-020/release-existing.py')
             and controls['testSha256'] == digest(ROOT / 'deployment/m5-020/release-existing.test.py')
             and controls['logSha256'] == digest(NEUTRAL / 'release-controls-green.log'), 'offline_release_controls_not_bound')

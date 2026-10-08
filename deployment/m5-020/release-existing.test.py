@@ -28,6 +28,14 @@ class ReleaseControls(unittest.TestCase):
                 op.release_existing(Path('/tmp/not-an-authorized-gate.json'))
             spawn.assert_not_called()
 
+    def test_context_symlink_is_denied_before_reading_its_target(self):
+        with tempfile.TemporaryDirectory() as directory:
+            context = Path(directory)
+            (context / "shopify.app.m5-019r.toml").symlink_to("/tmp/synthetic-not-read")
+            with patch.object(op, "CONTEXT", context), patch.object(Path, "read_bytes", side_effect=AssertionError("unexpected_read")):
+                with self.assertRaisesRegex(ValueError, "context_symlink_denied"):
+                    op.validate_context()
+
     def test_partial_gate_is_rejected_without_dispatch(self):
         with patch.object(op.subprocess, "Popen") as spawn:
             with self.assertRaises(ValueError):
