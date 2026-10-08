@@ -1,0 +1,6 @@
+{
+  "archiveSha256": "f117be50d7bc106f1c943cdf75a8080fa63c26e0edd99b7ba0ddf3eaea697c2b",
+  "buildContext": "/home/serveradmin/insignia-rewrite-m5-019/build",
+  "webEntryUnchanged": true,
+  "secretFilesInBuildContext": false
+}

@@ -1,0 +1,30 @@
+{
+  "session": "01a11807-8482-7e80-a4af-0a1676b8cae0",
+  "head": "66e902c254a1a75aa959947b2d657d953cabe82a",
+  "actualTurnContexts": [
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-019-worktree",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      }
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-019-worktree",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      }
+    }
+  ],
+  "readOnlyRuntime": true,
+  "credentialOrNetworkIsolation": false,
+  "originalReportSha256": "fa01d4a2dcc71cbf07fce882711734b2369c1f160558131f6e6ba44266d083f7",
+  "reportSha256": "1f4842641cc2df6cc83bdab18d6f10a069236c9d86912c30a37d7074de89a0eb",
+  "rendering": "Trailing whitespace normalized only; neutral original preserved",
+  "verdict": "CHANGES_REQUESTED"
+}

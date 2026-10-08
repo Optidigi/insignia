@@ -1,0 +1,22 @@
+{
+  "reviewedHead": "66e902c254a1a75aa959947b2d657d953cabe82a",
+  "spec": "CLEAR",
+  "security": "CHANGES_REQUESTED",
+  "finding": "NEW_ACCOUNTING_DIRECTORY_PARENT_NOT_SYNCED",
+  "correction": "establish_accounting_directory synchronizes CANONICAL.parent before exclusive reservation and dispatch; sync failure raises before either. File and child-directory fsync remain.",
+  "controls": {
+    "tests": 11,
+    "result": "PASS",
+    "actualSyncOrder": [
+      "parent-directory",
+      "reservation-file",
+      "accounting-directory"
+    ],
+    "syncFailure": "FAIL_CLOSED",
+    "shopifyDispatches": 0,
+    "externalRequests": 0
+  },
+  "creationAttempts": 0,
+  "releaseAttempts": 0,
+  "next": "Fresh round4 full-source CLEAR reviews and all10 current-head CI before freeze"
+}

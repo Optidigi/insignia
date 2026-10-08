@@ -1,0 +1,9 @@
+{
+  "buildClient": [
+    "assets",
+    "favicon.ico"
+  ],
+  "public": [
+    "favicon.ico"
+  ]
+}

@@ -1,0 +1,18 @@
+api_version = "2026-07"
+
+[[extensions]]
+uid = "552059da-2dc1-47f8-8fc0-14a5ccb6f665"
+name = "Insignia experimental-v2 cart validation"
+handle = "insignia-experimental-v2-validation"
+type = "function"
+description = "Local preproduction candidate only"
+
+  [[extensions.targeting]]
+  target = "cart.validations.generate.run"
+  input_query = "src/cart_validations_generate_run.graphql"
+  export = "cart_validations_generate_run"
+
+  [extensions.build]
+  command = "exit 1"
+  path = "target/cart-validation.wasm"
+  wasm_opt = false

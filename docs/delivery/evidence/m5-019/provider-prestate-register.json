@@ -1,0 +1,125 @@
+{
+  "slice": "M5-019",
+  "createdAt": "2026-10-07T18:30:29.252311+00:00",
+  "closed": false,
+  "nativeReadCeiling": 32,
+  "nativeActions": [
+    {
+      "kind": "preview_status",
+      "outcome": "AVAILABLE",
+      "tabId": "tab_18",
+      "retroactiveRecord": true
+    },
+    {
+      "kind": "preview_navigate",
+      "purpose": "Exact active version prestate",
+      "reservedAt": "2026-10-07T18:30:29.252337+00:00",
+      "outcome": "SETTLED"
+    },
+    {
+      "kind": "preview_evaluate",
+      "purpose": "Selected public active-version configuration, excluding timeline/account/credential fields",
+      "reservedAt": "2026-10-07T18:30:58.252605+00:00",
+      "outcome": "SETTLED"
+    },
+    {
+      "kind": "preview_navigate",
+      "purpose": "Exact-app overview installation impact surface",
+      "reservedAt": "2026-10-07T18:42:05.548631+00:00",
+      "outcome": "SETTLED"
+    },
+    {
+      "kind": "preview_evaluate",
+      "purpose": "Overview public installation-impact labels and navigation paths",
+      "reservedAt": "2026-10-07T18:42:39.984654+00:00",
+      "outcome": "SETTLED"
+    },
+    {
+      "kind": "preview_evaluate",
+      "purpose": "Resolve rendered Distribution navigation URL without query",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T18:59:13.669117+00:00"
+    },
+    {
+      "kind": "preview_navigate",
+      "purpose": "Rendered exact-app Distribution surface for current impact constraints",
+      "outcome": "PARTNERS_LOGIN_REQUIRED",
+      "reservedAt": "2026-10-07T19:00:49.594216+00:00"
+    },
+    {
+      "kind": "preview_open",
+      "purpose": "Fresh designated installation presence with unchanged Active app; separate background tab preserves pending Partners login",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T19:08:17.493378+00:00"
+    },
+    {
+      "kind": "preview_evaluate",
+      "purpose": "Current designated app iframe/title only; no auth query/token or iframe content",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T19:10:21.267372+00:00"
+    },
+    {
+      "kind": "preview_status",
+      "purpose": "Owner completed Partners login; inspect exact shared tab only",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T19:10:47.418839+00:00"
+    },
+    {
+      "kind": "preview_evaluate",
+      "purpose": "Exact app distribution status and supported installation-report navigation, no credentials",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T19:11:07.158361+00:00"
+    },
+    {
+      "kind": "preview_navigate",
+      "purpose": "Exact-app supported Partner overview current installation-impact summary",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T19:11:34.035283+00:00"
+    },
+    {
+      "kind": "preview_evaluate",
+      "purpose": "Selected overview install summary and report links, excludes credential section and accounts",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T19:12:12.279308+00:00"
+    }
+  ],
+  "appVersionCreateAttempts": 0,
+  "releases": 0,
+  "scriptedAdminRequests": 0,
+  "fixtureCount": 0,
+  "officialCliReads": [
+    {
+      "command": "app config link",
+      "clientId": "1443cf6d03d39edae7c101a943c5c684",
+      "purpose": "Read current exact-app config into fresh private local scratch",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T18:45:15.350522+00:00",
+      "exit": 0,
+      "generatedConfigPresent": true
+    },
+    {
+      "command": "app info --json",
+      "purpose": "Validate exact-app candidate and only frozen Function extension configuration against supported installed CLI/specifications",
+      "outcome": "STOPPED",
+      "reservedAt": "2026-10-07T18:56:02.261417+00:00",
+      "exit": 2,
+      "localArgumentFailure": "--config and --client-id are mutually exclusive; parse rejected before context/auth"
+    },
+    {
+      "command": "app info --json --config m5-019",
+      "exactClientFromPinnedConfig": "1443cf6d03d39edae7c101a943c5c684",
+      "purpose": "Correct local selectors and validate fixed candidate",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T18:57:16.033304+00:00",
+      "exit": 0
+    },
+    {
+      "command": "app versions list --json --config m5-019",
+      "purpose": "Exact active/unreleased version prestate list",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T18:59:14.081756+00:00",
+      "exit": 0
+    }
+  ],
+  "ceilingProvenance": "Before gate freeze: 32 logical native read actions planned to cover actual distribution/auth navigation, two module readbacks and final Active/config equality. This is local operator planning, not a user/provider HTTP ceiling. Version create ceiling remains one; release zero."
+}

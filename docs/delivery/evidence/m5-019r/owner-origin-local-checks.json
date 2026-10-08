@@ -1,0 +1,25 @@
+{
+  "origin": "https://insignia-app.optidigi.nl",
+  "controls": {
+    "tests": 16,
+    "status": "PASS",
+    "redLogs": [
+      "owner-origin-red-controls.log",
+      "owner-origin-red-host-controls.log"
+    ],
+    "zeroProviderDispatches": true
+  },
+  "realStandalone": "PASS_SYNTHETIC_CREDENTIALS_DENY_ALL_EXTERNAL_FETCH_ZERO_ATTEMPTS",
+  "style": "PASS_82_EXISTING_WARNINGS_85_INFOS",
+  "secretProvenance": "PASS",
+  "historyGuard": "PASS_ACCEPTED_LEDGER_BYTES_UNCHANGED",
+  "acceptedSourceBuild": {
+    "files": 621,
+    "hashMismatches": 0
+  },
+  "freshReviews": "PENDING_CHANGED_CONFIGURATION",
+  "naturalExactHeadCI": "PENDING_CHANGED_CONFIGURATION",
+  "publicHostReadiness": "PENDING",
+  "versionCreateAttempts": 0,
+  "releaseAttempts": 0
+}

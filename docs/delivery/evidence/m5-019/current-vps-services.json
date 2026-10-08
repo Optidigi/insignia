@@ -1,0 +1,195 @@
+{
+  "observedAt": "2026-10-07T17:36:52.720846+00:00",
+  "host": "prod-server",
+  "uid": 1000,
+  "readOnly": true,
+  "dockerAvailable": true,
+  "dockerExecutableIsElf": true,
+  "containers": [
+    {
+      "name": "insignia-app",
+      "id": "8c08a8e001c7751fa23e865ada27257c201849019e7bad5e8a449306dcf20c9d",
+      "imageId": "sha256:b06eae7224abc3bf992b7811086c4e2c572c3d0e45d78145152b14a2a982f7c1",
+      "imageReference": "ghcr.io/optidigi/insignia-app:latest",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Restarting": false
+      },
+      "health": "healthy",
+      "restartPolicy": {
+        "Name": "unless-stopped",
+        "MaximumRetryCount": 0
+      },
+      "networks": [
+        "insignia_internal",
+        "proxy"
+      ],
+      "ports": {
+        "3000/tcp": null
+      },
+      "routingLabels": {
+        "traefik.docker.network": "proxy",
+        "traefik.enable": "true",
+        "traefik.http.routers.insignia.entrypoints": "websecure",
+        "traefik.http.routers.insignia.rule": "Host(`insignia.optidigi.nl`)",
+        "traefik.http.routers.insignia.service": "insignia",
+        "traefik.http.routers.insignia.tls.certresolver": "letsencrypt",
+        "traefik.http.services.insignia.loadbalancer.server.port": "3000"
+      },
+      "environmentNames": [
+        "SCOPES",
+        "NODE_ENV",
+        "R2_PUBLIC_URL",
+        "POSTGRES_PASSWORD",
+        "R2_BUCKET_NAME",
+        "DATABASE_URL",
+        "SHOPIFY_APP_URL",
+        "CRON_SECRET",
+        "SHOPIFY_API_KEY",
+        "APP_VERSION",
+        "R2_ACCOUNT_ID",
+        "SHOPIFY_API_SECRET",
+        "R2_SECRET_ACCESS_KEY",
+        "POSTGRES_DB",
+        "POSTGRES_USER",
+        "R2_ACCESS_KEY_ID",
+        "R2_ENDPOINT",
+        "PATH",
+        "NODE_VERSION",
+        "YARN_VERSION"
+      ],
+      "publicClientId": "eb2c3c7dd059991bc6cd4d421578a8ab",
+      "mountMetadata": []
+    },
+    {
+      "name": "insignia-postgres",
+      "id": "d0d4efe0f67fa4f810848f66f87049b3043ba85a00dff5fad551d2aefa6dbc3e",
+      "imageId": "sha256:4e6e670bb069649261c9c18031f0aded7bb249a5b6664ddec29c013a89310d50",
+      "imageReference": "postgres:16-alpine",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Restarting": false
+      },
+      "health": "healthy",
+      "restartPolicy": {
+        "Name": "unless-stopped",
+        "MaximumRetryCount": 0
+      },
+      "networks": [
+        "insignia_internal"
+      ],
+      "ports": {
+        "5432/tcp": null
+      },
+      "routingLabels": {},
+      "environmentNames": [
+        "POSTGRES_USER",
+        "POSTGRES_PASSWORD",
+        "POSTGRES_DB",
+        "PATH",
+        "GOSU_VERSION",
+        "LANG",
+        "PG_MAJOR",
+        "PG_VERSION",
+        "PG_SHA256",
+        "DOCKER_PG_LLVM_DEPS",
+        "PGDATA"
+      ],
+      "publicClientId": null,
+      "mountMetadata": [
+        {
+          "Type": "bind",
+          "Source": "/srv/data/saas/insignia/postgres",
+          "Destination": "/var/lib/postgresql/data",
+          "RW": true
+        }
+      ]
+    },
+    {
+      "name": "traefik",
+      "id": "469dd744a48f195207ade272e51109e316901645ef7f8525476d3b5d34abc875",
+      "imageId": "sha256:f5dba1e65167778cd5f8d1b463fc5d200f49d40c6458fc9f4b391a68ebfb9534",
+      "imageReference": "traefik:v3.6",
+      "state": {
+        "Status": "running",
+        "Running": true,
+        "Restarting": false
+      },
+      "health": null,
+      "restartPolicy": {
+        "Name": "unless-stopped",
+        "MaximumRetryCount": 0
+      },
+      "networks": [
+        "proxy"
+      ],
+      "ports": {
+        "443/tcp": [
+          {
+            "HostIp": "0.0.0.0",
+            "HostPort": "443"
+          },
+          {
+            "HostIp": "::",
+            "HostPort": "443"
+          }
+        ],
+        "80/tcp": [
+          {
+            "HostIp": "0.0.0.0",
+            "HostPort": "80"
+          },
+          {
+            "HostIp": "::",
+            "HostPort": "80"
+          }
+        ]
+      },
+      "routingLabels": {
+        "traefik.docker.network": "proxy",
+        "traefik.enable": "true",
+        "traefik.http.routers.traefik.entrypoints": "websecure",
+        "traefik.http.routers.traefik.rule": "Host(`monitor.optidigi.nl`)",
+        "traefik.http.routers.traefik.service": "api@internal",
+        "traefik.http.routers.traefik.tls.certresolver": "letsencrypt"
+      },
+      "environmentNames": [
+        "DOCKER_API_VERSION",
+        "PATH"
+      ],
+      "publicClientId": null,
+      "mountMetadata": [
+        {
+          "Type": "bind",
+          "Source": "/srv/data/ops/traefik/acme",
+          "Destination": "/letsencrypt",
+          "RW": true
+        },
+        {
+          "Type": "bind",
+          "Source": "/srv/ops/secrets/siteinabox-cloudflare-aop-ca.pem",
+          "Destination": "/run/secrets/siteinabox-cloudflare-aop-ca.pem",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Source": "/var/run/docker.sock",
+          "Destination": "/var/run/docker.sock",
+          "RW": false
+        },
+        {
+          "Type": "bind",
+          "Source": "/srv/ops/infra/stacks/traefik/cloudflare-aop.dynamic.yml",
+          "Destination": "/etc/traefik/dynamic/cloudflare-aop.yml",
+          "RW": false
+        }
+      ],
+      "fileProviderFlags": [
+        "--providers.file.directory=/etc/traefik/dynamic",
+        "--providers.file.watch=true"
+      ]
+    }
+  ]
+}

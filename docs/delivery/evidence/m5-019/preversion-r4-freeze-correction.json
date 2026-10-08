@@ -1,0 +1,18 @@
+{
+  "reviewedHead": "13f5b730f3528d6f155ea5bd4b22916c6e49ef02",
+  "spec": "CLEAR",
+  "security": "CLEAR",
+  "ci": "10 exact-head attempt-1 successes",
+  "freezeFailure": "IsADirectoryError: tracked spikes/m0-013/rust/extensions/transform is a directory symlink",
+  "gateWritten": false,
+  "creationReservationWritten": false,
+  "shopifyDispatches": 0,
+  "correction": "Inventory binds lexical tracked symlink paths, file kind and exact symlink link bytes; ordinary files bind content bytes. Tracked symlink target must remain inside source. Historical symlinks and all621 accepted source/build bytes unchanged.",
+  "controls": {
+    "tests": 12,
+    "result": "PASS",
+    "newControl": "Actual complete mandatory inventory round-trip with tracked directory symlinks; changed type rejected",
+    "externalRequests": 0
+  },
+  "next": "Fresh round5 reviews and exact-head CI before gate freeze"
+}

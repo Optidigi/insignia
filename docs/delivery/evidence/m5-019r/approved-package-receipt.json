@@ -1,0 +1,9 @@
+{
+  "zipSha256": "c8733ddb60f6b76e7789c1878ef45f49149e8e4b886504b52e6a02fefeb7a8df",
+  "manifestEntries": 5,
+  "manifestResult": "ALL PASS",
+  "reviewedBase": "703cfb21a4262675b088cd06289fe08a421ecdd8",
+  "reviewedHead": "5157ac8be2a9d1bf3f6765bf449fd6a410ce699c",
+  "reviewedTree": "dc59b6e730940a0cbabd304ae51442f384046885",
+  "principalVerdict": "CHANGES_REQUESTED"
+}

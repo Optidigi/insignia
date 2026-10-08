@@ -1,0 +1,17 @@
+{
+  "generatedBy": "official app versions list read",
+  "files": [
+    {
+      "path": ".shopify/project.json",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "path": ".shopify/.gitignore",
+      "sha256": "9d7825d64370a3fbd926824fc20376d28cfb0a7a05397b79f0af6388abad6827"
+    }
+  ],
+  "content": "empty project object and standard ignore-all metadata only",
+  "purpose": "restore exact seven-file upload candidate before freeze; future baseline reads use separate existing read context",
+  "providerMutations": 0,
+  "firstCleanupAssertion": "strict trailing-newline expectation failed before deletion; corrected to actual source metadata"
+}

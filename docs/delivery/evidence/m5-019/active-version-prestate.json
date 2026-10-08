@@ -1,0 +1,6 @@
+{
+  "extensionLinks": [],
+  "path": "/dashboard/200969036/apps/429028933633/versions/1153019904001",
+  "publicConfigurationText": "/\nInsignia\n/\nVersions\n/\ninsignia-3\nActive\nApp details\nname\nInsignia\napplication_url\nhttps://example.com\nembedded\ntrue\nAccess scopes\noptional_scopes\nwrite_products,read_publications,read_product_listings\nuse_legacy_install_flow\nfalse\nWebhooks\napi_version\n2026-07\n",
+  "title": "insignia-3 · Insignia · Dev Dashboard"
+}

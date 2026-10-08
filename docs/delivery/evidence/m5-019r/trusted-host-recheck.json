@@ -1,0 +1,11 @@
+{
+  "host": "65.109.22.104",
+  "user": "serveradmin",
+  "port": 22,
+  "fingerprint": "SHA256:vttVPAISQypNdyfjFElTJ6ef8Q5S2YlC+XoUn599uq4",
+  "matchesOwnerPreviouslyTrustedSession": true,
+  "strictHostKeyChecking": true,
+  "newPublicKeyPrepared": true,
+  "ownerAuthorization": "PENDING",
+  "authenticationAttempted": false
+}

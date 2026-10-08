@@ -1,0 +1,10 @@
+[WARN] Shared workspace lockfile detected but configuration forces legacy deploy implementation.
+Packages are copied from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/serveradmin/.local/share/pnpm/store/v11
+  Virtual store is at:             ../insignia-m5-019-handoff/runtime-qualified/node_modules/.pnpm
+[WARN] 1 deprecated subdependencies found: prom-client@15.1.3
+Packages: +335
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 335, reused 335, downloaded 0, added 335, done
+Done in 581ms using pnpm v12.6.0
+{"approvedMerge": "703cfb21a4262675b088cd06289fe08a421ecdd8", "reviewedSourceFiles": 396, "reviewedBuildFiles": 225, "webEntrySha256": "5dab1e4f21a7033582c1c2a326c97d6dcadae66ca04566a73a2aca113b4077f7", "productionSdkVersion": "15.0.0", "newBuild": false, "providerRequests": 0}

@@ -1,0 +1,64 @@
+test_candidate_wasm_query_config_extras_and_escape_rejected (__main__.GateControls.test_candidate_wasm_query_config_extras_and_escape_rejected) ... ok
+test_canonical_origin_is_required_even_when_source_and_candidate_agree (__main__.GateControls.test_canonical_origin_is_required_even_when_source_and_candidate_agree) ... 
+  test_canonical_origin_is_required_even_when_source_and_candidate_agree (__main__.GateControls.test_canonical_origin_is_required_even_when_source_and_candidate_agree) (wrong='https://insignia.optidigi.com/admin/products') ... FAIL
+  test_canonical_origin_is_required_even_when_source_and_candidate_agree (__main__.GateControls.test_canonical_origin_is_required_even_when_source_and_candidate_agree) (wrong='https://insignia.optidigi.nl/admin/products') ... FAIL
+test_cli_home_bound_and_ambient_loader_path_stripped (__main__.GateControls.test_cli_home_bound_and_ambient_loader_path_stripped) ... ok
+test_complete_unique_inventory_required (__main__.GateControls.test_complete_unique_inventory_required) ... ok
+test_durable_claim_survives_duplicate (__main__.GateControls.test_durable_claim_survives_duplicate) ... ok
+test_exact_ci_identity_head_and_attempt (__main__.GateControls.test_exact_ci_identity_head_and_attempt) ... ok
+test_git_uses_trusted_executable_and_ignores_substituted_context (__main__.GateControls.test_git_uses_trusted_executable_and_ignores_substituted_context) ... ok
+test_host_readiness_is_bound_to_owner_revised_origin (__main__.GateControls.test_host_readiness_is_bound_to_owner_revised_origin) ... ERROR
+test_mandatory_inventory_includes_actual_baseline_and_modules (__main__.GateControls.test_mandatory_inventory_includes_actual_baseline_and_modules) ... ok
+test_new_accounting_parent_sync_precedes_reservation_and_dispatch (__main__.GateControls.test_new_accounting_parent_sync_precedes_reservation_and_dispatch) ... ok
+test_optimized_python_still_rejects_unfrozen_gate (__main__.GateControls.test_optimized_python_still_rejects_unfrozen_gate) ... ok
+test_owner_revised_dedicated_origin_is_accepted (__main__.GateControls.test_owner_revised_dedicated_origin_is_accepted) ... FAIL
+test_review_reports_and_settings_must_be_distinct (__main__.GateControls.test_review_reports_and_settings_must_be_distinct) ... ok
+test_superseded_version_must_stay_inactive_and_active_must_stay_exact (__main__.GateControls.test_superseded_version_must_stay_inactive_and_active_must_stay_exact) ... ok
+test_ten_duplicate_workflows_are_rejected (__main__.GateControls.test_ten_duplicate_workflows_are_rejected) ... ok
+test_tracked_directory_symlink_and_full_inventory_round_trip (__main__.GateControls.test_tracked_directory_symlink_and_full_inventory_round_trip) ... ok
+
+======================================================================
+ERROR: test_host_readiness_is_bound_to_owner_revised_origin (__main__.GateControls.test_host_readiness_is_bound_to_owner_revised_origin)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019r/create-unreleased-version.test.py", line 55, in test_host_readiness_is_bound_to_owner_revised_origin
+    operator.validate_host(host)
+    ^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'm5_019_create' has no attribute 'validate_host'. Did you mean: 'validate_ci'?
+
+======================================================================
+FAIL: test_canonical_origin_is_required_even_when_source_and_candidate_agree (__main__.GateControls.test_canonical_origin_is_required_even_when_source_and_candidate_agree) (wrong='https://insignia.optidigi.com/admin/products')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019r/create-unreleased-version.test.py", line 46, in test_canonical_origin_is_required_even_when_source_and_candidate_agree
+    with self.assertRaisesRegex(ValueError, 'canonical_app_url'):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_canonical_origin_is_required_even_when_source_and_candidate_agree (__main__.GateControls.test_canonical_origin_is_required_even_when_source_and_candidate_agree) (wrong='https://insignia.optidigi.nl/admin/products')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019r/create-unreleased-version.test.py", line 46, in test_canonical_origin_is_required_even_when_source_and_candidate_agree
+    with self.assertRaisesRegex(ValueError, 'canonical_app_url'):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+======================================================================
+FAIL: test_owner_revised_dedicated_origin_is_accepted (__main__.GateControls.test_owner_revised_dedicated_origin_is_accepted)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019r/create-unreleased-version.test.py", line 34, in test_owner_revised_dedicated_origin_is_accepted
+    self.assertEqual(app['application_url'], 'https://insignia-app.optidigi.nl/admin/products')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'https://insignia.optidigi.com/admin/products' != 'https://insignia-app.optidigi.nl/admin/products'
+- https://insignia.optidigi.com/admin/products
+?                           ^^^
++ https://insignia-app.optidigi.nl/admin/products
+?                 ++++          ^^
+
+
+----------------------------------------------------------------------
+Ran 16 tests in 3.565s
+
+FAILED (failures=3, errors=1)

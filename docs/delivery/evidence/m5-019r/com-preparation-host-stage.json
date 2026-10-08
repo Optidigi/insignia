@@ -1,0 +1,18 @@
+{
+  "observedAt": "2026-10-07T23:13:33.285496+00:00",
+  "classification": "CANONICAL_PRIVATE_STAGE_PASS_PUBLIC_DNS_TLS_PENDING",
+  "composeSha256": "fb6584f716f48c8be00020b7591ea180a39e94cefa82ff58233038337618272d",
+  "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+  "entrySha256": "5dab1e4f21a7033582c1c2a326c97d6dcadae66ca04566a73a2aca113b4077f7",
+  "webContainer": "c933d94dd6564da994aade45d86839c6c07f476d064d4f70004837c09bbf1f18",
+  "health": "healthy",
+  "appUrl": "https://insignia.optidigi.com",
+  "traefikExposed": false,
+  "canonicalRule": "Host(`insignia.optidigi.com`)",
+  "rewriteNlRouterRemoved": true,
+  "databaseLegacyAndTraefikIdentitiesUnchanged": true,
+  "privateBackupMode": "0o700",
+  "buildAttempts": 0,
+  "databaseMigrations": 0,
+  "providerRequests": 0
+}

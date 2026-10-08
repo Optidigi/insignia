@@ -1,0 +1,16 @@
+{
+  "observedAt": "2026-10-08T00:07:44.206221+00:00",
+  "attemptedExactVersionId": "1158986629121",
+  "requestedNativePath": "/dashboard/200969036/apps/429028933633/versions/1158986629121",
+  "observedOrigin": "https://accounts.shopify.com",
+  "observedPath": "/session-service/login",
+  "title": "Just a moment...",
+  "classification": "BLOCKED_SHOPIFY_BROWSER_AUTHENTICATION",
+  "queryValuesRetained": false,
+  "nativeConfigurationReadback": "NOT_OBSERVED",
+  "designatedInstallationPresence": "NOT_REVERIFIED",
+  "ownerSigninRequested": true,
+  "captchaOrAuthBypass": false,
+  "versionAttempts": 1,
+  "releaseAttempts": 0
+}

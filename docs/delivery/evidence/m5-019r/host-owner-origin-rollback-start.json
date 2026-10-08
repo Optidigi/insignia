@@ -1,0 +1,14 @@
+{
+  "observedAt": "2026-10-07T23:41:15.456948+00:00",
+  "classification": "ROLLBACK_SAME_OWNED_WEB_c81927922a3b9b3b7f37e305e4f1bc6dde730c3b42cbcd5af457415b01230621_START_SETTLED",
+  "container": "c81927922a3b9b3b7f37e305e4f1bc6dde730c3b42cbcd5af457415b01230621",
+  "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+  "health": "healthy",
+  "canonicalAppUrl": "https://insignia-app.optidigi.nl",
+  "routeEnabled": true,
+  "databaseLegacyAndTraefikUnchanged": true,
+  "startAttempts": 1,
+  "legacyOrComRewriteRoutesRestored": false,
+  "shopifyVersionCreates": 0,
+  "releases": 0
+}

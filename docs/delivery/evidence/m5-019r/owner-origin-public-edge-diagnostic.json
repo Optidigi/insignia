@@ -1,0 +1,10 @@
+{
+  "observedAt": "2026-10-07T23:23:19.298721+00:00",
+  "url": "https://insignia-app.optidigi.nl/admin/products",
+  "status": 403,
+  "server": "cloudflare",
+  "cfRay": "a470a7259e06fc28-AMS",
+  "contentType": "text/plain; charset=UTF-8",
+  "boundedDiagnosticBody": "error code: 1010\n",
+  "queryOrCredentials": false
+}

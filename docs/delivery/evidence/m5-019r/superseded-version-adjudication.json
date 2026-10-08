@@ -1,0 +1,10 @@
+{
+  "versionId": "1158837927937",
+  "versionTag": "m5-019-a9717e1265ef",
+  "historicalStatus": "inactive",
+  "classification": "SUPERSEDED_WRONG_CANONICAL_ORIGIN_NEVER_RELEASE",
+  "authority": "PR-050-principal-review.md plus owner M5-019R instruction",
+  "historicalEvidence": "docs/delivery/evidence/m5-019/ and original report/release proposal remain immutable",
+  "noRelease": true,
+  "freshLiveReadback": "PENDING fresh gate"
+}

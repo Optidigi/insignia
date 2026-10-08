@@ -1,0 +1,85 @@
+{
+  "name": "Insignia",
+  "organizationId": "200969036",
+  "configuration": {
+    "client_id": "1443cf6d03d39edae7c101a943c5c684",
+    "name": "Insignia",
+    "application_url": "https://insignia-app.optidigi.nl/admin/products",
+    "embedded": true,
+    "web_directories": [],
+    "extension_directories": [
+      "extensions/insignia-cart-transform",
+      "extensions/insignia-cart-validation"
+    ],
+    "access_scopes": {
+      "scopes": "",
+      "optional_scopes": [
+        "write_products",
+        "read_publications",
+        "read_product_listings"
+      ],
+      "use_legacy_install_flow": false
+    },
+    "auth": {
+      "redirect_urls": []
+    },
+    "webhooks": {
+      "api_version": "2026-07"
+    }
+  },
+  "errors": {
+    "errors": []
+  },
+  "extensionCount": 2,
+  "extensions": [
+    {
+      "configuration": {
+        "name": "Insignia experimental-v2 cart transform",
+        "type": "function",
+        "handle": "insignia-experimental-v2-transform",
+        "uid": "c56038d4-146a-405e-b47d-a055249eeeb3",
+        "description": "Local preproduction candidate only",
+        "api_version": "2026-07",
+        "build": {
+          "command": "exit 1",
+          "path": "target/cart-transform.wasm",
+          "wasm_opt": false
+        },
+        "configuration_ui": true,
+        "targeting": [
+          {
+            "target": "cart.transform.run",
+            "input_query": "src/cart_transform_run.graphql",
+            "export": "cart_transform_run"
+          }
+        ]
+      },
+      "localIdentifier": "insignia-experimental-v2-transform"
+    },
+    {
+      "configuration": {
+        "name": "Insignia experimental-v2 cart validation",
+        "type": "function",
+        "handle": "insignia-experimental-v2-validation",
+        "uid": "552059da-2dc1-47f8-8fc0-14a5ccb6f665",
+        "description": "Local preproduction candidate only",
+        "api_version": "2026-07",
+        "build": {
+          "command": "exit 1",
+          "path": "target/cart-validation.wasm",
+          "wasm_opt": false
+        },
+        "configuration_ui": true,
+        "targeting": [
+          {
+            "target": "cart.validations.generate.run",
+            "input_query": "src/cart_validations_generate_run.graphql",
+            "export": "cart_validations_generate_run"
+          }
+        ]
+      },
+      "localIdentifier": "insignia-experimental-v2-validation"
+    }
+  ],
+  "limitation": "Official app info validates local exact-app candidate; not native version readback. Initial sanitizer expected an app envelope; corrected local parsing of same completed response, no additional request."
+}

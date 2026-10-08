@@ -1,0 +1,8 @@
+{
+  "reason": "Restore hash-locked ledger before new fresh-head review; no partial/current-head verdict reused",
+  "terminatedReviewProcessIds": [
+    1751487
+  ],
+  "head": "59b4aa44872c87f52ea6839ccd039bbd3f080bd4",
+  "providerMutation": 0
+}

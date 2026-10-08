@@ -1,0 +1,58 @@
+{
+  "observedAt": "2026-10-07T23:22:56.146373+00:00",
+  "host": "insignia-app.optidigi.nl",
+  "publicTLSVerificationRequired": true,
+  "routingAtProbe": "NOT_ENABLED",
+  "routes": [
+    {
+      "path": "/live",
+      "status": 403,
+      "server": "cloudflare",
+      "cacheControl": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+      "csp": null,
+      "contentType": "text/plain; charset=UTF-8",
+      "bodyBytes": 17,
+      "bodySha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c"
+    },
+    {
+      "path": "/admin/products",
+      "status": 403,
+      "server": "cloudflare",
+      "cacheControl": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+      "csp": null,
+      "contentType": "text/plain; charset=UTF-8",
+      "bodyBytes": 17,
+      "bodySha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c"
+    },
+    {
+      "path": "/api/admin/products",
+      "status": 403,
+      "server": "cloudflare",
+      "cacheControl": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+      "csp": null,
+      "contentType": "text/plain; charset=UTF-8",
+      "bodyBytes": 17,
+      "bodySha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c"
+    },
+    {
+      "path": "/api/admin/products/1/config",
+      "status": 403,
+      "server": "cloudflare",
+      "cacheControl": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+      "csp": null,
+      "contentType": "text/plain; charset=UTF-8",
+      "bodyBytes": 17,
+      "bodySha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c"
+    },
+    {
+      "path": "/_astro/MerchantConfigEditor.DP-cRyvJ.js",
+      "status": 403,
+      "server": "cloudflare",
+      "cacheControl": "private, max-age=0, no-store, no-cache, must-revalidate, post-check=0, pre-check=0",
+      "csp": null,
+      "contentType": "text/plain; charset=UTF-8",
+      "bodyBytes": 17,
+      "bodySha256": "2938e9f1284180959e33ab1718d0793a72ff6e4cdb8108c34dcd14e69446de5c"
+    }
+  ]
+}

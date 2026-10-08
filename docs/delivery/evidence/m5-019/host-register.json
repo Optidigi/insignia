@@ -1,0 +1,76 @@
+{
+  "slice": "M5-019",
+  "createdAt": "2026-10-07T18:36:21.547250+00:00",
+  "hostStages": [
+    {
+      "stage": "private-isolated-directory-and-configuration",
+      "outcome": "SETTLED",
+      "sourceHead": "96a2e2b8506bd1b588c5c39e61e3324f819c07ef"
+    },
+    {
+      "stage": "immutable-package-transfer-and-extract",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T18:37:15.072927+00:00"
+    },
+    {
+      "stage": "immutable-node24-image-build",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T18:38:18.344342+00:00"
+    },
+    {
+      "stage": "fresh-isolated-postgresql18-and-migrations",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T18:41:20.599092+00:00"
+    },
+    {
+      "stage": "isolated-web-stage-http-and-restart",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T18:44:09.350640+00:00"
+    },
+    {
+      "stage": "public-route-coexistence-and-rollback",
+      "outcome": "READ_PROBE_TIMEOUT",
+      "reservedAt": "2026-10-07T18:48:34.183850+00:00",
+      "stateResolution": {
+        "states": [
+          {
+            "name": "insignia-app",
+            "id": "8c08a8e001c7751fa23e865ada27257c201849019e7bad5e8a449306dcf20c9d",
+            "image": "sha256:b06eae7224abc3bf992b7811086c4e2c572c3d0e45d78145152b14a2a982f7c1",
+            "status": "running",
+            "health": "healthy",
+            "startedAt": "2026-09-28T10:53:23.217714081Z",
+            "routeEnabled": "true"
+          },
+          {
+            "name": "insignia-rewrite-m5-019-web",
+            "id": "fda5d54ce1a12bdbff2acc2d25301612208c2eabbaf2db1af99f1201ca7d3109",
+            "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+            "status": "exited",
+            "health": "unhealthy",
+            "startedAt": "2026-10-07T18:48:46.698174562Z",
+            "routeEnabled": "true"
+          },
+          {
+            "name": "insignia-rewrite-m5-019-database",
+            "id": "a1a521b36a30dd97c6ece2e3cb79ba05edf963362bc3ce3941e5ffac53cee265",
+            "image": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+            "status": "running",
+            "health": "healthy",
+            "startedAt": "2026-10-07T18:41:27.552874568Z",
+            "routeEnabled": null
+          }
+        ],
+        "configuredRouteEnabled": "true"
+      }
+    },
+    {
+      "stage": "restore-verified-rollback-service",
+      "outcome": "SETTLED",
+      "reservedAt": "2026-10-07T18:52:42.161457+00:00"
+    }
+  ],
+  "publicRoutingEnabled": true,
+  "appVersionCreateAttempts": 0,
+  "releaseAttempts": 0
+}

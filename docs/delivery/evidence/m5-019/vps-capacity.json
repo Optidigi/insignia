@@ -1,0 +1,12 @@
+{
+  "cpuCount": 12,
+  "memoryKiB": {
+    "MemTotal": 65765236,
+    "MemAvailable": 53436012
+  },
+  "diskBytes": {
+    "total": 467909804032,
+    "free": 281221701632
+  },
+  "machine": "x86_64"
+}

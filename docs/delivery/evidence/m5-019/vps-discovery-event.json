@@ -1,0 +1,10 @@
+{
+  "startedAt": "2026-10-07T17:36:51.699844+00:00",
+  "operation": "current_vps_read_only_discovery",
+  "host": "65.109.22.104",
+  "user": "serveradmin",
+  "scriptSha256": "c3fa2e21f014e696851e75bc776eb275bba2cc3256988ba97ece2cf3ff34f454",
+  "mutation": false,
+  "completedAt": "2026-10-07T17:36:52.883052+00:00",
+  "exit": 0
+}

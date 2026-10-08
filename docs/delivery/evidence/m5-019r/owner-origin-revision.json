@@ -1,0 +1,13 @@
+{
+  "recordedAt": "2026-10-07T23:19:23.353866+00:00",
+  "authority": "Direct owner message in thread81292d0a-995f-4c06-8ce7-7d7cd419bc4a",
+  "ownerText": "just use insignia-app.optidigi.nl instead, optidigi.com is not under cloudflare. My mistake. optidigi.nl is",
+  "supersedesOnly": "canonical hostname in supplied M5-019R principal brief",
+  "origin": "https://insignia-app.optidigi.nl",
+  "applicationUrl": "https://insignia-app.optidigi.nl/admin/products",
+  "appName": "Insignia",
+  "additionalVersionAttemptsSoFar": 0,
+  "releaseAuthority": false,
+  "mergeAuthority": false,
+  "preservedComPreparationHead": "9b0810dd8383ae578a3c960b327786694f1b222e"
+}

@@ -1,0 +1,18 @@
+{
+  "classification": "PROVIDER_AUTHORITY_CLOSED_LOCAL_OWNER_EVIDENCE_INTEGRATION",
+  "closedAt": "2026-10-08T00:39:48.068335+00:00",
+  "previousRegisterSha256": "7275b9690e316a2000107e3644abfa462306a5ecad22c0e8461559685e005389",
+  "closedRegisterSha256": "6841404736276d7251336a729b20b16e5581a1a6f56a4669d3c53bd62c686ce8",
+  "historicalEventsUnchanged": true,
+  "nativeActions": 6,
+  "officialCliReads": 5,
+  "versionCreationAttempts": 1,
+  "releaseAttempts": 0,
+  "fixtures": 0,
+  "newProviderRequestsForThisIntegration": 0,
+  "pendingProviderWrites": 0,
+  "ownerAttestationSha256": "2dc51f58546be8a0449730b3a3eea33e8f5c0d00d3680bf850f4dfdd0367d07e",
+  "creationWritePhaseAlreadyClosed": true,
+  "hostRegisterAlreadyClosed": true,
+  "historicalRegistersReopened": false
+}

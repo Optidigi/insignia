@@ -1,0 +1,167 @@
+{
+  "slice": "M5-019",
+  "frozen": true,
+  "frozenAt": "2026-10-07T21:04:39.528876+00:00",
+  "sourceHead": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+  "gitDirectory": "/home/serveradmin/insignia-rewrite-20260924/.git/worktrees/insignia-m5-019-worktree",
+  "sourceTree": "cf9c7bb08efcd389ec7dd668c386c27072322a67",
+  "base": "703cfb21a4262675b088cd06289fe08a421ecdd8",
+  "worktree": "/home/serveradmin/insignia-m5-019-worktree",
+  "candidateDirectory": "/home/serveradmin/insignia-m5-019-handoff/app-version-qualified",
+  "hostClassification": "HOST_WEB_READINESS_PASS",
+  "activeVersion": "1153019904001",
+  "versionTag": "m5-019-a9717e1265ef",
+  "reviews": [
+    {
+      "axis": "spec",
+      "verdict": "CLEAR",
+      "report": "/home/serveradmin/insignia-m5-019-handoff/preversion-spec-r5.md",
+      "settings": "/home/serveradmin/insignia-m5-019-handoff/preversion-spec-r5.settings.json"
+    },
+    {
+      "axis": "security",
+      "verdict": "CLEAR",
+      "report": "/home/serveradmin/insignia-m5-019-handoff/preversion-security-r5.md",
+      "settings": "/home/serveradmin/insignia-m5-019-handoff/preversion-security-r5.settings.json"
+    }
+  ],
+  "ci": [
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37685318035,
+      "headSha": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+      "name": "M0-012 real contract local prototype",
+      "status": "completed",
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37685318035"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37685318016,
+      "headSha": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+      "name": "M0-010 local hybrid billing proof",
+      "status": "completed",
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37685318016"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37685317952,
+      "headSha": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+      "name": "M0-011 local provider adapter boundary",
+      "status": "completed",
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37685317952"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37685317983,
+      "headSha": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+      "name": "M0-009 embedded Astro local proof",
+      "status": "completed",
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37685317983"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37685317993,
+      "headSha": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+      "name": "M0-008 local publication and architecture checks",
+      "status": "completed",
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37685317993"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37685317997,
+      "headSha": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+      "name": "M3-002 local runtime and ingress",
+      "status": "completed",
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37685317997"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37685318005,
+      "headSha": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+      "name": "M3-001 PostgreSQL durable core",
+      "status": "completed",
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37685318005"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37685318175,
+      "headSha": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+      "name": "M0-014 local public-app candidate",
+      "status": "completed",
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37685318175"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37685317957,
+      "headSha": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+      "name": "M0-013 off-store protocol capacity",
+      "status": "completed",
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37685317957"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 37685317996,
+      "headSha": "a9717e1265efcff331efd15fb0e62ee58c1e1fc4",
+      "name": "M1-001 foundation and boundaries",
+      "status": "completed",
+      "url": "https://github.com/Optidigi/insignia/actions/runs/37685317996"
+    }
+  ],
+  "applicableWorkflowCount": 10,
+  "acceptedSourceBuildHashes": 621,
+  "creationCeiling": 1,
+  "releaseCeiling": 0,
+  "installationInventory": "NOT_OBSERVED; no-release current impact zero; later exact-app release global",
+  "providerAuthority": "one no-release dispatch and bounded supported exact-version readback only",
+  "frozenGateSha256": "409492912d1dda13f3787b3322679e11504a0745d96a9a520b3768b64ea47f8b",
+  "frozenFileCount": 3810,
+  "fullLocalManifest": "/home/serveradmin/insignia-m5-019-handoff/frozen-version-gate.json",
+  "inputCandidateFiles": [
+    {
+      "path": "/home/serveradmin/insignia-m5-019-handoff/app-version-qualified/extensions/insignia-cart-transform/shopify.extension.toml",
+      "kind": "file",
+      "sha256": "3c6fb6fbe137767c8fdae130779dab11e552edbe262cd54804741b12f25c46c7"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-019-handoff/app-version-qualified/extensions/insignia-cart-transform/src/cart_transform_run.graphql",
+      "kind": "file",
+      "sha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-019-handoff/app-version-qualified/extensions/insignia-cart-transform/target/cart-transform.wasm",
+      "kind": "file",
+      "sha256": "49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-019-handoff/app-version-qualified/extensions/insignia-cart-validation/shopify.extension.toml",
+      "kind": "file",
+      "sha256": "37204d9454c1db57bfe1a1552188a2ba2a55d3f508f2d3a81e44f1b1050a1d5a"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-019-handoff/app-version-qualified/extensions/insignia-cart-validation/src/cart_validations_generate_run.graphql",
+      "kind": "file",
+      "sha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-019-handoff/app-version-qualified/extensions/insignia-cart-validation/target/cart-validation.wasm",
+      "kind": "file",
+      "sha256": "3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-019-handoff/app-version-qualified/shopify.app.m5-019.toml",
+      "kind": "file",
+      "sha256": "ff3950dee6fa6cb5afbd9ab36909ea0af2a721f34d87912a5ae23f817c7b6764"
+    }
+  ],
+  "inventoryReconstruction": "All tracked files at frozen Git sourceHead/tree; plus621 baseline source/build records, seven candidate files, pinned CLI anchors/Node/Git, original reviewer reports/settings and fresh CI/Active/control receipts. Exact closure validated locally before reservation."
+}

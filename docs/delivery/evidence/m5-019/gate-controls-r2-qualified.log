@@ -1,0 +1,39 @@
+test_candidate_wasm_query_config_extras_and_escape_rejected (__main__.GateControls.test_candidate_wasm_query_config_extras_and_escape_rejected) ... ERROR
+test_complete_unique_inventory_required (__main__.GateControls.test_complete_unique_inventory_required) ... ok
+test_durable_claim_survives_duplicate (__main__.GateControls.test_durable_claim_survives_duplicate) ... ok
+test_exact_ci_identity_head_and_attempt (__main__.GateControls.test_exact_ci_identity_head_and_attempt) ... ok
+test_mandatory_inventory_includes_actual_baseline_and_modules (__main__.GateControls.test_mandatory_inventory_includes_actual_baseline_and_modules) ... ERROR
+test_optimized_python_still_rejects_unfrozen_gate (__main__.GateControls.test_optimized_python_still_rejects_unfrozen_gate) ... ok
+test_ten_duplicate_workflows_are_rejected (__main__.GateControls.test_ten_duplicate_workflows_are_rejected) ... ok
+
+======================================================================
+ERROR: test_candidate_wasm_query_config_extras_and_escape_rejected (__main__.GateControls.test_candidate_wasm_query_config_extras_and_escape_rejected)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019/create-unreleased-version.test.py", line 74, in test_candidate_wasm_query_config_extras_and_escape_rejected
+    self.assertEqual(len(operator.validate_candidate(SOURCE, candidate)), 7)
+                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019/create-unreleased-version.py", line 90, in validate_candidate
+    require({path for path in entries if path.is_file()} == expected, 'candidate_file_set_changed')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019/create-unreleased-version.py", line 27, in require
+    raise ValueError(reason)
+ValueError: candidate_file_set_changed
+
+======================================================================
+ERROR: test_mandatory_inventory_includes_actual_baseline_and_modules (__main__.GateControls.test_mandatory_inventory_includes_actual_baseline_and_modules)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019/create-unreleased-version.test.py", line 97, in test_mandatory_inventory_includes_actual_baseline_and_modules
+    modules = operator.validate_candidate(SOURCE, candidate)
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019/create-unreleased-version.py", line 90, in validate_candidate
+    require({path for path in entries if path.is_file()} == expected, 'candidate_file_set_changed')
+    ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019/create-unreleased-version.py", line 27, in require
+    raise ValueError(reason)
+ValueError: candidate_file_set_changed
+
+----------------------------------------------------------------------
+Ran 7 tests in 0.628s
+
+FAILED (errors=2)

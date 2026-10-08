@@ -1,0 +1,30 @@
+{
+  "session": "01a117e2-2c98-79c3-a242-7d4c30a047d3",
+  "head": "a52da8b6330af35b83b57c3b671eb81fea313fcd",
+  "actualTurnContexts": [
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-019-worktree",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      }
+    },
+    {
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "cwd": "/home/serveradmin/insignia-m5-019-worktree",
+      "approval_policy": "never",
+      "sandbox_policy": {
+        "type": "read-only"
+      }
+    }
+  ],
+  "readOnlyRuntime": true,
+  "credentialOrNetworkIsolation": false,
+  "originalReportSha256": "ce4fad212d7aa1cebbcafbc5de7c4e030c4f49b7b23a9039b67d21d61862f6ec",
+  "reportSha256": "ea136b743b60790ea0b3cfca892a14d8e8f8b68b99eab64944c40cb059d14fc7",
+  "rendering": "Git copy trims trailing whitespace only; neutral original byte-preserved",
+  "verdict": "CHANGES_REQUESTED"
+}

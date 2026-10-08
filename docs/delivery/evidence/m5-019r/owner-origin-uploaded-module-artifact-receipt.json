@@ -1,0 +1,84 @@
+{
+  "classification": "EXACT_REVIEWED_LOCAL_UPLOAD_BUNDLE_CLI_ACK_NATIVE_READBACK_PENDING",
+  "versionId": "1158986629121",
+  "versionTag": "m5-019r-9b94149272d1",
+  "observedAt": "2026-10-08T00:06:23.506054+00:00",
+  "sourceHead": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+  "bundleSha256": "72cf3948b24a04a876cd6cbe4e210e6ad47f82bd7113b719033ce3d6e75cac3f",
+  "manifestSha256": "3eb31bff6d55f7d68d0da91b31b335a88282e40fccd9d4dd3391ea22a87c42e0",
+  "functions": [
+    {
+      "uid": "c56038d4-146a-405e-b47d-a055249eeeb3",
+      "handle": "insignia-experimental-v2-transform",
+      "perDeploymentModuleIdFromCliManifest": "0d6215ff-1f8b-4d1e-b607-80438168f826",
+      "priorDeploymentModuleId": "5d574835-46c2-48f4-95cf-78bfe500e5d3",
+      "api": "2026-07",
+      "target": "cart.transform.run",
+      "export": "cart_transform_run",
+      "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
+      "decodedWasmSha256": "49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576",
+      "encodedWasmSha256": "5c6434b6e626cf85825e0e142c27dea56a27a83f64b9d848fc5aee9c76ed536b",
+      "decodedWasmBytes": 181378,
+      "transportEncoding": "base64",
+      "artifactAndIdentityEqualPriorReviewedFunction": true
+    },
+    {
+      "uid": "552059da-2dc1-47f8-8fc0-14a5ccb6f665",
+      "handle": "insignia-experimental-v2-validation",
+      "perDeploymentModuleIdFromCliManifest": "2375658e-73bf-4f45-a28a-5d43bac02a9c",
+      "priorDeploymentModuleId": "6f47b27d-e454-4ccb-994f-506a8f58efe5",
+      "api": "2026-07",
+      "target": "cart.validations.generate.run",
+      "export": "cart_validations_generate_run",
+      "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
+      "decodedWasmSha256": "3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6",
+      "encodedWasmSha256": "2330d0fec362e8ecf7185fa1f7cd2fbe1ec8b5b223b575606c93dbe38289a621",
+      "decodedWasmBytes": 182968,
+      "transportEncoding": "base64",
+      "artifactAndIdentityEqualPriorReviewedFunction": true
+    }
+  ],
+  "configuration": {
+    "app_access": {
+      "scopes": "",
+      "optional_scopes": [
+        "write_products",
+        "read_publications",
+        "read_product_listings"
+      ],
+      "use_legacy_install_flow": false,
+      "redirect_url_allowlist": []
+    },
+    "webhooks": {
+      "api_version": "2026-07"
+    },
+    "app_home": {
+      "app_url": "https://insignia-app.optidigi.nl/admin/products",
+      "embedded": true
+    },
+    "branding": {
+      "name": "Insignia"
+    }
+  },
+  "frozenInputFilesUnchanged": 7,
+  "acceptedSourceBuildUnchanged": 621,
+  "moduleIdSemantics": {
+    "classification": "CLI_GENERATES_FRESH_UUID_PER_DEPLOYMENT_NOT_FUNCTION_UID",
+    "primaryLocalSource": "@shopify/cli4.8.2 function.deployConfig assigns let o=Sc(); module_id:o; Sc imported as d from chunk-NYHGIWKZ.js; exported d=oot(); oot returns crypto.randomUUID()",
+    "sourceFiles": [
+      {
+        "path": "/home/serveradmin/insignia-pf001-tools/shopify/node_modules/@shopify/cli/dist/chunk-7LW23M5C.js",
+        "sha256": "38c3f3229316a140de9fb48581f9cbb4eac1063dd18ffecdaecc7d6b407b8feb"
+      },
+      {
+        "path": "/home/serveradmin/insignia-pf001-tools/shopify/node_modules/@shopify/cli/dist/chunk-NYHGIWKZ.js",
+        "sha256": "a89873a128c3044b0870f2a82788a7e4d8f8642e9bb4bfcb0c0f0d4abc380d7a"
+      }
+    ],
+    "stableFunctionUidsAndReviewedExecutableQueriesTargetsExportsAPIUnchanged": true
+  },
+  "providerAttestation": "Pinned CLI sole dispatch exit0 plus official exact-one-inactive-version ACK. Native exact-version config/UID readback still blocked by browser authentication. Supported dashboard has no independent server Wasm/query digest; no server-byte attestation claimed.",
+  "noRebuild": true,
+  "releaseAttempts": 0,
+  "localManifestInspectionCorrection": "First field-shape inspection assumed uuid exists on app configuration modules; function-only schema inspection resolved locally, zero new provider requests."
+}

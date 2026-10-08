@@ -1,0 +1,19 @@
+**CHANGES_REQUESTED — PRE-VERSION review.** Do not dispatch creation until the wrapper corrections below are reviewed and all ten applicable current-head workflows finish SUCCESS.
+
+Reviewed head `2b8473a52dce01564901eae3b075a38adf62fd6b` against base/effective merge base `703cfb21a4262675b088cd06289fe08a421ecdd8`.
+
+**Standards/security finding**
+
+- **P1 — Gate checks disappear under Python optimization.** [create-unreleased-version.py:36](/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019/create-unreleased-version.py:36), through line65, uses `assert` for authorization, review, CI, artifact and runtime checks. Launching with `python3 -O` or inherited `PYTHONOPTIMIZE=1` removes those checks and permits dispatch with an unfrozen or mismatched gate, provided subsequent file reads succeed. This violates AGENTS.md:7’s complete frozen-gate requirement and :17’s executable invariants. **Correction:** use explicit validation failures that remain active under optimization, before reservation or dispatch.
+
+**Spec findings**
+
+- **P1 — Artifact/evidence inventory completeness is unenforced.** [create-unreleased-version.py:53](/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019/create-unreleased-version.py:53) hashes only caller-listed files; `files=[]` passes. Lines55–58 compare only the main app configuration. Consequently, a packaged Wasm, query or extension configuration changed after packaging can escape validation while Git remains clean. Accepted source/build inventory, review reports/settings, host receipts and captured CLI hashes can also be omitted. M5-019 prompt:51, :58 and :63 require exact module/artifact binding before creation. **Correction:** require a complete, unique mandatory inventory derived from the accepted baseline and current candidate; reject omissions, extras and escaping candidate paths, and bind the supporting receipts and both distinct review reports/settings.
+
+- **P1 — Ten CI rows do not establish ten passing workflows.** [create-unreleased-version.py:51](/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019/create-unreleased-version.py:51) accepts ten copies of one successful current-head row. The other nine workflows could remain running or fail. This violates the complete gate and the assigned ten-workflow requirement. **Correction:** require the exact ten applicable workflow identities, unique run IDs, repository/head binding, and completed SUCCESS results for every workflow.
+
+The committed evidence supports `HOST_WEB_READINESS_PASS`: reviewed web bytes, isolated PG18/runtime permissions, explicit proxy boundaries, legacy coexistence, restart and rollback/restoration. Empty redirects match the implemented online token exchange. Proposed UUIDs are correctly described as local identities. Draft distribution and designated-installation presence satisfy the supported observation limit; other installations remain unknown. LXD cleanup remains explicitly `BLOCKED_ADMIN_AUTHENTICATION`.
+
+The fixed subprocess arguments, protected CLI environment and exclusive/fsynced reservation otherwise support one dispatch with no rebuild, release or retry. Creation/readback receipts are appropriately pending. Historical predeployment CLEAR reviews at `96a2e2b` do not establish the current gate; M0-007 is inapplicable, and PR49’s separate eleven-check entry remains historical.
+
+Inspection covered the diff and all changed files; complete relevant web/admin/auth, SDK identity/publication/availability, durable database/repository and migration source; deployment helpers/config/operator; authority documents and sanitized M5-019 evidence, including original failures and review responses. I ran no tests, builds, provider/network operations or mutations. No principal approval is granted.

@@ -1,0 +1,14 @@
+{
+  "observedAt": "2026-10-07T18:07:27.728335+00:00",
+  "originTlsExit": 0,
+  "sanitizedDetails": [
+    "Protocol version: TLSv1.3",
+    "Ciphersuite: TLS_AES_128_GCM_SHA256",
+    "Peer certificate: CN=insignia.optidigi.nl",
+    "Verification: OK",
+    "Verified peername: insignia.optidigi.nl"
+  ],
+  "priorCurlResolveExactOriginRootStatus": 200,
+  "credentialOrTlsTicketRetained": false,
+  "directOriginAddress": "65.109.22.104"
+}

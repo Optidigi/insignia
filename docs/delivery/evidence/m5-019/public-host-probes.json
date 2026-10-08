@@ -1,0 +1,272 @@
+{
+  "observedAt": "2026-10-07T17:16:59.881200+00:00",
+  "origin": "https://insignia.optidigi.nl",
+  "credentials": false,
+  "cookiesSentOrRetained": false,
+  "redirectsFollowed": false,
+  "routes": [
+    {
+      "path": "/",
+      "transportExit": 0,
+      "statusLine": "HTTP/2 200 ",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-security-policy": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "server": "cloudflare"
+      },
+      "publicLabels": [
+        {
+          "tag": "h1",
+          "text": "Logo customization for Shopify merchants"
+        },
+        {
+          "tag": "button",
+          "text": "Log in"
+        }
+      ],
+      "forms": [
+        {
+          "method": "post",
+          "actionPath": "/auth/login"
+        }
+      ],
+      "scripts": [],
+      "reviewedBootstrapMarkers": {
+        "shopify-api-key": false,
+        "MerchantConfigEditor": false,
+        "app-bridge.js": false,
+        "polaris.js": false
+      },
+      "bodyRetained": false
+    },
+    {
+      "path": "/auth/login",
+      "transportExit": 0,
+      "statusLine": "HTTP/2 200 ",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-security-policy": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "server": "cloudflare"
+      },
+      "publicLabels": [],
+      "forms": [
+        {
+          "method": "post",
+          "actionPath": "/auth/login"
+        }
+      ],
+      "scripts": [
+        {
+          "host": "cdn.shopify.com",
+          "path": "/shopifycloud/polaris.js"
+        }
+      ],
+      "reviewedBootstrapMarkers": {
+        "shopify-api-key": false,
+        "MerchantConfigEditor": false,
+        "app-bridge.js": false,
+        "polaris.js": true
+      },
+      "bodyRetained": false
+    },
+    {
+      "path": "/admin/products",
+      "transportExit": 0,
+      "statusLine": "HTTP/2 404 ",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-security-policy": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "server": "cloudflare"
+      },
+      "publicLabels": [
+        {
+          "tag": "title",
+          "text": "Unhandled Thrown Response!"
+        },
+        {
+          "tag": "h1",
+          "text": "404"
+        },
+        {
+          "tag": "h1",
+          "text": "Not Found"
+        }
+      ],
+      "forms": [],
+      "scripts": [],
+      "reviewedBootstrapMarkers": {
+        "shopify-api-key": false,
+        "MerchantConfigEditor": false,
+        "app-bridge.js": false,
+        "polaris.js": false
+      },
+      "bodyRetained": false
+    },
+    {
+      "path": "/api/admin/products",
+      "transportExit": 0,
+      "statusLine": "HTTP/2 404 ",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-security-policy": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "server": "cloudflare"
+      },
+      "publicLabels": [
+        {
+          "tag": "title",
+          "text": "Unhandled Thrown Response!"
+        },
+        {
+          "tag": "h1",
+          "text": "404"
+        },
+        {
+          "tag": "h1",
+          "text": "Not Found"
+        }
+      ],
+      "forms": [],
+      "scripts": [],
+      "reviewedBootstrapMarkers": {
+        "shopify-api-key": false,
+        "MerchantConfigEditor": false,
+        "app-bridge.js": false,
+        "polaris.js": false
+      },
+      "bodyRetained": false
+    },
+    {
+      "path": "/api/admin/products/0/config",
+      "transportExit": 0,
+      "statusLine": "HTTP/2 404 ",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-security-policy": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "server": "cloudflare"
+      },
+      "publicLabels": [
+        {
+          "tag": "title",
+          "text": "Unhandled Thrown Response!"
+        },
+        {
+          "tag": "h1",
+          "text": "404"
+        },
+        {
+          "tag": "h1",
+          "text": "Not Found"
+        }
+      ],
+      "forms": [],
+      "scripts": [],
+      "reviewedBootstrapMarkers": {
+        "shopify-api-key": false,
+        "MerchantConfigEditor": false,
+        "app-bridge.js": false,
+        "polaris.js": false
+      },
+      "bodyRetained": false
+    },
+    {
+      "path": "/_astro/m5-019-route-probe.js",
+      "transportExit": 0,
+      "statusLine": "HTTP/2 404 ",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-security-policy": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "cache-control": "max-age=14400",
+        "server": "cloudflare"
+      },
+      "publicLabels": [
+        {
+          "tag": "title",
+          "text": "Unhandled Thrown Response!"
+        },
+        {
+          "tag": "h1",
+          "text": "404"
+        },
+        {
+          "tag": "h1",
+          "text": "Not Found"
+        }
+      ],
+      "forms": [],
+      "scripts": [],
+      "reviewedBootstrapMarkers": {
+        "shopify-api-key": false,
+        "MerchantConfigEditor": false,
+        "app-bridge.js": false,
+        "polaris.js": false
+      },
+      "bodyRetained": false
+    },
+    {
+      "path": "/live",
+      "transportExit": 0,
+      "statusLine": "HTTP/2 404 ",
+      "headers": {
+        "content-type": "text/html; charset=utf-8",
+        "content-security-policy": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+        "referrer-policy": "strict-origin-when-cross-origin",
+        "server": "cloudflare"
+      },
+      "publicLabels": [
+        {
+          "tag": "title",
+          "text": "Unhandled Thrown Response!"
+        },
+        {
+          "tag": "h1",
+          "text": "404"
+        },
+        {
+          "tag": "h1",
+          "text": "Not Found"
+        }
+      ],
+      "forms": [],
+      "scripts": [],
+      "reviewedBootstrapMarkers": {
+        "shopify-api-key": false,
+        "MerchantConfigEditor": false,
+        "app-bridge.js": false,
+        "polaris.js": false
+      },
+      "bodyRetained": false
+    }
+  ],
+  "dns": {
+    "A": {
+      "exit": 0,
+      "answer": "insignia.optidigi.nl.\t199\tIN\tA\t188.114.97.0\ninsignia.optidigi.nl.\t199\tIN\tA\t188.114.96.0"
+    },
+    "AAAA": {
+      "exit": 0,
+      "answer": "insignia.optidigi.nl.\t199\tIN\tAAAA\t2a06:98c1:3120::\ninsignia.optidigi.nl.\t199\tIN\tAAAA\t2a06:98c1:3121::"
+    },
+    "CNAME": {
+      "exit": 0,
+      "answer": ""
+    }
+  },
+  "tls": {
+    "exit": 0,
+    "details": [
+      "subject=CN=optidigi.nl",
+      "issuer=C=US, O=Google Trust Services, CN=WE1",
+      "Verification: OK",
+      "Verified peername: *.optidigi.nl",
+      "New, TLSv1.3, Cipher is TLS_AES_256_GCM_SHA384",
+      "Protocol: TLSv1.3",
+      "Verify return code: 0 (ok)"
+    ]
+  }
+}

@@ -1,0 +1,37 @@
+test_candidate_wasm_query_config_extras_and_escape_rejected (__main__.GateControls.test_candidate_wasm_query_config_extras_and_escape_rejected) ... ok
+test_canonical_origin_is_required_even_when_source_and_candidate_agree (__main__.GateControls.test_canonical_origin_is_required_even_when_source_and_candidate_agree) ... FAIL
+test_cli_home_bound_and_ambient_loader_path_stripped (__main__.GateControls.test_cli_home_bound_and_ambient_loader_path_stripped) ... ok
+test_complete_unique_inventory_required (__main__.GateControls.test_complete_unique_inventory_required) ... ok
+test_durable_claim_survives_duplicate (__main__.GateControls.test_durable_claim_survives_duplicate) ... ok
+test_exact_ci_identity_head_and_attempt (__main__.GateControls.test_exact_ci_identity_head_and_attempt) ... ok
+test_git_uses_trusted_executable_and_ignores_substituted_context (__main__.GateControls.test_git_uses_trusted_executable_and_ignores_substituted_context) ... ok
+test_mandatory_inventory_includes_actual_baseline_and_modules (__main__.GateControls.test_mandatory_inventory_includes_actual_baseline_and_modules) ... ok
+test_new_accounting_parent_sync_precedes_reservation_and_dispatch (__main__.GateControls.test_new_accounting_parent_sync_precedes_reservation_and_dispatch) ... ok
+test_optimized_python_still_rejects_unfrozen_gate (__main__.GateControls.test_optimized_python_still_rejects_unfrozen_gate) ... ok
+test_review_reports_and_settings_must_be_distinct (__main__.GateControls.test_review_reports_and_settings_must_be_distinct) ... ok
+test_superseded_version_must_stay_inactive_and_active_must_stay_exact (__main__.GateControls.test_superseded_version_must_stay_inactive_and_active_must_stay_exact) ... ERROR
+test_ten_duplicate_workflows_are_rejected (__main__.GateControls.test_ten_duplicate_workflows_are_rejected) ... ok
+test_tracked_directory_symlink_and_full_inventory_round_trip (__main__.GateControls.test_tracked_directory_symlink_and_full_inventory_round_trip) ... ok
+
+======================================================================
+ERROR: test_superseded_version_must_stay_inactive_and_active_must_stay_exact (__main__.GateControls.test_superseded_version_must_stay_inactive_and_active_must_stay_exact)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019r/create-unreleased-version.test.py", line 46, in test_superseded_version_must_stay_inactive_and_active_must_stay_exact
+    operator.validate_versions(versions)
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: module 'm5_019_create' has no attribute 'validate_versions'
+
+======================================================================
+FAIL: test_canonical_origin_is_required_even_when_source_and_candidate_agree (__main__.GateControls.test_canonical_origin_is_required_even_when_source_and_candidate_agree)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-019-worktree/deployment/m5-019r/create-unreleased-version.test.py", line 36, in test_canonical_origin_is_required_even_when_source_and_candidate_agree
+    with self.assertRaisesRegex(ValueError, 'canonical_app_url'):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 14 tests in 3.514s
+
+FAILED (failures=1, errors=1)

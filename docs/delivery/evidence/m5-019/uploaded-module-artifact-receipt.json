@@ -1,0 +1,62 @@
+{
+  "classification": "EXACT_REVIEWED_UPLOAD_BUNDLE",
+  "bundleFormat": "brotli containing base64 Wasm transport",
+  "bundleSha256": "cbcc9c0f45b3ffff0bd66c1c1e8842544ffd1fd7bbb5787a2e0e4e199df7a44a",
+  "manifestSha256": "edbd681160ebcf09c543e0eb9f456ecaf1797c21418745940dd234bfb3af73f9",
+  "functions": [
+    {
+      "uid": "c56038d4-146a-405e-b47d-a055249eeeb3",
+      "handle": "insignia-experimental-v2-transform",
+      "registrationModuleIdFromCliManifest": "5d574835-46c2-48f4-95cf-78bfe500e5d3",
+      "api": "2026-07",
+      "target": "cart.transform.run",
+      "export": "cart_transform_run",
+      "querySha256": "8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053",
+      "decodedWasmSha256": "49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576",
+      "transportEncoding": "base64",
+      "encodedWasmSha256": "5c6434b6e626cf85825e0e142c27dea56a27a83f64b9d848fc5aee9c76ed536b",
+      "decodedWasmBytes": 181378,
+      "encodedWasmBytes": 241840
+    },
+    {
+      "uid": "552059da-2dc1-47f8-8fc0-14a5ccb6f665",
+      "handle": "insignia-experimental-v2-validation",
+      "registrationModuleIdFromCliManifest": "6f47b27d-e454-4ccb-994f-506a8f58efe5",
+      "api": "2026-07",
+      "target": "cart.validations.generate.run",
+      "export": "cart_validations_generate_run",
+      "querySha256": "a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5",
+      "decodedWasmSha256": "3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6",
+      "transportEncoding": "base64",
+      "encodedWasmSha256": "2330d0fec362e8ecf7185fa1f7cd2fbe1ec8b5b223b575606c93dbe38289a621",
+      "decodedWasmBytes": 182968,
+      "encodedWasmBytes": 243960
+    }
+  ],
+  "configuration": {
+    "app_access": {
+      "scopes": "",
+      "optional_scopes": [
+        "write_products",
+        "read_publications",
+        "read_product_listings"
+      ],
+      "use_legacy_install_flow": false,
+      "redirect_url_allowlist": []
+    },
+    "webhooks": {
+      "api_version": "2026-07"
+    },
+    "app_home": {
+      "app_url": "https://insignia.optidigi.nl/admin/products",
+      "embedded": true
+    },
+    "branding": {
+      "name": "Insignia"
+    }
+  },
+  "frozenSevenInputFilesUnchanged": true,
+  "acceptedSourceBuildUnchanged": 621,
+  "providerAttestation": "Pinned CLI exit0/new-version ACK plus native exact-version UID/config readback. Supported page exposes no server Wasm/query digest; no independent server-byte attestation claimed.",
+  "initialReadbackControlFailure": "Raw encoded index.wasm hash was initially compared to binary input hash; strict base64 decode proves both executable files exactly unchanged. No rebuild, altered Wasm or provider retry."
+}

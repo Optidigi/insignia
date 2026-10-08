@@ -1,0 +1,38 @@
+{
+  "classification": "FULL_FROZEN_PRE_VERSION_GATE_PASS",
+  "slice": "M5-019R",
+  "sourceHead": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+  "sourceTree": "3da38fc83b7a2b68501ec95b9211c1a2846b6f60",
+  "baseAndEffectiveMergeBase": "703cfb21a4262675b088cd06289fe08a421ecdd8",
+  "frozenAt": "2026-10-08T00:03:22.246395+00:00",
+  "canonicalOrigin": "https://insignia-app.optidigi.nl",
+  "gateManifestSha256": "801a0590c09f97b672ba1f06fa47e1ca12a7e58a94e83fd19ede8d2c2a72db09",
+  "frozenFileCount": 3921,
+  "fullManifestLocalPath": "/home/serveradmin/insignia-m5-019r-handoff/owner-origin-full-version-gate.json",
+  "mandatoryClosure": "All tracked files +621 accepted source/build +7 upload inputs +8 CLI anchors +Node/Git +two distinct current-head review reports/settings +fresh CI/versions/control",
+  "sourceClean": true,
+  "hostClassification": "CANONICAL_HOST_READINESS_PASS",
+  "reviews": [
+    {
+      "axis": "spec",
+      "verdict": "CLEAR",
+      "report": "owner-origin-preversion-spec-r4.md",
+      "settings": "owner-origin-preversion-spec-r4.settings.json"
+    },
+    {
+      "axis": "security",
+      "verdict": "CLEAR",
+      "report": "owner-origin-preversion-security-r4.md",
+      "settings": "owner-origin-preversion-security-r4.settings.json"
+    }
+  ],
+  "exactHeadAttempt1CI": 10,
+  "creationReservationExclusiveAndFsynced": true,
+  "creationCeiling": 1,
+  "versionTag": "m5-019r-9b94149272d1",
+  "releaseAuthorized": false,
+  "allFrozenFileHashesUnchangedAfterCLI": true,
+  "createdInactiveVersion": "1158986629121",
+  "nativeReadbackAndInstallation": "BLOCKED_SHARED_BROWSER_SHOPIFY_LOGIN",
+  "noRetry": true
+}

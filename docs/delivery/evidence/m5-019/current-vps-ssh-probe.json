@@ -1,0 +1,17 @@
+{
+  "observedAt": "2026-10-07T17:28:32.303291+00:00",
+  "ownerSuppliedDestination": {
+    "host": "65.109.22.104",
+    "user": "serveradmin",
+    "port": 22,
+    "source": "Owner laptop ssh -G prod output"
+  },
+  "command": "ssh -o BatchMode=yes -o StrictHostKeyChecking=yes -o ConnectTimeout=7 -o ConnectionAttempts=1 -p 22 serveradmin@65.109.22.104 hostname",
+  "exit": 255,
+  "stdout": "",
+  "stderr": "No ED25519 host key is known for 65.109.22.104 and you have requested strict checking.\nHost key verification failed.",
+  "strictHostKeyChecking": true,
+  "batchMode": true,
+  "remoteCommandExecuted": false,
+  "credentialsImported": false
+}

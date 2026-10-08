@@ -1,0 +1,24 @@
+{
+  "checks": [
+    {
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:style"
+      ],
+      "exit": 0,
+      "rawLogSha256": "c2a1eaf0182bfa63269203f8da34e45b16bb76e9f784629aee8ea720ef7e536d"
+    },
+    {
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "exit": 0,
+      "rawLogSha256": "b6173a893a3c6557cfbc594e69d77cc09be36b2ded91642a7aaa00bec42abc86"
+    }
+  ],
+  "earlierCheckLimitation": "pnpm production deploy removed workspace devDependencies; restored using frozen offline install, then re-ran both checks successfully",
+  "whitespace": "log-rendering.json preserves original/rendered hashes"
+}

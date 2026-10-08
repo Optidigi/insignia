@@ -1,0 +1,12 @@
+{
+  "directory": "/home/serveradmin/insignia-rewrite-m5-019",
+  "owner": 1000,
+  "mode": "0o700",
+  "privateSecretFiles": {
+    "runtime.env": "0600",
+    "database.env": "0600",
+    "provisioning.json": "0600"
+  },
+  "legacyFilesChanged": false,
+  "credentialValuesLogged": false
+}

@@ -1,0 +1,55 @@
+{
+  "slice": "M5-019R",
+  "closed": false,
+  "sourceHead": "9b0810dd8383ae578a3c960b327786694f1b222e",
+  "events": [
+    {
+      "kind": "exact-reviewed-prestate",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:12:41.843918+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:12:43.333664+00:00",
+      "receipt": "host-prestate.json"
+    },
+    {
+      "kind": "canonical-private-stage",
+      "mutation": true,
+      "reservedAt": "2026-10-07T23:13:16.234859+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:13:33.306625+00:00",
+      "receipt": "host-stage.json"
+    },
+    {
+      "kind": "canonical-private-http-before-restart",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:14:37.971200+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:14:39.565153+00:00",
+      "receipt": "host-private-http-before-restart.json"
+    },
+    {
+      "kind": "canonical-private-restart",
+      "mutation": true,
+      "reservedAt": "2026-10-07T23:15:11.364947+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:15:27.836134+00:00",
+      "receipt": "host-restart.json"
+    },
+    {
+      "kind": "canonical-private-http-after-restart",
+      "mutation": false,
+      "reservedAt": "2026-10-07T23:15:40.250327+00:00",
+      "outcome": "SETTLED",
+      "exitCode": 0,
+      "settledAt": "2026-10-07T23:15:41.840957+00:00",
+      "receipt": "host-private-http-after-restart.json"
+    }
+  ],
+  "hostMutationAttempts": 2,
+  "appVersionCreates": 0,
+  "releases": 0
+}

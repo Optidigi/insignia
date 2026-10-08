@@ -1,0 +1,22 @@
+{
+  "observedAt": "2026-10-07T23:42:51.399Z",
+  "origin": "https://insignia.optidigi.nl",
+  "transport": "actual_shared_browser_native_fetch_public_HTTPS",
+  "credentials": "omit",
+  "rows": [
+    {
+      "path": "/",
+      "status": 200,
+      "cacheControl": null,
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "bodySha256": "2de089f95976eb7ae2550de4bb262907fb1b3c8da16698320d034b91fe1dd12f"
+    },
+    {
+      "path": "/auth/login",
+      "status": 200,
+      "cacheControl": null,
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "bodySha256": "869d3cb23f84f0a071fa81a1b32b229294ca28bd2aaae73a26cfb896b455b76c"
+    }
+  ]
+}

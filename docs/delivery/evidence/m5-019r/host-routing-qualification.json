@@ -1,0 +1,146 @@
+{
+  "classification": "CANONICAL_HOST_READINESS_PASS",
+  "canonicalOrigin": "https://insignia-app.optidigi.nl",
+  "applicationUrl": "https://insignia-app.optidigi.nl/admin/products",
+  "runtimeAppUrl": "https://insignia-app.optidigi.nl",
+  "reviewedDeploymentSourceHead": "9155b4a6f9f1c7988a2dc44c4041d67c03d52bd3",
+  "publicTransport": "Actual native shared-browser HTTPS, omitted credentials; no TLS override",
+  "publicRoutes": [
+    {
+      "path": "/live",
+      "status": 200,
+      "cacheControl": "no-store",
+      "contentType": "application/json",
+      "csp": null,
+      "server": "cloudflare",
+      "cfRay": "a470c25039adfe98-AMS",
+      "bodyBytes": 17,
+      "bodySha256": "290f663cc2ed7fec14d831023497265da83974028929bc73c4e9711e949c8780"
+    },
+    {
+      "path": "/admin/products",
+      "status": 200,
+      "cacheControl": "private, no-store",
+      "contentType": "text/html",
+      "csp": "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' https: data:; connect-src 'self'; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'",
+      "server": "cloudflare",
+      "cfRay": "a470c2511b62fe98-AMS",
+      "bodyBytes": 6860,
+      "bodySha256": "4836d48bd05c226e8c89485628a6281598b3ecd1c633e0af769d937646b5cb21",
+      "correctClient": true
+    },
+    {
+      "path": "/api/admin/products",
+      "status": 401,
+      "cacheControl": "private, no-store",
+      "contentType": "application/json; charset=utf-8",
+      "csp": null,
+      "server": "cloudflare",
+      "cfRay": "a470c2516c0dfe98-AMS",
+      "bodyBytes": 35,
+      "bodySha256": "ca730ec7fc2b7edb7277e5b8e58d6a474971ca59dafb499141a4856c06132638"
+    },
+    {
+      "path": "/api/admin/products/1/config",
+      "status": 401,
+      "cacheControl": "private, no-store",
+      "contentType": "application/json; charset=utf-8",
+      "csp": null,
+      "server": "cloudflare",
+      "cfRay": "a470c2524dabfe98-AMS",
+      "bodyBytes": 35,
+      "bodySha256": "ca730ec7fc2b7edb7277e5b8e58d6a474971ca59dafb499141a4856c06132638"
+    },
+    {
+      "path": "/_astro/MerchantConfigEditor.DP-cRyvJ.js",
+      "status": 200,
+      "cacheControl": "public, max-age=31536000, immutable",
+      "contentType": "text/javascript; charset=utf-8",
+      "csp": null,
+      "server": "cloudflare",
+      "cfRay": "a470c2528e32fe98-AMS",
+      "bodyBytes": 33131,
+      "bodySha256": "9beb6d7bfec68ff2f618cb2756c22833e568b86087ceb1537a91d869a47dbe66"
+    }
+  ],
+  "dnsTLS": "PASS_CLOUDFLARE_AUTHORITATIVE_WILDCARD_PUBLIC_TLS_AND_CA_VERIFIED_OWNED_ORIGIN_CERT",
+  "ownedOriginAddress": "65.109.22.104",
+  "strictOriginCertificate": {
+    "observedAt": "2026-10-07T23:36:55.537086+00:00",
+    "host": "insignia-app.optidigi.nl",
+    "originAddress": "65.109.22.104",
+    "tlsOverride": false,
+    "scope": "Owned origin TLS observation after public browser PASS",
+    "verified": true,
+    "protocol": "TLSv1.3",
+    "sans": [
+      [
+        "DNS",
+        "insignia-app.optidigi.nl"
+      ]
+    ],
+    "notAfter": "Jan  5 22:37:14 2027 GMT",
+    "certificateSha256": "631d48d425bb77d6cd636f9d88659d819b85915ced040ac6f860e37395e9cd51"
+  },
+  "webImage": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+  "packageSha256": "f117be50d7bc106f1c943cdf75a8080fa63c26e0edd99b7ba0ddf3eaea697c2b",
+  "webEntrySha256": "5dab1e4f21a7033582c1c2a326c97d6dcadae66ca04566a73a2aca113b4077f7",
+  "composeSha256": "2cf6a39677b760570be3406e3d76280ec152ca40c4c01ba46e1ef2e4396faa4e",
+  "actualHardening": {
+    "nonRootUser": "node",
+    "readOnlyRootFs": true,
+    "allCapabilitiesDropped": true,
+    "noNewPrivileges": true,
+    "noPublishedWebOrDatabasePorts": true,
+    "privateFiles0600": true
+  },
+  "runtimeDatabaseRole": {
+    "role": {
+      "role": "insignia_runtime",
+      "rolsuper": false,
+      "rolcreaterole": false,
+      "rolcreatedb": false,
+      "rolreplication": false,
+      "rolbypassrls": false
+    },
+    "databaseReachable": true
+  },
+  "restart": "PASS_SAME_CONTAINER_IMAGE_CANONICAL_CONFIGURATION_HEALTH_RECOVERED",
+  "rollback": "PASS_STOP_ONLY_OWNED_WEB_PUBLIC404_LEGACY200_THEN_SAME_CONTAINER_START_PUBLIC200",
+  "legacyPublicRootLogin": [
+    {
+      "path": "/",
+      "status": 200,
+      "cacheControl": null,
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "bodySha256": "2de089f95976eb7ae2550de4bb262907fb1b3c8da16698320d034b91fe1dd12f"
+    },
+    {
+      "path": "/auth/login",
+      "status": 200,
+      "cacheControl": null,
+      "csp": "frame-ancestors https://admin.shopify.com https://*.myshopify.com https://*.spin.dev https://admin.myshopify.io https://admin.shop.dev; default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.shopify.com; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.myshopify.com https://*.shopify.com;",
+      "bodySha256": "869d3cb23f84f0a071fa81a1b32b229294ca28bd2aaae73a26cfb896b455b76c"
+    }
+  ],
+  "legacyRootLoginEqualBeforeDuringAfter": true,
+  "databaseLegacyAndTraefikIdsImagesStartTimesUnchanged": true,
+  "supersededRewriteNlAndComRoutesRemoved": true,
+  "unrelatedHostCollision": "NONE_OBSERVED_DOCKER_AND_MOUNTED_FILE_PROVIDER",
+  "rawScriptedEdgeLimitation": "Python urllib requests get Cloudflare1010 BIC; actual browser requests pass. No BIC/security/Cloudflare setting changed; no user-agent spoofing or TLS disable",
+  "initialOriginTLSFailure": "Certificate initially pending; original failure retained, resolver validated/issued certificate, subsequent strict verification PASS without operator retry/mutation",
+  "localFinalReadControlFailure": "Private-only routing-false assertion reused after exposure. Raw read failure retained; separate read-only phase resolution verified true routing/current identity. No ambiguous write/retry",
+  "hostDataReadinessOnly": true,
+  "authenticatedG7": "NOT_RUN",
+  "appVersionCreates": 0,
+  "releaseAttempts": 0,
+  "fixtureCount": 0,
+  "noApplicationOrFunctionRebuildOrNewDatabaseMigration": true,
+  "observedAt": "2026-10-07T23:45:31.393590+00:00",
+  "temporaryAccessCleanup": {
+    "keyRevoked": true,
+    "localPrivateKeyRemoved": true,
+    "otherKeysPreserved": true,
+    "receipt": "owner-origin-key-cleanup.json"
+  }
+}

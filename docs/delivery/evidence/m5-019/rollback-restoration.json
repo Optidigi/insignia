@@ -1,0 +1,9 @@
+{
+  "containerId": "fda5d54ce1a12bdbff2acc2d25301612208c2eabbaf2db1af99f1201ca7d3109",
+  "imageId": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+  "health": "healthy",
+  "sameStoppedContainerAndImageRestored": true,
+  "legacyContainerImageStartTimeUnchanged": true,
+  "databaseContainerPreserved": true,
+  "routeEnabled": "true"
+}
