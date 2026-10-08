@@ -1,0 +1,41 @@
+{
+  "classification": "EXACT_PINNED_CLI_RESTORED_PRIMARY_NPM_PACKAGE",
+  "version": "4.8.2",
+  "packageSha256": "0b1c01d1ebf1f1265826a4ffa78ea94bc4c2eb8a36beb9b2f5fb305ef30231ff",
+  "acceptedFrozenAnchorsMatched": [
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/cli-4.8.2/package/bin/run.js",
+      "sha256": "a594b0c862c5432e98b44f6ecdd94245907b2f7b43336a6205e62cd7698a1b9e"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/cli-4.8.2/package/dist/chunk-2ZGU7VWR.js",
+      "sha256": "dfe35cafc2e97063ebe1bb660472d73bf28938460b4d52d29ad6bc2f403c24b5"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/cli-4.8.2/package/dist/chunk-CTNBSUVU.js",
+      "sha256": "7066325faa5c75799d9112b069fc9f9c279ebdac3405e85b4410dffe1359a8d3"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/cli-4.8.2/package/dist/chunk-GZKEIUJT.js",
+      "sha256": "c2764a32b0dd77bee4b25a8a0ae5c0243dda277ae45a339c73c93b8f296c841d"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/cli-4.8.2/package/dist/chunk-NL7WDQSR.js",
+      "sha256": "a3981bb13b88bb92eb5c8634d5248477cb0e4c14c2d6b5fdbd4ea038c0278b54"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/cli-4.8.2/package/dist/chunk-NYHGIWKZ.js",
+      "sha256": "a89873a128c3044b0870f2a82788a7e4d8f8642e9bb4bfcb0c0f0d4abc380d7a"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/cli-4.8.2/package/dist/chunk-QJW6UIRU.js",
+      "sha256": "ae01052e66a72369d75a3d7a2a59e261c72c71e45aa5fba496685dbe4700ab97"
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/cli-4.8.2/package/package.json",
+      "sha256": "bba49a60a1d54ccb953fe1f44ceb3e2d71ced4536e32acca627478465a174567"
+    }
+  ],
+  "appVersionCreated": false,
+  "providerRequest": false
+}

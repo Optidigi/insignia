@@ -1,0 +1,64 @@
+{
+  "observedAt": "2026-10-08T02:00:43.373Z",
+  "canonicalOrigin": "https://insignia-app.optidigi.nl",
+  "transport": "actual_shared_browser_native_fetch_public_HTTPS",
+  "credentials": "omit",
+  "tlsOverride": false,
+  "rows": [
+    {
+      "path": "/live",
+      "status": 200,
+      "cacheControl": "no-store",
+      "contentType": "application/json",
+      "csp": null,
+      "server": "cloudflare",
+      "cfRay": "a4718db76cc7feb3-AMS",
+      "bodyBytes": 17,
+      "bodySha256": "290f663cc2ed7fec14d831023497265da83974028929bc73c4e9711e949c8780"
+    },
+    {
+      "path": "/admin/products",
+      "status": 200,
+      "cacheControl": "private, no-store",
+      "contentType": "text/html",
+      "csp": "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' https: data:; connect-src 'self'; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'",
+      "server": "cloudflare",
+      "cfRay": "a4718db85ecafeb3-AMS",
+      "bodyBytes": 6860,
+      "bodySha256": "4836d48bd05c226e8c89485628a6281598b3ecd1c633e0af769d937646b5cb21"
+    },
+    {
+      "path": "/api/admin/products",
+      "status": 401,
+      "cacheControl": "private, no-store",
+      "contentType": "application/json; charset=utf-8",
+      "csp": null,
+      "server": "cloudflare",
+      "cfRay": "a4718db89f8afeb3-AMS",
+      "bodyBytes": 35,
+      "bodySha256": "ca730ec7fc2b7edb7277e5b8e58d6a474971ca59dafb499141a4856c06132638"
+    },
+    {
+      "path": "/api/admin/products/1/config",
+      "status": 401,
+      "cacheControl": "private, no-store",
+      "contentType": "application/json; charset=utf-8",
+      "csp": null,
+      "server": "cloudflare",
+      "cfRay": "a4718db8d827feb3-AMS",
+      "bodyBytes": 35,
+      "bodySha256": "ca730ec7fc2b7edb7277e5b8e58d6a474971ca59dafb499141a4856c06132638"
+    },
+    {
+      "path": "/_astro/MerchantConfigEditor.DP-cRyvJ.js",
+      "status": 200,
+      "cacheControl": "public, max-age=31536000, immutable",
+      "contentType": "text/javascript; charset=utf-8",
+      "csp": null,
+      "server": "cloudflare",
+      "cfRay": "a4718db918ccfeb3-AMS",
+      "bodyBytes": 33131,
+      "bodySha256": "9beb6d7bfec68ff2f618cb2756c22833e568b86087ceb1537a91d869a47dbe66"
+    }
+  ]
+}

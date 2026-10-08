@@ -1,0 +1,35 @@
+{
+  "slice": "M5-020",
+  "classification": "CLI_ACK_AND_EXACT_ACTIVE_STATUS_SETTLED",
+  "recordedAt": "2026-10-08T02:03:42.021572+00:00",
+  "sourceHead": "e750a67bec40dd4ffa447681d6ee04fb631922e3",
+  "gateSha256": "0eb11cfa5c2ff07348a721f318cc5148cef2e910b5ad301dca88d61d880a685f",
+  "existingCandidate": {
+    "versionId": "1158986629121",
+    "versionTag": "m5-019r-9b94149272d1",
+    "postReadStatus": "active"
+  },
+  "rollback": {
+    "versionId": "1153019904001",
+    "versionTag": "insignia-3",
+    "postReadStatus": "inactive"
+  },
+  "superseded": {
+    "versionId": "1158837927937",
+    "postReadStatus": "inactive",
+    "classification": "SUPERSEDED_WRONG_CANONICAL_ORIGIN_NEVER_RELEASE"
+  },
+  "supportedCommand": "pinned Node24.21.0 / ShopifyCLI4.8.2 app release --path exact-context --config m5-019r --version m5-019r-9b94149272d1 --allow-updates --no-color",
+  "releaseAttempts": 1,
+  "versionCreationAttempts": 0,
+  "rollbackAttempts": 0,
+  "literalCliSuccessObserved": true,
+  "literalSuccess": "Version released to users.",
+  "privateOutputSha256": "0a595a65f887ae2214730d869cdad74023cebf000028f3b240ca28652f76ea2b",
+  "privateOutputCommitted": false,
+  "postVersionList": "versions-post-release.json",
+  "postNativeConfigReadback": "AGENT_BROWSER_BLOCKED_OWNER_FRESH_CONFIRMATION_PENDING",
+  "outboundHttpCount": "NOT_INSTRUMENTED; one logical supported release invocation, not a per-HTTP count",
+  "unresolvedReleaseWrite": false,
+  "m5G7Pass": false
+}

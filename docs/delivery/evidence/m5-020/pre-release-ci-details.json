@@ -1,0 +1,274 @@
+[
+  {
+    "workflow": "M1-001 foundation and boundaries",
+    "head": "e750a67bec40dd4ffa447681d6ee04fb631922e3",
+    "attempt": 1,
+    "runId": 37715044579,
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37715044579",
+    "jobs": [
+      {
+        "completedAt": "2026-10-08T01:59:34Z",
+        "conclusion": "success",
+        "databaseId": 113109490049,
+        "name": "foundation",
+        "startedAt": "2026-10-08T01:52:11Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-10-08T01:52:48Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-08T01:52:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:52:50Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+            "number": 2,
+            "startedAt": "2026-10-08T01:52:48Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:52:50Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "number": 3,
+            "startedAt": "2026-10-08T01:52:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:53:26Z",
+            "conclusion": "success",
+            "name": "Install pinned Rust and browser dependencies",
+            "number": 4,
+            "startedAt": "2026-10-08T01:52:50Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:57:06Z",
+            "conclusion": "success",
+            "name": "Build and check actual workspace",
+            "number": 5,
+            "startedAt": "2026-10-08T01:53:26Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:59:32Z",
+            "conclusion": "success",
+            "name": "M5 publication geometry stress (100 cases, no retries)",
+            "number": 6,
+            "startedAt": "2026-10-08T01:57:06Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:59:32Z",
+            "conclusion": "success",
+            "name": "Bind current source and build outputs",
+            "number": 7,
+            "startedAt": "2026-10-08T01:59:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:59:33Z",
+            "conclusion": "success",
+            "name": "Run actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+            "number": 8,
+            "startedAt": "2026-10-08T01:59:32Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:59:33Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "number": 15,
+            "startedAt": "2026-10-08T01:59:33Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:59:33Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+            "number": 16,
+            "startedAt": "2026-10-08T01:59:33Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:59:33Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 17,
+            "startedAt": "2026-10-08T01:59:33Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Optidigi/insignia/actions/runs/37715044579/job/113109490049"
+      }
+    ]
+  },
+  {
+    "workflow": "M3-001 PostgreSQL durable core",
+    "head": "e750a67bec40dd4ffa447681d6ee04fb631922e3",
+    "attempt": 1,
+    "runId": 37715044691,
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37715044691",
+    "jobs": [
+      {
+        "completedAt": "2026-10-08T01:54:19Z",
+        "conclusion": "success",
+        "databaseId": 113109490775,
+        "name": "durable-core",
+        "startedAt": "2026-10-08T01:52:11Z",
+        "status": "completed",
+        "steps": [
+          {
+            "completedAt": "2026-10-08T01:52:12Z",
+            "conclusion": "success",
+            "name": "Set up job",
+            "number": 1,
+            "startedAt": "2026-10-08T01:52:12Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:52:28Z",
+            "conclusion": "success",
+            "name": "Initialize containers",
+            "number": 2,
+            "startedAt": "2026-10-08T01:52:13Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:52:29Z",
+            "conclusion": "success",
+            "name": "Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+            "number": 3,
+            "startedAt": "2026-10-08T01:52:28Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:52:30Z",
+            "conclusion": "success",
+            "name": "Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "number": 4,
+            "startedAt": "2026-10-08T01:52:29Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:52:34Z",
+            "conclusion": "success",
+            "name": "Run corepack pnpm install --frozen-lockfile",
+            "number": 5,
+            "startedAt": "2026-10-08T01:52:30Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:52:34Z",
+            "conclusion": "success",
+            "name": "Inspect migration state",
+            "number": 6,
+            "startedAt": "2026-10-08T01:52:34Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:52:54Z",
+            "conclusion": "success",
+            "name": "Run corepack pnpm build",
+            "number": 7,
+            "startedAt": "2026-10-08T01:52:34Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:52:55Z",
+            "conclusion": "success",
+            "name": "Run corepack pnpm check:style",
+            "number": 8,
+            "startedAt": "2026-10-08T01:52:54Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:53:29Z",
+            "conclusion": "success",
+            "name": "Run corepack pnpm check:boundaries",
+            "number": 9,
+            "startedAt": "2026-10-08T01:52:55Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:53:29Z",
+            "conclusion": "success",
+            "name": "Run corepack pnpm check:secrets",
+            "number": 10,
+            "startedAt": "2026-10-08T01:53:29Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:53:45Z",
+            "conclusion": "success",
+            "name": "Run corepack pnpm check:database",
+            "number": 11,
+            "startedAt": "2026-10-08T01:53:29Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:54:14Z",
+            "conclusion": "success",
+            "name": "M5 100k actual read-seam query plans",
+            "number": 12,
+            "startedAt": "2026-10-08T01:53:45Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:54:15Z",
+            "conclusion": "success",
+            "name": "Preserve actual M5 PostgreSQL plans and build hashes",
+            "number": 13,
+            "startedAt": "2026-10-08T01:54:14Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:54:16Z",
+            "conclusion": "success",
+            "name": "Rehearse disposable down and up",
+            "number": 14,
+            "startedAt": "2026-10-08T01:54:15Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:54:16Z",
+            "conclusion": "success",
+            "name": "Post Run actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+            "number": 26,
+            "startedAt": "2026-10-08T01:54:16Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:54:16Z",
+            "conclusion": "success",
+            "name": "Post Run actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683",
+            "number": 27,
+            "startedAt": "2026-10-08T01:54:16Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:54:17Z",
+            "conclusion": "success",
+            "name": "Stop containers",
+            "number": 28,
+            "startedAt": "2026-10-08T01:54:16Z",
+            "status": "completed"
+          },
+          {
+            "completedAt": "2026-10-08T01:54:17Z",
+            "conclusion": "success",
+            "name": "Complete job",
+            "number": 29,
+            "startedAt": "2026-10-08T01:54:17Z",
+            "status": "completed"
+          }
+        ],
+        "url": "https://github.com/Optidigi/insignia/actions/runs/37715044691/job/113109490775"
+      }
+    ]
+  }
+]

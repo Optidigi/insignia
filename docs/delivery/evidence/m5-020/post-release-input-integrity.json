@@ -1,0 +1,17 @@
+{
+  "classification": "POST_RELEASE_PRODUCTION_SOURCE_BUILD_PROVIDER_INPUTS_UNCHANGED",
+  "recordedAt": "2026-10-08T02:04:34.740828+00:00",
+  "frozenSourceHead": "e750a67bec40dd4ffa447681d6ee04fb631922e3",
+  "acceptedProductionSource": 396,
+  "acceptedBuild": 225,
+  "acceptedHashesMatched": 621,
+  "providerInputFilesMatched": 7,
+  "releaseControllerFilesMatched": 4,
+  "productionSourceChangesAfterProviderAccess": 0,
+  "newBuilds": 0,
+  "versionCreationAttempts": 0,
+  "immutableHistoricalRunsReopened": false,
+  "newProductConfigs": 0,
+  "newProducts": 0,
+  "notes": "CLI-local metadata excluded from provider artifact comparison; no production source/build or seven config/Function inputs changed"
+}

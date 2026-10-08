@@ -1,0 +1,17 @@
+CLEAR — exact HEAD `6cd4651c604b6eaa8d3d100330dd3cee5f396178`
+
+Independent ROUND2 **Spec/correctness review: zero material findings**. Reviewed tree `7a01fcb9b326c4665b89b39c6123e9a4d5c34cfb`, cumulative base/effective `e5262267234516251bd4a42367643b700e8854f0`.
+
+Both ROUND1 inventory defects are closed in the actual implementation:
+
+- [Mandatory membership](/home/serveradmin/insignia-m5-020-worktree/deployment/m5-020/release-existing.py:68) includes every tracked lexical path, including all four directory symlinks, and rejects missing or changed-kind entries.
+- [Symlink validation](/home/serveradmin/insignia-m5-020-worktree/deployment/m5-020/release-existing.py:91) resolves targets strictly, rejects unresolved links and resolution cycles, confines executable targets to the three inventoried roots, and requires target-file or directory-content membership. Link kind/text and permitted target contents are frozen and revalidated. The prior escape into an unlisted shared dependency under `NEUTRAL` is denied.
+- Context links remain rejected before target reads. The fixed release command follows the durable exclusive reservation; timeout, nonzero exit and non-ACK consume the attempt without retry.
+
+I inspected the complete cumulative change and production seams: admin/editor/canvas geometry and rendering; App Bridge identity, private SSR/API and request protections; durable CAS, immutable publication/request/outbox and idempotency; activation and historical recovery; trusted release/build and Function readiness; provider availability v1/v2/v3; tenant transactions, fences and all 15 SQL migrations; Function queries, Rust authorization/policy/capacity; commercial eligibility; packaging, host helpers and release/freeze controllers. Pertinent authorization, browser, CAS, timing, ambiguity and crash-recovery test sources and the assigned historical review/finding chain were inspected without reusing verdicts.
+
+Personally performed static checks confirmed exact Git bindings, clean worktree, cumulative whitespace, changed JSON/Python AST parsing, architecture and controller/test/log hash bindings, and all **396 source + 225 build hashes**, with zero mismatches. The matrix retains all **34 real G7 criteria as not run**. Focused RED and GREEN11 logs are inspected fake-transport evidence; I executed no tests, builds or operators, and used no network, browser, provider CLI, SSH, credentials, edits or delegation.
+
+The fresh owner-native config/UID readback and explicit designated-store installation confirmation legitimately satisfy that premise. Their provenance limits remain truthful: no owner timestamp or provider artifact, no complete installation inventory, and no inactive-candidate installation equality claim. Minor nonblocking wording: the matrix introduction still says native proof is pending; the current report, qualification and committed fresh receipt correctly supersede that sentence.
+
+**SOURCE_GATE_PENDING / RELEASE_NOT_ATTEMPTED / M5_G7_NOT_PASSED remains the outcome.** Exact-head CI is unobserved here and must be supplied separately as ten qualifying attempt1 successes before full freeze. Default production readiness remains fail-closed; unresolved live prerequisites must stop fixture creation. This CLEAR grants no principal approval, release permission, M5/G7 PASS or successor merge authority.

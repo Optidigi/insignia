@@ -1,0 +1,14 @@
+...F......
+======================================================================
+FAIL: test_executable_link_outside_inventoried_roots_is_denied (__main__.ReleaseControls.test_executable_link_outside_inventoried_roots_is_denied)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-020-worktree/deployment/m5-020/release-existing.test.py", line 42, in test_executable_link_outside_inventoried_roots_is_denied
+    with self.assertRaisesRegex(ValueError, 'executable_symlink_outside_inventory_roots'):
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ValueError not raised
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.024s
+
+FAILED (failures=1)

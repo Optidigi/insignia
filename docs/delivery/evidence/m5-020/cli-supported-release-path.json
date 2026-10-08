@@ -1,0 +1,12 @@
+{
+  "source": "Exact restored official @shopify/cli4.8.2 primary local source",
+  "file": "dist/chunk-JADBWMQS.js",
+  "sha256": "4581745f1ff5f54e274980663e4c3ec3b580a29ddc5dc4c9b88842c0baae7532",
+  "operation": "app release --version existing-tag --allow-updates",
+  "versionTag": "m5-019r-9b94149272d1",
+  "allowDeletes": false,
+  "allowUpdates": "Required supported noninteractive confirmation for adding/updating exact reviewed modules/config, not protection bypass",
+  "commandCreatesOrBuildsOrDeploysVersion": false,
+  "exitZeroNotSufficient": "CLI can display userErrors and exit0; exact success ACK and independent post-release readback required",
+  "requestRetryAccounting": "One operator invocation; internal CLI HTTP requests are not claimed individually instrumented"
+}

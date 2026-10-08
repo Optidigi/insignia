@@ -1,0 +1,27 @@
+{
+  "classification": "FULL_PRE_RELEASE_GATE_FROZEN",
+  "sourceHead": "e750a67bec40dd4ffa447681d6ee04fb631922e3",
+  "sourceTree": "1e98f5f8965bf9a478913e3d0c7e6088ff18d37c",
+  "fileCount": 5141,
+  "gateSha256": "0eb11cfa5c2ff07348a721f318cc5148cef2e910b5ad301dca88d61d880a685f",
+  "exactSourceCI": "pre-release-ci.json",
+  "reviews": [
+    {
+      "axis": "spec",
+      "report": "/home/serveradmin/insignia-m5-020-handoff/pre-release-spec-r3.md",
+      "settings": "/home/serveradmin/insignia-m5-020-handoff/pre-release-spec-r3.settings.json"
+    },
+    {
+      "axis": "security",
+      "report": "/home/serveradmin/insignia-m5-020-handoff/pre-release-security-r3.md",
+      "settings": "/home/serveradmin/insignia-m5-020-handoff/pre-release-security-r3.settings.json"
+    }
+  ],
+  "localControls": 12,
+  "freshNativeEvidence": "fresh-native-readback.json",
+  "freshPublicHostEvidence": "canonical-public-host-refresh.json",
+  "versionCreationCeiling": 0,
+  "releaseCeiling": 1,
+  "frozenBeforeActualReleaseReservation": true,
+  "rawGate": "pre-release-gate.json"
+}

@@ -1,0 +1,27 @@
+{
+  "slice": "M5-020",
+  "classification": "BLOCKED_SHARED_BROWSER_SHOPIFY_HUMAN_VERIFICATION",
+  "nativeVersionNavigation": {
+    "requestedVersionId": "1158986629121",
+    "url": "https://accounts.shopify.com/session-service/login",
+    "title": "Just a moment...",
+    "configFieldsObserved": false
+  },
+  "designatedStoreNavigation": {
+    "requestedStore": "insignia-rewrite-dev.myshopify.com",
+    "requestedPath": "https://admin.shopify.com/store/insignia-rewrite-dev/apps",
+    "url": "https://accounts.shopify.com/session-service/login",
+    "title": "Just a moment...",
+    "iframeReached": false,
+    "authenticatedShopInstallIdentityObserved": false,
+    "grantsObserved": false,
+    "staffAuthorizationObserved": false,
+    "trustedReadinessObserved": false
+  },
+  "queryValuesRecorded": false,
+  "screenshotsSupplied": false,
+  "pdfsSupplied": false,
+  "authBypassAttempted": false,
+  "fixturesCreated": 0,
+  "productConfigsCreated": 0
+}
