@@ -397,6 +397,7 @@ def provision():
       'runtimeSelect',has_table_privilege('insignia_runtime','trusted_release_records','SELECT'),
       'runtimeWrite',has_table_privilege('insignia_runtime','trusted_release_records','INSERT,UPDATE,DELETE,TRUNCATE'),
       'runtimeSchemaCreate',has_schema_privilege('insignia_runtime','public','CREATE'),
+      'operatorConnect',has_database_privilege('insignia_release_operator',current_database(),'CONNECT'),
       'operatorInsert',has_table_privilege('insignia_release_operator','trusted_release_records','INSERT'),
       'operatorRewrite',has_table_privilege('insignia_release_operator','trusted_release_records','UPDATE,DELETE,TRUNCATE'),
       'runtimeOperatorMembership',pg_has_role('insignia_runtime','insignia_release_operator','MEMBER'),
@@ -404,7 +405,7 @@ def provision():
       'relationOwner',(SELECT pg_get_userbyid(relowner) FROM pg_class WHERE oid='trusted_release_records'::regclass),
       'rewriteTriggers',(SELECT count(*) FROM pg_trigger WHERE tgrelid='trusted_release_records'::regclass AND NOT tgisinternal),
       'records',(SELECT count(*) FROM trusted_release_records));"""))
-    require(rights['runtimeSelect'] and rights['operatorInsert'] and not any(rights[key] for key in
+    require(rights['runtimeSelect'] and rights['operatorConnect'] and rights['operatorInsert'] and not any(rights[key] for key in
         ['runtimeWrite', 'runtimeSchemaCreate', 'operatorRewrite', 'runtimeOperatorMembership', 'runtimeOwnerMembership']), 'Privilege readback mismatch')
     require(rights['relationOwner'] == 'insignia_release_owner' and rights['rewriteTriggers'] == 2 and rights['records'] == 0, 'Trusted schema readback mismatch')
     finish('provision', {'rights': rights, 'tenantSeeds': 0, 'trustedEvidenceAppends': 0, 'migration': MIGRATION})

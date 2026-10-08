@@ -1,0 +1,37 @@
+{
+  "trusted-release-connect-red.log": {
+    "rawSha256": "45c5cfed602dde8ad793f2e7495f386e8da34e17d6a7dad5a4e740254d2316a6",
+    "repositorySha256": "45c5cfed602dde8ad793f2e7495f386e8da34e17d6a7dad5a4e740254d2316a6",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "trusted-release-connect-red2.log": {
+    "rawSha256": "077a9bb3a062531060db40ef38df7143d84b52e45fd4f5e5330f0a9e7d6c6eb1",
+    "repositorySha256": "077a9bb3a062531060db40ef38df7143d84b52e45fd4f5e5330f0a9e7d6c6eb1",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "trusted-release-connect-green.log": {
+    "rawSha256": "e521d65133a77cbb1032df5d34e8fd3c527c70c0b035841c49517f8c42d046b3",
+    "repositorySha256": "e521d65133a77cbb1032df5d34e8fd3c527c70c0b035841c49517f8c42d046b3",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "host-controls-r12.log": {
+    "rawSha256": "0b7a389639adc49e07c3d47202513f72425ac7edf4841dcc768639030baeec7a",
+    "repositorySha256": "0b7a389639adc49e07c3d47202513f72425ac7edf4841dcc768639030baeec7a",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "package-decoder-r12.log": {
+    "rawSha256": "97a8c1173914cd8bc26518cae1c3eb19fe26fac486837110f64378bea4830b18",
+    "repositorySha256": "97a8c1173914cd8bc26518cae1c3eb19fe26fac486837110f64378bea4830b18",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "style-r12.log": {
+    "rawSha256": "d4903966f2307268791436cdf8e31f1d718a5f9ca6061b273fbfa36efc030889",
+    "repositorySha256": "65fe1dacf56b29e6d0a77ea7ee7ee5d015df5d014c5ba71415078f58d452e753",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "secrets-r12.log": {
+    "rawSha256": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "repositorySha256": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  }
+}

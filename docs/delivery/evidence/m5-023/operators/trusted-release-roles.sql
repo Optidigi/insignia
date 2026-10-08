@@ -6,6 +6,10 @@ ALTER TABLE public.trusted_release_records OWNER TO insignia_release_owner;
 ALTER FUNCTION public.forbid_trusted_release_rewrite() OWNER TO insignia_release_owner;
 REVOKE ALL ON public.trusted_release_records FROM PUBLIC, insignia_runtime;
 GRANT SELECT ON public.trusted_release_records TO insignia_runtime;
+-- Bind CONNECT to the current designated database; do not rely on PUBLIC.
+DO $$ BEGIN
+  EXECUTE format('GRANT CONNECT ON DATABASE %I TO insignia_release_operator', current_database());
+END $$;
 GRANT USAGE ON SCHEMA public TO insignia_release_operator;
 GRANT INSERT ON public.trusted_release_records TO insignia_release_operator;
 GRANT USAGE ON SEQUENCE public.trusted_release_records_record_seq_seq TO insignia_release_operator;
@@ -20,7 +24,8 @@ BEGIN
     OR pg_has_role('insignia_runtime','pg_database_owner','MEMBER')
     OR EXISTS(SELECT 1 FROM pg_roles WHERE rolname='insignia_runtime' AND (rolsuper OR rolcreaterole OR rolcreatedb OR rolbypassrls))
   THEN RAISE EXCEPTION 'Runtime trusted-release privileges invalid'; END IF;
-  IF NOT has_table_privilege('insignia_release_operator','public.trusted_release_records','INSERT')
+  IF NOT has_database_privilege('insignia_release_operator',current_database(),'CONNECT')
+    OR NOT has_table_privilege('insignia_release_operator','public.trusted_release_records','INSERT')
     OR has_table_privilege('insignia_release_operator','public.trusted_release_records','UPDATE,DELETE,TRUNCATE')
     OR has_schema_privilege('insignia_release_operator','public','CREATE')
     OR pg_has_role('insignia_release_operator','insignia_release_owner','MEMBER')

@@ -1,0 +1,17 @@
+file:///home/serveradmin/insignia-m5-023-worktree/apps/web/[eval1]:5
+import {Pool} from '/home/serveradmin/insignia-m5-023-worktree/apps/web/node_modules/pg/lib/index.js';
+        ^^^^
+SyntaxError: Named export 'Pool' not found. The requested module '/home/serveradmin/insignia-m5-023-worktree/apps/web/node_modules/pg/lib/index.js' is a CommonJS module, which may not support all module.exports as named exports.
+CommonJS modules can always be imported via the default export, for example using:
+
+import pkg from '/home/serveradmin/insignia-m5-023-worktree/apps/web/node_modules/pg/lib/index.js';
+const {Pool} = pkg;
+
+    at #asyncInstantiate (node:internal/modules/esm/module_job:455:21)
+    at async ModuleJob.run (node:internal/modules/esm/module_job:553:5)
+    at async node:internal/modules/esm/loader:223:26
+    at async ModuleLoader.executeModuleJob (node:internal/modules/esm/loader:220:20)
+    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5)
+
+Node.js v24.21.0
+Control process exit: 1

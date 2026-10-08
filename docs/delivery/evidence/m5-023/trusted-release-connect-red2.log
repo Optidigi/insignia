@@ -1,0 +1,29 @@
+/home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/pg-pool@3.14.0_pg@8.23.0/node_modules/pg-pool/index.js:45
+    Error.captureStackTrace(err)
+          ^
+
+error: permission denied for database "insignia_m5_023_connect_red2"
+    at /home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/pg-pool@3.14.0_pg@8.23.0/node_modules/pg-pool/index.js:45:11
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/trusted-release-connect-control.mjs:21:22 {
+  length: 162,
+  severity: 'FATAL',
+  code: '42501',
+  detail: 'User does not have CONNECT privilege.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'postinit.c',
+  line: '375',
+  routine: 'CheckMyDatabase'
+}
+
+Node.js v24.21.0
+Control process exit: 1
