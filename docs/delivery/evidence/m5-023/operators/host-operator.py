@@ -434,7 +434,8 @@ def provision():
       'runtimeSchemaCreate',has_schema_privilege('insignia_runtime','public','CREATE'),
       'operatorConnect',has_database_privilege('insignia_release_operator',current_database(),'CONNECT'),
       'operatorFunctions',has_function_privilege('insignia_release_operator','pg_catalog.clock_timestamp()','EXECUTE')
-        AND has_function_privilege('insignia_release_operator','pg_catalog.jsonb_typeof(jsonb)','EXECUTE'),
+        AND has_function_privilege('insignia_release_operator','pg_catalog.jsonb_typeof(jsonb)','EXECUTE')
+        AND has_function_privilege('insignia_release_operator','pg_catalog.isfinite(timestamp with time zone)','EXECUTE'),
       'operatorInsert',has_table_privilege('insignia_release_operator','trusted_release_records','INSERT'),
       'operatorRewrite',has_table_privilege('insignia_release_operator','trusted_release_records','UPDATE,DELETE,TRUNCATE'),
       'runtimeOperatorMembership',pg_has_role('insignia_runtime','insignia_release_operator','MEMBER'),

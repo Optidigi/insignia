@@ -1,0 +1,4 @@
+Fresh operator connection passes with PUBLIC CONNECT revoked
+{"operatorFunctions":{"clock":true,"shape":true,"finite":true},"publicExecuteRevoked":true}
+{"classification":"LOCAL_PG18_EXPLICIT_OPERATOR_CONNECT_APPEND_PASS","publicConnect":false,"operatorConnect":true,"exactRoleSql":true,"operatorRequiredFunctions":{"clock":true,"shape":true,"finite":true},"publicExecuteRevoked":true,"operatorAppend":1,"runtimeSelect":true,"runtimeAppendDenied":true,"rewriteDenied":true,"schemaCreateDenied":true,"ownerRoleDenied":true,"exactRuntimeReaderQualified":true,"productionMutations":0}
+Control process exit: 0
