@@ -55,7 +55,16 @@ $$;
 -- No release record, installation or runtime provisioning is performed by this migration.
 
 -- migrate:down
--- Disposable local/CI schema rehearsal only. Production rollback is web-only;
--- removing historical trusted evidence requires separate authority.
+-- Only an empty relation may be removed. Production rollback is web-only.
+-- dbmate executes down in one transaction; exclude concurrent appends before
+-- checking so no committed evidence can race the destructive operations.
+LOCK TABLE trusted_release_records IN ACCESS EXCLUSIVE MODE;
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM trusted_release_records) THEN
+    RAISE EXCEPTION 'trusted release evidence prevents schema rollback' USING ERRCODE = 'check_violation';
+  END IF;
+END;
+$$;
 DROP TABLE trusted_release_records;
 DROP FUNCTION forbid_trusted_release_rewrite();

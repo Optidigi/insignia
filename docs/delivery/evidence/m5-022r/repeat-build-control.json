@@ -1,0 +1,8 @@
+{
+  "classification": "REPEAT_BUILD_DIFFERS_ONLY_IN_ASTRO_SERIALIZED_MANIFEST_KEY",
+  "beforeSha256": "ac41aaff0207305cbe728b6428916c32a0bd757271b23724bcf5a6deeb2c0982",
+  "afterSha256": "b9e818db69339b8e2cbf472a845e5bc1cf9d13c802520555d37b5bed08923a7b",
+  "normalizedSha256": "5235da3026c6980ace37c6bcb3c77e940add4a89c64f2a3038adaf9130025fa3",
+  "keyValuesRecorded": false,
+  "productionDeployment": false
+}

@@ -1,0 +1,28 @@
+{
+  "classification": "M5_022R_SCOPE_AND_HISTORY_INTEGRITY_PASS",
+  "entryHead": "cfd43482d2b8e8f30bd21d91bf00e95d0663a3e0",
+  "entryTrackedFiles": 3825,
+  "entryTrackedInventorySha256": "76e77ed180673eaf9f960be442e8078560aa70c117ad8764280eab41aa5d7889",
+  "existingTrackedChanges": [
+    "AGENTS.md",
+    "docs/delivery/M5-022-PROVISIONING-PROPOSAL.md",
+    "docs/delivery/state.md",
+    "packages/database/migrations/20261008000100_m5_trusted_release.sql",
+    "packages/database/test/trusted-release.test.ts"
+  ],
+  "historicalProviderFunctionAvailabilityFilesUnchanged": 1698,
+  "historicalStateSuffixByteExact": true,
+  "runtimeSourceDependenciesProviderConfigFunctionAvailabilityUnchanged": true,
+  "productionAccess": false,
+  "productionDeployment": false,
+  "entryRuntimeBuildInputs": 57,
+  "byteEqualRuntimeBuildInputs": 56,
+  "rebuiltEntryException": {
+    "path": "apps/web/dist/server/entry.mjs",
+    "classification": "LOCAL_ASTRO_REBUILD_KEY_NOT_EXACT_HISTORICAL_BUILD_EQUALITY",
+    "historicalEntrySha256": "c8c47b184fd9ce1941d610b547e66b0e9aadf782457b272b8f8555afc554f005",
+    "currentEntrySha256": "b9e818db69339b8e2cbf472a845e5bc1cf9d13c802520555d37b5bed08923a7b",
+    "rebuildControl": "repeat-build-control.json",
+    "limitation": "Historical entry bytes were not archived for normalization. Two current builds differ only in the generated serialized manifest key. Production image is untouched."
+  }
+}

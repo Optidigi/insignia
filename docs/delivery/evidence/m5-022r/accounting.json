@@ -1,0 +1,15 @@
+{
+  "scope": "M5-022R same PR53 local correction only",
+  "productionVpsAccess": 0,
+  "productionSqlOrProvisioning": 0,
+  "productionDeployments": 0,
+  "ownerSearchRequested": 0,
+  "shopifyApiBrowserCredentialCliOperations": 0,
+  "shopifyVersionCreationReleaseRollbackScopes": 0,
+  "shopifyProductConfigPublicationAvailabilityMutations": 0,
+  "prMerges": 0,
+  "localPostgresql": "Authorized synthetic migration/integration writes and whole owned test-database teardown after assertions; no record deletion/truncation to permit down",
+  "historicalRuns": "Unchanged; never reopened",
+  "successorBootstrap": "Proposal only; not implemented or provisioned",
+  "M5G7": "NOT_PASSED_BLOCKED_PRODUCTION_PROVISIONING_REQUIRED"
+}

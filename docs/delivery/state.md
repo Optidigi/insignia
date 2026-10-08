@@ -1,3 +1,11 @@
+# Current M5-022R — same-PR correction; principal rereview required
+
+[PR53 CHANGES_REQUESTED](PR-053-principal-review.md), [correction](prompts/M5-022R-TRUSTED-EVIDENCE-DOWN-GUARD.md), [report](M5-022R-REPORT.md). Entry base e132c108a2108aea830ac2a5229b410f93a61a7d/head cfd43482d2b8e8f30bd21d91bf00e95d0663a3e0/tree e587a7c5c652ae286631d1d711fd8a58e73f5cbd. SAME PR53 only; no merge approval. Migration down locks before checking and refuses any trusted record; failed transaction preserves records, schema/history and rewrite guards. Empty down/up remains supported. [Unexecuted successor proposal](M5-022-PROVISIONING-PROPOSAL.md) replaces ad-hoc tenant repair with provider-authoritative, concurrent/idempotent managed-install bootstrap, reviewed generation transitions and existing encrypted expiring-offline lifecycle where needed. Commercial values remain owner-controlled; real publish awaits actual commercial authority or a separately approved dev-only entitlement.
+
+Offline qualification and two NEW actual GPT-6.1-sol/high full-source reviews plus natural exact-head attempt1 CI bind the final external review packet. Historical M5-022 diagnosis/provider evidence remains immutable; M5/G7 remains open at missing managed-install/readiness provisioning. Production/provider/browser/VPS access, provisioning/DML/deploy/Search/fixtures/app operations/M6/M7/merchant rollout remain closed. Temporary VPS access is still revoked. Stop for principal rereview; the proposal is not authority to implement a successor.
+
+---
+
 # Current M5-022 — offline correction; live provisioning stop
 
 **BLOCKED_PRODUCTION_PROVISIONING_REQUIRED / M5_G7_NOT_PASSED.** [Report](M5-022-REPORT.md), [exact provisioning proposal](M5-022-PROVISIONING-PROPOSAL.md), [G7 provenance matrix](M5-022-G7-MATRIX.md). Owner-authorized restricted SSH read-only diagnosis proves PostgreSQL18.6 connectivity but no exact designated tenant/current installation, no trusted-release relation and four absent commercial/Partner configuration keys. These are independently reproduced readiness prerequisites, not proof of the historical Search failing substage. Temporary key revoked and private key removed. No production DML, provisioning, web deployment, new owner Search, app/provider write or fixture.

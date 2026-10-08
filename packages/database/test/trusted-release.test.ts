@@ -1,4 +1,7 @@
+import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { Pool } from 'pg';
 import { expect, test } from 'vitest';
 import { createDurableCore, sha256CanonicalJson } from '../src/index.js';
@@ -181,3 +184,132 @@ test('trusted release source loads exact active scope only through a read-only r
     await pool.end();
   }
 });
+
+// Exercise the actual migration runner in isolated databases: a rollback must
+// preserve authority, including its migration-history entry, before teardown.
+const root = fileURLToPath(new URL('../../../', import.meta.url));
+const execFileAsync = promisify(execFile);
+async function migrate(url: string, direction: 'up' | 'rollback') {
+  return execFileAsync(
+    root + 'node_modules/.bin/dbmate',
+    ['--no-dump-schema', '--migrations-dir', root + 'packages/database/migrations', direction],
+    { cwd: root, env: { ...process.env, DATABASE_URL: url }, timeout: 30_000 },
+  );
+}
+
+async function disposableMigrationDatabase(
+  check: (pool: Pool, core: ReturnType<typeof createDurableCore>, url: string) => Promise<void>,
+) {
+  if (!connectionString) throw new Error('Migration regression requires a disposable PostgreSQL DATABASE_URL');
+  const admin = new Pool({ connectionString });
+  const name = 'm5022r_' + randomUUID().replaceAll('-', '');
+  const url = new URL(connectionString);
+  url.pathname = '/' + name;
+  let pool: Pool | undefined;
+  let core: ReturnType<typeof createDurableCore> | undefined;
+  try {
+    await admin.query('CREATE DATABASE ' + name);
+    await migrate(url.href, 'up');
+    pool = new Pool({ connectionString: url.href });
+    core = createDurableCore(new Pool({ connectionString: url.href }));
+    await check(pool, core, url.href);
+  } finally {
+    await core?.close();
+    await pool?.end();
+    // Whole disposable-database teardown follows assertions. Never delete or
+    // truncate evidence to make a down migration succeed.
+    await admin.query('DROP DATABASE IF EXISTS ' + name);
+    await admin.end();
+  }
+}
+
+async function releaseSchema(pool: Pool) {
+  return (
+    await pool.query(`SELECT
+      'trusted_release_records'::regclass::oid AS relation,
+      'forbid_trusted_release_rewrite()'::regprocedure::oid AS guard,
+      pg_get_functiondef('forbid_trusted_release_rewrite()'::regprocedure) AS guard_definition,
+      (SELECT jsonb_agg(jsonb_build_object('name',tgname,'enabled',tgenabled,'definition',pg_get_triggerdef(oid)) ORDER BY tgname)
+        FROM pg_trigger WHERE tgrelid='trusted_release_records'::regclass AND NOT tgisinternal) AS triggers,
+      (SELECT jsonb_agg(indexdef ORDER BY indexname) FROM pg_indexes WHERE tablename='trusted_release_records' AND schemaname='public') AS indexes,
+      (SELECT relacl::text FROM pg_class WHERE oid='trusted_release_records'::regclass) AS permissions,
+      (SELECT jsonb_agg(version ORDER BY version) FROM schema_migrations) AS migrations,
+      (SELECT jsonb_agg(to_jsonb(r)::text ORDER BY record_seq) FROM trusted_release_records r) AS records`)
+  ).rows[0];
+}
+
+test('empty trusted-release migration rolls down and up through dbmate', async () => {
+  await disposableMigrationDatabase(async (pool, _core, url) => {
+    expect((await pool.query("SELECT to_regclass('trusted_release_records') AS relation")).rows[0].relation).toBe(
+      'trusted_release_records',
+    );
+    await migrate(url, 'rollback');
+    expect((await pool.query("SELECT to_regclass('trusted_release_records') AS relation")).rows[0].relation).toBeNull();
+    expect(
+      (await pool.query("SELECT to_regprocedure('forbid_trusted_release_rewrite()') AS guard")).rows[0].guard,
+    ).toBeNull();
+    expect((await pool.query("SELECT version FROM schema_migrations WHERE version='20261008000100'")).rowCount).toBe(0);
+    await migrate(url, 'up');
+    const schema = await releaseSchema(pool);
+    expect(schema.triggers).toHaveLength(2);
+    expect(schema.records).toBeNull();
+    expect(schema.migrations).toContain('20261008000100');
+  });
+}, 60_000);
+
+test('non-empty trusted-release down fails and preserves exact records, schema, history and rewrite guards', async () => {
+  await disposableMigrationDatabase(async (pool, core, url) => {
+    const fixture = await appendFixture(pool, core);
+    const before = await releaseSchema(pool);
+    await expect(migrate(url, 'rollback')).rejects.toThrow('trusted release evidence prevents schema rollback');
+    expect(await releaseSchema(pool)).toEqual(before);
+    expect(before.records).toHaveLength(1);
+    for (const statement of [
+      'UPDATE trusted_release_records SET record_id=record_id WHERE record_id=$1',
+      'DELETE FROM trusted_release_records WHERE record_id=$1',
+    ]) {
+      await expect(pool.query(statement, [fixture.record.recordId])).rejects.toMatchObject({ code: '23514' });
+    }
+    await expect(pool.query('TRUNCATE trusted_release_records')).rejects.toMatchObject({ code: '23514' });
+    expect(await releaseSchema(pool)).toEqual(before);
+  });
+}, 60_000);
+
+test('rollback waits for an in-flight append and preserves it once committed', async () => {
+  await disposableMigrationDatabase(async (pool, core, url) => {
+    const writer = new Pool({ connectionString: url, max: 1 });
+    let rollback: Promise<{ error: unknown }> | undefined;
+    try {
+      await writer.query('BEGIN');
+      const fixture = await appendFixture(writer, core);
+      rollback = migrate(url, 'rollback').then(
+        () => ({ error: null }),
+        (error: unknown) => ({ error }),
+      );
+      let waiting = false;
+      for (let attempt = 0; attempt < 500; attempt++) {
+        const lock = await pool.query(`SELECT 1 FROM pg_locks
+          WHERE relation='trusted_release_records'::regclass AND mode='AccessExclusiveLock' AND NOT granted`);
+        if (lock.rowCount === 1) {
+          waiting = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 20));
+      }
+      expect(waiting).toBe(true);
+      await writer.query('COMMIT');
+      const result = await rollback;
+      expect(result.error).toMatchObject({ code: 2 });
+      expect(String(result.error)).toContain('trusted release evidence prevents schema rollback');
+      const surviving = await pool.query('SELECT trusted_record FROM trusted_release_records WHERE record_id=$1', [
+        fixture.record.recordId,
+      ]);
+      expect(surviving.rows[0].trusted_record).toEqual(fixture.record);
+      expect((await releaseSchema(pool)).triggers).toHaveLength(2);
+    } finally {
+      await writer.query('ROLLBACK');
+      await rollback;
+      await writer.end();
+    }
+  });
+}, 60_000);

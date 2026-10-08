@@ -1,0 +1,12 @@
+{
+  "authorityManifest": "PASS",
+  "currentAuthoredLocalLinks": "PASS",
+  "localLinksChecked": 27,
+  "historicalStateSuffixByteExact": true,
+  "currentEvidenceJson": "PASS",
+  "currentEvidenceSecretHeuristics": "PASS",
+  "authoredWhitespace": "PASS",
+  "rawLogs": "Byte-exact terminal output retained; raw whitespace is not normalized",
+  "sourceBuildInventoryCount": 373,
+  "reviewsAndFinalCi": "Bind after commit in external exact-ref review packet"
+}

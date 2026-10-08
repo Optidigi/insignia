@@ -1,0 +1,46 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-022-worktree/packages/database
+
+ ❯ test/trusted-release.test.ts (4 tests | 1 failed | 2 skipped) 1172ms
+   × non-empty trusted-release down fails and preserves exact records, schema, history and rewrite guards 497ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/trusted-release.test.ts > non-empty trusted-release down fails and preserves exact records, schema, history and rewrite guards
+AssertionError: promise resolved "{ …(2) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "stderr": "",
++   "stdout": "Rolling back: 20261008000100_m5_trusted_release.sql
++ Rolled back: 20261008000100_m5_trusted_release.sql in 8.143055ms
++ ",
+  }
+
+ ❯ test/trusted-release.test.ts:262:43
+    260|     const fixture = await appendFixture(pool, core);
+    261|     const before = await releaseSchema(pool);
+    262|     await expect(migrate(url, 'rollback')).rejects.toMatchObject({ cod…
+       |                                           ^
+    263|     expect(await releaseSchema(pool)).toEqual(before);
+    264|     expect(before.records).toHaveLength(1);
+ ❯ disposableMigrationDatabase test/trusted-release.test.ts:215:5
+ ❯ test/trusted-release.test.ts:259:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 2 skipped (4)
+   Start at  12:04:27
+   Duration  1.94s (tests 65%, transform 19%, import 16%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-022-
+  │ worktree/packages/database
+

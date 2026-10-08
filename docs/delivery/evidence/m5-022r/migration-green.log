@@ -1,0 +1,44 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-022-worktree/packages/database
+
+ ❯ test/trusted-release.test.ts (4 tests | 1 failed | 2 skipped) 947ms
+   × non-empty trusted-release down fails and preserves exact records, schema, history and rewrite guards 431ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/trusted-release.test.ts > non-empty trusted-release down fails and preserves exact records, schema, history and rewrite guards
+AssertionError: expected Error: Command failed: /home/serveradmin/… { …(6) } to match object { code: 1 }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+- {
+-   "code": 1,
++ Error {
++   "code": 2,
+  }
+
+ ❯ test/trusted-release.test.ts:262:43
+    260|     const fixture = await appendFixture(pool, core);
+    261|     const before = await releaseSchema(pool);
+    262|     await expect(migrate(url, 'rollback')).rejects.toMatchObject({ cod…
+       |                                           ^
+    263|     expect(await releaseSchema(pool)).toEqual(before);
+    264|     expect(before.records).toHaveLength(1);
+ ❯ disposableMigrationDatabase test/trusted-release.test.ts:215:5
+ ❯ test/trusted-release.test.ts:259:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 2 skipped (4)
+   Start at  12:04:54
+   Duration  1.71s (tests 60%, transform 21%, import 18%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-022-
+  │ worktree/packages/database
+

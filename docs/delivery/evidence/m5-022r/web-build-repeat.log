@@ -1,0 +1,25 @@
+$ astro check && astro build
+12:11:45 [@astrojs/node] Enabling sessions with filesystem storage
+12:11:45 [types] Generated 67ms
+12:11:45 [check] Getting diagnostics for Astro files in /home/serveradmin/insignia-m5-022-worktree/apps/web...
+Result (28 files): 
+- 0 errors
+- 0 warnings
+- 0 hints
+
+12:11:50 [@astrojs/node] Enabling sessions with filesystem storage
+12:11:51 [types] Generated 69ms
+12:11:51 [build] output: "server"
+12:11:51 [build] mode: "server"
+12:11:51 [build] directory: /home/serveradmin/insignia-m5-022-worktree/apps/web/dist/
+12:11:51 [build] adapter: @astrojs/node
+12:11:51 [build] Collecting build info...
+12:11:51 [build] ✓ Completed in 107ms.
+12:11:51 [build] Building server entrypoints...
+12:11:51 [vite] ✓ built in 214ms
+12:11:52 [vite] ✓ built in 1.54s
+12:11:53 [vite] ✓ built in 217ms
+12:11:53 [build] Rearranging server assets...
+12:11:53 [build] ✓ Completed in 2.04s.
+12:11:53 [build] Server built in 2.15s
+12:11:53 [build] Complete!
