@@ -1,0 +1,12 @@
+{
+  "classification": "BLOCKED_FRESH_NATIVE_CONFIG_AND_INSTALLATION_AUTHENTICATION",
+  "requestedVersion": "1158986629121",
+  "observedUrlWithoutQuery": "https://accounts.shopify.com/session-service/login",
+  "title": "Just a moment...",
+  "queryValuesRetained": false,
+  "nativeConfigurationReadback": "NOT_OBSERVED",
+  "installationPresence": "NOT_FRESHLY_VERIFIED",
+  "captchaBypass": false,
+  "releaseAttempts": 0,
+  "versionCreationAttempts": 0
+}

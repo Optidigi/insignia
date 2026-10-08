@@ -1,0 +1,11 @@
+{
+  "dependencies": {
+    "@ast-grep/napi": "0.43.0",
+    "clipboardy": "4.0.0",
+    "esbuild": "0.28.1",
+    "global-agent": "3.0.0"
+  },
+  "runtimeLockSha256": "8c5c3d94eee5d2a4830abcc23d138e060196f935ba7e682f69d03092fdda84f0",
+  "packageInstallScriptsExecuted": false,
+  "appBuildOrVersionCreation": false
+}
