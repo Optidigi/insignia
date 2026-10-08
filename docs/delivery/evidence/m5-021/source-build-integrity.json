@@ -1,0 +1,13 @@
+{
+  "classification": "ACCEPTED_LOCAL_SOURCE_BUILD_BYTE_EQUAL",
+  "recordedAt": "2026-10-08T04:20:36.805009+00:00",
+  "entryMerge": "db4265228b901a99cd4e3602ee0c387065080cc6",
+  "sourceMatches": 396,
+  "buildMatches": 225,
+  "acceptedInventory": "../m5-018/freeze-round4-inventory.json",
+  "acceptedInventorySha256": "e040f3899f4e4e658a118c54d1c58a37bce5ab7e03d0d70f96e2c5543610b884",
+  "buildRecoveredByteExactWithoutRebuild": true,
+  "newBuilds": 0,
+  "currentRemoteImagePersonallyReverified": false,
+  "scope": "Local accepted bytes and historical host binding only, not authenticated current deployment/readiness proof"
+}

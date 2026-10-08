@@ -1,0 +1,29 @@
+{
+  "classification": "OWNER_NATIVE_PRODUCT_PICKER_REACHED_AUTHENTICATION_UNAVAILABLE",
+  "recordedAt": "2026-10-08T04:34:24.824677+00:00",
+  "ownerObservedAt": null,
+  "request": "Open designated insignia-rewrite-dev store in the normal authenticated laptop browser, Apps -> Insignia; report title and any error/readiness text; no create/save/publish, credentials or tokens",
+  "observations": [
+    {
+      "kind": "nativeOwnerVisibleUi",
+      "observation": "Search product page appears in response to the designated installed-app launch instruction"
+    },
+    {
+      "kind": "nativeOwnerSearchResult",
+      "observation": "Click Search -> Authentication unavailable"
+    }
+  ],
+  "nativeLaunchPass": false,
+  "ownerAuthenticationFailureClaimed": true,
+  "iframeOriginPersonallyObservedByAgent": false,
+  "source": "Direct owner normal-browser text observation; no screenshot, timestamp, network status, server or database receipt supplied",
+  "screenshotsPdfsNativeProviderArtifactsSupplied": false,
+  "ownerBrowserHttpRequestCount": "NOT_INSTRUMENTED",
+  "ownerVerbatimReply": "I see the search product page, but when I click search I get: 'Authentication unavailable'",
+  "publicPickerAppearanceConfirmedByOwner": true,
+  "authenticatedAdminReadinessPass": false,
+  "ownerAuthenticationFailureScope": "App authenticated Search failure, not Shopify human-check failure",
+  "ownerReportedHttpStatus": null,
+  "iframeOriginExplicitlyReportedByOwner": false,
+  "shopContext": "Owner reply to requested insignia-rewrite-dev installed Insignia app procedure; exact server shop/install identity unverified"
+}

@@ -1,0 +1,45 @@
+{
+  "classification": "M5_021_LOCAL_DOC_SOURCE_BUILD_INTEGRITY_CHECKS_PASS",
+  "recordedAt": "2026-10-08T04:35:06.311391+00:00",
+  "entryMerge": "db4265228b901a99cd4e3602ee0c387065080cc6",
+  "checks": [
+    {
+      "check": "style",
+      "command": "biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002 scripts/m5-003 scripts/m5-004 scripts/m5-005 scripts/m5-009 scripts/m5-010 scripts/m5-011 scripts/m5-012 scripts/m5-013 scripts/m5-015 scripts/m5-015r scripts/m5-016 scripts/m5-017",
+      "exitCode": 0,
+      "logSha256": "5cb6bcc1fa6ed03356e59df97c2a4f5a6f606e231470d51347f93215de697f97",
+      "log": "local-style.log",
+      "logLocation": "neutral M5-021 handoff; retained actual successful output before the initial state-separator check failure"
+    },
+    {
+      "check": "secrets",
+      "command": "node scripts/boundaries/check-secrets.mjs",
+      "exitCode": 0,
+      "logSha256": "734ad029dfb172476895db6bfed720780ab49d9f14cd4a7cb18d3adec5a2bcc2",
+      "log": "local-secrets.log",
+      "logLocation": "neutral M5-021 handoff; retained actual successful output before the initial state-separator check failure"
+    },
+    {
+      "check": "history",
+      "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+      "exitCode": 0,
+      "logSha256": "47bb033a26cda6c97e0332451c130c56e663d35ab94aa6dda8c61a8a44ef4658",
+      "log": "local-history.log",
+      "logLocation": "neutral M5-021 handoff; retained actual successful output before the initial state-separator check failure"
+    }
+  ],
+  "sourceBuildHashesMatched": 621,
+  "historicalProviderSealHashesMatched": 7,
+  "historicalDeliveryStatePreserved": true,
+  "currentAuthoredDocumentLinksJsonWhitespaceSecretChecks": "PASS",
+  "matrixRows": 34,
+  "acceptedSourceContractRows": 6,
+  "nativeBlockedRows": 28,
+  "nativePasses": 0,
+  "ownerNativeError": "Authentication unavailable",
+  "liveRootCauseVerified": false,
+  "productionChanges": 0,
+  "newBuilds": 0,
+  "provisioningOrAgentProviderWrites": 0,
+  "notes": "Direct exact unchanged package scripts using existing pinned dependencies; no pnpm setup or native readiness success inferred. Initial state-suffix assertion omitted the newly inserted separator newline; exact original bytes preserved, corrected delimiter check passes without changing historical state. No source/build/seal mismatch."
+}

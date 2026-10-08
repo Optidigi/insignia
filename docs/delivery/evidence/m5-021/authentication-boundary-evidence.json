@@ -1,0 +1,25 @@
+{
+  "classification": "AUTHENTICATION_UNAVAILABLE_BOUNDARY_TRACED_ROOT_CAUSE_UNRESOLVED",
+  "ownerSource": "owner-native-observations.json",
+  "ownerError": "Authentication unavailable",
+  "ownerReportedHttpStatus": null,
+  "reviewedSourceBoundary": {
+    "path": "apps/web/src/server/admin/http.ts",
+    "sha256": "0992af05e4a4fcddd028f3b1eb8894c1d6f6fbb0a60dcf949a82291953ea7edc",
+    "lines": "109-114",
+    "meaning": "When services.authenticate throws, reviewed API returns HTTP503 with Authentication unavailable; this is source mapping, not observed live HTTP status"
+  },
+  "sourcePathsWithinBoundary": [
+    "Shopify online staff token exchange and grant consistency",
+    "Exact provider installation read",
+    "Current durable shop/installation lookup"
+  ],
+  "actualFailedSubstep": "UNKNOWN_NO_SANITIZED_CURRENT_SERVER_OR_DATABASE_DIAGNOSTICS",
+  "tenantOrInstallationMissing": "NOT_ESTABLISHED",
+  "grantOrClientSecretFailure": "NOT_ESTABLISHED",
+  "providerOutage": "NOT_ESTABLISHED",
+  "currentSourceImageIdentity": "NOT_FRESHLY_REVERIFIED",
+  "agentProviderSshOrRuntimeDbOperations": 0,
+  "noFixtureOrWriteToDiagnose": true,
+  "nextBoundedDiagnostic": "Fingerprint-verified read-only exact-service/tenant/authentication diagnostics; no credential/header/query/log dump, no provisioning/DML/retry mutation. Required provisioning or composition remains a principal stop."
+}

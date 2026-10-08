@@ -1,0 +1,10 @@
+{
+  "classification": "M5_021_HANDOFF_PACKAGE_VERIFIED",
+  "packageSha256": "93575179ed01781a1f58417baf9a3e54d6ac66936ac0653b1efe43adccf9478a",
+  "manifestEntriesPassed": 5,
+  "extractedNeutralPath": "/home/serveradmin/insignia-handoffs/insignia-pr51-m5-021-a5ajusib/insignia-pr51-approved-m5-021-handoff",
+  "suppliedPrincipalApproval": "../../PR-051-principal-review.md",
+  "suppliedBrief": "../../prompts/M5-021-OWNER-ASSISTED-G7.md",
+  "source": "User supplied approval package; not agent-authored principal approval",
+  "committedPackage": "authority/"
+}

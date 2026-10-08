@@ -1,3 +1,13 @@
+# Current M5-021 — readiness blocked before fixture
+
+[PR51 approval](PR-051-principal-review.md)/[slice](prompts/M5-021-OWNER-ASSISTED-G7.md) verified exact refs, ten attempt1 successes and both fresh CLEAR bindings. [Normal merge](evidence/m5-021/pr51-merge-receipt.json) db4265228b901a99cd4e3602ee0c387065080cc6 has approved ordered parents/tree; no head change/bypass. Settled Active1158986629121; rollback1153019904001; old1158837927937 NEVER_RELEASE. No new app/provider operation.
+
+[Report](M5-021-REPORT.md)/[owner steps](M5-021-OWNER-PROCEDURE.md): **M5_G7_NOT_PASSED / BLOCKED_AUTHENTICATED_ADMIN_AUTHENTICATION_UNAVAILABLE**. Owner normal-browser product picker appears; Search reports Authentication unavailable. Public UI/error only, not authenticated readiness. Reviewed API maps that message to an authentication throw/503; actual HTTP status and internal cause were not observed. Current shop/install/grants/staff/remote build/commercial state unverified. Accepted source/compiled build also lack trusted build/release, Function observation and calendar; local pure control1/1 passes. Stop before fixture, no provisioning/correction.
+
+Source396/build225 byte-equal/no rebuild; historical records unchanged. Fresh agent Shopify/browser/VPS/DB operations0, release/rollback/version/scopes/product/config/availability/publication/archive/database writes0/unresolved task-authorized writes0; owner HTTP counts unknown. G7 gated, merchant flow not run, cleanupNA. Two NEW actual GPT-6.1-sol/high CLEAR reviews and natural final-head CI required in successor packet. Stop for principal review; no successor merge, fixture/release/provisioning, M6/M7 or launch.
+
+---
+
 # Current M5-020 outcome — release settled, G7 blocked
 
 PR50 normally merged e5262267234516251bd4a42367643b700e8854f0 with exact approved ordered parents/tree. [M5-020 authority](prompts/M5-020-RELEASE-AND-G7-CLOSURE.md) was exercised only after fresh manual owner config/designated-installation proof, host/version checks, GREEN12 controls, two NEW actual GPT-6.1-sol/high CLEAR reviews, ten exact-source attempt1 CI and full5141-input frozen gate at sourcee750a67bec40dd4ffa447681d6ee04fb631922e3.
