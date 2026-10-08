@@ -1,0 +1,114 @@
+{
+  "slice": "M5-020",
+  "createdAt": "2026-10-08T01:02:00.613000+00:00",
+  "closed": true,
+  "phase": "CLOSED_STOPPED_BEFORE_FIXTURE",
+  "versionListReadCeiling": 1,
+  "releaseAttemptCeiling": 1,
+  "versionCreationCeiling": 0,
+  "productCeiling": 1,
+  "configCeiling": 1,
+  "events": [
+    {
+      "kind": "preview_status",
+      "purpose": "Fresh pre-release read-only browser availability",
+      "reservedAt": "2026-10-08T01:02:25.553203+00:00",
+      "outcome": "AVAILABLE_SHOPIFY_HUMAN_VERIFICATION_PAGE",
+      "settledAt": "2026-10-08T01:02:49.922404+00:00"
+    },
+    {
+      "kind": "CLI_VERSIONS_LIST",
+      "reservedAt": "2026-10-08T01:03:50.052682+00:00",
+      "outcome": "LOCAL_DEPENDENCY_LOAD_FAILURE_BEFORE_PROVIDER_COMMAND",
+      "purpose": "One bounded supported pre-release exact-app version list; no mutation",
+      "exitCode": 1,
+      "settledAt": "2026-10-08T01:03:53.650197+00:00",
+      "externalVersionListRequests": 0,
+      "reason": "Pinned CLI esbuild dependency absent; exact package restored but dependencies incomplete"
+    },
+    {
+      "kind": "EXACT_NATIVE_CANDIDATE_NAVIGATION",
+      "purpose": "Fresh supported native configuration/Function UID readback for existing inactive candidate only",
+      "reservedAt": "2026-10-08T01:04:01.122526+00:00",
+      "outcome": "BLOCKED_SHOPIFY_NATIVE_AUTHENTICATION",
+      "localDispatchCorrection": "Initial missing tabId failed locally with no navigation; corrected explicit existing tab",
+      "settledAt": "2026-10-08T01:04:48.764988+00:00"
+    },
+    {
+      "kind": "CANONICAL_PUBLIC_HOST_OPEN",
+      "purpose": "Fresh pre-release anonymous canonical host health; no credentials or mutation",
+      "reservedAt": "2026-10-08T01:05:44.925423+00:00",
+      "outcome": "OPENED_CANONICAL_PUBLIC_LIVE",
+      "settledAt": "2026-10-08T01:06:00.090406+00:00"
+    },
+    {
+      "kind": "CANONICAL_PUBLIC_HOST_FIVE_READS",
+      "purpose": "Fixed credential-omitting GETs live/admin/API/assets; six public requests total including open",
+      "reservedAt": "2026-10-08T01:06:00.090436+00:00",
+      "outcome": "PASS_EXACT_FIVE_PUBLIC_RESPONSE_HASHES_MATCH_ACCEPTED",
+      "settledAt": "2026-10-08T01:06:26.163858+00:00"
+    },
+    {
+      "kind": "CLI_VERSIONS_LIST_PROVIDER",
+      "reservedAt": "2026-10-08T01:07:38.041042+00:00",
+      "outcome": "CLI_COMPLETED",
+      "purpose": "One bounded supported pre-release exact-app version list; no mutation",
+      "exitCode": 0,
+      "settledAt": "2026-10-08T01:07:41.639688+00:00"
+    },
+    {
+      "kind": "OWNER_FRESH_NATIVE_ATTESTATION",
+      "recordedAt": "2026-10-08T01:42:55.975753+00:00",
+      "outcome": "CONFIG_AND_EXACT_DESIGNATED_INSTALLATION_MATCH",
+      "source": "Direct owner messages; no agent provider request",
+      "receipt": "fresh-native-readback.json",
+      "ownerObservedAt": null,
+      "installationCounter": 1,
+      "completeInventoryClaim": false,
+      "candidateVersionEqualityClaim": false
+    },
+    {
+      "kind": "CANONICAL_PUBLIC_HOST_REFRESH",
+      "reservedAt": "2026-10-08T02:00:30.530312+00:00",
+      "outcome": "PASS_FIVE_REFRESHED_RESPONSES_MATCH_ACCEPTED_HASHES",
+      "purpose": "Bounded final anonymous host health refresh before freeze; fixed five GETs, credentials omitted",
+      "settledAt": "2026-10-08T02:01:00.852955+00:00",
+      "fixedPublicGetInitiations": 5,
+      "previewStatusCalls": 1,
+      "previewEvaluateCalls": 1
+    },
+    {
+      "kind": "CLI_VERSIONS_LIST_POST_RELEASE",
+      "reservedAt": "2026-10-08T02:02:21.869121+00:00",
+      "outcome": "CLI_COMPLETED",
+      "purpose": "One supported independent existing-version Active/rollback/superseded settlement read; no mutation",
+      "exitCode": 0,
+      "settledAt": "2026-10-08T02:02:25.470349+00:00"
+    },
+    {
+      "kind": "POST_RELEASE_NATIVE_VERSION_NAVIGATION",
+      "reservedAt": "2026-10-08T02:02:59.718921+00:00",
+      "outcome": "BLOCKED_SHOPIFY_HUMAN_VERIFICATION",
+      "purpose": "One exact native version-page post-release config/Function UID readback; no mutation",
+      "settledAt": "2026-10-08T02:03:42.009389+00:00"
+    },
+    {
+      "kind": "DESIGNATED_INSTALLATION_COLD_LAUNCH",
+      "reservedAt": "2026-10-08T02:03:42.009418+00:00",
+      "outcome": "BLOCKED_SHOPIFY_HUMAN_VERIFICATION_BEFORE_IFRAME",
+      "purpose": "Bounded designated-store apps opening to locate exact installed Insignia; read-only, no fixture",
+      "settledAt": "2026-10-08T02:04:34.616504+00:00"
+    }
+  ],
+  "releaseAttempts": 1,
+  "versionCreationAttempts": 0,
+  "fixtures": 0,
+  "credentialValuesRecorded": false,
+  "unresolvedProviderWrites": 0,
+  "productsCreated": 0,
+  "productConfigsCreated": 0,
+  "rollbackAttempts": 0,
+  "closedAt": "2026-10-08T02:07:36.015154+00:00",
+  "classification": "RELEASED_ACTIVE_BLOCKED_SHARED_BROWSER_AUTH_M5_G7_NOT_PASSED",
+  "providerAccessClosed": true
+}

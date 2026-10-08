@@ -1,17 +1,17 @@
 {
-  "classification": "FRESH_NATIVE_PRESTATE_CONFIRMED_SOURCE_GATE_PENDING",
+  "classification": "FULL_PRE_RELEASE_GATE_PASSED_RELEASE_SETTLED_G7_BLOCKED",
   "packageSha256": "e100065a23ca5c12af261ae0f58e8d1dc09100cf0caa8036dbb7d219f70d6a65",
   "canonicalHost": "PASS_FIVE_CURRENT_RESPONSES_MATCH_ACCEPTED_HASHES",
   "versionList": "PASS_EXACT_FIVE_VERSION_SET_UNCHANGED",
   "nativeCandidateConfig": "FRESH_OWNER_NATIVE_VERSION_PAGE_READBACK_MATCH",
   "freshInstallationPresence": "DESIGNATED_INSTALLATION_PRESENCE_CONFIRMED_BY_OWNER",
   "priorOwnerAttestation": "Accepted historical M5-019R evidence, not relabeled as a fresh M5-020 observation",
-  "releaseAttempts": 0,
+  "releaseAttempts": 1,
   "versionCreationAttempts": 0,
   "productsCreated": 0,
   "productConfigsCreated": 0,
   "rollbackAttempts": 0,
-  "gateFrozen": false,
+  "gateFrozen": true,
   "localCliStartupFailure": "esbuild absent: provider command did not load",
   "dependencyRestorationFailure": "Default npm install attempted unpublished development dependency @shopify/app4.8.2; no provider operation",
   "dependencyRestorationResolution": "Installed only exact four production dependencies in separate neutral manifest; original CLI package and eight accepted anchors unchanged",
@@ -47,6 +47,32 @@
       "committed": "history.log",
       "renderedSha256": "47bb033a26cda6c97e0332451c130c56e663d35ab94aa6dda8c61a8a44ef4658",
       "rendering": "Trailing whitespace removed; raw neutral output preserved"
+    }
+  ],
+  "providerPhaseClosed": true,
+  "activeVersion": "1158986629121",
+  "rollbackVersion": "1153019904001",
+  "nativePostReleaseConfig": "AGENT_BLOCKED_OWNER_REFRESH_PENDING",
+  "g7": "BLOCKED_SHARED_BROWSER_HUMAN_VERIFICATION",
+  "sourceGateHead": "e750a67bec40dd4ffa447681d6ee04fb631922e3",
+  "sourceGateReviews": "CLEAR_CLEAR",
+  "sourceGateCi": "TEN_ATTEMPT1_SUCCESS",
+  "finalLocalScriptChecks": [
+    {
+      "script": "check:style",
+      "command": "biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002 scripts/m5-003 scripts/m5-004 scripts/m5-005 scripts/m5-009 scripts/m5-010 scripts/m5-011 scripts/m5-012 scripts/m5-013 scripts/m5-015 scripts/m5-015r scripts/m5-016 scripts/m5-017",
+      "exitCode": 0,
+      "rawSha256": "a8bc7573378a721ee06c85b58dd610737dc598750fec9c6548f258ecaa88c941",
+      "committedLog": "final-style.log",
+      "rendering": "Trailing whitespace removed; raw retained neutral"
+    },
+    {
+      "script": "check:secrets",
+      "command": "node scripts/boundaries/check-secrets.mjs",
+      "exitCode": 0,
+      "rawSha256": "734ad029dfb172476895db6bfed720780ab49d9f14cd4a7cb18d3adec5a2bcc2",
+      "committedLog": "final-secrets.log",
+      "rendering": "Trailing whitespace removed; raw retained neutral"
     }
   ]
 }

@@ -1,0 +1,17 @@
+CHANGES_REQUESTED — exact HEAD `f320f18e263dca0d838a46b7c739bc0fd7ee23df`
+
+Verified tree `ebb58af0d2733e5fc543c1251837c46c8e4ee58f` and base/effective `e5262267234516251bd4a42367643b700e8854f0`.
+
+Two material findings:
+
+1. **P1 — Executable symlink targets can escape the frozen inventory.** [release-existing.py:189](/home/serveradmin/insignia-m5-020-worktree/deployment/m5-020/release-existing.py:189) accepts symlink targets anywhere under `NEUTRAL`. However, `digest()` hashes only link text, and inventory enumeration covers only the three specified input roots without following directory symlinks. Counterexample: a non-golden CLI dependency links to `NEUTRAL/shared-dependency/index.js`, outside those roots. Changing that target after freezing leaves inventory membership and hashes unchanged, while Node can execute the changed dependency during release. This violates the documented complete frozen CLI/runtime-input contract. Reject executable links outside inventoried roots, or explicitly freeze and revalidate their complete resolved content and file kinds.
+
+2. **P2 — Four tracked directory symlinks are omitted from mandatory membership.** [release-existing.py:69](/home/serveradmin/insignia-m5-020-worktree/deployment/m5-020/release-existing.py:69) filters `git ls-files` through `is_file()`, excluding `spikes/m0-013/rust/extensions/{transform,validation}` and `spikes/m0-014/rust/extensions/{transform,validation}`. I confirmed all four exist as tracked directory symlinks. The builder therefore produces an inventory that omits them, and validation accepts that omission. This regresses the prior lexical-path correction and contradicts the full tracked file-kind inventory requirement. Include every tracked lexical path and bind each link’s kind and bytes. Git HEAD/cleanliness checks provide additional protection but do not repair this inventory contract.
+
+These are documented gate-contract defects, not judgment-based style smells. Both counterexamples derive from static inspection; I did not execute them.
+
+I inspected the cumulative diff and complete production seams covering admin authentication/private SSR/API, editor and Konva synchronization, immutable publication/outbox/idempotency, activation and recovery, readiness/trusted-release boundaries, Shopify publication and availability v1/v2/v3 adapters, Function Rust/query/policy code, durable tenant/transaction/fence handling, all 15 SQL migrations, deployment packaging/host helpers, and release/freeze controllers. I also inspected pertinent authorization, CAS, browser, activation, timing, ambiguity and crash-recovery test source. Assigned prior reviews/settings and finding responses were historical context only.
+
+Personally performed static checks verified accepted 396 source plus 225 build hashes, all 124 tracked historical hashes, committed control source/log bindings, changed JSON/Python AST parsing, and diff whitespace. No tests, builds, operator execution, network access or mutations occurred. Recorded GREEN9 controls remain fake-transport evidence. Current-head CI and full regression/PostgreSQL18 results remain unobserved here and separate from the parent’s external packet.
+
+The admitted outcome remains **BLOCKED_FRESH_NATIVE_PRESTATE / RELEASE_NOT_ATTEMPTED / M5_G7_NOT_PASSED**. Fresh candidate config/UID and designated-installation proof are missing; all 34 real G7 criteria remain not run. Default production readiness remains deliberately fail-closed. This review grants no principal approval, release permission or M5/G7 PASS.

@@ -1,0 +1,48 @@
+{
+  "classification": "M5_020_PROVIDER_PHASE_CLOSED",
+  "recordedAt": "2026-10-08T02:07:36.041891+00:00",
+  "releaseAttempts": 1,
+  "versionCreationAttempts": 0,
+  "productsCreated": 0,
+  "productConfigsCreated": 0,
+  "rollbackAttempts": 0,
+  "unresolvedProviderWrites": 0,
+  "files": [
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/read-register.json",
+      "sha256": "2687733bc964ae3734fcce04c82df656c135a580fac39e2d2cf4cb4e595bb486",
+      "private": false
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/pre-release-gate.json",
+      "sha256": "0eb11cfa5c2ff07348a721f318cc5148cef2e910b5ad301dca88d61d880a685f",
+      "private": false
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/run/release-reservation.json",
+      "sha256": "86e9fb4b9aac8f9a9b0f648abc55105cc3fee30b443796e86a18b7f7460cb6a7",
+      "private": false
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/run/dispatch-result.json",
+      "sha256": "e415e3be3bf71cf3d5cb467f31151d7e9efe8ecd0e6dfd339affedf1d8945895",
+      "private": false
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/run/cli-output.private.log",
+      "sha256": "0a595a65f887ae2214730d869cdad74023cebf000028f3b240ca28652f76ea2b",
+      "private": true
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/versions-post-release.private.log",
+      "sha256": "e008e046907ab9eb544bdaa672402cb8c746e72d2c223b145941adba496cbb64",
+      "private": true
+    },
+    {
+      "path": "/home/serveradmin/insignia-m5-020-handoff/versions-post-release.json",
+      "sha256": "193e1c2a0372604425d15eef8aae6c82b0fa4e51ace8238b241e2c5dff717e9a",
+      "private": false
+    }
+  ],
+  "authority": "No further agent provider access in this stopped slice; owner manual evidence may be integrated separately without reopening raw run"
+}
