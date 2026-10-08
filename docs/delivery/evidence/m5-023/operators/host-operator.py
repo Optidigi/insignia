@@ -111,9 +111,35 @@ def prestate():
     return current
 
 
+def same_database_endpoint(web, worker, database, address):
+    """Bind actual container DNS routes to one designated private DB endpoint."""
+    if address.path != '/insignia_rewrite' or address.port not in (None, 5432) \
+            or address.query not in ('', 'sslmode=disable') or address.fragment:
+        return False
+    networks = [item for item in database.get('NetworkSettings', {}).get('Networks', {}).values()
+        if item.get('NetworkID') and item.get('IPAddress') and all(any(
+            other.get('NetworkID') == item['NetworkID']
+            for other in container.get('NetworkSettings', {}).get('Networks', {}).values())
+            for container in (web, worker))
+        and (address.hostname == item['IPAddress'] or address.hostname in (item.get('Aliases') or []))]
+    if len(networks) != 1:
+        return False
+    probe = "const dns=require('node:dns'); dns.lookup(new URL(process.env.DATABASE_URL).hostname,{all:true,family:4},(error,rows)=>console.log(JSON.stringify(error?[]:[...new Set(rows.map(row=>row.address))].sort())));"
+    for container in (web, worker):
+        values = dict(value.split('=', 1) for value in container['Config'].get('Env', []))
+        if any(value and (key in ('NODE_OPTIONS', 'NODE_PATH') or key.startswith(('LD_', 'DYLD_')))
+               for key, value in values.items()):
+            return False
+        resolved = json.loads(run(['docker', 'exec', container['Id'], '/usr/local/bin/node', '-e', probe], timeout=10))
+        if resolved != [networks[0]['IPAddress']]:
+            return False
+    return True
+
+
 def lifecycle():
     """Read-only qualification; never install/start a missing worker or seed queue state."""
-    web = prestate()[0]
+    current = prestate()
+    web = current[0]
     environment = dict(value.split('=', 1) for value in web['Config']['Env'])
     expected = json.loads((ROOT / 'expected-inputs.json').read_text())
     target = urlsplit(environment.get('DATABASE_URL', ''))
@@ -133,26 +159,35 @@ def lifecycle():
         candidates.append((container, command, values))
     checks = {'exactWorkerArtifact': False, 'workerReady': False, 'workerKeyConfigurationPresent': False,
               'runtimeRoleExact': target.username == 'insignia_runtime', 'workerRoleExact': False,
+              'sameDatabaseEndpoint': False,
               'webhookSecretMatchesApp': bool(environment.get('SHOPIFY_WEBHOOK_SECRET'))
                 and environment.get('SHOPIFY_WEBHOOK_SECRET') == environment.get('SHOPIFY_CLIENT_SECRET')}
     if len(candidates) == 1:
         worker, command, values = candidates[0]
         entry = Path(command[1])
-        checks['workerRoleExact'] = urlsplit(values.get('DATABASE_URL', '')).username == 'insignia_runtime'
+        address = urlsplit(values.get('DATABASE_URL', ''))
+        checks['workerRoleExact'] = address.username == 'insignia_runtime' \
+            and address.query == target.query and address.fragment == target.fragment
         inspector = (ROOT / 'worker-inventory.mjs').read_bytes()
         inventory_bytes = (ROOT / 'worker-executable-inventory.json').read_bytes()
         require(sha(inspector) == expected['workerInspectorSha256']
                 and sha(inventory_bytes) == expected['workerInventorySha256'], 'Worker inspection input drift')
         # Hash every executable package/dependency without importing any of them.
         # Reject preloads and unsupported commands before any health request.
-        command_exact = len(command) in (2, 3) and (len(command) == 2 or re.fullmatch(r'--port=[0-9]+', command[2]))
+        command_exact = not worker['Config'].get('Entrypoint') and len(command) in (2, 3) \
+            and (len(command) == 2 or re.fullmatch(r'--port=[0-9]+', command[2]))
         immutable_code = worker.get('HostConfig', {}).get('ReadonlyRootfs') is True \
             and worker['Config'].get('User') == 'node' and entry.is_absolute() and entry.parts[1] != 'tmp' \
             and not any(mount.get('RW') and mount.get('Destination') != '/tmp' for mount in worker.get('Mounts', []))
-        if command_exact and immutable_code and not values.get('NODE_OPTIONS') and not values.get('NODE_PATH'):
-            artifact = json.loads(run(['docker', 'exec', '-i', worker['Id'], 'node', '--input-type=module', '-e',
+        preload_absent = not any(value and (key in ('NODE_OPTIONS', 'NODE_PATH') or key.startswith(('LD_', 'DYLD_')))
+            for key, value in values.items())
+        if command_exact and immutable_code and preload_absent:
+            artifact = json.loads(run(['docker', 'exec', '-i', worker['Id'], '/usr/local/bin/node', '--input-type=module', '-e',
                 inspector.decode() + '\ninspectWorkerFromStdin();'],
-                json.dumps({'entry': str(entry), 'inventory': json.loads(inventory_bytes)}).encode(), timeout=30))
+                json.dumps({'entry': str(entry), 'inventory': json.loads(inventory_bytes), 'command': command,
+                    'writablePaths': ['/tmp', '/dev', '/proc', '/sys',
+                        *[mount['Destination'] for mount in worker.get('Mounts', []) if mount.get('RW')],
+                        *(worker.get('HostConfig', {}).get('Tmpfs') or {}).keys()]}).encode(), timeout=30))
             checks['exactWorkerArtifact'] = artifact.get('exact') is True
         checks['workerKeyConfigurationPresent'] = all(values.get(key) for key in
             ['INSIGNIA_CREDENTIAL_KEY_ID', 'INSIGNIA_CREDENTIAL_KEY_BASE64', 'SHOPIFY_CLIENT_ID', 'SHOPIFY_CLIENT_SECRET'])
@@ -161,8 +196,9 @@ def lifecycle():
         port = next((arg.split('=', 1)[1] for arg in command[2:] if arg.startswith('--port=')), '4301')
         require(port.isdigit() and 0 < int(port) <= 65535, 'Worker health port invalid')
         if checks['exactWorkerArtifact']:
+            checks['sameDatabaseEndpoint'] = len(current) > 1 and same_database_endpoint(web, worker, current[1], target)
             probe = "fetch('http://127.0.0.1:" + port + "/ready').then(async r=>console.log(JSON.stringify({status:r.status,body:await r.json()}))).catch(()=>console.log(JSON.stringify({status:503})))"
-            health = json.loads(run(['docker', 'exec', worker['Id'], 'node', '-e', probe], timeout=10))
+            health = json.loads(run(['docker', 'exec', worker['Id'], '/usr/local/bin/node', '-e', probe], timeout=10))
             checks['workerReady'] = health.get('status') == 200 and health.get('body', {}).get('durableReady') is True
     rights = json.loads(sql("""BEGIN READ ONLY; SELECT json_build_object(
       'uninstallRuntimeUsable',has_schema_privilege('insignia_runtime','public','USAGE')

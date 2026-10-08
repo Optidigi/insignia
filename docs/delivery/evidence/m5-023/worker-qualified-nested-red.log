@@ -1,0 +1,49 @@
+✔ complete inventory accepts exact dependencies without executing them (779.904087ms)
+✔ changed database dependency fails despite identical entry and handler bytes (786.273468ms)
+✔ additional executable file fails exact inventory (776.044124ms)
+✔ changed internal module path fails despite unchanged file bytes (786.680198ms)
+✔ escaping executable link is rejected before reading or executing it (3.678909ms)
+✔ preload and lookup overrides cannot qualify (387.552622ms)
+✖ nearer dist dependency shadow cannot qualify the reviewed root package (395.78765ms)
+✖ qualified nested module files remain bound and any change fails (2.235963ms)
+✔ root alias into writable storage fails even with exact package bytes (390.4409ms)
+✔ inventory alone cannot qualify a different actually running process (455.41234ms)
+✔ effective process requires exact arguments, binary and absent preload flags (0.4752ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 9
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4869.374714
+
+✖ failing tests:
+
+test at docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:67:1
+✖ nearer dist dependency shadow cannot qualify the reviewed root package (395.78765ms)
+  Error: Unaccounted nested module lookup
+      at walk (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:35:39)
+      at files (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:50:5)
+      at collect (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:73:83)
+      at collectWorkerInventory (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:84:3)
+      at workerInventoryMatches (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:92:25)
+      at file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:74:16
+      at fixture (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:28:9)
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:67:83)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+
+test at docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:76:1
+✖ qualified nested module files remain bound and any change fails (2.235963ms)
+  Error: Unaccounted nested module lookup
+      at walk (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:35:39)
+      at walk (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:41:41)
+      at files (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:50:5)
+      at collect (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:73:83)
+      at collectWorkerInventory (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:84:3)
+      at file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:80:20
+      at fixture (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:28:9)
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:76:76)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)

@@ -1,0 +1,14 @@
+{
+  "filesAndLinks": 21074,
+  "archiveSha256": "17129c15c6decb87539b24fe12358d345d357e828d887c3943594778dd965022",
+  "archiveBytes": 37351210,
+  "inventorySha256": "8b68ba0bb020268e49b96cb2c7f014fa190d21de8ef7160dcf6d0fbcb6511809",
+  "entrySha256": "8696ea7d044163b8e2de2b90545b069cceaa288f685c908c68c6b4adbef29326",
+  "dockerfileSha256": "ca4a0257ce880e26a9fee2bdc97df178ff1eebe1dd4a29a13bfce291c0266927",
+  "dbmateSha256": "47e284b3d8cbad1ba5f090495aa05afd1bbd5f35e2ed5577aad06da74ce780ce",
+  "providerRequests": 0,
+  "productionDeployed": false,
+  "envFilesIncluded": false,
+  "sourceBinding": "Third-review/root correction working tree built by full-root-r4; final gate binds exact source/build hashes",
+  "supersedesOfflineArchiveSha256": "ef05cff2580eed335b7ee229b3b3436043b2b251b9a53e174876df367682fd71"
+}

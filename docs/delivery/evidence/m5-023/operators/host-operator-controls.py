@@ -100,7 +100,7 @@ class GuardControls(unittest.TestCase):
         self.assertEqual(self.calls, [])
 
     def test_read_only_missing_worker_classifies_and_never_provisions(self):
-        environment = ['DATABASE_URL=postgres://synthetic@database:5432/synthetic',
+        environment = ['DATABASE_URL=postgres://synthetic@database:5432/insignia_rewrite',
                        'SHOPIFY_CLIENT_SECRET=synthetic', 'SHOPIFY_WEBHOOK_SECRET=synthetic']
         web = {'Config': {'Env': environment, 'Cmd': ['node', 'entry.mjs']}}
         operator.prestate = lambda: [web]
@@ -124,20 +124,28 @@ class GuardControls(unittest.TestCase):
         self.assertNotIn('synthetic@', json.dumps(value))
 
     def test_only_exact_ready_worker_and_queue_qualify(self):
-        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code']:
+        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override']:
             with self.subTest(failure=failure):
                 path = operator.ROOT / 'lifecycle-settled.json'
                 if path.exists():
                     path.unlink()
-                web = {'Config': {'Env': ['DATABASE_URL=postgres://insignia_runtime@database:5432/synthetic',
+                web = {'Config': {'Env': ['DATABASE_URL=postgres://insignia_runtime@database:5432/insignia_rewrite',
                     'SHOPIFY_CLIENT_ID=synthetic-client', 'SHOPIFY_CLIENT_SECRET=synthetic-secret',
                     'SHOPIFY_WEBHOOK_SECRET=' + ('wrong' if failure == 'secret' else 'synthetic-secret')]}}
                 worker = {'Id': 'synthetic-worker', 'HostConfig': {'ReadonlyRootfs': failure != 'writable-code'},
-                    'Mounts': [], 'Config': {'User': 'node', 'Cmd': ['node', '/srv/worker/main.js'],
-                    'Env': ['DATABASE_URL=postgres://' + ('underprivileged_worker' if failure == 'role' else 'insignia_runtime') + '@database:5432/synthetic',
+                    'Mounts': [], 'Config': {'Entrypoint': ['/opt/unreviewed-wrapper'] if failure == 'custom-launcher' else [], 'User': 'node', 'Cmd': ['node', '/srv/worker/main.js'],
+                    'Env': ['DATABASE_URL=postgres://' + ('underprivileged_worker' if failure == 'role' else 'insignia_runtime') + '@database:5432/insignia_rewrite',
                         'SHOPIFY_CLIENT_ID=synthetic-client', 'SHOPIFY_CLIENT_SECRET=synthetic-secret',
                         'INSIGNIA_CREDENTIAL_KEY_ID=synthetic-key', 'INSIGNIA_CREDENTIAL_KEY_BASE64=synthetic-key-bytes']}}
-                operator.prestate = lambda: [web]
+                if failure == 'db-query-override':
+                    web['Config']['Env'][0] += '?host=unrelated-database'
+                    worker['Config']['Env'][0] += '?host=unrelated-database'
+                def network(ip, identity='exact-backend'):
+                    return {'NetworkSettings': {'Networks': {'backend': {'NetworkID': identity, 'IPAddress': ip, 'Aliases': ['database']}}}}
+                web.update({'Id': 'synthetic-web', **network('10.0.0.3')})
+                worker.update(network('10.0.0.4', 'other-backend' if failure == 'separate-network' else 'exact-backend'))
+                database = {'Id': 'synthetic-database', **network('10.0.0.2')}
+                operator.prestate = lambda: [web, database]
                 inspector = b'function inspectWorkerFromStdin() {}'
                 inventory = b'{"version":"synthetic-only"}'
                 (operator.ROOT / 'worker-inventory.mjs').write_bytes(inspector)
@@ -152,6 +160,8 @@ class GuardControls(unittest.TestCase):
                     if 'sha256sum' in args:
                         return ((('0' if failure == 'artifact' else '1') * 64) + '  main.js\n' + '2' * 64 + '  handlers.js\n').encode()
                     if '-e' in args:
+                        if 'dns.lookup' in args[args.index('-e') + 1]:
+                            return b'[\"10.0.1.2\"]' if failure == 'dns-drift' and 'synthetic-worker' in args else b'[\"10.0.0.2\"]'
                         if 'inspectWorkerFromStdin' in args[args.index('-e') + 1]:
                             return json.dumps({'exact': failure not in ['artifact', 'dependency']}).encode()
                         return json.dumps({'status': 503 if failure == 'health' else 200, 'body': {'durableReady': True}}).encode()

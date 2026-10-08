@@ -319,7 +319,7 @@ test('confirmed reinstall advances once through the reviewed lifecycle and old i
   }
 });
 
-test.each(['matching', 'wrong-shop-id', 'wrong-installation', 'wrong-domain', 'inactive'])(
+test.each(['matching', 'wrong-shop-id', 'wrong-installation', 'wrong-domain', 'inactive', 'uninstalled-winner'])(
   'a uniqueness loser compares the independently committed tenant: %s',
   async (mode) => {
     const provider = identity();
@@ -381,6 +381,21 @@ test.each(['matching', 'wrong-shop-id', 'wrong-installation', 'wrong-domain', 'i
         await new Promise((resolve) => setTimeout(resolve, 20));
       }
       expect(waiting).toBe(true);
+      if (mode === 'uninstalled-winner') {
+        const receipt = await core.webhooks.receive({
+          shopDomain: provider.shopDomain,
+          deliveryId: randomUUID(),
+          topic: 'app/uninstalled',
+          apiVersion: '2026-07',
+          triggeredAt: new Date(),
+          eventId: randomUUID(),
+          name: null,
+          rawBody: Buffer.from(
+            JSON.stringify({ id: Number(provider.shopifyShopId), myshopify_domain: provider.shopDomain }),
+          ),
+        });
+        expect(await core.webhooks.processUninstall(receipt.id)).toBe('unresolved');
+      }
       releaseWinner();
       await winner;
       if (mode === 'matching')
@@ -395,7 +410,10 @@ test.each(['matching', 'wrong-shop-id', 'wrong-installation', 'wrong-domain', 'i
             },
           },
         });
-      else expect(await settled).toMatchObject({ error: { kind: 'identity_mismatch' } });
+      else
+        expect(await settled).toMatchObject({
+          error: { kind: mode === 'uninstalled-winner' ? 'state_changed' : 'identity_mismatch' },
+        });
       expect(
         (
           await core.tenants.getManagedInstallationState(

@@ -1,35 +1,35 @@
 {
   "root": {
     "exit": 0,
-    "log": "full-root-r3b.log",
+    "log": "full-root-r4.log",
     "webTests": 86,
     "webSkipped": 0
   },
   "postgres18": {
     "version": "18.6",
     "exit": 0,
-    "tests": 196,
-    "log": "full-pg18-r3.log"
+    "tests": 197,
+    "log": "full-pg18-r4.log"
   },
   "concurrency": {
     "firstSessions": 100,
     "reinstallSessions": 100,
     "tests": 10,
-    "log": "unique-controls-green.log"
+    "log": "full-pg18-r4.log"
   },
   "productionSDKPGHTTP": {
     "tests": 11,
-    "log": "full-root-r3b.log",
+    "log": "full-root-r4.log",
     "withinFullRoot": true
   },
   "publicationStress": {
     "pass": 100,
     "total": 100,
-    "log": "publication-stress-r3.log"
+    "log": "publication-stress-r4.log"
   },
   "renderer": {
     "expectedNegative": true,
-    "log": "renderer-r3.log"
+    "log": "renderer-r4.log"
   },
   "roles": {
     "genuineLogins": true,
@@ -39,11 +39,11 @@
   },
   "hostFailureControls": {
     "tests": 9,
-    "log": "host-controls-r3.log"
+    "log": "host-controls-r4.log"
   },
   "portableRuntime": {
     "pass": true,
-    "log": "portable-runtime-r3-current.json"
+    "log": "portable-runtime-r4.json"
   },
   "productionOperations": 0,
   "shopifyRequests": 0,
@@ -62,11 +62,15 @@
     "applicationUpdateAndQueueUpdateIndependentlyRejected": true
   },
   "workerInventory": {
-    "tests": 6,
+    "tests": 11,
     "changedDependencyWithSameMainHandlersRejected": true,
     "internalPathExtraCodeEscapePreloadRejected": true,
     "dependencyCodeExecuted": false,
-    "log": "worker-inventory-links-green.log"
+    "log": "worker-controls-r4.log",
+    "nearerShadowRejected": true,
+    "mutableRootAliasRejected": true,
+    "actualUnrelatedProcessRejected": true,
+    "qualifiedNestedBytesBound": true
   },
   "logSha256": {
     "review-r2-uninstall-red.log": "89394afb1f4d1324ac08130e61d79f1134040f724a6d06a70064ed9cbc1f7664",
@@ -89,6 +93,26 @@
     "style-r3.log": "32684fb126bb574fa63b25f99d04c01e14a4f867fdab3bcf0af4cc5ae95f4edc",
     "secrets-r3.log": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
     "portable-runtime-r3-current.json": "b7129674130c1a0ac65b52bd2f41ba67696ecfeb034a064e0bcf3d59572397e9",
-    "worker-inspection-r3-result.json": "993d4830193910dd035a5df9b38a45f272c96cff9b89e0d881b13533ea7970f3"
+    "worker-inspection-r3-result.json": "993d4830193910dd035a5df9b38a45f272c96cff9b89e0d881b13533ea7970f3",
+    "unique-winner-uninstall-red.log": "d6e7b0a58f927d867f870927701b12963e16eea419ee0b38f17b5798db7bdbf7",
+    "unique-winner-uninstall-green.log": "4c3f5c0d324d4da7381bf61e1b0f3cac32e7f79ca22eea5c17ad4f37ded9916c",
+    "unique-uninstall-probe-red.log": "822b2c53ae37bc7f68e9852e7e7d8133d9556a4b4a2903a5a9fde898f1bd5b6c",
+    "unique-uninstall-probe-green.log": "e954b48d1e5f7466b8d0637b50937b9ab5f312efe845815f24c31c6dfe94b336",
+    "worker-shadow-red.log": "67f7192dd815e1767917c8494cb633121421439050a98f0e549a514cfed78166",
+    "worker-root-alias-red.log": "6c8f422fb12ec17cab99578a7d4e1c4c638de842091958db9eb0653342ce4db8",
+    "worker-route-launcher-red.log": "1623a379aa7955cb1e692c65ad6f88368b15ecf1ffc3f8cbc8b87c65733ab9e8",
+    "worker-route-launcher-green.log": "a2c2f5d3a3a31d1ecd6c28599160ca7ce17f5a9d649c05dc985bfb74bfa728bd",
+    "worker-effective-process-red.log": "2d8542070053b8a02460d794b3c52311118dd84b24b1c66eb2eae2e949b668f0",
+    "worker-effective-process-green.log": "2bfb866233539b0e7dd265d7a7d3d5c9f0498bb775e7fda6b5d9846683edba1e",
+    "worker-qualified-nested-red.log": "316a5e95677725b37c9e18c4e5c94153f8da7f425ef6b19d78bd4d09282fc3c8",
+    "worker-controls-r4.log": "c04eec7a3d6ecb6b4b6b7fc40c02dd0479ac74e644a8a08832e8db4c9f4acd7b",
+    "host-controls-r4.log": "a01b75149c2aaf00e9813154c9db0a078e277d4c93ff55f43ee3a208d2c70647",
+    "full-root-r4.log": "b0f6e33b57c2b1b841820bb29bd7aca015a058415a04ab4f816ab286574ffd1b",
+    "full-pg18-r4.log": "5f14ee6c33a6b80771fcd1de3df8f0187eca493a55b0394fbb99e7b9474e9550",
+    "publication-stress-r4.log": "3ef0077076d9f419380df68628c8d90bc429baafef4911620668cad385b8a466",
+    "renderer-r4.log": "00997d5f4e4bef746404689ade4b9b1a8fba344493dadbc95caf9243112a7660",
+    "style-r4.log": "bc523070d71f0f2adde6ebb20a62d8087bc6c0bb9d64c61ea611468655b7c91c",
+    "secrets-r4.log": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "portable-runtime-r4.json": "c1d70c12e77edbe3de104edfc6b1ff1b26575bae0fc9308def80955a994c5a50"
   }
 }

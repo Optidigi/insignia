@@ -1,10 +1,13 @@
 /** Filesystem/transport seam controls: no worker or dependency code executes. */
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync, renameSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
-import { collectWorkerInventory, workerInventoryMatches } from './worker-inventory.mjs';
+import { collectWorkerInventory, workerInventoryMatches, workerProcessMatches } from './worker-inventory.mjs';
 
 function fixture(run) {
   const root = mkdtempSync(join(tmpdir(), 'insignia-worker-proof-'));
@@ -22,7 +25,7 @@ function fixture(run) {
   const previous = globalThis.fetch;
   let requests = 0;
   globalThis.fetch = () => { requests++; throw new Error('External transport forbidden'); };
-  try { run({worker,database,outside,entry:join(worker,'dist/main.js')}); assert.equal(requests,0); }
+  try { run({root,worker,database,outside,entry:join(worker,'dist/main.js')}); assert.equal(requests,0); }
   finally { globalThis.fetch = previous; rmSync(root,{recursive:true,force:true}); }
 }
 
@@ -61,3 +64,44 @@ test('preload and lookup overrides cannot qualify',()=>fixture(({entry})=>{
     finally { if (before === undefined) delete process.env[key]; else process.env[key] = before; }
   }
 }));
+test('nearer dist dependency shadow cannot qualify the reviewed root package',()=>fixture(({entry,worker})=>{
+  const expected = collectWorkerInventory(entry);
+  const shadow = join(worker,'dist/node_modules/@insignia/database');
+  mkdirSync(shadow,{recursive:true});
+  writeFileSync(join(shadow,'package.json'),JSON.stringify({name:'@insignia/database',version:'0.0.0',main:'index.js'}));
+  writeFileSync(join(shadow,'index.js'),"throw new Error('Obsolete resolver must never execute');");
+  assert.equal(createRequire(entry).resolve('@insignia/database'),join(shadow,'index.js'));
+  assert.equal(workerInventoryMatches(entry,expected),false);
+}));
+test('qualified nested module files remain bound and any change fails',()=>fixture(({entry,worker})=>{
+  const nested = join(worker,'dist/fixtures/node_modules/qualified');
+  mkdirSync(nested,{recursive:true});
+  const file = join(nested,'index.js');writeFileSync(file,"throw new Error('Never execute inventory fixtures');");
+  const expected = collectWorkerInventory(entry);
+  assert.equal(workerInventoryMatches(entry,expected),true);
+  writeFileSync(file,"throw new Error('Changed nested bytes');");
+  assert.equal(workerInventoryMatches(entry,expected),false);
+}));
+test('root alias into writable storage fails even with exact package bytes',()=>fixture(({root,entry,worker})=>{
+  const expected = collectWorkerInventory(entry);
+  const mutable = join(root,'mutable-worker');
+  renameSync(worker,mutable); symlinkSync(mutable,worker);
+  assert.throws(()=>workerInventoryMatches(entry,expected,[mutable]),/Writable executable overlap/);
+}));
+test('inventory alone cannot qualify a different actually running process',()=>fixture(({entry})=>{
+  const inventory = collectWorkerInventory(entry);
+  const value = JSON.parse(execFileSync(process.execPath,[fileURLToPath(new URL('./worker-inventory.mjs',import.meta.url))],{
+    input:JSON.stringify({entry,inventory,command:['node',entry],writablePaths:[]}),encoding:'utf8',
+  }));
+  assert.equal(value.exact,false);
+  assert.equal(value.dependencyCodeExecuted,false);
+}));
+test('effective process requires exact arguments, binary and absent preload flags',()=>{
+  const command = ['node','/srv/worker/dist/main.js','--port=4301'];
+  const exact = {argv:[...command],nodeMatches:true,preloadAbsent:true};
+  assert.equal(workerProcessMatches(exact,command),true);
+  for (const actual of [
+    {...exact,argv:['node','--import=/opt/unreviewed.mjs',...command.slice(1)]},
+    {...exact,nodeMatches:false}, {...exact,preloadAbsent:false},
+  ]) assert.equal(workerProcessMatches(actual,command),false);
+});

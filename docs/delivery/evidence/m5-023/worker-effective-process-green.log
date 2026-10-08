@@ -1,0 +1,17 @@
+✔ complete inventory accepts exact dependencies without executing them (775.58614ms)
+✔ changed database dependency fails despite identical entry and handler bytes (785.362441ms)
+✔ additional executable file fails exact inventory (776.636446ms)
+✔ changed internal module path fails despite unchanged file bytes (788.094737ms)
+✔ escaping executable link is rejected before reading or executing it (3.716684ms)
+✔ preload and lookup overrides cannot qualify (390.036859ms)
+✔ nearer dist dependency shadow cannot qualify the reviewed root package (395.953605ms)
+✔ root alias into writable storage fails even with exact package bytes (393.007264ms)
+✔ inventory alone cannot qualify a different actually running process (458.361804ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4870.275133
