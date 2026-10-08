@@ -160,7 +160,7 @@ class GuardControls(unittest.TestCase):
         self.assertNotIn('synthetic@', json.dumps(value))
 
     def test_only_exact_ready_worker_and_queue_qualify(self):
-        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema']:
+        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid']:
             with self.subTest(failure=failure):
                 path = operator.ROOT / 'lifecycle-settled.json'
                 if path.exists():
@@ -202,7 +202,13 @@ class GuardControls(unittest.TestCase):
                             'environment': {**environment, 'APP_URL': operator.ORIGIN},
                             'labels': {'traefik.enable': 'true',
                                 'traefik.http.routers.insignia-canonical-m5-019r.rule': 'Host(`insignia-app.optidigi.nl`)'},
-                            'read_only': True, 'networks': {'backend': {}}, 'volumes': []}},
+                            'read_only': True, 'networks': {'backend': {}}, 'volumes': [],
+                            'user': '0' if failure == 'root-user' else 'node',
+                            'privileged': failure == 'privileged',
+                            'cap_drop': ['ALL'], 'cap_add': ['SYS_ADMIN'] if failure == 'cap-add' else [],
+                            'security_opt': ['no-new-privileges:false'] if failure == 'security-override' else ['no-new-privileges:true'],
+                            'tmpfs': ['/srv/insignia'] if failure == 'writable-module-tmpfs' else ['/tmp:size=64m,mode=1777'],
+                            'pid': 'host' if failure == 'host-pid' else None}},
                             'networks': {'backend': {'name': 'backend'}}}).encode()
                     if args[:3] == ['docker', 'ps', '-q']:
                         return b'synthetic-worker'

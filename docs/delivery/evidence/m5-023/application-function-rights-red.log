@@ -1,0 +1,13 @@
+PASS pg_catalog.pg_advisory_xact_lock(bigint) revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.hashtextextended(text,bigint) revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.gen_random_uuid() revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.now() revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.clock_timestamp() revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.jsonb_typeof(jsonb) revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.convert_from(bytea,name) revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.length(text) revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.lower(text) revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.octet_length(text) revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.octet_length(bytea) revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS pg_catalog.count() revocation reproduced42501; preflight OLD_FALSE_QUALIFICATION and restored permission qualifies
+PASS all12 actual local PG18 function revocation controls; every ACL rehearsal rolled back; production/provider access=0

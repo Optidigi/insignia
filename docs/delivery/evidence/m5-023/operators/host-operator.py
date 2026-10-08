@@ -103,6 +103,12 @@ def candidate_matches_runtime(web, candidate, networks):
         and all(environment.get(key) == value for key, value in current.items() if key.startswith('PG'))
         and {value['name'] for value in networks.values()} == actual_networks
         and candidate.get('read_only') is True and not candidate.get('volumes')
+        and candidate.get('user') in (None, '', 'node')
+        and set(candidate.get('cap_drop') or []) == {'ALL'}
+        and set(candidate.get('security_opt') or []) == {'no-new-privileges:true'}
+        and candidate.get('tmpfs') == ['/tmp:size=64m,mode=1777']
+        and not any(candidate.get(key) for key in ['privileged', 'cap_add', 'devices', 'device_cgroup_rules',
+            'group_add', 'userns_mode', 'pid', 'ipc', 'network_mode', 'cgroup', 'sysctls'])
         and not candidate.get('entrypoint') and not candidate.get('command'))
 
 
@@ -152,7 +158,11 @@ def prestate():
     web = current[0]
     require(web['State']['Status'] == 'running', 'Web not running')
     require('APP_URL=' + ORIGIN in web['Config']['Env'], 'Canonical origin mismatch')
-    require(web['HostConfig']['ReadonlyRootfs'] is True and web['Config']['User'] == 'node', 'Runtime isolation mismatch')
+    require(web['HostConfig']['ReadonlyRootfs'] is True and web['Config']['User'] == 'node'
+            and web['HostConfig'].get('Privileged') is not True
+            and set(web['HostConfig'].get('CapDrop') or []) == {'ALL'}
+            and not web['HostConfig'].get('CapAdd')
+            and set(web['HostConfig'].get('SecurityOpt') or []) == {'no-new-privileges:true'}, 'Runtime isolation mismatch')
     require(web['Config']['Labels']['traefik.http.routers.insignia-canonical-m5-019r.rule'] == 'Host(`insignia-app.optidigi.nl`)', 'Canonical router mismatch')
     return current
 
@@ -277,7 +287,14 @@ def lifecycle():
           ('product_configs','SELECT'),('product_configs','UPDATE'),('publication_operations','SELECT'),
           ('inbox_messages','SELECT'),('inbox_messages','INSERT'),('inbox_messages','UPDATE'),('inbox_messages','DELETE'),
           ('shopify_webhook_deliveries','SELECT'),('shopify_webhook_deliveries','INSERT')) AS required(relation,privilege)
-          WHERE NOT has_table_privilege('insignia_runtime','public.'||required.relation,required.privilege)),
+          WHERE NOT has_table_privilege('insignia_runtime','public.'||required.relation,required.privilege))
+        AND NOT EXISTS(SELECT 1 FROM (VALUES
+          ('pg_catalog.pg_advisory_xact_lock(bigint)'),('pg_catalog.hashtextextended(text,bigint)'),
+          ('pg_catalog.gen_random_uuid()'),('pg_catalog.now()'),('pg_catalog.clock_timestamp()'),
+          ('pg_catalog.jsonb_typeof(jsonb)'),('pg_catalog.convert_from(bytea,name)'),
+          ('pg_catalog.length(text)'),('pg_catalog.lower(text)'),('pg_catalog.octet_length(text)'),
+          ('pg_catalog.octet_length(bytea)'),('pg_catalog.count()')) AS required(signature)
+          WHERE NOT has_function_privilege('insignia_runtime',required.signature,'EXECUTE')),
       'queueSchemaPresent', EXISTS(SELECT 1 FROM pg_namespace WHERE nspname='pgboss'),
       'queueRuntimeUsable',COALESCE((SELECT has_schema_privilege('insignia_runtime',oid,'USAGE') FROM pg_namespace WHERE nspname='pgboss'),false)
         AND EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='pgboss' AND c.relkind IN ('r','p'))
@@ -413,6 +430,7 @@ def deploy():
             break
         time.sleep(1)
     require(web['State'].get('Health', {}).get('Status') == 'healthy' and web['Image'] == image['Id'], 'Deployment unsettled; stop, no retry')
+    require(prestate()[0]['Image'] == image['Id'], 'Effective deployed runtime isolation drift')
     require(identities(inspect(OTHERS)) == identities(current[1:]), 'Unrelated service changed')
     actual = run(['docker', 'exec', WEB, 'sha256sum', 'dist/server/entry.mjs']).decode().split()[0]
     require(actual == expected['entrySha256'], 'Deployed entry drift')

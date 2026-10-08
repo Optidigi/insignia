@@ -6,6 +6,8 @@ Preproduction reviews identified uninstall/persistence overlap and Compose overr
 
 Fifth-round candidate-configuration/indirect-trigger findings plus root runtime-schema and package-decoder objections now have focused failing/passing controls. No application/build/provider input changed. The full fresh review/CI gate remains unfrozen; no renewed host access or live operation has begun.
 
+Sixth-round required-function and initial-runtime-isolation findings now have twelve actual-PG and six unsafe-candidate controls. New full-source review/CI is required before freeze; application/build/provider inputs unchanged.
+
 ---
 
 # Current M5-022R — same-PR correction; principal rereview required
