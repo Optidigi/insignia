@@ -1,0 +1,17 @@
+{
+  "slice": "M5-019R",
+  "observedAt": "2026-10-07T23:52:34.828242+00:00",
+  "controls": "python3 -B deployment/m5-019r/create-unreleased-version.test.py -v",
+  "tests": 16,
+  "exit": 0,
+  "oneAttemptReservationDurability": true,
+  "exclusiveFileAndParentDirectoryFsync": true,
+  "duplicateClaimAndFailedSyncFailClosed": true,
+  "optimizedPythonFailClosed": true,
+  "mandatoryInventoryRoundTripAndSymlinkFences": true,
+  "distinctReviewSessionsAndReports": true,
+  "exactTenUniqueCIBinding": true,
+  "supersededOriginAndVersionFailClosed": true,
+  "fixtureOrProviderRequests": 0,
+  "actualVersionRunExists": false
+}

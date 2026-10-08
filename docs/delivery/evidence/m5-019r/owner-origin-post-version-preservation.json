@@ -1,0 +1,12 @@
+{
+  "classification": "POST_VERSION_PRODUCTION_AND_HISTORY_UNCHANGED",
+  "frozenSourceHead": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+  "acceptedSourceBuildHashes": 621,
+  "historicalPreservedHashes": 127,
+  "frozenUploadInputHashes": 7,
+  "productionDeploymentOperatorConfigChangedAfterDispatch": false,
+  "integrationChanges": "Docs/evidence/AGENTS only",
+  "creationAttempts": 1,
+  "releaseAttempts": 0,
+  "nativeReadback": "BLOCKED_SHOPIFY_AUTHENTICATION"
+}

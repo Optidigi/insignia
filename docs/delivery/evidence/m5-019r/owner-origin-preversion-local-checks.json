@@ -1,0 +1,32 @@
+{
+  "head": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+  "checksAt": "2026-10-07T23:54:10.582864+00:00",
+  "guardControls": {
+    "command": "python3 -B deployment/m5-019r/create-unreleased-version.test.py -v",
+    "exit": 0,
+    "tests": 16,
+    "providerRequests": 0
+  },
+  "historyGuard": {
+    "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+    "exit": 0
+  },
+  "secretProvenance": {
+    "command": "Node24.21 scripts/boundaries/check-secrets.mjs",
+    "exit": 0,
+    "productionFiles": 112,
+    "testFixtureFiles": 85
+  },
+  "acceptedProductionSourceBuildHashes": 621,
+  "unchangedHistoricalFiles": 127,
+  "latestCommitWhitespaceCheck": {
+    "command": "git diff 9155b4a6f9f1c7988a2dc44c4041d67c03d52bd3...HEAD --check",
+    "exit": 0
+  },
+  "cumulativeWhitespaceLimitation": "Historical raw evidence logs preserve trailing whitespace; no cumulative-clean claim",
+  "localBuildRerun": false,
+  "fullRegressionAndPostgreSQL18": "Natural exact-head CI in progress; no local PostgreSQL18 claim",
+  "applicationSourceBuildChanges": 0,
+  "versionAttempts": 0,
+  "privateAccessCleanup": "Exact temporary remote key revoked and local private key removed"
+}

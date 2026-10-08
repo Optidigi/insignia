@@ -1,0 +1,51 @@
+{
+  "slice": "M5-019R",
+  "classification": "CREATED_ONCE_INACTIVE_NATIVE_READBACK_PENDING",
+  "observedAt": "2026-10-08T00:04:10.236698+00:00",
+  "canonicalOrigin": "https://insignia-app.optidigi.nl",
+  "sourceHead": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+  "sourceTree": "3da38fc83b7a2b68501ec95b9211c1a2846b6f60",
+  "fullFrozenGateSha256": "801a0590c09f97b672ba1f06fa47e1ca12a7e58a94e83fd19ede8d2c2a72db09",
+  "frozenFileCount": 3921,
+  "allFrozenFileHashesUnchanged": true,
+  "reservation": {
+    "sourceHead": "9b94149272d1b62c34f44dda3bde209e80b4ae22",
+    "gateSha256": "801a0590c09f97b672ba1f06fa47e1ca12a7e58a94e83fd19ede8d2c2a72db09",
+    "attempt": 1,
+    "ceiling": 1,
+    "noBuild": true,
+    "noRelease": true,
+    "versionTag": "m5-019r-9b94149272d1"
+  },
+  "dispatch": {
+    "dispatches": 1,
+    "exit": 0,
+    "outcome": "CLI_COMPLETED_READBACK_REQUIRED"
+  },
+  "createdVersion": {
+    "createdAt": "2026-10-08 00:03:38",
+    "versionTag": "m5-019r-9b94149272d1",
+    "status": "inactive",
+    "versionId": "gid://shopify/Version/1158986629121",
+    "message": ""
+  },
+  "activeVersion": {
+    "createdAt": "2026-10-02 21:18:24",
+    "versionTag": "insignia-3",
+    "status": "active",
+    "versionId": "gid://shopify/Version/1153019904001",
+    "message": ""
+  },
+  "supersededNeverRelease": {
+    "createdAt": "2026-10-07 21:05:02",
+    "versionTag": "m5-019-a9717e1265ef",
+    "status": "inactive",
+    "versionId": "gid://shopify/Version/1158837927937",
+    "message": ""
+  },
+  "oldVersionRowsByteEqual": true,
+  "newVersionCount": 1,
+  "releaseAttempts": 0,
+  "nativeConfigurationReadback": "PENDING_SHOPIFY_BROWSER_LOGIN",
+  "designatedInstallationPresence": "PENDING_SHOPIFY_BROWSER_LOGIN"
+}
