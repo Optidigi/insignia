@@ -155,6 +155,27 @@ export function createTenantRepository(executor: DatabaseExecutor) {
         rows.some((row) => row.shop_domain !== input.shopDomain || row.shopify_shop_id !== input.shopifyShopId)
       )
         throw new ManagedInstallationError('identity_mismatch');
+      // A removed new installation may have been observed while the durable
+      // predecessor was inactive. Its signed delivery can already be processed
+      // as stale against that predecessor. Read immutable ingress evidence,
+      // regardless of processing state, before creating/advancing an active era.
+      // Only the signed Shop identity/domain can fence this provider identity.
+      const removed = await sql<{ removed: boolean }>`
+        WITH candidates AS (
+          SELECT convert_from(inbox.payload,'UTF8')::jsonb AS body
+          FROM shopify_webhook_deliveries delivery JOIN inbox_messages inbox ON inbox.id=delivery.inbox_id
+          WHERE delivery.shop_domain=${input.shopDomain} AND delivery.topic='app/uninstalled'
+            AND delivery.triggered_at >= ${input.observationStartedAt}
+        )
+        SELECT EXISTS(SELECT 1 FROM candidates WHERE
+          CASE jsonb_typeof(body->'id')
+            WHEN 'number' THEN (body->>'id')::numeric = ${input.shopifyShopId}::numeric
+            WHEN 'string' THEN body->>'id' = ${input.shopifyShopId}
+            ELSE false END
+          AND body ? 'myshopify_domain'
+          AND (body->>'myshopify_domain' IS NULL OR body->>'myshopify_domain'=${input.shopDomain})
+        ) AS removed`.execute(transaction);
+      if (removed.rows[0]?.removed !== false) throw new ManagedInstallationError('state_changed');
       if (rows.length === 0) {
         if (input.expected !== null) throw new ManagedInstallationError('state_changed');
         await sql`SAVEPOINT managed_installation_create`.execute(transaction);

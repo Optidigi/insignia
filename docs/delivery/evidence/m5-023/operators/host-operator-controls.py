@@ -124,22 +124,27 @@ class GuardControls(unittest.TestCase):
         self.assertNotIn('synthetic@', json.dumps(value))
 
     def test_only_exact_ready_worker_and_queue_qualify(self):
-        for failure in [None, 'artifact', 'secret', 'queue', 'health']:
+        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code']:
             with self.subTest(failure=failure):
                 path = operator.ROOT / 'lifecycle-settled.json'
                 if path.exists():
                     path.unlink()
-                web = {'Config': {'Env': ['DATABASE_URL=postgres://synthetic@database:5432/synthetic',
+                web = {'Config': {'Env': ['DATABASE_URL=postgres://insignia_runtime@database:5432/synthetic',
                     'SHOPIFY_CLIENT_ID=synthetic-client', 'SHOPIFY_CLIENT_SECRET=synthetic-secret',
                     'SHOPIFY_WEBHOOK_SECRET=' + ('wrong' if failure == 'secret' else 'synthetic-secret')]}}
-                worker = {'Id': 'synthetic-worker', 'Config': {'Cmd': ['node', '/srv/worker/main.js'],
-                    'Env': ['DATABASE_URL=postgres://worker@database:5432/synthetic',
+                worker = {'Id': 'synthetic-worker', 'HostConfig': {'ReadonlyRootfs': failure != 'writable-code'},
+                    'Mounts': [], 'Config': {'User': 'node', 'Cmd': ['node', '/srv/worker/main.js'],
+                    'Env': ['DATABASE_URL=postgres://' + ('underprivileged_worker' if failure == 'role' else 'insignia_runtime') + '@database:5432/synthetic',
                         'SHOPIFY_CLIENT_ID=synthetic-client', 'SHOPIFY_CLIENT_SECRET=synthetic-secret',
                         'INSIGNIA_CREDENTIAL_KEY_ID=synthetic-key', 'INSIGNIA_CREDENTIAL_KEY_BASE64=synthetic-key-bytes']}}
                 operator.prestate = lambda: [web]
+                inspector = b'function inspectWorkerFromStdin() {}'
+                inventory = b'{"version":"synthetic-only"}'
+                (operator.ROOT / 'worker-inventory.mjs').write_bytes(inspector)
+                (operator.ROOT / 'worker-executable-inventory.json').write_bytes(inventory)
                 (operator.ROOT / 'expected-inputs.json').write_text(json.dumps({
-                    'workerEntrySha256': '1' * 64, 'workerHandlersSha256': '2' * 64}))
-                def boundary(args, *unused, **kwargs):
+                    'workerInspectorSha256': operator.sha(inspector), 'workerInventorySha256': operator.sha(inventory)}))
+                def boundary(args, stdin=None, **kwargs):
                     if args[:3] == ['docker', 'ps', '-q']:
                         return b'synthetic-worker'
                     if args[:2] == ['docker', 'inspect']:
@@ -147,9 +152,14 @@ class GuardControls(unittest.TestCase):
                     if 'sha256sum' in args:
                         return ((('0' if failure == 'artifact' else '1') * 64) + '  main.js\n' + '2' * 64 + '  handlers.js\n').encode()
                     if '-e' in args:
+                        if 'inspectWorkerFromStdin' in args[args.index('-e') + 1]:
+                            return json.dumps({'exact': failure not in ['artifact', 'dependency']}).encode()
                         return json.dumps({'status': 503 if failure == 'health' else 200, 'body': {'durableReady': True}}).encode()
                     if 'psql' in args:
-                        return json.dumps({'queueSchemaPresent': True, 'queueRuntimeUsable': failure != 'queue'}).encode()
+                        result = {'queueSchemaPresent': True, 'queueRuntimeUsable': failure != 'queue'}
+                        if b'uninstallRuntimeUsable' in stdin:
+                            result['uninstallRuntimeUsable'] = failure != 'application-rights'
+                        return json.dumps(result).encode()
                     raise AssertionError('Unexpected external command')
                 operator.run = boundary
                 operator.lifecycle()

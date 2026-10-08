@@ -220,13 +220,11 @@ test(
         });
         assert.equal(await core.webhooks.processUninstall(receipt.id), 'unresolved');
       };
-      const actor = await services.authenticate(request());
-      assert.equal(await core.webhooks.processUninstall(receipt.id), 'processed');
-      assert.equal((await core.tenants.getManagedInstallationState(shop)).active, false);
-      await assert.rejects(services.catalog.list(actor, { query: '', cursor: null, limit: 10 }), {
-        message: 'Admin installation changed',
-      });
+      await assert.rejects(services.authenticate(request()), { message: 'Authentication unavailable' });
+      assert.equal(await core.webhooks.processUninstall(receipt.id), 'unresolved');
+      assert.equal(await core.tenants.getManagedInstallationState(shop), null);
       model.afterRead = null;
+      model.providerFailed = true;
       await assert.rejects(services.authenticate(request()), { message: 'Authentication unavailable' });
       assert.equal(model.catalogReads, 0);
     }),

@@ -1,0 +1,3 @@
+{"uninstallRuntimeUsable" : true, "queueSchemaPresent" : true, "queueRuntimeUsable" : true}
+{"uninstallRuntimeUsable" : false, "queueSchemaPresent" : true, "queueRuntimeUsable" : true}
+{"uninstallRuntimeUsable" : true, "queueSchemaPresent" : true, "queueRuntimeUsable" : false}

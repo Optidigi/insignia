@@ -1,0 +1,14 @@
+✔ complete inventory accepts exact dependencies without executing them (17.957086ms)
+✔ changed database dependency fails despite identical entry and handler bytes (3.245506ms)
+✔ additional executable file fails exact inventory (2.808821ms)
+✔ changed internal module path fails despite unchanged file bytes (2.562877ms)
+✔ escaping executable link is rejected before reading or executing it (1.947981ms)
+✔ preload and lookup overrides cannot qualify (1.635542ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 111.630339

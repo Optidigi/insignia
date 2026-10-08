@@ -1,0 +1,66 @@
+{
+  "productionArtifact": "current standalone source candidate with pinned production dependencies; no principal approval",
+  "credentials": "synthetic offline only",
+  "fetchGuard": "globalThis.fetch fail-closed in test process only",
+  "port": 59745,
+  "routes": [
+    {
+      "path": "/live",
+      "status": 200,
+      "contentType": "application/json",
+      "cacheControl": "no-store",
+      "csp": null,
+      "correctPublicClientPresent": false,
+      "bytes": 17
+    },
+    {
+      "path": "/admin/products",
+      "status": 200,
+      "contentType": "text/html",
+      "cacheControl": "private, no-store",
+      "csp": "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' https: data:; connect-src 'self'; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'",
+      "correctPublicClientPresent": true,
+      "bytes": 6859
+    },
+    {
+      "path": "/api/admin/products",
+      "status": 401,
+      "contentType": "application/json; charset=utf-8",
+      "cacheControl": "private, no-store",
+      "csp": null,
+      "correctPublicClientPresent": false,
+      "bytes": 35
+    },
+    {
+      "path": "/api/admin/products/1/config",
+      "status": 401,
+      "contentType": "application/json; charset=utf-8",
+      "cacheControl": "private, no-store",
+      "csp": null,
+      "correctPublicClientPresent": false,
+      "bytes": 35
+    },
+    {
+      "path": "/api/admin/readiness",
+      "status": 401,
+      "contentType": "application/json; charset=utf-8",
+      "cacheControl": "private, no-store",
+      "csp": null,
+      "correctPublicClientPresent": false,
+      "bytes": 35
+    },
+    {
+      "path": "/_astro/MerchantConfigEditor.DP-cRyvJ.js",
+      "status": 200,
+      "contentType": "text/javascript; charset=utf-8",
+      "cacheControl": "public, max-age=31536000, immutable",
+      "csp": null,
+      "correctPublicClientPresent": false,
+      "bytes": 33131
+    }
+  ],
+  "exit": "PASS",
+  "processStopped": true,
+  "guardDenialInLog": false,
+  "webEntrySha256": "cb568590043b19189485c36da2fc55143f96b92b0227b495ffb338fc3cf09669"
+}

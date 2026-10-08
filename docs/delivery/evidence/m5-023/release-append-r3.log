@@ -1,0 +1,10 @@
+PASS: three real append guards, zero loopback DB connections, zero writes, no secret output.
+✔ docs/delivery/evidence/m5-023/operators/release-append-controls.mjs (1014.785428ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1025.238747

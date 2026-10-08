@@ -132,13 +132,28 @@ def lifecycle():
             continue
         candidates.append((container, command, values))
     checks = {'exactWorkerArtifact': False, 'workerReady': False, 'workerKeyConfigurationPresent': False,
+              'runtimeRoleExact': target.username == 'insignia_runtime', 'workerRoleExact': False,
               'webhookSecretMatchesApp': bool(environment.get('SHOPIFY_WEBHOOK_SECRET'))
                 and environment.get('SHOPIFY_WEBHOOK_SECRET') == environment.get('SHOPIFY_CLIENT_SECRET')}
     if len(candidates) == 1:
         worker, command, values = candidates[0]
         entry = Path(command[1])
-        hashes = run(['docker', 'exec', worker['Id'], 'sha256sum', str(entry), str(entry.with_name('handlers.js'))]).decode().splitlines()
-        checks['exactWorkerArtifact'] = len(hashes) == 2 and [line.split()[0] for line in hashes] == [expected['workerEntrySha256'], expected['workerHandlersSha256']]
+        checks['workerRoleExact'] = urlsplit(values.get('DATABASE_URL', '')).username == 'insignia_runtime'
+        inspector = (ROOT / 'worker-inventory.mjs').read_bytes()
+        inventory_bytes = (ROOT / 'worker-executable-inventory.json').read_bytes()
+        require(sha(inspector) == expected['workerInspectorSha256']
+                and sha(inventory_bytes) == expected['workerInventorySha256'], 'Worker inspection input drift')
+        # Hash every executable package/dependency without importing any of them.
+        # Reject preloads and unsupported commands before any health request.
+        command_exact = len(command) in (2, 3) and (len(command) == 2 or re.fullmatch(r'--port=[0-9]+', command[2]))
+        immutable_code = worker.get('HostConfig', {}).get('ReadonlyRootfs') is True \
+            and worker['Config'].get('User') == 'node' and entry.is_absolute() and entry.parts[1] != 'tmp' \
+            and not any(mount.get('RW') and mount.get('Destination') != '/tmp' for mount in worker.get('Mounts', []))
+        if command_exact and immutable_code and not values.get('NODE_OPTIONS') and not values.get('NODE_PATH'):
+            artifact = json.loads(run(['docker', 'exec', '-i', worker['Id'], 'node', '--input-type=module', '-e',
+                inspector.decode() + '\ninspectWorkerFromStdin();'],
+                json.dumps({'entry': str(entry), 'inventory': json.loads(inventory_bytes)}).encode(), timeout=30))
+            checks['exactWorkerArtifact'] = artifact.get('exact') is True
         checks['workerKeyConfigurationPresent'] = all(values.get(key) for key in
             ['INSIGNIA_CREDENTIAL_KEY_ID', 'INSIGNIA_CREDENTIAL_KEY_BASE64', 'SHOPIFY_CLIENT_ID', 'SHOPIFY_CLIENT_SECRET'])
         checks['workerKeyConfigurationPresent'] = bool(checks['workerKeyConfigurationPresent']
@@ -150,6 +165,15 @@ def lifecycle():
             health = json.loads(run(['docker', 'exec', worker['Id'], 'node', '-e', probe], timeout=10))
             checks['workerReady'] = health.get('status') == 200 and health.get('body', {}).get('durableReady') is True
     rights = json.loads(sql("""BEGIN READ ONLY; SELECT json_build_object(
+      'uninstallRuntimeUsable',has_schema_privilege('insignia_runtime','public','USAGE')
+        AND NOT EXISTS(SELECT 1 FROM (VALUES
+          ('shops','SELECT'),('shops','UPDATE'),
+          ('installation_generations','SELECT'),('installation_generations','UPDATE'),
+          ('shop_credentials','SELECT'),('shop_credentials','UPDATE'),
+          ('product_configs','SELECT'),('product_configs','UPDATE'),
+          ('inbox_messages','SELECT'),('inbox_messages','UPDATE'),
+          ('shopify_webhook_deliveries','SELECT')) AS required(relation,privilege)
+          WHERE NOT has_table_privilege('insignia_runtime','public.'||required.relation,required.privilege)),
       'queueSchemaPresent', EXISTS(SELECT 1 FROM pg_namespace WHERE nspname='pgboss'),
       'queueRuntimeUsable',COALESCE((SELECT has_schema_privilege('insignia_runtime',oid,'USAGE') FROM pg_namespace WHERE nspname='pgboss'),false)
         AND EXISTS(SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='pgboss' AND c.relkind IN ('r','p'))

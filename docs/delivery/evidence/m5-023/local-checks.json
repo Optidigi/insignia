@@ -1,15 +1,15 @@
 {
   "root": {
     "exit": 0,
-    "log": "full-root-clean-install.log",
+    "log": "full-root-r3b.log",
     "webTests": 86,
     "webSkipped": 0
   },
   "postgres18": {
     "version": "18.6",
     "exit": 0,
-    "tests": 192,
-    "log": "full-pg18-review-fixes.log"
+    "tests": 196,
+    "log": "full-pg18-r3.log"
   },
   "concurrency": {
     "firstSessions": 100,
@@ -19,16 +19,17 @@
   },
   "productionSDKPGHTTP": {
     "tests": 11,
-    "log": "production-uninstall-green.log"
+    "log": "full-root-r3b.log",
+    "withinFullRoot": true
   },
   "publicationStress": {
     "pass": 100,
     "total": 100,
-    "log": "publication-stress-review-fixes.log"
+    "log": "publication-stress-r3.log"
   },
   "renderer": {
     "expectedNegative": true,
-    "log": "renderer-review-fixes2.log"
+    "log": "renderer-r3.log"
   },
   "roles": {
     "genuineLogins": true,
@@ -38,11 +39,11 @@
   },
   "hostFailureControls": {
     "tests": 9,
-    "log": "lifecycle-controls-current.log"
+    "log": "host-controls-r3.log"
   },
   "portableRuntime": {
     "pass": true,
-    "log": "portable-runtime-review-fixes.json"
+    "log": "portable-runtime-r3-current.json"
   },
   "productionOperations": 0,
   "shopifyRequests": 0,
@@ -51,12 +52,43 @@
     "tests": 3,
     "dbConnections": 0,
     "writes": 0,
-    "log": "release-append-controls2.log"
+    "log": "release-append-r3.log"
   },
   "lifecycleRights": {
     "actualPostgreSQL": true,
     "partialTableAndSequenceRightsRejected": true,
     "localDDLTransactionRolledBack": true,
-    "log": "lifecycle-privileges-control2.log"
+    "log": "lifecycle-application-rights-control2.log",
+    "applicationUpdateAndQueueUpdateIndependentlyRejected": true
+  },
+  "workerInventory": {
+    "tests": 6,
+    "changedDependencyWithSameMainHandlersRejected": true,
+    "internalPathExtraCodeEscapePreloadRejected": true,
+    "dependencyCodeExecuted": false,
+    "log": "worker-inventory-links-green.log"
+  },
+  "logSha256": {
+    "review-r2-uninstall-red.log": "89394afb1f4d1324ac08130e61d79f1134040f724a6d06a70064ed9cbc1f7664",
+    "review-r2-uninstall-green.log": "f6afba9fd9f9c9fbc67f3ee46513e17848f5e1b876fda95e39b6d41731b0e3b3",
+    "review-r2-guard-controls-green.log": "231ae1e76c629d8001bda60c825f2e86cf5e148fce31b93a41361f9ba0c7c0f0",
+    "worker-full-controls-red.log": "46b67cc15bc381d0fce0ac7a0fdfa0d40473f05ff0f18b2a9754939098903b3b",
+    "worker-full-controls-green.log": "3621fcc66e9f7bc36e44a7ca9c51a46dfbc662609e36367165ebcc6e91b727d6",
+    "worker-inventory-links-red.log": "237bc67e70cd078e25adde1cd757306def4920125748b779a0206baf29c094a5",
+    "worker-inventory-links-green.log": "7a8e256ba387ad6c15e29833993465bfe953349a7019007de840230505565df4",
+    "worker-immutable-code-red.log": "063bde3cef410b66630f8fb0aaf447e6f4cae3573e576f5a5106656b75dc44fd",
+    "host-controls-r3.log": "c1b8e4d68d3adb252db0df754dbb0ba75a1f79d483e964b86acf00f9b41cb63d",
+    "lifecycle-application-rights-control.log": "5e7e06a04a4758db21123cd9e8d9048504312671c74c389d9780b32858e28059",
+    "lifecycle-application-rights-control2.log": "b13ff66e27f517169f068bc7c5c5890a9a17251bca586df24e618d48ec988aad",
+    "full-root-r3.log": "498046e984a6eb5c37b8f5164b4ef1ea48204c2a0ee4b5925ef266b9162cc7af",
+    "full-root-r3b.log": "b5ed272166d5e559f6a050c2ca3df6d4e3812156b7027fcfe4ef5651ca637c62",
+    "full-pg18-r3.log": "40476601e143265b890d9b89ed7b1171645ccc198e5d594848107bba1c811a79",
+    "publication-stress-r3.log": "a9284b3221baa89708c024711ed507d41f82ae8f9d040c76a7e27500e4cba532",
+    "renderer-r3.log": "31ad7808fca7c17d3d1398357712721237486a122946b38740f8781f6f2d69c2",
+    "release-append-r3.log": "fbbfcc64a439b5dceed02d5a5ead0ea2a269e874a8077a72f4cd066a920b8df6",
+    "style-r3.log": "32684fb126bb574fa63b25f99d04c01e14a4f867fdab3bcf0af4cc5ae95f4edc",
+    "secrets-r3.log": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "portable-runtime-r3-current.json": "b7129674130c1a0ac65b52bd2f41ba67696ecfeb034a064e0bcf3d59572397e9",
+    "worker-inspection-r3-result.json": "993d4830193910dd035a5df9b38a45f272c96cff9b89e0d881b13533ea7970f3"
   }
 }

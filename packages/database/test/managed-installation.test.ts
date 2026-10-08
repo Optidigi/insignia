@@ -1,9 +1,126 @@
 import { randomUUID } from 'node:crypto';
+import { sql } from 'kysely';
 import { Pool } from 'pg';
 import { expect, test } from 'vitest';
 import { createDurableCore } from '../src/index.js';
+import { createTenantRepository } from '../src/repositories/tenant.js';
+import { openTestDatabase } from './support/postgres.js';
 
 const connectionString = process.env.DATABASE_URL;
+
+test.each(['current', 'historical', 'wrong-signed-shop'])(
+  'inactive predecessor and processed uninstall cannot resurrect a removed installation: %s',
+  async (era) => {
+    const core = createDurableCore(new Pool({ connectionString }));
+    const provider = identity();
+    try {
+      const first = await core.transactions.run((tx) =>
+        core.tenants.ensureManagedInstallation(tx, {
+          ...provider,
+          expected: null,
+          observationStartedAt: new Date(),
+        }),
+      );
+      await core.transactions.run((tx) => core.tenants.deactivateCurrent(tx, first.state.shopId, '1'));
+      const before = await core.tenants.getManagedInstallationState(provider.shopDomain);
+      const observationStartedAt = new Date();
+      const delivery = await core.webhooks.receive({
+        shopDomain: provider.shopDomain,
+        deliveryId: randomUUID(),
+        topic: 'app/uninstalled',
+        apiVersion: '2026-07',
+        triggeredAt: new Date(observationStartedAt.getTime() + (era === 'historical' ? -1000 : 0)),
+        eventId: randomUUID(),
+        name: null,
+        rawBody: Buffer.from(
+          JSON.stringify({
+            id: era === 'wrong-signed-shop' ? '9999999999999999999' : provider.shopifyShopId,
+            myshopify_domain: provider.shopDomain,
+          }),
+        ),
+      });
+      expect(await core.webhooks.processUninstall(delivery.id)).toBe('stale');
+      const historical = await core.webhooks.getById(delivery.id);
+      const next = { ...provider, externalInstallationId: `${provider.externalInstallationId}6` };
+      const attempt = core.transactions.run((tx) =>
+        core.tenants.ensureManagedInstallation(tx, {
+          ...next,
+          expected: before,
+          confirmation: next,
+          observationStartedAt,
+        }),
+      );
+      if (era === 'current') {
+        await expect(attempt).rejects.toThrow('Managed installation state changed');
+        expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toEqual(before);
+      } else expect((await attempt).state).toMatchObject({ currentGeneration: '2', active: true });
+      expect(await core.webhooks.getById(delivery.id)).toMatchObject({
+        id: historical!.id,
+        kind: historical!.kind,
+        state: historical!.state,
+      });
+    } finally {
+      await core.close();
+    }
+  },
+);
+
+test('bound uninstall waits for the shop lock then resolves the committed generation and observation boundary', async () => {
+  const database = await openTestDatabase();
+  const provider = identity();
+  const appName = `uninstall-bound-${randomUUID()}`;
+  const peer = createDurableCore(new Pool({ connectionString, application_name: appName }));
+  const shopId = randomUUID();
+  let pending: Promise<unknown> | undefined;
+  try {
+    await database.transaction().execute((tx) => createTenantRepository(tx).createShop(tx, { shopId, ...provider }));
+    const observationStartedAt = new Date();
+    const receipt = await peer.webhooks.receive({
+      shopDomain: provider.shopDomain,
+      deliveryId: randomUUID(),
+      topic: 'app/uninstalled',
+      apiVersion: '2026-07',
+      triggeredAt: observationStartedAt,
+      eventId: randomUUID(),
+      name: null,
+      rawBody: Buffer.from(JSON.stringify({ id: provider.shopifyShopId, myshopify_domain: provider.shopDomain })),
+    });
+    await database.transaction().execute(async (tx) => {
+      await tx
+        .selectFrom('shops')
+        .select('shop_id')
+        .where('shop_id', '=', shopId)
+        .forUpdate()
+        .executeTakeFirstOrThrow();
+      pending = peer.webhooks.processUninstall(receipt.id);
+      let waiting = false;
+      for (let i = 0; i < 100; i++) {
+        const activity = await sql<{ n: string }>`SELECT count(*)::text AS n FROM pg_stat_activity
+          WHERE application_name=${appName} AND wait_event_type='Lock'`.execute(database);
+        if (Number(activity.rows[0]?.n) > 0) {
+          waiting = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 10));
+      }
+      expect(waiting).toBe(true);
+      await createTenantRepository(tx).startInstallation(
+        tx,
+        shopId,
+        `${provider.externalInstallationId}9`,
+        observationStartedAt,
+      );
+    });
+    expect(await pending).toBe('processed');
+    expect(await peer.tenants.getManagedInstallationState(provider.shopDomain)).toMatchObject({
+      currentGeneration: '2',
+      active: false,
+    });
+  } finally {
+    await pending?.catch(() => {});
+    await Promise.all([peer.close(), database.destroy()]);
+  }
+});
 
 test.each(['current', 'historical'])('first bootstrap preserves uninstall ordering: %s', async (era) => {
   const core = createDurableCore(new Pool({ connectionString }));
@@ -27,21 +144,22 @@ test.each(['current', 'historical'])('first bootstrap preserves uninstall orderi
       ),
     });
     expect(await core.webhooks.processUninstall(delivery.id)).toBe('unresolved');
-    const installed = await core.transactions.run((tx) =>
+    const attempt = core.transactions.run((tx) =>
       core.tenants.ensureManagedInstallation(tx, { ...provider, expected: null, observationStartedAt }),
     );
-    expect(await core.webhooks.processUninstall(delivery.id)).toBe(era === 'current' ? 'processed' : 'stale');
-    expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toMatchObject({
-      shopId: installed.state.shopId,
-      currentGeneration: '1',
-      active: era === 'historical',
-    });
-    if (era === 'current')
-      await expect(
-        core.transactions.run((tx) =>
-          core.tenants.ensureManagedInstallation(tx, { ...provider, expected: installed.state, observationStartedAt }),
-        ),
-      ).rejects.toThrow('Managed installation state changed');
+    if (era === 'current') {
+      await expect(attempt).rejects.toThrow('Managed installation state changed');
+      expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toBeNull();
+      expect(await core.webhooks.processUninstall(delivery.id)).toBe('unresolved');
+    } else {
+      const installed = await attempt;
+      expect(await core.webhooks.processUninstall(delivery.id)).toBe('stale');
+      expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toMatchObject({
+        shopId: installed.state.shopId,
+        currentGeneration: '1',
+        active: true,
+      });
+    }
   } finally {
     await core.close();
   }
@@ -81,7 +199,7 @@ test.each(['current', 'historical'])('confirmed reinstall preserves uninstall or
         JSON.stringify({ id: Number(provider.shopifyShopId), myshopify_domain: provider.shopDomain }),
       ),
     });
-    const installed = await core.transactions.run((tx) =>
+    const attempt = core.transactions.run((tx) =>
       core.tenants.ensureManagedInstallation(tx, {
         ...next,
         expected: first.state,
@@ -89,9 +207,18 @@ test.each(['current', 'historical'])('confirmed reinstall preserves uninstall or
         observationStartedAt,
       }),
     );
-    expect(installed.state.currentGeneration).toBe('2');
-    expect(await core.webhooks.processUninstall(delivery.id)).toBe(era === 'current' ? 'processed' : 'stale');
-    expect((await core.tenants.getManagedInstallationState(provider.shopDomain))?.active).toBe(era === 'historical');
+    if (era === 'current') {
+      await expect(attempt).rejects.toThrow('Managed installation state changed');
+      expect(await core.webhooks.processUninstall(delivery.id)).toBe('processed');
+      expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toMatchObject({
+        currentGeneration: '1',
+        active: false,
+      });
+    } else {
+      expect((await attempt).state.currentGeneration).toBe('2');
+      expect(await core.webhooks.processUninstall(delivery.id)).toBe('stale');
+      expect((await core.tenants.getManagedInstallationState(provider.shopDomain))?.active).toBe(true);
+    }
   } finally {
     await core.close();
   }

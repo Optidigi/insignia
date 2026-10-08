@@ -127,32 +127,20 @@ async function resolveLocked(
   generation: string | null;
   resolution: 'resolved' | 'unresolved' | 'stale' | 'unverified';
 }> {
-  if (locked.inbox.shop_id !== null) {
-    const current = await tx
-      .selectFrom('shops')
-      .innerJoin('installation_generations as i', (join) =>
-        join.onRef('i.shop_id', '=', 'shops.shop_id').onRef('i.generation', '=', 'shops.current_generation'),
-      )
-      .select(['shops.current_generation', 'i.deactivated_at', 'i.activated_at'])
-      .where('shops.shop_id', '=', locked.inbox.shop_id)
-      .executeTakeFirst();
-    const resolution =
-      current?.current_generation === locked.inbox.installation_generation && current.deactivated_at === null
-        ? 'resolved'
-        : 'stale';
-    if (
-      resolution === 'resolved' ||
-      locked.routing.topic !== 'app/uninstalled' ||
-      !current ||
-      current.deactivated_at !== null ||
-      current.current_generation === locked.inbox.installation_generation ||
-      locked.routing.triggered_at < current.activated_at
-    )
-      return { shopId: locked.inbox.shop_id, generation: locked.inbox.installation_generation, resolution };
-    // A managed reinstall may persist after a signed uninstall was initially
-    // routed to the prior durable generation. Re-resolve identity/time under
-    // the shop lock; genuinely older deliveries remain stale above.
-  }
+  // Lock the shop alone first. A join taken before waiting on reinstall can
+  // retain an old installation snapshot; the subsequent read sees the committed
+  // generation while this same lock remains held through deactivation.
+  const shopQuery = tx.selectFrom('shops').select('shop_id');
+  const shop = await (locked.inbox.shop_id !== null
+    ? shopQuery.where('shop_id', '=', locked.inbox.shop_id)
+    : shopQuery.where('shop_domain', '=', locked.routing.shop_domain)
+  )
+    .forNoKeyUpdate()
+    .executeTakeFirst();
+  if (!shop)
+    return locked.inbox.shop_id !== null
+      ? { shopId: locked.inbox.shop_id, generation: locked.inbox.installation_generation, resolution: 'stale' }
+      : { shopId: null, generation: null, resolution: 'unresolved' };
   const current = await tx
     .selectFrom('shops')
     .innerJoin('installation_generations as i', (join) =>
@@ -165,10 +153,22 @@ async function resolveLocked(
       'i.activated_at',
       'i.deactivated_at',
     ])
-    .where('shops.shop_domain', '=', locked.routing.shop_domain)
-    .forNoKeyUpdate('shops')
+    .where('shops.shop_id', '=', shop.shop_id)
     .executeTakeFirst();
   if (!current) return { shopId: null, generation: null, resolution: 'unresolved' };
+  if (
+    locked.inbox.shop_id !== null &&
+    (locked.routing.topic !== 'app/uninstalled' || locked.inbox.state === 'processed')
+  ) {
+    return {
+      shopId: locked.inbox.shop_id,
+      generation: locked.inbox.installation_generation,
+      resolution:
+        current.current_generation === locked.inbox.installation_generation && current.deactivated_at === null
+          ? 'resolved'
+          : 'stale',
+    };
+  }
   if (current.deactivated_at !== null) return { shopId: null, generation: null, resolution: 'stale' };
   if (locked.routing.topic === 'app/uninstalled') {
     const signed = signedUninstallShop(locked.inbox.payload, locked.routing.shop_domain);

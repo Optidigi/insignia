@@ -1,0 +1,11 @@
+$ corepack pnpm --filter @insignia/database test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/database
+
+
+ Test Files  13 passed (13)
+      Tests  196 passed (196)
+   Start at  15:04:40
+   Duration  15.88s (tests 78%, import 17%, transform 6%)
+

@@ -1,0 +1,14 @@
+{
+  "filesAndLinks": 21074,
+  "archiveSha256": "ef05cff2580eed335b7ee229b3b3436043b2b251b9a53e174876df367682fd71",
+  "archiveBytes": 37350569,
+  "inventorySha256": "6ce49121a03bc536c8db3174ed984fc3733f04b710049086f63f71b49cadfb36",
+  "entrySha256": "cb568590043b19189485c36da2fc55143f96b92b0227b495ffb338fc3cf09669",
+  "dockerfileSha256": "ca4a0257ce880e26a9fee2bdc97df178ff1eebe1dd4a29a13bfce291c0266927",
+  "dbmateSha256": "47e284b3d8cbad1ba5f090495aa05afd1bbd5f35e2ed5577aad06da74ce780ce",
+  "providerRequests": 0,
+  "productionDeployed": false,
+  "envFilesIncluded": false,
+  "sourceBinding": "Second-review correction working tree built by full-root-r3b; later gate binds exact commit/source/build maps",
+  "supersedesOfflineArchiveSha256": "41973e198650f43ebed1b3e7815c0614279d8ca144ef02fd0a20245c670ea7c7"
+}
