@@ -1,0 +1,37 @@
+✔ complete inventory accepts exact dependencies without executing them (18.402553ms)
+✔ changed database dependency fails despite identical entry and handler bytes (3.835717ms)
+✔ additional executable file fails exact inventory (2.701601ms)
+✔ changed internal module path fails despite unchanged file bytes (2.70783ms)
+✔ escaping executable link is rejected before reading or executing it (2.103622ms)
+✔ preload and lookup overrides cannot qualify (1.644062ms)
+✖ nearer dist dependency shadow cannot qualify the reviewed root package (3.860802ms)
+ℹ tests 7
+ℹ suites 0
+ℹ pass 6
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 124.806923
+
+✖ failing tests:
+
+test at docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:65:1
+✖ nearer dist dependency shadow cannot qualify the reviewed root package (3.860802ms)
+  AssertionError [ERR_ASSERTION]: Missing expected exception.
+      at file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:72:10
+      at fixture (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:26:9)
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:65:83)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /Unaccounted nested module lookup/,
+    operator: 'throws',
+    diff: 'simple'
+  }

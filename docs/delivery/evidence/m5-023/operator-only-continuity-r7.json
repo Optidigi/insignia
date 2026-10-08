@@ -1,0 +1,17 @@
+{
+  "classification": "OPERATOR_ONLY_CORRECTION_APPLICATION_SOURCE_BUILD_UNCHANGED",
+  "priorMappedFiles": 709,
+  "mappedChanges": {
+    "docs/delivery/evidence/m5-023/operators/host-operator-controls.py": {
+      "before": "0f27211d8fa3e1e61f3937467f522be393ee5d43b5050725b8742acbd3d4e69d",
+      "after": "eca8e3282a54ed7e9a63feedca3e70c0bf69f647be1d8d388d7dadcd4d360a0c"
+    },
+    "docs/delivery/evidence/m5-023/operators/host-operator.py": {
+      "before": "29882042c2ad92a7351c91c8a886014897a8f37e8b4537a091d500714482920b",
+      "after": "3663bfc53f328ac2b3c8fed020afcf5b5c182ba58798019ce083d35b91b671b5"
+    }
+  },
+  "archiveSha256": "17129c15c6decb87539b24fe12358d345d357e828d887c3943594778dd965022",
+  "applicationRebuilds": 0,
+  "productionProviderCredentialAccess": false
+}

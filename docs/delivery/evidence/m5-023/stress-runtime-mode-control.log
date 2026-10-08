@@ -1,0 +1,12 @@
+✔ publication success preserves dirty local edits and exact save recovery [1/1] (963.113597ms)
+✔ publication failed preserves dirty local edits and exact save recovery [1/1] (938.070686ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [1/1] (1008.690617ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [1/1] (958.681982ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4329.722473

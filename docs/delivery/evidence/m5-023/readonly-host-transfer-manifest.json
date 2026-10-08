@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-08T20:11:54.907708+00:00",
+  "purpose": "Frozen read-only lifecycle qualification only",
+  "files": {
+    "host-operator.py": "b0cbe430e91f418fada28be5bca945027390b6cb764db3237c363e228446465c",
+    "worker-inventory.mjs": "693438235432ee25f91652fd31f77490c23eb207271c681b7ec3becd873f079d",
+    "worker-executable-inventory.json": "2a05e47acebb36bc1628fb2d36c9cb065cd21bdd99d1462c1a9d33e011886f26",
+    "runtime-database.mjs": "93a5c356e8a00b6e04d8231a146de8249288ab33b9a7d0c60720a93eafe867bf",
+    "expected-inputs.json": "a05a77e34c4fb2ac85bafb3f25bafe80ef51a6cd2da12b7a170871e617649fab",
+    "frozen-preproduction-gate.json": "00c45c666e5dc15d5c9cf5c1456f42675cb5580f279cd88d1332b062e7d3162a"
+  }
+}

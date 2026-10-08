@@ -3,10 +3,11 @@ import {
   type ActivationReadinessPort,
   bindProviderSubscription,
   type EntitlementPolicyConfig,
+  localDay,
   projectEntitlement,
 } from '@insignia/application';
 import type { MerchantDraft } from '@insignia/contracts';
-import { createDurableCore } from '@insignia/database';
+import { createDurableCore, ManagedInstallationError, type ManagedInstallationIdentity } from '@insignia/database';
 import { type AdminAuthenticationStage, createObservability } from '@insignia/observability';
 import {
   createActiveSubscriptionClient,
@@ -283,25 +284,69 @@ export function createProductionAdminServices(
           },
           async readInstallation(current): Promise<AdminInstallation> {
             if (!online || online.shop !== current.shop) throw new Error('Online grant missing');
+            // Capture durable state before provider IO. A stale observation may
+            // not reverse a generation committed while that IO was in flight.
+            const expected = await core.tenants.getManagedInstallationState(current.shop).catch(() => {
+              throw new AdminInstallationReconciliationError('TENANT_READ_FAILED');
+            });
+            const observationStartedAt = new Date();
             const provider = await shopify.readInstallation(online);
             diagnostic('INSTALLATION_PROVIDER_READ_SUCCEEDED');
             merchantTimezone = provider.ianaTimezone;
-            const tenant = await core.tenants.getShopByDomain(provider.shop).catch(() => {
-              throw new AdminInstallationReconciliationError('TENANT_READ_FAILED');
-            });
-            if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
-              throw new AdminInstallationReconciliationError('TENANT_NOT_FOUND_OR_SHOP_ID_MISMATCH');
-            const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId).catch(() => {
-              throw new AdminInstallationReconciliationError('CURRENT_INSTALLATION_READ_FAILED');
-            });
+            const identity: ManagedInstallationIdentity = {
+              shopDomain: provider.shop,
+              shopifyShopId: provider.shopId.slice('gid://shopify/Shop/'.length),
+              externalInstallationId: provider.installationId,
+            };
+            let confirmation: ManagedInstallationIdentity | undefined;
+            if (expected && expected.externalInstallationId !== provider.installationId) {
+              const confirmed = await shopify.readInstallation(online);
+              if (
+                confirmed.ianaTimezone !== provider.ianaTimezone ||
+                [...confirmed.grantedScopes].sort().join(',') !== [...provider.grantedScopes].sort().join(',')
+              )
+                throw new AdminInstallationReconciliationError('INSTALLATION_BOOTSTRAP_CONFIRMATION_REQUIRED');
+              confirmation = {
+                shopDomain: confirmed.shop,
+                shopifyShopId: confirmed.shopId.slice('gid://shopify/Shop/'.length),
+                externalInstallationId: confirmed.installationId,
+              };
+            }
+            const installed = await core.transactions
+              .run((tx) =>
+                core.tenants.ensureManagedInstallation(tx, {
+                  ...identity,
+                  expected,
+                  confirmation,
+                  observationStartedAt,
+                }),
+              )
+              .catch((error: unknown) => {
+                const stages = {
+                  identity_mismatch: 'INSTALLATION_BOOTSTRAP_IDENTITY_MISMATCH',
+                  state_changed: 'INSTALLATION_BOOTSTRAP_STALE_STATE',
+                  confirmation_required: 'INSTALLATION_BOOTSTRAP_CONFIRMATION_REQUIRED',
+                } as const;
+                throw new AdminInstallationReconciliationError(
+                  error instanceof ManagedInstallationError
+                    ? stages[error.kind]
+                    : 'INSTALLATION_BOOTSTRAP_WRITE_FAILED',
+                );
+              });
+            const outcomes = {
+              CREATED: 'INSTALLATION_BOOTSTRAP_CREATED_SUCCEEDED',
+              REUSED: 'INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED',
+              REINSTALLED: 'INSTALLATION_BOOTSTRAP_REINSTALLED_SUCCEEDED',
+            } as const;
+            diagnostic(outcomes[installed.outcome]);
             return {
               shop: provider.shop,
               shopId: provider.shopId,
               installationId: provider.installationId,
-              trustedInstallationId: installed?.externalInstallationId ?? '',
-              tenantShopId: tenant.shopId,
-              installationGeneration: installed?.generation ?? '',
-              active: installed?.active === true,
+              trustedInstallationId: installed.state.externalInstallationId ?? '',
+              tenantShopId: installed.state.shopId,
+              installationGeneration: installed.state.currentGeneration,
+              active: installed.state.active,
               grantedScopes: provider.grantedScopes,
             };
           },
@@ -315,6 +360,86 @@ export function createProductionAdminServices(
         if (merchantTimezone) merchantTimezones.set(actor, merchantTimezone);
       }
       return actor;
+    },
+    async inspectReadiness(actor) {
+      await active(actor);
+      const online = grant(actor);
+      if (!appId || !/^[1-9][0-9]*$/.test(appId)) throw new Error('Readiness configuration unavailable');
+      const scope = {
+        shopId: actor.tenantShopId,
+        installationGeneration: actor.installationGeneration,
+        appClientId: apiKey,
+      };
+      const tenant = { ...scope, appId, shopifyShopId: actor.shopId };
+      const transport = createPublicationAdminHttpTransport({
+        credentials: {
+          acquire: async (input) => {
+            if (input.shopId !== scope.shopId || input.installationGeneration !== scope.installationGeneration)
+              return { kind: 'inactive' as const };
+            await active(actor);
+            return {
+              kind: 'usable' as const,
+              shopDomain: actor.shop,
+              accessToken: online.accessToken,
+              accessExpiresAt: new Date(online.expiresAtMs),
+            };
+          },
+        },
+      });
+      // Reviewed local query fingerprints only guide collection. These are not
+      // an Active-version/Wasm attestation or a replacement release authority.
+      const functions = await createFunctionOwnershipReconciler({ transport }).read(tenant, {
+        appKey: apiKey,
+        transformInputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
+        validationInputQuerySha256: 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5',
+      });
+      const publicConfig = await createPublicationAdminAdapter({ transport }).read({
+        ...tenant,
+        field: 'public_config',
+      });
+      const keysScope = await core.signingKeys.getActiveScope(scope.shopId, scope.installationGeneration);
+      const keys = keysScope ? await core.signingKeys.list(keysScope) : [];
+      const ianaTimezone = merchantTimezones.get(actor);
+      if (!ianaTimezone) throw new Error('Trusted merchant calendar unavailable');
+      const now = new Date();
+      const merchantDay = localDay(now, ianaTimezone).ordinal;
+      const evidence = await core.trustedReleaseRecords.read({
+        scope,
+        expectedActiveAppVersionRef: '1158986629121',
+        now,
+      });
+      await active(actor);
+      return {
+        version: 'm5-admin-technical-readiness-v1',
+        observedAt: now.toISOString(),
+        shop: actor.shop,
+        shopId: actor.shopId,
+        tenantShopId: scope.shopId,
+        installationGeneration: scope.installationGeneration,
+        externalInstallationId: actor.installationId,
+        canRead: actor.canRead,
+        canEdit: actor.canEdit,
+        ianaTimezone,
+        merchantDay,
+        functions,
+        trustedRelease: evidence
+          ? {
+              recordId: evidence.record.recordId,
+              activeAppVersionRef: evidence.record.activeAppVersionRef,
+              expectedBuild: evidence.expectedBuild,
+            }
+          : null,
+        signingKeyPresent: keys.some(
+          (key) =>
+            ['pending', 'active'].includes(key.state) &&
+            key.privateEnvelope !== null &&
+            key.wrappingKeyId !== null &&
+            key.firstDay <= merchantDay &&
+            key.lastDay >= merchantDay,
+        ),
+        publicConfigPresent: publicConfig !== null,
+        commercialConfigured: partner !== null && policy !== null && appGid !== null,
+      };
     },
     catalog: { list: catalog.list, get: catalog.get },
     configs: service,

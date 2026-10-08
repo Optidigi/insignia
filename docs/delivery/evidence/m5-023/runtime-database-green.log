@@ -1,0 +1,1 @@
+PASS actual local PG18 session: exact public runtime baseline/reset, PGOPTIONS and role-default alternate schema denied, wrong role/server denied. Provider requests=0; production connections/writes=0. Local schema/role test setup only; no production-name claim.

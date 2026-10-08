@@ -1,0 +1,12 @@
+{
+  "productionArtifact": "approved byte-identical standalone build with frozen production dependencies",
+  "credentials": "synthetic offline only",
+  "fetchGuard": "globalThis.fetch fail-closed in test process only",
+  "port": 41039,
+  "routes": [],
+  "exit": "FAIL",
+  "error": "runtime_exited",
+  "processStopped": true,
+  "guardDenialInLog": false,
+  "webEntrySha256": "5ad5fbed3a809261d44358813b58773df78d72f2002de37742b3ed8fcfedfb28"
+}

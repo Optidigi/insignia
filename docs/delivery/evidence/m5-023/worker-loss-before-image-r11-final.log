@@ -1,0 +1,1 @@
+PASS actual decoder/deploy boundary: simulated post-build worker loss stops before image-reference write/up; external commands executed0; original env bytes preserved; one earlier simulated deploy reservation, no later mutation

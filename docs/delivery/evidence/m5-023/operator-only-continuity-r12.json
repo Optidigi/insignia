@@ -1,0 +1,21 @@
+{
+  "sourceBaseline": "723cd1c4f4fd876923c17c9e5aba57b8a35a73f9",
+  "applicationChanged": false,
+  "buildChanged": false,
+  "providerChanged": false,
+  "migrationChanged": false,
+  "changedMappedPaths": [
+    "docs/delivery/evidence/m5-023/operators/host-operator.py",
+    "docs/delivery/evidence/m5-023/operators/trusted-release-roles.sql"
+  ],
+  "newLocalControl": "operators/trusted-release-connect-control.mjs",
+  "rolesSha256": "1339593fafa134f2856746159f0a8c9c7c5d7525e39c71a9f868925286d9c8a0",
+  "hostOperatorSha256": "0cd9b92c2b0b146ff59362234c72390ab3953820de81a086a48c46caea190261",
+  "archiveSha256": "ec9e7e9c91c7d7344346c5f859b91b2d18f272faa205320dfe8f8564629ed1c0",
+  "workerInventorySha256": "2a05e47acebb36bc1628fb2d36c9cb065cd21bdd99d1462c1a9d33e011886f26",
+  "hostMethods": 11,
+  "hostVariants": 36,
+  "isolatedPgExplicitConnectAppendPass": true,
+  "publicConnectRevoked": true,
+  "liveAccessStarted": false
+}

@@ -1,0 +1,9 @@
+# M5-023 — fourth preproduction response
+
+Both actual full-source reviews atf696147f182068d50c73929ea688497af0029e8c requested changes. Reports/settings and all earlier findings/responses remain unchanged.
+
+**Spec/correctness and Standards/security — ingress/bootstrap rights:** the read-only lifecycle now checks shops/generations INSERT, inbox INSERT/DELETE and verified-delivery INSERT alongside every existing SELECT/UPDATE and queue/function/sequence privilege. Exact SQL from the reviewed failing head was replayed locally with each of five permissions independently revoked; all falsely qualified, and that expected-red assertion is preserved. Current exact SQL rejects each independently while full rights qualify before/after. The local privilege/fixture transaction is rolled back; no production DML or evidence deletion.
+
+**Standards/security — IPv6 route ambiguity:** DNS lookup is unrestricted. Every returned IPv4/IPv6 address must belong to the same exact designated database container/network endpoint; unknown, empty or divergent addresses fail. A dual-stack designated endpoint qualifies, while an alternate AAAA address is rejected. The external DNS-boundary control reproduces the old family4 omission, then passes with the correction.
+
+Only docs/evidence/operator preflight inputs changed. Application/source/build, pinned dependency graph, reviewed web archive, Function/provider inputs and migration16/role SQL remain byte-equal to the previously fully qualified candidate. Full root86/PG197/concurrency/stress/renderer/portable results remain applicable to those unchanged sources; relevant operator and actual PG permission controls have been rerun. Fresh full-source reviews and natural exact-head attempt1 CI are still required before freeze/access. No VPS/Shopify/credential/deployment/fixture operation occurred. No worker deployment or commercial premise is authorized by this response.

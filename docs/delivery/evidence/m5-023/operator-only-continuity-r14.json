@@ -1,0 +1,28 @@
+{
+  "sourceBaseline": "4b6778ac66ed034bb514a69c84fdf6f1a5136906",
+  "applicationChanged": false,
+  "buildChanged": false,
+  "providerChanged": false,
+  "migrationChanged": false,
+  "rolesChanged": false,
+  "changedMappedPaths": [
+    "docs/delivery/evidence/m5-023/operators/host-operator-controls.py",
+    "docs/delivery/evidence/m5-023/operators/host-operator.py",
+    "docs/delivery/evidence/m5-023/operators/release-append.mjs"
+  ],
+  "newLocalControls": [
+    "docs/delivery/evidence/m5-023/operators/release-append-deadline-control.mjs",
+    "docs/delivery/evidence/m5-023/operators/dba-client-route-control.py"
+  ],
+  "hostOperatorSha256": "a4721411079399f12a1d40d6ab56eccd36fabc3f82d9a5d8ed33267527aad8fb",
+  "releaseAppendSha256": "e66648504268c8210c42bd1b1100fa7b9fa3b6f5fa8ba2340b64c66e1dac24ac",
+  "archiveSha256": "ec9e7e9c91c7d7344346c5f859b91b2d18f272faa205320dfe8f8564629ed1c0",
+  "workerInventorySha256": "2a05e47acebb36bc1628fb2d36c9cb065cd21bdd99d1462c1a9d33e011886f26",
+  "hostMethods": 11,
+  "hostVariants": 40,
+  "expiredTableAndForeignKeyWaitsAppendZero": true,
+  "freshAppendRuntimeQualified": true,
+  "actualDbaClientsExplicitSocketQualified": true,
+  "dbaFailureBlocksFiveMutationsBeforeReservations": true,
+  "liveAccessStarted": false
+}

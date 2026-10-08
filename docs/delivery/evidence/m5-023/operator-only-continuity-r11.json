@@ -1,0 +1,17 @@
+{
+  "sourceBaseline": "a33ed0757c55f36368a6269c72222200e569c4ee",
+  "applicationChanged": false,
+  "buildChanged": false,
+  "providerChanged": false,
+  "changedMappedPaths": [
+    "docs/delivery/evidence/m5-023/operators/host-operator-controls.py",
+    "docs/delivery/evidence/m5-023/operators/host-operator.py"
+  ],
+  "archiveSha256": "ec9e7e9c91c7d7344346c5f859b91b2d18f272faa205320dfe8f8564629ed1c0",
+  "workerInventorySha256": "2a05e47acebb36bc1628fb2d36c9cb065cd21bdd99d1462c1a9d33e011886f26",
+  "hostMethods": 11,
+  "hostVariants": 36,
+  "postPassBlockedActionsPerFailure": 7,
+  "postBuildReferenceWriteBlocked": true,
+  "liveAccessStarted": false
+}

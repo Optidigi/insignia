@@ -1,0 +1,30 @@
+$ node scripts/boundaries/check.mjs && node scripts/boundaries/check-database-api.mjs && node scripts/boundaries/check-domain-effects.mjs && node --test scripts/boundaries/domain-effects.test.mjs
+Boundary checks passed: 198 real modules, 4 browser modules, 19 negative source fixtures, 2 rejected browser bundles and exports.
+Database public API rejects 19 compiler probes and 4 runtime deep imports.
+6 production domain modules have no prohibited ambient effects
+✔ Date.now is rejected in a production domain helper (9.008074ms)
+✔ new Date is rejected in a production domain helper (0.74236ms)
+✔ Math.random is rejected in a production domain helper (0.465143ms)
+✔ globalThis.Date.now is rejected in a production domain helper (0.503951ms)
+✔ fetch is rejected in a production domain helper (1.200986ms)
+✔ globalThis.crypto is rejected in a production domain helper (0.40738ms)
+✔ computed random is rejected in a production domain helper (0.894307ms)
+✔ template random is rejected in a production domain helper (0.661619ms)
+✔ dynamic Math member is rejected in a production domain helper (1.20265ms)
+✔ spread Date is rejected in a production domain helper (1.556923ms)
+✔ random destructuring is rejected in a production domain helper (0.731876ms)
+✔ date alias is rejected in a production domain helper (0.341776ms)
+✔ math alias is rejected in a production domain helper (0.29391ms)
+✔ import meta is rejected in a production domain helper (0.39434ms)
+✔ process environment is rejected in a production domain helper (0.230349ms)
+✔ deterministic numeric and explicit-value operations stay allowed (1.353269ms)
+✔ type-only properties are not ambient API references (2.082644ms)
+✔ compiled graph includes an imported module with an excluded test-like filename (558.614882ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 969.190568

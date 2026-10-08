@@ -1,0 +1,9 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/database
+
+
+ Test Files  1 passed (1)
+      Tests  6 passed (6)
+   Start at  12:53:58
+   Duration  1.85s (tests 64%, transform 19%, import 16%)
+

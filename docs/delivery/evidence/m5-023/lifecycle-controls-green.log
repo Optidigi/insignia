@@ -1,0 +1,6 @@
+........
+----------------------------------------------------------------------
+Ran 8 tests in 0.004s
+
+OK
+{"action": "lifecycle-settled", "at": "2026-10-08T14:03:03.480924+00:00", "candidateCount": 0, "checks": {"exactWorkerArtifact": false, "queueRuntimeUsable": false, "queueSchemaPresent": false, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": false, "workerReady": false}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}

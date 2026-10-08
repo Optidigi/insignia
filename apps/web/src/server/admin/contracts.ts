@@ -1,6 +1,9 @@
 /** Server-only integration seam. The integrator supplies verified online identity,
  * bounded catalog reads and durable config/publication commands. None of these
  * ports may trust a shop, product or staff identity from the browser body. */
+
+import type { ExpectedFunctionBuild } from '@insignia/application';
+import type { FunctionOwnership } from '@insignia/shopify';
 import type { CatalogProduct, CommandOutcome, ConfigView } from '../../shared/admin-view.js';
 
 export type { CatalogProduct, CommandOutcome, ConfigView, PublicationState } from '../../shared/admin-view.js';
@@ -22,6 +25,25 @@ export interface AdminServices {
   /** Must verify the Shopify session token, active installation and online staff
    * grant on every request, including reinstall/deactivation invalidation. */
   authenticate(request: Request): Promise<AdminActor | null>;
+  /** Read-only technical observations; presence alone is never activation admission. */
+  inspectReadiness?(actor: AdminActor): Promise<{
+    version: 'm5-admin-technical-readiness-v1';
+    observedAt: string;
+    shop: string;
+    shopId: string;
+    tenantShopId: string;
+    installationGeneration: string;
+    externalInstallationId: string;
+    canRead: boolean;
+    canEdit: boolean;
+    ianaTimezone: string;
+    merchantDay: number;
+    functions: FunctionOwnership;
+    trustedRelease: { recordId: string; activeAppVersionRef: string; expectedBuild: ExpectedFunctionBuild } | null;
+    signingKeyPresent: boolean;
+    publicConfigPresent: boolean;
+    commercialConfigured: boolean;
+  }>;
   catalog: {
     list(
       actor: AdminActor,

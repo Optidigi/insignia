@@ -1,0 +1,53 @@
+$ vitest run -- managed-installation.test.ts -t 'first creation rolls back'
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/database
+
+ ❯ test/managed-installation.test.ts (22 tests | 1 failed) 1153ms
+   × first creation rolls back when matching uninstall commits during the initial INSERT wait 89ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/managed-installation.test.ts > first creation rolls back when matching uninstall commits during the initial INSERT wait
+AssertionError: expected { value: { outcome: 'CREATED', …(1) } } to match object { error: { kind: 'state_changed' } }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "error": {
+-     "kind": "state_changed",
++   "value": {
++     "outcome": "CREATED",
++     "state": {
++       "active": true,
++       "currentGeneration": "1",
++       "externalInstallationId": "gid://shopify/AppInstallation/81890822561993",
++       "shopDomain": "m49b39636edc44a7ab163a0c80b174195.myshopify.com",
++       "shopId": "76e2151b-c720-4843-bc46-072bc2ae59b0",
++       "shopifyShopId": "81035668155845",
++     },
+    },
+  }
+
+ ❯ test/managed-installation.test.ts:46:27
+     44|     expect(await ingress.webhooks.processUninstall(receipt.id)).toBe('…
+     45|     await blocker.query('COMMIT');
+     46|     expect(await settled).toMatchObject({ error: { kind: 'state_change…
+       |                           ^
+     47|     expect(await candidate.tenants.getShopByDomain(provider.shopDomain…
+     48|     expect(await candidate.tenants.getManagedInstallationState(provide…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed | 12 passed (13)
+      Tests  1 failed | 197 passed (198)
+   Start at  17:15:33
+   Duration  17.67s (tests 80%, import 15%, transform 5%)
+
+[ELIFECYCLE] Test failed. See above for more details.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in /home/serveradmin/insignia-m5-023-worktree/
+  │ packages/database

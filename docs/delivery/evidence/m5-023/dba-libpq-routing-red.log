@@ -1,0 +1,7 @@
+{"action": "backup-settled", "at": "2026-10-08T19:19:24.381808+00:00", "backupHashes": {".env": "ac0c0d548004d075e4e0f05b6b8fa02c6f74990c457bee28e172e2ef3ab3840c", "compose.yaml": "ac0c0d548004d075e4e0f05b6b8fa02c6f74990c457bee28e172e2ef3ab3840c", "database.dump": "3c41fbc0d8ba2e71b04d4a2bcbf08a7c12defa00ee95efed4b07a0ab9d11ba49", "database.env": "ac0c0d548004d075e4e0f05b6b8fa02c6f74990c457bee28e172e2ef3ab3840c", "roles.sql": "79e5306d7754af40617e92bb34cd83daa97392d4849566200b4428eec536b2b8", "runtime.env": "ac0c0d548004d075e4e0f05b6b8fa02c6f74990c457bee28e172e2ef3ab3840c"}, "databaseRestore": "operator disaster recovery only from private PG18 custom dump; no automatic schema down", "dumpListVerified": true, "oldImage": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5", "webRollback": "restore .env from private backup; compose up web only; retain DB evidence"}
+{"sqlTarget": "b", "dumpDesignated": false, "globalsDesignated": false, "actualLibpqTools": ["psql", "pg_dump", "pg_restore", "pg_dumpall"], "dockerCommands": 0, "providerRequests": 0, "productionWrites": 0, "fixtureProvenance": "Two isolated synthetic PG18 socket clusters; precondition/transport seams"}
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/dba-client-route-control.py", line 92, in <module>
+    assert sql_target == 'a' and result['dumpDesignated'] and result['globalsDesignated']
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

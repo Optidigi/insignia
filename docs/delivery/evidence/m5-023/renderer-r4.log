@@ -1,0 +1,24 @@
+PUBLICATION_STRESS_FIRST_FAILURE {"iteration":1,"saveMode":"dirty","publishMode":"success","observation":{"ownerVersion":"2","selectedPlacement":"front","numericInputValue":"0.6","projectedGeometry":null,"publicationMetadata":"{\"state\":\"PUBLISH_REQUESTED\",\"revisionId\":\"original-immutable-revision\",\"sourceDraftVersion\":\"1\"}"}}
+✖ publication success preserves dirty local edits and exact save recovery [1/1] (5690.599673ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6484.835736
+
+✖ failing tests:
+
+test at apps/web/test/admin/editor-browser.test.mjs:1146:7
+✖ publication success preserves dirty local edits and exact save recovery [1/1] (5690.599673ms)
+  locator.waitFor: Timeout 5000ms exceeded.
+  Call log:
+  [2m  - waiting for getByText('Preview: ready', { exact: true }) to be visible[22m
+  
+      at TestContext.<anonymous> (/home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/editor-browser.test.mjs:1250:67) {
+    name: 'TimeoutError',
+    log: [ "  - waiting for getByText('Preview: ready', { exact: true }) to be visible" ]
+  }
+EXPECTED NEGATIVE CONTROL: missing renderer rejected before canvas baseline.

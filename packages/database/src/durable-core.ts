@@ -42,7 +42,14 @@ import {
   type VerifiedShopifyDelivery,
 } from './repositories/shopify-webhooks.js';
 import { PgSigningKeyRepository } from './repositories/signing-keys.js';
-import { type ActiveAuthorizationScope, createTenantRepository, type ShopRecord } from './repositories/tenant.js';
+import {
+  type ActiveAuthorizationScope,
+  createTenantRepository,
+  type ManagedInstallationInput,
+  type ManagedInstallationResult,
+  type ManagedInstallationState,
+  type ShopRecord,
+} from './repositories/tenant.js';
 import { createTrustedReleaseReader } from './repositories/trusted-release.js';
 
 const transactionBrand: unique symbol = Symbol('insignia durable transaction');
@@ -181,6 +188,11 @@ export interface DurableCore {
     ): Promise<void>;
   };
   readonly tenants: {
+    getManagedInstallationState(shopDomain: string): Promise<ManagedInstallationState | null>;
+    ensureManagedInstallation(
+      transaction: DurableTransaction,
+      input: ManagedInstallationInput,
+    ): Promise<ManagedInstallationResult>;
     getShop(shopId: string): Promise<ShopRecord | null>;
     getShopByDomain(shopDomain: string): Promise<ShopRecord | null>;
     getCurrentAdminInstallation(shopId: string): Promise<{
@@ -578,6 +590,8 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       },
     },
     tenants: {
+      getManagedInstallationState: (shopDomain) => tenants.getManagedInstallationState(shopDomain),
+      ensureManagedInstallation: (handle, input) => tenants.ensureManagedInstallation(resolve(handle), input),
       getShop: (shopId) => tenants.getShop(shopId),
       getShopByDomain: (shopDomain) => tenants.getShopByDomain(shopDomain),
       getCurrentAdminInstallation: (shopId) => tenants.getCurrentAdminInstallation(shopId),

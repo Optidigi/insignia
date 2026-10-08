@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-08T20:18:08.047387+00:00",
+  "removalAck": {
+    "at": "2026-10-08T20:17:48.427354+00:00",
+    "classification": "TEMPORARY_KEY_REMOVAL_ACK",
+    "removedExactOwnLines": 1,
+    "otherKeyLinesPreserved": true,
+    "privateKeyLogged": false
+  },
+  "newConnectionExit": 255,
+  "newConnectionPublickeyDenied": true,
+  "publicVerificationMessage": "serveradmin@65.109.22.104: Permission denied (publickey,password).",
+  "removalAttempts": 1,
+  "verificationConnections": 2,
+  "firstVerificationHarnessFailure": "Exact publickey-only text assertion was too narrow; no repeated removal or privileged fallback",
+  "authenticatedConnectionAfterRemoval": false,
+  "localPrivateKeyRemoved": true
+}

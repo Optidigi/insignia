@@ -1,0 +1,513 @@
+$ corepack pnpm check:style && corepack pnpm build && corepack pnpm test:unit && corepack pnpm test:m5-operator && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && python3 -B scripts/boundaries/check-cargo-workspace.py && corepack pnpm check:rust && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 python3 -B scripts/m4-002/replay-production-vectors.py && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/m4-003/replay-public-config.mjs && corepack pnpm test:browser && python3 -B spikes/m0-007/scripts/check-history.py && python3 -B spikes/m0-014/scripts/check-live-setup.py && python3 -B scripts/m1-functions/artifact-manifest.py
+$ biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002 scripts/m5-003 scripts/m5-004 scripts/m5-005 scripts/m5-009 scripts/m5-010 scripts/m5-011 scripts/m5-012 scripts/m5-013 scripts/m5-015 scripts/m5-015r scripts/m5-016 scripts/m5-017
+apps/web/src/server/admin/production.ts:82:57 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    80 │   const appOrigin = required(env, 'APP_URL');
+    81 │   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+  > 82 │   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
+       │                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    83 │   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+    84 │   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+  
+  i Unsafe fix: Use a template literal.
+  
+     80  80 │     const appOrigin = required(env, 'APP_URL');
+     81  81 │     const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+     82     │ - ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·'gid://shopify/App/'·+·appId·:·null;
+         82 │ + ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·`gid://shopify/App/${appId}`·:·null;
+     83  83 │     const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+     84  84 │     const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+  
+
+apps/web/src/server/admin/production.ts:105:54 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    103 │       installationGeneration: actor.installationGeneration,
+    104 │     });
+  > 105 │     if (!scope || scope.shopDomain !== actor.shop || 'gid://shopify/Shop/' + scope.shopifyShopId !== actor.shopId)
+        │                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    106 │       throw new Error('Admin installation changed');
+    107 │   }
+  
+  i Unsafe fix: Use a template literal.
+  
+    103 103 │         installationGeneration: actor.installationGeneration,
+    104 104 │       });
+    105     │ - ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·'gid://shopify/Shop/'·+·scope.shopifyShopId·!==·actor.shopId)
+        105 │ + ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·`gid://shopify/Shop/${scope.shopifyShopId}`·!==·actor.shopId)
+    106 106 │         throw new Error('Admin installation changed');
+    107 107 │     }
+  
+
+scripts/m5-017/qualification.mjs:301:9 lint/complexity/noUselessCatch  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
+
+  i The catch clause that only rethrows the original error is useless.
+  
+    299 │         save();
+    300 │       } catch (error) {
+  > 301 │         throw error;
+        │         ^^^^^^^^^^^^
+    302 │       }
+    303 │       requireValue((await owner()).status === 'DRAFT', 'initial_draft');
+  
+  i An unnecessary catch clause can be confusing.
+  
+  i Unsafe fix: Remove the try/catch clause.
+  
+    292 292 │       if (phase === 'start') {
+    293 293 │         op.mode('create');
+    294     │ - ······try·{
+    295 294 │           const s = op.state();
+    296 295 │           evidence.create = (
+    ······· │ 
+    298 297 │           ).productCreate.product;
+    299 298 │           save();
+    300     │ - ······}·catch·(error)·{
+    301     │ - ········throw·error;
+    302     │ - ······}
+    303 299 │         requireValue((await owner()).status === 'DRAFT', 'initial_draft');
+    304 300 │         evidence.draft = await snapshot('draft');
+  
+
+apps/web/src/server/admin/auth.ts:71:48 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    69 │     let identity: VerifiedAdminIdentity;
+    70 │     try {
+  > 71 │       identity = await port.verifySessionToken(match[1]!);
+       │                                                ^^^^^^^^^
+    72 │     } catch {
+    73 │       return null;
+  
+
+apps/web/src/server/admin/auth.ts:86:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    84 │     let grant: OnlineAdminGrant;
+    85 │     try {
+  > 86 │       grant = await port.exchangeOnlineGrant(match[1]!, identity);
+       │                                              ^^^^^^^^^
+    87 │     } catch (error) {
+    88 │       diagnostic(error instanceof AdminOnlineIdentityError ? error.stage : 'ONLINE_EXCHANGE_FAILED');
+  
+
+apps/web/src/server/admin/preview.ts:109:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    107 │             .then((found) => (found ? project(found) : null)),
+    108 │         );
+  > 109 │       const result = await map.get(id)!;
+        │                            ^^^^^^^^^^^^
+    110 │       await active(actor);
+    111 │       return result;
+  
+
+apps/web/src/server/admin/preview.ts:116:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    114 │       await active(actor);
+    115 │       if (!currencies.has(actor)) currencies.set(actor, reader(actor).shopCurrency());
+  > 116 │       const result = await currencies.get(actor)!;
+        │                            ^^^^^^^^^^^^^^^^^^^^^^
+    117 │       await active(actor);
+    118 │       return result;
+  
+
+apps/web/src/server/admin/preview.ts:163:34 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    161 │                   shopId: randomUUID(),
+    162 │                   shopDomain: shop,
+  > 163 │                   shopifyShopId: shopId.split('/').at(-1)!,
+        │                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+    164 │                   externalInstallationId: provider.installationId,
+    165 │                 }),
+  
+
+apps/web/src/server/admin/preview.ts:223:26 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    221 │                   installationGeneration: bound.installationGeneration,
+    222 │                   shopifyShopId: shopId,
+  > 223 │                   appId: env.INSIGNIA_M5_002_APP_RESOURCE!,
+        │                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    224 │                 },
+    225 │                 {
+  
+
+apps/web/src/server/admin/preview.ts:227:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    225 │                 {
+    226 │                   appKey: client,
+  > 227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+        │                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+    229 │                 },
+  
+
+apps/web/src/server/admin/preview.ts:228:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    226 │                   appKey: client,
+    227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+  > 228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+        │                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    229 │                 },
+    230 │               );
+  
+
+apps/web/src/server/merchant-config.ts:174:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    172 │         option.allowedValueIds.flatMap((id) => {
+    173 │           const label = oldLabels?.[id];
+  > 174 │           return label ? [[values.get(id)!, label]] : [];
+        │                            ^^^^^^^^^^^^^^^
+    175 │         }),
+    176 │       );
+  
+
+apps/web/src/server/merchant-config.ts:177:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    175 │         }),
+    176 │       );
+  > 177 │       return Object.keys(remapped).length ? [[options.get(option.id)!, remapped]] : [];
+        │                                               ^^^^^^^^^^^^^^^^^^^^^^^
+    178 │     }),
+    179 │   );
+  
+
+apps/web/src/server/merchant-config.ts:183:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    181 │     ...source,
+    182 │     labels,
+  > 183 │     methods: source.methods.map((item) => ({ id: methods.get(item.id)! })),
+        │                                                  ^^^^^^^^^^^^^^^^^^^^^
+    184 │     placements: source.placements.map((item) => ({
+    185 │       ...item,
+  
+
+apps/web/src/server/merchant-config.ts:186:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    184 │     placements: source.placements.map((item) => ({
+    185 │       ...item,
+  > 186 │       id: placements.get(item.id)!,
+        │           ^^^^^^^^^^^^^^^^^^^^^^^^
+    187 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+    188 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+  
+
+apps/web/src/server/merchant-config.ts:187:59 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    185 │       ...item,
+    186 │       id: placements.get(item.id)!,
+  > 187 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+        │                                                           ^^^^^^^^^^^^^^^^
+    188 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+    189 │     })),
+  
+
+apps/web/src/server/merchant-config.ts:188:55 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    186 │       id: placements.get(item.id)!,
+    187 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+  > 188 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+        │                                                       ^^^^^^^^^^^^^^
+    189 │     })),
+    190 │     productionOptions: source.productionOptions.map((item) => ({
+  
+
+apps/web/src/server/merchant-config.ts:191:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    189 │     })),
+    190 │     productionOptions: source.productionOptions.map((item) => ({
+  > 191 │       id: options.get(item.id)!,
+        │           ^^^^^^^^^^^^^^^^^^^^^
+    192 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+    193 │     })),
+  
+
+apps/web/src/server/merchant-config.ts:192:57 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    190 │     productionOptions: source.productionOptions.map((item) => ({
+    191 │       id: options.get(item.id)!,
+  > 192 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+        │                                                         ^^^^^^^^^^^^^^^
+    193 │     })),
+    194 │     pricingRules: source.pricingRules.map((rule) => ({
+  
+
+apps/web/src/server/merchant-config.ts:196:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    194 │     pricingRules: source.pricingRules.map((rule) => ({
+    195 │       ...rule,
+  > 196 │       id: prices.get(rule.id)!,
+        │           ^^^^^^^^^^^^^^^^^^^^
+    197 │       scope:
+    198 │         rule.scope.kind === 'general'
+  
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 191.
+Checked 297 files in 601ms. No fixes applied.
+Found 89 warnings.
+Found 122 infos.
+$ corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build
+packages/cart-authorization build$ tsc -p tsconfig.json
+packages/contracts build$ tsc -p tsconfig.json
+packages/domain build$ tsc -p tsconfig.json
+packages/observability build$ tsc -p tsconfig.json
+packages/domain build: Done
+packages/visualizer build$ tsc -p tsconfig.json
+packages/contracts build: Done
+packages/application build$ tsc -p tsconfig.json
+packages/cart-authorization build: Done
+packages/observability build: Done
+packages/visualizer build: Done
+packages/application build: Done
+packages/shopify build$ tsc -p tsconfig.json
+packages/shopify build: Done
+packages/database build$ tsc -p tsconfig.json
+packages/database build: Done
+apps/worker build$ tsc -p tsconfig.json
+apps/storefront build$ tsc --noEmit && vite build && node scripts/copy-theme-asset.mjs
+apps/storefront build: vite v8.3.1 building client environment for production...
+apps/storefront build: transforming...
+apps/storefront build: ✓ 5 modules transformed.
+apps/storefront build: rendering chunks...
+apps/storefront build: computing gzip size...
+apps/storefront build: dist/insignia-storefront.js  14.03 kB │ gzip: 5.93 kB
+apps/storefront build: 
+apps/storefront build: ✓ built in 29ms
+apps/storefront build: Done
+apps/worker build: Done
+apps/web build$ astro check && astro build
+apps/web build: 14:59:44 [@astrojs/node] Enabling sessions with filesystem storage
+apps/web build: 14:59:44 [types] Generated 67ms
+apps/web build: 14:59:44 [check] Getting diagnostics for Astro files in /home/serveradmin/insignia-m5-023-worktree/apps/web...
+apps/web build: Result (29 files): 
+apps/web build: - 0 errors
+apps/web build: - 0 warnings
+apps/web build: - 0 hints
+apps/web build: 
+apps/web build: 14:59:49 [@astrojs/node] Enabling sessions with filesystem storage
+apps/web build: 14:59:49 [types] Generated 66ms
+apps/web build: 14:59:49 [build] output: "server"
+apps/web build: 14:59:49 [build] mode: "server"
+apps/web build: 14:59:49 [build] directory: /home/serveradmin/insignia-m5-023-worktree/apps/web/dist/
+apps/web build: 14:59:49 [build] adapter: @astrojs/node
+apps/web build: 14:59:49 [build] Collecting build info...
+apps/web build: 14:59:49 [build] ✓ Completed in 105ms.
+apps/web build: 14:59:49 [build] Building server entrypoints...
+apps/web build: 14:59:50 [vite] ✓ built in 209ms
+apps/web build: 14:59:51 [vite] ✓ built in 1.59s
+apps/web build: 14:59:51 [vite] ✓ built in 220ms
+apps/web build: 14:59:52 [build] Rearranging server assets...
+apps/web build: 14:59:52 [build] ✓ Completed in 2.09s.
+apps/web build: 14:59:52 [build] Server built in 2.19s
+apps/web build: 14:59:52 [build] Complete!
+apps/web build: Done
+$ corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/contracts test && corepack pnpm --filter @insignia/visualizer test && corepack pnpm --filter @insignia/cart-authorization test && corepack pnpm --filter @insignia/application test && corepack pnpm --filter @insignia/shopify test && corepack pnpm --filter @insignia/observability test && corepack pnpm --filter @insignia/worker test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/domain
+
+
+ Test Files  5 passed (5)
+      Tests  26 passed (26)
+   Start at  14:59:52
+   Duration  446ms (transform 48%, tests 34%, import 14%, worker 4%)
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/contracts
+
+
+ Test Files  2 passed (2)
+      Tests  6 passed (6)
+   Start at  14:59:53
+   Duration  269ms (import 56%, transform 30%, tests 10%, worker 3%)
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/visualizer
+
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  14:59:54
+   Duration  222ms (transform 63%, import 17%, tests 14%, worker 5%)
+
+$ node --experimental-strip-types --test test/*.test.ts
+✔ hard subset bounds and untrusted ordinary-line hints (2.277798ms)
+✔ 33 buckets are refused before the signer is called (0.413386ms)
+✔ every admitted code matches the versioned matrix and unknown/digital values reject (13.064272ms)
+✔ production-generated carriers decode, conserve and verify for every complete set (6.25154ms)
+✔ PostgreSQL-persisted negative adjustment has exact signed quote and member economics (1.09588ms)
+✔ versioned 33-bucket vector rejects before any signing call (0.42649ms)
+✔ production decoder and signature bytes preserve the independent v2 wire literal (5.724846ms)
+✔ injected synthetic Ed25519 signer covers the complete set and three-day key window (2.649394ms)
+✔ invalid window or set refuses signing and noncanonical carrier refuses decoding (0.581243ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 190.458022
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/application
+
+
+ Test Files  16 passed (16)
+      Tests  201 passed (201)
+   Start at  14:59:55
+   Duration  1.60s (transform 41%, import 34%, tests 21%, worker 3%)
+
+    Isolate  16 workers spawned · ~125ms startup each (spawn + environment, per file)
+             at least ~541ms faster with isolate: false — reuses workers across files instead of one per file
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/shopify
+
+
+ Test Files  14 passed (14)
+      Tests  334 passed (334)
+   Start at  14:59:57
+   Duration  2.09s (tests 64%, transform 22%, import 12%, worker 2%)
+
+    Isolate  14 workers spawned · ~123ms startup each (spawn + environment, per file)
+             at least ~449ms faster with isolate: false — reuses workers across files instead of one per file
+
+$ node --test test/*.test.mjs
+✔ structured runtime events cannot emit arbitrary payload or credential fields (4.900084ms)
+✔ metric labels are fixed outcomes and never contain tenant or delivery IDs (2.629047ms)
+✔ admin auth diagnostics emit only a bounded stage and independent correlation, never identity or secrets (2.108221ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 127.782059
+$ node --test test/*.test.mjs
+✔ current and previous synthetic wrapping keys remain available by ID (2.4876ms)
+✔ PostgreSQL claim retries the old refresh token after a lost response and fences stale replacement (92.891521ms)
+✔ diagnostic decodes and derives synthetic pixels without claiming durable readiness (13.77548ms)
+✔ liveness stays separate from durable readiness; loopback metrics expose bounded outcomes (59.111602ms)
+{"level":30,"time":1791471600558,"event":"worker_started"}
+{"level":30,"time":1791471600565,"event":"webhook_enqueued","inboxId":"894ed18f-037a-47fe-9637-d8793b67ebc7"}
+{"level":50,"time":1791471600574,"event":"webhook_process_failed","inboxId":"894ed18f-037a-47fe-9637-d8793b67ebc7","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791471604578,"event":"webhook_process_ok","inboxId":"894ed18f-037a-47fe-9637-d8793b67ebc7","attempt":1}
+{"level":30,"time":1791471604650,"event":"worker_stopped"}
+{"level":30,"time":1791471604672,"event":"worker_started"}
+{"level":30,"time":1791471604689,"event":"worker_stopped"}
+✔ PostgreSQL pg-boss starts, retries, settles and replays after restart (4181.874568ms)
+{"level":30,"time":1791471604744,"event":"worker_started"}
+{"level":30,"time":1791471604749,"event":"webhook_enqueued","inboxId":"536248f5-9483-43fd-95a3-e30f64f28883"}
+{"level":50,"time":1791471604769,"event":"webhook_process_failed","inboxId":"536248f5-9483-43fd-95a3-e30f64f28883","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791471608764,"event":"webhook_process_ok","inboxId":"536248f5-9483-43fd-95a3-e30f64f28883","attempt":1}
+{"level":30,"time":1791471608846,"event":"worker_stopped"}
+✖ pg-boss retry after committed uninstall retains one deactivation and one inbox fact (4156.317057ms)
+✔ process starts queues and workers before readiness; stop makes readiness unavailable (41.33327ms)
+✔ startup failure closes a started queue without reporting readiness (1.441693ms)
+{"level":30,"time":1791471600559,"event":"worker_started"}
+{"level":30,"time":1791471600563,"event":"worker_started"}
+{"level":30,"time":1791471600565,"event":"worker_started"}
+{"level":30,"time":1791471600569,"event":"worker_started"}
+{"level":30,"time":1791471600570,"event":"worker_started"}
+{"level":30,"time":1791471600572,"event":"worker_started"}
+✔ enqueue confirms exact inbox identity, including completed job replay (7.745875ms)
+✔ null send without same persisted job is retryable, never an acknowledgement (1.815491ms)
+✔ workers pass IDs only to injected durable handlers; failed attempt retries safely (3.725224ms)
+✔ invalid job body and identity fail closed without invoking application (1.139782ms)
+✔ enabled worker refuses missing credential-key configuration and stays not ready (1.553636ms)
+✔ refresh claim contention is retried rather than silently completing its job (2.119648ms)
+{"level":30,"time":1791471600560,"event":"webhook_enqueued","inboxId":"3fc2d3e3-cab1-49e4-bf33-e7b04f81df47"}
+{"level":30,"time":1791471600561,"event":"worker_stopped"}
+{"level":50,"time":1791471600566,"event":"webhook_process_failed","inboxId":"fc3c2907-395a-4efb-b136-c5bdb25edb6a","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791471600566,"event":"webhook_process_ok","inboxId":"fc3c2907-395a-4efb-b136-c5bdb25edb6a","attempt":1}
+{"level":30,"time":1791471600566,"event":"refresh_process_ok","shopId":"a5b4693f-7a56-460d-aede-2d4eaa9982d4","attempt":0}
+{"level":30,"time":1791471600568,"event":"worker_stopped"}
+{"level":50,"time":1791471600569,"event":"webhook_process_failed","inboxId":"c5ad05cf-8118-46fe-b649-c16fe3e07b19","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791471600570,"event":"worker_stopped"}
+{"level":50,"time":1791471600572,"event":"refresh_process_failed","errorClass":"RefreshError","attempt":0}
+{"level":30,"time":1791471600573,"event":"worker_stopped"}
+✔ configured worker serves liveness and durable readiness, then closes on SIGTERM (691.539297ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 14
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8951.213024
+
+✖ failing tests:
+
+test at test/postgres.test.mjs:65:1
+✖ pg-boss retry after committed uninstall retains one deactivation and one inbox fact (4156.317057ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
+  + actual - expected
+  
+    {
+      id: '536248f5-9483-43fd-95a3-e30f64f28883',
+  +   installationGeneration: null,
+  -   installationGeneration: '1',
+      kind: 'processed',
+  +   shopId: null
+  -   shopId: '9fe70e48-b842-4ad6-80df-503e65ff5d4c'
+    }
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-023-worktree/apps/worker/test/postgres.test.mjs:127:12)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: { kind: 'processed', id: '536248f5-9483-43fd-95a3-e30f64f28883', shopId: null, installationGeneration: null },
+    expected: { kind: 'processed', id: '536248f5-9483-43fd-95a3-e30f64f28883', shopId: '9fe70e48-b842-4ad6-80df-503e65ff5d4c', installationGeneration: '1' },
+    operator: 'deepStrictEqual',
+    diff: 'simple'
+  }
+[ELIFECYCLE] Test failed. See above for more details.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in /home/serveradmin/insignia-m5-023-worktree/
+  │ apps/worker
+
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

@@ -1,0 +1,42 @@
+✔ complete inventory accepts exact dependencies without executing them (780.990412ms)
+✔ changed database dependency fails despite identical entry and handler bytes (786.236863ms)
+✔ additional executable file fails exact inventory (775.833832ms)
+✔ changed internal module path fails despite unchanged file bytes (784.368355ms)
+✔ escaping executable link is rejected before reading or executing it (3.700446ms)
+✔ preload and lookup overrides cannot qualify (389.976837ms)
+✔ nearer dist dependency shadow cannot qualify the reviewed root package (393.182614ms)
+✔ root alias into writable storage fails even with exact package bytes (389.025282ms)
+✖ inventory alone cannot qualify a different actually running process (856.054164ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 8
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5260.658774
+
+✖ failing tests:
+
+test at docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:82:1
+✖ inventory alone cannot qualify a different actually running process (856.054164ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  true !== false
+  
+      at file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:87:10
+      at fixture (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:28:9)
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs:82:80)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: true,
+    expected: false,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

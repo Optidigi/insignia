@@ -1,0 +1,12 @@
+{
+  "node": "v24.21.0",
+  "platform": "linux",
+  "arch": "x64",
+  "packages": 66,
+  "files": 9014,
+  "bytes": 1500618,
+  "sha256": "afa20d02620239c0f59669e34c002539b0ec31ab3fb4c873e3e0f2abf8d651ab",
+  "providerRequests": 0,
+  "dependencyCodeExecuted": false,
+  "source": "exact portable runtime from full-root-r3b"
+}

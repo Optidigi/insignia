@@ -1,0 +1,9 @@
+{
+  "applicationSourceBuildUnchanged": true,
+  "onlyChangedFrozenInputs": [
+    "docs/delivery/evidence/m5-023/operators/host-operator-controls.py",
+    "docs/delivery/evidence/m5-023/operators/host-operator.py"
+  ],
+  "runtimeArchiveSha256": "17129c15c6decb87539b24fe12358d345d357e828d887c3943594778dd965022",
+  "providerInputsUnchanged": true
+}

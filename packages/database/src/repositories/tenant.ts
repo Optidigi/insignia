@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { sql, type Transaction } from 'kysely';
 import type { Database, DatabaseExecutor } from '../client/database.js';
 
@@ -6,6 +7,57 @@ export interface ShopRecord {
   shopDomain: string;
   shopifyShopId: string | null;
   currentGeneration: string;
+}
+
+export type ManagedInstallationState = ShopRecord & { externalInstallationId: string | null; active: boolean };
+export type ManagedInstallationIdentity = {
+  shopDomain: string;
+  shopifyShopId: string;
+  externalInstallationId: string;
+};
+export type ManagedInstallationInput = ManagedInstallationIdentity & {
+  expected: ManagedInstallationState | null;
+  /** Trusted server time immediately before provider IO; never request input. */
+  observationStartedAt: Date;
+  /** A second matching provider observation; never a browser assertion. */
+  confirmation?: ManagedInstallationIdentity;
+};
+export type ManagedInstallationResult = {
+  outcome: 'CREATED' | 'REUSED' | 'REINSTALLED';
+  state: ManagedInstallationState;
+};
+export class ManagedInstallationError extends Error {
+  constructor(readonly kind: 'identity_mismatch' | 'state_changed' | 'confirmation_required') {
+    super(
+      {
+        identity_mismatch: 'Managed installation identity mismatch',
+        state_changed: 'Managed installation state changed',
+        confirmation_required: 'Managed installation confirmation required',
+      }[kind],
+    );
+    this.name = 'ManagedInstallationError';
+  }
+}
+
+async function managedInstallationState(executor: DatabaseExecutor, shopDomain: string) {
+  const row = await executor
+    .selectFrom('shops')
+    .innerJoin('installation_generations as i', (join) =>
+      join.onRef('i.shop_id', '=', 'shops.shop_id').onRef('i.generation', '=', 'shops.current_generation'),
+    )
+    .select([
+      'shops.shop_id',
+      'shops.shop_domain',
+      'shops.shopify_shop_id',
+      'shops.current_generation',
+      'i.external_installation_id',
+      'i.deactivated_at',
+    ])
+    .where('shops.shop_domain', '=', shopDomain)
+    .executeTakeFirst();
+  return row
+    ? { ...mapShop(row), externalInstallationId: row.external_installation_id, active: row.deactivated_at === null }
+    : null;
 }
 
 export interface ActiveAuthorizationScope {
@@ -66,9 +118,155 @@ function mapShop(row: {
   };
 }
 
+async function assertNoObservedUninstall(
+  transaction: Transaction<Database>,
+  input: ManagedInstallationInput,
+): Promise<void> {
+  // A removed new installation may have been observed while the durable
+  // predecessor was inactive. Its signed delivery can already be processed
+  // as stale against that predecessor. Read immutable ingress evidence,
+  // regardless of processing state, before creating/advancing an active era.
+  // Only the signed Shop identity/domain can fence this provider identity.
+  const removed = await sql<{ removed: boolean }>`
+  WITH candidates AS (
+    SELECT convert_from(inbox.payload,'UTF8')::jsonb AS body
+    FROM shopify_webhook_deliveries delivery JOIN inbox_messages inbox ON inbox.id=delivery.inbox_id
+    WHERE delivery.shop_domain=${input.shopDomain} AND delivery.topic='app/uninstalled'
+      AND delivery.triggered_at >= ${input.observationStartedAt}
+  )
+  SELECT EXISTS(SELECT 1 FROM candidates WHERE
+    CASE jsonb_typeof(body->'id')
+      WHEN 'number' THEN (body->>'id')::numeric = ${input.shopifyShopId}::numeric
+      WHEN 'string' THEN body->>'id' = ${input.shopifyShopId}
+      ELSE false END
+    AND body ? 'myshopify_domain'
+    AND (body->>'myshopify_domain' IS NULL OR body->>'myshopify_domain'=${input.shopDomain})
+  ) AS removed`.execute(transaction);
+  if (removed.rows[0]?.removed !== false) throw new ManagedInstallationError('state_changed');
+}
+
 /** Mutations require an enclosing transaction so installation and shop state commit together. */
 export function createTenantRepository(executor: DatabaseExecutor) {
   return {
+    getManagedInstallationState: (shopDomain: string) => managedInstallationState(executor, shopDomain),
+    async ensureManagedInstallation(
+      transaction: Transaction<Database>,
+      input: ManagedInstallationInput,
+    ): Promise<ManagedInstallationResult> {
+      if (
+        !(input.observationStartedAt instanceof Date) ||
+        !Number.isFinite(input.observationStartedAt.getTime()) ||
+        !/^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(input.shopDomain) ||
+        !/^[1-9][0-9]{0,19}$/.test(input.shopifyShopId) ||
+        !/^gid:\/\/shopify\/AppInstallation\/[1-9][0-9]*$/.test(input.externalInstallationId)
+      )
+        throw new ManagedInstallationError('identity_mismatch');
+      const time = await sql<{ now: Date }>`SELECT clock_timestamp() AS now`.execute(transaction);
+      if (input.observationStartedAt > time.rows[0]!.now) throw new ManagedInstallationError('state_changed');
+      // Shared provider/domain locks serialize both first creation and alias races.
+      for (const key of [
+        `insignia:managed-install:domain:${input.shopDomain}`,
+        `insignia:managed-install:shop:${input.shopifyShopId}`,
+      ].sort())
+        await sql`SELECT pg_advisory_xact_lock(hashtextextended(${key},0))`.execute(transaction);
+      const rows = await transaction
+        .selectFrom('shops')
+        .selectAll()
+        .where((eb) =>
+          eb.or([eb('shop_domain', '=', input.shopDomain), eb('shopify_shop_id', '=', input.shopifyShopId)]),
+        )
+        .forUpdate()
+        .execute();
+      if (
+        rows.length > 1 ||
+        rows.some((row) => row.shop_domain !== input.shopDomain || row.shopify_shop_id !== input.shopifyShopId)
+      )
+        throw new ManagedInstallationError('identity_mismatch');
+      await assertNoObservedUninstall(transaction, input);
+      if (rows.length === 0) {
+        if (input.expected !== null) throw new ManagedInstallationError('state_changed');
+        await sql`SAVEPOINT managed_installation_create`.execute(transaction);
+        try {
+          await createTenantRepository(transaction).createShop(transaction, {
+            shopId: randomUUID(),
+            shopDomain: input.shopDomain,
+            shopifyShopId: input.shopifyShopId,
+            externalInstallationId: input.externalInstallationId,
+            activatedAt: input.observationStartedAt,
+          });
+          await sql`RELEASE SAVEPOINT managed_installation_create`.execute(transaction);
+          const state = await managedInstallationState(transaction, input.shopDomain);
+          if (!state) throw new ManagedInstallationError('state_changed');
+          // A first INSERT can wait while signed ingress commits without a tenant.
+          await assertNoObservedUninstall(transaction, input);
+          return { outcome: 'CREATED', state };
+        } catch (error) {
+          if (!error || typeof error !== 'object' || !('code' in error) || error.code !== '23505') throw error;
+          await sql`ROLLBACK TO SAVEPOINT managed_installation_create`.execute(transaction);
+          await sql`RELEASE SAVEPOINT managed_installation_create`.execute(transaction);
+          // An independent writer can bypass advisory locks. A uniqueness error
+          // alone never proves success: re-read all provider-bound fields.
+          await transaction
+            .selectFrom('shops')
+            .select('shop_id')
+            .where('shop_domain', '=', input.shopDomain)
+            .forUpdate()
+            .execute();
+          const winner = await managedInstallationState(transaction, input.shopDomain);
+          if (
+            !winner ||
+            winner.shopifyShopId !== input.shopifyShopId ||
+            winner.externalInstallationId !== input.externalInstallationId ||
+            !winner.active
+          )
+            throw new ManagedInstallationError('identity_mismatch');
+          // A uniqueness wait can outlive the first ingress observation.
+          await assertNoObservedUninstall(transaction, input);
+          return { outcome: 'REUSED', state: winner };
+        }
+      }
+      const state = await managedInstallationState(transaction, input.shopDomain);
+      if (!state || !state.externalInstallationId || (input.expected && input.expected.shopId !== state.shopId))
+        throw new ManagedInstallationError('state_changed');
+      if (state.externalInstallationId === input.externalInstallationId) {
+        if (!state.active) throw new ManagedInstallationError('state_changed');
+        return { outcome: 'REUSED', state };
+      }
+      const expected = input.expected;
+      if (
+        !expected ||
+        expected.shopDomain !== state.shopDomain ||
+        expected.shopifyShopId !== state.shopifyShopId ||
+        expected.currentGeneration !== state.currentGeneration ||
+        expected.externalInstallationId !== state.externalInstallationId ||
+        expected.active !== state.active
+      )
+        throw new ManagedInstallationError('state_changed');
+      const history = await transaction
+        .selectFrom('installation_generations')
+        .select('generation')
+        .where('shop_id', '=', state.shopId)
+        .where('external_installation_id', '=', input.externalInstallationId)
+        .executeTakeFirst();
+      if (history) throw new ManagedInstallationError('state_changed');
+      const confirmation = input.confirmation;
+      if (
+        !confirmation ||
+        confirmation.shopDomain !== input.shopDomain ||
+        confirmation.shopifyShopId !== input.shopifyShopId ||
+        confirmation.externalInstallationId !== input.externalInstallationId
+      )
+        throw new ManagedInstallationError('confirmation_required');
+      await createTenantRepository(transaction).startInstallation(
+        transaction,
+        state.shopId,
+        input.externalInstallationId,
+        input.observationStartedAt,
+      );
+      const installed = await managedInstallationState(transaction, input.shopDomain);
+      if (!installed) throw new ManagedInstallationError('state_changed');
+      return { outcome: 'REINSTALLED', state: installed };
+    },
     async getActiveAuthorizationScope(input: {
       shopId: string;
       installationGeneration: string;
@@ -140,7 +338,13 @@ export function createTenantRepository(executor: DatabaseExecutor) {
 
     async createShop(
       transaction: Transaction<Database>,
-      input: { shopId: string; shopDomain: string; shopifyShopId?: string; externalInstallationId?: string },
+      input: {
+        shopId: string;
+        shopDomain: string;
+        shopifyShopId?: string;
+        externalInstallationId?: string;
+        activatedAt?: Date;
+      },
     ): Promise<ShopRecord> {
       const domain = input.shopDomain.trim().toLowerCase();
       if (input.shopifyShopId !== undefined && !/^[1-9][0-9]{0,19}$/.test(input.shopifyShopId))
@@ -160,6 +364,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
           shop_id: input.shopId,
           generation: '1',
           external_installation_id: input.externalInstallationId ?? null,
+          ...(input.activatedAt ? { activated_at: input.activatedAt } : {}),
           deactivated_at: null,
         })
         .execute();
@@ -176,6 +381,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
       transaction: Transaction<Database>,
       shopId: string,
       externalInstallationId?: string,
+      activatedAt?: Date,
     ): Promise<string> {
       const shop = await transaction
         .selectFrom('shops')
@@ -210,6 +416,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
           shop_id: shopId,
           generation,
           external_installation_id: externalInstallationId ?? null,
+          ...(activatedAt ? { activated_at: activatedAt } : {}),
           deactivated_at: null,
         })
         .execute();

@@ -1,0 +1,13 @@
+CHANGES_REQUESTED
+
+PR54 review binds only head `f696147f182068d50c73929ea688497af0029e8c`, tree `8c7b7fa9ccac1f62f493f82185bbfe5a540c3e6c`. Base/merge-base matched the supplied value; worktree is clean.
+
+- **P1 — Uninstall ingress permissions are not qualified.** [host-operator.py:210](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py:210) checks inbox SELECT/UPDATE and delivery SELECT, but omits their INSERT permissions. Revoke either INSERT while retaining checked privileges: lifecycle can return `PASS_UNINSTALL_PROCESSOR`, yet signed ingress fails at [shopify-webhooks.ts:250](/home/serveradmin/insignia-m5-023-worktree/packages/database/src/repositories/shopify-webhooks.ts:250) or its subsequent delivery insertion. Backup/provision/deploy could then proceed without qualified durable ingress, violating production-plan step 0. Add INSERT checks for both tables and DELETE for inbox collision cleanup; add independent database-backed revoked-permission controls proving rejection before mutation.
+
+- **P2 — Database routing excludes IPv6 ambiguity.** [host-operator.py:127](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py:127) forces `family:4`. A hostname with the designated database’s A record and an alternate reachable AAAA destination passes this probe. Runtime PostgreSQL connections are not constrained to IPv4, so matching IPv4 observations do not establish the required same-database route. Inspect unrestricted lookup results and bind every returned address to the designated endpoint, rejecting ambiguity; add a divergent-AAAA control.
+
+I independently assessed all preserved round-one through round-three reports/settings/responses and the root unique-wait objection. Earlier bootstrap/uninstall fences, immutable processed receipts, Compose controls, and worker inventory/launcher/writable-root corrections are supported by source. Qualification retains the gaps above.
+
+Static coverage included complete interacting tenant/transaction/migration/credential/uninstall, authentication/SDK/HTTP/staff/calendar/observability, readiness/release/Function/public-config, v1/v2/v3 activation/recovery, M3 consumers, operators/roles/archive/deployment paths, and relevant tests. No additional material Standards or smell finding.
+
+Parent root86/PG197, concurrency, operator and portable-runtime results are supplied execution evidence; I ran only Git/file reads. Preserved failures remain failures. Exact-head CI is unverified here; live processor/readiness remains unknown. This grants no principal approval or production readiness.

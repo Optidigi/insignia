@@ -1,0 +1,1 @@
+PASS local PG18 effective-publication uninstall: publication_operations SELECT preflight checked against explicit old/corrected expectation; actual deactivation fails 42501 and all installation/credential/effective pointer bytes survive; restoring SELECT permits atomic deactivation. Rehearsal rolled back, no production/provider access.

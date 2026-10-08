@@ -1,0 +1,95 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/database
+
+ ❯ test/managed-installation.test.ts (20 tests | 3 failed | 16 skipped) 197ms
+   × inactive predecessor and processed uninstall cannot resurrect a removed installation: current 73ms
+   × inactive predecessor and processed uninstall cannot resurrect a removed installation: wrong-signed-shop 43ms
+   × bound uninstall waits for the shop lock then resolves the committed generation and observation boundary 37ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/managed-installation.test.ts > inactive predecessor and processed uninstall cannot resurrect a removed installation: current
+AssertionError: promise resolved "{ outcome: 'REINSTALLED', …(1) }" instead of rejecting
+
+- Expected
++ Received
+
+- Error {
+-   "message": "rejected promise",
++ {
++   "outcome": "REINSTALLED",
++   "state": {
++     "active": true,
++     "currentGeneration": "2",
++     "externalInstallationId": "gid://shopify/AppInstallation/727891232544706",
++     "shopDomain": "m01ab098c6165423389d5c8c5a4096347.myshopify.com",
++     "shopId": "3361de87-3a5b-45ac-9ef3-bfdf05497ac4",
++     "shopifyShopId": "1834111230310",
++   },
+  }
+
+ ❯ test/managed-installation.test.ts:34:28
+     32|     }));
+     33|     if (era === 'current') {
+     34|       await expect(attempt).rejects.toThrow('Managed installation stat…
+       |                            ^
+     35|       expect(await core.tenants.getManagedInstallationState(provider.s…
+     36|     } else expect((await attempt).state).toMatchObject({ currentGenera…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+ FAIL  test/managed-installation.test.ts > inactive predecessor and processed uninstall cannot resurrect a removed installation: wrong-signed-shop
+AssertionError: expected { kind: 'processed', …(7) } to deeply equal { kind: 'processed', …(7) }
+
+- Expected
++ Received
+
+  {
+    "id": "6273c7d9-7913-430c-b105-993c339d4a9f",
+    "installationGeneration": null,
+    "kind": "processed",
+-   "resolution": "stale",
++   "resolution": "unverified",
+    "shopDomain": "m12afd7659d12400183806dc3374c5e94.myshopify.com",
+    "shopId": null,
+    "state": "processed",
+    "topic": "app/uninstalled",
+  }
+
+ ❯ test/managed-installation.test.ts:37:54
+     35|       expect(await core.tenants.getManagedInstallationState(provider.s…
+     36|     } else expect((await attempt).state).toMatchObject({ currentGenera…
+     37|     expect(await core.webhooks.getById(delivery.id)).toEqual(historica…
+       |                                                      ^
+     38|   } finally { await core.close(); }
+     39| });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯
+
+ FAIL  test/managed-installation.test.ts > bound uninstall waits for the shop lock then resolves the committed generation and observation boundary
+AssertionError: expected 'stale' to be 'processed' // Object.is equality
+
+Expected: "processed"
+Received: "stale"
+
+ ❯ test/managed-installation.test.ts:72:27
+     70|       await createTenantRepository(tx).startInstallation(tx, shopId, `…
+     71|     });
+     72|     expect(await pending).toBe('processed');
+       |                           ^
+     73|     expect(await peer.tenants.getManagedInstallationState(provider.sho…
+     74|   } finally { await pending?.catch(() => {}); await Promise.all([peer.…
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed | 1 passed | 16 skipped (20)
+   Start at  14:39:38
+   Duration  962ms (transform 42%, import 34%, tests 24%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-023-
+  │ worktree/packages/database
+

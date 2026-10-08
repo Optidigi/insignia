@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-08T20:22:31.216217+00:00",
+  "changedSectionDocumentLinksResolved": 38,
+  "scope": "Current M5-023 integration; immutable historical state/report separately integrity-checked",
+  "g7Criteria": 34,
+  "acceptedSourceCriteria": 6,
+  "blockedNativeCriteria": 28,
+  "historicalControlColumnByteExact": true,
+  "styleExit": 0,
+  "secretCheckExit": 0,
+  "productionSourceBuildChanged": false
+}

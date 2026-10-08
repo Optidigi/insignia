@@ -1,0 +1,30 @@
+{"level":30,"time":1791464377680,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"b166c623-86d1-4655-8d0e-ba811d191ecc","statusClass":"success"}
+{"level":30,"time":1791464377701,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"b166c623-86d1-4655-8d0e-ba811d191ecc","statusClass":"success"}
+✖ production first verified staff session bootstraps and searches, repeat reuses provider identity (220.501613ms)
+{"level":30,"time":1791464377703,"event":"admin_authentication","authStage":"TENANT_NOT_FOUND_OR_SHOP_ID_MISMATCH","correlationId":"b166c623-86d1-4655-8d0e-ba811d191ecc","statusClass":"failure"}
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 557.761101
+
+✖ failing tests:
+
+test at test/admin/managed-install-bootstrap.test.mjs:80:1
+✖ production first verified staff session bootstraps and searches, repeat reuses provider identity (220.501613ms)
+  Error: Authentication unavailable
+      at file:///home/serveradmin/insignia-m5-023-worktree/apps/web/.astro/m5-managed-bootstrap.mjs:713:13
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Object.authenticate (file:///home/serveradmin/insignia-m5-023-worktree/apps/web/.astro/m5-managed-bootstrap.mjs:1057:21)
+      at async file:///home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/managed-install-bootstrap.test.mjs:83:19
+      at async fixture (file:///home/serveradmin/insignia-m5-023-worktree/apps/web/test/admin/managed-install-bootstrap.test.mjs:72:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-023-
+  │ worktree/apps/web
+

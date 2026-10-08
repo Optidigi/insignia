@@ -20,4 +20,13 @@ export {
   type ShopifyWebhookState,
   type VerifiedShopifyDelivery,
 } from './repositories/shopify-webhooks.js';
-export type { ActiveAuthorizationScope, ShopRecord } from './repositories/tenant.js';
+export type {
+  ActiveAuthorizationScope,
+  ManagedInstallationIdentity,
+  ManagedInstallationInput,
+  ManagedInstallationResult,
+  ManagedInstallationState,
+  ShopRecord,
+} from './repositories/tenant.js';
+
+export { ManagedInstallationError } from './repositories/tenant.js';

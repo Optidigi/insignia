@@ -1,0 +1,1 @@
+psql:/home/serveradmin/insignia-m5-023-handoff/lifecycle-application-rights-control.sql:8: ERROR:  relation "outbox_messages" does not exist

@@ -1,0 +1,15 @@
+CHANGES_REQUESTED
+
+Static Spec/correctness review of PR54 at exact head `f13ef87cfdd98cc611443f4cc4c6342b7f2b56cd`; pinned tree and merge-base match, worktree clean.
+
+- **P1 — Same durable database is unproven.** [host-operator.py:131](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py:131) compares hostname/port/database text. Separate Docker networks can resolve identical `database:5432/insignia_rewrite` URLs to different PostgreSQL servers. Worker artifact/readiness and named-database privileges can all pass while the worker never consumes web uninstall deliveries. Bind both actual connection routes to the designated database identity; reject unknown/different routing. Add an identical-URL/different-network negative control.
+
+- **P1 — Effective worker launcher escapes qualification.** [host-operator.py:148](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py:148) validates `Config.Cmd`, ignoring `Entrypoint`. A wrapper can export `NODE_OPTIONS=--import=/opt/preload.mjs` before launching the expected worker. Config environment remains empty; separate `docker exec` inventory sees reviewed files, and readiness can pass despite unreviewed running behavior. Bind the effective launcher and process arguments/environment flags to reviewed executable inputs; reject unknown wrappers/preloads. Add an altered-entrypoint control.
+
+- **P1 — Writable executable topology can pass.** [host-operator.py:150](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py:150) checks the lexical entry path and exempts writable `/tmp`. `/srv/worker` can symlink into `/tmp` with otherwise matching package bytes. [worker-inventory.mjs:52](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/worker-inventory.mjs:52) resolves that root and compares relative inventories, allowing mutable code to qualify. Check resolved entry/dependency roots against every writable mount/tmpfs; reject overlaps. Add this root-alias control.
+
+I assessed both prior rounds and responses. Retained uninstall fencing, fresh observation after shop-lock acquisition, processed-receipt preservation, role checks and expanded dependency hashing address their specific counterexamples; worker qualification remains incomplete above.
+
+Static coverage included complete interacting auth/SDK/HTTP, tenant transactions/migrations, uninstall/credentials/M3 consumers, calendar/observability/readiness, trusted release/artifact/config, v1/v2/v3 activation/recovery, packaging/operators/roles/append guards and test sensitivity.
+
+Parent’s root86/PG196/concurrency/operator/runtime results are supplied executed evidence; I ran no builds/tests/imports or live operations. Existing controls omit these counterexamples. Exact-head CI remains pending. This is neither principal approval nor live-readiness acceptance.

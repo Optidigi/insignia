@@ -1,0 +1,7 @@
+{
+  "classification": "HISTORICAL_LINK_OUTSIDE_CURRENT_INTEGRATION",
+  "observedAssertion": "docs/delivery/state.md -> PR-026-principal-review.md absent",
+  "scope": "First link check included entire immutable historical state suffix",
+  "resolution": "Validate current changed state/report sections and current M5-023 documents; preserve historical suffix unchanged",
+  "historicalLinkFixed": false
+}

@@ -1,0 +1,102 @@
+....EEEEEEEE....
+======================================================================
+ERROR: test_only_exact_ready_worker_and_queue_qualify (__main__.GuardControls.test_only_exact_ready_worker_and_queue_qualify) (failure=None)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 164, in test_only_exact_ready_worker_and_queue_qualify
+    operator.lifecycle()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 141, in lifecycle
+    checks['exactWorkerArtifact'] = len(hashes) == 2 and [line.split()[0] for line in hashes] == [expected['workerEntrySha256'], expected['workerHandlersSha256']]
+                                                                                                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'workerEntrySha256'
+
+======================================================================
+ERROR: test_only_exact_ready_worker_and_queue_qualify (__main__.GuardControls.test_only_exact_ready_worker_and_queue_qualify) (failure='artifact')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 164, in test_only_exact_ready_worker_and_queue_qualify
+    operator.lifecycle()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 141, in lifecycle
+    checks['exactWorkerArtifact'] = len(hashes) == 2 and [line.split()[0] for line in hashes] == [expected['workerEntrySha256'], expected['workerHandlersSha256']]
+                                                                                                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'workerEntrySha256'
+
+======================================================================
+ERROR: test_only_exact_ready_worker_and_queue_qualify (__main__.GuardControls.test_only_exact_ready_worker_and_queue_qualify) (failure='secret')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 164, in test_only_exact_ready_worker_and_queue_qualify
+    operator.lifecycle()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 141, in lifecycle
+    checks['exactWorkerArtifact'] = len(hashes) == 2 and [line.split()[0] for line in hashes] == [expected['workerEntrySha256'], expected['workerHandlersSha256']]
+                                                                                                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'workerEntrySha256'
+
+======================================================================
+ERROR: test_only_exact_ready_worker_and_queue_qualify (__main__.GuardControls.test_only_exact_ready_worker_and_queue_qualify) (failure='queue')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 164, in test_only_exact_ready_worker_and_queue_qualify
+    operator.lifecycle()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 141, in lifecycle
+    checks['exactWorkerArtifact'] = len(hashes) == 2 and [line.split()[0] for line in hashes] == [expected['workerEntrySha256'], expected['workerHandlersSha256']]
+                                                                                                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'workerEntrySha256'
+
+======================================================================
+ERROR: test_only_exact_ready_worker_and_queue_qualify (__main__.GuardControls.test_only_exact_ready_worker_and_queue_qualify) (failure='health')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 164, in test_only_exact_ready_worker_and_queue_qualify
+    operator.lifecycle()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 141, in lifecycle
+    checks['exactWorkerArtifact'] = len(hashes) == 2 and [line.split()[0] for line in hashes] == [expected['workerEntrySha256'], expected['workerHandlersSha256']]
+                                                                                                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'workerEntrySha256'
+
+======================================================================
+ERROR: test_only_exact_ready_worker_and_queue_qualify (__main__.GuardControls.test_only_exact_ready_worker_and_queue_qualify) (failure='dependency')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 164, in test_only_exact_ready_worker_and_queue_qualify
+    operator.lifecycle()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 141, in lifecycle
+    checks['exactWorkerArtifact'] = len(hashes) == 2 and [line.split()[0] for line in hashes] == [expected['workerEntrySha256'], expected['workerHandlersSha256']]
+                                                                                                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'workerEntrySha256'
+
+======================================================================
+ERROR: test_only_exact_ready_worker_and_queue_qualify (__main__.GuardControls.test_only_exact_ready_worker_and_queue_qualify) (failure='role')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 164, in test_only_exact_ready_worker_and_queue_qualify
+    operator.lifecycle()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 141, in lifecycle
+    checks['exactWorkerArtifact'] = len(hashes) == 2 and [line.split()[0] for line in hashes] == [expected['workerEntrySha256'], expected['workerHandlersSha256']]
+                                                                                                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'workerEntrySha256'
+
+======================================================================
+ERROR: test_only_exact_ready_worker_and_queue_qualify (__main__.GuardControls.test_only_exact_ready_worker_and_queue_qualify) (failure='application-rights')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator-controls.py", line 164, in test_only_exact_ready_worker_and_queue_qualify
+    operator.lifecycle()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py", line 141, in lifecycle
+    checks['exactWorkerArtifact'] = len(hashes) == 2 and [line.split()[0] for line in hashes] == [expected['workerEntrySha256'], expected['workerHandlersSha256']]
+                                                                                                  ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+KeyError: 'workerEntrySha256'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.010s
+
+FAILED (errors=8)
+{"action": "lifecycle-settled", "at": "2026-10-08T14:58:43.149654+00:00", "candidateCount": 0, "checks": {"exactWorkerArtifact": false, "queueRuntimeUsable": false, "queueSchemaPresent": false, "webhookSecretMatchesApp": true, "workerKeyConfigurationPresent": false, "workerReady": false}, "classification": "BLOCKED_UNINSTALL_PROCESSOR_READINESS", "databaseWrites": 0, "providerRequests": 0, "runtimeEnvironmentValuesLogged": false, "workerDeployments": 0}

@@ -1,0 +1,24 @@
+{"result":{"outcome":"REUSED"},"knownUninstallDuringUniqueWait":true,"providerRequests":0,"expected":"state_changed"}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: Expected values to be strictly deep-equal:
++ actual - expected
+
+  {
++   outcome: 'REUSED'
+-   error: 'state_changed'
+  }
+
+    at file:///home/serveradmin/insignia-m5-023-handoff/unique-uninstall-probe.mjs:23:9
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  generatedMessage: true,
+  code: 'ERR_ASSERTION',
+  actual: { outcome: 'REUSED' },
+  expected: { error: 'state_changed' },
+  operator: 'deepStrictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.21.0

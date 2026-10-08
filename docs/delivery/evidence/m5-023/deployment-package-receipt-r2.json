@@ -1,0 +1,14 @@
+{
+  "filesAndLinks": 21074,
+  "archiveSha256": "41973e198650f43ebed1b3e7815c0614279d8ca144ef02fd0a20245c670ea7c7",
+  "archiveBytes": 37345704,
+  "inventorySha256": "2e5f3c8f34ddc3c4e6c389594b9ea3778c7eaa84de3f9ac489159e8eb2a5c04f",
+  "entrySha256": "9a0f4d4a0d79830a340b49a26f1ea5e1617016fa5f3e2e0ab379b33f014bbbb2",
+  "dockerfileSha256": "ca4a0257ce880e26a9fee2bdc97df178ff1eebe1dd4a29a13bfce291c0266927",
+  "dbmateSha256": "47e284b3d8cbad1ba5f090495aa05afd1bbd5f35e2ed5577aad06da74ce780ce",
+  "providerRequests": 0,
+  "productionDeployed": false,
+  "envFilesIncluded": false,
+  "sourceBinding": "Review-correction working tree built by full-root-clean-install; later gate binds exact commit and all source/build hashes",
+  "supersedesOfflineArchiveSha256": "0e1b5950f3c5cbdc0840804276119542c51fe5f534e3a1d6899bd7781874e25c"
+}

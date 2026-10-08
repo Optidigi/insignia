@@ -1,0 +1,52 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/database
+
+ ❯ test/managed-installation.test.ts (21 tests | 1 failed | 20 skipped) 93ms
+   × a uniqueness loser compares the independently committed tenant: uninstalled-winner 91ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/managed-installation.test.ts > a uniqueness loser compares the independently committed tenant: uninstalled-winner
+AssertionError: expected { value: { outcome: 'REUSED', …(1) } } to match object { error: { kind: 'state_changed' } }
+(3 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "error": {
+-     "kind": "state_changed",
++   "value": {
++     "outcome": "REUSED",
++     "state": {
++       "active": true,
++       "currentGeneration": "1",
++       "externalInstallationId": "gid://shopify/AppInstallation/72673764062269",
++       "shopDomain": "m469ccfb7eef94218ade4343c7bd7f40d.myshopify.com",
++       "shopId": "28d6caef-e963-442c-80fd-8c517df43641",
++       "shopifyShopId": "77639313780474",
++     },
+    },
+  }
+
+ ❯ test/managed-installation.test.ts:407:34
+    405|           },
+    406|         });
+    407|       else expect(await settled).toMatchObject({ error: { kind: mode =…
+       |                                  ^
+    408|       expect(
+    409|         (
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 20 skipped (21)
+   Start at  15:20:10
+   Duration  870ms (transform 48%, import 39%, tests 13%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-023-
+  │ worktree/packages/database
+

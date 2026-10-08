@@ -1,0 +1,12 @@
+{
+  "at": "2026-10-08T20:16:32.000587+00:00",
+  "ownerAuthorized": true,
+  "host": "65.109.22.104",
+  "user": "serveradmin",
+  "port": 22,
+  "hostFingerprint": "SHA256:vttVPAISQypNdyfjFElTJ6ef8Q5S2YlC+XoUn599uq4",
+  "publicKeySha256": "489ae5b75554c6056bcbb5766aae3f4e3f913ab20506d45c9f1fccf9e060e91a",
+  "priorKeyReused": false,
+  "restrictedKey": true,
+  "privateKeyPublished": false
+}

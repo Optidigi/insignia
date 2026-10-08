@@ -1,0 +1,68 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/database
+
+ ❯ test/managed-installation.test.ts (3 tests | 1 failed) 122ms
+   × a uniqueness loser re-reads and compares the independently committed tenant 52ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/managed-installation.test.ts > a uniqueness loser re-reads and compares the independently committed tenant
+AssertionError: expected { …(1) } to match object { value: { outcome: 'REUSED', …(1) } }
+(19 matching properties omitted from actual)
+
+- Expected
++ Received
+
+  {
+-   "value": {
+-     "outcome": "REUSED",
+-     "state": {
+-       "active": true,
+-       "currentGeneration": "1",
+-       "externalInstallationId": "gid://shopify/AppInstallation/84338301129718",
+-       "shopId": "9004de96-879a-406a-a88c-ee805149a92f",
+-     },
++   "error": error {
++     "message": "duplicate key value violates unique constraint \"shops_shop_domain_key\"",
++     "length": 257,
++     "name": "error",
++     "severity": "ERROR",
++     "code": "23505",
++     "detail": "Key (shop_domain)=(m2b914953c43a4cb48a7ad3f55cf90efc.myshopify.com) already exists.",
++     "hint": undefined,
++     "position": undefined,
++     "internalPosition": undefined,
++     "internalQuery": undefined,
++     "where": undefined,
++     "schema": "public",
++     "table": "shops",
++     "column": undefined,
++     "dataType": undefined,
++     "constraint": "shops_shop_domain_key",
++     "file": "nbtinsert.c",
++     "line": "666",
++     "routine": "_bt_check_unique",
+    },
+  }
+
+ ❯ test/managed-installation.test.ts:86:27
+     84|     expect(waiting).toBe(true);
+     85|     await winner.query('COMMIT');
+     86|     expect(await settled).toMatchObject({ value: { outcome:'REUSED', s…
+       |                           ^
+     87|     expect((await core.tenants.getManagedInstallationState(provider.sh…
+     88|   } finally {
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 2 passed (3)
+   Start at  12:51:16
+   Duration  866ms (transform 45%, import 38%, tests 17%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-023-
+  │ worktree/packages/database
+

@@ -1,0 +1,13 @@
+{
+  "node": "v24.21.0",
+  "nodeExecutableSha256": "7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c",
+  "platform": "linux",
+  "arch": "x64",
+  "packages": 66,
+  "files": 9030,
+  "bytes": 1503528,
+  "sha256": "fdce5256b08539f09c180955204c442931c5ddf8de35555daf2e04df7ec34134",
+  "providerRequests": 0,
+  "dependencyCodeExecuted": false,
+  "source": "exact portable runtime built by full-root-r4; complete nested lookup bytes"
+}

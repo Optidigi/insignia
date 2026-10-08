@@ -1,0 +1,67 @@
+{
+  "host-controls-r11.log": {
+    "rawSha256": "cfc22377884766551d5cbffc23aa64efadfb97031919da5b50087ffbfb37ba30",
+    "repositorySha256": "cfc22377884766551d5cbffc23aa64efadfb97031919da5b50087ffbfb37ba30",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "secrets-r11-final.log": {
+    "rawSha256": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "repositorySha256": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "worker-loss-before-image-red.log": {
+    "rawSha256": "4875d1313881a08442d47b63235a1f404c30199b825d1cd319192c0d9b4d271c",
+    "repositorySha256": "4875d1313881a08442d47b63235a1f404c30199b825d1cd319192c0d9b4d271c",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "host-controls-r11-final.log": {
+    "rawSha256": "32c8452b2550fdddb61fcfb7e87653ce73c2ace262182dad8b12d3328019ea26",
+    "repositorySha256": "32c8452b2550fdddb61fcfb7e87653ce73c2ace262182dad8b12d3328019ea26",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "package-decoder-r11.log": {
+    "rawSha256": "97a8c1173914cd8bc26518cae1c3eb19fe26fac486837110f64378bea4830b18",
+    "repositorySha256": "97a8c1173914cd8bc26518cae1c3eb19fe26fac486837110f64378bea4830b18",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "style-r11-final.log": {
+    "rawSha256": "681a4a2b7bc33a4719b5c21387d502b8bb8c45a9964c2b35ee3288fc0d465ddb",
+    "repositorySha256": "331754b6cededd0b016f163a22f343faf7c78cdca5c007cf7424ef80ad0ade0d",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "post-pass-worker-first-green.log": {
+    "rawSha256": "fcc476c1d8062bab18529f978d0bd0678748921da6a47060b756222ef8fc055e",
+    "repositorySha256": "fcc476c1d8062bab18529f978d0bd0678748921da6a47060b756222ef8fc055e",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "worker-loss-before-image-green.log": {
+    "rawSha256": "546ce5deaa44699ace3e00f2d387621e2eb63c64ac34afaf3f1c5dd5219563ec",
+    "repositorySha256": "546ce5deaa44699ace3e00f2d387621e2eb63c64ac34afaf3f1c5dd5219563ec",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "post-pass-worker-red.log": {
+    "rawSha256": "c19eda0241c1d2697cc91da53c2319938c600845381ea0262b6cedd9d33025ca",
+    "repositorySha256": "c19eda0241c1d2697cc91da53c2319938c600845381ea0262b6cedd9d33025ca",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "secrets-r11.log": {
+    "rawSha256": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "repositorySha256": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "worker-loss-before-image-r11-final.log": {
+    "rawSha256": "546ce5deaa44699ace3e00f2d387621e2eb63c64ac34afaf3f1c5dd5219563ec",
+    "repositorySha256": "546ce5deaa44699ace3e00f2d387621e2eb63c64ac34afaf3f1c5dd5219563ec",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "worker-isolation-root-red.log": {
+    "rawSha256": "454ba373f1e34a2434f0a217efb53c86fb61e7c78bbccad7183261e9f36ada45",
+    "repositorySha256": "454ba373f1e34a2434f0a217efb53c86fb61e7c78bbccad7183261e9f36ada45",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "style-r11.log": {
+    "rawSha256": "53ef29345e54fce4f86b94527956959df22042a99eb67c9968b9564c29220f2e",
+    "repositorySha256": "382e8edf6c9731e1593cd645fd288afa4351181e8f4a55e9967553118feae3f0",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  }
+}

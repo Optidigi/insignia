@@ -1,0 +1,19 @@
+{"level":30,"time":1791464409032,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"96a0a50a-852c-444b-b82d-ccf8f52bda22","statusClass":"success"}
+{"level":30,"time":1791464409055,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"96a0a50a-852c-444b-b82d-ccf8f52bda22","statusClass":"success"}
+{"level":30,"time":1791464409067,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_CREATED_SUCCEEDED","correlationId":"96a0a50a-852c-444b-b82d-ccf8f52bda22","statusClass":"success"}
+{"level":30,"time":1791464409067,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"96a0a50a-852c-444b-b82d-ccf8f52bda22","statusClass":"success"}
+{"level":30,"time":1791464409067,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"96a0a50a-852c-444b-b82d-ccf8f52bda22","statusClass":"success"}
+{"level":30,"time":1791464409074,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"a427e3fa-c11d-4fc6-9885-5d419a85fb02","statusClass":"success"}
+{"level":30,"time":1791464409075,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"a427e3fa-c11d-4fc6-9885-5d419a85fb02","statusClass":"success"}
+{"level":30,"time":1791464409079,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"a427e3fa-c11d-4fc6-9885-5d419a85fb02","statusClass":"success"}
+{"level":30,"time":1791464409079,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"a427e3fa-c11d-4fc6-9885-5d419a85fb02","statusClass":"success"}
+{"level":30,"time":1791464409079,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"a427e3fa-c11d-4fc6-9885-5d419a85fb02","statusClass":"success"}
+✔ production first verified staff session bootstraps and searches, repeat reuses provider identity (243.801087ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 583.726209

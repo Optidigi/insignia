@@ -1,0 +1,11 @@
+CHANGES_REQUESTED — security/standards review bound only to head `a33ed0757c55f36368a6269c72222200e569c4ee`. Exact tree, effective merge-base and clean working tree verified.
+
+**P1 — Saved lifecycle PASS outlives the qualified worker.** [host-operator.py:326](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py:326) accepts `lifecycle-settled.json` and rechecks only the candidate Compose digest. It never rechecks worker existence, executable identity, readiness, database routing or privileges. `prestate()` inspects web/database/legacy/Traefik, excluding the worker.
+
+Concrete counterexample: lifecycle qualifies the reviewed worker; backup completes; the worker then exits while Compose remains unchanged. `provision()` accepts the historical PASS, reserves provisioning at line373 and executes schema/role writes at line381. Deployment likewise accepts that receipt. This violates [production-plan step0](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/M5-023-PRODUCTION-PLAN.md:5): missing/unqualified processor prerequisites must stop subsequent host mutation.
+
+Smallest correction: extract repeatable read-only qualification from lifecycle receipt creation and require current qualification before subsequent mutation reservations and the deployment image-reference write. Add post-PASS worker disappearance and privilege-loss controls requiring zero mutation reservations. No worker deployment or restart authority is implied.
+
+I reassessed r1–r9 reports/settings/responses, root objections, controls and interacting application/operator source. Their specific corrections remain present; the supplied controls omit this transition.
+
+This finding follows static inspection; I executed no reproduction, tests, builds, imports or external operations. Recorded root/PG/stress/operator results are supplied execution evidence. Exact-head CI remains unverified here; the gate remains unfrozen and live processor readiness unproven. This is neither principal approval nor live readiness approval.

@@ -1,0 +1,19 @@
+{
+  "sourceBaseline": "a14e835a4448579bd85ce252531b4f0d070dd390",
+  "applicationChanged": false,
+  "buildChanged": false,
+  "providerChanged": false,
+  "migrationChanged": false,
+  "rolesChanged": false,
+  "changedMappedPaths": [
+    "docs/delivery/evidence/m5-023/operators/host-operator-controls.py",
+    "docs/delivery/evidence/m5-023/operators/host-operator.py"
+  ],
+  "hostOperatorSha256": "3677d4fefcf15272368271c8f206cc1097c6fd386e93abd6bf4126d08e27456a",
+  "archiveSha256": "ec9e7e9c91c7d7344346c5f859b91b2d18f272faa205320dfe8f8564629ed1c0",
+  "workerInventorySha256": "2a05e47acebb36bc1628fb2d36c9cb065cd21bdd99d1462c1a9d33e011886f26",
+  "hostMethods": 11,
+  "hostVariants": 36,
+  "composeDriftRejectsBeforeExternalCommandsForAllSevenActions": true,
+  "liveAccessStarted": false
+}

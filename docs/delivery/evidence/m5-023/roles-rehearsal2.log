@@ -1,0 +1,45 @@
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+error: duplicate key value violates unique constraint "shops_shopify_shop_id_key"
+    at /home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/pg@8.23.0/node_modules/pg/lib/client.js:694:17
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async PostgresConnection.executeQuery (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/dialect/postgres/postgres-driver.js:113:28)
+    at async file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:39:24
+    at async #run (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/single-connection-provider.js:24:16)
+    at async DefaultQueryExecutor.executeQuery (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:38:28)
+    at async InsertQueryBuilder.execute (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-builder/insert-query-builder.js:1101:24)
+    at async Object.createShop (file:///home/serveradmin/insignia-m5-023-worktree/packages/database/dist/repositories/tenant.js:229:13)
+    at async file:///home/serveradmin/insignia-m5-023-worktree/packages/database/dist/durable-core.js:150:28
+    at async file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+    at PostgresConnection.executeQuery (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/dialect/postgres/postgres-driver.js:126:41)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:39:24
+    at async #run (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/single-connection-provider.js:24:16)
+    at async DefaultQueryExecutor.executeQuery (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:38:28)
+    at async InsertQueryBuilder.execute (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-builder/insert-query-builder.js:1101:24)
+    at async Object.createShop (file:///home/serveradmin/insignia-m5-023-worktree/packages/database/dist/repositories/tenant.js:229:13)
+    at async file:///home/serveradmin/insignia-m5-023-worktree/packages/database/dist/durable-core.js:150:28
+    at async file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+    at async DefaultConnectionProvider.provideConnection (file:///home/serveradmin/insignia-m5-023-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/default-connection-provider.js:10:20) {
+  length: 225,
+  severity: 'ERROR',
+  code: '23505',
+  detail: 'Key (shopify_shop_id)=(555) already exists.',
+  hint: undefined,
+  position: undefined,
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: 'public',
+  table: 'shops',
+  column: undefined,
+  dataType: undefined,
+  constraint: 'shops_shopify_shop_id_key',
+  file: 'nbtinsert.c',
+  line: '666',
+  routine: '_bt_check_unique'
+}
+
+Node.js v24.21.0

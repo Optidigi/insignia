@@ -1,0 +1,1610 @@
+$ corepack pnpm check:style && corepack pnpm build && corepack pnpm test:unit && corepack pnpm test:m5-operator && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && python3 -B scripts/boundaries/check-cargo-workspace.py && corepack pnpm check:rust && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 python3 -B scripts/m4-002/replay-production-vectors.py && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/m4-003/replay-public-config.mjs && corepack pnpm test:browser && python3 -B spikes/m0-007/scripts/check-history.py && python3 -B spikes/m0-014/scripts/check-live-setup.py && python3 -B scripts/m1-functions/artifact-manifest.py
+$ biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002 scripts/m5-003 scripts/m5-004 scripts/m5-005 scripts/m5-009 scripts/m5-010 scripts/m5-011 scripts/m5-012 scripts/m5-013 scripts/m5-015 scripts/m5-015r scripts/m5-016 scripts/m5-017
+apps/web/src/server/admin/production.ts:82:57 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+
+    80 │   const appOrigin = required(env, 'APP_URL');
+    81 │   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+  > 82 │   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
+       │                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    83 │   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+    84 │   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+
+  i Unsafe fix: Use a template literal.
+
+     80  80 │     const appOrigin = required(env, 'APP_URL');
+     81  81 │     const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+     82     │ - ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·'gid://shopify/App/'·+·appId·:·null;
+         82 │ + ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·`gid://shopify/App/${appId}`·:·null;
+     83  83 │     const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+     84  84 │     const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+
+
+apps/web/src/server/admin/production.ts:105:54 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+
+    103 │       installationGeneration: actor.installationGeneration,
+    104 │     });
+  > 105 │     if (!scope || scope.shopDomain !== actor.shop || 'gid://shopify/Shop/' + scope.shopifyShopId !== actor.shopId)
+        │                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    106 │       throw new Error('Admin installation changed');
+    107 │   }
+
+  i Unsafe fix: Use a template literal.
+
+    103 103 │         installationGeneration: actor.installationGeneration,
+    104 104 │       });
+    105     │ - ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·'gid://shopify/Shop/'·+·scope.shopifyShopId·!==·actor.shopId)
+        105 │ + ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·`gid://shopify/Shop/${scope.shopifyShopId}`·!==·actor.shopId)
+    106 106 │         throw new Error('Admin installation changed');
+    107 107 │     }
+
+
+scripts/m5-017/qualification.mjs:301:9 lint/complexity/noUselessCatch  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
+
+  i The catch clause that only rethrows the original error is useless.
+
+    299 │         save();
+    300 │       } catch (error) {
+  > 301 │         throw error;
+        │         ^^^^^^^^^^^^
+    302 │       }
+    303 │       requireValue((await owner()).status === 'DRAFT', 'initial_draft');
+
+  i An unnecessary catch clause can be confusing.
+
+  i Unsafe fix: Remove the try/catch clause.
+
+    292 292 │       if (phase === 'start') {
+    293 293 │         op.mode('create');
+    294     │ - ······try·{
+    295 294 │           const s = op.state();
+    296 295 │           evidence.create = (
+    ······· │
+    298 297 │           ).productCreate.product;
+    299 298 │           save();
+    300     │ - ······}·catch·(error)·{
+    301     │ - ········throw·error;
+    302     │ - ······}
+    303 299 │         requireValue((await owner()).status === 'DRAFT', 'initial_draft');
+    304 300 │         evidence.draft = await snapshot('draft');
+
+
+apps/web/src/server/admin/auth.ts:71:48 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    69 │     let identity: VerifiedAdminIdentity;
+    70 │     try {
+  > 71 │       identity = await port.verifySessionToken(match[1]!);
+       │                                                ^^^^^^^^^
+    72 │     } catch {
+    73 │       return null;
+
+
+apps/web/src/server/admin/auth.ts:86:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    84 │     let grant: OnlineAdminGrant;
+    85 │     try {
+  > 86 │       grant = await port.exchangeOnlineGrant(match[1]!, identity);
+       │                                              ^^^^^^^^^
+    87 │     } catch (error) {
+    88 │       diagnostic(error instanceof AdminOnlineIdentityError ? error.stage : 'ONLINE_EXCHANGE_FAILED');
+
+
+apps/web/src/server/admin/preview.ts:109:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    107 │             .then((found) => (found ? project(found) : null)),
+    108 │         );
+  > 109 │       const result = await map.get(id)!;
+        │                            ^^^^^^^^^^^^
+    110 │       await active(actor);
+    111 │       return result;
+
+
+apps/web/src/server/admin/preview.ts:116:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    114 │       await active(actor);
+    115 │       if (!currencies.has(actor)) currencies.set(actor, reader(actor).shopCurrency());
+  > 116 │       const result = await currencies.get(actor)!;
+        │                            ^^^^^^^^^^^^^^^^^^^^^^
+    117 │       await active(actor);
+    118 │       return result;
+
+
+apps/web/src/server/admin/preview.ts:163:34 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    161 │                   shopId: randomUUID(),
+    162 │                   shopDomain: shop,
+  > 163 │                   shopifyShopId: shopId.split('/').at(-1)!,
+        │                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+    164 │                   externalInstallationId: provider.installationId,
+    165 │                 }),
+
+
+apps/web/src/server/admin/preview.ts:223:26 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    221 │                   installationGeneration: bound.installationGeneration,
+    222 │                   shopifyShopId: shopId,
+  > 223 │                   appId: env.INSIGNIA_M5_002_APP_RESOURCE!,
+        │                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    224 │                 },
+    225 │                 {
+
+
+apps/web/src/server/admin/preview.ts:227:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    225 │                 {
+    226 │                   appKey: client,
+  > 227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+        │                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+    229 │                 },
+
+
+apps/web/src/server/admin/preview.ts:228:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    226 │                   appKey: client,
+    227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+  > 228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+        │                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    229 │                 },
+    230 │               );
+
+
+apps/web/src/server/merchant-config.ts:174:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    172 │         option.allowedValueIds.flatMap((id) => {
+    173 │           const label = oldLabels?.[id];
+  > 174 │           return label ? [[values.get(id)!, label]] : [];
+        │                            ^^^^^^^^^^^^^^^
+    175 │         }),
+    176 │       );
+
+
+apps/web/src/server/merchant-config.ts:177:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    175 │         }),
+    176 │       );
+  > 177 │       return Object.keys(remapped).length ? [[options.get(option.id)!, remapped]] : [];
+        │                                               ^^^^^^^^^^^^^^^^^^^^^^^
+    178 │     }),
+    179 │   );
+
+
+apps/web/src/server/merchant-config.ts:183:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    181 │     ...source,
+    182 │     labels,
+  > 183 │     methods: source.methods.map((item) => ({ id: methods.get(item.id)! })),
+        │                                                  ^^^^^^^^^^^^^^^^^^^^^
+    184 │     placements: source.placements.map((item) => ({
+    185 │       ...item,
+
+
+apps/web/src/server/merchant-config.ts:186:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    184 │     placements: source.placements.map((item) => ({
+    185 │       ...item,
+  > 186 │       id: placements.get(item.id)!,
+        │           ^^^^^^^^^^^^^^^^^^^^^^^^
+    187 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+    188 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+
+
+apps/web/src/server/merchant-config.ts:187:59 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    185 │       ...item,
+    186 │       id: placements.get(item.id)!,
+  > 187 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+        │                                                           ^^^^^^^^^^^^^^^^
+    188 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+    189 │     })),
+
+
+apps/web/src/server/merchant-config.ts:188:55 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    186 │       id: placements.get(item.id)!,
+    187 │       allowedMethodIds: item.allowedMethodIds.map((id) => methods.get(id)!),
+  > 188 │       allowedStepIds: item.allowedStepIds.map((id) => steps.get(id)!),
+        │                                                       ^^^^^^^^^^^^^^
+    189 │     })),
+    190 │     productionOptions: source.productionOptions.map((item) => ({
+
+
+apps/web/src/server/merchant-config.ts:191:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    189 │     })),
+    190 │     productionOptions: source.productionOptions.map((item) => ({
+  > 191 │       id: options.get(item.id)!,
+        │           ^^^^^^^^^^^^^^^^^^^^^
+    192 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+    193 │     })),
+
+
+apps/web/src/server/merchant-config.ts:192:57 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    190 │     productionOptions: source.productionOptions.map((item) => ({
+    191 │       id: options.get(item.id)!,
+  > 192 │       allowedValueIds: item.allowedValueIds.map((id) => values.get(id)!),
+        │                                                         ^^^^^^^^^^^^^^^
+    193 │     })),
+    194 │     pricingRules: source.pricingRules.map((rule) => ({
+
+
+apps/web/src/server/merchant-config.ts:196:11 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+
+    194 │     pricingRules: source.pricingRules.map((rule) => ({
+    195 │       ...rule,
+  > 196 │       id: prices.get(rule.id)!,
+        │           ^^^^^^^^^^^^^^^^^^^^
+    197 │       scope:
+    198 │         rule.scope.kind === 'general'
+
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 191.
+Checked 297 files in 600ms. No fixes applied.
+Found 89 warnings.
+Found 122 infos.
+$ corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build
+packages/cart-authorization build$ tsc -p tsconfig.json
+packages/contracts build$ tsc -p tsconfig.json
+packages/domain build$ tsc -p tsconfig.json
+packages/observability build$ tsc -p tsconfig.json
+packages/contracts build: Done
+packages/visualizer build$ tsc -p tsconfig.json
+packages/domain build: Done
+packages/application build$ tsc -p tsconfig.json
+packages/observability build: Done
+packages/cart-authorization build: Done
+packages/visualizer build: Done
+packages/application build: Done
+packages/shopify build$ tsc -p tsconfig.json
+packages/shopify build: Done
+packages/database build$ tsc -p tsconfig.json
+packages/database build: Done
+apps/storefront build$ tsc --noEmit && vite build && node scripts/copy-theme-asset.mjs
+apps/worker build$ tsc -p tsconfig.json
+apps/worker build: Done
+apps/web build$ astro check && astro build
+apps/storefront build: vite v8.3.1 building client environment for production...
+apps/storefront build: transforming...
+apps/storefront build: ✓ 5 modules transformed.
+apps/storefront build: rendering chunks...
+apps/storefront build: computing gzip size...
+apps/storefront build: dist/insignia-storefront.js  14.03 kB │ gzip: 5.93 kB
+apps/storefront build:
+apps/storefront build: ✓ built in 26ms
+apps/storefront build: Done
+apps/web build: 17:21:16 [@astrojs/node] Enabling sessions with filesystem storage
+apps/web build: 17:21:16 [types] Generated 67ms
+apps/web build: 17:21:16 [check] Getting diagnostics for Astro files in /home/serveradmin/insignia-m5-023-worktree/apps/web...
+apps/web build: Result (29 files):
+apps/web build: - 0 errors
+apps/web build: - 0 warnings
+apps/web build: - 0 hints
+apps/web build:
+apps/web build: 17:21:21 [@astrojs/node] Enabling sessions with filesystem storage
+apps/web build: 17:21:21 [types] Generated 67ms
+apps/web build: 17:21:21 [build] output: "server"
+apps/web build: 17:21:21 [build] mode: "server"
+apps/web build: 17:21:21 [build] directory: /home/serveradmin/insignia-m5-023-worktree/apps/web/dist/
+apps/web build: 17:21:21 [build] adapter: @astrojs/node
+apps/web build: 17:21:21 [build] Collecting build info...
+apps/web build: 17:21:21 [build] ✓ Completed in 112ms.
+apps/web build: 17:21:21 [build] Building server entrypoints...
+apps/web build: 17:21:22 [vite] ✓ built in 213ms
+apps/web build: 17:21:23 [vite] ✓ built in 1.60s
+apps/web build: 17:21:24 [vite] ✓ built in 216ms
+apps/web build: 17:21:24 [build] Rearranging server assets...
+apps/web build: 17:21:24 [build] ✓ Completed in 2.10s.
+apps/web build: 17:21:24 [build] Server built in 2.21s
+apps/web build: 17:21:24 [build] Complete!
+apps/web build: Done
+$ corepack pnpm --filter @insignia/domain test && corepack pnpm --filter @insignia/contracts test && corepack pnpm --filter @insignia/visualizer test && corepack pnpm --filter @insignia/cart-authorization test && corepack pnpm --filter @insignia/application test && corepack pnpm --filter @insignia/shopify test && corepack pnpm --filter @insignia/observability test && corepack pnpm --filter @insignia/worker test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/domain
+
+
+ Test Files  5 passed (5)
+      Tests  26 passed (26)
+   Start at  17:21:24
+   Duration  451ms (transform 51%, tests 30%, import 15%, worker 4%)
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/contracts
+
+
+ Test Files  2 passed (2)
+      Tests  6 passed (6)
+   Start at  17:21:25
+   Duration  263ms (import 56%, transform 30%, tests 11%, worker 3%)
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/visualizer
+
+
+ Test Files  2 passed (2)
+      Tests  9 passed (9)
+   Start at  17:21:26
+   Duration  224ms (transform 64%, import 17%, tests 13%, worker 5%)
+
+$ node --experimental-strip-types --test test/*.test.ts
+✔ hard subset bounds and untrusted ordinary-line hints (2.44838ms)
+✔ 33 buckets are refused before the signer is called (0.460953ms)
+✔ every admitted code matches the versioned matrix and unknown/digital values reject (14.640526ms)
+✔ production-generated carriers decode, conserve and verify for every complete set (6.433169ms)
+✔ PostgreSQL-persisted negative adjustment has exact signed quote and member economics (1.147552ms)
+✔ versioned 33-bucket vector rejects before any signing call (0.420695ms)
+✔ production decoder and signature bytes preserve the independent v2 wire literal (5.122156ms)
+✔ injected synthetic Ed25519 signer covers the complete set and three-day key window (2.495539ms)
+✔ invalid window or set refuses signing and noncanonical carrier refuses decoding (0.524545ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 9
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 181.223712
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/application
+
+
+ Test Files  16 passed (16)
+      Tests  201 passed (201)
+   Start at  17:21:27
+   Duration  1.58s (transform 43%, import 33%, tests 21%, worker 3%)
+
+    Isolate  16 workers spawned · ~123ms startup each (spawn + environment, per file)
+             at least ~533ms faster with isolate: false — reuses workers across files instead of one per file
+
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/shopify
+
+
+ Test Files  14 passed (14)
+      Tests  334 passed (334)
+   Start at  17:21:29
+   Duration  2.13s (tests 63%, transform 20%, import 15%, worker 2%)
+
+    Isolate  14 workers spawned · ~126ms startup each (spawn + environment, per file)
+             at least ~460ms faster with isolate: false — reuses workers across files instead of one per file
+
+$ node --test test/*.test.mjs
+✔ structured runtime events cannot emit arbitrary payload or credential fields (4.897502ms)
+✔ metric labels are fixed outcomes and never contain tenant or delivery IDs (2.618757ms)
+✔ admin auth diagnostics emit only a bounded stage and independent correlation, never identity or secrets (2.122171ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 132.70899
+$ node --test test/*.test.mjs
+✔ current and previous synthetic wrapping keys remain available by ID (2.45136ms)
+✔ PostgreSQL claim retries the old refresh token after a lost response and fences stale replacement (110.603869ms)
+✔ diagnostic decodes and derives synthetic pixels without claiming durable readiness (12.536072ms)
+✔ liveness stays separate from durable readiness; loopback metrics expose bounded outcomes (59.250945ms)
+{"level":30,"time":1791480092707,"event":"worker_started"}
+{"level":30,"time":1791480092716,"event":"webhook_enqueued","inboxId":"8e829040-9b15-4c75-a07c-c64a977a7e2a"}
+{"level":50,"time":1791480092727,"event":"webhook_process_failed","inboxId":"8e829040-9b15-4c75-a07c-c64a977a7e2a","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791480096727,"event":"webhook_process_ok","inboxId":"8e829040-9b15-4c75-a07c-c64a977a7e2a","attempt":1}
+{"level":30,"time":1791480096796,"event":"worker_stopped"}
+{"level":30,"time":1791480096816,"event":"worker_started"}
+{"level":30,"time":1791480096832,"event":"worker_stopped"}
+✔ PostgreSQL pg-boss starts, retries, settles and replays after restart (4173.336677ms)
+{"level":30,"time":1791480096881,"event":"worker_started"}
+{"level":30,"time":1791480096885,"event":"webhook_enqueued","inboxId":"a7f081c7-61d7-4a04-bc27-30061b7f8f73"}
+{"level":50,"time":1791480096904,"event":"webhook_process_failed","inboxId":"a7f081c7-61d7-4a04-bc27-30061b7f8f73","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791480100905,"event":"webhook_process_ok","inboxId":"a7f081c7-61d7-4a04-bc27-30061b7f8f73","attempt":1}
+{"level":30,"time":1791480100976,"event":"worker_stopped"}
+✔ pg-boss retry after committed uninstall retains one deactivation and one inbox fact (4143.021515ms)
+✔ process starts queues and workers before readiness; stop makes readiness unavailable (44.414569ms)
+✔ startup failure closes a started queue without reporting readiness (1.489ms)
+{"level":30,"time":1791480092748,"event":"worker_started"}
+{"level":30,"time":1791480092752,"event":"worker_started"}
+{"level":30,"time":1791480092753,"event":"worker_started"}
+{"level":30,"time":1791480092756,"event":"worker_started"}
+{"level":30,"time":1791480092757,"event":"worker_started"}
+{"level":30,"time":1791480092758,"event":"worker_started"}
+✔ enqueue confirms exact inbox identity, including completed job replay (7.115631ms)
+✔ null send without same persisted job is retryable, never an acknowledgement (1.540745ms)
+✔ workers pass IDs only to injected durable handlers; failed attempt retries safely (2.903502ms)
+✔ invalid job body and identity fail closed without invoking application (0.851407ms)
+✔ enabled worker refuses missing credential-key configuration and stays not ready (0.707273ms)
+✔ refresh claim contention is retried rather than silently completing its job (1.216102ms)
+{"level":30,"time":1791480092749,"event":"webhook_enqueued","inboxId":"13dafb1a-2268-48c2-bcc8-1ea4c09b3f88"}
+{"level":30,"time":1791480092750,"event":"worker_stopped"}
+{"level":50,"time":1791480092754,"event":"webhook_process_failed","inboxId":"1c751b4e-25b9-429d-9470-5afd6c2b6339","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791480092754,"event":"webhook_process_ok","inboxId":"1c751b4e-25b9-429d-9470-5afd6c2b6339","attempt":1}
+{"level":30,"time":1791480092754,"event":"refresh_process_ok","shopId":"604866d0-06c8-4b69-a0ba-41dfe1a4c500","attempt":0}
+{"level":30,"time":1791480092755,"event":"worker_stopped"}
+{"level":50,"time":1791480092756,"event":"webhook_process_failed","inboxId":"cd2acee5-52f9-48e0-9a3d-b6db97ed3dae","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791480092757,"event":"worker_stopped"}
+{"level":50,"time":1791480092758,"event":"refresh_process_failed","errorClass":"RefreshError","attempt":0}
+{"level":30,"time":1791480092758,"event":"worker_stopped"}
+✔ configured worker serves liveness and durable readiness, then closes on SIGTERM (690.810776ms)
+ℹ tests 15
+ℹ suites 0
+ℹ pass 15
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 8930.001046
+$ node --test scripts/m5-002/read-register.test.mjs scripts/m5-002/built-runtime.test.mjs && node --test scripts/m5-004/operator.test.mjs scripts/m5-009/operator.test.mjs scripts/m5-010/operator.test.mjs scripts/m5-010/binding.test.mjs scripts/m5-010/native-actions.test.mjs && node --test scripts/m5-005/diagnostic.test.mjs && node --test scripts/m5-011/operator.test.mjs scripts/m5-011/binding.test.mjs && node --test scripts/m5-012/operator.test.mjs scripts/m5-012/binding.test.mjs && node --test scripts/m5-013/operator.test.mjs scripts/m5-013/binding.test.mjs scripts/m5-015/*.test.mjs scripts/m5-015r/*.test.mjs && node --test scripts/m5-016/*.test.mjs && node --test scripts/m5-017/*.test.mjs
+✔ complete built server reproduces CLI development-mode CSP rejection (251.937535ms)
+✔ actual launcher runtime preparation admits built hydration without widening CSP (210.351167ms)
+✔ actual launcher register reserves durably before synthetic fetch, serializes and denies extra attempts (77.26892ms)
+✔ exact SDK online exchange is counted per attempt; mutations, wrong targets and other token/event routes never send (1.656809ms)
+✔ ambiguous or inflated history stops before any send (0.557492ms)
+✔ one-shot loss applies only after a committed local save and never changes transport counts (1.576883ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 534.368766
+✔ actual HTTP attempts are durably reserved before dispatch (11.282685ms)
+✔ captured M5-004 empty grants stop the actual public workflow before any fixture write (6.639047ms)
+✔ fixed targets/documents/variables reject unrelated writes and extra payload before actual HTTP (3.94489ms)
+✔ normal reserves cannot consume final 12 reads/3 updates; all attempts count, one lock and one create (198.898204ms)
+✔ naturally lost mutation response stops all later writes and cleanup across reopen; no automatic retry (2.583203ms)
+✔ real routing identity, nine retained grants and complete empty publication history are mandatory (2.4344ms)
+✔ auth exact app/route counts3 and never persists synthetic secret or returned token (1.819666ms)
+✔ missing/corrupt history never reinitializes or sends (0.709055ms)
+✔ offline gate prevents even credential loading (0.305187ms)
+✔ full qualification reuses unchanged actual status/catalog adapters, fresh-process hold reload and drift refusal (567.655115ms)
+✔ complete workflow stops on changed installation; no manufacture or unsafe cleanup (25.856553ms)
+✔ complete workflow stops on unexpected exposure; no manufacture or unsafe cleanup (24.650441ms)
+✔ complete workflow stops on visibility mismatch; no manufacture or unsafe cleanup (161.925804ms)
+✔ complete workflow stops on natural lost response; no manufacture or unsafe cleanup (103.769707ms)
+✔ complete workflow stops on metadata drift; no manufacture or unsafe cleanup (26.123299ms)
+✔ complete workflow stops on malformed success; no manufacture or unsafe cleanup (102.40497ms)
+✔ live register is canonical; synthetic initialization rejects unsafe directories and lost history (0.649177ms)
+✔ malformed/unsuccessful mutation responses stay unknown; only valid explicit rejection permits finalization (5.793509ms)
+✔ lock cannot release while late HTTP/body work can still persist history (1.076046ms)
+✔ acknowledged fixture metadata baseline rejects added tags or changed creation identity (1.189371ms)
+✔ actual adapter HTTP/GraphQL outcomes survive bounded transport and sanitized response replay (12.234179ms)
+✔ foreign live root and stale register binding cannot reach credential loading (20.279533ms)
+✔ gate rejects incomplete CI and unbound review receipts even when every supplied workflow is green (27.519122ms)
+✔ complete source/build/review/CI gate accepts bound receipts and rejects omissions, stale refs or altered evidence (90.71769ms)
+✔ actual adapter user-error failure remains identical when replayed from sanitized mutation evidence (4.425339ms)
+✔ malformed success userErrors cannot acknowledge a status mutation or allow cleanup (4.382777ms)
+✔ actual availability missing/oversized bodies keep direct/wrapped/replayed shape errors (5.22494ms)
+✔ catalog receives original bounded UTF8 bytes and provenance hashes the bytes, not replacement text (2.449478ms)
+✔ failed catalog preserves actual normalized results before STOP (280.712773ms)
+✔ failed drift preserves actual normalized results before STOP (469.570473ms)
+✔ availability preserves its lossy UTF8 semantics while catalog rejects the same original bad bytes (2.197173ms)
+✔ reopening a finished run preserves exact normalized evidence and refuses before credential loading (481.31623ms)
+✔ catalog successful non200 keeps direct/wrapped/replayed body semantics (1.952938ms)
+✔ current product capability accepts write_products without the obsolete nine grants (1.869831ms)
+✔ legacy exact-nine guard stays unchanged while successor records current additional grants (3.62695ms)
+✔ successor rejects absent capability, malformed grants and every wrong routing identity (0.89483ms)
+✔ successor rejects the legacy canonical live directory before writing and cannot reopen legacy history (1.069019ms)
+✔ successor documents, request ceilings, ownership, settlement and shared matrix stay source-identical (10.7941ms)
+✔ fresh complete successor workflow uses real adapters, current product grants, persisted holds and unchanged matrix (976.138156ms)
+✔ public successor workflow stops on missing capability without unsafe cleanup or retries (2.251258ms)
+✔ public successor workflow stops on wrong identity without unsafe cleanup or retries (1.847136ms)
+✔ public successor workflow stops on lost status acknowledgement without unsafe cleanup or retries (90.046105ms)
+✔ successor live entry refuses incomplete gate before the protected credential route (36.07785ms)
+✔ successor gate binds its own tree, directory, exact source and independent review/CI receipts (114.05514ms)
+✔ captured live publication-field denial stops create settlement and never permits status finalization (4.653605ms)
+✔ successor gate binds its own tree, directory, exact source and independent review/CI receipts (123.844202ms)
+✔ native release and two-scope consent are durable one-use operations with dependency and ambiguity stops (6.136983ms)
+✔ native successful sequence closes after exactly one release/request/approval and rejects reset reservation history (3.465153ms)
+✔ 010 requires all publication/product capabilities and permits additional well formed grants (4.239886ms)
+✔ 010 denies normal fresh create until fixed predecessor has been safely resolved (3.238977ms)
+✔ complete absent predecessor lookup permits one fresh create and retains resolution independently (9.918904ms)
+✔ owned unpublished ARCHIVED predecessor requires exact archived readback before fresh create (5.759093ms)
+✔ owned unpublished DRAFT predecessor requires exact archived readback before fresh create (5.613904ms)
+✔ owned unpublished ACTIVE predecessor requires exact archived readback before fresh create (8.123914ms)
+✔ owned unpublished UNLISTED predecessor requires exact archived readback before fresh create (3.790463ms)
+✔ predecessor multiple stops without any mutation or second lookup (1.832974ms)
+✔ predecessor partial next stops without any mutation or second lookup (1.536117ms)
+✔ predecessor partial previous stops without any mutation or second lookup (1.74843ms)
+✔ predecessor missing page info stops without any mutation or second lookup (1.551496ms)
+✔ predecessor missing nodes stops without any mutation or second lookup (1.352772ms)
+✔ predecessor invalid product id stops without any mutation or second lookup (1.511653ms)
+✔ predecessor wrong type stops without any mutation or second lookup (1.345228ms)
+✔ predecessor wrong handle stops without any mutation or second lookup (1.367626ms)
+✔ predecessor wrong title stops without any mutation or second lookup (1.409747ms)
+✔ predecessor wrong tag stops without any mutation or second lookup (1.40794ms)
+✔ predecessor too early creation stops without any mutation or second lookup (1.389443ms)
+✔ predecessor invalid creation stops without any mutation or second lookup (1.374478ms)
+✔ predecessor future creation stops without any mutation or second lookup (1.356423ms)
+✔ predecessor published stops without any mutation or second lookup (1.342796ms)
+✔ predecessor store url stops without any mutation or second lookup (1.352065ms)
+✔ predecessor publication membership stops without any mutation or second lookup (1.449348ms)
+✔ predecessor resource partial stops without any mutation or second lookup (1.510276ms)
+✔ predecessor unpublished partial stops without any mutation or second lookup (1.435091ms)
+✔ predecessor missing publications stops without any mutation or second lookup (1.457142ms)
+✔ predecessor unsupported status stops without any mutation or second lookup (1.605776ms)
+✔ predecessor lookup transport retains stop and never retries or creates (1.63554ms)
+✔ predecessor lookup stream failure retains stop and never retries or creates (2.133785ms)
+✔ predecessor lookup invalid utf8 retains stop and never retries or creates (1.76345ms)
+✔ predecessor lookup http retains stop and never retries or creates (1.338771ms)
+✔ predecessor lookup missing body retains stop and never retries or creates (1.478527ms)
+✔ predecessor lookup invalid json retains stop and never retries or creates (1.515283ms)
+✔ predecessor lookup oversized retains stop and never retries or creates (2.366732ms)
+✔ predecessor lookup graphql permission retains stop and never retries or creates (1.655991ms)
+✔ predecessor lookup partial graphql data retains stop and never retries or creates (1.500511ms)
+✔ predecessor lookup mutation rejected retains stop and never retries or creates (1.5493ms)
+✔ predecessor archive transport retains stop and never retries or creates (1.884726ms)
+✔ predecessor archive stream failure retains stop and never retries or creates (1.939439ms)
+✔ predecessor archive invalid utf8 retains stop and never retries or creates (2.12887ms)
+✔ predecessor archive http retains stop and never retries or creates (1.951447ms)
+✔ predecessor archive missing body retains stop and never retries or creates (1.99936ms)
+✔ predecessor archive invalid json retains stop and never retries or creates (2.138822ms)
+✔ predecessor archive oversized retains stop and never retries or creates (2.879149ms)
+✔ predecessor archive graphql permission retains stop and never retries or creates (2.014969ms)
+✔ predecessor archive partial graphql data retains stop and never retries or creates (2.048864ms)
+✔ predecessor archive mutation rejected retains stop and never retries or creates (2.185652ms)
+✔ predecessor readback transport retains stop and never retries or creates (4.664553ms)
+✔ predecessor readback stream failure retains stop and never retries or creates (2.439215ms)
+✔ predecessor readback invalid utf8 retains stop and never retries or creates (2.371679ms)
+✔ predecessor readback http retains stop and never retries or creates (2.265312ms)
+✔ predecessor readback missing body retains stop and never retries or creates (2.246328ms)
+✔ predecessor readback invalid json retains stop and never retries or creates (2.303125ms)
+✔ predecessor readback oversized retains stop and never retries or creates (3.024588ms)
+✔ predecessor readback graphql permission retains stop and never retries or creates (2.452952ms)
+✔ predecessor readback partial graphql data retains stop and never retries or creates (2.634142ms)
+✔ predecessor readback mutation rejected retains stop and never retries or creates (2.374492ms)
+✔ archive wrong id cannot resolve predecessor (1.942854ms)
+✔ archive wrong metadata cannot resolve predecessor (1.688591ms)
+✔ archive wrong status cannot resolve predecessor (1.694012ms)
+✔ archive exposed cannot resolve predecessor (1.775496ms)
+✔ readback wrong id cannot resolve predecessor (2.419455ms)
+✔ readback wrong metadata cannot resolve predecessor (2.402412ms)
+✔ readback wrong status cannot resolve predecessor (2.356607ms)
+✔ readback exposed cannot resolve predecessor (2.941754ms)
+✔ public qualification resolves absent predecessor then runs unchanged real adapter matrix (526.347311ms)
+✔ public qualification resolves ARCHIVED predecessor then runs unchanged real adapter matrix (461.954365ms)
+✔ public qualification resolves ACTIVE predecessor then runs unchanged real adapter matrix (444.513179ms)
+✔ fixed predecessor search and status-only allowance cannot be caller substituted (1.768302ms)
+✔ reload retains predecessor FOUND, independent identity and one archival reservation (1.79366ms)
+✔ reload retains predecessor ARCHIVE_ACKNOWLEDGED, independent identity and one archival reservation (1.983183ms)
+✔ reload retains predecessor ARCHIVED_VERIFIED, independent identity and one archival reservation (2.281359ms)
+✔ reload retains predecessor STOPPED, independent identity and one archival reservation (1.899114ms)
+✔ reload retains predecessor ABSENT, independent identity and one archival reservation (1.164601ms)
+✔ reopening refuses forged safe resolution or a retained lookup for a substituted marker (1.834239ms)
+✔ serialized archive and readback attempts reserve actual HTTP once and never share the matrix allowance (3.230014ms)
+✔ predecessor lookup consumes normal read ceiling and auth remains bounded at three (67.296463ms)
+✔ public qualification stops on missing read_publications with no blind retry (1.800484ms)
+✔ public qualification stops on wrong identity with no blind retry (1.531017ms)
+✔ public qualification stops on predecessor permission failure with no blind retry (2.165752ms)
+✔ public qualification stops on fresh create unknown with no blind retry (4.293943ms)
+✔ public qualification stops on fresh adapter update unknown with no blind retry (70.178427ms)
+✔ 010 cannot reopen closed-profile histories and synthetic qualification rejects every canonical live directory (30.806973ms)
+✔ archival permission expiring during durable reservation consumes allowance without HTTP or retry (1.982793ms)
+✔ pending predecessor HTTP retains exclusive lock and prevents early operator closure (1.270845ms)
+✔ public qualification stops before fresh create after ACTIVE predecessor archive failure (3.013221ms)
+✔ public qualification stops before fresh create after ACTIVE predecessor readback failure (3.640537ms)
+✔ public qualification stops before fresh create after ARCHIVED predecessor readback failure (2.829939ms)
+ℹ tests 136
+ℹ suites 0
+ℹ pass 136
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2933.425756
+✔ one actual diagnostic sequence keeps empty installation distinct from nonempty token/REST/declarations (10.603847ms)
+✔ partial stream failure is UNKNOWN and cannot allow a later independent read (2.961206ms)
+✔ permission/shape metadata error does not become an empty grant agreement (2.873393ms)
+✔ metadata shape failure still permits the independent REST read (2.063542ms)
+✔ public sequence preserves missing installation/REST scope semantics (2.146565ms)
+✔ public sequence preserves null installation/REST scope semantics (1.873589ms)
+✔ public sequence preserves empty installation/REST scope semantics (1.780234ms)
+✔ public sequence preserves wrong-type installation/REST scope semantics (3.373394ms)
+✔ public sequence preserves duplicates installation/REST scope semantics (1.863005ms)
+✔ public sequence preserves bad-handle installation/REST scope semantics (1.885084ms)
+✔ token missing is recorded separately without preventing identity verification (1.673626ms)
+✔ token null is recorded separately without preventing identity verification (1.5617ms)
+✔ token empty is recorded separately without preventing identity verification (1.504068ms)
+✔ token wrong-type is recorded separately without preventing identity verification (1.39428ms)
+✔ token duplicate is recorded separately without preventing identity verification (1.50381ms)
+✔ token bad-handle is recorded separately without preventing identity verification (1.452167ms)
+✔ wrong shop identity stops after exactly two attempts (1.207459ms)
+✔ wrong domain identity stops after exactly two attempts (0.983727ms)
+✔ wrong app identity stops after exactly two attempts (0.99851ms)
+✔ wrong client identity stops after exactly two attempts (0.933391ms)
+✔ wrong installation identity stops after exactly two attempts (0.918565ms)
+✔ wrong development identity stops after exactly two attempts (0.955597ms)
+✔ explicit mismatched declared identity stops before REST (1.275357ms)
+✔ token-invalid metadata response stops all later work (1.242857ms)
+✔ offline unvalidated metadata is NOT_RUN without live document fallback (1.252895ms)
+✔ unvalidated identity document stops before credential access (0.423259ms)
+✔ actual entrypoint prevents host dispatch (0.943487ms)
+✔ actual entrypoint prevents API dispatch (0.803196ms)
+✔ actual entrypoint prevents method dispatch (0.791583ms)
+✔ actual entrypoint prevents document dispatch (0.900045ms)
+✔ actual entrypoint prevents mutation dispatch (0.920908ms)
+✔ actual entrypoint prevents variables dispatch (0.971902ms)
+✔ fixed REST GET prevents query (1.84715ms)
+✔ fixed REST GET prevents body (1.65848ms)
+✔ canonical history cannot be reopened, exhausted, corrupted or reset after loss (2.514352ms)
+✔ expired credential preparation never dispatches a late HTTP call and retains pending lock (36.634666ms)
+✔ ignored abort and late HTTP completion remain UNKNOWN with no later request or evidence rewrite (1023.7534ms)
+✔ metadata oversized is shape evidence and allows independent REST (5.231769ms)
+✔ metadata invalid-UTF8 is shape evidence and allows independent REST (1.512657ms)
+✔ metadata invalid-JSON is shape evidence and allows independent REST (1.545813ms)
+✔ metadata missing-body is shape evidence and allows independent REST (1.393196ms)
+✔ unusable authentication never authorizes a read (0.708208ms)
+✔ unusable authentication never authorizes a read (0.59804ms)
+✔ unusable authentication never authorizes a read (0.604105ms)
+✔ synthetic entry cannot override its mode to admit a nonsynthetic bearer (0.773302ms)
+✔ pinned documented fields validate both exact documents and reject mutation/extra/unknown syntax (0.645136ms)
+✔ live entrypoint rejects an unbound offline gate before owner credential metadata (26.509075ms)
+✔ complete source/CI/review gate accepts exact receipts and rejects omitted/stale/altered evidence (91.40294ms)
+✔ captured four-surface empty scope result replays through the public sequence without authorizing repair (2.061925ms)
+ℹ tests 49
+ℹ suites 0
+ℹ pass 49
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1492.869573
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (4.079976ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (297.758149ms)
+✔ exact historical ownership accepts the fixed fixture and rejects an alternate target (2.026442ms)
+✔ actual production acquire reports legacy membership conflict; V2 adjudication archives the owned fixture once (42.174428ms)
+✔ ownership stops before any status mutation (2.909875ms)
+✔ incomplete resourcePublications stops before any status mutation (2.751635ms)
+✔ incomplete unpublishedPublications stops before any status mutation (2.792449ms)
+✔ incomplete APP stops before any status mutation (3.705295ms)
+✔ incomplete MARKET stops before any status mutation (4.66544ms)
+✔ incomplete COMPANY_LOCATION stops before any status mutation (5.391703ms)
+✔ incomplete NONE stops before any status mutation (7.733185ms)
+✔ missing read scope stops before any status mutation (1.821525ms)
+✔ initial DRAFT drift stops before any status mutation (6.92487ms)
+✔ cross-partition version drift stops before any status mutation (3.445345ms)
+✔ observed required grant loss in adapter read stops before any status mutation (11.407753ms)
+✔ lost DRAFT acknowledgement never retries or archives (12.217568ms)
+✔ DRAFT readback failure never retries or archives (11.085455ms)
+✔ post-DRAFT ownership drift never retries or archives (13.705907ms)
+✔ post-DRAFT partition drift never retries or archives (14.657968ms)
+✔ different V2 behavior is classified from evidence without assuming staged membership (23.157512ms)
+✔ ambiguous archive has exactly one bounded final observation and no resend (20.335907ms)
+✔ newly appearing DRAFT V2 membership is not described as retained from ACTIVE (18.404186ms)
+✔ acknowledgement/readback version drift stops before any post-DRAFT projection or cleanup (12.52152ms)
+✔ concrete Shopify AppCatalog metadata permits the fixed adjudication (18.533553ms)
+✔ concrete Shopify MarketCatalog metadata permits the fixed adjudication (20.655751ms)
+✔ concrete Shopify CompanyLocationCatalog metadata permits the fixed adjudication (19.644766ms)
+✔ catalog typename and global ID mismatch stops before any status mutation (5.897393ms)
+✔ wrapped production failure preserves {"userError":true} (12.68523ms)
+✔ wrapped production failure preserves {"adapterFailure":"http403"} (6.987969ms)
+✔ wrapped production failure preserves {"adapterFailure":"graphql"} (8.670914ms)
+✔ wrapped production failure preserves {"adapterFailure":"invalidJSON"} (6.980701ms)
+✔ wrapped production failure preserves {"adapterFailure":"missingBody"} (6.253514ms)
+✔ wrapped production failure preserves {"adapterFailure":"badScopes"} (7.018906ms)
+✔ wrapped production failure preserves {"adapterFailure":"badNodes"} (6.744959ms)
+✔ wrapped production failure preserves {"adapterFailure":"nullScope"} (8.122462ms)
+✔ wrapped production failure preserves {"adapterFailure":"nullScopePost"} (10.394351ms)
+✔ wrapped production failure preserves {"adapterFailure":"badHandlePost"} (10.424548ms)
+✔ wrapped production failure preserves {"adapterFailure":"scopeString"} (9.47503ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOutstanding":true} (38.943461ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyOutstanding":true} (39.949674ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveOversizeOutstanding":true} (42.631226ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyAbortOutstanding":true} (38.426532ms)
+✔ outstanding archive transport quarantines all further dispatch {"archiveBodyCancelRejected":true} (19.547686ms)
+✔ durable transport denies alternate target, ACTIVE, extra fields and arbitrary documents before HTTP (0.926807ms)
+✔ quarantined first event zero rejects every subsequent provider dispatch (21.031052ms)
+✔ 100 serial synthetic adjudications preserve the fixed ceilings and stop on each ambiguous write (1543.137719ms)
+ℹ tests 46
+ℹ suites 0
+ℹ pass 46
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2402.576857
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (3.135577ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (268.630511ms)
+✔ alternate product and broad search are refused before HTTP (2.966627ms)
+✔ fixed intent reads clean up one owned DRAFT and close with exact ARCHIVED settlement (26.449772ms)
+✔ already ARCHIVED fixture is observed with no cleanup mutation (9.709071ms)
+✔ complete negative intent surfaces report NO_INTENT_OBSERVED before cleanup (12.325103ms)
+✔ unexpected ownership stops before cleanup (2.973296ms)
+✔ unexpected ACTIVE stops before cleanup (2.744699ms)
+✔ initial version drift stops before cleanup (2.676359ms)
+✔ scope loss stops before cleanup (1.75613ms)
+✔ incomplete includedProducts stops before cleanup (4.975695ms)
+✔ foreign exact-ID result stops before cleanup (7.105059ms)
+✔ duplicate exact-ID result stops before cleanup (5.391093ms)
+✔ one-second observation drift stops before cleanup (5.422899ms)
+✔ changed publication identity stops before cleanup (3.182773ms)
+✔ search anchor disagrees stops before cleanup (5.716115ms)
+✔ contradictory inclusion/search results stop before cleanup (9.885474ms)
+✔ three qualified intent positives confirm intent with an empty diagnostic association (13.685444ms)
+✔ diagnostic association cannot change negative consensus or resolve actual intent disagreement (37.047799ms)
+✔ effective publication stays separate from matching configured-intent observations (10.085263ms)
+✔ corrected interpretation cannot reopen the frozen closed attempt or authorize cleanup (4.283609ms)
+✔ effective publication on DRAFT makes intent inconsistent and refuses cleanup (7.646662ms)
+✔ ambiguous archive response consumes one final exact read without resend (9.516436ms)
+✔ one-second archive acknowledgement/readback drift stays a conflict (11.723391ms)
+✔ authentication failure closes the fresh register without Admin requests (1.024989ms)
+✔ quarantined outstanding archive forbids final read and any overlapping request (8013.15696ms)
+✔ fixed documents and variables exclude every alternate target before HTTP (122.18318ms)
+✔ fixed source query literals are exactly the authorized ID filters and first:2 (0.554356ms)
+✔ closed register cannot be initialized a second time (9.205114ms)
+✔ 100 serial synthetic runs preserve zero or one mutation and never overlap (860.868999ms)
+✔ invalid or malformed runtime search metadata stops before cleanup (7.736197ms)
+✔ malformed GraphQL errors values never authorize cleanup (18.358604ms)
+✔ rejected foreign descriptive data is absent from register and qualification evidence (8.944734ms)
+✔ a failed read reservation cannot be retried or lead to unverifiable cleanup (1.429764ms)
+✔ documented search diagnostics without warnings preserve exact intent reads (10.51032ms)
+ℹ tests 35
+ℹ suites 0
+ℹ pass 35
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9521.931799
+✔ source gate requires two fresh high-effort reviews and every workflow on the frozen source (3.207679ms)
+✔ full source binding includes the inherited internal Rust links without following external symlinks (306.152968ms)
+✔ alternate exact product is refused before HTTP (3.105373ms)
+✔ disposable cleanup settles exact final ARCHIVED despite a one-second acknowledgement timestamp difference (15.389229ms)
+✔ already ARCHIVED is verified with no update (4.703566ms)
+✔ foreign ownership stops with zero update (3.83241ms)
+✔ ACTIVE state stops with zero update (2.705833ms)
+✔ UNLISTED state stops with zero update (1.998379ms)
+✔ effective publication stops with zero update (5.148986ms)
+✔ published timestamp stops with zero update (2.49138ms)
+✔ online store URL stops with zero update (2.495687ms)
+✔ legacy effective membership stops with zero update (2.344955ms)
+✔ incomplete legacy stops with zero update (1.597522ms)
+✔ wrong installation stops with zero update (1.964873ms)
+✔ scope loss stops with zero update (1.429649ms)
+✔ malformed GraphQL error fields are rejected before mutation (6.751224ms)
+✔ ambiguous archive is not resent and one final exact read settles ARCHIVED (3.728663ms)
+✔ final DRAFT or effective-publication drift is unsettled with no retry (7.145527ms)
+✔ unsettled archive transport forbids final read and any overlap (8004.813775ms)
+✔ exact source documents have no searches or alternate mutation fields (13.960768ms)
+✔ alternate documents, extra fields and non-ARCHIVED statuses are denied before dispatch (12.646172ms)
+✔ closed cleanup register rejects any second initialization (5.572195ms)
+✔ 100 serial disposable cleanup cases never exceed one update (276.793731ms)
+✔ failed authentication cannot admit an Admin read through the public operator (1.015564ms)
+✔ failed prestate or final reads cannot be retried and archive cannot be resent (3.600062ms)
+✔ auth response disposal failure quarantines pending event index zero (0.991295ms)
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.398209ms)
+✔ zero ACTIVE effective membership is PARTIAL with one create and safe archive, without acquire or restore (44.413104ms)
+✔ production v2 core lifecycle survives an actual fresh process, with capability=true and exact persisted hold bytes (656.950761ms)
+✔ absence of future capability is recorded without weakening core qualification (651.894164ms)
+✔ exact shop fence prevents creation (2.923276ms)
+✔ exact domain fence prevents creation (1.852285ms)
+✔ exact development fence prevents creation (1.955805ms)
+✔ exact app fence prevents creation (1.922487ms)
+✔ exact client fence prevents creation (1.840672ms)
+✔ exact installation fence prevents creation (1.779973ms)
+✔ exact grants fence prevents creation (2.074096ms)
+✔ ownership drift stops before setup and denies archival cleanup (4.925295ms)
+✔ actual schedule stops setup; explicit archive cannot turn persistent schedule into PASS (16.371961ms)
+✔ configured intent drift after setup stops acquire and permits separately settled cleanup (24.612229ms)
+✔ ambiguous create has one exact-marker recovery read and no further mutation (4.730301ms)
+✔ lost acquire acknowledgement never causes restore, replay or cleanup mutation (21.195187ms)
+✔ closed register rejects reentry before loading even synthetic credentials (20.898183ms)
+✔ unsafe synthetic directory and live gate reject before any request (0.366586ms)
+✔ global attempts, document denial, token replacement and serial reservation are durable (116.827919ms)
+✔ one-second ACK/readback difference is retained while v2 semantics complete in fresh process (660.283426ms)
+✔ lost restore acknowledgement in fresh process never retries or archives (640.381575ms)
+✔ incomplete configured-intent connection stops lifecycle before setup (8.540226ms)
+✔ production pagination consumes global budget and repeated cursor stops without mutation (13.384018ms)
+✔ fresh-process-only resume rejects same PID before credential load in live operator seam (17.598958ms)
+✔ non-quiescent fetch timeout retains pending reservation and forbids another request (8002.347229ms)
+✔ malformed production mutation acknowledgement is not considered settled for archival authority (21.173917ms)
+✔ failed disposal of an oversized body quarantines the outbound attempt (2.000479ms)
+✔ persisted hold tampering stops fresh-process resume before a second auth or cleanup request (517.015907ms)
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.561203ms)
+✔ missing adapter transport / import proof uses only the guarded operator or denies locally (248.920635ms)
+✔ misspelled adapter transport / import proof uses only the guarded operator or denies locally (225.918391ms)
+✔ imports adapter transport / import proof uses only the guarded operator or denies locally (219.709156ms)
+✔ correct adapter transport / import proof uses only the guarded operator or denies locally (329.9818ms)
+✔ zero ACTIVE effective membership is PARTIAL with one create and safe archive, without acquire or restore (56.402149ms)
+✔ production v2 core lifecycle survives an actual fresh process, with capability=true and exact persisted hold bytes (699.750066ms)
+✔ absence of future capability is recorded without weakening core qualification (676.142302ms)
+✔ exact shop fence prevents creation (3.173862ms)
+✔ exact domain fence prevents creation (2.483325ms)
+✔ exact development fence prevents creation (2.392596ms)
+✔ exact app fence prevents creation (2.27112ms)
+✔ exact client fence prevents creation (2.214782ms)
+✔ exact installation fence prevents creation (2.245867ms)
+✔ exact grants fence prevents creation (2.486542ms)
+✔ ownership drift stops before setup and denies archival cleanup (6.527262ms)
+✔ actual schedule stops setup; explicit archive cannot turn persistent schedule into PASS (22.132029ms)
+✔ configured intent drift after setup stops acquire and permits separately settled cleanup (32.691795ms)
+✔ ambiguous create has one exact-marker recovery read and no further mutation (5.280211ms)
+✔ lost acquire acknowledgement never causes restore, replay or cleanup mutation (23.368494ms)
+✔ closed register rejects reentry before loading even synthetic credentials (29.88876ms)
+✔ unsafe synthetic directory and live gate reject before any request (0.359367ms)
+✔ global attempts, document denial, token replacement and serial reservation are durable (142.614213ms)
+✔ one-second ACK/readback difference is retained while v2 semantics complete in fresh process (640.000652ms)
+✔ lost restore acknowledgement in fresh process never retries or archives (609.222006ms)
+✔ incomplete configured-intent connection stops lifecycle before setup (10.912297ms)
+✔ production pagination consumes global budget and repeated cursor stops without mutation (14.035524ms)
+✔ fresh-process-only resume rejects same PID before credential load in live operator seam (25.454469ms)
+✔ non-quiescent fetch timeout retains pending reservation and forbids another request (8002.338141ms)
+✔ malformed production mutation acknowledgement is not considered settled for archival authority (27.029804ms)
+✔ failed disposal of an oversized body quarantines the outbound attempt (1.981924ms)
+✔ persisted hold tampering stops fresh-process resume before a second auth or cleanup request (523.164042ms)
+✔ all synthetic auth/create/status/production reads dispatch only after matching durable events (34.594711ms)
+✔ durable accounting corruption prevents create dispatch and any cleanup mutation (3.988775ms)
+✔ zero-effective PARTIAL branch becomes STOPPED if archive applied but acknowledgement is lost (25.693564ms)
+✔ lost archive ACK permits only one exact ownership/status classification read and no final snapshot or retry (25.682411ms)
+ℹ tests 90
+ℹ suites 0
+ℹ pass 90
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 13650.442416
+✔ gate demands exact source/tree/binding, two actual model reviews and ten unique attempt-one workflows (3.83963ms)
+✔ missing adapter transport / import proof uses only the guarded operator or denies locally (250.274566ms)
+✔ misspelled adapter transport / import proof uses only the guarded operator or denies locally (229.243926ms)
+✔ imports adapter transport / import proof uses only the guarded operator or denies locally (215.982014ms)
+✔ correct adapter transport / import proof uses only the guarded operator or denies locally (308.886769ms)
+✔ complete explicit APP discovery and exact inclusion authorize only the fixed archival cleanup (33.359403ms)
+✔ direct inclusion without either generic discovery surface classifies DIRECT_ONLY and still cleans the disposable fixture (12.780375ms)
+✔ complete APP catalogs independently establish the generic surface when typed publications omit the target (13.194095ms)
+✔ a denied second discovery surface is retained but cannot negate independently complete positive generic evidence (14.023996ms)
+✔ denied generic reads without complete positive evidence classify UNRESOLVED without retries (11.384356ms)
+✔ direct null remains UNRESOLVED despite generic positives (11.924425ms)
+✔ direct not-included remains UNRESOLVED despite generic positives (12.289973ms)
+✔ direct incomplete remains UNRESOLVED despite generic positives (12.714288ms)
+✔ direct error remains UNRESOLVED despite generic positives (9.905783ms)
+✔ capability drift between direct and generic observations is coverage ambiguity (11.259861ms)
+✔ multiple APP catalogs claiming the target Publication are coverage ambiguity (12.206008ms)
+✔ observed conflicting catalogs followed by a denied page remain UNRESOLVED despite complete positive publications (13.106626ms)
+✔ empty nonterminal publications page fails before any continuation (10.864235ms)
+✔ empty nonterminal catalogs page fails before any continuation (10.461477ms)
+✔ duplicate generic IDs and repeated cursors fail closed with cleanup capacity preserved (19.738588ms)
+✔ infinite unique discovery pages reserve one catalog attempt and exact cleanup/final read within sixteen GraphQL attempts (40.396804ms)
+✔ prestate identity drift stops before discovery or mutation (2.270976ms)
+✔ prestate ownership drift stops before discovery or mutation (2.170068ms)
+✔ prestate status drift stops before discovery or mutation (2.164481ms)
+✔ prestate target-effective drift stops before discovery or mutation (2.326528ms)
+✔ prestate connection drift stops before discovery or mutation (2.089963ms)
+✔ identity drift in discovery revokes cleanup before any mutation (4.088379ms)
+✔ identity mismatch combined with malformed operation data latches the fence before projection (3.770743ms)
+✔ GraphQL error with contradictory direct identity prevents archival (3.85225ms)
+✔ GraphQL error with contradictory catalog identity prevents archival (7.825469ms)
+✔ conflicting duplicate publications metadata cannot hide behind rejection (10.868718ms)
+✔ conflicting duplicate catalogs metadata cannot hide behind rejection (10.726519ms)
+✔ partial error publications data retains contradictory coverage evidence (10.974438ms)
+✔ partial error catalogs data retains contradictory coverage evidence (12.215387ms)
+✔ lost archive acknowledgement gets exactly one final classification read and never a resend (11.131356ms)
+✔ final exact state settlement records updatedAt difference without timestamp equality (10.65026ms)
+✔ a failed final publication predicate closes STOPPED without another mutation or read (12.15125ms)
+✔ source drift before credentials produces no provider request (0.753021ms)
+✔ corrupt reservation accounting denies the captured transport before its first native call (1.499797ms)
+✔ canonical entry exposes no resume phase and a closed synthetic register cannot be reopened (11.092856ms)
+✔ identity contradiction in the final read invalidates the classification without another write (10.81056ms)
+✔ HTTP 500 error with reported identity drift blocks cleanup (3.968418ms)
+✔ HTTP 403 error with reported identity drift blocks cleanup (8.152728ms)
+✔ a qualified HTTP 403 denial cannot negate a complete independent positive surface (10.992828ms)
+✔ malformed partial error publications remains coverage ambiguity (10.674597ms)
+✔ HTTP error partial publications contradictions remain visible (11.019803ms)
+✔ malformed partial error catalogs remains coverage ambiguity (11.954233ms)
+✔ HTTP error partial catalogs contradictions remain visible (10.506208ms)
+✔ ownership freshness starts before I/O and cannot be renewed by slow response completion (9.436804ms)
+✔ a backwards local clock cannot make future observation origins fresh for cleanup (7.509148ms)
+✔ falsy malformed publications false is coverage ambiguity (14.427222ms)
+✔ falsy malformed publications 0 is coverage ambiguity (10.155494ms)
+✔ falsy malformed publications "" is coverage ambiguity (10.16586ms)
+✔ malformed publications error envelope empty-array cannot qualify generic discovery (11.018212ms)
+✔ malformed publications error envelope object cannot qualify generic discovery (9.517651ms)
+✔ malformed publications error envelope null cannot qualify generic discovery (9.555868ms)
+✔ malformed publications error envelope null-member cannot qualify generic discovery (9.834844ms)
+✔ malformed publications error envelope numeric-message cannot qualify generic discovery (10.306996ms)
+✔ malformed publications error envelope empty-message cannot qualify generic discovery (9.295982ms)
+✔ malformed publications error envelope nonobject-extensions cannot qualify generic discovery (9.520493ms)
+✔ falsy malformed catalogs false is coverage ambiguity (10.132555ms)
+✔ falsy malformed catalogs 0 is coverage ambiguity (11.482682ms)
+✔ falsy malformed catalogs "" is coverage ambiguity (10.475289ms)
+✔ malformed catalogs error envelope empty-array cannot qualify generic discovery (9.500751ms)
+✔ malformed catalogs error envelope object cannot qualify generic discovery (10.620729ms)
+✔ malformed catalogs error envelope null cannot qualify generic discovery (9.591768ms)
+✔ malformed catalogs error envelope null-member cannot qualify generic discovery (9.45315ms)
+✔ malformed catalogs error envelope numeric-message cannot qualify generic discovery (9.603656ms)
+✔ malformed catalogs error envelope empty-message cannot qualify generic discovery (11.04227ms)
+✔ malformed catalogs error envelope nonobject-extensions cannot qualify generic discovery (9.496789ms)
+✔ archive freshness is rechecked after reservation immediately before native dispatch (8.853526ms)
+✔ early source gate rejection settles its reserved but unsent archival request exactly (8.416248ms)
+✔ wall rollback followed by successful reads cannot renew elapsed ownership freshness (11.379509ms)
+ℹ tests 73
+ℹ suites 0
+ℹ pass 73
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1122.728228
+✔ gate demands exact source/tree/binding, two actual model reviews and eleven unique attempt-one workflows (3.686785ms)
+✔ the slice-specific history workflow is mandatory rather than optional diagnostic CI (0.976319ms)
+✔ missing adapter transport / import proof uses only the guarded operator or denies locally (262.32055ms)
+✔ misspelled adapter transport / import proof uses only the guarded operator or denies locally (263.192072ms)
+✔ imports adapter transport / import proof uses only the guarded operator or denies locally (216.388511ms)
+✔ correct adapter transport / import proof uses only the guarded operator or denies locally (323.579577ms)
+✔ production v3 hidden-anchor lifecycle survives a genuinely fresh process and exact hold bytes (845.583164ms)
+✔ naturally mismatched settled restore invokes only production compensation, is STOPPED and safely archived (746.685755ms)
+✔ lost restore response never compensates, retries, or cleans up an unsettled transition (640.829054ms)
+✔ visible schedule stops before acquire; known settled setup may receive one archival cleanup (61.643937ms)
+✔ tampered persisted hold stops the fresh process before its credential exchange or mutation (538.655316ms)
+✔ fresh register cannot be started twice even without provider access (1.183333ms)
+✔ zero effective ACTIVE membership is partial with one create, one cleanup and no adapter write (30.031764ms)
+✔ global GraphQL ceiling and closed register reject before another injected transport invocation (286.637437ms)
+✔ guarded dispatch denies freshness-at-dispatch without a native create and preserves known unsent accounting (4.895886ms)
+✔ guarded dispatch denies transport-expiry without a native create and preserves known unsent accounting (4.282896ms)
+✔ guarded dispatch denies elapsed-freshness without a native create and preserves known unsent accounting (3.219857ms)
+✔ guarded dispatch denies backward-clock without a native create and preserves known unsent accounting (3.147235ms)
+✔ guarded dispatch denies slow-identity without a native create and preserves known unsent accounting (2.625529ms)
+✔ guarded dispatch denies source-gate-denial without a native create and preserves known unsent accounting (3.953968ms)
+✔ final transport fence rejects freshness crossing 29950 to 30050ms independently of the eight-second request timer (3.801548ms)
+✔ final transport fence rejects operation-deadline crossing 29950 to 30050ms independently of the eight-second request timer (5.933153ms)
+✔ reported identity drift with malformed-product stops before cleanup without renewing old ownership (7.155558ms)
+✔ reported identity drift with http-error stops before cleanup without renewing old ownership (7.101174ms)
+✔ sealed live restore responses replay as RESTORED in a network-denied fresh process without compensation (293.441615ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3483.354912
+$ tsc -p scripts/m1-functions/tsconfig.json && node --test scripts/m1-functions/check-vector.test.ts
+✔ TypeScript/Node and Rust share the exact experimental-v2 envelope/member bytes (5.793195ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 126.880206
+$ node scripts/boundaries/check.mjs && node scripts/boundaries/check-database-api.mjs && node scripts/boundaries/check-domain-effects.mjs && node --test scripts/boundaries/domain-effects.test.mjs
+Boundary checks passed: 198 real modules, 4 browser modules, 19 negative source fixtures, 2 rejected browser bundles and exports.
+Database public API rejects 19 compiler probes and 4 runtime deep imports.
+6 production domain modules have no prohibited ambient effects
+✔ Date.now is rejected in a production domain helper (8.975246ms)
+✔ new Date is rejected in a production domain helper (0.752021ms)
+✔ Math.random is rejected in a production domain helper (0.484077ms)
+✔ globalThis.Date.now is rejected in a production domain helper (0.505454ms)
+✔ fetch is rejected in a production domain helper (1.214918ms)
+✔ globalThis.crypto is rejected in a production domain helper (0.415625ms)
+✔ computed random is rejected in a production domain helper (0.894506ms)
+✔ template random is rejected in a production domain helper (0.664633ms)
+✔ dynamic Math member is rejected in a production domain helper (1.215604ms)
+✔ spread Date is rejected in a production domain helper (1.572952ms)
+✔ random destructuring is rejected in a production domain helper (0.734232ms)
+✔ date alias is rejected in a production domain helper (0.35155ms)
+✔ math alias is rejected in a production domain helper (0.284929ms)
+✔ import meta is rejected in a production domain helper (0.395176ms)
+✔ process environment is rejected in a production domain helper (0.227387ms)
+✔ deterministic numeric and explicit-value operations stay allowed (1.363199ms)
+✔ type-only properties are not ambient API references (2.103345ms)
+✔ compiled graph includes an imported module with an excluded test-like filename (559.256939ms)
+ℹ tests 18
+ℹ suites 0
+ℹ pass 18
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 974.4646
+$ node scripts/boundaries/check-secrets.mjs
+Secret/fixture provenance check passed: 114 production source files, 90 separately scanned test/fixture files, 2 browser artifacts, 2 explicitly synthetic seeds.
+20 archived Cargo manifests remain independent
+$ bash scripts/m1-functions/check.sh
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.07s
+     Running unittests src/lib.rs (target/debug/deps/cart_authorization-428bc6dab939b9b3)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/currency_matrix.rs (target/debug/deps/currency_matrix-a76cbbc666a7ab20)
+
+running 1 test
+test every_admitted_currency_agrees_with_versioned_ts_matrix ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/production_vectors.rs (target/debug/deps/production_vectors-931358b74671ec5f)
+
+running 1 test
+test production_typescript_vectors_verify_with_complete_rust_core ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/whole_quote.rs (target/debug/deps/whole_quote-dd6e3b33eb9f8a50)
+
+running 13 tests
+test canonical_carriers_reject_length_padding_alphabet_and_tail_bits ... ok
+test complete_ordered_set_verifies_once_and_matches_observed_price ... ok
+test compensated_price_mutations_cannot_preserve_authorization_by_preserving_total ... ok
+test every_header_byte_class_is_signed_and_structural_header_is_strict ... ok
+test last_member_change_invalidates_everything ... ok
+test independent_context_keys_date_and_physical_economics_reject ... ok
+test missing_duplicate_unsigned_and_extra_members_fail_closed ... ok
+test member_from_a_different_signed_quote_cannot_mix_with_original_envelope ... ok
+test noncanonical_public_point_and_revoked_or_out_of_window_keys_reject ... ok
+test shared_python_typescript_rust_golden_vector_agrees ... ok
+test signature_and_arithmetic_profiles_reject_mutations ... ok
+test large_complete_quantity_and_500_unit_tier_cannot_be_partially_reused ... ok
+test fifteen_independently_signed_high_bit_magic_variants_reject ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+     Running unittests src/main.rs (target/debug/deps/cart_transform-358275b5ea2405f6)
+
+running 20 tests
+test capacity::tests::exact_output_bound_has_headroom ... ok
+test capacity::tests::cart_line_width_and_grammar ... ok
+test product_policy::tests::illegible_lone_anchor_cannot_authorize_a_signed_quote ... ok
+test product_policy::tests::absent_fields_are_unmanaged_but_a_single_lost_field_is_uncertain ... ok
+test product_policy::tests::matching_ready_fields_classify_required_and_optional ... ok
+test product_policy::tests::pending_malformed_and_stale_fields_block_plain_but_preserve_signed ... ok
+test product_policy::tests::wrong_installation_generation_rejects_signed_too ... ok
+test product_policy::tests::strict_grammar_rejects_unknown_states_and_noncanonical_revisions ... ok
+test tests::no_partial_expansion_for_incomplete_or_tampered_set ... ok
+test tests::revoked_and_out_of_window_public_keys_emit_no_price_operation ... ok
+test tests::complete_set_sets_both_prices_and_copies_compact_member ... ok
+test tests::signed_quote_with_only_illegible_policy_emits_no_price ... ok
+test tests::signed_quote_with_no_product_anchors_still_requires_shop_keys ... ok
+test tests::context_physical_line_policy_and_cart_order_are_enforced ... ok
+test tests::signed_prices_survive_policy_revision_and_one_lost_anchor ... ok
+test tests::unsigned_marker_removed_and_invalid_signature_emit_no_price ... ok
+test tests::ten_thousand_physical_units_use_two_expansions ... ok
+test tests::untrusted_config_cannot_raise_experiment_ceiling ... ok
+test tests::transform_accepts_canonical_zero_and_echoes_target_local_id ... ok
+test tests::ten_bucket_output_is_bounded_and_oversized_sets_emit_no_partial_operation ... ok
+
+test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src/main.rs (target/debug/deps/cart_validation-95daed9c7c60dc1b)
+
+running 24 tests
+test capacity::tests::cart_line_width_and_grammar ... ok
+test capacity::tests::exact_output_bound_has_headroom ... ok
+test product_policy::tests::absent_fields_are_unmanaged_but_a_single_lost_field_is_uncertain ... ok
+test product_policy::tests::illegible_lone_anchor_cannot_authorize_a_signed_quote ... ok
+test product_policy::tests::matching_ready_fields_classify_required_and_optional ... ok
+test product_policy::tests::pending_malformed_and_stale_fields_block_plain_but_preserve_signed ... ok
+test product_policy::tests::strict_grammar_rejects_unknown_states_and_noncanonical_revisions ... ok
+test product_policy::tests::wrong_installation_generation_rejects_signed_too ... ok
+test tests::incomplete_tampered_and_unsigned_required_sets_reject ... ok
+test tests::malformed_stale_pending_and_wrong_generation_policy_fail_plain ... ok
+test tests::complete_set_compares_observed_exact_subtotals ... ok
+test tests::buyer_marker_removal_cannot_turn_known_required_into_plain ... ok
+test tests::one_lost_anchor_blocks_plain_while_explicit_optional_and_unmanaged_pass ... ok
+test tests::revoked_and_out_of_window_public_keys_reject_checkout ... ok
+test tests::cart_order_context_and_physical_claim_changes_fail_at_checkout ... ok
+test tests::signed_quote_with_only_illegible_policy_rejects ... ok
+test tests::signed_quote_with_no_product_anchors_needs_healthy_shop_keys ... ok
+test tests::signed_historical_quote_survives_same_generation_policy_revision ... ok
+test tests::untrusted_config_cannot_raise_experiment_ceiling ... ok
+test tests::ten_thousand_physical_units_validate_without_per_unit_expansion ... ok
+test tests::mixed_200_line_cart_blocks_damaged_managed_line_then_recovers ... ok
+test tests::zero_based_cartline_does_not_bypass_economics_or_trust_at_checkout ... ok
+test tests::ten_bucket_set_validates_and_oversized_sets_reject ... ok
+test tests::zero_based_cartline_preserves_complete_signed_checkout_at_both_steps ... ok
+
+test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+   Doc-tests cart_authorization
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+/home/serveradmin/insignia-m5-023-worktree/crates/cart-transform/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+    Finished `release` profile [optimized] target(s) in 0.04s
+c20cbda370e8ce19c309a49a71f497edb36e2f2db6b4667eced22073cb76fc17  /home/serveradmin/insignia-m5-023-worktree/extensions/insignia-cart-transform/target/cart-transform.raw.wasm
+49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576  /home/serveradmin/insignia-m5-023-worktree/extensions/insignia-cart-transform/target/cart-transform.wasm
+184312 /home/serveradmin/insignia-m5-023-worktree/extensions/insignia-cart-transform/target/cart-transform.raw.wasm
+181378 /home/serveradmin/insignia-m5-023-worktree/extensions/insignia-cart-transform/target/cart-transform.wasm
+365690 total
+/home/serveradmin/insignia-m5-023-worktree/crates/cart-validation/target/m1-tools/shopify-function-trampoline-2.0.1: OK
+    Finished `release` profile [optimized] target(s) in 0.04s
+1c2e43c03c62fb1983089d3b8623eeb6a3ffc90211893c9abb7a2b67fa9ad763  /home/serveradmin/insignia-m5-023-worktree/extensions/insignia-cart-validation/target/cart-validation.raw.wasm
+3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6  /home/serveradmin/insignia-m5-023-worktree/extensions/insignia-cart-validation/target/cart-validation.wasm
+185960 /home/serveradmin/insignia-m5-023-worktree/extensions/insignia-cart-validation/target/cart-validation.raw.wasm
+182968 /home/serveradmin/insignia-m5-023-worktree/extensions/insignia-cart-validation/target/cart-validation.wasm
+368928 total
+/home/serveradmin/insignia-m5-023-worktree/.m1-artifacts/tools/function-runner-9.2.2: OK
+transform 8 c20cbda370e8ce19c309a49a71f497edb36e2f2db6b4667eced22073cb76fc17 49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576
+validation 18 1c2e43c03c62fb1983089d3b8623eeb6a3ffc90211893c9abb7a2b67fa9ad763 3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6
+{
+  "rows": 230,
+  "positive": 16,
+  "vectorsSha256": "7f0046b88183b79cbccc305c883aab0483a6cda1eddb191297e2295c35ac1eda",
+  "transformWasmSha256": "49248769ae4ce578af7c5e7fa77f8c230c8fd4f45b2d673c22cfed87ff946576",
+  "validationWasmSha256": "3193f60bbb29cdc473ce7ae73e88d1064ca7be2f03da2aade4e17ae1390366c6"
+}
+M4-003 production builder config passed 6 complete Function runs.
+$ corepack pnpm --filter @insignia/web test && corepack pnpm --filter @insignia/storefront test
+$ node --test test/*.test.mjs test/admin/*.test.mjs
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: release-blocked (1647.818056ms)
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: active-drift (1234.613758ms)
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: active-key-drift (1242.738724ms)
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: active-epoch-drift (1200.725041ms)
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: active-destroyed-key (1122.406716ms)
+✔ real admin HTTP publish commits PG v3 activation and immutable evidence: restoration-pending (509.328222ms)
+✔ admin distinguishes activation waiting, held, restoration and conflict without manufacturing ACTIVE (1.337496ms)
+✔ publication conflict outranks a retained held/pending activation state (0.198579ms)
+✔ terminal operator hold outranks stale held activation (0.166142ms)
+✔ failed immutable request is explicit while unresolved availability still takes precedence (0.189614ms)
+✔ current staff and installation grant read and edit; reinstallation is checked every request (1.980843ms)
+✔ staff read access does not grant mutation (1.070587ms)
+✔ expired or cross-shop identity and stale installation fail closed (0.454579ms)
+✔ authentication stages distinguish grant and installation mismatches without identity data (0.678917ms)
+✔ downstream failures preserve only their safe stage and refresh type after verified identity (1.866809ms)
+✔ read requires current verified staff and exact shop, even on deep links (6.487016ms)
+✔ mutation refuses cross-origin and staff denial before invoking command (2.930466ms)
+✔ save carries exact product, draft version and idempotency to durable command (4.788865ms)
+✔ stale draft save is a conflict, never a success response (1.406058ms)
+✔ publish returns activation-pending truthfully and requires current edit grant (1.067805ms)
+✔ a product missing from the verified shop cannot be changed (1.627307ms)
+✔ expired identity and shop supplied in command body cannot create a config (1.943406ms)
+✔ unwired admin backend serves no private catalog data (0.585621ms)
+✔ unknown durable command failures remain unavailable without leaking details (1.179738ms)
+✔ refresh-required online exchange is 401 with Shopify fresh-ID-token retry signal (1.688043ms)
+✔ generic exchange/provider/database failures do not gain the fresh-token retry response (1.654347ms)
+✔ built picker refreshes once on 401; second 401, 403 and 503 stop without another request (1992.807232ms)
+✔ editor-generated fixed, override and tier defaults price through unchanged M2 in zero/two/three exponent currencies (3003.800867ms)
+✔ real browser editor syncs typed view, variant and step controls with direct Konva canvas and saved draft (1799.238626ms)
+✔ removing named choices drops only their labels including nested option value labels before save (1093.484888ms)
+✔ variant without a saved image override retains the portrait default until explicit landscape adoption (952.358182ms)
+✔ merchant currency adoption refreshes saved publication eligibility and later failed or stale reads fail closed (992.539617ms)
+✔ mobile deep link, cookie-free reload, interrupted save, stale conflict, and missing Polaris control (2349.036753ms)
+✔ interrupted publication resumes the identical request after reload and reaches a durable phase (1183.5193ms)
+✔ numeric placement input reaches owner state before blur and survives an owner rerender (1423.335918ms)
+✔ publication success preserves dirty local edits and exact save recovery [1/1] (853.290623ms)
+✔ publication failed preserves dirty local edits and exact save recovery [1/1] (861.128496ms)
+✔ publication success preserves ambiguous local edits and exact save recovery [1/1] (890.037398ms)
+✔ publication failed preserves ambiguous local edits and exact save recovery [1/1] (976.95959ms)
+✔ publication retry keeps the original version after a newer draft edit when embedded storage is denied (866.525142ms)
+✔ stale stored publication is replaced by the current immutable intent despite newer ineligible draft (652.371329ms)
+✔ reinstalled Admin discards prior-generation browser request and publishes with a new key (654.793869ms)
+✔ concurrent editor refreshes share one App Bridge identity request (1324.327835ms)
+✔ empty merchant draft can be configured through typed controls and pass M2 validation (1143.4884ms)
+✔ mounted admin refreshes late activation and readiness without overwriting local edits, then clears expired identity (10866.790878ms)
+✔ two production admin tabs keep stale edits and explicitly review the winning CAS draft: 9.00 (1468.157184ms)
+✔ two production admin tabs keep stale edits and explicitly review the winning CAS draft: 2.50 (1548.54504ms)
+✔ authorization denial fences a save already in flight from repopulating private editor state (5884.882597ms)
+✔ a pre-command passive observation cannot overwrite a newer pending publication or its stored request (5964.921808ms)
+✔ operator and restoration conflicts cannot initiate another publication from a saved eligible draft (985.834289ms)
+{"level":30,"time":1791480183270,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"a043fb0f-4d81-48f2-b7aa-ae6c8c64f536","statusClass":"success"}
+{"level":30,"time":1791480183294,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"a043fb0f-4d81-48f2-b7aa-ae6c8c64f536","statusClass":"success"}
+{"level":30,"time":1791480183312,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_CREATED_SUCCEEDED","correlationId":"a043fb0f-4d81-48f2-b7aa-ae6c8c64f536","statusClass":"success"}
+{"level":30,"time":1791480183312,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"a043fb0f-4d81-48f2-b7aa-ae6c8c64f536","statusClass":"success"}
+{"level":30,"time":1791480183312,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"a043fb0f-4d81-48f2-b7aa-ae6c8c64f536","statusClass":"success"}
+{"level":30,"time":1791480183323,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"93bfd959-b19c-48b0-9bbb-75a9e003da03","statusClass":"success"}
+{"level":30,"time":1791480183325,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"93bfd959-b19c-48b0-9bbb-75a9e003da03","statusClass":"success"}
+{"level":30,"time":1791480183337,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"93bfd959-b19c-48b0-9bbb-75a9e003da03","statusClass":"success"}
+{"level":30,"time":1791480183337,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"93bfd959-b19c-48b0-9bbb-75a9e003da03","statusClass":"success"}
+{"level":30,"time":1791480183338,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"93bfd959-b19c-48b0-9bbb-75a9e003da03","statusClass":"success"}
+✔ production first verified staff session bootstraps and searches, repeat reuses provider identity (339.151971ms)
+{"level":30,"time":1791480183386,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"75264d2e-4d58-4867-b3c3-f92ac2fb77b3","statusClass":"success"}
+{"level":30,"time":1791480183409,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"75264d2e-4d58-4867-b3c3-f92ac2fb77b3","statusClass":"success"}
+{"level":30,"time":1791480183413,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_STALE_STATE","correlationId":"75264d2e-4d58-4867-b3c3-f92ac2fb77b3","statusClass":"failure"}
+{"level":30,"time":1791480183420,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"e75d50a9-f6be-413a-bbb1-492a0f415076","statusClass":"success"}
+✔ uninstall during the first provider observation fences the bootstrapped generation (56.670385ms)
+{"level":30,"time":1791480183422,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_FAILED","correlationId":"e75d50a9-f6be-413a-bbb1-492a0f415076","statusClass":"failure"}
+{"level":30,"time":1791480183452,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"1d4dde80-5845-4590-bad4-a2a27e2c1c7d","statusClass":"success"}
+{"level":30,"time":1791480183459,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"1d4dde80-5845-4590-bad4-a2a27e2c1c7d","statusClass":"success"}
+{"level":30,"time":1791480183471,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_CREATED_SUCCEEDED","correlationId":"1d4dde80-5845-4590-bad4-a2a27e2c1c7d","statusClass":"success"}
+{"level":30,"time":1791480183471,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"1d4dde80-5845-4590-bad4-a2a27e2c1c7d","statusClass":"success"}
+{"level":30,"time":1791480183471,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"1d4dde80-5845-4590-bad4-a2a27e2c1c7d","statusClass":"success"}
+{"level":30,"time":1791480183472,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"c75d2de9-53f0-4fae-a768-d48e471ca29e","statusClass":"success"}
+{"level":30,"time":1791480183474,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"c75d2de9-53f0-4fae-a768-d48e471ca29e","statusClass":"success"}
+{"level":30,"time":1791480183486,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REINSTALLED_SUCCEEDED","correlationId":"c75d2de9-53f0-4fae-a768-d48e471ca29e","statusClass":"success"}
+{"level":30,"time":1791480183486,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"c75d2de9-53f0-4fae-a768-d48e471ca29e","statusClass":"success"}
+{"level":30,"time":1791480183486,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"c75d2de9-53f0-4fae-a768-d48e471ca29e","statusClass":"success"}
+{"level":30,"time":1791480183487,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"431c6831-342b-4e81-8951-936758845abd","statusClass":"success"}
+{"level":30,"time":1791480183488,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"431c6831-342b-4e81-8951-936758845abd","statusClass":"success"}
+{"level":30,"time":1791480183494,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_STALE_STATE","correlationId":"431c6831-342b-4e81-8951-936758845abd","statusClass":"failure"}
+✔ production confirms a reinstall twice, advances once and rejects historical stale sessions (73.230828ms)
+{"level":30,"time":1791480183520,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"1ad10bb1-f313-4b10-95eb-adda483585ba","statusClass":"success"}
+{"level":30,"time":1791480183529,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"1ad10bb1-f313-4b10-95eb-adda483585ba","statusClass":"success"}
+{"level":30,"time":1791480183543,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_CREATED_SUCCEEDED","correlationId":"1ad10bb1-f313-4b10-95eb-adda483585ba","statusClass":"success"}
+{"level":30,"time":1791480183543,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"1ad10bb1-f313-4b10-95eb-adda483585ba","statusClass":"success"}
+{"level":30,"time":1791480183543,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"1ad10bb1-f313-4b10-95eb-adda483585ba","statusClass":"success"}
+{"level":30,"time":1791480183546,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"c46b1539-4d6f-4760-be4d-d61cc09db31b","statusClass":"success"}
+{"level":30,"time":1791480183547,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"c46b1539-4d6f-4760-be4d-d61cc09db31b","statusClass":"success"}
+{"level":30,"time":1791480183552,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_CONFIRMATION_REQUIRED","correlationId":"c46b1539-4d6f-4760-be4d-d61cc09db31b","statusClass":"failure"}
+✔ production provider drift during reinstall confirmation leaves the generation unchanged (57.712649ms)
+{"level":30,"time":1791480183582,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"a3337c1c-fe04-4c95-8dd0-dccdbb4e8160","statusClass":"success"}
+{"level":30,"time":1791480183582,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"4d1054e2-6c4b-47db-9587-2903947610d3","statusClass":"success"}
+{"level":30,"time":1791480183582,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"d956e8b6-9bfa-47af-a927-4dab7bb144f8","statusClass":"success"}
+{"level":30,"time":1791480183583,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"37e88476-fae7-427d-9dcf-26cdb517a48a","statusClass":"success"}
+{"level":30,"time":1791480183583,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"7b1db0a2-5843-4e99-85cc-5646841526f3","statusClass":"success"}
+{"level":30,"time":1791480183583,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"7420a877-cc85-4f2c-b889-2f8d5b85c803","statusClass":"success"}
+{"level":30,"time":1791480183583,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"472a78aa-41ad-4b2a-b40c-66c460d6a33d","statusClass":"success"}
+{"level":30,"time":1791480183584,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"8c5ec219-3ce2-485d-8ea6-dca3b545d781","statusClass":"success"}
+{"level":30,"time":1791480183584,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"e33a1438-c256-4cc4-87f8-6e065c47c304","statusClass":"success"}
+{"level":30,"time":1791480183584,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"90458dea-beec-470a-86e6-2ff27bb58295","statusClass":"success"}
+{"level":30,"time":1791480183584,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"8d1560a3-1a4b-4b30-92dc-0ec9bee0eae0","statusClass":"success"}
+{"level":30,"time":1791480183584,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"555e0a32-8dde-45a7-bcbd-c6870becf457","statusClass":"success"}
+{"level":30,"time":1791480183585,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"b7d672ac-4571-4d22-9fe5-44f68db42912","statusClass":"success"}
+{"level":30,"time":1791480183585,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"0fc38bcf-e6ed-4caf-bbf8-fa4e8356c1e4","statusClass":"success"}
+{"level":30,"time":1791480183585,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"aa639c50-9de4-4b1b-954d-d0a29212f169","statusClass":"success"}
+{"level":30,"time":1791480183586,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"df9a4da4-3e18-47b5-ba8c-f7aff9c594be","statusClass":"success"}
+{"level":30,"time":1791480183586,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"682bd32d-b26c-4b23-823e-9bed5f50f407","statusClass":"success"}
+{"level":30,"time":1791480183586,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"9f79d46a-6216-4bb4-be43-553b021bb2f2","statusClass":"success"}
+{"level":30,"time":1791480183586,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"4a778912-e1d8-4bff-9167-0cd8ba8860b8","statusClass":"success"}
+{"level":30,"time":1791480183586,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"bdb4602d-dd0c-43eb-8f89-5886bd47ded8","statusClass":"success"}
+{"level":30,"time":1791480183586,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"868d20c3-c63d-4d92-9624-ceee0ba96795","statusClass":"success"}
+{"level":30,"time":1791480183586,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"e138d687-6486-40f3-9a64-dc14316e81b7","statusClass":"success"}
+{"level":30,"time":1791480183586,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"00980596-7ebc-4a33-99f2-b2b4f3ed9b8c","statusClass":"success"}
+{"level":30,"time":1791480183587,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"d75ca06c-5d39-448b-ae35-6e6c333bc86f","statusClass":"success"}
+{"level":30,"time":1791480183603,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"e33a1438-c256-4cc4-87f8-6e065c47c304","statusClass":"success"}
+{"level":30,"time":1791480183607,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"7b1db0a2-5843-4e99-85cc-5646841526f3","statusClass":"success"}
+{"level":30,"time":1791480183608,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"90458dea-beec-470a-86e6-2ff27bb58295","statusClass":"success"}
+{"level":30,"time":1791480183609,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"a3337c1c-fe04-4c95-8dd0-dccdbb4e8160","statusClass":"success"}
+{"level":30,"time":1791480183611,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"37e88476-fae7-427d-9dcf-26cdb517a48a","statusClass":"success"}
+{"level":30,"time":1791480183612,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"d956e8b6-9bfa-47af-a927-4dab7bb144f8","statusClass":"success"}
+{"level":30,"time":1791480183613,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"555e0a32-8dde-45a7-bcbd-c6870becf457","statusClass":"success"}
+{"level":30,"time":1791480183614,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"b7d672ac-4571-4d22-9fe5-44f68db42912","statusClass":"success"}
+{"level":30,"time":1791480183615,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"0fc38bcf-e6ed-4caf-bbf8-fa4e8356c1e4","statusClass":"success"}
+{"level":30,"time":1791480183617,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"aa639c50-9de4-4b1b-954d-d0a29212f169","statusClass":"success"}
+{"level":30,"time":1791480183618,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"df9a4da4-3e18-47b5-ba8c-f7aff9c594be","statusClass":"success"}
+{"level":30,"time":1791480183619,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"8d1560a3-1a4b-4b30-92dc-0ec9bee0eae0","statusClass":"success"}
+{"level":30,"time":1791480183627,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"4d1054e2-6c4b-47db-9587-2903947610d3","statusClass":"success"}
+{"level":30,"time":1791480183628,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"472a78aa-41ad-4b2a-b40c-66c460d6a33d","statusClass":"success"}
+{"level":30,"time":1791480183629,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"7420a877-cc85-4f2c-b889-2f8d5b85c803","statusClass":"success"}
+{"level":30,"time":1791480183629,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"8c5ec219-3ce2-485d-8ea6-dca3b545d781","statusClass":"success"}
+{"level":30,"time":1791480183632,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"682bd32d-b26c-4b23-823e-9bed5f50f407","statusClass":"success"}
+{"level":30,"time":1791480183632,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"9f79d46a-6216-4bb4-be43-553b021bb2f2","statusClass":"success"}
+{"level":30,"time":1791480183633,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"4a778912-e1d8-4bff-9167-0cd8ba8860b8","statusClass":"success"}
+{"level":30,"time":1791480183634,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"bdb4602d-dd0c-43eb-8f89-5886bd47ded8","statusClass":"success"}
+{"level":30,"time":1791480183635,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"868d20c3-c63d-4d92-9624-ceee0ba96795","statusClass":"success"}
+{"level":30,"time":1791480183636,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"e138d687-6486-40f3-9a64-dc14316e81b7","statusClass":"success"}
+{"level":30,"time":1791480183637,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"00980596-7ebc-4a33-99f2-b2b4f3ed9b8c","statusClass":"success"}
+{"level":30,"time":1791480183637,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"d75ca06c-5d39-448b-ae35-6e6c333bc86f","statusClass":"success"}
+{"level":30,"time":1791480183654,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_CREATED_SUCCEEDED","correlationId":"90458dea-beec-470a-86e6-2ff27bb58295","statusClass":"success"}
+{"level":30,"time":1791480183654,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"90458dea-beec-470a-86e6-2ff27bb58295","statusClass":"success"}
+{"level":30,"time":1791480183654,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"90458dea-beec-470a-86e6-2ff27bb58295","statusClass":"success"}
+{"level":30,"time":1791480183659,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"a3337c1c-fe04-4c95-8dd0-dccdbb4e8160","statusClass":"success"}
+{"level":30,"time":1791480183660,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"a3337c1c-fe04-4c95-8dd0-dccdbb4e8160","statusClass":"success"}
+{"level":30,"time":1791480183660,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"a3337c1c-fe04-4c95-8dd0-dccdbb4e8160","statusClass":"success"}
+{"level":30,"time":1791480183667,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"37e88476-fae7-427d-9dcf-26cdb517a48a","statusClass":"success"}
+{"level":30,"time":1791480183667,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"37e88476-fae7-427d-9dcf-26cdb517a48a","statusClass":"success"}
+{"level":30,"time":1791480183667,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"37e88476-fae7-427d-9dcf-26cdb517a48a","statusClass":"success"}
+{"level":30,"time":1791480183673,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"d956e8b6-9bfa-47af-a927-4dab7bb144f8","statusClass":"success"}
+{"level":30,"time":1791480183673,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"d956e8b6-9bfa-47af-a927-4dab7bb144f8","statusClass":"success"}
+{"level":30,"time":1791480183673,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"d956e8b6-9bfa-47af-a927-4dab7bb144f8","statusClass":"success"}
+{"level":30,"time":1791480183678,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"555e0a32-8dde-45a7-bcbd-c6870becf457","statusClass":"success"}
+{"level":30,"time":1791480183678,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"555e0a32-8dde-45a7-bcbd-c6870becf457","statusClass":"success"}
+{"level":30,"time":1791480183678,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"555e0a32-8dde-45a7-bcbd-c6870becf457","statusClass":"success"}
+{"level":30,"time":1791480183683,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"b7d672ac-4571-4d22-9fe5-44f68db42912","statusClass":"success"}
+{"level":30,"time":1791480183684,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"b7d672ac-4571-4d22-9fe5-44f68db42912","statusClass":"success"}
+{"level":30,"time":1791480183684,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"b7d672ac-4571-4d22-9fe5-44f68db42912","statusClass":"success"}
+{"level":30,"time":1791480183689,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"aa639c50-9de4-4b1b-954d-d0a29212f169","statusClass":"success"}
+{"level":30,"time":1791480183689,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"aa639c50-9de4-4b1b-954d-d0a29212f169","statusClass":"success"}
+{"level":30,"time":1791480183689,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"aa639c50-9de4-4b1b-954d-d0a29212f169","statusClass":"success"}
+{"level":30,"time":1791480183695,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"0fc38bcf-e6ed-4caf-bbf8-fa4e8356c1e4","statusClass":"success"}
+{"level":30,"time":1791480183695,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"0fc38bcf-e6ed-4caf-bbf8-fa4e8356c1e4","statusClass":"success"}
+{"level":30,"time":1791480183695,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"0fc38bcf-e6ed-4caf-bbf8-fa4e8356c1e4","statusClass":"success"}
+{"level":30,"time":1791480183700,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"7b1db0a2-5843-4e99-85cc-5646841526f3","statusClass":"success"}
+{"level":30,"time":1791480183701,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"7b1db0a2-5843-4e99-85cc-5646841526f3","statusClass":"success"}
+{"level":30,"time":1791480183701,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"7b1db0a2-5843-4e99-85cc-5646841526f3","statusClass":"success"}
+{"level":30,"time":1791480183707,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"e33a1438-c256-4cc4-87f8-6e065c47c304","statusClass":"success"}
+{"level":30,"time":1791480183707,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"e33a1438-c256-4cc4-87f8-6e065c47c304","statusClass":"success"}
+{"level":30,"time":1791480183707,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"e33a1438-c256-4cc4-87f8-6e065c47c304","statusClass":"success"}
+{"level":30,"time":1791480183713,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"df9a4da4-3e18-47b5-ba8c-f7aff9c594be","statusClass":"success"}
+{"level":30,"time":1791480183713,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"df9a4da4-3e18-47b5-ba8c-f7aff9c594be","statusClass":"success"}
+{"level":30,"time":1791480183713,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"df9a4da4-3e18-47b5-ba8c-f7aff9c594be","statusClass":"success"}
+{"level":30,"time":1791480183719,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"8d1560a3-1a4b-4b30-92dc-0ec9bee0eae0","statusClass":"success"}
+{"level":30,"time":1791480183719,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"8d1560a3-1a4b-4b30-92dc-0ec9bee0eae0","statusClass":"success"}
+{"level":30,"time":1791480183719,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"8d1560a3-1a4b-4b30-92dc-0ec9bee0eae0","statusClass":"success"}
+{"level":30,"time":1791480183726,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"4d1054e2-6c4b-47db-9587-2903947610d3","statusClass":"success"}
+{"level":30,"time":1791480183726,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"4d1054e2-6c4b-47db-9587-2903947610d3","statusClass":"success"}
+{"level":30,"time":1791480183726,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"4d1054e2-6c4b-47db-9587-2903947610d3","statusClass":"success"}
+{"level":30,"time":1791480183730,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"472a78aa-41ad-4b2a-b40c-66c460d6a33d","statusClass":"success"}
+{"level":30,"time":1791480183731,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"472a78aa-41ad-4b2a-b40c-66c460d6a33d","statusClass":"success"}
+{"level":30,"time":1791480183731,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"472a78aa-41ad-4b2a-b40c-66c460d6a33d","statusClass":"success"}
+{"level":30,"time":1791480183735,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"7420a877-cc85-4f2c-b889-2f8d5b85c803","statusClass":"success"}
+{"level":30,"time":1791480183735,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"7420a877-cc85-4f2c-b889-2f8d5b85c803","statusClass":"success"}
+{"level":30,"time":1791480183735,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"7420a877-cc85-4f2c-b889-2f8d5b85c803","statusClass":"success"}
+{"level":30,"time":1791480183739,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"8c5ec219-3ce2-485d-8ea6-dca3b545d781","statusClass":"success"}
+{"level":30,"time":1791480183739,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"8c5ec219-3ce2-485d-8ea6-dca3b545d781","statusClass":"success"}
+{"level":30,"time":1791480183739,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"8c5ec219-3ce2-485d-8ea6-dca3b545d781","statusClass":"success"}
+{"level":30,"time":1791480183743,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"682bd32d-b26c-4b23-823e-9bed5f50f407","statusClass":"success"}
+{"level":30,"time":1791480183743,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"682bd32d-b26c-4b23-823e-9bed5f50f407","statusClass":"success"}
+{"level":30,"time":1791480183743,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"682bd32d-b26c-4b23-823e-9bed5f50f407","statusClass":"success"}
+{"level":30,"time":1791480183749,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"9f79d46a-6216-4bb4-be43-553b021bb2f2","statusClass":"success"}
+{"level":30,"time":1791480183749,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"9f79d46a-6216-4bb4-be43-553b021bb2f2","statusClass":"success"}
+{"level":30,"time":1791480183749,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"9f79d46a-6216-4bb4-be43-553b021bb2f2","statusClass":"success"}
+{"level":30,"time":1791480183753,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"4a778912-e1d8-4bff-9167-0cd8ba8860b8","statusClass":"success"}
+{"level":30,"time":1791480183753,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"4a778912-e1d8-4bff-9167-0cd8ba8860b8","statusClass":"success"}
+{"level":30,"time":1791480183753,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"4a778912-e1d8-4bff-9167-0cd8ba8860b8","statusClass":"success"}
+{"level":30,"time":1791480183758,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"bdb4602d-dd0c-43eb-8f89-5886bd47ded8","statusClass":"success"}
+{"level":30,"time":1791480183758,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"bdb4602d-dd0c-43eb-8f89-5886bd47ded8","statusClass":"success"}
+{"level":30,"time":1791480183758,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"bdb4602d-dd0c-43eb-8f89-5886bd47ded8","statusClass":"success"}
+{"level":30,"time":1791480183762,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"868d20c3-c63d-4d92-9624-ceee0ba96795","statusClass":"success"}
+{"level":30,"time":1791480183762,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"868d20c3-c63d-4d92-9624-ceee0ba96795","statusClass":"success"}
+{"level":30,"time":1791480183762,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"868d20c3-c63d-4d92-9624-ceee0ba96795","statusClass":"success"}
+{"level":30,"time":1791480183766,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"e138d687-6486-40f3-9a64-dc14316e81b7","statusClass":"success"}
+{"level":30,"time":1791480183766,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"e138d687-6486-40f3-9a64-dc14316e81b7","statusClass":"success"}
+{"level":30,"time":1791480183766,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"e138d687-6486-40f3-9a64-dc14316e81b7","statusClass":"success"}
+{"level":30,"time":1791480183772,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"00980596-7ebc-4a33-99f2-b2b4f3ed9b8c","statusClass":"success"}
+{"level":30,"time":1791480183772,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"00980596-7ebc-4a33-99f2-b2b4f3ed9b8c","statusClass":"success"}
+{"level":30,"time":1791480183772,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"00980596-7ebc-4a33-99f2-b2b4f3ed9b8c","statusClass":"success"}
+{"level":30,"time":1791480183776,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"d75ca06c-5d39-448b-ae35-6e6c333bc86f","statusClass":"success"}
+{"level":30,"time":1791480183776,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"d75ca06c-5d39-448b-ae35-6e6c333bc86f","statusClass":"success"}
+{"level":30,"time":1791480183776,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"d75ca06c-5d39-448b-ae35-6e6c333bc86f","statusClass":"success"}
+{"level":30,"time":1791480183785,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"f154ad77-e241-48e3-8008-6931a0891bdf","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"abf357a7-2d42-4329-9678-823c970f9ac6","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"2f74ce9f-13ff-4409-97be-84bd4b65fac5","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"5da50b1b-55bb-4590-a6a4-9d657c7ff7e1","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"e3261e75-4170-483c-8e8d-1e61c71136b0","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"dc7f6c57-ec54-4bfa-9d40-cd05faadf3a9","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"7af65184-86a3-4aec-9482-85dd30da866a","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"fbd82bfe-2d7d-40f2-a3b3-1ab72033a725","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"2308d31b-c863-4ab8-93c6-2341338de999","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"5b4cc620-07b1-47c6-b6ee-bed51ca8e2f6","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"867a54c0-bd84-48ce-bcc4-e5317a94b542","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"8b3264ab-142b-4e87-80ea-70d0d9d05031","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"b6f975c9-27f1-4ec4-9a7a-f99175970291","statusClass":"success"}
+{"level":30,"time":1791480183786,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"2578aeb3-3b32-488e-8847-e1fea0ae1e13","statusClass":"success"}
+{"level":30,"time":1791480183787,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"424ed67a-f9df-4204-82e2-199c20bb54fe","statusClass":"success"}
+{"level":30,"time":1791480183787,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"5d0e6448-2bae-4027-a821-f1603c15a1ba","statusClass":"success"}
+{"level":30,"time":1791480183787,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"1e2877af-2623-43da-8945-d0c6e623473b","statusClass":"success"}
+{"level":30,"time":1791480183787,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"b0d34665-d3e9-461c-872a-98b6192f006c","statusClass":"success"}
+{"level":30,"time":1791480183787,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"f72b162c-f811-437f-9a92-cf2af71744cf","statusClass":"success"}
+{"level":30,"time":1791480183787,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"c612a57d-8128-4d79-913b-c268fe3354f6","statusClass":"success"}
+{"level":30,"time":1791480183787,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"a7aa1dbf-0181-429a-97fd-e0147ce8ac2e","statusClass":"success"}
+{"level":30,"time":1791480183787,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"615f568f-9c4b-497c-9c8d-519e33e5765d","statusClass":"success"}
+{"level":30,"time":1791480183787,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"697b0243-eaf2-4847-b7ca-80aa664586c4","statusClass":"success"}
+{"level":30,"time":1791480183787,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"1638f6da-8eff-44bd-b247-56663faec7f0","statusClass":"success"}
+{"level":30,"time":1791480183789,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"f154ad77-e241-48e3-8008-6931a0891bdf","statusClass":"success"}
+{"level":30,"time":1791480183790,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"e3261e75-4170-483c-8e8d-1e61c71136b0","statusClass":"success"}
+{"level":30,"time":1791480183790,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"2308d31b-c863-4ab8-93c6-2341338de999","statusClass":"success"}
+{"level":30,"time":1791480183791,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"5b4cc620-07b1-47c6-b6ee-bed51ca8e2f6","statusClass":"success"}
+{"level":30,"time":1791480183792,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"dc7f6c57-ec54-4bfa-9d40-cd05faadf3a9","statusClass":"success"}
+{"level":30,"time":1791480183793,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"2f74ce9f-13ff-4409-97be-84bd4b65fac5","statusClass":"success"}
+{"level":30,"time":1791480183794,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"abf357a7-2d42-4329-9678-823c970f9ac6","statusClass":"success"}
+{"level":30,"time":1791480183795,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"7af65184-86a3-4aec-9482-85dd30da866a","statusClass":"success"}
+{"level":30,"time":1791480183796,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"5da50b1b-55bb-4590-a6a4-9d657c7ff7e1","statusClass":"success"}
+{"level":30,"time":1791480183797,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"8b3264ab-142b-4e87-80ea-70d0d9d05031","statusClass":"success"}
+{"level":30,"time":1791480183797,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"b6f975c9-27f1-4ec4-9a7a-f99175970291","statusClass":"success"}
+{"level":30,"time":1791480183798,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"2578aeb3-3b32-488e-8847-e1fea0ae1e13","statusClass":"success"}
+{"level":30,"time":1791480183799,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"424ed67a-f9df-4204-82e2-199c20bb54fe","statusClass":"success"}
+{"level":30,"time":1791480183800,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"5d0e6448-2bae-4027-a821-f1603c15a1ba","statusClass":"success"}
+{"level":30,"time":1791480183800,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"1e2877af-2623-43da-8945-d0c6e623473b","statusClass":"success"}
+{"level":30,"time":1791480183801,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"b0d34665-d3e9-461c-872a-98b6192f006c","statusClass":"success"}
+{"level":30,"time":1791480183802,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"f72b162c-f811-437f-9a92-cf2af71744cf","statusClass":"success"}
+{"level":30,"time":1791480183802,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"867a54c0-bd84-48ce-bcc4-e5317a94b542","statusClass":"success"}
+{"level":30,"time":1791480183803,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"fbd82bfe-2d7d-40f2-a3b3-1ab72033a725","statusClass":"success"}
+{"level":30,"time":1791480183804,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"c612a57d-8128-4d79-913b-c268fe3354f6","statusClass":"success"}
+{"level":30,"time":1791480183805,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"a7aa1dbf-0181-429a-97fd-e0147ce8ac2e","statusClass":"success"}
+{"level":30,"time":1791480183806,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"615f568f-9c4b-497c-9c8d-519e33e5765d","statusClass":"success"}
+{"level":30,"time":1791480183807,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"697b0243-eaf2-4847-b7ca-80aa664586c4","statusClass":"success"}
+{"level":30,"time":1791480183807,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"1638f6da-8eff-44bd-b247-56663faec7f0","statusClass":"success"}
+{"level":30,"time":1791480183824,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REINSTALLED_SUCCEEDED","correlationId":"e3261e75-4170-483c-8e8d-1e61c71136b0","statusClass":"success"}
+{"level":30,"time":1791480183824,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"e3261e75-4170-483c-8e8d-1e61c71136b0","statusClass":"success"}
+{"level":30,"time":1791480183824,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"e3261e75-4170-483c-8e8d-1e61c71136b0","statusClass":"success"}
+{"level":30,"time":1791480183832,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"f154ad77-e241-48e3-8008-6931a0891bdf","statusClass":"success"}
+{"level":30,"time":1791480183832,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"f154ad77-e241-48e3-8008-6931a0891bdf","statusClass":"success"}
+{"level":30,"time":1791480183832,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"f154ad77-e241-48e3-8008-6931a0891bdf","statusClass":"success"}
+{"level":30,"time":1791480183838,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"7af65184-86a3-4aec-9482-85dd30da866a","statusClass":"success"}
+{"level":30,"time":1791480183839,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"7af65184-86a3-4aec-9482-85dd30da866a","statusClass":"success"}
+{"level":30,"time":1791480183839,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"7af65184-86a3-4aec-9482-85dd30da866a","statusClass":"success"}
+{"level":30,"time":1791480183845,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"5da50b1b-55bb-4590-a6a4-9d657c7ff7e1","statusClass":"success"}
+{"level":30,"time":1791480183845,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"5da50b1b-55bb-4590-a6a4-9d657c7ff7e1","statusClass":"success"}
+{"level":30,"time":1791480183845,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"5da50b1b-55bb-4590-a6a4-9d657c7ff7e1","statusClass":"success"}
+{"level":30,"time":1791480183849,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"2308d31b-c863-4ab8-93c6-2341338de999","statusClass":"success"}
+{"level":30,"time":1791480183849,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"2308d31b-c863-4ab8-93c6-2341338de999","statusClass":"success"}
+{"level":30,"time":1791480183849,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"2308d31b-c863-4ab8-93c6-2341338de999","statusClass":"success"}
+{"level":30,"time":1791480183853,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"5b4cc620-07b1-47c6-b6ee-bed51ca8e2f6","statusClass":"success"}
+{"level":30,"time":1791480183853,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"5b4cc620-07b1-47c6-b6ee-bed51ca8e2f6","statusClass":"success"}
+{"level":30,"time":1791480183853,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"5b4cc620-07b1-47c6-b6ee-bed51ca8e2f6","statusClass":"success"}
+{"level":30,"time":1791480183857,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"2f74ce9f-13ff-4409-97be-84bd4b65fac5","statusClass":"success"}
+{"level":30,"time":1791480183857,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"2f74ce9f-13ff-4409-97be-84bd4b65fac5","statusClass":"success"}
+{"level":30,"time":1791480183857,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"2f74ce9f-13ff-4409-97be-84bd4b65fac5","statusClass":"success"}
+{"level":30,"time":1791480183861,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"abf357a7-2d42-4329-9678-823c970f9ac6","statusClass":"success"}
+{"level":30,"time":1791480183861,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"abf357a7-2d42-4329-9678-823c970f9ac6","statusClass":"success"}
+{"level":30,"time":1791480183861,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"abf357a7-2d42-4329-9678-823c970f9ac6","statusClass":"success"}
+{"level":30,"time":1791480183867,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"8b3264ab-142b-4e87-80ea-70d0d9d05031","statusClass":"success"}
+{"level":30,"time":1791480183867,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"8b3264ab-142b-4e87-80ea-70d0d9d05031","statusClass":"success"}
+{"level":30,"time":1791480183867,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"8b3264ab-142b-4e87-80ea-70d0d9d05031","statusClass":"success"}
+{"level":30,"time":1791480183874,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"dc7f6c57-ec54-4bfa-9d40-cd05faadf3a9","statusClass":"success"}
+{"level":30,"time":1791480183874,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"dc7f6c57-ec54-4bfa-9d40-cd05faadf3a9","statusClass":"success"}
+{"level":30,"time":1791480183874,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"dc7f6c57-ec54-4bfa-9d40-cd05faadf3a9","statusClass":"success"}
+{"level":30,"time":1791480183881,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"b6f975c9-27f1-4ec4-9a7a-f99175970291","statusClass":"success"}
+{"level":30,"time":1791480183881,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"b6f975c9-27f1-4ec4-9a7a-f99175970291","statusClass":"success"}
+{"level":30,"time":1791480183881,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"b6f975c9-27f1-4ec4-9a7a-f99175970291","statusClass":"success"}
+{"level":30,"time":1791480183890,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"2578aeb3-3b32-488e-8847-e1fea0ae1e13","statusClass":"success"}
+{"level":30,"time":1791480183890,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"2578aeb3-3b32-488e-8847-e1fea0ae1e13","statusClass":"success"}
+{"level":30,"time":1791480183890,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"2578aeb3-3b32-488e-8847-e1fea0ae1e13","statusClass":"success"}
+{"level":30,"time":1791480183894,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"424ed67a-f9df-4204-82e2-199c20bb54fe","statusClass":"success"}
+{"level":30,"time":1791480183894,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"424ed67a-f9df-4204-82e2-199c20bb54fe","statusClass":"success"}
+{"level":30,"time":1791480183894,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"424ed67a-f9df-4204-82e2-199c20bb54fe","statusClass":"success"}
+{"level":30,"time":1791480183899,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"5d0e6448-2bae-4027-a821-f1603c15a1ba","statusClass":"success"}
+{"level":30,"time":1791480183899,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"5d0e6448-2bae-4027-a821-f1603c15a1ba","statusClass":"success"}
+{"level":30,"time":1791480183899,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"5d0e6448-2bae-4027-a821-f1603c15a1ba","statusClass":"success"}
+{"level":30,"time":1791480183904,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"1e2877af-2623-43da-8945-d0c6e623473b","statusClass":"success"}
+{"level":30,"time":1791480183905,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"1e2877af-2623-43da-8945-d0c6e623473b","statusClass":"success"}
+{"level":30,"time":1791480183905,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"1e2877af-2623-43da-8945-d0c6e623473b","statusClass":"success"}
+{"level":30,"time":1791480183911,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"b0d34665-d3e9-461c-872a-98b6192f006c","statusClass":"success"}
+{"level":30,"time":1791480183912,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"b0d34665-d3e9-461c-872a-98b6192f006c","statusClass":"success"}
+{"level":30,"time":1791480183912,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"b0d34665-d3e9-461c-872a-98b6192f006c","statusClass":"success"}
+{"level":30,"time":1791480183917,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"f72b162c-f811-437f-9a92-cf2af71744cf","statusClass":"success"}
+{"level":30,"time":1791480183917,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"f72b162c-f811-437f-9a92-cf2af71744cf","statusClass":"success"}
+{"level":30,"time":1791480183917,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"f72b162c-f811-437f-9a92-cf2af71744cf","statusClass":"success"}
+{"level":30,"time":1791480183933,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"867a54c0-bd84-48ce-bcc4-e5317a94b542","statusClass":"success"}
+{"level":30,"time":1791480183933,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"867a54c0-bd84-48ce-bcc4-e5317a94b542","statusClass":"success"}
+{"level":30,"time":1791480183933,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"867a54c0-bd84-48ce-bcc4-e5317a94b542","statusClass":"success"}
+{"level":30,"time":1791480183938,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"fbd82bfe-2d7d-40f2-a3b3-1ab72033a725","statusClass":"success"}
+{"level":30,"time":1791480183938,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"fbd82bfe-2d7d-40f2-a3b3-1ab72033a725","statusClass":"success"}
+{"level":30,"time":1791480183938,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"fbd82bfe-2d7d-40f2-a3b3-1ab72033a725","statusClass":"success"}
+{"level":30,"time":1791480183944,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"c612a57d-8128-4d79-913b-c268fe3354f6","statusClass":"success"}
+{"level":30,"time":1791480183944,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"c612a57d-8128-4d79-913b-c268fe3354f6","statusClass":"success"}
+{"level":30,"time":1791480183944,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"c612a57d-8128-4d79-913b-c268fe3354f6","statusClass":"success"}
+{"level":30,"time":1791480183951,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"a7aa1dbf-0181-429a-97fd-e0147ce8ac2e","statusClass":"success"}
+{"level":30,"time":1791480183951,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"a7aa1dbf-0181-429a-97fd-e0147ce8ac2e","statusClass":"success"}
+{"level":30,"time":1791480183951,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"a7aa1dbf-0181-429a-97fd-e0147ce8ac2e","statusClass":"success"}
+{"level":30,"time":1791480183956,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"615f568f-9c4b-497c-9c8d-519e33e5765d","statusClass":"success"}
+{"level":30,"time":1791480183956,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"615f568f-9c4b-497c-9c8d-519e33e5765d","statusClass":"success"}
+{"level":30,"time":1791480183956,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"615f568f-9c4b-497c-9c8d-519e33e5765d","statusClass":"success"}
+{"level":30,"time":1791480183960,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"697b0243-eaf2-4847-b7ca-80aa664586c4","statusClass":"success"}
+{"level":30,"time":1791480183960,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"697b0243-eaf2-4847-b7ca-80aa664586c4","statusClass":"success"}
+{"level":30,"time":1791480183960,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"697b0243-eaf2-4847-b7ca-80aa664586c4","statusClass":"success"}
+{"level":30,"time":1791480183964,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"1638f6da-8eff-44bd-b247-56663faec7f0","statusClass":"success"}
+{"level":30,"time":1791480183964,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"1638f6da-8eff-44bd-b247-56663faec7f0","statusClass":"success"}
+{"level":30,"time":1791480183964,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"1638f6da-8eff-44bd-b247-56663faec7f0","statusClass":"success"}
+✔ production concurrent verified sessions converge and concurrent reinstalls advance once (413.721416ms)
+{"level":30,"time":1791480184004,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_FAILED","correlationId":"f4b578e2-0818-4fe6-810e-c91fd91219cc","statusClass":"failure"}
+✔ production exchange failure cannot bootstrap an installation (37.384083ms)
+{"level":30,"time":1791480184026,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"a86a7b9e-d8d2-4241-941d-0da7fbe84438","statusClass":"success"}
+{"level":30,"time":1791480184027,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_FAILED","correlationId":"a86a7b9e-d8d2-4241-941d-0da7fbe84438","statusClass":"failure"}
+✔ production provider failure cannot bootstrap an installation (25.697988ms)
+{"level":30,"time":1791480184054,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"3fa18b45-0fee-4209-bf44-f143346cdd72","statusClass":"success"}
+{"level":30,"time":1791480184055,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH","correlationId":"3fa18b45-0fee-4209-bf44-f143346cdd72","statusClass":"failure"}
+✔ production domain failure cannot bootstrap an installation (24.287625ms)
+{"level":30,"time":1791480184085,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"db3fabd4-b25e-4d99-8f9f-853c40b69bba","statusClass":"success"}
+{"level":30,"time":1791480184087,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"db3fabd4-b25e-4d99-8f9f-853c40b69bba","statusClass":"success"}
+{"level":30,"time":1791480184089,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_IDENTITY_MISMATCH","correlationId":"db3fabd4-b25e-4d99-8f9f-853c40b69bba","statusClass":"failure"}
+✔ production durable-shop-id failure cannot bootstrap an installation (36.204134ms)
+{"level":30,"time":1791480184114,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"6de7f3dd-4aba-4e70-b84e-59a851297e19","statusClass":"success"}
+{"level":30,"time":1791480184120,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"6de7f3dd-4aba-4e70-b84e-59a851297e19","statusClass":"success"}
+{"level":30,"time":1791480184129,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_CREATED_SUCCEEDED","correlationId":"6de7f3dd-4aba-4e70-b84e-59a851297e19","statusClass":"success"}
+{"level":30,"time":1791480184129,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"6de7f3dd-4aba-4e70-b84e-59a851297e19","statusClass":"success"}
+{"level":30,"time":1791480184129,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"6de7f3dd-4aba-4e70-b84e-59a851297e19","statusClass":"success"}
+{"level":30,"time":1791480184136,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"58a7cda2-c8f7-4469-8d8e-0ae504295871","statusClass":"success"}
+{"level":30,"time":1791480184137,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"58a7cda2-c8f7-4469-8d8e-0ae504295871","statusClass":"success"}
+{"level":30,"time":1791480184141,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"58a7cda2-c8f7-4469-8d8e-0ae504295871","statusClass":"success"}
+{"level":30,"time":1791480184141,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"58a7cda2-c8f7-4469-8d8e-0ae504295871","statusClass":"success"}
+{"level":30,"time":1791480184141,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"58a7cda2-c8f7-4469-8d8e-0ae504295871","statusClass":"success"}
+{"level":30,"time":1791480184142,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"3e5a6815-5f67-45dd-aa68-5cd1a00958a3","statusClass":"success"}
+{"level":30,"time":1791480184143,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"3e5a6815-5f67-45dd-aa68-5cd1a00958a3","statusClass":"success"}
+{"level":30,"time":1791480184147,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"3e5a6815-5f67-45dd-aa68-5cd1a00958a3","statusClass":"success"}
+{"level":30,"time":1791480184147,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"3e5a6815-5f67-45dd-aa68-5cd1a00958a3","statusClass":"success"}
+{"level":30,"time":1791480184147,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"3e5a6815-5f67-45dd-aa68-5cd1a00958a3","statusClass":"success"}
+{"level":30,"time":1791480184148,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"e599af7f-2bf8-45b7-9f16-a9b96c17da4a","statusClass":"success"}
+{"level":30,"time":1791480184149,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"e599af7f-2bf8-45b7-9f16-a9b96c17da4a","statusClass":"success"}
+{"level":30,"time":1791480184154,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"e599af7f-2bf8-45b7-9f16-a9b96c17da4a","statusClass":"success"}
+✔ technical readiness HTTP remains authenticated, private, staff-bound and read-only (62.458227ms)
+{"level":30,"time":1791480184154,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"e599af7f-2bf8-45b7-9f16-a9b96c17da4a","statusClass":"success"}
+{"level":30,"time":1791480184154,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"e599af7f-2bf8-45b7-9f16-a9b96c17da4a","statusClass":"success"}
+✔ readiness collection fingerprints match the reviewed Function query artifacts (2.892833ms)
+✔ overlapping distinct-key M5 creates serialize before the command FK lock upgrade (173.162056ms)
+✔ currency precision rejects invalid saved and legacy publication amounts without rounding or durable intent (172.018941ms)
+✔ durable editor CAS, exact-key replay, independent copy, immutable geometry, and reinstall fence (378.315447ms)
+✔ actual M4 prepare/advance over immutable M5 revision reports ready, conflict and hold truthfully (761.601607ms)
+✔ diagnostic preview requires accounting and HTTPS before any provider access (386.124484ms)
+✔ live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous replay and mutation refusal (548.20348ms)
+✔ preview same-token single flight; replacement and current-installation invalidation exchange fresh (1.382023ms)
+✔ preview rejected exchange is not cached and expired or long-lived identity is denied (0.827772ms)
+{"level":30,"time":1791480193825,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"30f45a59-bff0-4a3d-88d7-801eccd694a1","statusClass":"success"}
+{"level":30,"time":1791480193851,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"30f45a59-bff0-4a3d-88d7-801eccd694a1","statusClass":"success"}
+{"level":30,"time":1791480193859,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"30f45a59-bff0-4a3d-88d7-801eccd694a1","statusClass":"success"}
+{"level":30,"time":1791480193860,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"30f45a59-bff0-4a3d-88d7-801eccd694a1","statusClass":"success"}
+{"level":30,"time":1791480193860,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"30f45a59-bff0-4a3d-88d7-801eccd694a1","statusClass":"success"}
+▶ production composition uses signed staff SDK, current policy and trusted readiness: missing
+  ✔ scheduled cancellation boundary 2026-09-30T23:59:59.999Z: allowed=true (11.985248ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.000Z: allowed=false (11.07721ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.001Z: allowed=false (11.220491ms)
+✔ production composition uses signed staff SDK, current policy and trusted readiness: missing (503.098514ms)
+{"level":30,"time":1791480194137,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"f628569c-cfc1-4100-98ee-6d17791076df","statusClass":"success"}
+{"level":30,"time":1791480194143,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"f628569c-cfc1-4100-98ee-6d17791076df","statusClass":"success"}
+{"level":30,"time":1791480194150,"event":"admin_authentication","authStage":"INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED","correlationId":"f628569c-cfc1-4100-98ee-6d17791076df","statusClass":"success"}
+{"level":30,"time":1791480194150,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"f628569c-cfc1-4100-98ee-6d17791076df","statusClass":"success"}
+{"level":30,"time":1791480194150,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"f628569c-cfc1-4100-98ee-6d17791076df","statusClass":"success"}
+▶ production composition uses signed staff SDK, current policy and trusted readiness: trusted-function-mismatch
+  ✔ scheduled cancellation boundary 2026-09-30T23:59:59.999Z: allowed=true (15.346703ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.000Z: allowed=false (10.371261ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.001Z: allowed=false (10.061856ms)
+✔ production composition uses signed staff SDK, current policy and trusted readiness: trusted-function-mismatch (308.823976ms)
+✔ production readiness composes trusted record, independent expected build, current Function read and preloaded day (22.834355ms)
+✔ missing release evidence never synthesizes a build, queries Functions or falls back to UTC (0.778339ms)
+✔ server activation composition cannot promote a diagnostic observation without trusted release source (1.71774ms)
+✔ preloaded trusted merchant day is synchronous across DST and server-day boundaries (22.341607ms)
+✔ server composition binds trusted provider reads to one signed immutable quote candidate (51.239917ms)
+✔ built SSR serves public shell and a real Polaris/Preact interaction (5944.854931ms)
+✔ HTTP 5xx after durable inbox commit leads to same-ID retry and a single queue handoff (14.119554ms)
+✔ stream bound rejects a lying or absent Content-Length before trusted metadata is stored (1.775553ms)
+✖ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (11509.558349ms)
+ℹ tests 86
+ℹ suites 0
+ℹ pass 85
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 50593.848033
+
+✖ failing tests:
+
+test at test/shopify-webhook.test.mjs:10:1
+✖ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (11509.558349ms)
+  AssertionError [ERR_ASSERTION]: worker did not atomically process the current authenticated uninstall
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-023-worktree/apps/web/test/shopify-webhook.test.mjs:163:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }
+[ELIFECYCLE] Test failed. See above for more details.
+Error: ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL
+
+  × "pnpm recursive run" failed in /home/serveradmin/insignia-m5-023-worktree/
+  │ apps/web
+
+[ELIFECYCLE] Command failed with exit code 1.
+[ELIFECYCLE] Command failed with exit code 1.

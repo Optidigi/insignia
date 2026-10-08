@@ -1,0 +1,54 @@
+Use the attached `insignia-pr53-approved-m5-023-handoff` package.
+
+PR #53 is APPROVED for NORMAL merge only at:
+
+base `e132c108a2108aea830ac2a5229b410f93a61a7d`
+head `e5d93a42ec06090b53f63088bcdb03c29d4a6a16`
+tree `33f3e69107dce64018e9504609510206b22e37ae`
+
+Reverify exact refs, all 11 exact-head attempt-1 successful workflows, both fresh CLEAR reviews and external principal approval. Mark ready if necessary without changing head. No squash/rebase/force/protection bypass/fabricated native approval. Verify actual normal-merge ordered parents/tree.
+
+Then execute M5-023 exactly.
+
+Do NOT manually seed `insignia-rewrite-dev` into PostgreSQL.
+
+Implement the permanent managed-install/token-exchange first-authenticated-session bootstrap:
+
+verified App Bridge ID token
+→ matching online staff grant
+→ exact provider currentAppInstallation/shop identity
+→ concurrency-safe/idempotent durable tenant/install lifecycle.
+
+Provider identity is authoritative. Browser IDs are not.
+
+Exact repeat installation reuses the generation. Independently proven new AppInstallation advances through `startInstallation()` once. Stale requests cannot reverse a newer generation.
+
+Evaluate the existing expiring-offline M3 credential lifecycle. If background/worker consumers require offline access, obtain and persist the expiring offline pair through the existing encrypted credential repository and refresh lifecycle; no second token store and no offline-token substitution for staff permissions.
+
+After source/tests/reviews/CI freeze, renew only owner-authorized restricted VPS access.
+
+Apply migration16 and least-privilege trusted-release roles.
+
+Deploy ONLY the corrected web runtime. No Shopify app version/release/rollback or scope operation.
+
+Then owner performs one normal-browser Search.
+
+If auth/bootstrap succeeds, prove exact durable tenant/current AppInstallation and Search success.
+
+Then append fresh exact trusted release evidence for Active `1158986629121`, verify Function/build/signing/time readiness, preserving the 30-second freshness contract.
+
+Commercial configuration is a hard owner boundary.
+
+Do not invent plan handles, usage handles, policy IDs, features, included usage, Partner credentials or subscription state.
+
+If no legitimate owner-backed production/dev commercial configuration is available, STOP as:
+
+`BLOCKED_OWNER_COMMERCIAL_CONFIGURATION`
+
+Do not create the publication fixture.
+
+If legitimate entitlement is available, continue directly through remaining G7 plus at most one disposable product/ProductConfig configure→preview→save→publish→v3 activation and cleanup.
+
+No M6/M7, no merchant rollout, no availability research.
+
+Return one integrated PR with explicit outcome and stop for principal review.

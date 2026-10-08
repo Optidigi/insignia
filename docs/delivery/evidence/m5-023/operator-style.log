@@ -1,0 +1,89 @@
+docs/delivery/evidence/m5-023/operators/release-append-controls.mjs:14:16 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    12 │   { versionId: 'gid://shopify/Version/1158986629121', versionTag: 'm5-019r-9b94149272d1', status: 'active' },
+    13 │   ...['1158837927937', '1153019904001', '1152880803841', '1146748534785'].map((id) => ({
+  > 14 │     versionId: 'gid://shopify/Version/' + id,
+       │                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    15 │     status: 'inactive',
+    16 │   })),
+  
+  i Unsafe fix: Use a template literal.
+  
+    12 12 │     { versionId: 'gid://shopify/Version/1158986629121', versionTag: 'm5-019r-9b94149272d1', status: 'active' },
+    13 13 │     ...['1158837927937', '1153019904001', '1152880803841', '1146748534785'].map((id) => ({
+    14    │ - ····versionId:·'gid://shopify/Version/'·+·id,
+       14 │ + ····versionId:·`gid://shopify/Version/${id}`,
+    15 15 │       status: 'inactive',
+    16 16 │     })),
+  
+
+docs/delivery/evidence/m5-023/operators/release-append-controls.mjs:37:12 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    35 │     if (control === 'wrong-active') input.activeObservation.versions[0].status = 'inactive';
+    36 │     const child = spawn(process.execPath, ['--input-type=module', '-e', source], {
+  > 37 │       cwd: root + 'apps/web',
+       │            ^^^^^^^^^^^^^^^^^
+    38 │       env: { ...process.env, DATABASE_URL: 'postgres://synthetic@127.0.0.1:' + server.address().port + '/synthetic' },
+    39 │     });
+  
+  i Unsafe fix: Use a template literal.
+  
+    35 35 │       if (control === 'wrong-active') input.activeObservation.versions[0].status = 'inactive';
+    36 36 │       const child = spawn(process.execPath, ['--input-type=module', '-e', source], {
+    37    │ - ······cwd:·root·+·'apps/web',
+       37 │ + ······cwd:·`${root}apps/web`,
+    38 38 │         env: { ...process.env, DATABASE_URL: 'postgres://synthetic@127.0.0.1:' + server.address().port + '/synthetic' },
+    39 39 │       });
+  
+
+docs/delivery/evidence/m5-023/operators/release-append-controls.mjs:38:44 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    36 │     const child = spawn(process.execPath, ['--input-type=module', '-e', source], {
+    37 │       cwd: root + 'apps/web',
+  > 38 │       env: { ...process.env, DATABASE_URL: 'postgres://synthetic@127.0.0.1:' + server.address().port + '/synthetic' },
+       │                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    39 │     });
+    40 │     let output = '';
+  
+  i Unsafe fix: Use a template literal.
+  
+    36 36 │       const child = spawn(process.execPath, ['--input-type=module', '-e', source], {
+    37 37 │         cwd: root + 'apps/web',
+    38    │ - ······env:·{·...process.env,·DATABASE_URL:·'postgres://synthetic@127.0.0.1:'·+·server.address().port·+·'/synthetic'·},
+       38 │ + ······env:·{·...process.env,·DATABASE_URL:·`postgres://synthetic@127.0.0.1:${server.address().port}/synthetic`·},
+    39 39 │       });
+    40 40 │       let output = '';
+  
+
+docs/delivery/evidence/m5-023/operators/release-append.mjs:57:16 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    55 │   assert.equal(state.currentGeneration, readiness.installationGeneration);
+    56 │   assert.equal(state.externalInstallationId, readiness.externalInstallationId);
+  > 57 │   assert.equal('gid://shopify/Shop/' + state.shopifyShopId, readiness.shopId);
+       │                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    58 │   assert.equal(readiness.functions.observation.shopId, state.shopId);
+    59 │   assert.equal(readiness.functions.observation.installationGeneration, state.currentGeneration);
+  
+  i Unsafe fix: Use a template literal.
+  
+     55  55 │     assert.equal(state.currentGeneration, readiness.installationGeneration);
+     56  56 │     assert.equal(state.externalInstallationId, readiness.externalInstallationId);
+     57     │ - ··assert.equal('gid://shopify/Shop/'·+·state.shopifyShopId,·readiness.shopId);
+         57 │ + ··assert.equal(`gid://shopify/Shop/${state.shopifyShopId}`,·readiness.shopId);
+     58  58 │     assert.equal(readiness.functions.observation.shopId, state.shopId);
+     59  59 │     assert.equal(readiness.functions.observation.installationGeneration, state.currentGeneration);
+  
+
+Skipped 7 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 2 files in 10ms. Fixed 2 files.
+Found 4 infos.

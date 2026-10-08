@@ -1,0 +1,27 @@
+{
+  "state-compose-preflight-red.log": {
+    "rawSha256": "210297bb2c3201ed27361b64c4b9c24dac03ef7e991bddc9156188d5a84d9ac9",
+    "repositorySha256": "210297bb2c3201ed27361b64c4b9c24dac03ef7e991bddc9156188d5a84d9ac9",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "host-controls-r13.log": {
+    "rawSha256": "f66f7f50d6c19efc47d5b3e5132c233d4380f015876da500cf6e66af284b358d",
+    "repositorySha256": "f66f7f50d6c19efc47d5b3e5132c233d4380f015876da500cf6e66af284b358d",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "package-decoder-r13.log": {
+    "rawSha256": "97a8c1173914cd8bc26518cae1c3eb19fe26fac486837110f64378bea4830b18",
+    "repositorySha256": "97a8c1173914cd8bc26518cae1c3eb19fe26fac486837110f64378bea4830b18",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "style-r13.log": {
+    "rawSha256": "f3971f2cae75d23be6b9d1eb6f626cfbdf8e5118d30071ee52209348eb8348bf",
+    "repositorySha256": "bd091c739d81f61be4903cc94a328322d8385ca89849c0571d008a99a65b4675",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  },
+  "secrets-r13.log": {
+    "rawSha256": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "repositorySha256": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
+    "normalization": "Trailing whitespace/blank EOF only; private original preserved"
+  }
+}

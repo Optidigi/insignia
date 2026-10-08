@@ -1,0 +1,35 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-023-worktree/packages/database
+
+ ❯ test/managed-installation.test.ts (12 tests | 1 failed | 10 skipped) 86ms
+   × first bootstrap preserves uninstall ordering: current 55ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/managed-installation.test.ts > first bootstrap preserves uninstall ordering: current
+AssertionError: expected 'stale' to be 'processed' // Object.is equality
+
+Expected: "processed"
+Received: "stale"
+
+ ❯ test/managed-installation.test.ts:31:63
+     29|       core.tenants.ensureManagedInstallation(tx, { ...provider, expect…
+     30|     );
+     31|     expect(await core.webhooks.processUninstall(delivery.id)).toBe(era…
+       |                                                               ^
+     32|     expect(await core.tenants.getManagedInstallationState(provider.sho…
+     33|       shopId: installed.state.shopId,
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 1 passed | 10 skipped (12)
+   Start at  13:55:30
+   Duration  832ms (transform 47%, import 40%, tests 12%, worker 1%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-023-
+  │ worktree/packages/database
+

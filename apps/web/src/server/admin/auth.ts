@@ -36,7 +36,14 @@ export interface AdminIdentityPort {
 
 /** Durable reconciliation exposes only its fixed failing stage, never database messages. */
 export class AdminInstallationReconciliationError extends Error {
-  readonly stage: 'TENANT_READ_FAILED' | 'CURRENT_INSTALLATION_READ_FAILED' | 'TENANT_NOT_FOUND_OR_SHOP_ID_MISMATCH';
+  readonly stage:
+    | 'TENANT_READ_FAILED'
+    | 'CURRENT_INSTALLATION_READ_FAILED'
+    | 'TENANT_NOT_FOUND_OR_SHOP_ID_MISMATCH'
+    | 'INSTALLATION_BOOTSTRAP_IDENTITY_MISMATCH'
+    | 'INSTALLATION_BOOTSTRAP_STALE_STATE'
+    | 'INSTALLATION_BOOTSTRAP_CONFIRMATION_REQUIRED'
+    | 'INSTALLATION_BOOTSTRAP_WRITE_FAILED';
   constructor(stage: AdminInstallationReconciliationError['stage']) {
     super('Current installation unavailable');
     this.name = 'AdminInstallationReconciliationError';
