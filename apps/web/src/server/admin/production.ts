@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import {
   type ActivationReadinessPort,
   bindProviderSubscription,
@@ -6,11 +7,13 @@ import {
 } from '@insignia/application';
 import type { MerchantDraft } from '@insignia/contracts';
 import { createDurableCore } from '@insignia/database';
+import { type AdminAuthenticationStage, createObservability } from '@insignia/observability';
 import {
   createActiveSubscriptionClient,
   createAdminOnlineIdentity,
   createCatalogReader,
   createCatalogTransport,
+  createFunctionOwnershipReconciler,
   createPartnerGraphqlTransport,
   createPublicationAdminAdapter,
   createPublicationAdminHttpTransport,
@@ -20,9 +23,9 @@ import {
 } from '@insignia/shopify';
 import { Pool } from 'pg';
 import { createMerchantConfigService } from '../merchant-config.js';
-import { type AdminInstallation, createAdminAuthenticator } from './auth.js';
+import { type AdminInstallation, AdminInstallationReconciliationError, createAdminAuthenticator } from './auth.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
-import { createServerActivationReadiness } from './release-evidence.js';
+import { createBoundProductionActivationReadiness } from './release-evidence.js';
 
 function project(value: ShopifyCatalogProduct): CatalogProduct {
   return {
@@ -79,6 +82,8 @@ export function createProductionAdminServices(
   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
   const grants = new WeakMap<AdminActor, OnlineStaffGrant>();
+  const merchantTimezones = new WeakMap<AdminActor, string>();
+  const authenticationLogger = createObservability().logger;
   const activations = new WeakMap<AdminActor, ReturnType<typeof core.productionActivations.create>>();
   const policy = featurePolicy(env);
   const partner =
@@ -167,9 +172,9 @@ export function createProductionAdminServices(
         };
       },
     };
-    const remote = createPublicationAdminAdapter({
-      transport: createPublicationAdminHttpTransport({ credentials }),
-    });
+    const transport = createPublicationAdminHttpTransport({ credentials });
+    const remote = createPublicationAdminAdapter({ transport });
+    const functions = createFunctionOwnershipReconciler({ transport });
     const coordinator = core.productionActivations.create({
       appId,
       appClientId: apiKey,
@@ -195,11 +200,26 @@ export function createProductionAdminServices(
       }),
       readiness:
         activationReadiness ??
-        createServerActivationReadiness({
-          expectedBuild: { read: async () => null },
-          observeFunctions: async () => ({ transform: 'unknown', validation: 'unknown', observation: null }),
-          currentDay: () => {
-            throw new Error('Trusted merchant calendar unavailable');
+        createBoundProductionActivationReadiness({
+          scope: {
+            shopId: actor.tenantShopId,
+            installationGeneration: actor.installationGeneration,
+            appClientId: apiKey,
+          },
+          ianaTimezone: merchantTimezones.get(actor) ?? null,
+          records: core.trustedReleaseRecords,
+          observeFunctions: async (scope, expected) => {
+            await active(actor);
+            const observed = await functions.read(
+              { ...scope, appId, shopifyShopId: actor.shopId },
+              {
+                appKey: apiKey,
+                transformInputQuerySha256: expected.transform.inputQuerySha256,
+                validationInputQuerySha256: expected.validation.inputQuerySha256,
+              },
+            );
+            await active(actor);
+            return observed;
           },
         }),
       maxObservationAgeMs: 30_000,
@@ -249,34 +269,51 @@ export function createProductionAdminServices(
   return {
     appOrigin,
     async authenticate(request) {
+      const correlationId = randomUUID();
+      const diagnostic = (authStage: AdminAuthenticationStage) =>
+        authenticationLogger.info('admin_authentication', { authStage, correlationId });
       let online: OnlineStaffGrant | undefined;
-      const authenticator = createAdminAuthenticator({
-        verifySessionToken: shopify.verify,
-        async exchangeOnlineGrant(token, identity) {
-          online = await shopify.exchangeOnline(token, identity);
-          return online;
+      let merchantTimezone: string | undefined;
+      const authenticator = createAdminAuthenticator(
+        {
+          verifySessionToken: shopify.verify,
+          async exchangeOnlineGrant(token, identity) {
+            online = await shopify.exchangeOnline(token, identity);
+            return online;
+          },
+          async readInstallation(current): Promise<AdminInstallation> {
+            if (!online || online.shop !== current.shop) throw new Error('Online grant missing');
+            const provider = await shopify.readInstallation(online);
+            diagnostic('INSTALLATION_PROVIDER_READ_SUCCEEDED');
+            merchantTimezone = provider.ianaTimezone;
+            const tenant = await core.tenants.getShopByDomain(provider.shop).catch(() => {
+              throw new AdminInstallationReconciliationError('TENANT_READ_FAILED');
+            });
+            if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
+              throw new AdminInstallationReconciliationError('TENANT_NOT_FOUND_OR_SHOP_ID_MISMATCH');
+            const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId).catch(() => {
+              throw new AdminInstallationReconciliationError('CURRENT_INSTALLATION_READ_FAILED');
+            });
+            return {
+              shop: provider.shop,
+              shopId: provider.shopId,
+              installationId: provider.installationId,
+              trustedInstallationId: installed?.externalInstallationId ?? '',
+              tenantShopId: tenant.shopId,
+              installationGeneration: installed?.generation ?? '',
+              active: installed?.active === true,
+              grantedScopes: provider.grantedScopes,
+            };
+          },
         },
-        async readInstallation(current): Promise<AdminInstallation> {
-          if (!online || online.shop !== current.shop) throw new Error('Online grant missing');
-          const provider = await shopify.readInstallation(online);
-          const tenant = await core.tenants.getShopByDomain(provider.shop);
-          if (!tenant || !tenant.shopifyShopId || 'gid://shopify/Shop/' + tenant.shopifyShopId !== provider.shopId)
-            throw new Error('Tenant installation mismatch');
-          const installed = await core.tenants.getCurrentAdminInstallation(tenant.shopId);
-          return {
-            shop: provider.shop,
-            shopId: provider.shopId,
-            installationId: provider.installationId,
-            trustedInstallationId: installed?.externalInstallationId ?? '',
-            tenantShopId: tenant.shopId,
-            installationGeneration: installed?.generation ?? '',
-            active: installed?.active === true,
-            grantedScopes: provider.grantedScopes,
-          };
-        },
-      });
+        Date.now,
+        diagnostic,
+      );
       const actor = await authenticator(request);
-      if (actor && online) grants.set(actor, online);
+      if (actor && online) {
+        grants.set(actor, online);
+        if (merchantTimezone) merchantTimezones.set(actor, merchantTimezone);
+      }
       return actor;
     },
     catalog: { list: catalog.list, get: catalog.get },

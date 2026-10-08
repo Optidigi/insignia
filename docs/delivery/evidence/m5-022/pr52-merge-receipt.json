@@ -1,0 +1,13 @@
+{
+  "classification": "PR52_NORMAL_MERGE_ORDERED_PARENTS_TREE_VERIFIED",
+  "recordedAt": "2026-10-08T10:26:53.963688+00:00",
+  "merge": "e132c108a2108aea830ac2a5229b410f93a61a7d",
+  "orderedParents": [
+    "db4265228b901a99cd4e3602ee0c387065080cc6",
+    "39c77ee73f7534e01a47853968eec8c139d917c6"
+  ],
+  "tree": "315cc4cf18c3c1eef0cb0d8fa3c542fc5170bed5",
+  "mergeMethod": "merge",
+  "approvedHeadUnchanged": true,
+  "squashRebaseForceProtectionBypassOrFabricatedNativeApproval": false
+}

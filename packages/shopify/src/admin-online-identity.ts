@@ -5,6 +5,29 @@ import { ApiVersion, HttpResponseError, InvalidJwtError, RequestedTokenType, sho
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
 import { withAdminDeadline } from './admin-deadline.js';
 
+export type AdminOnlineIdentityStage =
+  | 'ONLINE_EXCHANGE_REFRESH_REQUIRED'
+  | 'ONLINE_EXCHANGE_FAILED'
+  | 'ONLINE_GRANT_MISMATCH'
+  | 'INSTALLATION_PROVIDER_READ_FAILED'
+  | 'INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH';
+
+const stageMessages: Record<AdminOnlineIdentityStage, string> = {
+  ONLINE_EXCHANGE_REFRESH_REQUIRED: 'Identity refresh required',
+  ONLINE_EXCHANGE_FAILED: 'Online token exchange failed',
+  ONLINE_GRANT_MISMATCH: 'Online staff grant mismatch',
+  INSTALLATION_PROVIDER_READ_FAILED: 'Installation read failed',
+  INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH: 'Installation response mismatch',
+};
+/** Only bounded classification survives the SDK/provider boundary; no cause/body/token. */
+export class AdminOnlineIdentityError extends Error {
+  constructor(readonly stage: AdminOnlineIdentityStage) {
+    super(stageMessages[stage]);
+    if (!Object.hasOwn(stageMessages, stage)) throw new Error('Invalid authentication classification');
+    this.name = 'AdminOnlineIdentityError';
+  }
+}
+
 export type VerifiedStaffIdentity = {
   shop: string;
   staffId: string;
@@ -21,6 +44,7 @@ export type OnlineStaffGrant = {
 };
 export type AdminInstallationRead = {
   shop: string;
+  ianaTimezone: string;
   shopId: string;
   installationId: string;
   grantedScopes: string[];
@@ -34,7 +58,7 @@ export function deadlineAwareOnlineFetch(baseFetch: typeof fetch): typeof fetch 
 const nodeSdkFetch = abstractFetch;
 setAbstractFetchFunc(deadlineAwareOnlineFetch(nodeSdkFetch));
 const installationQuery = `query M5001StaffInstallation {
-  shop { id myshopifyDomain }
+  shop { id myshopifyDomain ianaTimezone }
   currentAppInstallation { id accessScopes { handle } }
 }`;
 function scopes(value: string | undefined): string[] {
@@ -44,7 +68,15 @@ function scopes(value: string | undefined): string[] {
     .filter(Boolean);
 }
 function refreshableExchangeError(error: unknown): boolean {
-  return error instanceof InvalidJwtError || (error instanceof HttpResponseError && error.response.code === 400);
+  if (error instanceof InvalidJwtError) return true;
+  if (!(error instanceof HttpResponseError) || error.response.code !== 400) return false;
+  const body = error.response.body;
+  return (
+    !!body &&
+    typeof body === 'object' &&
+    !Array.isArray(body) &&
+    (body as Record<string, unknown>).error === 'invalid_subject_token'
+  );
 }
 
 type OnlineSession = {
@@ -72,6 +104,8 @@ export function createAdminOnlineIdentity(input: {
     hostName: input.hostName,
     apiVersion: ApiVersion.July26,
     isEmbeddedApp: true,
+    // Dedicated bounded diagnostics own logging; SDK messages/bodies are never logged.
+    logger: { log: () => {} },
   });
   return {
     async verify(token: string): Promise<VerifiedStaffIdentity> {
@@ -119,8 +153,8 @@ export function createAdminOnlineIdentity(input: {
           'Online token exchange',
         );
       } catch (error) {
-        if (refreshableExchangeError(error)) throw new Error('Identity refresh required');
-        throw new Error('Online token exchange failed');
+        if (refreshableExchangeError(error)) throw new AdminOnlineIdentityError('ONLINE_EXCHANGE_REFRESH_REQUIRED');
+        throw new AdminOnlineIdentityError('ONLINE_EXCHANGE_FAILED');
       }
       const associated = session.onlineAccessInfo?.associated_user;
       if (
@@ -133,7 +167,7 @@ export function createAdminOnlineIdentity(input: {
         !associated ||
         String(associated.id) !== identity.staffId
       )
-        throw new Error('Online staff grant mismatch');
+        throw new AdminOnlineIdentityError('ONLINE_GRANT_MISMATCH');
       return {
         shop: identity.shop,
         staffId: identity.staffId,
@@ -185,12 +219,17 @@ export function createAdminOnlineIdentity(input: {
           try {
             body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(buffer));
           } catch {
-            throw new Error('Installation response invalid');
+            throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH');
           }
-          if (!body || typeof body !== 'object' || 'errors' in body) throw new Error('Installation response invalid');
+          if (!body || typeof body !== 'object' || Array.isArray(body))
+            throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH');
+          if ('errors' in body) throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED');
           const data = (body as { data?: unknown }).data;
-          if (!data || typeof data !== 'object') throw new Error('Installation response invalid');
-          const shop = (data as { shop?: unknown }).shop as { id?: unknown; myshopifyDomain?: unknown } | undefined;
+          if (!data || typeof data !== 'object')
+            throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH');
+          const shop = (data as { shop?: unknown }).shop as
+            | { id?: unknown; myshopifyDomain?: unknown; ianaTimezone?: unknown }
+            | undefined;
           const install = (data as { currentAppInstallation?: unknown }).currentAppInstallation as
             | { id?: unknown; accessScopes?: unknown }
             | undefined;
@@ -198,6 +237,9 @@ export function createAdminOnlineIdentity(input: {
             !shop ||
             !/^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/.test(String(shop.id)) ||
             shop.myshopifyDomain !== grant.shop ||
+            typeof shop.ianaTimezone !== 'string' ||
+            shop.ianaTimezone.length > 128 ||
+            !/^[A-Za-z_][A-Za-z0-9_+.-]*(?:\/[A-Za-z0-9_+.-]+){0,3}$/.test(shop.ianaTimezone) ||
             !install ||
             !/^gid:\/\/shopify\/AppInstallation\/[1-9][0-9]*$/.test(String(install.id)) ||
             !Array.isArray(install.accessScopes) ||
@@ -205,9 +247,15 @@ export function createAdminOnlineIdentity(input: {
               (scope) => scope && typeof scope === 'object' && typeof scope.handle === 'string',
             )
           )
-            throw new Error('Installation response mismatch');
+            throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH');
+          try {
+            new Intl.DateTimeFormat('en-US', { timeZone: shop.ianaTimezone as string });
+          } catch {
+            throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH');
+          }
           return {
             shop: grant.shop,
+            ianaTimezone: shop.ianaTimezone as string,
             shopId: shop.id as string,
             installationId: install.id as string,
             grantedScopes: install.accessScopes.map((scope) => scope.handle),
@@ -217,7 +265,10 @@ export function createAdminOnlineIdentity(input: {
         () => {
           void reader?.cancel().catch(() => {});
         },
-      );
+      ).catch((error: unknown) => {
+        if (error instanceof AdminOnlineIdentityError) throw error;
+        throw new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED');
+      });
     },
   };
 }

@@ -1,3 +1,13 @@
+# Current M5-022 — offline correction; live provisioning stop
+
+**BLOCKED_PRODUCTION_PROVISIONING_REQUIRED / M5_G7_NOT_PASSED.** [Report](M5-022-REPORT.md), [exact provisioning proposal](M5-022-PROVISIONING-PROPOSAL.md), [G7 provenance matrix](M5-022-G7-MATRIX.md). Owner-authorized restricted SSH read-only diagnosis proves PostgreSQL18.6 connectivity but no exact designated tenant/current installation, no trusted-release relation and four absent commercial/Partner configuration keys. These are independently reproduced readiness prerequisites, not proof of the historical Search failing substage. Temporary key revoked and private key removed. No production DML, provisioning, web deployment, new owner Search, app/provider write or fixture.
+
+[PR52 supplied approval](PR-052-principal-review.md) and [M5-022 authority](prompts/M5-022-AUTH-READINESS-G7-CLOSURE.md) verified; [normal merge](evidence/m5-022/pr52-merge-receipt.json) e132c108a2108aea830ac2a5229b410f93a61a7d has approved ordered parents/tree. Offline auth correction preserves refresh-required exchange as typed401/header; other outages remain503. Safe stage diagnostics, append-only operator-owned PostgreSQL release source with SELECT-only runtime access, independent expected build, existing Function observer and synchronous authenticated merchant-local calendar are wired without provisioning or readiness weakening. Historical v1/v2/v3 source and provider evidence remain unchanged.
+
+Fresh full regression/PG18/stress/renderer and two NEW actual GPT-6.1-sol/high completed-change CLEAR reviews plus natural final-head attempt1 CI are required in the successor exact-ref external review packet. Return integrated implementation/evidence PR; stop for principal review. Canonical Insignia remains https://insignia-app.optidigi.nl, accepted Active1158986629121/rollback1153019904001/NEVER_RELEASE1158837927937; no new live version equality claimed. Do not deploy, provision, request Search, create fixture, merge successor, start M6/M7 or merchant rollout in this stopped slice.
+
+---
+
 # Current M5-021 — readiness blocked before fixture
 
 [PR51 approval](PR-051-principal-review.md)/[slice](prompts/M5-021-OWNER-ASSISTED-G7.md) verified exact refs, ten attempt1 successes and both fresh CLEAR bindings. [Normal merge](evidence/m5-021/pr51-merge-receipt.json) db4265228b901a99cd4e3602ee0c387065080cc6 has approved ordered parents/tree; no head change/bypass. Settled Active1158986629121; rollback1153019904001; old1158837927937 NEVER_RELEASE. No new app/provider operation.

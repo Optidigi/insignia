@@ -3,6 +3,7 @@ import pino from 'pino';
 import { Counter, Gauge, Registry } from 'prom-client';
 
 const EVENTS = new Set([
+  'admin_authentication',
   'worker_started',
   'worker_stopped',
   'worker_start_failed',
@@ -15,6 +16,7 @@ const EVENTS = new Set([
 ]);
 
 export type RuntimeEvent =
+  | 'admin_authentication'
   | 'worker_started'
   | 'worker_stopped'
   | 'worker_start_failed'
@@ -25,7 +27,27 @@ export type RuntimeEvent =
   | 'refresh_process_failed'
   | 'queue_job_rejected';
 
+const ADMIN_AUTH_STAGES = [
+  'ONLINE_EXCHANGE_REFRESH_REQUIRED',
+  'ONLINE_EXCHANGE_FAILED',
+  'ONLINE_GRANT_MISMATCH',
+  'INSTALLATION_PROVIDER_READ_FAILED',
+  'INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH',
+  'TENANT_READ_FAILED',
+  'CURRENT_INSTALLATION_READ_FAILED',
+  'TENANT_NOT_FOUND_OR_SHOP_ID_MISMATCH',
+  'CURRENT_INSTALLATION_MISSING_OR_INACTIVE',
+  'CURRENT_INSTALLATION_ID_MISMATCH',
+  'ONLINE_EXCHANGE_SUCCEEDED',
+  'INSTALLATION_PROVIDER_READ_SUCCEEDED',
+  'TENANT_RECONCILIATION_SUCCEEDED',
+  'AUTHENTICATION_SUCCEEDED',
+] as const;
+export type AdminAuthenticationStage = (typeof ADMIN_AUTH_STAGES)[number];
+
 export interface RuntimeLogDetails {
+  authStage?: AdminAuthenticationStage;
+  correlationId?: string;
   inboxId?: string;
   shopId?: string;
   jobId?: string;
@@ -55,6 +77,26 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
   if (Number.isInteger(input.attempt) && (input.attempt ?? -1) >= 0 && (input.attempt ?? 0) <= 1000)
     result.attempt = input.attempt;
   return result;
+}
+
+function eventDetails(event: RuntimeEvent, input: RuntimeLogDetails) {
+  if (event !== 'admin_authentication') return safeDetails(input);
+  if (
+    !ADMIN_AUTH_STAGES.includes(input.authStage!) ||
+    typeof input.correlationId !== 'string' ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(input.correlationId)
+  )
+    throw new Error('Invalid authentication diagnostic');
+  return {
+    authStage: input.authStage,
+    correlationId: input.correlationId,
+    statusClass:
+      input.authStage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED'
+        ? 'refresh'
+        : input.authStage!.endsWith('_SUCCEEDED')
+          ? 'success'
+          : 'failure',
+  };
 }
 
 export type WebhookOutcome = 'received' | 'duplicate' | 'rejected' | 'enqueue_failure';
@@ -95,11 +137,11 @@ export function createObservability(options: { stream?: Writable; level?: 'debug
   const logger = {
     info(event: RuntimeEvent, details: RuntimeLogDetails = {}) {
       if (!EVENTS.has(event)) throw new Error('Invalid runtime event');
-      rawLogger.info({ event, ...safeDetails(details) });
+      rawLogger.info({ event, ...eventDetails(event, details) });
     },
     error(event: RuntimeEvent, details: RuntimeLogDetails = {}) {
       if (!EVENTS.has(event)) throw new Error('Invalid runtime event');
-      rawLogger.error({ event, ...safeDetails(details) });
+      rawLogger.error({ event, ...eventDetails(event, details) });
     },
   };
 

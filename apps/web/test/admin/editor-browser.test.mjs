@@ -134,6 +134,70 @@ async function startServer() {
   await exited;
   throw new Error('Web server did not start: ' + diagnostics);
 }
+test('built picker refreshes once on 401; second 401, 403 and 503 stop without another request', {
+  timeout: 60000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  assert.equal(createHash('sha256').update(source).digest('hex'), polarisSha);
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    for (const statuses of [[401, 200], [401, 401], [403], [503]]) {
+      const page = await browser.newPage();
+      await page.addInitScript(() => {
+        window.syntheticTokenCount = 0;
+        window.shopify = { idToken: async () => 'synthetic-refresh-' + ++window.syntheticTokenCount };
+      });
+      await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+      await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+      await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+        route.fulfill({ body: '', contentType: 'text/javascript' }),
+      );
+      let active = false;
+      const tokens = [];
+      await page.route('**/api/admin/products?*', (route) => {
+        const request = route.request();
+        assert.equal(request.method(), 'GET');
+        assert.equal(request.headers().cookie, undefined);
+        const status = active ? statuses[tokens.length] : 200;
+        if (active) tokens.push(request.headers().authorization);
+        assert.ok(status, 'no third retry request is allowed');
+        return route.fulfill({
+          status,
+          headers: status === 401 ? { 'X-Shopify-Retry-Invalid-Session-Request': '1' } : {},
+          json:
+            status === 200
+              ? { products: [], nextCursor: null }
+              : { error: 'Synthetic authentication stopped ' + status },
+        });
+      });
+      await page.goto(server.base + '/admin/products');
+      await page.getByText('No products found.').waitFor();
+      await page.evaluate(() => {
+        window.syntheticTokenCount = 0;
+      });
+      active = true;
+      await page.getByRole('button', { name: 'Search', exact: true }).click();
+      const finalStatus = statuses.at(-1);
+      await page
+        .getByText(finalStatus === 200 ? 'No products found.' : 'Synthetic authentication stopped ' + finalStatus, {
+          exact: true,
+        })
+        .waitFor();
+      assert.equal(await page.evaluate(() => window.syntheticTokenCount), statuses.length);
+      assert.deepEqual(
+        tokens,
+        statuses.map((_, index) => 'Bearer synthetic-refresh-' + (index + 1)),
+      );
+      await page.close();
+    }
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
 test('editor-generated fixed, override and tier defaults price through unchanged M2 in zero/two/three exponent currencies', {
   timeout: 60000,
 }, async () => {

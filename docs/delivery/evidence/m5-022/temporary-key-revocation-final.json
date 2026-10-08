@@ -1,0 +1,7 @@
+{
+  "classification": "M5_022_TEMPORARY_KEY_REVOKED",
+  "removedExactPublicKeyEntries": 1,
+  "otherEntriesPreservedByteExact": true,
+  "providerOrDatabaseMutation": false,
+  "localPrivateKeyRemoved": true
+}

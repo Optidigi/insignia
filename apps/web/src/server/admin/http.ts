@@ -1,4 +1,5 @@
 import { CommandDigestConflictError } from '@insignia/application';
+import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor, AdminServices, CommandOutcome } from './contracts.js';
 
 export type AdminRoute = { kind: 'list' } | { kind: 'config'; productId: string };
@@ -110,7 +111,12 @@ export async function handleAdminRequest(
   let actor: AdminActor | null;
   try {
     actor = await services.authenticate(request);
-  } catch {
+  } catch (error) {
+    if (error instanceof AdminOnlineIdentityError && error.stage === 'ONLINE_EXCHANGE_REFRESH_REQUIRED') {
+      const response = adminJson(401, { error: 'Authentication required' });
+      response.headers.set('X-Shopify-Retry-Invalid-Session-Request', '1');
+      return response;
+    }
     return adminJson(503, { error: 'Authentication unavailable' });
   }
   if (!validActor(actor, Date.now())) return adminJson(401, { error: 'Authentication required' });

@@ -1,0 +1,14 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 52,
+  "base": "db4265228b901a99cd4e3602ee0c387065080cc6",
+  "head": "39c77ee73f7534e01a47853968eec8c139d917c6",
+  "tree": "315cc4cf18c3c1eef0cb0d8fa3c542fc5170bed5",
+  "verdict": "APPROVED_BLOCKED_AUTH",
+  "ci": "10/10 applicable success attempt1",
+  "fresh_reviews": "CLEAR/CLEAR",
+  "active_version": "1158986629121",
+  "blocker": "AUTHENTICATION_UNAVAILABLE_ROOT_CAUSE_UNRESOLVED",
+  "known_readiness_gap": "TRUSTED_ACTIVATION_READINESS_UNWIRED",
+  "next": "M5-022_AUTH_READINESS_G7_CLOSURE"
+}

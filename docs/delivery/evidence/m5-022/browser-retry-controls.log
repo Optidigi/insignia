@@ -1,0 +1,9 @@
+✔ built picker refreshes once on 401; second 401, 403 and 503 stop without another request (2119.592068ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 2809.997719

@@ -127,7 +127,7 @@ test('live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous r
       if (query.includes('currentAppInstallation'))
         return Response.json({
           data: {
-            shop: { id: 'gid://shopify/Shop/501', myshopifyDomain: shop },
+            shop: { id: 'gid://shopify/Shop/501', myshopifyDomain: shop, ianaTimezone: 'America/New_York' },
             currentAppInstallation: {
               id: active ? 'gid://shopify/AppInstallation/61' : 'gid://shopify/AppInstallation/999',
               accessScopes: [{ handle: 'read_products' }, { handle: 'write_products' }],
@@ -236,7 +236,7 @@ test('live-style SDK identity, local PG create/save/reload/CAS/exact ambiguous r
       'forbidden',
     );
     active = false;
-    await assert.rejects(services.authenticate(req), /generation/);
+    await assert.rejects(services.authenticate(req), /Authentication unavailable/);
     assert.equal(mutations, 0);
   } finally {
     globalThis.fetch = oldFetch;
