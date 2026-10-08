@@ -124,7 +124,7 @@ class GuardControls(unittest.TestCase):
         self.assertNotIn('synthetic@', json.dumps(value))
 
     def test_only_exact_ready_worker_and_queue_qualify(self):
-        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override']:
+        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA']:
             with self.subTest(failure=failure):
                 path = operator.ROOT / 'lifecycle-settled.json'
                 if path.exists():
@@ -141,7 +141,7 @@ class GuardControls(unittest.TestCase):
                     web['Config']['Env'][0] += '?host=unrelated-database'
                     worker['Config']['Env'][0] += '?host=unrelated-database'
                 def network(ip, identity='exact-backend'):
-                    return {'NetworkSettings': {'Networks': {'backend': {'NetworkID': identity, 'IPAddress': ip, 'Aliases': ['database']}}}}
+                    return {'NetworkSettings': {'Networks': {'backend': {'NetworkID': identity, 'IPAddress': ip, 'GlobalIPv6Address': 'fd00::' + ip.rsplit('.',1)[1], 'Aliases': ['database']}}}}
                 web.update({'Id': 'synthetic-web', **network('10.0.0.3')})
                 worker.update(network('10.0.0.4', 'other-backend' if failure == 'separate-network' else 'exact-backend'))
                 database = {'Id': 'synthetic-database', **network('10.0.0.2')}
@@ -161,7 +161,11 @@ class GuardControls(unittest.TestCase):
                         return ((('0' if failure == 'artifact' else '1') * 64) + '  main.js\n' + '2' * 64 + '  handlers.js\n').encode()
                     if '-e' in args:
                         if 'dns.lookup' in args[args.index('-e') + 1]:
-                            return b'[\"10.0.1.2\"]' if failure == 'dns-drift' and 'synthetic-worker' in args else b'[\"10.0.0.2\"]'
+                            if failure == 'dns-drift' and 'synthetic-worker' in args:
+                                return b'["10.0.1.2"]'
+                            if 'family:4' in args[args.index('-e') + 1]:
+                                return b'["10.0.0.2"]'
+                            return b'["10.0.0.2","fd00::999"]' if failure == 'divergent-AAAA' else b'["10.0.0.2","fd00::2"]'
                         if 'inspectWorkerFromStdin' in args[args.index('-e') + 1]:
                             return json.dumps({'exact': failure not in ['artifact', 'dependency']}).encode()
                         return json.dumps({'status': 503 if failure == 'health' else 200, 'body': {'durableReady': True}}).encode()

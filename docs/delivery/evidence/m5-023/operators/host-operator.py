@@ -6,6 +6,7 @@ Every mutation reserves a durable event first. A used action is never retried.
 """
 import datetime
 import hashlib
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -113,25 +114,33 @@ def prestate():
 
 def same_database_endpoint(web, worker, database, address):
     """Bind actual container DNS routes to one designated private DB endpoint."""
-    if address.path != '/insignia_rewrite' or address.port not in (None, 5432) \
+    if address.scheme not in ('postgres', 'postgresql') or address.path != '/insignia_rewrite' or address.port not in (None, 5432) \
             or address.query not in ('', 'sslmode=disable') or address.fragment:
         return False
     networks = [item for item in database.get('NetworkSettings', {}).get('Networks', {}).values()
-        if item.get('NetworkID') and item.get('IPAddress') and all(any(
+        if item.get('NetworkID') and (item.get('IPAddress') or item.get('GlobalIPv6Address')) and all(any(
             other.get('NetworkID') == item['NetworkID']
             for other in container.get('NetworkSettings', {}).get('Networks', {}).values())
             for container in (web, worker))
-        and (address.hostname == item['IPAddress'] or address.hostname in (item.get('Aliases') or []))]
+        and (address.hostname in (item.get('IPAddress'), item.get('GlobalIPv6Address'))
+             or address.hostname in (item.get('Aliases') or []))]
     if len(networks) != 1:
         return False
-    probe = "const dns=require('node:dns'); dns.lookup(new URL(process.env.DATABASE_URL).hostname,{all:true,family:4},(error,rows)=>console.log(JSON.stringify(error?[]:[...new Set(rows.map(row=>row.address))].sort())));"
+    approved = {ipaddress.ip_address(value) for value in
+        (networks[0].get('IPAddress'), networks[0].get('GlobalIPv6Address')) if value}
+    probe = "const dns=require('node:dns'); dns.lookup(new URL(process.env.DATABASE_URL).hostname,{all:true},(error,rows)=>console.log(JSON.stringify(error?[]:[...new Set(rows.map(row=>row.address))].sort())));"
     for container in (web, worker):
         values = dict(value.split('=', 1) for value in container['Config'].get('Env', []))
         if any(value and (key in ('NODE_OPTIONS', 'NODE_PATH') or key.startswith(('LD_', 'DYLD_')))
                for key, value in values.items()):
             return False
         resolved = json.loads(run(['docker', 'exec', container['Id'], '/usr/local/bin/node', '-e', probe], timeout=10))
-        if resolved != [networks[0]['IPAddress']]:
+        if not isinstance(resolved, list) or not 1 <= len(resolved) <= len(approved):
+            return False
+        try:
+            if not {ipaddress.ip_address(value) for value in resolved}.issubset(approved):
+                return False
+        except ValueError:
             return False
     return True
 
@@ -203,12 +212,12 @@ def lifecycle():
     rights = json.loads(sql("""BEGIN READ ONLY; SELECT json_build_object(
       'uninstallRuntimeUsable',has_schema_privilege('insignia_runtime','public','USAGE')
         AND NOT EXISTS(SELECT 1 FROM (VALUES
-          ('shops','SELECT'),('shops','UPDATE'),
-          ('installation_generations','SELECT'),('installation_generations','UPDATE'),
+          ('shops','SELECT'),('shops','INSERT'),('shops','UPDATE'),
+          ('installation_generations','SELECT'),('installation_generations','INSERT'),('installation_generations','UPDATE'),
           ('shop_credentials','SELECT'),('shop_credentials','UPDATE'),
           ('product_configs','SELECT'),('product_configs','UPDATE'),
-          ('inbox_messages','SELECT'),('inbox_messages','UPDATE'),
-          ('shopify_webhook_deliveries','SELECT')) AS required(relation,privilege)
+          ('inbox_messages','SELECT'),('inbox_messages','INSERT'),('inbox_messages','UPDATE'),('inbox_messages','DELETE'),
+          ('shopify_webhook_deliveries','SELECT'),('shopify_webhook_deliveries','INSERT')) AS required(relation,privilege)
           WHERE NOT has_table_privilege('insignia_runtime','public.'||required.relation,required.privilege)),
       'queueSchemaPresent', EXISTS(SELECT 1 FROM pg_namespace WHERE nspname='pgboss'),
       'queueRuntimeUsable',COALESCE((SELECT has_schema_privilege('insignia_runtime',oid,'USAGE') FROM pg_namespace WHERE nspname='pgboss'),false)

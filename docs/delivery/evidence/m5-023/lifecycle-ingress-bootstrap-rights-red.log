@@ -1,0 +1,10 @@
+{"uninstallRuntimeUsable" : true, "queueSchemaPresent" : true, "queueRuntimeUsable" : true}
+{"uninstallRuntimeUsable" : true, "queueSchemaPresent" : true, "queueRuntimeUsable" : true}
+{"uninstallRuntimeUsable" : true, "queueSchemaPresent" : true, "queueRuntimeUsable" : true}
+{"uninstallRuntimeUsable" : true, "queueSchemaPresent" : true, "queueRuntimeUsable" : true}
+{"uninstallRuntimeUsable" : true, "queueSchemaPresent" : true, "queueRuntimeUsable" : true}
+{"uninstallRuntimeUsable" : true, "queueSchemaPresent" : true, "queueRuntimeUsable" : true}
+{"uninstallRuntimeUsable" : true, "queueSchemaPresent" : true, "queueRuntimeUsable" : true}
+Traceback (most recent call last):
+  File "<stdin>", line 2, in <module>
+AssertionError: Old exact-head SQL falsely qualifies all five independently revoked ingress/bootstrap privileges

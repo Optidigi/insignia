@@ -1,0 +1,11 @@
+CHANGES_REQUESTED
+
+Review binds only PR54 head `f696147f182068d50c73929ea688497af0029e8c`. Requested refs match; worktree is clean.
+
+- **P1 — Lifecycle qualification omits required ingress/bootstrap privileges.** [host-operator.py:205](/home/serveradmin/insignia-m5-023-worktree/docs/delivery/evidence/m5-023/operators/host-operator.py:205) checks application SELECT/UPDATE rights but omits INSERT. Counterexample: revoke runtime INSERT on `inbox_messages` while retaining all checked application and queue rights. Worker `/ready` and lifecycle qualification can still pass, permitting backup/provision/deploy; a signed uninstall then fails at [shopify-webhooks.ts:251](/home/serveradmin/insignia-m5-023-worktree/packages/database/src/repositories/shopify-webhooks.ts:251) before durable receipt. Delivery INSERT, conflict-cleanup DELETE and first-bootstrap shop/generation INSERT are likewise unchecked. This violates production-plan step0’s requirement to qualify ingress and every required application privilege before mutation. **Smallest correction:** add the exact ingress/bootstrap privileges to the read-only qualification and PostgreSQL controls independently revoking these rights. Existing application/queue UPDATE controls do not detect this omission.
+
+Static coverage included full interacting tenant/transaction/migration, auth/SDK/HTTP/staff/calendar, uninstall/credentials/M3 consumers, readiness/trusted-release, v1/v2/v3 activation/recovery, operators/roles/Docker/package and historical host references. I assessed all six preserved reviews, settings, responses and the root objection. Current uninstall ordering, unique-wait fence, Compose, worker dependency/launcher/topology and database-routing corrections are supported by inspected source; application privilege qualification remains incomplete.
+
+Parent-supplied execution evidence records root PASS with86 web tests, PostgreSQL197/197, concurrency/race controls and portable/operator qualification, with failures retained. I inspected source, test assertions and evidence; I executed no tests, builds, imports or live operations.
+
+Exact-head CI remains pending in the supplied evidence. Live processor/readiness remains unknown. This grants neither principal approval nor production readiness.

@@ -39,7 +39,8 @@
   },
   "hostFailureControls": {
     "tests": 9,
-    "log": "host-controls-r4.log"
+    "log": "host-controls-r5.log",
+    "qualificationVariants": 14
   },
   "portableRuntime": {
     "pass": true,
@@ -58,8 +59,9 @@
     "actualPostgreSQL": true,
     "partialTableAndSequenceRightsRejected": true,
     "localDDLTransactionRolledBack": true,
-    "log": "lifecycle-application-rights-control2.log",
-    "applicationUpdateAndQueueUpdateIndependentlyRejected": true
+    "log": "lifecycle-ingress-bootstrap-rights-green.log",
+    "applicationUpdateAndQueueUpdateIndependentlyRejected": true,
+    "ingressBootstrapIndependentRevocations": 5
   },
   "workerInventory": {
     "tests": 11,
@@ -113,6 +115,10 @@
     "renderer-r4.log": "00997d5f4e4bef746404689ade4b9b1a8fba344493dadbc95caf9243112a7660",
     "style-r4.log": "bc523070d71f0f2adde6ebb20a62d8087bc6c0bb9d64c61ea611468655b7c91c",
     "secrets-r4.log": "b847afc376e98cafb5c0c35f464608557205185140a7b6a24c6feb75ecb33e1f",
-    "portable-runtime-r4.json": "c1d70c12e77edbe3de104edfc6b1ff1b26575bae0fc9308def80955a994c5a50"
+    "portable-runtime-r4.json": "c1d70c12e77edbe3de104edfc6b1ff1b26575bae0fc9308def80955a994c5a50",
+    "dns-AAAA-red.log": "ba8a49ac9a001152f2603a48d08647cbc79f3c32a7e9781f817fbd48192499dc",
+    "host-controls-r5.log": "824dbf43f581ae816a745e093e3009361f77928738e634fe8587208424aaf7dd",
+    "lifecycle-ingress-bootstrap-rights-red.log": "297dabde72ea5c86a76f003fd18c931b6f6f7166f736c8604cdac7ce7015d7c0",
+    "lifecycle-ingress-bootstrap-rights-green.log": "f981f90dfd44d2874bbe66478f147590990f29846ca775e3dab400ce883063e4"
   }
 }
