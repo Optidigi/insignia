@@ -1,0 +1,55 @@
+{
+  "classification": "ACCEPTED_PRODUCTION_COMPOSITION_READINESS_UNWIRED_STATIC_EVIDENCE",
+  "recordedAt": "2026-10-08T04:23:53.724431+00:00",
+  "entrySource": "db4265228b901a99cd4e3602ee0c387065080cc6",
+  "personallyInspected": [
+    {
+      "path": "apps/web/src/server/admin/runtime.ts",
+      "sha256": "7717b80c6be7b70e70df28f42fcbb5a3c2e6ee32b09203dcaff9772e6a06e89b"
+    },
+    {
+      "path": "apps/web/src/server/admin/production.ts",
+      "sha256": "89764270e433f4fab99410c8e81f60c085dc5f19fe72d8920fe3c13a051945c8"
+    },
+    {
+      "path": "apps/web/src/server/admin/release-evidence.ts",
+      "sha256": "0d3ebed5f78bb8a5f0df8b12624aa7e1400c3034b3c7d7a91c31de5c1a134103"
+    },
+    {
+      "path": "packages/application/src/publication/activation.ts",
+      "sha256": "ded574f2effbf72c4b6451619c589b3b9421385b29087e0aa95c042b3dd60032"
+    },
+    {
+      "path": "packages/application/src/keys/trusted-release.ts",
+      "sha256": "75d28a370c80b024af9eed231c9f651d5e0f0bfca58831c941d9dfa47cc3ae0a"
+    }
+  ],
+  "acceptedBuildChunk": {
+    "path": "apps/web/dist/server/chunks/runtime_DP08uKlp.mjs",
+    "sha256": "95457f1edd5f37eae94997083ab8aa529a277fdd83cd6638b97b6ac2844661bf"
+  },
+  "defaultComposition": {
+    "productionFactoryCalledWithoutReadinessCapability": true,
+    "expectedBuild": "null",
+    "trustedReleaseEvidenceSource": "omitted; null attestation",
+    "functions": "transform unknown / validation unknown / observation null",
+    "merchantCalendar": "throws Trusted merchant calendar unavailable"
+  },
+  "activationRequirement": "Both Function states present plus exact production artifact/release observation; otherwise fail closed before provider mutation",
+  "existingAutomatedControl": "apps/web/test/admin/production-composition.test.mjs: default production publish remains ACTIVATION_WAITING_RELEASE, effectiveRevisionId null, adminMutations0; accepted historical/source-control evidence, not newly executed here",
+  "freshOfflineControl": {
+    "command": "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node --test apps/web/test/admin/release-evidence.test.mjs",
+    "exitCode": 0,
+    "tests": 1,
+    "pass": 1,
+    "skip": 0,
+    "logSha256": "509b58761a14dc0cb605a362ac741937f99b3719dd030f24e0e52c1bfeb7cced",
+    "scope": "Local pure trusted-release evidence control; does not authenticate Shopify or prove deployed current runtime readiness"
+  },
+  "neededNextBoundary": "A separately reviewed trusted server readiness composition and any required installation/key/commercial enablement; ordinary app release, owner fields or environment JSON alone cannot supply trusted RELEASE_BOUND evidence",
+  "noFixOrProvisioningPerformed": true,
+  "authenticatedCurrentRuntimeEvidence": "OWNER_UI_AUTHENTICATION_UNAVAILABLE; no authenticated readiness or current server/DB facts",
+  "freshRemoteImageEquality": "NOT_OBSERVED; accepted host receipt only",
+  "providerOperations": 0,
+  "fixtureCreated": false
+}

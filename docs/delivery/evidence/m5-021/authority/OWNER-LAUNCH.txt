@@ -1,0 +1,41 @@
+Use the attached `insignia-pr51-approved-m5-021-handoff` package.
+
+PR #51 is APPROVED for NORMAL merge only at:
+
+base `e5262267234516251bd4a42367643b700e8854f0`
+head `405511e181ea2a05933ecdcd8ff0c43bfff63df8`
+tree `4d30b8e3139ad3dfac4820345b45cba1167ddb84`
+
+Reverify exact refs, ten final-head attempt-1 CI successes, fresh CLEAR/CLEAR reviews and external principal approval. Mark ready if needed without changing head. No squash/rebase/force/protection bypass/fabricated native approval. Verify normal-merge ordered parents/tree.
+
+The release is settled. Do NOT release again.
+
+Active:
+`1158986629121 / m5-019r-9b94149272d1`
+
+Rollback:
+`1153019904001 / insignia-3`
+
+NEVER RELEASE:
+`1158837927937 / m5-019-a9717e1265ef`
+
+M5/G7 remains open only because Shopify human verification blocks the shared browser before iframe.
+
+Execute M5-021 as owner-assisted normal-browser acceptance.
+
+Do not bypass or automate Shopify human verification.
+
+The owner uses their normal authenticated laptop browser to open the designated dev store and Insignia. The local agent prepares test steps, inspects local/server/database evidence, and integrates owner observations/screenshots truthfully.
+
+First prove the real embedded admin loads and authenticated readiness passes. If not, stop before fixtures.
+
+Then run core real-native G7 checks.
+
+Only after readiness passes, use at most one disposable Shopify product and one ProductConfig to prove real:
+configure → preview → save → stale-edit conflict → publish request → immutable revision/request/outbox → FIRST_PUBLICATION v3 → truthful pending → committed activation → refresh/reopen exact effective revision.
+
+Archive the disposable product once if all writes settle exactly.
+
+Do not start M6/M7, change scopes, create a new app version, release/rollback, or automate the Shopify human-check.
+
+Return one integrated evidence PR with explicit M5/G7 PASS or exact blocker and stop for principal review.

@@ -1,0 +1,17 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 51,
+  "base": "e5262267234516251bd4a42367643b700e8854f0",
+  "head": "405511e181ea2a05933ecdcd8ff0c43bfff63df8",
+  "tree": "4d30b8e3139ad3dfac4820345b45cba1167ddb84",
+  "verdict": "APPROVED_BLOCKED_G7",
+  "released_active": "1158986629121",
+  "rollback": "1153019904001",
+  "never_release": "1158837927937",
+  "release_attempts": 1,
+  "version_creation_attempts": 0,
+  "fixtures": 0,
+  "unresolved_provider_writes": 0,
+  "blocker": "BLOCKED_SHARED_BROWSER_SHOPIFY_HUMAN_VERIFICATION",
+  "next": "M5-021_OWNER_ASSISTED_G7"
+}
