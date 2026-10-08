@@ -1,0 +1,72 @@
+{
+  "classification": "M5_022_FRESH_REVIEW_CAPABILITY_RESOLUTION",
+  "providers": [
+    {
+      "providerInstanceId": "codex",
+      "canRunChildTask": true,
+      "models": [
+        {
+          "id": "gpt-6.1-sol",
+          "label": "GPT-6.1-Sol",
+          "options": [
+            {
+              "id": "reasoningEffort",
+              "label": "Reasoning",
+              "type": "select",
+              "options": [
+                {
+                  "id": "low",
+                  "label": "Low",
+                  "isDefault": true
+                },
+                {
+                  "id": "medium",
+                  "label": "Medium"
+                },
+                {
+                  "id": "high",
+                  "label": "High"
+                },
+                {
+                  "id": "xhigh",
+                  "label": "Extra High"
+                },
+                {
+                  "id": "max",
+                  "label": "Max"
+                },
+                {
+                  "id": "ultra",
+                  "label": "Ultra"
+                }
+              ],
+              "currentValue": "low"
+            },
+            {
+              "id": "serviceTier",
+              "label": "Service Tier",
+              "type": "select",
+              "options": [
+                {
+                  "id": "default",
+                  "label": "Standard",
+                  "isDefault": true
+                },
+                {
+                  "id": "priority",
+                  "label": "Fast",
+                  "description": "2x speed, increased usage"
+                }
+              ],
+              "currentValue": "default"
+            }
+          ]
+        }
+      ],
+      "constraints": []
+    }
+  ],
+  "nativeAndT3ReviewSchemasExposeEnforcedReadOnlySandbox": false,
+  "fallback": "Two NEW distinct Codex CLI0.160.1 exec processes --ignore-user-config --sandbox read-only, actual gpt-6.1-sol/high/never session turn_context verified",
+  "readOnlyNotCredentialNetworkIsolation": true
+}

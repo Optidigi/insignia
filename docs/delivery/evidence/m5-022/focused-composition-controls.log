@@ -1,0 +1,45 @@
+✔ current staff and installation grant read and edit; reinstallation is checked every request (2.922706ms)
+✔ staff read access does not grant mutation (3.152808ms)
+✔ expired or cross-shop identity and stale installation fail closed (0.478444ms)
+✔ authentication stages distinguish grant and installation mismatches without identity data (5.66194ms)
+✔ downstream failures preserve only their safe stage and refresh type after verified identity (4.29442ms)
+✔ read requires current verified staff and exact shop, even on deep links (10.586273ms)
+✔ mutation refuses cross-origin and staff denial before invoking command (2.98883ms)
+✔ save carries exact product, draft version and idempotency to durable command (2.527715ms)
+✔ stale draft save is a conflict, never a success response (1.250956ms)
+✔ publish returns activation-pending truthfully and requires current edit grant (1.217105ms)
+✔ a product missing from the verified shop cannot be changed (1.121063ms)
+✔ expired identity and shop supplied in command body cannot create a config (2.189167ms)
+✔ unwired admin backend serves no private catalog data (0.572226ms)
+✔ unknown durable command failures remain unavailable without leaking details (1.634402ms)
+✔ refresh-required online exchange is 401 with Shopify fresh-ID-token retry signal (1.806426ms)
+✔ generic exchange/provider/database failures do not gain the fresh-token retry response (1.910729ms)
+{"level":30,"time":1791458020566,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"e8dfe979-4bbb-4e7c-bbc0-327a4ccdec0d","statusClass":"success"}
+{"level":30,"time":1791458020598,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"e8dfe979-4bbb-4e7c-bbc0-327a4ccdec0d","statusClass":"success"}
+{"level":30,"time":1791458020603,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"e8dfe979-4bbb-4e7c-bbc0-327a4ccdec0d","statusClass":"success"}
+{"level":30,"time":1791458020603,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"e8dfe979-4bbb-4e7c-bbc0-327a4ccdec0d","statusClass":"success"}
+▶ production composition uses signed staff SDK, current policy and trusted readiness: missing
+  ✔ scheduled cancellation boundary 2026-09-30T23:59:59.999Z: allowed=true (16.122707ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.000Z: allowed=false (15.336415ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.001Z: allowed=false (14.723125ms)
+✔ production composition uses signed staff SDK, current policy and trusted readiness: missing (799.563424ms)
+{"level":30,"time":1791458021129,"event":"admin_authentication","authStage":"ONLINE_EXCHANGE_SUCCEEDED","correlationId":"a6abc4b5-2049-40b4-8d2f-a8d5e9c71f55","statusClass":"success"}
+{"level":30,"time":1791458021130,"event":"admin_authentication","authStage":"INSTALLATION_PROVIDER_READ_SUCCEEDED","correlationId":"a6abc4b5-2049-40b4-8d2f-a8d5e9c71f55","statusClass":"success"}
+{"level":30,"time":1791458021139,"event":"admin_authentication","authStage":"TENANT_RECONCILIATION_SUCCEEDED","correlationId":"a6abc4b5-2049-40b4-8d2f-a8d5e9c71f55","statusClass":"success"}
+{"level":30,"time":1791458021139,"event":"admin_authentication","authStage":"AUTHENTICATION_SUCCEEDED","correlationId":"a6abc4b5-2049-40b4-8d2f-a8d5e9c71f55","statusClass":"success"}
+▶ production composition uses signed staff SDK, current policy and trusted readiness: trusted-function-mismatch
+  ✔ scheduled cancellation boundary 2026-09-30T23:59:59.999Z: allowed=true (11.368886ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.000Z: allowed=false (10.463344ms)
+  ✔ scheduled cancellation boundary 2026-10-01T00:00:00.001Z: allowed=false (9.968071ms)
+✔ production composition uses signed staff SDK, current policy and trusted readiness: trusted-function-mismatch (352.043071ms)
+✔ production readiness composes trusted record, independent expected build, current Function read and preloaded day (24.553501ms)
+✔ missing release evidence never synthesizes a build, queries Functions or falls back to UTC (0.704628ms)
+✔ preloaded trusted merchant day is synchronous across DST and server-day boundaries (36.910509ms)
+ℹ tests 27
+ℹ suites 0
+ℹ pass 27
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1941.589464

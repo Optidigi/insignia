@@ -61,3 +61,39 @@ test('metric labels are fixed outcomes and never contain tenant or delivery IDs'
   assert.match(text, /insignia_unresolved_inbox_backlog 3/);
   assert.doesNotMatch(text, /105501393179|shop_id|domain|delivery_id/);
 });
+
+test('admin auth diagnostics emit only a bounded stage and independent correlation, never identity or secrets', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  logger.info('admin_authentication', {
+    authStage: 'ONLINE_EXCHANGE_REFRESH_REQUIRED',
+    correlationId: '01234567-89ab-4cde-8123-456789abcdef',
+    authorization: 'Bearer SECRET',
+    accessToken: 'SECRET',
+    clientSecret: 'SECRET',
+    rawBody: { token: 'SECRET' },
+    staffId: 'SECRET',
+    sessionId: 'SECRET',
+    query: 'id_token=SECRET',
+    error: new Error('SECRET'),
+  });
+  const record = JSON.parse(output.trim());
+  assert.equal(record.authStage, 'ONLINE_EXCHANGE_REFRESH_REQUIRED');
+  assert.equal(record.correlationId, '01234567-89ab-4cde-8123-456789abcdef');
+  assert.equal(record.statusClass, 'refresh');
+  assert.equal(typeof record.time, 'number');
+  assert.deepEqual(Object.keys(record).sort(), ['authStage', 'correlationId', 'event', 'level', 'statusClass', 'time']);
+  assert.doesNotMatch(output, /SECRET|Bearer|staffId|sessionId|rawBody|query|error/);
+  assert.throws(() =>
+    logger.info('admin_authentication', { authStage: 'SECRET', correlationId: record.correlationId }),
+  );
+  assert.throws(() => logger.info('admin_authentication', { authStage: record.authStage, correlationId: 'SECRET' }));
+  assert.doesNotMatch(output, /SECRET/);
+});

@@ -1,0 +1,43 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-022-worktree/packages/shopify
+
+ ❯ test/admin-online-identity.test.ts (12 tests | 1 failed) 60ms
+   ❯ production Shopify online staff adapter with synthetic transport (12)
+     × classifies installation status 200 without exposing raw provider evidence 13ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/admin-online-identity.test.ts > production Shopify online staff adapter with synthetic transport > classifies installation status 200 without exposing raw provider evidence
+AssertionError: expected AdminOnlineIdentityError: Installation re… { stage: '…' } to match object { Object (stage) }
+(1 matching property omitted from actual)
+
+- Expected
++ Received
+
+- {
+-   "stage": "INSTALLATION_PROVIDER_READ_FAILED",
++ AdminOnlineIdentityError {
++   "stage": "INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH",
+  }
+
+ ❯ test/admin-online-identity.test.ts:42:21
+     40|     const failure = await provider.readInstallation({ shop, staffId: '…
+     41|       expiresAtMs: Date.now() + 60_000, appScopes: [], userScopes: [] …
+     42|     expect(failure).toMatchObject({ stage });
+       |                     ^
+     43|     expect(String(failure)).not.toContain('synthetic-private');
+     44|   });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 11 passed (12)
+   Start at  11:09:56
+   Duration  386ms (import 50%, tests 24%, transform 24%, worker 2%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-022-
+  │ worktree/packages/shopify
+

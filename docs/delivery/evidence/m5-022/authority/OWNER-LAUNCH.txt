@@ -1,0 +1,48 @@
+Use the attached `insignia-pr52-approved-m5-022-handoff` package.
+
+PR #52 is APPROVED for NORMAL merge only at:
+
+base `db4265228b901a99cd4e3602ee0c387065080cc6`
+head `39c77ee73f7534e01a47853968eec8c139d917c6`
+tree `315cc4cf18c3c1eef0cb0d8fa3c542fc5170bed5`
+
+Reverify exact refs, all 10 exact-head attempt-1 CI successes, both fresh CLEAR reviews and external principal approval. Mark ready if necessary without changing the head. No squash/rebase/force/protection bypass/fabricated native approval. Verify the normal-merge ordered parents/tree.
+
+Current real blocker:
+owner product picker loads, Search => `Authentication unavailable`.
+
+Do not guess missing tenant/scopes/secret/provider outage.
+
+The current source narrows generic 503 to downstream authentication after local ID-token verification: online token exchange and/or provider-installation/durable-tenant reconciliation.
+
+Execute M5-022 exactly.
+
+Required auth correction:
+refreshable Shopify ID-token exchange rejection must map to HTTP 401 + `X-Shopify-Retry-Invalid-Session-Request: 1`, not generic 503. Browser gets one fresh-ID-token retry only. Do not retry 503.
+
+Add safe stage diagnostics with no tokens/secrets/raw provider bodies/staff IDs.
+
+Wire the existing trusted activation-readiness contracts. Do not weaken them and do not use unsigned env/browser JSON as release authority.
+
+Preferred trusted release source: append-only operator-owned PostgreSQL relation with SELECT-only runtime access, bound to shop/install/app/current Active `1158986629121` and exact Function artifact attestation.
+
+Use current authenticated Shopify `ianaTimezone` as preloaded trusted merchant timezone if no stronger existing trusted source exists.
+
+Perform only read-only current service/DB diagnosis before source deployment. No production DML/provisioning.
+
+After source/tests/reviews/CI freeze, deploy only the reviewed web runtime to:
+`https://insignia-app.optidigi.nl`
+
+No Shopify app version/release/rollback operation.
+
+If renewed VPS access is needed, stop for owner-authorized temporary restricted access; no bypass.
+
+Then owner performs one normal-browser Search.
+
+If it succeeds directly or after exactly one refresh-required retry, prove the stage outcomes and continue directly through trusted-readiness qualification and remaining real G7 + one disposable product/ProductConfig merchant-flow/v3 activation/cleanup.
+
+If the frozen corrected build still fails authentication, record the exact stage classification and STOP. Do not patch-and-continue.
+
+No Shopify release/version/scope changes, no human-check bypass, no M6/M7, no merchant rollout.
+
+Return one integrated PR with explicit M5/G7 PASS or exact blocker and stop for principal review.

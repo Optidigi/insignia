@@ -43,6 +43,7 @@ import {
 } from './repositories/shopify-webhooks.js';
 import { PgSigningKeyRepository } from './repositories/signing-keys.js';
 import { type ActiveAuthorizationScope, createTenantRepository, type ShopRecord } from './repositories/tenant.js';
+import { createTrustedReleaseReader } from './repositories/trusted-release.js';
 
 const transactionBrand: unique symbol = Symbol('insignia durable transaction');
 
@@ -58,6 +59,7 @@ export type ConfigInput = {
 };
 
 export interface DurableCore {
+  readonly trustedReleaseRecords: ReturnType<typeof createTrustedReleaseReader>;
   readonly signingKeys: SigningKeyStore;
   readonly productionPublications: {
     create(input: {
@@ -377,6 +379,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       : null;
   }
   return {
+    trustedReleaseRecords: createTrustedReleaseReader(database),
     signingKeys,
     productionPublications: {
       create: ({ appId, remote }) => {

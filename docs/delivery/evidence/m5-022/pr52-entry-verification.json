@@ -1,0 +1,85 @@
+{
+  "recordedAt": "2026-10-08T10:26:34.963801+00:00",
+  "classification": "PR52_EXACT_ENTRY_REVERIFIED",
+  "pr": {
+    "baseRefOid": "db4265228b901a99cd4e3602ee0c387065080cc6",
+    "headRefOid": "39c77ee73f7534e01a47853968eec8c139d917c6",
+    "isDraft": false,
+    "mergeable": "MERGEABLE",
+    "reviews": [],
+    "state": "OPEN",
+    "url": "https://github.com/Optidigi/insignia/pull/52"
+  },
+  "tree": "315cc4cf18c3c1eef0cb0d8fa3c542fc5170bed5",
+  "workflowCount": 10,
+  "allAttempt1Success": true,
+  "freshDistinctClearReviews": [
+    {
+      "axis": "spec",
+      "head": "39c77ee73f7534e01a47853968eec8c139d917c6",
+      "verdict": "CLEAR",
+      "session": "01a119cd-ce22-72a0-b339-8649a23afafc",
+      "actualTurnContexts": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "cwd": "/home/serveradmin/insignia-m5-021-worktree",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "cwd": "/home/serveradmin/insignia-m5-021-worktree",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "2ad0dc36b6b2b2c93535ea02d70d83dd29e5eaf5571afdf5f9c86e6500691677",
+      "readOnlyEnforced": true,
+      "credentialNetworkIsolation": false,
+      "provider": "Codex CLI0.160.1 actual runtime",
+      "source": "Actual session turn_context; not reviewer self-report"
+    },
+    {
+      "axis": "security",
+      "head": "39c77ee73f7534e01a47853968eec8c139d917c6",
+      "verdict": "CLEAR",
+      "session": "01a119cd-ce22-7f41-a1ce-b481d829a0f0",
+      "actualTurnContexts": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "cwd": "/home/serveradmin/insignia-m5-021-worktree",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        },
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "cwd": "/home/serveradmin/insignia-m5-021-worktree",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "298674b17c4233d9ab497287ab34ff60d7efa039644650e1b58718c21d6d7bc6",
+      "readOnlyEnforced": true,
+      "credentialNetworkIsolation": false,
+      "provider": "Codex CLI0.160.1 actual runtime",
+      "source": "Actual session turn_context; not reviewer self-report"
+    }
+  ],
+  "principalApproval": "authority/PR-052-principal-review.md",
+  "principalApprovalSha256": "161d26427c225cdbdeeb3a73c9f19d1aa8cd0a3cd498f6a8d30fe3561e376f2c",
+  "principalPacketUrl": "https://github.com/Optidigi/insignia/pull/52#issuecomment-6052480706",
+  "packetSha256": "1abdffe20860e535f713ce7459d8938d50a77819695870be8f805f0f739df569",
+  "nativeApprovalFabricated": false
+}

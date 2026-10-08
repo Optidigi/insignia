@@ -1,0 +1,39 @@
+Creating: insignia_m5_022_rehearsal
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+Applying: 20260929000100_durable_core.sql
+Applied: 20260929000100_durable_core.sql in 115.325774ms
+Applying: 20260929000200_runtime_ingress_credentials.sql
+Applied: 20260929000200_runtime_ingress_credentials.sql in 26.843339ms
+Applying: 20260929000300_authorization_generation.sql
+Applied: 20260929000300_authorization_generation.sql in 9.94103ms
+Applying: 20260929000400_accepted_quote.sql
+Applied: 20260929000400_accepted_quote.sql in 35.650776ms
+Applying: 20260930000100_m4_key_lifecycle.sql
+Applied: 20260930000100_m4_key_lifecycle.sql in 30.956568ms
+Applying: 20260930000200_publication_progress.sql
+Applied: 20260930000200_publication_progress.sql in 19.345543ms
+Applying: 20260930000300_m5_revision_geometry.sql
+Applied: 20260930000300_m5_revision_geometry.sql in 9.649729ms
+Applying: 20260930000400_m5_revision_presentation.sql
+Applied: 20260930000400_m5_revision_presentation.sql in 10.147271ms
+Applying: 20260930000500_m5_publication_source_version.sql
+Applied: 20260930000500_m5_publication_source_version.sql in 2.322239ms
+Applying: 20260930000600_m5_publication_intent_generation.sql
+Applied: 20260930000600_m5_publication_intent_generation.sql in 5.802917ms
+Applying: 20260930000700_m5_publication_intent_lookup.sql
+Applied: 20260930000700_m5_publication_intent_lookup.sql in 3.892115ms
+Applying: 20260930000800_m5_current_publication_pointer.sql
+Applied: 20260930000800_m5_current_publication_pointer.sql in 8.461487ms
+Applying: 20260930000900_m5_activation.sql
+Applied: 20260930000900_m5_activation.sql in 35.290087ms
+Applying: 20261006000100_m5_availability_v2.sql
+Applied: 20261006000100_m5_availability_v2.sql in 30.261093ms
+Applying: 20261007000100_m5_availability_v3.sql
+Applied: 20261007000100_m5_availability_v3.sql in 49.071957ms
+Applying: 20261008000100_m5_trusted_release.sql
+Applied: 20261008000100_m5_trusted_release.sql in 30.01043ms
+Rolling back: 20261008000100_m5_trusted_release.sql
+Rolled back: 20261008000100_m5_trusted_release.sql in 19.985802ms
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+Applying: 20261008000100_m5_trusted_release.sql
+Applied: 20261008000100_m5_trusted_release.sql in 152.035375ms

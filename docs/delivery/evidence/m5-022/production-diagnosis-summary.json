@@ -1,0 +1,29 @@
+{
+  "classification": "BLOCKED_PRODUCTION_PROVISIONING_REQUIRED",
+  "recordedAt": "2026-10-08T10:47:32.964924+00:00",
+  "evidenceKind": "OWNER_AUTHORIZED_RESTRICTED_SSH_READ_ONLY",
+  "hostFingerprint": "SHA256:vttVPAISQypNdyfjFElTJ6ef8Q5S2YlC+XoUn599uq4",
+  "exactDomain": "insignia-rewrite-dev.myshopify.com",
+  "databaseConnectivity": "PASS",
+  "postgresVersion": "18.6",
+  "tenantRows": 0,
+  "currentInstallationRows": 0,
+  "externalInstallationIdPresence": "NO_DURABLE_INSTALLATION_ROW",
+  "shopDomainShopIdMismatch": "NOT_COMPARABLE_NO_TENANT",
+  "trustedReleaseRelationPresent": false,
+  "commercialConfigKeyPresence": {
+    "INSIGNIA_M5_ENTITLEMENT_POLICY_JSON": false,
+    "INSIGNIA_M5_FEATURES_JSON": false,
+    "INSIGNIA_PARTNER_ORGANIZATION_ID": false,
+    "INSIGNIA_PARTNER_ACCESS_TOKEN": false
+  },
+  "productionDml": 0,
+  "productionProvisioning": 0,
+  "webDeployments": 0,
+  "shopifyRequests": 0,
+  "productConfigFixtures": 0,
+  "ownerSearchRequestsAfterCorrection": 0,
+  "liveHistoricalSearchRootCauseVerified": false,
+  "temporaryAccess": "REVOKED_PRIVATE_KEY_REMOVED",
+  "limitation": "Missing prerequisites are independently verified; online exchange and historical Search failing substage were not observed. First helper failed locally before completed SQL, preserved separately, not classified as a database outage."
+}

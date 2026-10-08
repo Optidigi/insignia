@@ -1,0 +1,13 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 53,
+  "base": "e132c108a2108aea830ac2a5229b410f93a61a7d",
+  "head": "cfd43482d2b8e8f30bd21d91bf00e95d0663a3e0",
+  "tree": "e587a7c5c652ae286631d1d711fd8a58e73f5cbd",
+  "verdict": "CHANGES_REQUESTED",
+  "ci": "11/11 success attempt1",
+  "fresh_reviews": "CLEAR/CLEAR",
+  "blocking_finding": "non-empty trusted release evidence can be destroyed by migration down",
+  "successor_adjudication": "permanent managed-install first-session bootstrap, not ad-hoc tenant seed",
+  "production_activity_authorized": false
+}

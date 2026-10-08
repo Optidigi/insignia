@@ -1,0 +1,44 @@
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-022-worktree/packages/database
+
+ ❯ test/trusted-release.test.ts (5 tests | 1 failed) 1801ms
+   × rollback waits for an in-flight append and preserves it once committed 462ms
+
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/trusted-release.test.ts > rollback waits for an in-flight append and preserves it once committed
+AssertionError: expected Error: Command failed: /home/serveradmin/… { …(6) } to match object { code: 1 }
+(5 matching properties omitted from actual)
+
+- Expected
++ Received
+
+- {
+-   "code": 1,
++ Error {
++   "code": 2,
+  }
+
+ ❯ test/trusted-release.test.ts:302:28
+    300|       await writer.query('COMMIT');
+    301|       const result = await rollback;
+    302|       expect(result.error).toMatchObject({ code: 1 });
+       |                            ^
+    303|       expect(String(result.error)).toContain('trusted release evidence…
+    304|       const surviving = await pool.query('SELECT trusted_record FROM t…
+ ❯ disposableMigrationDatabase test/trusted-release.test.ts:215:5
+ ❯ test/trusted-release.test.ts:279:3
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  1 failed | 4 passed (5)
+   Start at  12:05:37
+   Duration  2.57s (tests 74%, transform 14%, import 12%)
+
+Error: ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL
+
+  × "pnpm recursive exec" failed in /home/serveradmin/insignia-m5-022-
+  │ worktree/packages/database
+

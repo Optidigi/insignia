@@ -1,0 +1,96 @@
+{
+  "classification": "M5_022R_LOCAL_QUALIFICATION",
+  "postgresqlVersion": "18.6",
+  "nodeVersion": "24.21.0",
+  "pnpmVersion": "12.6.0",
+  "dbmateVersion": "2.36.0",
+  "databaseScope": "FRESH_LOOPBACK_SYNTHETIC_DATABASE_AND_OWNED_DISPOSABLE_MIGRATION_DATABASES",
+  "seams": "Actual dbmate migration up/rollback and PostgreSQL append-only record/schema boundary; explicitly required by principal. No production connection.",
+  "checks": [
+    {
+      "name": "Principal rollback defect reproduced",
+      "command": "pnpm --filter @insignia/database exec vitest run test/trusted-release.test.ts -t trusted-release.*(down|rolls)",
+      "exitCode": 1,
+      "result": "EXPECTED_RED_POPULATED_DOWN_SUCCEEDED",
+      "log": "migration-red.log",
+      "passedControl": "empty down/up"
+    },
+    {
+      "name": "First guard run",
+      "exitCode": 1,
+      "result": "HARNESS_EXPECTED_EXIT1_BUT_PINNED_DBMATE_RETURNS2_ON_SQL_ERROR",
+      "log": "migration-green.log"
+    },
+    {
+      "name": "First expanded guard run",
+      "exitCode": 1,
+      "result": "4/5_PASS_RACE_ASSERTION_EXPECTED_EXIT1_INSTEAD_OF2",
+      "log": "focused-migration-green.log"
+    },
+    {
+      "name": "Focused actual migration regression",
+      "command": "pnpm --filter @insignia/database exec vitest run test/trusted-release.test.ts",
+      "exitCode": 0,
+      "result": "5/5_PASS",
+      "log": "focused-migration-green2.log"
+    },
+    {
+      "name": "Full PostgreSQL18 final",
+      "command": "pnpm check:database",
+      "exitCode": 0,
+      "result": "176/176_PASS_NO_SKIPS_12_FILES",
+      "log": "full-pg18-final.log"
+    },
+    {
+      "name": "Full root",
+      "command": "INSIGNIA_REQUIRE_POSTGRES_TEST=1 CARGO_NET_OFFLINE=true pnpm check",
+      "exitCode": 0,
+      "result": "PASS_INCLUDING_75_WEB_TESTS_NO_SKIPS",
+      "log": "full-root.log"
+    },
+    {
+      "name": "Database typecheck",
+      "command": "pnpm --filter @insignia/database typecheck",
+      "exitCode": 0,
+      "result": "PASS",
+      "log": "database-typecheck.log"
+    },
+    {
+      "name": "Web repeat-build control",
+      "command": "pnpm --filter @insignia/web build; compare entry with generated key normalized in memory",
+      "exitCode": 0,
+      "result": "PASS_DIFF_ONLY_SERIALIZED_MANIFEST_KEY",
+      "log": "web-build-repeat.log"
+    },
+    {
+      "name": "Publication stress",
+      "command": "pnpm test:m5-stress",
+      "exitCode": 0,
+      "result": "100/100_PASS_NO_SKIPS",
+      "log": "stress100.log"
+    },
+    {
+      "name": "Renderer negative control",
+      "command": "pnpm test:m5-renderer-control",
+      "exitCode": 0,
+      "result": "EXPECTED_NEGATIVE_CONTROL_MISSING_RENDERER_REJECTED",
+      "log": "renderer-control.log"
+    },
+    {
+      "name": "Final style",
+      "command": "pnpm check:style",
+      "exitCode": 0,
+      "result": "PASS",
+      "log": "final-style.log"
+    },
+    {
+      "name": "Final secrets",
+      "command": "pnpm check:secrets",
+      "exitCode": 0,
+      "result": "PASS",
+      "log": "final-secrets.log"
+    }
+  ],
+  "reviews": "REQUIRED_NEW_COMPLETED_CHANGE_FULL_SOURCE_CLEAR_CLEAR_IN_EXACT_REF_EXTERNAL_PACKET",
+  "ci": "REQUIRED_NATURAL_FINAL_HEAD_ATTEMPT1_IN_EXACT_REF_EXTERNAL_PACKET"
+}

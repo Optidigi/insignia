@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { AdminOnlineIdentityError } from '@insignia/shopify';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 
 const productId = 'gid://shopify/Product/10485042479387';
@@ -217,4 +218,49 @@ test('unknown durable command failures remain unavailable without leaking detail
   );
   assert.equal(response.status, 503);
   assert.deepEqual(await response.json(), { error: 'Admin service unavailable' });
+});
+
+test('refresh-required online exchange is 401 with Shopify fresh-ID-token retry signal', async () => {
+  const h = deps({
+    authenticate: async () => {
+      throw new AdminOnlineIdentityError('ONLINE_EXCHANGE_REFRESH_REQUIRED');
+    },
+  });
+  const response = await handleAdminRequest(
+    new Request(origin + '/api/admin/products', {
+      headers: { Authorization: 'Bearer synthetic' },
+    }),
+    h.services,
+    { kind: 'list' },
+  );
+  assert.equal(response.status, 401);
+  assert.equal(response.headers.get('X-Shopify-Retry-Invalid-Session-Request'), '1');
+  assert.deepEqual(await response.json(), { error: 'Authentication required' });
+  assert.equal(response.headers.get('Cache-Control'), 'private, no-store');
+});
+
+test('generic exchange/provider/database failures do not gain the fresh-token retry response', async () => {
+  for (const error of [
+    new AdminOnlineIdentityError('ONLINE_EXCHANGE_FAILED'),
+    new AdminOnlineIdentityError('ONLINE_GRANT_MISMATCH'),
+    new AdminOnlineIdentityError('INSTALLATION_PROVIDER_READ_FAILED'),
+    new Error('Identity refresh required'),
+    new Error('synthetic-private-database-error'),
+  ]) {
+    const h = deps({
+      authenticate: async () => {
+        throw error;
+      },
+    });
+    const response = await handleAdminRequest(
+      new Request(origin + '/api/admin/products', {
+        headers: { Authorization: 'Bearer synthetic' },
+      }),
+      h.services,
+      { kind: 'list' },
+    );
+    assert.equal(response.status, 503);
+    assert.equal(response.headers.get('X-Shopify-Retry-Invalid-Session-Request'), null);
+    assert.deepEqual(await response.json(), { error: 'Authentication unavailable' });
+  }
 });

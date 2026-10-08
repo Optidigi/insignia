@@ -1,0 +1,69 @@
+Use the attached `insignia-pr53-changes-requested-m5-022r` package.
+
+PR #53 is CHANGES_REQUESTED at:
+
+base `e132c108a2108aea830ac2a5229b410f93a61a7d`
+head `cfd43482d2b8e8f30bd21d91bf00e95d0663a3e0`
+tree `e587a7c5c652ae286631d1d711fd8a58e73f5cbd`
+
+Do not merge.
+
+The auth-refresh and trusted-readiness implementation is accepted in shape. The production diagnosis is accepted.
+
+Correct the SAME PR only.
+
+### Required source correction
+
+`packages/database/migrations/20261008000100_m5_trusted_release.sql` currently drops `trusted_release_records` unconditionally on down migration.
+
+This violates the table's append-only trust contract.
+
+Change down migration so it FAILS CLOSED if any trusted release record exists.
+
+Required regression:
+- empty table down/up succeeds;
+- non-empty table down fails;
+- record survives exactly;
+- table/triggers/function remain;
+- UPDATE/DELETE/TRUNCATE still fail.
+
+Do not delete/truncate records to make down migration succeed.
+
+### Required proposal correction
+
+Do NOT propose ad-hoc/manual SQL seeding of `insignia-rewrite-dev`.
+
+Production has zero tenant/install rows because the managed-install/token-exchange production path has no permanent first-install bootstrap.
+
+Update the proposal so the successor implements a reusable first-authenticated-session lifecycle:
+
+verified App Bridge ID token
+→ matching online grant
+→ exact provider `currentAppInstallation`
+→ transactionally ensure durable tenant/generation using reviewed tenant repositories.
+
+No browser-supplied IDs. No guessed Shopify IDs.
+
+Make it concurrency-safe/idempotent.
+
+Existing identity mismatch fails closed.
+
+Reinstall/new external installation must transition generation through the reviewed lifecycle rather than overwriting the old generation.
+
+Also evaluate the existing expiring-offline credential lifecycle. If background/worker operations require offline credentials, bootstrap the exact expiring offline pair through the existing encrypted M3 credential repository rather than a new token store.
+
+### Commercial boundary
+
+Do not invent plan/usage handles, policy IDs, feature sets, included usage, Partner credentials or subscription state.
+
+Commercial values remain owner decisions.
+
+Authentication/bootstrap/readiness can be provisioned first. Real publish eligibility waits for actual owner-backed commercial configuration or a separately approved dev-only test entitlement.
+
+### Validation
+
+Run focused migration regression, PostgreSQL18, full root, final CI and two fresh GPT-6.1-sol/high CLEAR reviews.
+
+Return SAME PR #53 for principal rereview.
+
+No production provisioning, deployment, Search, fixture, Shopify app release/version/scope mutation, M6/M7 or rollout.

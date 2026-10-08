@@ -1,0 +1,110 @@
+{
+  "classification": "M5_022_FULL_LOCAL_QUALIFICATION_PASS_WITH_NATIVE_PROVISIONING_STOP",
+  "node": "24.21.0",
+  "pnpm": "12.6.0",
+  "postgres": "18.6",
+  "localDatabase": "NEW_LOOPBACK_ISOLATED_SYNTHETIC_ONLY",
+  "rootRepeat": "PASS_FULL_ROOT_AFTER_SAFE_MESSAGE_ASSERTION_CORRECTION",
+  "checks": [
+    {
+      "check": "PostgreSQL18 / two idempotent migrations /173 tests",
+      "command": "corepack pnpm check:database",
+      "exitCode": 0,
+      "log": "full-pg18.log",
+      "logSha256": "99ddfd5f5c8428525e65b6ce46a21dc4c71d0c98832f4bbd365e3d052154ba47"
+    },
+    {
+      "check": "Trusted source controls",
+      "command": "corepack pnpm --filter @insignia/database exec vitest run test/trusted-release.test.ts",
+      "exitCode": 0,
+      "log": "trusted-source-controls.log",
+      "logSha256": "4674eb5c9b7b8bd519e68443e191dd19fcd6807e954b42090f921113653e85de"
+    },
+    {
+      "check": "Production/auth/calendar composition27/27",
+      "command": "node --test apps/web/test/admin/{auth,commands,trusted-calendar,production-readiness,production-composition}.test.mjs",
+      "exitCode": 0,
+      "log": "focused-composition-controls.log",
+      "logSha256": "0c9b599c09acf5753d158cf5d606cd9f7ab3e097a6ee4fdea29ea3eb2b027b90"
+    },
+    {
+      "check": "Built browser retry4cases",
+      "command": "node --test --test-name-pattern=built\\ picker\\ refreshes apps/web/test/admin/editor-browser.test.mjs",
+      "exitCode": 0,
+      "log": "browser-retry-controls.log",
+      "logSha256": "7f99ac327979c15271c2edf2d40e8332056e4eda7d3e20b692afc9c1d08f044e"
+    },
+    {
+      "check": "Publication stress100/100",
+      "command": "corepack pnpm test:m5-stress",
+      "exitCode": 0,
+      "log": "publication-stress100.log",
+      "logSha256": "cef11d80ec4f612480430cc4fff8b76acecbb14d166eef0de65a649a2b947a5e"
+    },
+    {
+      "check": "Renderer expected negative control",
+      "command": "corepack pnpm test:m5-renderer-control",
+      "exitCode": 0,
+      "log": "renderer-control.log",
+      "logSha256": "246226c12ff3c9f1f47750d5900a945a6fb3e28ff968de1821b750919040b0c6"
+    },
+    {
+      "check": "100k query plan",
+      "command": "M5_QUERY_PLAN_OUTPUT=<neutral>/query-plans.json corepack pnpm test:m5-query-plan",
+      "exitCode": 0,
+      "log": "query-plans.log",
+      "logSha256": "e7e74ac7db49240a0e66156f91b9dfffa420cd6d2cf9f4d3d431e537b694106c"
+    },
+    {
+      "check": "Migration16 isolated down/up",
+      "command": "dbmate create; db:migrate; dbmate rollback; db:migrate (separate local rehearsal DB)",
+      "exitCode": 0,
+      "log": "migration-rehearsal.log",
+      "logSha256": "1f4aef06c20c3285168d978e1c37d48a7670080cba7f029562e1895738366225"
+    },
+    {
+      "check": "Database source typecheck",
+      "command": "corepack pnpm --filter @insignia/database typecheck",
+      "exitCode": 0,
+      "log": "database-typecheck.log",
+      "logSha256": "38ac890c60e7f38d59ddfb410325cdfb5fca83c9411765c5481754e01c021630"
+    },
+    {
+      "check": "SDK HTTP200 GraphQL error red",
+      "command": "corepack pnpm --filter @insignia/shopify exec vitest run test/admin-online-identity.test.ts",
+      "exitCode": 1,
+      "log": "auth-graphql-red.log",
+      "logSha256": "6d03cf9786a91f3feb990c6d62a3432bcced4f62d5b8be82062fc595e6a49692"
+    },
+    {
+      "check": "SDK green12/12",
+      "command": "corepack pnpm --filter @insignia/shopify exec vitest run test/admin-online-identity.test.ts",
+      "exitCode": 0,
+      "log": "auth-graphql-green.log",
+      "logSha256": "48e676d67a6d98a5b22f0851d85bf2db767bf91d16b229074e6de194735a2e47"
+    },
+    {
+      "check": "Initial root failed safe-message assertion",
+      "command": "corepack pnpm check",
+      "exitCode": 1,
+      "log": "full-root.log",
+      "logSha256": "ff9b6c9f002cf8dd7958a4eaaa395cbfde842f72a02855a233f7be012aa844a7"
+    },
+    {
+      "check": "Full root; PG-backed web75/75; all unit/Rust/vector/boundary/browser/history checks",
+      "command": "corepack pnpm check",
+      "exitCode": 0,
+      "log": "full-root2.log",
+      "logSha256": "0a83cd4e351075f5dcd5fcbd6dbf1431b5fc7f81e740a0506947f4fef8750d92"
+    },
+    {
+      "check": "Current source/fixtures secret provenance",
+      "command": "corepack pnpm check:secrets",
+      "exitCode": 0,
+      "log": "updated-evidence-secrets.log",
+      "logSha256": "64e82e3234282bd9575dedccb8e568065d0fed0c8e7a8b8e024e8abae09c177d"
+    }
+  ],
+  "liveQualification": "NOT_RUN_PROVISIONING_STOP",
+  "developmentFailuresPreserved": "Neutral M5-022 handoff red/green and helper failures retained; current evidence includes red SDK classification and failed first full root run."
+}
