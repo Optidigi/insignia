@@ -26,6 +26,7 @@ OLD_IMAGE = 'sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917d
 ORIGIN = 'https://insignia-app.optidigi.nl'
 DOMAIN = 'insignia-rewrite-dev.myshopify.com'
 MIGRATION = '20261008000100'
+COMPOSE_SHA256 = '2cf6a39677b760570be3406e3d76280ec152ca40c4c01ba46e1ef2e4396faa4e'
 
 
 def require(condition, message):
@@ -67,6 +68,7 @@ def inspect(names):
 
 
 def compose_configuration(image):
+    require(sha((APP / 'compose.yaml').read_bytes()) == COMPOSE_SHA256, 'Reviewed Compose source drift')
     require(re.fullmatch(r'sha256:[0-9a-f]{64}', image) is not None, 'Reviewed image identity invalid')
     environment = {key: os.environ[key] for key in ('PATH', 'HOME') if key in os.environ}
     environment.update({'INSIGNIA_WEB_IMAGE': image, 'INSIGNIA_ROUTE_ENABLED': 'true'})
@@ -98,7 +100,13 @@ def candidate_matches_runtime(web, candidate, networks):
     environment = candidate.get('environment') or {}
     critical = ['DATABASE_URL', 'APP_URL', 'SHOPIFY_CLIENT_ID', 'SHOPIFY_CLIENT_SECRET', 'SHOPIFY_WEBHOOK_SECRET']
     actual_networks = set(web.get('NetworkSettings', {}).get('Networks', {}))
-    return (all(environment.get(key) and environment[key] == current.get(key) for key in critical)
+    accepted_fields = {'image', 'pull_policy', 'container_name', 'restart', 'read_only', 'tmpfs',
+        'cap_drop', 'security_opt', 'env_file', 'environment', 'networks', 'depends_on', 'healthcheck',
+        'labels', 'user', 'volumes', 'entrypoint', 'command', 'privileged', 'cap_add', 'devices',
+        'device_cgroup_rules', 'group_add', 'userns_mode', 'pid', 'ipc', 'network_mode', 'cgroup', 'sysctls'}
+    return (set(candidate).issubset(accepted_fields)
+        and all(value in (None, {}) for value in (candidate.get('networks') or {}).values())
+        and all(environment.get(key) and environment[key] == current.get(key) for key in critical)
         and all(current.get(key) == value for key, value in environment.items())
         and all(environment.get(key) == value for key, value in current.items() if key.startswith('PG'))
         and {value['name'] for value in networks.values()} == actual_networks

@@ -8,6 +8,8 @@ Fifth-round candidate-configuration/indirect-trigger findings plus root runtime-
 
 Sixth-round required-function and initial-runtime-isolation findings now have twelve actual-PG and six unsafe-candidate controls. New full-source review/CI is required before freeze; application/build/provider inputs unchanged.
 
+Seventh-round candidate mounts/routing findings now reject through an explicit field surface and exact already-reviewed canonical Compose bytes, with eleven host methods/29 variants. Current-host equivalence remains unproven until gated access. Fresh review/CI required; no live authority used.
+
 ---
 
 # Current M5-022R — same-PR correction; principal rereview required

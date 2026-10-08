@@ -1,0 +1,22 @@
+{
+  "classification": "OPERATOR_ONLY_CORRECTION_APPLICATION_SOURCE_BUILD_UNCHANGED",
+  "priorMappedFiles": 709,
+  "mappedChanges": {
+    "docs/delivery/evidence/m5-023/operators/host-operator-controls.py": {
+      "before": "eca8e3282a54ed7e9a63feedca3e70c0bf69f647be1d8d388d7dadcd4d360a0c",
+      "after": "328b55c181d97569dbc90db3116e2dbf17551b4a32394e21d8752b9984b18dcf"
+    },
+    "docs/delivery/evidence/m5-023/operators/host-operator.py": {
+      "before": "3663bfc53f328ac2b3c8fed020afcf5b5c182ba58798019ce083d35b91b671b5",
+      "after": "d8c898c0ab13c65d29c288038d21b51d0d276cd0b21ae8886e412c8a8bfbd1fe"
+    }
+  },
+  "newExpectedComposeInput": {
+    "path": "docs/delivery/evidence/m5-023/operators/expected-compose.yaml",
+    "sha256": "2cf6a39677b760570be3406e3d76280ec152ca40c4c01ba46e1ef2e4396faa4e",
+    "origin": "Byte-exact decode of already-reviewed immutable M5-019R owner-origin stage; no host mutation"
+  },
+  "archiveSha256": "17129c15c6decb87539b24fe12358d345d357e828d887c3943594778dd965022",
+  "applicationRebuilds": 0,
+  "productionProviderCredentialAccess": false
+}

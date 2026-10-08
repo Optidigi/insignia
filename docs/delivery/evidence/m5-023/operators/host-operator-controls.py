@@ -17,6 +17,9 @@ class GuardControls(unittest.TestCase):
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         operator.ROOT = Path(self.directory.name)
+        operator.APP = operator.ROOT / 'app'
+        operator.APP.mkdir()
+        (operator.APP / 'compose.yaml').write_bytes(Path(__file__).with_name('expected-compose.yaml').read_bytes())
         operator.prestate = original_prestate
         self.calls = []
         self.config = {'services': {'web': {'image': operator.OLD_IMAGE,
@@ -55,6 +58,16 @@ class GuardControls(unittest.TestCase):
             operator.deploy()
         self.assertEqual(len(self.calls), 1)
         self.assertIn('config', self.calls[0])
+
+    def test_changed_compose_source_stops_before_any_external_command(self):
+        self.qualified_receipt()
+        with (operator.APP / 'compose.yaml').open('ab') as stream:
+            stream.write(b'\n# unreviewed source change\n')
+        for action in [operator.backup, operator.provision, operator.deploy]:
+            with self.assertRaisesRegex(RuntimeError, 'Reviewed Compose source drift'):
+                action()
+        self.assertEqual(self.calls, [])
+        self.assertFalse(list(operator.ROOT.glob('*-reserved.json')))
 
     def test_durable_reservation_is_private_and_never_replaced(self):
         operator.event('operation-reserved', {'intent': 'synthetic'})
@@ -160,7 +173,7 @@ class GuardControls(unittest.TestCase):
         self.assertNotIn('synthetic@', json.dumps(value))
 
     def test_only_exact_ready_worker_and_queue_qualify(self):
-        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid']:
+        for failure in [None, 'artifact', 'secret', 'queue', 'health', 'dependency', 'role', 'application-rights', 'writable-code', 'custom-launcher', 'separate-network', 'dns-drift', 'db-query-override', 'divergent-AAAA', 'candidate-database', 'candidate-webhook', 'runtime-schema', 'root-user', 'privileged', 'cap-add', 'security-override', 'writable-module-tmpfs', 'host-pid', 'config-mount', 'secret-mount', 'inherited-mount', 'hosts-override', 'dns-override', 'lifecycle-hook']:
             with self.subTest(failure=failure):
                 path = operator.ROOT / 'lifecycle-settled.json'
                 if path.exists():
@@ -198,7 +211,15 @@ class GuardControls(unittest.TestCase):
                             environment['DATABASE_URL'] = 'postgres://insignia_runtime@another:5432/insignia_rewrite'
                         if failure == 'candidate-webhook':
                             environment['SHOPIFY_WEBHOOK_SECRET'] = 'different-secret'
-                        return json.dumps({'services': {'web': {'image': operator.OLD_IMAGE,
+                        additions = {
+                            'config-mount': {'configs': [{'source': 'shadow', 'target': '/srv/insignia/dist/server/entry.mjs'}]},
+                            'secret-mount': {'secrets': [{'source': 'shadow', 'target': '/srv/insignia/node_modules/pg/lib/index.js'}]},
+                            'inherited-mount': {'volumes_from': ['container:shadow:ro']},
+                            'hosts-override': {'extra_hosts': ['database:10.0.1.2']},
+                            'dns-override': {'dns': ['10.0.1.3']},
+                            'lifecycle-hook': {'post_start': [{'command': 'unreviewed-hook'}]},
+                        }.get(failure, {})
+                        return json.dumps({'services': {'web': {**additions, 'image': operator.OLD_IMAGE,
                             'environment': {**environment, 'APP_URL': operator.ORIGIN},
                             'labels': {'traefik.enable': 'true',
                                 'traefik.http.routers.insignia-canonical-m5-019r.rule': 'Host(`insignia-app.optidigi.nl`)'},
