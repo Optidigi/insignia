@@ -1,0 +1,5 @@
+{
+  "encoding": "UTF-8 lossless raw log serialization",
+  "sha256": "bb84a1190038eb7de997fa8a9f27ac693f821b4df69b75e2f7491aa6efef8f6c",
+  "rawContent": "✖ M5-025 existing HTTP/worker cannot distinguish old replay from identical later uninstall (11150.133775ms)\nℹ tests 1\nℹ suites 0\nℹ pass 0\nℹ fail 1\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 16885.711318\n\n✖ failing tests:\n\ntest at apps/web/test/uninstall-authority.test.mjs:12:1\n✖ M5-025 existing HTTP/worker cannot distinguish old replay from identical later uninstall (11150.133775ms)\n  Error: bounded local observation did not settle\n      at waitFor (file:///home/serveradmin/insignia-m5-025-worktree/apps/web/test/uninstall-authority.test.mjs:48:11)\n      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-025-worktree/apps/web/test/uninstall-authority.test.mjs:130:5)\n      at async Test.run (node:internal/test_runner/test:1409:7)\n      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)\n"
+}

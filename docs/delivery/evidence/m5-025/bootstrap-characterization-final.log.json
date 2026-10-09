@@ -1,0 +1,5 @@
+{
+  "encoding": "UTF-8 lossless raw log serialization",
+  "sha256": "c4d22fc49c96ddab42db9e5c932138bc8b0c464409b51dbb1c49d97633434d29",
+  "rawContent": "\n RUN  v5.0.2 /home/serveradmin/insignia-m5-025-worktree/packages/database\n\n\n Test Files  1 passed (1)\n      Tests  2 passed (2)\n   Start at  10:43:49\n   Duration  1.63s (transform 43%, import 43%, tests 14%)\n\n"
+}

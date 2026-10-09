@@ -24,7 +24,8 @@
       "exitCode": 0,
       "log": "bootstrap-characterization-final.log",
       "sha256": "c4d22fc49c96ddab42db9e5c932138bc8b0c464409b51dbb1c49d97633434d29",
-      "bytes": 210
+      "bytes": 210,
+      "committedArtifact": "bootstrap-characterization-final.log.json"
     },
     {
       "name": "final-secrets",
@@ -69,7 +70,8 @@
       "exitCode": 0,
       "log": "full-pg18-final.log",
       "sha256": "4860848babc4baab30f4a59bdd80702e989fc2d7d24324a649bc06ceed50ddea",
-      "bytes": 514
+      "bytes": 514,
+      "committedArtifact": "full-pg18-final.log.json"
     },
     {
       "name": "full-pg18",
@@ -140,7 +142,8 @@
       "log": "isolated-http-green.log",
       "sha256": "e1b5f9b53ca9434e6196e39f096afe9e95c4ad9bca2758f97080ba311fd1dcc3",
       "bytes": 391,
-      "testSourceSha256": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4"
+      "testSourceSha256": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4",
+      "committedArtifact": "isolated-http-green.log.json"
     },
     {
       "name": "isolated-http-red",
@@ -161,7 +164,8 @@
       "log": "isolated-http-red.log",
       "sha256": "270aa92e4a2d9c29bd5b23dc6b8e386d9b8ca4710fadf59957bc70619b928072",
       "bytes": 1090,
-      "testSourceSha256": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4"
+      "testSourceSha256": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4",
+      "committedArtifact": "isolated-http-red.log.json"
     },
     {
       "name": "publication-stress",
@@ -194,7 +198,8 @@
       "exitCode": 0,
       "log": "queue-crash-regression.log",
       "sha256": "81fa522e6ca9fda5092504079a923227d3d6a09017ba2eb7d1aca65ec079db2f",
-      "bytes": 2277
+      "bytes": 2277,
+      "committedArtifact": "queue-crash-regression.log.json"
     },
     {
       "name": "renderer-control",
@@ -216,7 +221,8 @@
       "classification": "EXPECTED_RED_INTERMEDIATE_SOURCE_HASH_NOT_CAPTURED",
       "log": "uninstall-invariant-red.log",
       "sha256": "43baaa344bf6815f82b8b59f722879e8511a0f517e6d87b1fbcd1754150a6f42",
-      "bytes": 1090
+      "bytes": 1090,
+      "committedArtifact": "uninstall-invariant-red.log.json"
     },
     {
       "name": "uninstall-invariant-final-red.log",
@@ -224,7 +230,51 @@
       "classification": "RETAINED_HARNESS_TIMEOUT_NOT_EXPECTED_SECURITY_RED",
       "log": "uninstall-invariant-final-red.log",
       "sha256": "bb84a1190038eb7de997fa8a9f27ac693f821b4df69b75e2f7491aa6efef8f6c",
-      "bytes": 870
+      "bytes": 870,
+      "committedArtifact": "uninstall-invariant-final-red.log.json"
+    },
+    {
+      "name": "final-boundaries",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:boundaries"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T10:50:53.952134+00:00",
+      "exitCode": 0,
+      "log": "final-boundaries.log",
+      "sha256": "c6938980c11d35335dbc922445acf3c103254bc82d57074c2b30f9b4f03d5c74",
+      "bytes": 1931
+    },
+    {
+      "name": "final-secrets-after-evidence",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T10:52:23.547919+00:00",
+      "exitCode": 0,
+      "log": "final-secrets-after-evidence.log",
+      "sha256": "a45b211081f227f1965cd829de00212e985029584c5f290798757486cb13b078",
+      "bytes": 206
+    },
+    {
+      "name": "final-style-after-isolation",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:style"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T10:52:20.686375+00:00",
+      "exitCode": 0,
+      "log": "final-style-after-isolation.log",
+      "sha256": "aba4f5620b02a29260170c8ce6793c4c4f7c1360c2ce545429d8d1341b3eebac",
+      "bytes": 13782
     }
-  ]
+  ],
+  "rawCaptureWhitespace": "Initial git diff --check reported raw diagnostic trailing spaces/blank EOF; logs remain byte-exact privately and are now serialized losslessly as JSON in Git."
 }
