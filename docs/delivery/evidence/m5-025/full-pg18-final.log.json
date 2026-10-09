@@ -1,0 +1,5 @@
+{
+  "encoding": "UTF-8 lossless raw log serialization",
+  "sha256": "4860848babc4baab30f4a59bdd80702e989fc2d7d24324a649bc06ceed50ddea",
+  "rawContent": "$ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database\n$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up\n$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up\n$ corepack pnpm --filter @insignia/database test\n$ vitest run\n\n RUN  v5.0.2 /home/serveradmin/insignia-m5-025-worktree/packages/database\n\n\n Test Files  14 passed (14)\n      Tests  200 passed (200)\n   Start at  10:47:17\n   Duration  21.68s (tests 77%, import 17%, transform 6%)\n\n"
+}

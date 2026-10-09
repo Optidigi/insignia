@@ -1,0 +1,75 @@
+{
+  "time": "2026-10-09T10:32:47.404834+00:00",
+  "access": "Unauthenticated public documentation only; no shop or Admin/Partner API requests",
+  "documents": [
+    {
+      "name": "subscription-create",
+      "requested": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/webhookSubscriptionCreate.md",
+      "actual": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/webhookSubscriptionCreate.md",
+      "contentType": "text/markdown; charset=utf-8",
+      "sha256": "8329e358da383cac95295df7243797fa8dc876617db7823cf7bf4403fe32f404",
+      "bytes": 39520
+    },
+    {
+      "name": "subscription-input",
+      "requested": "https://shopify.dev/docs/api/admin-graphql/2026-07/input-objects/WebhookSubscriptionInput.md",
+      "actual": "https://shopify.dev/docs/api/admin-graphql/2026-07/input-objects/WebhookSubscriptionInput.md",
+      "contentType": "text/markdown; charset=utf-8",
+      "sha256": "99759c11eef945205ff32ce03532a7d8a8da604d733d3c49b6c992dee27c6a1b",
+      "bytes": 3222
+    },
+    {
+      "name": "manage-subscriptions",
+      "requested": "https://shopify.dev/docs/apps/build/webhooks/subscribe.md",
+      "actual": "https://shopify.dev/docs/apps/build/webhooks/subscribe.md",
+      "contentType": "text/markdown; charset=utf-8",
+      "sha256": "6de324c71816f17a05d876f20a91ceaae743cec9becbb5552778b83a16c05e38",
+      "bytes": 16889
+    },
+    {
+      "name": "webhooks-pinned",
+      "requested": "https://shopify.dev/docs/api/webhooks/2026-07.md",
+      "actual": "https://shopify.dev/docs/api/webhooks/2026-07.md",
+      "contentType": "text/markdown; charset=utf-8",
+      "sha256": "c11b538658f642a5026d053fe426ec73c1f0378845de2af82212352b33842d46",
+      "bytes": 309767
+    },
+    {
+      "name": "verify",
+      "requested": "https://shopify.dev/docs/apps/build/webhooks/verify-deliveries.md",
+      "actual": "https://shopify.dev/docs/apps/build/webhooks/verify-deliveries.md",
+      "contentType": "text/markdown; charset=utf-8",
+      "sha256": "129fcbc49c12180cf456a3fe662805d43e21bdc7da76d36007982bd0713b94d6",
+      "bytes": 7367
+    },
+    {
+      "name": "privacy",
+      "requested": "https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance.md",
+      "actual": "https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance.md",
+      "contentType": "text/markdown; charset=utf-8",
+      "sha256": "ea9dee13304ca6cef50f83e94bac56afde96022db9ae7a7109fe1fcfe25624ee",
+      "bytes": 8912
+    },
+    {
+      "name": "partner-uninstalled",
+      "requested": "https://shopify.dev/docs/api/partner/2026-07/objects/RelationshipUninstalled.md",
+      "actual": "https://shopify.dev/docs/api/partner/2026-07/objects/RelationshipUninstalled.md",
+      "contentType": "text/markdown; charset=utf-8",
+      "sha256": "5d769439bd213948d572a99a6e1e5708145919e5f18f511c82c8810b7a8b260c",
+      "bytes": 1635
+    },
+    {
+      "name": "partner-auth",
+      "requested": "https://shopify.dev/docs/api/partner/2026-07/authentication.md",
+      "errorClass": "HTTPError"
+    },
+    {
+      "name": "troubleshoot",
+      "requested": "https://shopify.dev/docs/apps/build/webhooks/troubleshoot.md",
+      "actual": "https://shopify.dev/docs/apps/build/webhooks/troubleshoot.md",
+      "contentType": "text/markdown; charset=utf-8",
+      "sha256": "a0ac8fab125157a933c0389c5fef589ff75b49d42bf0784651f2952f5f3aac45",
+      "bytes": 9092
+    }
+  ]
+}

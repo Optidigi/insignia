@@ -1,3 +1,11 @@
+# Current M5-025 — offline uninstall authority investigation
+
+[Authority](prompts/M5-025-GENERATION-SAFE-UNINSTALL.md), [PR55 merge receipt](evidence/m5-025/pr55-merge-receipt.json): already-merged normal commit `f05b1cfa30d28fb346a0148db3f384d53b9c1a42` has approved ordered parents/tree and remote main. Eleven exact-head attempt1 workflows and both final actual CLEAR reviews were reverified. Fresh branch `feat/m5-025-uninstall-authority` in `/home/serveradmin/insignia-m5-025-worktree`; private local resources under `/home/serveradmin/insignia-m5-025-handoff`.
+
+**BLOCKED_PLATFORM_UNINSTALL_AUTHORITY / M5_G7_NOT_PASSED.** [Analysis](M5-025-PLATFORM-ANALYSIS.md), [report](M5-025-REPORT.md), [qualification](M5-025-QUALIFICATION.md): current signed inputs cannot distinguish old-body replay from a genuine identical-body later uninstall. Callback capabilities remain a documented viable candidate, with exact-app lifecycle and registration-gap coverage unqualified. The explicit security assertion remains RED; production semantics/history are unchanged. Root/PG200/web88/crash/stress100 regression is green. New exact-head reviews/CI attach to the PR after freeze. Production/Shopify access and resource mutation remain CLOSED. Return the bounded blocker and recommended separate callback qualification for principal review; no successor merge or live G7 claim.
+
+---
+
 # Current M5-024 — offline worker/queue prerequisite qualification
 
 [Authority](prompts/M5-024-UNINSTALL-PROCESSOR-QUEUE.md), [external PR54 approval](PR-054-principal-review.md), [normal merge receipt](evidence/m5-024/pr54-merge-receipt.json):56f504e88dd0dd77ee2c5165e3417f65dd0a5d36 has approved ordered parents/tree and updated main. One successor feat/m5-024-uninstall-processor-readiness in /home/serveradmin/insignia-m5-024-worktree. Existing M3 worker and pg-boss12.35.0 only; no bootstrap or Availability redesign, historical evidence immutable.

@@ -88,6 +88,15 @@ jobs:
       - name: M5-024 captured signed body / altered metadata characterization
         working-directory: apps/web
         run: node --test test/webhook-metadata-boundary.test.mjs
+      - name: M5-025 uninstall authority hard-stop characterization
+        env:
+          DATABASE_URL: postgres://insignia_test:insignia_test@localhost:5432/insignia_m5_025_http?sslmode=disable
+        # Dedicated disposable DB prevents unrelated recovery backlog competing
+        # with this bounded process control. Success is reproduction, not security PASS.
+        run: |
+          corepack pnpm exec dbmate create
+          corepack pnpm db:migrate
+          node --test apps/web/test/uninstall-authority.test.mjs
       - name: Built HTTP ingress with PostgreSQL and queue handoff
         working-directory: apps/web
         run: node --test test/shopify-webhook.test.mjs

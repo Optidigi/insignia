@@ -1,0 +1,5 @@
+{
+  "encoding": "UTF-8 lossless raw log serialization",
+  "sha256": "e1b5f9b53ca9434e6196e39f096afe9e95c4ad9bca2758f97080ba311fd1dcc3",
+  "rawContent": "M5-025 BLOCKER_REPRODUCED: generations2 and3 deactivated from identical signed bytes; altered IDs/time supply no independent generation authority; no provider used\n✔ M5-025 existing HTTP/worker cannot distinguish old replay from identical later uninstall (12606.727033ms)\nℹ tests 1\nℹ suites 0\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 18000.198632\n"
+}

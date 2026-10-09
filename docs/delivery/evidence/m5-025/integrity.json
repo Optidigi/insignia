@@ -1,0 +1,9 @@
+{
+  "baseline": "f05b1cfa30d28fb346a0148db3f384d53b9c1a42",
+  "protectedTrackedFilesVerified": 2360,
+  "protectedPaths": "Production src, SQL migrations, extension/crate inputs, deployment config, M5-024 scripts, architecture and historical evidence",
+  "allMatchBaseline": true,
+  "newProviderRequests": 0,
+  "productionOperations": 0,
+  "localBuildComparison": "compatibility-inventory.json (local regenerated Astro not byte-identical; no deployment)"
+}

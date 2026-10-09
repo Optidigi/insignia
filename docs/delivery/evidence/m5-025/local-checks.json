@@ -1,0 +1,280 @@
+{
+  "scope": "OFFLINE_LOCAL_ONLY",
+  "outcome": "BLOCKED_PLATFORM_UNINSTALL_AUTHORITY",
+  "securityCorrection": "NOT_IMPLEMENTED; independent authority/genuine-uninstall coverage unqualified",
+  "rawLogsLocation": "/home/serveradmin/insignia-m5-025-handoff",
+  "checks": [
+    {
+      "name": "bootstrap-characterization-final",
+      "command": [
+        "corepack",
+        "pnpm",
+        "--filter",
+        "@insignia/database",
+        "exec",
+        "vitest",
+        "run",
+        "test/uninstall-authority.test.ts"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T10:43:49.212645+00:00",
+      "exitCode": 0,
+      "log": "bootstrap-characterization-final.log",
+      "sha256": "c4d22fc49c96ddab42db9e5c932138bc8b0c464409b51dbb1c49d97633434d29",
+      "bytes": 210,
+      "committedArtifact": "bootstrap-characterization-final.log.json"
+    },
+    {
+      "name": "final-secrets",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T10:45:34.695103+00:00",
+      "exitCode": 0,
+      "log": "final-secrets.log",
+      "sha256": "a45b211081f227f1965cd829de00212e985029584c5f290798757486cb13b078",
+      "bytes": 206
+    },
+    {
+      "name": "final-style",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:style"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T10:45:32.164660+00:00",
+      "exitCode": 0,
+      "log": "final-style.log",
+      "sha256": "2d69f97746aa198b9d3e6f74852436fd8b36a37afaf4093e51743a412ccf53f6",
+      "bytes": 13786
+    },
+    {
+      "name": "full-pg18-final",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:database"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T10:47:15.701802+00:00",
+      "exitCode": 0,
+      "log": "full-pg18-final.log",
+      "sha256": "4860848babc4baab30f4a59bdd80702e989fc2d7d24324a649bc06ceed50ddea",
+      "bytes": 514,
+      "committedArtifact": "full-pg18-final.log.json"
+    },
+    {
+      "name": "full-pg18",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:database"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T10:41:30.534013+00:00",
+      "exitCode": 0,
+      "log": "full-pg18.log",
+      "sha256": "7bbfbd4a07a99c094f651d0c52415b8892ad627ecc9d3c758dc50e64a56e0191",
+      "bytes": 514
+    },
+    {
+      "name": "full-root",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T10:37:42.988280+00:00",
+      "exitCode": 0,
+      "log": "full-root.log",
+      "sha256": "026585d94061296582185bec3ad73b5d428802777b1f33bacef269161ba0c307",
+      "bytes": 161009
+    },
+    {
+      "name": "http-characterization-final",
+      "command": [
+        "node",
+        "--test",
+        "apps/web/test/uninstall-authority.test.mjs"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T10:43:51.552914+00:00",
+      "exitCode": 0,
+      "log": "http-characterization-final.log",
+      "sha256": "038e30fc966c8d00bab8aed3716b0ea15ebae72e1a577a9831f1e2e7c3f94705",
+      "bytes": 391
+    },
+    {
+      "name": "isolated-http-green",
+      "command": [
+        "node",
+        "--test",
+        "apps/web/test/uninstall-authority.test.mjs"
+      ],
+      "localDatabase": "insignia_m5_025_http_green",
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T10:49:51.450684+00:00",
+      "exitCode": 0,
+      "classification": "PASS_BLOCKER_CHARACTERIZATION",
+      "log": "isolated-http-green.log",
+      "sha256": "e1b5f9b53ca9434e6196e39f096afe9e95c4ad9bca2758f97080ba311fd1dcc3",
+      "bytes": 391,
+      "testSourceSha256": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4",
+      "committedArtifact": "isolated-http-green.log.json"
+    },
+    {
+      "name": "isolated-http-red",
+      "command": [
+        "node",
+        "--test",
+        "apps/web/test/uninstall-authority.test.mjs"
+      ],
+      "localDatabase": "insignia_m5_025_http_red",
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST",
+        "M5_025_REQUIRE_SAFE_UNINSTALL"
+      ],
+      "startedAt": "2026-10-09T10:49:36.254482+00:00",
+      "exitCode": 1,
+      "classification": "EXPECTED_RED_SECURITY_INVARIANT_UNFIXED",
+      "log": "isolated-http-red.log",
+      "sha256": "270aa92e4a2d9c29bd5b23dc6b8e386d9b8ca4710fadf59957bc70619b928072",
+      "bytes": 1090,
+      "testSourceSha256": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4",
+      "committedArtifact": "isolated-http-red.log.json"
+    },
+    {
+      "name": "publication-stress",
+      "command": [
+        "corepack",
+        "pnpm",
+        "test:m5-stress"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T10:43:02.207511+00:00",
+      "exitCode": 0,
+      "log": "publication-stress.log",
+      "sha256": "9638209646caed82f6474b9db0e22fd3b6887f60c77243a43f3edd0783e92de2",
+      "bytes": 10408
+    },
+    {
+      "name": "queue-crash-regression",
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "scripts/m5-024/queue-privileges.test.mjs",
+        "scripts/m5-024/crash-recovery.test.mjs"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T10:42:32.123505+00:00",
+      "exitCode": 0,
+      "log": "queue-crash-regression.log",
+      "sha256": "81fa522e6ca9fda5092504079a923227d3d6a09017ba2eb7d1aca65ec079db2f",
+      "bytes": 2277,
+      "committedArtifact": "queue-crash-regression.log.json"
+    },
+    {
+      "name": "renderer-control",
+      "command": [
+        "corepack",
+        "pnpm",
+        "test:m5-renderer-control"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T10:45:24.469875+00:00",
+      "exitCode": 0,
+      "log": "renderer-control.log",
+      "sha256": "58260993d27eb1f74245f56a5021455c9c5ea248fde627b71705ddb83d7e2086",
+      "bytes": 1257
+    },
+    {
+      "name": "uninstall-invariant-red.log",
+      "exitCode": 1,
+      "classification": "EXPECTED_RED_INTERMEDIATE_SOURCE_HASH_NOT_CAPTURED",
+      "log": "uninstall-invariant-red.log",
+      "sha256": "43baaa344bf6815f82b8b59f722879e8511a0f517e6d87b1fbcd1754150a6f42",
+      "bytes": 1090,
+      "committedArtifact": "uninstall-invariant-red.log.json"
+    },
+    {
+      "name": "uninstall-invariant-final-red.log",
+      "exitCode": 1,
+      "classification": "RETAINED_HARNESS_TIMEOUT_NOT_EXPECTED_SECURITY_RED",
+      "log": "uninstall-invariant-final-red.log",
+      "sha256": "bb84a1190038eb7de997fa8a9f27ac693f821b4df69b75e2f7491aa6efef8f6c",
+      "bytes": 870,
+      "committedArtifact": "uninstall-invariant-final-red.log.json"
+    },
+    {
+      "name": "final-boundaries",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:boundaries"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T10:50:53.952134+00:00",
+      "exitCode": 0,
+      "log": "final-boundaries.log",
+      "sha256": "c6938980c11d35335dbc922445acf3c103254bc82d57074c2b30f9b4f03d5c74",
+      "bytes": 1931
+    },
+    {
+      "name": "final-secrets-after-evidence",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T10:52:23.547919+00:00",
+      "exitCode": 0,
+      "log": "final-secrets-after-evidence.log",
+      "sha256": "a45b211081f227f1965cd829de00212e985029584c5f290798757486cb13b078",
+      "bytes": 206
+    },
+    {
+      "name": "final-style-after-isolation",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:style"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T10:52:20.686375+00:00",
+      "exitCode": 0,
+      "log": "final-style-after-isolation.log",
+      "sha256": "aba4f5620b02a29260170c8ce6793c4c4f7c1360c2ce545429d8d1341b3eebac",
+      "bytes": 13782
+    }
+  ],
+  "rawCaptureWhitespace": "Initial git diff --check reported raw diagnostic trailing spaces/blank EOF; logs remain byte-exact privately and are now serialized losslessly as JSON in Git."
+}
