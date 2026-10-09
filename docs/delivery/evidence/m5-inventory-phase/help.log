@@ -1,0 +1,1 @@
+Usage: phase.py create DIR ALLOCATION QUALIFICATION | admin DIR COLLECTOR_ALLOCATION | owner-surface DIR ID | host DIR SOURCE IDENTITY KNOWN_HOST_FILE | close DIR | frozen-command SOURCE_SHA256

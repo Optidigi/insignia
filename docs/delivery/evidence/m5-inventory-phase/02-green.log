@@ -1,0 +1,7 @@
+test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding (__main__.PhaseControls.test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding) ... ok
+test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) ... ok
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.005s
+
+OK

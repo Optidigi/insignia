@@ -1,0 +1,33 @@
+✖ synthetic Python control failures preserve their diagnostic traceback (155.23677ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 300.663679
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:1076:1
+✖ synthetic Python control failures preserve their diagnostic traceback (155.23677ms)
+  AssertionError [ERR_ASSERTION]: The input did not match the regular expression /RuntimeError: SYNTHETIC_CONTROL_FAILURE/. Input:
+  
+  'Expected values to be strictly equal:\n\n1 !== 0\n'
+  
+      at Object.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:1078:12)
+      at expectedException (node:assert:578:17)
+      at expectsError (node:assert:703:21)
+      at strict.rejects (node:assert:769:3)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:1077:3)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'Expected values to be strictly equal:\n\n1 !== 0\n',
+    expected: /RuntimeError: SYNTHETIC_CONTROL_FAILURE/,
+    operator: 'match',
+    diff: 'simple'
+  }

@@ -1,0 +1,176 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (50.639002ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (5.287442ms)
+  ✔ request template is not permission (4.22426ms)
+  ✔ no approval reference (3.041917ms)
+  ✔ wrong endpoint (2.681913ms)
+  ✔ wrong optional scopes (4.324541ms)
+  ✔ required scope expansion (1.471009ms)
+  ✔ grant expansion (1.44148ms)
+  ✔ mutations (2.292561ms)
+  ✔ wrong operation (1.328533ms)
+  ✔ too many requests (1.663352ms)
+  ✔ too long retention (2.376596ms)
+  ✔ expired grant (1.854387ms)
+  ✔ wrong private destination (2.601908ms)
+  ✔ credential absent (1.407239ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (39.04192ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (34.621362ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (16.191041ms)
+  ✔ missing shop (6.063938ms)
+  ✔ wrong shop (6.647175ms)
+  ✔ wrong client (6.379508ms)
+  ✔ wrong app (6.429023ms)
+  ✔ wrong installation (8.240254ms)
+  ✔ grant drift (6.423625ms)
+  ✔ grant duplicate (10.39032ms)
+  ✔ connection missing (4.735687ms)
+  ✔ page info missing (4.423916ms)
+  ✔ next cursor missing (3.861876ms)
+  ✔ topic missing (5.279061ms)
+  ✔ unsupported version (5.014705ms)
+  ✔ unsupported format (5.849491ms)
+  ✔ URI missing (8.76811ms)
+  ✔ duplicate ID (6.246828ms)
+  ✔ URI conflict (4.241079ms)
+  ✔ page over 250 (6.282901ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (124.721328ms)
+▶ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry
+  ✔ permission (4.345037ms)
+  ✔ throttle (4.2669ms)
+  ✔ redirect (5.98791ms)
+  ✔ API fallback (4.062833ms)
+  ✔ missing API header (4.515728ms)
+  ✔ not JSON (5.756015ms)
+  ✔ encoding (4.125329ms)
+  ✔ malformed body (4.022094ms)
+  ✔ over 1 MiB (6.996946ms)
+  ✔ lost response (6.798135ms)
+  ✔ absolute timeout (25.035806ms)
+✔ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry (77.61294ms)
+✔ run deadline and expired allocation stop in flight and preserve consumed reservations (28.590472ms)
+✔ CLI reads one bounded existing token from inherited descriptor and prints only the public result (178.455565ms)
+✔ killed in-flight process leaves a consumed reservation; seal never resumes or retries it (88.217089ms)
+▶ unknown identity and connection shapes cannot silently qualify a partial provider response
+  ✖ unexpected queried object field (7.443309ms)
+  ✖ unexpected queried object field (7.634157ms)
+  ✖ unexpected queried object field (6.032629ms)
+  ✖ unexpected queried object field (9.092993ms)
+  ✖ unexpected queried object field (6.452181ms)
+✖ unknown identity and connection shapes cannot silently qualify a partial provider response (37.697401ms)
+ℹ tests 57
+ℹ suites 0
+ℹ pass 51
+ℹ fail 6
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 770.145881
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:275:39
+✖ unexpected queried object field (7.443309ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED'
+  - 'STOP_RESPONSE_CONTRACT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:278:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:275:31)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED',
+    expected: 'STOP_RESPONSE_CONTRACT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:275:39
+✖ unexpected queried object field (7.634157ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED'
+  - 'STOP_RESPONSE_CONTRACT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:278:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:275:31)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED',
+    expected: 'STOP_RESPONSE_CONTRACT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:275:39
+✖ unexpected queried object field (6.032629ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED'
+  - 'STOP_RESPONSE_CONTRACT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:278:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:275:31)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED',
+    expected: 'STOP_RESPONSE_CONTRACT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:275:39
+✖ unexpected queried object field (9.092993ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED'
+  - 'STOP_RESPONSE_CONTRACT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:278:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:275:31)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED',
+    expected: 'STOP_RESPONSE_CONTRACT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:275:39
+✖ unexpected queried object field (6.452181ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED'
+  - 'STOP_RESPONSE_CONTRACT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:278:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:275:31)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED',
+    expected: 'STOP_RESPONSE_CONTRACT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

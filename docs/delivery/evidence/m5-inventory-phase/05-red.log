@@ -1,0 +1,65 @@
+test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) ... 
+  test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='failure') ... FAIL
+  test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='stdout_limit') ... FAIL
+  test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='stderr_limit') ... FAIL
+  test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='malformed') ... FAIL
+/usr/lib/python3.14/subprocess.py:1139: ResourceWarning: subprocess 2751763 is still running
+  _warn("subprocess %s is still running" % self.pid,
+ResourceWarning: Enable tracemalloc to get the object allocation traceback
+  test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='timeout') ... FAIL
+test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final (__main__.PhaseControls.test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final) ... ok
+test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding (__main__.PhaseControls.test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding) ... ok
+test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport (__main__.PhaseControls.test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport) ... ok
+test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) ... ok
+
+======================================================================
+FAIL: test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 191, in test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase
+    self.assertNotIn('PRIVATE', json.dumps(result))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PRIVATE' unexpectedly found in '{"classification": "STOP_SSH_OR_PRIVATE_IO_UNCERTAIN", "reservedAdminRequests": 0, "reservedOwnerSurfaces": 0, "reservedMetadataObservations": 10, "nativeSafety": "UNQUALIFIED", "retryAuthorized": false}'
+
+======================================================================
+FAIL: test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='stdout_limit')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 191, in test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase
+    self.assertNotIn('PRIVATE', json.dumps(result))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PRIVATE' unexpectedly found in '{"classification": "STOP_SSH_OR_PRIVATE_IO_UNCERTAIN", "reservedAdminRequests": 0, "reservedOwnerSurfaces": 0, "reservedMetadataObservations": 10, "nativeSafety": "UNQUALIFIED", "retryAuthorized": false}'
+
+======================================================================
+FAIL: test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='stderr_limit')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 191, in test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase
+    self.assertNotIn('PRIVATE', json.dumps(result))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PRIVATE' unexpectedly found in '{"classification": "STOP_SSH_OR_PRIVATE_IO_UNCERTAIN", "reservedAdminRequests": 0, "reservedOwnerSurfaces": 0, "reservedMetadataObservations": 10, "nativeSafety": "UNQUALIFIED", "retryAuthorized": false}'
+
+======================================================================
+FAIL: test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='malformed')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 191, in test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase
+    self.assertNotIn('PRIVATE', json.dumps(result))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PRIVATE' unexpectedly found in '{"classification": "STOP_SSH_OR_PRIVATE_IO_UNCERTAIN", "reservedAdminRequests": 0, "reservedOwnerSurfaces": 0, "reservedMetadataObservations": 10, "nativeSafety": "UNQUALIFIED", "retryAuthorized": false}'
+
+======================================================================
+FAIL: test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='timeout')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 191, in test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase
+    self.assertNotIn('PRIVATE', json.dumps(result))
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PRIVATE' unexpectedly found in '{"classification": "STOP_SSH_OR_PRIVATE_IO_UNCERTAIN", "reservedAdminRequests": 0, "reservedOwnerSurfaces": 0, "reservedMetadataObservations": 10, "nativeSafety": "UNQUALIFIED", "retryAuthorized": false}'
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.505s
+
+FAILED (failures=5)
+<sys>:0: ResourceWarning: unclosed file <_io.BufferedReader name=7>
+<sys>:0: ResourceWarning: unclosed file <_io.BufferedReader name=5>

@@ -1,0 +1,92 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (40.109539ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (4.550039ms)
+  ✔ request template is not permission (1.391428ms)
+  ✔ no approval reference (1.246388ms)
+  ✔ wrong endpoint (1.323251ms)
+  ✔ wrong optional scopes (1.412553ms)
+  ✔ required scope expansion (2.315275ms)
+  ✔ grant expansion (1.373006ms)
+  ✔ mutations (1.214952ms)
+  ✔ wrong operation (1.252807ms)
+  ✔ too many requests (1.194816ms)
+  ✔ too long retention (1.111412ms)
+  ✔ expired grant (1.150387ms)
+  ✔ wrong private destination (1.999566ms)
+  ✔ credential absent (1.264988ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (25.362714ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (11.952555ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (7.289596ms)
+  ✔ missing shop (5.473022ms)
+  ✔ wrong shop (4.913012ms)
+  ✔ wrong client (5.136631ms)
+  ✔ wrong app (5.47173ms)
+  ✔ wrong installation (5.734082ms)
+  ✔ grant drift (5.008338ms)
+  ✔ grant duplicate (6.61661ms)
+  ✔ connection missing (3.610649ms)
+  ✔ page info missing (3.954415ms)
+  ✔ next cursor missing (5.053153ms)
+  ✔ topic missing (4.973034ms)
+  ✔ unsupported version (4.122598ms)
+  ✔ unsupported format (4.525072ms)
+  ✔ URI missing (6.1808ms)
+  ✔ duplicate ID (3.736537ms)
+  ✔ URI conflict (3.67704ms)
+  ✔ page over 250 (5.120974ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (93.402372ms)
+▶ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry
+  ✔ permission (4.427415ms)
+  ✔ throttle (6.390929ms)
+  ✔ redirect (4.268738ms)
+  ✔ API fallback (4.396806ms)
+  ✔ missing API header (3.985523ms)
+  ✔ not JSON (4.889905ms)
+  ✔ encoding (4.586679ms)
+  ✔ malformed body (3.939602ms)
+  ✔ over 1 MiB (9.866072ms)
+  ✔ lost response (3.959209ms)
+  ✔ absolute timeout (24.296339ms)
+✔ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry (76.780764ms)
+✔ run deadline and expired allocation stop in flight and preserve consumed reservations (29.143511ms)
+✔ CLI reads one bounded existing token from inherited descriptor and prints only the public result (181.00813ms)
+✔ killed in-flight process leaves a consumed reservation; seal never resumes or retries it (84.018576ms)
+▶ unknown identity and connection shapes cannot silently qualify a partial provider response
+  ✔ unexpected queried object field (4.291352ms)
+  ✔ unexpected queried object field (4.4126ms)
+  ✔ unexpected queried object field (4.634701ms)
+  ✔ unexpected queried object field (6.721002ms)
+  ✔ unexpected queried object field (4.84297ms)
+✔ unknown identity and connection shapes cannot silently qualify a partial provider response (25.86071ms)
+✖ credential reflection is withheld from disk and public errors while the attempted request remains consumed (5.158023ms)
+ℹ tests 58
+ℹ suites 0
+ℹ pass 57
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 674.578596
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:284:1
+✖ credential reflection is withheld from disk and public errors while the attempted request remains consumed (5.158023ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_PROVIDER_ERROR'
+  - 'STOP_SECRET_REFLECTION'
+          ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:287:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_PROVIDER_ERROR',
+    expected: 'STOP_SECRET_REFLECTION',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

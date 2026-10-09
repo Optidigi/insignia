@@ -1,0 +1,139 @@
+test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) ... 
+  test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='failure') ... ERROR
+  test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='stdout_limit') ... ERROR
+  test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='stderr_limit') ... ERROR
+  test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='malformed') ... ERROR
+  test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='timeout') ... ERROR
+test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final (__main__.PhaseControls.test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final) ... FAIL
+test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding (__main__.PhaseControls.test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding) ... FAIL
+test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport (__main__.PhaseControls.test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport) ... FAIL
+test_same_allocation_cannot_restart_budget_at_another_directory (__main__.PhaseControls.test_same_allocation_cannot_restart_budget_at_another_directory) ... FAIL
+test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) ... ok
+
+======================================================================
+ERROR: test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 194, in test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase
+    state = json.loads((fixture.directory/'ledger.json').read_bytes())
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 778, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpb6ufwh0l/phase/ledger.json'
+
+======================================================================
+ERROR: test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='stdout_limit')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 194, in test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase
+    state = json.loads((fixture.directory/'ledger.json').read_bytes())
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 778, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpd4kvkxcl/phase/ledger.json'
+
+======================================================================
+ERROR: test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='stderr_limit')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 194, in test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase
+    state = json.loads((fixture.directory/'ledger.json').read_bytes())
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 778, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpbygexqo5/phase/ledger.json'
+
+======================================================================
+ERROR: test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='malformed')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 194, in test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase
+    state = json.loads((fixture.directory/'ledger.json').read_bytes())
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 778, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpgcol79y_/phase/ledger.json'
+
+======================================================================
+ERROR: test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) (scenario='timeout')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 187, in test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase
+    state = json.loads((fixture.directory/'ledger.json').read_bytes())
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 778, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpbaqh5pcz/phase/ledger.json'
+
+======================================================================
+FAIL: test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final (__main__.PhaseControls.test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 149, in test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final
+    self.assertEqual(result['classification'], 'OWNER_SURFACE_RESERVED_NOT_OBSERVED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_PHASE_UNAVAILABLE' != 'OWNER_SURFACE_RESERVED_NOT_OBSERVED'
+- STOP_PHASE_UNAVAILABLE
++ OWNER_SURFACE_RESERVED_NOT_OBSERVED
+
+
+======================================================================
+FAIL: test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding (__main__.PhaseControls.test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 102, in test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding
+    self.assertEqual(result['classification'], 'PHASE_CREATED_RESOURCES_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_PHASE_UNQUALIFIED' != 'PHASE_CREATED_RESOURCES_UNQUALIFIED'
+- STOP_PHASE_UNQUALIFIED
++ PHASE_CREATED_RESOURCES_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport (__main__.PhaseControls.test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 163, in test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport
+    self.assertEqual(result['classification'], 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_SSH_OR_PRIVATE_IO_UNCERTAIN' != 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED'
+- STOP_SSH_OR_PRIVATE_IO_UNCERTAIN
++ HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_same_allocation_cannot_restart_budget_at_another_directory (__main__.PhaseControls.test_same_allocation_cannot_restart_budget_at_another_directory)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 206, in test_same_allocation_cannot_restart_budget_at_another_directory
+    self.assertEqual(PHASE.create_phase(directory, allocation, gate)['classification'], 'PHASE_CREATED_RESOURCES_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_PHASE_UNQUALIFIED' != 'PHASE_CREATED_RESOURCES_UNQUALIFIED'
+- STOP_PHASE_UNQUALIFIED
++ PHASE_CREATED_RESOURCES_UNQUALIFIED
+
+
+----------------------------------------------------------------------
+Ran 6 tests in 0.013s
+
+FAILED (failures=4, errors=5)

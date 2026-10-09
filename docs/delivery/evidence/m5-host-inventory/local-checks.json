@@ -1,0 +1,197 @@
+{
+  "classification": "LOCAL_WRITER_VALIDATION_NATIVE_NOT_RUN",
+  "base": "d6c74a2d605606c0ada497fefa9996808854d7d4",
+  "branch": "feat/m5-host-readonly-inventory",
+  "python": "3.14.4",
+  "go": "go version go1.27.1 linux/amd64",
+  "sourceInputs": {
+    "scripts/m5-host-inventory/host_inventory.py": "a917080edc777e0a859b85c8054240b187f58fcee6c8b2c9a86fa8586f59a285",
+    "scripts/m5-host-inventory/operator_test.py": "49fae5cb59b1ad64be528286093305a89727558f9da892ffaa7f908f30bdbf58",
+    "scripts/m5-host-inventory/template_control.go": "1cade51a3f934ed398f29dcb478912b25ac099b49e238551b6c40d9a7644551b",
+    "docs/delivery/M5-HOST-READONLY-INVENTORY.md": "72e97f47a0bdf4a6108018205f5772ef66f5610df9155ce2289e37b29c46314a"
+  },
+  "selectorSha256": "de0f87edd007edfcecf18332383745d1b042e2a2c5083d0e65ad2895b22111e3",
+  "commands": [
+    {
+      "command": "python3 -B scripts/m5-host-inventory/operator_test.py -v",
+      "privateLog": "/home/serveradmin/insignia-m5-host-inventory-handoff/01-entry-red.log",
+      "sha256": "cec71eaa8721e351730f8abb90fcf176bb5e909e95fad6f4b20def0832201671",
+      "bytes": 3010,
+      "exitCode": 1,
+      "classification": "SETUP_FAILURE_STDLIB_MODULE_COLLISION",
+      "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/01-entry-red.log"
+    },
+    {
+      "command": "python3 -B scripts/m5-host-inventory/operator_test.py -v",
+      "privateLog": "/home/serveradmin/insignia-m5-host-inventory-handoff/02-entry-behavior-red.log",
+      "sha256": "8f4f0148d7de66e916f606445173c922ba07732e3be0e559a4cece0190207056",
+      "bytes": 835,
+      "exitCode": 1,
+      "classification": "EXPECTED_RED_ENTRY_CONTROL",
+      "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/02-entry-behavior-red.log"
+    },
+    {
+      "command": "python3 -B scripts/m5-host-inventory/operator_test.py -v",
+      "privateLog": "/home/serveradmin/insignia-m5-host-inventory-handoff/03-entry-green.log",
+      "sha256": "6f26aa50a9ec4cbd35b6099c75d948832351294a353bb9de974a78bb2a796341",
+      "bytes": 229,
+      "exitCode": 0,
+      "classification": "PASS_LOCAL_ENTRY_CONTROL",
+      "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/03-entry-green.log"
+    },
+    {
+      "command": "python3 -B scripts/m5-host-inventory/operator_test.py -v",
+      "privateLog": "/home/serveradmin/insignia-m5-host-inventory-handoff/04-subprocess-behavior-red.log",
+      "sha256": "fb842bdd76e76c72d84fbc9f888821a6a13f178a67fa956f1b9c147dbe2fedad",
+      "bytes": 1280,
+      "exitCode": 1,
+      "classification": "EXPECTED_RED_SUBPROCESS_INTERFACE",
+      "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/04-subprocess-behavior-red.log"
+    },
+    {
+      "command": "python3 -B scripts/m5-host-inventory/operator_test.py -v",
+      "privateLog": "/home/serveradmin/insignia-m5-host-inventory-handoff/05-subprocess-green.log",
+      "sha256": "4e1734b7715917666c8b1bc0d7c320d0c360886a2832bfc50123188c787b453a",
+      "bytes": 2133,
+      "exitCode": 0,
+      "classification": "PASS_LOCAL_13_CONTROLS",
+      "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/05-subprocess-green.log"
+    },
+    {
+      "command": "python3 -B scripts/m5-host-inventory/operator_test.py MetadataControls.test_ancestor_symlink_cannot_redirect_allocated_artifact -v",
+      "privateLog": "/home/serveradmin/insignia-m5-host-inventory-handoff/06-ancestor-symlink-red.log",
+      "sha256": "24d2e4cc34473a10c091616c7c76edddc46b8e30981c912c69f5bde1bab5a614",
+      "bytes": 934,
+      "exitCode": 1,
+      "classification": "EXPECTED_RED_ANCESTOR_PATH_CONTROL",
+      "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/06-ancestor-symlink-red.log"
+    },
+    {
+      "command": "python3 -B scripts/m5-host-inventory/operator_test.py -v",
+      "privateLog": "/home/serveradmin/insignia-m5-host-inventory-handoff/07-ancestor-symlink-green.log",
+      "sha256": "19b3c25566ba7ab70014a829dab24722de125f13c721c058c95e2709c0151ea6",
+      "bytes": 2282,
+      "exitCode": 0,
+      "classification": "PASS_LOCAL_14_CONTROLS",
+      "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/07-ancestor-symlink-green.log"
+    },
+    {
+      "command": "python3 -B scripts/m5-host-inventory/operator_test.py TemplateControls -v",
+      "privateLog": "/home/serveradmin/insignia-m5-host-inventory-handoff/08-go-template-control.log",
+      "sha256": "bfad1a18edd91e78ccbc23a394b0916214fc23a1ed14087e1769e705c2ec224f",
+      "bytes": 250,
+      "exitCode": 0,
+      "classification": "PASS_LOCAL_GO_TEMPLATE_PROJECTION",
+      "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/08-go-template-control.log"
+    },
+    {
+      "command": "python3 -B scripts/m5-host-inventory/operator_test.py -v",
+      "privateLog": "/home/serveradmin/insignia-m5-host-inventory-handoff/09-final-local-controls.log",
+      "sha256": "10810bce08fc097512eb2ab3e672c01afe6f3ed65c0f85349ff4e354b8c30285",
+      "bytes": 2579,
+      "exitCode": 0,
+      "classification": "PASS_LOCAL_16_CONTROLS",
+      "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/09-final-local-controls.log"
+    }
+  ],
+  "finalTestCount": 16,
+  "finalTestSkipped": 0,
+  "syntax": "PASS_AST_PARSE_NO_BYTECODE_WRITES",
+  "newFileWhitespace": "PASS",
+  "documentLinks": "PASS_ALL_LOCAL_TARGETS_EXIST",
+  "changedPathCredentialMarkerScan": "PASS",
+  "documentPrecheckFailure": "Initial link check ran before local-checks.json existed; assertion failed, then manifest created and all targets rechecked. No missing external evidence was fabricated.",
+  "hostRequests": 0,
+  "providerRequests": 0,
+  "nativeCredentialsRead": 0,
+  "hostWrites": 0,
+  "productionSql": 0,
+  "sshCaller": "NOT_IMPLEMENTED_PARENT_OWNS_TRANSPORT_SHARED_PHASE_AUTHENTICITY_ACCOUNTING",
+  "independentReviews": "NOT_RUN_WRITER_IS_NOT_REVIEWER",
+  "exactHeadCi": "NOT_RUN_PARENT_INTEGRATION_REQUIRED",
+  "nativeDockerCompatibility": "NOT_RUN_LOCAL_GO_TEMPLATE_CONTROL_ONLY",
+  "privateLogs": "Synthetic local-only, directory0700/files0600, no native/credential material",
+  "runCeilings": {
+    "observations": 12,
+    "activeReadSlots": 10,
+    "unallocatedUnknownSlots": 2,
+    "perObservationBytes": 1048576,
+    "activeInspectionSeconds": 1800,
+    "commandSeconds": 15
+  },
+  "parentIndependentTest": {
+    "command": "python3 -B scripts/m5-host-inventory/operator_test.py",
+    "exitCode": 0,
+    "tests": 16,
+    "skipped": 0,
+    "log": "Private parent handoff inventory-host-tests.log",
+    "sha256": "28025441b38e3a3b08c1712c031f88738eba1bae675a38c268838c4a2364aa94"
+  },
+  "parentDocumentationClarification": {
+    "path": "docs/delivery/M5-HOST-READONLY-INVENTORY.md",
+    "sha256": "70ba826839e373b8589baf4847b755a2b12855f297709541ffd90d6e429ed16c",
+    "reason": "Distinguish host-side Docker CLI projection from selective daemon permission; original writer sourceInputs remains historical byte binding."
+  },
+  "writerSourceInputs": {
+    "scripts/m5-host-inventory/host_inventory.py": "c7740c5581bd178d28cf20a534466a5641d6b9ec441b74f53a8f3dfd33417c79",
+    "scripts/m5-host-inventory/operator_test.py": "6f94b6cdfa0968a0c25c13a4829e8f4e4cdca2d7162c8be8f29e2e033186d8e1",
+    "scripts/m5-host-inventory/template_control.go": "1cade51a3f934ed398f29dcb478912b25ac099b49e238551b6c40d9a7644551b",
+    "docs/delivery/M5-HOST-READONLY-INVENTORY.md": "7c698b5f5f6b1e650aac208d7a07fe5192cc84c64bd6466b86e4b28f7a5cb496"
+  },
+  "writerDocumentationSnapshot": {
+    "path": "docs/delivery/evidence/m5-host-inventory/writer-host-document.md",
+    "sha256": "7c698b5f5f6b1e650aac208d7a07fe5192cc84c64bd6466b86e4b28f7a5cb496",
+    "historicalContext": "Original host writer document before parent projection clarification; its relative links retain original docs/delivery path context."
+  },
+  "parentTopologyCorrection": {
+    "reason": "Identify actual possible processor candidates using fixed ID/name/image projection within same single observation, no adaptive inspection or globalabsence claim",
+    "checks": [
+      {
+        "command": [
+          "python3",
+          "-B",
+          "scripts/m5-host-inventory/operator_test.py",
+          "MetadataControls.test_running_topology_identifies_candidates_without_following_them",
+          "-v"
+        ],
+        "startedAt": "2026-10-09T15:15:47.551786+00:00",
+        "exitCode": 1,
+        "log": "inventory-topology-red.log",
+        "sha256": "e9adb2724af6c7cf64fc0f41c4d170734fb68e9c003f4b1a3b4a9eb3521544f4",
+        "bytes": 1180,
+        "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/inventory-topology-red.log"
+      },
+      {
+        "command": [
+          "python3",
+          "-B",
+          "scripts/m5-host-inventory/operator_test.py",
+          "-v"
+        ],
+        "startedAt": "2026-10-09T15:16:12.452235+00:00",
+        "exitCode": 0,
+        "log": "inventory-topology-green.log",
+        "sha256": "f3fa098ed5ef7c9afef4acb6df714153120eba0109f5b4f5f0241da5638c21c2",
+        "bytes": 2749,
+        "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/inventory-topology-green.log"
+      },
+      {
+        "command": [
+          "python3",
+          "-B",
+          "scripts/m5-host-inventory/operator_test.py",
+          "-v"
+        ],
+        "startedAt": "2026-10-09T15:17:35.442490+00:00",
+        "exitCode": 0,
+        "log": "inventory-host-final.log",
+        "sha256": "34c3f35dc38571a39347dd6e0566fa19bc9ee14806dfa8c1be0c390eb7430e8c",
+        "bytes": 2748,
+        "retainedPublicSyntheticLog": "docs/delivery/evidence/m5-host-inventory/inventory-host-final.log"
+      }
+    ],
+    "finalTests": 17,
+    "finalSkipped": 0,
+    "actualGoTemplates": 3
+  }
+}

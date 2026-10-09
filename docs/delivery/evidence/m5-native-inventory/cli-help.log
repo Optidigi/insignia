@@ -1,0 +1,2 @@
+Usage: node scripts/m5-native-inventory/cli.mjs --allocation PRIVATE_JSON --private-directory NEW_PRIVATE_DIR --token-fd INHERITED_FD [--test-endpoint LOOPBACK_URL]
+       node scripts/m5-native-inventory/cli.mjs --seal-abandoned PRIVATE_DIR

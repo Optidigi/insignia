@@ -1,0 +1,23 @@
+test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) ... ok
+test_frozen_command_is_single_line_for_restrict_command_access_setup (__main__.PhaseControls.test_frozen_command_is_single_line_for_restrict_command_access_setup) ... FAIL
+test_invalid_host_gate_or_access_never_invokes_transport_or_reserves_reads (__main__.PhaseControls.test_invalid_host_gate_or_access_never_invokes_transport_or_reserves_reads) ... ok
+test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final (__main__.PhaseControls.test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final) ... ok
+test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding (__main__.PhaseControls.test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding) ... ok
+test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport (__main__.PhaseControls.test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport) ... ok
+test_remote_result_cannot_claim_complete_when_shape_or_accounting_is_inconsistent (__main__.PhaseControls.test_remote_result_cannot_claim_complete_when_shape_or_accounting_is_inconsistent) ... ok
+test_same_allocation_cannot_restart_budget_at_another_directory (__main__.PhaseControls.test_same_allocation_cannot_restart_budget_at_another_directory) ... ok
+test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) ... ok
+
+======================================================================
+FAIL: test_frozen_command_is_single_line_for_restrict_command_access_setup (__main__.PhaseControls.test_frozen_command_is_single_line_for_restrict_command_access_setup)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 246, in test_frozen_command_is_single_line_for_restrict_command_access_setup
+    self.assertNotIn('\n', command)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: '\n' unexpectedly found in 'exec env -i PATH=/usr/bin:/bin HOME=/nonexistent LANG=C LC_ALL=C /usr/bin/python3 -I -B -c \'import base64,hashlib,json,sys\ntry:\n raw=sys.stdin.buffer.read(1460001)\n assert len(raw)<=1460000\n envelope=json.loads(raw)\n assert set(envelope)=={\'"\'"\'source\'"\'"\',\'"\'"\'request\'"\'"\'}\n source=base64.b64decode(envelope[\'"\'"\'source\'"\'"\'],validate=True)\n assert len(source)<=1048576\n assert hashlib.sha256(source).hexdigest()==\'"\'"\'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\'"\'"\'\n namespace={\'"\'"\'__name__\'"\'"\':\'"\'"\'m5_host_inventory\'"\'"\',\'"\'"\'__file__\'"\'"\':\'"\'"\'<stdin>\'"\'"\'}\n exec(compile(source,\'"\'"\'<stdin>\'"\'"\',\'"\'"\'exec\'"\'"\'),namespace)\n result=namespace[\'"\'"\'collect_verified_source\'"\'"\'](envelope[\'"\'"\'request\'"\'"\'],source)\n sys.stdout.buffer.write(namespace[\'"\'"\'encoded\'"\'"\'](result)+b\'"\'"\'\\n\'"\'"\')\n sys.exit(0 if result[\'"\'"\'classification\'"\'"\']==\'"\'"\'METADATA_OBSERVED_NATIVE_UNQUALIFIED\'"\'"\' else 1)\nexcept Exception:\n sys.stdout.write(\'"\'"\'{"classification":"STOP_REMOTE_LOADER"}\\n\'"\'"\')\n sys.exit(1)\n\''
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.811s
+
+FAILED (failures=1)

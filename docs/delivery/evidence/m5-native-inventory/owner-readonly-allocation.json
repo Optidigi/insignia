@@ -1,0 +1,57 @@
+{
+  "schema": "insignia-resource-allocation-v1",
+  "status": "OWNER_GRANTED_BOUNDED_READ_ONLY",
+  "milestone": "M5",
+  "ownerResponse": "you have full acess yes",
+  "interpretation": "Response to exact bounded read-only question, not an expansion to mutations",
+  "purpose": "M5-027 read-only inventory implemented under milestone autonomy",
+  "exactResourceIdentities": [
+    "Existing Insignia app client1443cf6d03d39edae7c101a943c5c684 / app429028933633",
+    "Existing non-disposable insignia-rewrite-dev installation",
+    "VPS65.109.22.104 serveradmin port22; renewed restricted access",
+    "Canonical origin insignia-app.optidigi.nl as identity only, no app/probe request"
+  ],
+  "allowedReads": [
+    "At most3 existing supported-credential Admin API requests under fixed documents",
+    "At most3 owner-inspected app-management surfaces",
+    "At most12 named sanitized deployment/processor/queue/privacy metadata observations \u22641MiB each"
+  ],
+  "allowedMutations": [],
+  "excludedActions": [
+    "Installation/subscription mutation",
+    "App Home/Search/first-session bootstrap",
+    "Production SQL",
+    "Provisioning/deployment",
+    "App versions/release/scopes",
+    "Merchant fixture",
+    "M6/M7/rollout"
+  ],
+  "ceilings": {
+    "adminRequests": 3,
+    "ownerSurfaces": 3,
+    "metadataObservations": 12,
+    "bytesPerObservation": 1048576,
+    "activeMinutes": 30
+  },
+  "privateEvidenceRetentionDays": 7,
+  "privateEvidenceLocation": "New restricted0700 local run directory only",
+  "credentialRoute": "Supported existing access to be established; no token exchange/refresh/new store allowed by this read-only phase",
+  "hostAccess": "Owner-authorized temporary restricted key; pin supplied historical fingerprint before authentication; locally qualified collector frozen before use",
+  "commercialOwnerResponse": "idk, find out",
+  "commercialAuthority": "Investigate existing legitimate non-secret facts only; no invented configuration/entitlement/subscription or private access expansion",
+  "resourceGaps": [
+    "No separate disposable installation identified",
+    "No other processor/hosting inventory identified",
+    "Supported exact-app existing Admin credential not yet proven"
+  ],
+  "grantedAt": "2026-10-09T14:23:28.011Z",
+  "localTechnicalGate": "IN_PROGRESS; no credentials/live requests used yet",
+  "noImplicitAuthority": true,
+  "recordedAt": "2026-10-09T14:24:40.481111+00:00",
+  "ownerMessageProvenance": {
+    "threadId": "81292d0a-995f-4c06-8ce7-7d7cd419bc4a",
+    "timelinePosition": 7975,
+    "source": "Native T3 user reply to consolidated bounded resource question",
+    "retrievedVia": "t3_thread_read messages; full untruncated owner item"
+  }
+}

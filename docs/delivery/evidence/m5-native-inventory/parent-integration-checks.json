@@ -1,0 +1,163 @@
+{
+  "classification": "LOCAL_TOOLING_CHECKS_PASS_NATIVE_NOT_RUN",
+  "checkedAt": "2026-10-09T15:03:18.521160+00:00",
+  "base": "d9ba6383a6e15958419ecf8e26d9182f08078e41",
+  "checks": [
+    {
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:style"
+      ],
+      "startedAt": "2026-10-09T14:54:43.107219+00:00",
+      "exitCode": 0,
+      "log": "inventory-style.log",
+      "sha256": "00c0491ac6346c5fa228bb674f0dcc0ba84522946dcea709d7207e8b948de7dc",
+      "bytes": 13179
+    },
+    {
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "startedAt": "2026-10-09T14:54:44.062368+00:00",
+      "exitCode": 0,
+      "log": "inventory-secrets.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    },
+    {
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:boundaries"
+      ],
+      "startedAt": "2026-10-09T14:54:44.307908+00:00",
+      "exitCode": 0,
+      "log": "inventory-boundaries.log",
+      "sha256": "64b42319fd0a6303e7c423b11d7cf550612750d973b0628512382e53ff384759",
+      "bytes": 1928
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "spikes/m0-007/scripts/check-history.py"
+      ],
+      "startedAt": "2026-10-09T14:56:07.140312+00:00",
+      "exitCode": 0,
+      "log": "inventory-history.log",
+      "sha256": "2f7449966db373e8189785c42ef491ec89499e1238a05af31311613aa825e466",
+      "bytes": 2457
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "scripts/m5-host-inventory/operator_test.py"
+      ],
+      "startedAt": "2026-10-09T14:56:05.991412+00:00",
+      "exitCode": 0,
+      "log": "inventory-host-tests.log",
+      "sha256": "28025441b38e3a3b08c1712c031f88738eba1bae675a38c268838c4a2364aa94",
+      "bytes": 115
+    }
+  ],
+  "logLocation": "/home/serveradmin/insignia-milestone-autonomy-handoff",
+  "productionChange": false,
+  "nativeReads": 0,
+  "uninstallSecurityAssertion": "RED_PRESERVED",
+  "remaining": "Fresh full-source reviews and natural exact-head CI before credentials",
+  "finalCheckedAt": "2026-10-09T15:31:40.353866+00:00",
+  "historicalCheckScope": "Earlier checks retain their recorded input scope; current input hashes and final integrated run are separate.",
+  "finalChecks": [
+    {
+      "command": [
+        "pnpm",
+        "check:style"
+      ],
+      "startedAt": "2026-10-09T15:30:00.200851+00:00",
+      "exitCode": 0,
+      "log": "inventory-final-style.log",
+      "sha256": "a7b62376c4620d36a6cc938b4b4cc382838c9c30ff690caf7c27fcbe5971cfd7",
+      "bytes": 13180
+    },
+    {
+      "command": [
+        "pnpm",
+        "check:secrets"
+      ],
+      "startedAt": "2026-10-09T15:30:00.205408+00:00",
+      "exitCode": 0,
+      "log": "inventory-final-secrets.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    },
+    {
+      "command": "pnpm test:m5-inventory",
+      "exitCode": 0,
+      "log": "/home/serveradmin/insignia-milestone-autonomy-handoff/inventory-integrated-final.log",
+      "sha256": "b68ebb27e4c74307f7fa0e095eb9f51d885fa7db37de477ef29b248a0039f3e8",
+      "counts": {
+        "nativeCollector": 89,
+        "hostCollector": 17,
+        "phaseMethods": 12
+      },
+      "skipped": 0,
+      "nativeRequests": 0
+    }
+  ],
+  "integrity": {
+    "checkedCurrentArtifactAndRetainedLogHashes": 86,
+    "currentDocumentLinks": "PASS",
+    "gitDiffCheck": "PASS",
+    "parentReceiptFailures": [
+      "Recursive path/hash scan treated historical intermediate document binding as current. Corrected to current artifacts/sourceInputs and preserved log bindings; historical records unchanged.",
+      "Second receipt script selected nonexistent inventory-build.receipt.json and exited before writing. Shell incorrectly continued to initial commit. No review/native gate was claimed; corrected receipt committed separately before qualification."
+    ]
+  },
+  "r1ReviewOutcome": "CHANGES_REQUIRED; reproduced descriptor cancellation and SSH identity expansion; both accepted",
+  "r2CorrectedChecks": [
+    {
+      "command": [
+        "pnpm",
+        "test:m5-inventory"
+      ],
+      "startedAt": "2026-10-09T15:50:44.539572+00:00",
+      "exitCode": 0,
+      "log": "inventory-r2-integrated.log",
+      "sha256": "a2ede22d70235c7df885beea77e0b75bc7c4e66fc73d07b6545962fa3969574d",
+      "bytes": 8940
+    },
+    {
+      "command": [
+        "pnpm",
+        "check:style"
+      ],
+      "startedAt": "2026-10-09T15:50:45.843338+00:00",
+      "exitCode": 0,
+      "log": "inventory-r2-style.log",
+      "sha256": "6064cc4437f641a7e3047b5002234cac177933bb8922be4c5f8f10fcd1abbe60",
+      "bytes": 13180
+    },
+    {
+      "command": [
+        "pnpm",
+        "check:secrets"
+      ],
+      "startedAt": "2026-10-09T15:50:45.842452+00:00",
+      "exitCode": 0,
+      "log": "inventory-r2-secrets.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    }
+  ],
+  "r2Integrity": {
+    "checkedHistoricalAndCurrentArtifactHashes": 91,
+    "currentDocumentLinks": "PASS",
+    "productionInputs": "UNCHANGED",
+    "nativeReads": 0,
+    "reviewsAndCi": "PENDING_NEW_HEAD"
+  }
+}

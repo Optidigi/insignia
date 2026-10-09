@@ -1,0 +1,46 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (36.79766ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (4.443324ms)
+  ✔ request template is not permission (3.040145ms)
+  ✔ no approval reference (1.257081ms)
+  ✔ wrong endpoint (1.335179ms)
+  ✔ wrong optional scopes (1.333285ms)
+  ✔ required scope expansion (1.380378ms)
+  ✔ grant expansion (1.213965ms)
+  ✔ mutations (1.314991ms)
+  ✔ wrong operation (1.305232ms)
+  ✔ too many requests (1.205291ms)
+  ✔ too long retention (1.127215ms)
+  ✔ expired grant (1.144394ms)
+  ✔ wrong private destination (1.118043ms)
+  ✔ credential absent (2.115313ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (26.07247ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (11.312559ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (4.872405ms)
+  ✔ missing shop (6.438154ms)
+  ✔ wrong shop (4.778332ms)
+  ✔ wrong client (4.247046ms)
+  ✔ wrong app (4.867839ms)
+  ✔ wrong installation (5.228233ms)
+  ✔ grant drift (4.435286ms)
+  ✔ grant duplicate (4.227986ms)
+  ✔ connection missing (6.49745ms)
+  ✔ page info missing (3.898098ms)
+  ✔ next cursor missing (3.692961ms)
+  ✔ topic missing (3.876385ms)
+  ✔ unsupported version (5.01676ms)
+  ✔ unsupported format (4.283326ms)
+  ✔ URI missing (4.878496ms)
+  ✔ duplicate ID (6.536119ms)
+  ✔ URI conflict (4.33614ms)
+  ✔ page over 250 (4.418488ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (89.381006ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 36
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 261.485218

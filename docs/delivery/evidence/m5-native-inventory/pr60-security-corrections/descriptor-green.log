@@ -1,0 +1,9 @@
+✔ CLI exits by the credential deadline while a real blocking pipe writer remains open (5177.778677ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5295.454278

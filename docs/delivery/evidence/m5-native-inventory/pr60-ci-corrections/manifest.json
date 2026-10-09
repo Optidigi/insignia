@@ -1,0 +1,193 @@
+{
+  "schema": "insignia-pr60-ci-correction-evidence-v1",
+  "generatedAt": "2026-10-09T16:31:39.960224+00:00",
+  "classification": "OFFLINE_TEST_COMPATIBILITY_CORRECTED_NATIVE_NOT_RUN",
+  "historicalCandidate": "9c2b8ec84da0d96fb86e9bbd68108e210064a6b4",
+  "historicalTree": "7994fc5ddce19e564d3cc2b86c562cebd6ffa14a",
+  "historicalManifests": [
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/manifest.json",
+      "inputCommit": "9c2b8ec84da0d96fb86e9bbd68108e210064a6b4",
+      "sha256": "e0cd57b4a400723eed0f5eda7d5c64764afa38697156f494225a46ee6c5df3a5",
+      "scope": "Preserved original/R1/R2 historical inputs and checks; artifact versions retrieve with git show 9c2b8ec84da0d96fb86e9bbd68108e210064a6b4:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/manifest.json",
+      "inputCommit": "9c2b8ec84da0d96fb86e9bbd68108e210064a6b4",
+      "sha256": "b35c22f85b81eab61167e178b903f03968a0c8be5b34e370f0e8802cfeb157db",
+      "scope": "Preserved original/R1/R2 historical inputs and checks; artifact versions retrieve with git show 9c2b8ec84da0d96fb86e9bbd68108e210064a6b4:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/manifest.json",
+      "inputCommit": "9c2b8ec84da0d96fb86e9bbd68108e210064a6b4",
+      "sha256": "dfaabe6b237810a1fada955a746c771d514fd32d308dc20eba6d6bbde2f74823",
+      "scope": "Preserved original/R1/R2 historical inputs and checks; artifact versions retrieve with git show 9c2b8ec84da0d96fb86e9bbd68108e210064a6b4:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/manifest.json",
+      "inputCommit": "9c2b8ec84da0d96fb86e9bbd68108e210064a6b4",
+      "sha256": "d93c5afad6f8843497507d4012c9808cc7e6971988420e5e74e21d013eb72dfc",
+      "scope": "Preserved original/R1/R2 historical inputs and checks; artifact versions retrieve with git show 9c2b8ec84da0d96fb86e9bbd68108e210064a6b4:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/pr60-security-corrections/manifest.json",
+      "inputCommit": "9c2b8ec84da0d96fb86e9bbd68108e210064a6b4",
+      "sha256": "5d444ad27b1c77dd27797ad9e8149da605517648b3eef87c67d7534932096fa6",
+      "scope": "Preserved original/R1/R2 historical inputs and checks; artifact versions retrieve with git show 9c2b8ec84da0d96fb86e9bbd68108e210064a6b4:PATH."
+    }
+  ],
+  "unchangedRuntimeSources": [
+    {
+      "path": "scripts/m5-native-inventory/cli.mjs",
+      "inputCommit": "9c2b8ec84da0d96fb86e9bbd68108e210064a6b4",
+      "sha256": "bea8503b2b6000c7c51b823ec837fe36433ccba1e44a51a5e0d9d2c46aa05562"
+    },
+    {
+      "path": "scripts/m5-native-inventory/collector.mjs",
+      "inputCommit": "9c2b8ec84da0d96fb86e9bbd68108e210064a6b4",
+      "sha256": "68d1744ff09d9cc6320a9e52fbbfa2b0adf87f0ca44f3bd7b01bc0c7bb2375ff"
+    },
+    {
+      "path": "scripts/m5-inventory-phase/phase.py",
+      "inputCommit": "9c2b8ec84da0d96fb86e9bbd68108e210064a6b4",
+      "sha256": "64d6361685d6e888f8913f14b42e7daf5e678350836f09c22c6b25ab1c656665"
+    },
+    {
+      "path": "scripts/m5-host-inventory/host_inventory.py",
+      "inputCommit": "9c2b8ec84da0d96fb86e9bbd68108e210064a6b4",
+      "sha256": "a917080edc777e0a859b85c8054240b187f58fcee6c8b2c9a86fa8586f59a285"
+    }
+  ],
+  "originalFailure": {
+    "ciRun": 37957210768,
+    "job": "foundation",
+    "attempt": 1,
+    "localRetainedLog": "/home/serveradmin/insignia-milestone-autonomy-handoff/inventory-r3-foundation-ci-failed.log",
+    "logSha256": "3a1af0d133c2d270766ce0dd5ae519f61aa10ca91c38dbe8af8ac09779878463",
+    "observed": "95 native checks:94passed, Python helper exit1 at ~5.2sec; helper stderr discarded by old code0 assertion.",
+    "originalTraceback": "UNAVAILABLE; no recovered exact CI cause or actual Python3.12 validation claimed.",
+    "otherNineJobs": "Parent-reported success; this writer does not qualify CI authority."
+  },
+  "diagnosis": {
+    "actualRuntime": "/usr/bin/python3 and PATHpython3 both3.14.4; no3.12 binary available or installed.",
+    "actualReproduction": "Linux child-subreaper retains terminated reader as Z. Strict Path.stat on its fd/3 raises PermissionError errno13; old observation fails exit1 with actual traceback. Python3.14 Path.exists suppresses that error. Compatible mechanism, not proof of original missing CI traceback.",
+    "strictLegacySource": "strict-zombie-legacy-helper.py",
+    "strictLegacyRed": "strict-zombie-red.log",
+    "permanentObserverRed": "held-zombie-red.log",
+    "redHelperSnapshot": "held-zombie-red-helper.py",
+    "fix": "Only Z/ABSENT skips inaccessible descriptor inspection; actual original token-pipe EPIPE remains mandatory. Live state still fails regardless of fd observation. Strict stat preserves nonterminal inspection errors. No deadline/tolerance reduction, no native runtime change.",
+    "failureDiagnostics": "Only synthetic helpers: on exception preserve captured stderr including fullsys.version and nonsecret system/kernel/machine; never print argv/environment/hostname/private child stdout."
+  },
+  "cycles": [
+    {
+      "contract": "Synthetic helper failure must expose its captured diagnostic traceback.",
+      "command": "node --test --test-name-pattern='failures preserve their diagnostic' scripts/m5-native-inventory/collector.test.mjs",
+      "red": {
+        "log": "diagnostic-red.log",
+        "exitCode": 1
+      },
+      "green": {
+        "log": "zombie-diagnostic-green.log",
+        "exitCode": 0
+      }
+    },
+    {
+      "contract": "Both real public CLI normal-reaping and held-zombie cases retain terminal+EPIPE requirements after supervisor SIGKILL.",
+      "command": "node --test --test-name-pattern='independent deadline after CLI SIGKILL' scripts/m5-native-inventory/collector.test.mjs",
+      "red": {
+        "log": "held-zombie-red.log",
+        "exitCode": 1,
+        "observed": "normal passed, held-zombie failed at strict fd stat PermissionError."
+      },
+      "green": {
+        "log": "zombie-diagnostic-green.log",
+        "exitCode": 0,
+        "observed": "normal ABSENT and retained Z; both fdRetainedfalse/pipeClosedtrue. Held-zombie fixture itself reaps its adopted child after observation; killed CLI does not reap it."
+      }
+    }
+  ],
+  "finalChecks": [
+    {
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "log": "final-native.log",
+      "exitCode": 0,
+      "passed": 98,
+      "observed": "Normal ABSENT and retained-zombie Z, both fdRetainedfalse/pipeClosedtrue. Successful and expected-failure diagnostics include actualfullsys.version3.14.4 GCC15.2.0, Linux7.0.0-31-generic x86_64."
+    },
+    {
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "log": "final-phase.log",
+      "exitCode": 0,
+      "passed": 13
+    },
+    {
+      "command": "/home/serveradmin/insignia-m5-027-worktree/node_modules/.bin/biome check scripts/m5-native-inventory/cli.mjs scripts/m5-native-inventory/collector.mjs scripts/m5-native-inventory/collector.test.mjs",
+      "log": "style-check.log",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "currentArtifacts": [
+    {
+      "path": "scripts/m5-native-inventory/collector.test.mjs",
+      "sha256": "721f542cf9913c2ac6716f3d3248d6a5777020682fcf02f1118b779ee2cf3fd4"
+    },
+    {
+      "path": "docs/delivery/M5-NATIVE-INVENTORY-COLLECTOR.md",
+      "sha256": "5451af7eec59b0cd2d9153e7241f3564c15802b16a6392367e82a443bbe7e118"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/diagnostic-red.log",
+      "sha256": "c8e1ec08743e02b9c142d2de51220604a1d9ced521877d83cdeb26cdc53c2a06"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/final-native.log",
+      "sha256": "ecc971953b5d9a8770c929bb1e2b953b122175dbfd588760eba2a1a4c7e3fe1f"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/final-phase.log",
+      "sha256": "40e2a2564681e66337b72567538e6247c4f99472d29fb05c0144cdb79e1e5d1c"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/held-zombie-red.log",
+      "sha256": "e9fb21fadd35f914d13625112e3e0064c2fab0e204508e294a56fb96d4958192"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/strict-zombie-red.log",
+      "sha256": "b48fe42bd067e687512050cd3907b2477482496fd0fabbf00c29c982473ed437"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/style-check.log",
+      "sha256": "5e1955a47d7242aeb9191c26606f43ce55685b26c354221f27a9074730a755ba"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/style-format.log",
+      "sha256": "46ca58d1a0d217dd8b8d1e6a136761e8d6d6065831ad21da206745d7fb2d12dd"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/zombie-diagnostic-green.log",
+      "sha256": "752e921f479e7ef7596a37329c73ebfe7b542c81bad2dd1101c00555db56b978"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/held-zombie-red-helper.py",
+      "sha256": "abc615e707d068001bf597eb190c838b684d56abe861f4066fef39e7d0519252"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/strict-zombie-legacy-helper.py",
+      "sha256": "04894a42155fafeee6223f007ab75e8a996c0f0fe599a3454c7e926253d15715"
+    }
+  ],
+  "limitations": "Synthetic local subprocess/pipe and loopback HTTP only. No actual Python3.12 runtime proof, original CI traceback, credentials, native SSH/provider calls, mutation or deployment. Parent must obtain fresh completed independent exact-source reviews and natural attempt1CI; writer tests are not those authorities.",
+  "localRuntime": {
+    "pythonExecutable": "/usr/bin/python3",
+    "sysVersion": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+    "platform": {
+      "system": "Linux",
+      "kernel": "7.0.0-31-generic",
+      "machine": "x86_64"
+    }
+  }
+}

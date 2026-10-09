@@ -1,0 +1,321 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (36.948117ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✖ missing allocation (11.569472ms)
+  ✖ request template is not permission (8.202224ms)
+  ✖ no approval reference (7.853787ms)
+  ✖ wrong endpoint (7.266639ms)
+  ✖ wrong optional scopes (6.206682ms)
+  ✖ required scope expansion (7.935405ms)
+  ✖ grant expansion (7.024789ms)
+  ✖ mutations (5.939029ms)
+  ✖ wrong operation (7.508294ms)
+  ✖ too many requests (6.587377ms)
+  ✖ too long retention (7.072159ms)
+  ✖ expired grant (7.874798ms)
+  ✖ wrong private destination (5.870824ms)
+  ✖ credential absent (5.426479ms)
+✖ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (105.633292ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 1
+ℹ fail 15
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 241.441062
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ missing allocation (11.569472ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ request template is not permission (8.202224ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ no approval reference (7.853787ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ wrong endpoint (7.266639ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ wrong optional scopes (6.206682ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ required scope expansion (7.935405ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ grant expansion (7.024789ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ mutations (5.939029ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ wrong operation (7.508294ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ too many requests (6.587377ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ too long retention (7.072159ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ expired grant (7.874798ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ wrong private destination (5.870824ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:107:47
+✖ credential absent (5.426479ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INPUT_NOT_ALLOCATED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:111:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:107:39)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INPUT_NOT_ALLOCATED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

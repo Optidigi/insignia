@@ -1,0 +1,52 @@
+{
+  "scope": "LOCAL_ONLY_NATIVE_NOT_STARTED",
+  "counts": {
+    "nativeCollector": 95,
+    "host": 17,
+    "phase": 13,
+    "skips": 0
+  },
+  "checks": {
+    "inventory-r3-integrated": {
+      "command": [
+        "pnpm",
+        "test:m5-inventory"
+      ],
+      "startedAt": "2026-10-09T16:09:36.439327+00:00",
+      "exitCode": 0,
+      "log": "inventory-r3-integrated.log",
+      "sha256": "8192274423af8e1af8412a2e45a57c38f9e5b5c74e97df12a469d367d5a72cd7",
+      "bytes": 9374
+    },
+    "inventory-r3-style": {
+      "command": [
+        "pnpm",
+        "check:style"
+      ],
+      "startedAt": "2026-10-09T16:09:58.092579+00:00",
+      "exitCode": 0,
+      "log": "inventory-r3-style.log",
+      "sha256": "64cffbd4c6882453d8f03d610201c44d2fb5a223076140ea3c5bb23ab4af227d",
+      "bytes": 13813
+    },
+    "inventory-r3-secrets": {
+      "command": [
+        "pnpm",
+        "check:secrets"
+      ],
+      "startedAt": "2026-10-09T16:09:59.256568+00:00",
+      "exitCode": 0,
+      "log": "inventory-r3-secrets.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    }
+  },
+  "artifactIntegrity": {
+    "checkedBindings": 19,
+    "historicalManifestsUnchanged": 4,
+    "productionProviderDiff": "EMPTY"
+  },
+  "freshReview": "PENDING",
+  "exactHeadCI": "PENDING",
+  "nativeGate": "CLOSED"
+}

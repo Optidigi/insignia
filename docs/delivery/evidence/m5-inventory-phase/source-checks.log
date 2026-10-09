@@ -1,0 +1,2 @@
+PASS: Python syntax and credential-marker check on new phase sources; test identity bytes are explicitly synthetic.
+PASS: local documentation source links resolve.

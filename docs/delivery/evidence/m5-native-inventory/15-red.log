@@ -1,0 +1,122 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (68.03183ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (7.306724ms)
+  ✔ request template is not permission (1.537325ms)
+  ✔ no approval reference (6.01464ms)
+  ✔ wrong endpoint (2.967636ms)
+  ✔ wrong optional scopes (3.568503ms)
+  ✔ required scope expansion (2.468446ms)
+  ✔ grant expansion (2.74129ms)
+  ✔ mutations (3.027145ms)
+  ✔ wrong operation (1.820093ms)
+  ✔ too many requests (2.601323ms)
+  ✔ too long retention (1.462637ms)
+  ✔ expired grant (1.367235ms)
+  ✔ wrong private destination (2.166248ms)
+  ✔ credential absent (2.694146ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (44.871457ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (15.229145ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (9.513018ms)
+  ✔ missing shop (8.301976ms)
+  ✔ wrong shop (8.089099ms)
+  ✔ wrong client (7.102104ms)
+  ✔ wrong app (15.864959ms)
+  ✔ wrong installation (8.417767ms)
+  ✔ grant drift (16.809111ms)
+  ✔ grant duplicate (36.741202ms)
+  ✔ connection missing (34.289994ms)
+  ✔ page info missing (33.500747ms)
+  ✔ next cursor missing (23.561973ms)
+  ✔ topic missing (34.632603ms)
+  ✔ unsupported version (38.231267ms)
+  ✔ unsupported format (17.432517ms)
+  ✔ URI missing (28.206526ms)
+  ✔ duplicate ID (16.505791ms)
+  ✔ URI conflict (10.933828ms)
+  ✔ page over 250 (13.72061ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (365.17565ms)
+▶ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry
+  ✔ permission (9.377027ms)
+  ✔ throttle (6.648637ms)
+  ✔ redirect (8.513581ms)
+  ✔ API fallback (16.370811ms)
+  ✔ missing API header (8.537723ms)
+  ✔ not JSON (11.069519ms)
+  ✔ encoding (4.857542ms)
+  ✔ malformed body (10.049118ms)
+  ✔ over 1 MiB (16.503731ms)
+  ✔ lost response (11.091723ms)
+  ✔ absolute timeout (38.753033ms)
+✔ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry (143.836642ms)
+✔ run deadline and expired allocation stop in flight and preserve consumed reservations (46.776425ms)
+✔ CLI reads one bounded existing token from inherited descriptor and prints only the public result (195.112605ms)
+✔ killed in-flight process leaves a consumed reservation; seal never resumes or retries it (99.043116ms)
+▶ unknown identity and connection shapes cannot silently qualify a partial provider response
+  ✔ unexpected queried object field (6.394195ms)
+  ✔ unexpected queried object field (4.247495ms)
+  ✔ unexpected queried object field (3.892561ms)
+  ✔ unexpected queried object field (4.739955ms)
+  ✔ unexpected queried object field (4.071749ms)
+✔ unknown identity and connection shapes cannot silently qualify a partial provider response (24.242127ms)
+✔ credential reflection is withheld from disk and public errors while the attempted request remains consumed (3.808036ms)
+✔ private response-write failure seals the acknowledged request as uncertain without another transport (3.873234ms)
+✔ full 500-record envelope needs exactly two pages and one final identity read (18.672114ms)
+▶ third page, cursor cycle, cross-page duplicates and boundary drift never extend the request envelope
+  ✔ third page (7.259456ms)
+  ✔ cursor cycle (5.814471ms)
+  ✔ cross-page duplicate (5.980569ms)
+  ✔ boundary drift (7.583986ms)
+  ✔ boundary error (8.629841ms)
+✔ third page, cursor cycle, cross-page duplicates and boundary drift never extend the request envelope (36.204208ms)
+▶ allocation may tighten ceilings and injected test endpoints cannot leave loopback
+  ✔ tight requests (5.713028ms)
+  ✔ tight pages (3.742872ms)
+  ✔ tight records (3.608104ms)
+  ✔ invalid endpoint denied before transport (1.360117ms)
+  ✔ invalid endpoint denied before transport (0.905674ms)
+  ✔ invalid endpoint denied before transport (0.853441ms)
+  ✔ invalid endpoint denied before transport (1.279585ms)
+  ✔ invalid endpoint denied before transport (0.833133ms)
+✔ allocation may tighten ceilings and injected test endpoints cannot leave loopback (19.574116ms)
+✔ failed journal persistence keeps reservation durable and forbids reinvocation despite an unsealed run (4.251498ms)
+▶ CLI refuses arbitrary queries, environment credential switches and duplicate flags before transport
+  ✔ --query (83.54378ms)
+  ✔ --token-env (95.402312ms)
+  ✔ --token-fd (93.342795ms)
+✔ CLI refuses arbitrary queries, environment credential switches and duplicate flags before transport (273.188999ms)
+▶ resource declaration must name an existing supported capability and cannot smuggle a second token store
+  ✔ unsupported owner input (4.546222ms)
+  ✔ unsupported owner input (1.758596ms)
+✔ resource declaration must name an existing supported capability and cannot smuggle a second token store (7.659531ms)
+✔ unexpected topic bytes remain private while the public observation uses an opaque category (8.792273ms)
+✖ distinct topics can share one coherent receiver while duplicate URI/topic bindings still stop (9.729706ms)
+ℹ tests 85
+ℹ suites 0
+ℹ pass 84
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1547.541722
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:827:1
+✖ distinct topics can share one coherent receiver while duplicate URI/topic bindings still stop (9.729706ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_DUPLICATE_OR_CONFLICT'
+  - 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:832:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_DUPLICATE_OR_CONFLICT',
+    expected: 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

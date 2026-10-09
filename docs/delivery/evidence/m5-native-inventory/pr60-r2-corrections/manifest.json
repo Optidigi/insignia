@@ -1,0 +1,184 @@
+{
+  "schema": "insignia-pr60-r2-correction-evidence-v1",
+  "generatedAt": "2026-10-09T16:08:55.098545+00:00",
+  "classification": "OFFLINE_CORRECTED_NATIVE_NOT_RUN",
+  "historicalCandidate": "c5b3ad9d2a82d5fae88a2026eac2946de4adaf93",
+  "historicalTree": "67320bfe17d5ac194311949a8489d164d5e41c8a",
+  "historicalManifests": [
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/manifest.json",
+      "inputCommit": "c5b3ad9d2a82d5fae88a2026eac2946de4adaf93",
+      "sha256": "e0cd57b4a400723eed0f5eda7d5c64764afa38697156f494225a46ee6c5df3a5",
+      "scope": "Historical original/R1 inputs and checks; unchanged. Artifact source versions retrieve with git show c5b3ad9d2a82d5fae88a2026eac2946de4adaf93:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/manifest.json",
+      "inputCommit": "c5b3ad9d2a82d5fae88a2026eac2946de4adaf93",
+      "sha256": "b35c22f85b81eab61167e178b903f03968a0c8be5b34e370f0e8802cfeb157db",
+      "scope": "Historical original/R1 inputs and checks; unchanged. Artifact source versions retrieve with git show c5b3ad9d2a82d5fae88a2026eac2946de4adaf93:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/manifest.json",
+      "inputCommit": "c5b3ad9d2a82d5fae88a2026eac2946de4adaf93",
+      "sha256": "d93c5afad6f8843497507d4012c9808cc7e6971988420e5e74e21d013eb72dfc",
+      "scope": "Historical original/R1 inputs and checks; unchanged. Artifact source versions retrieve with git show c5b3ad9d2a82d5fae88a2026eac2946de4adaf93:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/pr60-security-corrections/manifest.json",
+      "inputCommit": "c5b3ad9d2a82d5fae88a2026eac2946de4adaf93",
+      "sha256": "5d444ad27b1c77dd27797ad9e8149da605517648b3eef87c67d7534932096fa6",
+      "scope": "Historical original/R1 inputs and checks; unchanged. Artifact source versions retrieve with git show c5b3ad9d2a82d5fae88a2026eac2946de4adaf93:PATH."
+    }
+  ],
+  "redImplementations": [
+    {
+      "path": "scripts/m5-native-inventory/cli.mjs",
+      "inputCommit": "c5b3ad9d2a82d5fae88a2026eac2946de4adaf93",
+      "sha256": "b738569ba87319babe7d8a027c2e75555616fdcc12ab95e19ffcdd556151a747"
+    },
+    {
+      "path": "scripts/m5-native-inventory/collector.mjs",
+      "inputCommit": "c5b3ad9d2a82d5fae88a2026eac2946de4adaf93",
+      "sha256": "38f727a94108841d5d3948753b5825310c4e7e48bcb541fa751cd94a2cf3bf6d"
+    }
+  ],
+  "cycles": [
+    {
+      "contract": "Writerless allocation/journal FIFOs reject promptly before reads/transport; O_NONBLOCK added to both O_NOFOLLOW opens, FD regular-file checks preserved.",
+      "command": "node --test --test-name-pattern='writerless allocation' scripts/m5-native-inventory/collector.test.mjs",
+      "red": {
+        "log": "fifo-red.log",
+        "exitCode": 1,
+        "observed": "Both public CLI operations exceeded external1.5sec deadline before file-type checking."
+      },
+      "green": {
+        "log": "fifo-green.log",
+        "exitCode": 0
+      }
+    },
+    {
+      "contract": "Reader independently force-terminates even after supervisor CLI SIGKILL; bounded partial token pipe released; surviving parent supervision preserved.",
+      "command": "node --test --test-name-pattern='independent deadline after CLI SIGKILL' scripts/m5-native-inventory/collector.test.mjs",
+      "red": {
+        "log": "reader-red.log",
+        "exitCode": 1
+      },
+      "redRepeated": {
+        "log": "reader-red-repeat.log",
+        "exitCode": 1,
+        "observed": {
+          "readerState": "S",
+          "fdRetained": true,
+          "pipeClosed": false,
+          "externalSecondsAfterParentKill": 6
+        }
+      },
+      "failedIntermediate": {
+        "log": "reader-exit-timer-failed.log",
+        "exitCode": 1,
+        "sourceSnapshot": "reader-process-exit-failed-cli.mjs",
+        "observed": "process.exit(1) timer still hangs at runtime cleanup while blocked fs read survives."
+      },
+      "green": {
+        "log": "reader-green.log",
+        "exitCode": 0,
+        "observed": {
+          "readerState": "ABSENT",
+          "fdRetained": false,
+          "pipeClosed": true
+        }
+      }
+    }
+  ],
+  "finalChecks": [
+    {
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "log": "final-native.log",
+      "exitCode": 0,
+      "passed": 95
+    },
+    {
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "log": "final-phase.log",
+      "exitCode": 0,
+      "passed": 13
+    },
+    {
+      "command": "/home/serveradmin/insignia-m5-027-worktree/node_modules/.bin/biome check scripts/m5-native-inventory/cli.mjs scripts/m5-native-inventory/collector.mjs scripts/m5-native-inventory/collector.test.mjs",
+      "log": "style-check.log",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "currentArtifacts": [
+    {
+      "path": "scripts/m5-native-inventory/cli.mjs",
+      "sha256": "bea8503b2b6000c7c51b823ec837fe36433ccba1e44a51a5e0d9d2c46aa05562"
+    },
+    {
+      "path": "scripts/m5-native-inventory/collector.mjs",
+      "sha256": "68d1744ff09d9cc6320a9e52fbbfa2b0adf87f0ca44f3bd7b01bc0c7bb2375ff"
+    },
+    {
+      "path": "scripts/m5-native-inventory/collector.test.mjs",
+      "sha256": "d49847a6d0aa1598aa920bf19b9efa266e1614406420a0374f6b93fc5c8372af"
+    },
+    {
+      "path": "docs/delivery/M5-NATIVE-INVENTORY-COLLECTOR.md",
+      "sha256": "97bd8facd08c6ee37704749a15f1856268b8f11a6eab124e36333c45da79608f"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/fifo-green.log",
+      "sha256": "e3fe0a0a115c54d6dbe3db4d91fdd146df435888cefa9b51ede9d5c189769bc1"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/fifo-red.log",
+      "sha256": "770874dce39bc343e257c7310786197acb23a2041d2d7bc50621484673195076"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/final-native.log",
+      "sha256": "6996c568703c623fa2f165a0ffedeca94f337f51380dc70b950b52c8f5c9692f"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/final-phase.log",
+      "sha256": "ee52e23619c58b9e663ab8f07ef9c0b1a825fb22c722693b1289cec83e8bab11"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/reader-exit-timer-failed.log",
+      "sha256": "0867e380cf96e33411e78f29f4e79c7fcb496dd14ddcf85a5512e83a8a762880"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/reader-green.log",
+      "sha256": "2b32c944b195cdd4fd61e2c1d56141346fac3a6504d8d1138c6da183fd74060b"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/reader-red-repeat.log",
+      "sha256": "ac543c002441b09194c2ce3258fb05a7871ab5bc13338fd9dc2fed4655b8ee11"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/reader-red.log",
+      "sha256": "50a9e33153f4a296e82644abe3b141730f393729818c63520fed461ece75cecb"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/style-check.log",
+      "sha256": "26ab4e9ade531b1a287b0a07952699f9c753da7f9fa7a97238d54d30947a0f8d"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/style-format.log",
+      "sha256": "0374c572dc546121713330148949e59b2174d653f9d2dc2a28b9c7dc6afeffbe"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/reader-process-exit-failed-cli.mjs",
+      "sha256": "060fb1c292db7c773d5400c1c95ea0c76eb666306458e68d58594c2b9bbe4653"
+    }
+  ],
+  "runtime": {
+    "node": "v24.21.0",
+    "python": "3.14.4"
+  },
+  "platformSemantics": "Linux /proc public process-state/fd existence plus pipe EPIPE in synthetic subprocess control. ABSENT or Z qualifies terminated reader with no open pipe FD; killed CLI cannot reap child. Do not infer absence of OS zombie metadata or general secure memory erasure.",
+  "limitations": "Synthetic local subprocess/pipe and loopback HTTP controls only. No native SSH, actual provider credentials/resources, external network, mutations/deployment. Writer checks are not independent review or CI authority; parent owns fresh exact-source reviews and CI. Unsigned SHA declarations are not resource permission."
+}

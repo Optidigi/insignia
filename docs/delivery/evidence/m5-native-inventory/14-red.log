@@ -1,0 +1,121 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (73.125193ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (6.907957ms)
+  ✔ request template is not permission (2.692211ms)
+  ✔ no approval reference (2.758813ms)
+  ✔ wrong endpoint (6.107164ms)
+  ✔ wrong optional scopes (2.736004ms)
+  ✔ required scope expansion (2.428667ms)
+  ✔ grant expansion (2.446038ms)
+  ✔ mutations (2.690489ms)
+  ✔ wrong operation (3.38672ms)
+  ✔ too many requests (2.216507ms)
+  ✔ too long retention (4.100715ms)
+  ✔ expired grant (1.513337ms)
+  ✔ wrong private destination (2.665659ms)
+  ✔ credential absent (1.208875ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (47.551509ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (22.032967ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (10.468913ms)
+  ✔ missing shop (6.536005ms)
+  ✔ wrong shop (6.894074ms)
+  ✔ wrong client (7.15253ms)
+  ✔ wrong app (6.662783ms)
+  ✔ wrong installation (6.757741ms)
+  ✔ grant drift (6.409102ms)
+  ✔ grant duplicate (8.080542ms)
+  ✔ connection missing (5.7971ms)
+  ✔ page info missing (5.481991ms)
+  ✔ next cursor missing (5.416835ms)
+  ✔ topic missing (6.397796ms)
+  ✔ unsupported version (6.658668ms)
+  ✔ unsupported format (6.304136ms)
+  ✔ URI missing (7.637454ms)
+  ✔ duplicate ID (5.262741ms)
+  ✔ URI conflict (5.835142ms)
+  ✔ page over 250 (6.13276ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (123.272811ms)
+▶ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry
+  ✔ permission (5.89253ms)
+  ✔ throttle (5.812651ms)
+  ✔ redirect (7.123144ms)
+  ✔ API fallback (8.395679ms)
+  ✔ missing API header (5.471055ms)
+  ✔ not JSON (5.498085ms)
+  ✔ encoding (5.419309ms)
+  ✔ malformed body (5.935091ms)
+  ✔ over 1 MiB (9.852889ms)
+  ✔ lost response (19.248403ms)
+  ✔ absolute timeout (28.313934ms)
+✔ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry (109.203482ms)
+✔ run deadline and expired allocation stop in flight and preserve consumed reservations (36.725418ms)
+✔ CLI reads one bounded existing token from inherited descriptor and prints only the public result (213.1127ms)
+✔ killed in-flight process leaves a consumed reservation; seal never resumes or retries it (108.505371ms)
+▶ unknown identity and connection shapes cannot silently qualify a partial provider response
+  ✔ unexpected queried object field (6.307125ms)
+  ✔ unexpected queried object field (5.082725ms)
+  ✔ unexpected queried object field (4.372961ms)
+  ✔ unexpected queried object field (6.653427ms)
+  ✔ unexpected queried object field (8.676892ms)
+✔ unknown identity and connection shapes cannot silently qualify a partial provider response (32.200665ms)
+✔ credential reflection is withheld from disk and public errors while the attempted request remains consumed (4.300332ms)
+✔ private response-write failure seals the acknowledged request as uncertain without another transport (5.425758ms)
+✔ full 500-record envelope needs exactly two pages and one final identity read (18.257002ms)
+▶ third page, cursor cycle, cross-page duplicates and boundary drift never extend the request envelope
+  ✔ third page (8.535607ms)
+  ✔ cursor cycle (8.024547ms)
+  ✔ cross-page duplicate (9.251465ms)
+  ✔ boundary drift (6.96367ms)
+  ✔ boundary error (20.370878ms)
+✔ third page, cursor cycle, cross-page duplicates and boundary drift never extend the request envelope (54.244645ms)
+▶ allocation may tighten ceilings and injected test endpoints cannot leave loopback
+  ✔ tight requests (4.237141ms)
+  ✔ tight pages (5.390444ms)
+  ✔ tight records (3.748298ms)
+  ✔ invalid endpoint denied before transport (1.003891ms)
+  ✔ invalid endpoint denied before transport (2.238041ms)
+  ✔ invalid endpoint denied before transport (1.007409ms)
+  ✔ invalid endpoint denied before transport (1.211621ms)
+  ✔ invalid endpoint denied before transport (0.974311ms)
+✔ allocation may tighten ceilings and injected test endpoints cannot leave loopback (21.212275ms)
+✔ failed journal persistence keeps reservation durable and forbids reinvocation despite an unsealed run (6.306144ms)
+▶ CLI refuses arbitrary queries, environment credential switches and duplicate flags before transport
+  ✔ --query (107.593294ms)
+  ✔ --token-env (92.549364ms)
+  ✔ --token-fd (92.744471ms)
+✔ CLI refuses arbitrary queries, environment credential switches and duplicate flags before transport (293.750152ms)
+▶ resource declaration must name an existing supported capability and cannot smuggle a second token store
+  ✔ unsupported owner input (6.383705ms)
+  ✔ unsupported owner input (3.247453ms)
+✔ resource declaration must name an existing supported capability and cannot smuggle a second token store (10.454508ms)
+✖ unexpected topic bytes remain private while the public observation uses an opaque category (28.075568ms)
+ℹ tests 84
+ℹ suites 0
+ℹ pass 83
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1358.173343
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:399:1
+✖ unexpected topic bytes remain private while the public observation uses an opaque category (28.075568ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'PRIVATE_CAPABILITY_AS_TOPIC'
+  - 'OTHER_TOPIC'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:404:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'PRIVATE_CAPABILITY_AS_TOPIC',
+    expected: 'OTHER_TOPIC',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

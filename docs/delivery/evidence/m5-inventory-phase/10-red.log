@@ -1,0 +1,29 @@
+test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) ... ok
+test_frozen_command_is_single_line_for_restrict_command_access_setup (__main__.PhaseControls.test_frozen_command_is_single_line_for_restrict_command_access_setup) ... ok
+test_invalid_host_gate_or_access_never_invokes_transport_or_reserves_reads (__main__.PhaseControls.test_invalid_host_gate_or_access_never_invokes_transport_or_reserves_reads) ... ok
+test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final (__main__.PhaseControls.test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final) ... ok
+test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding (__main__.PhaseControls.test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding) ... ERROR
+test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport (__main__.PhaseControls.test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport) ... ok
+test_remote_result_cannot_claim_complete_when_shape_or_accounting_is_inconsistent (__main__.PhaseControls.test_remote_result_cannot_claim_complete_when_shape_or_accounting_is_inconsistent) ... ok
+test_same_allocation_cannot_restart_budget_at_another_directory (__main__.PhaseControls.test_same_allocation_cannot_restart_budget_at_another_directory) ... ok
+test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) ... ok
+
+======================================================================
+ERROR: test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding (__main__.PhaseControls.test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 118, in test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding
+    self.assertEqual(json.loads((directory/'admin-allocation.json').read_bytes()), binding['collectorAllocation'])
+                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 778, in read_bytes
+    with self.open(mode='rb', buffering=0) as f:
+         ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 772, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/tmpdk01xx83/phase/admin-allocation.json'
+
+----------------------------------------------------------------------
+Ran 9 tests in 0.928s
+
+FAILED (errors=1)
