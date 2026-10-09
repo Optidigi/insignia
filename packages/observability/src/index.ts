@@ -85,6 +85,7 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
     input.errorClass === 'TransientPayloadExpiredUnresolved' ||
     input.errorClass === 'PrivacyRetentionBlocked' ||
     input.errorClass === 'UnknownPayloadRetentionBlocked' ||
+    input.errorClass === 'UnsupportedPayloadRetentionBlocked' ||
     input.errorClass === 'UninstallRecoveryUnresolved'
   )
     result.errorClass = input.errorClass;

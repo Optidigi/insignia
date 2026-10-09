@@ -286,7 +286,87 @@ test.each(['customers/data_request', 'customers/redact', 'shop/redact'])(
   },
 );
 
-test('blocked old privacy work cannot starve eligible nonprivacy byte erasure in a bounded batch', async () => {
+test.each(['orders/paid', 'orders/create', 'refunds/create'])(
+  'expired unsupported %s sole facts survive while eligible uninstall bytes erase',
+  async (topic) => {
+    const f = await fixture();
+    try {
+      const receipt = await f.core.webhooks.receive({
+        ...f.input,
+        topic,
+        deliveryId: randomUUID(),
+        rawBody: Buffer.from(
+          JSON.stringify({ id: '123', currency: 'EUR', total_price: '12.34', transaction_ids: ['456'] }),
+        ),
+      });
+      expect(await f.core.webhooks.getById(receipt.id)).toMatchObject({ state: 'pending' });
+      await expire(f.pool, receipt.id);
+      const before = (await f.pool.query('SELECT payload,purge_after FROM inbox_messages WHERE id=$1', [receipt.id]))
+        .rows[0];
+      await expire(f.pool, f.receipt.id);
+      const result = await f.core.webhooks.eraseExpiredPayloads(100);
+      expect(result.erasedIds).not.toContain(receipt.id);
+      expect(result.blockedUnsupportedIds).toContain(receipt.id);
+      expect(result.erasedIds).toContain(f.receipt.id);
+      expect(
+        (await f.pool.query('SELECT payload,purge_after FROM inbox_messages WHERE id=$1', [receipt.id])).rows[0],
+      ).toEqual(before);
+      expect(
+        (
+          await f.pool.query(
+            'SELECT state,erasure_state,purge_after<clock_timestamp() AS overdue FROM inbox_messages WHERE id=$1',
+            [receipt.id],
+          )
+        ).rows[0],
+      ).toEqual({ state: 'pending', erasure_state: 'retained', overdue: true });
+      expect(
+        (
+          await f.pool.query('SELECT octet_length(payload) AS bytes,erasure_state FROM inbox_messages WHERE id=$1', [
+            f.receipt.id,
+          ])
+        ).rows[0],
+      ).toEqual({ bytes: 0, erasure_state: 'erased' });
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test('unindexed overdue Shopify bytes remain an explicit unknown blocker', async () => {
+  const f = await fixture();
+  try {
+    const id = randomUUID();
+    const payload = Buffer.from('synthetic unknown payload');
+    await f.pool.query(
+      `INSERT INTO inbox_messages(id,source,payload,payload_sha256,received_at,retention_class,purge_after)
+      VALUES($1,'shopify',$2,$3,clock_timestamp(),'shopify-webhook',clock_timestamp()+interval '20 milliseconds')`,
+      [id, payload, createHash('sha256').update(payload).digest('hex')],
+    );
+    await new Promise((resolve) => setTimeout(resolve, 40));
+    const before = (await f.pool.query('SELECT payload,purge_after FROM inbox_messages WHERE id=$1', [id])).rows[0];
+    await expire(f.pool, f.receipt.id);
+    const result = await f.core.webhooks.eraseExpiredPayloads(100);
+    expect(result.blockedUnknownIds).toContain(id);
+    expect(result.blockedUnsupportedIds).not.toContain(id);
+    expect(result.blockedPrivacyIds).not.toContain(id);
+    expect(result.erasedIds).toContain(f.receipt.id);
+    expect((await f.pool.query('SELECT payload,purge_after FROM inbox_messages WHERE id=$1', [id])).rows[0]).toEqual(
+      before,
+    );
+    expect(
+      (
+        await f.pool.query(
+          'SELECT state,erasure_state,purge_after<clock_timestamp() AS overdue FROM inbox_messages WHERE id=$1',
+          [id],
+        )
+      ).rows[0],
+    ).toEqual({ state: 'pending', erasure_state: 'retained', overdue: true });
+  } finally {
+    await f.close();
+  }
+});
+
+test('blocked old work cannot starve eligible uninstall byte erasure in a bounded batch', async () => {
   const f = await fixture();
   try {
     await f.core.webhooks.eraseExpiredPayloads(100);

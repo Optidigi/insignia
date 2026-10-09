@@ -14,11 +14,13 @@ export type WebhookPayloadErasure = {
   unresolvedExpiredIds: string[];
   blockedPrivacyIds: string[];
   blockedUnknownIds: string[];
+  blockedUnsupportedIds: string[];
 };
 
 class TransientPayloadExpiredError extends Error {}
 
-/** The body must pass raw-byte HMAC at controlled ingress; bounded routing headers are trusted Shopify delivery metadata. */
+/** Raw body passed HMAC verification. Bounded routing headers are not covered
+ * by that HMAC; their legacy use as routing metadata remains unqualified. */
 export type VerifiedShopifyDelivery = {
   shopDomain: string;
   topic: string;
@@ -373,18 +375,18 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
           .orderBy('inbox.id', 'asc')
           .limit(limit);
         // Separate bounded blocker accounting from eligible work so an old
-        // unresolved privacy row cannot prevent every subsequent raw erasure.
+        // unresolved or unsupported row cannot prevent subsequent uninstall erasure.
         const blocked = await expiredQuery
-          .where((eb) => eb.or([eb('delivery.topic', 'is', null), eb('delivery.topic', 'in', PRIVACY_TOPICS)]))
+          .where((eb) => eb.or([eb('delivery.topic', 'is', null), eb('delivery.topic', '!=', 'app/uninstalled')]))
           .execute();
         const eligible = await expiredQuery
-          .where('delivery.topic', 'not in', PRIVACY_TOPICS)
+          .where('delivery.topic', '=', 'app/uninstalled')
           .forUpdate('inbox')
           .skipLocked()
           .execute();
-        // No structured privacy obligation/subject mapping exists yet. Losing
-        // the only subject identity would abandon mandatory work. Leave these
-        // deadlines overdue and report the blocker; this is not a waiver.
+        // No qualified obligation mapping/capture exists for privacy or deferred
+        // business topics. Losing their only subject/economic facts would abandon
+        // work. Leave deadlines overdue and report blockers; this is not a waiver.
         const erasedIds = eligible.map((row) => row.id);
         if (erasedIds.length) {
           await tx
@@ -412,6 +414,9 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
             .filter((row) => row.topic !== null && PRIVACY_TOPICS.includes(row.topic))
             .map((row) => row.id),
           blockedUnknownIds: blocked.filter((row) => row.topic === null).map((row) => row.id),
+          blockedUnsupportedIds: blocked
+            .filter((row) => row.topic !== null && !PRIVACY_TOPICS.includes(row.topic))
+            .map((row) => row.id),
         };
       });
     },

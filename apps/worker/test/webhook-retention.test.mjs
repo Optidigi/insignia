@@ -2,10 +2,12 @@ import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
+import { Writable } from 'node:stream';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { createDurableCore } from '@insignia/database';
+import { createObservability } from '@insignia/observability';
 import { Pool } from 'pg';
 import { PgBoss } from 'pg-boss';
 import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
@@ -15,7 +17,7 @@ import { createPgBossRuntime, REFRESH_QUEUE, WEBHOOK_QUEUE } from '../dist/runti
 const connectionString = process.env.DATABASE_URL;
 const postgres = { skip: !connectionString && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1', timeout: 30_000 };
 
-async function fixture() {
+async function fixture({ observability } = {}) {
   assert.ok(connectionString, 'Owned PostgreSQL test DATABASE_URL is required');
   // Each application inbox has exactly its own configured queue namespace.
   // Sharing application rows across independent test queue schemas would make
@@ -43,7 +45,7 @@ async function fixture() {
     schedule: false,
     supervise: false,
   });
-  const queue = createPgBossRuntime({ boss, webhookHandoff: core.webhooks, credentialKeysReady: true });
+  const queue = createPgBossRuntime({ boss, webhookHandoff: core.webhooks, credentialKeysReady: true, observability });
   await queue.start();
   const receipt = await core.webhooks.receive({
     shopDomain: `m${randomUUID().replaceAll('-', '')}.myshopify.com`,
@@ -72,6 +74,84 @@ async function fixture() {
     },
   };
 }
+
+test(
+  'real PostgreSQL unsupported receipt blockers stay bounded and alert without losing economic sole facts',
+  postgres,
+  async () => {
+    let output = '';
+    const observability = createObservability({
+      stream: new Writable({
+        write(chunk, _encoding, callback) {
+          output += chunk;
+          callback();
+        },
+      }),
+    });
+    const f = await fixture({ observability });
+    try {
+      const unsupportedIds = [];
+      for (let index = 0; index < 101; index++) {
+        const receipt = await f.core.webhooks.receive({
+          shopDomain: 'synthetic-orders.myshopify.com',
+          topic: 'orders/paid',
+          deliveryId: randomUUID(),
+          apiVersion: '2026-07',
+          triggeredAt: new Date(),
+          eventId: null,
+          name: null,
+          rawBody: Buffer.from(JSON.stringify({ id: String(index + 1), currency: 'EUR', total_price: '12.34' })),
+        });
+        unsupportedIds.push(receipt.id);
+      }
+      await f.queue.ensureWebhookEnqueued(f.receipt.id);
+      await f.pool.query(
+        `UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=ANY($1::uuid[])`,
+        [[...unsupportedIds, f.receipt.id]],
+      );
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      const before = (
+        await f.pool.query('SELECT id,payload,purge_after FROM inbox_messages WHERE id=ANY($1::uuid[]) ORDER BY id', [
+          unsupportedIds,
+        ])
+      ).rows;
+      const result = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
+      assert.deepEqual(result.erasedIds, [f.receipt.id]);
+      assert.equal(result.blockedUnsupportedIds.length, 100);
+      assert.deepEqual(result.blockedPrivacyIds, []);
+      assert.deepEqual(result.blockedUnknownIds, []);
+      assert.deepEqual(
+        (
+          await f.pool.query('SELECT id,payload,purge_after FROM inbox_messages WHERE id=ANY($1::uuid[]) ORDER BY id', [
+            unsupportedIds,
+          ])
+        ).rows,
+        before,
+      );
+      assert.equal(
+        (
+          await f.pool.query(
+            `SELECT count(*)::int AS count FROM inbox_messages WHERE id=ANY($1::uuid[])
+      AND state='pending' AND erasure_state='retained' AND purge_after<clock_timestamp()`,
+            [unsupportedIds],
+          )
+        ).rows[0].count,
+        101,
+      );
+      const records = output
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line));
+      const alert = records.find((record) => record.errorClass === 'UnsupportedPayloadRetentionBlocked');
+      assert.ok(alert);
+      assert.equal(alert.count, 100);
+      assert.deepEqual(Object.keys(alert).sort(), ['count', 'errorClass', 'event', 'level', 'time']);
+      assert.doesNotMatch(JSON.stringify(alert), /synthetic-orders|total_price|currency|inboxId|shopId/);
+    } finally {
+      await f.close();
+    }
+  },
+);
 
 test('real pg-boss lost ACK and handoff rollback cannot recreate a deleted job retry budget', postgres, async () => {
   const f = await fixture();

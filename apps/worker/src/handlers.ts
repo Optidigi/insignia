@@ -78,6 +78,7 @@ export async function maintainWebhookRetention(core: DurableCore, queue: PgBossR
     ['TransientPayloadExpiredUnresolved', result.unresolvedExpiredIds.length],
     ['PrivacyRetentionBlocked', result.blockedPrivacyIds.length],
     ['UnknownPayloadRetentionBlocked', result.blockedUnknownIds.length],
+    ['UnsupportedPayloadRetentionBlocked', result.blockedUnsupportedIds.length],
   ] as const) {
     if (count) {
       queue.observability.metrics.queue('failure');

@@ -1,5 +1,6 @@
 /** This shape is produced only after raw-body HMAC verification by the Shopify adapter. */
-/** The HMAC covers only rawBody; bounded headers are trusted provider metadata after controlled ingress verification. */
+/** The HMAC covers only rawBody. Bounded routing headers are not authenticated
+ * by that HMAC; their legacy use as routing metadata remains unqualified. */
 export type VerifiedShopifyDelivery = {
   shopDomain: string;
   topic: string;
