@@ -1,5 +1,6 @@
 """Synthetic LOCAL_TEST controls; real fixed-command subprocesses and temp files."""
 import datetime
+import hashlib
 import importlib.util
 import json
 import os
@@ -151,6 +152,14 @@ else:
 ''')
         self.bindings = {'command': [sys.executable, '-B', str(self.script)], 'root': root,
                          'artifactHashes': [MODULE.digest(compose), MODULE.digest(package)]}
+
+    def sparse_package(self, size):
+        package = self.root / str(MODULE.APP).lstrip('/') / 'reviewed-web-package.tar.gz'
+        with package.open('wb') as output:
+            output.truncate(size)
+        with package.open('rb') as source:
+            self.bindings['artifactHashes'][1] = hashlib.file_digest(source, 'sha256').hexdigest()
+        return package
 
     def run(self, request=None):
         return MODULE.collect_local_test(request or envelope(), self.bindings)
@@ -323,6 +332,76 @@ class TransportControls(unittest.TestCase):
 
 
 class MetadataControls(unittest.TestCase):
+    def test_recorded_package_size_is_hashable_without_body_capture(self):
+        receipt_path = OPERATOR.parents[2] / 'docs/delivery/evidence/m5-019/deployment-package-receipt.json'
+        receipt = json.loads(receipt_path.read_bytes())
+        self.assertEqual(receipt['bytes'], 70310306)
+        self.assertEqual(receipt['archiveSha256'], MODULE.PACKAGE_SHA)
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Fixture(Path(directory))
+            fixture.sparse_package(receipt['bytes'])
+            result = fixture.run()
+            self.assertEqual(result['classification'], 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED')
+            self.assertEqual(result['observations'][5]['metadata'], {
+                'bytesHashed': 70310306, 'sha256': fixture.bindings['artifactHashes'][1], 'mode': '0o600'})
+            self.assertEqual(len(result['observations']), 12)
+            self.assertEqual(result['attemptedObservationIds'], [row['id'] for row in MODULE.PLAN[:10]])
+            self.assertLess(len(MODULE.encoded(result)), MODULE.CAP)
+            self.assertFalse(result['globalAbsenceProven'])
+            self.assertFalse(result['retryAuthorized'])
+            commands = [tuple(json.loads(line)) for line in fixture.commands.read_text().splitlines()]
+            self.assertEqual(commands, list(MODULE.ALLOWED_COMMANDS))
+
+    def test_package_one_byte_over_recorded_bound_stops_before_later_reads(self):
+        with tempfile.TemporaryDirectory() as directory:
+            fixture = Fixture(Path(directory))
+            fixture.sparse_package(70310307)
+            result = fixture.run()
+            self.assertEqual(result['classification'], 'STOP_ARTIFACT_INVALID')
+            self.assertEqual(len(result['attemptedObservationIds']), 6)
+            self.assertEqual(len(result['observations']), 5)
+            self.assertFalse(result['retryAuthorized'])
+            commands = [tuple(json.loads(line)) for line in fixture.commands.read_text().splitlines()]
+            self.assertEqual(commands, list(MODULE.CONTAINER_COMMANDS))
+
+    def test_recorded_size_package_still_requires_exact_digest(self):
+        for corruption in ('expected-digest', 'same-size-content-drift'):
+            with self.subTest(corruption=corruption), tempfile.TemporaryDirectory() as directory:
+                fixture = Fixture(Path(directory))
+                package = fixture.sparse_package(70310306)
+                if corruption == 'expected-digest':
+                    fixture.bindings['artifactHashes'][1] = 'f' * 64
+                else:
+                    with package.open('r+b') as output:
+                        output.seek(-1, os.SEEK_END)
+                        output.write(b'x')
+                result = fixture.run()
+                self.assertEqual(result['classification'], 'STOP_ARTIFACT_DRIFT')
+                self.assertEqual(len(result['attemptedObservationIds']), 6)
+                self.assertEqual(len(result['observations']), 5)
+                self.assertFalse(result['retryAuthorized'])
+
+    def test_package_symlink_nonregular_file_and_expired_deadline_remain_closed(self):
+        for corruption in ('symlink', 'directory', 'expired-deadline'):
+            with self.subTest(corruption=corruption), tempfile.TemporaryDirectory() as directory:
+                fixture = Fixture(Path(directory))
+                package = fixture.sparse_package(70310306)
+                request = envelope()
+                if corruption == 'symlink':
+                    package.unlink()
+                    package.symlink_to(package.with_name('runtime.env'))
+                elif corruption == 'directory':
+                    package.unlink()
+                    package.mkdir()
+                else:
+                    request['reservation']['deadline'] = '2000-01-01T00:00:00Z'
+                result = fixture.run(request)
+                self.assertTrue(result['classification'].startswith('STOP_'))
+                self.assertEqual(len(result['attemptedObservationIds']), 0 if corruption == 'expired-deadline' else 6)
+                self.assertEqual(len(result['observations']), 0 if corruption == 'expired-deadline' else 5)
+                self.assertFalse(result['retryAuthorized'])
+                self.assertNotIn(BAIT, json.dumps(result))
+
     def test_running_topology_identifies_candidates_without_following_them(self):
         with tempfile.TemporaryDirectory() as directory:
             result = Fixture(Path(directory), 'processor_topology').run()

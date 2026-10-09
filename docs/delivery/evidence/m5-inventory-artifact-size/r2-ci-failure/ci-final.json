@@ -1,0 +1,92 @@
+[
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 37988027827,
+    "headSha": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+    "name": "M0-011 local provider adapter boundary",
+    "status": "completed",
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37988027827"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 37988027683,
+    "headSha": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+    "name": "M0-012 real contract local prototype",
+    "status": "completed",
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37988027683"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 37988027797,
+    "headSha": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+    "name": "M0-010 local hybrid billing proof",
+    "status": "completed",
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37988027797"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 37988027783,
+    "headSha": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+    "name": "M0-008 local publication and architecture checks",
+    "status": "completed",
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37988027783"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 37988027633,
+    "headSha": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+    "name": "M0-009 embedded Astro local proof",
+    "status": "completed",
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37988027633"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 37988027709,
+    "headSha": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+    "name": "M0-013 off-store protocol capacity",
+    "status": "completed",
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37988027709"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 37988027613,
+    "headSha": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+    "name": "M3-001 PostgreSQL durable core",
+    "status": "completed",
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37988027613"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 37988027717,
+    "headSha": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+    "name": "M0-014 local public-app candidate",
+    "status": "completed",
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37988027717"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "failure",
+    "databaseId": 37988027764,
+    "headSha": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+    "name": "M3-002 local runtime and ingress",
+    "status": "completed",
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37988027764"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 37988027634,
+    "headSha": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+    "name": "M1-001 foundation and boundaries",
+    "status": "completed",
+    "url": "https://github.com/Optidigi/insignia/actions/runs/37988027634"
+  }
+]

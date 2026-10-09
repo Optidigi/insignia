@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "6963b62c75ab6f2db8ce9e0597e3efa83e2028b3",
-  "currentTree": "25d90287ff8d26b8f0d2fb8c83e491cedb9e1c21",
+  "currentIntegratedCommit": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
+  "currentTree": "ccb195bd398b0475414352c981e5503bab2e2a2f",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -80,6 +80,10 @@
     {
       "pr": 61,
       "receipt": "evidence/m5-inventory-phase/existing-owner-access/integration/pr61-merge-receipt.json"
+    },
+    {
+      "pr": 62,
+      "receipt": "evidence/m5-inventory-artifact-size/pr62-merge-receipt.json"
     }
   ],
   "openFindings": [
@@ -95,6 +99,13 @@
       "evidence": "evidence/m5-native-inventory/owner-readonly-allocation.json",
       "ownerReply": "you have full acess yes",
       "localTechnicalGate": "Original PR60 merged; standalone PR62 f396 had actual R1 CLEAR/CLEAR and five attempt-1 successes; first native run authenticated, partial STOP sealed. Revised source requires fresh gate and new native allocation."
+    },
+    {
+      "scope": "FRESH_BOUNDED_READ_ONLY",
+      "evidence": "evidence/m5-inventory-artifact-size/owner-readonly-renewal.json",
+      "ownerReply": "Sure, whatever you need to get M5 done/finished.",
+      "conservativeMetadataSlotsCharged": 20,
+      "interpretation": "Original grant plus fresh ten-observation phase; no production/Shopify mutation or credential-acquisition inference"
     }
   ],
   "ownerInputs": [
@@ -104,7 +115,7 @@
     "Commercial configuration unknown; owner delegates factual investigation",
     "Any later provisioning/deployment/mutation requires exact separate owner resource envelope"
   ],
-  "nextSafeAction": "Complete PR62 revised-source/integration local qualification, preserving exact first native run; consolidate remaining credential/native-read/resource/commercial inputs; no repeated native attempt under sealed allocation.",
+  "nextSafeAction": "Qualify exact known artifact limit; continue M5 within actual owner-authorized resources and preserve sealed runs.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
@@ -117,13 +128,10 @@
     "nativeAuthority": "NONE; no production SQL/deployment"
   },
   "activeCandidate": {
-    "pr": 62,
-    "scope": "Bounded existing-owner identity inventory tooling; first partial native read sealed; optional metadata-gap handling local correction",
-    "standaloneHead": "f396a33a63ddd2e24eb68464666f9f6408200a5d",
-    "standaloneReviews": "ACTUAL_CLEAR_CLEAR_GPT_6_1_SOL_HIGH",
-    "standaloneCi": "5 natural exact-head attempt1 SUCCESS",
-    "nativeResult": "PARTIAL_SEALED_STOP_NO_RETRY",
-    "next": "Fresh completed-change reviews and exact-head CI after new base/local collector correction; owner allocation required before another native run"
+    "scope": "Exact known reviewed archive size correction; preserves two sealed native attempts and metadata limits",
+    "base": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
+    "nativeResult": "SECOND_PARTIAL_SEALED_STOP_COMMERCIAL_NOT_REACHED",
+    "next": "Local TDD/candidate/fresh reviews/exact-head CI; no self-granted resource or deadline reset"
   },
   "boundedInventoryTooling": {
     "pr": 60,

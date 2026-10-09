@@ -1,0 +1,85 @@
+{
+  "classification": "LOCAL_KNOWN_ARTIFACT_LIMIT_CORRECTION_NATIVE_NOT_RUN_ON_REVISED_SOURCE",
+  "base": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
+  "sourceSha256": "9d352d201dfa1b795bd7e3efd7c09d1c9b9aa340d38fadad0d2d14a47826203d",
+  "testsSha256": "444f47d6e503d105d078f4bc6bb3498680b9510c32e724d6577b070702d1404f",
+  "phaseSourceSha256": "f9a1a3ff73e3ab1d06b3a2a92fc22d7e7d7675014b5c26fd8a4ad1004f4bdf87",
+  "selectorSha256": "de0f87edd007edfcecf18332383745d1b042e2a2c5083d0e65ad2895b22111e3",
+  "packageSizeCeiling": 70310306,
+  "packageDigestUnchanged": true,
+  "metadataOutputCapUnchanged": 1048576,
+  "selectorCommandsUnchanged": true,
+  "logs": {
+    "artifact-size-writer-02-green.log": {
+      "sha256": "4658d372db04f94a8cdb3db429da25b83a410722d508f1cec098857c74dc3f6c",
+      "bytes": 252
+    },
+    "artifact-size-writer-03-focused.log": {
+      "sha256": "5d5c952044d5bc618f23c64fa60cc0a69ed411d7b9db62856aa56e99862c0dd0",
+      "bytes": 1613
+    },
+    "artifact-size-writer-04-full.log": {
+      "sha256": "0b8f95da58b087ec1f42a3e0b1d9725c8a61e6419ebb141f22bc3ac5e0046990",
+      "bytes": 3969
+    },
+    "artifact-size-writer-01-red.log": {
+      "sha256": "46fbc87f7fd403b38cc186d0699dc7b6a8e2a86b8028c1010e370b47f65b792a",
+      "bytes": 1151
+    }
+  },
+  "parentInventory": {
+    "result": "PASS",
+    "tests": {
+      "admin": 98,
+      "host": 24,
+      "phase": 18
+    },
+    "logSha256": "e959c7e84b5f4fa80092a5acb170b119804f5b0cd8a78a0bc29b7ab74c4da9bb"
+  },
+  "build": {
+    "result": "PASS",
+    "logSha256": "3abe7f18775d23bebdd3a1ea8607b77975fdc1ef229fd476617f814d7cf34abd"
+  },
+  "productionProviderSourceChanges": [],
+  "historicalEvidenceRewritten": false,
+  "actualNativeCause": "UNKNOWN; local size incompatibility proved separately",
+  "newNativeAuthority": "Source/gate cannot grant resources; use actual owner allocation, immutable closed records and cumulative accounting",
+  "m5G7": "NOT_PASSED",
+  "historicalSnapshotRestoredToRecordedBytes": {
+    "path": "docs/delivery/evidence/m5-host-inventory/writer-host-document.md",
+    "gitRef": "57afc7a6d14e8abdf09220d6da145de4f1a89430",
+    "sha256": "7c698b5f5f6b1e650aac208d7a07fe5192cc84c64bd6466b86e4b28f7a5cb496"
+  },
+  "r1Review": "CHANGES_REQUIRED/CLEAR; historical documentation corrected; fresh R2 required",
+  "r2Reviews": "CLEAR/CLEAR; natural runtime CI FAILED; NOT_ACCEPTED",
+  "runtimeCiFailuresPreserved": [
+    37987569323,
+    37988027764
+  ],
+  "supportingTestCorrection": {
+    "path": "apps/web/test/webhook-metadata-boundary.test.mjs",
+    "sha256": "a29126ba4a705b40b1ff30659521bccbd6c001ca16f4a67a3b9d0fc64be5fa63",
+    "productionSemanticsChanged": false,
+    "assertionsAndWaitLimitsPreserved": true,
+    "originalSourceEmptyAndContaminatedDifferential": "PASS/FAIL at unchanged target wait",
+    "qualification": "Local isolated PostgreSQL18 actual controls PASS; generic uninstall security assertion RED; fresh reviews/natural CI required",
+    "receiptSha256": "6c89673f3a1ccddec20fafb131b47b6a98bfaedaef22c9b52e14207be25d2840",
+    "diagnosisSha256": "246c3c884c3ea7a8334424644f19067b397b27d4bcf76988d12d19c793a17c49",
+    "ownedClusterClosed": true
+  },
+  "r3Reviews": "Actual CLEAR/CLEAR; nine natural successes/two precheckout DockerHub rate-limit failures; NOT_ACCEPTED",
+  "ciOnlyRepair": {
+    "workflows": [
+      ".github/workflows/m3-database.yml",
+      ".github/workflows/m3-runtime.yml"
+    ],
+    "immutableOfficialImageIndex": "74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+    "actualPublicManifestBodyMatchedHistoricalDigest": true,
+    "testStepsAndAssertionsUnchanged": true,
+    "failedRunsPreserved": [
+      37991234225,
+      37991234250
+    ],
+    "newReviewsAndNaturalCiRequired": true
+  }
+}

@@ -1,0 +1,15 @@
+test_ancestor_symlink_cannot_redirect_allocated_artifact (__main__.MetadataControls.test_ancestor_symlink_cannot_redirect_allocated_artifact) ... ok
+test_artifact_and_route_drift_stop_followup_reads (__main__.MetadataControls.test_artifact_and_route_drift_stop_followup_reads) ... ok
+test_missing_process_executable_is_unknown_not_absence (__main__.MetadataControls.test_missing_process_executable_is_unknown_not_absence) ... ok
+test_nonsecret_commercial_values_do_not_claim_provider_truth (__main__.MetadataControls.test_nonsecret_commercial_values_do_not_claim_provider_truth) ... ok
+test_package_one_byte_over_recorded_bound_stops_before_later_reads (__main__.MetadataControls.test_package_one_byte_over_recorded_bound_stops_before_later_reads) ... ok
+test_package_symlink_nonregular_file_and_expired_deadline_remain_closed (__main__.MetadataControls.test_package_symlink_nonregular_file_and_expired_deadline_remain_closed) ... ok
+test_recorded_package_size_is_hashable_without_body_capture (__main__.MetadataControls.test_recorded_package_size_is_hashable_without_body_capture) ... ok
+test_recorded_size_package_still_requires_exact_digest (__main__.MetadataControls.test_recorded_size_package_still_requires_exact_digest) ... ok
+test_running_topology_identifies_candidates_without_following_them (__main__.MetadataControls.test_running_topology_identifies_candidates_without_following_them) ... ok
+test_symlink_artifact_is_not_followed (__main__.MetadataControls.test_symlink_artifact_is_not_followed) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 3.376s
+
+OK

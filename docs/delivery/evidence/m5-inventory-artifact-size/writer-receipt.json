@@ -1,0 +1,49 @@
+{
+  "base": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
+  "commitOrPush": false,
+  "focused": {
+    "exitCode": 0,
+    "failures": 0,
+    "testCount": 10
+  },
+  "full": {
+    "exitCode": 0,
+    "failures": 0,
+    "seconds": 13.344,
+    "testCount": 24
+  },
+  "green": {
+    "exitCode": 0,
+    "failures": 0,
+    "testCount": 1
+  },
+  "historicalEvidenceModified": false,
+  "logs": {
+    "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-writer-01-red.log": "46fbc87f7fd403b38cc186d0699dc7b6a8e2a86b8028c1010e370b47f65b792a",
+    "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-writer-02-green.log": "4658d372db04f94a8cdb3db429da25b83a410722d508f1cec098857c74dc3f6c",
+    "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-writer-03-focused.log": "5d5c952044d5bc618f23c64fa60cc0a69ed411d7b9db62856aa56e99862c0dd0",
+    "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-writer-04-full.log": "0b8f95da58b087ec1f42a3e0b1d9725c8a61e6419ebb141f22bc3ac5e0046990"
+  },
+  "metadataCap": 1048576,
+  "nativeRequests": 0,
+  "nativeStopCause": "UNKNOWN",
+  "packageMaxBytes": 70310306,
+  "packageSha256": "f117be50d7bc106f1c943cdf75a8080fa63c26e0edd99b7ba0ddf3eaea697c2b",
+  "red": {
+    "exitCode": 1,
+    "failures": 1,
+    "testCount": 1
+  },
+  "selectorSha256": "de0f87edd007edfcecf18332383745d1b042e2a2c5083d0e65ad2895b22111e3",
+  "sourceAfterSha256": "9d352d201dfa1b795bd7e3efd7c09d1c9b9aa340d38fadad0d2d14a47826203d",
+  "sourceBeforeSha256": "890d991e339efaf064b558d5bb2e3d1634cb6551b806dc111047bc0d359dd406",
+  "testsSha256": "444f47d6e503d105d078f4bc6bb3498680b9510c32e724d6577b070702d1404f",
+  "unchangedAstControls": {
+    "Boundary": true,
+    "collect": true,
+    "collect_local_test": true,
+    "collect_verified_source": true,
+    "container": true,
+    "entry": true
+  }
+}

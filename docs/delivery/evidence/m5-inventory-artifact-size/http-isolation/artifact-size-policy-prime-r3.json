@@ -1,0 +1,18 @@
+{
+  "command": [
+    "corepack",
+    "pnpm",
+    "--filter",
+    "@insignia/worker",
+    "deploy",
+    "--prod",
+    "--frozen-lockfile",
+    "--config.inject-workspace-packages=true",
+    "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-policy-primer-r3"
+  ],
+  "startedAt": "2026-10-09T20:55:00.846154+00:00",
+  "completedAt": "2026-10-09T20:55:01.807742+00:00",
+  "exitCode": 0,
+  "logSha256": "fb8eba7b3b616524e27a1a254f3947f9eba23c5604dac9813de2dbd34a129b83",
+  "scope": "LOCAL_PACKAGING; public registry metadata priming only; no provider/host access"
+}

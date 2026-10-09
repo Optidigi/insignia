@@ -1,0 +1,17 @@
+{
+  "classification": "REAL_REVIEWED_ARCHIVE_LOCAL_PUBLIC_COLLECTOR_PASS_NOT_NATIVE",
+  "sourceSha256": "9d352d201dfa1b795bd7e3efd7c09d1c9b9aa340d38fadad0d2d14a47826203d",
+  "artifact": {
+    "sha256": "f117be50d7bc106f1c943cdf75a8080fa63c26e0edd99b7ba0ddf3eaea697c2b",
+    "bytesHashed": 70310306,
+    "mode": "0o600"
+  },
+  "result": "LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED",
+  "attemptedObservations": 10,
+  "allOriginalSourceArtifactBytesUnchanged": true,
+  "archiveExtractedOrExecuted": false,
+  "providerRequests": 0,
+  "hostWrites": 0,
+  "productionSql": 0,
+  "fixtureOtherMetadata": "SYNTHETIC_LOCAL_TEST"
+}

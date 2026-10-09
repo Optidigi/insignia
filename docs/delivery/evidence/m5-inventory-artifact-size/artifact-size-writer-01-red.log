@@ -1,0 +1,18 @@
+test_recorded_package_size_is_hashable_without_body_capture (__main__.MetadataControls.test_recorded_package_size_is_hashable_without_body_capture) ... FAIL
+
+======================================================================
+FAIL: test_recorded_package_size_is_hashable_without_body_capture (__main__.MetadataControls.test_recorded_package_size_is_hashable_without_body_capture)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-inventory-artifact-worktree/scripts/m5-host-inventory/operator_test.py", line 344, in test_recorded_package_size_is_hashable_without_body_capture
+    self.assertEqual(result['classification'], 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_ARTIFACT_INVALID' != 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED'
+- STOP_ARTIFACT_INVALID
++ LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.283s
+
+FAILED (failures=1)

@@ -1,0 +1,38 @@
+{
+  "entry": "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-portable-r3-qualified/dist/main.js",
+  "currentCompiledWorkerPairs": [
+    {
+      "name": "main.js",
+      "same": true,
+      "sha256": "0a3c8839b286874a07211a222326b86449043198cfbb921a85563bc2422b044e"
+    },
+    {
+      "name": "runtime.js",
+      "same": true,
+      "sha256": "5c84f0716f978674fd7dffe4d34f6fec7d7f0a5319ffc3a1186c8accd24e17ab"
+    },
+    {
+      "name": "handlers.js",
+      "same": true,
+      "sha256": "473f9444fbb5ed66dbde165eb71d35bf62d52200830ef464c964d0f9ee2f99ba"
+    },
+    {
+      "name": "queue-contract.js",
+      "same": true,
+      "sha256": "a726447f12eb8e416b42ce2dabddbee1ec9e5f4a0f47d69400e983faf1aa4f7a"
+    },
+    {
+      "name": "process.js",
+      "same": true,
+      "sha256": "9e88aa662028113523765f358a7831732527f71bf0266ad6760cc118c70f009a"
+    },
+    {
+      "name": "config.js",
+      "same": true,
+      "sha256": "1ad1df21daaadec03fb2e256b3551c37edda34661bc91bf7f8f695e81c6e12ee"
+    }
+  ],
+  "freshOfflineBuildExitCode": 0,
+  "originalBuildFailure": "ERR_PNPM_NO_OFFLINE_META cron-parser; preserved before normalpublicregistrypolicyprime",
+  "nativePackageDeployment": false
+}

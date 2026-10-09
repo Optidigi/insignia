@@ -1,0 +1,26 @@
+runtime	Initialize containers	﻿2026-10-09T21:05:10.7687843Z ##[group]Checking docker version
+runtime	Initialize containers	2026-10-09T21:05:10.7700817Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+runtime	Initialize containers	2026-10-09T21:05:10.9437824Z '1.48'
+runtime	Initialize containers	2026-10-09T21:05:10.9450082Z Docker daemon API version: '1.48'
+runtime	Initialize containers	2026-10-09T21:05:10.9451066Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+runtime	Initialize containers	2026-10-09T21:05:10.9619612Z '1.48'
+runtime	Initialize containers	2026-10-09T21:05:10.9631949Z Docker client API version: '1.48'
+runtime	Initialize containers	2026-10-09T21:05:10.9636672Z ##[endgroup]
+runtime	Initialize containers	2026-10-09T21:05:10.9639526Z ##[group]Clean up resources from previous jobs
+runtime	Initialize containers	2026-10-09T21:05:10.9645490Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=423489"
+runtime	Initialize containers	2026-10-09T21:05:10.9784942Z ##[command]/usr/bin/docker network prune --force --filter "label=423489"
+runtime	Initialize containers	2026-10-09T21:05:10.9917196Z ##[endgroup]
+runtime	Initialize containers	2026-10-09T21:05:10.9917758Z ##[group]Create local container network
+runtime	Initialize containers	2026-10-09T21:05:10.9927619Z ##[command]/usr/bin/docker network create --label 423489 github_network_817025e5044849bcaec12d1519f6e049
+runtime	Initialize containers	2026-10-09T21:05:11.0438476Z f968693217f8552953b30870248206c3bda5da2dd5d7b0d1bc4e461452452a2d
+runtime	Initialize containers	2026-10-09T21:05:11.0457077Z ##[endgroup]
+runtime	Initialize containers	2026-10-09T21:05:11.0480660Z ##[group]Starting postgres service container
+runtime	Initialize containers	2026-10-09T21:05:11.0502967Z ##[command]/usr/bin/docker pull postgres:18
+runtime	Initialize containers	2026-10-09T21:05:11.6576552Z Error response from daemon: toomanyrequests: You have reached your unauthenticated pull rate limit. https://www.docker.com/increase-rate-limit
+runtime	Initialize containers	2026-10-09T21:05:11.6606007Z ##[warning]Docker pull failed with exit code 1, back off 2.863 seconds before retry.
+runtime	Initialize containers	2026-10-09T21:05:14.5247493Z ##[command]/usr/bin/docker pull postgres:18
+runtime	Initialize containers	2026-10-09T21:05:15.0882438Z Error response from daemon: toomanyrequests: You have reached your unauthenticated pull rate limit. https://www.docker.com/increase-rate-limit
+runtime	Initialize containers	2026-10-09T21:05:15.0894339Z ##[warning]Docker pull failed with exit code 1, back off 3.326 seconds before retry.
+runtime	Initialize containers	2026-10-09T21:05:18.4170396Z ##[command]/usr/bin/docker pull postgres:18
+runtime	Initialize containers	2026-10-09T21:05:18.9754317Z Error response from daemon: toomanyrequests: You have reached your unauthenticated pull rate limit. https://www.docker.com/increase-rate-limit
+runtime	Initialize containers	2026-10-09T21:05:18.9854163Z ##[error]Docker pull failed with exit code 1

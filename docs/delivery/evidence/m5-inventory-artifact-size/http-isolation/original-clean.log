@@ -1,0 +1,10 @@
+M5-024 REPRODUCED_LOCAL: original signed body, new unsigned delivery ID/trigger, generation 2 deactivated; no real provider used
+✔ captured signed body with new delivery ID and later unsigned trigger can deactivate a new generation (7507.703847ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12881.312902
