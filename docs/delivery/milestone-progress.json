@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "7bfba46e79ff2f9208d13f5712918f357b5836b4",
-  "currentTree": "b6e7e6d7fc931b84d4a72e09981a95a317024621",
+  "currentIntegratedCommit": "d9ba6383a6e15958419ecf8e26d9182f08078e41",
+  "currentTree": "4185e55b96d0beb0bd9bb134644236f252c2866e",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -68,6 +68,10 @@
     {
       "pr": 58,
       "receipt": "evidence/milestone-autonomy/pr58-merge-receipt.json"
+    },
+    {
+      "pr": 59,
+      "receipt": "evidence/m5-native-inventory/pr59-merge-receipt.json"
     }
   ],
   "openFindings": [
@@ -77,17 +81,31 @@
     "28 native G7 criteria blocked",
     "Real merchant configure/preview/save/publication/activation NOT_RUN"
   ],
-  "resourceGrants": [],
-  "ownerInputs": [
-    "Exact-app read-only access and current destination/configuration facts",
-    "Named host/processor/queue/privacy artifact metadata and private evidence ownership",
-    "Separate disposable installation and mutation allocation after safe preinstallation gate",
-    "Legitimate commercial eligibility or separately approved bounded dev entitlement",
-    "Exact production provisioning/deployment authority only after topology and security qualification"
+  "resourceGrants": [
+    {
+      "scope": "BOUNDED_READ_ONLY",
+      "evidence": "evidence/m5-native-inventory/owner-readonly-allocation.json",
+      "ownerReply": "you have full acess yes",
+      "localTechnicalGate": "IN_PROGRESS; no native reads started"
+    }
   ],
-  "nextSafeAction": "Complete governance adoption, implement/qualify bounded collector locally, request actual owner resources, continue M5 prerequisites.",
+  "ownerInputs": [
+    "Working private access route for existing exact-app Admin credential",
+    "Other processor/queue/privacy ownership artifact locations still unidentified",
+    "Separate disposable development installation not identified or allocated",
+    "Commercial configuration unknown; owner delegates factual investigation",
+    "Any later provisioning/deployment/mutation requires exact separate owner resource envelope"
+  ],
+  "nextSafeAction": "Complete and independently qualify combined native/host metadata collectors, freeze exact CI/source, renew restricted host access, execute only granted read-only subset; investigate commercial configuration without invention.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
-  "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b"
+  "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
+  "parallelLocalWork": {
+    "slice": "Transient webhook retention/queue recovery",
+    "status": "IMPLEMENTING_OFFLINE_NOT_QUALIFIED",
+    "worktree": "Separate feat/m5-transient-webhook-retention branch",
+    "purpose": "Existing raw deadlines, durable bounded handoff/exhaustion and truthful unresolved privacy; not uninstall authority/privacy complete",
+    "nativeAuthority": "NONE; no production SQL/deployment"
+  }
 }

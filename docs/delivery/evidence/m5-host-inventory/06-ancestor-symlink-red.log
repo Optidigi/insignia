@@ -1,0 +1,15 @@
+test_ancestor_symlink_cannot_redirect_allocated_artifact (__main__.MetadataControls.test_ancestor_symlink_cannot_redirect_allocated_artifact) ... FAIL
+
+======================================================================
+FAIL: test_ancestor_symlink_cannot_redirect_allocated_artifact (__main__.MetadataControls.test_ancestor_symlink_cannot_redirect_allocated_artifact)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-host-inventory-worktree/scripts/m5-host-inventory/operator_test.py", line 279, in test_ancestor_symlink_cannot_redirect_allocated_artifact
+    self.assertTrue(result['classification'].startswith('STOP_'))
+    ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: False is not true
+
+----------------------------------------------------------------------
+Ran 1 test in 0.317s
+
+FAILED (failures=1)

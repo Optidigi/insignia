@@ -1,0 +1,4 @@
+PASS: 41 new files scanned without credential markers; exact public app/client identifiers and explicitly synthetic descriptor tokens are intentional.
+PASS: collector source imports only Node built-ins/local module and has no generic fetch transport.
+PENDING_PARENT_INTEGRATION: owner-readonly-allocation.json provenance record
+PASS: remaining local documentation links resolve.

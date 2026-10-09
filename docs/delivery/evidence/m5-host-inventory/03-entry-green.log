@@ -1,0 +1,6 @@
+test_unqualified_entry_stops_before_any_host_read (__main__.EntryControls.test_unqualified_entry_stops_before_any_host_read) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.042s
+
+OK

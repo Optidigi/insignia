@@ -1,0 +1,45 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (51.772988ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (6.112697ms)
+  ✔ request template is not permission (1.663733ms)
+  ✔ no approval reference (3.061151ms)
+  ✔ wrong endpoint (1.755028ms)
+  ✔ wrong optional scopes (1.365136ms)
+  ✔ required scope expansion (1.228662ms)
+  ✔ grant expansion (1.222563ms)
+  ✔ mutations (1.529177ms)
+  ✔ wrong operation (1.400858ms)
+  ✔ too many requests (1.69172ms)
+  ✔ too long retention (1.812343ms)
+  ✔ expired grant (1.572481ms)
+  ✔ wrong private destination (1.28684ms)
+  ✔ credential absent (2.355247ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (32.134929ms)
+✖ two pages follow the exact private cursor then final identity within three total requests (16.729785ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 16
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 205.150689
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:118:1
+✖ two pages follow the exact private cursor then final identity within three total requests (16.729785ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 3
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:125:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 3,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

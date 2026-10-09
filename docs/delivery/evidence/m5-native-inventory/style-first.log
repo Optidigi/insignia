@@ -1,0 +1,51 @@
+scripts/m5-native-inventory/collector.test.mjs:526:22 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    524 │   );
+    525 │   child.stdio[3].on('error', () => {});
+  > 526 │   child.stdio[3].end(secret + '\n');
+        │                      ^^^^^^^^^^^^^
+    527 │   let stdout = '',
+    528 │     stderr = '';
+  
+  i Unsafe fix: Use a template literal.
+  
+    524 524 │     );
+    525 525 │     child.stdio[3].on('error', () => {});
+    526     │ - ··child.stdio[3].end(secret·+·'\n');
+        526 │ + ··child.stdio[3].end(`${secret}\n`);
+    527 527 │     let stdout = '',
+    528 528 │       stderr = '';
+  
+
+scripts/m5-native-inventory/collector.mjs:69:5 lint/complexity/useOptionalChain  FIXABLE  ━━━━━━━━━━
+
+  ! Change to an optional chain.
+  
+    67 │   if (!a || Object.keys(a).some((field) => !fields.includes(field))) return false;
+    68 │   if (
+  > 69 │     !a ||
+       │     ^^^^^
+  > 70 │     a.schema !== 'insignia-native-inventory-allocation-v1' ||
+       │     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    71 │     !['OWNER_ALLOCATED', 'LOOPBACK_TEST'].includes(a.status) ||
+    72 │     !nonempty(a.ownerApprovalReference) ||
+  
+  i Unsafe fix: Change to an optional chain.
+  
+     67  67 │     if (!a || Object.keys(a).some((field) => !fields.includes(field))) return false;
+     68  68 │     if (
+     69     │ - ····!a·||
+     70     │ - ····a.schema·!==·'insignia-native-inventory-allocation-v1'·||
+         69 │ + ····a?.schema·!==·'insignia-native-inventory-allocation-v1'·||
+     71  70 │       !['OWNER_ALLOCATED', 'LOOPBACK_TEST'].includes(a.status) ||
+     72  71 │       !nonempty(a.ownerApprovalReference) ||
+  
+
+Skipped 4 suggested fixes.
+If you wish to apply the suggested (unsafe) fixes, use the command biome check --write --unsafe
+
+Checked 3 files in 67ms. Fixed 3 files.
+Found 1 warning.
+Found 1 info.

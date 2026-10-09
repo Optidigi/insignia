@@ -1,0 +1,20 @@
+test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final (__main__.PhaseControls.test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final) ... FAIL
+test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding (__main__.PhaseControls.test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding) ... ok
+test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) ... ok
+
+======================================================================
+FAIL: test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final (__main__.PhaseControls.test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 92, in test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final
+    self.assertEqual(result['classification'], 'OWNER_SURFACE_RESERVED_NOT_OBSERVED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_NOT_IMPLEMENTED' != 'OWNER_SURFACE_RESERVED_NOT_OBSERVED'
+- STOP_NOT_IMPLEMENTED
++ OWNER_SURFACE_RESERVED_NOT_OBSERVED
+
+
+----------------------------------------------------------------------
+Ran 3 tests in 0.006s
+
+FAILED (failures=1)

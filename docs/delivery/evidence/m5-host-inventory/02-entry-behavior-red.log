@@ -1,0 +1,15 @@
+test_unqualified_entry_stops_before_any_host_read (__main__.EntryControls.test_unqualified_entry_stops_before_any_host_read) ... FAIL
+
+======================================================================
+FAIL: test_unqualified_entry_stops_before_any_host_read (__main__.EntryControls.test_unqualified_entry_stops_before_any_host_read)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-host-inventory-worktree/scripts/m5-host-inventory/operator_test.py", line 15, in test_unqualified_entry_stops_before_any_host_read
+    self.assertEqual(result.returncode, 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 1 test in 0.043s
+
+FAILED (failures=1)

@@ -1,0 +1,72 @@
+{
+  "classification": "LOCAL_TOOLING_INTEGRATION_IN_PROGRESS_NATIVE_NOT_RUN",
+  "checkedAt": "2026-10-09T15:03:18.521160+00:00",
+  "base": "d9ba6383a6e15958419ecf8e26d9182f08078e41",
+  "checks": [
+    {
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:style"
+      ],
+      "startedAt": "2026-10-09T14:54:43.107219+00:00",
+      "exitCode": 0,
+      "log": "inventory-style.log",
+      "sha256": "00c0491ac6346c5fa228bb674f0dcc0ba84522946dcea709d7207e8b948de7dc",
+      "bytes": 13179
+    },
+    {
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "startedAt": "2026-10-09T14:54:44.062368+00:00",
+      "exitCode": 0,
+      "log": "inventory-secrets.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    },
+    {
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:boundaries"
+      ],
+      "startedAt": "2026-10-09T14:54:44.307908+00:00",
+      "exitCode": 0,
+      "log": "inventory-boundaries.log",
+      "sha256": "64b42319fd0a6303e7c423b11d7cf550612750d973b0628512382e53ff384759",
+      "bytes": 1928
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "spikes/m0-007/scripts/check-history.py"
+      ],
+      "startedAt": "2026-10-09T14:56:07.140312+00:00",
+      "exitCode": 0,
+      "log": "inventory-history.log",
+      "sha256": "2f7449966db373e8189785c42ef491ec89499e1238a05af31311613aa825e466",
+      "bytes": 2457
+    },
+    {
+      "command": [
+        "python3",
+        "-B",
+        "scripts/m5-host-inventory/operator_test.py"
+      ],
+      "startedAt": "2026-10-09T14:56:05.991412+00:00",
+      "exitCode": 0,
+      "log": "inventory-host-tests.log",
+      "sha256": "28025441b38e3a3b08c1712c031f88738eba1bae675a38c268838c4a2364aa94",
+      "bytes": 115
+    }
+  ],
+  "logLocation": "/home/serveradmin/insignia-milestone-autonomy-handoff",
+  "productionChange": false,
+  "nativeReads": 0,
+  "uninstallSecurityAssertion": "RED_PRESERVED",
+  "remaining": "Phase caller implementation, final integrated checks/reviews/CI before credentials"
+}

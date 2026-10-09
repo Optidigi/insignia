@@ -1,0 +1,81 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (36.994588ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (3.83316ms)
+  ✔ request template is not permission (4.273188ms)
+  ✔ no approval reference (1.359697ms)
+  ✔ wrong endpoint (1.351665ms)
+  ✔ wrong optional scopes (1.358801ms)
+  ✔ required scope expansion (1.184621ms)
+  ✔ grant expansion (1.213016ms)
+  ✔ mutations (1.163659ms)
+  ✔ wrong operation (1.264955ms)
+  ✔ too many requests (1.195791ms)
+  ✔ too long retention (1.100606ms)
+  ✔ expired grant (1.185256ms)
+  ✔ wrong private destination (2.302394ms)
+  ✔ credential absent (1.638729ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (27.121467ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (11.202211ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (6.246332ms)
+  ✔ missing shop (5.113506ms)
+  ✔ wrong shop (4.651417ms)
+  ✔ wrong client (4.826269ms)
+  ✔ wrong app (5.23266ms)
+  ✔ wrong installation (4.935618ms)
+  ✔ grant drift (5.183295ms)
+  ✔ grant duplicate (3.950685ms)
+  ✔ connection missing (6.204669ms)
+  ✔ page info missing (3.608007ms)
+  ✔ next cursor missing (3.992046ms)
+  ✔ topic missing (4.862746ms)
+  ✔ unsupported version (4.442106ms)
+  ✔ unsupported format (4.78504ms)
+  ✔ URI missing (4.368852ms)
+  ✔ duplicate ID (6.532705ms)
+  ✔ URI conflict (4.379158ms)
+  ✔ page over 250 (4.194991ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (90.285507ms)
+▶ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry
+  ✔ permission (4.674459ms)
+  ✔ throttle (3.802767ms)
+  ✔ redirect (4.915414ms)
+  ✔ API fallback (6.278218ms)
+  ✔ missing API header (4.596713ms)
+  ✔ not JSON (3.952296ms)
+  ✔ encoding (5.002584ms)
+  ✔ malformed body (3.344636ms)
+  ✔ over 1 MiB (7.565797ms)
+  ✔ lost response (3.655843ms)
+  ✔ absolute timeout (30.789553ms)
+✔ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry (80.766164ms)
+✔ run deadline and expired allocation stop in flight and preserve consumed reservations (35.753286ms)
+✖ CLI reads one bounded existing token from inherited descriptor and prints only the public result (68.39763ms)
+ℹ tests 50
+ℹ suites 0
+ℹ pass 49
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 453.001662
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:224:1
+✖ CLI reads one bounded existing token from inherited descriptor and prints only the public result (68.39763ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:228:10)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

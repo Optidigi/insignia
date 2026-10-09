@@ -1,0 +1,404 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (136.267204ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (17.28372ms)
+  ✔ request template is not permission (6.838949ms)
+  ✔ no approval reference (7.543526ms)
+  ✔ wrong endpoint (6.620078ms)
+  ✔ wrong optional scopes (3.197848ms)
+  ✔ required scope expansion (6.6087ms)
+  ✔ grant expansion (5.451422ms)
+  ✔ mutations (9.168289ms)
+  ✔ wrong operation (6.529246ms)
+  ✔ too many requests (8.366794ms)
+  ✔ too long retention (1.932646ms)
+  ✔ expired grant (5.719035ms)
+  ✔ wrong private destination (3.793756ms)
+  ✔ credential absent (8.834804ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (104.467546ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (44.101454ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✖ GraphQL errors (37.329501ms)
+  ✖ missing shop (42.925173ms)
+  ✖ wrong shop (27.451009ms)
+  ✖ wrong client (26.792651ms)
+  ✖ wrong app (27.543148ms)
+  ✖ wrong installation (41.104287ms)
+  ✖ grant drift (36.542725ms)
+  ✖ grant duplicate (19.137455ms)
+  ✖ connection missing (10.4738ms)
+  ✖ page info missing (14.045181ms)
+  ✖ next cursor missing (24.181636ms)
+  ✖ topic missing (16.483935ms)
+  ✖ unsupported version (26.361759ms)
+  ✖ unsupported format (18.462293ms)
+  ✖ URI missing (13.081881ms)
+  ✖ duplicate ID (8.496128ms)
+  ✖ URI conflict (10.57439ms)
+  ✖ page over 250 (16.829741ms)
+✖ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (422.369063ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 17
+ℹ fail 19
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1041.917473
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ GraphQL errors (37.329501ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_PROVIDER_ERROR'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_PROVIDER_ERROR',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ missing shop (42.925173ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_IDENTITY_OR_GRANT_DRIFT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_IDENTITY_OR_GRANT_DRIFT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ wrong shop (27.451009ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_IDENTITY_OR_GRANT_DRIFT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_IDENTITY_OR_GRANT_DRIFT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ wrong client (26.792651ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_IDENTITY_OR_GRANT_DRIFT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_IDENTITY_OR_GRANT_DRIFT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ wrong app (27.543148ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_IDENTITY_OR_GRANT_DRIFT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_IDENTITY_OR_GRANT_DRIFT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ wrong installation (41.104287ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_IDENTITY_OR_GRANT_DRIFT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_IDENTITY_OR_GRANT_DRIFT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ grant drift (36.542725ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_IDENTITY_OR_GRANT_DRIFT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_IDENTITY_OR_GRANT_DRIFT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ grant duplicate (19.137455ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_IDENTITY_OR_GRANT_DRIFT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_IDENTITY_OR_GRANT_DRIFT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ connection missing (10.4738ms)
+  TypeError: Cannot read properties of undefined (reading 'nodes')
+      at collectInventory (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.mjs:108:47)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:155:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ page info missing (14.045181ms)
+  TypeError: Cannot read properties of undefined (reading 'hasNextPage')
+      at collectInventory (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.mjs:110:42)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:155:20)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7)
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ next cursor missing (24.181636ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INCOMPLETE_CONNECTION'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INCOMPLETE_CONNECTION',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ topic missing (16.483935ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INCOMPLETE_CONNECTION'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INCOMPLETE_CONNECTION',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ unsupported version (26.361759ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INCOMPLETE_CONNECTION'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INCOMPLETE_CONNECTION',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ unsupported format (18.462293ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INCOMPLETE_CONNECTION'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INCOMPLETE_CONNECTION',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ URI missing (13.081881ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_INCOMPLETE_CONNECTION'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_INCOMPLETE_CONNECTION',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ duplicate ID (8.496128ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_DUPLICATE_OR_CONFLICT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_DUPLICATE_OR_CONFLICT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ URI conflict (10.57439ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_DUPLICATE_OR_CONFLICT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_DUPLICATE_OR_CONFLICT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:153:56
+✖ page over 250 (16.829741ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_CEILING_EXHAUSTED'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:156:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:153:48)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_CEILING_EXHAUSTED',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

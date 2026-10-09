@@ -12,6 +12,9 @@ on:
       - 'packages/contracts/**'
       - 'packages/observability/**'
       - 'scripts/m5-002/**'
+      - 'scripts/m5-native-inventory/**'
+      - 'scripts/m5-host-inventory/**'
+      - 'scripts/m5-inventory-phase/**'
       - 'scripts/m5-024/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -29,6 +32,9 @@ on:
       - 'packages/contracts/**'
       - 'packages/observability/**'
       - 'scripts/m5-002/**'
+      - 'scripts/m5-native-inventory/**'
+      - 'scripts/m5-host-inventory/**'
+      - 'scripts/m5-inventory-phase/**'
       - 'scripts/m5-024/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -69,6 +75,8 @@ jobs:
       - run: corepack pnpm build
       - run: corepack pnpm check:style
       - run: corepack pnpm check:boundaries
+      - name: Bounded read-only inventory controls (local processes only)
+        run: corepack pnpm test:m5-inventory
       - run: corepack pnpm check:secrets
       - run: corepack pnpm check:database
       - run: corepack pnpm --filter @insignia/shopify test
