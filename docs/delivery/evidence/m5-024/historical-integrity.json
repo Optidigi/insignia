@@ -1,0 +1,16 @@
+{
+  "base": "56f504e88dd0dd77ee2c5165e3417f65dd0a5d36",
+  "checkedTrees": [
+    "docs/delivery/evidence/m5-023",
+    "packages/database/migrations",
+    "packages/database/src",
+    "packages/shopify/src",
+    "packages/application/src",
+    "docs/architecture",
+    "shopify.app.toml",
+    "extensions"
+  ],
+  "changedFiles": [],
+  "previousComposeSha256": "2cf6a39677b760570be3406e3d76280ec152ca40c4c01ba46e1ef2e4396faa4e",
+  "preserved": true
+}

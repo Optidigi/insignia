@@ -1,0 +1,7 @@
+{
+  "jsonParse": "PASS",
+  "localReportLinks": "PASS",
+  "handoffArchive": "handoff-integrity.json",
+  "authorityFiles": 15,
+  "sourceArchiveUntouched": true
+}

@@ -1,0 +1,11 @@
+✔ built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue (5435.8943ms)
+M5-024 REPRODUCED_LOCAL: original signed body, new unsigned delivery ID/trigger, generation 2 deactivated; no real provider used
+✔ captured signed body with new delivery ID and later unsigned trigger can deactivate a new generation (5433.131304ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 21643.352809

@@ -12,6 +12,7 @@ on:
       - 'packages/contracts/**'
       - 'packages/observability/**'
       - 'scripts/m5-002/**'
+      - 'scripts/m5-024/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/m3-runtime.yml'
@@ -28,6 +29,7 @@ on:
       - 'packages/contracts/**'
       - 'packages/observability/**'
       - 'scripts/m5-002/**'
+      - 'scripts/m5-024/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/m3-runtime.yml'
@@ -73,6 +75,15 @@ jobs:
       - run: corepack pnpm --filter @insignia/application test
       - run: corepack pnpm --filter @insignia/observability test
       - run: corepack pnpm --filter @insignia/worker test
+      - name: M5-024 restricted queue roles and real process crash recovery
+        run: node --test --test-concurrency=1 scripts/m5-024/queue-privileges.test.mjs scripts/m5-024/crash-recovery.test.mjs
+      - name: M5-024 offline portable worker and drift guards
+        run: |
+          bash scripts/m5-024/build-worker.sh /tmp/insignia-m5-024-worker
+          M5_WORKER_PACKAGE_ENTRY=/tmp/insignia-m5-024-worker/dist/main.js node --test scripts/m5-024/worker-guards.test.mjs scripts/m5-024/portable-process.test.mjs
+      - name: M5-024 captured signed body / altered metadata characterization
+        working-directory: apps/web
+        run: node --test test/webhook-metadata-boundary.test.mjs
       - name: Built HTTP ingress with PostgreSQL and queue handoff
         working-directory: apps/web
         run: node --test test/shopify-webhook.test.mjs

@@ -6,12 +6,14 @@ import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
+import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
 
 test('built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',
   timeout: 60_000,
 }, async () => {
   assert.ok(process.env.DATABASE_URL, 'DATABASE_URL is required for the HTTP/PostgreSQL test');
+  await installQueue(process.env.DATABASE_URL);
   const secret = 'synthetic-webhook-hmac-test-secret';
   const port = 44000 + Math.floor(Math.random() * 1000);
   const server = spawn(process.execPath, ['dist/server/entry.mjs'], {

@@ -1,3 +1,11 @@
+# Current M5-024 — offline worker/queue prerequisite qualification
+
+[Authority](prompts/M5-024-UNINSTALL-PROCESSOR-QUEUE.md), [external PR54 approval](PR-054-principal-review.md), [normal merge receipt](evidence/m5-024/pr54-merge-receipt.json):56f504e88dd0dd77ee2c5165e3417f65dd0a5d36 has approved ordered parents/tree and updated main. One successor feat/m5-024-uninstall-processor-readiness in /home/serveradmin/insignia-m5-024-worktree. Existing M3 worker and pg-boss12.35.0 only; no bootstrap or Availability redesign, historical evidence immutable.
+
+**BLOCKED_WEBHOOK_METADATA_SECURITY_BOUNDARY / M5_G7_NOT_PASSED.** [Report](M5-024-REPORT.md), [criterion matrix](M5-024-QUALIFICATION.md), [conditional plan](M5-024-CONDITIONAL-PRODUCTION-PLAN.md): production queue startup now refuses implicit schema/queue DDL; separate pinned owner installation and restricted queue/runtime rights, exact portable worker, real process crash/retry and synthetic drift controls qualify locally. The real local HTTP/worker characterization reproduced old signed-body replay with new unsigned ID/time deactivating generation2; accepted uninstall/bootstrap predicates remain unchanged for principal adjudication. Alternate processor topology is UNKNOWN. Docker build/digest/PID1/OS isolation and actual host parity are NOT_RUN. New full-source reviews and natural CI are required at the final PR head; no live readiness/G7 claim. Production host/credentials/schema/roles/queue/web/worker deployment, Shopify access, owner Search, fixture and commercial invention remain CLOSED. Return one integrated PR and stop for principal review; no successor merge/M6/M7/rollout.
+
+---
+
 # Current M5-023 — implementation complete; production prerequisite blocked
 
 **BLOCKED_UNINSTALL_PROCESSOR_READINESS / M5_G7_NOT_PASSED.** [Authority](prompts/M5-023-INSTALL-BOOTSTRAP-TRUSTED-PROVISIONING.md), [PR53 approval](PR-053R-principal-review.md), [verified normal merge](evidence/m5-023/pr53-merge-receipt.json)66983f7a959c67cea8e03e79e16761613b73a9b2. [PR54](https://github.com/Optidigi/insignia/pull/54) implements provider-authoritative concurrent/idempotent managed-install bootstrap with signed-uninstall fences and reviewed lifecycle reuse/reinstall. No manual seed or invented commercial configuration.

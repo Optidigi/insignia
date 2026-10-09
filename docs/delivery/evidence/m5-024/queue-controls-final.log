@@ -1,0 +1,29 @@
+{"level":30,"time":1791535963511,"event":"worker_started"}
+{"level":30,"time":1791535963555,"event":"webhook_enqueued","inboxId":"231b39b2-0722-455e-8e19-8ab95908bd44"}
+{"level":30,"time":1791535970579,"event":"webhook_enqueued","inboxId":"2cfdde2d-89e9-4a13-a3f1-b42597872fcc"}
+{"level":30,"time":1791535975680,"event":"worker_stopped"}
+✔ real process death before transaction and after commit recovers durable queued uninstalls once (12235.296302ms)
+{"level":30,"time":1791535981160,"event":"worker_started"}
+{"level":50,"time":1791535981181,"event":"worker_start_failed","errorClass":"QueueStartupError"}
+{"level":30,"time":1791535981181,"event":"worker_stopped"}
+{"level":30,"time":1791535981187,"event":"webhook_enqueued","inboxId":"ba03ea88-d691-4f24-8dfb-0a7f4eb80e70"}
+{"level":30,"time":1791535981198,"event":"worker_stopped"}
+{"level":30,"time":1791535981212,"event":"worker_started"}
+{"level":30,"time":1791535981234,"event":"worker_started"}
+{"level":50,"time":1791535981252,"event":"webhook_process_failed","inboxId":"ba03ea88-d691-4f24-8dfb-0a7f4eb80e70","errorClass":"ProcessingError","attempt":0}
+{"level":30,"time":1791535985243,"event":"webhook_process_ok","inboxId":"ba03ea88-d691-4f24-8dfb-0a7f4eb80e70","attempt":1}
+{"level":30,"time":1791535985348,"event":"worker_stopped"}
+{"level":30,"time":1791535985378,"event":"webhook_enqueued","inboxId":"0f9ebed4-acf9-4bd9-b51d-54252aa10d17"}
+{"level":30,"time":1791535985387,"event":"worker_started"}
+{"level":30,"time":1791535985413,"event":"webhook_process_ok","inboxId":"0f9ebed4-acf9-4bd9-b51d-54252aa10d17","attempt":0}
+{"level":30,"time":1791535985507,"event":"worker_stopped"}
+{"level":30,"time":1791535985588,"event":"worker_stopped"}
+✔ separate owner installation and restricted queue roles preserve messages across restart and deny DDL (4544.079439ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 22565.037863

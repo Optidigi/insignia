@@ -1,0 +1,10 @@
+✔ portable production entry boots in a fresh process, denies JS filesystem writes and stops cleanly (887.843312ms)
+✔ candidate guards reject source, Compose, image, endpoint and private parity drift (9355.372563ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 9448.684892

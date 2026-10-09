@@ -1,0 +1,19 @@
+{
+  "at": "2026-10-08T21:40:01.209024+00:00",
+  "pr": "https://github.com/Optidigi/insignia/pull/54",
+  "method": "NORMAL_MERGE_COMMIT",
+  "mergeCommit": "56f504e88dd0dd77ee2c5165e3417f65dd0a5d36",
+  "orderedParents": [
+    "66983f7a959c67cea8e03e79e16761613b73a9b2",
+    "c7bbca723179e908553b6f8e786a9b638e9bf6a8"
+  ],
+  "tree": "53f40875d12a48bcf4f9c799c387233b2cc5172b",
+  "updatedMain": "56f504e88dd0dd77ee2c5165e3417f65dd0a5d36",
+  "mergedAt": "2026-10-08T21:39:58Z",
+  "approvedHeadUnchanged": true,
+  "entryCi": "pr54-entry-ci.json",
+  "entryReviews": "pr54-entry-qualification-comment.json",
+  "externalApproval": "03-PR54-PRINCIPAL-VERDICT.md supplied owner package",
+  "nativeApprovalFabricated": false,
+  "protectionBypass": false
+}
