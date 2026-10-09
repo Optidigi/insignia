@@ -1,5 +1,5 @@
 {
-  "classification": "LOCAL_TOOLING_INTEGRATION_IN_PROGRESS_NATIVE_NOT_RUN",
+  "classification": "LOCAL_TOOLING_CHECKS_PASS_NATIVE_NOT_RUN",
   "checkedAt": "2026-10-09T15:03:18.521160+00:00",
   "base": "d9ba6383a6e15958419ecf8e26d9182f08078e41",
   "checks": [
@@ -68,5 +68,53 @@
   "productionChange": false,
   "nativeReads": 0,
   "uninstallSecurityAssertion": "RED_PRESERVED",
-  "remaining": "Phase caller implementation, final integrated checks/reviews/CI before credentials"
+  "remaining": "Fresh full-source reviews and natural exact-head CI before credentials",
+  "finalCheckedAt": "2026-10-09T15:31:40.353866+00:00",
+  "historicalCheckScope": "Earlier checks retain their recorded input scope; current input hashes and final integrated run are separate.",
+  "finalChecks": [
+    {
+      "command": [
+        "pnpm",
+        "check:style"
+      ],
+      "startedAt": "2026-10-09T15:30:00.200851+00:00",
+      "exitCode": 0,
+      "log": "inventory-final-style.log",
+      "sha256": "a7b62376c4620d36a6cc938b4b4cc382838c9c30ff690caf7c27fcbe5971cfd7",
+      "bytes": 13180
+    },
+    {
+      "command": [
+        "pnpm",
+        "check:secrets"
+      ],
+      "startedAt": "2026-10-09T15:30:00.205408+00:00",
+      "exitCode": 0,
+      "log": "inventory-final-secrets.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    },
+    {
+      "command": "pnpm test:m5-inventory",
+      "exitCode": 0,
+      "log": "/home/serveradmin/insignia-milestone-autonomy-handoff/inventory-integrated-final.log",
+      "sha256": "b68ebb27e4c74307f7fa0e095eb9f51d885fa7db37de477ef29b248a0039f3e8",
+      "counts": {
+        "nativeCollector": 89,
+        "hostCollector": 17,
+        "phaseMethods": 12
+      },
+      "skipped": 0,
+      "nativeRequests": 0
+    }
+  ],
+  "integrity": {
+    "checkedCurrentArtifactAndRetainedLogHashes": 86,
+    "currentDocumentLinks": "PASS",
+    "gitDiffCheck": "PASS",
+    "parentReceiptFailures": [
+      "Recursive path/hash scan treated historical intermediate document binding as current. Corrected to current artifacts/sourceInputs and preserved log bindings; historical records unchanged.",
+      "Second receipt script selected nonexistent inventory-build.receipt.json and exited before writing. Shell incorrectly continued to initial commit. No review/native gate was claimed; corrected receipt committed separately before qualification."
+    ]
+  }
 }
