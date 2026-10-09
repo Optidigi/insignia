@@ -1052,24 +1052,33 @@ def state():
  except FileNotFoundError:
   return 'ABSENT'
 limit=time.monotonic()+6
-while time.monotonic()<limit and state() not in ('Z','ABSENT'):
- time.sleep(0.02)
-terminal=state()
-# A terminal process has released its descriptors; a zombie's fd directory
-# may be inaccessible. Still require the independent pipe EPIPE observation.
-fd_retained=False if terminal in ('Z','ABSENT') else fd_exists()
+observer_started=limit-6
 pipe_closed=False
+os.set_blocking(write_fd,False)
 try:
- os.write(write_fd,b'PRIVATE_SYNTHETIC_PROBE')
-except BrokenPipeError:
- pipe_closed=True
+ while time.monotonic()<limit:
+  terminal=state()
+  if terminal in ('Z','ABSENT'):
+   try:
+    os.write(write_fd,b'p')
+   except BrokenPipeError:
+    pipe_closed=True
+    break
+   except BlockingIOError:
+    pass
+  time.sleep(0.02)
+ observer_ms=(time.monotonic()-observer_started)*1000
+ closure_within_deadline=pipe_closed and time.monotonic()<=limit
+ # A leader zombie can precede thread-group descriptor teardown. EPIPE is
+ # the required closure proof; any nonterminal process still fails the test.
+ fd_retained=not pipe_closed if terminal in ('Z','ABSENT') else fd_exists()
 finally:
  if terminal not in ('Z','ABSENT'):
   os.kill(reader,signal.SIGKILL)
  os.close(write_fd)
  if retain_zombie:
   os.waitpid(reader,0)
-print(json.dumps({'pythonVersion':sys.version,'platform':CONTROL_RUNTIME['platform'],'retainedZombie':retain_zombie,'readerState':terminal,'fdRetained':fd_retained,'pipeClosed':pipe_closed,'code':child.returncode,'stdout':stdout.decode(),'stderr':stderr.decode()}))
+print(json.dumps({'observerElapsedMs':observer_ms,'closureWithinDeadline':closure_within_deadline,'pythonVersion':sys.version,'platform':CONTROL_RUNTIME['platform'],'retainedZombie':retain_zombie,'readerState':terminal,'fdRetained':fd_retained,'pipeClosed':pipe_closed,'code':child.returncode,'stdout':stdout.decode(),'stderr':stderr.decode()}))
 `;
       const observation = await localPythonControl(
         helper,
@@ -1091,6 +1100,8 @@ print(json.dumps({'pythonVersion':sys.version,'platform':CONTROL_RUNTIME['platfo
           readerState: observation.readerState,
           fdRetained: observation.fdRetained,
           pipeClosed: observation.pipeClosed,
+          observerElapsedMs: observation.observerElapsedMs,
+          closureWithinDeadline: observation.closureWithinDeadline,
         }),
       );
       assert.ok(
@@ -1100,6 +1111,7 @@ print(json.dumps({'pythonVersion':sys.version,'platform':CONTROL_RUNTIME['platfo
       if (mode === 'retained-zombie') assert.equal(observation.readerState, 'Z');
       assert.equal(observation.fdRetained, false);
       assert.equal(observation.pipeClosed, true);
+      assert.equal(observation.closureWithinDeadline, true);
       assert.equal(observation.code, -9);
       assert.equal(observation.stdout, '');
       assert.equal(observation.stderr, '');

@@ -1,0 +1,14 @@
+▶ private reader terminates and releases its pipe by an independent deadline after CLI SIGKILL
+  ✔ normal (5216.620452ms)
+  ✔ retained-zombie (5234.816246ms)
+✔ private reader terminates and releases its pipe by an independent deadline after CLI SIGKILL (10454.957741ms)
+ℹ {"pythonVersion":"3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]","platform":{"system":"Linux","kernel":"7.0.0-31-generic","machine":"x86_64"},"retainedZombie":false,"readerState":"ABSENT","fdRetained":false,"pipeClosed":true,"observerElapsedMs":4800.399286905304,"closureWithinDeadline":true}
+ℹ {"pythonVersion":"3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]","platform":{"system":"Linux","kernel":"7.0.0-31-generic","machine":"x86_64"},"retainedZombie":true,"readerState":"Z","fdRetained":false,"pipeClosed":true,"observerElapsedMs":4795.38626386784,"closureWithinDeadline":true}
+ℹ tests 3
+ℹ suites 0
+ℹ pass 3
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10583.611124
