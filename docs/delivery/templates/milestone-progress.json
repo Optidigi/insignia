@@ -1,0 +1,18 @@
+{
+  "schema": "insignia-milestone-progress-v1",
+  "milestone": "M5",
+  "status": "IN_PROGRESS",
+  "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
+  "entryCommit": null,
+  "currentIntegratedCommit": null,
+  "currentTree": null,
+  "acceptanceRows": [],
+  "mergedPrs": [],
+  "openFindings": [],
+  "resourceGrants": [],
+  "ownerInputs": [],
+  "nextSafeAction": null,
+  "nextPrincipalCheckpoint": "M5 complete",
+  "principalAcceptance": null,
+  "nextMilestoneStarted": false
+}

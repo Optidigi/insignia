@@ -1,0 +1,20 @@
+{
+  "schema": "insignia-local-merge-v1",
+  "milestone": null,
+  "pr": null,
+  "localVerdict": "NOT_YET_REVIEWED",
+  "reviewedBase": null,
+  "reviewedHead": null,
+  "effectiveMergeBase": null,
+  "reviewedTree": null,
+  "independentReviews": [],
+  "ciRuns": [],
+  "method": "NORMAL_MERGE",
+  "actualMerge": null,
+  "orderedParents": [],
+  "integratedTree": null,
+  "remoteMain": null,
+  "ownerDelegation": "milestone-autonomy-2026-10-09",
+  "externalPrincipalPrApprovalClaimed": false,
+  "milestoneAccepted": false
+}

@@ -1,6 +1,16 @@
 # Tooling, MCP and skill acceptance register
 
+> Current execution authority: milestone autonomy, 9 October 2026. Local tooling/subagent setup and within-milestone reviews/merges are delegated by the operating model. All older capability snapshots below retain their observed dates; recheck the actual host and record the current delta rather than treating historical availability or restrictions as today's state.
+
 Version 1.1 — 24 September 2026. The PF-002 delta below is current for its three readiness outcomes; PF-001/PF-001R snapshots remain historical. See [PF-002 evidence](evidence/pf002-readiness.md) for exact commands and limits. The baseline matrix remains the acceptance criteria for later slices.
+
+## Current host delta — 9 October 2026
+
+Git/gh normal PR58 merge and ordered-parent/tree verification passed. Context exporter retained all 59 selected Git blobs, the complete 131485-byte baseline plan and pinned skill/support/license files; all eight exporter controls passed. Active instruction routes and ancestor/global/nested paths are recorded in [the audit](evidence/milestone-autonomy/instruction-context-audit.json). Node24.21.0, pnpm12.6.0 and Codex CLI0.162.0 are available. The runtime-reported parent model is GPT-6.1-sol/high. Project config enables multi-agent; native same-model independent analysis was exercised. Final reviewers use fresh enforced-read-only CLI sessions with actual runtime verification; filesystem isolation does not prove credential/network isolation. The actual review sessions and exact candidate refs will be published in the adoption PR after freeze.
+
+Repository-pinned five skills and support/license files are retained unchanged. The available host `research` skill is inspected when used; it is not claimed as a pinned project installation. Historical native/tooling results below are dated observations, not refreshed provider/host readiness. Missing current resource allocations remain unresolved; no VPS, Shopify credential/browser/provider, production provisioning or commercial authority is conferred by this delta.
+
+## Historical capability observations
 
 ## PF-002 current delta
 

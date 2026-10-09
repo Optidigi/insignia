@@ -1,0 +1,74 @@
+{
+  "bootstrap-controls": {
+    "command": [
+      "python3",
+      "/home/serveradmin/insignia-autonomy-2026-10-09-input/insignia-milestone-autonomy-2026-10-09/tools/test_prepare_local_context.py"
+    ],
+    "startedAt": "2026-10-09T14:10:18.167771+00:00",
+    "exitCode": 0,
+    "log": "bootstrap-controls.log",
+    "sha256": "0061be4ec52f38b8754d9373d74a6a5d7f3bc2df61c2c5c903b006b4bfa6cc2e",
+    "bytes": 962
+  },
+  "offline-install": {
+    "command": [
+      "corepack",
+      "pnpm",
+      "install",
+      "--offline",
+      "--frozen-lockfile",
+      "--ignore-scripts"
+    ],
+    "startedAt": "2026-10-09T14:10:18.828291+00:00",
+    "exitCode": 0,
+    "log": "offline-install.log",
+    "sha256": "4fa694da1439c631e1a929fe29325fecc9c0e866b268c82eb197b167d975aedd",
+    "bytes": 702
+  },
+  "style": {
+    "command": [
+      "corepack",
+      "pnpm",
+      "check:style"
+    ],
+    "startedAt": "2026-10-09T14:10:27.395440+00:00",
+    "exitCode": 0,
+    "log": "style.log",
+    "sha256": "375b66cd41ea959f6440c9880d8acd8ae7351004e8db37feed61c976aa125d08",
+    "bytes": 18436
+  },
+  "local-build": {
+    "command": [
+      "corepack",
+      "pnpm",
+      "build"
+    ],
+    "startedAt": "2026-10-09T14:10:28.574660+00:00",
+    "exitCode": 0,
+    "log": "local-build.log",
+    "sha256": "09afd5c481c3ef807fa2e3875c8ca581ecfa9c8ef2751e2d4f89e2fde1cb6688",
+    "bytes": 2741
+  },
+  "secrets": {
+    "command": [
+      "corepack",
+      "pnpm",
+      "check:secrets"
+    ],
+    "startedAt": "2026-10-09T14:11:22.512198+00:00",
+    "exitCode": 0,
+    "log": "secrets.log",
+    "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+    "bytes": 206
+  },
+  "scope": {
+    "productionSourceTestsMigrationsProviderInputs": "UNCHANGED",
+    "technicalPlan": "Complete document preserved except explicit delivery-governance spans",
+    "priorState": "Byte-exact archive verified",
+    "retainedSkills": "All pinned skill/support/license blobs unchanged",
+    "nativeAccess": "NOT_RUN_NOT_GRANTED",
+    "historicalTests": "PROVENANCE_REUSED_NOT_RERUN",
+    "buildReason": "Generated artifacts required by existing secret check",
+    "styleDiagnostics": "Existing warnings/information retained; exit0"
+  }
+}

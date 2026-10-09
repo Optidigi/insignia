@@ -1,0 +1,18 @@
+{
+  "schema": "insignia-resource-allocation-v1",
+  "status": "REQUEST_NOT_PERMISSION",
+  "milestone": "M5",
+  "purpose": null,
+  "exactResourceIdentities": [],
+  "allowedReads": [],
+  "allowedMutations": [],
+  "indirectEffects": [],
+  "ceilings": {},
+  "costLimit": null,
+  "privateCredentialChannel": null,
+  "cleanupAndRollback": null,
+  "delayedPrivacyOwnerAndDeadline": null,
+  "ownerApprovalReference": null,
+  "localTechnicalGate": null,
+  "noImplicitAuthority": true
+}

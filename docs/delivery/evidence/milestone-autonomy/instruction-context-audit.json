@@ -1,0 +1,37 @@
+{
+  "date": "2026-10-09",
+  "ancestorInstructionPaths": {
+    "/AGENTS.md": false,
+    "/home/AGENTS.md": false,
+    "/home/serveradmin/AGENTS.md": false,
+    "/home/serveradmin/.codex/AGENTS.md": false
+  },
+  "trackedInstructions": [
+    "AGENTS.md"
+  ],
+  "hostConfigTopLevelKeyNamesOnly": [
+    "projects",
+    "tui"
+  ],
+  "hostConfigValuesNotPublished": true,
+  "activeRoutesUpdated": [
+    "AGENTS.md",
+    ".codex/config.toml",
+    "docs/agents/issue-tracker.md",
+    "docs/delivery/templates/slice-brief.md",
+    "docs/delivery/templates/review-packet.md",
+    "docs/delivery/templates/gate-evidence.md"
+  ],
+  "projectRuntimeRequest": {
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "multiAgent": true
+  },
+  "sourceOfTruth": "docs/delivery/operating-model.md",
+  "historicalSlicePromptsAndEvidence": "BYTE_PRESERVED; owner decision prospectively supersedes delivery stops only",
+  "independentReviewRoute": "codex --ignore-user-config -s read-only -c approval_policy=never -m gpt-6.1-sol -c model_reasoning_effort=high",
+  "isolationLimit": "Filesystem read-only only, credential/connector/network isolation not claimed",
+  "contextIntegrity": "59 exact source blobs and pretransition state hash verified",
+  "bootstrapTests": "8/8 PASS; local-only package tools; source scripts unmodified",
+  "productionAccess": "NOT_USED_NOT_GRANTED"
+}
