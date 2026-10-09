@@ -1,0 +1,37 @@
+{
+  "scope": "actual SDK public interface; synthetic transport; global fetch denied; zero native provider evidence",
+  "controls": [
+    {
+      "name": "sdk-characterization-first",
+      "exitCode": 0,
+      "classification": "PASS_INITIAL_CHARACTERIZATION",
+      "sha256": "e412b57c75c1de3be287e927b6f5ffbc8e5a3a6463e93dced7f5dfcc8335a794",
+      "bytes": 220,
+      "command": "corepack pnpm --filter @insignia/shopify exec vitest run test/webhook-registration.test.ts",
+      "sourceSha256": null,
+      "sourceBindingLimit": "Initial run preceded formatting; final source bound for RED and final green"
+    },
+    {
+      "name": "sdk-preservation-red",
+      "exitCode": 1,
+      "classification": "EXPECTED_RED_SDK_RECONCILIATION_HAZARD_NOT_PRODUCTION_FIX",
+      "sha256": "83249d997b5ccbd44912100e7b4caba4f95da3900b33b7405f1f0b97def56605",
+      "bytes": 1442,
+      "command": "M5_026_REQUIRE_CALLBACK_PRESERVATION=1 corepack pnpm --filter @insignia/shopify exec vitest run test/webhook-registration.test.ts",
+      "sourceSha256": "f11de47780dd820b2f49bfd5f4b8b1de61649dce01ef519f2b2fc2419b66459e",
+      "sourceBindingLimit": null
+    },
+    {
+      "name": "sdk-characterization",
+      "exitCode": 0,
+      "classification": "PASS_FINAL_CHARACTERIZATION",
+      "sha256": "6ec90b39d3eb095d2f73278d5377caee010d9cafd84abd9dfcd899ef266c2e20",
+      "bytes": 220,
+      "command": "corepack pnpm --filter @insignia/shopify exec vitest run test/webhook-registration.test.ts",
+      "sourceSha256": "f11de47780dd820b2f49bfd5f4b8b1de61649dce01ef519f2b2fc2419b66459e",
+      "sourceBindingLimit": null
+    }
+  ],
+  "productionAuthorityTransition": "NOT_IMPLEMENTED",
+  "historicalM5_025SecurityInvariant": "RED_UNCHANGED"
+}

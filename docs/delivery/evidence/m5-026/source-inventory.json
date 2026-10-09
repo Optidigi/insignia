@@ -1,0 +1,25 @@
+{
+  "baseline": "1e0cb0279bf5595e59a52972bea621b379114713",
+  "node": "24.21.0",
+  "shopifySdk": "15.0.0",
+  "api": "2026-07",
+  "sourceHashes": {
+    "node_modules/.pnpm/@shopify+shopify-api@15.0.0/node_modules/@shopify/shopify-api/lib/webhooks/register.ts": "fffa3bfb3ce2c262bb8ad93fa722624283f07e1f4bae2ed51739b4e91b6cd6e2",
+    "node_modules/.pnpm/@shopify+shopify-api@15.0.0/node_modules/@shopify/shopify-api/lib/webhooks/registry.ts": "1597023d6cd0890fe459c868c36a08609db3f3fe3223c9a8bf52ed6d1d3eed7c",
+    "packages/shopify/src/webhook.ts": "c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f",
+    "packages/application/src/shopify/ingress.ts": "8745ed7a0900216ce7ea49b3d2af71c624b534251a1d0e64986c663e2772b10b",
+    "packages/database/src/repositories/shopify-webhooks.ts": "c0d93f382bce045ef02e04aab175a05a128181470dbb7793f193313281703533",
+    "packages/database/src/repositories/tenant.ts": "a88129c9b6fd99d7544c4d22856caba58306f960d6daa56c5b3575a15c4659a5",
+    "apps/web/src/server/admin/production.ts": "63b2125855f1db446ba53ac68f7598793fb08719feaef90e87a93992b1161a63",
+    "apps/web/src/pages/api/webhooks/shopify.ts": "c2ee6ee8b95000445ca8daa404c60116891c40373879f6208123522fb0757af5",
+    "apps/worker/src/main.ts": "7a74f42b40b738b115392dda9f1d5b77347f9a3ce54eb1755459372039e28c0a",
+    "apps/worker/src/handlers.ts": "9c1f9272760fcb7f4d41b4de98f352e34196bfc54959193e1509b9df1c256471",
+    "apps/worker/src/runtime.ts": "af7debb34c5f3ff8976e015c428da69baeaa6471d6c2f253315efb298adf2a1c",
+    "deployment/m5-019r/shopify.app.m5-019r.toml": "cd1f8bb82c14d12d7fe3ff90349eba5c5bd0acde774b4b9063d5a085bcc97111",
+    "apps/web/test/uninstall-authority.test.mjs": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4"
+  },
+  "productionSubscriptionReconciliationCallsFound": 0,
+  "searchScope": "tracked apps/packages/deployment excluding dist and node_modules; webhooks.register/addHandlers/registerWebhooks/afterAuth/webhookSubscription",
+  "remoteWriters": "UNKNOWN_NOT_INSPECTED",
+  "productionOrProviderOperations": 0
+}

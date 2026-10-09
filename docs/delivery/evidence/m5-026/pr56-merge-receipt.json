@@ -1,0 +1,21 @@
+{
+  "observedAt": "2026-10-09T11:21:05.824121+00:00",
+  "repository": "Optidigi/insignia",
+  "pr": 56,
+  "merge": "1e0cb0279bf5595e59a52972bea621b379114713",
+  "orderedParents": [
+    "f05b1cfa30d28fb346a0148db3f384d53b9c1a42",
+    "28b4a2c6633d29e513b04bbd6ced694b57722b1a"
+  ],
+  "tree": "52f66c83b0c71a50cfb913beee5a4375c7f293f0",
+  "remoteMain": "1e0cb0279bf5595e59a52972bea621b379114713",
+  "approvedOutcome": "BLOCKED_PLATFORM_UNINSTALL_AUTHORITY / M5_G7_NOT_PASSED",
+  "approvalProvenance": "Owner-relayed external principal exact-candidate approval; owner separately replied Delegate PR56 normal merge in this thread. No native approval fabricated.",
+  "mergeAttempts": 1,
+  "method": "normal merge commit; no admin/protection bypass; approved head unchanged",
+  "entryCI": "11 naturally applicable approved-head runs, all attempt1 success",
+  "freshReviewHashes": {
+    "spec": "b3c3df66058d20a11759ee0b1b4372167ba25aa7323d6c768e9719bc4dd5df6b",
+    "security": "4c7bc5a33dcd9eeed839bffbf2df24dc9f81c98b7f3a163322f3d46893e124fc"
+  }
+}

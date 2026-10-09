@@ -1,0 +1,5 @@
+{
+  "encoding": "lossless UTF-8 raw log in JSON",
+  "sha256": "6ec90b39d3eb095d2f73278d5377caee010d9cafd84abd9dfcd899ef266c2e20",
+  "rawContent": "\n RUN  v5.0.2 /home/serveradmin/insignia-m5-026-worktree/packages/shopify\n\n\n Test Files  1 passed (1)\n      Tests  6 passed (6)\n   Start at  11:25:16\n   Duration  327ms (import 65%, transform 18%, tests 14%, worker 2%)\n\n"
+}

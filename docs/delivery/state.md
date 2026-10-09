@@ -1,3 +1,11 @@
+# Current M5-026 candidate — offline qualification, native resource phase closed
+
+PR56's bounded blocker is externally APPROVED and normally merged as 1e0cb0279bf5595e59a52972bea621b379114713; [receipt](evidence/m5-026/pr56-merge-receipt.json). This accepts evidence only, not existing uninstall production safety. Current [authority](prompts/M5-026-EXACT-APP-CALLBACK-QUALIFICATION.md) authorizes offline controls/research/plan preparation. [Report](M5-026-REPORT.md), [feasibility/threat/gap matrix](M5-026-CALLBACK-AUTHORITY.md), [separate resource proposal](M5-026-RESOURCE-PLAN.md).
+
+Outcome: OFFLINE_QUALIFICATION_CANDIDATE / NATIVE_RESOURCE_AUTHORIZATION_REQUIRED; BLOCKED_PLATFORM_UNINSTALL_AUTHORITY / M5_G7_NOT_PASSED remains. Exact-app callback feasibility and gap coverage are NOT_NATIVE_QUALIFIED. The current RED assertion and historical records stay unchanged. No production or provider operation, Search or fixture. Return one PR for principal review and separate resource authorization; no successor merge or live continuation.
+
+---
+
 # Current M5-025 — offline uninstall authority investigation
 
 [Authority](prompts/M5-025-GENERATION-SAFE-UNINSTALL.md), [PR55 merge receipt](evidence/m5-025/pr55-merge-receipt.json): already-merged normal commit `f05b1cfa30d28fb346a0148db3f384d53b9c1a42` has approved ordered parents/tree and remote main. Eleven exact-head attempt1 workflows and both final actual CLEAR reviews were reverified. Fresh branch `feat/m5-025-uninstall-authority` in `/home/serveradmin/insignia-m5-025-worktree`; private local resources under `/home/serveradmin/insignia-m5-025-handoff`.

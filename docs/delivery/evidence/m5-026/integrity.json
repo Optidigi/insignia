@@ -1,0 +1,10 @@
+{
+  "baseline": "1e0cb0279bf5595e59a52972bea621b379114713",
+  "protectedTrackedFilesVerified": 2472,
+  "allMatchBaseline": true,
+  "scope": "Production src, migrations, root locks, Functions/crates/deployment, M5-024 scripts, architecture, all historical evidence/reports and M5-025 RED HTTP test",
+  "newAuthorityTransition": false,
+  "productionOperations": 0,
+  "authenticatedProviderOperations": 0,
+  "publicDocumentationFetches": "12 unauthenticated primary docs, not native evidence"
+}
