@@ -1,0 +1,134 @@
+[
+  {
+    "name": "create",
+    "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/webhookSubscriptionCreate.md",
+    "observedAt": "2026-10-09T11:24:32.828603+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/webhookSubscriptionCreate.md",
+    "sha256": "8329e358da383cac95295df7243797fa8dc876617db7823cf7bf4403fe32f404",
+    "bytes": 39520
+  },
+  {
+    "name": "subscriptions",
+    "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/queries/webhookSubscriptions.md",
+    "observedAt": "2026-10-09T11:24:32.829141+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/queries/webhookSubscriptions.md",
+    "sha256": "fbfa7e9ec1c09e1f4610e1eee9af8b02a9b7d9d1213351d5c973764f617de367",
+    "bytes": 11997
+  },
+  {
+    "name": "subscription",
+    "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/WebhookSubscription.md",
+    "observedAt": "2026-10-09T11:24:32.829608+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/objects/WebhookSubscription.md",
+    "sha256": "3527f1e72a0e1b9967ecfdbdc065c5130e802be992f0e149525c651a61f46852",
+    "bytes": 16149
+  },
+  {
+    "name": "input",
+    "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/input-objects/WebhookSubscriptionInput.md",
+    "observedAt": "2026-10-09T11:24:32.830063+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/input-objects/WebhookSubscriptionInput.md",
+    "sha256": "99759c11eef945205ff32ce03532a7d8a8da604d733d3c49b6c992dee27c6a1b",
+    "bytes": 3222
+  },
+  {
+    "name": "delete",
+    "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/webhookSubscriptionDelete.md",
+    "observedAt": "2026-10-09T11:24:33.111520+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/webhookSubscriptionDelete.md",
+    "sha256": "dd24ef54e5427a8b8bcbe79826a82849a2fecd26f928b2ea011138205639794e",
+    "bytes": 5914
+  },
+  {
+    "name": "uninstall",
+    "url": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/appUninstall.md",
+    "observedAt": "2026-10-09T11:24:33.184083+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/api/admin-graphql/2026-07/mutations/appUninstall.md",
+    "sha256": "f3e91c8519c9e97ba1ce0f20b7163170fd7eaccee1205fb494c12e659eb16de0",
+    "bytes": 2888
+  },
+  {
+    "name": "manage",
+    "url": "https://shopify.dev/docs/apps/build/webhooks/subscribe.md",
+    "observedAt": "2026-10-09T11:24:33.225781+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/apps/build/webhooks/subscribe.md",
+    "sha256": "6de324c71816f17a05d876f20a91ceaae743cec9becbb5552778b83a16c05e38",
+    "bytes": 16889
+  },
+  {
+    "name": "troubleshoot",
+    "url": "https://shopify.dev/docs/apps/build/webhooks/troubleshoot.md",
+    "observedAt": "2026-10-09T11:24:33.232499+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/apps/build/webhooks/troubleshoot.md",
+    "sha256": "a0ac8fab125157a933c0389c5fef589ff75b49d42bf0784651f2952f5f3aac45",
+    "bytes": 9092
+  },
+  {
+    "name": "privacy",
+    "url": "https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance.md",
+    "observedAt": "2026-10-09T11:24:33.315651+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/apps/build/compliance/privacy-law-compliance.md",
+    "sha256": "ea9dee13304ca6cef50f83e94bac56afde96022db9ae7a7109fe1fcfe25624ee",
+    "bytes": 8912
+  },
+  {
+    "name": "partner-events",
+    "url": "https://shopify.dev/docs/api/partner/2026-07/queries/events.md",
+    "observedAt": "2026-10-09T11:24:33.363501+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/api/partner/2026-07/queries/events.md",
+    "sha256": "eb98ab7fdc36af2fc68782d61f4fa4d9ae0966df67fa0e69d86bb958d8924599",
+    "bytes": 1856
+  },
+  {
+    "name": "partner-installed",
+    "url": "https://shopify.dev/docs/api/partner/2026-07/objects/RelationshipInstalled.md",
+    "observedAt": "2026-10-09T11:24:33.397834+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/api/partner/2026-07/objects/RelationshipInstalled.md",
+    "sha256": "7b9f8559f45bc3ccd3073dd28fd5a9f94ff925b247b9b21e890fca2c31cab522",
+    "bytes": 1305
+  },
+  {
+    "name": "partner-uninstalled",
+    "url": "https://shopify.dev/docs/api/partner/2026-07/objects/RelationshipUninstalled.md",
+    "observedAt": "2026-10-09T11:24:33.510101+00:00",
+    "authenticated": false,
+    "kind": "public developer documentation, not native provider evidence",
+    "status": 200,
+    "actualUrl": "https://shopify.dev/docs/api/partner/2026-07/objects/RelationshipUninstalled.md",
+    "sha256": "5d769439bd213948d572a99a6e1e5708145919e5f18f511c82c8810b7a8b260c",
+    "bytes": 1635
+  }
+]

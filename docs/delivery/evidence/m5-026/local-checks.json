@@ -1,0 +1,205 @@
+{
+  "scope": "offline synthetic controls; no native provider result",
+  "checks": [
+    {
+      "name": "final-secrets-serial",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T11:46:38.246340+00:00",
+      "exitCode": 0,
+      "log": "final-secrets-serial.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    },
+    {
+      "name": "final-secrets",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T11:43:38.730479+00:00",
+      "exitCode": 0,
+      "log": "final-secrets.log",
+      "sha256": "36991082d15d5dbe4ae9f0a025fd84d34852bbe2ccadca1788751faf8e91ca0e",
+      "bytes": 206
+    },
+    {
+      "name": "final-style-serial",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:style"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T11:46:37.180670+00:00",
+      "exitCode": 0,
+      "log": "final-style-serial.log",
+      "sha256": "46ec72b27bc36bdc6531a38e9272b0c5a2fa8d4ef220090607e117b9c68d8737",
+      "bytes": 13785
+    },
+    {
+      "name": "final-style",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:style"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T11:43:37.493157+00:00",
+      "exitCode": 1,
+      "log": "final-style.log",
+      "sha256": "081661cfee746ac21eee16d9ab0cf7a74523a16f56a1350b2008b145ad528fe6",
+      "bytes": 13558,
+      "classification": "RETAINED_STYLE_ERROR_DURING_ROOT_BOUNDARY_PROBES; serial repeat passes without production/test-source change; truncated diagnostics do not isolate exact error"
+    },
+    {
+      "name": "full-pg18",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:database"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T11:37:50.174807+00:00",
+      "exitCode": 0,
+      "log": "full-pg18.log",
+      "sha256": "8816491e5488e782cacbbc413f5bdfb0f7585c5a94f7c669790a3628def71c60",
+      "bytes": 514
+    },
+    {
+      "name": "full-root-isolated",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T11:42:12.489361+00:00",
+      "exitCode": 0,
+      "log": "full-root-isolated.log",
+      "sha256": "14767ded685b0f8af67df4b35aec7ec428a3ea7d86404bdbad9b3ea00a9a4f7f",
+      "bytes": 152656
+    },
+    {
+      "name": "full-root",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T11:35:23.408905+00:00",
+      "exitCode": 1,
+      "log": "full-root.log",
+      "sha256": "39b07b88f51cce2ae950a037d850c3cb69bf9363937f638e82085bf727a0ad77",
+      "bytes": 159447,
+      "classification": "RETAINED_WEBHOOK_HARNESS_TIMEOUT_DURING_OVERLAPPING_DATABASE_CHECKS_NOT_SECURITY_RED"
+    },
+    {
+      "name": "m5-025-invariant-green",
+      "command": [
+        "node",
+        "--test",
+        "apps/web/test/uninstall-authority.test.mjs"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T11:39:00.271276+00:00",
+      "exitCode": 0,
+      "classification": "PASS_UNCHANGED_BLOCKER_CHARACTERIZATION",
+      "sourceSha256": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4",
+      "log": "m5-025-invariant-green.log",
+      "bytes": 390,
+      "sha256": "a9191d80e4b8d36419e9bc475a77c57b04c33a2deeaad0e63ef226319c0996f9"
+    },
+    {
+      "name": "m5-025-invariant-red",
+      "command": [
+        "node",
+        "--test",
+        "apps/web/test/uninstall-authority.test.mjs"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST",
+        "M5_025_REQUIRE_SAFE_UNINSTALL"
+      ],
+      "startedAt": "2026-10-09T11:38:44.182695+00:00",
+      "exitCode": 1,
+      "classification": "EXPECTED_RED_UNCHANGED_PRODUCTION_INVARIANT",
+      "sourceSha256": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4",
+      "log": "m5-025-invariant-red.log",
+      "bytes": 1090,
+      "sha256": "b78b48e5c2e4c21e07bf1ea5efba8b1710403d3ac866b3e912290798e66ddc67"
+    },
+    {
+      "name": "publication-stress",
+      "command": [
+        "corepack",
+        "pnpm",
+        "test:m5-stress"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T11:39:36.137749+00:00",
+      "exitCode": 0,
+      "log": "publication-stress.log",
+      "sha256": "08d41f5245bbdb8734771ef5224310d0368934e9c58a54e985509cef58c0e3c3",
+      "bytes": 10364
+    },
+    {
+      "name": "queue-crash",
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "scripts/m5-024/queue-privileges.test.mjs",
+        "scripts/m5-024/crash-recovery.test.mjs"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "startedAt": "2026-10-09T11:39:34.925970+00:00",
+      "exitCode": 0,
+      "log": "queue-crash.log",
+      "sha256": "743456c4e5d4af1fe19c0200823f792d4703c809925f50e36d29a7d5bc0613eb",
+      "bytes": 1947
+    },
+    {
+      "name": "renderer-control",
+      "command": [
+        "corepack",
+        "pnpm",
+        "test:m5-renderer-control"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T11:39:37.291661+00:00",
+      "exitCode": 0,
+      "log": "renderer-control.log",
+      "sha256": "9e47c87c8ddfe6fddafb4d37ebff9545aaebd33187c32e4099b01eaf868eb38a",
+      "bytes": 1257
+    }
+  ],
+  "sdkControls": "sdk-controls.json contains initial/formatted RED/green SDK receipts",
+  "unsupportedOptionProbe": "NODE_OPTIONS=--test-concurrency=1 rejected by Node24 with exit9; not used to qualify a gate",
+  "testSerialization": "Full root rerun used a fresh dedicated database and no concurrent external DB checks; root script unchanged",
+  "securityInvariant": "M5-025 remains RED; green characterization does not correct it",
+  "rawLogs": "Original bytes retained privately; selected logs encoded losslessly in Git"
+}

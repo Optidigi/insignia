@@ -1,0 +1,52 @@
+{
+  "scope": "Round2 documentation/evidence correction only; implementation and historical inputs unchanged",
+  "checks": [
+    {
+      "name": "r2-style",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:style"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T12:06:51.786448+00:00",
+      "exitCode": 0,
+      "log": "r2-style.log",
+      "sha256": "a71ef51a29a21811e5e60b0ece4e7e7a1227ad207521f18fdc0bf19297aa8057",
+      "bytes": 13151
+    },
+    {
+      "name": "r2-secrets",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T12:06:52.743806+00:00",
+      "exitCode": 0,
+      "log": "r2-secrets.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    }
+  ],
+  "integrity": {
+    "baseline": "1e0cb0279bf5595e59a52972bea621b379114713",
+    "changedTrackedPaths": 32,
+    "onlyAuthorizedQualificationPaths": true,
+    "productionSourceMigrationsBuildProviderInputsHistoricalEvidenceUnchanged": true,
+    "diffWhitespacePass": true,
+    "localMarkdownTargetsVerified": 223,
+    "preExistingMissingTargets": [
+      {
+        "file": "docs/delivery/state.md",
+        "target": "PR-026-principal-review.md",
+        "classification": "PRE_EXISTING_BASELINE_LINK_NOT_CHANGED"
+      }
+    ],
+    "losslessLogWrapperHashesPass": true,
+    "classification": "DOC_EVIDENCE_ONLY_ROUND2; unchanged implementation already fully qualified locally; no native safety PASS"
+  },
+  "retainedCheckFailure": "Initial broad link check failed on pre-existing state.md PR-026-principal-review.md target. Initial shell lacked fail-fast and committed docs despite that assertion; no successful link receipt was fabricated. Corrected check explicitly retains baseline missing links and requires every new target to exist. No historical link or source changed.",
+  "fullRegression": "Previously retained full root, PG18, queue/HTTP/SDK/stress controls apply to unchanged implementation; not rerun for documentation-only correction"
+}

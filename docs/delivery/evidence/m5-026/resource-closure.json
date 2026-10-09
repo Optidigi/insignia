@@ -1,0 +1,13 @@
+{
+  "time": "2026-10-09T11:46:38.567192+00:00",
+  "ownedLocalCluster": "PostgreSQL18.6 loopback55429 STOPPED",
+  "databases": [
+    "insignia_m5_026",
+    "insignia_m5_026_root",
+    "insignia_m5_026_http_red",
+    "insignia_m5_026_http_green"
+  ],
+  "data": "retained privately, not truncated/dropped",
+  "httpAndWorkers": "test-managed terminated",
+  "nativeProviderOrProductionOperations": 0
+}

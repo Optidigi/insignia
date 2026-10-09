@@ -1,0 +1,5 @@
+{
+  "encoding": "lossless UTF-8 raw log in JSON",
+  "sha256": "a9191d80e4b8d36419e9bc475a77c57b04c33a2deeaad0e63ef226319c0996f9",
+  "rawContent": "M5-025 BLOCKER_REPRODUCED: generations2 and3 deactivated from identical signed bytes; altered IDs/time supply no independent generation authority; no provider used\n\u2714 M5-025 existing HTTP/worker cannot distinguish old replay from identical later uninstall (12945.28267ms)\n\u2139 tests 1\n\u2139 suites 0\n\u2139 pass 1\n\u2139 fail 0\n\u2139 cancelled 0\n\u2139 skipped 0\n\u2139 todo 0\n\u2139 duration_ms 18585.745127\n"
+}
