@@ -448,6 +448,52 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
         .execute();
       return rows.map((row) => row.inbox_id);
     },
+    /** Commit only transport selection, not success or send permission. Rows
+     * rotate durably even if the caller crashes before auditing their queue. */
+    async selectUninstallRecoveryIds(limit: number): Promise<string[]> {
+      if (!Number.isInteger(limit) || limit < 1 || limit > 100) throw new TypeError('Invalid uninstall recovery limit');
+      return database.transaction().execute(async (tx) => {
+        const rows = await tx
+          .selectFrom('inbox_messages as inbox')
+          .innerJoin('shopify_webhook_deliveries as delivery', 'delivery.inbox_id', 'inbox.id')
+          .innerJoin('shops as shop', 'shop.shop_domain', 'delivery.shop_domain')
+          .select('inbox.id as inbox_id')
+          .where('delivery.topic', '=', 'app/uninstalled')
+          .where('inbox.state', '=', 'pending')
+          .where('inbox.source', '=', 'shopify')
+          .where('inbox.retention_class', '=', 'shopify-webhook')
+          .where('inbox.erasure_state', '=', 'retained')
+          .where('delivery.queue_handoff_state', '!=', 'exhausted')
+          .where(sql<boolean>`isfinite(inbox.purge_after) AND inbox.purge_after > clock_timestamp()`)
+          .orderBy(sql<Date>`COALESCE(delivery.queue_recovery_selected_at, inbox.received_at)`, 'asc')
+          .orderBy('inbox.id', 'asc')
+          .limit(limit)
+          .forUpdate('inbox')
+          .skipLocked()
+          .execute();
+        const ids: string[] = [];
+        for (const row of rows) {
+          // Inbox was locked first. Read delivery AFTER that lock, in the same
+          // order as handoff/processing, so a previous statement snapshot cannot
+          // override a committed exhaustion or authorize a fresh send.
+          const state = await lockQueueById(tx, row.inbox_id);
+          if (state === null || state === 'exhausted' || !(await payloadUsable(tx, row.inbox_id))) continue;
+          const inbox = await tx
+            .selectFrom('inbox_messages')
+            .select('state')
+            .where('id', '=', row.inbox_id)
+            .executeTakeFirstOrThrow();
+          if (inbox.state !== 'pending') continue;
+          await tx
+            .updateTable('shopify_webhook_deliveries')
+            .set({ queue_recovery_selected_at: sql<Date>`clock_timestamp()` })
+            .where('inbox_id', '=', row.inbox_id)
+            .execute();
+          ids.push(row.inbox_id);
+        }
+        return ids;
+      });
+    },
     async receive(input: VerifiedShopifyDelivery): Promise<ShopifyWebhookReceipt> {
       validate(input);
       if (input.topic === 'app/uninstalled') signedUninstallShop(input.rawBody, input.shopDomain);

@@ -498,7 +498,8 @@ test('retention migration preserves legacy ambiguity, new defaults and populated
   try {
     await admin.query('CREATE DATABASE ' + name);
     await migrate('up');
-    await migrate('rollback');
+    await migrate('rollback'); // Unselected transport diagnostic44 can roll back.
+    await migrate('rollback'); // Rehearse original43 legacy reservation contract.
     pool = new Pool({ connectionString: url.href });
     expect(
       (
@@ -537,6 +538,7 @@ test('retention migration preserves legacy ambiguity, new defaults and populated
         return 'missing';
       }),
     ).toBe('missing');
+    await migrate('rollback'); // No selection occurred:44 has no progress to erase.
     await expect(migrate('rollback')).rejects.toThrow('durable webhook queue evidence prevents rollback');
     expect((await pool.query("SELECT version FROM schema_migrations WHERE version='20261009000100'")).rowCount).toBe(1);
     expect(
@@ -547,6 +549,75 @@ test('retention migration preserves legacy ambiguity, new defaults and populated
     await fresh?.close();
     await pool?.end();
     await admin.query('DROP DATABASE IF EXISTS ' + name);
+    await admin.end();
+  }
+}, 60_000);
+
+test('recovery selection migration44 preserves progress and grants only its transport column', async () => {
+  if (!connectionString) throw new Error('Owned PostgreSQL DATABASE_URL is required');
+  const admin = new Pool({ connectionString });
+  const name = `m5recovery_migration_${randomUUID().replaceAll('-', '')}`;
+  const url = new URL(connectionString);
+  url.pathname = `/${name}`;
+  const root = fileURLToPath(new URL('../../../', import.meta.url));
+  const migrate = (direction: string) =>
+    promisify(execFile)(
+      `${root}node_modules/.bin/dbmate`,
+      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, direction],
+      { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30_000 },
+    );
+  let pool: Pool | undefined;
+  let f: Awaited<ReturnType<typeof fixture>> | undefined;
+  try {
+    // This fixed NOLOGIN transport group is local fixture provisioning; production
+    // installer/role ownership remains separate from schema qualification.
+    await admin.query(`DO $$ BEGIN IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='insignia_queue_consume')
+      THEN CREATE ROLE insignia_queue_consume NOLOGIN; END IF; END $$`);
+    await admin.query(`CREATE DATABASE ${name}`);
+    await migrate('up');
+    await migrate('rollback');
+    await migrate('up');
+    pool = new Pool({ connectionString: url.href });
+    expect(
+      (
+        await pool.query(`SELECT has_column_privilege('insignia_queue_consume','shopify_webhook_deliveries','queue_recovery_selected_at','UPDATE') AS selected,
+      has_column_privilege('insignia_queue_consume','shopify_webhook_deliveries','delivery_id','UPDATE') AS identity`)
+      ).rows[0],
+    ).toEqual({ selected: true, identity: false });
+    f = await fixture(url.href);
+    expect(await f.core.webhooks.pendingUninstallIds(100)).toContain(f.receipt.id);
+    expect(
+      (
+        await pool.query('SELECT queue_recovery_selected_at FROM shopify_webhook_deliveries WHERE inbox_id=$1', [
+          f.receipt.id,
+        ])
+      ).rows[0].queue_recovery_selected_at,
+    ).toBeNull();
+    const before = (
+      await pool.query('SELECT payload,purge_after,state,attempts FROM inbox_messages WHERE id=$1', [f.receipt.id])
+    ).rows[0];
+    await expect(f.core.webhooks.selectUninstallRecoveryIds(0)).rejects.toThrow('Invalid uninstall recovery limit');
+    await expect(f.core.webhooks.selectUninstallRecoveryIds(101)).rejects.toThrow('Invalid uninstall recovery limit');
+    expect(await f.core.webhooks.selectUninstallRecoveryIds(1)).toEqual([f.receipt.id]);
+    expect(
+      (
+        await pool.query(
+          'SELECT queue_handoff_state,isfinite(queue_recovery_selected_at) AS finite FROM shopify_webhook_deliveries WHERE inbox_id=$1',
+          [f.receipt.id],
+        )
+      ).rows[0],
+    ).toEqual({ queue_handoff_state: 'unconfirmed', finite: true });
+    expect(
+      (await pool.query('SELECT payload,purge_after,state,attempts FROM inbox_messages WHERE id=$1', [f.receipt.id]))
+        .rows[0],
+    ).toEqual(before);
+    await expect(migrate('rollback')).rejects.toThrow('durable webhook recovery selection evidence prevents rollback');
+    expect((await pool.query("SELECT version FROM schema_migrations WHERE version='20261009000200'")).rowCount).toBe(1);
+    expect((await f.core.tenants.getCurrentAdminInstallation(f.shopId))?.active).toBe(true);
+  } finally {
+    await f?.close();
+    await pool?.end();
+    await admin.query(`DROP DATABASE IF EXISTS ${name}`);
     await admin.end();
   }
 }, 60_000);

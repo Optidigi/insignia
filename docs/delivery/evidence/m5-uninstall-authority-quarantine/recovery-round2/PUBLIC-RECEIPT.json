@@ -1,0 +1,705 @@
+{
+  "recordKind": "PUBLIC_ELIGIBLE_OFFLINE_LOCAL_R2_QUALIFICATION_RECEIPT",
+  "baseCommit": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "rejectedR1Head": "72a83a716cadb3fc351528f0468b3b29c422d02b",
+  "rejectedR1Tree": "91d2d544670fa7724abd38368a9db12bbeee8848",
+  "r1Disposition": "REJECTED_SECURITY_CHANGES_REQUIRED_DESPITE_11_CI_SUCCESS",
+  "originalR1BindingSha256": "613348062c717e49f9ccf77c37629aa8f95a908a856f2b5fec078092ff07f12c",
+  "originalR1ReviewSha256": "76fa6fe025abdaee2ca7dc39885599eea3305c25fe0253b3c858f1e66612da9e",
+  "preservedOriginalPublicPacketHashes": {
+    "PUBLIC-RECEIPT.json": "ec75122056c96bdc51ec33826a2127a88b7bd5387de94bae52e343c0d8def79b",
+    "PUBLIC-SUMMARY.md": "263840f716dc14643b7bd7b547c68de77dc16ef256a91948649227bf6b9b8095"
+  },
+  "writerChangedFileHashes": {
+    "apps/web/src/pages/api/webhooks/shopify.ts": "c67e4a76989976c2fa99749ad3111793f12af0b20d219d07222028e8a0e8b3bc",
+    "apps/web/test/shopify-webhook.test.mjs": "3e33779b8279482b051a4058c50a0b22df280b9c79d2cd3019c5b416eed68773",
+    "apps/web/test/uninstall-authority.test.mjs": "1ed0d4ebd53d2294aaa3bc3bc58e1bef565c542867fcc985e118175d41728358",
+    "apps/web/test/webhook-metadata-boundary.test.mjs": "3327bea8b860df53012d01d6ca743b9f934304dac6dacf12dca034fde1ad7155",
+    "apps/worker/src/handlers.ts": "a11e6f27b4ee4078b944b3ad2941867f0783af56746037b4f594efe1b7e57487",
+    "apps/worker/src/runtime.ts": "6d15e8fe7b5d0a783233c12ee9888e060e17c7a5b126bbd0d3c90bee8c135a80",
+    "apps/worker/test/postgres.test.mjs": "55cf8a8e4a4bf860dab22ef63dee8e01cb3ec908f8bd35b7acc1370fa27b5b3c",
+    "apps/worker/test/webhook-retention.test.mjs": "1195657f558b32d9471b947b3d4258aa25da55697b8cf207a725fd4e0359ce51",
+    "packages/database/migrations/20261009000200_m5_webhook_recovery_selection.sql": "78720a19ca2c24898ca5b611ac5e3dcab6c75854bd19cf70a86c28e516c190dc",
+    "packages/database/src/client/database.ts": "6dcb3965b61c34775a78fa9d9447a6dcb8e58caa1c9fe642c0fed850bd58db65",
+    "packages/database/src/durable-core.ts": "218ec3d70a15653bcce30fb422eabb49bb3fa2d7fed6e182de631ff30f51f086",
+    "packages/database/src/repositories/shopify-webhooks.ts": "ce5ae5967590e7c11677c53f5d76dfeab47341fa747e7e2d2b4157db59c720a5",
+    "packages/database/src/repositories/tenant.ts": "74865ace55f91cee464886ca905744f5e7e0773363f99e739460f23a4543d511",
+    "packages/database/test/managed-installation.test.ts": "4570211aef75b70cb4debce2f6f554255df42add86924514058455ba75383f5e",
+    "packages/database/test/runtime.test.ts": "1457c58d1f667b081231697d265522aab3c9dc2e1f5651907e5aca63761b4df3",
+    "packages/database/test/uninstall-authority.test.ts": "eb170f85ca99c2b5b695052d2f927ddd6987ba0e9daead44affd30ef52bdc6b0",
+    "packages/database/test/webhook-retention.test.ts": "3d1c3e0664bf73fce42f1073b4bac8ff6904fc7eb48519352afd5e814392b6d8",
+    "scripts/m5-024/crash-child.mjs": "bceed44b37d6985d0c22cec623e3947124cee84dbfe1b16c094cd9d2f33060ed",
+    "scripts/m5-024/crash-recovery.test.mjs": "0bfc492bca4200a7049bf7da85efe4e5841cba32ed6c5befd120e67768d76707",
+    "scripts/m5-024/queue-privileges.test.mjs": "f85901db19afd03a65c951959c833ce25188c6222a05eb1436ed4d9a7a9b2144",
+    "scripts/m5-024/queue-roles.sql": "588170c78e34cf35dd01acfd07a8127c123e33002495a04640b690d0f4c16a34"
+  },
+  "writerSourceBindingsSha256": "76fd0b527ce37981c8a770061729aa10e46eeaffcf39037f7efec377d5f9acc0",
+  "r2FrozenEightSourceManifestSha256": "4506dff28be2b352f50b763c7ed074d95319196345d31a681318e60155ca0b52",
+  "migration": {
+    "ordinal": 44,
+    "column": "queue_recovery_selected_at",
+    "meaning": "Finite nullable DB-clock selected-at transport scheduling diagnostic; not ACK, success, send permission, installation-generation authority or retention basis.",
+    "emptyDownUp": "PASS",
+    "populatedDown": "REJECTED_PRESERVES_SELECTION_EVIDENCE",
+    "beforeExistingRoleMigrationGrantAndAfterRoleInstaller": "PASS",
+    "enqueueUpdateDenied": "PASS"
+  },
+  "runs": [
+    {
+      "name": "00-initdb",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": null,
+      "privateOriginalLogSha256": "a60d3f0851ae905c4f6e1ccf686b5f94a901d7f7adfd6ea8ddc66f24d92b3182",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "01-start",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": null,
+      "privateOriginalLogSha256": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "04-original-starvation-red",
+      "exitCode": 1,
+      "outcome": "RETAINED_FAILURE",
+      "elapsedSeconds": 5.479,
+      "privateOriginalLogSha256": "2b4c9aebdb2c314c061f924db45f239de6a89225e896a3d6e4d741d9feb3f375",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": "Original unmodified R1 source starvation RED:101 committed without job remained unselected behind100 completed quarantine jobs. Owned fixture dropped."
+    },
+    {
+      "name": "05-public-recovery-starvation-red",
+      "exitCode": 1,
+      "outcome": "RETAINED_FAILURE",
+      "elapsedSeconds": 6.683,
+      "privateOriginalLogSha256": "5d8edc361aca4046211ce0ac97f237e65c36b0021cd32c0870ebed5e8f61d27d",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          0
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": "New public recovery regression against original production source RED after two bounded cycles and independent restart: target job count0 versus1."
+    },
+    {
+      "name": "06-recovery-fairness-build",
+      "exitCode": 1,
+      "outcome": "RETAINED_FAILURE",
+      "elapsedSeconds": 7.287,
+      "privateOriginalLogSha256": "e0a38cc0737cc294e28905df67d4a19dad6390f1d1da5769a8192c87f32341f9",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": "TypeScript2322 rejected Generated<NullableTimestamp>; existing NullableTimestamp corrected before build07."
+    },
+    {
+      "name": "07-recovery-fairness-build",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 18.165,
+      "privateOriginalLogSha256": "5b7c19544e04979de7e6eec208abed551890eef25525f60159ee99af0a754609",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "08-public-recovery-starvation-green",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 6.585,
+      "privateOriginalLogSha256": "cbd6324197b7660db991311133ba40216946e025a710821bf619192e50e8a69d",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          1
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "09-owned-main-migrate",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 0.365,
+      "privateOriginalLogSha256": "556425ff9122d33058ef7ade74bb7d8c5364d66870ec298a00f9101561c9d4cc",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "10-worker-recovery-controls",
+      "exitCode": 1,
+      "outcome": "RETAINED_FAILURE",
+      "elapsedSeconds": 0.114,
+      "privateOriginalLogSha256": "5f6f6a92f9927ca3a960c8c1ea8a996a01ce5845acae3de10680a8e5965bba1e",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          0
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": "New test SQL literal JavaScript parse failure; fixture quoting corrected before12."
+    },
+    {
+      "name": "12-worker-recovery-controls",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 18.016,
+      "privateOriginalLogSha256": "7af8725f40ec0a61e6df937db6d66591b964aa177fcfbed177b723deff8c4f25",
+      "testCountsAsLogged": {
+        "tests": [
+          12
+        ],
+        "pass": [
+          12
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "14-worker-recovery-grant-controls",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 17.515,
+      "privateOriginalLogSha256": "a8b15c24c7c10289af487326c4614dc86e13946943bc6684bab3695614c95435",
+      "testCountsAsLogged": {
+        "tests": [
+          12
+        ],
+        "pass": [
+          12
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "17-migration-and-reservation-controls",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 3.077,
+      "privateOriginalLogSha256": "1e27ce49d4a959f786fa2e9c3459d20b6f99d24cef5ab6a4ceff446ec691b4e9",
+      "testCountsAsLogged": {
+        "vitestPassed": [
+          2
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "19-final-worker-recovery-controls",
+      "exitCode": 1,
+      "outcome": "RETAINED_FAILURE",
+      "elapsedSeconds": 19.18,
+      "privateOriginalLogSha256": "c5ae3da47c9846b06236aa09713f9c366271211e707646d711f896c36f66f367",
+      "testCountsAsLogged": {
+        "tests": [
+          12
+        ],
+        "pass": [
+          11
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": "Concurrent control incorrectly watched routing SELECT rather than actual blocked delivery UPDATE. Probe corrected, production unchanged."
+    },
+    {
+      "name": "21-final-worker-recovery-controls",
+      "exitCode": 1,
+      "outcome": "RETAINED_FAILURE",
+      "elapsedSeconds": 16.008,
+      "privateOriginalLogSha256": "7e071b276043caa208d2247b89a3291007d87b566b608e3be3c18382c4804a94",
+      "testCountsAsLogged": {
+        "tests": [
+          12
+        ],
+        "pass": [
+          11
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": "Concurrent control attempted restart of same permanently stopped runtime. Fixture now constructs new Boss/runtime, production unchanged."
+    },
+    {
+      "name": "23-final-worker-recovery-controls",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 16.113,
+      "privateOriginalLogSha256": "ab1bea34a082dc3418906bfa3219b676af6bf770ccdf60c33e72a212a7b6924c",
+      "testCountsAsLogged": {
+        "tests": [
+          12
+        ],
+        "pass": [
+          12
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "24-final-full-root-check",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 216.052,
+      "privateOriginalLogSha256": "0d75d17450d912e3c297e2cd1f40b3b4c9c5bd6b2a8b7bb3e5329d6361ceb9f8",
+      "testCountsAsLogged": {
+        "tests": [
+          9,
+          4,
+          31,
+          6,
+          136,
+          49,
+          46,
+          35,
+          90,
+          73,
+          25,
+          98,
+          1,
+          18,
+          88,
+          1
+        ],
+        "pass": [
+          9,
+          4,
+          31,
+          6,
+          136,
+          49,
+          46,
+          35,
+          90,
+          73,
+          25,
+          98,
+          1,
+          18,
+          88,
+          1
+        ],
+        "fail": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cancelled": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "skipped": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "vitestPassed": [
+          26,
+          6,
+          9,
+          202,
+          347
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "25-final-isolated-database-controls",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 18.255,
+      "privateOriginalLogSha256": "994f8e414d86b4a7dd2278a2951ed9d8e7e644e341b4beaa5cca52c6981e2e17",
+      "testCountsAsLogged": {
+        "vitestPassed": [
+          222
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "26-final-inherited-ledger-baseline",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 0.115,
+      "privateOriginalLogSha256": "56a34d7d9b9a24e065cf0944d067246acd57b04b8dfba9bc8d3a279473dda7f5",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "27-final-queue-and-sigkill-controls",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 21.886,
+      "privateOriginalLogSha256": "ba394b99bebdb11cb08655481d557a872653ed4aa6472e121a36aee5a758c912",
+      "testCountsAsLogged": {
+        "tests": [
+          2
+        ],
+        "pass": [
+          2
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "28-final-publication-stress",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 93.107,
+      "privateOriginalLogSha256": "bc762a16536b43ea7a353303708ce5f83e3f0ad42600fb33eedea944a2569f1e",
+      "testCountsAsLogged": {
+        "tests": [
+          100
+        ],
+        "pass": [
+          100
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "29-final-renderer-control",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 6.702,
+      "privateOriginalLogSha256": "ca35f2b1c2a0ae8504ef33f88c0899f595da5c93b3e2888db66d4b29b286c49b",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          0
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "30-current-build-bindings",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 0.064,
+      "privateOriginalLogSha256": "fb4a878274f40bfcbeea9039f29b10b1d64dacc797946ab5c18ec0cbe0676d13",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "31-actual-portable-graph-bindings",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 0.115,
+      "privateOriginalLogSha256": "ca73e614119273bd5d0edc0739bc0063cf368a1b3eb4ee2c6167c764d897c76d",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "31-new-offline-portable-build",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 21.87,
+      "privateOriginalLogSha256": "5817e65eb3779f288bb849dfc40c6102a4087cf13dcb654a55e59e9c0d5324f8",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "31-postportable-build-bindings",
+      "exitCode": 1,
+      "outcome": "RETAINED_FAILURE",
+      "elapsedSeconds": 0.165,
+      "privateOriginalLogSha256": "583b42f8bb676eb8a3d5fa7ea556787344f0365f61f80c191e44b8d8345ff346",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": "Private binding helper wrongly enumerated all repository packages rather than actual portable dependency graph; absent cart-authorization corrected to existing packaging graph, no production/package byte changes."
+    },
+    {
+      "name": "32-new-portable-controls",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 13.746,
+      "privateOriginalLogSha256": "c96c3aac2990f7d0d9bc027e7e72b63c2fd300f4c16166a118d0335ab479e6d9",
+      "testCountsAsLogged": {
+        "tests": [
+          2
+        ],
+        "pass": [
+          2
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "33-final-current-entry-http-controls",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 38.83,
+      "privateOriginalLogSha256": "069f0cfea2d29dfb5182b6601dae1839f568b60aaeccaa221dba10602167a0ec",
+      "testCountsAsLogged": {
+        "tests": [
+          3
+        ],
+        "pass": [
+          3
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "34-final-inherited-ledger-unchanged",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 0.114,
+      "privateOriginalLogSha256": "7f91fc367cb13b093a0ce4e33b1d3b4cfe659ac8376dedc1a230197d2895ab77",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "35-owned-resource-preclosure",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": 0.114,
+      "privateOriginalLogSha256": "fcb435308574f17b1b58d0f2c1478aa4825c3616a6fd0260736bd52c1cbd2f30",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "36-pg-status",
+      "exitCode": 3,
+      "outcome": "EXPECTED_CLOSED_STATUS",
+      "elapsedSeconds": null,
+      "privateOriginalLogSha256": "e138ccb54fdb08283c6eb21159c53207bbbbf07077246e2804e18d22efe6e250",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "36-pg-stop",
+      "exitCode": 0,
+      "outcome": "SUCCESS",
+      "elapsedSeconds": null,
+      "privateOriginalLogSha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    }
+  ],
+  "compiledArtifacts": {
+    "rootBeforeSha256": "41159e127744810b62f657265ef011d782945c5015bf4ac4569e43f502076963",
+    "rootFinalSha256": "fa2d19f801d8cb6d84f9a7c04875f63ff908b4e390f6cccced95254311cd9dff",
+    "portableEqualityReceiptSha256": "7ec0d8e8d5f8287e0e04906c50f058a439c693b34170858330b312f2faca75f9",
+    "rootBuiltFiles": 220,
+    "rootUnchangedFiles": 219,
+    "rootChangedFiles": [
+      "apps/web/dist/server/entry.mjs"
+    ],
+    "rootWorkerWorkspaceEquality": true,
+    "portablePackages": 9,
+    "portableCompiledFiles": 176,
+    "finalWebEntrySha256": "7a74c2cad800f2cad4cf88968820f589df90b8a20192c31dd04bc41c924ba249",
+    "finalWorkerHandlersSha256": "fd060109677eb6d8cab117f7b3b1ca86bfbed19d9ec887c0fac280278e2e2082",
+    "finalWebhookRepositorySha256": "e3210407ffc500d71efc2f373562e26a185256f3a8615ddd1930235d71a273de",
+    "portableEntrySha256": "0a3c8839b286874a07211a222326b86449043198cfbb921a85563bc2422b044e",
+    "portableInventorySha256": "1201d01a37a3e41405a367e6020791d39c3d35a0028742a2fcfea157385ad416"
+  },
+  "inheritedLedger": {
+    "beforeLogSha256": "56a34d7d9b9a24e065cf0944d067246acd57b04b8dfba9bc8d3a279473dda7f5",
+    "unchangedAfterLogSha256": "7f91fc367cb13b093a0ce4e33b1d3b4cfe659ac8376dedc1a230197d2895ab77",
+    "projectionSha256": "a2fb490f7c9fe7f849a1d86baf8288e8ab9d4174e3b837ef50d8f81dec906d83"
+  },
+  "closure": {
+    "recordKind": "ACTUAL_OWNED_LOCAL_RESOURCE_CLOSURE",
+    "closedAtUtc": "2026-10-09T23:04:16.426655+00:00",
+    "port": 55458,
+    "ownedDisposableDatabases": 0,
+    "otherClientSessions": 0,
+    "stopExitCode": 0,
+    "statusExitCode": 3,
+    "postmasterPidFileAbsent": true,
+    "knownOwnedPostmasterProcessAbsent": true,
+    "tcpConnectResult": 111,
+    "tcpListenerAbsent": true,
+    "reuseAddrBindListenSucceeded": true,
+    "plainBindWithoutReuseAddrNotClaimed": true,
+    "clusterReopened": false,
+    "testsAfterClosure": false
+  },
+  "closureLogHashes": {
+    "35-owned-resource-preclosure.log": "fcb435308574f17b1b58d0f2c1478aa4825c3616a6fd0260736bd52c1cbd2f30",
+    "36-pg-stop.log": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "36-pg-status.log": "e138ccb54fdb08283c6eb21159c53207bbbbf07077246e2804e18d22efe6e250"
+  },
+  "limits": {
+    "globalConcurrentDisjointnessClaimed": false,
+    "concurrency": "SKIP LOCKED excludes actually held inbox locks. READ COMMITTED joined ordering can retain older sort snapshots; partially overlapping calls after release may repeat an audit. Subsequent persisted selection rotates; singleton/reservation guards remain.",
+    "crash": "Selection commits before external audit. Crash after selection delays this row behind older unchecked rows; selection grants no send permission and is not successful handling.",
+    "queueUnavailable": "Bounded selections rotate diagnostics while queue unavailable; no false ACK, exhaustion, privacy fulfillment or business success.",
+    "build": "Only worker/workspace exact byte equality is asserted. Any generated web-entry hash change is recorded; final HTTP exercises actual post-package entry, no reconstructed exact prior-key difference.",
+    "providerShopifyVpsSsh": false,
+    "deployment": false,
+    "commitPush": false,
+    "credentialSchemaNewAuthorityNewRetentionBasis": false,
+    "genuineUninstallPrivacyFulfilled": false,
+    "nativeInstallationGenerationQualified": false,
+    "M5G7Acceptance": "BLOCKED",
+    "localNetwork": "Isolated loopback PG/HTTP only; offline package succeeds with existing policy metadata.",
+    "historicProcessedRows": "Unchanged; unqualified pending rows stay pending and active generation preserved.",
+    "retention": "Privacy/uninstall/unsupported overdue obligations remain explicit blockers; no indefinite retention permission.",
+    "bootstrap": "Existing typed conservative fence remains; unsigned routing can deny availability."
+  }
+}

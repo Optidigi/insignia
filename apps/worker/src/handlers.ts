@@ -57,7 +57,7 @@ export function createDurableWorkerHandlers(
 
 /** Bounded queue handoff recovery preserves receipts; it cannot supply uninstall authority. */
 export async function recoverPendingUninstalls(core: DurableCore, queue: PgBossRuntime): Promise<number> {
-  const ids = await core.webhooks.pendingUninstallIds(100);
+  const ids = await core.webhooks.selectUninstallRecoveryIds(100);
   let confirmed = 0;
   for (const id of ids) {
     try {

@@ -241,6 +241,7 @@ export interface DurableCore {
     eraseExpiredPayloads(limit: number): Promise<WebhookPayloadErasure>;
     unresolvedBacklogCount(): Promise<number>;
     pendingUninstallIds(limit: number): Promise<string[]>;
+    selectUninstallRecoveryIds(limit: number): Promise<string[]>;
     receive(input: VerifiedShopifyDelivery): Promise<ShopifyWebhookReceipt>;
     getById(id: string): Promise<ShopifyWebhookState | null>;
     processUninstall(

@@ -125,14 +125,14 @@
     "Any later provisioning/deployment/mutation requires exact separate owner resource envelope",
     "Canonical web policy/features absent; legitimate owner-backed configuration or separately approved bounded development eligibility required; no commercial terms invented"
   ],
-  "nextSafeAction": "Freeze the tested quarantine, obtain fresh full-source reviews/exact-head CI and normally integrate; then execute remaining safe work and obtain substantive native/provider/commercial allocation. No VPS read-window renewal.",
+  "nextSafeAction": "Complete real fair-recovery and migration/role controls, full regressions, two fresh full-source CLEAR reviews and natural exact-head attempt1CI before normal integration; no VPS read-window renewal.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
     "slice": "Generic uninstall authority quarantine",
-    "status": "LOCAL_CONTROLS_PASS_INDEPENDENT_REVIEW_CI_PENDING",
+    "status": "R2_SOURCE_BUILD_QUALIFIED_FROZEN_NEW_REVIEWS_CI_PENDING",
     "purpose": "Pending generic HMAC-body receipts cannot deactivate any installation from unsigned header chronology or historical derived binding",
     "nativeAuthority": "NONE; source-only; no production changes"
   },
@@ -140,7 +140,33 @@
     "scope": "Generic uninstall authority quarantine; no independently qualified generation authority or production rollout",
     "base": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
     "nativeResult": "Reviewed artifacts matched; commercial policy/features absent; process supervision incomplete; no provider reads or production changes",
-    "next": "Fresh full-source CLEAR/CLEAR and natural exact-head attempt1CI before delegated normal merge; native full M5 remains blocked"
+    "next": "Two NEW full-source CLEAR reviews and natural exact-head attempt1CI before delegated normal merge; final acceptance/merge receipts in PR64 discussion. M5 native authority/privacy/commercial/G7 remain blocked.",
+    "rejectedRound1": {
+      "head": "72a83a716cadb3fc351528f0468b3b29c422d02b",
+      "tree": "91d2d544670fa7724abd38368a9db12bbeee8848",
+      "reviews": "SPEC_CLEAR_SECURITY_CHANGES_REQUIRED",
+      "naturalExactHeadAttempt1Successes": 11,
+      "finding": "100 completed pending quarantines starve later unqueued receipts",
+      "evidence": "evidence/m5-uninstall-authority-quarantine/reviews/r1/runtime.json"
+    },
+    "correctionScope": "One durable transport-selection timestamp/migration/type/least-privilege column grant; no generation authority or production application",
+    "pr": 64,
+    "url": "https://github.com/Optidigi/insignia/pull/64",
+    "refEvidence": "Precommit content hashes in candidate manifest; later exact-head reviews/CI/normal merge recorded in PR discussion and durable local receipt, avoiding a self-referential commit hash.",
+    "localQualification": {
+      "root": "PASS216.052s",
+      "postgres": "222/222",
+      "worker": "31/31",
+      "recovery": "12/12",
+      "queueSigkill": "2/2",
+      "publicationStress": "100/100",
+      "renderer": "EXPECTED_NEGATIVE",
+      "portable": "2/2",
+      "currentEntryHttp": "3/3",
+      "ownedPort55458": "CLOSED",
+      "evidence": "evidence/m5-uninstall-authority-quarantine/recovery-round2/PUBLIC-RECEIPT.json",
+      "evidenceClarification": "evidence/m5-uninstall-authority-quarantine/recovery-round2/PUBLIC-INTERPRETATION.md"
+    }
   },
   "boundedInventoryTooling": {
     "pr": 60,
@@ -152,5 +178,6 @@
     "existingSupportedAdminCredential": "UNAVAILABLE",
     "milestoneAcceptance": false,
     "ownerVpsPermission": "PERMANENT_READ_ONLY"
-  }
+  },
+  "integratedRefsObservedBeforeCandidateAt": "2026-10-09T23:04:41.923551+00:00"
 }
