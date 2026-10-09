@@ -1,0 +1,22 @@
+{
+  "classification": "VERIFIED_DELEGATED_NORMAL_MERGE_NOT_MILESTONE_ACCEPTANCE",
+  "pr": "https://github.com/Optidigi/insignia/pull/63",
+  "reviewedBase": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
+  "effectiveMergeBase": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
+  "reviewedHead": "fd5de86d6862d971fcda1a476eacee497184826c",
+  "reviewedTree": "a781aed9ee9379207ab2bb822b1b0287a57bfa9e",
+  "merge": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "orderedParents": [
+    "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
+    "fd5de86d6862d971fcda1a476eacee497184826c"
+  ],
+  "mergeTree": "a781aed9ee9379207ab2bb822b1b0287a57bfa9e",
+  "remoteMain": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "mergedAt": "2026-10-09T21:29:05Z",
+  "verifiedAt": "2026-10-09T21:29:22.174603+00:00",
+  "qualificationReceiptSha256": "0075d3698dadcfd734d1e3b1a9ac146cc34f25eeebc91259b1cfa99df121febf",
+  "reviews": "CLEAR/CLEAR",
+  "exactHeadAttempt1Successes": 11,
+  "nativeAccessOnRevisedSource": 0,
+  "m5G7Passed": false
+}

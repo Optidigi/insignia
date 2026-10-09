@@ -1,0 +1,30 @@
+{
+  "classification": "READ_ONLY_METADATA_NOT_GLOBAL_PROCESSOR_PROOF",
+  "receipt": {
+    "at": "2026-10-09T21:47:05.322960+00:00",
+    "authorityRef": "/home/serveradmin/insignia-milestone-autonomy-handoff/owner-permanent-vps-readonly-20261009.json",
+    "closedAt": "2026-10-09T21:47:06.405147+00:00",
+    "exitCode": 0,
+    "fixedCommandSha256": "5bcb94ffb1fa6dbbb6d357cfe4ad0eebf2e7943af624a9633cfe449a9f7b90b9",
+    "hostWrites": 0,
+    "productionSql": 0,
+    "providerRequests": 0,
+    "serverRestrictionProven": false,
+    "sshInvocations": 1,
+    "status": "CLOSED_CAPTURED",
+    "stderrBytes": 57,
+    "stdoutBytes": 3070,
+    "stdoutSha256": "fe28040bc76e839475303412061bd0b6bb072d3d32478ac991519952c545b95c"
+  },
+  "summary": {
+    "psRows": 473,
+    "selectedJsTitleOrSystemdRows": 16,
+    "exactExecutableResolvedCount": 1,
+    "raceOrAccessUnavailableCount": 15,
+    "unknownCause": "Access_or_race_not_independently_discriminated",
+    "globalAbsenceProven": false
+  },
+  "retentionDeleteBy": "2026-10-15T21:46:43.298097+00:00",
+  "noArgsEnvMemoryOrUnitExecutionPropertiesRead": true,
+  "authorityRef": "owner-permanent-vps-readonly.json"
+}

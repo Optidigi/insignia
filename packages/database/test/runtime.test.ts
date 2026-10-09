@@ -203,9 +203,9 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
         core.tenants.createShop(tx, { shopId, shopDomain: domain, shopifyShopId: signedShopId(domain) }),
       );
       expect(await core.webhooks.pendingUninstallIds(100)).toContain(received.id);
-      expect((await core.webhooks.getById(received.id))?.resolution).toBe('stale');
-      expect(await core.webhooks.processUninstall(received.id)).toBe('stale');
-      expect(await core.webhooks.pendingUninstallIds(100)).not.toContain(received.id);
+      expect((await core.webhooks.getById(received.id))?.resolution).toBe('unqualified');
+      expect(await core.webhooks.processUninstall(received.id)).toBe('unqualified');
+      expect(await core.webhooks.pendingUninstallIds(100)).toContain(received.id);
       expect(
         (
           await database
@@ -263,7 +263,7 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
     }
   });
 
-  it('keeps an old uninstall stale after reinstall, including a delayed first delivery', async () => {
+  it('keeps an old uninstall unqualified after reinstall, including a delayed first delivery', async () => {
     const database = await openTestDatabase();
     const core = createDurableCore(new Pool({ connectionString }), { credentialKeys: keys });
     const shopId = randomUUID();
@@ -274,13 +274,13 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
       );
       const old = delivery(domain, randomUUID(), 'app/uninstalled');
       const bound = await core.webhooks.receive(old);
-      expect(bound.installationGeneration).toBe('1');
+      expect(bound.installationGeneration).toBeNull();
       expect(await core.transactions.run((tx) => core.tenants.startInstallation(tx, shopId))).toBe('2');
-      expect(await core.webhooks.processUninstall(bound.id)).toBe('stale');
+      expect(await core.webhooks.processUninstall(bound.id)).toBe('unqualified');
       const delayed = { ...delivery(domain, randomUUID(), 'app/uninstalled'), triggeredAt: old.triggeredAt };
       const lateReceipt = await core.webhooks.receive(delayed);
-      expect(lateReceipt.shopId).toBeNull();
-      expect(await core.webhooks.processUninstall(lateReceipt.id)).toBe('stale');
+      expect(lateReceipt.shopId).toBe(shopId);
+      expect(await core.webhooks.processUninstall(lateReceipt.id)).toBe('unqualified');
       expect((await core.webhooks.receive(old)).id).toBe(bound.id);
       expect(
         (
@@ -335,7 +335,7 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
         expect(waiting).toBe(true);
         expect(await createTenantRepository(tx).startInstallation(tx, shopId)).toBe('2');
       });
-      expect(await pending).toBe('stale');
+      expect(await pending).toBe('unqualified');
       expect(
         (
           await database
@@ -351,7 +351,7 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
     }
   });
 
-  it('rolls back deactivation when inbox completion fails, then safely retries', async () => {
+  it('quarantine never attempts inbox completion or deactivation, including replay', async () => {
     const database = await openTestDatabase();
     const core = createDurableCore(new Pool({ connectionString }), { credentialKeys: keys });
     const shopId = randomUUID();
@@ -379,7 +379,7 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
         )
         .execute(database);
       installed = true;
-      await expect(core.webhooks.processUninstall(receipt.id)).rejects.toThrow('synthetic inbox failure');
+      expect(await core.webhooks.processUninstall(receipt.id)).toBe('unqualified');
       expect((await core.webhooks.getById(receipt.id))?.state).toBe('pending');
       expect(
         (
@@ -404,7 +404,7 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
       await sql.raw(`DROP TRIGGER ${trigger} ON inbox_messages`).execute(database);
       await sql.raw(`DROP FUNCTION ${trigger}()`).execute(database);
       installed = false;
-      expect(await core.webhooks.processUninstall(receipt.id)).toBe('processed');
+      expect(await core.webhooks.processUninstall(receipt.id)).toBe('unqualified');
     } finally {
       if (installed) {
         await sql.raw(`DROP TRIGGER ${trigger} ON inbox_messages`).execute(database);
@@ -457,7 +457,7 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
     }
   });
 
-  it('atomically processes a current uninstall and fences credentials and outbox', async () => {
+  it('generic uninstall leaves credentials/publication active; trusted lifecycle retains their fences', async () => {
     const database = await openTestDatabase();
     const core = createDurableCore(new Pool({ connectionString }), { credentialKeys: keys });
     const shopId = randomUUID();
@@ -532,9 +532,22 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
       await core.transactions.run((tx) => core.outbox.add(tx, event));
       const input = delivery(domain, randomUUID(), 'app/uninstalled');
       const first = await core.webhooks.receive(input);
-      expect(first.installationGeneration).toBe('1');
-      expect(await core.webhooks.processUninstall(first.id)).toBe('processed');
-      expect((await core.webhooks.getById(first.id))?.state).toBe('processed');
+      expect(first.installationGeneration).toBeNull();
+      expect(await core.webhooks.processUninstall(first.id)).toBe('unqualified');
+      expect((await core.webhooks.getById(first.id))?.state).toBe('pending');
+      expect((await config.getConfig(shopId, configId))?.effectiveRevisionId).toBe(revisionId);
+      expect(
+        (
+          await core.credentials.acquire({
+            shopId,
+            installationGeneration: '1',
+            minimumRemainingMs: 0,
+            claimLeaseMs: 30_000,
+          })
+        ).kind,
+      ).toBe('usable');
+      // Separate trusted local lifecycle seam; this is not generic webhook authority.
+      expect(await core.transactions.run((tx) => core.tenants.deactivateCurrent(tx, shopId, '1'))).toBe('deactivated');
       expect((await config.getConfig(shopId, configId))?.effectiveRevisionId).toBeNull();
       await database.transaction().execute(async (tx) => {
         expect(await createPublicationRepository(tx).activate(shopId, configId, operationId)).toBe('stale');
@@ -551,7 +564,7 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
           }),
         ),
       ).rejects.toThrow('inactive installation generation');
-      expect(await core.webhooks.pendingUninstallIds(100)).not.toContain(first.id);
+      expect(await core.webhooks.pendingUninstallIds(100)).toContain(first.id);
       expect(
         (
           await core.credentials.acquire({
@@ -562,8 +575,8 @@ describe('M3-002 PostgreSQL 18 runtime invariants', () => {
           })
         ).kind,
       ).toBe('inactive');
-      expect(await core.webhooks.receive(input)).toMatchObject({ kind: 'processed', id: first.id });
-      expect(await core.webhooks.processUninstall(first.id)).toBe('already_processed');
+      expect(await core.webhooks.receive(input)).toMatchObject({ kind: 'duplicate', id: first.id });
+      expect(await core.webhooks.processUninstall(first.id)).toBe('unqualified');
       expect(
         (
           await core.credentials.acquire({

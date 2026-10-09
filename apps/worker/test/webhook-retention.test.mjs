@@ -113,7 +113,9 @@ test(
         name: null,
         rawBody,
       });
-      assert.equal(await f.core.webhooks.processUninstall(receipt.id), 'processed');
+      assert.equal(await f.core.webhooks.processUninstall(receipt.id), 'unqualified');
+      // Synthetic historical completion; no corrected production path creates it.
+      await f.pool.query("UPDATE inbox_messages SET state='processed' WHERE id=$1", [receipt.id]);
       await f.pool.query(
         `UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=$1`,
         [receipt.id],

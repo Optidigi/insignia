@@ -52,7 +52,7 @@ async function until(predicate) {
   throw new Error('bounded crash recovery did not settle');
 }
 
-test('real process death before transaction and after commit recovers durable queued uninstalls once', {
+test('real process death before transaction and after quarantine recovers transport without completing uninstall', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',
   timeout: 60_000,
 }, async () => {
@@ -80,7 +80,7 @@ test('real process death before transaction and after commit recovers durable qu
     await installQueue(connectionString);
     await producer.start();
     await maintenance.start();
-    for (const phase of ['before-transaction', 'after-commit']) {
+    for (const phase of ['before-transaction', 'after-quarantine']) {
       const shopId = randomUUID();
       const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
       const shopifyShopId = (BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n).toString();
@@ -113,8 +113,8 @@ test('real process death before transaction and after commit recovers durable qu
       child.kill('SIGKILL');
       await closed;
       const pre = (await pool.query('select state, attempts from inbox_messages where id=$1', [receipt.id])).rows[0];
-      assert.equal(pre.state, phase === 'after-commit' ? 'processed' : 'pending');
-      assert.equal(pre.attempts, phase === 'after-commit' ? 1 : 0);
+      assert.equal(pre.state, 'pending');
+      assert.equal(pre.attempts, 0);
       // Explicit synthetic clock seam: make the real acquired lease expired, without waiting 120s.
       await pool.query("update pgboss.job set started_on=now()-interval '121 seconds' where id=$1 and state='active'", [
         receipt.id,
@@ -133,18 +133,14 @@ test('real process death before transaction and after commit recovers durable qu
         async () => (await maintenance.findJobs(WEBHOOK_QUEUE, { id: receipt.id }))[0]?.state === 'completed',
       );
       const final = (await pool.query('select state, attempts from inbox_messages where id=$1', [receipt.id])).rows[0];
-      assert.deepEqual(final, { state: 'processed', attempts: 1 });
-      assert.ok(
-        (
-          await pool.query('select deactivated_at from installation_generations where shop_id=$1 and generation=1', [
-            shopId,
-          ])
-        ).rows[0].deactivated_at,
-      );
+      assert.deepEqual(final, { state: 'pending', attempts: 0 });
+      assert.equal((await core.tenants.getCurrentAdminInstallation(shopId)).active, true);
+      assert.equal((await core.webhooks.getById(receipt.id)).resolution, 'unqualified');
       const ended = new Promise((resolve) => child.once('close', resolve));
       child.kill('SIGTERM');
       await Promise.race([ended, delay(5000)]);
-      if (child.exitCode === null) child.kill('SIGKILL');
+      if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+      await ended;
       child = undefined;
       assert.equal((await producer.ensureWebhookEnqueued(receipt.id)).status, 'already_enqueued');
     }

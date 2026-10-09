@@ -1,0 +1,913 @@
+{
+  "recordKind": "PUBLIC_ELIGIBLE_OFFLINE_LOCAL_QUALIFICATION_RECEIPT",
+  "baseCommit": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "writerChangedFiles": {
+    "apps/web/src/pages/api/webhooks/shopify.ts": "c67e4a76989976c2fa99749ad3111793f12af0b20d219d07222028e8a0e8b3bc",
+    "apps/web/test/shopify-webhook.test.mjs": "3e33779b8279482b051a4058c50a0b22df280b9c79d2cd3019c5b416eed68773",
+    "apps/web/test/uninstall-authority.test.mjs": "1ed0d4ebd53d2294aaa3bc3bc58e1bef565c542867fcc985e118175d41728358",
+    "apps/web/test/webhook-metadata-boundary.test.mjs": "3327bea8b860df53012d01d6ca743b9f934304dac6dacf12dca034fde1ad7155",
+    "apps/worker/src/handlers.ts": "3049aa1d96553ba815c5c026ebb266c9da4f88cf4226b8a3d9606e51148707ea",
+    "apps/worker/src/runtime.ts": "6d15e8fe7b5d0a783233c12ee9888e060e17c7a5b126bbd0d3c90bee8c135a80",
+    "apps/worker/test/postgres.test.mjs": "55cf8a8e4a4bf860dab22ef63dee8e01cb3ec908f8bd35b7acc1370fa27b5b3c",
+    "apps/worker/test/webhook-retention.test.mjs": "ef09ef96a3fdcc53ec0e8325abfbe0337f32bd7a1cca68e9cc3e84fcde8411aa",
+    "packages/database/src/durable-core.ts": "486cb0f96b36d5abb19ba13485be3befd38ad744e6c3e5e92019869136e2dd40",
+    "packages/database/src/repositories/shopify-webhooks.ts": "0373c62a3c062fdd879c37c573a0d0b7eea17ab4903d276faf6b0c65cf8163ad",
+    "packages/database/src/repositories/tenant.ts": "74865ace55f91cee464886ca905744f5e7e0773363f99e739460f23a4543d511",
+    "packages/database/test/managed-installation.test.ts": "4570211aef75b70cb4debce2f6f554255df42add86924514058455ba75383f5e",
+    "packages/database/test/runtime.test.ts": "1457c58d1f667b081231697d265522aab3c9dc2e1f5651907e5aca63761b4df3",
+    "packages/database/test/uninstall-authority.test.ts": "eb170f85ca99c2b5b695052d2f927ddd6987ba0e9daead44affd30ef52bdc6b0",
+    "packages/database/test/webhook-retention.test.ts": "4ad6ea16d2453866a842f9e976403b442433b3f1ac0c2f1441320d5b7ba46e9a",
+    "scripts/m5-024/crash-child.mjs": "bceed44b37d6985d0c22cec623e3947124cee84dbfe1b16c094cd9d2f33060ed",
+    "scripts/m5-024/crash-recovery.test.mjs": "0bfc492bca4200a7049bf7da85efe4e5841cba32ed6c5befd120e67768d76707",
+    "scripts/m5-024/queue-privileges.test.mjs": "f85901db19afd03a65c951959c833ce25188c6222a05eb1436ed4d9a7a9b2144"
+  },
+  "originalBaseFileHashes": {
+    "apps/web/src/pages/api/webhooks/shopify.ts": "c2ee6ee8b95000445ca8daa404c60116891c40373879f6208123522fb0757af5",
+    "apps/web/test/shopify-webhook.test.mjs": "4b5cf6e372bde06be82ef50ef8fa7561c10042f5688f8a162460069a0bc49a75",
+    "apps/web/test/uninstall-authority.test.mjs": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4",
+    "apps/web/test/webhook-metadata-boundary.test.mjs": "a29126ba4a705b40b1ff30659521bccbd6c001ca16f4a67a3b9d0fc64be5fa63",
+    "apps/worker/src/handlers.ts": "91456cbf6e97ef60de0b658914755c9284ad19a4937ba5cd99fa24cf88038215",
+    "apps/worker/src/runtime.ts": "f65a9b322f33970a504406d5dba29225a0a771d0281fa392bfe32860484260f4",
+    "apps/worker/test/postgres.test.mjs": "44bf42f2fdab2c41f420ae37175bca24090dc93c5d0a8cd22667da69dd6c5398",
+    "apps/worker/test/webhook-retention.test.mjs": "2803cda2bb59c7060f2541b8e9c7a5ea4166c7af35f894a4aaef68a4f50d2d03",
+    "packages/database/src/durable-core.ts": "8eb42ae6b0a41e1aa8f3385e20c10a6e1c4c77923ce97055e672ede1e04e5abb",
+    "packages/database/src/repositories/shopify-webhooks.ts": "c11a411f573591cbb008204376f045dfb60383b3aed169ff656d0df3d1071f9b",
+    "packages/database/src/repositories/tenant.ts": "4ff41393415795109ab25a9b7ef81711b6ae89611995d3225aee9658cc0e505b",
+    "packages/database/test/managed-installation.test.ts": "022a9493387c1ab43e4ecaf9b46a6db30cd8c0ded78f43cda50691227b4f03aa",
+    "packages/database/test/runtime.test.ts": "a6b991e1a847cba6e56679d2124da02c4a248ab4cd1332806d2e78d7a419226a",
+    "packages/database/test/uninstall-authority.test.ts": "cf948b84eb4f93a5f18a798b68cf871f7ef018cec5cdd2ed8b8e3b6dcb3cb129",
+    "packages/database/test/webhook-retention.test.ts": "01d4d3a0cb04ce8c219a111427e24a154d9d7c513fa9f9775276d2a98dc77970",
+    "scripts/m5-024/crash-child.mjs": "674a646e5cc868c488834b9911148e9d719af9bef9322782a84d348aedef78bd",
+    "scripts/m5-024/crash-recovery.test.mjs": "2f0b3c9c7c7f4a7d91b0589f10e8fd20b509059d5c93ff659a8df58b783ede8e",
+    "scripts/m5-024/queue-privileges.test.mjs": "92125384b286fe86abe6f1f1322368c868f0e82aeb52e51ba0f86d19fcf32634"
+  },
+  "writerSourceBindingsSha256": "8522147d66931736a00ff73e3c5eb5c187e96247ebb1595514566f84b7a3e2af",
+  "parentOwnedTrustBoundaryDocumentSnapshots": {
+    "docs/architecture/SHOPIFY-WEBHOOK-TRUST-BOUNDARY.md": "31580a12187dc4d81984613b75f856009b7cf1fe4a1e21fa13d79a1c7e887265",
+    "docs/delivery/evidence/m5-uninstall-authority-quarantine/historical-pr23-trust-boundary.md": "1541e0ad341535f4c10dc7cf415f6eaee2ebad2f1264ede1c4fe5666830dc8e5"
+  },
+  "runs": [
+    {
+      "name": "05-offline-install",
+      "exitCode": 0,
+      "elapsedSeconds": 0.469,
+      "logSha256": "33a226ad991e38261976436cada65bdb65b7164c072e02b76b651d441efa1012",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "06-original-build",
+      "exitCode": 0,
+      "elapsedSeconds": 18.999,
+      "logSha256": "51cae0a196c3f1f51d711ec97f096cc58f9596dda47ae3fbcbadcd0363bf1c2b",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "07-original-migrate",
+      "exitCode": 0,
+      "elapsedSeconds": 0.365,
+      "logSha256": "94a4ba93b93f1af74061dbbe5161fec19db81b07cbd09b79bdb29d6a04416885",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "08-historical-strict-red",
+      "exitCode": 1,
+      "elapsedSeconds": 15.003,
+      "logSha256": "b6a08a5a305a6db03cdcf9be7e18daba25f081bb0dd4177b1125c345ae5fb6f1",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          0
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": "Original unchanged strict HTTP invariant RED: generation2 active was false."
+    },
+    {
+      "name": "09-repository-quarantine-red",
+      "exitCode": 1,
+      "elapsedSeconds": 1.517,
+      "logSha256": "70391a739dc48a6df8fbdaae4a0dffe5beeebd2d3a5090cc6d8206e62d94f8b6",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": "New generic quarantine repository contract RED: processed instead of unqualified."
+    },
+    {
+      "name": "10-repository-quarantine-green",
+      "exitCode": 1,
+      "elapsedSeconds": 1.518,
+      "logSha256": "4171765d0656fc7a2ee130bd8811fae8c2369978371019dca557eed8825cf3b7",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": "Fixture used nonunique signed Shop ID against retained prior RED row; corrected to random synthetic identity."
+    },
+    {
+      "name": "11-repository-quarantine-green",
+      "exitCode": 0,
+      "elapsedSeconds": 1.569,
+      "logSha256": "c8c9cf365411d1e3ab046383388753673d4b56fb9dfe9cd08bc31b1e2d65d1f6",
+      "testCountsAsLogged": {
+        "vitestPassed": [
+          1
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "12-quarantine-build",
+      "exitCode": 1,
+      "elapsedSeconds": 7.351,
+      "logSha256": "cab2e4079a874ff1c676504e1401370b47cc86b1f66ae6604755f9271b013f53",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": "Build rejected outdated DurableCore result union; explicit type corrected."
+    },
+    {
+      "name": "13-strict-http-green",
+      "exitCode": 1,
+      "elapsedSeconds": 0.465,
+      "logSha256": "a78f5302da8a7e77ac43d808ac0a2703f7fc7d3bfe3c1eedc3f5f1b04bb27cf6",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          0
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": "HTTP fixture had undefined connectionString and was run after failed build; corrected and superseded."
+    },
+    {
+      "name": "14-quarantine-build",
+      "exitCode": 0,
+      "elapsedSeconds": 18.005,
+      "logSha256": "330843f34e81e4a640c25f72b6b7bdc50440fef58edd84709f9658e36a526332",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "15-strict-http-green",
+      "exitCode": 0,
+      "elapsedSeconds": 18.523,
+      "logSha256": "8192725b0dd403fd5565f646184dc140acaacdc11138ee76982f02e4460a478a",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          1
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "16-database-controls",
+      "exitCode": 0,
+      "elapsedSeconds": 20.85,
+      "logSha256": "cad1a1afae1da6adef115d80af3c9e2ae555e225069e82421e4c7d72b7940e8f",
+      "testCountsAsLogged": {
+        "vitestPassed": [
+          221
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "17-original-ingress-contract-red",
+      "exitCode": 1,
+      "elapsedSeconds": 17.113,
+      "logSha256": "d0319996576dd310ed62a7e516acdcffc646bd2c1d8fd9a00d4374d26831ba62",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          0
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": "Original ingress contract still required processed; shared queue timing confounds unique cause."
+    },
+    {
+      "name": "18-full-root-check",
+      "exitCode": 0,
+      "elapsedSeconds": 258.52,
+      "logSha256": "ae269fe38a6a072568656aa992a27548f557e3b0e07653ad2f289ae933d2a338",
+      "testCountsAsLogged": {
+        "tests": [
+          9,
+          4,
+          29,
+          6,
+          136,
+          49,
+          46,
+          35,
+          90,
+          73,
+          25,
+          98,
+          1,
+          18,
+          88,
+          1
+        ],
+        "pass": [
+          9,
+          4,
+          29,
+          6,
+          136,
+          49,
+          46,
+          35,
+          90,
+          73,
+          25,
+          98,
+          1,
+          18,
+          88,
+          1
+        ],
+        "fail": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cancelled": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "skipped": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "vitestPassed": [
+          26,
+          6,
+          9,
+          202,
+          347
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "19-queue-crash-controls",
+      "exitCode": 1,
+      "elapsedSeconds": 47.362,
+      "logSha256": "ff6db187cdea96c0bb0883de75c1e349f0b5a9ebcd6c8f993a17991680ffb477",
+      "testCountsAsLogged": {
+        "tests": [
+          2
+        ],
+        "pass": [
+          1
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": "Shared queue privilege target remained created; crash test passed. Earlier jobs consumed every2 seconds."
+    },
+    {
+      "name": "20-queue-fresh-old-contract-red",
+      "exitCode": 1,
+      "elapsedSeconds": 16.015,
+      "logSha256": "e943cb3adc5721d136e2a8c7c681b4f3ccc7a08177dc1ede8bc5f257214328c9",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          0
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": "Fresh isolated queue proved obsolete later processed expectation: actual pending. DB dropped."
+    },
+    {
+      "name": "21-inherited-ledger-baseline",
+      "exitCode": 1,
+      "elapsedSeconds": 0.115,
+      "logSha256": "3bd1929f0ddc7b7bfb413d0108085a07bbcac88c62f9099a17b11039e5f4d660",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": "Private ledger query referenced nonexistent processed_at; corrected projection, no state change."
+    },
+    {
+      "name": "22-inherited-ledger-baseline",
+      "exitCode": 0,
+      "elapsedSeconds": 0.114,
+      "logSha256": "66b38c17e1241474b6ebb44a2e83528ad76d5c2bb236b5cf7a2e3cc39096674d",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "23-queue-crash-isolated-green",
+      "exitCode": 0,
+      "elapsedSeconds": 20.318,
+      "logSha256": "cea533b0ead53a6d4f603d4e06122a162120936a63fd9a3c15640b46d5d9c8f6",
+      "testCountsAsLogged": {
+        "tests": [
+          2
+        ],
+        "pass": [
+          2
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "24-real-http-controls-green",
+      "exitCode": 0,
+      "elapsedSeconds": 38.712,
+      "logSha256": "7a313f5f5983fe45cba71e99ed378b3e1570bc8227507e4e296e2f5f74305d9f",
+      "testCountsAsLogged": {
+        "tests": [
+          3
+        ],
+        "pass": [
+          3
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "25-publication-stress",
+      "exitCode": 0,
+      "elapsedSeconds": 92.92,
+      "logSha256": "561a5aeb1ddb58ddc6eaa2478c9bf60245e9e70a81e1ba665467de8de57de585",
+      "testCountsAsLogged": {
+        "tests": [
+          100
+        ],
+        "pass": [
+          100
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "26-missing-renderer-control",
+      "exitCode": 0,
+      "elapsedSeconds": 6.789,
+      "logSha256": "8ef55ad77eac56c63d457fb1b8850c3248fb0b0c7a6932c561b8079dcd2cf263",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          0
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "27-inherited-ledger-after-http",
+      "exitCode": 0,
+      "elapsedSeconds": 0.114,
+      "logSha256": "9d3a589953f79b25d35ea689c367a0cf3e496c554dc1595893bdc13b92311463",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "28-fresh-offline-portable-build",
+      "exitCode": 1,
+      "elapsedSeconds": 18.249,
+      "logSha256": "baa6df1d0d9e3adb6ca3ead2c7d1a8709746ec8d2deb2fb72596e4afcd3a34dc",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": "Offline policy metadata missing cron-parser; no bypass. Normal public registry primer32 plus offline restore33 precede NEW package39."
+    },
+    {
+      "name": "29-legacy-backlog-red",
+      "exitCode": 1,
+      "elapsedSeconds": 2.07,
+      "logSha256": "7b057212c4cb30abf18f9370c930f03fc61c733baf47b0c3e0b78e84dbe79402",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": "Legacy bound pending uninstall omitted from unresolved backlog; expected1 got0."
+    },
+    {
+      "name": "30-legacy-backlog-green",
+      "exitCode": 0,
+      "elapsedSeconds": 2.019,
+      "logSha256": "bbd5a89c19bd34fd06e64d345e67b249b66d19a970ed181c357f035fc0185268",
+      "testCountsAsLogged": {
+        "vitestPassed": [
+          1
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "31-http-quarantine-metric-red",
+      "exitCode": 1,
+      "elapsedSeconds": 6.5,
+      "logSha256": "96f6fd0866f1339d3c007416d80081a50d1f89f179947466b92ce55254d26393",
+      "testCountsAsLogged": {
+        "tests": [
+          1
+        ],
+        "pass": [
+          0
+        ],
+        "fail": [
+          1
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": "Real HTTP accepted generic resolution emitted failed=3, expected unresolved=3."
+    },
+    {
+      "name": "32-normal-registry-policy-primer",
+      "exitCode": 0,
+      "elapsedSeconds": 0.918,
+      "logSha256": "1c4fad92032e271927f0870d700fd7a02b1cf2dc0fd6c535db512af048c9a248",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "33-offline-module-restore",
+      "exitCode": 0,
+      "elapsedSeconds": 0.215,
+      "logSha256": "19659d86ba231817f78d2df7af047422bb3beac2761978c65eff1178e92341c6",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "34-final-full-root-check",
+      "exitCode": 0,
+      "elapsedSeconds": 204.879,
+      "logSha256": "9894bc68f1ad63afe5d96c9776042664a1e511ce38d7a140af6c10bf523fbfb0",
+      "testCountsAsLogged": {
+        "tests": [
+          9,
+          4,
+          29,
+          6,
+          136,
+          49,
+          46,
+          35,
+          90,
+          73,
+          25,
+          98,
+          1,
+          18,
+          88,
+          1
+        ],
+        "pass": [
+          9,
+          4,
+          29,
+          6,
+          136,
+          49,
+          46,
+          35,
+          90,
+          73,
+          25,
+          98,
+          1,
+          18,
+          88,
+          1
+        ],
+        "fail": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "cancelled": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "skipped": [
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0
+        ],
+        "vitestPassed": [
+          26,
+          6,
+          9,
+          202,
+          347
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "35-final-isolated-database-controls",
+      "exitCode": 0,
+      "elapsedSeconds": 17.932,
+      "logSha256": "ea08f4108bcecef08f96e4d7da2cdbcb396c614ab8823e85fed823b1ee68955e",
+      "testCountsAsLogged": {
+        "vitestPassed": [
+          221
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "36-final-real-http-controls-green",
+      "exitCode": 0,
+      "elapsedSeconds": 38.651,
+      "logSha256": "0d527b67ccc3445fb4e0bc8e5ec5cdff92d3c711cd3911d2de4bee1e6a828e46",
+      "testCountsAsLogged": {
+        "tests": [
+          3
+        ],
+        "pass": [
+          3
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "37-final-inherited-ledger-baseline",
+      "exitCode": 0,
+      "elapsedSeconds": 0.115,
+      "logSha256": "f0a481d05c6363cf1604c3170cfd4a35eab9863bd31dd5df460bf8c329aba597",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "38-final-queue-crash-green",
+      "exitCode": 0,
+      "elapsedSeconds": 21.838,
+      "logSha256": "e26ef246ab6d0f03a244d2c7cecadbf62b8e0a260ee370a72d764a56adfdad18",
+      "testCountsAsLogged": {
+        "tests": [
+          2
+        ],
+        "pass": [
+          2
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "39-fresh-offline-portable-build",
+      "exitCode": 0,
+      "elapsedSeconds": 21.919,
+      "logSha256": "8af55ab499ba3edbf4a33998e35775fee141f34176bebb8a02e1cd0243c32042",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "40-fresh-portable-process-controls",
+      "exitCode": 0,
+      "elapsedSeconds": 13.697,
+      "logSha256": "b1723d0a796090360089fd87464d3ccf8a0196d9bba8cb1c06ac03c648d32d59",
+      "testCountsAsLogged": {
+        "tests": [
+          2
+        ],
+        "pass": [
+          2
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "41-post-portable-real-http-controls",
+      "exitCode": 0,
+      "elapsedSeconds": 38.787,
+      "logSha256": "fd165084eee3a368432c09a59f4cda74fac3bbfc339523b4109230f72f6b9abc",
+      "testCountsAsLogged": {
+        "tests": [
+          3
+        ],
+        "pass": [
+          3
+        ],
+        "fail": [
+          0
+        ],
+        "cancelled": [
+          0
+        ],
+        "skipped": [
+          0
+        ]
+      },
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "42-final-inherited-ledger-unchanged",
+      "exitCode": 0,
+      "elapsedSeconds": 0.114,
+      "logSha256": "b89a59eb9771fc76d65aefa772715bf978959effb7d8ee8b65116414e8f565b1",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    },
+    {
+      "name": "43-owned-resource-preclosure",
+      "exitCode": 0,
+      "elapsedSeconds": 0.114,
+      "logSha256": "fcb435308574f17b1b58d0f2c1478aa4825c3616a6fd0260736bd52c1cbd2f30",
+      "testCountsAsLogged": {},
+      "retainedFailureExplanation": null
+    }
+  ],
+  "otherRetainedFailures": [
+    {
+      "recordKind": "ORIGINAL_PRIVATE_LOG",
+      "log": "01-start.log",
+      "sha256": "072bdd374cf4acca521b5f507cda71baccaba16e1ebc37c9bcecf8f3f5f1fd02",
+      "reason": "Unix socket path exceeded PostgreSQL bound; allocated fresh initialization started TCP-only, no prior closed cluster reused."
+    },
+    {
+      "recordKind": "DERIVED_TOOL_RESULT_ATTESTATION_NOT_ORIGINAL_RAW_LOG",
+      "reason": "Snapshot attempted to reread obsolete generated web chunk names after visibility change; FileNotFoundError. New220-file enumeration separately preserved."
+    },
+    {
+      "recordKind": "DERIVED_TOOL_RESULT_ATTESTATION_NOT_ORIGINAL_RAW_LOG",
+      "reason": "Broad220 compiled equality AssertionError after package rebuild; observed sole generated web entry hash change. Corrected witness proves219 unchanged and all176 portable files equal; no claim exact old entry difference."
+    },
+    {
+      "recordKind": "DERIVED_TOOL_RESULT_ATTESTATION_NOT_ORIGINAL_RAW_LOG",
+      "reason": "Initial post-stop plain socket bind EADDRINUSE; stop/status logs retained, stop exitcode not persisted before probe exception. Final status3/absentPID/no listener/reusable bind and TIME_WAIT12 recorded."
+    }
+  ],
+  "compiledArtifacts": {
+    "firstRootBuildHashesSha256": "92ea41fc2c4d50d3750a12f2df2eb3c22bbd7f4e6a336404b71c1db878e9f2c4",
+    "finalRootBuildHashesSha256": "c96705b4891c92e25765a659f69511d78dbe755243bd3b45e1012a714b0836d5",
+    "postPortableRootBuildHashesSha256": "3c25e315a21bc0c44e9605270dabd5d6406539d2ac346cb552e8e73f269ab81e",
+    "portableEqualityReceiptSha256": "ab61b9578ff008f7d88c2632cd6cff91d251a57a2e3413ee853b4b11271d96ce",
+    "rootOutputFiles": 220,
+    "rootUnchangedAfterPackaging": 219,
+    "changedRootPath": "apps/web/dist/server/entry.mjs",
+    "portablePackages": 9,
+    "portableCompiledFiles": 176,
+    "portableEntrySha256": "0a3c8839b286874a07211a222326b86449043198cfbb921a85563bc2422b044e",
+    "portableInventorySha256": "23fdf1473c6ed0b749e229b8e110c5887cb250fc0c7e660113bf0006c3a2fefa"
+  },
+  "finalInheritedLedgerSha256": "17745d068af379c5b9907382a10760bafa63f202f16342e1433ad428793afd59",
+  "initialIsolatedControlsInheritedLedgerSha256": "3d64d5812be4762505ebb124d6c760318a00858cce3125444e854bf987290d34",
+  "closure": {
+    "statusExitCode": 3,
+    "postmasterPidFilePresent": false,
+    "tcpListenerAbsent": true,
+    "loopbackPort55456BindAndListenWithReuseaddr": true,
+    "initialPlainBindFailedWithEaddrinuse": true,
+    "initialStopExitCodeNotPersistedBeforeSocketProbeFailure": true,
+    "stopLogReportsServerStopped": true,
+    "closedAt": "2026-10-09T22:23:04.616397+00:00",
+    "shutdownLogPostmasterProcessPresent": false,
+    "ownedLoopbackPortTcpStateCounts": {
+      "06": 12
+    }
+  },
+  "closureLogHashes": {
+    "42-final-inherited-ledger-unchanged.log": "b89a59eb9771fc76d65aefa772715bf978959effb7d8ee8b65116414e8f565b1",
+    "43-owned-resource-preclosure.log": "fcb435308574f17b1b58d0f2c1478aa4825c3616a6fd0260736bd52c1cbd2f30",
+    "44-pg-stop.log": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "45-pg-status.log": "e138ccb54fdb08283c6eb21159c53207bbbbf07077246e2804e18d22efe6e250",
+    "47-pg-status-confirmed.log": "e138ccb54fdb08283c6eb21159c53207bbbbf07077246e2804e18d22efe6e250"
+  },
+  "scopeLimits": {
+    "providerShopifyVpsSshAccess": false,
+    "deployment": false,
+    "commitPush": false,
+    "productionPathsChanged": 6,
+    "schemaMigrationLockfileCredentialSystemChanges": false,
+    "genericUninstallFulfilled": false,
+    "privacyFulfilled": false,
+    "nativeInstallationGenerationAuthorityQualified": false,
+    "fullM5Acceptance": "BLOCKED",
+    "bootstrapFence": "Existing typed conservative fence retained; unsigned headers can still deny availability.",
+    "retention": "Raw generic uninstall/privacy/unsupported obligations remain retained overdue blockers; no new indefinite retention basis.",
+    "stressReuse": "Stress25 and renderer26 precede visibility-only route/count correction; relevant publication/renderer source unchanged. Final root34 covers current browser source.",
+    "buildProvenance": "219/220 root files unchanged after fresh packaging. Pinned Astro creates per-build AES-GCM key without ASTRO_KEY, consistent with changed entry digest; old entry bytes unavailable, no exact difference/cause claim. HTTP41 tests actual newly built entry.",
+    "localNetwork": "Only isolated loopback PG/HTTP and owner-authorized normal public npm policy metadata primer; not a native provider acceptance run."
+  },
+  "ledgerObservationWindows": {
+    "initial": {
+      "baselineRun": "22",
+      "comparisonRun": "27",
+      "correspondingControls": [
+        "23 queue/crash",
+        "24 HTTP3"
+      ],
+      "inboxRows": 70,
+      "jobRows": 31,
+      "unchanged": true
+    },
+    "final": {
+      "baselineRun": "37",
+      "comparisonRun": "42",
+      "correspondingControls": [
+        "38 queue/crash",
+        "40 portable",
+        "41 current-entry HTTP3"
+      ],
+      "inboxRows": 72,
+      "jobRows": 31,
+      "unchanged": true
+    },
+    "interveningMainLedgerChangeAttribution": "Not established by these snapshots. Visibility29/30 ran isolated disposable application databases and were dropped; their fixture additions are not attributed to the main ledger."
+  }
+}

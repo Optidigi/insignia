@@ -20,7 +20,8 @@ export interface JobContext {
 }
 
 export interface WorkerHandlers {
-  /** Must commit business mutation and inbox processed marker in one durable transaction. */
+  /** Qualified business effects and completion must commit together. Deferred
+   * transport settlement leaves the durable inbox unresolved, never processed. */
   processInbox(inboxId: string, context: JobContext): Promise<undefined | 'deferred' | 'expired' | 'exhausted'>;
   /** Must durably mark terminal reauthorization before returning reauth_required. */
   refreshCredential(

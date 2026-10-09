@@ -126,7 +126,10 @@ async function assertNoObservedUninstall(
   // predecessor was inactive. Its signed delivery can already be processed
   // as stale against that predecessor. Read immutable ingress evidence,
   // regardless of processing state, before creating/advancing an active era.
-  // Only the signed Shop identity/domain can fence this provider identity.
+  // This remains a conservative fail-closed bootstrap fence. Header topic/time
+  // are unqualified and can cause denial; matching signed Shop bytes supply no
+  // independent uninstall-purpose or generation authority. This check must not
+  // be treated as a qualified uninstall or proof of its absence.
   // Once bytes are unavailable, keep a conservative typed fence for relevant
   // evidence. Erasure is not proof that the installation survived an uninstall.
   const removed = await sql<{ removed: boolean }>`

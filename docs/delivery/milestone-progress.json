@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
-  "currentTree": "ccb195bd398b0475414352c981e5503bab2e2a2f",
+  "currentIntegratedCommit": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "currentTree": "a781aed9ee9379207ab2bb822b1b0287a57bfa9e",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -35,8 +35,8 @@
       "id": "LIFECYCLE_PRIVACY",
       "requirement": "Generation-safe uninstall, registration gaps, all destinations/transitive effects and privacy obligations",
       "plan": "implementation-plan \u00a76.1/6.5/10.4/11; M5-025\u2013027",
-      "evidence": "M5-025 RED and M5-026/027 bounded analysis",
-      "result": "PARTIAL_NATIVE_METADATA_ONLY_NOT_RUNTIME_READINESS",
+      "evidence": "M5-025 historical RED; new unconditional local HTTP/PG/worker quarantine GREEN plus M5-026/027 bounded platform analysis",
+      "result": "LOCAL_DEFENSIVE_QUARANTINE_PASS_NATIVE_AUTHORITY_PRIVACY_BLOCKED",
       "dependency": "Native read-only inventory before any install experiment; independent authority and privacy correction"
     },
     {
@@ -84,10 +84,14 @@
     {
       "pr": 62,
       "receipt": "evidence/m5-inventory-artifact-size/pr62-merge-receipt.json"
+    },
+    {
+      "pr": 63,
+      "receipt": "evidence/m5-uninstall-authority-quarantine/pr63-merge-receipt.json"
     }
   ],
   "openFindings": [
-    "M5-025 generation authority RED",
+    "Independent genuine-uninstall/registration-gap/privacy authority BLOCKED; historical M5-025 RED preserved and new strict local safety GREEN",
     "Current native destinations/effects/privacy unqualified",
     "Worker/image/queue/runtime native prerequisites not qualified",
     "28 native G7 criteria blocked",
@@ -98,7 +102,7 @@
       "scope": "BOUNDED_READ_ONLY",
       "evidence": "evidence/m5-native-inventory/owner-readonly-allocation.json",
       "ownerReply": "you have full acess yes",
-      "localTechnicalGate": "Original PR60 merged; standalone PR62 f396 had actual R1 CLEAR/CLEAR and five attempt-1 successes; first native run authenticated, partial STOP sealed. Revised source requires fresh gate and new native allocation."
+      "localTechnicalGate": "Historical bounded allocation/run is sealed; permanent VPS allocation now supersedes its read/time caps prospectively. Closed history and separate Shopify resource conditions remain."
     },
     {
       "scope": "FRESH_BOUNDED_READ_ONLY",
@@ -106,41 +110,47 @@
       "ownerReply": "Sure, whatever you need to get M5 done/finished.",
       "conservativeMetadataSlotsCharged": 20,
       "interpretation": "Original grant plus fresh ten-observation phase; no production/Shopify mutation or credential-acquisition inference"
+    },
+    {
+      "scope": "PERMANENT_READ_ONLY_VPS",
+      "evidence": "evidence/m5-uninstall-authority-quarantine/owner-permanent-vps-readonly.json",
+      "ownerReply": "okay, you are permanently permitted to check, read, access vps",
+      "interpretation": "Supersedes prior owner VPS read/time caps only; source-qualified bounded operations, immutable closed history and <=7day private retention continue. No production changes or independent Shopify access."
     }
   ],
   "ownerInputs": [
     "Working private access route for existing exact-app Admin credential",
     "Other processor/queue/privacy ownership artifact locations still unidentified",
     "Separate disposable development installation not identified or allocated",
-    "Commercial configuration unknown; owner delegates factual investigation",
-    "Any later provisioning/deployment/mutation requires exact separate owner resource envelope"
+    "Any later provisioning/deployment/mutation requires exact separate owner resource envelope",
+    "Canonical web policy/features absent; legitimate owner-backed configuration or separately approved bounded development eligibility required; no commercial terms invented"
   ],
-  "nextSafeAction": "Qualify exact known artifact limit; continue M5 within actual owner-authorized resources and preserve sealed runs.",
+  "nextSafeAction": "Freeze the tested quarantine, obtain fresh full-source reviews/exact-head CI and normally integrate; then execute remaining safe work and obtain substantive native/provider/commercial allocation. No VPS read-window renewal.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
-    "slice": "Transient webhook retention/queue recovery",
-    "status": "LOCAL_ACCEPTED_NORMALLY_MERGED_NOT_M5_ACCEPTANCE",
-    "worktree": "Separate feat/m5-transient-webhook-retention branch",
-    "purpose": "Deadline effect fences and finite durable queue budget; all unqualified raw erasure deferred; uninstall authority/privacy incomplete",
-    "nativeAuthority": "NONE; no production SQL/deployment"
+    "slice": "Generic uninstall authority quarantine",
+    "status": "LOCAL_CONTROLS_PASS_INDEPENDENT_REVIEW_CI_PENDING",
+    "purpose": "Pending generic HMAC-body receipts cannot deactivate any installation from unsigned header chronology or historical derived binding",
+    "nativeAuthority": "NONE; source-only; no production changes"
   },
   "activeCandidate": {
-    "scope": "Exact known reviewed archive size correction; preserves two sealed native attempts and metadata limits",
-    "base": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
-    "nativeResult": "SECOND_PARTIAL_SEALED_STOP_COMMERCIAL_NOT_REACHED",
-    "next": "Local TDD/candidate/fresh reviews/exact-head CI; no self-granted resource or deadline reset"
+    "scope": "Generic uninstall authority quarantine; no independently qualified generation authority or production rollout",
+    "base": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+    "nativeResult": "Reviewed artifacts matched; commercial policy/features absent; process supervision incomplete; no provider reads or production changes",
+    "next": "Fresh full-source CLEAR/CLEAR and natural exact-head attempt1CI before delegated normal merge; native full M5 remains blocked"
   },
   "boundedInventoryTooling": {
     "pr": 60,
     "status": "LOCAL_ACCEPTED_NORMALLY_MERGED",
     "reviews": "ACTUAL_CLEAR_CLEAR_GPT_6_1_SOL_HIGH",
     "naturalExactHeadAttempt1Ci": 10,
-    "nativeAccess": "PARTIAL_SEALED_STOP",
+    "nativeAccess": "THIRD_PARTIAL_STOP_PLUS_FOCUSED_READS_SEALED",
     "hostKeySetup": "EXISTING_OWNER_IDENTITY_AUTHENTICATED; NO NEW KEY REQUIRED",
     "existingSupportedAdminCredential": "UNAVAILABLE",
-    "milestoneAcceptance": false
+    "milestoneAcceptance": false,
+    "ownerVpsPermission": "PERMANENT_READ_ONLY"
   }
 }

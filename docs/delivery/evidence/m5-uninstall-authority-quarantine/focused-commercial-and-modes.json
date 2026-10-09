@@ -1,0 +1,101 @@
+{
+  "classification": "FOCUSED_VPS_READS_COMPLETED_NOT_M5_OR_PROVIDER_AUTHORITY_PASS",
+  "authorityRef": "owner-permanent-vps-readonly.json",
+  "closed": true,
+  "sshInvocations": 1,
+  "readReservations": 5,
+  "receipt": {
+    "adminRequests": 0,
+    "at": "2026-10-09T21:44:25.399620+00:00",
+    "authorityRef": "/home/serveradmin/insignia-milestone-autonomy-handoff/owner-permanent-vps-readonly-20261009.json",
+    "closedAt": "2026-10-09T21:44:26.541927+00:00",
+    "exitCode": 0,
+    "fixedCommandSha256": "12900afce3c3af3f46fa16cd32b6c43cef4b8f5837e5f13db475c0b444475db1",
+    "historicalReservations": 30,
+    "hostWrites": 0,
+    "metadataReservations": 5,
+    "ownerPages": 0,
+    "productionSql": 0,
+    "providerRequests": 0,
+    "resultClassification": "FOCUSED_READ_COMPLETE_NOT_READINESS_OR_M5_PASS",
+    "serverRestrictionProven": false,
+    "sshInvocations": 1,
+    "status": "CLOSED_CAPTURED",
+    "stderrBytes": 0,
+    "stdoutBytes": 1435,
+    "stdoutSha256": "c98ad30f906ae8f29117f14bb530519360fc7820e87658eea33a1d0bb3d5de3b"
+  },
+  "fileModes": [
+    {
+      "classification": "METADATA_OBSERVED",
+      "id": "file-mode-.env",
+      "metadata": {
+        "contentRead": false,
+        "mode": "0o600",
+        "name": ".env"
+      }
+    },
+    {
+      "classification": "METADATA_OBSERVED",
+      "id": "file-mode-runtime.env",
+      "metadata": {
+        "contentRead": false,
+        "mode": "0o600",
+        "name": "runtime.env"
+      }
+    },
+    {
+      "classification": "METADATA_OBSERVED",
+      "id": "file-mode-database.env",
+      "metadata": {
+        "contentRead": false,
+        "mode": "0o600",
+        "name": "database.env"
+      }
+    }
+  ],
+  "commercial": {
+    "policyConfigured": false,
+    "featuresConfigured": false,
+    "exactKeyPresenceOnly": {
+      "INSIGNIA_CREDENTIAL_KEY_BASE64": {
+        "nonempty": false,
+        "present": false
+      },
+      "INSIGNIA_CREDENTIAL_KEY_ID": {
+        "nonempty": false,
+        "present": false
+      },
+      "INSIGNIA_PARTNER_ACCESS_TOKEN": {
+        "nonempty": false,
+        "present": false
+      },
+      "INSIGNIA_PARTNER_ORGANIZATION_ID": {
+        "nonempty": false,
+        "present": false
+      },
+      "SHOPIFY_WEBHOOK_SECRET": {
+        "nonempty": false,
+        "present": false
+      }
+    },
+    "ownerCommercialApproval": "UNKNOWN_NOT_ATTESTED",
+    "providerTruth": "UNKNOWN_NOT_QUERIED",
+    "configurationStatus": "UNKNOWN_MISSING_CONFIGURATION",
+    "otherStoresFilesOrDifferentlyNamedKeysObserved": false
+  },
+  "laterProcessCounts": {
+    "bracketedNameCount": 0,
+    "kernelThreadNameShapeCount": 150,
+    "lineCount": 470,
+    "lineShapeFailures": 0,
+    "nameRegexFailures": 10,
+    "noArgsEnvOrMemoryRead": true,
+    "whitespaceNameCount": 9
+  },
+  "countsProveOriginalFailureCause": false,
+  "retentionDeleteBy": "2026-10-15T21:44:07.518611+00:00",
+  "secretValuesCapturedOrExported": false,
+  "dockerClientInspectMayTransientlyHandleFullConfigEnv": true,
+  "fieldLevelPrivilegeOrSecretHandlingIsolationProven": false
+}

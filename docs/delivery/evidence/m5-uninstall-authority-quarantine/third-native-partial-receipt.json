@@ -1,0 +1,95 @@
+{
+  "classification": "PARTIAL_SEALED_STOP_NOT_M5_OR_READINESS_PASS",
+  "authorityRef": "owner-permanent-vps-readonly.json",
+  "qualifiedHead": "fd5de86d6862d971fcda1a476eacee497184826c",
+  "qualifiedTree": "a781aed9ee9379207ab2bb822b1b0287a57bfa9e",
+  "qualifiedSourceSha256": "9d352d201dfa1b795bd7e3efd7c09d1c9b9aa340d38fadad0d2d14a47826203d",
+  "reservedMetadataObservations": 10,
+  "historicalReservationsBeforeRun": 20,
+  "conservativeReservationsAfterRun": 30,
+  "sshInvocations": 1,
+  "closed": true,
+  "startedAt": "2026-10-09T21:42:25.886077+00:00",
+  "closedAt": "2026-10-09T21:42:30.887123+00:00",
+  "localStopClassification": "STOP_SSH_OR_REMOTE_FAILURE",
+  "remoteStopClassification": "STOP_METADATA_INVALID",
+  "originalNativeFailureCause": "UNKNOWN",
+  "attemptedObservationIds": [
+    "canonical-web-runtime",
+    "canonical-database-runtime",
+    "canonical-router-runtime",
+    "legacy-service-boundary",
+    "canonical-compose-artifact",
+    "reviewed-web-package-artifact",
+    "bounded-running-docker-topology",
+    "bounded-host-process-executables"
+  ],
+  "selectedPublicObservations": [
+    {
+      "id": "canonical-web-runtime",
+      "classification": "METADATA_OBSERVED_NATIVE_UNQUALIFIED",
+      "metadata": {
+        "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+        "status": "running",
+        "health": "healthy",
+        "canonicalRouteMatches": true,
+        "canonicalRouteEnabled": true
+      }
+    },
+    {
+      "id": "canonical-database-runtime",
+      "classification": "METADATA_OBSERVED_NATIVE_UNQUALIFIED",
+      "metadata": {
+        "image": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+        "status": "running",
+        "health": "healthy",
+        "canonicalRouteMatches": false,
+        "canonicalRouteEnabled": false
+      }
+    },
+    {
+      "classification": "UNAVAILABLE_COMMAND_FAILED",
+      "id": "canonical-router-runtime",
+      "metadata": {
+        "containerState": "UNKNOWN",
+        "failureCause": "UNKNOWN",
+        "globalAbsenceProven": false
+      }
+    },
+    {
+      "classification": "METADATA_OBSERVED_NATIVE_UNQUALIFIED",
+      "id": "canonical-compose-artifact",
+      "metadata": {
+        "bytesHashed": 2365,
+        "mode": "0o600",
+        "sha256": "2cf6a39677b760570be3406e3d76280ec152ca40c4c01ba46e1ef2e4396faa4e"
+      }
+    },
+    {
+      "classification": "METADATA_OBSERVED_NATIVE_UNQUALIFIED",
+      "id": "reviewed-web-package-artifact",
+      "metadata": {
+        "bytesHashed": 70310306,
+        "mode": "0o600",
+        "sha256": "f117be50d7bc106f1c943cdf75a8080fa63c26e0edd99b7ba0ddf3eaea697c2b"
+      }
+    },
+    {
+      "id": "bounded-running-docker-topology",
+      "classification": "METADATA_OBSERVED_NATIVE_UNQUALIFIED",
+      "runningCount": 33,
+      "canonicalWorkerNamedContainerObserved": false,
+      "globalAbsenceProven": false,
+      "processorCoverage": "UNKNOWN"
+    }
+  ],
+  "rawStdoutSha256": "6abe207230b423e3bc624fe4ee45c6f4ac59b5bc23f09953473d61404b94f66c",
+  "rawStdoutBytes": 8613,
+  "rawStderrBytes": 0,
+  "retentionDeleteBy": "2026-10-15T21:42:25.816404+00:00",
+  "providerRequests": 0,
+  "ownerPages": 0,
+  "productionSql": 0,
+  "hostWrites": 0,
+  "retryOfSealedRun": false
+}

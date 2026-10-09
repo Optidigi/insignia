@@ -275,7 +275,10 @@ test.each(['pending', 'processed'])(
         }),
       );
       const receipt = await f.core.webhooks.receive({ ...f.input, deliveryId: randomUUID(), rawBody });
-      if (state === 'processed') expect(await f.core.webhooks.processUninstall(receipt.id)).toBe('processed');
+      if (state === 'processed') {
+        // Historical processed evidence only; quarantine cannot create this state.
+        await f.pool.query("UPDATE inbox_messages SET state='processed' WHERE id=$1", [receipt.id]);
+      }
       await expire(f.pool, receipt.id);
       const before = (
         await f.pool.query('SELECT payload,purge_after,state,erasure_state FROM inbox_messages WHERE id=$1', [
@@ -440,23 +443,23 @@ test('unqualified uninstall observations are bounded without discarding facts or
   }
 });
 
-test('deadline is checked after waiting for the installation row that will be deactivated', async () => {
+test('deadline is checked after waiting for the inbox row before quarantine resolution', async () => {
   const f = await fixture();
   const blocker = await f.pool.connect();
   let processing: Promise<string> | undefined;
   try {
-    await blocker.query('BEGIN');
-    await blocker.query('SELECT generation FROM installation_generations WHERE shop_id=$1 FOR UPDATE', [f.shopId]);
     await f.pool.query(
       `UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '250 milliseconds' WHERE id=$1`,
       [f.receipt.id],
     );
+    await blocker.query('BEGIN');
+    await blocker.query('SELECT id FROM inbox_messages WHERE id=$1 FOR UPDATE', [f.receipt.id]);
     processing = f.core.webhooks.processUninstall(f.receipt.id);
     const deadline = Date.now() + 2_000;
     let waiting = false;
     while (Date.now() < deadline) {
       const { rows } = await f.pool.query(`SELECT EXISTS(SELECT 1 FROM pg_stat_activity
-        WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%"installation_generations"%') AS waiting`);
+        WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%"inbox_messages"%') AS waiting`);
       if (rows[0].waiting) {
         waiting = true;
         break;

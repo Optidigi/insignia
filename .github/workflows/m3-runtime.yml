@@ -94,14 +94,18 @@ jobs:
           corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
           bash scripts/m5-024/build-worker.sh /tmp/insignia-m5-024-worker
           M5_WORKER_PACKAGE_ENTRY=/tmp/insignia-m5-024-worker/dist/main.js node --test scripts/m5-024/worker-guards.test.mjs scripts/m5-024/portable-process.test.mjs
-      - name: M5-024 captured signed body / altered metadata characterization
+      - name: Generic webhook quarantine through real HTTP and worker
+        env:
+          M5_025_REQUIRE_SAFE_UNINSTALL: '1'
         working-directory: apps/web
         run: node --test test/webhook-metadata-boundary.test.mjs
-      - name: M5-025 uninstall authority hard-stop characterization
+      - name: Uninstall authority quarantine and unresolved obligation controls
         env:
           DATABASE_URL: postgres://insignia_test:insignia_test@localhost:5432/insignia_m5_025_http?sslmode=disable
+          M5_025_REQUIRE_SAFE_UNINSTALL: '1'
         # Dedicated disposable DB prevents unrelated recovery backlog competing
-        # with this bounded process control. Success is reproduction, not security PASS.
+        # with this bounded process control. Safety assertions are unconditional;
+        # transport completion does not fulfill uninstall/privacy obligations.
         run: |
           corepack pnpm exec dbmate create
           corepack pnpm db:migrate

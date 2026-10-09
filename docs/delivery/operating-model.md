@@ -67,6 +67,8 @@ At milestone completion the implementation PRs may already be merged. Freeze the
 
 The orchestrator owns technical plans, preflights, freeze decisions and local approval of within-milestone experiments. Where existing explicit owner allocation covers the resources, operations, cost and effects, execute after local qualification without an additional principal signature.
 
+The owner has separately allocated [permanent read-only VPS access](authority/permanent-vps-readonly-2026-10-09.md) for the established Insignia host. Use it without recurring read-budget or authorization-window requests; retain bounded technical calls, private accounting and retention. It grants no production changes or independent Shopify resource operations.
+
 This policy does not allocate unknown infrastructure or authorize all production/Shopify activity. For missing authority, request one specific owner allocation: resource identity, access, operation/effect bounds, secrets channel, cost, cleanup, delayed obligations and stop conditions. Do not open another plan-only PR merely to ask that question. Start the permitted work immediately when allocation is granted and recorded. Any scope expansion needs renewed owner permission, not a new routine principal review.
 
 Retain secure secrets handling, raw evidence, uncertainty accounting, no ambiguous external mutation retry, and pause-on-unsafe-state. Preserve closed historical runs. A reviewed fix may create a new locally authorized technical run under valid owner resources; it may not relabel or resume a sealed failed attempt by patching in place.

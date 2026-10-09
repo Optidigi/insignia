@@ -20,7 +20,7 @@ export function credentialLifecycle(core: DurableCore): OfflineCredentialLifecyc
   };
 }
 
-/** M3-002 handles uninstall and credential refresh; future business topics remain queued/visible. */
+/** Generic uninstall and other unqualified topics stay visible and deferred; credential refresh retains its existing contract. */
 export function createDurableWorkerHandlers(
   core: DurableCore,
   transport: ShopifyOfflineRefreshTransport,
@@ -36,7 +36,7 @@ export function createDurableWorkerHandlers(
       if (state.topic !== 'app/uninstalled') return 'deferred';
       const result = await core.webhooks.processUninstall(inboxId);
       if (result === 'unresolved' || result === 'not_found') throw new Error('Uninstall delivery cannot yet resolve');
-      if (result === 'unverified') return 'deferred';
+      if (result === 'unverified' || result === 'unqualified') return 'deferred';
       if (result === 'expired') return 'expired';
       if (result === 'exhausted') return 'exhausted';
     },
@@ -55,7 +55,7 @@ export function createDurableWorkerHandlers(
   };
 }
 
-/** Periodic bounded recovery bridges installation after an unresolved signed uninstall. */
+/** Bounded queue handoff recovery preserves receipts; it cannot supply uninstall authority. */
 export async function recoverPendingUninstalls(core: DurableCore, queue: PgBossRuntime): Promise<number> {
   const ids = await core.webhooks.pendingUninstallIds(100);
   let confirmed = 0;

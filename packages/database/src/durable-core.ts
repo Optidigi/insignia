@@ -246,7 +246,7 @@ export interface DurableCore {
     processUninstall(
       id: string,
     ): Promise<
-      'processed' | 'unverified' | 'already_processed' | 'unresolved' | 'stale' | 'not_found' | 'expired' | 'exhausted'
+      'unqualified' | 'unverified' | 'already_processed' | 'unresolved' | 'not_found' | 'expired' | 'exhausted'
     >;
   };
   readonly credentials: {
