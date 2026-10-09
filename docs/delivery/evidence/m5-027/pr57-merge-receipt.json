@@ -1,0 +1,18 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 57,
+  "url": "https://github.com/Optidigi/insignia/pull/57",
+  "mergedAt": "2026-10-09T12:55:50Z",
+  "observedAt": "2026-10-09T12:55:52.883109+00:00",
+  "mergeCommit": "a87ed85034dcaaf3b4b86bb1f0d9986f6e59d449",
+  "orderedParents": [
+    "1e0cb0279bf5595e59a52972bea621b379114713",
+    "4a542c72d3b78b76e74877260a3e275a53e2d2c2"
+  ],
+  "tree": "ccca0bdadbc0509491c0d161c9306e977e9fad88",
+  "remoteMain": "a87ed85034dcaaf3b4b86bb1f0d9986f6e59d449",
+  "mergeAttempts": 1,
+  "method": "normal merge commit, no admin/protection bypass/squash/rebase/force-push",
+  "approvalScope": "Bounded offline M5-026 only; no production safety or resource authority",
+  "explicitOwnerDelegation": "Delegate PR57 normal merge"
+}

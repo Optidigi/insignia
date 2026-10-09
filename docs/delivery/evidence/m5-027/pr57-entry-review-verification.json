@@ -1,0 +1,50 @@
+{
+  "reviewCommentUrl": "https://github.com/Optidigi/insignia/pull/57#issuecomment-6080684055",
+  "commentSha256": "25e44ea2565162e060acdee19ba141ccefa5fcb1067ff4719c06b7e2119b2636",
+  "reviewRuntime": {
+    "base": "1e0cb0279bf5595e59a52972bea621b379114713",
+    "head": "4a542c72d3b78b76e74877260a3e275a53e2d2c2",
+    "tree": "ccca0bdadbc0509491c0d161c9306e977e9fad88",
+    "cli": "Codex0.162.0 ignore-user-config enforced-read-only fallback; native delegation does not expose enforced filesystem read-only",
+    "reviewers": [
+      {
+        "axis": "spec",
+        "sessionId": "01a12090-6dcb-73b0-b34c-2e116a574025",
+        "model": "gpt-6.1-sol",
+        "reasoningEffort": "high",
+        "approvalPolicy": "never",
+        "sandboxPolicy": {
+          "type": "read-only"
+        },
+        "cwd": "/home/serveradmin/insignia-m5-026-worktree",
+        "parentVerifiedTurnContexts": 1,
+        "promptSha256": "59df9c9008c089956bf5da77bab8720389ae07fc23d663d0e020c94c99a039d3",
+        "limitations": "Filesystem read-only enforced; credential/network isolation not claimed. Static full-source review; tests/native operations not rerun.",
+        "verdict": "CLEAR",
+        "reportSha256": "82ac844532520a544bbbb88a42a0df45b78b88191f6a0f3a9943c03c6645ff05",
+        "completedProcessExitCode": 0
+      },
+      {
+        "axis": "security",
+        "sessionId": "01a12090-7195-7a41-acce-25bdec8fc7bd",
+        "model": "gpt-6.1-sol",
+        "reasoningEffort": "high",
+        "approvalPolicy": "never",
+        "sandboxPolicy": {
+          "type": "read-only"
+        },
+        "cwd": "/home/serveradmin/insignia-m5-026-worktree",
+        "parentVerifiedTurnContexts": 1,
+        "promptSha256": "b4ebc0060ee3a30be877138503b27798253147547f5e17ec21d7237d95677cbc",
+        "limitations": "Filesystem read-only enforced; credential/network isolation not claimed. Static full-source review; tests/native operations not rerun.",
+        "verdict": "CLEAR",
+        "reportSha256": "8c789e023d0407e7dd652c3c399d71781a00d05fa77d3cf45542e7b17395156e",
+        "completedProcessExitCode": 0
+      }
+    ],
+    "verdictScope": "Bounded offline qualification/resource proposal only; no native authority or production PASS"
+  },
+  "externalPrincipalApproval": "owner-relayed APPROVED bounded offline M5-026 only",
+  "ownerDelegation": "Delegate PR57 normal merge",
+  "nativeApprovalFabricated": false
+}

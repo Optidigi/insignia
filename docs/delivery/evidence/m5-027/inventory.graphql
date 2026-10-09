@@ -1,0 +1,13 @@
+# PROPOSED READ-ONLY DOCUMENTS; NOT EXECUTED. API2026-07.
+query M5027WebhookInventory($after: String) {
+  shop { id myshopifyDomain }
+  currentAppInstallation { id app { id apiKey } accessScopes { handle } }
+  webhookSubscriptions(first: 250, after: $after) {
+    nodes { id topic uri format apiVersion { handle } }
+    pageInfo { hasNextPage endCursor }
+  }
+}
+query M5027InstallationBoundary {
+  shop { id myshopifyDomain }
+  currentAppInstallation { id app { id apiKey } accessScopes { handle } }
+}

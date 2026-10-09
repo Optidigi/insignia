@@ -1,3 +1,11 @@
+# Current M5-027 — pre-installation effects remain unqualified
+
+PR57 APPROVED for bounded offline M5-026 only and normally merged as a87ed85034dcaaf3b4b86bb1f0d9986f6e59d449 after specific owner delegation; [receipt](evidence/m5-027/pr57-merge-receipt.json). Current [authority](prompts/M5-027-PREINSTALL-DESTINATION-EFFECT-PRIVACY.md), [offline source/effect/privacy report](M5-027-DESTINATION-EFFECT-PRIVACY.md) and [separate read-only inventory proposal](M5-027-READ-ONLY-INVENTORY.md).
+
+**STOP_PRE_INSTALL_DESTINATION_EFFECTS_UNQUALIFIED / M5_G7_NOT_PASSED.** Native accepted configuration/destinations/deployed processors/privacy facts are NOT_RUN; no owner resource access granted. Automatic admin mount can authenticate/bootstrap; unknown-Shop ingress writes inbox/queue; privacy topics defer and purge metadata is not an erasure executor. Historical RED/source/contracts preserved. Docs/evidence only; reuse existing qualification, new applicable checks/independent reviews/natural CI before external handoff. Existing designated installation is not disposable. No install/uninstall/webhook/app/scope/deploy/production SQL/Search/fixture/M6/M7/rollout. Return one candidate, no successor merge or resource continuation.
+
+---
+
 # Current M5-026 candidate — offline qualification, native resource phase closed
 
 PR56's bounded blocker is externally APPROVED and normally merged as 1e0cb0279bf5595e59a52972bea621b379114713; [receipt](evidence/m5-026/pr56-merge-receipt.json). This accepts evidence only, not existing uninstall production safety. Current [authority](prompts/M5-026-EXACT-APP-CALLBACK-QUALIFICATION.md) authorizes offline controls/research/plan preparation. [Report](M5-026-REPORT.md), [feasibility/threat/gap matrix](M5-026-CALLBACK-AUTHORITY.md), [separate resource proposal](M5-026-RESOURCE-PLAN.md).

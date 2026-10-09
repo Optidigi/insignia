@@ -1,0 +1,198 @@
+{
+  "baseline": "a87ed85034dcaaf3b4b86bb1f0d9986f6e59d449",
+  "scope": "Independent source inspection + fresh scoped rg search; current source is not asserted to be current deployment",
+  "files": [
+    {
+      "path": "deployment/m5-019r/shopify.app.m5-019r.toml",
+      "bytes": 670,
+      "sha256": "cd1f8bb82c14d12d7fe3ff90349eba5c5bd0acde774b4b9063d5a085bcc97111",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "deployment/m5-019r/compose.yaml",
+      "bytes": 2365,
+      "sha256": "2cf6a39677b760570be3406e3d76280ec152ca40c4c01ba46e1ef2e4396faa4e",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/web/src/pages/api/webhooks/shopify.ts",
+      "bytes": 1938,
+      "sha256": "c2ee6ee8b95000445ca8daa404c60116891c40373879f6208123522fb0757af5",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/web/src/server/shopify-webhook.ts",
+      "bytes": 3487,
+      "sha256": "51fd83e4425246d9b5816d85e52bb2e6ed37cebf4f9deffcaaa9280cec71ce77",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/web/src/server/runtime.ts",
+      "bytes": 1065,
+      "sha256": "03c9f1a8482147f12ba7f23a955fce4da3caee368aa7a3350bb64b7a0ac1dcdd",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/web/src/pages/admin/products/index.astro",
+      "bytes": 1486,
+      "sha256": "a09070e3125c41ed1a1ae4484bc149348aba77cf0bf94108ca5f54ac7e03ecbd",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/web/src/pages/admin/products/[productId]/config.astro",
+      "bytes": 1655,
+      "sha256": "c46ef05880974bdbac1835c2a02e93ae76b359a83951641f98c088cd710d7571",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/web/src/islands/MerchantConfigEditor.tsx",
+      "bytes": 81662,
+      "sha256": "9bfe1801c88ec5aefaebc79a4fb35a54039130321d189e7d239f18f59cee3a75",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/web/src/server/admin/http.ts",
+      "bytes": 8920,
+      "sha256": "676279f16c93d0c52510506dc3dea923a9e463c671ba079e65a92a8b413d90b4",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/web/src/server/admin/production.ts",
+      "bytes": 18949,
+      "sha256": "63b2125855f1db446ba53ac68f7598793fb08719feaef90e87a93992b1161a63",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "packages/application/src/shopify/ingress.ts",
+      "bytes": 2889,
+      "sha256": "8745ed7a0900216ce7ea49b3d2af71c624b534251a1d0e64986c663e2772b10b",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "packages/shopify/src/webhook.ts",
+      "bytes": 4809,
+      "sha256": "c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "packages/shopify/src/admin-online-identity.ts",
+      "bytes": 11639,
+      "sha256": "6fadbaeea4cd5bbd5f63d20a3e5a85e028cf8983cbb7b0bd98e6dea1af87d2c9",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "packages/database/src/repositories/shopify-webhooks.ts",
+      "bytes": 15737,
+      "sha256": "c0d93f382bce045ef02e04aab175a05a128181470dbb7793f193313281703533",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "packages/database/src/repositories/tenant.ts",
+      "bytes": 19688,
+      "sha256": "a88129c9b6fd99d7544c4d22856caba58306f960d6daa56c5b3575a15c4659a5",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "packages/database/src/repositories/shop-credentials.ts",
+      "bytes": 13179,
+      "sha256": "01e09b510901db3737aee6524cac9db4fe3c3a1d983d6d23b798c6f4cccce813",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "packages/database/src/repositories/delivery/pg-inbox-repository.ts",
+      "bytes": 4936,
+      "sha256": "2dc03c6820c103e556944cae6534c390bc8a601b7ce78bd115365d03ddf77002",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "packages/database/migrations/20260929000100_durable_core.sql",
+      "bytes": 14817,
+      "sha256": "383ce96b93793e8e69330bdd7baff0b522baa92e71c1c8ec3bfda7eed3fd880d",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/worker/src/handlers.ts",
+      "bytes": 2911,
+      "sha256": "9c1f9272760fcb7f4d41b4de98f352e34196bfc54959193e1509b9df1c256471",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/worker/src/runtime.ts",
+      "bytes": 12729,
+      "sha256": "af7debb34c5f3ff8976e015c428da69baeaa6471d6c2f253315efb298adf2a1c",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/worker/src/queue-contract.ts",
+      "bytes": 950,
+      "sha256": "171cd006fde7460cc9ffc111189ffd3d81d726b0c3a31739331159c0829fd209",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/worker/src/main.ts",
+      "bytes": 2356,
+      "sha256": "7a74f42b40b738b115392dda9f1d5b77347f9a3ce54eb1755459372039e28c0a",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "scripts/m5-024/install-queue.mjs",
+      "bytes": 2508,
+      "sha256": "2fc7c0add7a8b3bbcb5f6db24080aebc32499cfc73b47206a0e51416cc5717c7",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "apps/web/test/uninstall-authority.test.mjs",
+      "bytes": 9484,
+      "sha256": "724b87cc01f1028333234ae585f0060395410c5212ce731b17457f79622cd5f4",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-019/deployed-legacy-route-manifest.json",
+      "bytes": 10833,
+      "sha256": "48c85833ea1462cfe49ae4e59602cf37a4f0cb20f87a3d2fccf99ad0044410f1",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-020/post-release-owner-native-attestation.json",
+      "bytes": 2554,
+      "sha256": "036c823c94881d3d4f22a12046a81ab6f7852de1fcc382854a38b2812f05760e",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-026/local-checks.json",
+      "bytes": 6418,
+      "sha256": "c2fb384a8f06f1307bc8308369dc694bc392d16905e84774dffe3c6d0879c45a",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-026/source-inventory.json",
+      "bytes": 2065,
+      "sha256": "277f790996a0d706c31d8c33a72431b2210af98fe14c481940eead9c105b0159",
+      "unchangedFromBaseline": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-026/public-doc-fetch.json",
+      "bytes": 6021,
+      "sha256": "a52589412201ec02e35f67b2e7e378fe756eff131ac3388194ab66a5a612cf70",
+      "unchangedFromBaseline": true
+    }
+  ],
+  "scopedSearch": {
+    "command": "rg -n purge_after|erasure_state|redact|delete-expired|tombstone|processInbox|ensureManagedInstallation|webhooks.register|webhookSubscriptionCreate apps/web/src apps/worker/src packages/database/src packages/shopify/src packages/application/src scripts/m5-024",
+    "sha256": "b4b5af8ae3b0d6229784346a270a9a64239064e2c787338b445189e7a88b2117",
+    "bytes": 2499,
+    "rawContent": "apps/worker/src/handlers.ts:30:    async processInbox(inboxId) {\napps/worker/src/runtime.ts:23:  processInbox(inboxId: string, context: JobContext): Promise<undefined | 'deferred'>;\napps/worker/src/runtime.ts:202:          const outcome = await handlers.processInbox(job.id, {\nscripts/m5-024/crash-child.mjs:19:  async processInbox(id, context) {\nscripts/m5-024/crash-child.mjs:25:    await handlers.processInbox(id, context);\nscripts/m5-024/queue-privileges.test.mjs:87:      async processInbox(received) {\npackages/application/src/delivery/inbox.ts:66:export async function processInbox<Tx>(\napps/web/src/server/admin/production.ts:317:                core.tenants.ensureManagedInstallation(tx, {\npackages/database/src/repositories/shopify-webhooks.ts:267:            purge_after: new Date(now.getTime() + WEBHOOK_RETENTION_MS),\npackages/database/src/repositories/shopify-webhooks.ts:268:            erasure_state: 'retained',\npackages/database/src/repositories/tenant.ts:152:    async ensureManagedInstallation(\npackages/database/src/repositories/delivery/pg-outbox-repository.ts:57:        purge_after: event.purgeAfter,\npackages/database/src/repositories/delivery/pg-outbox-repository.ts:58:        erasure_state: 'retained',\npackages/database/src/repositories/delivery/pg-outbox-repository.ts:77:        'purge_after',\npackages/database/src/repositories/delivery/pg-outbox-repository.ts:91:      existing.purge_after?.getTime() !== event.purgeAfter?.getTime() ||\npackages/database/src/repositories/delivery/pg-outbox-repository.ts:193:        purgeAfter: row.purge_after,\npackages/database/src/repositories/delivery/pg-inbox-repository.ts:24:        purge_after: message.purgeAfter,\npackages/database/src/repositories/delivery/pg-inbox-repository.ts:27:        erasure_state: 'retained',\npackages/database/src/repositories/delivery/pg-inbox-repository.ts:94:      purgeAfter: row.purge_after,\npackages/database/src/client/database.ts:109:  purge_after: NullableTimestamp;\npackages/database/src/client/database.ts:110:  erasure_state: Generated<'retained' | 'pending' | 'erased'>;\npackages/database/src/client/database.ts:162:  purge_after: NullableTimestamp;\npackages/database/src/client/database.ts:163:  erasure_state: Generated<'retained' | 'pending' | 'erased'>;\npackages/database/src/durable-core.ts:192:    ensureManagedInstallation(\npackages/database/src/durable-core.ts:594:      ensureManagedInstallation: (handle, input) => tenants.ensureManagedInstallation(resolve(handle), input),\n"
+  },
+  "qualifiedSourceFacts": [
+    "Automatic authenticated load on admin mount/visibility",
+    "Authentication transaction can ensure installation",
+    "Unknown-Shop durable receipt and queue handoff",
+    "getById can mutate resolution binding",
+    "Privacy handler defers; no implemented erasure/purge/tombstone executor located in scoped current runtime source",
+    "Local queue retry limit does not bound recovery lifetime"
+  ],
+  "nativeFacts": "NOT_RUN; actual destinations, deployment shapes, independent privacy processor and delayed-effect owner UNKNOWN",
+  "productionOperations": 0,
+  "publicDocumentationRequests": 0,
+  "authenticatedShopifyProviderOperations": 0
+}

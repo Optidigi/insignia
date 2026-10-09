@@ -1,0 +1,13 @@
+{
+  "role": "Independent offline source research scout, not a final reviewer or principal",
+  "sessionId": "01a120bd-4af2-7d03-bac2-d8814719fe1e",
+  "model": "gpt-6.1-sol",
+  "effort": "high",
+  "filesystem": "enforced read-only",
+  "approvalPolicy": "never",
+  "exitCode": 0,
+  "reportSha256": "ddbff08c2a24a27317f69bb788d8bf86cbeb6395776405cb1a741d7f80b2e45c",
+  "promptSha256": "6c74143fee870713dd6c609795d07ea26661da5ce11033355fbbfcbd079a44f1",
+  "limitations": "Static analysis/retained primary docs only, no current native observation; network/credential isolation not claimed",
+  "integration": "Historical legacy candidate routes included with attribution UNKNOWN; advisory broader budgets not adopted; final plan narrows to3 Admin reads,3 owner surfaces,12 named metadata artifacts and zero SQL/canonical probes"
+}
