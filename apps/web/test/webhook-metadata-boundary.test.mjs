@@ -38,8 +38,8 @@ async function isolatedDatabase() {
   }
 }
 
-// Characterization, not a security PASS: preserve accepted semantics until principal adjudication.
-test('captured signed body with new delivery ID and later unsigned trigger can deactivate a new generation', {
+// Generic HMAC admission is preserved; unsigned headers cannot authorize deactivation.
+test('captured signed body with new delivery ID and later unsigned trigger remains quarantined', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',
   timeout: 40_000,
 }, async (t) => {
@@ -105,7 +105,7 @@ test('captured signed body with new delivery ID and later unsigned trigger can d
     const original = await post();
     assert.equal(original.status, 200);
     const first = await original.json();
-    await core.webhooks.processUninstall(first.inboxId);
+    assert.equal(await core.webhooks.processUninstall(first.inboxId), 'unqualified');
     assert.equal(await core.transactions.run((tx) => core.tenants.startInstallation(tx, shopId)), '2');
     const activated = (
       await pool.query('select activated_at from installation_generations where shop_id=$1 and generation=2', [shopId])
@@ -114,7 +114,7 @@ test('captured signed body with new delivery ID and later unsigned trigger can d
     assert.equal((await post({ 'x-shopify-triggered-at': changedTrigger })).status, 503, 'same delivery ID conflicts');
     const old = await post({ 'x-shopify-webhook-id': randomUUID() });
     assert.equal(old.status, 200);
-    assert.equal((await core.webhooks.getById((await old.json()).inboxId)).resolution, 'stale');
+    assert.equal((await core.webhooks.getById((await old.json()).inboxId)).resolution, 'unqualified');
     const wrongShopId = randomUUID();
     const wrongDomainName = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
     await core.transactions.run((tx) =>
@@ -136,8 +136,8 @@ test('captured signed body with new delivery ID and later unsigned trigger can d
     assert.equal(replay.status, 200);
     const receipt = await replay.json();
     const bound = await core.webhooks.getById(receipt.inboxId);
-    assert.equal(bound.installationGeneration, '2');
-    assert.equal(bound.resolution, 'resolved');
+    assert.equal(bound.installationGeneration, null);
+    assert.equal(bound.resolution, 'unqualified');
     worker = spawn(
       process.execPath,
       [new URL('../../worker/dist/main.js', import.meta.url).pathname, `--port=${port + 1000}`],
@@ -154,16 +154,15 @@ test('captured signed body with new delivery ID and later unsigned trigger can d
       },
     );
     workerClosed = new Promise((resolve) => worker.once('close', resolve));
-    await waitFor(async () => {
-      const rows = await pool.query(
-        'select deactivated_at from installation_generations where shop_id=$1 and generation=2',
-        [shopId],
-      );
-      return rows.rows[0].deactivated_at !== null;
-    });
+    await waitFor(
+      async () =>
+        (await pool.query('select state from pgboss.job where id=$1', [receipt.inboxId])).rows[0]?.state ===
+        'completed',
+    );
+    assert.equal((await core.tenants.getCurrentAdminInstallation(shopId)).active, true);
     assert.equal(
       (await pool.query('select state from inbox_messages where id=$1', [receipt.inboxId])).rows[0].state,
-      'processed',
+      'pending',
     );
     assert.equal(
       (
@@ -174,7 +173,7 @@ test('captured signed body with new delivery ID and later unsigned trigger can d
       null,
     );
     console.log(
-      'M5-024 REPRODUCED_LOCAL: original signed body, new unsigned delivery ID/trigger, generation 2 deactivated; no real provider used',
+      'M5-024 QUARANTINE_LOCAL: generic receipt remains pending and generation2 active; no real provider used',
     );
   } finally {
     for (const [child, closed] of [

@@ -1,0 +1,40 @@
+{
+  "classification": "CHANGES_REQUIRED_NOT_ACCEPTED",
+  "head": "72a83a716cadb3fc351528f0468b3b29c422d02b",
+  "tree": "91d2d544670fa7724abd38368a9db12bbeee8848",
+  "base": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "effectiveMergeBase": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "reviews": [
+    {
+      "axis": "spec",
+      "sessionId": "01a122c8-458d-7fc3-8ae8-99e6c7f5abaa",
+      "verdict": "CLEAR",
+      "actualModel": "gpt-6.1-sol",
+      "actualEffort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "allOriginalTurnContextsMatched": true,
+      "processExitCode": 0,
+      "turnCompleted": true,
+      "reportSha256": "fe941e3202c1cbbb47795925ac69df0cef46d7f64f1861111f9adcfe15ec8c94",
+      "limits": "Static fullsource/publicevidence only; parent tests/CI; no independent native attestation or credential/network isolation"
+    },
+    {
+      "axis": "security",
+      "sessionId": "01a122c8-45a3-7403-aedb-2e4611aa6894",
+      "verdict": "CHANGES_REQUIRED",
+      "actualModel": "gpt-6.1-sol",
+      "actualEffort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "allOriginalTurnContextsMatched": true,
+      "processExitCode": 0,
+      "turnCompleted": true,
+      "reportSha256": "76fa6fe025abdaee2ca7dc39885599eea3305c25fe0253b3c858f1e66612da9e",
+      "limits": "Static fullsource/publicevidence only; parent tests/CI; no independent native attestation or credential/network isolation"
+    }
+  ],
+  "finding": "P2 completed quarantines starve bounded queue handoff recovery for later committed unqueued receipts",
+  "accepted": false,
+  "recordedAt": "2026-10-09T22:35:31.196608+00:00"
+}

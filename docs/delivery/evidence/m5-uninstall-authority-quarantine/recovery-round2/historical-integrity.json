@@ -1,0 +1,49 @@
+{
+  "checks": [
+    {
+      "path": "docs/delivery/history/state-before-uninstall-quarantine-pr63.md",
+      "originalGit": "5ce5911d124bf2727e8e5d390f53086d6e578d78:docs/delivery/state.md",
+      "sha256": "3df95de96725662022e56ba46c58bfe72623a941150988594e8bfd469329fba1",
+      "byteExact": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-uninstall-authority-quarantine/historical-pr23-trust-boundary.md",
+      "originalGit": "5ce5911d124bf2727e8e5d390f53086d6e578d78:docs/architecture/SHOPIFY-WEBHOOK-TRUST-BOUNDARY.md",
+      "sha256": "1541e0ad341535f4c10dc7cf415f6eaee2ebad2f1264ede1c4fe5666830dc8e5",
+      "byteExact": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-uninstall-authority-quarantine/reviews/r1/candidate-manifest.json",
+      "originalGit": "72a83a716cadb3fc351528f0468b3b29c422d02b:docs/delivery/evidence/m5-uninstall-authority-quarantine/manifest.json",
+      "sha256": "799fa4292d9d7a184ec2f1b700adb0003e8edd89fe3b27fadedfc1cc63eed1b6",
+      "byteExact": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-uninstall-authority-quarantine/PUBLIC-RECEIPT.json",
+      "originalGit": "72a83a716cadb3fc351528f0468b3b29c422d02b:docs/delivery/evidence/m5-uninstall-authority-quarantine/PUBLIC-RECEIPT.json",
+      "sha256": "ec75122056c96bdc51ec33826a2127a88b7bd5387de94bae52e343c0d8def79b",
+      "byteExact": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-uninstall-authority-quarantine/PUBLIC-SUMMARY.md",
+      "originalGit": "72a83a716cadb3fc351528f0468b3b29c422d02b:docs/delivery/evidence/m5-uninstall-authority-quarantine/PUBLIC-SUMMARY.md",
+      "sha256": "263840f716dc14643b7bd7b547c68de77dc16ef256a91948649227bf6b9b8095",
+      "byteExact": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-uninstall-authority-quarantine/reviews/r1/spec.md",
+      "sha256": "fe941e3202c1cbbb47795925ac69df0cef46d7f64f1861111f9adcfe15ec8c94",
+      "matchesOriginalReviewedReport": true
+    },
+    {
+      "path": "docs/delivery/evidence/m5-uninstall-authority-quarantine/reviews/r1/security.md",
+      "sha256": "76fa6fe025abdaee2ca7dc39885599eea3305c25fe0253b3c858f1e66612da9e",
+      "matchesOriginalReviewedReport": true
+    },
+    {
+      "check": "R1exact11greenCIremainsrejected",
+      "result": "PASS"
+    }
+  ],
+  "sourceBuildExecutionPerformed": false
+}

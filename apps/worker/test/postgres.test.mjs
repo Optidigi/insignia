@@ -82,7 +82,7 @@ test('PostgreSQL pg-boss starts, retries, settles and replays after restart', {
   }
 });
 
-test('pg-boss retry after committed uninstall retains one deactivation and one inbox fact', {
+test('pg-boss retry after quarantine retains pending receipt and active installation', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',
   timeout: 45_000,
 }, async () => {
@@ -122,9 +122,11 @@ test('pg-boss retry after committed uninstall retains one deactivation and one i
       rawBody: Buffer.from(JSON.stringify({ id: Number(shopifyShopId), myshopify_domain: domain })),
     };
     const receipt = await core.webhooks.receive(input);
+    let providerCalls = 0;
     const actual = createDurableWorkerHandlers(core, {
       async refresh() {
-        throw new Error('unexpected refresh');
+        providerCalls++;
+        throw new Error('provider unavailable');
       },
     });
     let attempts = 0;
@@ -134,9 +136,10 @@ test('pg-boss retry after committed uninstall retains one deactivation and one i
     await queue.work({
       ...actual,
       async processInbox(id, context) {
-        await actual.processInbox(id, context);
+        const outcome = await actual.processInbox(id, context);
         attempts++;
-        if (attempts === 1) throw new Error('synthetic crash after durable commit');
+        if (attempts === 1) throw new Error('synthetic crash after quarantine transaction');
+        return outcome;
       },
     });
     const deadline = Date.now() + 35_000;
@@ -149,18 +152,20 @@ test('pg-boss retry after committed uninstall retains one deactivation and one i
     assert.equal(job?.state, 'completed');
     assert.equal(attempts, 2);
     const inbox = await pool.query('select id, state, attempts from inbox_messages where id = $1', [receipt.id]);
-    assert.deepEqual(inbox.rows, [{ id: receipt.id, state: 'processed', attempts: 1 }]);
+    assert.deepEqual(inbox.rows, [{ id: receipt.id, state: 'pending', attempts: 0 }]);
     const generation = await pool.query(
       'select deactivated_at from installation_generations where shop_id = $1 and generation = 1',
       [shopId],
     );
-    assert.ok(generation.rows[0]?.deactivated_at);
+    assert.equal(generation.rows[0]?.deactivated_at, null);
     assert.deepEqual(await core.webhooks.receive(input), {
-      kind: 'processed',
+      kind: 'duplicate',
       id: receipt.id,
       shopId,
-      installationGeneration: '1',
+      installationGeneration: null,
     });
+    assert.equal((await core.webhooks.getById(receipt.id)).resolution, 'unqualified');
+    assert.equal(providerCalls, 0, 'uninstall quarantine must not dispatch provider IO');
   } finally {
     if (started) await queue.stop();
     await core.close();

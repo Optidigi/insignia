@@ -1,0 +1,53 @@
+{
+  "classification": "READ_ONLY_METADATA_NOT_GLOBAL_PROCESSOR_PROOF",
+  "receipt": {
+    "at": "2026-10-09T21:49:05.112263+00:00",
+    "authorityRef": "/home/serveradmin/insignia-milestone-autonomy-handoff/owner-permanent-vps-readonly-20261009.json",
+    "closedAt": "2026-10-09T21:49:06.824755+00:00",
+    "exitCode": 0,
+    "fixedCommandSha256": "4938f698010245dea31f73eff9b790a1aeda5bc70727fbb7f268e2f4cc1fce4a",
+    "hostWrites": 0,
+    "metadataReadReservations": 3,
+    "productionSql": 0,
+    "providerRequests": 0,
+    "serverRestrictionProven": false,
+    "sshInvocations": 1,
+    "status": "CLOSED_CAPTURED",
+    "stderrBytes": 0,
+    "stdoutBytes": 26810,
+    "stdoutSha256": "076dd9f761ac32cb770a37348299546de8f2323c4568e188bc0007c6485d130f"
+  },
+  "summary": {
+    "observations": [
+      {
+        "id": "canonical-web-process-names",
+        "classification": "METADATA_OBSERVED",
+        "unitCount": null,
+        "insigniaNamedUnitCount": 0,
+        "canonicalWebProcessCount": 1,
+        "workerSemanticsProven": false
+      },
+      {
+        "id": "systemd-service-unit-names",
+        "classification": "METADATA_OBSERVED",
+        "unitCount": 161,
+        "insigniaNamedUnitCount": 0,
+        "canonicalWebProcessCount": null,
+        "workerSemanticsProven": false
+      },
+      {
+        "id": "systemd-service-unit-file-names",
+        "classification": "METADATA_OBSERVED",
+        "unitCount": 232,
+        "insigniaNamedUnitCount": 0,
+        "canonicalWebProcessCount": null,
+        "workerSemanticsProven": false
+      }
+    ],
+    "otherUnitNamesOrHostsProveProcessorAbsence": false,
+    "globalAbsenceProven": false
+  },
+  "retentionDeleteBy": "2026-10-15T21:48:14.311393+00:00",
+  "noArgsEnvMemoryOrUnitExecutionPropertiesRead": true,
+  "authorityRef": "owner-permanent-vps-readonly.json"
+}

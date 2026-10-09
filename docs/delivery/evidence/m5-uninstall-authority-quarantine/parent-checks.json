@@ -1,0 +1,56 @@
+{
+  "classification": "PARENT_STATIC_CHECKS_PASSED_NOT_REVIEW_OR_MILESTONE_ACCEPTANCE",
+  "at": "2026-10-09T22:24:55.825702+00:00",
+  "base": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "checks": [
+    {
+      "command": "corepack pnpm check:style",
+      "exitCode": 0,
+      "checkedFiles": 319,
+      "warnings": 90,
+      "infos": 132,
+      "fixesApplied": false
+    },
+    {
+      "command": "node scripts/boundaries/check-secrets.mjs",
+      "exitCode": 0,
+      "productionSources": 115,
+      "testFixtureFiles": 99,
+      "browserArtifacts": 2,
+      "syntheticSeeds": 2
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    },
+    {
+      "check": "selected evidence JSON and active/new document links",
+      "result": "PASS"
+    },
+    {
+      "check": "previous state and historical PR23 trust record equal complete original base Git bytes",
+      "result": "PASS"
+    },
+    {
+      "check": "all18current/base source bindings and220final compiled file hashes match actual files; portable equality receipt digest verified",
+      "result": "PASS"
+    },
+    {
+      "check": "39original local execution JSON/log records and all closure log hashes match public receipt",
+      "result": "PASS"
+    }
+  ],
+  "productionSourceChangedPaths": [
+    "apps/web/src/pages/api/webhooks/shopify.ts",
+    "apps/worker/src/handlers.ts",
+    "apps/worker/src/runtime.ts",
+    "packages/database/src/durable-core.ts",
+    "packages/database/src/repositories/shopify-webhooks.ts",
+    "packages/database/src/repositories/tenant.ts"
+  ],
+  "migrationFunctionProviderConfigLockChanged": false,
+  "independentReviews": "PENDING",
+  "finalHeadCi": "PENDING",
+  "milestonePassed": false,
+  "runtimeBuildsOrBehaviorTestsRunAfterWriterRelease": false
+}

@@ -1,25 +1,59 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { createHmac, randomUUID } from 'node:crypto';
-import { once } from 'node:events';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
 
+async function isolatedDatabase() {
+  const admin = new Pool({ connectionString: process.env.DATABASE_URL });
+  const database = `m5024_http_${randomUUID().replaceAll('-', '')}`;
+  const url = new URL(process.env.DATABASE_URL);
+  url.pathname = `/${database}`;
+  const root = fileURLToPath(new URL('../../../', import.meta.url));
+  let created = false;
+  async function close() {
+    try {
+      if (created) await admin.query(`DROP DATABASE ${database}`);
+    } finally {
+      await admin.end();
+    }
+  }
+  try {
+    await admin.query(`CREATE DATABASE ${database}`);
+    created = true;
+    await promisify(execFile)(
+      `${root}node_modules/.bin/dbmate`,
+      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
+      { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30_000 },
+    );
+    return { connectionString: url.href, close };
+  } catch (error) {
+    await close();
+    throw error;
+  }
+}
+
 test('built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',
   timeout: 60_000,
-}, async () => {
+}, async (t) => {
   assert.ok(process.env.DATABASE_URL, 'DATABASE_URL is required for the HTTP/PostgreSQL test');
-  await installQueue(process.env.DATABASE_URL);
+  const database = await isolatedDatabase();
+  t.after(() => database.close());
+  const { connectionString } = database;
+  await installQueue(connectionString);
   const secret = 'synthetic-webhook-hmac-test-secret';
   const port = 44000 + Math.floor(Math.random() * 1000);
   const server = spawn(process.execPath, ['dist/server/entry.mjs'], {
     cwd: new URL('..', import.meta.url),
     env: {
       ...process.env,
+      DATABASE_URL: connectionString,
       HOST: '127.0.0.1',
       PORT: String(port),
       SHOPIFY_WEBHOOK_SECRET: secret,
@@ -27,14 +61,16 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
     },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  const serverClosed = new Promise((resolve) => server.once('close', resolve));
   const output = [];
   server.stderr.on('data', (chunk) => output.push(String(chunk)));
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+  const pool = new Pool({ connectionString });
+  const core = createDurableCore(new Pool({ connectionString }));
   const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
   const shopId = randomUUID();
   const shopifyShopId = (BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n).toString();
   let worker;
+  let workerClosed;
   const id = randomUUID();
   const body = Buffer.from(JSON.stringify({ id: Number(shopifyShopId), myshopify_domain: domain }));
   const headers = {
@@ -120,6 +156,8 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
     assert.match(metrics, /insignia_webhook_total\{outcome="rejected"\} 4/);
     assert.match(metrics, /insignia_webhook_total\{outcome="received"\} 1/);
     assert.match(metrics, /insignia_webhook_total\{outcome="duplicate"\} 2/);
+    assert.match(metrics, /insignia_inbox_ingress_resolution_total\{outcome="unresolved"\} 3/);
+    assert.match(metrics, /insignia_unresolved_inbox_backlog 1/);
     const workerPort = port + 1000;
     worker = spawn(
       process.execPath,
@@ -127,6 +165,7 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
       {
         env: {
           ...process.env,
+          DATABASE_URL: connectionString,
           INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
           INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
           SHOPIFY_CLIENT_ID: 'synthetic-client-id',
@@ -135,6 +174,7 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
         stdio: ['ignore', 'pipe', 'pipe'],
       },
     );
+    workerClosed = new Promise((resolve) => worker.once('close', resolve));
     let workerReady = false;
     for (let i = 0; i < 100; i++) {
       if (worker.exitCode !== null) break;
@@ -151,21 +191,21 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
     assert.ok(workerReady, 'worker did not reach durable readiness');
     let completed = false;
     for (let i = 0; i < 100; i++) {
-      const row = await pool.query('select state from inbox_messages where id = $1', [receipt.inboxId]);
-      const generation = await pool.query(
-        'select deactivated_at from installation_generations where shop_id = $1 and generation = 1',
-        [shopId],
-      );
-      if (row.rows[0]?.state === 'processed' && generation.rows[0]?.deactivated_at) {
+      const job = await pool.query('select state from pgboss.job where id=$1', [receipt.inboxId]);
+      if (job.rows[0]?.state === 'completed') {
         completed = true;
         break;
       }
       await delay(100);
     }
-    assert.ok(completed, 'worker did not atomically process the current authenticated uninstall');
+    assert.ok(completed, 'worker did not settle quarantine transport');
+    assert.equal((await core.tenants.getCurrentAdminInstallation(shopId)).active, true);
+    assert.equal((await core.webhooks.getById(receipt.inboxId)).state, 'pending');
+    assert.equal((await core.webhooks.getById(receipt.inboxId)).resolution, 'unqualified');
+    assert.equal((await core.webhooks.getById(receipt.inboxId)).installationGeneration, null);
     const completedReplay = await fetch(endpoint, { method: 'POST', headers, body });
     assert.equal(completedReplay.status, 200);
-    assert.deepEqual(await completedReplay.json(), { inboxId: receipt.inboxId, status: 'processed' });
+    assert.deepEqual(await completedReplay.json(), { inboxId: receipt.inboxId, status: 'duplicate' });
     assert.equal(
       (
         await pool.query('select count(*)::int as n from inbox_messages where external_delivery_id = $1', [
@@ -175,13 +215,17 @@ test('built HTTP ingress authenticates raw bytes and durably deduplicates throug
       1,
     );
   } finally {
-    worker?.kill('SIGTERM');
-    server.kill('SIGTERM');
-    await Promise.race([once(server, 'exit'), delay(5000)]);
-    if (server.exitCode === null) server.kill('SIGKILL');
-    if (worker) {
-      await Promise.race([once(worker, 'exit'), delay(5000)]);
-      if (worker.exitCode === null) worker.kill('SIGKILL');
+    for (const [child, closed] of [
+      [worker, workerClosed],
+      [server, serverClosed],
+    ]) {
+      if (!child) continue;
+      if (child.exitCode === null && child.signalCode === null) {
+        child.kill('SIGTERM');
+        await Promise.race([closed, delay(5000)]);
+        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+      }
+      await closed;
     }
     await core.close();
     await pool.end();

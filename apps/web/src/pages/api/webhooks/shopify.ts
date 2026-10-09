@@ -20,7 +20,11 @@ export const POST: APIRoute = async ({ request }) => {
         const { core } = await webRuntime();
         const state = await core.webhooks.getById(result.inboxId);
         observability.metrics.resolution(
-          state?.resolution === 'resolved' ? 'resolved' : state?.resolution === 'unresolved' ? 'unresolved' : 'failed',
+          state?.resolution === 'resolved'
+            ? 'resolved'
+            : state?.resolution === 'unresolved' || state?.resolution === 'unqualified'
+              ? 'unresolved'
+              : 'failed',
         );
         observability.metrics.unresolvedBacklog(await core.webhooks.unresolvedBacklogCount());
       },

@@ -1,0 +1,42 @@
+{
+  "base": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "checkedAt": "2026-10-09T22:55:48.587810+00:00",
+  "files": [
+    {
+      "path": "deployment/m5-019r/shopify.app.m5-019r.toml",
+      "unchangedFromBase": true,
+      "sha256": "cd1f8bb82c14d12d7fe3ff90349eba5c5bd0acde774b4b9063d5a085bcc97111"
+    },
+    {
+      "path": "deployment/m5-019r/extensions/insignia-cart-validation/shopify.extension.toml",
+      "unchangedFromBase": true,
+      "sha256": "37204d9454c1db57bfe1a1552188a2ba2a55d3f508f2d3a81e44f1b1050a1d5a"
+    },
+    {
+      "path": "deployment/m5-019r/extensions/insignia-cart-transform/shopify.extension.toml",
+      "unchangedFromBase": true,
+      "sha256": "3c6fb6fbe137767c8fdae130779dab11e552edbe262cd54804741b12f25c46c7"
+    },
+    {
+      "path": "docs/architecture/WHOLE-QUOTE-V2-ADOPTED.md",
+      "unchangedFromBase": true,
+      "sha256": "3c3813206eb317a9eb1a803d25287a7590dbf33cf0c44ed68049cb6a13bd4837"
+    },
+    {
+      "path": "docs/architecture/decision-ledger.md",
+      "unchangedFromBase": true,
+      "sha256": "c453be74606f1b122c27b8b43169f61c6ca6f9f04e9858f112070bd3a33dc4c2"
+    },
+    {
+      "path": "docs/architecture/implementation-plan.md",
+      "unchangedFromBase": true,
+      "sha256": "3abb753e608907122f81f37143d131ce61244b74a7c4a3396cc1cc6c44bbf38f"
+    },
+    {
+      "path": "pnpm-lock.yaml",
+      "unchangedFromBase": true,
+      "sha256": "2c381b84c3d3a5eb6ac84313b030b1802dc7d3826b014420ccfa8dcb77a68881"
+    }
+  ],
+  "nativeFreshnessClaim": false
+}

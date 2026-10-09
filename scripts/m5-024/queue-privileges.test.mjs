@@ -1,9 +1,12 @@
 import assert from 'node:assert/strict';
+import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { createDurableWorkerHandlers } from '../../apps/worker/dist/handlers.js';
 import { createPgBossRuntime, WEBHOOK_QUEUE } from '../../apps/worker/dist/runtime.js';
 import { queueBoundaryHandoff } from '../../apps/worker/test/queue-handoff-fixture.mjs';
@@ -14,20 +17,52 @@ const requireWorker = createRequire(new URL('../../apps/worker/package.json', im
 const { Pool } = requireWorker('pg');
 const { PgBoss } = await import(requireWorker.resolve('pg-boss'));
 
+async function isolatedDatabase() {
+  const admin = new Pool({ connectionString: process.env.DATABASE_URL });
+  const database = `m5024_privileges_${randomUUID().replaceAll('-', '')}`;
+  const url = new URL(process.env.DATABASE_URL);
+  url.pathname = `/${database}`;
+  const root = fileURLToPath(new URL('../../', import.meta.url));
+  let created = false;
+  async function close(roles = []) {
+    try {
+      if (created) await admin.query(`DROP DATABASE ${database}`);
+      for (const role of roles) await admin.query(`DROP ROLE IF EXISTS ${role}`);
+    } finally {
+      await admin.end();
+    }
+  }
+  try {
+    await admin.query(`CREATE DATABASE ${database}`);
+    created = true;
+    await promisify(execFile)(
+      `${root}node_modules/.bin/dbmate`,
+      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
+      { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30_000 },
+    );
+    return { connectionString: url.href, close };
+  } catch (error) {
+    await close();
+    throw error;
+  }
+}
+
 test('separate owner installation and restricted queue roles preserve messages across restart and deny DDL', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',
   timeout: 45_000,
 }, async () => {
   assert.ok(process.env.DATABASE_URL);
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const database = await isolatedDatabase();
+  const { connectionString } = database;
+  const pool = new Pool({ connectionString });
   const role = `m5024_${randomUUID().replaceAll('-', '')}`;
   const workerRole = `${role}_w`;
   const testPassword = randomUUID().replaceAll('-', '');
-  const url = new URL(process.env.DATABASE_URL);
+  const url = new URL(connectionString);
   let producer;
   let worker;
   try {
-    assert.deepEqual(await installQueue(process.env.DATABASE_URL), await installQueue(process.env.DATABASE_URL));
+    assert.deepEqual(await installQueue(connectionString), await installQueue(connectionString));
     await pool.query(await readFile(new URL('./queue-roles.sql', import.meta.url), 'utf8'));
     await pool.query(
       `create role ${role} login password '${testPassword}'; create role ${workerRole} login password '${testPassword}'; grant insignia_queue_enqueue to ${role}; grant insignia_queue_consume to ${workerRole}`,
@@ -118,7 +153,7 @@ test('separate owner installation and restricted queue roles preserve messages a
     }
     await worker.stop();
     worker = undefined;
-    const ownerCore = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    const ownerCore = createDurableCore(new Pool({ connectionString }));
     const consumerCore = createDurableCore(new Pool({ connectionString: url.href }));
     const shopId = randomUUID();
     const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
@@ -151,24 +186,25 @@ test('separate owner installation and restricted queue roles preserve messages a
           },
         }),
       );
+      // The restricted consumer settles transport; generic HMAC routing does
+      // not authorize uninstall processing or current-installation deactivation.
       for (let i = 0; i < 100; i++) {
-        if (
-          (await pool.query('select state from inbox_messages where id=$1', [receipt.id])).rows[0].state === 'processed'
-        )
+        if ((await pool.query('select state from pgboss.job where id=$1', [receipt.id])).rows[0]?.state === 'completed')
           break;
         await delay(100);
       }
       assert.equal(
+        (await pool.query('select state from pgboss.job where id=$1', [receipt.id])).rows[0]?.state,
+        'completed',
+      );
+      assert.equal(
         (await pool.query('select state from inbox_messages where id=$1', [receipt.id])).rows[0].state,
-        'processed',
+        'pending',
       );
-      assert.ok(
-        (
-          await pool.query('select deactivated_at from installation_generations where shop_id=$1 and generation=1', [
-            shopId,
-          ])
-        ).rows[0].deactivated_at,
-      );
+      const state = await ownerCore.webhooks.getById(receipt.id);
+      assert.equal(state.resolution, 'unqualified');
+      assert.equal(state.installationGeneration, null);
+      assert.equal((await ownerCore.tenants.getCurrentAdminInstallation(shopId)).active, true);
       await worker.stop();
       worker = undefined;
     } finally {
@@ -177,12 +213,16 @@ test('separate owner installation and restricted queue roles preserve messages a
     }
 
     const before = await pool.query('select id,state,data from pgboss.job where id=$1', [id]);
-    await installQueue(process.env.DATABASE_URL);
+    await installQueue(connectionString);
     await pool.query(await readFile(new URL('./queue-roles.sql', import.meta.url), 'utf8'));
     assert.deepEqual((await pool.query('select id,state,data from pgboss.job where id=$1', [id])).rows, before.rows);
   } finally {
     await worker?.stop();
     await producer?.stop();
-    await pool.end();
+    try {
+      await pool.end();
+    } finally {
+      await database.close([role, workerRole]);
+    }
   }
 });

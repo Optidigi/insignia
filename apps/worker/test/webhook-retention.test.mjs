@@ -75,6 +75,282 @@ async function fixture({ observability } = {}) {
   };
 }
 
+test('bounded recovery advances past100 settled quarantines after an independent restart', postgres, async () => {
+  const f = await fixture();
+  let restartedCore;
+  let restartedQueue;
+  try {
+    const shopId = randomUUID();
+    const shopDomain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
+    await f.core.transactions.run((tx) => f.core.tenants.createShop(tx, { shopId, shopDomain, shopifyShopId: '456' }));
+    const delivery = () => ({
+      shopDomain,
+      deliveryId: randomUUID(),
+      topic: 'app/uninstalled',
+      apiVersion: '2026-07',
+      triggeredAt: new Date(),
+      eventId: null,
+      name: null,
+      rawBody: Buffer.from(JSON.stringify({ id: '456', myshopify_domain: shopDomain })),
+    });
+    const older = [];
+    for (let index = 0; index < 100; index++) {
+      const receipt = await f.core.webhooks.receive(delivery());
+      older.push(receipt.id);
+      await f.queue.ensureWebhookEnqueued(receipt.id);
+    }
+    // Real pinned queue claims/completion establish the starting backlog without
+    // spending100 polling intervals. Public handlers still quarantine each body.
+    const handlers = durableHandlers.createDurableWorkerHandlers(f.core, {
+      async refresh() {
+        throw new Error('no provider requests');
+      },
+    });
+    const jobs = await f.boss.fetch(WEBHOOK_QUEUE, { batchSize: 100, includeMetadata: true });
+    assert.equal(jobs.length, 100);
+    for (const job of jobs) assert.equal(await handlers.processInbox(job.data.inboxId), 'deferred');
+    await f.boss.complete(WEBHOOK_QUEUE, jobs);
+    const before = (
+      await f.pool.query(`SELECT id,state,retry_count FROM ${f.schema}.job WHERE id=ANY($1::uuid[]) ORDER BY id`, [
+        older,
+      ])
+    ).rows;
+    assert.equal(before.length, 100);
+    assert.equal(
+      before.every((job) => job.state === 'completed' && job.retry_count === 0),
+      true,
+    );
+    const next = delivery();
+    const target = await f.core.webhooks.receive(next);
+    assert.equal((await f.core.webhooks.receive(next)).id, target.id, 'duplicate receipt must not create new work');
+    assert.deepEqual(await f.boss.findJobs(WEBHOOK_QUEUE, { id: target.id }), []);
+    await f.queue.stop();
+    restartedCore = createDurableCore(new Pool({ connectionString: f.connectionString }));
+    const restartedBoss = new PgBoss({
+      connectionString: f.connectionString,
+      schema: f.schema,
+      migrate: false,
+      createSchema: false,
+      schedule: false,
+      supervise: false,
+    });
+    restartedQueue = createPgBossRuntime({
+      boss: restartedBoss,
+      webhookHandoff: restartedCore.webhooks,
+      credentialKeysReady: true,
+    });
+    await restartedQueue.start();
+    // Persisted fair selection must advance within two bounded100-row cycles.
+    // Business pending is retained; neither completed jobs nor ACKs supply authority.
+    await durableHandlers.recoverPendingUninstalls(restartedCore, restartedQueue);
+    await durableHandlers.recoverPendingUninstalls(restartedCore, restartedQueue);
+    const recovered = await restartedBoss.findJobs(WEBHOOK_QUEUE, { id: target.id });
+    assert.equal(recovered.length, 1, 'Committed receipt101 must recover despite100 settled quarantines');
+    assert.equal(recovered[0].state, 'created');
+    assert.equal(recovered[0].retryCount, 0);
+    assert.deepEqual(
+      (
+        await f.pool.query(`SELECT id,state,retry_count FROM ${f.schema}.job WHERE id=ANY($1::uuid[]) ORDER BY id`, [
+          older,
+        ])
+      ).rows,
+      before,
+    );
+    assert.equal((await restartedCore.tenants.getCurrentAdminInstallation(shopId)).active, true);
+    assert.equal((await restartedCore.webhooks.getById(target.id)).resolution, 'unqualified');
+    assert.equal((await restartedCore.webhooks.getById(target.id)).state, 'pending');
+    // Confirmed tail jobs are still audited. Deleting this exact associated job
+    // cannot recreate its budget or conceal the unresolved obligation.
+    await restartedBoss.deleteJob(WEBHOOK_QUEUE, target.id);
+    await durableHandlers.recoverPendingUninstalls(restartedCore, restartedQueue);
+    assert.deepEqual(await restartedBoss.findJobs(WEBHOOK_QUEUE, { id: target.id }), []);
+    assert.equal((await restartedCore.webhooks.getById(target.id)).resolution, 'exhausted');
+    assert.equal(
+      (await f.pool.query('SELECT last_error_class FROM inbox_messages WHERE id=$1', [target.id])).rows[0]
+        .last_error_class,
+      'webhook_queue_missing',
+    );
+  } finally {
+    await restartedQueue?.stop();
+    await restartedCore?.close();
+    await f.close();
+  }
+});
+
+test('durable transport selection survives unaudited crash and concurrent locked inboxes', postgres, async () => {
+  const f = await fixture();
+  const selectionName = `recovery-selection-${randomUUID()}`;
+  const independent = createDurableCore(
+    new Pool({ connectionString: f.connectionString, application_name: selectionName }),
+  );
+  let waitingSelection;
+  let resumedQueue;
+  const blocker = await f.pool.connect();
+  try {
+    const shopDomain = (await f.core.webhooks.getById(f.receipt.id)).shopDomain;
+    const shopId = randomUUID();
+    await f.core.transactions.run((tx) => f.core.tenants.createShop(tx, { shopId, shopDomain, shopifyShopId: '123' }));
+    const ids = [f.receipt.id];
+    for (let index = 0; index < 2; index++)
+      ids.push(
+        (
+          await f.core.webhooks.receive({
+            shopDomain,
+            deliveryId: randomUUID(),
+            topic: 'app/uninstalled',
+            apiVersion: '2026-07',
+            triggeredAt: new Date(),
+            eventId: null,
+            name: null,
+            rawBody: Buffer.from(JSON.stringify({ id: '123', myshopify_domain: null })),
+          })
+        ).id,
+      );
+    // Tie only trusted fixture collection order; unsigned trigger times do not order selection.
+    await f.pool.query(
+      "UPDATE inbox_messages SET received_at=statement_timestamp()-interval '1 second' WHERE id=ANY($1::uuid[])",
+      [ids],
+    );
+    const ordered = [...ids].sort();
+    const before = (
+      await f.pool.query(
+        'SELECT id,payload,purge_after,state,attempts FROM inbox_messages WHERE id=ANY($1::uuid[]) ORDER BY id',
+        [ids],
+      )
+    ).rows;
+    await blocker.query('BEGIN');
+    await blocker.query('SELECT id FROM inbox_messages WHERE id=$1 FOR UPDATE', [ordered[0]]);
+    await blocker.query('SELECT inbox_id FROM shopify_webhook_deliveries WHERE inbox_id=$1 FOR UPDATE', [ordered[1]]);
+    waitingSelection = independent.webhooks.selectUninstallRecoveryIds(1);
+    let waitingOnDelivery = false;
+    for (let index = 0; index < 100; index++) {
+      const waiting = await f.pool.query(
+        `SELECT 1 FROM pg_stat_activity WHERE application_name=$1
+        AND wait_event_type='Lock' AND query LIKE 'update "shopify_webhook_deliveries" set "queue_recovery_selected_at"%'`,
+        [selectionName],
+      );
+      if (waiting.rowCount === 1) {
+        waitingOnDelivery = true;
+        break;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+    assert.equal(waitingOnDelivery, true, 'first selector holds inbox before waiting on its delivery');
+    assert.deepEqual(
+      await f.core.webhooks.selectUninstallRecoveryIds(1),
+      [ordered[2]],
+      'second selector skips both actually locked inbox rows',
+    );
+    await blocker.query('COMMIT');
+    assert.deepEqual(await waitingSelection, [ordered[1]]);
+    // Neither selector audits the queue. Durable timestamps rotate after those
+    // exact held-lock intervals; overlapping post-release snapshots may repeat an audit.
+    assert.deepEqual(await independent.webhooks.selectUninstallRecoveryIds(1), [ordered[0]]);
+    const rotated = await independent.webhooks.selectUninstallRecoveryIds(1);
+    assert.equal(rotated.length, 1);
+    assert.ok(
+      [ordered[1], ordered[2]].includes(rotated[0]),
+      'an unaudited selected receipt rotates back after older unchecked rows',
+    );
+    const newcomer = await f.core.webhooks.receive({
+      shopDomain,
+      deliveryId: randomUUID(),
+      topic: 'app/uninstalled',
+      apiVersion: '2026-07',
+      triggeredAt: new Date('2099-01-01'),
+      eventId: null,
+      name: null,
+      rawBody: Buffer.from(JSON.stringify({ id: '123', myshopify_domain: null })),
+    });
+    const next = await independent.webhooks.selectUninstallRecoveryIds(1);
+    assert.equal(next.length, 1);
+    assert.notEqual(next[0], newcomer.id, 'new unselected arrivals cannot starve older selected work');
+
+    assert.deepEqual(
+      (
+        await f.pool.query(
+          'SELECT id,payload,purge_after,state,attempts FROM inbox_messages WHERE id=ANY($1::uuid[]) ORDER BY id',
+          [ids],
+        )
+      ).rows,
+      before,
+    );
+    assert.equal(
+      (await f.pool.query(`SELECT count(*)::int n FROM ${f.schema}.job WHERE id=ANY($1::uuid[])`, [ids])).rows[0].n,
+      0,
+      'selection alone grants no send',
+    );
+    assert.equal(
+      (
+        await f.pool.query(
+          `SELECT count(*)::int n FROM shopify_webhook_deliveries WHERE inbox_id=ANY($1::uuid[]) AND queue_handoff_state='unconfirmed' AND queue_recovery_selected_at IS NOT NULL`,
+          [ids],
+        )
+      ).rows[0].n,
+      3,
+    );
+    // Actual stopped transport rejects every audit. Selection commits without
+    // a fabricated ACK, inbox success or a consumed first-send reservation.
+    await f.queue.stop();
+    assert.equal(await durableHandlers.recoverPendingUninstalls(f.core, f.queue), 0);
+    const all = [...ids, newcomer.id];
+    assert.equal(
+      (
+        await f.pool.query(
+          `SELECT count(*)::int n FROM shopify_webhook_deliveries WHERE inbox_id=ANY($1::uuid[]) AND queue_handoff_state='unconfirmed' AND queue_recovery_selected_at IS NOT NULL`,
+          [all],
+        )
+      ).rows[0].n,
+      4,
+    );
+    assert.equal(
+      (await f.pool.query(`SELECT count(*)::int n FROM ${f.schema}.job WHERE id=ANY($1::uuid[])`, [all])).rows[0].n,
+      0,
+    );
+    const resumedBoss = new PgBoss({
+      connectionString: f.connectionString,
+      schema: f.schema,
+      migrate: false,
+      createSchema: false,
+      schedule: false,
+      supervise: false,
+    });
+    resumedQueue = createPgBossRuntime({
+      boss: resumedBoss,
+      webhookHandoff: independent.webhooks,
+      credentialKeysReady: true,
+    });
+    await resumedQueue.start();
+    assert.equal(await durableHandlers.recoverPendingUninstalls(independent, resumedQueue), 4);
+    assert.equal(
+      (
+        await f.pool.query(
+          `SELECT count(*)::int n FROM ${f.schema}.job WHERE id=ANY($1::uuid[]) AND state='created' AND retry_count=0`,
+          [all],
+        )
+      ).rows[0].n,
+      4,
+    );
+    assert.deepEqual(
+      (
+        await f.pool.query(
+          'SELECT id,payload,purge_after,state,attempts FROM inbox_messages WHERE id=ANY($1::uuid[]) ORDER BY id',
+          [ids],
+        )
+      ).rows,
+      before,
+    );
+    assert.equal((await f.core.tenants.getCurrentAdminInstallation(shopId)).active, true);
+  } finally {
+    await blocker.query('ROLLBACK');
+    await waitingSelection?.catch(() => {});
+    blocker.release();
+    await resumedQueue?.stop();
+    await independent.close();
+    await f.close();
+  }
+});
+
 test(
   'processed overdue uninstall blockers retain their safe category through the real public logger',
   postgres,
@@ -113,7 +389,9 @@ test(
         name: null,
         rawBody,
       });
-      assert.equal(await f.core.webhooks.processUninstall(receipt.id), 'processed');
+      assert.equal(await f.core.webhooks.processUninstall(receipt.id), 'unqualified');
+      // Synthetic historical completion; no corrected production path creates it.
+      await f.pool.query("UPDATE inbox_messages SET state='processed' WHERE id=$1", [receipt.id]);
       await f.pool.query(
         `UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=$1`,
         [receipt.id],
@@ -226,6 +504,14 @@ test(
 test('real pg-boss lost ACK and handoff rollback cannot recreate a deleted job retry budget', postgres, async () => {
   const f = await fixture();
   try {
+    const domain = (await f.core.webhooks.getById(f.receipt.id)).shopDomain;
+    await f.core.transactions.run((tx) =>
+      f.core.tenants.createShop(tx, {
+        shopId: randomUUID(),
+        shopDomain: domain,
+        shopifyShopId: '123',
+      }),
+    );
     const send = f.boss.send.bind(f.boss);
     let sends = 0;
     f.boss.send = async (...args) => {
@@ -244,6 +530,7 @@ test('real pg-boss lost ACK and handoff rollback cannot recreate a deleted job r
       sends++;
       return send(...args);
     };
+    assert.equal(await durableHandlers.recoverPendingUninstalls(f.core, f.queue), 0);
     await assert.rejects(f.queue.ensureWebhookEnqueued(f.receipt.id), /missing|exhausted/);
     assert.equal(sends, 1);
     const { rows } = await f.pool.query(
@@ -268,6 +555,14 @@ test(
   async () => {
     const f = await fixture();
     try {
+      const domain = (await f.core.webhooks.getById(f.receipt.id)).shopDomain;
+      await f.core.transactions.run((tx) =>
+        f.core.tenants.createShop(tx, {
+          shopId: randomUUID(),
+          shopDomain: domain,
+          shopifyShopId: '123',
+        }),
+      );
       const send = f.boss.send.bind(f.boss);
       let sends = 0;
       f.boss.send = async (...args) => {
@@ -288,6 +583,7 @@ test(
         sends++;
         return send(...args);
       };
+      assert.equal(await durableHandlers.recoverPendingUninstalls(f.core, f.queue), 1);
       assert.deepEqual(await f.queue.ensureWebhookEnqueued(f.receipt.id), {
         inboxId: f.receipt.id,
         status: 'already_enqueued',
@@ -387,6 +683,14 @@ test('real pg-boss worker failure output excludes arbitrary payload-bearing erro
 test('real pg-boss terminal retry metadata cannot be reset or recreated', postgres, async () => {
   const f = await fixture();
   try {
+    const domain = (await f.core.webhooks.getById(f.receipt.id)).shopDomain;
+    await f.core.transactions.run((tx) =>
+      f.core.tenants.createShop(tx, {
+        shopId: randomUUID(),
+        shopDomain: domain,
+        shopifyShopId: '123',
+      }),
+    );
     await f.queue.ensureWebhookEnqueued(f.receipt.id);
     for (let attempt = 0; attempt <= 5; attempt++) {
       const [job] = await f.boss.fetch(WEBHOOK_QUEUE, { batchSize: 1, includeMetadata: true });
@@ -408,6 +712,7 @@ test('real pg-boss terminal retry metadata cannot be reset or recreated', postgr
     const [failed] = await f.boss.findJobs(WEBHOOK_QUEUE, { id: f.receipt.id });
     assert.equal(failed.state, 'failed');
     assert.equal(failed.retryCount, 5);
+    assert.equal(await durableHandlers.recoverPendingUninstalls(f.core, f.queue), 0);
     await assert.rejects(f.queue.ensureWebhookEnqueued(f.receipt.id), /exhausted/);
     assert.equal((await f.boss.findJobs(WEBHOOK_QUEUE, { id: f.receipt.id }))[0].state, 'failed');
     await f.boss.deleteJob(WEBHOOK_QUEUE, f.receipt.id);
@@ -426,6 +731,14 @@ test('restricted consumer grants permit only required retention and queue metada
   let restrictedQueue;
   let restrictedPool;
   try {
+    const domain = (await f.core.webhooks.getById(f.receipt.id)).shopDomain;
+    await f.core.transactions.run((tx) =>
+      f.core.tenants.createShop(tx, {
+        shopId: randomUUID(),
+        shopDomain: domain,
+        shopifyShopId: '123',
+      }),
+    );
     const grants = (
       await readFile(new URL('../../../scripts/m5-024/queue-roles.sql', import.meta.url), 'utf8')
     ).replaceAll('pgboss', f.schema);
@@ -444,6 +757,30 @@ test('restricted consumer grants permit only required retention and queue metada
       credentialKeysReady: true,
     });
     await restrictedQueue.start();
+    await f.pool.query(
+      'REVOKE UPDATE(queue_recovery_selected_at) ON shopify_webhook_deliveries FROM insignia_queue_consume',
+    );
+    await assert.rejects(restrictedCore.webhooks.selectUninstallRecoveryIds(1), { code: '42501' });
+    assert.equal(
+      (
+        await f.pool.query('SELECT queue_recovery_selected_at FROM shopify_webhook_deliveries WHERE inbox_id=$1', [
+          f.receipt.id,
+        ])
+      ).rows[0].queue_recovery_selected_at,
+      null,
+    );
+    await f.pool.query(
+      'GRANT UPDATE(queue_recovery_selected_at) ON shopify_webhook_deliveries TO insignia_queue_consume',
+    );
+    assert.deepEqual(await restrictedCore.webhooks.selectUninstallRecoveryIds(1), [f.receipt.id]);
+    assert.equal(
+      (
+        await f.pool.query(
+          "SELECT has_column_privilege('insignia_queue_enqueue','shopify_webhook_deliveries','queue_recovery_selected_at','UPDATE') AS allowed",
+        )
+      ).rows[0].allowed,
+      false,
+    );
     await restrictedQueue.ensureWebhookEnqueued(f.receipt.id);
     await f.pool.query(
       `UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=$1`,

@@ -241,12 +241,13 @@ export interface DurableCore {
     eraseExpiredPayloads(limit: number): Promise<WebhookPayloadErasure>;
     unresolvedBacklogCount(): Promise<number>;
     pendingUninstallIds(limit: number): Promise<string[]>;
+    selectUninstallRecoveryIds(limit: number): Promise<string[]>;
     receive(input: VerifiedShopifyDelivery): Promise<ShopifyWebhookReceipt>;
     getById(id: string): Promise<ShopifyWebhookState | null>;
     processUninstall(
       id: string,
     ): Promise<
-      'processed' | 'unverified' | 'already_processed' | 'unresolved' | 'stale' | 'not_found' | 'expired' | 'exhausted'
+      'unqualified' | 'unverified' | 'already_processed' | 'unresolved' | 'not_found' | 'expired' | 'exhausted'
     >;
   };
   readonly credentials: {

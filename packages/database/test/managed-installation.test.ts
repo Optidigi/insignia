@@ -72,7 +72,7 @@ test('first creation rolls back when matching uninstall commits during the initi
 });
 
 test.each(['current', 'historical', 'wrong-signed-shop'])(
-  'inactive predecessor and processed uninstall cannot resurrect a removed installation: %s',
+  'inactive predecessor and unqualified receipt retain a conservative bootstrap fence: %s',
   async (era) => {
     const core = createDurableCore(new Pool({ connectionString }));
     const provider = identity();
@@ -102,7 +102,9 @@ test.each(['current', 'historical', 'wrong-signed-shop'])(
           }),
         ),
       });
-      expect(await core.webhooks.processUninstall(delivery.id)).toBe('stale');
+      expect(await core.webhooks.processUninstall(delivery.id)).toBe(
+        era === 'wrong-signed-shop' ? 'unverified' : 'unqualified',
+      );
       const historical = await core.webhooks.getById(delivery.id);
       const next = { ...provider, externalInstallationId: `${provider.externalInstallationId}6` };
       const attempt = core.transactions.run((tx) =>
@@ -128,7 +130,7 @@ test.each(['current', 'historical', 'wrong-signed-shop'])(
   },
 );
 
-test('bound uninstall waits for the shop lock then resolves the committed generation and observation boundary', async () => {
+test('uninstall waits for the shop lock but cannot authorize the committed replacement generation', async () => {
   const database = await openTestDatabase();
   const provider = identity();
   const appName = `uninstall-bound-${randomUUID()}`;
@@ -174,10 +176,10 @@ test('bound uninstall waits for the shop lock then resolves the committed genera
         observationStartedAt,
       );
     });
-    expect(await pending).toBe('processed');
+    expect(await pending).toBe('unqualified');
     expect(await peer.tenants.getManagedInstallationState(provider.shopDomain)).toMatchObject({
       currentGeneration: '2',
-      active: false,
+      active: true,
     });
   } finally {
     await pending?.catch(() => {});
@@ -216,7 +218,7 @@ test.each(['current', 'historical'])('first bootstrap preserves uninstall orderi
       expect(await core.webhooks.processUninstall(delivery.id)).toBe('unresolved');
     } else {
       const installed = await attempt;
-      expect(await core.webhooks.processUninstall(delivery.id)).toBe('stale');
+      expect(await core.webhooks.processUninstall(delivery.id)).toBe('unqualified');
       expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toMatchObject({
         shopId: installed.state.shopId,
         currentGeneration: '1',
@@ -272,14 +274,14 @@ test.each(['current', 'historical'])('confirmed reinstall preserves uninstall or
     );
     if (era === 'current') {
       await expect(attempt).rejects.toThrow('Managed installation state changed');
-      expect(await core.webhooks.processUninstall(delivery.id)).toBe('processed');
+      expect(await core.webhooks.processUninstall(delivery.id)).toBe('unqualified');
       expect(await core.tenants.getManagedInstallationState(provider.shopDomain)).toMatchObject({
         currentGeneration: '1',
-        active: false,
+        active: true,
       });
     } else {
       expect((await attempt).state.currentGeneration).toBe('2');
-      expect(await core.webhooks.processUninstall(delivery.id)).toBe('stale');
+      expect(await core.webhooks.processUninstall(delivery.id)).toBe('unqualified');
       expect((await core.tenants.getManagedInstallationState(provider.shopDomain))?.active).toBe(true);
     }
   } finally {

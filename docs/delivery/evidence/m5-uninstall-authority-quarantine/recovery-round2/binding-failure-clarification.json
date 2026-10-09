@@ -1,0 +1,23 @@
+{
+  "classification": "CORRECTION_OF_OVER_SPECIFIC_DERIVED_CAUSE_NOT_RAW_LOG_REWRITE",
+  "recordedAt": "2026-10-09T23:08:27.897390+00:00",
+  "originalRun": "31-postportable-build-bindings",
+  "originalRawLogSha256": "583b42f8bb676eb8a3d5fa7ea556787344f0365f61f80c191e44b8d8345ff346",
+  "observedFailure": "AssertionError: portable workspace mismatch @insignia/cart-authorization",
+  "originalHelperSourceSnapshotBoundToExecutedAttempt": false,
+  "specificOriginalCause": "UNKNOWN",
+  "withdrawnInference": "Original PUBLIC snapshot says all-repository enumeration caused mismatch. That is not established by the preserved raw log without an immutable executed-source snapshot.",
+  "correctedQualification": {
+    "independentOriginalLog": "31-actual-portable-graph-bindings.log",
+    "rawLogSha256": "ca73e614119273bd5d0edc0739bc0063cf368a1b3eb4ee2c6167c764d897c76d",
+    "portableEqualityReceiptSha256": "7ec0d8e8d5f8287e0e04906c50f058a439c693b34170858330b312f2faca75f9",
+    "parentReadOnlyReverification": true,
+    "packages": 9,
+    "compiledFiles": 176,
+    "cartAuthorizationIncluded": true,
+    "sourceAndPortableBytesMatchRecordedHashes": true
+  },
+  "originalPublicSnapshotRawRecordsAndSourceBytesUnchanged": true,
+  "testsBuildsServicesOrClosedClusterReopenPerformed": false,
+  "milestoneAcceptance": false
+}

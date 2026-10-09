@@ -1,0 +1,73 @@
+{
+  "classification": "PARENT_FINAL_CONTENT_ARTIFACT_LOG_INTEGRITY_NOT_REVIEW_OR_MILESTONE_ACCEPTANCE",
+  "base": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "recordedAt": "2026-10-09T23:06:56.092948+00:00",
+  "sourcePathsVerified": 21,
+  "compiledPathsVerified": 220,
+  "originalExecutionLogsAndExitRecordsVerified": 31,
+  "closureLogsVerified": 3,
+  "portableEqualityDigestVerified": true,
+  "rootStyleReusedFromUnchangedInputs": {
+    "rootRecord": "24-final-full-root-check",
+    "rootExitCode": 0,
+    "rootRawLogSha256": "0d75d17450d912e3c297e2cd1f40b3b4c9c5bd6b2a8b7bb3e5329d6361ceb9f8",
+    "styleSummaryAsLogged": [
+      "Checked 319 files in 638ms. No fixes applied.",
+      "Found 90 warnings.",
+      "Found 132 infos."
+    ],
+    "sourceHashesMatchFrozenQualifiedInputs": true
+  },
+  "rendererInterpretation": {
+    "classification": "EXPECTED_NEGATIVE",
+    "wrapperExitCode": 0,
+    "nestedBrowserTests": 1,
+    "nestedBrowserPassed": 0,
+    "nestedBrowserFailed": 1,
+    "receiptOutcomeSUCCESSMeansWrapperOnly": true,
+    "sourceUnchanged": true
+  },
+  "closedCluster": {
+    "recordKind": "ACTUAL_OWNED_LOCAL_RESOURCE_CLOSURE",
+    "closedAtUtc": "2026-10-09T23:04:16.426655+00:00",
+    "port": 55458,
+    "ownedDisposableDatabases": 0,
+    "otherClientSessions": 0,
+    "stopExitCode": 0,
+    "statusExitCode": 3,
+    "postmasterPidFileAbsent": true,
+    "knownOwnedPostmasterProcessAbsent": true,
+    "tcpConnectResult": 111,
+    "tcpListenerAbsent": true,
+    "reuseAddrBindListenSucceeded": true,
+    "plainBindWithoutReuseAddrNotClaimed": true,
+    "clusterReopened": false,
+    "testsAfterClosure": false
+  },
+  "rejectedR1History": "byte-exact archives/reviews/manifest/PUBLIC snapshot verified separately",
+  "runtimeTestsBuildsServicesAfterWriterRelease": false,
+  "productionDeployment": false,
+  "milestonePassed": false,
+  "portableActualPackageAndRootCompiledBytesVerified": {
+    "packages": 9,
+    "files": 176,
+    "sameActualPackageDependencyGraph": true
+  },
+  "failedHelperInterpretation": "Original31-postportable causeUNKNOWN beyond observed cart-authorization mismatch; separately qualified graph includes it.",
+  "newDocumentLinksVerified": 32,
+  "publicJsonParsed": 17,
+  "staticSecretCheck": {
+    "command": "node scripts/boundaries/check-secrets.mjs",
+    "exitCode": 0,
+    "productionSourceFiles": 115,
+    "fixtureFiles": 99,
+    "browserArtifacts": 2,
+    "syntheticSeeds": 2,
+    "provenance": "ACTUAL_EXEC_TOOL_RESULT_DERIVED_ATTESTATION; no fabricated raw log file"
+  },
+  "diffWhitespaceCheck": {
+    "command": "git diff --check",
+    "exitCode": 0
+  },
+  "selectedNewPublicDocumentsSecretMarkerInspection": "PASS; manual/provenance and private-key/Admin-token pattern inspection, not universal absence proof"
+}

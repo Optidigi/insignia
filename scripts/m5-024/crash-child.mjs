@@ -26,12 +26,13 @@ await queue.work({
       process.send({ phase, id });
       await new Promise(() => {});
     }
-    await handlers.processInbox(id, context);
-    if (phase === 'after-commit') {
+    const outcome = await handlers.processInbox(id, context);
+    if (phase === 'after-quarantine') {
       process.send({ phase, id });
       await new Promise(() => {});
     }
-    process.send({ phase: 'settled', id });
+    process.send({ phase: 'settled', id, outcome });
+    return outcome;
   },
 });
 process.send({ phase: 'ready' });
