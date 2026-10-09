@@ -44,5 +44,11 @@
   "historicalEvidenceRewritten": false,
   "actualNativeCause": "UNKNOWN; local size incompatibility proved separately",
   "newNativeAuthority": "Source/gate cannot grant resources; use actual owner allocation, immutable closed records and cumulative accounting",
-  "m5G7": "NOT_PASSED"
+  "m5G7": "NOT_PASSED",
+  "historicalSnapshotRestoredToRecordedBytes": {
+    "path": "docs/delivery/evidence/m5-host-inventory/writer-host-document.md",
+    "gitRef": "57afc7a6d14e8abdf09220d6da145de4f1a89430",
+    "sha256": "7c698b5f5f6b1e650aac208d7a07fe5192cc84c64bd6466b86e4b28f7a5cb496"
+  },
+  "r1Review": "CHANGES_REQUIRED/CLEAR; historical documentation corrected; fresh R2 required"
 }

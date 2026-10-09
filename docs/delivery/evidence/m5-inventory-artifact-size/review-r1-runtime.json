@@ -1,0 +1,29 @@
+{
+  "classification": "R1_CHANGES_REQUIRED_CLEAR_NOT_ACCEPTED",
+  "head": "861748fdb66687266708aed5d464676a1cf867d0",
+  "tree": "2665f85ebb1a7ebb37de35796122cdfdf9d381fd",
+  "reviews": [
+    {
+      "axis": "spec",
+      "sessionId": "01a1225d-297c-7143-acb0-719989daa5e2",
+      "verdict": "CHANGES_REQUIRED",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "completedExit": 0,
+      "reportSha256": "5c7260ca1534597b023c56e9f8a3d9cfc10b0ca57c766f5a282ae6ecac898c03"
+    },
+    {
+      "axis": "security",
+      "sessionId": "01a1225d-2972-75c2-b4ac-d21f96ea229d",
+      "verdict": "CLEAR",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "completedExit": 0,
+      "reportSha256": "46c49b5757d76bfd3389df78db052e668273428b2dac707f0b717f044f337df4"
+    }
+  ]
+}
