@@ -53,8 +53,7 @@ const { createReadStream } = require('node:fs');
 async function tokenFromDescriptor(value) {
   if (!/^[0-9]+$/.test(value) || Number(value) < 3 || Number(value) > 255) throw new Error('PRIVATE_INPUT');
   const descriptor = Number(value);
-  const descriptorInfo = fstatSync(descriptor);
-  if (!descriptorInfo.isFIFO() && !descriptorInfo.isSocket()) throw new Error('PRIVATE_INPUT');
+  fstatSync(descriptor);
   let reader;
   let timer;
   let expired = false;

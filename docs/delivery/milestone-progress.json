@@ -86,7 +86,7 @@
       "scope": "BOUNDED_READ_ONLY",
       "evidence": "evidence/m5-native-inventory/owner-readonly-allocation.json",
       "ownerReply": "you have full acess yes",
-      "localTechnicalGate": "IN_PROGRESS; no native reads started"
+      "localTechnicalGate": "R1 CHANGES_REQUIRED; corrected local controls PASS, fresh review/CI pending; native NOT_STARTED"
     }
   ],
   "ownerInputs": [
@@ -107,5 +107,14 @@
     "worktree": "Separate feat/m5-transient-webhook-retention branch",
     "purpose": "Existing raw deadlines, durable bounded handoff/exhaustion and truthful unresolved privacy; not uninstall authority/privacy complete",
     "nativeAuthority": "NONE; no production SQL/deployment"
+  },
+  "activeCandidate": {
+    "pr": 60,
+    "scope": "Bounded read-only inventory tools; native not started",
+    "r1Head": "6f899be0a0eb226bb257d99be249a9e4a86fa54d",
+    "r1Reviews": "CHANGES_REQUIRED / CHANGES_REQUIRED",
+    "r1Ci": "10/10 attempt-1 SUCCESS",
+    "correction": "Token FIFO/socket reader supervised; SSH identity path literal allowlist; actual RED/GREEN preserved",
+    "next": "Fresh independent reviews and exact-head CI before native access"
   }
 }

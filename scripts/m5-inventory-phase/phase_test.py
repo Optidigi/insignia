@@ -46,10 +46,10 @@ IDS = ['canonical-web-runtime', 'canonical-database-runtime', 'canonical-router-
 UNKNOWN_IDS = ['current-queue-role-ownership', 'downstream-privacy-copy-ownership']
 
 class HostFixture:
-    def __init__(self, parent, scenario='normal', host_mutation=None):
+    def __init__(self, parent, scenario='normal', host_mutation=None, identity_name='private-identity'):
         self.directory = Path(parent)/'phase'
         self.source = Path(parent)/'frozen_host.py'
-        self.key = Path(parent)/'private-identity'
+        self.key = Path(parent)/identity_name
         self.key.write_bytes(b'SYNTHETIC_PRIVATE_KEY_NEVER_READ')
         self.key.chmod(0o600)
         algorithm = b'ssh-ed25519'
@@ -280,6 +280,19 @@ class PhaseControls(unittest.TestCase):
             self.assertEqual(state['host']['status'], 'RESERVED')
             self.assertEqual(fixture.run()['classification'], 'STOP_RESERVATION_CONSUMED')
             self.assertEqual(PHASE.close_phase(fixture.directory)['classification'], 'PHASE_CLOSED_RESERVATIONS_NOT_PROOF')
+
+    def test_identity_expansion_syntax_stops_before_reservation_or_transport(self):
+        for name in ['identity-%h', 'identity-%d', 'identity-${HOME}']:
+            with self.subTest(name=name), tempfile.TemporaryDirectory() as parent:
+                fixture = HostFixture(parent, identity_name=name)
+                marker = Path(parent)/'transport-started'
+                fixture.script.write_text('from pathlib import Path\nPath('+repr(str(marker))+').touch()\n'+fixture.script.read_text())
+                result = fixture.run()
+                self.assertEqual(result['classification'], 'STOP_KEY_METADATA')
+                self.assertFalse(marker.exists())
+                state = json.loads((fixture.directory/'ledger.json').read_bytes())
+                self.assertEqual(state['metadataObservations'], 0)
+                self.assertIsNone(state['host'])
 
     def test_cli_rejects_unsupported_operation_without_echoing_private_arguments(self):
         result = subprocess.run([sys.executable,'-B',str(SOURCE),'arbitrary-command','SYNTHETIC_PRIVATE_ARGUMENT'],capture_output=True,timeout=5)

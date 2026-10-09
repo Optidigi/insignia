@@ -460,7 +460,9 @@ def run_host_inventory(directory, source_path, key_path, known_host_line, test_c
             require(digest(known_host_line.encode()) == access['knownHostLineSha256'], 'STOP_HOST_PIN')
             algorithm = verified_pin(known_host_line, host['fingerprint'])
             key_path = Path(key_path)
-            require(str(key_path) == access['identityPath'] and key_path.is_absolute() and key_path.resolve() == key_path, 'STOP_KEY_METADATA')
+            require(re.fullmatch(r'/[A-Za-z0-9_./-]+', str(key_path)) is not None
+                    and str(key_path) == access['identityPath'] and key_path.is_absolute()
+                    and key_path.resolve() == key_path, 'STOP_KEY_METADATA')
             key_info = key_path.lstat()
             require(stat.S_ISREG(key_info.st_mode) and stat.S_IMODE(key_info.st_mode) == 0o600 and key_info.st_uid == os.getuid(), 'STOP_KEY_METADATA')
             require(state['metadataObservations']+10 <= allocation['ceilings']['metadataObservations'], 'STOP_PHASE_LIMIT')

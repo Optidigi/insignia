@@ -1,0 +1,45 @@
+test_identity_expansion_syntax_stops_before_reservation_or_transport (__main__.PhaseControls.test_identity_expansion_syntax_stops_before_reservation_or_transport) ... 
+  test_identity_expansion_syntax_stops_before_reservation_or_transport (__main__.PhaseControls.test_identity_expansion_syntax_stops_before_reservation_or_transport) (name='identity-%h') ... FAIL
+  test_identity_expansion_syntax_stops_before_reservation_or_transport (__main__.PhaseControls.test_identity_expansion_syntax_stops_before_reservation_or_transport) (name='identity-%d') ... FAIL
+  test_identity_expansion_syntax_stops_before_reservation_or_transport (__main__.PhaseControls.test_identity_expansion_syntax_stops_before_reservation_or_transport) (name='identity-${HOME}') ... FAIL
+
+======================================================================
+FAIL: test_identity_expansion_syntax_stops_before_reservation_or_transport (__main__.PhaseControls.test_identity_expansion_syntax_stops_before_reservation_or_transport) (name='identity-%h')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 291, in test_identity_expansion_syntax_stops_before_reservation_or_transport
+    self.assertEqual(result['classification'], 'STOP_KEY_METADATA')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED' != 'STOP_KEY_METADATA'
+- HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED
++ STOP_KEY_METADATA
+
+
+======================================================================
+FAIL: test_identity_expansion_syntax_stops_before_reservation_or_transport (__main__.PhaseControls.test_identity_expansion_syntax_stops_before_reservation_or_transport) (name='identity-%d')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 291, in test_identity_expansion_syntax_stops_before_reservation_or_transport
+    self.assertEqual(result['classification'], 'STOP_KEY_METADATA')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED' != 'STOP_KEY_METADATA'
+- HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED
++ STOP_KEY_METADATA
+
+
+======================================================================
+FAIL: test_identity_expansion_syntax_stops_before_reservation_or_transport (__main__.PhaseControls.test_identity_expansion_syntax_stops_before_reservation_or_transport) (name='identity-${HOME}')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 291, in test_identity_expansion_syntax_stops_before_reservation_or_transport
+    self.assertEqual(result['classification'], 'STOP_KEY_METADATA')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED' != 'STOP_KEY_METADATA'
+- HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED
++ STOP_KEY_METADATA
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.315s
+
+FAILED (failures=3)

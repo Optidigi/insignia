@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { mkdtemp, open, readFile, rm, stat, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -503,7 +503,7 @@ test('run deadline and expired allocation stop in flight and preserve consumed r
   assert.equal((await journal(h.directory)).sealed, true);
 });
 
-async function cli(h, extra = [], credential = secret) {
+async function cli(h, extra = [], credential = secret, descriptor = undefined) {
   const manifest = join(h.directory, '..', 'allocation.json');
   await writeFile(manifest, JSON.stringify(h.options.allocation), { mode: 0o600 });
   const child = spawn(
@@ -520,10 +520,12 @@ async function cli(h, extra = [], credential = secret) {
       h.options.testEndpoint,
       ...extra,
     ],
-    { stdio: ['ignore', 'pipe', 'pipe', 'pipe'] },
+    { stdio: ['ignore', 'pipe', 'pipe', descriptor ?? 'pipe'] },
   );
-  child.stdio[3].on('error', () => {});
-  child.stdio[3].end(`${credential}\n`);
+  if (descriptor === undefined) {
+    child.stdio[3].on('error', () => {});
+    child.stdio[3].end(`${credential}\n`);
+  }
   let stdout = '',
     stderr = '';
   child.stdout.on('data', (data) => {
@@ -858,4 +860,81 @@ test('CLI rejects missing, multiline and oversized descriptor tokens before crea
       assert.equal(h.requests.length, 0);
       await assert.rejects(stat(h.directory), { code: 'ENOENT' });
     });
+});
+
+test('CLI exits by the credential deadline while a real blocking pipe writer remains open', async (t) => {
+  const h = await harness(t, async ({ res }) => res.end(JSON.stringify(page())));
+  const manifest = join(h.directory, '..', 'allocation.json');
+  await writeFile(manifest, JSON.stringify(h.options.allocation), { mode: 0o600 });
+  const helper = `import json,os,subprocess,sys,time
+read_fd,write_fd=os.pipe()
+started=time.monotonic()
+child=subprocess.Popen([sys.argv[1],sys.argv[2],'--allocation',sys.argv[3],'--private-directory',sys.argv[4],'--token-fd',str(read_fd),'--test-endpoint',sys.argv[5]],pass_fds=(read_fd,),stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+os.close(read_fd)
+timed_out=False
+try:
+ stdout,stderr=child.communicate(timeout=6.5)
+except subprocess.TimeoutExpired:
+ timed_out=True
+ child.kill()
+ stdout,stderr=child.communicate(timeout=2)
+finally:
+ os.close(write_fd)
+print(json.dumps({'timedOut':timed_out,'code':child.returncode,'stdout':stdout.decode(),'stderr':stderr.decode(),'seconds':time.monotonic()-started}))
+`;
+  const child = spawn(
+    'python3',
+    [
+      '-B',
+      '-c',
+      helper,
+      process.execPath,
+      new URL('./cli.mjs', import.meta.url).pathname,
+      manifest,
+      h.directory,
+      h.options.testEndpoint,
+    ],
+    { stdio: ['ignore', 'pipe', 'pipe'] },
+  );
+  let stdout = '';
+  let stderr = '';
+  child.stdout.on('data', (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk;
+  });
+  const code = await new Promise((resolve, reject) => {
+    child.on('error', reject);
+    child.on('close', resolve);
+  });
+  assert.equal(code, 0);
+  assert.equal(stderr, '');
+  const observation = JSON.parse(stdout);
+  assert.equal(observation.timedOut, false, 'public CLI remained alive after its five-second credential deadline');
+  assert.equal(observation.code, 1);
+  assert.equal(observation.stderr, '');
+  assert.equal(JSON.parse(observation.stdout).outcome, 'STOP_INPUT_NOT_ALLOCATED');
+  assert.equal(h.requests.length, 0);
+  await assert.rejects(stat(h.directory), { code: 'ENOENT' });
+});
+
+test('CLI rejects a regular-file credential descriptor before transport or run creation', async (t) => {
+  const h = await harness(t, async ({ input, res }) =>
+    res.end(JSON.stringify(input.operationName === 'M5027InstallationBoundary' ? { data: identity } : page())),
+  );
+  const syntheticFile = join(h.directory, '..', 'unsupported-synthetic-file');
+  await writeFile(syntheticFile, `${secret}\n`, { mode: 0o600 });
+  const file = await open(syntheticFile, 'r');
+  try {
+    const result = await cli(h, [], undefined, file.fd);
+    assert.equal(result.code, 1);
+    assert.equal(result.result.outcome, 'STOP_INPUT_NOT_ALLOCATED');
+    assert.equal(result.result.requests, 0);
+    assert.equal(result.stderr, '');
+    assert.equal(h.requests.length, 0);
+    await assert.rejects(stat(h.directory), { code: 'ENOENT' });
+  } finally {
+    await file.close();
+  }
 });
