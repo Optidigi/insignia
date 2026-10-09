@@ -1,0 +1,25 @@
+{
+  "repository": "Optidigi/insignia",
+  "pr": 60,
+  "url": "https://github.com/Optidigi/insignia/pull/60",
+  "reviewedBase": "d9ba6383a6e15958419ecf8e26d9182f08078e41",
+  "effectiveMergeBase": "d9ba6383a6e15958419ecf8e26d9182f08078e41",
+  "reviewedHead": "9a062d9fa9b5cec7130098d7b43146540cc90d8a",
+  "reviewedTree": "04e0428c742e74cae76c23693cca110d463a9413",
+  "actualMerge": "7fc8688b2d59c191486771192d4f466cbc226703",
+  "orderedParents": [
+    "d9ba6383a6e15958419ecf8e26d9182f08078e41",
+    "9a062d9fa9b5cec7130098d7b43146540cc90d8a"
+  ],
+  "actualTree": "04e0428c742e74cae76c23693cca110d463a9413",
+  "remoteMain": "7fc8688b2d59c191486771192d4f466cbc226703",
+  "mergedAt": "2026-10-09T17:04:33Z",
+  "verifiedAt": "2026-10-09T17:05:29.501364+00:00",
+  "method": "NORMAL_MERGE_NO_BYPASS",
+  "qualificationComment": "https://github.com/Optidigi/insignia/pull/60#issuecomment-6085537190",
+  "localVerdict": "LOCAL_TOOLING_SLICE_ACCEPTED",
+  "reviewRuntimeReceipt": "inventory-review-r5-runtime.json",
+  "principalApprovalFabricated": false,
+  "nativeSafety": "UNQUALIFIED",
+  "milestoneAccepted": false
+}

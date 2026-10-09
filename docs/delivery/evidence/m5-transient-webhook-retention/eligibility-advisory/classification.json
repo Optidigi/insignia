@@ -1,0 +1,12 @@
+{
+  "classification": "UNQUALIFIED_SYNTHETIC_APPLICATION_CONTRACT_COUNTEREXAMPLE_NOT_NATIVE_EXPLOIT",
+  "ordinaryPayloadRelabelRejected": true,
+  "syntheticOverlapAcceptedAndErased": true,
+  "processedOnlyDoesNotProveObligationCapture": true,
+  "nativeProviderShapeOverlap": "NOT_PROVEN",
+  "correctionApplied": false,
+  "genericUninstallSecurity": "UNCHANGED_RED",
+  "cluster": "OWNED_LOCAL_PG18_CLOSED_PORT55444",
+  "manifestSha256": "ac5406b3a15e91bfceb33788a4508c617275f878edde3adc1f9452db0aab6c8d",
+  "next": "Explicit independent full-source review; no deployment, native authority or loss-of-real-obligation claim"
+}
