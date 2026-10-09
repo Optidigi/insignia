@@ -1,0 +1,54 @@
+{
+  "scope": "OFFLINE_LOCAL_ONLY",
+  "reviewRound3": [
+    {
+      "axis": "spec",
+      "session": "01a1200c-8ba4-7922-b933-d7ee842f92f3",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "head": "e072423c2e95db1c21579b0e5ba3ea4c7c40283a",
+      "verdict": "FINDINGS",
+      "reportSha256": "2cea9fbecaecbba276313f49e9c5e7f3cfdf7a1d0af9fa928fdbd96c6ca9d587"
+    },
+    {
+      "axis": "security",
+      "session": "01a1200c-8be9-7150-b991-675daae097b6",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "head": "e072423c2e95db1c21579b0e5ba3ea4c7c40283a",
+      "verdict": "FINDINGS",
+      "reportSha256": "4d2fcb92287f9c1a4b475255abb7cc4b431fc04a51f8e8b28318e8ed25d2c539"
+    }
+  ],
+  "disposition": "Both reviews found the same web NODE_TLS_REJECT_UNAUTHORIZED override. The pure guard now rejects every NODE_* except reviewed NODE_ENV plus SSL_*/OPENSSL_*/loader/database overrides. Controls use the verify-full positive candidate and never connect to any server. Red then green recorded.",
+  "checks": [
+    {
+      "name": "guard-web-tls-red",
+      "command": "node --test scripts/m5-024/worker-guards.test.mjs",
+      "environmentKeys": [
+        "M5_WORKER_PACKAGE_ENTRY"
+      ],
+      "exitCode": 1,
+      "sha256": "86928d040d4ffb485f6ae514696bad29a0f3d55aacc928b6da64bf046dfdf4f6",
+      "bytes": 1020,
+      "log": "guard-web-tls-red.log"
+    },
+    {
+      "name": "guard-web-tls-green",
+      "command": "node --test scripts/m5-024/worker-guards.test.mjs",
+      "environmentKeys": [
+        "M5_WORKER_PACKAGE_ENTRY"
+      ],
+      "exitCode": 0,
+      "sha256": "19c383e4ae20ce6961685bb2ad5e3dab08bf94304d6c05d650ccd66a92df49ee",
+      "bytes": 220,
+      "log": "guard-web-tls-green.log"
+    }
+  ],
+  "productionSourceBuildPackageAndProviderInputsUnchanged": true,
+  "previousHeadCi": "round3-ci.json (eleven attempt1 successes; does not replace new-head qualification)"
+}

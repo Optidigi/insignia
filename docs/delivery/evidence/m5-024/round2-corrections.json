@@ -1,0 +1,78 @@
+{
+  "scope": "OFFLINE_LOCAL_ONLY",
+  "reviewRound2": [
+    {
+      "axis": "spec",
+      "session": "01a11ffd-48f8-7683-906c-2feb084b298d",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "head": "8bf8c551a0006e73dfffe7d4978c5adbe9a2a971",
+      "verdict": "CLEAR",
+      "reportSha256": "82a237aba94c28361a73676a25a575781e50bdd6f0942e7096c5cc54715e87d5"
+    },
+    {
+      "axis": "security",
+      "session": "01a11ffd-4911-7060-9999-6e5826435026",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "head": "8bf8c551a0006e73dfffe7d4978c5adbe9a2a971",
+      "verdict": "FINDINGS",
+      "reportSha256": "ad74222f1333774f1f8993da4628c7a55fa4601c8a8afca766d4c9ff1fb1abd1"
+    }
+  ],
+  "dispositions": {
+    "security-P2-web-PGPORT": "Reject PG*/NODE/loader overrides in the effective web environment; require explicit ports for both URLs. Failing public guard control then final portable/guard suite PASS.",
+    "CI-round2-offline-legacy-cache": "Existing mirror had hidden legacy dependency on registry resolution metadata. Explicit frozen legacy alone also failed in a controlled cache. Supported inject-workspace lockfile deploy passed with normal npm policy-metadata preparation, then offline actual packaging; no supply-chain bypass. CI repeats this exact preparation/restore/packaging sequence."
+  },
+  "checks": [
+    {
+      "name": "guard-web-override-red",
+      "exitCode": 1,
+      "sha256": "b3bc5dbd5b6b9264e1c5c7981712626c19700d33421811030e84103335a28b96",
+      "bytes": 1022,
+      "log": "guard-web-override-red.log"
+    },
+    {
+      "name": "legacy-no-mirror-red",
+      "exitCode": 1,
+      "sha256": "56292378bb9b03a74031698fedd036bac0a6220d47158e150c69eb23ce46dd2d",
+      "bytes": 663,
+      "log": "legacy-no-mirror-red.log"
+    },
+    {
+      "name": "legacy-frozen-no-mirror-green",
+      "exitCode": 1,
+      "sha256": "48cfb04a6a99a51df1dbddce900faea8cb65f176c1316207ec8866bcf2443778",
+      "bytes": 654,
+      "log": "legacy-frozen-no-mirror-green.log"
+    },
+    {
+      "name": "deploy-modern-primer",
+      "exitCode": 0,
+      "sha256": "9344cc404c8e2ae53ed4c78504e39821aed5a7db227e52c2d9ccac0b35aa9691",
+      "bytes": 614,
+      "log": "deploy-modern-primer.log"
+    },
+    {
+      "name": "deploy-modern-offline",
+      "exitCode": 0,
+      "sha256": "3ee2365f664f5494ee8d389ab5193f7702c3c627052773c9c9350efb4e444e9f",
+      "bytes": 495,
+      "log": "deploy-modern-offline.log"
+    },
+    {
+      "name": "worker-build-final-r4",
+      "exitCode": 0,
+      "sha256": "e021e9727ff5c857028783626e6abce601e380f12ab4ec930440042eb37519cb",
+      "bytes": 3424,
+      "log": "worker-build-final-r4.log"
+    }
+  ],
+  "productionSourceUnchanged": true,
+  "packageInventoryDelta": "Only root package.json deploy metadata changed; all compiled workspace and dependency files/versions unchanged. Prior manifest retained.",
+  "threatSemanticsUnchanged": true
+}

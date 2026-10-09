@@ -1,0 +1,239 @@
+{
+  "scope": "OFFLINE_LOCAL_ONLY",
+  "outcome": "BLOCKED_WEBHOOK_METADATA_SECURITY_BOUNDARY",
+  "ciAndReviews": "Attach exact-final-head reports and native workflow IDs in PR packet; never inferred here",
+  "rawLogsLocation": "/home/serveradmin/insignia-m5-024-handoff (private local raw logs; compact selected synthetic logs committed)",
+  "checks": [
+    {
+      "name": "full-root-final",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check"
+      ],
+      "environmentKeys": [],
+      "localDatabase": false,
+      "startedAt": "2026-10-09T08:49:11.257917+00:00",
+      "exitCode": 0,
+      "log": "full-root-final.log",
+      "sha256": "ef1a66332b3b2833a8da6b8a17257c18d1eb4d869700d631302d3a46a8aadeb2",
+      "bytes": 90875
+    },
+    {
+      "name": "full-web-pg18",
+      "command": [
+        "corepack",
+        "pnpm",
+        "--filter",
+        "@insignia/web",
+        "test"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "localDatabase": true,
+      "startedAt": "2026-10-09T08:51:51.896826+00:00",
+      "exitCode": 0,
+      "log": "full-web-pg18.log",
+      "sha256": "1cf0815490b048f74b44eba6b6027eed851ee653b1f59957a9660f1f648e6d18",
+      "bytes": 69239
+    },
+    {
+      "name": "queue-controls-final",
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "scripts/m5-024/queue-privileges.test.mjs",
+        "scripts/m5-024/crash-recovery.test.mjs"
+      ],
+      "environmentKeys": [
+        "DATABASE_URL",
+        "INSIGNIA_REQUIRE_POSTGRES_TEST"
+      ],
+      "localDatabase": true,
+      "startedAt": "2026-10-09T08:52:43.022958+00:00",
+      "exitCode": 0,
+      "log": "queue-controls-final.log",
+      "sha256": "7828a054a3323ede5794549bdd92e5e8893814becbfeb832abfd61bb2f69e606",
+      "bytes": 1947
+    },
+    {
+      "name": "publication-stress100",
+      "command": [
+        "corepack",
+        "pnpm",
+        "test:m5-stress"
+      ],
+      "environmentKeys": [],
+      "localDatabase": false,
+      "startedAt": "2026-10-09T08:53:05.636416+00:00",
+      "exitCode": 0,
+      "log": "publication-stress100.log",
+      "sha256": "c4594815f7b4d22ca00366f19e79a9a7cdad1b0b394f659508527ed493a3b90d",
+      "bytes": 10321
+    },
+    {
+      "name": "renderer-control",
+      "command": [
+        "corepack",
+        "pnpm",
+        "test:m5-renderer-control"
+      ],
+      "environmentKeys": [],
+      "localDatabase": false,
+      "startedAt": "2026-10-09T08:54:38.585335+00:00",
+      "exitCode": 0,
+      "log": "renderer-control.log",
+      "sha256": "f81b3a27d6a3a0d82ce746f305114c262437267a34cc8125ba56be6f4db19440",
+      "bytes": 1257
+    },
+    {
+      "name": "worker-inventory-controls",
+      "command": [
+        "node",
+        "--test",
+        "docs/delivery/evidence/m5-023/operators/worker-inventory-controls.mjs"
+      ],
+      "environmentKeys": [],
+      "localDatabase": false,
+      "startedAt": "2026-10-09T08:54:45.258683+00:00",
+      "exitCode": 0,
+      "log": "worker-inventory-controls.log",
+      "sha256": "56a0b2d08087c87bb3e6165e0219a79421d035cfc249b40f461a69d2dc856a2a",
+      "bytes": 1443
+    },
+    {
+      "name": "style-final",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:style"
+      ],
+      "environmentKeys": [],
+      "localDatabase": false,
+      "startedAt": "2026-10-09T08:54:53.694163+00:00",
+      "exitCode": 0,
+      "log": "style-final.log",
+      "sha256": "d09e2fa01f7114129a013646bd8c52cf276083703b1ed4b5ffbc224ba0d6d641",
+      "bytes": 13785
+    },
+    {
+      "name": "secrets-final",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "environmentKeys": [],
+      "localDatabase": false,
+      "startedAt": "2026-10-09T08:54:54.499690+00:00",
+      "exitCode": 0,
+      "log": "secrets-final.log",
+      "sha256": "0b2d9080c93aeca8cf6cc738c288768409c4c03fe3661095338ee7ea224aab07",
+      "bytes": 206
+    },
+    {
+      "name": "full-pg18",
+      "command": "corepack pnpm check:database (isolated PG18.6)",
+      "exitCode": 0,
+      "log": "full-pg18.log",
+      "sha256": "e1596e610e3eb24725354c1d6adf0917ed2a51dcc235e533edeae86f2585f5fc",
+      "bytes": 514,
+      "classification": "PASS"
+    },
+    {
+      "name": "worker-final",
+      "command": "corepack pnpm --filter @insignia/worker test (isolated PG18.6)",
+      "exitCode": 0,
+      "log": "worker-final.log",
+      "sha256": "fcec580d1ca6ecc3f9c1b2eebc9bb4df9dda1b4de6265d5b8d37a25bf13e33b5",
+      "bytes": 5334,
+      "classification": "PASS"
+    },
+    {
+      "name": "http-final",
+      "command": "node --test --test-concurrency=1 apps/web/test/shopify-webhook.test.mjs apps/web/test/webhook-metadata-boundary.test.mjs",
+      "exitCode": 0,
+      "log": "http-final.log",
+      "sha256": "a2199d689c6eaa1f9ea4a55f4384f9bf3562ed8ea13dbc6219d2d5052e4654da",
+      "bytes": 482,
+      "classification": "PASS"
+    },
+    {
+      "name": "portable-final",
+      "command": "node --test scripts/m5-024/worker-guards.test.mjs scripts/m5-024/portable-process.test.mjs (actual portable entry)",
+      "exitCode": 0,
+      "log": "portable-final.log",
+      "sha256": "2605143def99b41b5b76851e516f31ffd773fd7e1e8784de4a38d382f9dd89e0",
+      "bytes": 335,
+      "classification": "PASS"
+    },
+    {
+      "name": "schema-red",
+      "command": "node --test apps/worker/test/managed-schema.test.mjs before correction",
+      "exitCode": 1,
+      "log": "schema-red.log",
+      "sha256": "a732785665e6370f3760def1161c8f2617e3f721a2909c464f68cc6b351f4d92",
+      "bytes": 1033,
+      "classification": "EXPECTED_RED"
+    },
+    {
+      "name": "schema-green",
+      "command": "node --test apps/worker/test/managed-schema.test.mjs after correction",
+      "exitCode": 0,
+      "log": "schema-green.log",
+      "sha256": "0e8bb3242043bd8e55feb570a02a77411686655da5a01fb8802619ba9223dccf",
+      "bytes": 340,
+      "classification": "PASS"
+    },
+    {
+      "name": "metadata-characterization",
+      "command": "local characterization first request lacked JSON Content-Type",
+      "exitCode": 1,
+      "log": "metadata-characterization.log",
+      "sha256": "18de226ee56646e9809691ac3eea2b76703db35ac395ee2f2fb580b75e40dd91",
+      "bytes": 1049,
+      "classification": "RETAINED_FAILURE"
+    },
+    {
+      "name": "metadata-characterization-json",
+      "command": "same bounded local test with correct HTTP Content-Type",
+      "exitCode": 0,
+      "log": "metadata-characterization-json.log",
+      "sha256": "6a243afbbcbef646659d22646bf24d938e0f25f0781bb97a6e821afe699cdaac",
+      "bytes": 367,
+      "classification": "PASS"
+    },
+    {
+      "name": "package-r2",
+      "command": "package build with workspace development tools pruned by previous prod deployment",
+      "exitCode": 1,
+      "log": "package-r2.log",
+      "sha256": "4cb911104ba50aca243a89f3fcee8efd24574a85dde0b21918c424bbac10c3e7",
+      "bytes": 1025,
+      "classification": "RETAINED_FAILURE"
+    },
+    {
+      "name": "full-root-first",
+      "command": "root check with workspace tools absent; restored explicit dev installation",
+      "exitCode": 127,
+      "log": "full-root-first.log",
+      "sha256": "e5f1091885cefe32602d56b77d1eed01e2fd513b95cee6f56d02586b51e7104e",
+      "bytes": 2151,
+      "classification": "RETAINED_FAILURE"
+    }
+  ],
+  "counts": {
+    "database": 198,
+    "worker": 18,
+    "webWithPostgres": 87,
+    "publicationStress": 100,
+    "portableControls": 2,
+    "queueAndCrashControls": 2
+  },
+  "historicalEvidenceChanged": false,
+  "productionOrShopifyOperations": 0,
+  "containerRuntime": "NOT_RUN_NO_LOCAL_DOCKER"
+}

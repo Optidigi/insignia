@@ -1,0 +1,12 @@
+{
+  "id": 37911412896,
+  "head_sha": "8bf8c551a0006e73dfffe7d4978c5adbe9a2a971",
+  "run_attempt": 1,
+  "conclusion": "failure",
+  "html_url": "https://github.com/Optidigi/insignia/actions/runs/37911412896",
+  "event": "pull_request",
+  "created_at": "2026-10-09T09:27:42Z",
+  "updated_at": "2026-10-09T09:30:16Z",
+  "classification": "FAILED_OFFLINE_LEGACY_DEPLOY_CACHE_METADATA",
+  "rawLogSha256": "51c48ba0858c1e1b4d8dd7e9efd081d8c3940d7997a54b0ec24715d92f306fbd"
+}

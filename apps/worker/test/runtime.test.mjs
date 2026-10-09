@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { test } from 'node:test';
+import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
 
 const entry = new URL('../dist/main.js', import.meta.url);
 
@@ -9,6 +10,7 @@ test('configured worker serves liveness and durable readiness, then closes on SI
   timeout: 30_000,
 }, async () => {
   assert.ok(process.env.DATABASE_URL, 'DATABASE_URL is required for the worker startup test');
+  await installQueue(process.env.DATABASE_URL);
   const child = spawn(process.execPath, [entry.pathname, '--port=0'], {
     env: {
       ...process.env,

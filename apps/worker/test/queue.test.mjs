@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
+import { QUEUE_POLICY } from '../dist/queue-contract.js';
 import { createPgBossRuntime, REFRESH_QUEUE, WEBHOOK_QUEUE } from '../dist/runtime.js';
 
 function fakeBoss() {
@@ -18,8 +19,17 @@ function fakeBoss() {
     async stop(options) {
       calls.push(['stop', options]);
     },
-    async createQueue(name, options) {
-      calls.push(['createQueue', name, options]);
+    async getQueue(name) {
+      calls.push(['getQueue', name]);
+      return {
+        name,
+        ...QUEUE_POLICY,
+        table: 'job_common',
+        notify: false,
+        deadLetter: null,
+        heartbeatSeconds: null,
+        retryDelayMax: null,
+      };
     },
     async send(name, data, options) {
       calls.push(['send', name, data, options]);
@@ -218,5 +228,27 @@ test('refresh claim contention is retried rather than silently completing its jo
   const metrics = await queue.observability.registry.metrics();
   assert.match(metrics, /insignia_refresh_claim_contention_total 1/);
   assert.match(metrics, /insignia_queue_attempt_total\{outcome="retry"\} 1/);
+  await queue.stop();
+});
+
+test('queue policy drift, missing queue and wrong schema fail startup; later drift fails readiness', async () => {
+  for (const replacement of [null, { retryLimit: 99 }]) {
+    const boss = fakeBoss();
+    const original = boss.getQueue;
+    boss.getQueue = async (name) => (replacement === null ? null : { ...(await original(name)), ...replacement });
+    const queue = createPgBossRuntime({ boss });
+    await assert.rejects(queue.start(), /queue/);
+    assert.equal(queue.durableReady, false);
+  }
+  const boss = fakeBoss();
+  boss.schemaVersion = async () => 42;
+  await assert.rejects(createPgBossRuntime({ boss }).start(), /version differs/);
+  boss.schemaVersion = async () => 43;
+  const queue = createPgBossRuntime({ boss, credentialKeysReady: true });
+  await queue.start();
+  await queue.work({ async processInbox() {}, async refreshCredential() {} });
+  assert.equal(await queue.checkDurableReady(), true);
+  boss.getQueue = async () => null;
+  assert.equal(await queue.checkDurableReady(), false);
   await queue.stop();
 });

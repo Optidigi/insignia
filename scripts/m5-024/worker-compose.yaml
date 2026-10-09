@@ -1,0 +1,27 @@
+# Separate project; existing web/database/legacy Compose sources remain untouched.
+name: insignia-uninstall-m5-024
+services:
+  worker:
+    image: ${INSIGNIA_WORKER_IMAGE:?Set separately reviewed sha256 digest; image not built in M5-024}
+    pull_policy: never
+    restart: unless-stopped
+    read_only: true
+    user: node
+    command: [/usr/local/bin/node, /srv/insignia/worker/dist/main.js]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    env_file: worker.env
+    environment:
+      NODE_ENV: production
+    networks: [private]
+    healthcheck:
+      test: [CMD, /usr/local/bin/node, -e, "fetch('http://127.0.0.1:4301/ready').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    stop_grace_period: 40s
+networks:
+  private:
+    external: true
+    name: insignia-rewrite-m5-019_private

@@ -2,14 +2,14 @@ import { randomUUID } from 'node:crypto';
 import { createObservability, type Observability } from '@insignia/observability';
 import { type JobWithMetadata, PgBoss } from 'pg-boss';
 
-export const WEBHOOK_QUEUE = 'insignia.shopify-webhook.v1';
-export const REFRESH_QUEUE = 'insignia.token-refresh.v1';
+import { assertQueueContract, QUEUE_SCHEMA_VERSION, REFRESH_QUEUE, WEBHOOK_QUEUE } from './queue-contract.js';
+
+export { REFRESH_QUEUE, WEBHOOK_QUEUE } from './queue-contract.js';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const RETRY_LIMIT = 5;
 type Boss = Pick<
   PgBoss,
-  'start' | 'stop' | 'createQueue' | 'send' | 'findJobs' | 'retry' | 'work' | 'offWork' | 'schemaVersion'
+  'start' | 'stop' | 'getQueue' | 'send' | 'findJobs' | 'retry' | 'work' | 'offWork' | 'schemaVersion'
 >;
 
 export interface JobContext {
@@ -69,16 +69,56 @@ function assertJobPayload(data: unknown, allowed: readonly string[]): asserts da
 /** pg-boss owns its schema. Application dbmate migrations must never edit it. */
 export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntime {
   if (!options.boss && !options.connectionString) throw new Error('Missing worker database connection');
+  const schema = options.schema ?? 'pgboss';
+  if (!/^[a-z_][a-z0-9_]{0,62}$/.test(schema)) throw new Error('Invalid queue schema');
   const boss =
-    options.boss ?? new PgBoss({ connectionString: options.connectionString, schema: options.schema ?? 'pgboss' });
+    options.boss ??
+    new PgBoss({
+      connectionString: options.connectionString,
+      schema,
+      migrate: false,
+      createSchema: false,
+      schedule: false,
+      supervise: options.credentialKeysReady === true,
+      persistQueueStats: false,
+      monitorVacuum: false,
+      reindex: false,
+    });
   const observability = options.observability ?? createObservability();
   let started = false;
   let workersStarted = false;
   let stopped = false;
+  let faulted = false;
+  if (!options.boss)
+    (boss as PgBoss).on('error', () => {
+      faulted = true;
+      observability.logger.error('worker_start_failed', { errorClass: 'QueueRuntimeError' });
+    });
   const workerIds: { name: string; id: string }[] = [];
 
   function requireStarted() {
     if (!started || stopped) throw new Error('Queue runtime is not active');
+  }
+
+  async function checkContract() {
+    if ((await boss.schemaVersion()) !== QUEUE_SCHEMA_VERSION) throw new Error('pg-boss schema version differs');
+    for (const name of [WEBHOOK_QUEUE, REFRESH_QUEUE]) assertQueueContract(name, await boss.getQueue(name));
+    if (!options.boss) {
+      // Read-only privilege/clock probes also detect revoked grants after startup.
+      const worker = options.credentialKeysReady === true;
+      const { rows } = await (boss as PgBoss).getDb().executeSql(`SELECT ${schema}.job_now(),
+        has_table_privilege(current_user, '${schema}.job', 'INSERT') AND has_table_privilege(current_user, '${schema}.job', 'UPDATE') AND
+        has_table_privilege(current_user, '${schema}.job_common', 'INSERT') AND has_table_privilege(current_user, '${schema}.job_common', 'UPDATE') AND
+        (${
+          worker
+            ? `has_table_privilege(current_user, '${schema}.job', 'DELETE') AND
+          has_table_privilege(current_user, '${schema}.job_common', 'DELETE') AND
+          has_column_privilege(current_user, '${schema}.version', 'flow_on', 'UPDATE') AND
+          has_column_privilege(current_user, '${schema}.queue', 'monitor_on', 'UPDATE')`
+            : 'true'
+        }) AS allowed`);
+      if (rows.length !== 1 || rows[0]?.allowed !== true) throw new Error('Queue runtime privileges are incomplete');
+    }
   }
 
   async function start() {
@@ -87,24 +127,7 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
     if (options.credentialKeysReady === false) throw new Error('Credential wrapping keys not configured');
     try {
       await boss.start();
-      await boss.createQueue(WEBHOOK_QUEUE, {
-        retryLimit: RETRY_LIMIT,
-        retryDelay: 2,
-        retryBackoff: true,
-        expireInSeconds: 120,
-        retentionSeconds: 14 * 86400,
-        deleteAfterSeconds: 7 * 86400,
-      });
-      await boss.createQueue(REFRESH_QUEUE, {
-        retryLimit: RETRY_LIMIT,
-        retryDelay: 2,
-        retryBackoff: true,
-        expireInSeconds: 120,
-        retentionSeconds: 14 * 86400,
-        deleteAfterSeconds: 7 * 86400,
-      });
-      const version = await boss.schemaVersion();
-      if (!Number.isSafeInteger(version) || (version ?? 0) < 1) throw new Error('pg-boss schema is unavailable');
+      await checkContract();
       started = true;
       observability.logger.info('worker_started');
     } catch (error) {
@@ -268,16 +291,16 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
       return boss.schemaVersion();
     },
     async checkDurableReady() {
-      if (!started || !workersStarted || stopped || options.credentialKeysReady !== true) return false;
+      if (!started || !workersStarted || stopped || faulted || options.credentialKeysReady !== true) return false;
       try {
-        const version = await boss.schemaVersion();
-        return Number.isSafeInteger(version) && (version ?? 0) > 0;
+        await checkContract();
+        return true;
       } catch {
         return false;
       }
     },
     get durableReady() {
-      return started && workersStarted && !stopped && options.credentialKeysReady === true;
+      return started && workersStarted && !stopped && !faulted && options.credentialKeysReady === true;
     },
     observability,
   };

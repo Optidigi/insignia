@@ -1,0 +1,48 @@
+[
+  {
+    "name": "guards-corrections-final",
+    "command": [
+      "node",
+      "--test",
+      "scripts/m5-024/worker-guards.test.mjs"
+    ],
+    "environmentKeys": [
+      "M5_WORKER_PACKAGE_ENTRY"
+    ],
+    "exitCode": 0,
+    "sha256": "b8e6e10e8fcff5ce5675fee56e33bb28618fd41026020ce334e02ddb62897993",
+    "bytes": 220,
+    "log": "guards-corrections-final.log"
+  },
+  {
+    "name": "queue-scram-corrections-final",
+    "command": [
+      "node",
+      "--test",
+      "--test-concurrency=1",
+      "scripts/m5-024/queue-privileges.test.mjs",
+      "scripts/m5-024/crash-recovery.test.mjs"
+    ],
+    "environmentKeys": [
+      "DATABASE_URL",
+      "INSIGNIA_REQUIRE_POSTGRES_TEST"
+    ],
+    "exitCode": 0,
+    "sha256": "52a592c2ffcdef0146a33cb123cf25a0cd2ea19ae8d9cf6089c9216a86d99d99",
+    "bytes": 1947,
+    "log": "queue-scram-corrections-final.log"
+  },
+  {
+    "name": "root-corrections-final",
+    "command": [
+      "corepack",
+      "pnpm",
+      "check"
+    ],
+    "environmentKeys": [],
+    "exitCode": 0,
+    "sha256": "cea4bb115a6327ef4b93afb08ca4cf710724193006969e343012664f3a734c82",
+    "bytes": 90886,
+    "log": "root-corrections-final.log"
+  }
+]

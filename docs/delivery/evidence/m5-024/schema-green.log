@@ -1,0 +1,11 @@
+{"level":50,"time":1791496107473,"event":"worker_start_failed","errorClass":"QueueStartupError"}
+{"level":30,"time":1791496107479,"event":"worker_stopped"}
+✔ runtime refuses absent schema without installing it (38.10089ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 220.704414

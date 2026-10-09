@@ -5,6 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { PgBoss } from 'pg-boss';
+import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
 import { createDurableWorkerHandlers } from '../dist/handlers.js';
 import { createPgBossRuntime, WEBHOOK_QUEUE } from '../dist/runtime.js';
 
@@ -17,7 +18,18 @@ test('PostgreSQL pg-boss starts, retries, settles and replays after restart', {
   const connectionString = process.env.DATABASE_URL;
   assert.ok(connectionString, 'DATABASE_URL is required for the PostgreSQL queue test');
   const inboxId = randomUUID();
-  const boss = new PgBoss({ connectionString, schema });
+  await installQueue(connectionString, schema);
+  const boss = new PgBoss({
+    connectionString,
+    schema,
+    migrate: false,
+    createSchema: false,
+    schedule: false,
+    supervise: true,
+    persistQueueStats: false,
+    monitorVacuum: false,
+    reindex: false,
+  });
   const queue = createPgBossRuntime({ boss, credentialKeysReady: true });
   let attempts = 0;
   try {
@@ -48,7 +60,14 @@ test('PostgreSQL pg-boss starts, retries, settles and replays after restart', {
     await queue.stop();
   }
 
-  const restartedBoss = new PgBoss({ connectionString, schema });
+  const restartedBoss = new PgBoss({
+    connectionString,
+    schema,
+    migrate: false,
+    createSchema: false,
+    schedule: false,
+    supervise: false,
+  });
   const restarted = createPgBossRuntime({ boss: restartedBoss });
   try {
     await restarted.start();
@@ -72,7 +91,18 @@ test('pg-boss retry after committed uninstall retains one deactivation and one i
   const core = createDurableCore(new Pool({ connectionString }), {
     credentialKeys: { currentKeyId: 'synthetic-k1', keys: { 'synthetic-k1': Buffer.alloc(32, 41) } },
   });
-  const boss = new PgBoss({ connectionString, schema });
+  await installQueue(connectionString, schema);
+  const boss = new PgBoss({
+    connectionString,
+    schema,
+    migrate: false,
+    createSchema: false,
+    schedule: false,
+    supervise: true,
+    persistQueueStats: false,
+    monitorVacuum: false,
+    reindex: false,
+  });
   const queue = createPgBossRuntime({ boss, credentialKeysReady: true });
   const shopId = randomUUID();
   const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;

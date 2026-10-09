@@ -1,0 +1,84 @@
+{
+  "scope": "OFFLINE_LOCAL_ONLY",
+  "reviewRound1": [
+    {
+      "axis": "spec",
+      "session": "01a11fef-82c3-7603-a8f0-c7c0ca4a6e7e",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "verdict": "FINDINGS",
+      "head": "9e87fcb6c7374a5751ae9ec9a57a734fc5d02612",
+      "reportSha256": "9d16fa4c0a25c975b18ef0b5ae655b174747711804e7eadf06702879599b8846"
+    },
+    {
+      "axis": "security",
+      "session": "01a11fef-829f-74f0-b49d-931587516291",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "verdict": "FINDINGS",
+      "head": "9e87fcb6c7374a5751ae9ec9a57a734fc5d02612",
+      "reportSha256": "1ae6622f764c5ff0440e5d24af70743145a20cc8059431c894ec3a10fa5d92a7"
+    }
+  ],
+  "dispositions": {
+    "spec-P2-role-auth": "Synthetic password plus authenticated current_user and SQLSTATE42501 required before negative probes; local SCRAM red/green.",
+    "spec-P2-web-endpoint": "Both independent endpoint observations and URLs required; exact same server/database target, approved distinct roles allowed; missing/mismatch red/green.",
+    "security-P2-duplicate-sslmode": "Exactly one sslmode query entry, with both conflicting orders and both roles rejected; red/green."
+  },
+  "checks": [
+    {
+      "name": "queue-scram-red",
+      "command": "node --test scripts/m5-024/queue-privileges.test.mjs",
+      "exitCode": 1,
+      "sha256": "76711e22f4550c7198739301136fea40c415ff67ddb40195129a4f95ba8287ee",
+      "bytes": 1426,
+      "privateRawLog": "/home/serveradmin/insignia-m5-024-handoff/queue-scram-red.log"
+    },
+    {
+      "name": "queue-scram-green",
+      "command": "node --test scripts/m5-024/queue-privileges.test.mjs",
+      "exitCode": 0,
+      "sha256": "0880afd131e55d3e95c1b4563569484a414fadef21ff1a34be865dcda44a9f10",
+      "bytes": 1492,
+      "privateRawLog": "/home/serveradmin/insignia-m5-024-handoff/queue-scram-green.log"
+    },
+    {
+      "name": "guard-web-endpoint-red",
+      "command": "node --test scripts/m5-024/worker-guards.test.mjs",
+      "exitCode": 1,
+      "sha256": "69e1611646466b1f53ae1488fbba924d4d672e8cf29a8b76ccb9be46b399840f",
+      "bytes": 1018,
+      "privateRawLog": "/home/serveradmin/insignia-m5-024-handoff/guard-web-endpoint-red.log"
+    },
+    {
+      "name": "guard-web-endpoint-green",
+      "command": "node --test scripts/m5-024/worker-guards.test.mjs",
+      "exitCode": 0,
+      "sha256": "c7dd8feec828b162d4ed8eaee0641312a22f93fde3e9580ce697203431e03d12",
+      "bytes": 218,
+      "privateRawLog": "/home/serveradmin/insignia-m5-024-handoff/guard-web-endpoint-green.log"
+    },
+    {
+      "name": "guard-duplicate-ssl-red",
+      "command": "node --test scripts/m5-024/worker-guards.test.mjs",
+      "exitCode": 1,
+      "sha256": "3f6c9775363fb4bbccd179ca51999c7fda5028494039e2eb88435475a437fa1d",
+      "bytes": 1021,
+      "privateRawLog": "/home/serveradmin/insignia-m5-024-handoff/guard-duplicate-ssl-red.log"
+    },
+    {
+      "name": "guard-duplicate-ssl-green",
+      "command": "node --test scripts/m5-024/worker-guards.test.mjs",
+      "exitCode": 0,
+      "sha256": "7d15ad76b049d2f2ae41f7d87aae5f567fe6374dbb116b59cb4c2f6628949221",
+      "bytes": 219,
+      "privateRawLog": "/home/serveradmin/insignia-m5-024-handoff/guard-duplicate-ssl-green.log"
+    }
+  ],
+  "productionRuntimeAndPortablePackageUnchanged": true,
+  "threatSemanticsUnchanged": true
+}
