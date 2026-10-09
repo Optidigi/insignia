@@ -1,6 +1,6 @@
 # Insignia — greenfield architecture and implementation plan
 
-**Record version:** 1.4 — 30 September 2026
+**Record version:** 1.5 — 9 October 2026 (delivery governance only; technical contracts retained)
 
 **Status:** Product/architecture decision audit closed; Option A required-product trust boundary approved. No complete development gate accepted.
 
@@ -8,7 +8,7 @@
 
 **Delivery:** Consult the maintained [delivery state](../delivery/state.md) for current authorization, evidence and gate status. The v1.3 record remains available at fixed PR #25 merge `4209bb16a09cff95d5cbbc1bbcb082e8c1fa8899` with plan SHA-256 `b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d` and ledger SHA-256 `d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9`. The original v1.1 record remains at fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`; approved v1.2 remains at fixed PR #17 merge `662a78cd27507d8a2f1eaa976f1c644c93edd1be`.
 
-**Execution governance:** Read `../delivery/operating-model.md` before implementing or delegating. Root `AGENTS.md` is the concise entry point; `../delivery/state.md` records current authorization. The principal architect/reviewer is ChatGPT in the Insignia Rewrite Project; the local orchestrator is sol-6-high. Version 1.2 added the approved Option A boundary, version 1.3 corrected gate/milestone sequencing, and version 1.4 adopts whole-quote v2 for production implementation. This does not establish merchant capacity or authorize deployment.
+**Execution governance:** The owner-authorized milestone-autonomy decision applies immediately to unfinished M5. The local orchestrator owns slices, independent local review and normal merges; the principal reviews completed milestones. Read `../delivery/operating-model.md` and [the owner decision](../delivery/authority/milestone-autonomy-2026-10-09.md). Prior v1.2 Option A, v1.3 gate sequencing and v1.4 whole-quote v2 adoption remain intact. This update does not alter acceptance criteria, approve a production defect or allocate external resources.
 
 This document is intended to be sufficient context for implementation agents. A numbered source register follows section 17. `[S#]` references support external platform/library facts. Requirements and algorithms stated as Insignia decisions are design specifications, not claims of already-observed Shopify behavior.
 
@@ -784,6 +784,8 @@ G8 is added because the approved hybrid/feature-tiered business model depends on
 
 ### 14.2.1 Gate evidence timing, approved v1.3 sequencing retained in v1.4
 
+**Delivery ownership update (9 October 2026):** The local orchestrator qualifies in-milestone technical sub-results and dependencies through independent review and evidence; the principal accepts the complete milestone and its assigned gate outcomes at milestone handoff. This changes neither any criterion below nor its owning milestone, and grants no unallocated resource or rollout authority.
+
 The criteria in the table above are unchanged. A principal-accepted **feasibility basis** establishes only a bounded platform/interface contract; it is not a complete gate PASS. A milestone may start only after its stated entry evidence and separate authorization. A feature may be accepted only after its owning milestone's remaining criteria pass. Every G1–G8 criterion for the supported shipping scope must pass again on the release candidate before merchant rollout. A changed deadline is recorded here rather than treated as a waived requirement.
 
 | Gate | M0/next-dependent entry evidence | Remaining owner and blocking point |
@@ -935,13 +937,15 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 
 The authoritative delivery procedure is `../delivery/operating-model.md`. This section retains architecture-specific implementation requirements. Read both before implementation; task/role templates and the tooling register are linked by the operating model.
 
-### 16.0 Principal-led execution and review
+### 16.0 Milestone-autonomous execution and principal review
 
-The principal architect/reviewer in the Insignia Rewrite Project seeds each bounded slice and reviews every PR. sol-6-high orchestrates local implementation, optional one-level subagents, tests and handoffs. Start with one writer; permit at most two independently approved non-overlapping writers, each with its own branch/worktree and isolated resources. The orchestrator integrates shared root/lock/config/schema/fixture changes. Local spec/correctness reviewers are read-only and do not grant principal approval.
+The local orchestrator owns the active milestone's decomposition, implementation, relevant skills/tools, subagents, independent local reviews, exact-head qualification, normal PR merges and continuation. It may start the next internal slice without a new principal prompt. One accountable integrator owns shared contracts, migrations, lockfiles, resources and cumulative correctness. Parallelism follows actual path/resource isolation and local budget, not an external per-writer approval checkpoint.
 
-PF-001 is the only initial execution authorization. A completed slice returns actual repository/PR/base/head, commands, CI and gate evidence to the principal. The user relays PRs and review outcomes; this chat is not a background monitor. Principal verdicts bind exact refs; changed reviewable code or effective base needs renewed review. User merge/resource authority remains explicit. A native GitHub approval is distinct from an architectural verdict, and an agent must not manufacture either.
+The owner authorized this delivery change on 9 October 2026, effective immediately for unfinished M5. The principal reviews the completed milestone's cumulative entry-to-candidate implementation, working user flow, original acceptance criteria, source/native evidence, architecture/plan drift and cleanup. Local PRs may already be merged; freeze the integrated commit/tree for the milestone handoff. Do not start the next milestone until principal acceptance. A blocked evidence PR is not milestone completion.
 
-Canonical progress lives in `../delivery/state.md`, reviewed slice prompts and PR/evidence records. Scope/decision changes update the ledger and affected plan sections. Resume from current repository state rather than reconstructing authority from remembered chat. No agent auto-starts a dependent next slice or marks a gate passed merely because its harness PR merged.
+Obtain fresh independent read-only Spec/correctness and Standards/security reviews for each completed change and an integrated full-source pair plus cumulative drift audit at milestone exit. Bind verdicts and checks to actual base/head/tree. Requalify changed code or effective base. Never fabricate a native GitHub reviewer, model/session, principal verdict or test result.
+
+Canonical progress lives in `../delivery/state.md`, the complete current plan/ledger, locally owned milestone worklist and PR/evidence records. The [owner decision](../delivery/authority/milestone-autonomy-2026-10-09.md) and operating model supersede older per-slice principal stop requirements prospectively. Preserve prior decisions/results as history. Resource permissions and genuine locked-decision/security incidents remain exceptions; ordinary technical plans and within-milestone gates are locally adjudicated. Continue independent safe work rather than multiplying proposal-only STOP slices.
 
 ### 16.1 Work in narrow vertical slices
 
@@ -999,7 +1003,7 @@ This section mirrors `decision-ledger.md`; update both in the same reviewed chan
 
 **Retention:** Buyer artwork/identifying customization payloads at most six months from collection; abandoned uploads shorter; reuse does not reset expiry; merchant warning/export opportunity. Permitted minimal pseudonymized financial/audit facts may persist separately. Privacy/uninstall erasure includes derivatives/payloads and does not rewrite purchase economics.
 
-**Delivery governance:** ChatGPT in the Insignia Rewrite Project is principal architect/reviewer; sol-6-high is the local orchestrator. Repository documents and SHA-bound PR verdicts preserve continuity. Preflight PF-001 precedes M0. One outcome per slice/PR; one writer by default, at most two independently authorized non-overlapping writers in separate worktrees; local read-only pre-review plus principal review of every PR. User retains merge/resource authority unless explicitly delegated for a reviewed change. No unattended monitoring is assumed. `../delivery/operating-model.md` controls the detailed execution method; later slices require recorded principal authorization.
+**Delivery governance:** The owner delegates within-milestone planning, implementation, independent local review, technical qualification, normal PR merges and continuation to the local orchestrator, effective immediately for unfinished M5. The principal architect/reviewer in the Insignia Rewrite project accepts completed milestones M5, M6, M7 and onward, not every PR. Independent reviewers and exact-head checks remain required; local verdicts are not principal approvals. Resource permissions, locked product/security/protocol decisions and real incident exceptions remain with the proper owner/principal authority. The next milestone begins only after principal acceptance of the current one. The [owner decision](../delivery/authority/milestone-autonomy-2026-10-09.md) and `../delivery/operating-model.md` control execution.
 
 ### DEVELOPMENT GATES
 

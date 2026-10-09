@@ -2,42 +2,26 @@
 
 ## Start every session
 
-Read `docs/architecture/decision-ledger.md`, `docs/delivery/state.md` and the currently authorized slice prompt. Before executing or delegating a slice, read `docs/delivery/operating-model.md`. For affected architecture, read the relevant sections of `docs/architecture/implementation-plan.md` before changing code. The detailed plan is a reference, not an always-loaded instruction blob.
+Read `docs/delivery/authority/milestone-autonomy-2026-10-09.md`, `docs/architecture/decision-ledger.md`, `docs/delivery/operating-model.md` and `docs/delivery/state.md`. Read relevant sections of the complete `docs/architecture/implementation-plan.md` and active milestone charter before changing behavior. Fetch current PR/main; resume legitimate newer work rather than a stale handoff SHA.
 
-The user owns product decisions; ChatGPT in the Insignia Rewrite Project is principal. Current [M5-027](docs/delivery/prompts/M5-027-PREINSTALL-DESTINATION-EFFECT-PRIVACY.md) follows PR57's approved bounded offline qualification and [verified normal merge](docs/delivery/evidence/m5-027/pr57-merge-receipt.json). Analyze destinations, automatic authentication, durable effects/privacy offline and prepare the smallest read-only native inventory. Native access requires separate exact owner authorization; installation/provider/resource mutations stay closed. Preserve historical source/evidence and RED invariant. Return one evidence candidate with independent reviews/natural CI and stop for principal review without merging.
+The owner delegates execution, slice/PR review and normal merges **inside each milestone** to the local orchestrator, effective immediately for unfinished M5. The principal reviews completed milestones, not each slice. Old per-PR stop/merge-prohibition instructions are historical where they conflict with this decision; product, security and resource conditions remain binding.
 
-## Authority and scope
+## Execute the milestone
 
-The ledger controls settled decisions; the plan provides implementation detail; the operating model controls delivery. Record approved changes rather than silently replacing a decision. `Optidigi/insignia` is the rewrite repository; `Optidigi/insignia-legacy` is the storefront UI/visual reference only. New-application SQL migrations are required; legacy import/migration/compatibility work is outside scope.
+Own its worklist, implementation, research, tests, tools, subagents, local acceptance, integration and continuation. Use narrow end-to-end slices and maintain the whole milestone acceptance map. Obtain independent fresh read-only Spec/correctness and Standards/security review, resolve findings, qualify exact-head CI, merge normally under delegated authority and continue. Do not invent a principal verdict or waive repository-enforced approvals.
 
-For missing access, conflicting instructions or platform evidence that invalidates a lock, report the narrow blocker and continue only independent safe work. Prefer reading available files/tool state to repeating answered product questions.
+Use pinned Matt Pocock `writing-for-agents` for agent documents, `tdd` for behavior, `diagnosing-bugs` for defects, `code-review` for independent reviews, `handoff` for context transfer and inspected `research` for platform uncertainty. Use other relevant actual tools/skills/subagents as needed, with provenance, least privilege and real runtime checks. The operating model is the single orchestration policy.
 
-## Implementation
+## Preserve contracts
 
-Use one outcome per slice/PR, explicit contracts and executable invariants. Build a failing behavior test, implement the narrow path and refactor. Keep domain independent of Shopify, Astro, Preact, Konva and persistence. Keep Shopify SDK use in its adapter; Konva remains a renderer. Follow exact-money, tenant, idempotency, immutable-record and retention contracts in the plan.
+The decision ledger controls product/architecture locks. Keep the domain independent of Shopify, frameworks, rendering and persistence; Shopify SDK stays in its adapter and Konva stays a renderer. Preserve exact money, whole-quote v2, tenant/generation fences, immutable historical records, availability v1/v2/v3 meaning and retention. Legacy is only the storefront visual reference; no legacy migration/import work.
 
-Consult the maintained G1–G8 evidence register in the plan and delivery state. A source citation, schema validation, mocked test or successful compilation is not real-store gate evidence. Preserve failing observations and obtain principal acceptance before dependent work proceeds.
+Documentation, mock success or CI alone is not native-store evidence. Preserve RED security controls until an implemented correction actually qualifies; passing characterization is not a fix. Do not mark M5 done with G7 or required publication/installation safety still blocked. Do not start M6 before principal acceptance of M5.
 
-## Delegation and integration
+## Resources and exceptions
 
-One orchestrator; one writer by default, at most two for independently authorized non-overlapping slices. Writers use separate branches/worktrees and assigned paths/resources. The orchestrator owns root/lockfiles, contracts, fixture definitions, migration ordering, CI and delivery state. Read-only local reviewers do not replace principal review. See `docs/delivery/agent-roles.md` when spawning or configuring a role.
+Use owner-allocated resources within their recorded limits after local technical qualification. Missing credential/resource/cost/production/destructive-operation permission requires a concrete owner request, not another principal-review slice. No secret leakage, invented commercial configuration, human-verification bypass, unauthorized Shopify version/scopes, merchant rollout or ambiguous mutation retry. A material locked-decision conflict or incident is a real exception; continue independent safe work.
 
-Use runtime-supported sandbox/approval controls. Worktrees and instructions are not credential isolation. Serialize shared Shopify store/app mutations. A missing subagent feature permits a recorded sequential workflow, never fictional delegation.
+## Finish
 
-## Verification and review
-
-Use actual package/workspace scripts once present; discover commands rather than inventing them. Capture the commands, exit status and sanitized evidence. Commit SQL migrations with relevant features and TS/Rust fixtures together. Check the whole staged diff for scope and secrets.
-
-Before handing off a PR, use `docs/delivery/templates/review-packet.md`. Principal approval is bound to repo/PR/base/head; changed code or effective base needs re-review. Merge authority stays with the user unless explicitly delegated for that reviewed change. An agent-authored approval file is not independent approval.
-
-## Tools and skills
-
-Before declaring readiness, exercise capabilities from `docs/delivery/tooling-register.md`. Verify instruction and skill loading in the actual local host. Use project-scoped, inspected, pinned skills; their defaults cannot override the active slice or approval boundary. When authoring agent-facing docs use writing-for-agents; for behavioral work use tdd; for a defect use diagnosing-bugs; for local pre-review use code-review; for context transfer use handoff, subject to this project workflow.
-
-## Safety
-
-Use designated non-production stores, databases, storage prefixes and synthetic data. Keep credentials, original artwork, personal data and presigned secrets out of code, logs and handoffs. Production changes, paid actions, privilege escalation and destructive operations need explicit user authorization. Preflight may not deploy Functions, scaffold the application, create billable events or change repository protections.
-
-## Finish each slice
-
-Update the short delivery state and PR evidence, distinguish verified/failed/unavailable/not-run checks, and stop at the principal review boundary. Do not auto-start the next slice. The user carries the PR URL/head to the principal; no background watcher is assumed.
+Keep the active delivery state short and the local full plan current. At milestone completion, freeze the integrated commit/tree, run cumulative drift/integration/security review, assemble acceptance/demo/test/native/cleanup evidence, and stop for principal review. Merged slices do not themselves grant milestone acceptance. Runtime interruptions require a resumable handoff, not a fictitious completion claim.

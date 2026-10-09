@@ -2,7 +2,8 @@
 
 Status: NOT_RUN / IN_PROGRESS / PASS / FAIL / BLOCKED
 Candidate result date: <UTC timestamp>
-Principal acceptance: NOT_REVIEWED / <verdict reference and reviewed SHA>
+Local technical acceptance: NOT_REVIEWED / <verdict reference and reviewed SHA>
+Milestone principal acceptance: NOT_REVIEWED / <completed-milestone verdict reference>
 
 ## Claim and boundary
 
@@ -26,4 +27,4 @@ Commands or procedures, exit status, normalized/redacted input/output, screensho
 
 ## Conclusion
 
-Smallest established claim, unresolved cases, recommended supported limits and cleanup state. On failure describe realistic alternatives without implementing a silent architectural substitute. Only principal-accepted PASS evidence permits dependent work. A merged spike PR is not itself gate acceptance.
+Smallest established claim, unresolved cases, recommended supported limits and cleanup state. On failure describe realistic alternatives without implementing a silent architectural substitute. The orchestrator may accept qualified in-milestone sub-results and continue under the operating model. Complete assigned gate outcomes remain part of principal milestone acceptance. A merged spike PR is not itself gate acceptance.

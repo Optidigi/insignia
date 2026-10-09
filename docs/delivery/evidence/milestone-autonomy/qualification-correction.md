@@ -1,0 +1,5 @@
+# Governance qualification correction
+
+The original candidate `6991168656c240fc2c2b5e93b2a27a1d3764aadf` naturally triggered CI. Architecture history checks rejected the owner-authorized v1.5 delivery amendment against the old current v1.4/M5-017 hashes. The original workflow records and failure logs remain retained; no rerun or waiver hides them. Incomplete reviewers were cancelled before changing their source; their evidence cannot carry CLEAR to the corrected candidate.
+
+`spikes/m0-007/scripts/check-history.py` now preserves the former current architecture as an exact fixed-ref archive at PR58 merge `7bfba46e79ff2f9208d13f5712918f357b5836b4`, retains all earlier byte checks and pins the owner-amended v1.5 plan/ledger plus owner decision. Actual local RED then GREEN and two unauthorized-byte negative controls prove rejection remains active. Application, worker, migrations, Function/provider inputs and pinned skills remain unchanged. New final-head natural CI and both fresh completed-change reviewers are required.

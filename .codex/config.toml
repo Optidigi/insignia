@@ -1,6 +1,6 @@
-# M5-011 project-local model request; runtime evidence is captured separately.
+# Milestone-autonomy project-local requests; actual runtime evidence remains separate.
 model = "gpt-6.1-sol"
 model_reasoning_effort = "high"
 
 [features]
-multi_agent = false
+multi_agent = true

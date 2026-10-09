@@ -1,0 +1,93 @@
+{
+  "schema": "insignia-milestone-progress-v1",
+  "milestone": "M5",
+  "status": "IN_PROGRESS",
+  "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
+  "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
+  "currentIntegratedCommit": "7bfba46e79ff2f9208d13f5712918f357b5836b4",
+  "currentTree": "b6e7e6d7fc931b84d4a72e09981a95a317024621",
+  "acceptanceRows": [
+    {
+      "id": "M5_CONFIG_PREVIEW",
+      "requirement": "Geometry/UI-canvas, method/placement/prices/defaults/copy, immutable historical config/prices",
+      "plan": "implementation-plan \u00a73.1\u20133.2, \u00a77.2, \u00a79, \u00a715 M5",
+      "evidence": "PR27 and M5-018 accepted local evidence",
+      "result": "LOCAL_ACCEPTED_NATIVE_NOT_RUN",
+      "dependency": "Native merchant configure/preview/save and immutable history control"
+    },
+    {
+      "id": "G7_AUTH",
+      "requirement": "Cold/deep/reload/mobile/cookie/expired/staff/shop-install/private-fragment/CSRF",
+      "plan": "implementation-plan \u00a77.1, \u00a714.2 G7, \u00a714.2.1 G7",
+      "evidence": "M5-018 controls, M5-023-G7-MATRIX.md",
+      "result": "NATIVE_BLOCKED",
+      "dependency": "Safe install/uninstall and current deploy/auth/grants"
+    },
+    {
+      "id": "G7_EDITOR",
+      "requirement": "Polaris/Preact hydration/events, UI\u2194canvas, native refresh, two-tab CAS, ambiguous-save recovery, grant cache and truthful activation UI",
+      "plan": "implementation-plan \u00a714.2/14.2.1 G7 and \u00a715 M5",
+      "evidence": "M5-018 controls, exhaustive M5-023-G7-MATRIX.md",
+      "result": "NATIVE_BLOCKED",
+      "dependency": "Owner normal browser plus durable facts"
+    },
+    {
+      "id": "LIFECYCLE_PRIVACY",
+      "requirement": "Generation-safe uninstall, registration gaps, all destinations/transitive effects and privacy obligations",
+      "plan": "implementation-plan \u00a76.1/6.5/10.4/11; M5-025\u2013027",
+      "evidence": "M5-025 RED and M5-026/027 bounded analysis",
+      "result": "RED_NATIVE_UNQUALIFIED",
+      "dependency": "Native read-only inventory before any install experiment; independent authority and privacy correction"
+    },
+    {
+      "id": "RUNTIME_READINESS",
+      "requirement": "Actual worker/queue/schema roles/immutable image/process isolation/secrets/routes/rollback",
+      "plan": "implementation-plan \u00a710.3/11, M5-023/024",
+      "evidence": "M5-024 portable controls and stopped M5-023 host evidence",
+      "result": "PARTIAL_NATIVE_NOT_RUN",
+      "dependency": "Named topology and owner-authorized host operations"
+    },
+    {
+      "id": "M5_ACTIVATION",
+      "requirement": "Trusted release exact 30s, expected Functions/ownership, signing/day/commercial eligibility, durable immutable request/outbox/FIRST_PUBLICATION v3",
+      "plan": "implementation-plan \u00a73.1/6.2/10.3, \u00a714.2.1 G6, \u00a715 M5",
+      "evidence": "M5-017/018 accepted v3/PG controls; historical release attestation",
+      "result": "NATIVE_NOT_RUN",
+      "dependency": "Current trusted premises, legitimate eligibility and one permitted fixture"
+    },
+    {
+      "id": "M5_EXIT",
+      "requirement": "Real merchant publication, exact effective revision/replay/reopen, cleanup and complete assigned G7; cumulative reviews/drift",
+      "plan": "implementation-plan \u00a715 M5; operating-model \u00a78",
+      "evidence": "No completed milestone record",
+      "result": "NOT_COMPLETE",
+      "dependency": "All prerequisite rows qualified, fresh cumulative reviews and principal milestone acceptance"
+    }
+  ],
+  "mergedPrs": [
+    {
+      "pr": 58,
+      "receipt": "evidence/milestone-autonomy/pr58-merge-receipt.json"
+    }
+  ],
+  "openFindings": [
+    "M5-025 generation authority RED",
+    "Current native destinations/effects/privacy unqualified",
+    "Worker/image/queue/runtime native prerequisites not qualified",
+    "28 native G7 criteria blocked",
+    "Real merchant configure/preview/save/publication/activation NOT_RUN"
+  ],
+  "resourceGrants": [],
+  "ownerInputs": [
+    "Exact-app read-only access and current destination/configuration facts",
+    "Named host/processor/queue/privacy artifact metadata and private evidence ownership",
+    "Separate disposable installation and mutation allocation after safe preinstallation gate",
+    "Legitimate commercial eligibility or separately approved bounded dev entitlement",
+    "Exact production provisioning/deployment authority only after topology and security qualification"
+  ],
+  "nextSafeAction": "Complete governance adoption, implement/qualify bounded collector locally, request actual owner resources, continue M5 prerequisites.",
+  "nextPrincipalCheckpoint": "M5 complete",
+  "principalAcceptance": null,
+  "nextMilestoneStarted": false,
+  "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b"
+}
