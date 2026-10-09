@@ -1,0 +1,45 @@
+test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes (__main__.TransportControls.test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes) ... 
+  test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes (__main__.TransportControls.test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes) (scenario='optional_router_failure') ... FAIL
+  test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes (__main__.TransportControls.test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes) (scenario='optional_legacy_failure') ... FAIL
+  test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes (__main__.TransportControls.test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes) (scenario='optional_both_failure') ... FAIL
+
+======================================================================
+FAIL: test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes (__main__.TransportControls.test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes) (scenario='optional_router_failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-existing-owner-access-worktree/scripts/m5-host-inventory/operator_test.py", line 180, in test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes
+    self.assertEqual(result['classification'], 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_COMMAND_FAILED' != 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED'
+- STOP_COMMAND_FAILED
++ LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes (__main__.TransportControls.test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes) (scenario='optional_legacy_failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-existing-owner-access-worktree/scripts/m5-host-inventory/operator_test.py", line 180, in test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes
+    self.assertEqual(result['classification'], 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_COMMAND_FAILED' != 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED'
+- STOP_COMMAND_FAILED
++ LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes (__main__.TransportControls.test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes) (scenario='optional_both_failure')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-existing-owner-access-worktree/scripts/m5-host-inventory/operator_test.py", line 180, in test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes
+    self.assertEqual(result['classification'], 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_COMMAND_FAILED' != 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED'
+- STOP_COMMAND_FAILED
++ LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.255s
+
+FAILED (failures=3)

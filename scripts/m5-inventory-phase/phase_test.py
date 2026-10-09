@@ -46,7 +46,7 @@ IDS = ['canonical-web-runtime', 'canonical-database-runtime', 'canonical-router-
 UNKNOWN_IDS = ['current-queue-role-ownership', 'downstream-privacy-copy-ownership']
 
 class HostFixture:
-    def __init__(self, parent, scenario='normal', host_mutation=None, identity_name='private-identity'):
+    def __init__(self, parent, scenario='normal', host_mutation=None, identity_name='private-identity', result_mutation=None):
         self.directory = Path(parent)/'phase'
         self.source = Path(parent)/'frozen_host.py'
         self.key = Path(parent)/identity_name
@@ -65,6 +65,8 @@ class HostFixture:
                                   [{'id': name, 'classification': 'UNKNOWN_NOT_ALLOCATED'} for name in UNKNOWN_IDS],
                   'observationLimit': 12, 'providerRequests': 0, 'hostWrites': 0, 'productionSql': 0,
                   'globalAbsenceProven': False, 'retryAuthorized': False}
+        if result_mutation is not None:
+            result_mutation(result)
         self.source.write_text('import hashlib,json\nPLAN='+repr(plan)+'\nALLOWED_COMMANDS=()\n' +
             'SELECTOR_SHA='+repr(selector_sha)+'\n' +
             'def encoded(v): return json.dumps(v,sort_keys=True,separators=(\",\",\":\"),ensure_ascii=True).encode()\n' +
@@ -183,6 +185,53 @@ class PhaseControls(unittest.TestCase):
             capture = json.loads((fixture.directory/'host-stdout.private').read_bytes())
             self.assertEqual(len(capture['observations']), 12)
             self.assertEqual(fixture.run()['classification'], 'STOP_RESERVATION_CONSUMED')
+
+    def test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry(self):
+        for indexes in ([2], [3], [2, 3]):
+            def unavailable(result):
+                for index in indexes:
+                    result['observations'][index] = {
+                        'id': IDS[index], 'classification': 'UNAVAILABLE_COMMAND_FAILED',
+                        'metadata': {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': False}}
+            with self.subTest(indexes=indexes), tempfile.TemporaryDirectory() as parent:
+                fixture = HostFixture(parent, result_mutation=unavailable)
+                result = fixture.run()
+                self.assertEqual(result['classification'], 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED')
+                self.assertEqual(result['reservedMetadataObservations'], 10)
+                capture = json.loads((fixture.directory/'host-stdout.private').read_bytes())
+                self.assertEqual(capture['attemptedObservationIds'], IDS)
+                for index in indexes:
+                    self.assertEqual(capture['observations'][index]['classification'], 'UNAVAILABLE_COMMAND_FAILED')
+                    self.assertFalse(capture['observations'][index]['metadata']['globalAbsenceProven'])
+                self.assertFalse(capture['globalAbsenceProven'])
+                self.assertFalse(capture['retryAuthorized'])
+                self.assertEqual(fixture.run()['classification'], 'STOP_RESERVATION_CONSUMED')
+
+    def test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata(self):
+        cases = [(index, {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': False})
+                 for index in (0, 1, 4, 5, 6, 7, 8, 9, 10, 11)]
+        invalid = [None, [], {}, {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN'},
+                   {'containerState': 'running', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': False},
+                   {'containerState': 'UNKNOWN', 'failureCause': 'NOT_FOUND', 'globalAbsenceProven': False},
+                   {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': True},
+                   {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': 0},
+                   {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': False, 'extra': 'unallocated'},
+                   {'containerState': 'UNKNOWN', 'failureCause': 'x' * 1048576, 'globalAbsenceProven': False}]
+        cases += [(index, metadata) for index in (2, 3) for metadata in invalid]
+        for index, metadata in cases:
+            with self.subTest(index=index, metadataType=type(metadata).__name__), tempfile.TemporaryDirectory() as parent:
+                fixture = HostFixture(parent)
+                changed = {'id': (IDS + UNKNOWN_IDS)[index], 'classification': 'UNAVAILABLE_COMMAND_FAILED', 'metadata': metadata}
+                # Alter the external transport response, not the frozen source cap.
+                replacement = 'result=json.loads(process.stdout)\nresult["observations"][' + str(index) + ']=' + repr(changed)
+                fixture.script.write_text(fixture.script.read_text().replace('sys.stdout.buffer.write(process.stdout)',
+                    replacement + '\nsys.stdout.buffer.write(json.dumps(result).encode())'))
+                result = fixture.run()
+                self.assertEqual(result['classification'], 'STOP_HOST_RESULT_INVALID')
+                state = json.loads((fixture.directory/'ledger.json').read_bytes())
+                self.assertTrue(state['closed'])
+                self.assertEqual(state['metadataObservations'], 10)
+                self.assertEqual(fixture.run()['classification'], 'STOP_PHASE_CLOSED')
 
     def test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase(self):
         scenarios = {

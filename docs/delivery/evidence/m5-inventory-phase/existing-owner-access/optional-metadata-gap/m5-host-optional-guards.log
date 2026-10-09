@@ -1,0 +1,14 @@
+test_command_allowlist_blocks_sql_exec_shell_and_credentials (__main__.TransportControls.test_command_allowlist_blocks_sql_exec_shell_and_credentials) ... ok
+test_fixed_filesystem_boundary_denies_arbitrary_paths (__main__.TransportControls.test_fixed_filesystem_boundary_denies_arbitrary_paths) ... ok
+test_nonoptional_command_failures_still_stop_remaining_observations (__main__.TransportControls.test_nonoptional_command_failures_still_stop_remaining_observations) ... ok
+test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes (__main__.TransportControls.test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes) ... ok
+test_optional_successful_bytes_still_require_valid_identity_and_bounded_metadata (__main__.TransportControls.test_optional_successful_bytes_still_require_valid_identity_and_bounded_metadata) ... ok
+test_process_environment_does_not_forward_secret_or_routing_overrides (__main__.TransportControls.test_process_environment_does_not_forward_secret_or_routing_overrides) ... ok
+test_real_subprocess_failure_and_raw_metadata_never_capture_bait_or_retry (__main__.TransportControls.test_real_subprocess_failure_and_raw_metadata_never_capture_bait_or_retry) ... ok
+test_real_subprocess_stdout_limit_is_enforced_before_unbounded_capture (__main__.TransportControls.test_real_subprocess_stdout_limit_is_enforced_before_unbounded_capture) ... ok
+test_real_subprocess_timeout_and_inherited_pipe_are_bounded (__main__.TransportControls.test_real_subprocess_timeout_and_inherited_pipe_are_bounded) ... ok
+
+----------------------------------------------------------------------
+Ran 9 tests in 3.706s
+
+OK

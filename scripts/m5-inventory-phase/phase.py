@@ -394,9 +394,17 @@ def validate_host_result(result, observation_cap):
         row = observations[index]
         require(isinstance(row, dict) and row.get('id') == name and len(encoded(row)) <= observation_cap, 'STOP_HOST_RESULT_INVALID')
         if index < 10:
-            require(set(row) == {'id', 'classification', 'metadata'} and
-                    row['classification'] == 'METADATA_OBSERVED_NATIVE_UNQUALIFIED' and
-                    isinstance(row['metadata'], (dict, list)), 'STOP_HOST_RESULT_INVALID')
+            require(set(row) == {'id', 'classification', 'metadata'}, 'STOP_HOST_RESULT_INVALID')
+            if row['classification'] == 'UNAVAILABLE_COMMAND_FAILED':
+                # Fixed optional-command failure is UNKNOWN, never container evidence.
+                metadata = row['metadata']
+                require(index in (2, 3) and isinstance(metadata, dict) and
+                        set(metadata) == {'containerState', 'failureCause', 'globalAbsenceProven'} and
+                        metadata['containerState'] == 'UNKNOWN' and metadata['failureCause'] == 'UNKNOWN' and
+                        metadata['globalAbsenceProven'] is False, 'STOP_HOST_RESULT_INVALID')
+            else:
+                require(row['classification'] == 'METADATA_OBSERVED_NATIVE_UNQUALIFIED' and
+                        isinstance(row['metadata'], (dict, list)), 'STOP_HOST_RESULT_INVALID')
         else:
             require(set(row) == {'id', 'classification'} and row['classification'] == 'UNKNOWN_NOT_ALLOCATED', 'STOP_HOST_RESULT_INVALID')
 

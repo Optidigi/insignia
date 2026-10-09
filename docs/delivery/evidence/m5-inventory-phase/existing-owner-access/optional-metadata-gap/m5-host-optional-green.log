@@ -1,0 +1,6 @@
+test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes (__main__.TransportControls.test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.529s
+
+OK

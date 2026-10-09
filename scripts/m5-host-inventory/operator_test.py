@@ -67,11 +67,45 @@ class Fixture:
         (proc / 'exe').symlink_to('/usr/local/bin/node')
         (proc / 'cgroup').write_text('0::/system.slice/example.service\n')
         self.script = root / 'fixed_command.py'
+        self.commands = root / 'command-audit.jsonl'
         data = {'normalRows': {name: metadata(name) for name in (MODULE.WEB, MODULE.DB, 'traefik', 'insignia-app')},
-                'scenario': scenario, 'bait': BAIT}
+                'scenario': scenario, 'bait': BAIT, 'auditPath': str(self.commands)}
         self.script.write_text('''import json,os,sys,time
 DATA = json.loads(''' + repr(json.dumps(data)) + ''')
 command = sys.argv[1:]
+with open(DATA['auditPath'], 'a') as audit:
+    audit.write(json.dumps(command) + chr(10))
+if command[0] == 'docker' and command[-1] in ('traefik', 'insignia-app'):
+    target = 'optional_' + ('router' if command[-1] == 'traefik' else 'legacy') + '_'
+    scenario = DATA['scenario']
+    if scenario in ('optional_both_failure', target + 'failure'):
+        sys.stdout.write(DATA['bait']); sys.stderr.write(DATA['bait']); sys.exit(17)
+    if scenario == target + 'oversize':
+        sys.stdout.write('x' * (1024 * 1024 + 1)); sys.exit(17)
+    if scenario == target + 'timeout':
+        time.sleep(2); sys.exit(17)
+    if scenario == target + 'descendant':
+        import subprocess
+        subprocess.Popen([sys.executable,'-c','import time;time.sleep(2)'])
+        sys.exit(17)
+    if scenario == target + 'raw':
+        print(json.dumps({'rawEnv':DATA['bait']})); sys.exit()
+    if scenario == target + 'invalid_json':
+        print('{invalid-json'); sys.exit()
+    if scenario == target + 'duplicate_json':
+        print('{"name":"safe","name":"wrong"}'); sys.exit()
+    if scenario == target + 'identity':
+        row = DATA['normalRows'][command[-1]]
+        row['name'] = '/unallocated'
+        print(json.dumps(row)); sys.exit()
+if DATA['scenario'] == 'canonical_db_failure' and command[-1] == 'insignia-rewrite-m5-019-database':
+    sys.stdout.write(DATA['bait']); sys.stderr.write(DATA['bait']); sys.exit(17)
+if DATA['scenario'] == 'topology_failure' and 'ps' in command:
+    sys.exit(17)
+if DATA['scenario'] == 'process_failure' and command[0] == 'ps':
+    sys.exit(17)
+if DATA['scenario'] == 'commercial_failure' and command[0] == 'docker' and '.Config.Env' in command[-2]:
+    sys.exit(17)
 if any(key in os.environ for key in ('DOCKER_HOST','COMPOSE_FILE','NODE_OPTIONS','PGPASSWORD','SYNTHETIC_SECRET')):
     print(DATA['bait']); sys.exit(9)
 if command[0] == 'docker' and command[-1].startswith('insignia-rewrite-m5-019-web'):
@@ -99,7 +133,7 @@ elif 'ps' in command:
 elif '.Config.Env' in command[-2]:
     if DATA['scenario'] == 'commercial_secret':
         print(json.dumps({'key':'INSIGNIA_PARTNER_ACCESS_TOKEN','value':DATA['bait']}))
-    elif DATA['scenario'] == 'commercial_valid':
+    elif DATA['scenario'] == 'commercial_valid' or DATA['scenario'].startswith('optional_'):
         policy = {'policyVersion':'synthetic-v1','maxAgeMs':30000,'plans':[{'planHandle':'synthetic-plan','usageHandle':'synthetic-usage','policyId':'synthetic-policy','features':['synthetic-base'],'includedUsage':0}]}
         features = {name:'synthetic-base' for name in ('base','required','logoLater','options','pricing')}
         for key,value in [('INSIGNIA_M5_ENTITLEMENT_POLICY_JSON',policy),('INSIGNIA_M5_FEATURES_JSON',features)]:
@@ -169,6 +203,63 @@ class EntryControls(unittest.TestCase):
 
 
 class TransportControls(unittest.TestCase):
+    def test_optional_command_failure_is_unknown_and_later_fixed_commercial_read_completes(self):
+        for scenario, unavailable in [('optional_router_failure', [2]), ('optional_legacy_failure', [3]),
+                                      ('optional_both_failure', [2, 3])]:
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
+                fixture = Fixture(Path(directory), scenario)
+                result = fixture.run()
+                self.assertEqual(result['classification'], 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED')
+                self.assertEqual(len(result['observations']), 12)
+                self.assertEqual(result['attemptedObservationIds'], [row['id'] for row in MODULE.PLAN[:10]])
+                for index in unavailable:
+                    self.assertEqual(result['observations'][index], {
+                        'id': MODULE.PLAN[index]['id'], 'classification': 'UNAVAILABLE_COMMAND_FAILED',
+                        'metadata': {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': False}})
+                commercial = result['observations'][9]['metadata']
+                self.assertEqual(commercial['configurationStatus'], 'OBSERVED_SCHEMA_ONLY')
+                self.assertEqual(commercial['policy']['plans'][0]['planHandle'], 'synthetic-plan')
+                self.assertEqual(commercial['providerTruth'], 'UNKNOWN_NOT_QUERIED')
+                self.assertFalse(result['globalAbsenceProven'])
+                self.assertFalse(result['retryAuthorized'])
+                self.assertEqual((result['providerRequests'], result['hostWrites'], result['productionSql']), (0, 0, 0))
+                self.assertNotIn(BAIT, json.dumps(result))
+                commands = [tuple(json.loads(line)) for line in fixture.commands.read_text().splitlines()]
+                self.assertEqual(commands, list(MODULE.ALLOWED_COMMANDS))
+                self.assertEqual(len(commands), 7)
+
+    def test_optional_successful_bytes_still_require_valid_identity_and_bounded_metadata(self):
+        cases = [('raw', 'STOP_METADATA_INVALID'), ('invalid_json', 'STOP_LOCAL_OR_METADATA_FAILURE'),
+                 ('duplicate_json', 'STOP_METADATA_INVALID'), ('identity', 'STOP_METADATA_INVALID'),
+                 ('oversize', 'STOP_OUTPUT_LIMIT'), ('timeout', 'STOP_COMMAND_TIMEOUT'),
+                 ('descendant', 'STOP_COMMAND_TIMEOUT')]
+        old = MODULE.COMMAND_SECONDS
+        try:
+            for index, target in ((2, 'router'), (3, 'legacy')):
+                for scenario, expected in cases:
+                    MODULE.COMMAND_SECONDS = 0.15 if scenario in ('timeout', 'descendant') else old
+                    with self.subTest(target=target, scenario=scenario), tempfile.TemporaryDirectory() as directory:
+                        fixture = Fixture(Path(directory), 'optional_' + target + '_' + scenario)
+                        result = fixture.run()
+                        self.assertEqual(result['classification'], expected)
+                        self.assertEqual(len(result['attemptedObservationIds']), index + 1)
+                        self.assertEqual(len(result['observations']), index)
+                        self.assertNotIn(BAIT, json.dumps(result))
+                        self.assertFalse(result['retryAuthorized'])
+        finally:
+            MODULE.COMMAND_SECONDS = old
+
+    def test_nonoptional_command_failures_still_stop_remaining_observations(self):
+        for scenario, attempts in [('failure', 1), ('canonical_db_failure', 2),
+                                   ('topology_failure', 7), ('process_failure', 8), ('commercial_failure', 10)]:
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:
+                result = Fixture(Path(directory), scenario).run()
+                self.assertEqual(result['classification'], 'STOP_COMMAND_FAILED')
+                self.assertEqual(len(result['attemptedObservationIds']), attempts)
+                self.assertEqual(len(result['observations']), attempts - 1)
+                self.assertNotIn(BAIT, json.dumps(result))
+                self.assertFalse(result['retryAuthorized'])
+
     def test_real_subprocess_failure_and_raw_metadata_never_capture_bait_or_retry(self):
         for scenario in ('failure','raw','invalid_json','duplicate_json','commercial_secret'):
             with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as directory:

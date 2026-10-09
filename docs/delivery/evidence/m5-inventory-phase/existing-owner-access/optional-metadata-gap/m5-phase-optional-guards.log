@@ -1,0 +1,32 @@
+test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata (__main__.PhaseControls.test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata) ... 
+  test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata (__main__.PhaseControls.test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata) (index=2, metadataType='dict') ... FAIL
+  test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata (__main__.PhaseControls.test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata) (index=3, metadataType='dict') ... FAIL
+
+======================================================================
+FAIL: test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata (__main__.PhaseControls.test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata) (index=2, metadataType='dict')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-existing-owner-access-worktree/scripts/m5-inventory-phase/phase_test.py", line 228, in test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata
+    self.assertEqual(result['classification'], 'STOP_HOST_RESULT_INVALID')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_SOURCE_DRIFT' != 'STOP_HOST_RESULT_INVALID'
+- STOP_SOURCE_DRIFT
++ STOP_HOST_RESULT_INVALID
+
+
+======================================================================
+FAIL: test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata (__main__.PhaseControls.test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata) (index=3, metadataType='dict')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-existing-owner-access-worktree/scripts/m5-inventory-phase/phase_test.py", line 228, in test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata
+    self.assertEqual(result['classification'], 'STOP_HOST_RESULT_INVALID')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_SOURCE_DRIFT' != 'STOP_HOST_RESULT_INVALID'
+- STOP_SOURCE_DRIFT
++ STOP_HOST_RESULT_INVALID
+
+
+----------------------------------------------------------------------
+Ran 1 test in 2.052s
+
+FAILED (failures=2)

@@ -1,0 +1,6 @@
+test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata (__main__.PhaseControls.test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 2.234s
+
+OK

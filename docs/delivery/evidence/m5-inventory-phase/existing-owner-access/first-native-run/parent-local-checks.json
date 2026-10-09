@@ -1,0 +1,23 @@
+{
+  "classification": "PARENT_LOCAL_BUILD_SECRET_CHECKS_PASS_NOT_NATIVE",
+  "head": "f396a33a63ddd2e24eb68464666f9f6408200a5d",
+  "tree": "4d97c0b45cf04ee087cf2425f58464f93a5acacc",
+  "checks": [
+    {
+      "command": "pnpm build",
+      "exitCode": 0,
+      "privateLog": "existing-access-parent-build.log",
+      "sha256": "49699eee86705851986811a6472aa6058bc96567a793511011614575e67f68e3",
+      "bytes": 2753
+    },
+    {
+      "command": "pnpm check:secrets",
+      "exitCode": 0,
+      "privateLog": "existing-access-parent-secrets.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    }
+  ],
+  "unchangedProductionSource": "Gitdiffcontainsphasecaller/tests/docs only; noweb/worker/Functions/providerinputchanges",
+  "nativeRequests": 0
+}

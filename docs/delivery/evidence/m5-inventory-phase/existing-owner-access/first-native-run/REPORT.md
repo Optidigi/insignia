@@ -1,0 +1,13 @@
+# First existing-key native inventory: sealed partial result
+
+The owner was correct that another session had already enabled VPS access. The exact existing identity authenticated to the pinned VPS and executed the fixed frozen source. No new key setup was needed. Original M5-023 temporary-key revocation did not establish absence of this separate key. Parent local public derivation and authenticated T3 owner directive are retained separately; no server-side forced-command/read-only-account policy is claimed.
+
+The standalone source/build gate at `f396a33a63ddd2e24eb68464666f9f6408200a5d` / tree `4d97c0b45cf04ee087cf2425f58464f93a5acacc` had fresh actual GPT-6.1-sol/high CLEAR/CLEAR reviews and all five naturally applicable exact-head attempt-1 workflows successful before access. Subsequent main integration is separately qualified before PR62 merge; these receipts do not qualify later source.
+
+One fixed SSH invocation began `2026-10-09T18:34:24.649884Z` and closed `18:34:25.865889Z`. Ten observation slots were durably reserved before transport; three commands were attempted and two complete observations captured. Web and database containers are running/healthy. The web image matches the historical exact deployed image and its label matches the canonical hostname. These are container metadata, not actual app/iframe/readiness, Function, installation or privacy acceptance.
+
+The third exact command (`docker inspect` with the reviewed projection and literal container `traefik`) returned nonzero. The remote source intentionally suppressed command stderr, so the actual reason is unknown. No missing service, wrong router identity, global absence, provider outage or authentication failure is inferred. The caller sealed `STOP_SSH_OR_REMOTE_FAILURE / UNCERTAIN_NO_RETRY`, retaining remote `STOP_COMMAND_FAILED`. No retry, refund, reopened phase or extra live command occurred. The unattempted commercial projection leaves eligibility UNKNOWN_NOT_READ.
+
+Admin requests, owner-inspected pages, production SQL and operator host writes: zero. Existing designated installation remains non-disposable and untouched. SSH/audit effects were explicitly allocated. Raw private captures are stored only in the receipt-bound 0700/0600 directory, delete by `2026-10-15T18:34:07.591393Z` or earlier if required. Only selected non-secret derived facts and hashes are published; no raw response, credentials, confidential URI, screenshot or owner version attestation is invented.
+
+Any revised collector needs a fresh local gate and separately qualified owner allocation/accounting before a new native run. The original source/raw run remains sealed and historical. M5/G7, uninstall-generation authority and privacy/retention are not passed.
