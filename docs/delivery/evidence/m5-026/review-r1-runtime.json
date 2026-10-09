@@ -1,0 +1,40 @@
+{
+  "base": "1e0cb0279bf5595e59a52972bea621b379114713",
+  "head": "0cb6ef4b8dd3f09a5c8c1cb1d1fa123b7bc1494b",
+  "tree": "7fe38b9405c85ac60051c1afe0ba4e7f60a41d04",
+  "cli": "Codex0.162.0 ignore-user-config enforced-read-only fallback; current native delegation does not provide enforced filesystem read-only",
+  "reviewers": [
+    {
+      "axis": "spec",
+      "sessionId": "01a1207e-73de-7220-8712-5e2b4c19e868",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "approvalPolicy": "never",
+      "sandboxPolicy": {
+        "type": "read-only"
+      },
+      "cwd": "/home/serveradmin/insignia-m5-026-worktree",
+      "parentVerifiedTurnContexts": 1,
+      "limitations": "Enforced read-only filesystem; no credential/network isolation claimed; static review, no rerun of tests or native operation.",
+      "verdict": "CHANGES_REQUIRED",
+      "reportSha256": "68e4ea424ddd0b8d6e16aa1d7d3bedf50ba57de85e5ff087d96cfa1da44705e1",
+      "promptSha256": "3df31bf0695793c9380f1444bb38e6cb4a1e3ed827e2bb08c7bbbba93b2821c8"
+    },
+    {
+      "axis": "security",
+      "sessionId": "01a1207e-735f-7f41-b8f7-49bd3e7de915",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "approvalPolicy": "never",
+      "sandboxPolicy": {
+        "type": "read-only"
+      },
+      "cwd": "/home/serveradmin/insignia-m5-026-worktree",
+      "parentVerifiedTurnContexts": 1,
+      "limitations": "Enforced read-only filesystem; no credential/network isolation claimed; static review, no rerun of tests or native operation.",
+      "verdict": "CHANGES_REQUIRED",
+      "reportSha256": "8bc2c0f23f3cd87553ea16328074e5de73fff44190ce00a2947959e8cd078bc0",
+      "promptSha256": "a26e6f7768f9e91d941d851b9408039d9d310d9f8d1f0618a71b60eb7332dbc7"
+    }
+  ]
+}

@@ -28,7 +28,7 @@ The pinned [create API](https://shopify.dev/docs/api/admin-graphql/2026-07/mutat
 | Failed acknowledgement | Synthetic SDK transport failure stops without another mutation | Persist reservation first; read-only exact-URI reconciliation if credentials remain; otherwise STOP_UNRESOLVED_REGISTRATION, no retry |
 | Subscription removal | Removal can eliminate future receipt coverage | Complete readback and separately owned failure/removal observation; no subscription absence ⇒ installation absence inference |
 | Queue/crash/retry | Existing M3/pg-boss durable receipt and transaction fences retained | Queue cannot provide missing generation authority; callback authority must be stored before queue work, never regenerated from headers |
-| Privacy | Existing raw receipt admission is separate from completed erasure | Mandatory compliance endpoints preserved; independent deadline/erasure handling still required, not met by indefinite pending |
+| Privacy / induced effects | Unknown-Shop generic/compliance receipt can insert production inbox/queue work before tenant bootstrap | Mandatory pre-install destination/effects gate; preserve subscriptions, separately authorize/account safe downstream effects and delayed privacy horizon, otherwise STOP |
 
 ## Current reconciliation source and local control
 
@@ -52,7 +52,7 @@ Every row separates **safe generation selection** from **complete genuine-uninst
 | Admin credentials unavailable | Preserve received evidence; no error/401/timeout/refresh failure ⇒ uninstall inference. Staff authorization is not replaced with offline credentials. | UNRESOLVED: genuine uninstall may revoke access. Independent channel or explicit bounded operator adjudication remains necessary. |
 | Duplicate/out-of-order/crash | Admission independent of destructive decision; immutable capability mapping plus stable inbox ID, original generation and business idempotency survive replay/restart. | Existing generic path still fails M5-025; candidate mapping/recovery is not implemented or natively proven. |
 
-This matrix does **not** demonstrate complete safe genuine-uninstall handling for all gaps. It demonstrates why a callback-only rollout would still be blocked. The resource plan tests the missing facts and must return PARTIAL/STOPPED when any row remains unresolved. No native “callback delivered” result can blanket-pass this matrix.
+This matrix does **not** demonstrate complete safe genuine-uninstall handling for all gaps. It demonstrates why a callback-only rollout would still be blocked. The resource plan first gates all preserved destinations and induced downstream effects, including automatic app-session/bootstrap and delayed privacy receipts. An isolated collector does not prevent canonical ingress/queue writes. Unknown or unapproved effects stop before installation; six-hour closure does not end privacy obligations. The resource plan tests the missing facts and must return PARTIAL/STOPPED when any row remains unresolved. No native “callback delivered” result can blanket-pass this matrix.
 
 ## Independent Partner timeline alternative
 
