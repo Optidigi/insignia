@@ -79,6 +79,10 @@ jobs:
         run: node --test --test-concurrency=1 scripts/m5-024/queue-privileges.test.mjs scripts/m5-024/crash-recovery.test.mjs
       - name: M5-024 offline portable worker and drift guards
         run: |
+          # Prepare policy metadata for the derived frozen lockfile using normal npm reads.
+          # The actual candidate packaging below stays offline; no trust/policy bypass.
+          corepack pnpm --filter @insignia/worker deploy --prod --frozen-lockfile --config.inject-workspace-packages=true /tmp/insignia-m5-024-cache-primer
+          corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
           bash scripts/m5-024/build-worker.sh /tmp/insignia-m5-024-worker
           M5_WORKER_PACKAGE_ENTRY=/tmp/insignia-m5-024-worker/dist/main.js node --test scripts/m5-024/worker-guards.test.mjs scripts/m5-024/portable-process.test.mjs
       - name: M5-024 captured signed body / altered metadata characterization

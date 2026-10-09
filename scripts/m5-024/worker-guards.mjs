@@ -14,13 +14,15 @@ const ENV_KEYS = [
   'NODE_ENV',
 ];
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
+const webOverrides = /^(?:PG|NODE_OPTIONS$|NODE_PATH$|LD_|DYLD_)/;
 
 function matchesDatabaseUrl(value, endpoint) {
   const url = new URL(value);
   return (
     ['postgres:', 'postgresql:'].includes(url.protocol) &&
     url.hostname === endpoint.hostname &&
-    Number(url.port || 5432) === endpoint.port &&
+    url.port !== '' &&
+    Number(url.port) === endpoint.port &&
     decodeURIComponent(url.pathname.slice(1)) === endpoint.database &&
     decodeURIComponent(url.username) === endpoint.role &&
     !url.hash &&
@@ -97,6 +99,7 @@ export function qualifyWorkerCandidate({
       return false;
     if (Object.keys(environment).some((key) => !ENV_KEYS.includes(key)) || environment.NODE_ENV !== 'production')
       return false;
+    if (Object.keys(webEnvironment).some((key) => webOverrides.test(key))) return false;
     for (const key of ENV_KEYS.filter(
       (key) => !['INSIGNIA_CREDENTIAL_PREVIOUS_KEYS_JSON', 'SHOPIFY_WEBHOOK_PREVIOUS_SECRET'].includes(key),
     ))

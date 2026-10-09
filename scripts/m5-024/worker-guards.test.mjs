@@ -115,6 +115,13 @@ test('candidate guards reject source, Compose, image, endpoint and private parit
     },
     { webEndpoint: undefined },
     { webEndpoint: { ...candidate.webEndpoint, address: '192.0.2.42' } },
+    {
+      webEnvironment: {
+        ...candidate.webEnvironment,
+        DATABASE_URL: candidate.webEnvironment.DATABASE_URL.replace(':5432', ''),
+        PGPORT: '5433',
+      },
+    },
     { writablePaths: [entry] },
     { inventory: { ...candidate.inventory, node: 'wrong' } },
   ])

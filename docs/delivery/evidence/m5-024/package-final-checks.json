@@ -1,0 +1,46 @@
+[
+  {
+    "name": "portable-guards-final-r4",
+    "command": [
+      "node",
+      "--test",
+      "scripts/m5-024/worker-guards.test.mjs",
+      "scripts/m5-024/portable-process.test.mjs"
+    ],
+    "environmentKeys": [
+      "M5_WORKER_PACKAGE_ENTRY",
+      "DATABASE_URL",
+      "INSIGNIA_REQUIRE_POSTGRES_TEST"
+    ],
+    "exitCode": 0,
+    "log": "portable-guards-final-r4.log",
+    "sha256": "24b6a5e65372a07e76eef1acfa2e560ea45ccd15449d47036218f2ad1f187c07",
+    "bytes": 337
+  },
+  {
+    "name": "style-final-r4",
+    "command": [
+      "corepack",
+      "pnpm",
+      "check:style"
+    ],
+    "environmentKeys": [],
+    "exitCode": 0,
+    "log": "style-final-r4.log",
+    "sha256": "9edd3f50c5ca696b7d5a0742e0aae782bc926c90cf0eade5192756f984cf9d05",
+    "bytes": 13785
+  },
+  {
+    "name": "secrets-final-r4",
+    "command": [
+      "corepack",
+      "pnpm",
+      "check:secrets"
+    ],
+    "environmentKeys": [],
+    "exitCode": 0,
+    "log": "secrets-final-r4.log",
+    "sha256": "0b2d9080c93aeca8cf6cc738c288768409c4c03fe3661095338ee7ea224aab07",
+    "bytes": 206
+  }
+]

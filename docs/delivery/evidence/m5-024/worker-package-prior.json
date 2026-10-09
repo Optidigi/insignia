@@ -2,9 +2,9 @@
   "kind": "OFFLINE_PORTABLE_PACKAGE_NOT_CONTAINER_IMAGE",
   "node": "v24.21.0",
   "nodeExecutableSha256": "7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c",
-  "inventorySha256": "e0fff10e8bb87e6cde6147d1bcf7694430a93c6188249439fc9e7b399cf770c5",
-  "archiveSha256": "cece6953b4274aa8155e1e23115076bacfc59e19febc35cd31b6c81b77fc5d7e",
-  "archiveBytes": 17644428,
+  "inventorySha256": "91452e850fb6793b813e35fa18f663b329614d4d9b50d2360c77224f6d3ab274",
+  "archiveSha256": "9a2dd53630501a7fb2ed2eb46b08a8108170c36a3091da9f8480413f224154e1",
+  "archiveBytes": 17683214,
   "packages": 69,
   "files": 9056,
   "pinnedPgBoss": [
@@ -15,7 +15,7 @@
     "apps/worker/package.json": "0a005a93536d153b1ce27294e1eef834255fa86f04d165c7838417a1190a6e0c",
     "apps/worker/src/runtime.ts": "af7debb34c5f3ff8976e015c428da69baeaa6471d6c2f253315efb298adf2a1c",
     "apps/worker/src/queue-contract.ts": "171cd006fde7460cc9ffc111189ffd3d81d726b0c3a31739331159c0829fd209",
-    "scripts/m5-024/build-worker.sh": "ae07c00b18bae444591f76c9e0d25e76ac3f04241845669b0a696febdde3fb37",
+    "scripts/m5-024/build-worker.sh": "bc3568dcaaeec87e8e55d37f5e6cd4e65a3d9b08b1ed74b95b5c571627f7eeb8",
     "scripts/m5-024/copy-built-workspaces.mjs": "1561ff5e04aa9a2bcd369a8bd68de5d58070bae3ca2d1bcc6ec1549697b3ebd5",
     "scripts/m5-024/Dockerfile": "d5eddce6c21e8caa6c55d10128852c0e2b7f4ee0d80051f5f9140dcdc6f33836",
     "scripts/m5-024/worker-compose.yaml": "d9cdddc956c31527d139329f4897b51078022b8add11c14f7d7bd2ed39192bf6"
@@ -23,14 +23,5 @@
   "dockerBuild": "NOT_RUN_NO_LOCAL_DOCKER",
   "imageDigest": null,
   "pid1AndOsIsolation": "NOT_RUN",
-  "productionOrProviderOperations": 0,
-  "packagePreparation": "Pinned frozen lockfile policy metadata checked through normal npm cache preparation; actual candidate deploy is offline with inject-workspace-packages=true; no trust/policy bypass.",
-  "priorManifest": "worker-package-prior.json",
-  "executableInventoryDelta": [
-    {
-      "name": "@insignia/worker",
-      "changedFileCount": 1
-    }
-  ],
-  "productionSourceUnchanged": true
+  "productionOrProviderOperations": 0
 }
