@@ -1,0 +1,9 @@
+{
+  "classification": "LOCAL_REVIEWED_ARTIFACT_CONFIRMED_OLD_SIZE_LIMIT_CANNOT_ACCEPT",
+  "artifactBytes": 70310306,
+  "artifactSha256": "f117be50d7bc106f1c943cdf75a8080fa63c26e0edd99b7ba0ddf3eaea697c2b",
+  "oldMaxBytes": 67108864,
+  "sourceReceipt": "docs/delivery/evidence/m5-019/deployment-package-receipt.json",
+  "nativeCause": "UNKNOWN; STOP_ARTIFACT_INVALID also covers file type/current size, local match not freshhostproof",
+  "extractedOrExecuted": false
+}

@@ -1,0 +1,6 @@
+test_recorded_package_size_is_hashable_without_body_capture (__main__.MetadataControls.test_recorded_package_size_is_hashable_without_body_capture) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.707s
+
+OK

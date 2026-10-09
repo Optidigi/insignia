@@ -1,0 +1,89 @@
+{
+  "classification": "SECOND_RUN_PARTIAL_SEALED_STOP_NOT_HOST_OR_M5_PASS",
+  "ownerProvenance": "t3-thread81292d0a.position8702",
+  "frozenHead": "7d8608b63860c25630fcc711a2ba843dccbfd68f",
+  "frozenTree": "ccb195bd398b0475414352c981e5503bab2e2a2f",
+  "sourceSha256": "890d991e339efaf064b558d5bb2e3d1634cb6551b806dc111047bc0d359dd406",
+  "phaseStartedAt": "2026-10-09T20:23:25.122329+00:00",
+  "deadline": "2026-10-09T20:53:25.122329+00:00",
+  "closed": true,
+  "invocations": 1,
+  "metadataReserved": 10,
+  "cumulativeMetadataReserved": 20,
+  "actualObservationsAttempted": 6,
+  "observedRows": [
+    {
+      "id": "canonical-web-runtime",
+      "classification": "METADATA_OBSERVED_NATIVE_UNQUALIFIED",
+      "metadata": {
+        "name": "/insignia-rewrite-m5-019-web",
+        "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+        "status": "running",
+        "health": "healthy",
+        "readOnlyRoot": true,
+        "privileged": false,
+        "canonicalRouteMatches": true,
+        "canonicalRouteEnabled": true
+      }
+    },
+    {
+      "id": "canonical-database-runtime",
+      "classification": "METADATA_OBSERVED_NATIVE_UNQUALIFIED",
+      "metadata": {
+        "name": "/insignia-rewrite-m5-019-database",
+        "image": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+        "status": "running",
+        "health": "healthy",
+        "readOnlyRoot": false,
+        "privileged": false,
+        "canonicalRouteMatches": false,
+        "canonicalRouteEnabled": false
+      }
+    },
+    {
+      "id": "canonical-router-runtime",
+      "classification": "UNAVAILABLE_COMMAND_FAILED",
+      "metadata": {
+        "containerState": "UNKNOWN",
+        "failureCause": "UNKNOWN",
+        "globalAbsenceProven": false
+      }
+    },
+    {
+      "id": "legacy-service-boundary",
+      "classification": "METADATA_OBSERVED_NATIVE_UNQUALIFIED",
+      "metadata": {
+        "name": "/insignia-app",
+        "image": "sha256:b06eae7224abc3bf992b7811086c4e2c572c3d0e45d78145152b14a2a982f7c1",
+        "status": "running",
+        "health": "healthy",
+        "readOnlyRoot": false,
+        "privileged": false,
+        "canonicalRouteMatches": false,
+        "canonicalRouteEnabled": true
+      }
+    },
+    {
+      "id": "canonical-compose-artifact",
+      "classification": "METADATA_OBSERVED_NATIVE_UNQUALIFIED",
+      "metadata": {
+        "bytesHashed": 2365,
+        "mode": "0o600",
+        "sha256": "2cf6a39677b760570be3406e3d76280ec152ca40c4c01ba46e1ef2e4396faa4e"
+      }
+    }
+  ],
+  "failedObservation": "reviewed-web-package-artifact",
+  "remoteClassification": "STOP_ARTIFACT_INVALID",
+  "nativeCause": "UNKNOWN; invalid file type/size/stream limit; no missing-file or hash-drift claim",
+  "commercial": "NOT_REACHED",
+  "adminRequests": 0,
+  "ownerPages": 0,
+  "productionSql": 0,
+  "hostWrites": 0,
+  "rawCaptureSha256": "ab2e1c637a45aeed1d2586084a7f43b9852ec504c7bf8d3a1c23950f9c75cf2d",
+  "rawCaptureBytes": 2791,
+  "privateRetentionDeleteBy": "2026-10-15T20:23:25.032836+00:00",
+  "retryAttempted": false,
+  "m5G7": false
+}

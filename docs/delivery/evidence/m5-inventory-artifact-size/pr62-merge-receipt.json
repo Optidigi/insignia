@@ -1,0 +1,32 @@
+{
+  "schema": "insignia-normal-merge-receipt-v1",
+  "prUrl": "https://github.com/Optidigi/insignia/pull/62",
+  "classification": "LOCAL_TOOLING_SLICE_NORMALLY_MERGED_NOT_PRINCIPAL_MILESTONE_APPROVED",
+  "base": "6963b62c75ab6f2db8ce9e0597e3efa83e2028b3",
+  "effectiveMergeBase": "6963b62c75ab6f2db8ce9e0597e3efa83e2028b3",
+  "reviewedHead": "7d8608b63860c25630fcc711a2ba843dccbfd68f",
+  "reviewedTree": "ccb195bd398b0475414352c981e5503bab2e2a2f",
+  "mergeCommit": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
+  "orderedParents": [
+    "6963b62c75ab6f2db8ce9e0597e3efa83e2028b3",
+    "7d8608b63860c25630fcc711a2ba843dccbfd68f"
+  ],
+  "tree": "ccb195bd398b0475414352c981e5503bab2e2a2f",
+  "remoteMainVerified": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
+  "reviews": "FRESH_ACTUAL_GPT_6_1_SOL_HIGH_CLEAR_CLEAR_READONLY",
+  "qualificationReceiptSha256": "22df1176a9ed201578998ff7e37a30dfdb69ac37c5ab5d6a9bb57a70226394af",
+  "naturalExactHeadAttempt1Ci": 10,
+  "verificationAt": "2026-10-09T18:59:47.588588+00:00",
+  "nativeOperationsOnRevisedSource": 0,
+  "m5Acceptance": false,
+  "firstNativeRun": "SEALED_PARTIAL_STOP_ACCESS_AUTHENTICATED_COMMERCIAL_NOT_READ",
+  "noNewKeySetupRequired": true,
+  "blockers": [
+    "GENERIC_UNINSTALL_AUTHORITY_RED",
+    "PRIVACY_RETENTION_UNFULFILLED_OVERDUE",
+    "NATIVE_READINESS_UNQUALIFIED",
+    "ADMIN_CREDENTIAL_ROUTE_UNAVAILABLE",
+    "COMMERCIAL_CONFIGURATION_UNKNOWN_NOT_READ",
+    "M5_G7_NOT_PASSED"
+  ]
+}

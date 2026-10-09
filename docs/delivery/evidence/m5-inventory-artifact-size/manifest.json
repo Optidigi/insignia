@@ -1,0 +1,48 @@
+{
+  "classification": "LOCAL_KNOWN_ARTIFACT_LIMIT_CORRECTION_NATIVE_NOT_RUN_ON_REVISED_SOURCE",
+  "base": "1b1b206828ce17bd0e3158d0dbc787ed0d0e7903",
+  "sourceSha256": "9d352d201dfa1b795bd7e3efd7c09d1c9b9aa340d38fadad0d2d14a47826203d",
+  "testsSha256": "444f47d6e503d105d078f4bc6bb3498680b9510c32e724d6577b070702d1404f",
+  "phaseSourceSha256": "f9a1a3ff73e3ab1d06b3a2a92fc22d7e7d7675014b5c26fd8a4ad1004f4bdf87",
+  "selectorSha256": "de0f87edd007edfcecf18332383745d1b042e2a2c5083d0e65ad2895b22111e3",
+  "packageSizeCeiling": 70310306,
+  "packageDigestUnchanged": true,
+  "metadataOutputCapUnchanged": 1048576,
+  "selectorCommandsUnchanged": true,
+  "logs": {
+    "artifact-size-writer-02-green.log": {
+      "sha256": "4658d372db04f94a8cdb3db429da25b83a410722d508f1cec098857c74dc3f6c",
+      "bytes": 252
+    },
+    "artifact-size-writer-03-focused.log": {
+      "sha256": "5d5c952044d5bc618f23c64fa60cc0a69ed411d7b9db62856aa56e99862c0dd0",
+      "bytes": 1613
+    },
+    "artifact-size-writer-04-full.log": {
+      "sha256": "0b8f95da58b087ec1f42a3e0b1d9725c8a61e6419ebb141f22bc3ac5e0046990",
+      "bytes": 3969
+    },
+    "artifact-size-writer-01-red.log": {
+      "sha256": "46fbc87f7fd403b38cc186d0699dc7b6a8e2a86b8028c1010e370b47f65b792a",
+      "bytes": 1151
+    }
+  },
+  "parentInventory": {
+    "result": "PASS",
+    "tests": {
+      "admin": 98,
+      "host": 24,
+      "phase": 18
+    },
+    "logSha256": "e959c7e84b5f4fa80092a5acb170b119804f5b0cd8a78a0bc29b7ab74c4da9bb"
+  },
+  "build": {
+    "result": "PASS",
+    "logSha256": "3abe7f18775d23bebdd3a1ea8607b77975fdc1ef229fd476617f814d7cf34abd"
+  },
+  "productionProviderSourceChanges": [],
+  "historicalEvidenceRewritten": false,
+  "actualNativeCause": "UNKNOWN; local size incompatibility proved separately",
+  "newNativeAuthority": "Source/gate cannot grant resources; use actual owner allocation, immutable closed records and cumulative accounting",
+  "m5G7": "NOT_PASSED"
+}

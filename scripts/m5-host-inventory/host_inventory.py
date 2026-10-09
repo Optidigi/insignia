@@ -22,6 +22,8 @@ WEB, DB = 'insignia-rewrite-m5-019-web', 'insignia-rewrite-m5-019-database'
 IMAGE = 'sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5'
 COMPOSE_SHA = '2cf6a39677b760570be3406e3d76280ec152ca40c4c01ba46e1ef2e4396faa4e'
 PACKAGE_SHA = 'f117be50d7bc106f1c943cdf75a8080fa63c26e0edd99b7ba0ddf3eaea697c2b'
+# Exact reviewed archive size: docs/delivery/evidence/m5-019/deployment-package-receipt.json.
+PACKAGE_MAX_BYTES = 70310306
 CAP, COMMAND_SECONDS = 1024 * 1024, 15
 ENVIRONMENT = {'PATH': '/usr/bin:/bin', 'HOME': '/nonexistent', 'LANG': 'C', 'LC_ALL': 'C'}
 POLICY_KEYS = ('INSIGNIA_M5_ENTITLEMENT_POLICY_JSON', 'INSIGNIA_M5_FEATURES_JSON')
@@ -398,7 +400,7 @@ def _collect(request, actual_source_sha, bindings=None):
                 expected = COMPOSE_SHA if index == 4 else PACKAGE_SHA
                 if local:
                     expected = bindings['artifactHashes'][index - 4]
-                metadata = boundary.artifact(Path(plan['sources'][0]), expected, CAP if index == 4 else 64 * CAP)
+                metadata = boundary.artifact(Path(plan['sources'][0]), expected, CAP if index == 4 else PACKAGE_MAX_BYTES)
             elif index == 6:
                 rows = [strict_json(line) for line in boundary.command(TOPOLOGY_COMMAND).splitlines()]
                 require(len(rows) <= 200, 'STOP_TOPOLOGY_LIMIT')

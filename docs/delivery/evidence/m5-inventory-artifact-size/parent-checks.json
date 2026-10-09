@@ -1,0 +1,27 @@
+[
+  {
+    "command": [
+      "pnpm",
+      "check:style"
+    ],
+    "exit": 0,
+    "sha256": "e96e4c15748fb6071dbcff58ec799147fe929b50dbb33d1ec8fc53e0f5fa3b43"
+  },
+  {
+    "command": [
+      "pnpm",
+      "check:secrets"
+    ],
+    "exit": 0,
+    "sha256": "5d30b8b5212705b349e1ee889ccf8eca2ac0fde8d678693c49a7f9c8cbd6286b"
+  },
+  {
+    "command": [
+      "python3",
+      "-B",
+      "spikes/m0-007/scripts/check-history.py"
+    ],
+    "exit": 0,
+    "sha256": "2f7449966db373e8189785c42ef491ec89499e1238a05af31311613aa825e466"
+  }
+]
