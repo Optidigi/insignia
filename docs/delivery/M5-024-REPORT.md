@@ -34,6 +34,8 @@ The first natural CI runtime workflow failed because the synthetic restricted-ro
 
 The second Standards/security review additionally identified inherited web `PGPORT` bypassing an omitted URL port. Both URLs now require explicit ports and the effective web environment rejects database/Node/loader overrides. Its red control and final portable/guard PASS are [recorded](evidence/m5-024/round2-corrections.json). The second CI failure and unsuccessful explicit-frozen legacy probe are preserved; lockfile-based policy-cache preparation and offline packaging passed. No threat-semantic correction is implemented.
 
+Both round3 reviews found the same `NODE_TLS_REJECT_UNAUTHORIZED` override while that head's eleven workflows passed. The final pure guard rejects all `NODE_*` overrides except reviewed `NODE_ENV`, plus SSL/OpenSSL trust overrides. A `verify-full` candidate with certificate rejection disabled failed the new control before the correction; it and extra-CA/trust-file controls now pass without any TLS connection. [The receipts](evidence/m5-024/round3-corrections.json) retain both reports and the earlier green CI independently of the new final gate. Production source/build/package and provider inputs are unchanged by this guard-only correction.
+
 ## Review boundary
 
 The final exact candidate's two actual GPT-6.1-sol/high full-source review reports and natural CI receipts are attached to the PR after its head is frozen; no approval is inferred here. This report requests principal review of the bounded blocker and implementation, not permission to run a stopped historical live phase. Final refs belong in the PR packet, avoiding a self-referential evidence commit.

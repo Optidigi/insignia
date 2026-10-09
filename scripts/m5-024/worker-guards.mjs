@@ -14,7 +14,7 @@ const ENV_KEYS = [
   'NODE_ENV',
 ];
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
-const webOverrides = /^(?:PG|NODE_OPTIONS$|NODE_PATH$|LD_|DYLD_)/;
+const webOverrides = /^(?:PG|NODE_(?!ENV$)|SSL_|OPENSSL_|LD_|DYLD_)/;
 
 function matchesDatabaseUrl(value, endpoint) {
   const url = new URL(value);

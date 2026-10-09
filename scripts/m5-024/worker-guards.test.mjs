@@ -76,6 +76,20 @@ test('candidate guards reject source, Compose, image, endpoint and private parit
     },
   };
   assert.equal(qualifyWorkerCandidate(tlsCandidate), true);
+  for (const [key, value] of [
+    ['NODE_TLS_REJECT_UNAUTHORIZED', '0'],
+    ['NODE_EXTRA_CA_CERTS', '/synthetic/unreviewed-ca.pem'],
+    ['SSL_CERT_FILE', '/synthetic/unreviewed-ca.pem'],
+    ['SSL_CERT_DIR', '/synthetic/unreviewed-ca'],
+    ['OPENSSL_CONF', '/synthetic/unreviewed.conf'],
+  ])
+    assert.equal(
+      qualifyWorkerCandidate({
+        ...tlsCandidate,
+        webEnvironment: { ...tlsCandidate.webEnvironment, [key]: value },
+      }),
+      false,
+    );
   for (const key of ['environment', 'webEnvironment']) {
     for (const modes of ['verify-full&sslmode=disable', 'disable&sslmode=verify-full']) {
       assert.equal(
