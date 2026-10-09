@@ -939,8 +939,17 @@ test('CLI rejects a regular-file credential descriptor before transport or run c
   }
 });
 
-async function localPythonControl(source, args) {
-  const child = spawn('python3', ['-B', '-c', source, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+async function localPythonControl(source, args, python = 'python3') {
+  // These helpers contain only synthetic fixtures. Expose runtime/tracebacks,
+  // excluding arguments, environment, host names and private child stdout.
+  const diagnostics = `import json,os,sys
+CONTROL_RUNTIME={'pythonVersion':sys.version,'platform':{'system':os.uname().sysname,'kernel':os.uname().release,'machine':os.uname().machine}}
+def control_exception(kind,error,traceback):
+ print('SYNTHETIC_CONTROL_RUNTIME '+json.dumps(CONTROL_RUNTIME),file=sys.stderr)
+ sys.__excepthook__(kind,error,traceback)
+sys.excepthook=control_exception
+`;
+  const child = spawn(python, ['-B', '-c', diagnostics + source, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
   let stdout = '',
     stderr = '';
   child.stdout.on('data', (chunk) => {
@@ -953,7 +962,7 @@ async function localPythonControl(source, args) {
     child.once('error', reject);
     child.once('close', resolve);
   });
-  assert.equal(code, 0);
+  assert.equal(code, 0, `Synthetic Python control failed:\n${stderr}`);
   assert.equal(stderr, '');
   return JSON.parse(stdout);
 }
@@ -1001,11 +1010,24 @@ print(json.dumps({'timedOut':timed_out,'code':child.returncode,'stdout':stdout.d
 });
 
 test('private reader terminates and releases its pipe by an independent deadline after CLI SIGKILL', async (t) => {
-  const h = await harness(t, async ({ res }) => res.end(JSON.stringify(page())));
-  const manifest = join(h.directory, '..', 'allocation.json');
-  await writeFile(manifest, JSON.stringify(h.options.allocation), { mode: 0o600 });
-  const helper = `import json,os,signal,subprocess,sys,time
+  for (const mode of ['normal', 'retained-zombie'])
+    await t.test(mode, async (st) => {
+      const h = await harness(st, async ({ res }) => res.end(JSON.stringify(page())));
+      const manifest = join(h.directory, '..', 'allocation.json');
+      await writeFile(manifest, JSON.stringify(h.options.allocation), { mode: 0o600 });
+      const helper = `import json,os,signal,subprocess,sys,time
 from pathlib import Path
+retain_zombie=sys.argv[6]=='retained-zombie'
+if retain_zombie:
+ import ctypes
+ assert ctypes.CDLL(None).prctl(36,1,0,0,0)==0
+# Explicit stat keeps observer behavior independent of Path.exists suppression.
+def fd_exists():
+ try:
+  Path('/proc/'+str(reader)+'/fd/3').stat()
+  return True
+ except FileNotFoundError:
+  return False
 read_fd,write_fd=os.pipe()
 child=subprocess.Popen([sys.argv[1],sys.argv[2],'--allocation',sys.argv[3],'--private-directory',sys.argv[4],'--token-fd',str(read_fd),'--test-endpoint',sys.argv[5]],pass_fds=(read_fd,),stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
 os.close(read_fd)
@@ -1021,7 +1043,7 @@ while time.monotonic()<limit:
 assert reader is not None
 # Leave EOF withheld; allow the reader to consume the partial private bytes.
 time.sleep(0.25)
-assert Path('/proc/'+str(reader)+'/fd/3').exists()
+assert fd_exists()
 child.kill()
 stdout,stderr=child.communicate(timeout=2)
 def state():
@@ -1033,7 +1055,9 @@ limit=time.monotonic()+6
 while time.monotonic()<limit and state() not in ('Z','ABSENT'):
  time.sleep(0.02)
 terminal=state()
-fd_retained=Path('/proc/'+str(reader)+'/fd/3').exists()
+# A terminal process has released its descriptors; a zombie's fd directory
+# may be inaccessible. Still require the independent pipe EPIPE observation.
+fd_retained=False if terminal in ('Z','ABSENT') else fd_exists()
 pipe_closed=False
 try:
  os.write(write_fd,b'PRIVATE_SYNTHETIC_PROBE')
@@ -1043,31 +1067,52 @@ finally:
  if terminal not in ('Z','ABSENT'):
   os.kill(reader,signal.SIGKILL)
  os.close(write_fd)
-print(json.dumps({'readerState':terminal,'fdRetained':fd_retained,'pipeClosed':pipe_closed,'code':child.returncode,'stdout':stdout.decode(),'stderr':stderr.decode()}))
+ if retain_zombie:
+  os.waitpid(reader,0)
+print(json.dumps({'pythonVersion':sys.version,'platform':CONTROL_RUNTIME['platform'],'retainedZombie':retain_zombie,'readerState':terminal,'fdRetained':fd_retained,'pipeClosed':pipe_closed,'code':child.returncode,'stdout':stdout.decode(),'stderr':stderr.decode()}))
 `;
-  const observation = await localPythonControl(helper, [
-    process.execPath,
-    new URL('./cli.mjs', import.meta.url).pathname,
-    manifest,
-    h.directory,
-    h.options.testEndpoint,
-  ]);
-  t.diagnostic(
-    JSON.stringify({
-      readerState: observation.readerState,
-      fdRetained: observation.fdRetained,
-      pipeClosed: observation.pipeClosed,
-    }),
-  );
-  assert.ok(
-    ['Z', 'ABSENT'].includes(observation.readerState),
-    'orphaned reader still executing beyond its independent deadline',
-  );
-  assert.equal(observation.fdRetained, false);
-  assert.equal(observation.pipeClosed, true);
-  assert.equal(observation.code, -9);
-  assert.equal(observation.stdout, '');
-  assert.equal(observation.stderr, '');
-  assert.equal(h.requests.length, 0);
-  await assert.rejects(stat(h.directory), { code: 'ENOENT' });
+      const observation = await localPythonControl(
+        helper,
+        [
+          process.execPath,
+          new URL('./cli.mjs', import.meta.url).pathname,
+          manifest,
+          h.directory,
+          h.options.testEndpoint,
+          mode,
+        ],
+        '/usr/bin/python3',
+      );
+      t.diagnostic(
+        JSON.stringify({
+          pythonVersion: observation.pythonVersion,
+          platform: observation.platform,
+          retainedZombie: observation.retainedZombie,
+          readerState: observation.readerState,
+          fdRetained: observation.fdRetained,
+          pipeClosed: observation.pipeClosed,
+        }),
+      );
+      assert.ok(
+        ['Z', 'ABSENT'].includes(observation.readerState),
+        'orphaned reader still executing beyond its independent deadline',
+      );
+      if (mode === 'retained-zombie') assert.equal(observation.readerState, 'Z');
+      assert.equal(observation.fdRetained, false);
+      assert.equal(observation.pipeClosed, true);
+      assert.equal(observation.code, -9);
+      assert.equal(observation.stdout, '');
+      assert.equal(observation.stderr, '');
+      assert.equal(h.requests.length, 0);
+      await assert.rejects(stat(h.directory), { code: 'ENOENT' });
+    });
+});
+
+test('synthetic Python control failures preserve their diagnostic traceback', async (t) => {
+  await assert.rejects(localPythonControl("raise RuntimeError('SYNTHETIC_CONTROL_FAILURE')", []), (error) => {
+    assert.match(error.message, /RuntimeError: SYNTHETIC_CONTROL_FAILURE/);
+    assert.match(error.message, /SYNTHETIC_CONTROL_RUNTIME .*"pythonVersion".*"kernel"/);
+    t.diagnostic(error.message.match(/SYNTHETIC_CONTROL_RUNTIME .*/)[0]);
+    return true;
+  });
 });
