@@ -1,0 +1,12 @@
+{
+  "id": 37909848051,
+  "head_sha": "9e87fcb6c7374a5751ae9ec9a57a734fc5d02612",
+  "run_attempt": 1,
+  "conclusion": "failure",
+  "html_url": "https://github.com/Optidigi/insignia/actions/runs/37909848051",
+  "event": "pull_request",
+  "created_at": "2026-10-09T09:13:08Z",
+  "updated_at": "2026-10-09T09:15:09Z",
+  "classification": "FAILED_SYNTHETIC_LOGIN_PASSWORD_HARNESS",
+  "rawLogSha256": "635a2830ba0ddc7d0cf464d2d02e04c5d79103df92e7852caa7bf7a54a857bee"
+}

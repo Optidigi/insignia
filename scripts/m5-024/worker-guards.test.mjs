@@ -48,9 +48,14 @@ test('candidate guards reject source, Compose, image, endpoint and private parit
     rendered,
     expectedRendered: rendered,
     environment,
-    webEnvironment: { ...environment },
+    webEnvironment: {
+      ...environment,
+      DATABASE_URL: environment.DATABASE_URL.replace('synthetic_worker', 'synthetic_web'),
+    },
     endpoint,
     expectedEndpoint: endpoint,
+    webEndpoint: { ...endpoint, role: 'synthetic_web' },
+    expectedWebEndpoint: { ...endpoint, role: 'synthetic_web' },
     entry,
     inventory: collectWorkerInventory(entry),
     writablePaths: [],
@@ -58,6 +63,30 @@ test('candidate guards reject source, Compose, image, endpoint and private parit
     expectedImage: `synthetic@sha256:${'a'.repeat(64)}`,
   };
   assert.equal(qualifyWorkerCandidate(candidate), true);
+  const tlsCandidate = {
+    ...candidate,
+    endpoint: { ...endpoint, sslmode: 'verify-full' },
+    expectedEndpoint: { ...endpoint, sslmode: 'verify-full' },
+    webEndpoint: { ...candidate.webEndpoint, sslmode: 'verify-full' },
+    expectedWebEndpoint: { ...candidate.webEndpoint, sslmode: 'verify-full' },
+    environment: { ...environment, DATABASE_URL: environment.DATABASE_URL.replace('disable', 'verify-full') },
+    webEnvironment: {
+      ...candidate.webEnvironment,
+      DATABASE_URL: candidate.webEnvironment.DATABASE_URL.replace('disable', 'verify-full'),
+    },
+  };
+  assert.equal(qualifyWorkerCandidate(tlsCandidate), true);
+  for (const key of ['environment', 'webEnvironment']) {
+    for (const modes of ['verify-full&sslmode=disable', 'disable&sslmode=verify-full']) {
+      assert.equal(
+        qualifyWorkerCandidate({
+          ...tlsCandidate,
+          [key]: { ...tlsCandidate[key], DATABASE_URL: tlsCandidate[key].DATABASE_URL.replace('verify-full', modes) },
+        }),
+        false,
+      );
+    }
+  }
   for (const change of [
     { composeBytes: Buffer.from('drift') },
     { image: `wrong@sha256:${'a'.repeat(64)}` },
@@ -76,7 +105,16 @@ test('candidate guards reject source, Compose, image, endpoint and private parit
     { environment: { ...environment, SHOPIFY_WEBHOOK_SECRET: 'wrong' } },
     { environment: { ...environment, SHOPIFY_WEBHOOK_PREVIOUS_SECRET: 'unmatched-previous' } },
     { environment: { ...environment, INSIGNIA_CREDENTIAL_KEY_BASE64: 'invalid' } },
-    { webEnvironment: { ...environment, SHOPIFY_CLIENT_SECRET: 'wrong' } },
+    { webEnvironment: { ...candidate.webEnvironment, SHOPIFY_CLIENT_SECRET: 'wrong' } },
+    { webEnvironment: { ...candidate.webEnvironment, DATABASE_URL: undefined } },
+    {
+      webEnvironment: {
+        ...candidate.webEnvironment,
+        DATABASE_URL: 'postgres://synthetic_web@other-db:5432/other_db?sslmode=disable',
+      },
+    },
+    { webEndpoint: undefined },
+    { webEndpoint: { ...candidate.webEndpoint, address: '192.0.2.42' } },
     { writablePaths: [entry] },
     { inventory: { ...candidate.inventory, node: 'wrong' } },
   ])

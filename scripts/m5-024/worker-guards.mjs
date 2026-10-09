@@ -15,6 +15,21 @@ const ENV_KEYS = [
 ];
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 
+function matchesDatabaseUrl(value, endpoint) {
+  const url = new URL(value);
+  return (
+    ['postgres:', 'postgresql:'].includes(url.protocol) &&
+    url.hostname === endpoint.hostname &&
+    Number(url.port || 5432) === endpoint.port &&
+    decodeURIComponent(url.pathname.slice(1)) === endpoint.database &&
+    decodeURIComponent(url.username) === endpoint.role &&
+    !url.hash &&
+    url.searchParams.getAll('sslmode').length === 1 &&
+    [...url.searchParams.keys()].every((key) => key === 'sslmode') &&
+    url.searchParams.get('sslmode') === endpoint.sslmode
+  );
+}
+
 // Pure qualification of privately gathered observations. No network/DB/provider/write operation.
 // Expected Compose is the independently reviewed fully rendered JSON, not an editable template.
 export function qualifyWorkerCandidate({
@@ -26,6 +41,8 @@ export function qualifyWorkerCandidate({
   webEnvironment,
   endpoint,
   expectedEndpoint,
+  webEndpoint,
+  expectedWebEndpoint,
   entry,
   inventory,
   writablePaths,
@@ -70,7 +87,12 @@ export function qualifyWorkerCandidate({
       !endpoint ||
       JSON.stringify(endpoint) !== JSON.stringify(expectedEndpoint) ||
       endpoint.major !== 18 ||
-      endpoint.schemaVersion !== 43
+      endpoint.schemaVersion !== 43 ||
+      !webEndpoint ||
+      JSON.stringify(webEndpoint) !== JSON.stringify(expectedWebEndpoint) ||
+      ['hostname', 'port', 'database', 'address', 'major', 'schemaVersion', 'sslmode'].some(
+        (key) => webEndpoint[key] !== endpoint[key],
+      )
     )
       return false;
     if (Object.keys(environment).some((key) => !ENV_KEYS.includes(key)) || environment.NODE_ENV !== 'production')
@@ -90,17 +112,11 @@ export function qualifyWorkerCandidate({
       'INSIGNIA_CREDENTIAL_PREVIOUS_KEYS_JSON',
     ])
       if (environment[key] !== webEnvironment[key]) return false;
-    const url = new URL(environment.DATABASE_URL);
     if (
-      url.hostname !== endpoint.hostname ||
-      Number(url.port || 5432) !== endpoint.port ||
-      decodeURIComponent(url.pathname.slice(1)) !== endpoint.database ||
-      decodeURIComponent(url.username) !== endpoint.role ||
-      url.hash ||
-      [...url.searchParams.keys()].some((key) => key !== 'sslmode')
+      !matchesDatabaseUrl(environment.DATABASE_URL, endpoint) ||
+      !matchesDatabaseUrl(webEnvironment.DATABASE_URL, webEndpoint)
     )
       return false;
-    if (url.searchParams.get('sslmode') !== endpoint.sslmode) return false;
     loadCredentialKeys(environment);
     return workerInventoryMatches(entry, inventory, writablePaths);
   } catch {

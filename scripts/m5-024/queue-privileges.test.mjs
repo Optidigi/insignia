@@ -21,6 +21,7 @@ test('separate owner installation and restricted queue roles preserve messages a
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const role = `m5024_${randomUUID().replaceAll('-', '')}`;
   const workerRole = `${role}_w`;
+  const testPassword = randomUUID().replaceAll('-', '');
   const url = new URL(process.env.DATABASE_URL);
   let producer;
   let worker;
@@ -28,12 +29,15 @@ test('separate owner installation and restricted queue roles preserve messages a
     assert.deepEqual(await installQueue(process.env.DATABASE_URL), await installQueue(process.env.DATABASE_URL));
     await pool.query(await readFile(new URL('./queue-roles.sql', import.meta.url), 'utf8'));
     await pool.query(
-      `create role ${role} login; create role ${workerRole} login; grant insignia_queue_enqueue to ${role}; grant insignia_queue_consume to ${workerRole}`,
+      `create role ${role} login password '${testPassword}'; create role ${workerRole} login password '${testPassword}'; grant insignia_queue_enqueue to ${role}; grant insignia_queue_consume to ${workerRole}`,
     );
-    // This cluster uses local synthetic trust auth. Production role login/password remains owner-private.
+    // Disposable synthetic passwords support both SCRAM CI and local trust authentication.
+    // Production login provisioning remains a separate owner-private operation.
     url.username = role;
+    url.password = testPassword;
     const producerPool = new Pool({ connectionString: url.href });
     try {
+      assert.equal((await producerPool.query('select current_user')).rows[0].current_user, role);
       for (const sql of [
         'create table pgboss.escape(id int)',
         'create schema escape',
@@ -41,7 +45,7 @@ test('separate owner installation and restricted queue roles preserve messages a
         'update pgboss.version set version=42',
         'delete from pgboss.job',
       ])
-        await assert.rejects(producerPool.query(sql));
+        await assert.rejects(producerPool.query(sql), { code: '42501' });
       assert.equal(
         (await producerPool.query("select has_schema_privilege('public','pgboss','USAGE') as allowed")).rows[0].allowed,
         false,
@@ -99,6 +103,7 @@ test('separate owner installation and restricted queue roles preserve messages a
     assert.equal(await worker.checkDurableReady(), true);
     const consumerPool = new Pool({ connectionString: url.href });
     try {
+      assert.equal((await consumerPool.query('select current_user')).rows[0].current_user, workerRole);
       for (const sql of [
         'create table pgboss.escape(id int)',
         "select pgboss.create_queue('escape','{}')",
@@ -106,7 +111,7 @@ test('separate owner installation and restricted queue roles preserve messages a
         'update pgboss.queue set retry_limit=999',
         'update pgboss.version set version=42',
       ])
-        await assert.rejects(consumerPool.query(sql));
+        await assert.rejects(consumerPool.query(sql), { code: '42501' });
     } finally {
       await consumerPool.end();
     }
