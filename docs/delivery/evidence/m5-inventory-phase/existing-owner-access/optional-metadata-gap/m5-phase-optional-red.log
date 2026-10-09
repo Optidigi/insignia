@@ -1,0 +1,45 @@
+test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry (__main__.PhaseControls.test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry) ... 
+  test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry (__main__.PhaseControls.test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry) (indexes=[2]) ... FAIL
+  test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry (__main__.PhaseControls.test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry) (indexes=[3]) ... FAIL
+  test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry (__main__.PhaseControls.test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry) (indexes=[2, 3]) ... FAIL
+
+======================================================================
+FAIL: test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry (__main__.PhaseControls.test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry) (indexes=[2])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-existing-owner-access-worktree/scripts/m5-inventory-phase/phase_test.py", line 199, in test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry
+    self.assertEqual(result['classification'], 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_HOST_RESULT_INVALID' != 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED'
+- STOP_HOST_RESULT_INVALID
++ HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry (__main__.PhaseControls.test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry) (indexes=[3])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-existing-owner-access-worktree/scripts/m5-inventory-phase/phase_test.py", line 199, in test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry
+    self.assertEqual(result['classification'], 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_HOST_RESULT_INVALID' != 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED'
+- STOP_HOST_RESULT_INVALID
++ HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry (__main__.PhaseControls.test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry) (indexes=[2, 3])
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-existing-owner-access-worktree/scripts/m5-inventory-phase/phase_test.py", line 199, in test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry
+    self.assertEqual(result['classification'], 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_HOST_RESULT_INVALID' != 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED'
+- STOP_HOST_RESULT_INVALID
++ HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.221s
+
+FAILED (failures=3)

@@ -1,0 +1,6 @@
+test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry (__main__.PhaseControls.test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.220s
+
+OK

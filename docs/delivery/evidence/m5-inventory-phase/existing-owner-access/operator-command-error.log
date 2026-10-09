@@ -1,0 +1,24 @@
+Scope: all 12 workspace projects
+✓ Lockfile passes supply-chain policies (verified 1d ago)
+Lockfile is up to date, resolution step is skipped
+Packages are hard linked from the content-addressable store to the virtual store.
+  Content-addressable store is at: /home/serveradmin/.local/share/pnpm/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Packages: +464
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 464, reused 464, downloaded 0, added 464, done
+
+devDependencies:
++ @biomejs/biome 2.5.14
++ @types/node 24.10.0
++ dbmate 2.36.0
++ dependency-cruiser 18.4.0
++ esbuild 0.25.12
++ typescript 5.9.3
+
+Done in 300ms using pnpm v12.6.0
+Error: ERR_PNPM_NO_SCRIPT
+
+  × Missing script: inventory:test
+  help: Command "inventory:test" not found.
+

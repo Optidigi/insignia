@@ -1,0 +1,9 @@
+# Optional fixed metadata gaps — local correction
+
+The first native run authenticated with the existing owner key, then stopped on the exact fixed `traefik` inspect command. The nonzero exit establishes no cause or global absence. Its raw capture, frozen source and closed accounting remain unchanged. No revised native run has occurred.
+
+The smallest correction accepts only `STOP_COMMAND_FAILED` from the third/fourth fixed Docker commands as `UNAVAILABLE_COMMAND_FAILED`. Their exact metadata is containerState UNKNOWN, failureCause UNKNOWN, globalAbsenceProven false. The collector continues the remaining already allocated fixed independent reads. No alternative name, alias, follow-up discovery or new command is added; selector digest and seven fixed command argv templates are unchanged. Canonical web/DB failures and all malformed, wrong-identity, oversized, timed-out and inherited-pipe controls still STOP. Phase validation allows the exact unknown shape only in those two slots.
+
+Actual synthetic subprocess RED/GREEN, command-accounting and fail-closed controls are preserved beside the manifest. Host 20/20 and phase 18/18 pass; parent inventory 98+20+18 and production build pass. The initial response-cap negative fixture accidentally exceeded the source cap; that failed setup is retained separately from its corrected external-response-only fixture. These controls prove local behavior, not native container absence, commercial eligibility, privacy/uninstall safety or M5/G7 acceptance.
+
+The integration base is PR61's verified normal merge. Production application/worker/database/Function/provider documents are unchanged relative to that base. Fresh independent completed-change reviews and natural exact-head CI remain required before accepting this candidate. Another live attempt requires a new owner resource allocation accounting for the ten slots conservatively consumed by the closed first run; no deadline, budget or failed run may be reset.

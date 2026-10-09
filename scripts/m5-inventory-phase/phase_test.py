@@ -46,7 +46,7 @@ IDS = ['canonical-web-runtime', 'canonical-database-runtime', 'canonical-router-
 UNKNOWN_IDS = ['current-queue-role-ownership', 'downstream-privacy-copy-ownership']
 
 class HostFixture:
-    def __init__(self, parent, scenario='normal', host_mutation=None, identity_name='private-identity'):
+    def __init__(self, parent, scenario='normal', host_mutation=None, identity_name='private-identity', result_mutation=None):
         self.directory = Path(parent)/'phase'
         self.source = Path(parent)/'frozen_host.py'
         self.key = Path(parent)/identity_name
@@ -65,6 +65,8 @@ class HostFixture:
                                   [{'id': name, 'classification': 'UNKNOWN_NOT_ALLOCATED'} for name in UNKNOWN_IDS],
                   'observationLimit': 12, 'providerRequests': 0, 'hostWrites': 0, 'productionSql': 0,
                   'globalAbsenceProven': False, 'retryAuthorized': False}
+        if result_mutation is not None:
+            result_mutation(result)
         self.source.write_text('import hashlib,json\nPLAN='+repr(plan)+'\nALLOWED_COMMANDS=()\n' +
             'SELECTOR_SHA='+repr(selector_sha)+'\n' +
             'def encoded(v): return json.dumps(v,sort_keys=True,separators=(\",\",\":\"),ensure_ascii=True).encode()\n' +
@@ -94,6 +96,16 @@ class HostFixture:
         self.command = [sys.executable, '-B', str(self.script), str(self.directory)]
     def run(self):
         return PHASE.run_host_inventory(self.directory, self.source, self.key, self.known_host, test_command=self.command)
+
+def existing_access(host, gate, access):
+    identity, pin = access['identityPath'], access['knownHostLineSha256']
+    command_sha = access['forcedCommandSha256']
+    access.clear()
+    access.update(mode='EXISTING_IDENTITY_FIXED_COMMAND', identityPath=identity,
+                  knownHostLineSha256=pin, fixedCommandSha256=command_sha,
+                  identityPublicKeyFingerprint='SHA256:Hwhydo5U9f8ZDJr9+INeksDq9DoKB+83TsRCyynmRRM',
+                  identityVerificationRef='SYNTHETIC_PUBLIC_IDENTITY_VERIFICATION',
+                  ownerReuseApprovalReference='SYNTHETIC_OWNER_REUSE_DIRECTIVE')
 
 class PhaseControls(unittest.TestCase):
     def test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding(self):
@@ -173,6 +185,53 @@ class PhaseControls(unittest.TestCase):
             capture = json.loads((fixture.directory/'host-stdout.private').read_bytes())
             self.assertEqual(len(capture['observations']), 12)
             self.assertEqual(fixture.run()['classification'], 'STOP_RESERVATION_CONSUMED')
+
+    def test_optional_unavailable_rows_are_privately_captured_as_unknown_without_retry(self):
+        for indexes in ([2], [3], [2, 3]):
+            def unavailable(result):
+                for index in indexes:
+                    result['observations'][index] = {
+                        'id': IDS[index], 'classification': 'UNAVAILABLE_COMMAND_FAILED',
+                        'metadata': {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': False}}
+            with self.subTest(indexes=indexes), tempfile.TemporaryDirectory() as parent:
+                fixture = HostFixture(parent, result_mutation=unavailable)
+                result = fixture.run()
+                self.assertEqual(result['classification'], 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED')
+                self.assertEqual(result['reservedMetadataObservations'], 10)
+                capture = json.loads((fixture.directory/'host-stdout.private').read_bytes())
+                self.assertEqual(capture['attemptedObservationIds'], IDS)
+                for index in indexes:
+                    self.assertEqual(capture['observations'][index]['classification'], 'UNAVAILABLE_COMMAND_FAILED')
+                    self.assertFalse(capture['observations'][index]['metadata']['globalAbsenceProven'])
+                self.assertFalse(capture['globalAbsenceProven'])
+                self.assertFalse(capture['retryAuthorized'])
+                self.assertEqual(fixture.run()['classification'], 'STOP_RESERVATION_CONSUMED')
+
+    def test_unavailable_classification_cannot_broaden_locations_or_claim_observed_metadata(self):
+        cases = [(index, {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': False})
+                 for index in (0, 1, 4, 5, 6, 7, 8, 9, 10, 11)]
+        invalid = [None, [], {}, {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN'},
+                   {'containerState': 'running', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': False},
+                   {'containerState': 'UNKNOWN', 'failureCause': 'NOT_FOUND', 'globalAbsenceProven': False},
+                   {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': True},
+                   {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': 0},
+                   {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': False, 'extra': 'unallocated'},
+                   {'containerState': 'UNKNOWN', 'failureCause': 'x' * 1048576, 'globalAbsenceProven': False}]
+        cases += [(index, metadata) for index in (2, 3) for metadata in invalid]
+        for index, metadata in cases:
+            with self.subTest(index=index, metadataType=type(metadata).__name__), tempfile.TemporaryDirectory() as parent:
+                fixture = HostFixture(parent)
+                changed = {'id': (IDS + UNKNOWN_IDS)[index], 'classification': 'UNAVAILABLE_COMMAND_FAILED', 'metadata': metadata}
+                # Alter the external transport response, not the frozen source cap.
+                replacement = 'result=json.loads(process.stdout)\nresult["observations"][' + str(index) + ']=' + repr(changed)
+                fixture.script.write_text(fixture.script.read_text().replace('sys.stdout.buffer.write(process.stdout)',
+                    replacement + '\nsys.stdout.buffer.write(json.dumps(result).encode())'))
+                result = fixture.run()
+                self.assertEqual(result['classification'], 'STOP_HOST_RESULT_INVALID')
+                state = json.loads((fixture.directory/'ledger.json').read_bytes())
+                self.assertTrue(state['closed'])
+                self.assertEqual(state['metadataObservations'], 10)
+                self.assertEqual(fixture.run()['classification'], 'STOP_PHASE_CLOSED')
 
     def test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase(self):
         scenarios = {
@@ -293,6 +352,65 @@ class PhaseControls(unittest.TestCase):
                 state = json.loads((fixture.directory/'ledger.json').read_bytes())
                 self.assertEqual(state['metadataObservations'], 0)
                 self.assertIsNone(state['host'])
+
+    def test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim(self):
+        with tempfile.TemporaryDirectory() as parent:
+            fixture = HostFixture(parent, host_mutation=existing_access)
+            controls = ("assert argv[:9]==['-F','/dev/null','-T','-x','-p','22','-i',"+repr(str(fixture.key))+",'-l']\n"
+                        "assert argv[9]=='serveradmin' and argv[-2]=='65.109.22.104'\n"
+                        "assert set(argv[10:-2:2])=={'-o'}\n"
+                        "assert all(option in argv[11:-2:2] for option in "
+                        "['BatchMode=yes','IdentitiesOnly=yes','IdentityAgent=none','PasswordAuthentication=no',"
+                        "'KbdInteractiveAuthentication=no','ForwardAgent=no','ClearAllForwardings=yes',"
+                        "'ProxyCommand=none','ProxyJump=none','RequestTTY=no','ConnectionAttempts=1',"
+                        "'ControlMaster=no','StrictHostKeyChecking=yes'])\n"
+                        "assert argv[-1]==(Path(sys.argv[1])/'forced-command.txt').read_text()\n"
+                        "assert '-A' not in argv and '-tt' not in argv\n")
+            fixture.script.write_text(fixture.script.read_text().replace('raw=sys.stdin.buffer.read()',
+                                       controls+'raw=sys.stdin.buffer.read()'))
+            result = fixture.run()
+            self.assertEqual(result['classification'], 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED')
+            self.assertEqual(result['reservedMetadataObservations'], 10)
+            state = json.loads((fixture.directory/'ledger.json').read_bytes())
+            self.assertEqual(state['host']['accessMode'], 'EXISTING_IDENTITY_FIXED_COMMAND')
+            self.assertFalse(state['host']['serverRestrictionProven'])
+            self.assertNotIn('forcedCommandSha256', state['host'])
+            self.assertEqual(state['host']['fixedCommandSha256'],
+                             digest((fixture.directory/'forced-command.txt').read_bytes()))
+            self.assertEqual(fixture.run()['classification'], 'STOP_RESERVATION_CONSUMED')
+
+    def test_existing_identity_unqualified_bindings_stop_before_reservation_and_transport(self):
+        changes = [{'mode':'UNKNOWN'}, {'ownerReuseApprovalReference':''},
+                   {'identityVerificationRef':''}, {'identityPublicKeyFingerprint':'SHA256:unallocated'},
+                   {'fixedCommandSha256':'f'*64}, {'knownHostLineSha256':'e'*64},
+                   {'forcedCommandAttestationRef':'NOT_SERVER_PROOF'}]
+        for change in changes:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as parent:
+                def mutation(host, gate, access):
+                    existing_access(host, gate, access)
+                    access.update(change)
+                fixture = HostFixture(parent, host_mutation=mutation)
+                marker = Path(parent)/'transport-invoked'
+                fixture.script.write_text('from pathlib import Path;Path('+repr(str(marker))+').touch()')
+                self.assertTrue(fixture.run()['classification'].startswith('STOP_'))
+                self.assertFalse(marker.exists())
+                state = json.loads((fixture.directory/'ledger.json').read_bytes())
+                self.assertEqual(state['metadataObservations'], 0)
+                self.assertIsNone(state['host'])
+
+    def test_existing_identity_transport_failure_seals_consumed_attempt_without_retry(self):
+        with tempfile.TemporaryDirectory() as parent:
+            fixture = HostFixture(parent, host_mutation=existing_access)
+            fixture.script.write_text('import sys;sys.stdin.buffer.read();sys.exit(1)')
+            result = fixture.run()
+            self.assertTrue(result['classification'].startswith('STOP_'))
+            self.assertEqual(result['reservedMetadataObservations'], 10)
+            state = json.loads((fixture.directory/'ledger.json').read_bytes())
+            self.assertTrue(state['closed'])
+            self.assertEqual(state['host']['invocations'], 1)
+            self.assertEqual(state['host']['status'], 'UNCERTAIN_NO_RETRY')
+            self.assertFalse(state['host']['serverRestrictionProven'])
+            self.assertEqual(fixture.run()['classification'], 'STOP_PHASE_CLOSED')
 
     def test_cli_rejects_unsupported_operation_without_echoing_private_arguments(self):
         result = subprocess.run([sys.executable,'-B',str(SOURCE),'arbitrary-command','SYNTHETIC_PRIVATE_ARGUMENT'],capture_output=True,timeout=5)

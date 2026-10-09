@@ -1,0 +1,147 @@
+$ node --test scripts/m5-native-inventory/collector.test.mjs && python3 -B scripts/m5-host-inventory/operator_test.py && python3 -B scripts/m5-inventory-phase/phase_test.py
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (40.289121ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (4.555114ms)
+  ✔ request template is not permission (1.457377ms)
+  ✔ no approval reference (1.232231ms)
+  ✔ wrong endpoint (1.246509ms)
+  ✔ wrong optional scopes (1.287055ms)
+  ✔ required scope expansion (1.195118ms)
+  ✔ grant expansion (1.258456ms)
+  ✔ mutations (1.33536ms)
+  ✔ wrong operation (1.716555ms)
+  ✔ too many requests (1.328117ms)
+  ✔ too long retention (1.102541ms)
+  ✔ expired grant (1.100484ms)
+  ✔ wrong private destination (2.1584ms)
+  ✔ credential absent (1.209173ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (24.632134ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (11.006636ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (5.197713ms)
+  ✔ missing shop (5.574754ms)
+  ✔ wrong shop (5.935193ms)
+  ✔ wrong client (5.681363ms)
+  ✔ wrong app (7.712933ms)
+  ✔ wrong installation (4.915874ms)
+  ✔ grant drift (4.664218ms)
+  ✔ grant duplicate (4.184113ms)
+  ✔ connection missing (4.956403ms)
+  ✔ page info missing (4.897858ms)
+  ✔ next cursor missing (6.635902ms)
+  ✔ topic missing (4.470214ms)
+  ✔ unsupported version (4.554329ms)
+  ✔ unsupported format (4.432062ms)
+  ✔ URI missing (3.854498ms)
+  ✔ duplicate ID (4.122427ms)
+  ✔ URI conflict (6.230783ms)
+  ✔ page over 250 (5.461008ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (96.192681ms)
+▶ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry
+  ✔ permission (5.651436ms)
+  ✔ throttle (3.756674ms)
+  ✔ redirect (3.871395ms)
+  ✔ API fallback (4.680076ms)
+  ✔ missing API header (6.319282ms)
+  ✔ not JSON (4.526914ms)
+  ✔ encoding (4.06244ms)
+  ✔ malformed body (4.196412ms)
+  ✔ over 1 MiB (6.880368ms)
+  ✔ lost response (4.65939ms)
+  ✔ absolute timeout (32.44553ms)
+✔ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry (82.939506ms)
+✔ run deadline and expired allocation stop in flight and preserve consumed reservations (42.290303ms)
+✔ CLI reads one bounded existing token from inherited descriptor and prints only the public result (288.302441ms)
+✔ killed in-flight process leaves a consumed reservation; seal never resumes or retries it (128.798044ms)
+▶ unknown identity and connection shapes cannot silently qualify a partial provider response
+  ✔ unexpected queried object field (4.997796ms)
+  ✔ unexpected queried object field (4.221395ms)
+  ✔ unexpected queried object field (4.582433ms)
+  ✔ unexpected queried object field (4.260708ms)
+  ✔ unexpected queried object field (4.201044ms)
+✔ unknown identity and connection shapes cannot silently qualify a partial provider response (23.122525ms)
+✔ credential reflection is withheld from disk and public errors while the attempted request remains consumed (5.025551ms)
+✔ private response-write failure seals the acknowledged request as uncertain without another transport (7.513461ms)
+✔ full 500-record envelope needs exactly two pages and one final identity read (15.091328ms)
+▶ third page, cursor cycle, cross-page duplicates and boundary drift never extend the request envelope
+  ✔ third page (6.320921ms)
+  ✔ cursor cycle (7.956645ms)
+  ✔ cross-page duplicate (6.026034ms)
+  ✔ boundary drift (5.482226ms)
+  ✔ boundary error (5.683264ms)
+✔ third page, cursor cycle, cross-page duplicates and boundary drift never extend the request envelope (32.339158ms)
+▶ allocation may tighten ceilings and injected test endpoints cannot leave loopback
+  ✔ tight requests (4.681931ms)
+  ✔ tight pages (4.849503ms)
+  ✔ tight records (3.781622ms)
+  ✔ invalid endpoint denied before transport (0.876219ms)
+  ✔ invalid endpoint denied before transport (0.841181ms)
+  ✔ invalid endpoint denied before transport (0.812069ms)
+  ✔ invalid endpoint denied before transport (3.306001ms)
+  ✔ invalid endpoint denied before transport (5.960021ms)
+✔ allocation may tighten ceilings and injected test endpoints cannot leave loopback (26.390678ms)
+✔ failed journal persistence keeps reservation durable and forbids reinvocation despite an unsealed run (5.308437ms)
+▶ CLI refuses arbitrary queries, environment credential switches and duplicate flags before transport
+  ✔ --query (74.166724ms)
+  ✔ --token-env (71.860664ms)
+  ✔ --token-fd (70.598675ms)
+✔ CLI refuses arbitrary queries, environment credential switches and duplicate flags before transport (217.319168ms)
+▶ resource declaration must name an existing supported capability and cannot smuggle a second token store
+  ✔ unsupported owner input (1.222929ms)
+  ✔ unsupported owner input (0.897746ms)
+✔ resource declaration must name an existing supported capability and cannot smuggle a second token store (2.612331ms)
+✔ unexpected topic bytes remain private while the public observation uses an opaque category (6.97563ms)
+✔ distinct topics can share one coherent receiver while duplicate URI/topic bindings still stop (5.845344ms)
+▶ CLI rejects missing, multiline and oversized descriptor tokens before creating a run or contacting HTTP
+  ✔ invalid private descriptor bytes (121.446596ms)
+  ✔ invalid private descriptor bytes (123.597869ms)
+  ✔ invalid private descriptor bytes (114.748808ms)
+✔ CLI rejects missing, multiline and oversized descriptor tokens before creating a run or contacting HTTP (360.461247ms)
+✔ CLI exits by the credential deadline while a real blocking pipe writer remains open (5125.849031ms)
+✔ CLI rejects a regular-file credential descriptor before transport or run creation (73.792997ms)
+▶ public CLI rejects writerless allocation and abandoned-journal FIFOs without blocking open
+  ✔ allocation (102.376833ms)
+  ✔ journal (104.399208ms)
+✔ public CLI rejects writerless allocation and abandoned-journal FIFOs without blocking open (207.419291ms)
+▶ private reader terminates and releases its pipe by an independent deadline after CLI SIGKILL
+  ✔ normal (5165.057906ms)
+  ✔ retained-zombie (5187.986213ms)
+✔ private reader terminates and releases its pipe by an independent deadline after CLI SIGKILL (10353.902529ms)
+ℹ {"pythonVersion":"3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]","platform":{"system":"Linux","kernel":"7.0.0-31-generic","machine":"x86_64"},"retainedZombie":false,"readerState":"ABSENT","fdRetained":false,"pipeClosed":true,"observerElapsedMs":4789.340490009636,"closureWithinDeadline":true}
+ℹ {"pythonVersion":"3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]","platform":{"system":"Linux","kernel":"7.0.0-31-generic","machine":"x86_64"},"retainedZombie":true,"readerState":"Z","fdRetained":false,"pipeClosed":true,"observerElapsedMs":4797.883842140436,"closureWithinDeadline":true}
+✔ synthetic Python control failures preserve their diagnostic traceback (51.181913ms)
+ℹ SYNTHETIC_CONTROL_RUNTIME {"pythonVersion": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]", "platform": {"system": "Linux", "kernel": "7.0.0-31-generic", "machine": "x86_64"}}
+ℹ tests 98
+ℹ suites 0
+ℹ pass 98
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 17333.506494
+.................
+----------------------------------------------------------------------
+Ran 17 tests in 8.553s
+
+OK
+test_cli_rejects_unsupported_operation_without_echoing_private_arguments (__main__.PhaseControls.test_cli_rejects_unsupported_operation_without_echoing_private_arguments) ... ok
+test_existing_identity_transport_failure_seals_consumed_attempt_without_retry (__main__.PhaseControls.test_existing_identity_transport_failure_seals_consumed_attempt_without_retry) ... ok
+test_existing_identity_unqualified_bindings_stop_before_reservation_and_transport (__main__.PhaseControls.test_existing_identity_unqualified_bindings_stop_before_reservation_and_transport) ... ok
+test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim (__main__.PhaseControls.test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim) ... ok
+test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase (__main__.PhaseControls.test_failed_subprocess_streams_are_bounded_private_consumed_and_close_the_phase) ... ok
+test_frozen_command_is_single_line_for_restrict_command_access_setup (__main__.PhaseControls.test_frozen_command_is_single_line_for_restrict_command_access_setup) ... ok
+test_identity_expansion_syntax_stops_before_reservation_or_transport (__main__.PhaseControls.test_identity_expansion_syntax_stops_before_reservation_or_transport) ... ok
+test_invalid_host_gate_or_access_never_invokes_transport_or_reserves_reads (__main__.PhaseControls.test_invalid_host_gate_or_access_never_invokes_transport_or_reserves_reads) ... ok
+test_killed_caller_reservation_is_consumed_without_any_resume (__main__.PhaseControls.test_killed_caller_reservation_is_consumed_without_any_resume) ... ok
+test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final (__main__.PhaseControls.test_manual_surfaces_are_reserved_before_read_once_and_closure_is_final) ... ok
+test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding (__main__.PhaseControls.test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding) ... ok
+test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport (__main__.PhaseControls.test_real_local_pipe_loader_verifies_exact_bytes_and_host_reservation_before_transport) ... ok
+test_remote_loader_rejects_changed_source_even_if_stdin_digest_claims_are_updated (__main__.PhaseControls.test_remote_loader_rejects_changed_source_even_if_stdin_digest_claims_are_updated) ... ok
+test_remote_result_cannot_claim_complete_when_shape_or_accounting_is_inconsistent (__main__.PhaseControls.test_remote_result_cannot_claim_complete_when_shape_or_accounting_is_inconsistent) ... ok
+test_same_allocation_cannot_restart_budget_at_another_directory (__main__.PhaseControls.test_same_allocation_cannot_restart_budget_at_another_directory) ... ok
+test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) ... ok
+
+----------------------------------------------------------------------
+Ran 16 tests in 1.125s
+
+OK

@@ -381,8 +381,19 @@ def _collect(request, actual_source_sha, bindings=None):
                 observations.append({'id': plan['id'], 'classification': 'UNKNOWN_NOT_ALLOCATED'})
                 continue
             attempted.append(plan['id'])
+            observation_classification = 'METADATA_OBSERVED_NATIVE_UNQUALIFIED'
             if index < 4:
-                metadata = container(boundary.command(CONTAINER_COMMANDS[index]), plan['sources'][0])
+                try:
+                    data = boundary.command(CONTAINER_COMMANDS[index])
+                except Stop as error:
+                    # Only these two fixed optional commands may be unavailable.
+                    # Nonzero exit proves neither absence nor its cause; discard output.
+                    if index not in (2, 3) or error.category != 'STOP_COMMAND_FAILED':
+                        raise
+                    metadata = {'containerState': 'UNKNOWN', 'failureCause': 'UNKNOWN', 'globalAbsenceProven': False}
+                    observation_classification = 'UNAVAILABLE_COMMAND_FAILED'
+                else:
+                    metadata = container(data, plan['sources'][0])
             elif index in (4, 5):
                 expected = COMPOSE_SHA if index == 4 else PACKAGE_SHA
                 if local:
@@ -405,7 +416,7 @@ def _collect(request, actual_source_sha, bindings=None):
                 metadata = [boundary.file_mode(Path(value)) for value in plan['sources']]
             else:
                 metadata = nonsecret_configuration(boundary.command(COMMERCIAL_COMMAND))
-            observation = {'id': plan['id'], 'classification': 'METADATA_OBSERVED_NATIVE_UNQUALIFIED', 'metadata': metadata}
+            observation = {'id': plan['id'], 'classification': observation_classification, 'metadata': metadata}
             require(len(encoded(observation)) <= CAP, 'STOP_OUTPUT_LIMIT')
             observations.append(observation)
         classification = ('LOCAL_TEST_' if local else '') + 'METADATA_OBSERVED_NATIVE_UNQUALIFIED'

@@ -1,0 +1,120 @@
+{
+  "classification": "LOCAL_CORRECTION_QUALIFIED_NATIVE_NOT_RUN_ON_REVISED_SOURCE",
+  "base": "6963b62c75ab6f2db8ce9e0597e3efa83e2028b3",
+  "sources": {
+    "scripts/m5-host-inventory/host_inventory.py": "890d991e339efaf064b558d5bb2e3d1634cb6551b806dc111047bc0d359dd406",
+    "scripts/m5-host-inventory/operator_test.py": "175a3f51d16701a91b52c4035e83b41ce2ffe3ed5acc20f414db91efa741098e",
+    "scripts/m5-inventory-phase/phase.py": "f9a1a3ff73e3ab1d06b3a2a92fc22d7e7d7675014b5c26fd8a4ad1004f4bdf87",
+    "scripts/m5-inventory-phase/phase_test.py": "81d2682650d92436ec11eb368ddb867e83b9b5463160d1c6e84a7d033d960577"
+  },
+  "selectorSha256": "de0f87edd007edfcecf18332383745d1b042e2a2c5083d0e65ad2895b22111e3",
+  "selectorChanged": false,
+  "logs": {
+    "m5-host-optional-red.log": {
+      "sha256": "a4fec859e2e604e9154335d229064ed45198418008eb0b5763ea0df0a49635ab",
+      "bytes": 3997
+    },
+    "m5-phase-optional-guards-corrected.log": {
+      "sha256": "01932cab790765821963cc3ea4a5fe0d736a0ebdc1ca63792033d47477aa05e9",
+      "bytes": 297
+    },
+    "m5-phase-optional-full.log": {
+      "sha256": "ad092648e6b474d3c1d2cba3060c968306c0fe3acb67c9a542e7a6ce019d46ee",
+      "bytes": 3409
+    },
+    "m5-phase-optional-guards.log": {
+      "sha256": "da298cfba05e296d0a49a8e11530c304e143081db5352c76c0988a0028774f7b",
+      "bytes": 2544
+    },
+    "m5-phase-optional-red.log": {
+      "sha256": "de04aaa15407914345a2d96201552785a2aedafd1c7812f9c2fc40142b099b77",
+      "bytes": 3725
+    },
+    "m5-host-optional-green.log": {
+      "sha256": "8f01262bb3418e5b7385618f6f27b3a95b01c516a7ece058612064173a746ca9",
+      "bytes": 299
+    },
+    "m5-host-optional-guards.log": {
+      "sha256": "573f8b7c17efebd6170d724fe71c1c9f1c61e8c085b7d2a9b839b0906339c93a",
+      "bytes": 1666
+    },
+    "m5-phase-optional-green.log": {
+      "sha256": "705635c789624b9a67d0b9383d5c162869454fab68f2514d886f168c0d2c81ee",
+      "bytes": 287
+    },
+    "m5-host-optional-full.log": {
+      "sha256": "3257a0be0a80f16f26ce5629c5b986e91e730abd45fdd1ca2fe0f9ca626c947e",
+      "bytes": 3321
+    }
+  },
+  "tdd": {
+    "host": "old source STOP_COMMAND_FAILED; corrected unknown optional rows and later fixed reads complete",
+    "phase": "old source STOP_HOST_RESULT_INVALID; corrected private capture accepts only exact optional unknown rows",
+    "retainedSetupFailure": "first negative fixture exceeded frozen-source cap instead of response cap; corrected only external-response fixture"
+  },
+  "parentChecks": {
+    "inventory": {
+      "result": "PASS",
+      "admin": 98,
+      "host": 20,
+      "phase": 18,
+      "sha256": "25603c00ee9de250463777148c78ad925bcb284970b95acdb74f79ed8d3638ef"
+    },
+    "build": {
+      "result": "PASS",
+      "sha256": "9410a666938857d4011ff5f830d021881bc3fb0d0b15035fa842c3addd41b190"
+    },
+    "documentStyleSecretHistory": [
+      {
+        "command": [
+          "pnpm",
+          "check:style"
+        ],
+        "exit": 0,
+        "logSha256": "6cd4ab06618af5ad4a5f912b18ad293b611488217a77a50cadb4e99f0564839c",
+        "logBytes": 14647
+      },
+      {
+        "command": [
+          "pnpm",
+          "check:secrets"
+        ],
+        "exit": 0,
+        "logSha256": "5d30b8b5212705b349e1ee889ccf8eca2ac0fde8d678693c49a7f9c8cbd6286b",
+        "logBytes": 206
+      },
+      {
+        "command": [
+          "python3",
+          "-B",
+          "spikes/m0-007/scripts/check-history.py"
+        ],
+        "exit": 0,
+        "logSha256": "2f7449966db373e8189785c42ef491ec89499e1238a05af31311613aa825e466",
+        "logBytes": 2457
+      },
+      {
+        "command": [
+          "git",
+          "diff",
+          "--check"
+        ],
+        "exit": 0,
+        "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "logBytes": 0
+      }
+    ]
+  },
+  "nativeCallsOnCorrectedSource": 0,
+  "originalNativeRun": "SEALED_PARTIAL_STOP_NO_RETRY",
+  "newNativeAuthority": "NOT_GRANTED; first ten slots conservatively consumed, new explicit allocation required",
+  "m5G7": "NOT_PASSED",
+  "productionSourceBuildProviderInputsChanged": false,
+  "integrity": {
+    "historicalManifestVerifiedAgainst": "f396a33a63ddd2e24eb68464666f9f6408200a5d",
+    "historicalArtifactCount": 12,
+    "productionProviderSourceDiff": [],
+    "architectureCheck": "PASS; 120 unchanged receipts",
+    "priorManifestPreserved": true
+  }
+}

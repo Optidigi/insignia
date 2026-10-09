@@ -1,0 +1,6 @@
+test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim (__main__.PhaseControls.test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim) ... ok
+
+----------------------------------------------------------------------
+Ran 1 test in 0.074s
+
+OK

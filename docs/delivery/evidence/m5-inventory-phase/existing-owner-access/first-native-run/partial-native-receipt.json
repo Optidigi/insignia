@@ -1,0 +1,62 @@
+{
+  "classification": "AUTHENTICATED_PARTIAL_NATIVE_METADATA_NOT_HOST_OR_M5_PASS",
+  "frozenHead": "f396a33a63ddd2e24eb68464666f9f6408200a5d",
+  "frozenTree": "4d97c0b45cf04ee087cf2425f58464f93a5acacc",
+  "executedHostSourceSha256": "a917080edc777e0a859b85c8054240b187f58fcee6c8b2c9a86fa8586f59a285",
+  "existingIdentityWorked": true,
+  "hostFingerprintVerified": "SHA256:vttVPAISQypNdyfjFElTJ6ef8Q5S2YlC+XoUn599uq4",
+  "invocations": 1,
+  "metadataReservedConservatively": 10,
+  "actualCommandsAttempted": 3,
+  "completeObservations": 2,
+  "providerRequests": 0,
+  "productionSql": 0,
+  "hostWrites": 0,
+  "ownerPagesObserved": 0,
+  "failedObservation": "canonical-router-runtime",
+  "fixedFailedCommand": "docker --host unix:///var/run/docker.sock --config /nonexistent inspect --format <reviewed-fixed-projection> traefik",
+  "failure": "NONZERO_COMMAND_EXIT; stderr intentionally suppressed by qualified remote source; cause not inferred",
+  "retryAttempted": false,
+  "phaseClosed": true,
+  "privateCaptureRoot": "/home/serveradmin/insignia-m5-native-inventory-20261009/phase",
+  "privateRetentionDeleteBy": "2026-10-15T18:34:07.591393+00:00",
+  "rawResponseSha256": "c6f35bd9aa98674ffc56f6f69ab9818637ce09695ddef272eb41adb4c9d71a7c",
+  "observed": [
+    {
+      "id": "canonical-web-runtime",
+      "name": "/insignia-rewrite-m5-019-web",
+      "image": "sha256:8aa439cb733160ce6b99165e8401cfbc60f612851aeef0d76735db92917dc3f5",
+      "status": "running",
+      "health": "healthy",
+      "readOnlyRoot": true,
+      "privileged": false,
+      "canonicalRouteMatches": true,
+      "canonicalRouteEnabled": true
+    },
+    {
+      "id": "canonical-database-runtime",
+      "name": "/insignia-rewrite-m5-019-database",
+      "image": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+      "status": "running",
+      "health": "healthy",
+      "readOnlyRoot": false,
+      "privileged": false,
+      "canonicalRouteMatches": false,
+      "canonicalRouteEnabled": false
+    }
+  ],
+  "notReached": [
+    "legacy-service-boundary",
+    "canonical-compose-artifact",
+    "reviewed-web-package-artifact",
+    "bounded-running-docker-topology",
+    "bounded-host-process-executables",
+    "private-config-file-modes",
+    "commercial-nonsecret-configuration"
+  ],
+  "unknownNoReads": [
+    "current-queue-role-ownership",
+    "downstream-privacy-copy-ownership"
+  ],
+  "commercialEligibility": "UNKNOWN_NOT_READ"
+}
