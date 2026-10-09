@@ -1,0 +1,15 @@
+Sanitized retained excerpt of the actual first probe tool result.
+This file was written after the failure from the captured tool result; it is not an original raw command log.
+
+Command source: artifact-size-registry-identity-probe.py
+Observed exit code: 1
+Observed exception: AssertionError
+Captured source frames:
+  line 66: index=manifest(root,token,DIGEST,cached)
+  line 57: assert headers.get('Docker-Content-Digest')==calculated
+
+The first trace did not identify the registry or retain response metadata.
+Exact request count, first response body hash and registry-specific failure reason: UNKNOWN.
+No successful identity claim is made for this failed probe.
+Later separate authorized four-read ECR diagnostic observed absent digest headers while exact index/amd64 body hashes matched requested immutable digests.
+No anonymous token, response token body or authorization header is retained.

@@ -1,0 +1,114 @@
+{
+  "baseHead": "9cd60e286a5a2d889ab0a8a76f962f8699be885d",
+  "classification": "OFFICIAL_MIRROR_IMMUTABLE_INDEX_AND_AMD64_IDENTITY_VERIFIED_LOCAL_SOURCE_ONLY",
+  "firstProbe": {
+    "classification": "FAIL_HEADER_ASSERTION",
+    "evidenceType": "retrospective sanitized receipt of captured tool result, not original raw log",
+    "failure": "AssertionError at mandatory Docker-Content-Digest header equality check; original run source preserved, registry-specific cause not established by that trace",
+    "failureExcerptPath": "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-registry-first-probe-failure.txt",
+    "failureExcerptSha256": "7e3c559c58382f99f1216374907e503bb54177b0a0a776e08eb5c7449157ea84",
+    "firstProbeRequestCount": "UNKNOWN",
+    "observedExitCode": 1,
+    "sourcePath": "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-registry-identity-probe.py",
+    "sourceSha256": "30b349c5be505c9739e6dae11c84eb8cc014b298d9aafbd41156498a551f7a78"
+  },
+  "historicalReference": {
+    "event": "successful Docker Hub postgres:18 pull; overall runtime run later failed",
+    "logPath": "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-ci-r2-runtime-failed.log",
+    "logSha256": "aa290261c687ccfb3d2deba244589374dcfd7c63c71f9ab8efe35336b6356e17",
+    "pullDigest": "sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+    "runId": 37988027764
+  },
+  "imageReference": "public.ecr.aws/docker/library/postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+  "localChecks": {
+    "exactImageAndCommentOnlyByteSubstitution": "PASS",
+    "freshServicePullAndCI": "NOT_RUN_PARENT_OWNS_NEXT_EXACT_HEAD_QUALIFICATION",
+    "gitDiffCheck": "PASS"
+  },
+  "preservedInfrastructureFailureEvidenceBasis": "Parent inspected and retained the exact two CI failures; this registry probe did not independently read those current failure logs.",
+  "preservedInfrastructureFailures": [
+    {
+      "cause": "Docker Hub anonymous pull rate limit before checkout",
+      "runId": 37991234250,
+      "workflow": "M3 database"
+    },
+    {
+      "cause": "Docker Hub anonymous pull rate limit before checkout",
+      "runId": 37991234225,
+      "workflow": "M3 runtime"
+    }
+  ],
+  "primarySources": [
+    "https://www.docker.com/blog/news-from-aws-reinvent-docker-official-images-on-amazon-ecr-public/",
+    "https://aws.amazon.com/blogs/containers/docker-official-images-now-available-on-amazon-elastic-container-registry-public/",
+    "https://gallery.ecr.aws/docker/library/postgres",
+    "https://docs.aws.amazon.com/AmazonECR/latest/public/public-registries.html",
+    "https://docs.aws.amazon.com/AmazonECR/latest/public/public-service-quotas.html"
+  ],
+  "proofLimits": [
+    "Historical Docker Hub successful pull digest is the index identity anchor; no fresh Docker Hub fetch in the four-read probe.",
+    "ECR index raw bytes hash to the historical digest; exactly one linux/amd64 descriptor binds a child manifest whose raw bytes hash to that descriptor. Its config digest and 13 ordered layer digests are thus bound to the historical index.",
+    "No config/layer blobs were downloaded and no service container was started. Registry/runtime availability and fresh CI are not proved.",
+    "ECR anonymous quotas still apply. No unlimited/future-availability guarantee.",
+    "First probe header assertion failure and prior CI failures remain historical; no rerun or relabel of those attempts."
+  ],
+  "schema": "m5-ci-postgres-public-mirror-research/v1",
+  "subsequentAuthorizedProbe": {
+    "amd64ManifestBytes": 3439,
+    "amd64ManifestDigest": "sha256:885953109528ad3dfc90362b1a6f50a78620b5315be19f187753d267e484dc5b",
+    "configDigest": "sha256:29754c7520f4b9654cf8ff98e19ac73b88e255c3a53f6236ebe9d52249bb6df3",
+    "getAttempts": 4,
+    "indexBodySha256": "74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+    "indexBytes": 10229,
+    "layerCount": 13,
+    "layerDigests": [
+      "sha256:ecc510c1e359bdc007b39802570bb7e4dec7d6ebccf357c3201a74299113e05e",
+      "sha256:4a3cafbebf6d72be6d033fcb2d9e8bbc6a11b1ff4f5bc20d976d5e2e37a947cb",
+      "sha256:28ced28a309b096ff42953cb0a86595627a4bd07a944dd2f05528926cd41f12b",
+      "sha256:ab69e2551985a1719a3fe5f74400d8c9679f5ea751674fde5c41263fd488e278",
+      "sha256:1f04dfa92b9fc0d0350a96394660839240ef586ef175c5ef17c6bbe1ada94f0a",
+      "sha256:5a487c9461a5f7f1edbe60a1be3743aa0e981d4d2e2a33128804b85269526438",
+      "sha256:e0d4a6e58470239e79b596b9bf4a6d955ee89f429cb56b35ccfed96610df0024",
+      "sha256:496ce2ef5b2f05e2b5202ed5d3ef40bbfb10ebc68b1b84db6a43add5ca242a70",
+      "sha256:c8145e79cc2b7fe25d7126d75537c22ce81846a82aa37a865ff93ed48c7c36b5",
+      "sha256:06ea90d3bcc9736cff0ca6c77451bdd1e86b5d9cbde2b57b67ca92ec1a260699",
+      "sha256:dc25540d793fe1b9809eb7b63f8d4f4f5a9edf3b114eb7be98b90c1723eb97c7",
+      "sha256:7967f593457f7c184ea02818bd060182f3802c95d34bbe132c5eee070cb1abd1",
+      "sha256:d23c975c469304d5e8513f74ab43e3ee9f4721208b9c502bac8b6bb37dbfe168"
+    ],
+    "limits": {
+      "hardProcessDeadlineSeconds": 60,
+      "layerBlobsDownloaded": false,
+      "maxBytesPerResponse": 1048576,
+      "maximumGetAttempts": 4,
+      "redirectsAllowed": false,
+      "requestTimeoutSeconds": 10,
+      "sslVerified": true,
+      "tokensPersistedOrPrinted": false
+    },
+    "receiptPath": "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-registry-ecr-four-read-receipt.json",
+    "receiptSha256": "2563cb0aa804fede30ef78b325e0a29ef72a15f82ef54bab4036ccba0cb83917",
+    "sourcePath": "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-registry-ecr-four-read-probe.py",
+    "sourceSha256": "69d07e5c227b61858eba0f84b5db65ac4ab8eb8b9b7227e4a1ec544a7d1369d8",
+    "statusSequence": [
+      401,
+      200,
+      200,
+      200
+    ]
+  },
+  "workflowFiles": [
+    {
+      "afterSha256": "9388184c6c9c9bbacecd5a5eb73a1af177441f23dd67056ca55a017a6d81e873",
+      "beforeSha256": "95696d0be723043d567cb41046c6f688c540548d0074eef1fe18ed6c30abb5d6",
+      "path": ".github/workflows/m3-database.yml",
+      "proof": "exact original bytes with one service-image/comment substitution only"
+    },
+    {
+      "afterSha256": "59047e41ab6d5f75346c32313360d8da7b1cb4af455d1d345f1a057938ae18c7",
+      "beforeSha256": "a0ea243ab2370d0347d078ed964b14d288504f97ef0bcf0ca2332eb12a06a944",
+      "path": ".github/workflows/m3-runtime.yml",
+      "proof": "exact original bytes with one service-image/comment substitution only"
+    }
+  ]
+}

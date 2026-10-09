@@ -66,5 +66,20 @@
     "receiptSha256": "6c89673f3a1ccddec20fafb131b47b6a98bfaedaef22c9b52e14207be25d2840",
     "diagnosisSha256": "246c3c884c3ea7a8334424644f19067b397b27d4bcf76988d12d19c793a17c49",
     "ownedClusterClosed": true
+  },
+  "r3Reviews": "Actual CLEAR/CLEAR; nine natural successes/two precheckout DockerHub rate-limit failures; NOT_ACCEPTED",
+  "ciOnlyRepair": {
+    "workflows": [
+      ".github/workflows/m3-database.yml",
+      ".github/workflows/m3-runtime.yml"
+    ],
+    "immutableOfficialImageIndex": "74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+    "actualPublicManifestBodyMatchedHistoricalDigest": true,
+    "testStepsAndAssertionsUnchanged": true,
+    "failedRunsPreserved": [
+      37991234225,
+      37991234250
+    ],
+    "newReviewsAndNaturalCiRequired": true
   }
 }

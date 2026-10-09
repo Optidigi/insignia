@@ -1,0 +1,26 @@
+durable-core	Initialize containers	﻿2026-10-09T21:05:10.9101627Z ##[group]Checking docker version
+durable-core	Initialize containers	2026-10-09T21:05:10.9115411Z ##[command]/usr/bin/docker version --format '{{.Server.APIVersion}}'
+durable-core	Initialize containers	2026-10-09T21:05:11.0201259Z '1.48'
+durable-core	Initialize containers	2026-10-09T21:05:11.0211617Z Docker daemon API version: '1.48'
+durable-core	Initialize containers	2026-10-09T21:05:11.0212807Z ##[command]/usr/bin/docker version --format '{{.Client.APIVersion}}'
+durable-core	Initialize containers	2026-10-09T21:05:11.0378840Z '1.48'
+durable-core	Initialize containers	2026-10-09T21:05:11.0392509Z Docker client API version: '1.48'
+durable-core	Initialize containers	2026-10-09T21:05:11.0397135Z ##[endgroup]
+durable-core	Initialize containers	2026-10-09T21:05:11.0401021Z ##[group]Clean up resources from previous jobs
+durable-core	Initialize containers	2026-10-09T21:05:11.0407259Z ##[command]/usr/bin/docker ps --all --quiet --no-trunc --filter "label=230ec5"
+durable-core	Initialize containers	2026-10-09T21:05:11.0570547Z ##[command]/usr/bin/docker network prune --force --filter "label=230ec5"
+durable-core	Initialize containers	2026-10-09T21:05:11.0715253Z ##[endgroup]
+durable-core	Initialize containers	2026-10-09T21:05:11.0715872Z ##[group]Create local container network
+durable-core	Initialize containers	2026-10-09T21:05:11.0726689Z ##[command]/usr/bin/docker network create --label 230ec5 github_network_d5783e2bd6d94de98212a3b3f782d050
+durable-core	Initialize containers	2026-10-09T21:05:11.1264665Z 34d22baf14754b33d976107b92407dab84664dfcffd8d8f58bee1c2775ddce5e
+durable-core	Initialize containers	2026-10-09T21:05:11.1294193Z ##[endgroup]
+durable-core	Initialize containers	2026-10-09T21:05:11.1318968Z ##[group]Starting postgres service container
+durable-core	Initialize containers	2026-10-09T21:05:11.1343915Z ##[command]/usr/bin/docker pull postgres:18
+durable-core	Initialize containers	2026-10-09T21:05:11.7616424Z Error response from daemon: toomanyrequests: You have reached your unauthenticated pull rate limit. https://www.docker.com/increase-rate-limit
+durable-core	Initialize containers	2026-10-09T21:05:11.7651762Z ##[warning]Docker pull failed with exit code 1, back off 5.865 seconds before retry.
+durable-core	Initialize containers	2026-10-09T21:05:17.6304105Z ##[command]/usr/bin/docker pull postgres:18
+durable-core	Initialize containers	2026-10-09T21:05:18.2147799Z Error response from daemon: toomanyrequests: You have reached your unauthenticated pull rate limit. https://www.docker.com/increase-rate-limit
+durable-core	Initialize containers	2026-10-09T21:05:18.2161449Z ##[warning]Docker pull failed with exit code 1, back off 5.893 seconds before retry.
+durable-core	Initialize containers	2026-10-09T21:05:24.1087958Z ##[command]/usr/bin/docker pull postgres:18
+durable-core	Initialize containers	2026-10-09T21:05:24.7078876Z Error response from daemon: toomanyrequests: You have reached your unauthenticated pull rate limit. https://www.docker.com/increase-rate-limit
+durable-core	Initialize containers	2026-10-09T21:05:24.7185160Z ##[error]Docker pull failed with exit code 1

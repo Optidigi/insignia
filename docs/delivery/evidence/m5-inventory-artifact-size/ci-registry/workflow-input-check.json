@@ -1,0 +1,18 @@
+{
+  "base": "9cd60e286a5a2d889ab0a8a76f962f8699be885d",
+  "exactOfficialImageIndexSha256": "74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336",
+  "checks": [
+    {
+      "path": ".github/workflows/m3-database.yml",
+      "sha256": "9388184c6c9c9bbacecd5a5eb73a1af177441f23dd67056ca55a017a6d81e873",
+      "onlyImageAndProvenanceCommentChanged": true
+    },
+    {
+      "path": ".github/workflows/m3-runtime.yml",
+      "sha256": "59047e41ab6d5f75346c32313360d8da7b1cb4af455d1d345f1a057938ae18c7",
+      "onlyImageAndProvenanceCommentChanged": true
+    }
+  ],
+  "healthPortsEnvTestsUnchanged": true,
+  "productionRuntimeAndProviderInputsUnchanged": true
+}
