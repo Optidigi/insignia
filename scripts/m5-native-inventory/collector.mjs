@@ -460,7 +460,10 @@ export async function sealAbandonedRun({ privateDirectory }) {
       directory.uid !== process.getuid()
     )
       return stopped('STOP_EVIDENCE_UNAVAILABLE');
-    const file = await open(join(privateDirectory, 'journal.json'), constants.O_RDONLY | constants.O_NOFOLLOW);
+    const file = await open(
+      join(privateDirectory, 'journal.json'),
+      constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK,
+    );
     let state;
     try {
       const info = await file.stat();

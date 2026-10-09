@@ -40,8 +40,7 @@ const { createReadStream } = require('node:fs');
   let bytes = Buffer.alloc(0);
   // Keep the deadline even after a stream error: pending fs reads can survive
   // stream destruction. Unref avoids delaying a normally completed reader.
-  // SIGKILL avoids runtime cleanup waiting on a blocked threadpool read.
-  setTimeout(() => { bytes.fill(0); process.kill(process.pid, 'SIGKILL'); }, 5000).unref();
+  setTimeout(() => { bytes.fill(0); process.exit(1); }, 5000).unref();
   try {
     for await (const chunk of createReadStream(null, { fd: 3, autoClose: true, highWaterMark: 4098 })) {
       if (bytes.length + chunk.length > 4097) throw new Error();

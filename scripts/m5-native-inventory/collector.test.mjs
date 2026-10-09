@@ -938,3 +938,136 @@ test('CLI rejects a regular-file credential descriptor before transport or run c
     await file.close();
   }
 });
+
+async function localPythonControl(source, args) {
+  const child = spawn('python3', ['-B', '-c', source, ...args], { stdio: ['ignore', 'pipe', 'pipe'] });
+  let stdout = '',
+    stderr = '';
+  child.stdout.on('data', (chunk) => {
+    stdout += chunk;
+  });
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk;
+  });
+  const code = await new Promise((resolve, reject) => {
+    child.once('error', reject);
+    child.once('close', resolve);
+  });
+  assert.equal(code, 0);
+  assert.equal(stderr, '');
+  return JSON.parse(stdout);
+}
+
+test('public CLI rejects writerless allocation and abandoned-journal FIFOs without blocking open', async (t) => {
+  for (const mode of ['allocation', 'journal'])
+    await t.test(mode, async (st) => {
+      const h = await harness(st, async ({ res }) => res.end(JSON.stringify(page())));
+      const helper = `import json,os,subprocess,sys
+node,cli,directory,mode,endpoint=sys.argv[1:]
+if mode=='allocation':
+ path=os.path.join(os.path.dirname(directory),'allocation-fifo')
+ argv=[node,cli,'--allocation',path,'--private-directory',directory,'--token-fd','3','--test-endpoint',endpoint]
+else:
+ os.mkdir(directory,0o700)
+ path=os.path.join(directory,'journal.json')
+ argv=[node,cli,'--seal-abandoned',directory]
+os.mkfifo(path,0o600)
+child=subprocess.Popen(argv,stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+timed_out=False
+try:
+ stdout,stderr=child.communicate(timeout=1.5)
+except subprocess.TimeoutExpired:
+ timed_out=True
+ child.kill()
+ stdout,stderr=child.communicate(timeout=2)
+print(json.dumps({'timedOut':timed_out,'code':child.returncode,'stdout':stdout.decode(),'stderr':stderr.decode()}))
+`;
+      const observation = await localPythonControl(helper, [
+        process.execPath,
+        new URL('./cli.mjs', import.meta.url).pathname,
+        h.directory,
+        mode,
+        h.options.testEndpoint,
+      ]);
+      assert.equal(observation.timedOut, false, `${mode} FIFO blocked before file-type validation`);
+      assert.equal(observation.code, 1);
+      assert.equal(observation.stderr, '');
+      const result = JSON.parse(observation.stdout);
+      assert.equal(result.outcome, mode === 'allocation' ? 'STOP_INPUT_NOT_ALLOCATED' : 'STOP_EVIDENCE_UNAVAILABLE');
+      assert.equal(result.requests, 0);
+      assert.equal(h.requests.length, 0);
+      if (mode === 'allocation') await assert.rejects(stat(h.directory), { code: 'ENOENT' });
+    });
+});
+
+test('private reader terminates and releases its pipe by an independent deadline after CLI SIGKILL', async (t) => {
+  const h = await harness(t, async ({ res }) => res.end(JSON.stringify(page())));
+  const manifest = join(h.directory, '..', 'allocation.json');
+  await writeFile(manifest, JSON.stringify(h.options.allocation), { mode: 0o600 });
+  const helper = `import json,os,signal,subprocess,sys,time
+from pathlib import Path
+read_fd,write_fd=os.pipe()
+child=subprocess.Popen([sys.argv[1],sys.argv[2],'--allocation',sys.argv[3],'--private-directory',sys.argv[4],'--token-fd',str(read_fd),'--test-endpoint',sys.argv[5]],pass_fds=(read_fd,),stdin=subprocess.DEVNULL,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+os.close(read_fd)
+os.write(write_fd,b'SYNTHETIC_PARTIAL_PRIVATE_TOKEN')
+reader=None
+limit=time.monotonic()+2
+while time.monotonic()<limit:
+ children=Path('/proc/'+str(child.pid)+'/task/'+str(child.pid)+'/children').read_text().split()
+ if children:
+  reader=int(children[0])
+  break
+ time.sleep(0.01)
+assert reader is not None
+# Leave EOF withheld; allow the reader to consume the partial private bytes.
+time.sleep(0.25)
+assert Path('/proc/'+str(reader)+'/fd/3').exists()
+child.kill()
+stdout,stderr=child.communicate(timeout=2)
+def state():
+ try:
+  return Path('/proc/'+str(reader)+'/stat').read_text().rsplit(')',1)[1].split()[0]
+ except FileNotFoundError:
+  return 'ABSENT'
+limit=time.monotonic()+6
+while time.monotonic()<limit and state() not in ('Z','ABSENT'):
+ time.sleep(0.02)
+terminal=state()
+fd_retained=Path('/proc/'+str(reader)+'/fd/3').exists()
+pipe_closed=False
+try:
+ os.write(write_fd,b'PRIVATE_SYNTHETIC_PROBE')
+except BrokenPipeError:
+ pipe_closed=True
+finally:
+ if terminal not in ('Z','ABSENT'):
+  os.kill(reader,signal.SIGKILL)
+ os.close(write_fd)
+print(json.dumps({'readerState':terminal,'fdRetained':fd_retained,'pipeClosed':pipe_closed,'code':child.returncode,'stdout':stdout.decode(),'stderr':stderr.decode()}))
+`;
+  const observation = await localPythonControl(helper, [
+    process.execPath,
+    new URL('./cli.mjs', import.meta.url).pathname,
+    manifest,
+    h.directory,
+    h.options.testEndpoint,
+  ]);
+  t.diagnostic(
+    JSON.stringify({
+      readerState: observation.readerState,
+      fdRetained: observation.fdRetained,
+      pipeClosed: observation.pipeClosed,
+    }),
+  );
+  assert.ok(
+    ['Z', 'ABSENT'].includes(observation.readerState),
+    'orphaned reader still executing beyond its independent deadline',
+  );
+  assert.equal(observation.fdRetained, false);
+  assert.equal(observation.pipeClosed, true);
+  assert.equal(observation.code, -9);
+  assert.equal(observation.stdout, '');
+  assert.equal(observation.stderr, '');
+  assert.equal(h.requests.length, 0);
+  await assert.rejects(stat(h.directory), { code: 'ENOENT' });
+});
