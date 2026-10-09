@@ -96,14 +96,14 @@
     "Commercial configuration unknown; owner delegates factual investigation",
     "Any later provisioning/deployment/mutation requires exact separate owner resource envelope"
   ],
-  "nextSafeAction": "Qualify PR61 corrected source/reviews/CI while owner installs already-authorized forced-command key; execute only granted bounded native reads after actual access proof; establish real commercial facts.",
+  "nextSafeAction": "Complete PR61 freshR3 full-source reviews and natural exact-head CI; separately qualify the bounded existing-key caller under the owner reuse directive, then execute only granted native reads and establish real commercial facts.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
     "slice": "Transient webhook retention/queue recovery",
-    "status": "R1_REVIEW_CORRECTION_IN_PROGRESS",
+    "status": "R2_CORRECTIONS_LOCAL_PASS_R3_REVIEW_CI_PENDING",
     "worktree": "Separate feat/m5-transient-webhook-retention branch",
     "purpose": "Deadline effect fences and finite durable queue budget; all unqualified raw erasure deferred; uninstall authority/privacy incomplete",
     "nativeAuthority": "NONE; no production SQL/deployment"
@@ -114,8 +114,11 @@
     "r1Head": "e20c3e904fc5940b41892265d788ed1046b8160c",
     "r1Reviews": "CHANGES_REQUIRED / CHANGES_REQUIRED",
     "r1Ci": "10 SUCCESS / 1 FAILURE, all attempt-1",
-    "correction": "All unqualified raw erasure deferred with bounded alerts; unnecessary erase grants revoked; real SCRAM disposable-role fixtures corrected",
-    "next": "Fresh independent completed-change reviews and natural exact-head CI before local acceptance"
+    "correction": "All unqualified raw erasure remains deferred; safe logger category regression corrected; crash control gets its own migrated database/defaultqueue without weakening original policy/timeouts/assertions",
+    "next": "FreshR3 independent completed-change full-source reviews and natural exact-head CI before local acceptance",
+    "r2Head": "66b1ab75dd1d2e31c8adf40a903df299f38822d4",
+    "r2Reviews": "CHANGES_REQUIRED / CHANGES_REQUIRED",
+    "r2Ci": "10 SUCCESS / 1 FAILURE, all attempt-1"
   },
   "boundedInventoryTooling": {
     "pr": 60,
@@ -123,7 +126,7 @@
     "reviews": "ACTUAL_CLEAR_CLEAR_GPT_6_1_SOL_HIGH",
     "naturalExactHeadAttempt1Ci": 10,
     "nativeAccess": "NOT_STARTED",
-    "hostKeySetup": "OWNER_ACTION_PENDING",
+    "hostKeySetup": "OWNER_DIRECTS_EXISTING_KEY_REUSE; key found, bounded caller qualification pending",
     "existingSupportedAdminCredential": "UNAVAILABLE",
     "milestoneAcceptance": false
   }

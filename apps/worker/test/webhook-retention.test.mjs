@@ -76,6 +76,75 @@ async function fixture({ observability } = {}) {
 }
 
 test(
+  'processed overdue uninstall blockers retain their safe category through the real public logger',
+  postgres,
+  async () => {
+    let output = '';
+    const observability = createObservability({
+      stream: new Writable({
+        write(chunk, _encoding, callback) {
+          output += chunk;
+          callback();
+        },
+      }),
+    });
+    const f = await fixture({ observability });
+    try {
+      const shopId = randomUUID();
+      const shopDomain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
+      await f.core.transactions.run((tx) =>
+        f.core.tenants.createShop(tx, { shopId, shopDomain, shopifyShopId: '456' }),
+      );
+      const rawBody = Buffer.from(
+        JSON.stringify({
+          id: '456',
+          myshopify_domain: shopDomain,
+          customer: { id: '789' },
+          orders_to_redact: ['123'],
+        }),
+      );
+      const receipt = await f.core.webhooks.receive({
+        shopDomain,
+        deliveryId: randomUUID(),
+        topic: 'app/uninstalled',
+        apiVersion: '2026-07',
+        triggeredAt: new Date(),
+        eventId: null,
+        name: null,
+        rawBody,
+      });
+      assert.equal(await f.core.webhooks.processUninstall(receipt.id), 'processed');
+      await f.pool.query(
+        `UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=$1`,
+        [receipt.id],
+      );
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      const result = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
+      assert.deepEqual(result.erasedIds, []);
+      assert.deepEqual(result.unresolvedExpiredIds, []);
+      assert.deepEqual(result.blockedUninstallIds, [receipt.id]);
+      const alert = output
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line))
+        .find((record) => record.errorClass === 'UninstallPayloadRetentionBlocked');
+      assert.ok(alert);
+      assert.equal(alert.count, 1);
+      assert.deepEqual(Object.keys(alert).sort(), ['count', 'errorClass', 'event', 'level', 'time']);
+      const serialized = JSON.stringify(alert);
+      for (const privateValue of [shopId, shopDomain, receipt.id, 'orders_to_redact', 'customer'])
+        assert.equal(serialized.includes(privateValue), false);
+      assert.deepEqual(
+        (await f.pool.query('SELECT payload FROM inbox_messages WHERE id=$1', [receipt.id])).rows[0].payload,
+        rawBody,
+      );
+    } finally {
+      await f.close();
+    }
+  },
+);
+
+test(
   'real PostgreSQL unsupported receipt blockers stay bounded and alert without losing economic sole facts',
   postgres,
   async () => {

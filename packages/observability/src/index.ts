@@ -84,6 +84,7 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
     input.errorClass === 'WebhookQueueExhausted' ||
     input.errorClass === 'TransientPayloadExpiredUnresolved' ||
     input.errorClass === 'PrivacyRetentionBlocked' ||
+    input.errorClass === 'UninstallPayloadRetentionBlocked' ||
     input.errorClass === 'UnknownPayloadRetentionBlocked' ||
     input.errorClass === 'UnsupportedPayloadRetentionBlocked' ||
     input.errorClass === 'UninstallRecoveryUnresolved'

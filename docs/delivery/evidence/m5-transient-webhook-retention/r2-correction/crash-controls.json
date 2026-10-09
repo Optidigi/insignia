@@ -1,0 +1,127 @@
+{
+  "classification": "private synthetic-only CI2 diagnosis and one-file fixture correction",
+  "baseCommit": "66b1ab75dd1d2e31c8adf40a903df299f38822d4",
+  "observedHeadAtSeal": "66b1ab75dd1d2e31c8adf40a903df299f38822d4",
+  "runtime": {
+    "node": "v24.21.0",
+    "postgres": "18.6 user-local extracted tools; host SCRAM",
+    "pgBoss": "12.35.0"
+  },
+  "writerChangedPaths": [
+    "scripts/m5-024/crash-recovery.test.mjs"
+  ],
+  "sourceBeforeSha256": "9debf324b0f382010eaf80fac78e8e10997d5e05d29dcd6dcf01a4034fd3cc8f",
+  "sourceAndCompiledSha256": {
+    "scripts/m5-024/crash-recovery.test.mjs": "2f0b3c9c7c7f4a7d91b0589f10e8fd20b509059d5c93ff659a8df58b783ede8e",
+    "scripts/m5-024/crash-child.mjs": "674a646e5cc868c488834b9911148e9d719af9bef9322782a84d348aedef78bd",
+    "scripts/m5-024/queue-privileges.test.mjs": "92125384b286fe86abe6f1f1322368c868f0e82aeb52e51ba0f86d19fcf32634",
+    "apps/worker/src/runtime.ts": "f65a9b322f33970a504406d5dba29225a0a771d0281fa392bfe32860484260f4",
+    "apps/worker/src/queue-contract.ts": "171cd006fde7460cc9ffc111189ffd3d81d726b0c3a31739331159c0829fd209",
+    ".github/workflows/m3-runtime.yml": "a0ea243ab2370d0347d078ed964b14d288504f97ef0bcf0ca2332eb12a06a944",
+    "apps/worker/dist/runtime.js": "5c84f0716f978674fd7dffe4d34f6fec7d7f0a5319ffc3a1186c8accd24e17ab",
+    "apps/worker/dist/handlers.js": "473f9444fbb5ed66dbde165eb71d35bf62d52200830ef464c964d0f9ee2f99ba",
+    "packages/database/dist/repositories/shopify-webhooks.js": "7517619e4c313dcfa3488d91a79dd9ee49655ac5e1b435e7ad123506ed1431c6",
+    "packages/database/dist/index.js": "79fe69252b7579d7daa8ac7eb9fcb754a219042c0d632f8eaacd126293a31ebf"
+  },
+  "unchangedToBase": [
+    "scripts/m5-024/crash-child.mjs",
+    "scripts/m5-024/queue-privileges.test.mjs",
+    "apps/worker/src/runtime.ts",
+    "apps/worker/src/queue-contract.ts",
+    ".github/workflows/m3-runtime.yml"
+  ],
+  "actualChecks": {
+    "database": {
+      "pass": 219
+    },
+    "worker": {
+      "pass": 28
+    },
+    "originalCiStep": {
+      "pass": 1,
+      "fail": 1
+    },
+    "originalEmptyCase": {
+      "pass": 1
+    },
+    "originalSixJobContaminationCase": {
+      "fail": 1
+    },
+    "correctedIsolatedCrash": {
+      "pass": 1,
+      "parentInboxAndQueueUnchanged": true
+    },
+    "correctedExactCiStep": {
+      "pass": 2,
+      "fail": 0,
+      "cancelled": 0,
+      "skipped": 0
+    },
+    "style": {
+      "exit": 0
+    },
+    "syntax": {
+      "exit": 0
+    },
+    "diff": {
+      "exit": 0
+    }
+  },
+  "ownedPort": 55450,
+  "closure": {
+    "stopExit": 0,
+    "statusExit": 3,
+    "otherClientSessions": 0,
+    "fixtureDatabasesRemaining": 0
+  },
+  "sourceCommitted": false,
+  "oldClustersReopened": false,
+  "timeoutsChanged": false,
+  "authWeakened": false,
+  "mockedAuthorityUsed": false,
+  "parentCiFailureSha256": "dd4e43a1a7b2a404e8c428dadea9dcd9ddda7b66c83c537c375f160f2c4d3244",
+  "privateArtifactsSha256": {
+    "insignia_ci2_seeded-migration.log": "2cd8b065343311939436ebc4252538ce2edafc7ce9d275d03c50afbad0add816",
+    "DIAGNOSIS.md": "b8ad48ef0c488d954ea7ee23109a957c90df61b786f10c82aa6053c2114ce8c4",
+    "26-status.log": "e138ccb54fdb08283c6eb21159c53207bbbbf07077246e2804e18d22efe6e250",
+    "17-seed-private.log": "d5c2a05ac7c6f876fcce9ed228396b43a7d55d4eda95df2a89ca9403d52bef7c",
+    "16-original-correct-target-accounting.mjs": "1bd6118b3e4d8b574eb38790f39dd3222ca1ab3541377f5c511be5104504d8f1",
+    "19-seeded-contamination-red.log": "f9571ebb5eb267c213c4a1764b256538ab36376b717f28426eda28880bcedbd6",
+    "22-fixed-isolation-green.log": "73d69a5797e7fe5beef1a211cfbef71f29442c7997fcbde5adc7aeb33cf13d54",
+    "21-isolation-public-control.mjs": "2a60a7838d88e23288f5484ffbcd75a7c860b89d46d45eb8c1887423048d7dd9",
+    "22-fixed-isolation-private.json": "b85f92b74e19e49346dfadbb75e7d360549858319f9d5e4edc769d4717f776af",
+    "13-original-backlog-accounting-private.json": "e836ab91ef6420d7309c5e911aa36500dcd74f47636f6f74bf6df0b8b367e59b",
+    "24-final-resource-scan-private.json": "6f86ec661f8b62df1ae24b32cdb305764dcc0e788ce4b9ff3458b9c6a9070354",
+    "closure-private.json": "209e3e9490d340fceeef03dd1651152b20a85a3479922f85f3ce22194604c4c9",
+    "pg.log": "c0ecbb44f42329f7b6bb2e7fa90807cc3587d5d8ee018c48e54926f3e1bc31d2",
+    "03-create.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "08-observability-tests.log": "bc9f36ec459a3aad5873406da9697dc522cf7b8035c4b6c4301af3f3d32399b9",
+    "01-init.log": "6fd36d554fb76a2a2442b6a84001b068b29aced6959f94c709e52658c876d096",
+    "07-application-tests.log": "80e2e896c44ce25913d857bcc8de1b668255a72684defd26bedd31614e959bb3",
+    "06-shopify-tests.log": "2b0d856f64346663c3535e47c509e798d4711b06b5cd8acc827b56932bea035f",
+    "16-original-correct-target-accounting-private.json": "b5b246bca40204df9b5c956e848208b5bcca102e7b3148fe0286f18a863beb84",
+    "20-crash-recovery-source-before.mjs": "9debf324b0f382010eaf80fac78e8e10997d5e05d29dcd6dcf01a4034fd3cc8f",
+    "12-drained-shared-crash-control.log": "ed0637103f8d182f84e196add416e48c46dfb86dffdaa3f01313c0547fb9ab9e",
+    "23-fixed-ci-step-green.log": "9c8f94c36787cbfd2c6650d632695d9b5a0e09c4939d48a4daeb7ae45fd10776",
+    "insignia_ci2_clean-migration.log": "fc8558bf46bf6beec405dddafb4a3f5dcf6ae1be3c1958c98aaf79b07569a1fc",
+    "19-seeded-child-private.jsonl": "1a27bf3d174856c56b5097d8c2b57bf9fe69d2f2e00c23e96da18afc06b247a3",
+    "18-clean-control.log": "f4d670cca591b41fddd89609b170d347c67071ce9cc60225a65f22eb3cf05755",
+    "22-fixed-child-private.jsonl": "e83df8cfbb303340331de2096fe925c02707f08e4c12fe2525e7d9e4be72fe82",
+    "24-final-resource-scan.mjs": "d3fb8667eed3b1114121e0bd993f36524f26074cbcbd53dc4605c730efbb79ae",
+    "11-fork-capture.mjs": "89c2c9a6f63c6fea3428c29ae22a0c63f700c6cc2aa089767710d2d5ec7b58a1",
+    "clean-versus-seeded-results-private.json": "2cb8c6b7279df353c6aec6ff497d7dcbfabcb7478779d98dcf3d20057c026f23",
+    "02-start.log": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "13-original-backlog-accounting.mjs": "62ee2ea6a17bb6c1ee89fdcd458df2e3bbfd880c312020eb6fc614bff1f2dd28",
+    "ci-sequence-results-private.json": "870a455cbab4d85744293cee63ae89e3202ae54d9ec64c8329736569f69adff0",
+    "09-worker-tests.log": "d9df16abc5356923165aa41c6a468fb5e993cc761c1426bef7a17e061b814f0f",
+    "17-seed-real-backlog.mjs": "7f5be4926eca6660a382bf2e864a27524dd104b04b9acda95a4c9f53e1fff20f",
+    "25-stop.log": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "10-crash-permissions-ci-sequence.log": "3a510362c1e22842746aa9b29e450eca08affa2ff847d1fc3e63876e68168e05",
+    "04-run-ci-sequence.py": "113b51e22790b7d7b4d77addd3eff04961032e5563a6aadafe049c1235df8bc3",
+    "12-drained-shared-child-private.jsonl": "b5a1c16b1d9693a888bd20706b6675f117ac8089bcb7a104d24314372a3d33d1",
+    "18-clean-child-private.jsonl": "2f4a22dbff6c9310dce6562c508b885f0cb356ed1f43518920f6179597caad6a",
+    "14-fork-queue-capture.mjs": "d4af415679cc11cf7303264bf2915d7e207d1131df39146f8aa98894e5d15082",
+    "05-database-sequence.log": "2051f9260a320e73d45cdd5265e633cf4cb55d04e5eeab9efaf6f1a388f985ed"
+  },
+  "privateArtifactRoot": "/home/serveradmin/insignia-m5-retention-ci2-diagnosis"
+}

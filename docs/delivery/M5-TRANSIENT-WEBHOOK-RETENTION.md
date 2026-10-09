@@ -1,6 +1,6 @@
 # M5 transient webhook retention supporting slice
 
-**Local supporting correction; deployment readiness BLOCKED.** This does not fix generic uninstall authority, complete privacy handling/M10, authorize an installation, or qualify any deployed processor. Base: `d9ba6383a6e15958419ecf8e26d9182f08078e41`. Independent integrated review and exact-head CI belong to the parent orchestrator.
+**Local supporting correction; deployment readiness BLOCKED.** This does not fix generic uninstall authority, complete privacy handling/M10, authorize an installation, or qualify any deployed processor. Integrated base: `7fc8688b2d59c191486771192d4f466cbc226703`. Independent integrated review and exact-head CI belong to the parent orchestrator.
 
 The original writer candidate and evidence were frozen in local commit `c9510e0f8b381840809baf0740efe16f19e64d33`. Its [original local checks](evidence/m5-transient-webhook-retention/local-checks.json) remain byte-identical historical evidence. The subsequent bounded-topic correction is separately recorded in [correction checks](evidence/m5-transient-webhook-retention/correction-local-checks.json); original pass counts do not qualify the corrected source.
 
@@ -49,3 +49,5 @@ Original local checks record the original PostgreSQL 18 / pg-boss 12.35 run, inc
 ## Integrated review correction
 
 [R1 findings and response](evidence/m5-transient-webhook-retention/r1-correction/response.md) retain both CHANGES_REQUIRED reviews and the failed exact-head attempt-1 runtime workflow. Real SCRAM diagnosis reproduces passwordless disposable-role failure and its database-drop wait; random synthetic role passwords correct the fixtures without weakening authentication, grants, assertions or timeouts. A separate RED/GREEN control removes unnecessary raw-body erasure grants. New-source qualification is recorded separately; all prior manifests remain historical and byte-identical.
+
+[R2 findings and response](evidence/m5-transient-webhook-retention/r2-correction/response.md) retain both CHANGES_REQUIRED reviews and the second failed attempt-1 runtime workflow. The fixed logger now preserves the processed-overdue uninstall blocker category with counts only. Real public maintenance/logger RED/GREEN and worker29/full-root controls qualify that change. The runtime CI failure is reproduced as shared predecessor queue state; the crash control now owns a disposable migrated database and its existing queue, with original timeouts/assertions and contaminated parent rows preserved. Corrected local two-process controls pass; fresh independent review and natural exact-head CI remain mandatory. All native safety and milestone blockers above remain.
