@@ -1,0 +1,296 @@
+{
+  "schema": "m5-retention-r1-corrected-qualification-v1",
+  "rejectedHead": "e20c3e904fc5940b41892265d788ed1046b8160c",
+  "base": "7fc8688b2d59c191486771192d4f466cbc226703",
+  "classification": "LOCAL_SOURCE_CHECKS_PASS_REVIEW_CI_PENDING_M5_INCOMPLETE",
+  "rawBodies": "ALL_UNQUALIFIED_ERASURE_DEFERRED_OVERDUE_BLOCKERS_NOT_DEADLINE_WAIVER",
+  "sourceSha256": {
+    "packages/database/src/repositories/shopify-webhooks.ts": "c11a411f573591cbb008204376f045dfb60383b3aed169ff656d0df3d1071f9b",
+    "packages/database/test/webhook-retention.test.ts": "01d4d3a0cb04ce8c219a111427e24a154d9d7c513fa9f9775276d2a98dc77970",
+    "apps/worker/src/handlers.ts": "91456cbf6e97ef60de0b658914755c9284ad19a4937ba5cd99fa24cf88038215",
+    "apps/worker/test/webhook-retention.test.mjs": "eb66bf0df7cd5e51eee9f7423e90a4fc2ff3700352f6054cc40b35f953506a17",
+    "scripts/m5-024/queue-roles.sql": "93efffa05375f424370717f7b68b77569d9e50d9bd54647deba55e8efd406b66"
+  },
+  "checks": [
+    {
+      "classification": "RED_REPRODUCED_DESTRUCTIVE_ELIGIBILITY_DEFECT_2_TESTS",
+      "receiptSha256": "1223bcd4974c4081957422a30473c4814b32a71d45dd5a40b8495dda8c325cbc",
+      "command": [
+        "pnpm",
+        "--filter",
+        "@insignia/database",
+        "exec",
+        "vitest",
+        "run",
+        "test/webhook-retention.test.ts",
+        "-t",
+        "unsigned uninstall topic"
+      ],
+      "startedAt": "2026-10-09T17:41:34.547714+00:00",
+      "completedAt": "2026-10-09T17:41:36.097810+00:00",
+      "exitCode": 1,
+      "log": "mixed-body-red.log",
+      "sha256": "2588085a78eda3954620e7404b404617c4337bfda8b311d47a5bf458a2d04401",
+      "bytes": 2325,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "PASS_2_MIXED_PENDING_PROCESSED_CONTROLS",
+      "receiptSha256": "367d8f5ad34203ce8f0066afd405e41261fdd2d80d02051722f2c03791763f9b",
+      "command": [
+        "pnpm",
+        "--filter",
+        "@insignia/database",
+        "exec",
+        "vitest",
+        "run",
+        "test/webhook-retention.test.ts",
+        "-t",
+        "unsigned uninstall topic"
+      ],
+      "startedAt": "2026-10-09T17:42:30.169134+00:00",
+      "completedAt": "2026-10-09T17:42:31.719245+00:00",
+      "exitCode": 0,
+      "log": "mixed-body-green.log",
+      "sha256": "367c6f65b0f2c73fd8c70bfa4ab4f4e86d9e7b80cca6650b6b22d910f1858133",
+      "bytes": 230,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "PASS_19_RETENTION_CONTROLS",
+      "receiptSha256": "fdbdb01174e1257a01407ad426ce2880252119e8f5e3e16c23454620ef4967ac",
+      "command": [
+        "pnpm",
+        "--filter",
+        "@insignia/database",
+        "exec",
+        "vitest",
+        "run",
+        "test/webhook-retention.test.ts"
+      ],
+      "startedAt": "2026-10-09T17:43:16.567906+00:00",
+      "completedAt": "2026-10-09T17:43:22.004476+00:00",
+      "exitCode": 0,
+      "log": "database-retention-green.log",
+      "sha256": "f75881d4943651e50a50d7f60939e82208b893d3ff9b1ccbeda4a044e54debba",
+      "bytes": 216,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "PASS_219_PG18_TESTS_0_SKIP",
+      "receiptSha256": "a5d076fc4cf4c4355041baf78226c301e8b931f186a2d7ba14c37441ae09c79b",
+      "command": [
+        "pnpm",
+        "test:database"
+      ],
+      "startedAt": "2026-10-09T17:45:14.918795+00:00",
+      "completedAt": "2026-10-09T17:45:32.871817+00:00",
+      "exitCode": 0,
+      "log": "database-full.log",
+      "sha256": "9f405bbe984d0b48c2ab56fd5f2ee8aecaa796c11ffae3450cce2a5c2c71ad1d",
+      "bytes": 284,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "PASS_FULL_ROOT_WITH_REAL_PG18_SCRAM_WORKER_28_0_SKIP",
+      "receiptSha256": "2c7316bc2d2d6ac8c7fa223b939a168734ff6ab10a305633a50e969b68367b9a",
+      "command": [
+        "pnpm",
+        "check"
+      ],
+      "startedAt": "2026-10-09T17:46:34.512476+00:00",
+      "completedAt": "2026-10-09T17:49:51.782438+00:00",
+      "exitCode": 0,
+      "log": "root-full.log",
+      "sha256": "9ad68e9f14632f8d459711ccda95976fea7cd495a9ab0c0ca831a60573f5cceb",
+      "bytes": 167362,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "PASS_2_REAL_QUEUE_PROCESS_CRASH_CONTROLS",
+      "receiptSha256": "e131ad5035a9a216a6852c74874d2d5f3bf5157dbfcb79908ea9fff9e617c95b",
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "scripts/m5-024/queue-privileges.test.mjs",
+        "scripts/m5-024/crash-recovery.test.mjs"
+      ],
+      "startedAt": "2026-10-09T17:50:09.452081+00:00",
+      "completedAt": "2026-10-09T17:50:30.504585+00:00",
+      "exitCode": 0,
+      "log": "queue-controls.log",
+      "sha256": "f070475f120467d57acfbda49c48da87ad65978e20438d4e90416baa585c254b",
+      "bytes": 1945,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "RED_PRESERVED_GENERIC_UNINSTALL_SECURITY_ASSERTION",
+      "receiptSha256": "67902012385097cd463c86e9451986997c557b209d4f9459d553a7a21dfd4710",
+      "command": [
+        "env",
+        "M5_025_REQUIRE_SAFE_UNINSTALL=1",
+        "node",
+        "--test",
+        "apps/web/test/uninstall-authority.test.mjs"
+      ],
+      "startedAt": "2026-10-09T17:50:20.270757+00:00",
+      "completedAt": "2026-10-09T17:50:35.254280+00:00",
+      "exitCode": 1,
+      "log": "hard-uninstall-red.log",
+      "sha256": "8e36e309352f29321835e76c70a9a49a6cfb2bc9c811cfafad6eb775323446ee",
+      "bytes": 1096,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "RED_UNNECESSARY_ERASURE_GRANT",
+      "receiptSha256": "c58fbd042fa167d0f5d8a3b7f35eac83757a8dcea59a14113d897ed2d14ff02a",
+      "command": [
+        "node",
+        "--test",
+        "--test-name-pattern=restricted consumer",
+        "apps/worker/test/webhook-retention.test.mjs"
+      ],
+      "startedAt": "2026-10-09T17:44:28.571342+00:00",
+      "completedAt": "2026-10-09T17:44:30.033707+00:00",
+      "exitCode": 1,
+      "log": "erasure-grant-red.log",
+      "sha256": "a5404747e33a787b17b2b14343707b22e5e2e3aeca86ee094731bdb37b00e6d9",
+      "bytes": 1546,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "PASS_REAL_PERMISSION_DENIAL",
+      "receiptSha256": "f17b444629b824681e1cfe48adac699f8b2a5cfe4f8203a439b66ab10851dff1",
+      "command": [
+        "node",
+        "--test",
+        "--test-name-pattern=restricted consumer",
+        "apps/worker/test/webhook-retention.test.mjs"
+      ],
+      "startedAt": "2026-10-09T17:44:58.743437+00:00",
+      "completedAt": "2026-10-09T17:45:00.098531+00:00",
+      "exitCode": 0,
+      "log": "erasure-grant-green.log",
+      "sha256": "77aeac5c82d41f66b1323445ea8ee5f65be103e419c1a12c5f953c3f8d5983e5",
+      "bytes": 760,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "PASS_PORTABLE_BUILD_NOT_DOCKER_IMAGE",
+      "receiptSha256": "2ba078dabd69bf5fb3b92f574e644f097fa9efd5c45e61d3a791223e5774fac7",
+      "command": [
+        "bash",
+        "scripts/m5-024/build-worker.sh",
+        "/home/serveradmin/insignia-m5-retention-scram-checks/portable-worker-qualified"
+      ],
+      "startedAt": "2026-10-09T17:51:11.034298+00:00",
+      "completedAt": "2026-10-09T17:51:32.959665+00:00",
+      "exitCode": 0,
+      "log": "portable-new-build.log",
+      "sha256": "0b5c1217150d73934cfc0e73d47e3e09f30fb997f46d13eadb9dcc2d4e33ee76",
+      "bytes": 3461,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "PASS_2_REAL_PORTABLE_PROCESS_GUARDS_NOT_NATIVE_OS_ISOLATION",
+      "receiptSha256": "d5bd35732b338224476dcae055e1b59faaf9637af4a255a91739a37a1c313556",
+      "command": [
+        "env",
+        "-u",
+        "LD_LIBRARY_PATH",
+        "M5_WORKER_PACKAGE_ENTRY=/home/serveradmin/insignia-m5-retention-scram-checks/portable-worker-qualified/dist/main.js",
+        "node",
+        "--test",
+        "scripts/m5-024/worker-guards.test.mjs",
+        "scripts/m5-024/portable-process.test.mjs"
+      ],
+      "startedAt": "2026-10-09T17:51:58.108468+00:00",
+      "completedAt": "2026-10-09T17:52:10.820552+00:00",
+      "exitCode": 0,
+      "log": "portable-controls.log",
+      "sha256": "73c6a74ba8db749b95936a5ae6ba4d2721493e990e2662940656a7be2a49d02a",
+      "bytes": 337,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    },
+    {
+      "classification": "EXPECTED_NEGATIVE_RENDERER_CONTROL",
+      "receiptSha256": "7391edc6110664a21e247d60ece164bb066b4e897c361f45f73645d0ec08d973",
+      "command": [
+        "pnpm",
+        "test:m5-renderer-control"
+      ],
+      "startedAt": "2026-10-09T17:51:59.262540+00:00",
+      "completedAt": "2026-10-09T17:52:05.933967+00:00",
+      "exitCode": 0,
+      "log": "corrected-renderer.log",
+      "sha256": "901cb17307ab0868006034c782a852ca13e5a8f38496361f2a303c03a7744e95",
+      "bytes": 1262,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY"
+    }
+  ],
+  "resourceClosure": {
+    "scope": "NEW_OWNED_SYNTHETIC_PG18_ONLY",
+    "dataDirectory": "/home/serveradmin/insignia-m5-retention-scram-checks/pgdata",
+    "port": 55448,
+    "verifiedRunningBeforeStop": 0,
+    "stopExitCode": 0,
+    "verifiedStoppedStatusCode": 3,
+    "postmasterPidAbsent": true,
+    "portBindable": true,
+    "closedAt": "2026-10-09T17:53:14.536148+00:00",
+    "historicalClosedClustersReopened": false,
+    "nativeProviderOrProductionAccess": false
+  },
+  "resourceClosureSha256": "d2e0e915dfbc71692764b8a12be16470ddd40de5bf386725383f79bbda0913f8",
+  "portableExecutableInventorySha256": "5ad9b8b414efc5edf139688ae2d3712502e73336f8308b618b9abb91daa9f03b",
+  "portableEntrySha256": "0a3c8839b286874a07211a222326b86449043198cfbb921a85563bc2422b044e",
+  "privateArtifactRoot": "/home/serveradmin/insignia-m5-retention-scram-checks",
+  "scramDiagnosis": "writer-diagnosis/DIAGNOSIS.md",
+  "scramFixtureHistoricalReceiptSha256": "e2d3b2028cb2f26ee2103335e647e677644aca22d34c2677584c8234036f7cb9",
+  "historicalManifestsByteIdentical": [
+    "local-checks.json",
+    "correction-local-checks.json",
+    "parent-local-checks.json",
+    "eligibility-advisory/manifest.json",
+    "integration/new-base-checks.json"
+  ],
+  "reusedPublicationStress": {
+    "classification": "REUSED_UNCHANGED_PUBLICATION_PATH_ONLY_400_OF_400_NOT_FRESH_FINAL_SOURCE_STRESS",
+    "basis": "No publication/editor/availability/activation source changes in this correction. New full root requalifies canonical browser/activation paths; changed expiry maintenance is not invoked by publication stress. Prior stress source/run remains historical; exact-head CI performs its natural stress workflow.",
+    "originalChecks": [
+      {
+        "name": "parent-stress-serialized",
+        "classification": "PASS_400_OF_400_ZERO_SKIPPED",
+        "receipt": "parent-stress-serialized.receipt.json",
+        "receiptSha256": "b985067046fb015ee579c9bb2021ca1b309488d65b6110e407143245f9c9d3a0",
+        "log": "parent-stress-serialized.log",
+        "actualLogSha256": "bbc90a6f2558f124ea92644d426c369836a9189a63fe0171d0c2959ccaa298c7",
+        "exitCode": 0,
+        "command": [
+          "env",
+          "M5_PUBLICATION_STRESS_ITERATIONS=100",
+          "pnpm",
+          "--filter",
+          "@insignia/web",
+          "exec",
+          "node",
+          "--test",
+          "--test-name-pattern=publication (success|failed) preserves",
+          "test/admin/editor-browser.test.mjs"
+        ]
+      }
+    ]
+  },
+  "redInputLimit": "Mixed-body RED adds regression tests to the rejected runtime before correction; raw log retained, exact full uncommitted pre-correction test snapshot was not separately retained. Runtime source is the rejected commit.",
+  "limits": [
+    "No native/provider/VPS/production accesses",
+    "No production deployment or role changes",
+    "No new uninstall generation authority or privacy fulfillment",
+    "No Docker/PID1/native OS isolation proof",
+    "Raw/tombstone/routing retention and external copies remain unqualified",
+    "Native phase NOT_STARTED; host setup owner action pending; existing Admin credential unavailable",
+    "No legitimate commercial configuration established",
+    "No M5/G7 acceptance"
+  ]
+}

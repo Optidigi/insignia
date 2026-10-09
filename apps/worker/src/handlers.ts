@@ -77,6 +77,7 @@ export async function maintainWebhookRetention(core: DurableCore, queue: PgBossR
   for (const [category, count] of [
     ['TransientPayloadExpiredUnresolved', result.unresolvedExpiredIds.length],
     ['PrivacyRetentionBlocked', result.blockedPrivacyIds.length],
+    ['UninstallPayloadRetentionBlocked', result.blockedUninstallIds.length],
     ['UnknownPayloadRetentionBlocked', result.blockedUnknownIds.length],
     ['UnsupportedPayloadRetentionBlocked', result.blockedUnsupportedIds.length],
   ] as const) {

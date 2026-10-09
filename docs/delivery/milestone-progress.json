@@ -86,7 +86,7 @@
       "scope": "BOUNDED_READ_ONLY",
       "evidence": "evidence/m5-native-inventory/owner-readonly-allocation.json",
       "ownerReply": "you have full acess yes",
-      "localTechnicalGate": "R1 CHANGES_REQUIRED; corrected local controls PASS, fresh review/CI pending; native NOT_STARTED"
+      "localTechnicalGate": "PR60 normally merged after actual R5 CLEAR/CLEAR and 10 natural exact-head attempt-1 successes; native NOT_STARTED"
     }
   ],
   "ownerInputs": [
@@ -96,26 +96,26 @@
     "Commercial configuration unknown; owner delegates factual investigation",
     "Any later provisioning/deployment/mutation requires exact separate owner resource envelope"
   ],
-  "nextSafeAction": "Complete and independently qualify combined native/host metadata collectors, freeze exact CI/source, renew restricted host access, execute only granted read-only subset; investigate commercial configuration without invention.",
+  "nextSafeAction": "Qualify PR61 corrected source/reviews/CI while owner installs already-authorized forced-command key; execute only granted bounded native reads after actual access proof; establish real commercial facts.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
     "slice": "Transient webhook retention/queue recovery",
-    "status": "IMPLEMENTING_OFFLINE_NOT_QUALIFIED",
+    "status": "R1_REVIEW_CORRECTION_IN_PROGRESS",
     "worktree": "Separate feat/m5-transient-webhook-retention branch",
-    "purpose": "Existing raw deadlines, durable bounded handoff/exhaustion and truthful unresolved privacy; not uninstall authority/privacy complete",
+    "purpose": "Deadline effect fences and finite durable queue budget; all unqualified raw erasure deferred; uninstall authority/privacy incomplete",
     "nativeAuthority": "NONE; no production SQL/deployment"
   },
   "activeCandidate": {
-    "pr": 60,
-    "scope": "Bounded read-only inventory tools; native not started",
-    "r1Head": "6f899be0a0eb226bb257d99be249a9e4a86fa54d",
+    "pr": 61,
+    "scope": "Offline retention deadline/queue safeguards; no production authority",
+    "r1Head": "e20c3e904fc5940b41892265d788ed1046b8160c",
     "r1Reviews": "CHANGES_REQUIRED / CHANGES_REQUIRED",
-    "r1Ci": "10/10 attempt-1 SUCCESS",
-    "correction": "Token FIFO/socket reader supervised; SSH identity path literal allowlist; actual RED/GREEN preserved",
-    "next": "Fresh independent reviews and exact-head CI before native access"
+    "r1Ci": "10 SUCCESS / 1 FAILURE, all attempt-1",
+    "correction": "All unqualified raw erasure deferred with bounded alerts; unnecessary erase grants revoked; real SCRAM disposable-role fixtures corrected",
+    "next": "Fresh independent completed-change reviews and natural exact-head CI before local acceptance"
   },
   "boundedInventoryTooling": {
     "pr": 60,

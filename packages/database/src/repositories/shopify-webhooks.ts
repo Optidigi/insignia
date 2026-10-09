@@ -13,6 +13,7 @@ export type WebhookPayloadErasure = {
   erasedIds: string[];
   unresolvedExpiredIds: string[];
   blockedPrivacyIds: string[];
+  blockedUninstallIds: string[];
   blockedUnknownIds: string[];
   blockedUnsupportedIds: string[];
 };
@@ -374,42 +375,35 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
           .orderBy('inbox.purge_after', 'asc')
           .orderBy('inbox.id', 'asc')
           .limit(limit);
-        // Separate bounded blocker accounting from eligible work so an old
-        // unresolved or unsupported row cannot prevent subsequent uninstall erasure.
+        // Header labels are diagnostics only, never erasure authority. No
+        // body-bound obligation capture/discard qualification exists yet, even
+        // for processed uninstall-labelled receipts. Preserve every raw body.
         const blocked = await expiredQuery
           .where((eb) => eb.or([eb('delivery.topic', 'is', null), eb('delivery.topic', '!=', 'app/uninstalled')]))
           .execute();
-        const eligible = await expiredQuery
+        const uninstall = await expiredQuery
           .where('delivery.topic', '=', 'app/uninstalled')
           .forUpdate('inbox')
           .skipLocked()
           .execute();
-        // No qualified obligation mapping/capture exists for privacy or deferred
-        // business topics. Losing their only subject/economic facts would abandon
-        // work. Leave deadlines overdue and report blockers; this is not a waiver.
-        const erasedIds = eligible.map((row) => row.id);
-        if (erasedIds.length) {
-          await tx
-            .updateTable('inbox_messages')
-            .set({
-              payload: Buffer.alloc(0),
-              erasure_state: 'erased',
-              state: sql`CASE WHEN state='processed' THEN state ELSE 'failed' END`,
-              last_error_class: sql`CASE WHEN state='processed' THEN last_error_class ELSE 'transient_payload_expired' END`,
-              lease_owner: null,
-              lease_until: null,
-            })
-            .where('id', 'in', erasedIds)
-            .execute();
+        // Deadline exclusion already forbids execution. Cleaning only the exact
+        // associated ID-only job loses no raw obligation facts; it neither erases
+        // the inbox nor declares the unresolved work fulfilled.
+        if (uninstall.length) {
           await tx
             .updateTable('shopify_webhook_deliveries')
             .set({ queue_cleanup_pending: true })
-            .where('inbox_id', 'in', erasedIds)
+            .where(
+              'inbox_id',
+              'in',
+              uninstall.map((row) => row.id),
+            )
             .execute();
         }
         return {
-          erasedIds,
-          unresolvedExpiredIds: eligible.filter((row) => row.state !== 'processed').map((row) => row.id),
+          erasedIds: [],
+          unresolvedExpiredIds: uninstall.filter((row) => row.state !== 'processed').map((row) => row.id),
+          blockedUninstallIds: uninstall.map((row) => row.id),
           blockedPrivacyIds: blocked
             .filter((row) => row.topic !== null && PRIVACY_TOPICS.includes(row.topic))
             .map((row) => row.id),

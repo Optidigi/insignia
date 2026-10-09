@@ -116,7 +116,8 @@ test(
         ])
       ).rows;
       const result = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
-      assert.deepEqual(result.erasedIds, [f.receipt.id]);
+      assert.deepEqual(result.erasedIds, []);
+      assert.deepEqual(result.blockedUninstallIds, [f.receipt.id]);
       assert.equal(result.blockedUnsupportedIds.length, 100);
       assert.deepEqual(result.blockedPrivacyIds, []);
       assert.deepEqual(result.blockedUnknownIds, []);
@@ -237,48 +238,53 @@ test(
   },
 );
 
-test('real pg-boss expiry maintenance erases bytes and removes only exact associated jobs', postgres, async () => {
-  const f = await fixture();
-  try {
-    await f.queue.ensureWebhookEnqueued(f.receipt.id);
-    const refreshId = await f.queue.enqueueRefresh(randomUUID(), 1);
-    const unrelatedId = randomUUID();
-    await f.boss.send(WEBHOOK_QUEUE, { inboxId: unrelatedId }, { id: unrelatedId });
-    await f.pool.query(
-      `UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=$1`,
-      [f.receipt.id],
-    );
-    await new Promise((resolve) => setTimeout(resolve, 40));
-    const result = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
-    assert.ok(result.erasedIds.includes(f.receipt.id));
-    assert.ok(result.unresolvedExpiredIds.includes(f.receipt.id));
-    assert.ok(result.cleanedIds.includes(f.receipt.id));
-    assert.deepEqual(await f.boss.findJobs(WEBHOOK_QUEUE, { id: f.receipt.id }), []);
-    assert.equal((await f.boss.findJobs(REFRESH_QUEUE, { id: refreshId })).length, 1);
-    assert.equal((await f.boss.findJobs(WEBHOOK_QUEUE, { id: unrelatedId })).length, 1);
-    assert.equal(
-      (await f.pool.query('SELECT octet_length(payload) AS bytes FROM inbox_messages WHERE id=$1', [f.receipt.id]))
-        .rows[0].bytes,
-      0,
-    );
-    await assert.rejects(f.queue.ensureWebhookEnqueued(f.receipt.id), /expired/);
-    const handlers = durableHandlers.createDurableWorkerHandlers(f.core, {
-      async refresh() {
-        throw new Error('unexpected refresh');
-      },
-    });
-    assert.equal(
-      await handlers.processInbox(f.receipt.id, {
-        jobId: f.receipt.id,
-        attempt: 0,
-        signal: new AbortController().signal,
-      }),
-      'expired',
-    );
-  } finally {
-    await f.close();
-  }
-});
+test(
+  'real pg-boss expiry maintenance preserves sole facts and removes only exact associated jobs',
+  postgres,
+  async () => {
+    const f = await fixture();
+    try {
+      await f.queue.ensureWebhookEnqueued(f.receipt.id);
+      const refreshId = await f.queue.enqueueRefresh(randomUUID(), 1);
+      const unrelatedId = randomUUID();
+      await f.boss.send(WEBHOOK_QUEUE, { inboxId: unrelatedId }, { id: unrelatedId });
+      await f.pool.query(
+        `UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '20 milliseconds' WHERE id=$1`,
+        [f.receipt.id],
+      );
+      await new Promise((resolve) => setTimeout(resolve, 40));
+      const result = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
+      assert.deepEqual(result.erasedIds, []);
+      assert.ok(result.blockedUninstallIds.includes(f.receipt.id));
+      assert.ok(result.unresolvedExpiredIds.includes(f.receipt.id));
+      assert.ok(result.cleanedIds.includes(f.receipt.id));
+      assert.deepEqual(await f.boss.findJobs(WEBHOOK_QUEUE, { id: f.receipt.id }), []);
+      assert.equal((await f.boss.findJobs(REFRESH_QUEUE, { id: refreshId })).length, 1);
+      assert.equal((await f.boss.findJobs(WEBHOOK_QUEUE, { id: unrelatedId })).length, 1);
+      assert.equal(
+        (await f.pool.query('SELECT octet_length(payload) AS bytes FROM inbox_messages WHERE id=$1', [f.receipt.id]))
+          .rows[0].bytes,
+        Buffer.byteLength(JSON.stringify({ id: '123', myshopify_domain: null })),
+      );
+      await assert.rejects(f.queue.ensureWebhookEnqueued(f.receipt.id), /expired/);
+      const handlers = durableHandlers.createDurableWorkerHandlers(f.core, {
+        async refresh() {
+          throw new Error('unexpected refresh');
+        },
+      });
+      assert.equal(
+        await handlers.processInbox(f.receipt.id, {
+          jobId: f.receipt.id,
+          attempt: 0,
+          signal: new AbortController().signal,
+        }),
+        'expired',
+      );
+    } finally {
+      await f.close();
+    }
+  },
+);
 
 test('real pg-boss worker failure output excludes arbitrary payload-bearing errors', postgres, async () => {
   const f = await fixture();
@@ -346,6 +352,7 @@ test('real pg-boss terminal retry metadata cannot be reset or recreated', postgr
 test('restricted consumer grants permit only required retention and queue metadata writes', postgres, async () => {
   const f = await fixture();
   const role = `retention_${randomUUID().replaceAll('-', '')}`;
+  const testPassword = randomUUID().replaceAll('-', '');
   let restrictedCore;
   let restrictedQueue;
   let restrictedPool;
@@ -354,10 +361,11 @@ test('restricted consumer grants permit only required retention and queue metada
       await readFile(new URL('../../../scripts/m5-024/queue-roles.sql', import.meta.url), 'utf8')
     ).replaceAll('pgboss', f.schema);
     await f.pool.query(grants);
-    await f.pool.query(`CREATE ROLE ${role} LOGIN; GRANT insignia_queue_consume TO ${role}`);
+    await f.pool.query(`CREATE ROLE ${role} LOGIN PASSWORD '${testPassword}'; GRANT insignia_queue_consume TO ${role}`);
     const url = new URL(f.connectionString);
     url.username = role;
-    url.password = '';
+    // Disposable synthetic credentials work with both local trust and CI SCRAM.
+    url.password = testPassword;
     restrictedPool = new Pool({ connectionString: url.href });
     restrictedCore = createDurableCore(new Pool({ connectionString: url.href }));
     restrictedQueue = createPgBossRuntime({
@@ -374,9 +382,12 @@ test('restricted consumer grants permit only required retention and queue metada
     );
     await new Promise((resolve) => setTimeout(resolve, 40));
     const result = await durableHandlers.maintainWebhookRetention(restrictedCore, restrictedQueue);
-    assert.ok(result.erasedIds.includes(f.receipt.id));
+    assert.deepEqual(result.erasedIds, []);
+    assert.ok(result.blockedUninstallIds.includes(f.receipt.id));
     assert.ok(result.cleanedIds.includes(f.receipt.id));
     for (const statement of [
+      "UPDATE inbox_messages SET payload=''::bytea WHERE false",
+      "UPDATE inbox_messages SET erasure_state='erased' WHERE false",
       'UPDATE inbox_messages SET purge_after=clock_timestamp()',
       'UPDATE inbox_messages SET collected_at=clock_timestamp()',
       "UPDATE inbox_messages SET payload_sha256=repeat('a',64)",
@@ -445,6 +456,7 @@ test(
   async () => {
     const f = await fixture();
     const role = `retention_producer_${randomUUID().replaceAll('-', '')}`;
+    const testPassword = randomUUID().replaceAll('-', '');
     let producerCore;
     let producerQueue;
     let producerPool;
@@ -455,10 +467,12 @@ test(
           f.schema,
         ),
       );
-      await f.pool.query(`CREATE ROLE ${role} LOGIN; GRANT insignia_queue_enqueue TO ${role}`);
+      await f.pool.query(
+        `CREATE ROLE ${role} LOGIN PASSWORD '${testPassword}'; GRANT insignia_queue_enqueue TO ${role}`,
+      );
       const url = new URL(f.connectionString);
       url.username = role;
-      url.password = '';
+      url.password = testPassword;
       producerPool = new Pool({ connectionString: url.href });
       producerCore = createDurableCore(new Pool({ connectionString: url.href }));
       producerQueue = createPgBossRuntime({
