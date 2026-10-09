@@ -70,5 +70,88 @@
     "historicalTests": "PROVENANCE_REUSED_NOT_RERUN",
     "buildReason": "Generated artifacts required by existing secret check",
     "styleDiagnostics": "Existing warnings/information retained; exit0"
-  }
+  },
+  "architecture-history-red": {
+    "command": [
+      "python3",
+      "-B",
+      "spikes/m0-007/scripts/check-history.py"
+    ],
+    "startedAt": "2026-10-09T14:18:03.219675+00:00",
+    "exitCode": 1,
+    "log": "architecture-history-red.log",
+    "sha256": "7f8dd7454bbaa60302da687a4b3f7179d26d29f96b062ce9a11918e9c8a81eed",
+    "bytes": 424
+  },
+  "architecture-history-green": {
+    "command": [
+      "python3",
+      "-B",
+      "spikes/m0-007/scripts/check-history.py"
+    ],
+    "startedAt": "2026-10-09T14:18:44.608135+00:00",
+    "exitCode": 0,
+    "log": "architecture-history-green.log",
+    "sha256": "2f7449966db373e8189785c42ef491ec89499e1238a05af31311613aa825e466",
+    "bytes": 2457
+  },
+  "historical-artifacts": {
+    "command": [
+      "python3",
+      "-B",
+      "spikes/m0-006/scripts/check-evidence.py"
+    ],
+    "startedAt": "2026-10-09T14:18:44.861429+00:00",
+    "exitCode": 0,
+    "log": "historical-artifacts.log",
+    "sha256": "191dc620d5779368b4812a0e0f4ac8b400287838645984ae4eb16957ae675cdc",
+    "bytes": 89
+  },
+  "style-corrected": {
+    "command": [
+      "corepack",
+      "pnpm",
+      "check:style"
+    ],
+    "startedAt": "2026-10-09T14:19:28.025959+00:00",
+    "exitCode": 0,
+    "log": "style-corrected.log",
+    "sha256": "7754a87730f8d6d788c0c3ad0347f75ab9243ab7713c68e6987fcf3dfb4a3c04",
+    "bytes": 13151
+  },
+  "secrets-corrected": {
+    "command": [
+      "corepack",
+      "pnpm",
+      "check:secrets"
+    ],
+    "startedAt": "2026-10-09T14:19:28.952581+00:00",
+    "exitCode": 0,
+    "log": "secrets-corrected.log",
+    "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+    "bytes": 206
+  },
+  "architectureNegativeControls": {
+    "command": "Temporary unauthorized-byte probes against actual check-history.py; restored originals in finally",
+    "result": "PASS_2_NEGATIVE_CONTROLS",
+    "cases": [
+      {
+        "path": "docs/architecture/implementation-plan.md",
+        "exitCode": 1,
+        "classification": "EXPECTED_NEGATIVE_UNAUTHORIZED_BYTE_CHANGE",
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "3a7754187c277411796e10be6feaad3fc32627d554f81d886644568ff8bf5bdc"
+      },
+      {
+        "path": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
+        "exitCode": 1,
+        "classification": "EXPECTED_NEGATIVE_UNAUTHORIZED_BYTE_CHANGE",
+        "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stderrSha256": "c0f003e8a1c83aa2ee68eb02d81d24453cf161279be991abf9fff067127bb679"
+      }
+    ],
+    "sourceRestored": true,
+    "liveRequests": 0
+  },
+  "architectureGuardCorrection": "Initial natural exact-head CI rejected authorized plan amendment against v1.4 current hashes. Preserve old current v1.4/M5-017 as fixed 7bfba46 archive, pin owner-amended v1.5 bytes and owner authority. No historic hash or technical criterion weakened."
 }

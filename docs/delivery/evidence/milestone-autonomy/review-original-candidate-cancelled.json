@@ -1,0 +1,9 @@
+{
+  "head": "6991168656c240fc2c2b5e93b2a27a1d3764aadf",
+  "status": "CANCELLED_CANDIDATE_CORRECTION_REQUIRED",
+  "reason": "Exact-head CI exposed frozen architecture checker v1.4 binding; source checker update and new completed-change reviews required. No cancelled review carries CLEAR forward.",
+  "processesStopped": [
+    2705348,
+    2705349
+  ]
+}

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Verify frozen receipts plus v1.1/v1.2/v1.3 archives and the v1.4 record.
+"""Verify frozen receipts, architecture archives and the owner-amended v1.5 record.
 
-Each archived version is checked at its fixed merge. Current v1.4 plus M5-017 hashes are
+Each archived version is checked at its fixed merge. Current v1.5 governance plus M5-017 hashes are
 explicit constants, never learned from the working files being checked.
 """
 
@@ -75,11 +75,26 @@ for path, expected in pre_m5_017_architecture.items():
     archived = subprocess.check_output(["git", "show", f"{M5_017_BASE}:{path}"], cwd=REPO)
     assert digest(archived) == expected, f"pre-M5-017 architecture mismatch: {path}"
 
-current_architecture = {
+pre_autonomy_architecture = {
     "docs/architecture/implementation-plan.md": "c4425cf88b3ef4131f114d54ba367d8a285b340a2e3c1a2182b9172d313d0822",
     "docs/architecture/decision-ledger.md": "ed8390b3337ce179c5afc810f08cd012ed8ab55ba3ae4a8a67e08fd144ec8f96",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
 }
+# Owner-authorized delivery amendment retains the complete prior technical record.
+PRE_AUTONOMY_BASE = "7bfba46e79ff2f9208d13f5712918f357b5836b4"
+for path, expected in pre_autonomy_architecture.items():
+    archived = subprocess.check_output(["git", "show", f"{PRE_AUTONOMY_BASE}:{path}"], cwd=REPO)
+    assert digest(archived) == expected, f"pre-autonomy architecture mismatch: {path}"
+
+current_architecture = {
+    "docs/architecture/implementation-plan.md": "3abb753e608907122f81f37143d131ce61244b74a7c4a3396cc1cc6c44bbf38f",
+    "docs/architecture/decision-ledger.md": "c453be74606f1b122c27b8b43169f61c6ca6f9f04e9858f112070bd3a33dc4c2",
+    "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+}
+OWNER_AUTHORITY = "docs/delivery/authority/milestone-autonomy-2026-10-09.md"
+OWNER_AUTHORITY_SHA256 = "710cda826d77a712a89c791cc5d71144c215b2c7eebe6ce9f689638ba405a327"
+assert digest((REPO / OWNER_AUTHORITY).read_bytes()) == OWNER_AUTHORITY_SHA256, "owner authority mismatch"
+
 for path, expected in current_architecture.items():
     assert digest((REPO / path).read_bytes()) == expected, f"current approved architecture mismatch: {path}"
 print(json.dumps({
@@ -95,6 +110,10 @@ print(json.dumps({
     "archivedV1_3Sha256": v1_3_architecture,
     "preM5_017Ref": M5_017_BASE,
     "preM5_017Sha256": pre_m5_017_architecture,
-    "currentArchitectureVersion": "1.4 + M5-017",
+    "preAutonomyRef": PRE_AUTONOMY_BASE,
+    "preAutonomySha256": pre_autonomy_architecture,
+    "ownerAuthority": OWNER_AUTHORITY,
+    "ownerAuthoritySha256": OWNER_AUTHORITY_SHA256,
+    "currentArchitectureVersion": "1.5 delivery amendment + M5-017",
     "currentArchitectureSha256": current_architecture,
 }, sort_keys=True))
