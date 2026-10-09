@@ -19,8 +19,8 @@ Update these refs after the final commit, in the PR body. Changed refs require r
 
 CI run:
 Real-store/gate evidence (or NOT_RUN):
-Local spec review:
-Local correctness review:
+Independent Spec/correctness review:
+Independent Standards/security review:
 
 ## Risk and compatibility
 
@@ -29,8 +29,13 @@ Pricing/security/retention impact:
 Known limitations:
 Cleanup:
 
-## Principal review
+## Local acceptance and integration
 
-Principal verdict/reference: PENDING
-Gate acceptance: PENDING / NOT_APPLICABLE
-No merge or dependent next slice until the required SHA-bound principal review and human merge authorization.
+Local verdict/evidence: PENDING
+Both independent reviews CLEAR; required exact-head checks/CI successful:
+Delegated normal merge receipt (ordered parents/tree/main):
+Continue the active milestone after qualified local acceptance and normal merge under `docs/delivery/operating-model.md`. Preserve repository-enforced approvals and owner resource permissions.
+
+## Milestone boundary
+
+Milestone acceptance remains PENDING until its complete integrated requirements qualify and the principal accepts the exact cumulative candidate. Ordinary internal PRs do not need an external principal verdict. Stop before the next milestone.

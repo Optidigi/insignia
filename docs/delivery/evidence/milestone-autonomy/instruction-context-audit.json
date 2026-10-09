@@ -20,7 +20,8 @@
     "docs/agents/issue-tracker.md",
     "docs/delivery/templates/slice-brief.md",
     "docs/delivery/templates/review-packet.md",
-    "docs/delivery/templates/gate-evidence.md"
+    "docs/delivery/templates/gate-evidence.md",
+    ".github/PULL_REQUEST_TEMPLATE.md"
   ],
   "projectRuntimeRequest": {
     "model": "gpt-6.1-sol",
@@ -33,5 +34,6 @@
   "isolationLimit": "Filesystem read-only only, credential/connector/network isolation not claimed",
   "contextIntegrity": "59 exact source blobs and pretransition state hash verified",
   "bootstrapTests": "8/8 PASS; local-only package tools; source scripts unmodified",
-  "productionAccess": "NOT_USED_NOT_GRANTED"
+  "productionAccess": "NOT_USED_NOT_GRANTED",
+  "round2Finding": "Default GitHub PR template was missed; corrected before local acceptance"
 }

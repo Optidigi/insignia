@@ -153,5 +153,41 @@
     "sourceRestored": true,
     "liveRequests": 0
   },
-  "architectureGuardCorrection": "Initial natural exact-head CI rejected authorized plan amendment against v1.4 current hashes. Preserve old current v1.4/M5-017 as fixed 7bfba46 archive, pin owner-amended v1.5 bytes and owner authority. No historic hash or technical criterion weakened."
+  "architectureGuardCorrection": "Initial natural exact-head CI rejected authorized plan amendment against v1.4 current hashes. Preserve old current v1.4/M5-017 as fixed 7bfba46 archive, pin owner-amended v1.5 bytes and owner authority. No historic hash or technical criterion weakened.",
+  "style-final": {
+    "command": [
+      "corepack",
+      "pnpm",
+      "check:style"
+    ],
+    "startedAt": "2026-10-09T14:33:04.533614+00:00",
+    "exitCode": 0,
+    "log": "style-final.log",
+    "sha256": "1f484986d7203181d251c9a86dca6f42148de69d48e61acafd67c863585a1072",
+    "bytes": 13151
+  },
+  "secrets-final": {
+    "command": [
+      "corepack",
+      "pnpm",
+      "check:secrets"
+    ],
+    "startedAt": "2026-10-09T14:33:05.443736+00:00",
+    "exitCode": 0,
+    "log": "secrets-final.log",
+    "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+    "bytes": 206
+  },
+  "architecture-history-final": {
+    "command": [
+      "python3",
+      "-B",
+      "spikes/m0-007/scripts/check-history.py"
+    ],
+    "startedAt": "2026-10-09T14:33:05.667307+00:00",
+    "exitCode": 0,
+    "log": "architecture-history-final.log",
+    "sha256": "2f7449966db373e8189785c42ef491ec89499e1238a05af31311613aa825e466",
+    "bytes": 2457
+  }
 }
