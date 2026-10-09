@@ -382,5 +382,12 @@
     "Generic unexpired uninstall security invariant still RED; passing characterization does not authorize deactivation",
     "Privacy/unknown/unsupported raw receipts remain overdue and unfulfilled; no retention deadline waiver or production readiness",
     "No production SQL, deployment, provider credentials, native subscription changes or M5/G7 PASS"
-  ]
+  ],
+  "candidateDocumentationChange": {
+    "path": "docs/delivery/M5-TRANSIENT-WEBHOOK-RETENTION.md",
+    "sha256": "223ac4c746ea0ccc43e542e724abbe6708782376e51a7bf30514662e29b0a443",
+    "reason": "Correct routine technical obligation-processor ownership to delegated orchestrator; substantive missing retention basis, currentness risk and external resources remain exceptions",
+    "runtimeBytesChangedAfterChecks": false,
+    "historicalWriterAndCorrectionManifestChanged": false
+  }
 }
