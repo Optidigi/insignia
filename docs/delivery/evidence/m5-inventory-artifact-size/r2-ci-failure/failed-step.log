@@ -1,0 +1,27 @@
+runtime	M5-024 captured signed body / altered metadata characterization	﻿2026-10-09T20:38:33.8186446Z ##[group]Run node --test test/webhook-metadata-boundary.test.mjs
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:33.8186743Z ^[[36;1mnode --test test/webhook-metadata-boundary.test.mjs^[[0m
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:33.8238974Z shell: /usr/bin/bash -e {0}
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:33.8239142Z env:
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:33.8239533Z   DATABASE_URL: ***localhost:5432/insignia_test?sslmode=disable
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:33.8239725Z   INSIGNIA_REQUIRE_POSTGRES_TEST: 1
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:33.8239869Z ##[endgroup]
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:44.6002358Z ✖ captured signed body with new delivery ID and later unsigned trigger can deactivate a new generation (10564.107604ms)
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6091729Z ℹ tests 1
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6092122Z ℹ suites 0
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6092322Z ℹ pass 0
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6092502Z ℹ fail 1
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6092695Z ℹ cancelled 0
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6092892Z ℹ skipped 0
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6093070Z ℹ todo 0
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6093292Z ℹ duration_ms 15757.072307
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6096123Z 
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6096326Z ✖ failing tests:
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6096511Z 
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6096751Z test at test/webhook-metadata-boundary.test.mjs:11:1
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6097520Z ✖ captured signed body with new delivery ID and later unsigned trigger can deactivate a new generation (10564.107604ms)
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6098092Z   Error: bounded local observation did not settle
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6098696Z       at waitFor (file:///home/runner/work/insignia/insignia/apps/web/test/webhook-metadata-boundary.test.mjs:46:11)
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6099592Z       at async TestContext.<anonymous> (file:///home/runner/work/insignia/insignia/apps/web/test/webhook-metadata-boundary.test.mjs:111:5)
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6100309Z       at async Test.run (node:internal/test_runner/test:1409:7)
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6100845Z       at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)
+runtime	M5-024 captured signed body / altered metadata characterization	2026-10-09T20:38:49.6159360Z ##[error]Process completed with exit code 1.

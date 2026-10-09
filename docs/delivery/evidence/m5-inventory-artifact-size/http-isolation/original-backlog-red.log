@@ -1,0 +1,19 @@
+✖ captured signed body with new delivery ID and later unsigned trigger can deactivate a new generation (11056.864712ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 16440.552261
+
+✖ failing tests:
+
+test at test/webhook-metadata-boundary.test.mjs:11:1
+✖ captured signed body with new delivery ID and later unsigned trigger can deactivate a new generation (11056.864712ms)
+  Error: bounded local observation did not settle
+      at waitFor (file:///home/serveradmin/insignia-m5-inventory-artifact-worktree/apps/web/test/webhook-metadata-boundary.test.mjs:46:11)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-inventory-artifact-worktree/apps/web/test/webhook-metadata-boundary.test.mjs:111:5)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:387:3)

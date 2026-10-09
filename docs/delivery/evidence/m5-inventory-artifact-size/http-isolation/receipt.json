@@ -1,0 +1,203 @@
+{
+  "base": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+  "causalMetadata": {
+    "capturedChildErrors": 0,
+    "completedPredecessors": 5,
+    "predecessors": 6,
+    "sampledSqlLockWaits": 0,
+    "snapshotCount": 21,
+    "targetAttempts": 0,
+    "targetGenerationActive": true,
+    "targetInboxState": "pending",
+    "targetJobState": "created",
+    "targetPosition": 10,
+    "workerReadyObserved": true
+  },
+  "closure": {
+    "36-stop.log": 0,
+    "37-status.log": 3,
+    "fixtureDatabases": 0,
+    "loopback55454BindSucceededAndReleased": true,
+    "otherClients": 0,
+    "postmasterPidAbsent": true
+  },
+  "commitOrPush": false,
+  "diagnosisSha256": "246c3c884c3ea7a8334424644f19067b397b27d4bcf76988d12d19c793a17c49",
+  "failedNaturalCiRun": 37988027764,
+  "finalAfterPrefix": [
+    {
+      "disposableDatabases": 0,
+      "fail": 0,
+      "label": "ci",
+      "parentMetadataUnchanged": true,
+      "pass": 1
+    }
+  ],
+  "finalDifferential": [
+    {
+      "disposableDatabases": 0,
+      "fail": 0,
+      "label": "clean",
+      "parentMetadataUnchanged": true,
+      "pass": 1
+    },
+    {
+      "disposableDatabases": 0,
+      "fail": 0,
+      "label": "seeded",
+      "parentMetadataUnchanged": true,
+      "pass": 1
+    }
+  ],
+  "independentReview": "PARENT_PENDING",
+  "invariants": {
+    "assertionCallsUnchanged": 13,
+    "testTimeoutMilliseconds": 40000,
+    "waitForUnchanged": true,
+    "waitIterations": 100,
+    "waitMillisecondsPerIteration": 100
+  },
+  "nativeAuthority": "UNQUALIFIED",
+  "notWholeCiQualification": true,
+  "originalClean": {
+    "fail": 0,
+    "pass": 1,
+    "testMilliseconds": 7507.703847
+  },
+  "originalContaminated": {
+    "fail": 1,
+    "pass": 0,
+    "testMilliseconds": 11056.864712
+  },
+  "overlapLimit": {
+    "cleanRechecks": [
+      "23-worker-settled.log",
+      "24-queue-crash-settled.log"
+    ],
+    "reason": "parent module/build replacement",
+    "unqualifiedLogs": [
+      "19-worker.log",
+      "20-queue-crash.log"
+    ]
+  },
+  "parentPackaging": "initial missing offline policy metadata failure retained; normal registry priming/restoration and fresh qualified package separate",
+  "privateProbeHashes": {
+    "06-original-clean-child-private.jsonl": "da9a215aedf4fe8db14cd5114a8ae1afb298c1d76bfb9eaed7ed61565139e790",
+    "08-original-seeded-child-private.jsonl": "ad2e8195d7fc7385c61ba457a6ae0979a5d3999213be11fe83756bf2aec5ff3e",
+    "09-original-causal-accounting-private.json": "e8579d7e6b09d6943fbb5443cd974062a452a8cb56976e3d1d7939c0fdd62273",
+    "13-fixed-controls-private.json": "c77f122510ef0fea017b7a766289ab6271da4b2bb6d93674951429db1544e980",
+    "26-metadata-controls-private.json": "4cdd6298a105335033ea82dd34383c5ad67e29cf0c9034bba429afbfd49973bd",
+    "capture-local.mjs": "a0ab5264647e7a641b4dae79cf6af5809aa3de2f4e232e6dfe67e635c8ea98cb"
+  },
+  "selectedLogs": {
+    "after-prefix-green.log": {
+      "originalPrivateLog": "26-metadata-ci.log",
+      "sha256": "21e280e442ad67c4d0e0a5e965e41833551fce460f65fb35734656640b2483e3"
+    },
+    "after-prefix-isolation.log": {
+      "originalPrivateLog": "26-metadata-isolation.log",
+      "sha256": "17377684b32f12e95e279221015dd428fbdd4c764428c45ee90c32963d1d1401"
+    },
+    "causal-accounting.log": {
+      "originalPrivateLog": "09-original-causal-accounting.log",
+      "sha256": "2fb86601f259e35a175e095b5b35767993b068517c3a3723a6c9de20487d72bc"
+    },
+    "closure-status.log": {
+      "originalPrivateLog": "37-status.log",
+      "sha256": "e138ccb54fdb08283c6eb21159c53207bbbbf07077246e2804e18d22efe6e250"
+    },
+    "closure-stop.log": {
+      "originalPrivateLog": "36-stop.log",
+      "sha256": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d"
+    },
+    "final-clean-green.log": {
+      "originalPrivateLog": "13-fixed-clean.log",
+      "sha256": "cab0aabba655cf2af67d50c1f7ed38a16de9f680c700b2bebb0114b2157bcf52"
+    },
+    "final-contaminated-green.log": {
+      "originalPrivateLog": "13-fixed-seeded.log",
+      "sha256": "b113e34337a5a2f049f95eb4d1fba5a2b220c35289a4f31e60338a133b09fef4"
+    },
+    "final-isolation-controls.log": {
+      "originalPrivateLog": "13-fixed-controls.log",
+      "sha256": "ee8f2603beb8493b304bc5ac6dab95a866da52da71b60b4d444c5ba621e5decc"
+    },
+    "original-backlog-red.log": {
+      "originalPrivateLog": "08-original-seeded-red.log",
+      "sha256": "660a8d3193d49f330de2587a306cea867c0c9f4f90cc32c646a7ab69e759190c"
+    },
+    "original-clean.log": {
+      "originalPrivateLog": "06-original-clean.log",
+      "sha256": "95d97099172277a1fc1aaae33456a437dfdaf18cb0b490b4e6c15e150e1fee4a"
+    },
+    "security-red.log": {
+      "originalPrivateLog": "32-security-red.log",
+      "sha256": "e54a97dd80ea8e758e002adee38e2a09e052f599ed33f0adf5f01214f9763a59"
+    }
+  },
+  "sequentialControls": {
+    "15-database.log": {
+      "fail": 0,
+      "pass": 219,
+      "sha256": "7da388fcfbd21f83802cee39c0c135bc923c0f8ae7a2a1c08b8ea5ed2ee88fda"
+    },
+    "16-shopify.log": {
+      "fail": 0,
+      "pass": 347,
+      "sha256": "8f70ae1b760463ea52c7fff01a0a42ca4c6897ea43eaeb34f8c5d7e73b16c88d"
+    },
+    "17-application.log": {
+      "fail": 0,
+      "pass": 202,
+      "sha256": "d2ef85e7564e2ac4badbcacf4187496ed74eb2ad926a8222cc81ffa89a74c383"
+    },
+    "18-observability.log": {
+      "fail": 0,
+      "pass": 4,
+      "sha256": "aa2e654a8bdac49de324a06e0b61c2119f9b0c294e1a79cdc23b44ca9993f553"
+    },
+    "23-worker-settled.log": {
+      "fail": 0,
+      "pass": 29,
+      "sha256": "ad8b05994e730a0d2bc788b86f4e6f3770087037b812e5df422566b11c6efdc6"
+    },
+    "24-queue-crash-settled.log": {
+      "fail": 0,
+      "pass": 2,
+      "sha256": "15c75b687cb1503ce8d8ba51fa74e1e21fffdaae014359e6f21fafbe20c120f7"
+    },
+    "25-portable.log": {
+      "fail": 0,
+      "pass": 2,
+      "sha256": "0d26ea276aa360c3090c4b377594f4858a21d6ea408f42e5c5600b341ac4808e"
+    },
+    "26-metadata-ci.log": {
+      "fail": 0,
+      "pass": 1,
+      "sha256": "21e280e442ad67c4d0e0a5e965e41833551fce460f65fb35734656640b2483e3"
+    },
+    "28-authority-normal.log": {
+      "fail": 0,
+      "pass": 1,
+      "sha256": "9a15bf49bc1030cdc1b3d989bd737f0a795502a9a1118fe705dbdb49e63f5088"
+    },
+    "29-ingress.log": {
+      "fail": 0,
+      "pass": 1,
+      "sha256": "33f19d03707e4305f4c92e22651310192f2da331c7332ee6eba16e8ffeb6e88e"
+    },
+    "30-admin.log": {
+      "fail": 0,
+      "pass": 25,
+      "sha256": "7f7802722228dee9bc6a1551ee59ea7a2dd8f4c9606497b8a0a305bdffc64c01"
+    },
+    "32-security-red.log": {
+      "fail": 1,
+      "pass": 0,
+      "sha256": "e54a97dd80ea8e758e002adee38e2a09e052f599ed33f0adf5f01214f9763a59"
+    }
+  },
+  "sourceAfterSha256": "a29126ba4a705b40b1ff30659521bccbd6c001ca16f4a67a3b9d0fc64be5fa63",
+  "sourceBeforeSha256": "425416ddbf11aed75f0c65f3d66101dda3ed0b669773c31ec2c6e9bf213a9092",
+  "sourcePath": "apps/web/test/webhook-metadata-boundary.test.mjs"
+}

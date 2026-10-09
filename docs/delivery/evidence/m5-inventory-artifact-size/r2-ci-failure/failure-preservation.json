@@ -1,0 +1,14 @@
+{
+  "head": "c62d6057fcd305e26188438bf4dcf01a90caefc4",
+  "tree": "682e541af2b8544b9fa3705e167e920953d193e1",
+  "ciRun": 37988027764,
+  "attempt": 1,
+  "result": "FAILURE",
+  "reviews": "CLEAR/CLEAR; not accepted because CI failed",
+  "fullLogSha256": "aa290261c687ccfb3d2deba244589374dcfd7c63c71f9ab8efe35336b6356e17",
+  "fullLogStoredPrivately": true,
+  "failure": "unchanged webhook-metadata-boundary characterization target deactivation wait at line111",
+  "hypothesis": "shared fixture recovery backlog; real isolated local differential pending",
+  "rerunRequested": false,
+  "nativeRequestsOnRevisedSource": 0
+}

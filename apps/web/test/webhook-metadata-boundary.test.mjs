@@ -1,29 +1,72 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
 import { createHmac, randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
+
+async function isolatedDatabase() {
+  const admin = new Pool({ connectionString: process.env.DATABASE_URL });
+  const database = `m5024_http_${randomUUID().replaceAll('-', '')}`;
+  const url = new URL(process.env.DATABASE_URL);
+  url.pathname = `/${database}`;
+  const root = fileURLToPath(new URL('../../../', import.meta.url));
+  let created = false;
+  async function close() {
+    try {
+      if (created) await admin.query(`DROP DATABASE ${database}`);
+    } finally {
+      await admin.end();
+    }
+  }
+  try {
+    await admin.query(`CREATE DATABASE ${database}`);
+    created = true;
+    await promisify(execFile)(
+      `${root}node_modules/.bin/dbmate`,
+      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
+      { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30_000 },
+    );
+    return { connectionString: url.href, close };
+  } catch (error) {
+    await close();
+    throw error;
+  }
+}
 
 // Characterization, not a security PASS: preserve accepted semantics until principal adjudication.
 test('captured signed body with new delivery ID and later unsigned trigger can deactivate a new generation', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',
   timeout: 40_000,
-}, async () => {
+}, async (t) => {
   assert.ok(process.env.DATABASE_URL);
-  await installQueue(process.env.DATABASE_URL);
+  // Own the application inbox and default queue: global recovery must not
+  // compete with pending receipts from a preceding suite in this bounded control.
+  const database = await isolatedDatabase();
+  t.after(() => database.close());
+  const { connectionString } = database;
+  await installQueue(connectionString);
   const secret = 'synthetic-m5024-captured-body';
   const port = 46000 + Math.floor(Math.random() * 500);
-  const env = { ...process.env, HOST: '127.0.0.1', PORT: String(port), SHOPIFY_WEBHOOK_SECRET: secret };
+  const env = {
+    ...process.env,
+    DATABASE_URL: connectionString,
+    HOST: '127.0.0.1',
+    PORT: String(port),
+    SHOPIFY_WEBHOOK_SECRET: secret,
+  };
   const server = spawn(process.execPath, ['dist/server/entry.mjs'], {
     cwd: new URL('..', import.meta.url),
     env,
     stdio: 'ignore',
   });
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+  const serverClosed = new Promise((resolve) => server.once('close', resolve));
+  const pool = new Pool({ connectionString });
+  const core = createDurableCore(new Pool({ connectionString }));
   const shopId = randomUUID();
   const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
   const providerId = (BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n).toString();
@@ -38,6 +81,7 @@ test('captured signed body with new delivery ID and later unsigned trigger can d
     'x-shopify-triggered-at': new Date().toISOString(),
   };
   let worker;
+  let workerClosed;
   async function waitFor(predicate) {
     for (let i = 0; i < 100; i++) {
       if (await predicate().catch(() => false)) return;
@@ -100,6 +144,7 @@ test('captured signed body with new delivery ID and later unsigned trigger can d
       {
         env: {
           ...process.env,
+          DATABASE_URL: connectionString,
           INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
           INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
           SHOPIFY_CLIENT_ID: 'synthetic-client-id',
@@ -108,6 +153,7 @@ test('captured signed body with new delivery ID and later unsigned trigger can d
         stdio: 'ignore',
       },
     );
+    workerClosed = new Promise((resolve) => worker.once('close', resolve));
     await waitFor(async () => {
       const rows = await pool.query(
         'select deactivated_at from installation_generations where shop_id=$1 and generation=2',
@@ -131,11 +177,17 @@ test('captured signed body with new delivery ID and later unsigned trigger can d
       'M5-024 REPRODUCED_LOCAL: original signed body, new unsigned delivery ID/trigger, generation 2 deactivated; no real provider used',
     );
   } finally {
-    for (const child of [worker, server].filter(Boolean)) {
-      const closed = new Promise((resolve) => child.once('close', resolve));
-      child.kill('SIGTERM');
-      await Promise.race([closed, delay(5000)]);
-      if (child.exitCode === null) child.kill('SIGKILL');
+    for (const [child, closed] of [
+      [worker, workerClosed],
+      [server, serverClosed],
+    ]) {
+      if (!child) continue;
+      if (child.exitCode === null && child.signalCode === null) {
+        child.kill('SIGTERM');
+        await Promise.race([closed, delay(5000)]);
+        if (child.exitCode === null && child.signalCode === null) child.kill('SIGKILL');
+      }
+      await closed;
     }
     await core.close();
     await pool.end();

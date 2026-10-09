@@ -1,0 +1,12 @@
+{
+  "command": [
+    "bash",
+    "scripts/m5-024/build-worker.sh",
+    "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-portable-r3-qualified"
+  ],
+  "startedAt": "2026-10-09T20:55:01.947919+00:00",
+  "completedAt": "2026-10-09T20:55:24.515690+00:00",
+  "exitCode": 0,
+  "logSha256": "1a25e346a793fcf635e42e1ab5fa76378125bfe227b240e486396ee1017f2e5c",
+  "scope": "LOCAL_PACKAGING; public registry metadata priming only; no provider/host access"
+}

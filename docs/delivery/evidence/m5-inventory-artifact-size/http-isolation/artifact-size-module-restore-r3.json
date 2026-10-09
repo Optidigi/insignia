@@ -1,0 +1,16 @@
+{
+  "command": [
+    "corepack",
+    "pnpm",
+    "install",
+    "--offline",
+    "--frozen-lockfile",
+    "--ignore-scripts",
+    "--prod=false"
+  ],
+  "startedAt": "2026-10-09T20:55:01.807993+00:00",
+  "completedAt": "2026-10-09T20:55:01.947691+00:00",
+  "exitCode": 0,
+  "logSha256": "b48b271239e90f83b70e05819136d35560d2797c63ae9417cfed94f8b3b82004",
+  "scope": "LOCAL_PACKAGING; public registry metadata priming only; no provider/host access"
+}

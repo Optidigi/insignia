@@ -1,0 +1,12 @@
+{
+  "command": [
+    "bash",
+    "scripts/m5-024/build-worker.sh",
+    "/home/serveradmin/insignia-milestone-autonomy-handoff/artifact-size-portable-r3"
+  ],
+  "exitCode": 1,
+  "failedLogSha256": "ba3a83c2152ebaa5a48009d411f096380cefc4006b48fb23adf2824d2a640435",
+  "failure": "ERR_PNPM_NO_OFFLINE_META cron-parser policy metadata",
+  "resolution": "Normal public registry cache priming then root module restoration and a NEW offline package build; no supply-chain policy bypass",
+  "nativeOperation": false
+}

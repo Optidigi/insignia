@@ -50,5 +50,21 @@
     "gitRef": "57afc7a6d14e8abdf09220d6da145de4f1a89430",
     "sha256": "7c698b5f5f6b1e650aac208d7a07fe5192cc84c64bd6466b86e4b28f7a5cb496"
   },
-  "r1Review": "CHANGES_REQUIRED/CLEAR; historical documentation corrected; fresh R2 required"
+  "r1Review": "CHANGES_REQUIRED/CLEAR; historical documentation corrected; fresh R2 required",
+  "r2Reviews": "CLEAR/CLEAR; natural runtime CI FAILED; NOT_ACCEPTED",
+  "runtimeCiFailuresPreserved": [
+    37987569323,
+    37988027764
+  ],
+  "supportingTestCorrection": {
+    "path": "apps/web/test/webhook-metadata-boundary.test.mjs",
+    "sha256": "a29126ba4a705b40b1ff30659521bccbd6c001ca16f4a67a3b9d0fc64be5fa63",
+    "productionSemanticsChanged": false,
+    "assertionsAndWaitLimitsPreserved": true,
+    "originalSourceEmptyAndContaminatedDifferential": "PASS/FAIL at unchanged target wait",
+    "qualification": "Local isolated PostgreSQL18 actual controls PASS; generic uninstall security assertion RED; fresh reviews/natural CI required",
+    "receiptSha256": "6c89673f3a1ccddec20fafb131b47b6a98bfaedaef22c9b52e14207be25d2840",
+    "diagnosisSha256": "246c3c884c3ea7a8334424644f19067b397b27d4bcf76988d12d19c793a17c49",
+    "ownedClusterClosed": true
+  }
 }
