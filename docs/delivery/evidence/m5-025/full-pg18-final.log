@@ -1,0 +1,14 @@
+$ corepack pnpm db:migrate && corepack pnpm db:migrate && corepack pnpm test:database
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ dbmate --no-dump-schema --migrations-dir packages/database/migrations up
+$ corepack pnpm --filter @insignia/database test
+$ vitest run
+
+ RUN  v5.0.2 /home/serveradmin/insignia-m5-025-worktree/packages/database
+
+
+ Test Files  14 passed (14)
+      Tests  200 passed (200)
+   Start at  10:47:17
+   Duration  21.68s (tests 77%, import 17%, transform 6%)
+

@@ -1,0 +1,10 @@
+M5-025 BLOCKER_REPRODUCED: generations2 and3 deactivated from identical signed bytes; altered IDs/time supply no independent generation authority; no provider used
+✔ M5-025 existing HTTP/worker cannot distinguish old replay from identical later uninstall (12606.727033ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 18000.198632

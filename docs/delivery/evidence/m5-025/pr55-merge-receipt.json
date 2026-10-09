@@ -1,0 +1,25 @@
+{
+  "pr": {
+    "baseRefOid": "56f504e88dd0dd77ee2c5165e3417f65dd0a5d36",
+    "headRefOid": "520a252dd8e1c00dcede00100cdf9974486774c6",
+    "mergeCommit": {
+      "oid": "f05b1cfa30d28fb346a0148db3f384d53b9c1a42"
+    },
+    "mergedAt": "2026-10-09T10:23:32Z",
+    "state": "MERGED",
+    "url": "https://github.com/Optidigi/insignia/pull/55"
+  },
+  "merge": "f05b1cfa30d28fb346a0148db3f384d53b9c1a42",
+  "orderedParents": [
+    "56f504e88dd0dd77ee2c5165e3417f65dd0a5d36",
+    "520a252dd8e1c00dcede00100cdf9974486774c6"
+  ],
+  "tree": "8c8a59cafc8956118bd2fe0c69b30d392bbed426",
+  "remoteMain": "f05b1cfa30d28fb346a0148db3f384d53b9c1a42",
+  "alreadyMerged": true,
+  "mergeAttemptsThisSlice": 0,
+  "externalApproval": "Latest user M5-025 entry explicitly APPROVED exact base/head/tree",
+  "ci": "11 exact-head attempt-1 success",
+  "reviews": "Both actual GPT-6.1-sol/high R4 CLEAR reports rehashed against live final packet",
+  "nativeApprovalFabricated": false
+}

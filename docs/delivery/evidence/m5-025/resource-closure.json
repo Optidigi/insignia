@@ -1,0 +1,13 @@
+{
+  "time": "2026-10-09T10:51:39.878875+00:00",
+  "scope": "owned local synthetic resources only",
+  "pg18Cluster": "STOPPED",
+  "data": "retained privately, not dropped/truncated",
+  "databases": [
+    "insignia_m5_025",
+    "insignia_m5_025_http_red",
+    "insignia_m5_025_http_green"
+  ],
+  "temporaryServersAndWorkers": "test-managed terminated; no matching live process observed",
+  "productionOrProviderOperations": 0
+}
