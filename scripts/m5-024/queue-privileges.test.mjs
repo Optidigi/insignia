@@ -6,6 +6,7 @@ import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createDurableWorkerHandlers } from '../../apps/worker/dist/handlers.js';
 import { createPgBossRuntime, WEBHOOK_QUEUE } from '../../apps/worker/dist/runtime.js';
+import { queueBoundaryHandoff } from '../../apps/worker/test/queue-handoff-fixture.mjs';
 import { createDurableCore } from '../../packages/database/dist/index.js';
 import { installQueue } from './install-queue.mjs';
 
@@ -53,17 +54,17 @@ test('separate owner installation and restricted queue roles preserve messages a
     } finally {
       await producerPool.end();
     }
-    producer = createPgBossRuntime({ connectionString: url.href });
+    producer = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, connectionString: url.href });
     await producer.start();
     await pool.query('revoke execute on function pgboss.job_now() from insignia_queue_enqueue');
-    const denied = createPgBossRuntime({ connectionString: url.href });
+    const denied = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, connectionString: url.href });
     await assert.rejects(denied.start());
     await denied.stop();
     await pool.query('grant execute on function pgboss.job_now() to insignia_queue_enqueue');
     const id = randomUUID();
     await producer.ensureWebhookEnqueued(id);
     await producer.stop();
-    producer = createPgBossRuntime({ connectionString: url.href });
+    producer = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, connectionString: url.href });
     await producer.start();
     assert.equal((await producer.ensureWebhookEnqueued(id)).status, 'already_enqueued');
     url.username = workerRole;
@@ -80,7 +81,7 @@ test('separate owner installation and restricted queue roles preserve messages a
     boss.on('error', (error) => {
       throw error;
     });
-    worker = createPgBossRuntime({ boss, credentialKeysReady: true });
+    worker = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss, credentialKeysReady: true });
     await worker.start();
     let attempts = 0;
     await worker.work({
@@ -137,7 +138,11 @@ test('separate owner installation and restricted queue roles preserve messages a
         rawBody: Buffer.from(JSON.stringify({ id: shopifyShopId, myshopify_domain: domain })),
       });
       await producer.ensureWebhookEnqueued(receipt.id);
-      worker = createPgBossRuntime({ connectionString: url.href, credentialKeysReady: true });
+      worker = createPgBossRuntime({
+        webhookHandoff: consumerCore.webhooks,
+        connectionString: url.href,
+        credentialKeysReady: true,
+      });
       await worker.start();
       await worker.work(
         createDurableWorkerHandlers(consumerCore, {

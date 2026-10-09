@@ -62,6 +62,30 @@ test('metric labels are fixed outcomes and never contain tenant or delivery IDs'
   assert.doesNotMatch(text, /105501393179|shop_id|domain|delivery_id/);
 });
 
+test('retention alerts carry only fixed categories and bounded counts', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  logger.error('queue_job_rejected', {
+    errorClass: 'PrivacyRetentionBlocked',
+    count: 3,
+    customerId: 'SECRET',
+    rawBody: 'SECRET',
+    error: new Error('SECRET'),
+  });
+  const record = JSON.parse(output.trim());
+  assert.equal(record.errorClass, 'PrivacyRetentionBlocked');
+  assert.equal(record.count, 3);
+  assert.deepEqual(Object.keys(record).sort(), ['count', 'errorClass', 'event', 'level', 'time']);
+  assert.doesNotMatch(output, /SECRET|customerId|rawBody/);
+});
+
 test('admin auth diagnostics emit only a bounded stage and independent correlation, never identity or secrets', () => {
   let output = '';
   const { logger } = createObservability({

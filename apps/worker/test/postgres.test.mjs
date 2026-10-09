@@ -8,6 +8,7 @@ import { PgBoss } from 'pg-boss';
 import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
 import { createDurableWorkerHandlers } from '../dist/handlers.js';
 import { createPgBossRuntime, WEBHOOK_QUEUE } from '../dist/runtime.js';
+import { queueBoundaryHandoff } from './queue-handoff-fixture.mjs';
 
 const schema = 'pgboss_m3002_worker';
 
@@ -30,7 +31,7 @@ test('PostgreSQL pg-boss starts, retries, settles and replays after restart', {
     monitorVacuum: false,
     reindex: false,
   });
-  const queue = createPgBossRuntime({ boss, credentialKeysReady: true });
+  const queue = createPgBossRuntime({ boss, webhookHandoff: queueBoundaryHandoff, credentialKeysReady: true });
   let attempts = 0;
   try {
     await queue.start();
@@ -68,7 +69,7 @@ test('PostgreSQL pg-boss starts, retries, settles and replays after restart', {
     schedule: false,
     supervise: false,
   });
-  const restarted = createPgBossRuntime({ boss: restartedBoss });
+  const restarted = createPgBossRuntime({ boss: restartedBoss, webhookHandoff: queueBoundaryHandoff });
   try {
     await restarted.start();
     assert.equal(await restarted.schemaVersion(), 43);
@@ -103,7 +104,7 @@ test('pg-boss retry after committed uninstall retains one deactivation and one i
     monitorVacuum: false,
     reindex: false,
   });
-  const queue = createPgBossRuntime({ boss, credentialKeysReady: true });
+  const queue = createPgBossRuntime({ boss, webhookHandoff: core.webhooks, credentialKeysReady: true });
   const shopId = randomUUID();
   const domain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
   const shopifyShopId = (BigInt(`0x${createHash('sha256').update(domain).digest('hex').slice(0, 12)}`) + 1n).toString();

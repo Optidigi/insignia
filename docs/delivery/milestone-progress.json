@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "d9ba6383a6e15958419ecf8e26d9182f08078e41",
-  "currentTree": "4185e55b96d0beb0bd9bb134644236f252c2866e",
+  "currentIntegratedCommit": "7fc8688b2d59c191486771192d4f466cbc226703",
+  "currentTree": "04e0428c742e74cae76c23693cca110d463a9413",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -86,7 +86,7 @@
       "scope": "BOUNDED_READ_ONLY",
       "evidence": "evidence/m5-native-inventory/owner-readonly-allocation.json",
       "ownerReply": "you have full acess yes",
-      "localTechnicalGate": "R1 CHANGES_REQUIRED; corrected local controls PASS, fresh review/CI pending; native NOT_STARTED"
+      "localTechnicalGate": "PR60 normally merged after actual R5 CLEAR/CLEAR and 10 natural exact-head attempt-1 successes; native NOT_STARTED"
     }
   ],
   "ownerInputs": [
@@ -96,25 +96,38 @@
     "Commercial configuration unknown; owner delegates factual investigation",
     "Any later provisioning/deployment/mutation requires exact separate owner resource envelope"
   ],
-  "nextSafeAction": "Complete and independently qualify combined native/host metadata collectors, freeze exact CI/source, renew restricted host access, execute only granted read-only subset; investigate commercial configuration without invention.",
+  "nextSafeAction": "Complete PR61 freshR3 full-source reviews and natural exact-head CI; separately qualify the bounded existing-key caller under the owner reuse directive, then execute only granted native reads and establish real commercial facts.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
     "slice": "Transient webhook retention/queue recovery",
-    "status": "IMPLEMENTING_OFFLINE_NOT_QUALIFIED",
+    "status": "R2_CORRECTIONS_LOCAL_PASS_R3_REVIEW_CI_PENDING",
     "worktree": "Separate feat/m5-transient-webhook-retention branch",
-    "purpose": "Existing raw deadlines, durable bounded handoff/exhaustion and truthful unresolved privacy; not uninstall authority/privacy complete",
+    "purpose": "Deadline effect fences and finite durable queue budget; all unqualified raw erasure deferred; uninstall authority/privacy incomplete",
     "nativeAuthority": "NONE; no production SQL/deployment"
   },
   "activeCandidate": {
-    "pr": 60,
-    "scope": "Bounded read-only inventory tools; native not started",
-    "r1Head": "6f899be0a0eb226bb257d99be249a9e4a86fa54d",
+    "pr": 61,
+    "scope": "Offline retention deadline/queue safeguards; no production authority",
+    "r1Head": "e20c3e904fc5940b41892265d788ed1046b8160c",
     "r1Reviews": "CHANGES_REQUIRED / CHANGES_REQUIRED",
-    "r1Ci": "10/10 attempt-1 SUCCESS",
-    "correction": "Token FIFO/socket reader supervised; SSH identity path literal allowlist; actual RED/GREEN preserved",
-    "next": "Fresh independent reviews and exact-head CI before native access"
+    "r1Ci": "10 SUCCESS / 1 FAILURE, all attempt-1",
+    "correction": "All unqualified raw erasure remains deferred; safe logger category regression corrected; crash control gets its own migrated database/defaultqueue without weakening original policy/timeouts/assertions",
+    "next": "FreshR3 independent completed-change full-source reviews and natural exact-head CI before local acceptance",
+    "r2Head": "66b1ab75dd1d2e31c8adf40a903df299f38822d4",
+    "r2Reviews": "CHANGES_REQUIRED / CHANGES_REQUIRED",
+    "r2Ci": "10 SUCCESS / 1 FAILURE, all attempt-1"
+  },
+  "boundedInventoryTooling": {
+    "pr": 60,
+    "status": "LOCAL_ACCEPTED_NORMALLY_MERGED",
+    "reviews": "ACTUAL_CLEAR_CLEAR_GPT_6_1_SOL_HIGH",
+    "naturalExactHeadAttempt1Ci": 10,
+    "nativeAccess": "NOT_STARTED",
+    "hostKeySetup": "OWNER_DIRECTS_EXISTING_KEY_REUSE; key found, bounded caller qualification pending",
+    "existingSupportedAdminCredential": "UNAVAILABLE",
+    "milestoneAcceptance": false
   }
 }

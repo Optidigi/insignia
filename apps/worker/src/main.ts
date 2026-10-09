@@ -3,7 +3,7 @@ import { createShopifyOfflineRefreshTransport } from '@insignia/shopify';
 import { Pool } from 'pg';
 import { loadCredentialKeys } from './config.js';
 import { runLocalDiagnostic } from './diagnostic.js';
-import { createDurableWorkerHandlers, recoverPendingUninstalls } from './handlers.js';
+import { createDurableWorkerHandlers, maintainWebhookRetention, recoverPendingUninstalls } from './handlers.js';
 import { startWorkerProcess } from './process.js';
 import { createPgBossRuntime } from './runtime.js';
 
@@ -24,7 +24,7 @@ if (process.argv.includes('--diagnostic')) {
   const port = portArgument ? Number(portArgument.slice('--port='.length)) : 4301;
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Invalid worker port');
   const core = createDurableCore(new Pool({ connectionString }), { credentialKeys: keys });
-  const queue = createPgBossRuntime({ connectionString, credentialKeysReady: true });
+  const queue = createPgBossRuntime({ connectionString, credentialKeysReady: true, webhookHandoff: core.webhooks });
   const transport = createShopifyOfflineRefreshTransport({ clientId, clientSecret });
   const running = await startWorkerProcess({ queue, handlers: createDurableWorkerHandlers(core, transport), port });
   console.log(JSON.stringify({ url: running.url, durableReady: running.durableReady }));
@@ -33,6 +33,7 @@ if (process.argv.includes('--diagnostic')) {
     if (reconciling) return;
     reconciling = true;
     try {
+      await maintainWebhookRetention(core, queue);
       await recoverPendingUninstalls(core, queue);
     } catch {
       queue.observability.logger.error('queue_job_rejected');

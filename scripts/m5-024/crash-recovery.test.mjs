@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict';
-import { fork } from 'node:child_process';
+import { execFile, fork } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 import { recoverPendingUninstalls } from '../../apps/worker/dist/handlers.js';
 import { createPgBossRuntime, WEBHOOK_QUEUE } from '../../apps/worker/dist/runtime.js';
 import { createDurableCore } from '../../packages/database/dist/index.js';
@@ -12,6 +14,35 @@ import { installQueue } from './install-queue.mjs';
 const requireWorker = createRequire(new URL('../../apps/worker/package.json', import.meta.url));
 const { Pool } = requireWorker('pg');
 const { PgBoss } = await import(requireWorker.resolve('pg-boss'));
+
+async function isolatedDatabase() {
+  const admin = new Pool({ connectionString: process.env.DATABASE_URL });
+  const database = `m5024_crash_${randomUUID().replaceAll('-', '')}`;
+  const url = new URL(process.env.DATABASE_URL);
+  url.pathname = `/${database}`;
+  const root = fileURLToPath(new URL('../../', import.meta.url));
+  let created = false;
+  async function close() {
+    try {
+      if (created) await admin.query(`DROP DATABASE ${database}`);
+    } finally {
+      await admin.end();
+    }
+  }
+  try {
+    await admin.query(`CREATE DATABASE ${database}`);
+    created = true;
+    await promisify(execFile)(
+      `${root}node_modules/.bin/dbmate`,
+      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
+      { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30_000 },
+    );
+    return { connectionString: url.href, close };
+  } catch (error) {
+    await close();
+    throw error;
+  }
+}
 
 async function until(predicate) {
   for (let i = 0; i < 100; i++) {
@@ -26,12 +57,15 @@ test('real process death before transaction and after commit recovers durable qu
   timeout: 60_000,
 }, async () => {
   assert.ok(process.env.DATABASE_URL);
-  await installQueue(process.env.DATABASE_URL);
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
-  const producer = createPgBossRuntime({ connectionString: process.env.DATABASE_URL });
+  // Recovery scans the application inbox as well as its queue. Own both so a
+  // previous suite's pending receipts cannot compete with this process control.
+  const database = await isolatedDatabase();
+  const { connectionString } = database;
+  const pool = new Pool({ connectionString });
+  const core = createDurableCore(new Pool({ connectionString }));
+  const producer = createPgBossRuntime({ webhookHandoff: core.webhooks, connectionString });
   const maintenance = new PgBoss({
-    connectionString: process.env.DATABASE_URL,
+    connectionString,
     migrate: false,
     createSchema: false,
     supervise: false,
@@ -43,6 +77,7 @@ test('real process death before transaction and after commit recovers durable qu
   maintenance.on('error', () => {});
   let child;
   try {
+    await installQueue(connectionString);
     await producer.start();
     await maintenance.start();
     for (const phase of ['before-transaction', 'after-commit']) {
@@ -64,7 +99,7 @@ test('real process death before transaction and after commit recovers durable qu
       assert.equal((await pool.query('select count(*)::int n from pgboss.job where id=$1', [receipt.id])).rows[0].n, 0);
       await recoverPendingUninstalls(core, producer);
       assert.equal((await pool.query('select count(*)::int n from pgboss.job where id=$1', [receipt.id])).rows[0].n, 1);
-      const env = { ...process.env, M5_TEST_INBOX_ID: receipt.id };
+      const env = { ...process.env, DATABASE_URL: connectionString, M5_TEST_INBOX_ID: receipt.id };
       child = fork(new URL('./crash-child.mjs', import.meta.url), [phase], {
         env,
         stdio: ['ignore', 'ignore', 'ignore', 'ipc'],
@@ -114,10 +149,18 @@ test('real process death before transaction and after commit recovers durable qu
       assert.equal((await producer.ensureWebhookEnqueued(receipt.id)).status, 'already_enqueued');
     }
   } finally {
-    child?.kill('SIGKILL');
-    await producer.stop();
-    await maintenance.stop({ graceful: true });
-    await core.close();
-    await pool.end();
+    try {
+      if (child && child.exitCode === null && child.signalCode === null) {
+        const closed = new Promise((resolve) => child.once('close', resolve));
+        child.kill('SIGKILL');
+        await closed;
+      }
+      await producer.stop();
+      await maintenance.stop({ graceful: true });
+      await core.close();
+      await pool.end();
+    } finally {
+      await database.close();
+    }
   }
 });

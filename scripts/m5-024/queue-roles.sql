@@ -30,7 +30,8 @@ GRANT USAGE ON SCHEMA pgboss TO insignia_queue_enqueue, insignia_queue_consume;
 GRANT USAGE ON TYPE pgboss.job_state TO insignia_queue_enqueue, insignia_queue_consume;
 GRANT EXECUTE ON FUNCTION pgboss.job_now() TO insignia_queue_enqueue, insignia_queue_consume;
 GRANT SELECT ON pgboss.version, pgboss.queue, pgboss.job, pgboss.job_common TO insignia_queue_enqueue, insignia_queue_consume;
--- Replay of failed handoff uses retry(), hence job UPDATE for producer. No DELETE/DDL.
+-- Retain the existing queue-schema capability boundary. Runtime never retries a
+-- terminal job explicitly; application durable reservation prevents new budgets.
 -- This is a queue-schema capability boundary, not per-operation or per-job row isolation.
 GRANT INSERT, UPDATE ON pgboss.job, pgboss.job_common TO insignia_queue_enqueue;
 GRANT INSERT, UPDATE, DELETE ON pgboss.job, pgboss.job_common TO insignia_queue_consume;
@@ -53,5 +54,10 @@ GRANT UPDATE(updated_at) ON public.shops TO insignia_queue_consume;
 GRANT UPDATE(deactivated_at) ON public.installation_generations TO insignia_queue_consume;
 GRANT UPDATE ON public.shop_credentials TO insignia_queue_consume;
 GRANT UPDATE(shop_id, installation_generation, state, attempts, last_error_class) ON public.inbox_messages TO insignia_queue_consume;
+-- No qualified raw-body erasure executor exists. Reapplication also removes
+-- obsolete column grants from earlier local candidates; metadata cleanup needs
+-- no payload/disposition/lease rewrite authority.
+REVOKE UPDATE(payload, erasure_state, lease_owner, lease_until) ON public.inbox_messages FROM insignia_queue_consume;
+GRANT UPDATE(queue_handoff_state, queue_cleanup_pending) ON public.shopify_webhook_deliveries TO insignia_queue_consume;
 GRANT UPDATE(effective_revision_id, effective_operation_id, updated_at) ON public.product_configs TO insignia_queue_consume;
 COMMIT;

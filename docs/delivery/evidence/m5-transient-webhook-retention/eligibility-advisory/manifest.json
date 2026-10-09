@@ -1,0 +1,76 @@
+{
+  "classification": "LOCAL_SYNTHETIC_ADVISORY_NOT_NATIVE_QUALIFICATION",
+  "repository": "/home/serveradmin/insignia-m5-retention-worktree",
+  "observedHead": "1a670b2145ed1526186f43a2ebf8605c2f5cf8e8",
+  "runtimeSourceArtifacts": {
+    "packages/database/src/repositories/shopify-webhooks.ts": {
+      "sha256": "14fa9d4901d98b1bd9583ba74fb3a22fb411e62a35b6d4ac9282a52015765918",
+      "bytes": 27367
+    },
+    "packages/database/dist/repositories/shopify-webhooks.js": {
+      "sha256": "a48ef93e583b8d66df58209e40504db8908b30b07624f5b7670c4fca9ce306a6",
+      "bytes": 28365
+    },
+    "packages/shopify/src/webhook.ts": {
+      "sha256": "c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f",
+      "bytes": 4809
+    },
+    "packages/shopify/dist/webhook.js": {
+      "sha256": "f17cc028fbaff0283e92c49bac655948dac5dc3cbde24cb4da5ce6276205e7fb",
+      "bytes": 4557
+    },
+    "apps/web/src/server/shopify-webhook.ts": {
+      "sha256": "935991fc9f1b7b7059a1f3e977ed825b3b6435fb744544cef0b1d5763927f09a",
+      "bytes": 3706
+    },
+    "apps/web/dist/server/entry.mjs": {
+      "sha256": "4bb18d96c04825e5e8465df33810dcd672dcb6d4d3b6d87ee41609aa9377f87b",
+      "bytes": 638570
+    }
+  },
+  "evidence": {
+    "probe.mjs": {
+      "sha256": "e6e4346493f544cc199160d984bc05793c86e2abc92ac7e5d157b92ee534e2bd",
+      "bytes": 5880
+    },
+    "probe.log": {
+      "sha256": "011363ff2f7e7fbadf61c8dee37ff7e0e01ee60000086dc84cd313469995679f",
+      "bytes": 1958
+    },
+    "negative-control.mjs": {
+      "sha256": "96677ccb80d2c4b40b1aef0199773dabc0c06904fee867b0a0ac29229cb864f8",
+      "bytes": 758
+    },
+    "negative-red.log": {
+      "sha256": "7f2d56c4e6b4a9b6dfa75bfff6c58bb6a70535f9b6aa9aed96125b12250a60e4",
+      "bytes": 769
+    },
+    "allocation.json": {
+      "sha256": "d83ae5cc7c6efc04a99b3ca40f09f4286683fe6da2c412ffb69321b8c2a6a4c7",
+      "bytes": 441
+    },
+    "postgres-version.log": {
+      "sha256": "29c518785673b6dfff5f6ffc7d29f4ff650dade6e30cdf9a238ece4698dc6503",
+      "bytes": 128
+    },
+    "REPORT.md": {
+      "sha256": "d3d7e4acb874df4ed84649d13fe3d3d8d0af0d1c2ea1fbd77c30a2239d7ab4be",
+      "bytes": 4155
+    },
+    "cleanup.log": {
+      "sha256": "ae33045694d50930ab0dd1e97fb9a785eb85518316e153f20919cbd6a9340f3d",
+      "bytes": 148
+    }
+  },
+  "observedFailures": [
+    "synthetic overlapping privacy/body admitted and erased while pending",
+    "synthetic overlapping order/body admitted and erased despite unverified identity"
+  ],
+  "ordinaryPayloadRelabelRejected": true,
+  "nativePayloadOverlapProven": false,
+  "productionAccess": false,
+  "repositoryEdits": false,
+  "correctionApplied": false,
+  "negativeControlExit": 1,
+  "clusterClosed": true
+}
