@@ -1,0 +1,15 @@
+▶ private reader terminates and releases its pipe by an independent deadline after CLI SIGKILL
+  ✔ normal (5346.399085ms)
+  ✔ retained-zombie (5299.168404ms)
+✔ private reader terminates and releases its pipe by an independent deadline after CLI SIGKILL (10647.089504ms)
+ℹ {"pythonVersion":"3.14.4","retainedZombie":false,"readerState":"ABSENT","fdRetained":false,"pipeClosed":true}
+ℹ {"pythonVersion":"3.14.4","retainedZombie":true,"readerState":"Z","fdRetained":false,"pipeClosed":true}
+✔ synthetic Python control failures preserve their diagnostic traceback (131.789658ms)
+ℹ tests 4
+ℹ suites 0
+ℹ pass 4
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 10925.002924

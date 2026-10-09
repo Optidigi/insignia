@@ -1,0 +1,19 @@
+test_local_subprocess_inventory_preserves_unknown_downstream (__main__.EntryControls.test_local_subprocess_inventory_preserves_unknown_downstream) ... FAIL
+test_unqualified_entry_stops_before_any_host_read (__main__.EntryControls.test_unqualified_entry_stops_before_any_host_read) ... ok
+
+======================================================================
+FAIL: test_local_subprocess_inventory_preserves_unknown_downstream (__main__.EntryControls.test_local_subprocess_inventory_preserves_unknown_downstream)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-host-inventory-worktree/scripts/m5-host-inventory/operator_test.py", line 31, in test_local_subprocess_inventory_preserves_unknown_downstream
+    self.assertEqual(result['classification'], 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_ENTRY_UNQUALIFIED' != 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED'
+- STOP_ENTRY_UNQUALIFIED
++ LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.027s
+
+FAILED (failures=1)

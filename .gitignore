@@ -45,3 +45,7 @@ scripts/m4-002/__pycache__/
 # M5-002 serialized operator state; never evidence or credentials
 .m5-002-local/
 .shopify/
+
+# Local bytecode for bounded inventory tooling; execution uses -B.
+scripts/m5-host-inventory/__pycache__/
+scripts/m5-inventory-phase/__pycache__/

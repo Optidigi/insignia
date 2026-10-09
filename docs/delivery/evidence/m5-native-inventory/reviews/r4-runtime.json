@@ -1,0 +1,38 @@
+{
+  "base": "d9ba6383a6e15958419ecf8e26d9182f08078e41",
+  "head": "56356536d26a5a262bc37e2b309c17824671643e",
+  "tree": "a5fe3b59e80f0773c35b5d3457c9e86fca5565bc",
+  "reviewers": [
+    {
+      "axis": "spec",
+      "sessionId": "01a12184-625d-79c2-9460-17ef17f76f16",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "approvalPolicy": "never",
+      "sandboxPolicy": {
+        "type": "read-only"
+      },
+      "verdict": "CHANGES_REQUIRED",
+      "processExitCode": 0,
+      "promptSha256": "f9740f108690ded2787c9a3cbb7ac58c80c3fdee2dd17065fb1189620b21d465",
+      "reportSha256": "81e46dba0a574f2f3a7e9da75220c724aedd3ea1d43f9eee4d85f0f5aef3febc",
+      "limitations": "Filesystem read-only static local review; credential/network isolation not claimed"
+    },
+    {
+      "axis": "security",
+      "sessionId": "01a12184-66d5-7b92-adfd-e8f52fa730c7",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "approvalPolicy": "never",
+      "sandboxPolicy": {
+        "type": "read-only"
+      },
+      "verdict": "CLEAR",
+      "processExitCode": 0,
+      "promptSha256": "e5927ec857165013e781ceba25739cb11a2b27859e7b5054d52e43102ea720d3",
+      "reportSha256": "17c1ea179b8d4af57901e517632869c2f45956ad177b035d9f79f62f118fc12d",
+      "limitations": "Filesystem read-only static local review; credential/network isolation not claimed"
+    }
+  ],
+  "localAcceptance": "NOT_ACCEPTED_SPEC_P2_AND_TWO_ATTEMPT1_CI_FAILURES_NATIVE_GATE_CLOSED"
+}

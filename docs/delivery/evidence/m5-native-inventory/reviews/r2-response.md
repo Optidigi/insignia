@@ -1,0 +1,8 @@
+# PR60 round-two response
+
+Both independent reviews returned CHANGES_REQUIRED on candidate `c5b3ad9d2a82d5fae88a2026eac2946de4adaf93`, tree `67320bfe17d5ac194311949a8489d164d5e41c8a`. Its ten attempt-1 workflows passed; that CI did not clear the findings or authorize native access.
+
+- Spec P2: reproduced both writerless FIFO allocation and abandoned-journal opens hanging before type validation. Add O_NONBLOCK to both O_NOFOLLOW opens and retain descriptor regular-file checks. Actual public CLI controls now reject promptly before HTTP.
+- Standards/security P2: reproduced the blocked credential-reader child retaining its descriptor after the supervisor was killed. Give the reader an independent five-second SIGKILL deadline in addition to surviving-parent kill/reap supervision. The first process.exit timer still hung in runtime cleanup; that failed attempt and exact source snapshot are retained. The final public CLI control observes terminated reader, closed descriptor and pipe after supervisor SIGKILL. This does not claim the killed supervisor reaps its child, absence of zombie metadata, or secure erasure of JavaScript/OS memory.
+
+[Separate correction evidence](../pr60-r2-corrections/manifest.json) records actual RED/GREEN controls and current artifact hashes. Original and round-one manifests remain byte-identical and retrievable at the historical candidate. Phase/source/host and all production/provider inputs are unchanged. Fresh independent full-source reviews and natural exact-head CI are required. Native gate remains closed until those qualify; no native phase or credential access has occurred.

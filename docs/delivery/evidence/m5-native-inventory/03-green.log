@@ -1,0 +1,26 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (45.468544ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (4.247706ms)
+  ✔ request template is not permission (2.82612ms)
+  ✔ no approval reference (1.482667ms)
+  ✔ wrong endpoint (1.410899ms)
+  ✔ wrong optional scopes (1.472992ms)
+  ✔ required scope expansion (1.227415ms)
+  ✔ grant expansion (2.075839ms)
+  ✔ mutations (1.465481ms)
+  ✔ wrong operation (1.408009ms)
+  ✔ too many requests (1.265201ms)
+  ✔ too long retention (1.244582ms)
+  ✔ expired grant (4.220336ms)
+  ✔ wrong private destination (2.422732ms)
+  ✔ credential absent (1.179011ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (31.000899ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (20.603087ms)
+ℹ tests 17
+ℹ suites 0
+ℹ pass 17
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 214.843396

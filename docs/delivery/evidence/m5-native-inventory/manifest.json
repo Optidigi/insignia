@@ -1,0 +1,471 @@
+{
+  "schema": "insignia-native-inventory-offline-evidence-v1",
+  "generatedAt": "2026-10-09T14:34:16.112471+00:00",
+  "status": "OWNER_READ_ONLY_ENVELOPE_GRANTED_OFFLINE_IMPLEMENTED_NATIVE_NOT_RUN",
+  "repository": "Optidigi/insignia",
+  "branch": "feat/m5-bounded-native-inventory",
+  "writerBase": "7bfba46e79ff2f9208d13f5712918f357b5836b4",
+  "baseTree": "b6e7e6d7fc931b84d4a72e09981a95a317024621",
+  "runtime": "v24.21.0",
+  "testDesignAuthority": "Owner milestone autonomy and explicitly delegated local public collector/CLI seam design; orchestrator-approved writer scope.",
+  "ownerReadOnlyAllocation": "owner-readonly-allocation.json; exact owner response to bounded consolidated question, native access gated on local freeze; not permission for mutations",
+  "approvedDocuments": {
+    "path": "docs/delivery/evidence/m5-027/inventory.graphql",
+    "sha256": "ea48a307366b8cb366f17a1d854e26b211cba8372072d54ab69a9c00ed9d58e4",
+    "actualOutgoingCopiesMatchRetainedSource": true
+  },
+  "redGreenCycles": [
+    {
+      "cycle": 1,
+      "contract": "durable bounded one-page collection/private output",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "01-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "01-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 2,
+      "contract": "owner input/resource guard",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "02-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "02-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 3,
+      "contract": "two-page cursor and final identity",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "03-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "03-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 4,
+      "contract": "provider completeness/identity/grants/conflicts/caps",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "04-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "04-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 5,
+      "contract": "HTTP failures/redirect/API fallback/size/timeout/no retry",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "05-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "05-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 6,
+      "contract": "absolute run/allocation deadline",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "06-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "06-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 7,
+      "contract": "private token-fd CLI and reinvocation refusal",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "07-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "07-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 8,
+      "contract": "real child-process kill and abandoned reservation seal",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "08-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "08-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 9,
+      "contract": "unknown queried response fields",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "09-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "09-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 10,
+      "contract": "literal token reflection containment",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "10-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "10-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 11,
+      "contract": "private response I/O failure and uncertainty",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "11-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "11-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 13,
+      "contract": "existing supported capability/strict allocation fields",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "13-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "13-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": null,
+      "greenExitCode": null
+    },
+    {
+      "cycle": 14,
+      "contract": "opaque category for unknown topic bytes",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "14-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "14-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": 1,
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 15,
+      "contract": "shared receiver across coherent distinct topics",
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "red": "15-red.log",
+      "redVerdict": "FAIL_OBSERVED",
+      "green": "15-green.log",
+      "greenVerdict": "PASS_OBSERVED",
+      "redExitCode": 1,
+      "greenExitCode": 0
+    }
+  ],
+  "earlyExitStatusLimitation": "For cycles 01-11 and 13 the logging shell printed the captured Node log afterwards, so exact Node numeric exit statuses were not retained; the logs establish failing/passing test verdicts. Cycles14/15 preserve direct tool-observed exit1/exit0. Do not infer earlier wrapper exit0 means Node PASS.",
+  "additionalFailedControl": {
+    "log": "12-additional-controls.log",
+    "classification": "TEST_FIXTURE_CONTAINED_TWO_VIOLATIONS",
+    "detail": "Cross-page duplicate fixture also cycled cursor, causing STOP_CURSOR_CYCLE before duplicate classification. Fixture cursor corrected before cycle13; failure preserved, no security assertion weakened."
+  },
+  "checks": [
+    {
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "exitCode": 0,
+      "log": "final-tests.log",
+      "tests": 89,
+      "qualification": "OFFLINE_LOOPBACK_ONLY"
+    },
+    {
+      "command": "/home/serveradmin/insignia-m5-027-worktree/node_modules/.bin/biome check scripts/m5-native-inventory",
+      "exitCode": 0,
+      "log": "final-style.log",
+      "provenance": "Existing repository-pinned Biome2.5.14 executable, no install/root config modification"
+    },
+    {
+      "command": "node --check scripts/m5-native-inventory/collector.mjs && node --check scripts/m5-native-inventory/cli.mjs && node --check scripts/m5-native-inventory/collector.test.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "targeted Python new-file credential/import/local-link check",
+      "exitCode": 0,
+      "log": "targeted-source-checks.log"
+    },
+    {
+      "command": "node scripts/boundaries/check-secrets.mjs",
+      "status": "UNAVAILABLE_MISSING_UNCHANGED_BUILT_ARTIFACT",
+      "log": "secrets.log",
+      "nodeExitCode": null,
+      "detail": "Production source scanner reached required apps/storefront/dist/insignia-storefront.js missing in isolated worktree. No build/dependency install performed; targeted new-source scan passed."
+    },
+    {
+      "command": "node scripts/m5-native-inventory/cli.mjs --help",
+      "status": "PASS",
+      "log": "cli-help.log"
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0,
+      "limitation": "New files are untracked in writer branch; formatter and targeted source checks cover them."
+    }
+  ],
+  "artifacts": [
+    {
+      "path": "scripts/m5-native-inventory/collector.mjs",
+      "bytes": 18834,
+      "sha256": "38f727a94108841d5d3948753b5825310c4e7e48bcb541fa751cd94a2cf3bf6d"
+    },
+    {
+      "path": "scripts/m5-native-inventory/cli.mjs",
+      "bytes": 3314,
+      "sha256": "1fb4231b3219458f1bf55efa1c7253d19072b8e79f133a5f3e051259230d0bae"
+    },
+    {
+      "path": "scripts/m5-native-inventory/collector.test.mjs",
+      "bytes": 29816,
+      "sha256": "a870273cffb61e9bd7ad39967d6cd95ded1d9c3b48ff5d75ccaa6d37e3134016"
+    },
+    {
+      "path": "docs/delivery/M5-NATIVE-INVENTORY-COLLECTOR.md",
+      "bytes": 14206,
+      "sha256": "3b6b56189c1f91cdffb8639a8d6279fbd1e9fad62d739ef206a7b97a0ba832f6"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/01-green.log",
+      "bytes": 230,
+      "sha256": "3665871fc85dabf9a4b8a95c8c5c36d6e41138e8652f454d7d4ec2a3cba8699d"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/01-red.log",
+      "bytes": 1739,
+      "sha256": "61b4f16d45265343320a4f96bfa50a921cccecc3fb84ba17e9a8e82a1b910067"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/02-green.log",
+      "bytes": 970,
+      "sha256": "d8bc10c898378be037344a7a6c89c1926a3600a800b21f647cd8bf0685133038"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/02-red.log",
+      "bytes": 14835,
+      "sha256": "eb78e3e9f8da151657dabe543d8316b4a090fbd5beeefa3fbfafabd5cb78dd12"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/03-green.log",
+      "bytes": 1078,
+      "sha256": "fcc3e2c6f02478ad8a911afbcfe50a48ca08452bacdf58fbe7ccdf85e3418eab"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/03-red.log",
+      "bytes": 1794,
+      "sha256": "e6d67cf0d3bd634dc926eaa21a637ef3a74cf50ad4ffbfabb079cfebf406627c"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/04-green.log",
+      "bytes": 1923,
+      "sha256": "dbf35895369ea1255446ede4c3797c488f9452fc87f9d3ceb0b114ee2745681c"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/04-red.log",
+      "bytes": 19456,
+      "sha256": "3ba95fccb4c1b32278d8be128dcc4b6a4f2900bc006518c8a9d5b19e0c18a753"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/05-green.log",
+      "bytes": 2533,
+      "sha256": "896f49ece1030f45738c627a5c91986ea0ec6d55c4e43091aa7c847a92131975"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/05-red.log",
+      "bytes": 12228,
+      "sha256": "0ff6dc0f0f78631f451a0a7b7abd86290bd850b0b8cda934b28b22925296ab07"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/06-green.log",
+      "bytes": 2636,
+      "sha256": "a6ea474166c125cdb588ae605924554679435ea3692cb100b1333b616ff50f75"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/06-red.log",
+      "bytes": 3476,
+      "sha256": "15a5b650e599b7d9582c1c1ce408b0defd495c4729122bb4d4d08780df9b7f31"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/07-green.log",
+      "bytes": 2749,
+      "sha256": "d7c6c4fb210a9ce74c2b6d772ca42256389bf316507454c863d0b80948e2c8e7"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/07-red.log",
+      "bytes": 3555,
+      "sha256": "305cbb51545669174f38c72bc484fc456e9e5247cacb5b31b277f9c11a1500dc"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/08-green.log",
+      "bytes": 2852,
+      "sha256": "b06d4508b5a10c1f03540921ca45bfde98eeb9347b7ddd74a3316403f7a5b361"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/08-red.log",
+      "bytes": 3703,
+      "sha256": "b88f4aaae17c8770c04468f8159c96ea13006d071d34d5f96356ee08431e47d7"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/09-green.log",
+      "bytes": 3312,
+      "sha256": "d21fde21d20111e382d807b3980736d11e8bd21b223163bb07be553fb8b5ffdf"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/09-red.log",
+      "bytes": 8447,
+      "sha256": "85f3b9fb69f33dd47d1a391f92a948107ac8db037ddddec3b343cf1ec6f0ab9b"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/10-green.log",
+      "bytes": 3431,
+      "sha256": "58c6c6d5cdae654c13b950b22b519b98549bcc263f602ac98b8e35f9d1d51fdc"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/10-red.log",
+      "bytes": 4287,
+      "sha256": "1ecedec18269e0ae0e5ecae4c74fe27747ff70c0d9442bd22781c74cf0e53b06"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/11-green.log",
+      "bytes": 3553,
+      "sha256": "d8e9c4a3f032d28b773427395783e8916067f8ae96a9f671446972eda4649f97"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/11-red.log",
+      "bytes": 4353,
+      "sha256": "863bc278628a94894a1838195a8b9ddf1a1c070e69624477260c5bb9717e3776"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/12-additional-controls.log",
+      "bytes": 6053,
+      "sha256": "7d75eef71c9b20e4c9d547c16caad1e40c24158a66d7a4b22f514e5fa24b2b31"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/13-green.log",
+      "bytes": 5377,
+      "sha256": "4d645e86c255987948489068c4a57cf3df3abe2fe1da06551b9d26c7788277e7"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/13-red.log",
+      "bytes": 7372,
+      "sha256": "d9f2dd66ccb4a89eced19a0c1ed13e27338e91362e61e9069af216bba163a0b8"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/14-green.log",
+      "bytes": 5487,
+      "sha256": "efc38ce7f2a4f197017344781a120d6d10726babf88dc56bc38bba87ce8211d6"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/14-red.log",
+      "bytes": 6312,
+      "sha256": "e08f9bc650c95d7a0888c80ac769f313424df32b880632aa273f7afa72c1645a"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/15-green.log",
+      "bytes": 5614,
+      "sha256": "5079f6e9027a5b67c2322d946f275e2bbf45169ae57575cf4efdcdc12df27e66"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/15-red.log",
+      "bytes": 6505,
+      "sha256": "42ee019b9ab506d0d862bbb2c8eeadd67cb2e20838697d6d3a515b1d43705422"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/cli-help.log",
+      "bytes": 242,
+      "sha256": "50b6492a4b198646695eabd792a4550dec7c2435a1c7cb0488735818c3f8e0d4"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/final-format.log",
+      "bytes": 39,
+      "sha256": "dc22cc5b0412157b84fb7505897d575120324ad489399f2d6f710ec9ca894066"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/final-style.log",
+      "bytes": 43,
+      "sha256": "0867169c3092253043f8add68fe16f9b6a673447075bf76d2a95a910703438ac"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/final-tests.log",
+      "bytes": 5985,
+      "sha256": "1829468e142bd3e2f4a59e2e7aa8d97321fa794c2b1debf24deedd251d0ccca9"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/secrets.log",
+      "bytes": 787,
+      "sha256": "bdabf308ea2d07f8613d746ddd01ab44a4574845b7038b9a1ecf74ecfb7fb7a4"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/style-cleanup.log",
+      "bytes": 39,
+      "sha256": "a70107da23825c5237b2ebf00ef6cff4d500f2e7f4644f80a9d4ed00729d9bc9"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/style-first.log",
+      "bytes": 2049,
+      "sha256": "daed1b7fb12df904b8c78149e81230de8723d5f8fb7d029bfdba995430b50782"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/targeted-source-checks.log",
+      "bytes": 379,
+      "sha256": "f7f2b029558bb8c1c9b88ea6b4c796753fee540c3d1cfcbe58b916916e4bc2e3"
+    }
+  ],
+  "hashPolicy": "Only local code/document/sanitized synthetic log artifact hashes; no native raw body, callback capability, cursor, credential or identifying receipt hashes.",
+  "privateEvidence": "No native private collection produced. Loopback raw response files/journals were private temporary directories removed by test cleanup. Public logs contain only synthetic test verdicts.",
+  "notRun": [
+    "Native Shopify/API/platform field feasibility",
+    "Current Active/config/app-wide/compliance inventory",
+    "Supported credential/current exact IDs",
+    "Host/receiver/reconciler/processor/queue/SQL/service access",
+    "Privacy closure/downstream safety",
+    "M5/G7 acceptance",
+    "Independent final review (parent after integration)",
+    "Build/all historical tests/exact-head CI (parent proportional integration)",
+    "Commit/push/PR/merge/deploy"
+  ],
+  "limitations": [
+    "Successful shop-scoped collection is non-atomic and never native safety PASS.",
+    "Allocation JSON is declaration, not proof of actual owner approval.",
+    "Retention/earlier erasure requires named private evidence owner; no cleanup watcher installed.",
+    "Sealing may fail on unresolved private I/O/journal.pending conflict; reservation/directory remain consumed.",
+    "Host/current OS identity and filesystem fsync semantics are trusted; PID liveness guard is conservative."
+  ],
+  "sourceReferences": [
+    "authority/OWNER-DECISION-2026-10-09.md in supplied milestone-autonomy package",
+    "repo-proposals/docs/delivery/operating-model.md in supplied package",
+    "docs/architecture/decision-ledger.md",
+    "docs/architecture/implementation-plan.md sections6.5/10.4/11/14/15.M5",
+    "docs/delivery/M5-027-READ-ONLY-INVENTORY.md",
+    "docs/delivery/M5-026-CALLBACK-AUTHORITY.md",
+    ".agents/skills/tdd/SKILL.md",
+    ".agents/skills/tdd/tests.md",
+    ".agents/skills/tdd/mocking.md",
+    ".agents/skills/diagnosing-bugs/SKILL.md",
+    ".agents/skills/writing-for-agents/SKILL.md"
+  ],
+  "parentIndependentTest": {
+    "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+    "exitCode": 0,
+    "tests": 89,
+    "passed": 89,
+    "failed": 0,
+    "skipped": 0,
+    "log": "Private parent handoff collector-parent-test.log",
+    "logSha256": "c3d16cef7f45ab9f3e1f3d73e9bc518ec4c61e7445e06acb9d7b7f627360e79d",
+    "scope": "Fresh isolated loopback/offline public-boundary tests, no native provider/access"
+  }
+}

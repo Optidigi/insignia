@@ -1,0 +1,92 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (43.143364ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (4.596518ms)
+  ✔ request template is not permission (1.396842ms)
+  ✔ no approval reference (1.359896ms)
+  ✔ wrong endpoint (1.626245ms)
+  ✔ wrong optional scopes (1.443419ms)
+  ✔ required scope expansion (2.51813ms)
+  ✔ grant expansion (1.333574ms)
+  ✔ mutations (1.714267ms)
+  ✔ wrong operation (1.407821ms)
+  ✔ too many requests (1.577754ms)
+  ✔ too long retention (1.518501ms)
+  ✔ expired grant (1.335619ms)
+  ✔ wrong private destination (2.339578ms)
+  ✔ credential absent (2.320525ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (29.653596ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (19.783204ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (7.659154ms)
+  ✔ missing shop (5.670701ms)
+  ✔ wrong shop (6.974704ms)
+  ✔ wrong client (6.136133ms)
+  ✔ wrong app (10.011046ms)
+  ✔ wrong installation (8.197066ms)
+  ✔ grant drift (7.565261ms)
+  ✔ grant duplicate (7.624386ms)
+  ✔ connection missing (5.684996ms)
+  ✔ page info missing (5.161685ms)
+  ✔ next cursor missing (5.117942ms)
+  ✔ topic missing (6.196536ms)
+  ✔ unsupported version (5.519829ms)
+  ✔ unsupported format (5.580048ms)
+  ✔ URI missing (8.517772ms)
+  ✔ duplicate ID (6.115527ms)
+  ✔ URI conflict (6.407612ms)
+  ✔ page over 250 (5.897615ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (123.392685ms)
+▶ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry
+  ✔ permission (5.733879ms)
+  ✔ throttle (8.395839ms)
+  ✔ redirect (9.239171ms)
+  ✔ API fallback (8.913577ms)
+  ✔ missing API header (8.271023ms)
+  ✔ not JSON (18.04111ms)
+  ✔ encoding (30.602746ms)
+  ✔ malformed body (22.795038ms)
+  ✔ over 1 MiB (19.626755ms)
+  ✔ lost response (37.364165ms)
+  ✔ absolute timeout (35.326872ms)
+✔ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry (206.44674ms)
+✔ run deadline and expired allocation stop in flight and preserve consumed reservations (35.315403ms)
+✔ CLI reads one bounded existing token from inherited descriptor and prints only the public result (251.165946ms)
+✔ killed in-flight process leaves a consumed reservation; seal never resumes or retries it (95.13895ms)
+▶ unknown identity and connection shapes cannot silently qualify a partial provider response
+  ✔ unexpected queried object field (4.806431ms)
+  ✔ unexpected queried object field (3.683986ms)
+  ✔ unexpected queried object field (3.560173ms)
+  ✔ unexpected queried object field (4.881188ms)
+  ✔ unexpected queried object field (7.835947ms)
+✔ unknown identity and connection shapes cannot silently qualify a partial provider response (25.677073ms)
+✔ credential reflection is withheld from disk and public errors while the attempted request remains consumed (4.303648ms)
+✖ private response-write failure seals the acknowledged request as uncertain without another transport (5.527856ms)
+ℹ tests 59
+ℹ suites 0
+ℹ pass 58
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 945.738523
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:295:1
+✖ private response-write failure seals the acknowledged request as uncertain without another transport (5.527856ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'RESERVED'
+  - 'UNCERTAIN'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:306:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'RESERVED',
+    expected: 'UNCERTAIN',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

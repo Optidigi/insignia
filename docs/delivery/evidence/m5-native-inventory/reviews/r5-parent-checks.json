@@ -1,0 +1,51 @@
+{
+  "scope": "LOCAL_ONLY_NATIVE_NOT_STARTED",
+  "counts": {
+    "nativeCollector": 98,
+    "host": 17,
+    "phase": 13,
+    "skips": 0
+  },
+  "checks": {
+    "inventory-r5-integrated": {
+      "command": [
+        "pnpm",
+        "test:m5-inventory"
+      ],
+      "startedAt": "2026-10-09T16:55:53.958553+00:00",
+      "exitCode": 0,
+      "log": "inventory-r5-integrated.log",
+      "sha256": "df55f81feb959cc85066e2d27ea1c4cb66fa11a7b59622c6c5fc3a603ed68cbf",
+      "bytes": 10339
+    },
+    "inventory-r5-style": {
+      "command": [
+        "pnpm",
+        "check:style"
+      ],
+      "startedAt": "2026-10-09T16:54:58.956635+00:00",
+      "exitCode": 0,
+      "log": "inventory-r5-style.log",
+      "sha256": "71e7e7d5438cb14476ba79148d47fd824a8c97c22d054bf0ff4d895b66c37563",
+      "bytes": 13179
+    },
+    "inventory-r5-secrets": {
+      "command": [
+        "pnpm",
+        "check:secrets"
+      ],
+      "startedAt": "2026-10-09T16:55:25.316976+00:00",
+      "exitCode": 0,
+      "log": "inventory-r5-secrets.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    }
+  },
+  "runtimeSources": "BYTE_IDENTICAL_56356536",
+  "historicalManifests": "SIX_BYTE_IDENTICAL_56356536",
+  "productionAndProviderInputs": "UNCHANGED",
+  "priorCI": "R4_EIGHT_SUCCESS_TWO_FAILURE_RETAINED",
+  "freshReview": "PENDING",
+  "exactHeadCI": "PENDING",
+  "nativeGate": "CLOSED"
+}

@@ -1,0 +1,119 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (44.547943ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (4.633367ms)
+  ✔ request template is not permission (1.458497ms)
+  ✔ no approval reference (1.525275ms)
+  ✔ wrong endpoint (1.307103ms)
+  ✔ wrong optional scopes (1.240313ms)
+  ✔ required scope expansion (1.189542ms)
+  ✔ grant expansion (1.20631ms)
+  ✔ mutations (1.388109ms)
+  ✔ wrong operation (1.498514ms)
+  ✔ too many requests (1.342186ms)
+  ✔ too long retention (1.180557ms)
+  ✔ expired grant (1.032663ms)
+  ✔ wrong private destination (2.51464ms)
+  ✔ credential absent (1.1204ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (25.238175ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (11.438871ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (6.681052ms)
+  ✔ missing shop (5.119153ms)
+  ✔ wrong shop (4.758568ms)
+  ✔ wrong client (5.066434ms)
+  ✔ wrong app (5.661596ms)
+  ✔ wrong installation (4.607111ms)
+  ✔ grant drift (4.772626ms)
+  ✔ grant duplicate (8.251959ms)
+  ✔ connection missing (4.000689ms)
+  ✔ page info missing (4.682972ms)
+  ✔ next cursor missing (4.404588ms)
+  ✔ topic missing (4.592933ms)
+  ✔ unsupported version (3.908164ms)
+  ✔ unsupported format (6.225269ms)
+  ✔ URI missing (6.211022ms)
+  ✔ duplicate ID (3.649732ms)
+  ✔ URI conflict (5.090316ms)
+  ✔ page over 250 (4.561883ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (95.135175ms)
+▶ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry
+  ✔ permission (4.902206ms)
+  ✔ throttle (7.175056ms)
+  ✔ redirect (3.77146ms)
+  ✔ API fallback (4.477187ms)
+  ✔ missing API header (6.114038ms)
+  ✔ not JSON (4.75893ms)
+  ✔ encoding (3.787226ms)
+  ✔ malformed body (3.975513ms)
+  ✔ over 1 MiB (10.548376ms)
+  ✔ lost response (3.97919ms)
+  ✔ absolute timeout (26.332762ms)
+✔ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry (81.622676ms)
+✔ run deadline and expired allocation stop in flight and preserve consumed reservations (32.278269ms)
+✔ CLI reads one bounded existing token from inherited descriptor and prints only the public result (179.913086ms)
+✔ killed in-flight process leaves a consumed reservation; seal never resumes or retries it (87.137244ms)
+▶ unknown identity and connection shapes cannot silently qualify a partial provider response
+  ✔ unexpected queried object field (4.490884ms)
+  ✔ unexpected queried object field (4.246382ms)
+  ✔ unexpected queried object field (4.611828ms)
+  ✔ unexpected queried object field (7.273303ms)
+  ✔ unexpected queried object field (4.504373ms)
+✔ unknown identity and connection shapes cannot silently qualify a partial provider response (26.00343ms)
+✔ credential reflection is withheld from disk and public errors while the attempted request remains consumed (4.6184ms)
+✔ private response-write failure seals the acknowledged request as uncertain without another transport (4.039017ms)
+✔ full 500-record envelope needs exactly two pages and one final identity read (16.29588ms)
+▶ third page, cursor cycle, cross-page duplicates and boundary drift never extend the request envelope
+  ✔ third page (6.88476ms)
+  ✔ cursor cycle (5.940349ms)
+  ✖ cross-page duplicate (13.691438ms)
+  ✔ boundary drift (8.095461ms)
+  ✔ boundary error (5.993003ms)
+✖ third page, cursor cycle, cross-page duplicates and boundary drift never extend the request envelope (41.644942ms)
+▶ allocation may tighten ceilings and injected test endpoints cannot leave loopback
+  ✔ tight requests (4.639145ms)
+  ✔ tight pages (4.033459ms)
+  ✔ tight records (4.058504ms)
+  ✔ invalid endpoint denied before transport (0.995229ms)
+  ✔ invalid endpoint denied before transport (1.086056ms)
+  ✔ invalid endpoint denied before transport (0.791814ms)
+  ✔ invalid endpoint denied before transport (1.436888ms)
+  ✔ invalid endpoint denied before transport (0.880739ms)
+✔ allocation may tighten ceilings and injected test endpoints cannot leave loopback (19.115472ms)
+✔ failed journal persistence keeps reservation durable and forbids reinvocation despite an unsealed run (6.79418ms)
+▶ CLI refuses arbitrary queries, environment credential switches and duplicate flags before transport
+  ✔ --query (79.983332ms)
+  ✔ --token-env (81.796921ms)
+  ✔ --token-fd (82.475119ms)
+✔ CLI refuses arbitrary queries, environment credential switches and duplicate flags before transport (244.991189ms)
+ℹ tests 80
+ℹ suites 0
+ℹ pass 78
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 1024.353917
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:331:64
+✖ cross-page duplicate (13.691438ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_CURSOR_CYCLE'
+  - 'STOP_DUPLICATE_OR_CONFLICT'
+          ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:334:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:331:56)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_CURSOR_CYCLE',
+    expected: 'STOP_DUPLICATE_OR_CONFLICT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

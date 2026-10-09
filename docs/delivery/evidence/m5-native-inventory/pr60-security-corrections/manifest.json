@@ -1,0 +1,100 @@
+{
+  "schema": "insignia-pr60-security-correction-evidence-v1",
+  "generatedAt": "2026-10-09T15:49:53.138964+00:00",
+  "classification": "OFFLINE_CORRECTED_NATIVE_NOT_RUN",
+  "historicalCandidate": "6f899be0a0eb226bb257d99be249a9e4a86fa54d",
+  "historicalManifest": {
+    "path": "docs/delivery/evidence/m5-native-inventory/manifest.json",
+    "sha256": "e0cd57b4a400723eed0f5eda7d5c64764afa38697156f494225a46ee6c5df3a5",
+    "scope": "Historical R1 source and checks only; preserved unchanged; retrieve with git show 6f899be0a0eb226bb257d99be249a9e4a86fa54d:docs/delivery/evidence/m5-native-inventory/manifest.json"
+  },
+  "redImplementation": {
+    "path": "scripts/m5-native-inventory/cli.mjs",
+    "commit": "6f899be0a0eb226bb257d99be249a9e4a86fa54d",
+    "sha256": "1fb4231b3219458f1bf55efa1c7253d19072b8e79f133a5f3e051259230d0bae"
+  },
+  "contract": "Actual public CLI with inherited blocking os.pipe writer kept open terminates at five-second credential deadline without transport/run creation; fixed in-memory supervised reader killed and reaped. Only FIFO/socket descriptors accepted.",
+  "red": {
+    "log": "descriptor-red.log",
+    "exitCode": 1,
+    "command": "node --test --test-name-pattern='CLI exits by the credential deadline' scripts/m5-native-inventory/collector.test.mjs"
+  },
+  "green": {
+    "log": "descriptor-green.log",
+    "exitCode": 0,
+    "command": "node --test --test-name-pattern='CLI exits by the credential deadline' scripts/m5-native-inventory/collector.test.mjs"
+  },
+  "final": {
+    "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+    "log": "final-native.log",
+    "exitCode": 0,
+    "passed": 91
+  },
+  "currentArtifacts": [
+    {
+      "path": "scripts/m5-native-inventory/cli.mjs",
+      "sha256": "b738569ba87319babe7d8a027c2e75555616fdcc12ab95e19ffcdd556151a747"
+    },
+    {
+      "path": "scripts/m5-native-inventory/collector.test.mjs",
+      "sha256": "05022aa6748d654a083b0991e1633f356ed5b9c4bce5dac2c8fb3048736f9d35"
+    },
+    {
+      "path": "docs/delivery/M5-NATIVE-INVENTORY-COLLECTOR.md",
+      "sha256": "60eab7263ed97bb17295e975904e268658a0d5456229f95ca9533ec3a13dbd29"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/descriptor-green.log",
+      "sha256": "587a333608b39bb921bf8f0de018a682a0af09f51321331296a99caa22b03158"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/descriptor-red.log",
+      "sha256": "93dedd22dde9ead4eebf602e682bf39b7b38a7ae9b18a72f923dd9f31a6fd014"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/descriptor-type-green.log",
+      "sha256": "0c966b354c43f7238dd4ba4d375c3481e116e5fd79021cfd40fb61b248f88238"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/descriptor-type-red.log",
+      "sha256": "2d96b390c8eb592b1b12b02975a8fcbb65a3d237a3981a848ed463dd6bded23f"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/final-native.log",
+      "sha256": "b22beaa809818e478a4744baf5c6a28d7af964d62881f96c6ecac68e07df63fc"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/style-check.log",
+      "sha256": "ad217e44e5fa613e4c9cd65b241ee52add799c03d4c847ca13cb6e75e5ceffc0"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/style.log",
+      "sha256": "3128ee868434f3f0ae4b3d1e0ba040529feb578c8155ed4e7ddd850bcea43a52"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/descriptor-type-red-cli.mjs",
+      "sha256": "ac09ea1aae31caadf6ca61ec2f15f2bcb8bb3584de58a7da016d10dc9e6c44ba"
+    }
+  ],
+  "runtime": "v24.21.0",
+  "limitations": "Local subprocess/pipe and loopback HTTP only. No real SSH, credentials, external provider calls, mutation or deployment. Writer tests are not independent review; parent owns fresh exact-source independent reviews and CI. SHA declarations do not prove authority.",
+  "descriptorTypeCycle": {
+    "contract": "Regular-file fd must not substitute for supported private FIFO/socket channel. Synthetic regular-file RED completed loopback collection (exit0), contrary to required STOP; GREEN rejects before transport/run creation.",
+    "redImplementationSnapshot": "descriptor-type-red-cli.mjs",
+    "red": {
+      "log": "descriptor-type-red.log",
+      "exitCode": 1,
+      "command": "node --test --test-name-pattern='CLI rejects a regular-file credential' scripts/m5-native-inventory/collector.test.mjs"
+    },
+    "green": {
+      "log": "descriptor-type-green.log",
+      "exitCode": 0,
+      "command": "node --test --test-name-pattern='CLI rejects a regular-file credential' scripts/m5-native-inventory/collector.test.mjs"
+    }
+  },
+  "style": {
+    "command": "/home/serveradmin/insignia-m5-027-worktree/node_modules/.bin/biome check scripts/m5-native-inventory/cli.mjs scripts/m5-native-inventory/collector.test.mjs",
+    "log": "style-check.log",
+    "exitCode": 0
+  }
+}

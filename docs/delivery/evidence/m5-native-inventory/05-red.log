@@ -1,0 +1,279 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (36.649583ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (4.208418ms)
+  ✔ request template is not permission (2.932956ms)
+  ✔ no approval reference (1.264039ms)
+  ✔ wrong endpoint (1.302599ms)
+  ✔ wrong optional scopes (1.347073ms)
+  ✔ required scope expansion (1.208991ms)
+  ✔ grant expansion (1.260739ms)
+  ✔ mutations (1.499292ms)
+  ✔ wrong operation (1.333039ms)
+  ✔ too many requests (1.192612ms)
+  ✔ too long retention (1.383714ms)
+  ✔ expired grant (1.209927ms)
+  ✔ wrong private destination (2.0089ms)
+  ✔ credential absent (1.033388ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (25.963096ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (10.764156ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (5.866298ms)
+  ✔ missing shop (4.718785ms)
+  ✔ wrong shop (4.756828ms)
+  ✔ wrong client (4.341864ms)
+  ✔ wrong app (4.745603ms)
+  ✔ wrong installation (4.366821ms)
+  ✔ grant drift (4.950166ms)
+  ✔ grant duplicate (5.037476ms)
+  ✔ connection missing (6.275736ms)
+  ✔ page info missing (4.411992ms)
+  ✔ next cursor missing (3.84251ms)
+  ✔ topic missing (4.81162ms)
+  ✔ unsupported version (4.795374ms)
+  ✔ unsupported format (4.92959ms)
+  ✔ URI missing (4.200593ms)
+  ✔ duplicate ID (6.303919ms)
+  ✔ URI conflict (4.411358ms)
+  ✔ page over 250 (3.950488ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (89.656533ms)
+▶ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry
+  ✖ permission (5.572296ms)
+  ✖ throttle (5.708209ms)
+  ✖ redirect (4.102197ms)
+  ✖ API fallback (8.81856ms)
+  ✖ missing API header (6.947296ms)
+  ✖ not JSON (3.918593ms)
+  ✖ encoding (4.530373ms)
+  ✔ malformed body (4.64243ms)
+  ✖ over 1 MiB (16.145064ms)
+  ✖ lost response (3.881028ms)
+  ✖ absolute timeout (91.901385ms)
+✖ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry (158.913123ms)
+ℹ tests 48
+ℹ suites 0
+ℹ pass 37
+ℹ fail 11
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 446.128443
+
+✖ failing tests:
+
+test at scripts/m5-native-inventory/collector.test.mjs:180:57
+✖ permission (5.572296ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_PROVIDER_ERROR'
+  - 'STOP_HTTP_STATUS'
+          ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:184:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:180:49)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_PROVIDER_ERROR',
+    expected: 'STOP_HTTP_STATUS',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:180:57
+✖ throttle (5.708209ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_PROVIDER_ERROR'
+  - 'STOP_HTTP_STATUS'
+          ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:184:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:180:49)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_PROVIDER_ERROR',
+    expected: 'STOP_HTTP_STATUS',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:180:57
+✖ redirect (4.102197ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_PROVIDER_ERROR'
+  - 'STOP_HTTP_STATUS'
+          ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:184:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:180:49)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_PROVIDER_ERROR',
+    expected: 'STOP_HTTP_STATUS',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:180:57
+✖ API fallback (8.81856ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_RESPONSE_CONTRACT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:184:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:180:49)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_RESPONSE_CONTRACT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:180:57
+✖ missing API header (6.947296ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'COLLECTED_SHOP_SCOPED_NON_ATOMIC'
+  - 'STOP_RESPONSE_CONTRACT'
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:184:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:180:49)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'COLLECTED_SHOP_SCOPED_NON_ATOMIC',
+    expected: 'STOP_RESPONSE_CONTRACT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:180:57
+✖ not JSON (3.918593ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_PROVIDER_ERROR'
+  - 'STOP_RESPONSE_CONTRACT'
+          ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:184:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:180:49)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_PROVIDER_ERROR',
+    expected: 'STOP_RESPONSE_CONTRACT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:180:57
+✖ encoding (4.530373ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_PROVIDER_ERROR'
+  - 'STOP_RESPONSE_CONTRACT'
+          ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:184:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:180:49)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_PROVIDER_ERROR',
+    expected: 'STOP_RESPONSE_CONTRACT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:180:57
+✖ over 1 MiB (16.145064ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_PROVIDER_ERROR'
+  - 'STOP_RESPONSE_TOO_LARGE'
+          ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:184:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:180:49)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_PROVIDER_ERROR',
+    expected: 'STOP_RESPONSE_TOO_LARGE',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:180:57
+✖ lost response (3.881028ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_EVIDENCE_OR_TRANSPORT_UNCERTAIN'
+  - 'STOP_TRANSPORT_UNCERTAIN'
+          ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:184:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:180:49)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_EVIDENCE_OR_TRANSPORT_UNCERTAIN',
+    expected: 'STOP_TRANSPORT_UNCERTAIN',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at scripts/m5-native-inventory/collector.test.mjs:180:57
+✖ absolute timeout (91.901385ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+  
+  + 'STOP_IDENTITY_OR_GRANT_DRIFT'
+  - 'STOP_RESPONSE_TIMEOUT'
+          ^
+  
+      at TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:184:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-native-inventory/collector.test.mjs:180:49)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'STOP_IDENTITY_OR_GRANT_DRIFT',
+    expected: 'STOP_RESPONSE_TIMEOUT',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

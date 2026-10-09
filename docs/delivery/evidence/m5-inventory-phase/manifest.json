@@ -1,0 +1,315 @@
+{
+  "schema": "insignia-inventory-phase-offline-evidence-v1",
+  "generatedAt": "2026-10-09T15:28:07.315466+00:00",
+  "writerBase": "d9ba6383a6e15958419ecf8e26d9182f08078e41",
+  "runtime": "Python 3.14.4",
+  "classification": "OFFLINE_IMPLEMENTED_NATIVE_NOT_STARTED",
+  "testDesign": "Explicitly delegated public phase/SSH caller seam; actual local subprocess/pipe boundaries only.",
+  "authority": "Parent verifies actual owner read-only grant, review acceptance, natural CI and access; unsigned declaration/status/digest is not proof of authority. No HMAC/auth credential scheme introduced.",
+  "contracts": {
+    "adminRequestsReservedOnce": 3,
+    "ownerSurfaces": 3,
+    "metadataObservationLimit": 12,
+    "hostReservedOnce": 10,
+    "remainingUnknownWithoutRead": 2,
+    "sharedSeconds": 1800,
+    "combinedCaptureBytes": 12648448,
+    "stderrBytes": 65536,
+    "sshInvocations": 1
+  },
+  "redGreenCycles": [
+    {
+      "cycle": 1,
+      "contract": "shared deadline/private Admin reservation/binding",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "01-red.log",
+      "redExitCode": 1,
+      "green": "01-green.log",
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 2,
+      "contract": "unqualified declaration admission",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "02-red.log",
+      "redExitCode": 1,
+      "green": "02-green.log",
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 3,
+      "contract": "owner surfaces and final closure",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "03-red.log",
+      "redExitCode": 1,
+      "green": "03-green.log",
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 4,
+      "contract": "verified stdin loader and reserved SSH seam",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "04-red.log",
+      "redExitCode": 1,
+      "green": "04-green.log",
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 5,
+      "contract": "bounded subprocess output/timeout/private failure closure",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "05-red.log",
+      "redExitCode": 1,
+      "green": "05-green.log",
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 6,
+      "contract": "allocation directory prevents budget restart",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "06-red.log",
+      "redExitCode": 1,
+      "green": "06-green.log",
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 7,
+      "contract": "strict host result completeness/accounting",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "07-red.log",
+      "redExitCode": 1,
+      "green": "07-green.log",
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 8,
+      "contract": "host gate/access qualification before transport",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "08-red.log",
+      "redExitCode": 1,
+      "green": "08-green.log",
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 9,
+      "contract": "single-line forced command access artifact",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "09-red.log",
+      "redExitCode": 1,
+      "green": "09-green.log",
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 10,
+      "contract": "exact existing collector allocation file",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "10-red.log",
+      "redExitCode": 1,
+      "green": "10-green.log",
+      "greenExitCode": 0
+    },
+    {
+      "cycle": 11,
+      "contract": "killed caller reservation/reinvocation is non-mutating",
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "red": "11-red.log",
+      "redExitCode": 1,
+      "green": "11-green.log",
+      "greenExitCode": 0
+    }
+  ],
+  "verification": [
+    {
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "exitCode": 0,
+      "log": "final-tests.log",
+      "testMethods": 12,
+      "includesSubcases": true
+    },
+    {
+      "command": "python3 -B scripts/m5-inventory-phase/phase.py --help",
+      "exitCode": 0,
+      "log": "help.log"
+    },
+    {
+      "command": "Python AST/credential marker/local-link check",
+      "exitCode": 0,
+      "log": "source-checks.log"
+    }
+  ],
+  "preservedAdditionalFailure": {
+    "log": "05-green-assertion-failure.log",
+    "detail": "Overbroad assertion rejected fixed category PRIVATE_IO; corrected to exact private metadata/stderr sentinel values, without changing containment behavior."
+  },
+  "hostSourceAtWriterHandoff": {
+    "path": "scripts/m5-host-inventory/host_inventory.py",
+    "sha256": "a917080edc777e0a859b85c8054240b187f58fcee6c8b2c9a86fa8586f59a285",
+    "note": "Parent-owned source; caller derives frozen source/selector digests at runtime and does not hardcode this receipt hash."
+  },
+  "artifacts": [
+    {
+      "path": "scripts/m5-inventory-phase/phase.py",
+      "bytes": 31989,
+      "sha256": "a1a60a2a2b05fa5af5732aff001ab0703dfa8d267901be097618deb6642e4ecf"
+    },
+    {
+      "path": "scripts/m5-inventory-phase/phase_test.py",
+      "bytes": 21178,
+      "sha256": "465b651b44c4fd753eba2aa0c24d899e77029995c050a1c493d2d1d0ed2e13a5"
+    },
+    {
+      "path": "docs/delivery/M5-INVENTORY-PHASE.md",
+      "bytes": 12290,
+      "sha256": "5d4972979fab11f46629e7b4fabba06cda25a4a996680beec1eb7499d186f2e2"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/01-green.log",
+      "bytes": 291,
+      "sha256": "c54e588759815c9d62ff3aca2102247542bf63e0de28786cc2c81469a320013a"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/01-red.log",
+      "bytes": 1195,
+      "sha256": "50bc8810402fc685ed6d23c91f989559fdbabdfd88fa466af1cf2a7d144d8c84"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/02-green.log",
+      "bytes": 464,
+      "sha256": "39f4eb3b6f574a587a6b9a17c27b51b41d4263c63cb80a40ddcb79be8625ebb3"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/02-red.log",
+      "bytes": 8377,
+      "sha256": "e0948e354589a640403bf18dcc4801c88d4daf8970ea0d0f957329a68799734e"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/03-green.log",
+      "bytes": 640,
+      "sha256": "6edaf7b982f82ce56ffd07521ca552ec7ffe394032e4fab9c15310b9c861d579"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/03-red.log",
+      "bytes": 1517,
+      "sha256": "36e569124f66c036dd6bf90308eaa2a480a8819326b4e134a53feb97aed6939d"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/04-green.log",
+      "bytes": 846,
+      "sha256": "0eb6dc97932de358deeee886d5c1a79d2eb2d918237ddb119346e9bb87575972"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/04-red.log",
+      "bytes": 1793,
+      "sha256": "c8df958dad629ed314225860824709ee1fa14ad0d2d8a3523bde71301c2d6691"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/05-green-assertion-failure.log",
+      "bytes": 3387,
+      "sha256": "40d9abae3619332e90849fc5e4ed90702ac4383d8ad82eb783f6f2dc5439dd0f"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/05-green.log",
+      "bytes": 1038,
+      "sha256": "62fb4d8d241f75d56fa7c4c38fe88f271af6d68affc845473a99fe9dfda8cc55"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/05-red.log",
+      "bytes": 7259,
+      "sha256": "f82e3d05cf3f6d47a9032ca4d923928d3bdcfb61b263fad72d60a8d7c05b02e1"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/06-green.log",
+      "bytes": 1198,
+      "sha256": "c1a26440010893ad91cbd2919b17453d1addb2baeaf7eab16fdc27b29410c0ff"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/06-red.log",
+      "bytes": 11956,
+      "sha256": "67c5e8a58da0ce21d0e967b535cbabb241ba0cbef31518dcef5349b41c4fbb00"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/07-green.log",
+      "bytes": 1394,
+      "sha256": "e11a2ee734db889cd05bbc5a6d2b360e192b5cade8e2f20b9b4bca600614b51a"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/07-red.log",
+      "bytes": 8471,
+      "sha256": "969e0d54cb802c1ba4110d5c51b0d6bd47ef6bc6458f6ea7b9ff3cd31778ea60"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/08-green.log",
+      "bytes": 1576,
+      "sha256": "7b55e7cf79c624b9ef3166a9bda923ade5876846a0e5fe7cbfeef315daff80f7"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/08-red.log",
+      "bytes": 5095,
+      "sha256": "698ae3dfb1dff3149b4e36e6015d908ce329c8301886a89f7a2985d8d80b6407"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/09-green.log",
+      "bytes": 1746,
+      "sha256": "14132f72562850792418b5a072ef018a5d423ffe336b11fd544d8217edfc6c15"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/09-red.log",
+      "bytes": 3569,
+      "sha256": "a04139e99f04545497d890ccbb19d4a2f77fb7b79683667f13b011a0985459a6"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/10-green.log",
+      "bytes": 1746,
+      "sha256": "55aa571ee6352d4c896579c5ff894f0db7a52567d1f73c72e70ae9b7a1765a06"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/10-red.log",
+      "bytes": 3008,
+      "sha256": "c65eb9d206223406471ff81f814421b742e7388b9893f248952024a7d9c85fad"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/11-green.log",
+      "bytes": 2277,
+      "sha256": "9a32ea8a81a6ec412e469d9d0f30a928511d65ea036a4d90700a7150581db9b9"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/11-red.log",
+      "bytes": 3179,
+      "sha256": "5fd9bf1aabc49ce5111994bed3ca7cb33d26af1e5d0454c076f9f6b001469347"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/final-tests.log",
+      "bytes": 2277,
+      "sha256": "181bcee875cbd4fb9433512855622bce62a01e6901ef38f189bda4357f43e831"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/help.log",
+      "bytes": 194,
+      "sha256": "1d38030db29ec272b882aac9c60ff336e0d0fbb5c51ec71046335c86a5e17fc5"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/source-checks.log",
+      "bytes": 164,
+      "sha256": "47d19308351a2b02d30d0e1008ad36f218207cb1655f542c60f4e123c9aac292"
+    }
+  ],
+  "hashPolicy": "Hashes cover public code/docs and sanitized synthetic local logs only; no native captures/key material/callback or identifying private receipt hashes.",
+  "privateEvidence": "Only synthetic temporary private captures produced and removed by test cleanup. No actual identity contents accessed.",
+  "notRun": [
+    "Live SSH",
+    "Native provider/Admin/owner reads",
+    "Credential use/key generation/server authorization changes",
+    "Native Docker/service/SQL/processor inspection",
+    "Independent completed-change reviews and exact-head CI (parent)",
+    "Commit/push/PR/merge/deploy"
+  ],
+  "limitations": [
+    "Private ledger trust comes from OS identity and parent-checked provenance; SHA binding is not authentication.",
+    "Server forced-command enforcement is an independently established access prerequisite, not proven by a declaration.",
+    "SSH disconnect/phase closure does not instantly prove remote termination; reserved slots remain consumed and remote source retains shared deadline.",
+    "Reservations do not prove reads completed; parent reconciles actual receipts.",
+    "Failed fsync/pending conflict may prevent durable closure; preserve partial run without retry.",
+    "Named retention owner must erase private copies/backups on time; no watcher installed.",
+    "Metadata capture does not establish global processor absence/privacy/uninstall/M5/G7 safety."
+  ]
+}

@@ -1,0 +1,18 @@
+test_running_topology_identifies_candidates_without_following_them (__main__.MetadataControls.test_running_topology_identifies_candidates_without_following_them) ... FAIL
+
+======================================================================
+FAIL: test_running_topology_identifies_candidates_without_following_them (__main__.MetadataControls.test_running_topology_identifies_candidates_without_following_them)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-host-inventory/operator_test.py", line 241, in test_running_topology_identifies_candidates_without_following_them
+    self.assertEqual(result['classification'], 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_TOPOLOGY_LIMIT' != 'LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED'
+- STOP_TOPOLOGY_LIMIT
++ LOCAL_TEST_METADATA_OBSERVED_NATIVE_UNQUALIFIED
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.151s
+
+FAILED (failures=1)

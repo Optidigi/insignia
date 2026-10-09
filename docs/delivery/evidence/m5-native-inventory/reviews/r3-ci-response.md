@@ -1,0 +1,9 @@
+# PR60 round-three CI response
+
+Fresh Spec and Standards/security reviews were CLEAR at `9c2b8ec84da0d96fb86e9bbd68108e210064a6b4`, tree `7994fc5ddce19e564d3cc2b86c562cebd6ffa14a`. Nine natural attempt-1 workflows passed; foundation run `37957210768` failed in the new orphan-reader control. This candidate was not locally accepted and the native gate remained closed. No rerun of that failed workflow is used as qualification.
+
+The helper exited with code 1 after approximately 5.2 seconds; its initial assertion omitted captured Python stderr, so the original traceback is unavailable. A separate actual child-subreaper control reproduced a retained zombie whose closed `/proc/PID/fd/3` raises PermissionError. Stricter pre-3.14 Path.exists behavior reproduces the original helper failure through that mechanism; this is compatible diagnosis, not recovered CI stderr or an actual local Python 3.12 run.
+
+The test now independently requires terminal Z/ABSENT state and EPIPE from the writer to prove the reader has terminated and closed its pipe. Live-process descriptor inspection remains strict; errors cannot turn a live reader into success. Actual normal and held-zombie controls and a negative live-error control qualify this distinction. Synthetic helper failures retain their tracebacks and nonsecret Python/kernel/platform diagnostics; a subsequent natural CI run must establish its actual interpreter. No production CLI, collector, phase or host source changes were necessary.
+
+[Separate correction evidence](../pr60-ci-corrections/manifest.json) retains actual RED/GREEN, current artifacts and byte-identical historical manifests. Both new completed-change reviews and new natural exact-head attempt-1 CI are required. No private credentials, host key setup, native phase or provider access occurred.

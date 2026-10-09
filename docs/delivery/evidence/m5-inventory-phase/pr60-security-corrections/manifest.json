@@ -1,0 +1,61 @@
+{
+  "schema": "insignia-pr60-security-correction-evidence-v1",
+  "generatedAt": "2026-10-09T15:49:53.132746+00:00",
+  "classification": "OFFLINE_CORRECTED_NATIVE_NOT_RUN",
+  "historicalCandidate": "6f899be0a0eb226bb257d99be249a9e4a86fa54d",
+  "historicalManifest": {
+    "path": "docs/delivery/evidence/m5-inventory-phase/manifest.json",
+    "sha256": "d93c5afad6f8843497507d4012c9808cc7e6971988420e5e74e21d013eb72dfc",
+    "scope": "Historical R1 source and checks only; preserved unchanged; retrieve with git show 6f899be0a0eb226bb257d99be249a9e4a86fa54d:docs/delivery/evidence/m5-inventory-phase/manifest.json"
+  },
+  "redImplementation": {
+    "path": "scripts/m5-inventory-phase/phase.py",
+    "commit": "6f899be0a0eb226bb257d99be249a9e4a86fa54d",
+    "sha256": "a1a60a2a2b05fa5af5732aff001ab0703dfa8d267901be097618deb6642e4ecf"
+  },
+  "contract": "Existing expansion-bearing identity paths fail before reservation or transport; conservative literal ASCII absolute path allowlist.",
+  "red": {
+    "log": "identity-red.log",
+    "exitCode": 1,
+    "command": "python3 -B scripts/m5-inventory-phase/phase_test.py PhaseControls.test_identity_expansion_syntax_stops_before_reservation_or_transport"
+  },
+  "green": {
+    "log": "identity-green.log",
+    "exitCode": 0,
+    "command": "python3 -B scripts/m5-inventory-phase/phase_test.py PhaseControls.test_identity_expansion_syntax_stops_before_reservation_or_transport"
+  },
+  "final": {
+    "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+    "log": "final-phase.log",
+    "exitCode": 0,
+    "passed": 13
+  },
+  "currentArtifacts": [
+    {
+      "path": "scripts/m5-inventory-phase/phase.py",
+      "sha256": "64d6361685d6e888f8913f14b42e7daf5e678350836f09c22c6b25ab1c656665"
+    },
+    {
+      "path": "scripts/m5-inventory-phase/phase_test.py",
+      "sha256": "5eba7b5065f34c1c1a7b19087b2fd4ef3d51c34a586ad18beabc3a62664fe3ea"
+    },
+    {
+      "path": "docs/delivery/M5-INVENTORY-PHASE.md",
+      "sha256": "225a51eb97014eac572e04f05eaecc13cb322b722eeed065e0dfa5d0561e3cef"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/pr60-security-corrections/final-phase.log",
+      "sha256": "a88dcb12687bacc8d0a8f3bbc402767ff501e03eadf262cb5a980ac4173908b3"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/pr60-security-corrections/identity-green.log",
+      "sha256": "14a869294dc8f774f9c83b4e5403a4796ce1d94b8cee3f9c3519b86fc93ca260"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/pr60-security-corrections/identity-red.log",
+      "sha256": "be14b4465ac004f1ad8bbdcee63cb882ed6b949a76448d0f1ea01cdc54e113c8"
+    }
+  ],
+  "runtime": "3.14.4",
+  "limitations": "Local subprocess/pipe and loopback HTTP only. No real SSH, credentials, external provider calls, mutation or deployment. Writer tests are not independent review; parent owns fresh exact-source independent reviews and CI. SHA declarations do not prove authority."
+}

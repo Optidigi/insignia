@@ -1,0 +1,19 @@
+test_allocation_freeze_reservation_and_deadline_fail_before_read (__main__.EntryControls.test_allocation_freeze_reservation_and_deadline_fail_before_read) ... ok
+test_live_cli_rejects_local_bindings_arbitrary_executables_paths_and_runtime (__main__.EntryControls.test_live_cli_rejects_local_bindings_arbitrary_executables_paths_and_runtime) ... ok
+test_local_subprocess_inventory_preserves_unknown_downstream (__main__.EntryControls.test_local_subprocess_inventory_preserves_unknown_downstream) ... ok
+test_unqualified_entry_stops_before_any_host_read (__main__.EntryControls.test_unqualified_entry_stops_before_any_host_read) ... ok
+test_ancestor_symlink_cannot_redirect_allocated_artifact (__main__.MetadataControls.test_ancestor_symlink_cannot_redirect_allocated_artifact) ... ok
+test_artifact_and_route_drift_stop_followup_reads (__main__.MetadataControls.test_artifact_and_route_drift_stop_followup_reads) ... ok
+test_missing_process_executable_is_unknown_not_absence (__main__.MetadataControls.test_missing_process_executable_is_unknown_not_absence) ... ok
+test_nonsecret_commercial_values_do_not_claim_provider_truth (__main__.MetadataControls.test_nonsecret_commercial_values_do_not_claim_provider_truth) ... ok
+test_symlink_artifact_is_not_followed (__main__.MetadataControls.test_symlink_artifact_is_not_followed) ... ok
+test_command_allowlist_blocks_sql_exec_shell_and_credentials (__main__.TransportControls.test_command_allowlist_blocks_sql_exec_shell_and_credentials) ... ok
+test_process_environment_does_not_forward_secret_or_routing_overrides (__main__.TransportControls.test_process_environment_does_not_forward_secret_or_routing_overrides) ... ok
+test_real_subprocess_failure_and_raw_metadata_never_capture_bait_or_retry (__main__.TransportControls.test_real_subprocess_failure_and_raw_metadata_never_capture_bait_or_retry) ... ok
+test_real_subprocess_stdout_limit_is_enforced_before_unbounded_capture (__main__.TransportControls.test_real_subprocess_stdout_limit_is_enforced_before_unbounded_capture) ... ok
+test_real_subprocess_timeout_and_inherited_pipe_are_bounded (__main__.TransportControls.test_real_subprocess_timeout_and_inherited_pipe_are_bounded) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 2.160s
+
+OK

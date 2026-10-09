@@ -1,0 +1,60 @@
+✔ complete one-page collection reserves every attempt durably and returns only opaque observations (53.174647ms)
+▶ unallocated or broadened owner inputs stop before any HTTP request or evidence creation
+  ✔ missing allocation (7.405361ms)
+  ✔ request template is not permission (4.788032ms)
+  ✔ no approval reference (3.290791ms)
+  ✔ wrong endpoint (2.526512ms)
+  ✔ wrong optional scopes (2.808453ms)
+  ✔ required scope expansion (2.420315ms)
+  ✔ grant expansion (2.571444ms)
+  ✔ mutations (2.938868ms)
+  ✔ wrong operation (2.678825ms)
+  ✔ too many requests (1.719642ms)
+  ✔ too long retention (2.394702ms)
+  ✔ expired grant (2.316297ms)
+  ✔ wrong private destination (2.379784ms)
+  ✔ credential absent (3.433255ms)
+✔ unallocated or broadened owner inputs stop before any HTTP request or evidence creation (47.755793ms)
+✔ two pages follow the exact private cursor then final identity within three total requests (18.584192ms)
+▶ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims
+  ✔ GraphQL errors (7.373145ms)
+  ✔ missing shop (9.102983ms)
+  ✔ wrong shop (6.071695ms)
+  ✔ wrong client (9.099753ms)
+  ✔ wrong app (6.86149ms)
+  ✔ wrong installation (10.005851ms)
+  ✔ grant drift (7.930721ms)
+  ✔ grant duplicate (6.423516ms)
+  ✔ connection missing (10.709618ms)
+  ✔ page info missing (7.327306ms)
+  ✔ next cursor missing (5.7149ms)
+  ✔ topic missing (8.796948ms)
+  ✔ unsupported version (8.842276ms)
+  ✔ unsupported format (8.06217ms)
+  ✔ URI missing (7.130129ms)
+  ✔ duplicate ID (8.516861ms)
+  ✔ URI conflict (11.959367ms)
+  ✔ page over 250 (10.071587ms)
+✔ incomplete, drifting, duplicate or over-cap provider observations seal immediately without boundary claims (153.291416ms)
+▶ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry
+  ✔ permission (7.119421ms)
+  ✔ throttle (5.536669ms)
+  ✔ redirect (6.572258ms)
+  ✔ API fallback (6.454339ms)
+  ✔ missing API header (8.462641ms)
+  ✔ not JSON (6.175421ms)
+  ✔ encoding (5.463201ms)
+  ✔ malformed body (8.163894ms)
+  ✔ over 1 MiB (9.01901ms)
+  ✔ lost response (5.220584ms)
+  ✔ absolute timeout (27.938129ms)
+✔ transport failures, redirects, API fallback, oversized bodies and absolute timeouts consume one attempt with no retry (98.725652ms)
+✔ run deadline and expired allocation stop in flight and preserve consumed reservations (32.640553ms)
+ℹ tests 49
+ℹ suites 0
+ℹ pass 49
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 627.542285

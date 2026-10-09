@@ -1,0 +1,215 @@
+{
+  "schema": "insignia-pr60-r4-ci-correction-evidence-v1",
+  "generatedAt": "2026-10-09T16:54:27.820436+00:00",
+  "classification": "OFFLINE_OBSERVER_CORRECTED_NATIVE_NOT_RUN",
+  "historicalCandidate": "56356536d26a5a262bc37e2b309c17824671643e",
+  "historicalTree": "a5fe3b59e80f0773c35b5d3457c9e86fca5565bc",
+  "historicalManifests": [
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/manifest.json",
+      "inputCommit": "56356536d26a5a262bc37e2b309c17824671643e",
+      "sha256": "e0cd57b4a400723eed0f5eda7d5c64764afa38697156f494225a46ee6c5df3a5",
+      "scope": "Historical inputs, source versions and checks only; preserved byte-identical. Retrieve prior artifact versions with git show 56356536d26a5a262bc37e2b309c17824671643e:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-security-corrections/manifest.json",
+      "inputCommit": "56356536d26a5a262bc37e2b309c17824671643e",
+      "sha256": "b35c22f85b81eab61167e178b903f03968a0c8be5b34e370f0e8802cfeb157db",
+      "scope": "Historical inputs, source versions and checks only; preserved byte-identical. Retrieve prior artifact versions with git show 56356536d26a5a262bc37e2b309c17824671643e:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r2-corrections/manifest.json",
+      "inputCommit": "56356536d26a5a262bc37e2b309c17824671643e",
+      "sha256": "dfaabe6b237810a1fada955a746c771d514fd32d308dc20eba6d6bbde2f74823",
+      "scope": "Historical inputs, source versions and checks only; preserved byte-identical. Retrieve prior artifact versions with git show 56356536d26a5a262bc37e2b309c17824671643e:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-ci-corrections/manifest.json",
+      "inputCommit": "56356536d26a5a262bc37e2b309c17824671643e",
+      "sha256": "a63b3dd34858db56c0b2c8fd084446a0e154e611f8edb74eaeccf1ea4cd796fb",
+      "scope": "Historical inputs, source versions and checks only; preserved byte-identical. Retrieve prior artifact versions with git show 56356536d26a5a262bc37e2b309c17824671643e:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/manifest.json",
+      "inputCommit": "56356536d26a5a262bc37e2b309c17824671643e",
+      "sha256": "d93c5afad6f8843497507d4012c9808cc7e6971988420e5e74e21d013eb72dfc",
+      "scope": "Historical inputs, source versions and checks only; preserved byte-identical. Retrieve prior artifact versions with git show 56356536d26a5a262bc37e2b309c17824671643e:PATH."
+    },
+    {
+      "path": "docs/delivery/evidence/m5-inventory-phase/pr60-security-corrections/manifest.json",
+      "inputCommit": "56356536d26a5a262bc37e2b309c17824671643e",
+      "sha256": "5d444ad27b1c77dd27797ad9e8149da605517648b3eef87c67d7534932096fa6",
+      "scope": "Historical inputs, source versions and checks only; preserved byte-identical. Retrieve prior artifact versions with git show 56356536d26a5a262bc37e2b309c17824671643e:PATH."
+    }
+  ],
+  "unchangedRuntimeSources": [
+    {
+      "path": "scripts/m5-native-inventory/cli.mjs",
+      "inputCommit": "56356536d26a5a262bc37e2b309c17824671643e",
+      "sha256": "bea8503b2b6000c7c51b823ec837fe36433ccba1e44a51a5e0d9d2c46aa05562"
+    },
+    {
+      "path": "scripts/m5-native-inventory/collector.mjs",
+      "inputCommit": "56356536d26a5a262bc37e2b309c17824671643e",
+      "sha256": "68d1744ff09d9cc6320a9e52fbbfa2b0adf87f0ca44f3bd7b01bc0c7bb2375ff"
+    },
+    {
+      "path": "scripts/m5-inventory-phase/phase.py",
+      "inputCommit": "56356536d26a5a262bc37e2b309c17824671643e",
+      "sha256": "64d6361685d6e888f8913f14b42e7daf5e678350836f09c22c6b25ab1c656665"
+    },
+    {
+      "path": "scripts/m5-host-inventory/host_inventory.py",
+      "inputCommit": "56356536d26a5a262bc37e2b309c17824671643e",
+      "sha256": "a917080edc777e0a859b85c8054240b187f58fcee6c8b2c9a86fa8586f59a285"
+    }
+  ],
+  "failedCiRuns": [
+    {
+      "runId": 37960035511,
+      "job": "runtime",
+      "attempt": 1,
+      "localRetainedLog": "/home/serveradmin/insignia-milestone-autonomy-handoff/inventory-r4-ci-37960035511-failed.log",
+      "logSha256": "591cfbcacf0e40f6b8da0491bf60551fd31f17dc00414c1e0fbc0cdbab6cf007",
+      "observed": "Python3.12.3 GCC13.3.0/Linux6.17.0-1022-azure/x86_64; one immediate closure probe false while reader leader Z, causing98checks/96pass/2fail (nested control plus parent)."
+    },
+    {
+      "runId": 37960035570,
+      "job": "foundation",
+      "attempt": 1,
+      "localRetainedLog": "/home/serveradmin/insignia-milestone-autonomy-handoff/inventory-r4-ci-37960035570-failed.log",
+      "logSha256": "74306da92a5dba9142fd84c1e39be20eb2728f280f6315c077c7e965631ecb1c",
+      "observed": "Python3.12.3 GCC13.3.0/Linux6.17.0-1022-azure/x86_64; one immediate closure probe false while reader leader Z, causing98checks/96pass/2fail (nested control plus parent)."
+    }
+  ],
+  "actualDiagnosis": {
+    "red": {
+      "log": "legacy-repro.log",
+      "samples": 16,
+      "prematureLeaderZPipeOpen": 5,
+      "helperErrors": 0,
+      "command": "python3 -B docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/probe.py legacy-helper.py 16",
+      "snapshot": "legacy-helper.py"
+    },
+    "lateClosure": {
+      "log": "late-closure-repro.log",
+      "samples": 16,
+      "initialOpenCases": 2,
+      "allEpipeBeforeOriginalDeadline": true,
+      "measuredDelayMs": [
+        20.19763202406466,
+        20.23136313073337
+      ],
+      "command": "python3 -B docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/probe.py late-closure-helper.py 16",
+      "snapshot": "late-closure-helper.py"
+    },
+    "finding": "Actual public CLI source bytes unchanged: leaderZ can precede token-pipe closure. Immediate single probe races thread-group teardown; no retained pipe beyond original bound observed."
+  },
+  "correction": {
+    "observerSeconds": 6,
+    "deadlineChanged": false,
+    "runtimeChanged": false,
+    "probe": "O_NONBLOCK one-byte writes only after leader terminal; require actual BrokenPipeError/EPIPE and terminal state jointly before SAMEdeadline. BlockingIOError gives no closure proof; live/error states still fail. Pipe retention derives from EPIPE, never leaderZ alone.",
+    "focusedGreen": {
+      "log": "candidate-green.log",
+      "command": "node --test --test-name-pattern='independent deadline after CLI SIGKILL' /home/serveradmin/insignia-milestone-autonomy-handoff/pipe-closure-diagnosis/candidate.test.mjs",
+      "exitCode": 0,
+      "checksPassed": 3
+    },
+    "stress": {
+      "log": "candidate-stress.log",
+      "samples": 16,
+      "terminalAndActualEpipeWithinBound": 16,
+      "helperErrors": 0,
+      "maxObserverMs": 4812.5839359126985,
+      "command": "python3 -B docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/probe.py candidate-helper.py 16",
+      "snapshot": "candidate-helper.py"
+    }
+  },
+  "finalChecks": [
+    {
+      "command": "node --test scripts/m5-native-inventory/collector.test.mjs",
+      "log": "final-native.log",
+      "exitCode": 0,
+      "passed": 98
+    },
+    {
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "log": "final-phase.log",
+      "exitCode": 0,
+      "passed": 13
+    },
+    {
+      "command": "/home/serveradmin/insignia-m5-027-worktree/node_modules/.bin/biome check scripts/m5-native-inventory/cli.mjs scripts/m5-native-inventory/collector.mjs scripts/m5-native-inventory/collector.test.mjs",
+      "log": "style-check.log",
+      "exitCode": 0
+    },
+    {
+      "command": "git diff --check",
+      "exitCode": 0
+    }
+  ],
+  "currentArtifacts": [
+    {
+      "path": "scripts/m5-native-inventory/collector.test.mjs",
+      "sha256": "f719fc402938cdfb81a5c48da4418f9ac94ae9ee29d5425b99b98c8e98fe8601"
+    },
+    {
+      "path": "docs/delivery/M5-NATIVE-INVENTORY-COLLECTOR.md",
+      "sha256": "61928ac5d7fc015aee905600695c3575e869e2385da028020f22aec313ddebad"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/candidate-green.log",
+      "sha256": "00a99afae2551805c3c34fa9a38ef1f0de11c14ede053da07287132cc4c3c058"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/candidate-stress.log",
+      "sha256": "71d3dfed4c5e152e245077e1ce8e20347a533e7f56ad4f17202e1ffd689a07a3"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/final-native.log",
+      "sha256": "47db4fbb5e3c1e420e33d13b878ce222f6c5d3a4b0905ad08bc79689dcce60b7"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/final-phase.log",
+      "sha256": "efc42d1d55722fb6bc56ab8842de73969ded8698df30624fd0606ba2d6b8d824"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/late-closure-repro.log",
+      "sha256": "072a67a5d68a40f06f35b234e27bc89ac00f11e7ddec959dd8af7bf30e48a17f"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/legacy-repro.log",
+      "sha256": "fb3197be74a3229ab549c03a0fdcdeeb49b4fb6a563151ba18bc3a074b298fdc"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/style-check.log",
+      "sha256": "713992204e5a9adc92af7d04c99bfb7573e269b21d6200dc24fb834fed341169"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/candidate-helper.py",
+      "sha256": "8305e0cdfd94d7224955052851a5e6edbf19cffc705714485fa89b41bd6c7d84"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/late-closure-helper.py",
+      "sha256": "2ad08ac96ad928bb153d2ccfda7499b63e0b6b4b2b04038b7bc325bb34293b9a"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/legacy-helper.py",
+      "sha256": "946a4f009d284d432350302d61f68575d9ae3267bcc5fd2903fc43f64e774791"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-native-inventory/pr60-r4-ci-corrections/probe.py",
+      "sha256": "de6aeeb156bf4f4f197f347d460c774df84323a2bdee04fc3e343806ed306a17"
+    }
+  ],
+  "localRuntime": {
+    "sysVersion": "3.14.4 (main, Aug 20 2026, 10:41:58) [GCC 15.2.0]",
+    "platform": {
+      "system": "Linux",
+      "kernel": "7.0.0-31-generic",
+      "machine": "x86_64"
+    }
+  },
+  "limitations": "Local synthetic subprocess/pipe and loopback HTTP only. Actual failed old-headCI supplies3.12.3/kernel6.17 evidence; corrected local controls run3.14.4/kernel7.0.0. Fresh natural CI and independent reviews must qualify corrected source. No native credentials, SSH/provider calls, mutation, deployment or claim ofM5/native/privacy/G7PASS."
+}

@@ -1,0 +1,98 @@
+test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding (__main__.PhaseControls.test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding) ... ok
+test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) ... 
+  test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='classification') ... FAIL
+  test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='allowedMutations') ... FAIL
+  test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='ownerApprovalReference') ... FAIL
+  test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='classification') ... FAIL
+  test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='phaseSourceSha256') ... FAIL
+  test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='ciRef') ... FAIL
+test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) ... FAIL
+
+======================================================================
+FAIL: test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='classification')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 75, in test_unqualified_or_broadened_declarations_stop_before_phase_creation
+    self.assertEqual(PHASE.create_phase(directory, allocation, gate)['classification'], 'STOP_PHASE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PHASE_CREATED_RESOURCES_UNQUALIFIED' != 'STOP_PHASE_UNQUALIFIED'
+- PHASE_CREATED_RESOURCES_UNQUALIFIED
++ STOP_PHASE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='allowedMutations')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 75, in test_unqualified_or_broadened_declarations_stop_before_phase_creation
+    self.assertEqual(PHASE.create_phase(directory, allocation, gate)['classification'], 'STOP_PHASE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PHASE_CREATED_RESOURCES_UNQUALIFIED' != 'STOP_PHASE_UNQUALIFIED'
+- PHASE_CREATED_RESOURCES_UNQUALIFIED
++ STOP_PHASE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='ownerApprovalReference')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 75, in test_unqualified_or_broadened_declarations_stop_before_phase_creation
+    self.assertEqual(PHASE.create_phase(directory, allocation, gate)['classification'], 'STOP_PHASE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PHASE_CREATED_RESOURCES_UNQUALIFIED' != 'STOP_PHASE_UNQUALIFIED'
+- PHASE_CREATED_RESOURCES_UNQUALIFIED
++ STOP_PHASE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='classification')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 75, in test_unqualified_or_broadened_declarations_stop_before_phase_creation
+    self.assertEqual(PHASE.create_phase(directory, allocation, gate)['classification'], 'STOP_PHASE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PHASE_CREATED_RESOURCES_UNQUALIFIED' != 'STOP_PHASE_UNQUALIFIED'
+- PHASE_CREATED_RESOURCES_UNQUALIFIED
++ STOP_PHASE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='phaseSourceSha256')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 75, in test_unqualified_or_broadened_declarations_stop_before_phase_creation
+    self.assertEqual(PHASE.create_phase(directory, allocation, gate)['classification'], 'STOP_PHASE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PHASE_CREATED_RESOURCES_UNQUALIFIED' != 'STOP_PHASE_UNQUALIFIED'
+- PHASE_CREATED_RESOURCES_UNQUALIFIED
++ STOP_PHASE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation) (key='ciRef')
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 75, in test_unqualified_or_broadened_declarations_stop_before_phase_creation
+    self.assertEqual(PHASE.create_phase(directory, allocation, gate)['classification'], 'STOP_PHASE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PHASE_CREATED_RESOURCES_UNQUALIFIED' != 'STOP_PHASE_UNQUALIFIED'
+- PHASE_CREATED_RESOURCES_UNQUALIFIED
++ STOP_PHASE_UNQUALIFIED
+
+
+======================================================================
+FAIL: test_unqualified_or_broadened_declarations_stop_before_phase_creation (__main__.PhaseControls.test_unqualified_or_broadened_declarations_stop_before_phase_creation)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-native-inventory-worktree/scripts/m5-inventory-phase/phase_test.py", line 82, in test_unqualified_or_broadened_declarations_stop_before_phase_creation
+    self.assertEqual(PHASE.create_phase(directory, allocation, gate)['classification'], 'STOP_PHASE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'PHASE_CREATED_RESOURCES_UNQUALIFIED' != 'STOP_PHASE_UNQUALIFIED'
+- PHASE_CREATED_RESOURCES_UNQUALIFIED
++ STOP_PHASE_UNQUALIFIED
+
+
+----------------------------------------------------------------------
+Ran 2 tests in 0.009s
+
+FAILED (failures=7)

@@ -1,0 +1,13 @@
+Actual local synthetic Linux subreaper + strict Path.stat (NOT Python3.12 runtime).
+python=/usr/bin/python3 3.14.4
+exitCode=1
+Traceback (most recent call last):
+  File "<string>", line 39, in <module>
+    fd_retained=strict_exists(Path('/proc/'+str(reader)+'/fd/3'))
+  File "<string>", line 5, in strict_exists
+    path.stat()
+    ~~~~~~~~~^^
+  File "/usr/lib/python3.14/pathlib/__init__.py", line 655, in stat
+    return os.stat(self, follow_symlinks=follow_symlinks)
+           ~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+PermissionError: [Errno 13] Permission denied: '/proc/2813229/fd/3'

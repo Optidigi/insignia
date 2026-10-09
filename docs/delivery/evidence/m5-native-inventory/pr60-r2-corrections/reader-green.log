@@ -1,0 +1,10 @@
+✔ private reader terminates and releases its pipe by an independent deadline after CLI SIGKILL (5197.69327ms)
+ℹ {"readerState":"ABSENT","fdRetained":false,"pipeClosed":true}
+ℹ tests 1
+ℹ suites 0
+ℹ pass 1
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 5323.980737
