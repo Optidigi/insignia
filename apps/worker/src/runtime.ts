@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type { DurableCore, WebhookQueueHandoffOutcome, WebhookQueueHandoffState } from '@insignia/database';
 import { createObservability, type Observability } from '@insignia/observability';
 import { type JobWithMetadata, PgBoss } from 'pg-boss';
 
@@ -9,7 +10,7 @@ export { REFRESH_QUEUE, WEBHOOK_QUEUE } from './queue-contract.js';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 type Boss = Pick<
   PgBoss,
-  'start' | 'stop' | 'getQueue' | 'send' | 'findJobs' | 'retry' | 'work' | 'offWork' | 'schemaVersion'
+  'start' | 'stop' | 'getQueue' | 'send' | 'findJobs' | 'deleteJob' | 'work' | 'offWork' | 'schemaVersion'
 >;
 
 export interface JobContext {
@@ -20,7 +21,7 @@ export interface JobContext {
 
 export interface WorkerHandlers {
   /** Must commit business mutation and inbox processed marker in one durable transaction. */
-  processInbox(inboxId: string, context: JobContext): Promise<undefined | 'deferred'>;
+  processInbox(inboxId: string, context: JobContext): Promise<undefined | 'deferred' | 'expired' | 'exhausted'>;
   /** Must durably mark terminal reauthorization before returning reauth_required. */
   refreshCredential(
     shopId: string,
@@ -34,6 +35,7 @@ export interface PgBossRuntimeOptions {
   schema?: string;
   /** Test seam. Production constructs its own pg-boss instance. */
   boss?: Boss;
+  webhookHandoff: Pick<DurableCore['webhooks'], 'withQueueHandoff'>;
   observability?: Observability;
   /** Validated by the server composition from the credential wrapping-key ring. */
   credentialKeysReady?: boolean;
@@ -42,6 +44,7 @@ export interface PgBossRuntimeOptions {
 export interface PgBossRuntime {
   start(): Promise<void>;
   ensureWebhookEnqueued(inboxId: string): Promise<{ inboxId: string; status: 'enqueued' | 'already_enqueued' }>;
+  removeExpiredWebhookJob(inboxId: string): Promise<boolean>;
   enqueueRefresh(shopId: string, installationGeneration: number): Promise<string>;
   work(handlers: WorkerHandlers): Promise<void>;
   stop(): Promise<void>;
@@ -143,34 +146,51 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
   }> {
     requireStarted();
     assertUuid(inboxId, 'inbox ID');
-    const data = { inboxId };
-    const sent = await boss.send(WEBHOOK_QUEUE, data, { id: inboxId });
-    if (sent === inboxId) {
-      observability.logger.info('webhook_enqueued', { inboxId });
-      return { inboxId, status: 'enqueued' };
+    async function confirm(state: WebhookQueueHandoffState): Promise<WebhookQueueHandoffOutcome> {
+      let existing = await boss.findJobs<{ inboxId: string }>(WEBHOOK_QUEUE, { id: inboxId });
+      if (existing.length === 0 && state === 'unconfirmed') {
+        const sent = await boss.send(WEBHOOK_QUEUE, { inboxId }, { id: inboxId });
+        if (sent === inboxId) return 'enqueued';
+        if (sent !== null) throw new Error('Queue returned mismatched inbox job ID');
+        // A null ACK is not absence: resolve the pinned exact singleton.
+        existing = await boss.findJobs<{ inboxId: string }>(WEBHOOK_QUEUE, { id: inboxId });
+      }
+      if (existing.length === 0) return 'missing';
+      if (existing.length !== 1 || existing[0]?.id !== inboxId) throw new Error('Queue handoff not confirmed');
+      const job = existing[0];
+      assertJobPayload(job.data, ['inboxId']);
+      if (job.name !== WEBHOOK_QUEUE || job.data.inboxId !== inboxId) throw new Error('Queue job identity mismatch');
+      if (job.state === 'failed' || job.state === 'cancelled') return 'exhausted';
+      if (!['created', 'retry', 'active', 'completed'].includes(job.state))
+        throw new Error('Queue job is not eligible for acknowledged handoff');
+      // pg-boss owns automatic retryCount/retryLimit. Never reset failed jobs.
+      return 'already_enqueued';
     }
-    if (sent !== null) throw new Error('Queue returned mismatched inbox job ID');
+    if (!options.webhookHandoff) throw new Error('Durable webhook queue handoff is unavailable');
+    const status = await options.webhookHandoff.withQueueHandoff(inboxId, confirm);
+    if (status !== 'enqueued' && status !== 'already_enqueued') {
+      observability.metrics.queue('failure');
+      throw new Error(`Webhook queue handoff ${status}; work remains unresolved`);
+    }
+    if (status === 'enqueued') observability.logger.info('webhook_enqueued', { inboxId });
+    return { inboxId, status };
+  }
+
+  async function removeExpiredWebhookJob(inboxId: string): Promise<boolean> {
+    requireStarted();
+    if (options.credentialKeysReady !== true) throw new Error('Webhook cleanup requires worker privileges');
+    assertUuid(inboxId, 'inbox ID');
     const existing = await boss.findJobs<{ inboxId: string }>(WEBHOOK_QUEUE, { id: inboxId });
-    if (existing.length !== 1 || existing[0]?.id !== inboxId) throw new Error('Queue handoff not confirmed');
-    const job = existing[0];
-    assertJobPayload(job.data, ['inboxId']);
-    if (job.name !== WEBHOOK_QUEUE || job.data.inboxId !== inboxId) throw new Error('Queue job identity mismatch');
-    if (job.state === 'failed') {
-      await boss.retry(WEBHOOK_QUEUE, inboxId);
-      const retried = await boss.findJobs<{ inboxId: string }>(WEBHOOK_QUEUE, { id: inboxId });
-      if (
-        retried.length !== 1 ||
-        retried[0]?.id !== inboxId ||
-        retried[0]?.state !== 'retry' ||
-        retried[0]?.data.inboxId !== inboxId
-      )
-        throw new Error('Failed webhook job was not safely retried');
-      observability.metrics.queue('retry');
-      return { inboxId, status: 'enqueued' };
+    if (existing.length > 1) throw new Error('Queue cleanup identity is ambiguous');
+    if (existing.length) {
+      const job = existing[0]!;
+      assertJobPayload(job.data, ['inboxId']);
+      if (job.id !== inboxId || job.name !== WEBHOOK_QUEUE || job.data.inboxId !== inboxId)
+        throw new Error('Queue cleanup identity mismatch');
+      // Pinned CommandResponse is not a deletion proof; verify exact absence.
+      await boss.deleteJob(WEBHOOK_QUEUE, inboxId);
     }
-    if (!['created', 'retry', 'active', 'completed'].includes(job.state))
-      throw new Error('Queue job is not eligible for acknowledged handoff');
-    return { inboxId, status: 'already_enqueued' };
+    return (await boss.findJobs(WEBHOOK_QUEUE, { id: inboxId })).length === 0;
   }
 
   async function enqueueRefresh(shopId: string, installationGeneration: number): Promise<string> {
@@ -204,9 +224,19 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
             attempt: job.retryCount,
             signal: job.signal,
           });
-          observability.metrics.inbox(outcome === 'deferred' ? 'deferred' : 'success');
-          observability.logger.info('webhook_process_ok', { inboxId: job.id, attempt: job.retryCount });
-        } catch (error) {
+          observability.metrics.inbox(
+            outcome === 'expired' || outcome === 'exhausted'
+              ? 'failure'
+              : outcome === 'deferred'
+                ? 'deferred'
+                : 'success',
+          );
+          if (outcome === 'expired')
+            observability.logger.error('webhook_process_failed', { errorClass: 'TransientPayloadExpired' });
+          else if (outcome === 'exhausted')
+            observability.logger.error('webhook_process_failed', { errorClass: 'WebhookQueueExhausted' });
+          else observability.logger.info('webhook_process_ok', { inboxId: job.id, attempt: job.retryCount });
+        } catch {
           observability.metrics.inbox('failure');
           observability.metrics.queue(job.retryCount >= job.retryLimit ? 'failure' : 'retry');
           observability.logger.error('webhook_process_failed', {
@@ -214,7 +244,9 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
             attempt: job.retryCount,
             errorClass: 'ProcessingError',
           });
-          throw error;
+          // pg-boss persists serialized thrown errors in job.output on retries
+          // and terminal failures. Keep that copy free of arbitrary payloads.
+          throw new Error('Webhook processing failed');
         }
       },
     );
@@ -283,6 +315,7 @@ export function createPgBossRuntime(options: PgBossRuntimeOptions): PgBossRuntim
   return {
     start,
     ensureWebhookEnqueued,
+    removeExpiredWebhookJob,
     enqueueRefresh,
     work,
     stop,

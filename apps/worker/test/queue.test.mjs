@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { QUEUE_POLICY } from '../dist/queue-contract.js';
 import { createPgBossRuntime, REFRESH_QUEUE, WEBHOOK_QUEUE } from '../dist/runtime.js';
+import { queueBoundaryHandoff } from './queue-handoff-fixture.mjs';
 
 function fakeBoss() {
   const jobs = new Map();
@@ -65,7 +66,7 @@ function fakeBoss() {
 
 test('enqueue confirms exact inbox identity, including completed job replay', async () => {
   const boss = fakeBoss();
-  const queue = createPgBossRuntime({ boss });
+  const queue = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss });
   const inboxId = randomUUID();
   await queue.start();
   assert.deepEqual(await queue.ensureWebhookEnqueued(inboxId), { inboxId, status: 'enqueued' });
@@ -81,12 +82,24 @@ test('enqueue confirms exact inbox identity, including completed job replay', as
   await queue.stop();
 });
 
+test('omitted durable handoff port fails closed before any job inspection or send', async () => {
+  const boss = fakeBoss();
+  const queue = createPgBossRuntime({ boss });
+  await queue.start();
+  await assert.rejects(queue.ensureWebhookEnqueued(randomUUID()), /Durable webhook queue handoff is unavailable/);
+  assert.equal(
+    boss.calls.some((call) => call[0] === 'send' || call[0] === 'findJobs'),
+    false,
+  );
+  await queue.stop();
+});
+
 test('null send without same persisted job is retryable, never an acknowledgement', async () => {
   const boss = fakeBoss();
   boss.send = async () => null;
-  const queue = createPgBossRuntime({ boss });
+  const queue = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss });
   await queue.start();
-  await assert.rejects(queue.ensureWebhookEnqueued(randomUUID()), /not confirmed/);
+  await assert.rejects(queue.ensureWebhookEnqueued(randomUUID()), /missing/);
   boss.jobs.set('01234567-89ab-4cde-8123-456789abcdef', {
     id: '01234567-89ab-4cde-8123-456789abcdef',
     name: WEBHOOK_QUEUE,
@@ -98,16 +111,17 @@ test('null send without same persisted job is retryable, never an acknowledgemen
     inboxId: '01234567-89ab-4cde-8123-456789abcdef',
   };
   boss.jobs.get('01234567-89ab-4cde-8123-456789abcdef').state = 'failed';
-  assert.deepEqual(await queue.ensureWebhookEnqueued('01234567-89ab-4cde-8123-456789abcdef'), {
-    inboxId: '01234567-89ab-4cde-8123-456789abcdef',
-    status: 'enqueued',
-  });
-  assert.equal(boss.jobs.get('01234567-89ab-4cde-8123-456789abcdef').state, 'retry');
+  await assert.rejects(queue.ensureWebhookEnqueued('01234567-89ab-4cde-8123-456789abcdef'), /exhausted/);
+  assert.equal(boss.jobs.get('01234567-89ab-4cde-8123-456789abcdef').state, 'failed');
+  assert.equal(
+    boss.calls.some((call) => call[0] === 'retry'),
+    false,
+  );
 });
 
 test('workers pass IDs only to injected durable handlers; failed attempt retries safely', async () => {
   const boss = fakeBoss();
-  const queue = createPgBossRuntime({ boss, credentialKeysReady: true });
+  const queue = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss, credentialKeysReady: true });
   const inboxId = randomUUID();
   const shopId = randomUUID();
   const calls = [];
@@ -133,7 +147,7 @@ test('workers pass IDs only to injected durable handlers; failed attempt retries
     retryLimit: 5,
     signal: new AbortController().signal,
   };
-  await assert.rejects(webhookHandler([job]), /synthetic crash/);
+  await assert.rejects(webhookHandler([job]), /Webhook processing failed/);
   await webhookHandler([{ ...job, retryCount: 1 }]);
   assert.deepEqual(calls.slice(0, 2), [
     ['inbox', inboxId],
@@ -161,7 +175,7 @@ test('workers pass IDs only to injected durable handlers; failed attempt retries
 
 test('invalid job body and identity fail closed without invoking application', async () => {
   const boss = fakeBoss();
-  const queue = createPgBossRuntime({ boss, credentialKeysReady: true });
+  const queue = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss, credentialKeysReady: true });
   let invoked = false;
   await queue.start();
   await queue.work({
@@ -184,13 +198,13 @@ test('invalid job body and identity fail closed without invoking application', a
         signal: new AbortController().signal,
       },
     ]),
-    /job identity/,
+    /Webhook processing failed/,
   );
   assert.equal(invoked, false);
 });
 
 test('enabled worker refuses missing credential-key configuration and stays not ready', async () => {
-  const queue = createPgBossRuntime({ boss: fakeBoss() });
+  const queue = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss: fakeBoss() });
   await queue.start();
   assert.equal(queue.durableReady, false);
   await assert.rejects(
@@ -202,7 +216,7 @@ test('enabled worker refuses missing credential-key configuration and stays not 
 
 test('refresh claim contention is retried rather than silently completing its job', async () => {
   const boss = fakeBoss();
-  const queue = createPgBossRuntime({ boss, credentialKeysReady: true });
+  const queue = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss, credentialKeysReady: true });
   await queue.start();
   await queue.work({
     async processInbox() {},
@@ -236,15 +250,15 @@ test('queue policy drift, missing queue and wrong schema fail startup; later dri
     const boss = fakeBoss();
     const original = boss.getQueue;
     boss.getQueue = async (name) => (replacement === null ? null : { ...(await original(name)), ...replacement });
-    const queue = createPgBossRuntime({ boss });
+    const queue = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss });
     await assert.rejects(queue.start(), /queue/);
     assert.equal(queue.durableReady, false);
   }
   const boss = fakeBoss();
   boss.schemaVersion = async () => 42;
-  await assert.rejects(createPgBossRuntime({ boss }).start(), /version differs/);
+  await assert.rejects(createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss }).start(), /version differs/);
   boss.schemaVersion = async () => 43;
-  const queue = createPgBossRuntime({ boss, credentialKeysReady: true });
+  const queue = createPgBossRuntime({ webhookHandoff: queueBoundaryHandoff, boss, credentialKeysReady: true });
   await queue.start();
   await queue.work({ async processInbox() {}, async refreshCredential() {} });
   assert.equal(await queue.checkDurableReady(), true);

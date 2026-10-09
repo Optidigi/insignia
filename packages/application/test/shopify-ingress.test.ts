@@ -92,4 +92,25 @@ describe('verified Shopify webhook handoff', () => {
     ).rejects.toThrow('payload conflict');
     expect(queue.ensureEnqueued).not.toHaveBeenCalled();
   });
+
+  test('expired receipt cannot enqueue or claim a successful handoff', async () => {
+    let calls = 0;
+    await expect(
+      receiveVerifiedShopifyWebhook(
+        {
+          async receive() {
+            return { kind: 'expired', id: 'stable-uuid', shopId: null, installationGeneration: null };
+          },
+        },
+        {
+          async ensureEnqueued() {
+            calls++;
+            return 'enqueued';
+          },
+        },
+        delivery,
+      ),
+    ).rejects.toMatchObject({ name: 'ShopifyWebhookExpiredError' });
+    expect(calls).toBe(0);
+  });
 });

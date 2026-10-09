@@ -62,6 +62,7 @@ export interface RuntimeLogDetails {
   queue?: string;
   attempt?: number;
   errorClass?: string;
+  count?: number;
 }
 
 /** Whitelist the complete event envelope; no merchant payload or error object enters Pino. */
@@ -78,9 +79,17 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
   if (
     input.errorClass === 'QueueStartupError' ||
     input.errorClass === 'ProcessingError' ||
-    input.errorClass === 'RefreshError'
+    input.errorClass === 'RefreshError' ||
+    input.errorClass === 'TransientPayloadExpired' ||
+    input.errorClass === 'WebhookQueueExhausted' ||
+    input.errorClass === 'TransientPayloadExpiredUnresolved' ||
+    input.errorClass === 'PrivacyRetentionBlocked' ||
+    input.errorClass === 'UnknownPayloadRetentionBlocked' ||
+    input.errorClass === 'UninstallRecoveryUnresolved'
   )
     result.errorClass = input.errorClass;
+  if (Number.isInteger(input.count) && (input.count ?? -1) >= 0 && (input.count ?? 101) <= 100)
+    result.count = input.count;
   if (Number.isInteger(input.attempt) && (input.attempt ?? -1) >= 0 && (input.attempt ?? 0) <= 1000)
     result.attempt = input.attempt;
   return result;

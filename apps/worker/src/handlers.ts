@@ -30,11 +30,15 @@ export function createDurableWorkerHandlers(
     async processInbox(inboxId) {
       const state = await core.webhooks.getById(inboxId);
       if (!state) throw new Error('Shopify inbox identity is absent');
+      if (state.resolution === 'expired') return 'expired';
+      if (state.resolution === 'exhausted') return 'exhausted';
       if (state.state === 'processed') return;
       if (state.topic !== 'app/uninstalled') return 'deferred';
       const result = await core.webhooks.processUninstall(inboxId);
       if (result === 'unresolved' || result === 'not_found') throw new Error('Uninstall delivery cannot yet resolve');
       if (result === 'unverified') return 'deferred';
+      if (result === 'expired') return 'expired';
+      if (result === 'exhausted') return 'exhausted';
     },
     async refreshCredential(shopId, installationGeneration) {
       const result = await refreshExpiringOfflineCredentials(credentials, transport, {
@@ -61,8 +65,25 @@ export async function recoverPendingUninstalls(core: DurableCore, queue: PgBossR
       confirmed++;
     } catch {
       queue.observability.metrics.queue('failure');
-      queue.observability.logger.error('queue_job_rejected', { inboxId: id });
+      queue.observability.logger.error('queue_job_rejected', { errorClass: 'UninstallRecoveryUnresolved' });
     }
   }
   return confirmed;
+}
+
+/** Source-owned bounded transient cleanup, not privacy request fulfillment. */
+export async function maintainWebhookRetention(core: DurableCore, queue: PgBossRuntime) {
+  const result = await core.webhooks.eraseExpiredPayloads(100);
+  for (const [category, count] of [
+    ['TransientPayloadExpiredUnresolved', result.unresolvedExpiredIds.length],
+    ['PrivacyRetentionBlocked', result.blockedPrivacyIds.length],
+    ['UnknownPayloadRetentionBlocked', result.blockedUnknownIds.length],
+  ] as const) {
+    if (count) {
+      queue.observability.metrics.queue('failure');
+      queue.observability.logger.error('queue_job_rejected', { errorClass: category, count });
+    }
+  }
+  const cleanedIds = await core.webhooks.cleanupExpiredQueueJobs(100, (id) => queue.removeExpiredWebhookJob(id));
+  return { ...result, cleanedIds };
 }

@@ -119,6 +119,8 @@ export interface ShopifyWebhookDeliveriesTable {
   triggered_at: Timestamp;
   event_id: string | null;
   webhook_name: string | null;
+  queue_handoff_state: Generated<'unknown' | 'unconfirmed' | 'confirmed' | 'exhausted'>;
+  queue_cleanup_pending: Generated<boolean>;
 }
 
 export type CredentialState = 'active' | 'refresh-in-progress' | 'reauth-required' | 'revoked';

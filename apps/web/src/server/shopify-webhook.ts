@@ -1,6 +1,7 @@
 import {
   receiveVerifiedShopifyWebhook,
   ShopifyQueueHandoffError,
+  ShopifyWebhookExpiredError,
   type ShopifyWebhookIngressPort,
   type ShopifyWebhookQueuePort,
 } from '@insignia/application';
@@ -73,9 +74,19 @@ export async function handleShopifyWebhook(
     dependencies.metrics?.webhook(error instanceof ShopifyQueueHandoffError ? 'enqueue_failure' : 'rejected');
     const status =
       error instanceof WebhookBodyTooLargeError ? 413 : error instanceof InvalidShopifyWebhookError ? 401 : 503;
-    return new Response(JSON.stringify({ error: status === 503 ? 'handoff_unavailable' : 'invalid_webhook' }), {
-      status,
-      headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
-    });
+    return new Response(
+      JSON.stringify({
+        error:
+          error instanceof ShopifyWebhookExpiredError
+            ? 'transient_payload_expired_unresolved'
+            : status === 503
+              ? 'handoff_unavailable'
+              : 'invalid_webhook',
+      }),
+      {
+        status,
+        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
+      },
+    );
   }
 }

@@ -12,7 +12,7 @@ export type VerifiedShopifyDelivery = {
 };
 
 export type ShopifyInboxReceipt = {
-  kind: 'received' | 'duplicate' | 'processed';
+  kind: 'received' | 'duplicate' | 'processed' | 'expired';
   id: string;
   shopId: string | null;
   installationGeneration: string | null;
@@ -39,6 +39,13 @@ export class ShopifyQueueHandoffError extends Error {
   }
 }
 
+export class ShopifyWebhookExpiredError extends Error {
+  constructor() {
+    super('Shopify webhook transient payload expired; work remains unresolved');
+    this.name = 'ShopifyWebhookExpiredError';
+  }
+}
+
 export type ShopifyWebhookIngressResult = {
   inboxId: string;
   kind: 'received' | 'duplicate' | 'processed';
@@ -62,6 +69,7 @@ export async function receiveVerifiedShopifyWebhook(
     throw new TypeError('Verified Shopify delivery is missing required fields');
   }
   const receipt = await ingress.receive({ ...delivery, rawBody: Uint8Array.from(delivery.rawBody) });
+  if (receipt.kind === 'expired') throw new ShopifyWebhookExpiredError();
   if (!receipt.id || (receipt.kind !== 'received' && receipt.kind !== 'duplicate' && receipt.kind !== 'processed')) {
     throw new ShopifyQueueHandoffError();
   }

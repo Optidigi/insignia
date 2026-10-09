@@ -40,6 +40,9 @@ import {
   type ShopifyWebhookReceipt,
   type ShopifyWebhookState,
   type VerifiedShopifyDelivery,
+  type WebhookPayloadErasure,
+  type WebhookQueueHandoffOutcome,
+  type WebhookQueueHandoffState,
 } from './repositories/shopify-webhooks.js';
 import { PgSigningKeyRepository } from './repositories/signing-keys.js';
 import {
@@ -230,13 +233,21 @@ export interface DurableCore {
     ): Promise<'deactivated' | 'already_inactive' | 'stale'>;
   };
   readonly webhooks: {
+    withQueueHandoff(
+      id: string,
+      confirm: (state: WebhookQueueHandoffState) => Promise<WebhookQueueHandoffOutcome>,
+    ): Promise<WebhookQueueHandoffOutcome | 'expired'>;
+    cleanupExpiredQueueJobs(limit: number, remove: (id: string) => Promise<boolean>): Promise<string[]>;
+    eraseExpiredPayloads(limit: number): Promise<WebhookPayloadErasure>;
     unresolvedBacklogCount(): Promise<number>;
     pendingUninstallIds(limit: number): Promise<string[]>;
     receive(input: VerifiedShopifyDelivery): Promise<ShopifyWebhookReceipt>;
     getById(id: string): Promise<ShopifyWebhookState | null>;
     processUninstall(
       id: string,
-    ): Promise<'processed' | 'unverified' | 'already_processed' | 'unresolved' | 'stale' | 'not_found'>;
+    ): Promise<
+      'processed' | 'unverified' | 'already_processed' | 'unresolved' | 'stale' | 'not_found' | 'expired' | 'exhausted'
+    >;
   };
   readonly credentials: {
     install(input: CredentialIdentity & { pair: ExpiringOfflinePair }): Promise<string>;

@@ -29,7 +29,7 @@ test('real process death before transaction and after commit recovers durable qu
   await installQueue(process.env.DATABASE_URL);
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
-  const producer = createPgBossRuntime({ connectionString: process.env.DATABASE_URL });
+  const producer = createPgBossRuntime({ webhookHandoff: core.webhooks, connectionString: process.env.DATABASE_URL });
   const maintenance = new PgBoss({
     connectionString: process.env.DATABASE_URL,
     migrate: false,
