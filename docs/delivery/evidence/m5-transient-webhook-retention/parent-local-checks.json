@@ -1,0 +1,386 @@
+{
+  "version": "m5-retention-parent-qualified-local-v1",
+  "recordedAt": "2026-10-09T16:51:26.599816+00:00",
+  "sourceCommit": "a551fea3a73e4b42def6ad861c8f8480eda31261",
+  "base": "d9ba6383a6e15958419ecf8e26d9182f08078e41",
+  "scope": "LOCAL_SUPPORTING_RETENTION_AND_QUEUE_CORRECTION_ONLY",
+  "acceptance": "PENDING_INDEPENDENT_FULL_SOURCE_REVIEWS_AND_EXACT_HEAD_CI",
+  "deploymentReadiness": "BLOCKED",
+  "nativeAccess": false,
+  "postgres": "18.6 isolated owner cluster port55434",
+  "pgBoss": "12.35.0",
+  "closure": {
+    "recordedAt": "2026-10-09T16:50:47.504835+00:00",
+    "ownedClusterPort": 55434,
+    "stopResult": "ACKNOWLEDGED_FAST_STOP",
+    "statusExitCode": 3,
+    "status": "pg_ctl: no server running",
+    "otherWriterClustersReopened": false,
+    "nativeResourcesAccessed": false
+  },
+  "sourceSha256": {
+    "apps/web/src/server/runtime.ts": "cee722a8e9c549fa404a6c58aaebc13598277c44aec98199a736c935296dca7b",
+    "apps/web/src/server/shopify-webhook.ts": "935991fc9f1b7b7059a1f3e977ed825b3b6435fb744544cef0b1d5763927f09a",
+    "apps/worker/src/handlers.ts": "76202f2e2c8d7272f77e344772599879136c1c473dc0b4098666a4b19965ccf4",
+    "apps/worker/src/main.ts": "949a498dd5da86b284e74d79dfabade311fc896980a09718ef883cdacc533054",
+    "apps/worker/src/runtime.ts": "f65a9b322f33970a504406d5dba29225a0a771d0281fa392bfe32860484260f4",
+    "apps/worker/test/managed-schema.test.mjs": "00b463e291d7d5f423b451c62da02848130b6944c2a7cec4f72dc083d33e8ae0",
+    "apps/worker/test/postgres.test.mjs": "44bf42f2fdab2c41f420ae37175bca24090dc93c5d0a8cd22667da69dd6c5398",
+    "apps/worker/test/queue-handoff-fixture.mjs": "88a40065968e906e4663cf901babb026a910a36779c8b9af06bce706aa3475b0",
+    "apps/worker/test/queue.test.mjs": "7828ac82356d834f0d6e2f672c95def265f4fb62c940d1fdf5c9236537e51bc6",
+    "apps/worker/test/webhook-retention.test.mjs": "00580e9ba14385333b9d9321cd683dca5ee31b4658310d8e91a7f78b631a4426",
+    "docs/delivery/M5-TRANSIENT-WEBHOOK-RETENTION.md": "63f714059139eeb6300a193c9190edd9654df237507362a83650d054ef704dc2",
+    "packages/application/src/shopify/ingress.ts": "db57b31d2f687c16b815b17a6010f27eae73649e3eb3ce561ed2919a5e80a8f1",
+    "packages/application/test/shopify-ingress.test.ts": "21ec7d2efc3bdcb8ce1ae713ba483d43c2580524f776bda2dad16b7aa4a165c0",
+    "packages/database/migrations/20261009000100_m5_webhook_retention_handoff.sql": "b34376456233c2549c98c5cf70a40e75afc271c09bd60ce3b13608dda9a0997c",
+    "packages/database/src/client/database.ts": "7e1407dacd2a7f6bb8d23dbbf653e28010d47e5807dc6553c2c374e2f8870193",
+    "packages/database/src/durable-core.ts": "8eb42ae6b0a41e1aa8f3385e20c10a6e1c4c77923ce97055e672ede1e04e5abb",
+    "packages/database/src/index.ts": "ece2770f3d71242a5629807d649d1245db57f7fdee70daef17ee7aad35b09438",
+    "packages/database/src/repositories/shopify-webhooks.ts": "14fa9d4901d98b1bd9583ba74fb3a22fb411e62a35b6d4ac9282a52015765918",
+    "packages/database/src/repositories/tenant.ts": "4ff41393415795109ab25a9b7ef81711b6ae89611995d3225aee9658cc0e505b",
+    "packages/database/test/trusted-release.test.ts": "baa7f0ce2da9bd6265409c9c9a7175df274085e7f0a311222a2705be2738804f",
+    "packages/database/test/webhook-retention.test.ts": "63bdac9f1d3ab335673ce574c1e019e64d9c42b4bbe13ee43a1bc662894c5586",
+    "packages/observability/src/index.ts": "e2fbc4f2c64f5ac60459daa758f82da2105afa7c133627599d279d557923f672",
+    "packages/observability/test/observability.test.mjs": "474a5e65b159d680c838920953038c400fa8c7a4f82a0dca6fe0595ce19908a7",
+    "scripts/m5-024/crash-child.mjs": "674a646e5cc868c488834b9911148e9d719af9bef9322782a84d348aedef78bd",
+    "scripts/m5-024/crash-recovery.test.mjs": "9debf324b0f382010eaf80fac78e8e10997d5e05d29dcd6dcf01a4034fd3cc8f",
+    "scripts/m5-024/queue-privileges.test.mjs": "92125384b286fe86abe6f1f1322368c868f0e82aeb52e51ba0f86d19fcf32634",
+    "scripts/m5-024/queue-roles.sql": "acf6b0492629c60eaa120b63367e677ef3e40462ef178afd6e95e1d1257c89da"
+  },
+  "checks": [
+    {
+      "name": "parent-database",
+      "classification": "PASS_217_TESTS",
+      "receipt": "parent-database.receipt.json",
+      "receiptSha256": "8e8b3c7249d0a78f96836fb0573108759d528c2c32b0604345143e8d399d4740",
+      "log": "parent-database.log",
+      "actualLogSha256": "c44f4dc10d2abadf83dba62915ce8b40f5a322713a4cf29888549fa874a390b6",
+      "exitCode": 0,
+      "command": [
+        "pnpm",
+        "check:database"
+      ]
+    },
+    {
+      "name": "parent-portable-build-corrected",
+      "classification": "PASS_PORTABLE_PACKAGE_NOT_DOCKER_IMAGE",
+      "receipt": "parent-portable-build-corrected.receipt.json",
+      "receiptSha256": "81e805642c7e7fb7349927bdcedaf1dbfdacaf53aa80122432590f2b90fd4db2",
+      "log": "parent-portable-build-corrected.log",
+      "actualLogSha256": "fdfd7de7b2779bf320540b904076454e048527079f9152b216819f9c671b3f77",
+      "exitCode": 0,
+      "command": [
+        "bash",
+        "scripts/m5-024/build-worker.sh",
+        "/home/serveradmin/insignia-m5-retention-parent-checks/portable-worker-qualified"
+      ]
+    },
+    {
+      "name": "parent-portable-build",
+      "classification": "FAILED_MISSING_OFFLINE_POLICY_METADATA_PREREQUISITE",
+      "receipt": "parent-portable-build.receipt.json",
+      "receiptSha256": "75ae6808cb7aa75d726816ea8870a14d75c0379cd2b9a67c8b2196a557086302",
+      "log": "parent-portable-build.log",
+      "actualLogSha256": "616ad7c4b64711959d1db4e21cc8a8a0fb96deefd1f5bc5b15f1daf28d82e13c",
+      "exitCode": 1,
+      "command": [
+        "bash",
+        "scripts/m5-024/build-worker.sh",
+        "/home/serveradmin/insignia-m5-retention-parent-checks/portable-worker"
+      ]
+    },
+    {
+      "name": "parent-portable-controls-clean-environment",
+      "classification": "PASS_TWO_PORTABLE_PROCESS_AND_GUARD_CONTROLS_NOT_IMAGE_ISOLATION",
+      "receipt": "parent-portable-controls-clean-environment.receipt.json",
+      "receiptSha256": "fa64a904e4e997be1f8d933b79a81f790f90b0c009981888f330ac96850fd56f",
+      "log": "parent-portable-controls-clean-environment.log",
+      "actualLogSha256": "d960a6e91d60a63f1f98f581a73f2693c594e017014fc9d2f6a4fd1a5a373b10",
+      "exitCode": 0,
+      "command": [
+        "env",
+        "-u",
+        "LD_LIBRARY_PATH",
+        "DATABASE_URL=postgres://serveradmin@127.0.0.1:55434/insignia_parent_portable?sslmode=disable",
+        "M5_WORKER_PACKAGE_ENTRY=/home/serveradmin/insignia-m5-retention-parent-checks/portable-worker-qualified/dist/main.js",
+        "node",
+        "--test",
+        "scripts/m5-024/worker-guards.test.mjs",
+        "scripts/m5-024/portable-process.test.mjs"
+      ]
+    },
+    {
+      "name": "parent-portable-controls",
+      "classification": "FAILED_TEST_ENVIRONMENT_OVERRIDE_CORRECTLY_REJECTED",
+      "receipt": "parent-portable-controls.receipt.json",
+      "receiptSha256": "82c48c4dad5da46898dfe7a704c53a68c5652c7a1d1499c6e4bf64be290ebdb8",
+      "log": "parent-portable-controls.log",
+      "actualLogSha256": "acd316c5eaaeb998618f6ef97e6bbee17fb34bdd2383bf5348a7f78436e63a1e",
+      "exitCode": 1,
+      "command": [
+        "env",
+        "DATABASE_URL=postgres://serveradmin@127.0.0.1:55434/insignia_parent_portable?sslmode=disable",
+        "M5_WORKER_PACKAGE_ENTRY=/home/serveradmin/insignia-m5-retention-parent-checks/portable-worker-qualified/dist/main.js",
+        "node",
+        "--test",
+        "scripts/m5-024/worker-guards.test.mjs",
+        "scripts/m5-024/portable-process.test.mjs"
+      ]
+    },
+    {
+      "name": "parent-portable-dev-prerequisite",
+      "classification": "LOCAL_PREREQUISITE_PASS",
+      "receipt": "parent-portable-dev-prerequisite.receipt.json",
+      "receiptSha256": "cba2cd314afb9b74c260e931eb57f5e77c04b708e1297e42973f932df96f0b41",
+      "log": "parent-portable-dev-prerequisite.log",
+      "actualLogSha256": "b48b271239e90f83b70e05819136d35560d2797c63ae9417cfed94f8b3b82004",
+      "exitCode": 0,
+      "command": [
+        "pnpm",
+        "install",
+        "--offline",
+        "--frozen-lockfile",
+        "--ignore-scripts",
+        "--prod=false"
+      ]
+    },
+    {
+      "name": "parent-portable-metadata-prerequisite",
+      "classification": "LOCAL_PREREQUISITE_PASS",
+      "receipt": "parent-portable-metadata-prerequisite.receipt.json",
+      "receiptSha256": "b10b1e312c08a9b126661c200d7cc13890be589af28af09eb8d13a472e738eef",
+      "log": "parent-portable-metadata-prerequisite.log",
+      "actualLogSha256": "d09d61c7449a5939545d16c370cb09ac34bafc771ceab029827eeb3db65a440b",
+      "exitCode": 0,
+      "command": [
+        "pnpm",
+        "--filter",
+        "@insignia/worker",
+        "deploy",
+        "--prod",
+        "--frozen-lockfile",
+        "--config.inject-workspace-packages=true",
+        "/home/serveradmin/insignia-m5-retention-parent-checks/portable-policy-metadata-primer"
+      ]
+    },
+    {
+      "name": "parent-portable-migrate",
+      "classification": "LOCAL_PREREQUISITE_PASS",
+      "receipt": "parent-portable-migrate.receipt.json",
+      "receiptSha256": "67b4efce33b7424b22a122b2f0e406b96fe1e1e669b0b179eb90ea558149dfa5",
+      "log": "parent-portable-migrate.log",
+      "actualLogSha256": "9c9aabc8758375fb5bead55565c5af66a8235cc6a7e8bceeb6a4fb6743e6582c",
+      "exitCode": 0,
+      "command": [
+        "env",
+        "DATABASE_URL=postgres://serveradmin@127.0.0.1:55434/insignia_parent_portable?sslmode=disable",
+        "pnpm",
+        "db:migrate"
+      ]
+    },
+    {
+      "name": "parent-queue-controls",
+      "classification": "PASS_TWO_REAL_QUEUE_PROCESS_CONTROLS",
+      "receipt": "parent-queue-controls.receipt.json",
+      "receiptSha256": "2c2c622d32c362d4ce321f953535a8c9c8a21f52d162cbd42bb81f5a43400314",
+      "log": "parent-queue-controls.log",
+      "actualLogSha256": "47e1437521681c2521294d205f9424bacf494e10e1331c1e5278b7cc02e08a7d",
+      "exitCode": 0,
+      "command": [
+        "env",
+        "DATABASE_URL=postgres://serveradmin@127.0.0.1:55434/insignia_parent_queue?sslmode=disable",
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "scripts/m5-024/queue-privileges.test.mjs",
+        "scripts/m5-024/crash-recovery.test.mjs"
+      ]
+    },
+    {
+      "name": "parent-queue-migrate",
+      "classification": "LOCAL_PREREQUISITE_PASS",
+      "receipt": "parent-queue-migrate.receipt.json",
+      "receiptSha256": "dabd88e7baabc039fc17b3f04c368b4e10d69a24d61f9baecfc833f87009673e",
+      "log": "parent-queue-migrate.log",
+      "actualLogSha256": "cad9d99b0081cae51c421131f3fcbafa137c34e5e2fdd0e1622a4fe9143fa7ba",
+      "exitCode": 0,
+      "command": [
+        "env",
+        "DATABASE_URL=postgres://serveradmin@127.0.0.1:55434/insignia_parent_queue?sslmode=disable",
+        "pnpm",
+        "db:migrate"
+      ]
+    },
+    {
+      "name": "parent-renderer",
+      "classification": "EXPECTED_NEGATIVE_RENDERER_CONTROL",
+      "receipt": "parent-renderer.receipt.json",
+      "receiptSha256": "c38f65d57f19890399c8c127cf58503aecba8b395ed671b0285e1177d6f8cf07",
+      "log": "parent-renderer.log",
+      "actualLogSha256": "ec0c94e90146763abefab2525acea9aa20c80803254f258539083903aea4cfa1",
+      "exitCode": 0,
+      "command": [
+        "pnpm",
+        "test:m5-renderer-control"
+      ]
+    },
+    {
+      "name": "parent-root-aborted-final",
+      "classification": "ABORTED_EXIT143_NOT_QUALIFIED",
+      "receipt": "parent-root-aborted-final.receipt.json",
+      "receiptSha256": "18f046ef1ef955618fd458291d1fb2fc666992fe6b6851cedc332354cefeb7da",
+      "log": "parent-root.log",
+      "actualLogSha256": "aea42dd06afa9c63e6ea6bb00ac868676260c6504665c9be3e028fd6ea718763",
+      "exitCode": 143,
+      "command": [
+        "pnpm",
+        "check"
+      ]
+    },
+    {
+      "name": "parent-root-aborted",
+      "classification": "INTERIM_ABORT_RECEIPT_CORRECTED_BY_FINAL",
+      "receipt": "parent-root-aborted.receipt.json",
+      "receiptSha256": "f35e50b4f10c830e13a6ac1336035dbcf43bc293583bd5f4991d5e870ca8cdf8",
+      "log": "parent-root.log",
+      "actualLogSha256": "aea42dd06afa9c63e6ea6bb00ac868676260c6504665c9be3e028fd6ea718763",
+      "exitCode": null,
+      "command": [
+        "pnpm",
+        "check"
+      ]
+    },
+    {
+      "name": "parent-root-isolated",
+      "classification": "PASS_FULL_ROOT_ON_FROZEN_RETENTION_SOURCE",
+      "receipt": "parent-root-isolated.receipt.json",
+      "receiptSha256": "6e0b8b8fed019fbb400e9ca7692ee5583e2372fff3eb2a017646fcafce3b9e7e",
+      "log": "parent-root-isolated.log",
+      "actualLogSha256": "1b0e70c4d18a43f896f2d35a51b332ea148e60f9690b83356709bfb9fcebcb59",
+      "exitCode": 0,
+      "command": [
+        "pnpm",
+        "check"
+      ]
+    },
+    {
+      "name": "parent-root-migrate",
+      "classification": "LOCAL_PREREQUISITE_PASS",
+      "receipt": "parent-root-migrate.receipt.json",
+      "receiptSha256": "f0106054881a4743913cdac96bea53cd50e9098a71d8382b59db17b64911aeae",
+      "log": "parent-root-migrate.log",
+      "actualLogSha256": "bd02d28743afa52705e3850e9bc0eaf6a5e883f403bc787ae5cc4c46a2490551",
+      "exitCode": 0,
+      "command": [
+        "pnpm",
+        "db:migrate"
+      ]
+    },
+    {
+      "name": "parent-stress-corrected",
+      "classification": "INVALIDATED_CONCURRENT_BUILD_REMOVED_BROWSER_DIST_374_PASS_26_FAIL",
+      "receipt": "parent-stress-corrected.receipt.json",
+      "receiptSha256": "ba0a45029acadfdf18505336b1b1522a60fda4c3b60eeefa700745ecc8d2a970",
+      "log": "parent-stress-corrected.log",
+      "actualLogSha256": "872182a139e92e8caa0164631987c25f5575851d2c9440ed6aa5495f0924e9cd",
+      "exitCode": 1,
+      "command": [
+        "env",
+        "M5_PUBLICATION_STRESS_ITERATIONS=100",
+        "pnpm",
+        "--filter",
+        "@insignia/web",
+        "exec",
+        "node",
+        "--test",
+        "--test-name-pattern=publication (success|failed) preserves",
+        "test/admin/editor-browser.test.mjs"
+      ]
+    },
+    {
+      "name": "parent-stress-serialized",
+      "classification": "PASS_400_OF_400_ZERO_SKIPPED",
+      "receipt": "parent-stress-serialized.receipt.json",
+      "receiptSha256": "b985067046fb015ee579c9bb2021ca1b309488d65b6110e407143245f9c9d3a0",
+      "log": "parent-stress-serialized.log",
+      "actualLogSha256": "bbc90a6f2558f124ea92644d426c369836a9189a63fe0171d0c2959ccaa298c7",
+      "exitCode": 0,
+      "command": [
+        "env",
+        "M5_PUBLICATION_STRESS_ITERATIONS=100",
+        "pnpm",
+        "--filter",
+        "@insignia/web",
+        "exec",
+        "node",
+        "--test",
+        "--test-name-pattern=publication (success|failed) preserves",
+        "test/admin/editor-browser.test.mjs"
+      ]
+    },
+    {
+      "name": "parent-stress",
+      "classification": "FAILED_INVALID_ITERATION_ENVIRONMENT_400_LIMIT_100",
+      "receipt": "parent-stress.receipt.json",
+      "receiptSha256": "3f64e27e08eeff8b0e2e0008a07c82ccd580926de4d5a0f3be2797873bff94f8",
+      "log": "parent-stress.log",
+      "actualLogSha256": "631272c5a376a0bfa02c03f1263c567b9d1aa84b8d3f7baf1538f6b91c062515",
+      "exitCode": 1,
+      "command": [
+        "env",
+        "M5_PUBLICATION_STRESS_ITERATIONS=400",
+        "pnpm",
+        "--filter",
+        "@insignia/web",
+        "exec",
+        "node",
+        "--test",
+        "--test-name-pattern=publication (success|failed) preserves",
+        "test/admin/editor-browser.test.mjs"
+      ]
+    },
+    {
+      "name": "parent-uninstall-hard-red",
+      "classification": "REPRODUCED_SECURITY_DEFECT_NOT_PASS",
+      "receipt": "parent-uninstall-hard-red.receipt.json",
+      "receiptSha256": "3b3cd2b536b977a021ed2cdfcb627d6eca71a931bf0f9c1a242d6d0ce6d1ac00",
+      "log": "parent-uninstall-hard-red.log",
+      "actualLogSha256": "30e80d51f8fb5758cf6e54f8244713ec5342c4e7c451e4ed3def0415ac22fdc3",
+      "exitCode": 1,
+      "command": [
+        "env",
+        "DATABASE_URL=postgres://serveradmin@127.0.0.1:55434/insignia_parent_uninstall?sslmode=disable",
+        "M5_025_REQUIRE_SAFE_UNINSTALL=1",
+        "node",
+        "--test",
+        "apps/web/test/uninstall-authority.test.mjs"
+      ]
+    },
+    {
+      "name": "parent-uninstall-migrate",
+      "classification": "LOCAL_PREREQUISITE_PASS",
+      "receipt": "parent-uninstall-migrate.receipt.json",
+      "receiptSha256": "e3367c5b9a2e8449ecf167873fe6d29a16dcedf4cc8080d1ec6f3cf6cad839c6",
+      "log": "parent-uninstall-migrate.log",
+      "actualLogSha256": "2a7723ecfde18527f36edb8274d7ca39d3cb0b3e3e48fafb9e1cecfe357c38d4",
+      "exitCode": 0,
+      "command": [
+        "env",
+        "DATABASE_URL=postgres://serveradmin@127.0.0.1:55434/insignia_parent_uninstall?sslmode=disable",
+        "pnpm",
+        "db:migrate"
+      ]
+    }
+  ],
+  "limitations": [
+    "Root run qualifies frozen retention source before later legitimate collector/base integration; must requalify relevant integrated inputs",
+    "Original aborted root interim receipt wrongly claimed before-unit abort; final receipt corrects actual partial execution and exit143",
+    "Invalid stress configuration and concurrent-build run retained as failures, serialized corrected 400/400 is the qualified control",
+    "Normal pinned package deployment primed policy metadata; missing-metadata failure retained; no supply-chain check bypass",
+    "LD_LIBRARY_PATH inherited from PostgreSQL runner rejected by immutable executable guard; clean-environment correction retained, no guard weakening",
+    "Portable Node worker process and filesystem-denial controls are not native Docker image/PID1/OS isolation qualification",
+    "Generic unexpired uninstall security invariant still RED; passing characterization does not authorize deactivation",
+    "Privacy/unknown/unsupported raw receipts remain overdue and unfulfilled; no retention deadline waiver or production readiness",
+    "No production SQL, deployment, provider credentials, native subscription changes or M5/G7 PASS"
+  ]
+}
