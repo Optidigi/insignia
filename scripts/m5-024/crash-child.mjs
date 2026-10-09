@@ -6,7 +6,11 @@ import { createDurableCore } from '../../packages/database/dist/index.js';
 
 const { Pool } = createRequire(new URL('../../apps/worker/package.json', import.meta.url))('pg');
 const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
-const queue = createPgBossRuntime({ connectionString: process.env.DATABASE_URL, credentialKeysReady: true });
+const queue = createPgBossRuntime({
+  webhookHandoff: core.webhooks,
+  connectionString: process.env.DATABASE_URL,
+  credentialKeysReady: true,
+});
 const handlers = createDurableWorkerHandlers(core, {
   async refresh() {
     throw new Error('external requests denied');

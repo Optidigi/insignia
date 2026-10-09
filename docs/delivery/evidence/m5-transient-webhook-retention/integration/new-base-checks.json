@@ -1,0 +1,112 @@
+{
+  "schema": "m5-retention-legitimate-base-requalification-v1",
+  "base": "7fc8688b2d59c191486771192d4f466cbc226703",
+  "integratedBaseTree": "04e0428c742e74cae76c23693cca110d463a9413",
+  "localCandidateBeforeEvidenceCommit": "1a670b2145ed1526186f43a2ebf8605c2f5cf8e8",
+  "checks": {
+    "parent-new-base-inventory": {
+      "command": [
+        "pnpm",
+        "test:m5-inventory"
+      ],
+      "startedAt": "2026-10-09T17:08:59.150707+00:00",
+      "completedAt": "2026-10-09T17:09:25.670050+00:00",
+      "exitCode": 0,
+      "log": "parent-new-base-inventory.log",
+      "sha256": "f596dc90a47673a24e49f532624acee573b052d3807da0d22aa0392d6caed76c",
+      "bytes": 10328,
+      "scope": "LOCAL_OWNED_PG18_ONLY"
+    },
+    "parent-new-base-style": {
+      "command": [
+        "pnpm",
+        "check:style"
+      ],
+      "startedAt": "2026-10-09T17:09:36.158342+00:00",
+      "completedAt": "2026-10-09T17:09:37.007635+00:00",
+      "exitCode": 0,
+      "log": "parent-new-base-style.log",
+      "sha256": "3bbf32e0214f732f137ac57cfd6e03f68bbf455191ba73f0906d2e68d74735b9",
+      "bytes": 13179,
+      "scope": "LOCAL_OWNED_PG18_ONLY"
+    },
+    "parent-new-base-secrets": {
+      "command": [
+        "pnpm",
+        "check:secrets"
+      ],
+      "startedAt": "2026-10-09T17:09:37.083082+00:00",
+      "completedAt": "2026-10-09T17:09:37.248818+00:00",
+      "exitCode": 0,
+      "log": "parent-new-base-secrets.log",
+      "sha256": "5d30b8b5212705b349e1ee889ccf8eca2ac0fde8d678693c49a7f9c8cbd6286b",
+      "bytes": 206,
+      "scope": "LOCAL_OWNED_PG18_ONLY"
+    },
+    "parent-new-base-boundaries": {
+      "command": [
+        "pnpm",
+        "check:boundaries"
+      ],
+      "startedAt": "2026-10-09T17:10:18.315696+00:00",
+      "completedAt": "2026-10-09T17:10:55.598256+00:00",
+      "exitCode": 0,
+      "log": "parent-new-base-boundaries.log",
+      "sha256": "6d12d826ada98f2fb2901c02701056df2cd7664d08ea99185904fea9abc3c89c",
+      "bytes": 1924,
+      "scope": "LOCAL_OWNED_PG18_ONLY"
+    },
+    "parent-new-base-history": {
+      "command": [
+        "python3",
+        "-B",
+        "spikes/m0-007/scripts/check-history.py"
+      ],
+      "startedAt": "2026-10-09T17:10:19.480758+00:00",
+      "completedAt": "2026-10-09T17:10:19.737141+00:00",
+      "exitCode": 0,
+      "log": "parent-new-base-history.log",
+      "sha256": "2f7449966db373e8189785c42ef491ec89499e1238a05af31311613aa825e466",
+      "bytes": 2457,
+      "scope": "LOCAL_OWNED_PG18_ONLY"
+    }
+  },
+  "retentionProductionSourceSinceParentTests": "BYTE_IDENTICAL_A551FEA",
+  "changedBoundWriterDocument": "Owner technical/policy distinction only; original correction evidence remains historical",
+  "currentSourceSha256": {
+    "apps/web/src/server/runtime.ts": "cee722a8e9c549fa404a6c58aaebc13598277c44aec98199a736c935296dca7b",
+    "apps/web/src/server/shopify-webhook.ts": "935991fc9f1b7b7059a1f3e977ed825b3b6435fb744544cef0b1d5763927f09a",
+    "apps/worker/src/handlers.ts": "76202f2e2c8d7272f77e344772599879136c1c473dc0b4098666a4b19965ccf4",
+    "apps/worker/src/main.ts": "949a498dd5da86b284e74d79dfabade311fc896980a09718ef883cdacc533054",
+    "apps/worker/src/runtime.ts": "f65a9b322f33970a504406d5dba29225a0a771d0281fa392bfe32860484260f4",
+    "apps/worker/test/managed-schema.test.mjs": "00b463e291d7d5f423b451c62da02848130b6944c2a7cec4f72dc083d33e8ae0",
+    "apps/worker/test/postgres.test.mjs": "44bf42f2fdab2c41f420ae37175bca24090dc93c5d0a8cd22667da69dd6c5398",
+    "apps/worker/test/queue-handoff-fixture.mjs": "88a40065968e906e4663cf901babb026a910a36779c8b9af06bce706aa3475b0",
+    "apps/worker/test/queue.test.mjs": "7828ac82356d834f0d6e2f672c95def265f4fb62c940d1fdf5c9236537e51bc6",
+    "apps/worker/test/webhook-retention.test.mjs": "00580e9ba14385333b9d9321cd683dca5ee31b4658310d8e91a7f78b631a4426",
+    "docs/delivery/M5-TRANSIENT-WEBHOOK-RETENTION.md": "223ac4c746ea0ccc43e542e724abbe6708782376e51a7bf30514662e29b0a443",
+    "packages/application/src/shopify/ingress.ts": "db57b31d2f687c16b815b17a6010f27eae73649e3eb3ce561ed2919a5e80a8f1",
+    "packages/application/test/shopify-ingress.test.ts": "21ec7d2efc3bdcb8ce1ae713ba483d43c2580524f776bda2dad16b7aa4a165c0",
+    "packages/database/migrations/20261009000100_m5_webhook_retention_handoff.sql": "b34376456233c2549c98c5cf70a40e75afc271c09bd60ce3b13608dda9a0997c",
+    "packages/database/src/client/database.ts": "7e1407dacd2a7f6bb8d23dbbf653e28010d47e5807dc6553c2c374e2f8870193",
+    "packages/database/src/durable-core.ts": "8eb42ae6b0a41e1aa8f3385e20c10a6e1c4c77923ce97055e672ede1e04e5abb",
+    "packages/database/src/index.ts": "ece2770f3d71242a5629807d649d1245db57f7fdee70daef17ee7aad35b09438",
+    "packages/database/src/repositories/shopify-webhooks.ts": "14fa9d4901d98b1bd9583ba74fb3a22fb411e62a35b6d4ac9282a52015765918",
+    "packages/database/src/repositories/tenant.ts": "4ff41393415795109ab25a9b7ef81711b6ae89611995d3225aee9658cc0e505b",
+    "packages/database/test/trusted-release.test.ts": "baa7f0ce2da9bd6265409c9c9a7175df274085e7f0a311222a2705be2738804f",
+    "packages/database/test/webhook-retention.test.ts": "63bdac9f1d3ab335673ce574c1e019e64d9c42b4bbe13ee43a1bc662894c5586",
+    "packages/observability/src/index.ts": "e2fbc4f2c64f5ac60459daa758f82da2105afa7c133627599d279d557923f672",
+    "packages/observability/test/observability.test.mjs": "474a5e65b159d680c838920953038c400fa8c7a4f82a0dca6fe0595ce19908a7",
+    "scripts/m5-024/crash-child.mjs": "674a646e5cc868c488834b9911148e9d719af9bef9322782a84d348aedef78bd",
+    "scripts/m5-024/crash-recovery.test.mjs": "9debf324b0f382010eaf80fac78e8e10997d5e05d29dcd6dcf01a4034fd3cc8f",
+    "scripts/m5-024/queue-privileges.test.mjs": "92125384b286fe86abe6f1f1322368c868f0e82aeb52e51ba0f86d19fcf32634",
+    "scripts/m5-024/queue-roles.sql": "acf6b0492629c60eaa120b63367e677ef3e40462ef178afd6e95e1d1257c89da"
+  },
+  "reusedQualifiedTests": "217 PostgreSQL18; isolated full root; real queue/crash; guarded portable process; serialized400/400 stress; expected-negative renderer; explicit security RED; see parent-local-checks.json",
+  "reuseBasis": "No production, migration, worker package source or provider inputs changed by main advance; added inventory tooling independently requalified",
+  "freshIndependentReviews": "PENDING",
+  "naturalExactHeadCi": "PENDING",
+  "deploymentReadiness": "BLOCKED",
+  "nativeAccess": "NOT_STARTED",
+  "recordedAt": "2026-10-09T17:12:33.481660+00:00"
+}

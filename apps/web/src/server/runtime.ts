@@ -15,7 +15,11 @@ export async function webRuntime(): Promise<Runtime> {
       const connectionString = process.env.DATABASE_URL;
       if (!connectionString) throw new Error('Webhook ingress configuration is incomplete');
       const core = createDurableCore(new Pool({ connectionString }));
-      const queue = createPgBossRuntime({ connectionString, observability: webObservability });
+      const queue = createPgBossRuntime({
+        connectionString,
+        observability: webObservability,
+        webhookHandoff: core.webhooks,
+      });
       try {
         await queue.start();
       } catch (error) {

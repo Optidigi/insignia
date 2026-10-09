@@ -1,5 +1,8 @@
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { copyFile, mkdtemp, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { Pool } from 'pg';
@@ -190,11 +193,23 @@ test('trusted release source loads exact active scope only through a read-only r
 const root = fileURLToPath(new URL('../../../', import.meta.url));
 const execFileAsync = promisify(execFile);
 async function migrate(url: string, direction: 'up' | 'rollback') {
-  return execFileAsync(
-    root + 'node_modules/.bin/dbmate',
-    ['--no-dump-schema', '--migrations-dir', root + 'packages/database/migrations', direction],
-    { cwd: root, env: { ...process.env, DATABASE_URL: url }, timeout: 30_000 },
-  );
+  // This regression targets trusted-release rollback, even after later schema
+  // migrations exist. Run its exact era without altering production history.
+  const directory = await mkdtemp(join(tmpdir(), 'insignia-trusted-release-migrations-'));
+  try {
+    const source = root + 'packages/database/migrations';
+    for (const file of await readdir(source)) {
+      if (/^\d{14}.*\.sql$/.test(file) && file.slice(0, 14) <= '20261008000100')
+        await copyFile(join(source, file), join(directory, file));
+    }
+    return await execFileAsync(
+      root + 'node_modules/.bin/dbmate',
+      ['--no-dump-schema', '--migrations-dir', directory, direction],
+      { cwd: root, env: { ...process.env, DATABASE_URL: url }, timeout: 30_000 },
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
 }
 
 async function disposableMigrationDatabase(

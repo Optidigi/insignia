@@ -127,20 +127,26 @@ async function assertNoObservedUninstall(
   // as stale against that predecessor. Read immutable ingress evidence,
   // regardless of processing state, before creating/advancing an active era.
   // Only the signed Shop identity/domain can fence this provider identity.
+  // Once bytes are unavailable, keep a conservative typed fence for relevant
+  // evidence. Erasure is not proof that the installation survived an uninstall.
   const removed = await sql<{ removed: boolean }>`
   WITH candidates AS (
-    SELECT convert_from(inbox.payload,'UTF8')::jsonb AS body
+    SELECT CASE WHEN inbox.erasure_state='retained' AND inbox.purge_after IS NOT NULL
+      AND isfinite(inbox.purge_after) AND inbox.purge_after > clock_timestamp()
+      THEN convert_from(inbox.payload,'UTF8')::jsonb ELSE NULL END AS body,
+      NOT coalesce(inbox.erasure_state='retained' AND inbox.purge_after IS NOT NULL
+        AND isfinite(inbox.purge_after) AND inbox.purge_after > clock_timestamp(), false) AS unavailable
     FROM shopify_webhook_deliveries delivery JOIN inbox_messages inbox ON inbox.id=delivery.inbox_id
     WHERE delivery.shop_domain=${input.shopDomain} AND delivery.topic='app/uninstalled'
       AND delivery.triggered_at >= ${input.observationStartedAt}
   )
-  SELECT EXISTS(SELECT 1 FROM candidates WHERE
+  SELECT EXISTS(SELECT 1 FROM candidates WHERE unavailable OR (
     CASE jsonb_typeof(body->'id')
       WHEN 'number' THEN (body->>'id')::numeric = ${input.shopifyShopId}::numeric
       WHEN 'string' THEN body->>'id' = ${input.shopifyShopId}
       ELSE false END
     AND body ? 'myshopify_domain'
-    AND (body->>'myshopify_domain' IS NULL OR body->>'myshopify_domain'=${input.shopDomain})
+    AND (body->>'myshopify_domain' IS NULL OR body->>'myshopify_domain'=${input.shopDomain}))
   ) AS removed`.execute(transaction);
   if (removed.rows[0]?.removed !== false) throw new ManagedInstallationError('state_changed');
 }
@@ -442,6 +448,7 @@ export function createTenantRepository(executor: DatabaseExecutor) {
       transaction: Transaction<Database>,
       shopId: string,
       expectedGeneration: string,
+      beforeDeactivate?: () => Promise<void>,
     ): Promise<'deactivated' | 'already_inactive' | 'stale'> {
       const shop = await transaction
         .selectFrom('shops')
@@ -450,6 +457,32 @@ export function createTenantRepository(executor: DatabaseExecutor) {
         .forUpdate()
         .executeTakeFirst();
       if (!shop || shop.current_generation !== expectedGeneration) return 'stale';
+      if (beforeDeactivate) {
+        // The uninstall retention guard must run after all row lock waits,
+        // immediately before any installation/credential/publication effect.
+        await transaction
+          .selectFrom('installation_generations')
+          .select('generation')
+          .where('shop_id', '=', shopId)
+          .where('generation', '=', expectedGeneration)
+          .forUpdate()
+          .execute();
+        await transaction
+          .selectFrom('shop_credentials')
+          .select('shop_id')
+          .where('shop_id', '=', shopId)
+          .where('installation_generation', '=', expectedGeneration)
+          .forUpdate()
+          .execute();
+        await transaction
+          .selectFrom('product_configs')
+          .select('config_id')
+          .where('shop_id', '=', shopId)
+          .where('effective_operation_id', 'is not', null)
+          .forUpdate()
+          .execute();
+        await beforeDeactivate();
+      }
       const result = await transaction
         .updateTable('installation_generations')
         .set({ deactivated_at: sql<Date>`clock_timestamp()` })

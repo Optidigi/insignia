@@ -1,5 +1,6 @@
 /** This shape is produced only after raw-body HMAC verification by the Shopify adapter. */
-/** The HMAC covers only rawBody; bounded headers are trusted provider metadata after controlled ingress verification. */
+/** The HMAC covers only rawBody. Bounded routing headers are not authenticated
+ * by that HMAC; their legacy use as routing metadata remains unqualified. */
 export type VerifiedShopifyDelivery = {
   shopDomain: string;
   topic: string;
@@ -12,7 +13,7 @@ export type VerifiedShopifyDelivery = {
 };
 
 export type ShopifyInboxReceipt = {
-  kind: 'received' | 'duplicate' | 'processed';
+  kind: 'received' | 'duplicate' | 'processed' | 'expired';
   id: string;
   shopId: string | null;
   installationGeneration: string | null;
@@ -39,6 +40,13 @@ export class ShopifyQueueHandoffError extends Error {
   }
 }
 
+export class ShopifyWebhookExpiredError extends Error {
+  constructor() {
+    super('Shopify webhook transient payload expired; work remains unresolved');
+    this.name = 'ShopifyWebhookExpiredError';
+  }
+}
+
 export type ShopifyWebhookIngressResult = {
   inboxId: string;
   kind: 'received' | 'duplicate' | 'processed';
@@ -62,6 +70,7 @@ export async function receiveVerifiedShopifyWebhook(
     throw new TypeError('Verified Shopify delivery is missing required fields');
   }
   const receipt = await ingress.receive({ ...delivery, rawBody: Uint8Array.from(delivery.rawBody) });
+  if (receipt.kind === 'expired') throw new ShopifyWebhookExpiredError();
   if (!receipt.id || (receipt.kind !== 'received' && receipt.kind !== 'duplicate' && receipt.kind !== 'processed')) {
     throw new ShopifyQueueHandoffError();
   }

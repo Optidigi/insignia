@@ -1,0 +1,173 @@
+{
+  "schema": "m5-retention-r2-corrected-qualification-v1",
+  "rejectedHead": "66b1ab75dd1d2e31c8adf40a903df299f38822d4",
+  "base": "7fc8688b2d59c191486771192d4f466cbc226703",
+  "classification": "LOCAL_CHECKS_PASS_FRESH_R3_REVIEWS_CI_PENDING_M5_INCOMPLETE",
+  "sourceSha256": {
+    "packages/observability/src/index.ts": "f50ca1846e33788c7975c57d4d36438797a6bbc6a99a74877cc90249fc6916c4",
+    "apps/worker/test/webhook-retention.test.mjs": "2803cda2bb59c7060f2541b8e9c7a5ea4166c7af35f894a4aaef68a4f50d2d03",
+    "scripts/m5-024/crash-recovery.test.mjs": "2f0b3c9c7c7f4a7d91b0589f10e8fd20b509059d5c93ff659a8df58b783ede8e"
+  },
+  "checks": [
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-name-pattern=processed overdue uninstall blockers",
+        "apps/worker/test/webhook-retention.test.mjs"
+      ],
+      "startedAt": "2026-10-09T18:04:20.721551+00:00",
+      "completedAt": "2026-10-09T18:04:22.183226+00:00",
+      "exitCode": 1,
+      "log": "alert-red.log",
+      "sha256": "34754b4fd04c930033c5255f0825dc5cd9cf456a3ad059dc793372f534fc7b3b",
+      "bytes": 1044,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY",
+      "receiptSha256": "c0b051a7100d6730d8d964768e307b5af9cce04582f3bd2931f2e0b47c075ff6"
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "--test-name-pattern=processed overdue uninstall blockers",
+        "apps/worker/test/webhook-retention.test.mjs"
+      ],
+      "startedAt": "2026-10-09T18:05:31.046064+00:00",
+      "completedAt": "2026-10-09T18:05:32.169567+00:00",
+      "exitCode": 0,
+      "log": "alert-green.log",
+      "sha256": "7704b490b8a16834272bc0e3a95c09b78872fc8134eece963800071608c01ffb",
+      "bytes": 229,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY",
+      "receiptSha256": "d344ceb698aa35938e23644b45973baf42702461e11bda47a8990a7f49aef4a4"
+    },
+    {
+      "command": [
+        "pnpm",
+        "check"
+      ],
+      "startedAt": "2026-10-09T18:06:40.167499+00:00",
+      "completedAt": "2026-10-09T18:09:57.814307+00:00",
+      "exitCode": 0,
+      "log": "corrected-root.log",
+      "sha256": "b93293f998a6f16c7f579abcd81bc9e0a91bed24582eba21d06345e3c2fd25b2",
+      "bytes": 167564,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY",
+      "receiptSha256": "afe8bd3ae6fde19f69bb85973712138f7598bc54c71dced94b14f8178dad71e1"
+    },
+    {
+      "command": [
+        "bash",
+        "scripts/m5-024/build-worker.sh",
+        "/home/serveradmin/insignia-m5-retention-alert-checks/portable-worker-qualified"
+      ],
+      "startedAt": "2026-10-09T18:17:01.785870+00:00",
+      "completedAt": "2026-10-09T18:17:23.886683+00:00",
+      "exitCode": 0,
+      "log": "portable-current-build.log",
+      "sha256": "8f5e564e93b762cf4314ea9114b9565abf0b13c786d581103d9882a51f004640",
+      "bytes": 3461,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY",
+      "receiptSha256": "aa6ba9b5a533dc45f49ad6834c822c0df90c475dd42126d8631ef0ef9cba954b"
+    },
+    {
+      "command": [
+        "env",
+        "-u",
+        "LD_LIBRARY_PATH",
+        "M5_WORKER_PACKAGE_ENTRY=/home/serveradmin/insignia-m5-retention-alert-checks/portable-worker-qualified/dist/main.js",
+        "node",
+        "--test",
+        "scripts/m5-024/worker-guards.test.mjs",
+        "scripts/m5-024/portable-process.test.mjs"
+      ],
+      "startedAt": "2026-10-09T18:17:32.902530+00:00",
+      "completedAt": "2026-10-09T18:17:45.499906+00:00",
+      "exitCode": 0,
+      "log": "portable-current-controls.log",
+      "sha256": "f38adf14d705db897c05cbb6a35f8edff40779727bdb2863cae5aafc4186cf21",
+      "bytes": 337,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY",
+      "receiptSha256": "81a86a26a5737cb6da8170b67f828a929fe637994937262d925930b08c4e8465"
+    },
+    {
+      "command": [
+        "pnpm",
+        "check:style"
+      ],
+      "startedAt": "2026-10-09T18:17:45.628411+00:00",
+      "completedAt": "2026-10-09T18:17:46.495236+00:00",
+      "exitCode": 0,
+      "log": "corrected-final-style.log",
+      "sha256": "dd7514f3d871b5c5da64ace6254c1baad8fe4b363850fc2f04e34c66bf220df6",
+      "bytes": 13179,
+      "scope": "NEW_OWNED_PG18_SCRAM_ONLY",
+      "receiptSha256": "adb6d9791d3a0a5d1d3c6687a35a461be7d8fa0e74e6eeb555ade91e29a6d906"
+    }
+  ],
+  "workerTests": {
+    "tests": 29,
+    "pass": 29,
+    "fail": 0,
+    "cancelled": 0,
+    "skipped": 0
+  },
+  "crashControls": {
+    "manifest": "crash-controls.json",
+    "sha256": "4dd733e30dc880b7234a8906b05dce7f1c4555f0598d6d7c8abfd8d52e057def",
+    "ownedResourceClosure": {
+      "classification": "supplementary final owned-resource closure check",
+      "ownPidFileAbsent": true,
+      "loopbackAddress": "127.0.0.1",
+      "port": 55450,
+      "portBindSucceededAndReleased": true,
+      "previousStopExit": 0,
+      "previousStatusExit": 3,
+      "disposableFixtureDatabasesRemaining": 0,
+      "parentInboxAndQueueUnchangedInFocusedIsolationControl": true,
+      "exactCiStep": {
+        "tests": 2,
+        "pass": 2,
+        "fail": 0,
+        "cancelled": 0,
+        "skipped": 0
+      },
+      "correctionReceiptSha256": "97d3d95a87a2246d1d82742375cfb314a0afd282515a4ccba667e688d15e4023",
+      "testSourceSha256": "2f0b3c9c7c7f4a7d91b0589f10e8fd20b509059d5c93ff659a8df58b783ede8e"
+    },
+    "diagnosisSha256": "b8ad48ef0c488d954ea7ee23109a957c90df61b786f10c82aa6053c2114ce8c4"
+  },
+  "resourceClosure": {
+    "scope": "NEW_OWNED_SYNTHETIC_PG18_ONLY",
+    "dataDirectory": "/home/serveradmin/insignia-m5-retention-alert-checks/pgdata",
+    "port": 55452,
+    "verifiedRunningBeforeStop": 0,
+    "stopExitCode": 0,
+    "verifiedStoppedStatusCode": 3,
+    "postmasterPidAbsent": true,
+    "portBindableWithReuseAddr": true,
+    "firstPortCheck": "EADDRINUSE_AFTER_CONFIRMED_STOP_WITHOUT_SO_REUSEADDR; corrected final check permits normal TCP TIME_WAIT reuse; no restart or second stop",
+    "closedAt": "2026-10-09T18:18:38.591908+00:00",
+    "historicalClosedClustersReopened": false,
+    "nativeProviderOrProductionAccess": false
+  },
+  "portableExecutableInventorySha256": "2d37a1110e33abf3c54229c22df53205f5c58e05f44d4849979ab170114886b5",
+  "privateArtifactRoot": "/home/serveradmin/insignia-m5-retention-alert-checks",
+  "historicalManifestsByteIdentical": [
+    "local-checks.json",
+    "correction-local-checks.json",
+    "parent-local-checks.json",
+    "eligibility-advisory/manifest.json",
+    "integration/new-base-checks.json",
+    "r1-correction/local-checks.json"
+  ],
+  "reusedUnchangedControls": "R1 corrected PG219, renderer expected negative, explicit generic uninstall RED and publication400/400 path only. Independent CI-subsequence diagnosis again executes database219 at unchanged DB source before the logger correction. New full root executes worker29 and realHTTP/browser controls but does not run the separate database Vitest suite. Original raw receipts remain separate.",
+  "limits": [
+    "No native/SSH/provider/production operation",
+    "No Docker/PID1/native OS isolation proof",
+    "All unqualified raw erasure still deferred and overdue; not a retention waiver",
+    "Generic uninstall authority still RED",
+    "No current commercial eligibility or M5/G7 acceptance",
+    "Real private VPS identity found from another owner-authorized session; existing-key bounded caller requires separate local qualification before use; native phase NOT_STARTED"
+  ]
+}

@@ -1,0 +1,186 @@
+{
+  "version": "m5-transient-webhook-retention-supported-topic-correction-v1",
+  "recorded_at": "2026-10-09T16:19:01.522339+00:00",
+  "writer_baseline_commit": "c9510e0f8b381840809baf0740efe16f19e64d33",
+  "historical_manifest": {
+    "path": "docs/delivery/evidence/m5-transient-webhook-retention/local-checks.json",
+    "sha256": "01207dabb369803ab346466b1643bc0ee799122211d6e6d883bf1d4370ffb105",
+    "preservation": "BYTE_IDENTICAL_HISTORICAL_ONLY"
+  },
+  "scope": "LOCAL_SUPPORTING_CORRECTION_ONLY",
+  "deployment_readiness": "BLOCKED",
+  "contract": {
+    "eligible_topic": "app/uninstalled",
+    "source": "shopify",
+    "retention_class": "shopify-webhook",
+    "privacy_blockers": [
+      "customers/data_request",
+      "customers/redact",
+      "shop/redact"
+    ],
+    "other_indexed_topics": "blockedUnsupportedIds",
+    "unindexed": "blockedUnknownIds",
+    "eligible_batch_limit": 100,
+    "combined_blocker_sample_limit": 100,
+    "blocked_bodies_and_deadlines": "UNCHANGED_OVERDUE_UNFULFILLED",
+    "public_alert": "UnsupportedPayloadRetentionBlocked with bounded count, no identifiers",
+    "routing_headers": "UNSIGNED_LEGACY_USE_UNQUALIFIED",
+    "economic_or_privacy_store_created": false,
+    "indefinite_retention_permission": false
+  },
+  "red_green": [
+    {
+      "red_log": "05-unsupported-erasure-red.log",
+      "failed": 3,
+      "passed": 18,
+      "observed": "Old selector irreversibly erased expired orders/paid, orders/create and refunds/create sole facts",
+      "green_log": "06-unsupported-erasure-green.log",
+      "observed_green": "Unsupported bytes/deadlines survive, eligible uninstall bytes erase; unchanged authority controls pass as RED security characterization"
+    },
+    {
+      "red_log": "08-unsupported-alert-red.log",
+      "failed": 1,
+      "observed": "Real PostgreSQL preservation/bounds held, but new blocker alert was absent",
+      "green_log": "11-unsupported-alert-green.log",
+      "passed": 1,
+      "observed_green": "101 unsupported raw receipts preserved unchanged; sampled count100 alert and eligible uninstall erasure verified"
+    }
+  ],
+  "checks": {
+    "database": {
+      "log": "13-database-suite.log",
+      "passed": 217,
+      "failed": 0,
+      "skipped": 0
+    },
+    "worker": {
+      "log": "19-worker-suite.log",
+      "passed": 28,
+      "failed": 0,
+      "skipped": 0
+    },
+    "ingress": {
+      "log": "14-ingress-controls.log",
+      "passed": 4,
+      "failed": 0
+    },
+    "observability": {
+      "log": "15-log-controls.log",
+      "passed": 4,
+      "failed": 0
+    },
+    "builds": {
+      "logs": [
+        "16-application-build.log",
+        "17-database-final-build.log",
+        "18-worker-final-build.log"
+      ],
+      "status": "PASS"
+    },
+    "style": {
+      "log": "20-style.log",
+      "status": "PASS_WITH_EXISTING_WARNINGS"
+    },
+    "durable_api_boundary": {
+      "log": "21-api-boundary.log",
+      "status": "PASS"
+    },
+    "diff_check": {
+      "log": "22-diff-check.log",
+      "status": "PASS"
+    }
+  },
+  "postgres": {
+    "version": "18.6",
+    "allocation": "NEW_WRITER_OWNED_CLUSTER",
+    "port": 55442,
+    "parent_port_accessed": false,
+    "original_closed_cluster_reopened": false
+  },
+  "closure": {
+    "stop_log": "23-resource-stop.log",
+    "status_log": "24-resource-status.log",
+    "status_exit_code": 3,
+    "cluster": "STOPPED",
+    "test_processes": "CLOSED",
+    "private_directory_mode": "0700",
+    "private_log_modes": "0600",
+    "synthetic_state": "RETAINED_STOPPED",
+    "disposable_worker_databases": "REMOVED_AFTER_ASSERTIONS"
+  },
+  "source_sha256": {
+    "apps/web/src/server/runtime.ts": "cee722a8e9c549fa404a6c58aaebc13598277c44aec98199a736c935296dca7b",
+    "apps/web/src/server/shopify-webhook.ts": "935991fc9f1b7b7059a1f3e977ed825b3b6435fb744544cef0b1d5763927f09a",
+    "apps/worker/src/handlers.ts": "76202f2e2c8d7272f77e344772599879136c1c473dc0b4098666a4b19965ccf4",
+    "apps/worker/src/main.ts": "949a498dd5da86b284e74d79dfabade311fc896980a09718ef883cdacc533054",
+    "apps/worker/src/runtime.ts": "f65a9b322f33970a504406d5dba29225a0a771d0281fa392bfe32860484260f4",
+    "apps/worker/test/managed-schema.test.mjs": "00b463e291d7d5f423b451c62da02848130b6944c2a7cec4f72dc083d33e8ae0",
+    "apps/worker/test/postgres.test.mjs": "44bf42f2fdab2c41f420ae37175bca24090dc93c5d0a8cd22667da69dd6c5398",
+    "apps/worker/test/queue-handoff-fixture.mjs": "88a40065968e906e4663cf901babb026a910a36779c8b9af06bce706aa3475b0",
+    "apps/worker/test/queue.test.mjs": "7828ac82356d834f0d6e2f672c95def265f4fb62c940d1fdf5c9236537e51bc6",
+    "apps/worker/test/webhook-retention.test.mjs": "00580e9ba14385333b9d9321cd683dca5ee31b4658310d8e91a7f78b631a4426",
+    "docs/delivery/M5-TRANSIENT-WEBHOOK-RETENTION.md": "63f714059139eeb6300a193c9190edd9654df237507362a83650d054ef704dc2",
+    "packages/application/src/shopify/ingress.ts": "db57b31d2f687c16b815b17a6010f27eae73649e3eb3ce561ed2919a5e80a8f1",
+    "packages/application/test/shopify-ingress.test.ts": "21ec7d2efc3bdcb8ce1ae713ba483d43c2580524f776bda2dad16b7aa4a165c0",
+    "packages/database/migrations/20261009000100_m5_webhook_retention_handoff.sql": "b34376456233c2549c98c5cf70a40e75afc271c09bd60ce3b13608dda9a0997c",
+    "packages/database/src/client/database.ts": "7e1407dacd2a7f6bb8d23dbbf653e28010d47e5807dc6553c2c374e2f8870193",
+    "packages/database/src/durable-core.ts": "8eb42ae6b0a41e1aa8f3385e20c10a6e1c4c77923ce97055e672ede1e04e5abb",
+    "packages/database/src/index.ts": "ece2770f3d71242a5629807d649d1245db57f7fdee70daef17ee7aad35b09438",
+    "packages/database/src/repositories/shopify-webhooks.ts": "14fa9d4901d98b1bd9583ba74fb3a22fb411e62a35b6d4ac9282a52015765918",
+    "packages/database/src/repositories/tenant.ts": "4ff41393415795109ab25a9b7ef81711b6ae89611995d3225aee9658cc0e505b",
+    "packages/database/test/trusted-release.test.ts": "baa7f0ce2da9bd6265409c9c9a7175df274085e7f0a311222a2705be2738804f",
+    "packages/database/test/webhook-retention.test.ts": "63bdac9f1d3ab335673ce574c1e019e64d9c42b4bbe13ee43a1bc662894c5586",
+    "packages/observability/src/index.ts": "e2fbc4f2c64f5ac60459daa758f82da2105afa7c133627599d279d557923f672",
+    "packages/observability/test/observability.test.mjs": "474a5e65b159d680c838920953038c400fa8c7a4f82a0dca6fe0595ce19908a7",
+    "scripts/m5-024/crash-child.mjs": "674a646e5cc868c488834b9911148e9d719af9bef9322782a84d348aedef78bd",
+    "scripts/m5-024/crash-recovery.test.mjs": "9debf324b0f382010eaf80fac78e8e10997d5e05d29dcd6dcf01a4034fd3cc8f",
+    "scripts/m5-024/queue-privileges.test.mjs": "92125384b286fe86abe6f1f1322368c868f0e82aeb52e51ba0f86d19fcf32634",
+    "scripts/m5-024/queue-roles.sql": "acf6b0492629c60eaa120b63367e677ef3e40462ef178afd6e95e1d1257c89da"
+  },
+  "changed_paths": [
+    "apps/worker/src/handlers.ts",
+    "apps/worker/test/webhook-retention.test.mjs",
+    "docs/delivery/M5-TRANSIENT-WEBHOOK-RETENTION.md",
+    "packages/application/src/shopify/ingress.ts",
+    "packages/database/src/repositories/shopify-webhooks.ts",
+    "packages/database/test/webhook-retention.test.ts",
+    "packages/observability/src/index.ts"
+  ],
+  "private_log_sha256": {
+    "01-initdb.log": "d9c9e838b756c0a4238b54f8fea96049a4c5d056c01db1cd501c7fe9763d0fd8",
+    "02-start.log": "66afd0411ccc09366e99fdd99b85f21899c8d2d064f5835126859618802153ad",
+    "03-create-database.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "04-migrations.log": "250f91818fdaf815209b5273d1597ba41bf31c4c3ff360ab5385207cf380ba8e",
+    "05-unsupported-erasure-red.log": "cece62b9a92478b26b9b1a5850dfd8667b5015fc64b7fa3b808a96d89e9a08e9",
+    "06-unsupported-erasure-green.log": "9b575726b873a5d8cf01b3d7913c00195f00dd71c801b45911b306665d679337",
+    "07-database-build.log": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b",
+    "08-unsupported-alert-red.log": "eadd380468d3bd1cea1953081c0e4fa892551f86ba3729a56597ff88a8ac3b74",
+    "09-observability-build.log": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b",
+    "10-worker-build.log": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b",
+    "11-unsupported-alert-green.log": "d1b058aea72b72cb550bc39835b6ebcb088a224641ff1ce909b789f8edf5fbfd",
+    "12-format.log": "d2f758bfb441750ef901886e179b0a33460c720bc3416583b5afca4d6ba5f179",
+    "13-database-suite.log": "d8d9dd1525d78f08ba9a84b11d960c1d2d2ae4efdcbc7ff7a4bfdd2afda2b3e2",
+    "14-ingress-controls.log": "667aee68bfc3ed2c54ee6487f703aade678130733e2d696c95502b48f4b587c3",
+    "15-log-controls.log": "c48299ce6e059c8d91c715b657319e9e69fc1c6a2023142fad9535e99c6d6965",
+    "16-application-build.log": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b",
+    "17-database-final-build.log": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b",
+    "18-worker-final-build.log": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b",
+    "19-worker-suite.log": "7261c109749909075ae136e4182dab0a9681d361eab15b8fc3bc085b9c03d03f",
+    "20-style.log": "3eb2e014d12979f1cf893e4bf6bc4af7468ee4f5167fb2fbcfa3aecb42a2d087",
+    "21-api-boundary.log": "1f7e841df0254beae4ace4e8b632dd3189f150322fb8e29f4c555e02c406b175",
+    "22-diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "23-resource-stop.log": "ca19178a35ab4153b75b494963b66ce8243e1b94c173107c87b44d09db23652d",
+    "24-resource-status.log": "e138ccb54fdb08283c6eb21159c53207bbbbf07077246e2804e18d22efe6e250",
+    "pg18.log": "ebda0d3812ccc70c377fe30784abb04e7d920cafab09d8d0ea7f42bd78567f2a"
+  },
+  "native_provider_vps_or_external_credential_access": false,
+  "deployment_commit_push": false,
+  "remaining_gaps": [
+    "Parent independent integrated review and broad exact-head regression pending",
+    "Generic unexpired uninstall authority remains RED; topic selector is not authentication",
+    "Privacy/unknown/unsupported receipts remain overdue and unfulfilled; retention and minimum fact/obligation contract required before deployment",
+    "No future order/refund processor, economic/privacy store or indefinite retention basis supplied",
+    "Bounded samples are not global absence or punctual deletion proofs",
+    "Previously documented production topology/role/processor/backup/log/queue ambiguity remains unqualified"
+  ]
+}

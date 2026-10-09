@@ -19,6 +19,9 @@ export {
   type ShopifyWebhookReceipt,
   type ShopifyWebhookState,
   type VerifiedShopifyDelivery,
+  type WebhookPayloadErasure,
+  type WebhookQueueHandoffOutcome,
+  type WebhookQueueHandoffState,
 } from './repositories/shopify-webhooks.js';
 export type {
   ActiveAuthorizationScope,
