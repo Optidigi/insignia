@@ -95,6 +95,16 @@ class HostFixture:
     def run(self):
         return PHASE.run_host_inventory(self.directory, self.source, self.key, self.known_host, test_command=self.command)
 
+def existing_access(host, gate, access):
+    identity, pin = access['identityPath'], access['knownHostLineSha256']
+    command_sha = access['forcedCommandSha256']
+    access.clear()
+    access.update(mode='EXISTING_IDENTITY_FIXED_COMMAND', identityPath=identity,
+                  knownHostLineSha256=pin, fixedCommandSha256=command_sha,
+                  identityPublicKeyFingerprint='SHA256:Hwhydo5U9f8ZDJr9+INeksDq9DoKB+83TsRCyynmRRM',
+                  identityVerificationRef='SYNTHETIC_PUBLIC_IDENTITY_VERIFICATION',
+                  ownerReuseApprovalReference='SYNTHETIC_OWNER_REUSE_DIRECTIVE')
+
 class PhaseControls(unittest.TestCase):
     def test_one_phase_reserves_admin_once_with_same_shared_deadline_and_private_binding(self):
         with tempfile.TemporaryDirectory() as parent:
@@ -293,6 +303,65 @@ class PhaseControls(unittest.TestCase):
                 state = json.loads((fixture.directory/'ledger.json').read_bytes())
                 self.assertEqual(state['metadataObservations'], 0)
                 self.assertIsNone(state['host'])
+
+    def test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim(self):
+        with tempfile.TemporaryDirectory() as parent:
+            fixture = HostFixture(parent, host_mutation=existing_access)
+            controls = ("assert argv[:9]==['-F','/dev/null','-T','-x','-p','22','-i',"+repr(str(fixture.key))+",'-l']\n"
+                        "assert argv[9]=='serveradmin' and argv[-2]=='65.109.22.104'\n"
+                        "assert set(argv[10:-2:2])=={'-o'}\n"
+                        "assert all(option in argv[11:-2:2] for option in "
+                        "['BatchMode=yes','IdentitiesOnly=yes','IdentityAgent=none','PasswordAuthentication=no',"
+                        "'KbdInteractiveAuthentication=no','ForwardAgent=no','ClearAllForwardings=yes',"
+                        "'ProxyCommand=none','ProxyJump=none','RequestTTY=no','ConnectionAttempts=1',"
+                        "'ControlMaster=no','StrictHostKeyChecking=yes'])\n"
+                        "assert argv[-1]==(Path(sys.argv[1])/'forced-command.txt').read_text()\n"
+                        "assert '-A' not in argv and '-tt' not in argv\n")
+            fixture.script.write_text(fixture.script.read_text().replace('raw=sys.stdin.buffer.read()',
+                                       controls+'raw=sys.stdin.buffer.read()'))
+            result = fixture.run()
+            self.assertEqual(result['classification'], 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED')
+            self.assertEqual(result['reservedMetadataObservations'], 10)
+            state = json.loads((fixture.directory/'ledger.json').read_bytes())
+            self.assertEqual(state['host']['accessMode'], 'EXISTING_IDENTITY_FIXED_COMMAND')
+            self.assertFalse(state['host']['serverRestrictionProven'])
+            self.assertNotIn('forcedCommandSha256', state['host'])
+            self.assertEqual(state['host']['fixedCommandSha256'],
+                             digest((fixture.directory/'forced-command.txt').read_bytes()))
+            self.assertEqual(fixture.run()['classification'], 'STOP_RESERVATION_CONSUMED')
+
+    def test_existing_identity_unqualified_bindings_stop_before_reservation_and_transport(self):
+        changes = [{'mode':'UNKNOWN'}, {'ownerReuseApprovalReference':''},
+                   {'identityVerificationRef':''}, {'identityPublicKeyFingerprint':'SHA256:unallocated'},
+                   {'fixedCommandSha256':'f'*64}, {'knownHostLineSha256':'e'*64},
+                   {'forcedCommandAttestationRef':'NOT_SERVER_PROOF'}]
+        for change in changes:
+            with self.subTest(change=change), tempfile.TemporaryDirectory() as parent:
+                def mutation(host, gate, access):
+                    existing_access(host, gate, access)
+                    access.update(change)
+                fixture = HostFixture(parent, host_mutation=mutation)
+                marker = Path(parent)/'transport-invoked'
+                fixture.script.write_text('from pathlib import Path;Path('+repr(str(marker))+').touch()')
+                self.assertTrue(fixture.run()['classification'].startswith('STOP_'))
+                self.assertFalse(marker.exists())
+                state = json.loads((fixture.directory/'ledger.json').read_bytes())
+                self.assertEqual(state['metadataObservations'], 0)
+                self.assertIsNone(state['host'])
+
+    def test_existing_identity_transport_failure_seals_consumed_attempt_without_retry(self):
+        with tempfile.TemporaryDirectory() as parent:
+            fixture = HostFixture(parent, host_mutation=existing_access)
+            fixture.script.write_text('import sys;sys.stdin.buffer.read();sys.exit(1)')
+            result = fixture.run()
+            self.assertTrue(result['classification'].startswith('STOP_'))
+            self.assertEqual(result['reservedMetadataObservations'], 10)
+            state = json.loads((fixture.directory/'ledger.json').read_bytes())
+            self.assertTrue(state['closed'])
+            self.assertEqual(state['host']['invocations'], 1)
+            self.assertEqual(state['host']['status'], 'UNCERTAIN_NO_RETRY')
+            self.assertFalse(state['host']['serverRestrictionProven'])
+            self.assertEqual(fixture.run()['classification'], 'STOP_PHASE_CLOSED')
 
     def test_cli_rejects_unsupported_operation_without_echoing_private_arguments(self):
         result = subprocess.run([sys.executable,'-B',str(SOURCE),'arbitrary-command','SYNTHETIC_PRIVATE_ARGUMENT'],capture_output=True,timeout=5)

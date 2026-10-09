@@ -1,0 +1,121 @@
+{
+  "schema": "insignia-existing-owner-access-candidate-v1",
+  "base": "7fc8688b2d59c191486771192d4f466cbc226703",
+  "baseTree": "04e0428c742e74cae76c23693cca110d463a9413",
+  "classification": "OFFLINE_IMPLEMENTED_NATIVE_NOT_RUN",
+  "sourceArtifacts": {
+    "scripts/m5-inventory-phase/phase.py": {
+      "sha256": "82f6c1c2ae87e5be3afdd211725128a9309ec6e8667fa6afc614b1ba2facc113",
+      "bytes": 33797
+    },
+    "scripts/m5-inventory-phase/phase_test.py": {
+      "sha256": "a27cfade5d4a60aea155aba4e4e09f04dfab4db9a94a32a381b74f2404f5ab37",
+      "bytes": 26944
+    },
+    "docs/delivery/M5-INVENTORY-PHASE.md": {
+      "sha256": "41bca5a67ca82f9cf39f52321e9a7f83843630c22ec4aba4da0b278ef058d579",
+      "bytes": 15632
+    }
+  },
+  "evidence": {
+    "docs/delivery/evidence/m5-inventory-phase/existing-owner-access/REPORT.md": {
+      "sha256": "f781e05ab8a55e869f964c9567332289df0e17c1e279289e99125afa3faee926",
+      "bytes": 2201
+    },
+    "docs/delivery/evidence/m5-inventory-phase/existing-owner-access/final-inventory-tests.log": {
+      "sha256": "7bcad2dccd82fe10f50fc74eb943f232fdedad4bf6012429e053d052ad7e4f29",
+      "bytes": 10914
+    },
+    "docs/delivery/evidence/m5-inventory-phase/existing-owner-access/final-phase-tests.log": {
+      "sha256": "dfe12a1543507466a48994a9f16ea96a5cff3b890daa2e64e8b7e3da10c98f0c",
+      "bytes": 3019
+    },
+    "docs/delivery/evidence/m5-inventory-phase/existing-owner-access/operator-command-error.log": {
+      "sha256": "47f89073fce20ce8165c6c012e505cf86b5e63f7878543680f1b2c9f3d994d28",
+      "bytes": 810
+    },
+    "docs/delivery/evidence/m5-inventory-phase/existing-owner-access/owner-reuse-directive.json": {
+      "sha256": "db75f11551b2c2b17c0f6b4c5be597cb6df4a79c1d343dd08a084a5feeafcf9c",
+      "bytes": 2710
+    },
+    "docs/delivery/evidence/m5-inventory-phase/existing-owner-access/secrets.log": {
+      "sha256": "4cdcfb69c0e5489a29f02f859bf51ef6d70307ee56fc1ce1cf5f2db8971901a9",
+      "bytes": 892
+    },
+    "docs/delivery/evidence/m5-inventory-phase/existing-owner-access/style.log": {
+      "sha256": "1b2c7021c6976ea30a6a5be833e20bea3b546af090f2c1e5dd054118a9ae31dd",
+      "bytes": 18465
+    },
+    "docs/delivery/evidence/m5-inventory-phase/existing-owner-access/tdd-01-green.log": {
+      "sha256": "6d2fc145331f0eaccd37b515600c0b5258030fa7d421b55cee802d701b52793c",
+      "bytes": 285
+    },
+    "docs/delivery/evidence/m5-inventory-phase/existing-owner-access/tdd-01-red.log": {
+      "sha256": "b45d88d2a464c343e6c8c1b06477ea5ab371f8cdd6cfc84c47358731392e3209",
+      "bytes": 1214
+    }
+  },
+  "commands": [
+    {
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py PhaseControls.test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim",
+      "stage": "RED",
+      "exit": 1,
+      "log": "tdd-01-red.log",
+      "phaseSourceSha256": "64d6361685d6e888f8913f14b42e7daf5e678350836f09c22c6b25ab1c656665",
+      "testInputNote": "Initial new positive test version; final test adds outgoing argv assertions and shares the declaration fixture helper."
+    },
+    {
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py PhaseControls.test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim",
+      "stage": "GREEN",
+      "exit": 0,
+      "log": "tdd-01-green.log"
+    },
+    {
+      "command": "python3 -B scripts/m5-inventory-phase/phase_test.py",
+      "exit": 0,
+      "tests": 16,
+      "log": "final-phase-tests.log"
+    },
+    {
+      "command": "corepack pnpm test:m5-inventory",
+      "exit": 0,
+      "tests": {
+        "native": 98,
+        "host": 17,
+        "phase": 16
+      },
+      "log": "final-inventory-tests.log"
+    },
+    {
+      "command": "corepack pnpm check:style",
+      "exit": 0,
+      "log": "style.log",
+      "note": "Existing warnings/infos, no errors."
+    },
+    {
+      "command": "pnpm run inventory:test",
+      "exit": 1,
+      "log": "operator-command-error.log",
+      "classification": "UNSUPPORTED_SCRIPT_OPERATOR_ERROR"
+    },
+    {
+      "command": "corepack pnpm check:secrets",
+      "exit": 1,
+      "log": "secrets.log",
+      "classification": "NOT_QUALIFIED_MISSING_BUILD_ARTIFACT",
+      "note": "ENOENT fresh-worktree apps/storefront/dist/insignia-storefront.js; not a secret finding."
+    }
+  ],
+  "runtime": {
+    "node": "24.21.0",
+    "python": "3.14.4"
+  },
+  "independentReviews": "NOT_RUN_PARENT_OWNED",
+  "naturalExactHeadCI": "NOT_RUN_PARENT_OWNED",
+  "nativeSsh": "NOT_RUN",
+  "providerAccess": "NOT_RUN",
+  "serverRestrictionProven": false,
+  "readOnlyAccountProven": false,
+  "ownerGrantExpansion": false,
+  "historicalEvidenceChanged": false
+}

@@ -1,0 +1,47 @@
+{
+  "schema": "insignia-existing-owner-access-directive-v1",
+  "classification": "OWNER_REUSE_DIRECTIVE_PARENT_AUTHENTICATED_RETRIEVAL",
+  "ownerAnswer": "no. You should already have access to prod vps, enabled it for another agent/session earlier",
+  "ownerMessageProvenance": {
+    "threadId": "81292d0a-995f-4c06-8ce7-7d7cd419bc4a",
+    "timelinePosition": 8515,
+    "updatedAt": "2026-10-09T18:14:39.588Z",
+    "itemId": "turn-item:message:async-answer%3Aruntime-request%3Aprovider%3Acodex%3Aprovider-turn%3Aprovider-turn%253Aprovider%253Acodex%253Anative-turn%253A01a120f7-3d89-76d2-ad67-d55be7a817de%3Anative-request%3Aasync%253Acall_c99e48f74e944577abed9df048dd910d%3A55868bbf-1f92-4876-9823-cbc1c81d1748",
+    "retrievedVia": "Parent actual t3_thread_read; metadata delivered to isolated writer; not independently retrieved by writer"
+  },
+  "originalReadOnlyGrant": {
+    "path": "docs/delivery/evidence/m5-native-inventory/owner-readonly-allocation.json",
+    "sha256": "8d767f98a9624243d34e96b9fdec922a915c049a788d1107f91a1bec56af0079",
+    "ownerResponse": "you have full acess yes",
+    "boundsUnchanged": true
+  },
+  "exactIdentityPath": "/home/serveradmin/.ssh/id_t3_prod",
+  "publicKeyFingerprint": "SHA256:Hwhydo5U9f8ZDJr9+INeksDq9DoKB+83TsRCyynmRRM",
+  "publicKeyComment": "t3-code-834d07ed-pr04-research",
+  "priorAccessEvidence": {
+    "threadId": "834d07ed-e350-4b1d-b368-414cc9dd7e31",
+    "reportedMessagePositions": [
+      2733,
+      2790
+    ],
+    "source": "Parent T3 public metadata readback; existing successful same-VPS access. Not native Insignia inventory evidence."
+  },
+  "scope": "Reuse existing exact identity for unchanged bounded fixed-command read-only inventory; no new key/setup or remote auth-file changes",
+  "serverRestrictionProven": false,
+  "readOnlyAccountProven": false,
+  "privateIdentityReadByWriter": false,
+  "localPublicDerivationRunByWriter": false,
+  "nativeSshRunByWriter": false,
+  "providerAccessRunByWriter": false,
+  "qualification": "PENDING_FRESH_INDEPENDENT_REVIEWS_AND_NATURAL_EXACT_HEAD_CI",
+  "noImplicitAuthority": true,
+  "parentIdentityVerification": {
+    "classification": "PARENT_VERIFIED_PUBLIC_DERIVATION_RELATIONSHIP",
+    "privateProofPath": "/home/serveradmin/insignia-milestone-autonomy-handoff/existing-owner-identity-verification.json",
+    "privateProofSha256": "4830db58de58731e85664ee3bae620ed908a18dc2f9d4fa1c11951e108d8759f",
+    "verifiedAt": "2026-10-09T18:21:21.802708Z",
+    "operation": "Parent ssh-keygen -y derived public bytes matched identity public file and exact allocated fingerprint; no private-key output or persistence",
+    "writerReadProofContents": false,
+    "serverRestrictionEstablished": false
+  }
+}

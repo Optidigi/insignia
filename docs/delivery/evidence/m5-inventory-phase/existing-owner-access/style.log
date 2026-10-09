@@ -1,0 +1,345 @@
+$ biome check .dependency-cruiser.cjs apps/storefront/src apps/storefront/test apps/storefront/scripts apps/storefront/vite.config.ts apps/web/src/islands apps/web/src/pages/live.ts apps/web/src/pages/api apps/web/src/server apps/web/src/shared apps/web/src/styles apps/web/test apps/web/astro.config.mjs apps/worker/src apps/worker/test packages/contracts/src packages/domain/src packages/cart-authorization/src packages/cart-authorization/test packages/application/src packages/database/src packages/database/test packages/shopify/src packages/shopify/test packages/visualizer/src packages/observability/src packages/observability/test scripts/boundaries scripts/m1-functions/check-vector.test.ts scripts/m5-002 scripts/m5-003 scripts/m5-004 scripts/m5-005 scripts/m5-009 scripts/m5-010 scripts/m5-011 scripts/m5-012 scripts/m5-013 scripts/m5-015 scripts/m5-015r scripts/m5-016 scripts/m5-017 scripts/m5-024 scripts/m5-native-inventory
+apps/web/src/islands/MerchantConfigEditor.tsx:148:26 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    146 │         headers: {
+    147 │           ...Object.fromEntries(new Headers(init.headers).entries()),
+  > 148 │           Authorization: 'Bearer ' + (await sessionToken()),
+        │                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    149 │         },
+    150 │         cache: 'no-store',
+  
+  i Unsafe fix: Use a template literal.
+  
+     146  146 │           headers: {
+     147  147 │             ...Object.fromEntries(new Headers(init.headers).entries()),
+     148      │ - ··········Authorization:·'Bearer·'·+·(await·sessionToken()),
+          148 │ + ··········Authorization:·`Bearer·${await·sessionToken()}`,
+     149  149 │           },
+     150  150 │           cache: 'no-store',
+  
+
+apps/web/src/islands/MerchantConfigEditor.tsx:236:36 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    234 │ }
+    235 │ function canonical(value: unknown): string {
+  > 236 │   if (Array.isArray(value)) return '[' + value.map(canonical).join(',') + ']';
+        │                                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    237 │   if (value && typeof value === 'object')
+    238 │     return (
+  
+  i Unsafe fix: Use a template literal.
+  
+     234  234 │   }
+     235  235 │   function canonical(value: unknown): string {
+     236      │ - ··if·(Array.isArray(value))·return·'['·+·value.map(canonical).join(',')·+·']';
+          236 │ + ··if·(Array.isArray(value))·return·`[${value.map(canonical).join(',')}]`;
+     237  237 │     if (value && typeof value === 'object')
+     238  238 │       return (
+  
+
+apps/web/src/islands/MerchantConfigEditor.tsx:242:31 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    240 │       Object.entries(value)
+    241 │         .sort(([a], [b]) => a.localeCompare(b))
+  > 242 │         .map(([key, item]) => JSON.stringify(key) + ':' + canonical(item))
+        │                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    243 │         .join(',') +
+    244 │       '}'
+  
+  i Unsafe fix: Use a template literal.
+  
+     240  240 │         Object.entries(value)
+     241  241 │           .sort(([a], [b]) => a.localeCompare(b))
+     242      │ - ········.map(([key,·item])·=>·JSON.stringify(key)·+·':'·+·canonical(item))
+          242 │ + ········.map(([key,·item])·=>·`${JSON.stringify(key)}:${canonical(item)}`)
+     243  243 │           .join(',') +
+     244  244 │         '}'
+  
+
+apps/web/src/islands/MerchantConfigEditor.tsx:533:46 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    531 │   }
+    532 │   const selectedImage = editor?.variantId
+  > 533 │     ? (view?.product.variants.find((item) => 'variant_' + numberOf(item.id) === editor.variantId)?.imageUrl ??
+        │                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    534 │       view?.product.imageUrl)
+    535 │     : view?.product.imageUrl;
+  
+  i Unsafe fix: Use a template literal.
+  
+     531  531 │     }
+     532  532 │     const selectedImage = editor?.variantId
+     533      │ - ····?·(view?.product.variants.find((item)·=>·'variant_'·+·numberOf(item.id)·===·editor.variantId)?.imageUrl·??
+          533 │ + ····?·(view?.product.variants.find((item)·=>·`variant_${numberOf(item.id)}`·===·editor.variantId)?.imageUrl·??
+     534  534 │         view?.product.imageUrl)
+     535  535 │       : view?.product.imageUrl;
+  
+
+apps/web/src/islands/MerchantConfigEditor.tsx:1084:54 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    1082 │                       <option value="">Featured image</option>
+    1083 │                       {view.product.variants.map((item) => (
+  > 1084 │                         <option key={item.id} value={'variant_' + numberOf(item.id)}>
+         │                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    1085 │                           {item.title}
+    1086 │                         </option>
+  
+  i Unsafe fix: Use a template literal.
+  
+    1082 1082 │                         <option value="">Featured image</option>
+    1083 1083 │                         {view.product.variants.map((item) => (
+    1084      │ - ························<option·key={item.id}·value={'variant_'·+·numberOf(item.id)}>
+         1084 │ + ························<option·key={item.id}·value={`variant_${numberOf(item.id)}`}>
+    1085 1085 │                             {item.title}
+    1086 1086 │                           </option>
+  
+
+apps/web/src/server/admin/production.ts:82:57 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    80 │   const appOrigin = required(env, 'APP_URL');
+    81 │   const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+  > 82 │   const appGid = appId && /^[1-9][0-9]*$/.test(appId) ? 'gid://shopify/App/' + appId : null;
+       │                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    83 │   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+    84 │   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+  
+  i Unsafe fix: Use a template literal.
+  
+     80  80 │     const appOrigin = required(env, 'APP_URL');
+     81  81 │     const appId = env.INSIGNIA_SHOPIFY_APP_ID;
+     82     │ - ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·'gid://shopify/App/'·+·appId·:·null;
+         82 │ + ··const·appGid·=·appId·&&·/^[1-9][0-9]*$/.test(appId)·?·`gid://shopify/App/${appId}`·:·null;
+     83  83 │     const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
+     84  84 │     const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
+  
+
+apps/web/src/server/admin/production.ts:105:54 lint/style/useTemplate  FIXABLE  ━━━━━━━━━━━━━━━━━━━━
+
+  i Template literals are preferred over string concatenation.
+  
+    103 │       installationGeneration: actor.installationGeneration,
+    104 │     });
+  > 105 │     if (!scope || scope.shopDomain !== actor.shop || 'gid://shopify/Shop/' + scope.shopifyShopId !== actor.shopId)
+        │                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    106 │       throw new Error('Admin installation changed');
+    107 │   }
+  
+  i Unsafe fix: Use a template literal.
+  
+    103 103 │         installationGeneration: actor.installationGeneration,
+    104 104 │       });
+    105     │ - ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·'gid://shopify/Shop/'·+·scope.shopifyShopId·!==·actor.shopId)
+        105 │ + ····if·(!scope·||·scope.shopDomain·!==·actor.shop·||·`gid://shopify/Shop/${scope.shopifyShopId}`·!==·actor.shopId)
+    106 106 │         throw new Error('Admin installation changed');
+    107 107 │     }
+  
+
+apps/web/src/islands/MerchantConfigEditor.tsx:518:11 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    516 │       const newViewId = geometry.views.some((item) => item.id === current.viewId)
+    517 │         ? current.viewId
+  > 518 │         : geometry.views[0]!.id;
+        │           ^^^^^^^^^^^^^^^^^^
+    519 │       const updated = { ...current, version: current.version + 1, geometry, viewId: newViewId };
+    520 │       editorRef.current = updated;
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     516  516 │         const newViewId = geometry.views.some((item) => item.id === current.viewId)
+     517  517 │           ? current.viewId
+     518      │ - ········:·geometry.views[0]!.id;
+          518 │ + ········:·geometry.views[0]?.id;
+     519  519 │         const updated = { ...current, version: current.version + 1, geometry, viewId: newViewId };
+     520  520 │         editorRef.current = updated;
+  
+
+apps/web/src/islands/MerchantConfigEditor.tsx:785:35 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    783 │     setView((current) =>
+    784 │       current?.config &&
+  > 785 │       current.config.configId === view.config!.configId &&
+        │                                   ^^^^^^^^^^^^
+    786 │       current.config.draftVersion === view.config!.draftVersion
+    787 │         ? {
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     783  783 │       setView((current) =>
+     784  784 │         current?.config &&
+     785      │ - ······current.config.configId·===·view.config!.configId·&&
+          785 │ + ······current.config.configId·===·view.config?.configId·&&
+     786  786 │         current.config.draftVersion === view.config!.draftVersion
+     787  787 │           ? {
+  
+
+apps/web/src/islands/MerchantConfigEditor.tsx:786:39 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    784 │       current?.config &&
+    785 │       current.config.configId === view.config!.configId &&
+  > 786 │       current.config.draftVersion === view.config!.draftVersion
+        │                                       ^^^^^^^^^^^^
+    787 │         ? {
+    788 │             ...current,
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+     784  784 │         current?.config &&
+     785  785 │         current.config.configId === view.config!.configId &&
+     786      │ - ······current.config.draftVersion·===·view.config!.draftVersion
+          786 │ + ······current.config.draftVersion·===·view.config?.draftVersion
+     787  787 │           ? {
+     788  788 │               ...current,
+  
+
+apps/web/src/islands/MerchantConfigEditor.tsx:1112:50 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    1110 │                                   variantImages: [
+    1111 │                                     ...item.variantImages.filter((entry) => entry.variantId !== editor.variantId),
+  > 1112 │                                     { variantId: editor.variantId!, image: ref },
+         │                                                  ^^^^^^^^^^^^^^^^^
+    1113 │                                   ],
+    1114 │                                 }
+  
+
+apps/web/src/islands/MerchantConfigEditor.tsx:1534:83 lint/style/noNonNullAssertion  FIXABLE  ━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    1532 │                               update((item) => {
+    1533 │                                 const amount =
+  > 1534 │                                   item.rate.kind === 'fixed' ? item.rate.amount : item.rate.tiers[0]!.amount;
+         │                                                                                   ^^^^^^^^^^^^^^^^^^^
+    1535 │                                 return {
+    1536 │                                   ...item,
+  
+  i Unsafe fix: Replace with optional chain operator ?. This operator includes runtime checks, so it is safer than the compile-only non-null assertion operator
+  
+    1532 1532 │                                 update((item) => {
+    1533 1533 │                                   const amount =
+    1534      │ - ··································item.rate.kind·===·'fixed'·?·item.rate.amount·:·item.rate.tiers[0]!.amount;
+         1534 │ + ··································item.rate.kind·===·'fixed'·?·item.rate.amount·:·item.rate.tiers[0]?.amount;
+    1535 1535 │                                   return {
+    1536 1536 │                                     ...item,
+  
+
+apps/web/src/server/admin/auth.ts:71:48 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    69 │     let identity: VerifiedAdminIdentity;
+    70 │     try {
+  > 71 │       identity = await port.verifySessionToken(match[1]!);
+       │                                                ^^^^^^^^^
+    72 │     } catch {
+    73 │       return null;
+  
+
+apps/web/src/server/admin/auth.ts:86:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    84 │     let grant: OnlineAdminGrant;
+    85 │     try {
+  > 86 │       grant = await port.exchangeOnlineGrant(match[1]!, identity);
+       │                                              ^^^^^^^^^
+    87 │     } catch (error) {
+    88 │       diagnostic(error instanceof AdminOnlineIdentityError ? error.stage : 'ONLINE_EXCHANGE_FAILED');
+  
+
+apps/web/src/server/admin/preview.ts:109:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    107 │             .then((found) => (found ? project(found) : null)),
+    108 │         );
+  > 109 │       const result = await map.get(id)!;
+        │                            ^^^^^^^^^^^^
+    110 │       await active(actor);
+    111 │       return result;
+  
+
+apps/web/src/server/admin/preview.ts:116:28 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    114 │       await active(actor);
+    115 │       if (!currencies.has(actor)) currencies.set(actor, reader(actor).shopCurrency());
+  > 116 │       const result = await currencies.get(actor)!;
+        │                            ^^^^^^^^^^^^^^^^^^^^^^
+    117 │       await active(actor);
+    118 │       return result;
+  
+
+apps/web/src/server/admin/preview.ts:163:34 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    161 │                   shopId: randomUUID(),
+    162 │                   shopDomain: shop,
+  > 163 │                   shopifyShopId: shopId.split('/').at(-1)!,
+        │                                  ^^^^^^^^^^^^^^^^^^^^^^^^^
+    164 │                   externalInstallationId: provider.installationId,
+    165 │                 }),
+  
+
+apps/web/src/server/admin/preview.ts:223:26 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    221 │                   installationGeneration: bound.installationGeneration,
+    222 │                   shopifyShopId: shopId,
+  > 223 │                   appId: env.INSIGNIA_M5_002_APP_RESOURCE!,
+        │                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    224 │                 },
+    225 │                 {
+  
+
+apps/web/src/server/admin/preview.ts:227:46 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    225 │                 {
+    226 │                   appKey: client,
+  > 227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+        │                                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+    229 │                 },
+  
+
+apps/web/src/server/admin/preview.ts:228:47 lint/style/noNonNullAssertion ━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  ! Forbidden non-null assertion.
+  
+    226 │                   appKey: client,
+    227 │                   transformInputQuerySha256: env.INSIGNIA_M5_002_TRANSFORM_QUERY_HASH!,
+  > 228 │                   validationInputQuerySha256: env.INSIGNIA_M5_002_VALIDATION_QUERY_HASH!,
+        │                                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    229 │                 },
+    230 │               );
+  
+
+The number of diagnostics exceeds the limit allowed. Use --max-diagnostics to increase it.
+Diagnostics not shown: 191.
+Checked 316 files in 1507ms. No fixes applied.
+Found 89 warnings.
+Found 122 infos.

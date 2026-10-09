@@ -1,0 +1,18 @@
+test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim (__main__.PhaseControls.test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim) ... FAIL
+
+======================================================================
+FAIL: test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim (__main__.PhaseControls.test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/serveradmin/insignia-m5-existing-owner-access-worktree/scripts/m5-inventory-phase/phase_test.py", line 310, in test_existing_owner_identity_runs_only_fixed_command_without_forced_key_claim
+    self.assertEqual(result['classification'], 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED')
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: 'STOP_PHASE_UNQUALIFIED' != 'HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED'
+- STOP_PHASE_UNQUALIFIED
++ HOST_METADATA_CAPTURED_NATIVE_UNQUALIFIED
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.003s
+
+FAILED (failures=1)

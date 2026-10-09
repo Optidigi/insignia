@@ -234,6 +234,8 @@ def close_phase(directory):
 
 HOST, USER = '65.109.22.104', 'serveradmin'
 FINGERPRINT = 'SHA256:vttVPAISQypNdyfjFElTJ6ef8Q5S2YlC+XoUn599uq4'
+EXISTING_IDENTITY_PATH = '/home/serveradmin/.ssh/id_t3_prod'
+EXISTING_IDENTITY_FINGERPRINT = 'SHA256:Hwhydo5U9f8ZDJr9+INeksDq9DoKB+83TsRCyynmRRM'
 OBSERVATION_IDS = ['canonical-web-runtime', 'canonical-database-runtime', 'canonical-router-runtime',
     'legacy-service-boundary', 'canonical-compose-artifact', 'reviewed-web-package-artifact',
     'bounded-running-docker-topology', 'bounded-host-process-executables', 'private-config-file-modes',
@@ -403,18 +405,29 @@ def validate_host_entry(host, gate, access):
             'selectorSha256', 'observationIds', 'expiresAt', 'privateRetentionDays', 'auditEffectsAccounted'})
     require(isinstance(gate, dict) and set(gate) == {'classification', 'sourceSha256', 'selectorSha256',
             'head', 'tree', 'specReviewRef', 'standardsReviewRef', 'ciRef'})
-    require(isinstance(access, dict) and set(access) == {'identityPath', 'knownHostLineSha256',
-            'forcedCommandSha256', 'forcedCommandAttestationRef'})
+    require(isinstance(access, dict))
+    existing = access.get('mode') == 'EXISTING_IDENTITY_FIXED_COMMAND'
+    if existing:
+        require(set(access) == {'mode', 'identityPath', 'knownHostLineSha256', 'fixedCommandSha256',
+                               'identityPublicKeyFingerprint', 'identityVerificationRef', 'ownerReuseApprovalReference'})
+        require(access['identityPublicKeyFingerprint'] == EXISTING_IDENTITY_FINGERPRINT)
+        access_refs = (access['identityVerificationRef'], access['ownerReuseApprovalReference'])
+        command_sha = access['fixedCommandSha256']
+    else:
+        require(set(access) == {'identityPath', 'knownHostLineSha256',
+                               'forcedCommandSha256', 'forcedCommandAttestationRef'})
+        access_refs = (access['forcedCommandAttestationRef'],)
+        command_sha = access['forcedCommandSha256']
     require(gate['classification'] == 'FROZEN_LOCAL_GATE' and (host['host'], host['user'], host['port']) == (HOST, USER, 22)
             and type(host['port']) is int and host['readOnly'] is True and host['auditEffectsAccounted'] is True
             and host['observationIds'] == OBSERVATION_IDS and type(host['privateRetentionDays']) is int
             and 0 < host['privateRetentionDays'] <= 7 and instant(host['expiresAt']) > time.time())
-    for value in (host['id'], gate['specReviewRef'], gate['standardsReviewRef'], gate['ciRef'], access['forcedCommandAttestationRef']):
+    for value in (host['id'], gate['specReviewRef'], gate['standardsReviewRef'], gate['ciRef'], *access_refs):
         require(isinstance(value, str) and re.fullmatch('[A-Za-z0-9._:/-]{1,256}', value))
     for key in ('head', 'tree'):
         require(isinstance(gate[key], str) and re.fullmatch('[0-9a-f]{40}', gate[key]))
     for value in (host['selectorSha256'], gate['sourceSha256'], gate['selectorSha256'],
-                  access['knownHostLineSha256'], access['forcedCommandSha256']):
+                  access['knownHostLineSha256'], command_sha):
         require(isinstance(value, str) and re.fullmatch('[0-9a-f]{64}', value))
 
 def read_source(path):
@@ -456,7 +469,11 @@ def run_host_inventory(directory, source_path, key_path, known_host_line, test_c
             require(selector_sha == namespace['SELECTOR_SHA'] == host_gate['selectorSha256'] == host['selectorSha256'], 'STOP_SELECTOR_DRIFT')
             require([row['id'] for row in namespace['PLAN']] == OBSERVATION_IDS+UNKNOWN_IDS, 'STOP_SELECTOR_DRIFT')
             command = frozen_remote_command(host_gate['sourceSha256'])
-            require(digest(command.encode()) == access['forcedCommandSha256'] and access['forcedCommandAttestationRef'])
+            existing_identity = access.get('mode') == 'EXISTING_IDENTITY_FIXED_COMMAND'
+            command_sha = access['fixedCommandSha256'] if existing_identity else access['forcedCommandSha256']
+            require(digest(command.encode()) == command_sha)
+            if existing_identity and allocation['mode'] == 'LIVE':
+                require(access['identityPath'] == EXISTING_IDENTITY_PATH, 'STOP_KEY_METADATA')
             require(digest(known_host_line.encode()) == access['knownHostLineSha256'], 'STOP_HOST_PIN')
             algorithm = verified_pin(known_host_line, host['fingerprint'])
             key_path = Path(key_path)
@@ -475,6 +492,13 @@ def run_host_inventory(directory, source_path, key_path, known_host_line, test_c
             state['host'] = {'status': 'RESERVED', 'reservedObservationIds': OBSERVATION_IDS,
                              'sourceSha256': host_gate['sourceSha256'], 'selectorSha256': selector_sha,
                              'forcedCommandSha256': digest(command.encode()), 'invocations': 1, 'callerPid': os.getpid()}
+            if existing_identity:
+                del state['host']['forcedCommandSha256']
+                state['host'].update(accessMode='EXISTING_IDENTITY_FIXED_COMMAND', serverRestrictionProven=False,
+                                     fixedCommandSha256=digest(command.encode()),
+                                     identityPublicKeyFingerprint=access['identityPublicKeyFingerprint'],
+                                     identityVerificationRef=access['identityVerificationRef'],
+                                     ownerReuseApprovalReference=access['ownerReuseApprovalReference'])
             save(directory, state)
             reservation_created = True
             request = {'mode': 'LIVE', 'allocation': host, 'qualification': host_gate,
