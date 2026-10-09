@@ -1,0 +1,32 @@
+{
+  "classification": "REUSED_ACCEPTED_EVIDENCE_NOT_RERUN",
+  "baseline": "a87ed85034dcaaf3b4b86bb1f0d9986f6e59d449",
+  "priorSlice": "M5-026 approved bounded offline only",
+  "references": [
+    {
+      "path": "docs/delivery/evidence/m5-026/local-checks.json",
+      "sha256": "c2fb384a8f06f1307bc8308369dc694bc392d16905e84774dffe3c6d0879c45a"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-026/sdk-controls.json",
+      "sha256": "6d2b5e6e935719b2978c7f2af4fa658ac6b26feafd1e3724ea5c51b2d47885cb"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-026/m5-025-invariant-red.log.json",
+      "sha256": "1836d93a783d3b18623e5c7f2fcaa74d28694d4047a3b785f18e9e66f2c897d9"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-026/queue-crash.log.json",
+      "sha256": "fb31d5a3fa70f0fd49e06d9b4b0f0a4d304c422d2d94afce7995bff08c32f1be"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-026/full-pg18.log.json",
+      "sha256": "9a87bf506b84086addf7be7f161d870b5e19a66d3e170e5983aa56867e5d5b5f"
+    },
+    {
+      "path": "docs/delivery/evidence/m5-026/full-root-isolated.log.json",
+      "sha256": "ff86c0b7ea79fc15c19d9782fe5c34f18a8966c23ce580f86f615c8e11292cd3"
+    }
+  ],
+  "limits": "No new behavior/source; existing regression logs retained unchanged. Native authority/privacy PASS not implied. Current document checks and natural exact-head CI are separate."
+}

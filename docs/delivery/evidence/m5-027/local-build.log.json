@@ -1,0 +1,15 @@
+{
+  "name": "local-build",
+  "command": [
+    "corepack",
+    "pnpm",
+    "build"
+  ],
+  "environmentKeys": [],
+  "startedAt": "2026-10-09T13:10:16.387252+00:00",
+  "exitCode": 0,
+  "log": "local-build.log",
+  "sha256": "9885838678ca0a05d7e9c50508eba93296312a4927509faff084129ee90bc78d",
+  "bytes": 2717,
+  "rawContent": "$ corepack pnpm -r --filter './packages/**' build && corepack pnpm -r --filter './apps/**' build\npackages/cart-authorization build$ tsc -p tsconfig.json\npackages/domain build$ tsc -p tsconfig.json\npackages/contracts build$ tsc -p tsconfig.json\npackages/observability build$ tsc -p tsconfig.json\npackages/contracts build: Done\npackages/visualizer build$ tsc -p tsconfig.json\npackages/domain build: Done\npackages/application build$ tsc -p tsconfig.json\npackages/observability build: Done\npackages/cart-authorization build: Done\npackages/visualizer build: Done\npackages/application build: Done\npackages/shopify build$ tsc -p tsconfig.json\npackages/shopify build: Done\npackages/database build$ tsc -p tsconfig.json\npackages/database build: Done\napps/storefront build$ tsc --noEmit && vite build && node scripts/copy-theme-asset.mjs\napps/worker build$ tsc -p tsconfig.json\napps/worker build: Done\napps/web build$ astro check && astro build\napps/storefront build: vite v8.3.1 building client environment for production...\napps/storefront build: transforming...\napps/storefront build: \u2713 5 modules transformed.\napps/storefront build: rendering chunks...\napps/storefront build: computing gzip size...\napps/storefront build: dist/insignia-storefront.js  14.03 kB \u2502 gzip: 5.93 kB\napps/storefront build: \napps/storefront build: \u2713 built in 30ms\napps/storefront build: Done\napps/web build: 13:10:31 [@astrojs/node] Enabling sessions with filesystem storage\napps/web build: 13:10:31 [types] Generated 176ms\napps/web build: 13:10:31 [check] Getting diagnostics for Astro files in /home/serveradmin/insignia-m5-027-worktree/apps/web...\napps/web build: Result (29 files): \napps/web build: - 0 errors\napps/web build: - 0 warnings\napps/web build: - 0 hints\napps/web build: \napps/web build: 13:10:37 [@astrojs/node] Enabling sessions with filesystem storage\napps/web build: 13:10:37 [types] Generated 74ms\napps/web build: 13:10:37 [build] output: \"server\"\napps/web build: 13:10:37 [build] mode: \"server\"\napps/web build: 13:10:37 [build] directory: /home/serveradmin/insignia-m5-027-worktree/apps/web/dist/\napps/web build: 13:10:37 [build] adapter: @astrojs/node\napps/web build: 13:10:37 [build] Collecting build info...\napps/web build: 13:10:37 [build] \u2713 Completed in 123ms.\napps/web build: 13:10:37 [build] Building server entrypoints...\napps/web build: 13:10:38 [vite] \u2713 built in 274ms\napps/web build: 13:10:40 [vite] \u2713 built in 1.96s\napps/web build: 13:10:40 [vite] \u2713 built in 269ms\napps/web build: 13:10:40 [build] Rearranging server assets...\napps/web build: 13:10:40 [build] \u2713 Completed in 2.58s.\napps/web build: 13:10:40 [build] Server built in 2.71s\napps/web build: 13:10:40 [build] Complete!\napps/web build: Done\n"
+}

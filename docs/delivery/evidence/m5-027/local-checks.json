@@ -1,0 +1,68 @@
+{
+  "scope": "Docs/evidence only, no repeated behavioral qualification",
+  "fresh": [
+    {
+      "name": "local-build",
+      "command": [
+        "corepack",
+        "pnpm",
+        "build"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T13:10:16.387252+00:00",
+      "exitCode": 0,
+      "log": "local-build.log",
+      "sha256": "9885838678ca0a05d7e9c50508eba93296312a4927509faff084129ee90bc78d",
+      "bytes": 2717
+    },
+    {
+      "name": "final-secrets",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:secrets"
+      ],
+      "environmentKeys": [],
+      "startedAt": "2026-10-09T13:10:40.704162+00:00",
+      "exitCode": 0,
+      "log": "final-secrets.log",
+      "sha256": "1412133fb3add25aeac134a753abbd897e1d640350bf480b9b3d461b4dc01ce7",
+      "bytes": 206
+    }
+  ],
+  "style": {
+    "command": "corepack pnpm check:style",
+    "exitCode": 0,
+    "stdoutLog": "style.log",
+    "stdoutSha256": "ab2a2a050d6a96bacc3e15ac137466069187a619de32b26e1153216de023c59e",
+    "limits": "Existing warnings/infos; no fixes applied; stderr not separately retained"
+  },
+  "retainedInitialFailure": {
+    "command": "corepack pnpm check:secrets",
+    "exitCode": 1,
+    "reason": "ENOENT apps/storefront/dist/insignia-storefront.js in fresh worktree before local build",
+    "stdoutSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "limits": "Initial stderr observed in tool output, not separately retained; no raw stderr hash invented"
+  },
+  "integrity": {
+    "baseline": "a87ed85034dcaaf3b4b86bb1f0d9986f6e59d449",
+    "onlyDocsEvidenceInstructionsChanged": true,
+    "productionSourceTestsMigrationsBuildProviderInputsAndM5023Through026Unchanged": true,
+    "localTargetsVerified": 248,
+    "preExistingMissingTargets": [
+      {
+        "path": "docs/delivery/state.md",
+        "target": "PR-026-principal-review.md",
+        "classification": "PRE_EXISTING_BASELINE_LINK"
+      }
+    ],
+    "stagedWhitespacePass": true,
+    "stagedPrivateKeyTokenMarkerScanPass": true,
+    "preparedGraphql": "Static read-only two-query documents only; no execution/native schema qualification; unsupported field stops future inventory",
+    "authenticatedShopifyRequests": 0,
+    "productionRequests": 0,
+    "productionSql": 0,
+    "installationMutations": 0
+  },
+  "regression": "REUSED_ACCEPTED_M5_026_EVIDENCE_NOT_RERUN; current natural exact-head CI attaches separately"
+}
