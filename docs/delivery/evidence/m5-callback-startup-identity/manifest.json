@@ -1,0 +1,39 @@
+{
+  "base": "2f7aa2bfb304a80ac08a2965ed20c63e4c85fe8e",
+  "baseTree": "249989e574c266fcb3154602a1a0579d8d45a27b",
+  "ownedInputs": {
+    "scripts/m5-callback-qualification/receiver.mjs": "4d7d38619271d5250437eb707cdac863c0f4455b9b70a85fb758db5a972185e4",
+    "scripts/m5-callback-qualification/service.mjs": "3bb15248eb1a100e12795b3bcf3c17f727bc41bc54f42942b071aa081d910c21",
+    "scripts/m5-callback-qualification/supervisor.mjs": "6bed43f03d355c9490258f310a120c307ca4cd521bb18a54847e40e8000b9912",
+    "scripts/m5-callback-qualification/receiver.test.mjs": "603a7b6e9bdf27caa9b2140f2255c4b898e6695fa08f162f24784a8ec10fb966",
+    "scripts/m5-callback-qualification/supervisor.test.mjs": "f760d7ded01996d5df89e6e3ae7495b80973b22a810663c27dbc440de6707098",
+    "scripts/m5-callback-qualification/LIFECYCLE-CONTROLS.md": "61adb8e2b8608930f06c1d642189efd77e7b6a8b9c01b6f509b50b5064466b30",
+    "docs/delivery/state.md": "d74e244a3a514c8f526da0b920e5787a56ba2514f756079716fe2416ccc90df9",
+    "docs/delivery/milestone-progress.json": "dcca71eee67aafdceb66bf3bae7af987d3f6f5b035856cc22fb9f47a9bc859cd",
+    "docs/delivery/history/state-before-callback-startup-identity.md": "eb77040a39d098b1c220cbbb5eb6a26c736a9f985975652c0b30c124a5084852",
+    "docs/delivery/evidence/m5-callback-startup-identity/pr72-merge-receipt.json": "b09a2254e938b009db44a5d57877829f3b9bf2fe92225c985846335b893e4078",
+    "docs/delivery/evidence/m5-callback-startup-identity/pr72-final-ci.json": "9821a88b1f05656127a06b3d46dda09042215b25febe81475160946b2fd238ac",
+    "docs/delivery/evidence/m5-callback-startup-identity/owner-commercial-and-test-store-decision.json": "844701869f0052daf7fbdafa74a75341be44d627dd74c731c6a0de227fba1427",
+    "docs/delivery/evidence/m5-callback-startup-identity/REPORT.md": "390d2f6b71f7a2bfad7d3566477e5d0ad3bdeeaf2ddf5a505364bd275a1a0b16",
+    "docs/delivery/evidence/m5-callback-startup-identity/pr72-local-acceptance.json": "2ef9fc6238f6a14053e48d8630a564b7a1f6fae07c936dc531e76c86b3e8e007",
+    "docs/delivery/evidence/m5-callback-startup-identity/provenance.json": "8f400fad79c62a3c233c8ca238672e7bc65e95a385dca60f9c4b9978d11dcd68",
+    "docs/delivery/evidence/m5-callback-startup-identity/checks.json": "39718ac522c0db69a90706ce80f7103bd41418397e2a287563446916999a1705",
+    "docs/delivery/notes/m5-commercial-pricing-research-20261010.md": "02f816f88b7da7d9ea80a8de10eb816b6db92de6ae46f47e79f7045f19f43c9c"
+  },
+  "interactingInputs": {
+    "scripts/m5-callback-qualification/operator.mjs": "7f346a74dca05cb41c50cc90815599cdd4699b8191a4ead4ee10b72e0945de77",
+    "scripts/m5-callback-qualification/store.mjs": "b1c185a465b5a57eded64de0d1491fcdfa0135514bd589db6cffa19400f1666c",
+    "scripts/m5-callback-qualification/cleanup.mjs": "e548ad888ebe88f0d5f8a14b6eedcd054b5ccf13179d6dd535c1f26c9be82b9b",
+    "scripts/m5-callback-qualification/tls-edge.mjs": "ccc2b606e47f7370298ec068282733190482059b1b7805e948e3dd83e9887291",
+    "scripts/m5-callback-qualification/tls-edge.test.mjs": "7267ca129667d925132a601f871589ea3ccb74ddf7fa385c993bf94c87f54de8",
+    "scripts/m5-callback-qualification/network-guard.mjs": "f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a",
+    "packages/shopify/src/webhook.ts": "c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f",
+    ".github/workflows/m3-runtime.yml": "efd6d8e08af6474c4ba46cd02f29fe4ba39e5b1375a362c526f8a2d5ef6503b7",
+    "AGENTS.md": "1d5fa596975ef19e33a7e1bc3db9ca5b944872e2ddbfe8a393d7c68810b60eba",
+    "docs/architecture/decision-ledger.md": "c453be74606f1b122c27b8b43169f61c6ca6f9f04e9858f112070bd3a33dc4c2",
+    "docs/delivery/operating-model.md": "a5dc9c2a8ffb792077a1ee3c8c25f3e8fe6ba7837776a9d92cb5c64e13aa06d9",
+    "docs/delivery/authority/milestone-autonomy-2026-10-09.md": "710cda826d77a712a89c791cc5d71144c215b2c7eebe6ce9f689638ba405a327"
+  },
+  "selfPin": "Excluded; parent private freeze pins manifest",
+  "milestoneAcceptance": false
+}

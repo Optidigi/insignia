@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "b0949587efbcf9cdd6b2cef0b7700d6f85c32dd3",
-  "currentTree": "b87cbbc6607ba5324a2e30a0dc0b69014c13b70e",
+  "currentIntegratedCommit": "2f7aa2bfb304a80ac08a2965ed20c63e4c85fe8e",
+  "currentTree": "249989e574c266fcb3154602a1a0579d8d45a27b",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -120,6 +120,10 @@
     {
       "pr": 71,
       "receipt": "evidence/m5-callback-tls-edge/pr71-merge-receipt.json"
+    },
+    {
+      "pr": 72,
+      "receipt": "evidence/m5-callback-startup-identity/pr72-merge-receipt.json"
     }
   ],
   "openFindings": [
@@ -128,7 +132,7 @@
     "Worker/image/queue/runtime native prerequisites not qualified",
     "28 native G7 criteria blocked",
     "Real merchant configure/preview/save/publication/activation NOT_RUN",
-    "Experimental receiver24/lifecycle22/TLS21 controls local PASS only; native callback/TLS/host/cgroup/persistent timer/FD provider/resource/export/key-backup privacy unqualified"
+    "74 local controls PASS only; native callback/host/cgroup/timer/FD/DNS/TLS/copy/privacy unqualified"
   ],
   "resourceGrants": [
     {
@@ -168,28 +172,34 @@
       "evidence": "authority/standing-scoped-management-readonly-2026-10-10.md",
       "ownerReply": "yes, and future read-only checks like this are always permitted, as long as within the scope",
       "interpretation": "Equivalent scoped reads through existing official CLI session; technically qualify each new source/run. No recurring owner read window. No mutation/resource scope expansion."
+    },
+    {
+      "scope": "CONDITIONAL_SEPARATE_TEST_STORE_ALLOCATION",
+      "evidence": "evidence/m5-callback-startup-identity/owner-commercial-and-test-store-decision.json",
+      "ownerReply": "Yes, allocate that separate test store",
+      "interpretation": "Later isolated Insignia test after native identity/data/destination/privacy safety gate; no immediate mutation or protected installation authority"
     }
   ],
   "ownerInputs": [
     "Other processor/queue/privacy ownership artifact locations still unidentified",
     "Any later provisioning/deployment/mutation requires exact separate owner resource envelope",
-    "Known canonical-web policy/features absent; current provider subscription is active existing zero-dollar development contract. Owner feature/policy configuration or separately approved bounded development eligibility still required; provider prices do not supply policy",
-    "Owner selected stitchs-vat-verification-20261004 Admin handle; provider canonical domain/identity/suitability not verified. No installation-mutation allocation."
+    "Owner reports no commercial configuration and selects one all-feature paid plan;49.99 monthly/order fee under research, currency/fee/allowance/trial and provider policy still undefined; no dev bypass",
+    "Owner conditionally allocates stitchs-vat-verification-20261004; canonical provider identity/apps/data/downstream privacy safety gate unqualified; allocation does not start test"
   ],
-  "nextSafeAction": "Review and qualify TLS edge, then prepare the concrete necessary host delta and consolidated owner resource/eligibility decision; no native operation from local tests.",
+  "nextSafeAction": "Review/CI/merge startup identity correction, finish exact host package, research one-plan pricing; native safety and resource conditions remain.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
-    "slice": "Concrete callback host packaging",
-    "status": "NOT_IMPLEMENTED",
-    "nativeAuthority": "Host writes, route/certificate allocation and provider experiment absent"
+    "slice": "Concrete private host packaging and owner-requested competitor pricing research",
+    "status": "Private draft lacks launcher/cleanup wrappers; research ongoing",
+    "nativeAuthority": "No host writes or Shopify mutations"
   },
   "activeCandidate": {
-    "scope": "Local dedicated TLS callback edge;21 synthetic HTTPS/CLI controls;67 combined controls",
-    "base": "b0949587efbcf9cdd6b2cef0b7700d6f85c32dd3",
-    "tree": "b87cbbc6607ba5324a2e30a0dc0b69014c13b70e",
+    "scope": "Local startup mapping identity binding;74 real receiver/lifecycle/TLS controls",
+    "base": "2f7aa2bfb304a80ac08a2965ed20c63e4c85fe8e",
+    "tree": "249989e574c266fcb3154602a1a0579d8d45a27b",
     "reviews": "PENDING",
     "nativeAuthority": "UNALLOCATED / NOT_RUN"
   },

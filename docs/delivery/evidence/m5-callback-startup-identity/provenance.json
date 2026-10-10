@@ -1,0 +1,173 @@
+{
+  "base": "2f7aa2bfb304a80ac08a2965ed20c63e4c85fe8e",
+  "baseTree": "249989e574c266fcb3154602a1a0579d8d45a27b",
+  "writerFreezeSha256": "7684fe3a8651d3e7c5c6ae4d93f7b22fc05979d70a2808e5565dc4e8324ef020",
+  "testedSource": {
+    "scripts/m5-callback-qualification/receiver.mjs": "4d7d38619271d5250437eb707cdac863c0f4455b9b70a85fb758db5a972185e4",
+    "scripts/m5-callback-qualification/service.mjs": "3bb15248eb1a100e12795b3bcf3c17f727bc41bc54f42942b071aa081d910c21",
+    "scripts/m5-callback-qualification/supervisor.mjs": "6bed43f03d355c9490258f310a120c307ca4cd521bb18a54847e40e8000b9912",
+    "scripts/m5-callback-qualification/receiver.test.mjs": "603a7b6e9bdf27caa9b2140f2255c4b898e6695fa08f162f24784a8ec10fb966",
+    "scripts/m5-callback-qualification/supervisor.test.mjs": "f760d7ded01996d5df89e6e3ae7495b80973b22a810663c27dbc440de6707098",
+    "scripts/m5-callback-qualification/LIFECYCLE-CONTROLS.md": "d6870823c5d4f43d75c79a03d0bd9e962647c01ddb0be3f152e07c08447dd7a5"
+  },
+  "parentDocOnlyChange": "Lifecycle command explicitly serialized to match existing CI fixed-port registration; writer doc pin remains historical",
+  "runtimePins": {
+    "service.mjs": "3bb15248eb1a100e12795b3bcf3c17f727bc41bc54f42942b071aa081d910c21",
+    "receiver.mjs": "4d7d38619271d5250437eb707cdac863c0f4455b9b70a85fb758db5a972185e4",
+    "operator.mjs": "7f346a74dca05cb41c50cc90815599cdd4699b8191a4ead4ee10b72e0945de77",
+    "store.mjs": "b1c185a465b5a57eded64de0d1491fcdfa0135514bd589db6cffa19400f1666c",
+    "network-guard.mjs": "f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a",
+    "../../packages/shopify/src/webhook.ts": "c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f"
+  },
+  "commands": [
+    {
+      "log": "01-initial-red.log",
+      "command": "node --test /home/serveradmin/insignia-milestone-autonomy-handoff/callback-startup-identity-correction-20261010/initial-red.test.mjs",
+      "exit": 1,
+      "result": "MEANINGFUL_RED_1FAIL_0SKIP_READY_ACK200_C2",
+      "sha256": "6be7827f7c50a38744a30ba0b9f2dff7a2c41a9d50fa735d684a2bd05b6b5f36"
+    },
+    {
+      "log": "02-harness-no-regression.log",
+      "command": "node --test --test-name-pattern='root frozen identity must survive' scripts/m5-callback-qualification/supervisor.test.mjs",
+      "exit": 0,
+      "result": "HARNESS_FAILURE_ZERO_MATCHES",
+      "sha256": "00abe1b8b607ed14acaa1898cbec55a1684da1d9c8f108d8776ba1957cb42e77"
+    },
+    {
+      "log": "03-harness-syntax-failure.log",
+      "command": "node --test --test-name-pattern='root frozen identity must survive' scripts/m5-callback-qualification/supervisor.test.mjs",
+      "exit": 1,
+      "result": "HARNESS_FAILURE_SYNTAX",
+      "sha256": "23b8e020f29e1375c574e702eec85c16c6863b00a9d3ecccc063b5c193e6d3e3"
+    },
+    {
+      "log": "04-startup-replacement-red.log",
+      "command": "node --test --test-name-pattern='root frozen identity must survive' scripts/m5-callback-qualification/supervisor.test.mjs",
+      "exit": 1,
+      "result": "MEANINGFUL_RED_1FAIL_0SKIP_READY_ACK200_C2",
+      "sha256": "b99971ad11dc50a2cd1fc113d0f5e4dc500eda0b2b5e554bb1a6d18322247593"
+    },
+    {
+      "log": "05-bound-options-red.log",
+      "command": "node --test --test-name-pattern='explicit startup identity' scripts/m5-callback-qualification/receiver.test.mjs",
+      "exit": 1,
+      "result": "MEANINGFUL_RED_MISSING_EXPECTED_REJECTION",
+      "sha256": "c37b617136c55b4d38bc0cef861bbaa324c4522ce8a66f890e67f4bef2b191c0"
+    },
+    {
+      "log": "06-startup-binding-green.log",
+      "command": "node --test --test-name-pattern='root frozen identity must survive|explicit startup identity' scripts/m5-callback-qualification/{supervisor,receiver}.test.mjs",
+      "exit": 0,
+      "result": "GREEN_2PASS_0SKIP",
+      "sha256": "80457f8bf1aafe51bd94468bc02bcb45a4cb3666d6ce354e10c8aaab9ad44461"
+    },
+    {
+      "log": "07-bound-controls-green.log",
+      "command": "node --test --test-name-pattern='trusted caller identity|fixed bound service|correct service identity|authenticated correct bound' scripts/m5-callback-qualification/{supervisor,receiver}.test.mjs",
+      "exit": 0,
+      "result": "GREEN_4PASS_0SKIP",
+      "sha256": "8e51d1b44d0ce1267041bc9a1679a4313f532b041f0dab24ba8edd58be306241"
+    },
+    {
+      "log": "09-full-controls.log",
+      "command": "node --test scripts/m5-callback-qualification/{receiver,supervisor,cleanup,tls-edge}.test.mjs",
+      "exit": 1,
+      "result": "RETAINED_NEW_POSITIVE_FIXTURE_PATH_MISMATCH_72PASS_1FAIL_0SKIP",
+      "sha256": "7b61aed7b2185da1b3d82d76a6abc6dce4f65b8a0f5ba3133f899605bba7f52f"
+    },
+    {
+      "log": "12-caller-identity-snapshot-red.log",
+      "command": "node --test --test-name-pattern='explicit trusted identity is captured' scripts/m5-callback-qualification/supervisor.test.mjs",
+      "exit": 1,
+      "result": "MEANINGFUL_RED_1FAIL_0SKIP_EXPLICIT_EXPECTATION_REMOVAL_READY",
+      "sha256": "a188aa4190558abca1661a757fb0588d924a6421bbbc3b1ad932b3ae49b4c9d1"
+    },
+    {
+      "log": "14-caller-snapshot-fixture-green.log",
+      "command": "node --test --test-name-pattern='explicit trusted identity is captured|authenticated correct bound' scripts/m5-callback-qualification/{supervisor,receiver}.test.mjs",
+      "exit": 0,
+      "result": "GREEN_2PASS_0SKIP",
+      "sha256": "b0056f0dbf6c0283cacdb9f77032993e6df2d837bb00ea246e319daafa2357a8"
+    },
+    {
+      "log": "16-full-final-controls.log",
+      "command": "node --test scripts/m5-callback-qualification/{receiver,supervisor,cleanup,tls-edge}.test.mjs",
+      "exit": 0,
+      "result": "PASS_74_0FAIL_0SKIP",
+      "durationMs": 31063.704403,
+      "sha256": "7b29c8f3fd46850c8e28de36b1237a8388a4197374a55ddf3223bb72295b55b9"
+    },
+    {
+      "log": "17-final-style.log",
+      "command": "/home/serveradmin/insignia-m5-callback-lifecycle-control-worktree/node_modules/.bin/biome check scripts/m5-callback-qualification/{receiver.mjs,service.mjs,supervisor.mjs,receiver.test.mjs,supervisor.test.mjs}",
+      "exit": 0,
+      "result": "PASS_45_INFORMATIONAL",
+      "sha256": "d7901046711581998cdfaf4d5815908f5b03ca28de6a7c7ab824ebdc836c781b"
+    },
+    {
+      "log": "18-final-scoped-boundary.log",
+      "command": "/home/serveradmin/insignia-m5-callback-lifecycle-control-worktree/node_modules/.bin/depcruise --config .dependency-cruiser.cjs scripts/m5-callback-qualification/{receiver.mjs,service.mjs,supervisor.mjs,receiver.test.mjs,supervisor.test.mjs}",
+      "exit": 0,
+      "result": "PASS_23MODULES_28DEPENDENCIES",
+      "sha256": "59e34a99657d466ad63a12be98330f39fbedf54bb125bfbf8ba77df74dfe0849"
+    },
+    {
+      "log": "19-source-pin-secret-integrity.json",
+      "command": "local Python actual source pin/HEAD/tree/scoped marker/unchanged input/lock equality/scope/diff check script",
+      "exit": 0,
+      "result": "PASS_SCOPED_NO_FULLBUILD_CLAIM",
+      "sha256": "67942b26285ea9aab781747725a07c70e02481f88b522f09c5463488e5f757ca"
+    },
+    {
+      "log": "20-initial-reproduction-green.log",
+      "command": "node --test /home/serveradmin/insignia-milestone-autonomy-handoff/callback-startup-identity-correction-20261010/initial-green.test.mjs",
+      "exit": 0,
+      "result": "GREEN_EXACT_ORIGINAL_SCENARIO_1PASS_0SKIP",
+      "sha256": "7528ab1f9bd670713a205c9f664f4ba975499660921390fb281c4193dfa65c27"
+    }
+  ],
+  "logHashes": {
+    "06-startup-binding-green.log": "80457f8bf1aafe51bd94468bc02bcb45a4cb3666d6ce354e10c8aaab9ad44461",
+    "04-startup-replacement-red.log": "b99971ad11dc50a2cd1fc113d0f5e4dc500eda0b2b5e554bb1a6d18322247593",
+    "17-final-style.log": "d7901046711581998cdfaf4d5815908f5b03ca28de6a7c7ab824ebdc836c781b",
+    "13-final-format.log": "cb3344bd26e17128a36fe4092323b77ee67877cb39c13998e7ce941a4ab4aa9f",
+    "14-caller-snapshot-fixture-green.log": "b0056f0dbf6c0283cacdb9f77032993e6df2d837bb00ea246e319daafa2357a8",
+    "12-caller-identity-snapshot-red.log": "a188aa4190558abca1661a757fb0588d924a6421bbbc3b1ad932b3ae49b4c9d1",
+    "09-full-controls.log": "7b61aed7b2185da1b3d82d76a6abc6dce4f65b8a0f5ba3133f899605bba7f52f",
+    "18-final-scoped-boundary.log": "59e34a99657d466ad63a12be98330f39fbedf54bb125bfbf8ba77df74dfe0849",
+    "03-harness-syntax-failure.log": "23b8e020f29e1375c574e702eec85c16c6863b00a9d3ecccc063b5c193e6d3e3",
+    "20-initial-reproduction-green.log": "7528ab1f9bd670713a205c9f664f4ba975499660921390fb281c4193dfa65c27",
+    "01-initial-red.log": "6be7827f7c50a38744a30ba0b9f2dff7a2c41a9d50fa735d684a2bd05b6b5f36",
+    "10-style-check.log": "03f7368a795703d11f5783c1d883f51cdebf3c270dde26bed54448dc8f0de9fd",
+    "07-bound-controls-green.log": "8e51d1b44d0ce1267041bc9a1679a4313f532b041f0dab24ba8edd58be306241",
+    "02-harness-no-regression.log": "00abe1b8b607ed14acaa1898cbec55a1684da1d9c8f108d8776ba1957cb42e77",
+    "05-bound-options-red.log": "c37b617136c55b4d38bc0cef861bbaa324c4522ce8a66f890e67f4bef2b191c0",
+    "11-scoped-boundary.log": "59e34a99657d466ad63a12be98330f39fbedf54bb125bfbf8ba77df74dfe0849",
+    "inherited-startup-binding-red.log": "85e60c4ff31ef825552fce35f81fb90cb9a6e4c43997fd880c803e4aff1ab741",
+    "08-style-format.log": "9868ec5a3e384be48d4c931b03a5e8ed24b756ad628c68d9ff46e7017af49148",
+    "15-final-format.log": "8ce0baa24f1d011761ec667daf82e214066fd0830f49d3bcf24106c62274f4c7",
+    "16-full-final-controls.log": "7b29c8f3fd46850c8e28de36b1237a8388a4197374a55ddf3223bb72295b55b9"
+  },
+  "toolVersions": {
+    "biome": {
+      "version": "Version: 2.5.14",
+      "launcherSha256": "4968177f1e6eedb4c64b0e48107e0e9e626ecb45bdb974889a71527944ae3445",
+      "path": "/home/serveradmin/insignia-m5-callback-lifecycle-control-worktree/node_modules/.bin/biome"
+    },
+    "depcruise": {
+      "version": "18.4.0",
+      "launcherSha256": "dd2ad2cf727251d0fc018e15127dc812eda93d707c1c61dd0476e3af7af0b33c",
+      "path": "/home/serveradmin/insignia-m5-callback-lifecycle-control-worktree/node_modules/.bin/depcruise"
+    },
+    "node": {
+      "version": "v24.21.0",
+      "sha256": "7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c"
+    }
+  },
+  "handoffSha256": "e3dcec2b878d8a3c8f3c80dd4dfd70f4915d642974863878b4327e4cb4bc1f6e",
+  "privateEvidence": "Restricted local milestone handoff callback-startup-identity-correction-20261010; retrieve exact synthetic source/commands/logs by names and hashes. No native secret material or provider calls.",
+  "historicalFailureClasses": "01/04 real replacement RED;05 explicit invalid options RED;12 mutable caller options RED;02 zero matches/03 syntax harness failures;09 new fixture basename mismatch72PASS1FAIL;16 final74PASS0FAIL0SKIP;20 original reproduction GREEN",
+  "productionProviderBuildChanges": "NONE",
+  "milestoneAcceptance": false
+}

@@ -1,0 +1,21 @@
+{
+  "source": "Owner conversation, 10 October 2026; manual decision, no native/provider artifact",
+  "separateTestStore": {
+    "ownerReply": "Yes, allocate that separate test store",
+    "adminHandle": "stitchs-vat-verification-20261004",
+    "allocation": "Conditional later isolated Insignia install/uninstall resource; identity/apps/data/destination/privacy effects safety gate first",
+    "nativeIdentitySuitability": "UNQUALIFIED",
+    "doesNotStartExperiment": true,
+    "protectedStore": "insignia-rewrite-dev remains non-disposable"
+  },
+  "commercial": {
+    "earlierReply": "Use existing owner-backed commercial configuration",
+    "latestReply": "there is none yet I think - for now all features we have are paid plan (research what best price is here, competition is doing - we leaned toward 49.99 a month and a usage fee per order) and demo/trial plan. Just one paid plan. Not sure if this answers your question.",
+    "direction": "One paid plan, all features; research 49.99 monthly plus per-order usage; demo/trial meaning unresolved",
+    "runtimeConfiguration": "NOT_CONFIGURED",
+    "currencyMonthlyFeeUsageFeeAllowancePlanPolicyHandles": "UNDECIDED_NOT_INVENTED",
+    "temporaryDevEntitlement": "NOT_APPROVED_NOT_IMPLEMENTED",
+    "olderThreePlanDecision": "Historical locked ledger conflicts with newest owner direction; record explicitly, commercial plan/ledger amendment remains separate research-backed work",
+    "noBillingImplementationOrProviderMutation": true
+  }
+}

@@ -14,7 +14,7 @@ import {
   recoverDeadReceiver,
   status,
 } from './operator.mjs';
-import { openReceiver } from './receiver.mjs';
+import { openBoundReceiver, openReceiver } from './receiver.mjs';
 
 const privateParents = [];
 after(async () => {
@@ -710,4 +710,33 @@ test('small private metadata reads reject oversized mapping and oversized signin
   assert.equal(out.trim(), '{"status":"REFUSED"}');
   assert.equal(err, '');
   assert.equal((await status(s.directory)).reserved, 0);
+});
+
+test('explicit startup identity refuses missing, malformed and mismatched identity before locking', async () => {
+  const s = await setup();
+  for (const expectedIdentity of [undefined, '', 'a'.repeat(63), 'A'.repeat(64), '0'.repeat(64)]) {
+    let receiver;
+    try {
+      await assert.rejects(async () => {
+        receiver = await openReceiver({ directory: s.directory, clientSecrets: [secret], expectedIdentity });
+      });
+      await assert.rejects(openBoundReceiver({ directory: s.directory, clientSecrets: [secret], expectedIdentity }));
+      await assert.rejects(fs.stat(path.join(s.directory, 'receiver.lock')), { code: 'ENOENT' });
+    } finally {
+      await receiver?.close();
+    }
+  }
+});
+
+test('authenticated correct bound receiver identity accepts real HTTP and preserves private receipt behavior', async () => {
+  const { inspectOwnedExperiment } = await import('./supervisor.mjs');
+  const s = await setup({ binding: { ...binding, experiment: 'experiment' } });
+  const { identity: expectedIdentity } = await inspectOwnedExperiment(s.directory);
+  const r = await openBoundReceiver({ directory: s.directory, clientSecrets: [secret], expectedIdentity });
+  try {
+    assert.equal((await send(r.port, s.enrollment.callbackPath)).code, 200);
+    assert.equal((await privateReceipt(s.directory, 1)).capabilityLabel, binding.capabilityLabel);
+  } finally {
+    await r.close();
+  }
 });
