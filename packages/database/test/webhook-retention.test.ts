@@ -11,39 +11,53 @@ const connectionString = process.env.DATABASE_URL;
 async function fixture(url = connectionString) {
   const pool = new Pool({ connectionString: url });
   const core = createDurableCore(new Pool({ connectionString: url }));
+  const close = async () => {
+    const results = await Promise.allSettled([
+      Promise.resolve().then(() => core.close()),
+      Promise.resolve().then(() => pool.end()),
+    ]);
+    const failures = results.filter((result) => result.status === 'rejected').map((result) => result.reason);
+    if (failures.length) throw new AggregateError(failures, 'Fixture connection cleanup failed');
+  };
   const shopId = randomUUID();
   const shopDomain = `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
   const shopifyShopId = (BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n).toString();
-  await core.transactions.run((tx) =>
-    core.tenants.createShop(tx, {
-      shopId,
+  try {
+    await core.transactions.run((tx) =>
+      core.tenants.createShop(tx, {
+        shopId,
+        shopDomain,
+        shopifyShopId,
+        externalInstallationId: 'gid://shopify/AppInstallation/111',
+      }),
+    );
+    const input = {
       shopDomain,
-      shopifyShopId,
-      externalInstallationId: 'gid://shopify/AppInstallation/111',
-    }),
-  );
-  const input = {
-    shopDomain,
-    topic: 'app/uninstalled',
-    deliveryId: randomUUID(),
-    apiVersion: '2026-07',
-    triggeredAt: new Date(),
-    eventId: null,
-    name: null,
-    rawBody: Buffer.from(JSON.stringify({ id: shopifyShopId, myshopify_domain: shopDomain })),
-  };
-  const receipt = await core.webhooks.receive(input);
-  return {
-    pool,
-    core,
-    shopId,
-    input,
-    receipt,
-    async close() {
-      await core.close();
-      await pool.end();
-    },
-  };
+      topic: 'app/uninstalled',
+      deliveryId: randomUUID(),
+      apiVersion: '2026-07',
+      triggeredAt: new Date(),
+      eventId: null,
+      name: null,
+      rawBody: Buffer.from(JSON.stringify({ id: shopifyShopId, myshopify_domain: shopDomain })),
+    };
+    const receipt = await core.webhooks.receive(input);
+    return {
+      pool,
+      core,
+      shopId,
+      input,
+      receipt,
+      close,
+    };
+  } catch (error) {
+    try {
+      await close();
+    } catch (cleanupError) {
+      throw new AggregateError([error, cleanupError], 'Fixture setup and cleanup failed', { cause: error });
+    }
+    throw error;
+  }
 }
 
 async function expire(pool: Pool, id: string) {
@@ -65,15 +79,19 @@ async function isolatedHandoffFixture() {
   let created = false;
   let isolated: Awaited<ReturnType<typeof fixture>> | undefined;
   const close = async () => {
-    try {
-      await isolated?.close();
-    } finally {
+    const failures: unknown[] = [];
+    for (const cleanup of [
+      () => isolated?.close(),
+      () => (created ? admin.query(`DROP DATABASE ${name}`) : undefined),
+      () => admin.end(),
+    ]) {
       try {
-        if (created) await admin.query(`DROP DATABASE ${name}`);
-      } finally {
-        await admin.end();
+        await cleanup();
+      } catch (error) {
+        failures.push(error);
       }
     }
+    if (failures.length) throw new AggregateError(failures, 'Isolated fixture cleanup failed');
   };
   try {
     await admin.query(`CREATE DATABASE ${name}`);
@@ -86,7 +104,11 @@ async function isolatedHandoffFixture() {
     isolated = await fixture(url.href);
     return { ...isolated, close };
   } catch (error) {
-    await close();
+    try {
+      await close();
+    } catch (cleanupError) {
+      throw new AggregateError([error, cleanupError], 'Isolated fixture setup and cleanup failed', { cause: error });
+    }
     throw error;
   }
 }
