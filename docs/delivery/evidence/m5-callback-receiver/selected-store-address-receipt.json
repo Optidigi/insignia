@@ -1,0 +1,36 @@
+{
+  "status": "SEALED_STOP_CANDIDATE_NOT_UNIQUE_ADDRESS_UNQUALIFIED",
+  "nativeOutcome": {
+    "status": "STOPPED",
+    "stop": "CANDIDATE_NOT_UNIQUE"
+  },
+  "processExitCode": 0,
+  "sourceFreezeSha256": "56f466c64d1fd3c8864283bc09d396b158d80772dd56e2ac2e4769bc3cb57436",
+  "sdkMethodReservations": 3,
+  "closingBracket": "NOT_RUN",
+  "httpAndRefreshRequests": "NOT_ASSERTED",
+  "canonicalDomain": "UNKNOWN",
+  "identityOrganizationSuitability": "UNQUALIFIED",
+  "absence": "NOT_ASSERTED",
+  "candidateAdminHandle": "stitchs-vat-verification-20261004",
+  "oldStrictPhase": "SEALED_UNCHANGED_NOT_RETRIED",
+  "launchAttempts": 1,
+  "retries": 0,
+  "providerMutations": 0,
+  "rawStreamsPersisted": false,
+  "phaseFiles": {
+    "allocation.json": "55877bb80d7ec9d19ff85346ee3251fc53f165065aeaa85a6a11ba58f4037001",
+    "launch-reservation.json": "8cd0af8bd009bdebbf726957ab4ae69d23188895e6d8bbb5f15deed8a2bcfc7a",
+    "receipt.json": "ac88766c8ee517c0be2afc2d98d13f09fc069513fe3ce96e810510b2a2e112b3",
+    "reservation-1.json": "72e6572bf1cf5ba610f651d6f6495270cd5769e8b31e53e84acfa57376d64c15",
+    "reservation-2.json": "240cddc75851157a122f5d08131f1edc482f5b84d463ea30015ffdf6ef8fca1b",
+    "reservation-3.json": "b8002f77ab2c3c0fb6205706d34efd49d6a4493f9d3162414fdf4d517f7d8e84"
+  },
+  "gateSha256": "84534561c10dbebb1b8d06709f22d01330e4fcfec2dc0b85908bbd0f1d737a2f",
+  "privateDeleteNoLaterThan": "2026-10-17T15:12:29.060518+00:00",
+  "retentionOwner": "LOCAL_ORCHESTRATOR_NOT_AUTOMATED_ERASURE",
+  "observedAt": "2026-10-10T15:13:16.429458+00:00",
+  "evidenceProvenance": "SUPPORTED_ORIGINAL_CLI_SDK_METHOD_OBSERVATION",
+  "ownerSelection": "OWNER_NOMINATED_ADMIN_HANDLE_NOT_INSTALLATION_MUTATION_AUTHORITY",
+  "separateStrictPredecessor": "SEALED_STOP_ORG_INVALID_UNCHANGED_NO_IDENTITY_QUALIFIED"
+}

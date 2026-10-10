@@ -1,0 +1,160 @@
+{
+  "base": "b2f42b1895af37a421f2a8fc49d845412b120792",
+  "head": "efe045fb3184a84c57b976bea08c545a85237f28",
+  "tree": "3c9697376896f051ee210bb9d9d0ffd54d5633fd",
+  "acceptance": "REJECTED_SECURITY_BLOCKERS",
+  "recordedAt": "2026-10-10T15:37:24.054664+00:00",
+  "reviews": {
+    "spec": {
+      "verdict": "CLEAR",
+      "session": "01a12669-a5bc-7ea0-8bfd-d1ab42e224d3",
+      "processExitCode": 0,
+      "completedTurn": true,
+      "runtime": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "480bb229d0f60d7da15b825a6cadbcb38cc840539b7ec44879614da9636332a2"
+    },
+    "security": {
+      "verdict": "CHANGES_REQUESTED",
+      "session": "01a12669-a5d3-7f91-b9f8-351ad6968bbd",
+      "processExitCode": 0,
+      "completedTurn": true,
+      "runtime": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "4cce99b76d92d31a9aebca8f8217cbd89c0aaf1be9e2f5da8749996c9cb6a8fc"
+    }
+  },
+  "naturalExactHeadCi": {
+    "head": "efe045fb3184a84c57b976bea08c545a85237f28",
+    "recordedAt": "2026-10-10T15:37:34.857535+00:00",
+    "qualification": "CI_GREEN_SECURITY_REJECTED_NOT_ACCEPTED",
+    "runs": [
+      {
+        "id": 38063355764,
+        "name": "M0-012 real contract local prototype",
+        "head_sha": "efe045fb3184a84c57b976bea08c545a85237f28",
+        "run_attempt": 1,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Optidigi/insignia/actions/runs/38063355764"
+      },
+      {
+        "id": 38063355871,
+        "name": "M0-010 local hybrid billing proof",
+        "head_sha": "efe045fb3184a84c57b976bea08c545a85237f28",
+        "run_attempt": 1,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Optidigi/insignia/actions/runs/38063355871"
+      },
+      {
+        "id": 38063355856,
+        "name": "M0-011 local provider adapter boundary",
+        "head_sha": "efe045fb3184a84c57b976bea08c545a85237f28",
+        "run_attempt": 1,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Optidigi/insignia/actions/runs/38063355856"
+      },
+      {
+        "id": 38063355834,
+        "name": "M0-008 local publication and architecture checks",
+        "head_sha": "efe045fb3184a84c57b976bea08c545a85237f28",
+        "run_attempt": 1,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Optidigi/insignia/actions/runs/38063355834"
+      },
+      {
+        "id": 38063355754,
+        "name": "M0-009 embedded Astro local proof",
+        "head_sha": "efe045fb3184a84c57b976bea08c545a85237f28",
+        "run_attempt": 1,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Optidigi/insignia/actions/runs/38063355754"
+      },
+      {
+        "id": 38063355855,
+        "name": "M3-001 PostgreSQL durable core",
+        "head_sha": "efe045fb3184a84c57b976bea08c545a85237f28",
+        "run_attempt": 1,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Optidigi/insignia/actions/runs/38063355855"
+      },
+      {
+        "id": 38063355828,
+        "name": "M0-013 off-store protocol capacity",
+        "head_sha": "efe045fb3184a84c57b976bea08c545a85237f28",
+        "run_attempt": 1,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Optidigi/insignia/actions/runs/38063355828"
+      },
+      {
+        "id": 38063355869,
+        "name": "M0-014 local public-app candidate",
+        "head_sha": "efe045fb3184a84c57b976bea08c545a85237f28",
+        "run_attempt": 1,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Optidigi/insignia/actions/runs/38063355869"
+      },
+      {
+        "id": 38063355883,
+        "name": "M3-002 local runtime and ingress",
+        "head_sha": "efe045fb3184a84c57b976bea08c545a85237f28",
+        "run_attempt": 1,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Optidigi/insignia/actions/runs/38063355883"
+      },
+      {
+        "id": 38063355732,
+        "name": "M1-001 foundation and boundaries",
+        "head_sha": "efe045fb3184a84c57b976bea08c545a85237f28",
+        "run_attempt": 1,
+        "event": "pull_request",
+        "status": "completed",
+        "conclusion": "success",
+        "html_url": "https://github.com/Optidigi/insignia/actions/runs/38063355732"
+      }
+    ]
+  },
+  "reviewReports": {
+    "spec": {
+      "path": "r1-spec-review.md",
+      "sha256": "480bb229d0f60d7da15b825a6cadbcb38cc840539b7ec44879614da9636332a2"
+    },
+    "security": {
+      "path": "r1-security-review.md",
+      "sha256": "4cce99b76d92d31a9aebca8f8217cbd89c0aaf1be9e2f5da8749996c9cb6a8fc"
+    }
+  }
+}

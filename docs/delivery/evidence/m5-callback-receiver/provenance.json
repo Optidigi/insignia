@@ -1,0 +1,95 @@
+{
+  "candidateBase": "b2f42b1895af37a421f2a8fc49d845412b120792",
+  "candidateBaseTree": "ab4b8164834845935f008d035060f73fbfa03cc4",
+  "receiverOriginalBase": "659f118ddc9bdc8b5d33141f6395182ba6ba9bcb",
+  "receiverFreezeSha256": "986e38777b43b2835e4f9603ed334d20d12fb34ebc18ce609aac26771f192e05",
+  "preservedOfflineLogs": {
+    "01-receipt-green.log": "54a2a841662909d95413060f2d6e9ce4d7e716e930da70d1dd4905c62c45dbd4",
+    "01-receipt-red.log": "41f00168cdf8009b0b6f12e42b052b99b3459c351ed8f1e52402c61b6f98d59f",
+    "02-invariants-green.log": "08e035d2487121e47b94153e13fadbc90decc8ca0da61b48019532910d24930f",
+    "03-bounds-green.log": "f62bce06ce43fe93ec396e036e79050ab587d953b6414acaabb92a1440b6efc6",
+    "04-process-failed.log": "8f8da5c566e40e56be20f57d58257059ebe8dadfcda087afb7f6752c1f1d8b8e",
+    "05-guard-bind-red.log": "a6ce07d33a9f226f142e0e902656651ae1393982365747d5c64b658615eaf294",
+    "06-guard-process-green.log": "a1bdaa600a9d00e723bc0f26a833808a4b76817645567c011f766d1b8b1406dc",
+    "07-expired-status-green.log": "e54e26a6c38b5fdd13b20d73469e7812a692cbe45e31ae4a211f231f3b3b63e6",
+    "07-expired-status-red.log": "7476d1b813f17e84520ca4482a0181fa44927615f6b7b23287118ba7e20dabc3",
+    "08-close-green.log": "315a31b934e21b14dc77a4d6c484a6c2ecdbf9a2427d89bf91db4fbc802e1067",
+    "08-close-red.log": "04829ddd19eb8664df62239ed9c604529fae4bdc56860ea02863c709c94725cd",
+    "09-topic-green.log": "0d3a1869a32bf50e09b0eb237eabd1530a7bccaec2bf4361e05c2f28b553f14d",
+    "09-topic-red.log": "007816a4fc73964feffac3137c85ef66187240dcdd764a7dc5018d794f93432d",
+    "10-spool-bound-green.log": "fcc3b14291e4d02d62e6cb3346d4a316ced756e465360ca0e7c00d3a7b2eb56e",
+    "10-spool-bound-red.log": "1bf97e9f74a7af26b347b17879b66600575ef3770bef59a129e992cd29ad3f54",
+    "11-input-spool-final-green.log": "3c8f5287145d0245c50dd69221a2240c6ec8ae38d5cb38678abac78833ae5006",
+    "12-style-failed.log": "dd2be7382f33dffd3d7369c64da76037d42a09aac6a8f64cfe84bedccc857fab",
+    "13-style-write.log": "f9218693aecf2b0501906b526b0cff295cb0ab63d2119d3bc8c6eccc33a0b3ce",
+    "14-style-green.log": "2c6072afdf0a12f470129e77e2ade23e8087232bab499bad0f5210c4f1cebd77",
+    "15-formatted-final-green.log": "11beeac163279d6c3e1fdc0759113207406a7bfb6ed08f1a30089276025ce93a"
+  },
+  "parentFinalTestLogSha256": "85b30dd1dcf5f679232968f2b96baab2c3a3b09691d04c95c041fd0c462c0c61",
+  "localControls": {
+    "tests": 15,
+    "failures": 0,
+    "interfaces": "real HTTP/private operator/fsync reservation/fresh-process restart",
+    "fixtures": "SYNTHETIC_ONLY",
+    "currentTestLog": "20-integration-green.log"
+  },
+  "preservedFailures": {
+    "01-receipt-red.log": "Expected NOT_IMPLEMENTED RED",
+    "04-process-failed.log": "2 fresh child startup failures, source guard denied literal loopback DNS lookup",
+    "05-guard-bind-red.log": "Isolated source repro LOOPBACK_BIND_DENIED",
+    "07-expired-status-red.log": "Expected expired status raw-receipt classification RED",
+    "08-close-red.log": "Expected deadline listening-closure RED",
+    "09-topic-red.log": "Expected RED: compliance/unrelated topic received success ACK before observation eligibility check",
+    "10-spool-bound-red.log": "Expected real HTTP 8 MiB body ACK then status reconstruction RED: base64 encrypted spool exceeded old universal 9 MiB read cap",
+    "12-style-failed.log": "Pre-format Biome check exit1; 13 formatting/import errors and34 informational template suggestions"
+  },
+  "privateEvidenceLocation": "Owner-private durable handoff/callback-receiver-offline-20261010; retain existing snapshots/RED/GREEN and obtain through local orchestrator. Capabilities, raw receipts and exports excluded from public evidence/hashes.",
+  "reviewAndCi": "NEW_CANDIDATE_PENDING",
+  "deployment": "NOT_RUN",
+  "productionAuthority": "NONE",
+  "limitations": [
+    "CURRENT_CAPABILITY_COMPROMISE: current capability plus same-Shop captured body/HMAC can target current label",
+    "Headers are not installation-generation/event freshness authority",
+    "Signed Shop JSON ID/domain equality is synthetic local qualification only; native payload semantics NOT_RUN",
+    "Identical-body arrivals are separately reserved; no body-hash dedup",
+    "Local file erasure does not qualify exported/backup/log/device erasure",
+    "Pre-authentication, pending/missing/removed registration, Admin revocation and delayed privacy gaps unresolved"
+  ],
+  "originalReceiverSource": {
+    "scripts/m5-callback-qualification/README.md": "af4aaa77a8018d8a38f315fce34812b816489c03c575be86b9347107851aed91",
+    "scripts/m5-callback-qualification/SERVICE-PROPOSAL.json": "a484be4fca0b897c8e8760aa5a932160d2f4e75c9bd5c22c5d74aada66ad729b",
+    "scripts/m5-callback-qualification/network-guard.mjs": "f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a",
+    "scripts/m5-callback-qualification/operator.mjs": "37b3d476d022771f3778745b50c63c1c0413ddf88bcc2ea98a96932e32189924",
+    "scripts/m5-callback-qualification/receiver.mjs": "afa12ac05e36a390c6ba40a100371e0f097ee8ca12aa7059234a7482f9482177",
+    "scripts/m5-callback-qualification/receiver.test.mjs": "5ce573ecd5b72135b53c55982dfa4f204572ecf2dbb459721f2614774459a0df",
+    "scripts/m5-callback-qualification/service.mjs": "aff865e9b1109ad6b9f39a6f091cbc18e5bd112da3fb5d58c86e9028da1cbd09",
+    "scripts/m5-callback-qualification/store.mjs": "e2666fec661d1b9e437a8983e8c886caba0bb94c49ce9731cef1f86d7290a697"
+  },
+  "source": {
+    "scripts/m5-callback-qualification/README.md": "af4aaa77a8018d8a38f315fce34812b816489c03c575be86b9347107851aed91",
+    "scripts/m5-callback-qualification/SERVICE-PROPOSAL.json": "a484be4fca0b897c8e8760aa5a932160d2f4e75c9bd5c22c5d74aada66ad729b",
+    "scripts/m5-callback-qualification/network-guard.mjs": "f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a",
+    "scripts/m5-callback-qualification/operator.mjs": "37b3d476d022771f3778745b50c63c1c0413ddf88bcc2ea98a96932e32189924",
+    "scripts/m5-callback-qualification/receiver.mjs": "afa12ac05e36a390c6ba40a100371e0f097ee8ca12aa7059234a7482f9482177",
+    "scripts/m5-callback-qualification/receiver.test.mjs": "055f0195c3a2773121530674a63e098676180ee4ee93fec54027ad0239e3c3d5",
+    "scripts/m5-callback-qualification/service.mjs": "aff865e9b1109ad6b9f39a6f091cbc18e5bd112da3fb5d58c86e9028da1cbd09",
+    "scripts/m5-callback-qualification/store.mjs": "e2666fec661d1b9e437a8983e8c886caba0bb94c49ce9731cef1f86d7290a697"
+  },
+  "portabilityCorrection": {
+    "changedFile": "scripts/m5-callback-qualification/receiver.test.mjs",
+    "oldAssumption": "Literal private home evidence parent exists and is writable",
+    "red": "16-portability-red.log: isolated read-only-root process with hidden evidence parent failed ENOENT",
+    "green": "18-portability-green.log: same sandbox15/15PASS;20-integration-green.log: normal15/15PASS",
+    "fixtureParent": "mkdtemp under tmpdir with explicit0700; removed after suite",
+    "otherSevenSourceFiles": "UNCHANGED"
+  },
+  "newQualificationLogs": {
+    "16-portability-red.log": "56ea65f2767f0ed662a25987d6a1c4a14c340696da2b2f149f920f7103b98188",
+    "17-integration-format.log": "5c68c4c70a85e41330552f7d08559101d11fa02cb5651c70905880ade10afb2f",
+    "18-portability-green.log": "08b4d3840907d005837cedcf513477f83d3ebd9a1e75d8ae51ba704dadbab811",
+    "19-integration-style-green.log": "e2bb4ba9efb0bf799ce9e924066e6a6d1da8f83908c1a9780aa614dd77810c17",
+    "20-integration-green.log": "67f7f20ae9d29df4fc56a6db107611cf8aefe89488b65110526659eb13d40d83",
+    "21-integration-boundary.log": "0bf392563f39b608addce542f6d35dc14c5d7ad1b8830ecdcef79a5f1c5e5857"
+  },
+  "parentFinalTestResult": "HISTORICAL15PASS_OF_ORIGINAL_FROZEN_SOURCE"
+}

@@ -1,0 +1,172 @@
+{
+  "merge": {
+    "pr": 69,
+    "url": "https://github.com/Optidigi/insignia/pull/69",
+    "base": "659f118ddc9bdc8b5d33141f6395182ba6ba9bcb",
+    "effectiveMergeBase": "659f118ddc9bdc8b5d33141f6395182ba6ba9bcb",
+    "head": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+    "tree": "ab4b8164834845935f008d035060f73fbfa03cc4",
+    "merge": "b2f42b1895af37a421f2a8fc49d845412b120792",
+    "orderedParents": ["659f118ddc9bdc8b5d33141f6395182ba6ba9bcb", "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3"],
+    "remoteMain": "b2f42b1895af37a421f2a8fc49d845412b120792",
+    "mergedAt": "2026-10-10T15:04:35Z",
+    "method": "NORMAL_MERGE",
+    "verdict": "LOCAL_SLICE_ACCEPTED_NOT_PRINCIPAL_MILESTONE_APPROVAL",
+    "reviews": "ACTUAL_GPT_6_1_SOL_HIGH_CLEAR_CLEAR",
+    "naturalExactHeadAttempt1Successes": 10,
+    "milestone": "M5_IN_PROGRESS_G7_NOT_PASSED"
+  },
+  "reviews": [
+    {
+      "axis": "spec",
+      "session": "01a1264b-8e22-7730-a700-e832153ec9e0",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": {
+        "type": "read-only"
+      },
+      "approval": "never",
+      "turnCompleted": true,
+      "processExitCode": 0,
+      "reportSha256": "74453550fa9e41a60149b8ee4aad52e7500818d195234a2c0ddfa8905468221f",
+      "verdict": "CLEAR"
+    },
+    {
+      "axis": "security",
+      "session": "01a1264b-8e2b-79f3-abcb-444b46e49853",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": {
+        "type": "read-only"
+      },
+      "approval": "never",
+      "turnCompleted": true,
+      "processExitCode": 0,
+      "reportSha256": "dc46c3bc9a4cee95662b84ebcc08c437ee75f8a9902bf4090d5d53de9d12cdee",
+      "verdict": "CLEAR"
+    }
+  ],
+  "ci": [
+    {
+      "id": 38061195873,
+      "name": "M0-008 local publication and architecture checks",
+      "head_sha": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38061195873"
+    },
+    {
+      "id": 38061195856,
+      "name": "M0-012 real contract local prototype",
+      "head_sha": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38061195856"
+    },
+    {
+      "id": 38061195920,
+      "name": "M0-011 local provider adapter boundary",
+      "head_sha": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38061195920"
+    },
+    {
+      "id": 38061195959,
+      "name": "M0-010 local hybrid billing proof",
+      "head_sha": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38061195959"
+    },
+    {
+      "id": 38061195895,
+      "name": "M0-009 embedded Astro local proof",
+      "head_sha": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38061195895"
+    },
+    {
+      "id": 38061195847,
+      "name": "M0-014 local public-app candidate",
+      "head_sha": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38061195847"
+    },
+    {
+      "id": 38061195905,
+      "name": "M3-001 PostgreSQL durable core",
+      "head_sha": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38061195905"
+    },
+    {
+      "id": 38061195875,
+      "name": "M0-013 off-store protocol capacity",
+      "head_sha": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38061195875"
+    },
+    {
+      "id": 38061195893,
+      "name": "M3-002 local runtime and ingress",
+      "head_sha": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38061195893"
+    },
+    {
+      "id": 38061195879,
+      "name": "M1-001 foundation and boundaries",
+      "head_sha": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38061195879"
+    }
+  ],
+  "physicalR3": {
+    "pr": 69,
+    "head": "35c5b2b006625f0d66870a1c76f1fc8a47ae72a3",
+    "tree": "ab4b8164834845935f008d035060f73fbfa03cc4",
+    "workflowRunId": 38061195893,
+    "attempt": 1,
+    "ciCheckoutSyntheticMerge": "6c6ac5118ec4a69537cc0d9ef3a455a0ca73732b",
+    "imageId": "sha256:5716e194c736dee67f74b1ee96908e4961c5eaabf2516a996ede6ef5fb0fa79a",
+    "result": "PASS_ACTUAL_DISPOSABLE_IMAGE_OS_STARTUP_SIGTERM_RESTART_CLEANUP",
+    "controls": [
+      "built-image-identity",
+      "PG18-owner-install-schema43-restricted-consume-role",
+      "startup-PID1-OS-isolation-inventory-live-ready",
+      "SIGTERM-exit0",
+      "restart-PID1-OS-isolation-inventory-live-ready"
+    ],
+    "receiptSha256": "c3299f7af47ff37e91bd85d74ac25d58aa53db726e830459e854b69d6954f9f3",
+    "retention": "CI artifact30days; parent durable local copy retained; synthetic fixture values only",
+    "limitations": [
+      "Disposable CI only; production topology, deployment, backup/rollback, native providers, uninstall authority and privacy effects are NOT_RUN.",
+      "Network control observes one internal IPv4 network, no default route and failed TCP to documentation-only 192.0.2.1:443; it does not attest host-gateway services, DNS filtering or arbitrary host topology.",
+      "Local image ID is recorded; no registry image is pushed and no registry digest or exported image-tar hash is claimed."
+    ]
+  },
+  "privateSourceReceiptHashes": {
+    "pr69-merge-receipt.json": "f8aea15fbb1f5a076461318ff31754bb189b58282ffb810c3fc32f86b14cdf31",
+    "pr69-local-acceptance.json": "3a287730b392ad21705afc2b6b8cd30fbbea32c9ce5d989063f9d81b73ec791e",
+    "pr69-35c5b2b-image-qualified-receipt.json": "fee8230761630fba55d595d7a2f41da1c531e3e99114d293bdeebd3654f1b326"
+  },
+  "priorRejectedHeads": "R1 and R2 rejection/failure histories remain unchanged in m5-worker-image-controls evidence",
+  "receiverNativeDeployment": "NOT_RUN_NOT_AUTHORIZED"
+}

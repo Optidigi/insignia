@@ -1,0 +1,48 @@
+{
+  "status": "CLEAR_CLEAR_ACTUAL_RUNTIME_VERIFIED_SOURCE_PREFLIGHT_PASS",
+  "freezeSha256": "56f466c64d1fd3c8864283bc09d396b158d80772dd56e2ac2e4769bc3cb57436",
+  "reviews": [
+    {
+      "axis": "spec",
+      "session": "01a1265a-d8dd-7f21-acf3-b0b4a2657a8e",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": {
+        "type": "read-only"
+      },
+      "approval": "never",
+      "turnCompleted": true,
+      "processExitCode": 0,
+      "verdict": "CLEAR",
+      "reportSha256": "76ae142112b66f0ad810bc66bf07aa1ae04ccc8ddde6d7876c8536c4a0d49847"
+    },
+    {
+      "axis": "security",
+      "session": "01a1265a-d8d0-77e0-a51e-b7241301f711",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": {
+        "type": "read-only"
+      },
+      "approval": "never",
+      "turnCompleted": true,
+      "processExitCode": 0,
+      "verdict": "CLEAR",
+      "reportSha256": "cc1d72521266cafd7bb8ae4bab18b3a8b3d8aec139c5261a19a98b9e4b657459"
+    }
+  ],
+  "parentControls": {
+    "parent-projection.log": "20eba44a38fffbf871f7bad57056f671460e62102832b0cba9b61cb881f75dce",
+    "parent-closed-parser.log": "847557c56fff88bd94a3c9c9c3c86258b1aaf20f343e97c1d96a29a7d4bbd2b9",
+    "parent-process.log": "f5d58b791b715d0e24f052a766142c2a9b73cc1ddd9a83ce96db58ed0436ace5"
+  },
+  "qualification": "OTHER_IDENTITY_ORG_SUITABILITY_UNQUALIFIED",
+  "httpAndRefreshRequests": "NOT_ASSERTED",
+  "maxLaunchAttempts": 1,
+  "maxSdkMethodReservations": 4,
+  "providerMutations": 0,
+  "observedAt": "2026-10-10T15:12:29.060518+00:00",
+  "privateDeleteNoLaterThan": "2026-10-17T15:12:29.060518+00:00",
+  "retentionOwner": "LOCAL_ORCHESTRATOR_NOT_AUTOMATED_ERASURE",
+  "runtimeActuallyVerified": true
+}

@@ -1,0 +1,65 @@
+{
+  "schema": "m5-callback-receiver-r2-correction-v1",
+  "rejectedR1Head": "efe045fb3184a84c57b976bea08c545a85237f28",
+  "writerFreezeSha256": "15e2d0e1092bba967c08c82d8a20696fdc820b552e8c3155992b618520d9bd24",
+  "privateEvidenceDirectory": "/home/serveradmin/insignia-milestone-autonomy-handoff/callback-receiver-r2-correction-20261010",
+  "privateEvidenceKind": "SYNTHETIC_LOCAL_CONTROLS_NO_NATIVE_CAPTURES",
+  "correctedSources": {
+    "receiver.mjs": "ab778ca27df4de11c428498ed2c129032c80d59c590b0f41e33f5f5fafadc8c9",
+    "operator.mjs": "8120a40c38325f9e8464a99093ec3a60e2f346efe14bc23651b47a9326fba3a8",
+    "store.mjs": "ddaae94180244445c0385399255562bd09a6ed0064276aa3185d337d7413ae7a",
+    "receiver.test.mjs": "e041f942fd7a397faa9248397fdcfe4254dc40261951fe179be28cc5e38405e1"
+  },
+  "retainedR1Sources": {
+    "receiver.mjs": "afa12ac05e36a390c6ba40a100371e0f097ee8ca12aa7059234a7482f9482177",
+    "operator.mjs": "37b3d476d022771f3778745b50c63c1c0413ddf88bcc2ea98a96932e32189924",
+    "store.mjs": "e2666fec661d1b9e437a8983e8c886caba0bb94c49ce9731cef1f86d7290a697",
+    "receiver.test.mjs": "055f0195c3a2773121530674a63e098676180ee4ee93fec54027ad0239e3c3d5"
+  },
+  "acceptedVerifier": "c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f",
+  "finalControls": {
+    "command": "node --test scripts/m5-callback-qualification/receiver.test.mjs",
+    "exit": 0,
+    "tests": 24,
+    "pass": 24,
+    "fail": 0,
+    "log": "17-final-controls.log"
+  },
+  "meaningfulRedProvenance": {
+    "01-expiry-red.log": "Frozen R1 receiver with new public real HTTP unfinished-header regression.",
+    "03-recovery-red.log": "Original unguarded recovery/store with P1 shutdown corrected.",
+    "05-erase-red.log": "Original unguarded erase body with guarded startup/recovery/release.",
+    "08-body-close-red.log": "Equivalent R1 server.close-only shutdown block, other lifecycle corrections retained.",
+    "10-listen-red.log": "Equivalent original no-cleanup startup error behavior, lifecycle correction retained.",
+    "13-create-red.log": "Original unguarded createExperiment with guarded erase/startup/recovery/release.",
+    "15-timer-red.log": "Earlier candidate arming timer inside startup critical section."
+  },
+  "logs": {
+    "11-listen-green.log": "81ce5a653abc47cf5dbb6d01965834140dd695d8adedf717c80f402f3875c392",
+    "07-controls.log": "dde7be9789ad5e590eb25fbb2e31c635e5b7cb6fc414ea1e214370f97edc1cf1",
+    "12-final-controls.log": "3cf41a931ebaea26aec5370a61c589d46c3b7ae7d521d38dfda3a1ebfdc26bb6",
+    "05-erase-red.log": "cad6becee794157ecd970091fd2394d70fada031d15464485a4596482f2295e7",
+    "03-recovery-red.log": "7c40107fcdee23315ea8e731e0b12d078fc042dd32565d7711fe72586b6145ac",
+    "13-create-red.log": "361ae3e5e0ce7e5782bad05e339a6c19d00b685e958176aecc691f107cce29c4",
+    "18-style.log": "8263e05a1b72736e9fc2630d5dfeaaa9a4124d4c4977a0b68e52909da9e7a917",
+    "04-recovery-green.log": "9249226e7ecae0b030d6de3770bc8fc0b1c425881481e33fa64d016fafdc0eb3",
+    "10-listen-red.log": "34bd7ff91d3668fa56d8a9b765175a97e5b700d1a188807f567e834dbf6d634e",
+    "02-expiry-green.log": "c25b4877e83c51b11bf0c77ee0023cb4e224ead85f4e5361568770c0919850b9",
+    "15-timer-red.log": "239d2a090501da13780b710b8577fff945dc82d4a2f456dfce4b6d2dfc201839",
+    "01-expiry-red.log": "68e6a9a6a4b1b42b06c0e53be117cc6cc4598c90214b945a598d833fa67acbd0",
+    "09-body-close-green.log": "2942176c9a04a5b281c47f604ed7bf2782ef422412ccbc3e82668cd366d63fea",
+    "16-timer-green.log": "7e5f92802a3d619e92ef947858e8fec250a4abb14243c9cb182c6d99556fa258",
+    "06-erase-green.log": "821427c92d61283f11e34ff259ef118d6304cc3dff16a24fcd7719444bc8944d",
+    "14-create-green.log": "857be9a2cf45087998046e7468022fdf611d95f47defd798530532f7250419e8",
+    "08-body-close-red.log": "8952ac1abee05ce0e0a77f9dc9559768b7c475745f15aa47e2b82bb53069efe2",
+    "17-final-controls.log": "22e9851d96711614248992dea945f19ea3fe632142cf1a6ac62e5cf6279ab53d"
+  },
+  "limits": [
+    "Critical-section crash leaves a persistent 0600 exclusive lifecycle guard in trusted 0700 same-UID canonical parent; all automatic mutation/startup refuses. Explicit owning-process/group diagnosis is required before any manual guard cleanup. No stale-PID cleanup or killing exists.",
+    "Same-name experiment recreation is permitted only after completed erasure; it does not claim generation authority or retain a tombstone.",
+    "Expiry closes admission, aborts sockets, settles handlers, wipes purpose key and releases owned receiver lock; it does not erase filesystem copies.",
+    "All runtime fixtures synthetic/local only. No provider requests, SSH, credentials, native captures, dependency changes, commits or pushes."
+  ],
+  "keyWipeEvidence": "SOURCE_FLOW_INSPECTION_NOT_HEAP_OR_SECURE_PHYSICAL_MEMORY_INSTRUMENTATION",
+  "reviewsCi": "PENDING_NEW_FROZEN_CANDIDATE"
+}
