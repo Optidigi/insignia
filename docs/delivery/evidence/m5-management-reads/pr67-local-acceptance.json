@@ -1,0 +1,20 @@
+{
+  "classification": "LOCAL_SLICE_ACCEPTED_NOT_PRINCIPAL_MILESTONE_APPROVAL",
+  "repository": "Optidigi/insignia",
+  "pr": 67,
+  "base": "3864185da1d508475bb948a5aa7191cbd2be4e7c",
+  "head": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+  "tree": "438703315f58af10f61b6807647e6c4bc203d569",
+  "effectiveMergeBase": "3864185da1d508475bb948a5aa7191cbd2be4e7c",
+  "reviewsReceiptSha256": "69e06e4b651eb2c8c7a4807f1abd7d6724e4baca1a8fdab55947eff3505cb7e3",
+  "ciReceiptSha256": "8ef246f0f3032b4be554bac519984dab0bd9859f83f04dd84eca8ac93c88cd38",
+  "ciCount": 10,
+  "ciAttempt": 1,
+  "allNaturalExactHeadSuccess": true,
+  "documentScopeIntegritySha256": "546df71a6acd11a1a1deaa032c0de93b41c6f5b6c12037ff1d20d4594fa6c5fc",
+  "nativeRawFilesExact": 5,
+  "nativeOperationsThisEvidenceIntegration": 0,
+  "sourceBuildProviderInputsUnchanged": true,
+  "M5_G7": "NOT_PASSED",
+  "acceptedAt": "2026-10-10T10:24:17.205432+00:00"
+}

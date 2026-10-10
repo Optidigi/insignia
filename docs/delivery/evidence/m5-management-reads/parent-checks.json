@@ -1,0 +1,38 @@
+{
+  "schema": "m5-management-evidence-checks-v1",
+  "at": "2026-10-10T13:22:03.922639+00:00",
+  "base": "4edc399c3e483a882ad6d9aa03a9a07ac8ce2cdd",
+  "changedProductionSourceBuildProviderDocuments": false,
+  "historicalStateBytesExact": true,
+  "newJsonAndFileLinksPass": true,
+  "tokenPrefixScanPass": true,
+  "checksReusedUnchangedSource": {
+    "style": "PASS_91_WARNINGS_132_INFOS_NO_FIXES",
+    "secrets": "PASS_115_PROD_99_FIXTURE_PLUS_BROWSER_SEEDS"
+  },
+  "nativeQualification": {
+    "managementCommonSchemaR2VersionR6": "ACTUAL_CLEAR_CLEAR; originalSTOPSsealed",
+    "partnerR2": "ACTUAL_CLEAR_CLEAR_39_CONTROLS;currentSubobserved_historySTOP",
+    "moduleDiagnostic": "ACTUAL_CLEAR_CLEAR_PARENT_7_PURE_3_PROCESS;native4complete"
+  },
+  "files": {
+    "docs/delivery/evidence/m5-management-reads/partner-r2-security-review.md": "f09ce2ba92e213d23696e5fb0820f12500f8d0314003f600a576f0283fb41368",
+    "docs/delivery/evidence/m5-management-reads/pr67-merge-receipt.json": "ce4e4ee53439cf82a793e673764a17d294beac9c7a7edccb2b5a70badb78de4f",
+    "docs/delivery/evidence/m5-management-reads/pr67-final-ci.json": "8ef246f0f3032b4be554bac519984dab0bd9859f83f04dd84eca8ac93c88cd38",
+    "docs/delivery/evidence/m5-management-reads/partner-current-subscription-sealed-receipt.json": "131ab8f960b57cb4b69468bad0e0d9224c51213874575b08ea34f1a22a9f90bb",
+    "docs/delivery/evidence/m5-management-reads/module-schema-diagnostic-sealed-receipt.json": "28f87d212dd13bf5567bec57f034cfe92afb9c7299e99f3065d5c08920ec0857",
+    "docs/delivery/evidence/m5-management-reads/custom-management-sealed-receipt.json": "721bcc20ed6dceedd544649bfa0514dbedaaa56e321463c330a4f7401cb49e0d",
+    "docs/delivery/evidence/m5-management-reads/owner-app-config-subscriptions-not-located-20261010.json": "84892ff24b3d07f6f953fc394d2da784de7062e85f7d2d9fcb35d37e60965aec",
+    "docs/delivery/evidence/m5-management-reads/precredential-spec-review.md": "cdb6a19d9a7788b309088a11add087c7dde6cc1f94c7fb1e162a8d7f7e8c0556",
+    "docs/delivery/evidence/m5-management-reads/pr67-local-acceptance.json": "3cddaab8df918f614f71108883e0a735b4f5e9947ecda22abab6425b35c49ac8",
+    "docs/delivery/evidence/m5-management-reads/REPORT.md": "bb35a0a6192a70b564fbeefaa13739eb7aaffa2df4942be69c350336a45a7be7",
+    "docs/delivery/evidence/m5-management-reads/module-diagnostic-security-review.md": "c463cdf4b9e103c5d7b23c91e19d85b4418dd55c725aade96af88ab202d6e466",
+    "docs/delivery/evidence/m5-management-reads/partner-r2-runtime-receipt.json": "6b64edca5b2d5e4cae58ba89864588af6c54e99f8e09216e29d1e9d459e4c564",
+    "docs/delivery/evidence/m5-management-reads/precredential-security-review.md": "30db8a8822046adf0f35e43d116660a0e9ccc1b54666b22afaf349a5ce415270",
+    "docs/delivery/evidence/m5-management-reads/module-diagnostic-runtime-receipt.json": "e02ed878aab70600a92c7dd29b617ae6bbd13e859af17604baf1cfa26db95978",
+    "docs/delivery/evidence/m5-management-reads/owner-standing-scoped-management-readonly-20261010.json": "3ae008ed32e56fd5d011b26dfb2f5a9d411d3057ea65832df2862bb03f993719",
+    "docs/delivery/evidence/m5-management-reads/partner-r2-spec-review.md": "b9c8565b3d2111e888a7b1bfc266b95d632b87ec7448c0103ef589e0575d9a9d",
+    "docs/delivery/evidence/m5-management-reads/module-diagnostic-spec-review.md": "415e9295e62824698a72ecd149b3edf4e58419b0d2d75c19454ba9e61e3e8a52",
+    "docs/delivery/evidence/m5-management-reads/precredential-review-runtime-receipt.json": "4b7f394ecd1984fed8fc9ac12fbdd36cc3241e6e7950e36e0c61128c2ea59d66"
+  }
+}

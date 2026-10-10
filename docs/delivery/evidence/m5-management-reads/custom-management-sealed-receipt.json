@@ -1,0 +1,62 @@
+{
+  "schema": "insignia-management-custom-read-sealed-v1",
+  "phases": [
+    {
+      "phase": "native-schema-metadata-r2-run",
+      "status": "STOPPED",
+      "stop": "CLI_OR_LOCAL_UNCLASSIFIED",
+      "startedAt": "2026-10-10T12:54:34.019828+00:00",
+      "closedAt": "2026-10-10T12:54:34.998500+00:00",
+      "commandAttempts": 1,
+      "methodReservations": 1,
+      "operations": [
+        "AppSchemaFieldMetadata"
+      ],
+      "httpRequestCount": "NOT_ASSERTED",
+      "nativeRetry": false,
+      "rawStreamsPersisted": false,
+      "privateRetentionDeleteNoLaterThan": "2026-10-17T12:54:34.019828+00:00",
+      "retentionOwner": "local operator",
+      "deletionAutomated": false,
+      "selectedResultSha256": "e498720d4de3ccd1329b45420c404af704d3e48f3238a807762d3bddc0d2528d",
+      "allocationSha256": "e3ed855431d92c1c693d7b9ee2f0e5efbae421149510c3d8ffb7399e94007969",
+      "reservationsSha256": "03342d3347ec3fd4a346337136fc335d4a99534025aee805023f9415b73a4916",
+      "freezeSha256": "40e1fc98111dc690a912212cbc08b896054a653976c4fc6637b27c6500c3b608",
+      "destinationCoverage": "UNQUALIFIED",
+      "source": "CUSTOM_NEW_GRAPHQL_SCHEMA_METADATA_QUERY"
+    },
+    {
+      "phase": "native-lossless-version-modules-r6-run",
+      "status": "STOPPED",
+      "stop": "NONWEB_FIELDS_UNQUALIFIED",
+      "startedAt": "2026-10-10T12:54:52.018113+00:00",
+      "closedAt": "2026-10-10T12:54:53.809075+00:00",
+      "commandAttempts": 1,
+      "methodReservations": 3,
+      "operations": [
+        "ActiveAppReleaseFromApiKey",
+        "AppVersions",
+        "AppVersionById"
+      ],
+      "httpRequestCount": "NOT_ASSERTED",
+      "nativeRetry": false,
+      "rawStreamsPersisted": false,
+      "privateRetentionDeleteNoLaterThan": "2026-10-17T12:54:52.018113+00:00",
+      "retentionOwner": "local operator",
+      "deletionAutomated": false,
+      "selectedResultSha256": "7893d35bac131046d0b581d0dc898b47fc1a6ae63decbda4a8ed33067c71e43c",
+      "allocationSha256": "eeb64313995fa1d9705dad30f1f4b55e85209baae221af0880d54cce244a1dea",
+      "reservationsSha256": "fa0362724e75dfe99113530f25c7947bb8baecb45499e07924a1e6b51d422048",
+      "freezeSha256": "441da974395b8bd996708afad5447856bcc74214664d94c36496f6c6dd3dd319",
+      "destinationCoverage": "UNQUALIFIED",
+      "source": "CUSTOM_PINNED_EXISTING_QUERY_DOCUMENTS"
+    }
+  ],
+  "reviews": "Both actual independent GPT-6.1-sol/high axes CLEAR for each executed candidate/common guard",
+  "runtimeReceiptSha256": "4b7f394ecd1984fed8fc9ac12fbdd36cc3241e6e7950e36e0c61128c2ea59d66",
+  "mutationAttempts": 0,
+  "m5": "IN_PROGRESS",
+  "g7": "NOT_PASSED",
+  "limits": "No usable destination facts; reservations are conservative method invocations, not HTTP accounting or guaranteed provider execution",
+  "productionSourceBuildProviderDocumentsChanged": false
+}

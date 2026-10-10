@@ -1,0 +1,92 @@
+[
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 38044291654,
+    "event": "pull_request",
+    "headSha": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+    "name": "M0-008 local publication and architecture checks",
+    "status": "completed"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 38044291571,
+    "event": "pull_request",
+    "headSha": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+    "name": "M0-010 local hybrid billing proof",
+    "status": "completed"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 38044291618,
+    "event": "pull_request",
+    "headSha": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+    "name": "M0-011 local provider adapter boundary",
+    "status": "completed"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 38044291617,
+    "event": "pull_request",
+    "headSha": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+    "name": "M0-012 real contract local prototype",
+    "status": "completed"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 38044291620,
+    "event": "pull_request",
+    "headSha": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+    "name": "M0-009 embedded Astro local proof",
+    "status": "completed"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 38044291633,
+    "event": "pull_request",
+    "headSha": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+    "name": "M3-001 PostgreSQL durable core",
+    "status": "completed"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 38044291575,
+    "event": "pull_request",
+    "headSha": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+    "name": "M0-014 local public-app candidate",
+    "status": "completed"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 38044291627,
+    "event": "pull_request",
+    "headSha": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+    "name": "M0-013 off-store protocol capacity",
+    "status": "completed"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 38044291579,
+    "event": "pull_request",
+    "headSha": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+    "name": "M3-002 local runtime and ingress",
+    "status": "completed"
+  },
+  {
+    "attempt": 1,
+    "conclusion": "success",
+    "databaseId": 38044291699,
+    "event": "pull_request",
+    "headSha": "e8a95f09f4dc90a2c4d1df0ee4baf9ad8a0b9242",
+    "name": "M1-001 foundation and boundaries",
+    "status": "completed"
+  }
+]

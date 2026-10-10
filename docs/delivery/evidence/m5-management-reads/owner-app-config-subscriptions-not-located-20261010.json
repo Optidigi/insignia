@@ -1,0 +1,43 @@
+{
+  "schema": "insignia-owner-native-page-attestation-v1",
+  "source": {
+    "threadId": "81292d0a-995f-4c06-8ce7-7d7cd419bc4a",
+    "position": 9562,
+    "itemId": "turn-item:message:async-answer%3Aruntime-request%3Aprovider%3Acodex%3Aprovider-turn%3Aprovider-turn%253Aprovider%253Acodex%253Anative-turn%253A01a12542-d61c-7842-a271-3ea6bedfc546%3Anative-request%3Aasync%253Acall_231c534da3ed40468c9fefccebe7d011%3Ad9bb284a-a9e4-436c-a1bf-1f34a7cee3b4"
+  },
+  "classification": "OWNER_CONFIGURATION_FIELDS_CONFIRMED_SUBSCRIPTION_SECTION_NOT_LOCATED",
+  "observation": "In your normal Shopify Dev Dashboard, open Insignia \u2192 Versions \u2192 Active version 1158986629121 \u2192 Configuration \u2192 Subscriptions. Which webhook topics appear, and do their destinations exactly match https://insignia-app.optidigi.nl/api/webhooks/shopify? If there are no entries, reply \u201cnone.\u201d For any different destination, report only its hostname\u2014do not paste its path, query, credentials or confidential callback URI. Please include whether customers/data_request, customers/redact and shop/redact appear. This supplies the app-level/compliance evidence that the completed shop-specific API query cannot provide.\nApp details\n\nname\n    Insignia \napplication_url\n    https://insignia-app.optidigi.nl/admin/products \nembedded\n    true \n\nAccess scopes\n\noptional_scopes\n    write_products,read_publications,read_product_listings \nuse_legacy_install_flow\n    false \n\nWebhooks\n\napi_version\n    2026-07 \n\nFunctions\n2\n\nhandle\n    insignia-experimental-v2-validation \nuid\n    552059da-2dc1-47f8-8fc0-14a5ccb6f665 \n\nhandle\n    insignia-experimental-v2-transform \nuid\n    c56038d4-146a-405e-b47d-a055249eeeb3 \n\n\n\nthis is all I could find",
+  "fields": {
+    "name": "Insignia",
+    "application_url": "https://insignia-app.optidigi.nl/admin/products",
+    "embedded": true,
+    "optional_scopes": [
+      "write_products",
+      "read_publications",
+      "read_product_listings"
+    ],
+    "use_legacy_install_flow": false,
+    "api_version": "2026-07",
+    "functions": [
+      {
+        "handle": "insignia-experimental-v2-validation",
+        "uid": "552059da-2dc1-47f8-8fc0-14a5ccb6f665"
+      },
+      {
+        "handle": "insignia-experimental-v2-transform",
+        "uid": "c56038d4-146a-405e-b47d-a055249eeeb3"
+      }
+    ]
+  },
+  "scope": "Owner response to exact Active1158986629121 inspection request, not machine/provider artifact proof",
+  "subscriptionEvidence": {
+    "appSpecificTopics": "UNKNOWN_NOT_LOCATED",
+    "destinations": "UNKNOWN_NOT_LOCATED",
+    "complianceTopics": "UNKNOWN_NOT_LOCATED",
+    "explicitNoneSupplied": false
+  },
+  "nativeOperationsByAgentThisTurn": 0,
+  "freshActiveStatusExplicitlyRestated": false,
+  "requiredScopesExplicitlyRestated": false,
+  "providerArtifactsSupplied": false
+}

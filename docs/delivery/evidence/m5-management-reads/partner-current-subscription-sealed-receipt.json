@@ -1,0 +1,87 @@
+{
+  "schema": "insignia-partner-read-selected-v1",
+  "result": "STOPPED",
+  "stop": "MALFORMED_TIME",
+  "attemptedOperations": [
+    "ACTIVE_SUBSCRIPTION",
+    "RELATIONSHIP_HISTORY"
+  ],
+  "reservedRequests": 2,
+  "receivedResponses": 2,
+  "applicationRetries": 0,
+  "historyPagesQualified": 0,
+  "connectionComplete": false,
+  "historyWindow": {
+    "from": "2026-09-01T00:00:00Z",
+    "through": "2026-10-10T12:28:02Z"
+  },
+  "historyNotCurrentBeyondThrough": true,
+  "subscription": {
+    "schemaVersion": "m4-active-subscription-v1",
+    "sourceApiVersion": "2026-07",
+    "appId": "gid://shopify/App/429028933633",
+    "shopId": "gid://shopify/Shop/105501393179",
+    "observedAt": "2026-10-10T13:03:09.508Z",
+    "active": true,
+    "billingPeriod": "EVERY_30_DAYS",
+    "cancelAtEndOfCycle": false,
+    "trialEndsAt": null,
+    "currentBillingCycle": {
+      "startTime": "2026-09-28T16:53:01.000Z",
+      "endTime": "2026-10-28T16:53:01.000Z"
+    },
+    "items": [
+      {
+        "handle": "customized_order_paid",
+        "price": {
+          "kind": "tiered",
+          "providerTypename": "TieredPrice",
+          "active": false,
+          "currency": "USD",
+          "tiersMode": "VOLUME",
+          "tiers": [
+            {
+              "upTo": null,
+              "amountPerUnit": "0.0",
+              "amount": "0.0"
+            }
+          ]
+        },
+        "discount": null,
+        "usage": {
+          "quantity": "3.0",
+          "cost": {
+            "amount": "0.0",
+            "currencyCode": "USD"
+          }
+        }
+      },
+      {
+        "handle": "insignia-dev-zero-20260928",
+        "price": {
+          "kind": "flat",
+          "providerTypename": "FlatRatePrice",
+          "active": false,
+          "currency": "USD",
+          "amount": "0.0"
+        },
+        "discount": null,
+        "usage": null
+      }
+    ],
+    "pendingUpdate": null
+  },
+  "interpretation": "Validated native subscription facts; no owner feature policy, generation authority, uninstall or privacy qualification",
+  "sourceFreezeSha256": "dd18f24cc7bebd2e3c585b4e90f6698d48dbc8303989048df1fd9d62501d311c",
+  "projectionSha256": "0a5eae538e4721c2723aa953b14959573d4f8e3d9a200f7b0283985f1927d4e1",
+  "journalSha256": "8b6ed43b87a66d081ddb0a900a3c92de5b930358c94a057da511fae751ce0ed9",
+  "qualificationSha256": "b6e56a44532ee795dd37e8b7cf6e0299360589e85ecce7ee5b1fec2636c6a462",
+  "privateDeleteNoLaterThan": "2026-10-17T13:03:03.212695+00:00",
+  "retentionOperatorOwned": true,
+  "noRawBodiesPersisted": true,
+  "credential": "Existing private owner-provided input, transient memory/header use; no new token or second token store",
+  "providerWrites": 0,
+  "m5": "IN_PROGRESS",
+  "g7": "NOT_PASSED",
+  "sealed": true
+}
