@@ -88,9 +88,28 @@ test('candidate guards reject source, Compose, image, endpoint and private parit
   };
   const outboundCandidate = { ...localCandidate, rendered: outboundRendered, expectedRendered: outboundRendered };
   assert.equal(qualifyWorkerCandidate(outboundCandidate), true);
+  const serializedRendered = {
+    ...outboundRendered,
+    services: { worker: { ...outboundRendered.services.worker, entrypoint: null } },
+    networks: {
+      private: { ...outboundRendered.networks.private, ipam: {} },
+      egress: { name: 'insignia-uninstall-m5-024_egress', driver: 'bridge', ipam: {} },
+    },
+  };
+  assert.equal(
+    qualifyWorkerCandidate({
+      ...outboundCandidate,
+      rendered: serializedRendered,
+      expectedRendered: serializedRendered,
+    }),
+    true,
+  );
   for (const networks of [
     undefined,
     { ...outboundRendered.networks, egress: { ...outboundRendered.networks.egress, internal: true } },
+    { ...outboundRendered.networks, egress: { ...outboundRendered.networks.egress, internal: null } },
+    { ...outboundRendered.networks, egress: { ...outboundRendered.networks.egress, ipam: { driver: 'unreviewed' } } },
+    { ...outboundRendered.networks, private: { ...outboundRendered.networks.private, ipam: { config: [{}] } } },
     { ...outboundRendered.networks, egress: { ...outboundRendered.networks.egress, external: true } },
     { ...outboundRendered.networks, egress: { ...outboundRendered.networks.egress, name: 'unowned' } },
     { ...outboundRendered.networks, private: { external: true, name: 'wrong_database_network' } },
@@ -100,6 +119,13 @@ test('candidate guards reject source, Compose, image, endpoint and private parit
     assert.equal(qualifyWorkerCandidate({ ...outboundCandidate, rendered: drift, expectedRendered: drift }), false);
   }
   assert.equal(qualifyWorkerCandidate({ ...outboundCandidate, expectedRendered: localRendered }), false);
+  for (const entrypoint of [[], ['/bin/sh'], 'node']) {
+    const drift = {
+      ...serializedRendered,
+      services: { worker: { ...serializedRendered.services.worker, entrypoint } },
+    };
+    assert.equal(qualifyWorkerCandidate({ ...outboundCandidate, rendered: drift, expectedRendered: drift }), false);
+  }
   const extraAttachment = {
     ...outboundRendered,
     services: {

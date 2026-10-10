@@ -10,5 +10,5 @@ services:
     command: [/usr/local/bin/node, /srv/insignia/web/dist/server/entry.mjs]
     stop_grace_period: 40s
     read_only: true
-    cap_drop: [ALL]
-    security_opt: [no-new-privileges:true]
+    # cap_drop and security_opt inherit unchanged from the canonical base.
+    # Repeating sequence values in an overlay can fail Compose validation.

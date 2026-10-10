@@ -30,7 +30,8 @@ function workerNetworksMatch(rendered, worker) {
   const privateNetwork = definitions.private;
   if (
     !privateNetwork ||
-    Object.keys(privateNetwork).length !== 2 ||
+    Object.keys(privateNetwork).some((key) => !['name', 'external', 'ipam'].includes(key)) ||
+    (privateNetwork.ipam !== undefined && JSON.stringify(privateNetwork.ipam) !== '{}') ||
     privateNetwork.external !== true ||
     privateNetwork.name !== 'insignia-rewrite-m5-019_private'
   )
@@ -40,10 +41,11 @@ function workerNetworksMatch(rendered, worker) {
   return (
     rendered.name === 'insignia-uninstall-m5-024' &&
     egress &&
-    Object.keys(egress).length === 3 &&
+    Object.keys(egress).every((key) => ['name', 'driver', 'internal', 'ipam'].includes(key)) &&
+    (egress.ipam === undefined || JSON.stringify(egress.ipam) === '{}') &&
     egress.name === 'insignia-uninstall-m5-024_egress' &&
     egress.driver === 'bridge' &&
-    egress.internal === false
+    (egress.internal === undefined || egress.internal === false)
   );
 }
 
@@ -94,6 +96,7 @@ export function qualifyWorkerCandidate({
       'read_only',
       'user',
       'command',
+      'entrypoint',
       'cap_drop',
       'security_opt',
       'env_file',
@@ -109,6 +112,7 @@ export function qualifyWorkerCandidate({
       worker.image !== image ||
       worker.read_only !== true ||
       worker.user !== 'node' ||
+      (worker.entrypoint !== undefined && worker.entrypoint !== null) ||
       JSON.stringify(worker.command) !== JSON.stringify(['/usr/local/bin/node', '/srv/insignia/worker/dist/main.js']) ||
       JSON.stringify(worker.cap_drop) !== JSON.stringify(['ALL']) ||
       JSON.stringify(worker.security_opt) !== JSON.stringify(['no-new-privileges:true']) ||

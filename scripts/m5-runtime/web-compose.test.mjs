@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
+import { collectWorkerInventory } from '../../docs/delivery/evidence/m5-023/operators/worker-inventory.mjs';
+import { qualifyWorkerCandidate } from '../m5-024/worker-guards.mjs';
 
 // Required CI control: invokes the real renderer, never starts a service or contacts production.
 test('ordinary runtime overlays preserve canonical web boundaries and restrict worker outbound topology', async () => {
@@ -18,10 +22,24 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
       join(directory, 'overlay.yaml'),
       await readFile(new URL('../../deployment/m5-runtime/compose.yaml', import.meta.url)),
     );
-    // Empty test inputs satisfy env_file lookup; no secrets or fabricated credentials.
+    // Empty web inputs satisfy env_file lookup; worker values below are synthetic local controls.
     await writeFile(join(directory, 'runtime.env'), '');
     await writeFile(join(directory, 'database.env'), '');
-    await writeFile(join(directory, 'worker.env'), '');
+    const workerEnvironment = {
+      DATABASE_URL: 'postgres://synthetic_worker@database:5432/synthetic_db?sslmode=disable',
+      SHOPIFY_CLIENT_ID: 'synthetic-client',
+      SHOPIFY_CLIENT_SECRET: 'synthetic-hmac',
+      SHOPIFY_WEBHOOK_SECRET: 'synthetic-hmac',
+      INSIGNIA_CREDENTIAL_KEY_ID: 'synthetic-k1',
+      INSIGNIA_CREDENTIAL_KEY_BASE64: Buffer.alloc(32, 7).toString('base64'),
+      NODE_ENV: 'production',
+    };
+    await writeFile(
+      join(directory, 'worker.env'),
+      Object.entries(workerEnvironment)
+        .map(([key, value]) => `${key}=${value}`)
+        .join('\n'),
+    );
     await writeFile(
       join(directory, 'worker-base.yaml'),
       await readFile(new URL('../m5-024/worker-compose.yaml', import.meta.url)),
@@ -99,12 +117,19 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
     assert.equal(workerCandidate.name, 'insignia-uninstall-m5-024');
     assert.deepEqual(Object.keys(workerCandidate.services), ['worker']);
     assert.deepEqual(workerCandidate.networks.private, workerBase.networks.private);
-    assert.deepEqual(workerCandidate.networks.private, { name: 'insignia-rewrite-m5-019_private', external: true });
-    assert.deepEqual(workerCandidate.networks.egress, {
-      name: 'insignia-uninstall-m5-024_egress',
-      driver: 'bridge',
-      internal: false,
+    // Compose versions can emit an empty IPAM object for an unconfigured network.
+    const withoutEmptyIpam = ({ ipam, ...network }) => {
+      if (ipam !== undefined) assert.deepEqual(ipam, {});
+      return network;
+    };
+    assert.deepEqual(withoutEmptyIpam(workerCandidate.networks.private), {
+      name: 'insignia-rewrite-m5-019_private',
+      external: true,
     });
+    // Compose's omitempty serializer may omit the false default.
+    assert.equal(workerCandidate.networks.egress.internal ?? false, false);
+    const { internal: _internal, ...egress } = withoutEmptyIpam(workerCandidate.networks.egress);
+    assert.deepEqual(egress, { name: 'insignia-uninstall-m5-024_egress', driver: 'bridge' });
     assert.deepEqual(Object.keys(workerCandidate.networks).sort(), ['egress', 'private']);
     assert.deepEqual(workerCandidate.volumes, workerBase.volumes);
     const worker = workerCandidate.services.worker;
@@ -120,6 +145,47 @@ test('ordinary runtime overlays preserve canonical web boundaries and restrict w
     assert.deepEqual(worker.networks, { private: null, egress: null });
     const withoutNetworks = ({ networks: _networks, ...service }) => service;
     assert.deepEqual(withoutNetworks(worker), withoutNetworks(workerBase.services.worker));
+    // Exercise the actual JSON through the guard rather than a hand-written render fixture.
+    const endpoint = {
+      hostname: 'database',
+      port: 5432,
+      database: 'synthetic_db',
+      role: 'synthetic_worker',
+      sslmode: 'disable',
+      address: 'synthetic-address',
+      major: 18,
+      schemaVersion: 43,
+    };
+    const webEndpoint = { ...endpoint, role: 'synthetic_web' };
+    const entry = fileURLToPath(new URL('../../apps/worker/dist/main.js', import.meta.url));
+    const inventory = collectWorkerInventory(entry);
+    const composeBytes = Buffer.concat([
+      await readFile(join(directory, 'worker-base.yaml')),
+      await readFile(join(directory, 'worker-overlay.yaml')),
+    ]);
+    assert.equal(
+      qualifyWorkerCandidate({
+        composeBytes,
+        composeSha256: createHash('sha256').update(composeBytes).digest('hex'),
+        rendered: workerCandidate,
+        expectedRendered: workerCandidate,
+        environment: worker.environment,
+        webEnvironment: {
+          ...workerEnvironment,
+          DATABASE_URL: 'postgres://synthetic_web@database:5432/synthetic_db?sslmode=disable',
+        },
+        endpoint,
+        expectedEndpoint: endpoint,
+        webEndpoint,
+        expectedWebEndpoint: webEndpoint,
+        entry,
+        inventory,
+        writablePaths: [],
+        image,
+        expectedImage: image,
+      }),
+      true,
+    );
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
