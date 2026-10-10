@@ -5,7 +5,12 @@ import { createServer } from 'node:https';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { inspectPrivatePhase, PRIVATE_DOCKER_COMMAND, runPrivateInventory } from './private-operator.mjs';
+import {
+  freshInventoryAllocationMatches,
+  inspectPrivatePhase,
+  PRIVATE_DOCKER_COMMAND,
+  runPrivateInventory,
+} from './private-operator.mjs';
 
 const SECRET = 'SYNTHETIC_PRIVATE_CLIENT_SECRET',
   TOKEN = 'SYNTHETIC_PRIVATE_ADMIN_TOKEN';
@@ -82,7 +87,7 @@ async function fixture(t, handler, wrongHost = false) {
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const gatePath = join(root, 'gate.json');
   const gate = {
-    schema: 'insignia-private-inventory-gate-v1',
+    schema: 'insignia-private-inventory-gate-v2',
     status: 'LOOPBACK_TEST',
     tokenOperationalQualification: 'SUPPORTED_EXACT_STORE_ISSUANCE_OWNER_ALLOCATED',
     tokenLifecycleGuarantee: 'UNKNOWN_NOT_ASSERTED',
@@ -424,4 +429,102 @@ test('hostile remote Docker defaults cannot redirect the fixed producer invocati
       '/usr/bin/env -i /usr/bin/docker --host unix:///var/run/docker.sock --config /nonexistent inspect ',
     ),
   );
+});
+
+test('inventory v2 accepts native-shaped OAuth three grants and Admin four effective grants through final boundary', async (t) => {
+  const h = await fixture(t, async ({ req, res, body }) => {
+    if (req.url.includes('oauth'))
+      res.end(
+        JSON.stringify({
+          access_token: TOKEN,
+          scope: 'write_products,read_publications,read_product_listings',
+          expires_in: 86399,
+        }),
+      );
+    else {
+      const data = structuredClone(identity);
+      data.currentAppInstallation.accessScopes.push({ handle: 'read_products' });
+      if (JSON.parse(body).operationName === 'M5027WebhookInventory')
+        data.webhookSubscriptions = { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } };
+      res.end(JSON.stringify({ data }));
+    }
+  });
+  const r = await runPrivateInventory(h.options);
+  assert.equal(r.outcome, 'COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED');
+  assert.equal(r.oauthAttempts, 1);
+  assert.equal(r.requests, 2);
+  assert.deepEqual(
+    h.calls.map((c) => c.path),
+    ['/admin/oauth/access_token', '/admin/api/2026-07/graphql.json', '/admin/api/2026-07/graphql.json'],
+  );
+});
+
+test('inventory effective read equivalence does not relax the exact three OAuth scope contract', async (t) => {
+  const h = await fixture(t, async ({ res }) =>
+    res.end(
+      JSON.stringify({
+        access_token: TOKEN,
+        scope: 'write_products,read_publications,read_product_listings,read_products',
+        expires_in: 86399,
+      }),
+    ),
+  );
+  const r = await runPrivateInventory(h.options);
+  assert.equal(r.outcome, 'STOP_OAUTH_SCOPE_DRIFT');
+  assert.equal(r.oauthAttempts, 1);
+  assert.equal(r.requests, 0);
+  assert.equal(h.calls.length, 1);
+});
+
+test('fresh-run operator denies an old v1 gate before any producer or provider attempt', async (t) => {
+  const h = await fixture(t);
+  h.gate.schema = 'insignia-private-inventory-gate-v1';
+  await writeFile(h.gatePath, JSON.stringify(h.gate), { mode: 0o600 });
+  const r = await runPrivateInventory(h.options);
+  assert.equal(r.outcome, 'STOP_GATE');
+  assert.equal(r.oauthAttempts, 0);
+  assert.equal(r.requests, 0);
+  assert.equal(h.calls.length, 0);
+});
+
+test('fresh allocation admission cannot reuse a missing, old, broader or different-resource owner grant', () => {
+  const fresh = {
+    schema: 'insignia-resource-allocation-v1',
+    status: 'OWNER_GRANTED_FRESH_ONE_TOKEN_PLUS_THREE_READS',
+    resource: {
+      appId: '429028933633',
+      clientId: '1443cf6d03d39edae7c101a943c5c684',
+      shopDomain: 'insignia-rewrite-dev.myshopify.com',
+    },
+    ceilings: { tokenAcquisitionAttempts: 1, adminRequests: 3, retries: 0 },
+  };
+  assert.equal(freshInventoryAllocationMatches(undefined), false);
+  assert.equal(
+    freshInventoryAllocationMatches({ ...fresh, status: 'OWNER_GRANTED_CONDITIONAL_ONE_TOKEN_PLUS_THREE_READS' }),
+    false,
+  );
+  assert.equal(freshInventoryAllocationMatches(fresh), true);
+  for (const mutate of [
+    (g) => (g.resource.appId = 'other-app'),
+    (g) => (g.resource.clientId = 'other-client'),
+    (g) => (g.resource.shopDomain = 'other.myshopify.com'),
+    (g) => (g.ceilings.tokenAcquisitionAttempts = 2),
+    (g) => (g.ceilings.adminRequests = 4),
+    (g) => (g.ceilings.retries = 1),
+  ]) {
+    const grant = structuredClone(fresh);
+    mutate(grant);
+    assert.equal(freshInventoryAllocationMatches(grant), false);
+  }
+});
+
+test('fresh operator source pins a separate owner record and phase without the consumed anchors', async () => {
+  const source = await readFile(new URL('./private-operator.mjs', import.meta.url), 'utf8');
+  // An explicit invocation-shape control; this does not read native resources
+  // or establish an owner allocation, provider response or runtime permission.
+  assert.ok(source.includes("join(HOME, 'owner-token-inventory-effective-scopes-allocation-20261010.json')"));
+  assert.ok(source.includes("join(HOME, 'native-token-inventory-effective-scopes-20261010')"));
+  assert.ok(source.includes("ownerGrant: 'EFFECTIVE_SCOPES_FRESH_20261010'"));
+  assert.equal(source.includes("'owner-token-inventory-allocation-20261010.json'"), false);
+  assert.equal(source.includes("'native-token-inventory-20261010'"), false);
 });

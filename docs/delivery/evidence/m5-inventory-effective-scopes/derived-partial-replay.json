@@ -1,0 +1,15 @@
+{
+  "classification": "DERIVED_LOCAL_REPLAY_PARTIAL_NATIVE_RESPONSE_ONLY",
+  "rawSha256": "2c0d63fd0957dd6213f04ad13238460ef558f716f55500d952fdf84e319a3521",
+  "outcome": "STOP_LOCAL_MISSING_SEALED_BOUNDARY",
+  "requests": 2,
+  "pages": 1,
+  "records": 0,
+  "qualification": "STOP_PRE_INSTALL_DESTINATION_EFFECTS_UNQUALIFIED",
+  "localTransportInvocations": 2,
+  "externalRequests": 0,
+  "ambientEscapes": 0,
+  "finalNativeBoundary": "NOT_SUPPLIED_NOT_INVENTED",
+  "historicalNativeRun": "UNCHANGED_STOP_IDENTITY_OR_GRANT_DRIFT",
+  "nativeBudgetCharged": 0
+}

@@ -1,0 +1,26 @@
+{
+  "qualificationRawDirectory": "/home/serveradmin/insignia-m5-effective-scopes-qualification-20261010",
+  "logs": {
+    "12-fresh-anchor-format.log": "7a9efad248a569f164959038f728cbd493ac9f248a73ff0edc8ee959d427d628",
+    "05-full-inventory-green.log": "e655e248e72f8832eee417c640032ec6b651c3a19e3293fc921730156f8bc52f",
+    "01-native-shaped-red.log": "0c139a60bcb637404788b922fbb813fc8d9b2bd59acb24c74f2f467257d34ec5",
+    "02-native-shaped-green.log": "7ff76d460df5fcf9cc8b501ed4570bcf93912e5214101ea081f8006d95f6c350",
+    "13-current-format.log": "0a5e5283c6c8cb964cecdd1b16dfa5662dbd339979d352a7cc77f2c3ee6a890f",
+    "14-current-final-full-inventory.log": "8ce2e6a55aa47c518b3d68b896f954a064cb69325f40ac6f22698974aaf703a0",
+    "07-unchanged-baseline-deadline.log": "548435e893130f5573f7f5b03481b278af008ce8fb65cbafff49b2d0980c2f7e",
+    "08-old-gate-red.log": "39e186b1431ed48402b216b2e65e7fb7ff735cd4b5b6c3541425ac45b68c4a25",
+    "04-format.log": "e1912d6385ef9b7d6488ae1595e6c0503bcdbf1c55e8b9c150ec363c92640774",
+    "11-final-full-inventory.log": "3f7c3df8debb7df7d3185159ee48f9d6ee2bdeaea8e5c88356620d193a33081c",
+    "10-fresh-gate-format.log": "82e7fa25d8051d85cc5e295998fac152171038d3720463be1df0a93917d04976",
+    "06-final-style.log": "41c31ca836ca00a833176d4306c71459c331fb6e120edf13a9faf0af3607b3ca",
+    "03-focused-green.log": "2a8d1a15668ff43bf4a61533d568d45c8a4417e76af7f7c52aee3db065811489",
+    "09-old-gate-green.log": "da294582cf00359e5a219013b1af187728b08e913af095904d1ead5a145acf89",
+    "16-current-diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "15-current-style-check.log": "974c1150f1190279b6e2d26c78c2f7ea241a1fc06257fd312394f44bf627f54a"
+  },
+  "sourceManifestSha256": "8ea2b29dc71e0fce8bc82b7100b79c3c218d4595343541cac99bace06832627c",
+  "historicalNativeFourFilesExact": true,
+  "newOwnerAllocationCreated": false,
+  "newNativePhaseCreated": false,
+  "privateRawDeleteBy": "2026-10-16T09:29:00.315115Z"
+}

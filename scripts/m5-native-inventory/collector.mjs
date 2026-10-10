@@ -185,6 +185,19 @@ function validateShape(document, operationName) {
       }
   }
 }
+function inventoryGrantsMatch(grants, allocation) {
+  if (allocation.schema !== 'insignia-native-inventory-allocation-v2')
+    return sameSet(grants, allocation.expectedGrants);
+  // Shopify may include read_products in current effective accessScopes when
+  // write_products is granted. This is inventory-only observational equivalence;
+  // declared/OAuth scopes and historical v1 equality remain unchanged.
+  if (!Array.isArray(grants) || new Set(grants).size !== grants.length) return false;
+  const observed =
+    allocation.expectedGrants.includes('write_products') && grants.includes('write_products')
+      ? grants.filter((grant) => grant !== 'read_products')
+      : grants;
+  return sameSet(observed, allocation.expectedGrants);
+}
 function validateIdentity(data, allocation) {
   const installation = data?.currentAppInstallation;
   if (
@@ -194,9 +207,9 @@ function validateIdentity(data, allocation) {
     installation?.app?.id !== 'gid://shopify/App/429028933633' ||
     installation?.app?.apiKey !== '1443cf6d03d39edae7c101a943c5c684' ||
     !Array.isArray(installation?.accessScopes) ||
-    !sameSet(
+    !inventoryGrantsMatch(
       installation.accessScopes.map((scope) => scope?.handle),
-      allocation.expectedGrants,
+      allocation,
     )
   )
     halt('STOP_IDENTITY_OR_GRANT_DRIFT');

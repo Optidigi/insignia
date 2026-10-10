@@ -1,0 +1,60 @@
+{
+  "schema": "insignia-offline-writer-release-v1",
+  "status": "SOURCE_RELEASED_NO_FURTHER_EDITS",
+  "worktree": "/home/serveradmin/insignia-m5-inventory-effective-scopes-worktree",
+  "sourceManifest": "/home/serveradmin/insignia-m5-effective-scopes-qualification-20261010/final-source-manifest.json",
+  "sourceManifestSha256": "8ea2b29dc71e0fce8bc82b7100b79c3c218d4595343541cac99bace06832627c",
+  "base": "a4a561144d26b6de8307630021306829d5aca5ec",
+  "fullInventory": {
+    "command": "corepack pnpm test:m5-inventory",
+    "log": "/home/serveradmin/insignia-m5-effective-scopes-qualification-20261010/14-current-final-full-inventory.log",
+    "exitCode": 0,
+    "node": {
+      "pass": 140,
+      "fail": 0,
+      "skipped": 0,
+      "cancelled": 0
+    },
+    "hostPython": {
+      "pass": 24
+    },
+    "phasePython": {
+      "pass": 18
+    }
+  },
+  "style": {
+    "log": "/home/serveradmin/insignia-m5-effective-scopes-qualification-20261010/15-current-style-check.log",
+    "exitCode": 0
+  },
+  "diffCheck": {
+    "log": "/home/serveradmin/insignia-m5-effective-scopes-qualification-20261010/16-current-diff-check.log",
+    "exitCode": 0
+  },
+  "preservedFailures": [
+    {
+      "log": "01-native-shaped-red.log",
+      "kind": "expected native-shaped scope RED"
+    },
+    {
+      "log": "05-full-inventory-green.log",
+      "kind": "actual unexpected unchanged legacy deadline control failure",
+      "actual": "STOP_RESPONSE_TIMEOUT rather than STOP_RUN_DEADLINE",
+      "cause": "UNKNOWN",
+      "baselineControl": "07-unchanged-baseline-deadline.log passed once; no reproduced baseline failure or causal proof"
+    },
+    {
+      "log": "08-old-gate-red.log",
+      "kind": "expected old-gate acceptance RED"
+    },
+    {
+      "log": "11-final-full-inventory.log",
+      "kind": "missing test import ReferenceError; import corrected",
+      "exactExecutedSource": "UNKNOWN: source changed while command was running; source-at-allocation-import-failure is after-failure snapshot, not claimed exact executed source"
+    }
+  ],
+  "nativeRun": "Original accepted native phase sealed; no native phase/grant/gate accessed or changed by this offline task",
+  "resourcePreparation": "Fresh allocation NOT_GRANTED; gate-v2/new fixed grant and separate phase prepared in source only",
+  "scopeSemantics": "Inventory v2 only admits read_products implied by expected AND observed write_products. V1 exact and OAuth exact3 unchanged. No extra/missing/duplicate grant drift accepted.",
+  "commits": 0,
+  "pushes": 0
+}
