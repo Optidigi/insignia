@@ -126,6 +126,10 @@ jobs:
       - name: Portable current web deployment package
         run: |
           corepack pnpm exec biome check scripts/m5-runtime
+          # Prime the legacy deployment's metadata in a fresh runner cache.
+          # Qualified package construction below remains offline and frozen.
+          corepack pnpm --filter @insignia/web deploy --prod --frozen-lockfile --legacy /tmp/insignia-m5-web-cache-primer
+          corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
           node --test scripts/m5-runtime/web-address.test.mjs scripts/m5-runtime/portable-web.test.mjs
           bash scripts/m5-runtime/build-web.sh /tmp/insignia-m5-web
       - name: Actual current web image startup restart and export
