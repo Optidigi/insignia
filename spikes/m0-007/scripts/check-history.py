@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Verify frozen receipts, architecture archives and the owner-amended v1.5 record.
+"""Verify frozen receipts, architecture archives and the owner-amended v1.6 record.
 
-Each archived version is checked at its fixed merge. Current v1.5 governance plus M5-017 hashes are
+Each archived version is checked at its fixed merge. Current v1.6 commercial governance plus M5-017 hashes are
 explicit constants, never learned from the working files being checked.
 """
 
@@ -86,14 +86,33 @@ for path, expected in pre_autonomy_architecture.items():
     archived = subprocess.check_output(["git", "show", f"{PRE_AUTONOMY_BASE}:{path}"], cwd=REPO)
     assert digest(archived) == expected, f"pre-autonomy architecture mismatch: {path}"
 
-current_architecture = {
+pre_commercial_architecture = {
     "docs/architecture/implementation-plan.md": "3abb753e608907122f81f37143d131ce61244b74a7c4a3396cc1cc6c44bbf38f",
     "docs/architecture/decision-ledger.md": "c453be74606f1b122c27b8b43169f61c6ca6f9f04e9858f112070bd3a33dc4c2",
+    "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+}
+# Manual owner commercial amendment retains the prior delivery and technical record.
+PRE_COMMERCIAL_BASE = "b5594f4b92216194a1c580dffa1e7f06f93a4ad4"
+for path, expected in pre_commercial_architecture.items():
+    archived = subprocess.check_output(["git", "show", f"{PRE_COMMERCIAL_BASE}:{path}"], cwd=REPO)
+    assert digest(archived) == expected, f"pre-commercial architecture mismatch: {path}"
+
+current_architecture = {
+    "docs/architecture/implementation-plan.md": "490d7de1ff5eb338c17fea8441e8724e2b1f9345263a110eb661fba005ea976f",
+    "docs/architecture/decision-ledger.md": "52fd7e0f1d61c4bbf6ed4d0434cc44083715e58127c8cf0a0e8f98b5b724de88",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
 }
 OWNER_AUTHORITY = "docs/delivery/authority/milestone-autonomy-2026-10-09.md"
 OWNER_AUTHORITY_SHA256 = "710cda826d77a712a89c791cc5d71144c215b2c7eebe6ce9f689638ba405a327"
 assert digest((REPO / OWNER_AUTHORITY).read_bytes()) == OWNER_AUTHORITY_SHA256, "owner authority mismatch"
+
+COMMERCIAL_OWNER_AUTHORITY = "docs/delivery/authority/commercial-single-plan-2026-10-10.md"
+COMMERCIAL_OWNER_AUTHORITY_SHA256 = "72f9bb4840502e2973f7a22538f02e664ce4969eb7598a380fb2fdb0b9dab4b0"
+COMMERCIAL_OWNER_ATTESTATION = "docs/delivery/evidence/m5-commercial-owner-decision/owner-terms.json"
+COMMERCIAL_OWNER_ATTESTATION_SHA256 = "6422ff127526a8492047e5f67c3ec798dabddb985e0711349fa38cbc7f763c36"
+# Dated manual owner decisions, not provider receipts or native/configuration approval.
+assert digest((REPO / COMMERCIAL_OWNER_AUTHORITY).read_bytes()) == COMMERCIAL_OWNER_AUTHORITY_SHA256, "commercial owner authority mismatch"
+assert digest((REPO / COMMERCIAL_OWNER_ATTESTATION).read_bytes()) == COMMERCIAL_OWNER_ATTESTATION_SHA256, "commercial owner attestation mismatch"
 
 for path, expected in current_architecture.items():
     assert digest((REPO / path).read_bytes()) == expected, f"current approved architecture mismatch: {path}"
@@ -114,6 +133,12 @@ print(json.dumps({
     "preAutonomySha256": pre_autonomy_architecture,
     "ownerAuthority": OWNER_AUTHORITY,
     "ownerAuthoritySha256": OWNER_AUTHORITY_SHA256,
-    "currentArchitectureVersion": "1.5 delivery amendment + M5-017",
+    "preCommercialRef": PRE_COMMERCIAL_BASE,
+    "preCommercialSha256": pre_commercial_architecture,
+    "commercialOwnerAuthority": COMMERCIAL_OWNER_AUTHORITY,
+    "commercialOwnerAuthoritySha256": COMMERCIAL_OWNER_AUTHORITY_SHA256,
+    "commercialOwnerAttestation": COMMERCIAL_OWNER_ATTESTATION,
+    "commercialOwnerAttestationSha256": COMMERCIAL_OWNER_ATTESTATION_SHA256,
+    "currentArchitectureVersion": "1.6 owner commercial amendment + delivery amendment + M5-017",
     "currentArchitectureSha256": current_architecture,
 }, sort_keys=True))

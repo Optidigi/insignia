@@ -1,0 +1,8 @@
+{
+  "source": "Manual owner message in this Insignia thread,10 October2026",
+  "ownerMessage": "Confirm we're not overtesting/hardening too much - needs to be a solid first version, we're not preparing for targeted attacks. Take this with a grain of salt tho, it's my estimate - not completely sure about how much hardening and what you are hardening atp.",
+  "executionResponse": "Freeze experimental host tooling rather than expand it; prioritize necessary uninstall/privacy decision and actual merchant flow; reuse unchanged test inputs",
+  "securityContractWaiver": false,
+  "targetedAttackPreparationRequired": false,
+  "runtimeOrProviderMutationAuthority": false
+}

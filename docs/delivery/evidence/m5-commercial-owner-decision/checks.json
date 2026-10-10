@@ -70,12 +70,30 @@
   },
   "integrity": {
     "result": "PASS",
-    "sourceRestriction": "Two exact frozen application paths only",
+    "sourceRestriction": "Two unchanged frozen application paths plus literal architecture history-checker amendment",
     "historicalPlanLedgerState": "BYTE_EXACT_PINNED_HISTORY",
     "providerConfigAndWorkflowInputs": "UNCHANGED",
     "noRuntimeOrProviderWrites": true,
     "localLinks": "PASS",
     "scopedSecretMarkers": "PASS",
     "buildArtifacts": "Current local build only; no release or deployment"
+  },
+  "currentHistoryVerification": {
+    "argv": ["python3", "-B", "spikes/m0-007/scripts/check-history.py"],
+    "exitCode": 0,
+    "logSha256": "fbcc953b6e4845df5259c1a280d70cb0c1d0e5d5281954c2caa0b8409157223b"
+  },
+  "historyTamperControls": {
+    "result": "PASS",
+    "actualIsolatedRefusals": 4,
+    "expectedFailures": 4,
+    "proof": "history-amendment-proof.json",
+    "priorAssertions": "RETAINED",
+    "provenance": "Fresh private writer controls; parent verified source/log hashes"
+  },
+  "reuseAfterHistoryCorrection": {
+    "application206AndFocused12": "INPUT_IDENTICAL_REUSED",
+    "strictTypeBuildRootBuildBoundariesSecrets": "UNCHANGED_RUNTIME_INPUTS_REUSED",
+    "docStyleHistoryIntegrity": "FRESH"
   }
 }

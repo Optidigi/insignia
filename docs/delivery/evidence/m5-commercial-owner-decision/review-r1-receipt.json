@@ -1,0 +1,40 @@
+{
+  "candidate": "c286b9500b806240cb53d40ca62853b3219fb4f0",
+  "localAcceptance": "REJECTED_CI_HISTORY_PIN_OMISSION",
+  "reviews": {
+    "spec": {
+      "session": "01a12703-5042-7900-9cec-8ff4a8709c1b",
+      "verdict": "CLEAR",
+      "processExitCode": 0,
+      "completedTurn": true,
+      "runtime": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "3b53cf93e2d12450aee7140dd2eba2241d82d35c1fa2be70f998f3f0df923916"
+    },
+    "security": {
+      "session": "01a12703-4ff3-7212-9998-17f5bfcd5aef",
+      "verdict": "CLEAR",
+      "processExitCode": 0,
+      "completedTurn": true,
+      "runtime": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "9bde1f3465f7789db6bec4f83c38085f29db3731ac32af9d038ead7428207fb5"
+    }
+  }
+}

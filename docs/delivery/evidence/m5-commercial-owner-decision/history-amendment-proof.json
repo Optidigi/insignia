@@ -1,0 +1,89 @@
+{
+  "state": "PRIVATE_CORRECTION_FROZEN_RELEASED_TO_ROOT_NOT_APPLIED_W11",
+  "head": "c286b9500b806240cb53d40ca62853b3219fb4f0",
+  "tree": "b1a0f0cb6ee1cc62413c6bd39076077e47b503ea",
+  "correctedPath": "spikes/m0-007/scripts/check-history.py",
+  "correctedSource": "/home/serveradmin/insignia-milestone-autonomy-handoff/commercial-history-amendment-correction-20261010/check-history.py",
+  "correctedSha256": "00e0d8c54152d9f76d1e06ea8953173516ae2861d34f13ae485ba847837bff9e",
+  "commands": [
+    {
+      "command": "git worktree add --detach /home/serveradmin/insignia-milestone-autonomy-handoff/commercial-history-amendment-correction-20261010/isolated-worktree c286b9500b806240cb53d40ca62853b3219fb4f0",
+      "cwd": "/home/serveradmin/insignia-m5-commercial-decision-worktree",
+      "exitCode": 0,
+      "artifact": "01-isolated-worktree-setup.log",
+      "result": "PASS_PRIVATE_ISOLATED_SETUP",
+      "artifactSha256": "0fdaa83ec243304f59403be0942a9850f9e6eda3bccd6d96b32353fbff9bd877"
+    },
+    {
+      "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+      "cwd": "/home/serveradmin/insignia-milestone-autonomy-handoff/commercial-history-amendment-correction-20261010/isolated-worktree",
+      "exitCode": 1,
+      "artifact": "02-original-history-red.log",
+      "result": "MEANINGFUL_RED_CURRENT1.6DOCS_OLD1.5PINS",
+      "artifactSha256": "e6e46de8f824922c63ee35e43c453f8f380cf1c7ef5e07bee5371c2c8d132992"
+    },
+    {
+      "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+      "cwd": "/home/serveradmin/insignia-milestone-autonomy-handoff/commercial-history-amendment-correction-20261010/isolated-worktree",
+      "exitCode": 0,
+      "artifact": "03-corrected-full-history-green.log",
+      "result": "PASS_FULL_HISTORY_AND_CURRENT_GUARDS",
+      "artifactSha256": "fbcc953b6e4845df5259c1a280d70cb0c1d0e5d5281954c2caa0b8409157223b"
+    },
+    {
+      "command": "python3 -B /home/serveradmin/insignia-milestone-autonomy-handoff/commercial-history-amendment-correction-20261010/tamper-controls.py",
+      "cwd": "/home/serveradmin/insignia-milestone-autonomy-handoff/commercial-history-amendment-correction-20261010/isolated-worktree",
+      "exitCode": 0,
+      "artifact": "08-tamper-controls-summary.log",
+      "result": "PASS_FOUR_REAL_REFUSAL_CONTROLS",
+      "artifactSha256": "59c8a635f8b05cea08f679fbd3668046ff00fdc11d34b7d77ee23bcf9ce3bba6"
+    },
+    {
+      "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+      "cwd": "/home/serveradmin/insignia-milestone-autonomy-handoff/commercial-history-amendment-correction-20261010/isolated-worktree",
+      "exitCode": 1,
+      "artifact": "04-current-plan-tamper.log",
+      "result": "EXPECTED_REFUSAL",
+      "mutation": "docs/architecture/implementation-plan.md",
+      "expectedError": "current approved architecture mismatch: docs/architecture/implementation-plan.md",
+      "artifactSha256": "bd8abb886d12261aed8637b71810c96409e14fd69ac976935d16240335654cd5"
+    },
+    {
+      "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+      "cwd": "/home/serveradmin/insignia-milestone-autonomy-handoff/commercial-history-amendment-correction-20261010/isolated-worktree",
+      "exitCode": 1,
+      "artifact": "05-owner-authority-tamper.log",
+      "result": "EXPECTED_REFUSAL",
+      "mutation": "docs/delivery/authority/commercial-single-plan-2026-10-10.md",
+      "expectedError": "commercial owner authority mismatch",
+      "artifactSha256": "2749bc683beed235370bd936564e68675548653d4eecc0ce29f8e2f3c2b7fe2e"
+    },
+    {
+      "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+      "cwd": "/home/serveradmin/insignia-milestone-autonomy-handoff/commercial-history-amendment-correction-20261010/isolated-worktree",
+      "exitCode": 1,
+      "artifact": "06-owner-terms-tamper.log",
+      "result": "EXPECTED_REFUSAL",
+      "mutation": "docs/delivery/evidence/m5-commercial-owner-decision/owner-terms.json",
+      "expectedError": "commercial owner attestation mismatch",
+      "artifactSha256": "43dfa258ce7f8b210b8a1d116bd44633abf33b7943e029f3692a118ebf9ea78b"
+    },
+    {
+      "command": "python3 -B spikes/m0-007/scripts/check-history.py",
+      "cwd": "/home/serveradmin/insignia-milestone-autonomy-handoff/commercial-history-amendment-correction-20261010/isolated-worktree",
+      "exitCode": 1,
+      "artifact": "07-frozen-manifest-tamper.log",
+      "result": "EXPECTED_REFUSAL",
+      "mutation": "spikes/m0-006/evidence/live-artifact-manifest.json",
+      "expectedError": "historical manifest changed",
+      "artifactSha256": "e808bd9c23647b36cc07c8982cc9e21dabad4bb361ab9a9346a2ff893c32852e"
+    }
+  ],
+  "tamperRunnerSha256": "29786dab28eba1a3a90096d6be65697fbe9da96e1b717f04d1a02a9add0438da",
+  "tamperReceiptSha256": "e33339b10dbcc45962e389e4845c83c5533c71bb9f361680d97f3bc67dc6ee13",
+  "originalInputsReceiptSha256": "882737d5b4ea0c41b4c86af3e291856f18b21e8e52c0f1568310da1e32425304",
+  "preservationProofSha256": "27ec865168f5afddf86d3d2543278b8ab52ceac9b8a429198806858292ed6d6c",
+  "handoffSha256": "04bfaf403c337c9fd5662350534d2358ffa3adfd144c5ddbfa66d9523d2e5af4",
+  "scope": "PRIVATE_SINGLE_CHECKER_PREPARATION_ONLY_W11_UNTOUCHED",
+  "limits": "Manual owner amendment integrity only, not native/commercial runtime approval. No application/root suites rerun."
+}
