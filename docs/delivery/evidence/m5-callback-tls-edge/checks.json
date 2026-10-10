@@ -1,0 +1,89 @@
+{
+  "formatPreparation": {
+    "argv": [
+      "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/biome",
+      "check",
+      "--write",
+      "docs/delivery/evidence/m5-callback-tls-edge/pr71-local-acceptance.json",
+      "docs/delivery/evidence/m5-callback-tls-edge/pr71-merge-receipt.json",
+      "docs/delivery/evidence/m5-callback-tls-edge/provenance.json",
+      "docs/delivery/milestone-progress.json"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-private-callback-tls-edge-worktree",
+    "exitCode": 0,
+    "logSha256": "9ad3061813e3c34b67e1525c806d79bf9f6dc6a35ffbd900e3ada68ea8aa3dc6"
+  },
+  "scopedStyle": {
+    "argv": [
+      "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/biome",
+      "check",
+      "scripts/m5-callback-qualification",
+      "docs/delivery/evidence/m5-callback-tls-edge/pr71-local-acceptance.json",
+      "docs/delivery/evidence/m5-callback-tls-edge/pr71-merge-receipt.json",
+      "docs/delivery/evidence/m5-callback-tls-edge/provenance.json",
+      "docs/delivery/milestone-progress.json"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-private-callback-tls-edge-worktree",
+    "exitCode": 0,
+    "logSha256": "fd4aa0bd9ceeb855bf37cdf54b3cd527e1496305e657e1afc47618a312d7a5b8"
+  },
+  "boundaries": {
+    "argv": [
+      "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/depcruise",
+      "--config",
+      ".dependency-cruiser.cjs",
+      "scripts/m5-callback-qualification/tls-edge.mjs"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-private-callback-tls-edge-worktree",
+    "exitCode": 0,
+    "logSha256": "88e3a676b8f1ecddaf5c02608c4d8365fe889c7a898ccee3ca43e7fea5167f9a"
+  },
+  "trackedWhitespace": {
+    "argv": ["git", "diff", "--check"],
+    "cwd": "/home/serveradmin/insignia-m5-private-callback-tls-edge-worktree",
+    "exitCode": 0,
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "combinedControls": {
+    "result": "PASS",
+    "pass": 67,
+    "fail": 0,
+    "skipped": 0,
+    "execution": "Fresh writer run on exact current source; parent verified command, source and log pins; no redundant rerun",
+    "argv": [
+      "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node",
+      "--test",
+      "--test-concurrency=1",
+      "scripts/m5-callback-qualification/receiver.test.mjs",
+      "scripts/m5-callback-qualification/supervisor.test.mjs",
+      "scripts/m5-callback-qualification/cleanup.test.mjs",
+      "scripts/m5-callback-qualification/tls-edge.test.mjs"
+    ],
+    "logSha256": "7bb14f9389c6cdfcb5308f9ede2beb0a0c2628435662a27cbfafdd1ef410e935"
+  },
+  "reusedProductionSecrets": {
+    "argv": ["/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node", "scripts/boundaries/check-secrets.mjs"],
+    "cwd": "/home/serveradmin/insignia-m5-private-callback-receiver-worktree",
+    "exitCode": 0,
+    "logSha256": "743f98b568d1828232f861a3366e9907efd0bbd36b20bc458df8cf8012e21b55"
+  },
+  "integrity": {
+    "result": "PASS",
+    "owned": 11,
+    "allOriginalPrivateArtifacts": 62,
+    "correctedPins": "PASS",
+    "historicalState": "BYTE_EXACT",
+    "historicalReceiverLifecycleEvidence": "UNCHANGED",
+    "productionProviderBuildInputs": "UNCHANGED",
+    "publicSourceEvidenceSecretScan": "PASS",
+    "localMarkdownLinks": "PASS",
+    "mandatorySuiteRegistration": "PASS",
+    "noNativeOperation": true,
+    "noNewProductionBuild": true
+  },
+  "harnessCorrection": {
+    "result": "HARNESS_DEFECT_CORRECTED",
+    "initialLinkScanExit": 1,
+    "reason": "Byte-exact archived relative links must resolve at original state location; archive unchanged."
+  }
+}

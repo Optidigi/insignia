@@ -1,0 +1,148 @@
+{
+  "base": "b0949587efbcf9cdd6b2cef0b7700d6f85c32dd3",
+  "baseTree": "b87cbbc6607ba5324a2e30a0dc0b69014c13b70e",
+  "provisionalFreezeSha256": "868d483e53ce73ff0981b41c23f582ae36eb71621f94900ebc62afb6ad7f5382",
+  "correctionFreezeSha256": "3bb0b620a4886af89096d98f6f9caa5b519a2a14610066179d229ddb25015d98",
+  "sourceInputs": [
+    {
+      "path": "scripts/m5-callback-qualification/tls-edge.mjs",
+      "sha256": "ccc2b606e47f7370298ec068282733190482059b1b7805e948e3dd83e9887291",
+      "bytes": 10608
+    },
+    {
+      "path": "scripts/m5-callback-qualification/tls-edge.test.mjs",
+      "sha256": "7267ca129667d925132a601f871589ea3ccb74ddf7fa385c993bf94c87f54de8",
+      "bytes": 29930
+    },
+    {
+      "path": "scripts/m5-callback-qualification/TLS-EDGE.md",
+      "sha256": "0d4fd788ec0ee95a2424a4b6077f768251c9b4dce96db8c6241bbe24f1de2c33",
+      "bytes": 7783
+    }
+  ],
+  "privateLocation": "serveradmin-local-orchestrator restricted milestone handoff directory; source/log proof retrievable by recorded filenames and hashes. Synthetic TLS files removed by test owners; no actual capability/key capture in public evidence.",
+  "commands": [
+    {
+      "argv": [
+        "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node",
+        "--test",
+        "/home/serveradmin/insignia-milestone-autonomy-handoff/callback-tls-edge-pipeline-correction-20261010/pipeline.test.mjs"
+      ],
+      "log": "01-old-source-pipeline-red.log",
+      "exit": 1,
+      "result": "expected backend count1; observed2 against immutable original private source copy"
+    },
+    {
+      "argv": [
+        "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/biome",
+        "check",
+        "--write",
+        "scripts/m5-callback-qualification/tls-edge.mjs",
+        "scripts/m5-callback-qualification/tls-edge.test.mjs"
+      ],
+      "log": "02-style-write.log",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node",
+        "--test",
+        "--test-name-pattern=one TLS connection cannot pipeline",
+        "scripts/m5-callback-qualification/tls-edge.test.mjs"
+      ],
+      "log": "03-pipeline-green.log",
+      "exit": 0,
+      "pass": 1,
+      "fail": 0
+    },
+    {
+      "argv": [
+        "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node",
+        "--test",
+        "--test-concurrency=1",
+        "scripts/m5-callback-qualification/receiver.test.mjs",
+        "scripts/m5-callback-qualification/supervisor.test.mjs",
+        "scripts/m5-callback-qualification/cleanup.test.mjs",
+        "scripts/m5-callback-qualification/tls-edge.test.mjs"
+      ],
+      "log": "04-accepted-pr71-all-four-green.log",
+      "exit": 0,
+      "pass": 67,
+      "fail": 0,
+      "skipped": 0,
+      "durationMs": 53371.37117
+    },
+    {
+      "argv": [
+        "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/biome",
+        "check",
+        "scripts/m5-callback-qualification/tls-edge.mjs",
+        "scripts/m5-callback-qualification/tls-edge.test.mjs"
+      ],
+      "log": "05-style-green.log",
+      "exit": 0
+    },
+    {
+      "argv": [
+        "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/depcruise",
+        "--config",
+        ".dependency-cruiser.cjs",
+        "scripts/m5-callback-qualification/tls-edge.mjs"
+      ],
+      "log": "06-boundary-green.log",
+      "exit": 0
+    },
+    {
+      "argv": ["git", "diff", "--check"],
+      "log": "07-diff-green.log",
+      "exit": 0,
+      "limit": "tracked diff only; actual new MJS checked by scoped Biome"
+    },
+    {
+      "argv": ["python3", "-"],
+      "receipt": "08-scoped-safety-history-green.json",
+      "exit": 0,
+      "limit": "stdin text/source/hash checks; precise checks identified in structured receipt; source code not separately retained"
+    }
+  ],
+  "logs": [
+    {
+      "name": "01-old-source-pipeline-red.log",
+      "sha256": "104e580f6a7a4daebef154948c76b141ba6ec51d90546787067736f51b11a26f",
+      "bytes": 1017
+    },
+    {
+      "name": "02-style-write.log",
+      "sha256": "54a8e1effe9e5b864baa35a2efd820fa5f1ce5f4fbcc902080f7bcd4cbd8558b",
+      "bytes": 12680
+    },
+    {
+      "name": "03-pipeline-green.log",
+      "sha256": "020710745ba8614f6fa8f1357ead5ccb58df3891b3aed65c9f3760f4528b6a48",
+      "bytes": 227
+    },
+    {
+      "name": "04-accepted-pr71-all-four-green.log",
+      "sha256": "7bb14f9389c6cdfcb5308f9ede2beb0a0c2628435662a27cbfafdd1ef410e935",
+      "bytes": 7247
+    },
+    {
+      "name": "05-style-green.log",
+      "sha256": "aa0476a43c4f6a3dc40f9557b9a02bf8dc57de598f684314c021f8c51b3d46d7",
+      "bytes": 12559
+    },
+    {
+      "name": "06-boundary-green.log",
+      "sha256": "88e3a676b8f1ecddaf5c02608c4d8365fe889c7a898ccee3ca43e7fea5167f9a",
+      "bytes": 75
+    },
+    {
+      "name": "07-diff-green.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ],
+  "earlierResults": "Original PR70-base20 TLS/44 combined controls and parent PR71-base66 pre-pipeline controls preserved separately. Current67 control evidence uses accepted PR71 dependencies.",
+  "nativeAndPrivacy": "NOT_RUN / UNQUALIFIED",
+  "sourceCopyHashesOnly": true
+}
