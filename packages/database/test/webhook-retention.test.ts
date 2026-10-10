@@ -199,16 +199,29 @@ test('database wall clock is rechecked after an uninstall waits for the shop loc
 
 test('durable handoff excludes expired callbacks and records expiration crossing queue acknowledgement', async () => {
   const f = await fixture();
+  const hook = `handoff_expiry_${randomUUID().replaceAll('-', '')}`;
   try {
+    // Expire this fixture at the persisted ACK boundary, not before transport
+    // starts on a loaded runner. Production code and its real DB clock stay intact.
     await f.pool.query(
-      `UPDATE inbox_messages SET purge_after=clock_timestamp()+interval '100 milliseconds' WHERE id=$1`,
-      [f.receipt.id],
+      `CREATE FUNCTION ${hook}() RETURNS trigger LANGUAGE plpgsql AS $$
+       BEGIN
+         IF NEW.inbox_id=TG_ARGV[0]::uuid AND NEW.queue_handoff_state='confirmed' THEN
+           UPDATE public.inbox_messages SET purge_after=clock_timestamp() WHERE id=NEW.inbox_id;
+         END IF;
+         RETURN NEW;
+       END $$`,
     );
+    const trigger = await f.pool.query(
+      `SELECT format('CREATE TRIGGER %I AFTER UPDATE OF queue_handoff_state ON shopify_webhook_deliveries
+        FOR EACH ROW EXECUTE FUNCTION %I(%L)', $1::text, $1::text, $2::text) AS command`,
+      [hook, f.receipt.id],
+    );
+    await f.pool.query(trigger.rows[0].command);
     let calls = 0;
     const result = await f.core.webhooks.withQueueHandoff(f.receipt.id, async (state) => {
       expect(state).toBe('unconfirmed');
       calls++;
-      await new Promise((resolve) => setTimeout(resolve, 150));
       return 'enqueued';
     });
     expect(result).toBe('expired');
@@ -226,7 +239,12 @@ test('durable handoff excludes expired callbacks and records expiration crossing
     expect(rows[0]).toEqual({ queue_handoff_state: 'confirmed', queue_cleanup_pending: true });
     expect(await f.core.webhooks.processUninstall(f.receipt.id)).toBe('expired');
   } finally {
-    await f.close();
+    try {
+      await f.pool.query(`DROP TRIGGER IF EXISTS ${hook} ON shopify_webhook_deliveries`);
+      await f.pool.query(`DROP FUNCTION IF EXISTS ${hook}()`);
+    } finally {
+      await f.close();
+    }
   }
 });
 
