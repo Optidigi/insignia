@@ -1,0 +1,41 @@
+{
+  "classification": "VERIFIED_NORMAL_MERGE_LOCAL_SLICE_NOT_MILESTONE_APPROVAL",
+  "repository": "Optidigi/insignia",
+  "pr": 66,
+  "url": "https://github.com/Optidigi/insignia/pull/66",
+  "base": "a4a561144d26b6de8307630021306829d5aca5ec",
+  "head": "dba2ab10eed87251d2aa8f0f64fdfefac1af1ea9",
+  "effectiveMergeBase": "a4a561144d26b6de8307630021306829d5aca5ec",
+  "tree": "7d412a50d5a878d2d94035aa9f43bab47cce7ea4",
+  "merge": "3864185da1d508475bb948a5aa7191cbd2be4e7c",
+  "orderedParents": [
+    "a4a561144d26b6de8307630021306829d5aca5ec",
+    "dba2ab10eed87251d2aa8f0f64fdfefac1af1ea9"
+  ],
+  "actualMergeTree": "7d412a50d5a878d2d94035aa9f43bab47cce7ea4",
+  "remoteMain": "3864185da1d508475bb948a5aa7191cbd2be4e7c",
+  "acceptanceSha256": "356e1ea04c7b04ebf1175c1be0b53ff86fde968b0a7a6bd8cd44f2d90f40e184",
+  "reviews": "CLEAR_CLEAR_ACTUAL_INDEPENDENT_GPT_6_1_SOL_HIGH",
+  "naturalExactHeadCI": {
+    "count": 10,
+    "attempt": 1,
+    "allSuccess": true,
+    "runsSha256": "bec2761eb75b0673761e0d3727f5691ae13fca60b45e263987ab0236c715e700",
+    "runIds": [
+      38042687107,
+      38042687185,
+      38042687081,
+      38042687103,
+      38042687154,
+      38042687111,
+      38042687161,
+      38042687096,
+      38042687100,
+      38042687155
+    ]
+  },
+  "method": "normal merge without squash/rebase/admin/protection bypass",
+  "nativeNewPhase": "NOT_OWNER_GRANTED_NOT_RUN",
+  "M5_G7": "NOT_PASSED",
+  "verifiedAt": "2026-10-10T09:59:45.587049+00:00"
+}

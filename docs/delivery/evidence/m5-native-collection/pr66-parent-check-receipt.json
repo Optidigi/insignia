@@ -1,0 +1,32 @@
+{
+  "schema": "insignia-parent-local-checks-v1",
+  "result": "PASS",
+  "head": "dba2ab10eed87251d2aa8f0f64fdfefac1af1ea9",
+  "tree": "7d412a50d5a878d2d94035aa9f43bab47cce7ea4",
+  "base": "a4a561144d26b6de8307630021306829d5aca5ec",
+  "checks": [
+    {
+      "command": "corepack pnpm install --frozen-lockfile",
+      "exit": 0,
+      "logSha256": "a59fef73deb5e415002bc150ad504e7ae04ed5f1b0516f570d9875381c5b0e50"
+    },
+    {
+      "command": "corepack pnpm check",
+      "exit": 0,
+      "logSha256": "0f7a7beafeee3bdffe0652c6b6069af7e210de87269faf82876cebe48d9e08b8"
+    },
+    {
+      "command": "Derived replay exact first native response through correctedcollector, absent finalboundarySTOP",
+      "exit": 0,
+      "logSha256": "1e17d10451142eb15e1aee6a978c0b28a0ed1e4a5e7157c152f8b431318b11d1"
+    }
+  ],
+  "productionSourceConfigFunctionInputsUnchanged": true,
+  "writerAllSourceHashesExact": true,
+  "historicalNativeFourFilesExact": true,
+  "worktreeClean": true,
+  "newOwnerGrantAndPhaseAbsent": true,
+  "nativeOperationsThisCorrection": 0,
+  "rawDirectory": "/home/serveradmin/insignia-m5-effective-scopes-parent-qualification-20261010",
+  "recordedAt": "2026-10-10T09:51:19.008056+00:00"
+}

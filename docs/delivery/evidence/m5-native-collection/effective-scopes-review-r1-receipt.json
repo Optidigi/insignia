@@ -1,0 +1,44 @@
+{
+  "schema": "insignia-independent-review-runtime-v1",
+  "head": "dba2ab10eed87251d2aa8f0f64fdfefac1af1ea9",
+  "tree": "7d412a50d5a878d2d94035aa9f43bab47cce7ea4",
+  "base": "a4a561144d26b6de8307630021306829d5aca5ec",
+  "reviewers": {
+    "spec": {
+      "verdict": "CLEAR",
+      "session": "01a12536-c84e-7863-9957-eb70804c85e3",
+      "unifiedExecSession": 71893,
+      "actualModel": "gpt-6.1-sol",
+      "actualEffort": "high",
+      "actualSandbox": {
+        "type": "read-only"
+      },
+      "approvalPolicy": "never",
+      "processExit": 0,
+      "turnCompleted": true,
+      "originalSessionSha256": "1b8529bf56f3425abe6cacfdf7ca46679ff4bc53cf225cbb86dc23a28c479ec6",
+      "promptSha256": "ee88bf8588805f2248a37065375f3cde30c7133606f119fd7102a640c1ea6aa7",
+      "reportSha256": "496cc6ed2e06ec33185fd335908f5ca7ef7b56a16aa73055a9b39593b9fde00f",
+      "eventsSha256": "1bcd78f49405b316e81d1b1e8926ddc278f0f96fca1334ec543251a1e4313ae3"
+    },
+    "security": {
+      "verdict": "CLEAR",
+      "session": "01a12536-c86d-7dd3-8150-9126a6baf239",
+      "unifiedExecSession": 31486,
+      "actualModel": "gpt-6.1-sol",
+      "actualEffort": "high",
+      "actualSandbox": {
+        "type": "read-only"
+      },
+      "approvalPolicy": "never",
+      "processExit": 0,
+      "turnCompleted": true,
+      "originalSessionSha256": "79716c040bb41c554282b9713f1113a33ad8e30404a933bd27d1aa9b5512599e",
+      "promptSha256": "ab076ffed462c7f0646e2aec07040dfaf0fff565c73d4a1a792cd23bb2bf4521",
+      "reportSha256": "d61fabedaf1f91bccb6a69c5b59a90b30ae5a26bdfa7e3bf9c82dbc6735aa5ac",
+      "eventsSha256": "eb59148d53bf0bcdb9e940d49fcad46cde93aa5c3482cd9fd2fa5007a429f51b"
+    }
+  },
+  "boundary": "Actual filesystem-readonly enforcement; no network/credential isolation claim",
+  "recordedAt": "2026-10-10T09:51:52.494239+00:00"
+}

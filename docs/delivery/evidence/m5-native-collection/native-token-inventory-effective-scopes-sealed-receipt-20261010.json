@@ -1,0 +1,70 @@
+{
+  "schema": "insignia-sealed-native-inventory-receipt-v1",
+  "classification": "SHOP_SPECIFIC_COLLECTION_COMPLETE_APP_SPECIFIC_DESTINATIONS_EFFECTS_UNQUALIFIED",
+  "sourceHead": "dba2ab10eed87251d2aa8f0f64fdfefac1af1ea9",
+  "sourceTree": "7d412a50d5a878d2d94035aa9f43bab47cce7ea4",
+  "integratedMain": "3864185da1d508475bb948a5aa7191cbd2be4e7c",
+  "phaseClosed": true,
+  "historicalExecutionResult": {
+    "outcome": "COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED",
+    "requests": 2,
+    "pages": 1,
+    "records": 0,
+    "qualification": "STOP_PRE_INSTALL_DESTINATION_EFFECTS_UNQUALIFIED",
+    "oauthAttempts": 1,
+    "requestAccounting": "SHARED_DURABLE_RESERVED_ATTEMPTS"
+  },
+  "attempts": [
+    {
+      "number": 1,
+      "kind": "SSH",
+      "operation": "EXACT_CONTAINER_SECRET_PROJECTION",
+      "status": "RECEIVED_EPHEMERAL"
+    },
+    {
+      "number": 2,
+      "kind": "OAUTH",
+      "operation": "EXISTING_APP_CLIENT_CREDENTIALS",
+      "status": "RECEIVED_EPHEMERAL"
+    },
+    {
+      "number": 3,
+      "kind": "ADMIN",
+      "operation": "M5027WebhookInventory",
+      "status": "RECEIVED"
+    },
+    {
+      "number": 4,
+      "kind": "ADMIN",
+      "operation": "M5027InstallationBoundary",
+      "status": "RECEIVED"
+    }
+  ],
+  "rawFilesSha256": {
+    "phase.json": "9fb0905589648b0ba2b7cc574b970cdc050ed29e38ecb27b68ddd831058bb952",
+    "admin/response-1.body": "2c0d63fd0957dd6213f04ad13238460ef558f716f55500d952fdf84e319a3521",
+    "admin/response-2.body": "9c99b822421e1b506292eb28847d9d22a5c402719d850d5134209e12289f4a00",
+    "admin/journal.json": "e9cdf9dc04c50f8d9419e04e053540cefc3730be0f801cfd7375abc1a95a0e4a",
+    "admin/allocation.json": "8f837469453ab51eaf7e6a9ed21de7cc57a9438ef46b7d55a45ae07d02a292c4"
+  },
+  "nativeFacts": {
+    "shopDomainExact": true,
+    "appAndClientExact": true,
+    "shopAndInstallationTupleStable": true,
+    "initialAndFinalEffectiveGrantsExact": true,
+    "shopSpecificSubscriptionsCount": 0,
+    "subscriptionConnectionComplete": true,
+    "finalInstallationBoundary": "PASS",
+    "appSpecificDeclarativeDestinationInventory": "NOT_OBSERVED_BY_THIS_API",
+    "allDownstreamWritersPrivacyEffects": "UNQUALIFIED"
+  },
+  "credentials": "No native token/clientsecret/rawOAuth persisted; process ended, no cryptographic erasure/earlyrevocation assertion",
+  "tokenLifecycleGuarantee": "UNKNOWN_NOT_ASSERTED",
+  "providerMutationAccounting": "Exactly one token issuance received; zero subscriptions/installations/version/scopes/products/production changes",
+  "ownerAllocationSha256": "a3f829baa6684c46ba2bcd2bd7fda0b8bbf75a091301d9f9fa369aaec4561e4f",
+  "retentionDeleteBy": "2026-10-16T10:03:04.684559+00:00",
+  "rawDirectory": "/home/serveradmin/insignia-milestone-autonomy-handoff/native-token-inventory-effective-scopes-20261010",
+  "oneUnusedAdminSlot": "No permission for another operation or token; this run sealed, no resume",
+  "M5_G7": "NOT_PASSED",
+  "recordedAt": "2026-10-10T10:05:15.176343+00:00"
+}

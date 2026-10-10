@@ -1,0 +1,42 @@
+{
+  "schema": "insignia-resource-allocation-v1",
+  "status": "OWNER_GRANTED_FRESH_ONE_TOKEN_PLUS_THREE_READS",
+  "ownerResponse": "you have full permission",
+  "source": {
+    "threadId": "81292d0a-995f-4c06-8ce7-7d7cd419bc4a",
+    "position": 9493,
+    "itemId": "turn-item:message:083f40c5-bc8a-4e69-821c-0c2962a3164c",
+    "requestPosition": 9491,
+    "interpretation": "Explicit current reply to one fresh token/up to three fixed read-only inventory requests, not unallocated settings/installation/resource mutations"
+  },
+  "resource": {
+    "appId": "429028933633",
+    "clientId": "1443cf6d03d39edae7c101a943c5c684",
+    "shopDomain": "insignia-rewrite-dev.myshopify.com",
+    "privateInput": "Existing exact canonical VPS container SHOPIFY_CLIENT_SECRET through pinned SSH/private process pipe and memory only"
+  },
+  "ceilings": {
+    "tokenAcquisitionAttempts": 1,
+    "adminRequests": 3,
+    "retries": 0
+  },
+  "technicalPrerequisites": [
+    "PR66 exact source freeze",
+    "two NEW actual GPT-6.1-sol/high independent CLEAR reviews",
+    "full root and ten natural exact-head attempt1 CI successes",
+    "current owner app/store/Active observations and supported exact-store operation assessment; universal token lifecycle guarantee UNKNOWN"
+  ],
+  "credentialHandling": "No chat/argv/env/disk/rawOAuth/new token store; no token retry/refresh",
+  "excluded": [
+    "subscription/install/uninstall/reinstall changes",
+    "app version/release/rollback/scope changes",
+    "Search/bootstrap",
+    "merchant fixture",
+    "production SQL/provision/deploy",
+    "M6/M7/rollout"
+  ],
+  "historicalRuns": "Consumed original phase remains sealed unchanged; fresh fixed phase only",
+  "privateMetadataRetentionDays": 7,
+  "permanentVpsReads": "Already granted, no renewal",
+  "recordedAt": "2026-10-10T10:03:04.684559+00:00"
+}

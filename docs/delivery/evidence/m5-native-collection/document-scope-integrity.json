@@ -1,0 +1,35 @@
+{
+  "schema": "insignia-document-native-integrity-v1",
+  "result": "PASS",
+  "base": "3864185da1d508475bb948a5aa7191cbd2be4e7c",
+  "scopePaths": [
+    "docs/delivery/evidence/m5-native-collection/REPORT.md",
+    "docs/delivery/evidence/m5-native-collection/effective-scopes-review-r1-receipt.json",
+    "docs/delivery/evidence/m5-native-collection/native-token-inventory-effective-scopes-sealed-receipt-20261010.json",
+    "docs/delivery/evidence/m5-native-collection/owner-token-inventory-effective-scopes-allocation-20261010.json",
+    "docs/delivery/evidence/m5-native-collection/pr66-final-ci.json",
+    "docs/delivery/evidence/m5-native-collection/pr66-merge-receipt.json",
+    "docs/delivery/evidence/m5-native-collection/pr66-parent-check-receipt.json",
+    "docs/delivery/history/state-before-native-collection-pr66.md",
+    "docs/delivery/milestone-progress.json",
+    "docs/delivery/state.md"
+  ],
+  "productionSourceBuildConfigProviderInputsUnchanged": true,
+  "historicalStateByteExact": true,
+  "historicalLinkContext": "Original docs/delivery Git context",
+  "freshNativeFiveFilesHashExact": true,
+  "ownerAllocationHashExact": true,
+  "publicJsonLocalLinksWhitespaceSecretMarkers": "PASS",
+  "productionSecretCheck": "PASS_REEXECUTED_UNCHANGED_PR66_SOURCE_AND_BUILT_ARTIFACTS",
+  "nativeOperationsThisEvidenceIntegration": 0,
+  "reusedRootReceipt": "pr66-parent-check-receipt.json",
+  "reusedSourceReviews": "effective-scopes-review-r1-receipt.json",
+  "reusedSourceCI": "pr66-final-ci.json",
+  "candidateReviewsCI": "PENDING_NOT_ASSERTED",
+  "priorCheckFailure": {
+    "classification": "CHECK_IMPLEMENTATION_ERROR_ARCHIVE_LINK_CONTEXT",
+    "sourceChange": false,
+    "preservedAt": "/home/serveradmin/insignia-milestone-autonomy-handoff/native-collection-document-r1-failure.json"
+  },
+  "recordedAt": "2026-10-10T10:14:28.494414+00:00"
+}
