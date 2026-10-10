@@ -1,7 +1,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { mkdtemp, readdir, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { test } from 'node:test';
+import { setTimeout as delay } from 'node:timers/promises';
 import {
   assembleDatabaseFixtureProbe,
   assembleImageInventoryProbe,
@@ -11,6 +15,49 @@ import {
   qualifyImageRuntime,
   runImageCommand,
 } from './image-observations.mjs';
+
+test('slow failed finalization still launches every owned removal in its own real child', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'm5-finalization-launch-'));
+  const timeoutScale = 0.04;
+  const commands = [
+    ['rm', 'worker'],
+    ['rm', 'database'],
+    ['network-rm', 'network'],
+    ['image-rm', 'image'],
+  ];
+  try {
+    const result = await finalizeImageFixture({
+      timeoutScale,
+      containerNames: ['worker', 'database'],
+      cleanupCommands: commands,
+      async run(args, options) {
+        const child = await runImageCommand(
+          process.execPath,
+          [
+            '-e',
+            "require('node:fs').writeFileSync(process.argv[1], 'child actually launched'); setTimeout(()=>{},10000)",
+            join(directory, args.join('-')),
+          ],
+          options,
+        );
+        // Scale the actual runner's separately bounded raw-log-write allowance.
+        await delay(5000 * timeoutScale);
+        options.signal.throwIfAborted();
+        assert.equal(child.timedOut, false);
+      },
+    });
+    assert.equal(result.status, 'FAIL', 'these timed-out children are expected negatives');
+    const markers = await readdir(directory);
+    for (const args of commands)
+      assert.ok(markers.includes(args.join('-')), `owned removal never launched: ${args.join(' ')}`);
+    assert.deepEqual(
+      result.cleanup.map((item) => item.status),
+      ['FAIL', 'FAIL', 'FAIL', 'FAIL'],
+    );
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
 
 test('failed fixture logs make qualification fail while both owned cleanups still execute', async () => {
   // External Docker CLI boundary fixture only; this never qualifies a real image.

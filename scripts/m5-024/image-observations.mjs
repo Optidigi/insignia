@@ -49,13 +49,19 @@ export async function runImageCommand(command, args, { input, cwd, env = process
   });
 }
 
-export async function finalizeImageFixture({ containerNames, cleanupCommands, run }) {
-  const signal = AbortSignal.timeout(60_000);
+export async function finalizeImageFixture({ containerNames, cleanupCommands, run, timeoutScale = 1 }) {
+  assert.ok(Number.isFinite(timeoutScale) && timeoutScale > 0 && timeoutScale <= 1);
+  // Each operation owns a fresh budget, including the runner's raw-log write.
+  // An earlier timeout must never prevent a later owned removal from launching.
+  const operationOptions = (timeout) => ({
+    signal: AbortSignal.timeout(Math.ceil((timeout + 5000) * timeoutScale)),
+    timeout: Math.ceil(timeout * timeoutScale),
+  });
   const logs = [];
   const cleanup = [];
   for (const name of containerNames) {
     try {
-      await run(['logs', name], { signal, timeout: 5000 });
+      await run(['logs', name], operationOptions(5000));
       logs.push({ name, status: 'PASS' });
     } catch (error) {
       logs.push({ name, status: 'FAIL', error: error.message });
@@ -63,7 +69,7 @@ export async function finalizeImageFixture({ containerNames, cleanupCommands, ru
   }
   for (const args of cleanupCommands) {
     try {
-      await run(args, { signal, timeout: 10_000 });
+      await run(args, operationOptions(10_000));
       cleanup.push({ args, status: 'PASS' });
     } catch (error) {
       cleanup.push({ args, status: 'FAIL', error: error.message });

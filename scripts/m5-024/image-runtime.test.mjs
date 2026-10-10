@@ -50,8 +50,10 @@ console.log(JSON.stringify({
 test('actual built worker image qualifies OS isolation, frozen inventory, readiness, SIGTERM and restart on disposable PG18', {
   timeout: 420_000,
 }, async (t) => {
-  // Leave 90 seconds inside the Node test deadline for independent finalization.
-  const signal = AbortSignal.any([t.signal, AbortSignal.timeout(330_000)]);
+  // Reserve 120 seconds: 2 logs * (5s command + 5s write), 4 removals *
+  // (10s command + 5s write), 15s context cleanup and 5s receipt = 100s,
+  // leaving 20s for child shutdown and scheduling inside the 420s test deadline.
+  const signal = AbortSignal.any([t.signal, AbortSignal.timeout(300_000)]);
   const evidence = process.env.M5_IMAGE_EVIDENCE_DIR
     ? resolve(process.env.M5_IMAGE_EVIDENCE_DIR)
     : await mkdtemp(join(tmpdir(), 'insignia-m5-image-evidence-'));
@@ -292,8 +294,8 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
     receipt.failure = error.message;
     throw error;
   } finally {
-    // Finalization has its own deadline; an aborted test must still preserve logs
-    // and attempt every owned removal. Failure in either branch is fatal.
+    // Every log and removal has its own deadline; an aborted body must still
+    // preserve logs and launch every owned removal. Any failure is fatal.
     const finalized = await finalizeImageFixture({
       containerNames: dockerReady
         ? [

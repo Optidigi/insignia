@@ -1,0 +1,71 @@
+{
+  "reviewedR2Head": "c21c67c218c09315873fe16dd711bd12776dd617",
+  "reviewedR2Tree": "8139622770fef9a02d43024d36d77dc7a4f8c19a",
+  "candidate": "uncommitted R3 correction in exactly four assigned files; requires fresh independent reviews and natural new-head CI",
+  "files": {
+    "scripts/m5-024/IMAGE-CONTROLS.md": "c59bf2fe1f35b74b27a07f094e342bd277397327a2ab0345858d6079f2ff5d1e",
+    "scripts/m5-024/image-observations.mjs": "5f4237bdad7c972dfb276d74b3d8e931f4a5ebd1ecddb9e4a512084e76e3f237",
+    "scripts/m5-024/image-observations.test.mjs": "a752488fa79c00ef70355a3509ffc099c6d9584c6ab9baab88278e35e6a41329",
+    "scripts/m5-024/image-runtime.test.mjs": "320dfab7c8d279e63f934b974e31c1269867b655589f55be0c9138d0c4aa29e8"
+  },
+  "r3DiffSha256": "752fec855c0fbc61d366f01fcda95b203ae331f046505d004523a019ab12fec9",
+  "reviewedR2Snapshot": {
+    "head": "c21c67c218c09315873fe16dd711bd12776dd617",
+    "tree": "8139622770fef9a02d43024d36d77dc7a4f8c19a",
+    "files": {
+      "scripts/m5-024/IMAGE-CONTROLS.md": "9ff4582639bf04556036d4aa47a1bac336038adb523d9ca3cf3a887a5d71fa2d",
+      "scripts/m5-024/image-observations.mjs": "28f99f00e858ffd7965f572d5762489ec75b8a17232df1bc709e413992c4ac32",
+      "scripts/m5-024/image-observations.test.mjs": "1c2b811cfc5395672fa7e75f30d0054acecf3ddf98b232837e305d8b17e3a17c",
+      "scripts/m5-024/image-runtime.test.mjs": "71d35ebe8a0749f3d6d140237321e076ea43758d879ba9d385a6f7f43394320c"
+    },
+    "diff_sha256": "24e249e030c10d9af753334c3f6030de2a0ff7461ee6575ac1674dfaf6ed097d"
+  },
+  "logs": {
+    "01-finalization-green.log": "dbf5f635e703f3192487f1c11265cc7895487b7c5fdc483e7271fc32882eea74",
+    "01-finalization-red.log": "03c802bcd972ee9e96da561a5e89b9955660c9e438e7c7529a5397159484afbc",
+    "boundaries.log": "1b4c5193dd4f6bb102959fe0da6b2f37c89131ee39cb5f569f15669867d6e312",
+    "diff-check.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "final-tests.log": "d83fe6fecb0cdbe581cb3beb91411bae0c2f4ff758aa4d8062b6174fe3a44dbf",
+    "format.log": "a49f780fc5f0548175edcdac678f1d9756901348f6cfa5222a3c7327b96c0c42",
+    "local-image-not-run/001.log": "89601dd0803ed814728c21fb78de92f7a0c8517070a343f6300628ea920293b6",
+    "local-image-test.log": "81ee4dfcd78f30db5b7d5b1d7118d0d8e782e356f376f9ec1d3773ccf211d524",
+    "secrets.log": "5d30b8b5212705b349e1ee889ccf8eca2ac0fde8d678693c49a7f9c8cbd6286b",
+    "style.log": "c981e6172adb49965c313101b63c2c88c6de369e975b232894d39807b0ed7a92",
+    "syntax.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "results": {
+    "01-finalization-red": {
+      "exit": 1,
+      "tests": 11,
+      "pass": 10,
+      "fail": 1,
+      "skipped": 0,
+      "failure": "owned removal never launched: image-rm image"
+    },
+    "01-finalization-green": {
+      "exit": 0,
+      "tests": 11,
+      "pass": 11,
+      "skipped": 0
+    },
+    "final-tests": {
+      "exit": 0,
+      "tests": 11,
+      "pass": 11,
+      "skipped": 0
+    },
+    "format": 0,
+    "style": 0,
+    "boundaries": 0,
+    "secrets": 0,
+    "syntax": 0,
+    "diff-check": 0,
+    "local-image-test": {
+      "exit": 1,
+      "status": "NOT_RUN",
+      "reason": "spawn docker ENOENT"
+    }
+  },
+  "localNotRunReceiptSha256": "fee51d1576a0391247114e1a9b747b89d1c792a7393ed0c228626c0cffe790b2",
+  "historicalEvidence": "R2 reviewed c21c67c/tree813962 and CI38060140107 are retained and not relabeled as R3 source qualification"
+}

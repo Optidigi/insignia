@@ -2,7 +2,7 @@
   "sourceBase": "659f118ddc9bdc8b5d33141f6395182ba6ba9bcb",
   "files": {
     ".github/workflows/m3-runtime.yml": "e3e647e8bc563c4af8342a06fe353bf90355386b6818b4ee39776d0fa7fd4cc1",
-    "docs/delivery/evidence/m5-worker-image-controls/REPORT.md": "02f0b0ac8b11cd52b4325850c40398aabcc8b339eeba6e8a569f473b4af2f5b8",
+    "docs/delivery/evidence/m5-worker-image-controls/REPORT.md": "525d69cbdbccaa780f40d74c3892686daaca0f254a05c70518e53aaa182b403b",
     "docs/delivery/evidence/m5-worker-image-controls/parent-checks.json": "62832a65379f1331345810bb6aa1f1a5a267edd9233ae75fdf60757f3c4f3b5a",
     "docs/delivery/evidence/m5-worker-image-controls/pr68-final-ci.json": "215442251cf28079d380adaaddf8b963e200215a9d983f8b6d51aee05ae3d9da",
     "docs/delivery/evidence/m5-worker-image-controls/pr68-merge-receipt.json": "01d4924a8cd525f2de036462d9e3c9a81646ba2cc16556584cc8e808b8edc2c6",
@@ -10,7 +10,12 @@
     "docs/delivery/evidence/m5-worker-image-controls/r1-review-runtime.json": "d471d1ad8a13a666154509e1b92d490bb034eb910162cfcbc204b69df7bb4698",
     "docs/delivery/evidence/m5-worker-image-controls/r1-security-review.md": "16dcacdf96bbc1996c5b6970c0d10ecc026e021d03c79cd0b61bc9761d3b0583",
     "docs/delivery/evidence/m5-worker-image-controls/r1-spec-review.md": "79fd2f49742a0e8301324ffca9f38baf3337a17e22b5a80727f7405234702aa1",
+    "docs/delivery/evidence/m5-worker-image-controls/r2-image-lifecycle-receipt.json": "5d50aa0563147a5313a3f1aefcb85f1d28481b309386ab882d11c4a27ad6f295",
+    "docs/delivery/evidence/m5-worker-image-controls/r2-review-runtime.json": "933e68a3d56df487619729acb5c090d3bdae7d2d483260caef00db58a57b956b",
+    "docs/delivery/evidence/m5-worker-image-controls/r2-security-review.md": "9b1b3da769d019ab45bc52aeab320bd28a51f121fe02ea919fc69dfea4227550",
+    "docs/delivery/evidence/m5-worker-image-controls/r2-spec-review.md": "64100da6a2c75c3c614bf53cf391192de1b7dcee8b1f9a6118bb6dbab296ba01",
     "docs/delivery/evidence/m5-worker-image-controls/r2-tdd-provenance.json": "e55526141d87e6a6b77edc57b501d58fc1db383e58722396a5376a10ac8aff46",
+    "docs/delivery/evidence/m5-worker-image-controls/r3-tdd-provenance.json": "fbbcec913f4ec011a108069ff37c0dee3cde217c4dd2debfb858f56a02176497",
     "docs/delivery/evidence/m5-worker-image-controls/selected-web-method-reservations.json": "213b0d62fbeb8dc0c37b1cd243b3ecaf89158177e0c6a2a68a53815989cf9065",
     "docs/delivery/evidence/m5-worker-image-controls/selected-web-native-receipt.json": "93a09754015afce77122143df705e75da54417d4ba7984dcf1d6bd4de23fa177",
     "docs/delivery/evidence/m5-worker-image-controls/selected-web-runtime-gate.json": "ba8d31f3414b5d17d0fe9bf81e0c41491dee593e06ed9a3e220cbe438df732f5",
@@ -19,9 +24,9 @@
     "docs/delivery/evidence/m5-worker-image-controls/selected-web-spec-review.md": "36d26d54407aba93c7e7d6e5fad3166a90bfdaf5e7e5344169f1c66ed9a28df4",
     "docs/delivery/evidence/m5-worker-image-controls/tdd-provenance.json": "8a3de972bfbe89bdc58d5932a57b48bb34699800c3886d0a9fc2cbc35054b220",
     "scripts/m5-024/Dockerfile": "fc7e0e0a3ec4a1865eb92484bb42dd19427e55228a42d95bcb39a4ed27e14439",
-    "scripts/m5-024/IMAGE-CONTROLS.md": "9ff4582639bf04556036d4aa47a1bac336038adb523d9ca3cf3a887a5d71fa2d",
-    "scripts/m5-024/image-observations.mjs": "28f99f00e858ffd7965f572d5762489ec75b8a17232df1bc709e413992c4ac32",
-    "scripts/m5-024/image-observations.test.mjs": "1c2b811cfc5395672fa7e75f30d0054acecf3ddf98b232837e305d8b17e3a17c",
-    "scripts/m5-024/image-runtime.test.mjs": "71d35ebe8a0749f3d6d140237321e076ea43758d879ba9d385a6f7f43394320c"
+    "scripts/m5-024/IMAGE-CONTROLS.md": "c59bf2fe1f35b74b27a07f094e342bd277397327a2ab0345858d6079f2ff5d1e",
+    "scripts/m5-024/image-observations.mjs": "5f4237bdad7c972dfb276d74b3d8e931f4a5ebd1ecddb9e4a512084e76e3f237",
+    "scripts/m5-024/image-observations.test.mjs": "a752488fa79c00ef70355a3509ffc099c6d9584c6ab9baab88278e35e6a41329",
+    "scripts/m5-024/image-runtime.test.mjs": "320dfab7c8d279e63f934b974e31c1269867b655589f55be0c9138d0c4aa29e8"
   }
 }

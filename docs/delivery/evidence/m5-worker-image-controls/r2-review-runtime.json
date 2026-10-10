@@ -1,0 +1,37 @@
+{
+  "base": "659f118ddc9bdc8b5d33141f6395182ba6ba9bcb",
+  "head": "c21c67c218c09315873fe16dd711bd12776dd617",
+  "tree": "8139622770fef9a02d43024d36d77dc7a4f8c19a",
+  "reviews": [
+    {
+      "axis": "spec",
+      "session": "01a1263c-e3c5-7e42-bcab-a11878a46cad",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": {
+        "type": "read-only"
+      },
+      "approval": "never",
+      "turnCompleted": true,
+      "processExitCode": 0,
+      "reportSha256": "64100da6a2c75c3c614bf53cf391192de1b7dcee8b1f9a6118bb6dbab296ba01",
+      "verdict": "CHANGES_REQUESTED"
+    },
+    {
+      "axis": "security",
+      "session": "01a1263c-e39e-7a91-b0a0-d0478bad6a2c",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": {
+        "type": "read-only"
+      },
+      "approval": "never",
+      "turnCompleted": true,
+      "processExitCode": 0,
+      "reportSha256": "9b1b3da769d019ab45bc52aeab320bd28a51f121fe02ea919fc69dfea4227550",
+      "verdict": "CHANGES_REQUESTED"
+    }
+  ],
+  "disposition": "REJECTED_SHARED_FINALIZER_DEADLINE_SOURCE_CORRECTION_REQUIRED",
+  "physicalImageCi": "PASS_INDEPENDENT_LIFECYCLE_NOT_LOCAL_ACCEPTANCE"
+}
