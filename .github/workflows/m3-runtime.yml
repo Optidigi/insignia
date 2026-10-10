@@ -126,7 +126,7 @@ jobs:
       - name: Portable current web deployment package
         run: |
           corepack pnpm exec biome check scripts/m5-runtime
-          node --test scripts/m5-runtime/portable-web.test.mjs
+          node --test scripts/m5-runtime/web-address.test.mjs scripts/m5-runtime/portable-web.test.mjs
           bash scripts/m5-runtime/build-web.sh /tmp/insignia-m5-web
       - name: Actual current web image startup restart and export
         env:

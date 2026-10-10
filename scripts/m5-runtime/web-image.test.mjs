@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { runImageCommand } from '../m5-024/image-observations.mjs';
+import { ownedWebAddress } from './web-address.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
 
@@ -85,8 +86,6 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
       container,
       '--network',
       network,
-      '--publish',
-      '127.0.0.1::3000',
       '--read-only',
       '--cap-drop=ALL',
       '--security-opt=no-new-privileges',
@@ -104,10 +103,7 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
     assert.equal(running.HostConfig.ReadonlyRootfs, true);
     assert.deepEqual(running.HostConfig.CapDrop, ['ALL']);
     assert.equal(running.Config.User, 'node');
-    const mapping = running.NetworkSettings.Ports['3000/tcp'];
-    assert.equal(mapping.length, 1);
-    assert.equal(mapping[0].HostIp, '127.0.0.1');
-    const address = `http://127.0.0.1:${mapping[0].HostPort}/live`;
+    const address = ownedWebAddress(running.NetworkSettings, network);
     const response = await fetch(address, { signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]) });
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: 'live' });
@@ -126,7 +122,7 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
       'pinned-image-build',
       'nonprivileged-direct-node',
       'readonly-dropcaps',
-      'localhost-http',
+      'owned-internal-ipv4-http-no-published-ports',
       'sigterm-stop',
       'restart-http',
     ];
