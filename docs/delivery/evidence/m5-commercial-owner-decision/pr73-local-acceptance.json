@@ -1,0 +1,149 @@
+{
+  "verdict": "LOCAL_SLICE_ACCEPTED",
+  "base": "2f7aa2bfb304a80ac08a2965ed20c63e4c85fe8e",
+  "effectiveMergeBase": "2f7aa2bfb304a80ac08a2965ed20c63e4c85fe8e",
+  "head": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+  "tree": "ea91f47cc01480b8a10962a0778fce64b1f1003d",
+  "reviews": {
+    "spec": {
+      "verdict": "CLEAR",
+      "session": "01a126ee-e328-79f0-b460-f8c7cbd32368",
+      "completedTurn": true,
+      "processExitCode": 0,
+      "runtime": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "89750af2b61ee79ffac46f4d6a61a1a3fbbc372c9e701b3d72c9f10ed375ff53"
+    },
+    "security": {
+      "verdict": "CLEAR",
+      "session": "01a126ee-e301-7b41-9f0b-340dbc5ae020",
+      "completedTurn": true,
+      "processExitCode": 0,
+      "runtime": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "4f80501e14123821023e29384a513f55acb22f09733cdea082e32421c8336360"
+    }
+  },
+  "naturalExactHeadCi": [
+    {
+      "id": 38073284947,
+      "name": "M0-010 local hybrid billing proof",
+      "head_sha": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38073284947"
+    },
+    {
+      "id": 38073284942,
+      "name": "M0-008 local publication and architecture checks",
+      "head_sha": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38073284942"
+    },
+    {
+      "id": 38073284968,
+      "name": "M0-009 embedded Astro local proof",
+      "head_sha": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38073284968"
+    },
+    {
+      "id": 38073284936,
+      "name": "M0-011 local provider adapter boundary",
+      "head_sha": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38073284936"
+    },
+    {
+      "id": 38073284941,
+      "name": "M0-012 real contract local prototype",
+      "head_sha": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38073284941"
+    },
+    {
+      "id": 38073284969,
+      "name": "M0-014 local public-app candidate",
+      "head_sha": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38073284969"
+    },
+    {
+      "id": 38073284963,
+      "name": "M3-001 PostgreSQL durable core",
+      "head_sha": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38073284963"
+    },
+    {
+      "id": 38073284934,
+      "name": "M0-013 off-store protocol capacity",
+      "head_sha": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38073284934"
+    },
+    {
+      "id": 38073284948,
+      "name": "M3-002 local runtime and ingress",
+      "head_sha": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38073284948"
+    },
+    {
+      "id": 38073284940,
+      "name": "M1-001 foundation and boundaries",
+      "head_sha": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+      "run_attempt": 1,
+      "status": "completed",
+      "conclusion": "success",
+      "html_url": "https://github.com/Optidigi/insignia/actions/runs/38073284940"
+    }
+  ],
+  "preMergePr": {
+    "baseRefOid": "2f7aa2bfb304a80ac08a2965ed20c63e4c85fe8e",
+    "headRefOid": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+    "isDraft": true,
+    "mergeable": "MERGEABLE",
+    "reviewDecision": "",
+    "state": "OPEN",
+    "url": "https://github.com/Optidigi/insignia/pull/73"
+  },
+  "sourceFreezeSha256": "e0eac2a164c0a03e4d256ea84d6643e116fbd929a12d9e573ce85d5645852f64",
+  "authority": "OWNER_DELEGATED_WITHIN_M5",
+  "principalMilestoneApproval": false,
+  "nativeMutationAuthority": false,
+  "acceptedAt": "2026-10-10T17:58:28.117920+00:00"
+}

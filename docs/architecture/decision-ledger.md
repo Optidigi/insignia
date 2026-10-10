@@ -1,6 +1,6 @@
 # Insignia — authoritative decision ledger
 
-Version 1.5 — 9 October 2026 (delivery governance amendment; existing product/architecture locks retained). Companion: implementation-plan.md. The approved v1.3 record remains verifiable at the fixed PR #25 merge `4209bb16a09cff95d5cbbc1bbcb082e8c1fa8899` (plan SHA-256 `b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d`; ledger SHA-256 `d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9`). Version 1.2 recorded the approved Option A required-product trust boundary and remains verifiable at the fixed PR #17 merge `662a78cd27507d8a2f1eaa976f1c644c93edd1be`; version 1.1 remains verifiable at the fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`. The v1.3 sequencing decision remains in force. No complete development gate has been accepted.
+Version 1.6 — 10 October 2026 (owner single-plan commercial amendment; all other product/architecture locks retained). Companion: implementation-plan.md. The approved v1.3 record remains verifiable at the fixed PR #25 merge `4209bb16a09cff95d5cbbc1bbcb082e8c1fa8899` (plan SHA-256 `b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d`; ledger SHA-256 `d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9`). Version 1.2 recorded the approved Option A required-product trust boundary and remains verifiable at the fixed PR #17 merge `662a78cd27507d8a2f1eaa976f1c644c93edd1be`; version 1.1 remains verifiable at the fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`. The v1.3 sequencing decision remains in force. No complete development gate has been accepted.
 
 
 ### LOCKED
@@ -21,7 +21,7 @@ Version 1.5 — 9 October 2026 (delivery governance amendment; existing product/
 
 **Artwork/orders:** Byte-exact private SVG/PNG/JPEG originals, verified before use, safe PNG/WebP previews, no arbitrary inline SVG. Merchant-controlled logo-later; merchant-only post-order attachment. Append-only replacements; PENDING_ARTWORK → READY → ARTWORK_LOCKED. Immutable order-time purchase facts. Shopify owns payment/fulfillment/refunds/returns/restock; no garment/customization refund split.
 
-**Billing/entitlements:** Three feature-differentiated plans, subscription + per-order usage and different included allowances. One qualifying paid order, not quantity/groups; refunds do not reverse usage. Fourteen-day live chosen-plan trial from activation, subscription and usage waived, no retrospective trial billing and no separate demo system. No active entitlement means no new issuance/renewal; valid old offers honored until expiry. Historical order/artwork access remains within retention. Downgrade-incompatible configs stop new quoting until adjusted/republished or entitlement restored. Required purchases do not silently become plain purchases.
+**Billing/entitlements:** One paid plan with all released in-scope features, USD $49.99 per 30-day cycle, 100 qualifying paid customized orders included and USD $0.10 per additional qualifying order; adopted by the [10 October owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md). One qualifying paid order, not quantity/groups; refunds do not reverse usage. Fourteen-day live chosen-plan trial from activation, subscription and usage waived, no retrospective trial billing and no separate demo system. No active entitlement means no new issuance/renewal; valid old offers honored until expiry. Historical order/artwork access remains within retention. Downgrade-incompatible configs stop new quoting until adjusted/republished or entitlement restored. Required purchases do not silently become plain purchases.
 
 **Retention:** Buyer artwork/identifying customization payloads at most six months from collection; abandoned uploads shorter; reuse does not reset expiry; merchant warning/export opportunity. Permitted minimal pseudonymized financial/audit facts may persist separately. Privacy/uninstall erasure includes derivatives/payloads and does not rewrite purchase economics.
 
@@ -41,7 +41,7 @@ Whole-quote v2 is the single production implementation protocol. Its domain `Ins
 
 ### DEFERRED
 
-Actual production/VPS topology, deployment procedure, Barman/R2 restore mechanics, host-specific alert thresholds and other host operations until M11. Exact FX provider/cadence remains an implementation-time selection under the defined reproducibility/freshness contract. Plan names/prices/allowance values and feature-to-plan matrix remain commercial configuration required before the corresponding paid release, not guessed by coding agents. Migration/import is **excluded from this implementation**, not a hidden later milestone.
+Actual production/VPS topology, deployment procedure, Barman/R2 restore mechanics, host-specific alert thresholds and other host operations until M11. Exact FX provider/cadence remains an implementation-time selection under the defined reproducibility/freshness contract. One-plan economics and all-released-feature coverage are owner-approved; exact provider/display handles, versioned feature identifiers and actual pricing configuration/native qualification remain due before the corresponding paid release. Do not guess provider state or treat owner terms as configured billing. Migration/import is **excluded from this implementation**, not a hidden later milestone.
 
 
 ### M5-017 availability-hold decision — 7 October 2026
@@ -51,3 +51,7 @@ Actual production/VPS topology, deployment procedure, Barman/R2 restore mechanic
 ### Milestone-autonomy decision — 9 October 2026
 
 The owner explicitly delegated slice/PR review and normal merge authority inside each milestone to the local orchestrator, including unfinished M5 and PR58. The principal reviews the completed milestone against the plan/shape before the next begins. Relevant skills, subagents and tools are enabled under actual permissions. This replaces per-slice external approval prospectively, not product/security/resource constraints or historical facts. See the [recorded owner decision](../delivery/authority/milestone-autonomy-2026-10-09.md) and operating model.
+
+### Owner single-plan decision — 10 October 2026
+
+The newest [owner commercial decision](../delivery/authority/commercial-single-plan-2026-10-10.md) replaces three feature-differentiated paid plans with one all-released-feature plan at USD $49.99 per 30-day cycle plus USD $0.10 per qualifying paid order beyond100. The owner confirms the14-day live trial with both fees waived. Historical billing/provider/policy evidence and compatibility controls are not rewritten; no billing/resource operation, development entitlement mapping, G8 or milestone PASS is approved. Exact provider configuration and paid-release qualification remain outstanding.

@@ -1,0 +1,21 @@
+{
+  "source": "Owner explicit response in current Insignia thread, 10 October 2026",
+  "ownerPriceReply": "USD $49.99 + $0.10 after 100 included",
+  "ownerTrialReply": "14-day live trial",
+  "paidPlans": 1,
+  "features": "All released in-scope features",
+  "currency": "USD",
+  "billingPeriod": "EVERY_30_DAYS",
+  "baseAmount": "49.99",
+  "includedQualifyingPaidOrders": 100,
+  "additionalQualifyingPaidOrderAmount": "0.10",
+  "trialDays": 14,
+  "trialSubscriptionAndUsage": "WAIVED",
+  "usageUnit": "One qualifying non-test order first fully paid with at least one verified Insignia customization, not items/quantity/groups/plain orders",
+  "historicalRefundUsage": "Not reversed; unchanged accepted contract",
+  "noSeparateDemoApproved": true,
+  "doesNotAuthorizeProviderBillingMutation": true,
+  "doesNotConfigureOrInventProviderHandles": true,
+  "doesNotApproveRuntimeDevContractMappingYet": true,
+  "recordedAt": "2026-10-10T17:52:50.036236+00:00"
+}

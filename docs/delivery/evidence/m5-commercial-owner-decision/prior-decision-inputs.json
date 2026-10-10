@@ -1,0 +1,18 @@
+{
+  "historicalCommit": "be89811c1833ad6a7f6a2b77985bc1384ff98321",
+  "sha256": {
+    "docs/architecture/decision-ledger.md": "c453be74606f1b122c27b8b43169f61c6ca6f9f04e9858f112070bd3a33dc4c2",
+    "docs/architecture/implementation-plan.md": "3abb753e608907122f81f37143d131ce61244b74a7c4a3396cc1cc6c44bbf38f"
+  },
+  "historyPreservation": "Prior full records available byte-exact through fixed Git commit; no historical evidence file edited",
+  "ownerAuthority": "manual explicit latest conversation decisions",
+  "nativeOperations": 0,
+  "sourceBuildProviderChanges": {
+    "application": "Optional exact provider Shop policy restriction only",
+    "runtimeConfig": "UNCHANGED",
+    "providerInputs": "UNCHANGED",
+    "providerOperations": 0,
+    "newBillingConfiguration": false
+  },
+  "candidateBase": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4"
+}

@@ -1,0 +1,37 @@
+{
+  "base": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4",
+  "baseTree": "ea91f47cc01480b8a10962a0778fce64b1f1003d",
+  "ownedInputs": {
+    "docs/architecture/decision-ledger.md": "52fd7e0f1d61c4bbf6ed4d0434cc44083715e58127c8cf0a0e8f98b5b724de88",
+    "docs/architecture/implementation-plan.md": "490d7de1ff5eb338c17fea8441e8724e2b1f9345263a110eb661fba005ea976f",
+    "docs/delivery/authority/commercial-single-plan-2026-10-10.md": "72f9bb4840502e2973f7a22538f02e664ce4969eb7598a380fb2fdb0b9dab4b0",
+    "docs/delivery/evidence/m5-commercial-owner-decision/REPORT.md": "d364f5ab23bb924692954b7d15c57e69d206fbca3b6de661e1ba2e0bdfca6f49",
+    "docs/delivery/evidence/m5-commercial-owner-decision/checks.json": "3da273a18a8cd53a4b5878f09261490e7ab708035f94a76f6e9abcd2da3658bc",
+    "docs/delivery/evidence/m5-commercial-owner-decision/ci-r1-rejected.json": "16aaf993d342cfa08e2940a923d48ca388d5efcc8b02bcc4d10ad9d99f0176fd",
+    "docs/delivery/evidence/m5-commercial-owner-decision/history-amendment-proof.json": "287a8ec2015f8f1736e13ac4f7643876919303b57fbeea2d4d60117387297bb7",
+    "docs/delivery/evidence/m5-commercial-owner-decision/owner-terms.json": "6422ff127526a8492047e5f67c3ec798dabddb985e0711349fa38cbc7f763c36",
+    "docs/delivery/evidence/m5-commercial-owner-decision/owner-v1-prioritization.json": "94e12dec60ba3069ca1aacae8429dbc37f8b21b748bd4614b353e9cb5fa57773",
+    "docs/delivery/evidence/m5-commercial-owner-decision/pr73-final-ci.json": "8dc1b341a5a801eb5dd0425cadfcc23a253f1b564e9df2894904ee1887764ff0",
+    "docs/delivery/evidence/m5-commercial-owner-decision/pr73-local-acceptance.json": "ee0a735812c5a0e0acf78c4c24249d982407ae1e5523b364045447bc19a07556",
+    "docs/delivery/evidence/m5-commercial-owner-decision/pr73-merge-receipt.json": "ac2f5ef102e81f14dc0baaba12225936d3df5d9b6f8e73992ba490eb40566fee",
+    "docs/delivery/evidence/m5-commercial-owner-decision/prior-decision-inputs.json": "615d08e7f136efa9699f031504801cb9105470847d257830102ca84820cadde7",
+    "docs/delivery/evidence/m5-commercial-owner-decision/review-r1-receipt.json": "feadd1a979b55a7942a4e7e79c1c37677d159288c51fb9df66c40eee775d11ac",
+    "docs/delivery/evidence/m5-commercial-owner-decision/review-r1-security.md": "9bde1f3465f7789db6bec4f83c38085f29db3731ac32af9d038ead7428207fb5",
+    "docs/delivery/evidence/m5-commercial-owner-decision/review-r1-spec.md": "3b53cf93e2d12450aee7140dd2eba2241d82d35c1fa2be70f998f3f0df923916",
+    "docs/delivery/evidence/m5-commercial-owner-decision/source-test-proof.json": "c370eebc7314b2862df6b3680417f5f1fe8d8eb712d797ba0cf986a1e272c26e",
+    "docs/delivery/history/state-before-commercial-owner-decision.md": "d74e244a3a514c8f526da0b920e5787a56ba2514f756079716fe2416ccc90df9",
+    "docs/delivery/milestone-progress.json": "7ea2daa13dcc2ba4c0ffa9ddadf4762e320fa703267abf4e1cd42facaf7337b7",
+    "docs/delivery/state.md": "7785ce54fac4bfd9e90c98a3f4ea0f58d110cd7fc895bd2e2af4a79b2a279caa",
+    "packages/application/src/entitlement/provider-policy.ts": "fcc17a6bb04be02b7c0035bf80d4ba2d048f170e87e8076c457a5d0353b29701",
+    "packages/application/test/provider-policy.test.ts": "69945c1eea5c345d6df4bb48381a5dd7a7477b53537b3c447bf635dc2f0d744a",
+    "spikes/m0-007/scripts/check-history.py": "00e0d8c54152d9f76d1e06ea8953173516ae2861d34f13ae485ba847837bff9e"
+  },
+  "interactingInputs": {
+    "apps/web/src/server/admin/production.ts": "63b2125855f1db446ba53ac68f7598793fb08719feaef90e87a93992b1161a63",
+    "packages/application/src/shopify/provider-scope.ts": "fb0f14c550126cdc83b7b5e1a6d394d3500d46e3ca9bb6e872a14e1880d14f49",
+    "AGENTS.md": "1d5fa596975ef19e33a7e1bc3db9ca5b944872e2ddbfe8a393d7c68810b60eba",
+    "docs/delivery/operating-model.md": "a5dc9c2a8ffb792077a1ee3c8c25f3e8fe6ba7837776a9d92cb5c64e13aa06d9"
+  },
+  "selfPin": "Excluded; private final freeze pins manifest",
+  "milestoneAcceptance": false
+}
