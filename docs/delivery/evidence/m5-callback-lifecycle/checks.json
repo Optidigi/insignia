@@ -1,0 +1,57 @@
+{
+  "status": "LOCAL39PASS_REVIEW_CI_PENDING_NATIVE_NOT_RUN",
+  "base": "b2a874089482ec6f98938385da65453bd3b85d11",
+  "baseTree": "88b0c4ef4b40fe03202b503eb93e80f5cb9bd065",
+  "nodeVersion": "24.21.0",
+  "nodeSha256": "7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c",
+  "biomeVersion": "2.5.14",
+  "donorDependencies": "READ_ONLY_NOT_MUTATED",
+  "commands": [
+    {
+      "command": "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node --test scripts/m5-callback-qualification/receiver.test.mjs scripts/m5-callback-qualification/supervisor.test.mjs scripts/m5-callback-qualification/cleanup.test.mjs",
+      "log": "01-accepted-base-controls.log",
+      "sha256": "93b5201e0b8731b4cbea3af3c3c8157abfbc4615be7b4ce3e81667e252165c61",
+      "exit": 0,
+      "tests": 39,
+      "pass": 39,
+      "fail": 0
+    },
+    {
+      "command": "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/depcruise --config .dependency-cruiser.cjs scripts/m5-callback-qualification/supervisor.mjs scripts/m5-callback-qualification/cleanup.mjs",
+      "log": "03-scoped-boundary.log",
+      "sha256": "f173cb7e0a8f7b16f668283b4098c99c4da690fdd4a54cb228cd0b2df5c856db",
+      "exit": 0
+    },
+    {
+      "command": "git diff --check",
+      "log": "04-diff-check.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "exit": 0
+    },
+    {
+      "command": "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/biome check scripts/m5-callback-qualification docs/delivery/evidence/m5-callback-lifecycle docs/delivery/milestone-progress.json",
+      "log": "06-scoped-style.log",
+      "sha256": "2a2162c6a05099b227c18242b97faa4b58a81e5860cab7d6788f131d1b588b89",
+      "exit": 0,
+      "scope": "Runtime/proposal/provenance/receipt/progress present then; completed evidence style checked separately before freeze"
+    },
+    {
+      "command": "python3 /home/serveradmin/insignia-milestone-autonomy-handoff/callback-lifecycle-integration-20261010/check-integration.py",
+      "log": "08-final-scoped-secret-provenance-integrity.log",
+      "sha256": "f97ee029fb6340cfc97c6062c15b83010c65f22a5d5193edcee37e79173ade5d",
+      "exit": 0,
+      "scope": "Exact source/dependency/proof pins, state/authority/native-fact preservation, CI registration, PR70 receipt validity, local links/JSON and bounded static checks"
+    }
+  ],
+  "retainedIntegrationFailure": {
+    "log": "05-incomplete-evidence-link-check-failed.log",
+    "sha256": "01b41721c59182df11f1c1ba77fe21c6e8a6059bf780e37e1883c40b38037fd4",
+    "cause": "Ran link checker before report-linked checks/manifest existed. Completed evidence is checked later; no production source correction."
+  },
+  "privateEvidence": "Owner-private callback-lifecycle-integration-20261010; parent final private freeze records all final files/check outputs without circular public self-pins.",
+  "runtimeSourceReuse": "Four MJS byte-exact provisional release; same accepted R2 runtime inputs",
+  "reviewAndCi": "FRESH_CANDIDATE_PENDING",
+  "unrelatedBuildNativeProviderTests": "NOT_RERUN",
+  "milestoneAcceptance": false,
+  "finalMetadataValidation": "Parent/private final freeze pins checks/manifest amendments and final verification outputs without circularity"
+}

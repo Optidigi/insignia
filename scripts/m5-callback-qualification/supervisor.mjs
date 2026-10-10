@@ -1,0 +1,376 @@
+import { spawn } from 'node:child_process';
+import crypto from 'node:crypto';
+import { constants, fstatSync } from 'node:fs';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const self = fileURLToPath(import.meta.url);
+const fixedService = fileURLToPath(new URL('./service.mjs', import.meta.url));
+const pins = new Map([
+  ['service.mjs', 'aff865e9b1109ad6b9f39a6f091cbc18e5bd112da3fb5d58c86e9028da1cbd09'],
+  ['receiver.mjs', 'ab778ca27df4de11c428498ed2c129032c80d59c590b0f41e33f5f5fafadc8c9'],
+  ['operator.mjs', '8120a40c38325f9e8464a99093ec3a60e2f346efe14bc23651b47a9326fba3a8'],
+  ['store.mjs', 'ddaae94180244445c0385399255562bd09a6ed0064276aa3185d337d7413ae7a'],
+  ['network-guard.mjs', 'f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a'],
+  ['../../packages/shopify/src/webhook.ts', 'c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f'],
+]);
+const refused = () => ({ status: 'REFUSED' });
+const activeChildren = new Set();
+const supervised = new WeakMap();
+let interrupted = false;
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Pure protocol boundary: never spawns or signals a caller-selected process.
+export function observeReadyProtocol(stdout, stderr, { port = 0, deadlineMs = 10000 } = {}) {
+  let text = '',
+    bytes = 0,
+    readySeen = false,
+    settled = false;
+  let resolveReady, resolveViolation;
+  const ready = new Promise((resolve) => {
+    resolveReady = resolve;
+  });
+  const violation = new Promise((resolve) => {
+    resolveViolation = resolve;
+  });
+  const fail = () => {
+    if (!settled) {
+      settled = true;
+      resolveReady(refused());
+      resolveViolation(refused());
+    }
+  };
+  const timer = setTimeout(fail, deadlineMs);
+  const onData = (chunk) => {
+    bytes += chunk.length;
+    if (readySeen || bytes > 128) {
+      fail();
+      return;
+    }
+    text += chunk.toString('utf8');
+    if (!text.includes('\n')) return;
+    const match = /^\{"status":"READY","port":([1-9][0-9]{0,4})\}\n$/.exec(text);
+    const observed = match ? Number(match[1]) : 0;
+    text = '';
+    if (!match || observed > 65535 || (port !== 0 && port !== observed)) {
+      fail();
+      return;
+    }
+    readySeen = true;
+    clearTimeout(timer);
+    resolveReady({ status: 'READY', port: observed });
+  };
+  stdout.on('data', onData);
+  stderr.on('data', fail);
+  stdout.on('error', fail);
+  stderr.on('error', fail);
+  stdout.on('end', () => {
+    if (!readySeen) fail();
+  });
+  return {
+    ready,
+    violation,
+    close() {
+      settled = true;
+      clearTimeout(timer);
+      stdout.off('data', onData);
+      stderr.off('data', fail);
+      text = '';
+    },
+  };
+}
+
+function ownedChild(script, args, signingFd) {
+  const child = spawn(process.execPath, [script, ...args], {
+    detached: true,
+    env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
+    stdio: signingFd === undefined ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe', signingFd],
+  });
+  let exited = false,
+    result;
+  const exit = new Promise((resolve) => {
+    child.once('error', () => {
+      exited = true;
+      result = refused();
+      resolve(result);
+    });
+    child.once('close', (code, signal) => {
+      exited = true;
+      result = { code, signal };
+      resolve(result);
+    });
+  });
+  let stopping;
+  const stop = (budget = 5000) =>
+    (stopping ??= (async () => {
+      const start = performance.now();
+      const signal = (value) => {
+        if (!child.pid) return;
+        try {
+          process.kill(-child.pid, value);
+        } catch (error) {
+          if (error.code !== 'ESRCH') return false;
+        }
+        return true;
+      };
+      const alive = () => {
+        if (!child.pid) return false;
+        try {
+          process.kill(-child.pid, 0);
+          return true;
+        } catch (error) {
+          return error.code !== 'ESRCH';
+        }
+      };
+      if (alive() && !signal('SIGTERM')) return { status: 'STOP_UNCONFIRMED' };
+      await Promise.race([exit, wait(Math.min(1000, Math.floor(budget / 2)))]);
+      if (alive()) signal('SIGKILL');
+      while ((!exited || alive()) && performance.now() - start < budget) await wait(10);
+      return exited && !alive() ? { status: 'STOPPED' } : { status: 'STOP_UNCONFIRMED' };
+    })());
+  const owned = {
+    child,
+    exit,
+    stop,
+    get exited() {
+      return exited;
+    },
+    get result() {
+      return result;
+    },
+  };
+  activeChildren.add(owned);
+  exit.then(() => activeChildren.delete(owned));
+  return owned;
+}
+
+async function checkedFile(file, pin, maximum) {
+  const f = await fs.open(file, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    const stat = await f.stat();
+    if (!stat.isFile() || stat.size > maximum) throw Error('REFUSED');
+    if (
+      crypto
+        .createHash('sha256')
+        .update(await f.readFile())
+        .digest('hex') !== pin
+    )
+      throw Error('REFUSED');
+  } finally {
+    await f.close();
+  }
+}
+
+export async function inspectOwnedExperiment(directory) {
+  if (
+    typeof directory !== 'string' ||
+    !path.isAbsolute(directory) ||
+    path.resolve(directory) !== directory ||
+    (await fs.realpath(directory)) !== directory
+  )
+    throw Error('REFUSED');
+  for (const [file, pin] of pins) await checkedFile(fileURLToPath(new URL(file, import.meta.url)), pin, 128 * 1024);
+  if (process.version !== 'v24.21.0') throw Error('REFUSED');
+  await checkedFile(
+    process.execPath,
+    '7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c',
+    256 * 1024 * 1024,
+  );
+  const { load, privateDirectory } = await import('./store.mjs');
+  await privateDirectory(path.dirname(directory));
+  const { m, key } = await load(directory);
+  key.fill(0);
+  if (path.basename(directory) !== m.binding.experiment) throw Error('REFUSED');
+  return { acceptUntil: m.acceptUntil, eraseBy: m.eraseBy };
+}
+
+// Metadata work runs in an owned child, so a blocked private filesystem cannot stall the parent event loop.
+export async function boundedInspection(directory, deadlineMs = 10000) {
+  const owned = ownedChild(self, ['--inspect', directory]);
+  let text = '',
+    invalid = false;
+  owned.child.stdout.on('data', (c) => {
+    if (text.length + c.length > 128) invalid = true;
+    else text += c;
+  });
+  owned.child.stderr.on('data', () => {
+    invalid = true;
+  });
+  let timer;
+  const finished = await Promise.race([
+    owned.exit,
+    new Promise((resolve) => {
+      timer = setTimeout(() => resolve(null), deadlineMs);
+    }),
+  ]);
+  clearTimeout(timer);
+  if (!finished || invalid || finished.code !== 0) {
+    await owned.stop();
+    return refused();
+  }
+  const match = /^\{"status":"MAPPING","acceptUntil":([1-9][0-9]{0,15}),"eraseBy":([1-9][0-9]{0,15})\}\n$/.exec(text);
+  text = '';
+  if (
+    !match ||
+    !Number.isSafeInteger(Number(match[1])) ||
+    !Number.isSafeInteger(Number(match[2])) ||
+    Number(match[2]) <= Number(match[1])
+  )
+    return refused();
+  return { status: 'MAPPING', acceptUntil: Number(match[1]), eraseBy: Number(match[2]) };
+}
+
+export async function startSupervisor(options) {
+  const started = performance.now();
+  try {
+    if (
+      interrupted ||
+      !options ||
+      Object.keys(options).some((k) => !['directory', 'signingFd', 'port', 'deadlineMs'].includes(k))
+    )
+      return refused();
+    const { directory, signingFd, port = 0, deadlineMs = 10000 } = options;
+    if (
+      !Number.isSafeInteger(signingFd) ||
+      signingFd < 3 ||
+      !Number.isSafeInteger(port) ||
+      port < 0 ||
+      port > 65535 ||
+      !Number.isSafeInteger(deadlineMs) ||
+      deadlineMs < 1 ||
+      deadlineMs > 10000
+    )
+      return refused();
+    fstatSync(signingFd); // Descriptor metadata only; signing bytes pass directly to the fixed child FD3.
+    const mapping = await boundedInspection(directory, deadlineMs);
+    if (interrupted || mapping.status !== 'MAPPING' || Date.now() >= mapping.acceptUntil) return refused();
+    const remaining = deadlineMs - (performance.now() - started);
+    if (remaining <= 0) return refused();
+    const owned = ownedChild(fixedService, [directory, String(port)], signingFd);
+    const protocol = observeReadyProtocol(owned.child.stdout, owned.child.stderr, { port, deadlineMs: remaining });
+    const ready = await Promise.race([protocol.ready, owned.exit.then(refused)]);
+    if (ready.status !== 'READY' || Date.now() >= mapping.acceptUntil) {
+      protocol.close();
+      const stop = await owned.stop();
+      return stop.status === 'STOPPED' ? refused() : { status: 'STOP_UNCONFIRMED' };
+    }
+    let resolveDone, stopping;
+    const done = new Promise((resolve) => {
+      resolveDone = resolve;
+    });
+    let expiry;
+    const stop = (reason = 'STOPPED') =>
+      (stopping ??= (async () => {
+        clearTimeout(expiry);
+        protocol.close();
+        const result = await owned.stop();
+        const value = result.status === 'STOPPED' ? { status: reason } : result;
+        resolveDone(value);
+        return value;
+      })());
+    expiry = setTimeout(
+      () => {
+        stop('EXPIRED');
+      },
+      Math.max(1, mapping.acceptUntil - Date.now()),
+    );
+    protocol.violation.then(() => stop('REFUSED'));
+    owned.exit.then(() => stop('REFUSED'));
+    const handle = { status: 'READY', port: ready.port, stop: () => stop(), done };
+    supervised.set(handle, { directory, stop: handle.stop });
+    return handle;
+  } catch {
+    return refused();
+  }
+}
+
+export async function stopSupervisedExperiment(handle, directory) {
+  const owned = supervised.get(handle);
+  if (!owned || owned.directory !== directory) return refused();
+  return owned.stop();
+}
+
+export async function interruptOwnedControls() {
+  interrupted = true;
+  return Promise.all([...activeChildren].map((owned) => owned.stop()));
+}
+
+// Fixed eraser only; no executable/module or fake runtime clock parameter.
+export async function runErasureChild(directory, deadlineMs = 10000) {
+  if (interrupted || !Number.isSafeInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > 10000)
+    return { status: 'BLOCKED' };
+  const owned = ownedChild(fileURLToPath(new URL('./cleanup.mjs', import.meta.url)), ['--erase', directory]);
+  let text = '',
+    bytes = 0,
+    invalid = false,
+    timer;
+  owned.child.stdout.on('data', (chunk) => {
+    bytes += chunk.length;
+    if (bytes > 128) invalid = true;
+    else text += chunk;
+  });
+  owned.child.stderr.on('data', () => {
+    invalid = true;
+  });
+  const finished = await Promise.race([
+    owned.exit,
+    new Promise((resolve) => {
+      timer = setTimeout(() => resolve(null), deadlineMs);
+    }),
+  ]);
+  clearTimeout(timer);
+  if (!finished) {
+    await owned.stop();
+    return { status: 'UNCERTAIN' };
+  }
+  const match = /^\{"status":"(NOT_DUE|BLOCKED|UNCERTAIN|LOCAL_FILES_REMOVED_EXTERNAL_COPIES_UNQUALIFIED)"\}\n$/.exec(
+    text,
+  );
+  text = '';
+  if (invalid || !match) return { status: 'UNCERTAIN' };
+  const status = match[1];
+  if (finished.code !== (status === 'BLOCKED' ? 20 : status === 'UNCERTAIN' ? 21 : 0)) return { status: 'UNCERTAIN' };
+  return { status };
+}
+
+if (process.argv[1] === self) {
+  const emit = process.stdout.write.bind(process.stdout);
+  process.stdout.write = () => true;
+  process.stderr.write = () => true;
+  for (const key of ['log', 'info', 'warn', 'error', 'debug', 'trace', 'dir']) console[key] = () => {};
+  if (process.argv[2] === '--inspect') {
+    try {
+      const m = await inspectOwnedExperiment(process.argv[3]);
+      emit(`${JSON.stringify({ status: 'MAPPING', ...m })}\n`);
+    } catch {
+      emit('{"status":"REFUSED"}\n');
+      process.exitCode = 20;
+    }
+  } else {
+    let cliRunning;
+    for (const signal of ['SIGTERM', 'SIGINT'])
+      process.once(signal, () => {
+        interrupted = true;
+        if (cliRunning?.stop) cliRunning.stop();
+        else Promise.all([...activeChildren].map((owned) => owned.stop()));
+      });
+    const running = await startSupervisor({
+      directory: process.argv[2],
+      signingFd: 3,
+      port: Number(process.argv[3] ?? 0),
+    });
+    cliRunning = running;
+    if (running.status !== 'READY') {
+      emit('{"status":"REFUSED"}\n');
+      process.exitCode = 20;
+    } else {
+      emit(`${JSON.stringify({ status: 'READY', port: running.port })}\n`);
+      const stopped = await running.done;
+      if (!['STOPPED', 'EXPIRED'].includes(stopped.status)) {
+        emit('{"status":"REFUSED"}\n');
+        process.exitCode = 20;
+      }
+    }
+  }
+}

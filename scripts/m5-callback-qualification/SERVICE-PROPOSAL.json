@@ -6,7 +6,9 @@
     "scripts/m5-callback-qualification/operator.mjs",
     "scripts/m5-callback-qualification/store.mjs",
     "scripts/m5-callback-qualification/network-guard.mjs",
-    "packages/shopify/src/webhook.ts"
+    "packages/shopify/src/webhook.ts",
+    "scripts/m5-callback-qualification/supervisor.mjs",
+    "scripts/m5-callback-qualification/cleanup.mjs"
   ],
   "runtime": "Node 24.21.0 exact reviewed executable required",
   "listenAddress": "127.0.0.1",
@@ -44,12 +46,21 @@
     "OS egress/core-dump isolation and actual resource bounds",
     "Durable filesystem crash/restart and private export/erasure ownership",
     "Pre-install all-destination/effects/automatic-authentication and delayed-privacy gates",
-    "Separate exact owner allocation plus frozen independent CLEAR/CLEAR reviews and CI"
+    "Separate exact owner allocation plus frozen independent CLEAR/CLEAR reviews and CI",
+    "Whole-cgroup shutdown including supervisor SIGKILL, persistent erasure timer and reboot catch-up before ingress",
+    "Signing-FD provider resource/EOF handoff and external copy/key-backup/restore-erasure accounting"
   ],
   "startupSupervision": {
     "requiredReadyDeadlineSeconds": 10,
-    "onTimeout": "External supervisor must terminate/kill unready process",
-    "status": "HOST_SUPERVISOR_NOT_IMPLEMENTED_NOT_RUN",
-    "limit": "Synchronous FD3 read can block indefinitely without trusted EOF/supervision"
+    "terminationConfirmationBudgetSeconds": 5,
+    "localControl": "supervisor.mjs: fixed service/executable/pins, inherited FD3, closed READY/REFUSED streams, original acceptance expiry, owned-group TERM/KILL;39 combined local controls",
+    "status": "LOCAL_EXECUTABLE_CONTROLS_PASS_HOST_SUPERVISOR_NOT_RUN",
+    "limit": "Fixed service buffers at most4097 bytes and refuses above4096; trusted EOF still required. Unmanaged supervisor SIGKILL can leave detached child; whole-cgroup host kill/resource controls unqualified."
+  },
+  "deadlineErasure": {
+    "localControl": "cleanup.mjs one-shot original authenticated eraseBy, independent actual clock, exact owned tree/zero local exports, accepted dead-PID recovery and fsync erasure",
+    "result": "LOCAL_FILES_REMOVED_EXTERNAL_COPIES_UNQUALIFIED",
+    "hostStatus": "PERSISTENT_TIMER_REBOOT_CATCHUP_BEFORE_INGRESS_NOT_IMPLEMENTED_NOT_RUN",
+    "uncertainty": "Active/live unrelated/ambiguous PID or stale lifecycle guard refuses; no automatic stale-guard unlink or unowned terminating signal"
   }
 }

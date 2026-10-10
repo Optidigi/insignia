@@ -1,0 +1,148 @@
+{
+  "mergeReceipt": {
+    "pr": "https://github.com/Optidigi/insignia/pull/70",
+    "merge": "b2a874089482ec6f98938385da65453bd3b85d11",
+    "orderedParents": ["b2f42b1895af37a421f2a8fc49d845412b120792", "e1b525e7bd4419569d563eeaa25889483e8cd2b8"],
+    "tree": "88b0c4ef4b40fe03202b503eb93e80f5cb9bd065",
+    "remoteMain": "b2a874089482ec6f98938385da65453bd3b85d11",
+    "verifiedAt": "2026-10-10T16:10:22.827741+00:00",
+    "verdict": "LOCAL_SLICE_ACCEPTED_NOT_MILESTONE_ACCEPTANCE"
+  },
+  "acceptedReceiverHead": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+  "reviews": {
+    "spec": {
+      "session": "01a12683-a4a4-7171-9cc5-c3d88249ce9e",
+      "verdict": "CLEAR",
+      "processExitCode": 0,
+      "completedTurn": true,
+      "runtime": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "21ad34d850b7a4f03a90edeec2a5fe84c1f49d0a0badf99c0067202e9e04ca62"
+    },
+    "security": {
+      "session": "01a12683-a446-71f3-b007-e3e28467f4cd",
+      "verdict": "CLEAR",
+      "processExitCode": 0,
+      "completedTurn": true,
+      "runtime": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "b28a64133b1d2ceeaa3b406c730b755478a10e164aab99b22fa035d8efd36737"
+    }
+  },
+  "naturalExactHeadCi": [
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38065262386,
+      "event": "pull_request",
+      "headSha": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+      "name": "M0-012 real contract local prototype",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38065262366,
+      "event": "pull_request",
+      "headSha": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+      "name": "M0-011 local provider adapter boundary",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38065262414,
+      "event": "pull_request",
+      "headSha": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+      "name": "M0-010 local hybrid billing proof",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38065262416,
+      "event": "pull_request",
+      "headSha": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+      "name": "M0-008 local publication and architecture checks",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38065262397,
+      "event": "pull_request",
+      "headSha": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+      "name": "M0-009 embedded Astro local proof",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38065262376,
+      "event": "pull_request",
+      "headSha": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+      "name": "M0-014 local public-app candidate",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38065262388,
+      "event": "pull_request",
+      "headSha": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+      "name": "M3-001 PostgreSQL durable core",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38065262378,
+      "event": "pull_request",
+      "headSha": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+      "name": "M0-013 off-store protocol capacity",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38065262377,
+      "event": "pull_request",
+      "headSha": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+      "name": "M3-002 local runtime and ingress",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38065262402,
+      "event": "pull_request",
+      "headSha": "e1b525e7bd4419569d563eeaa25889483e8cd2b8",
+      "name": "M1-001 foundation and boundaries",
+      "status": "completed"
+    }
+  ],
+  "receiverControls": 24,
+  "nativeCallback": "NOT_RUN",
+  "milestoneAcceptance": false,
+  "historicalR1": "Spec CLEAR / security CHANGES_REQUESTED despite ten attempt1 CI passes; preserved in ../m5-callback-receiver/r1-rejected-candidate.json",
+  "sourceReceiptSha256": {
+    "pr70-merge-receipt.json": "7624743d37fc52d268790186721693e75ed6cd655ab5afde14c2d81dfda96a41",
+    "pr70-local-acceptance.json": "9141839bf47f2bbb36fc274464b276c851cedfcaec3f8ee7c04402ba221f6d0b"
+  }
+}
