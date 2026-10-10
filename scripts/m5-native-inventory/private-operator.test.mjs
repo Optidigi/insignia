@@ -5,7 +5,7 @@ import { createServer } from 'node:https';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
-import { inspectPrivatePhase, runPrivateInventory } from './private-operator.mjs';
+import { inspectPrivatePhase, PRIVATE_DOCKER_COMMAND, runPrivateInventory } from './private-operator.mjs';
 
 const SECRET = 'SYNTHETIC_PRIVATE_CLIENT_SECRET',
   TOKEN = 'SYNTHETIC_PRIVATE_ADMIN_TOKEN';
@@ -384,4 +384,44 @@ test('missing operational assessment or an asserted universal token guarantee st
     assert.equal(r.requests, 0);
     assert.equal(h.calls.length, 0);
   }
+});
+
+test('hostile remote Docker defaults cannot redirect the fixed producer invocation', async (t) => {
+  const root = await mkdtemp(join(tmpdir(), 'insignia-producer-routing-'));
+  t.after(() => rm(root, { recursive: true, force: true }));
+  const probe = join(root, 'probe.mjs'),
+    docker = join(root, 'docker');
+  await writeFile(
+    probe,
+    `const args=process.argv.slice(2); const hostIndex=args.indexOf('--host'), configIndex=args.indexOf('--config'); process.stdout.write(JSON.stringify({host:hostIndex<0?process.env.DOCKER_HOST:args[hostIndex+1],config:configIndex<0?process.env.DOCKER_CONFIG:args[configIndex+1],context:process.env.DOCKER_CONTEXT??null,path:process.env.PATH??null,args}));`,
+  );
+  await writeFile(docker, `#!/bin/sh\nexec '${process.execPath}' '${probe}' "$@"\n`, { mode: 0o700 });
+  // Only substitute the executable in this equivalent local process control.
+  // No Docker CLI or actual daemon is available; the native fixed invocation
+  // must also have the independently specified absolute executable and flags.
+  const command = PRIVATE_DOCKER_COMMAND.replace('/usr/bin/docker', `'${docker}'`);
+  const hostile = {
+    PATH: root,
+    DOCKER_HOST: 'tcp://other-daemon.invalid:2375',
+    DOCKER_CONTEXT: 'hostile-context',
+    DOCKER_CONFIG: join(root, 'hostile-config'),
+  };
+  const bytes = await new Promise((resolve, reject) => {
+    const child = spawn('/bin/sh', ['-c', command], { env: hostile, stdio: ['ignore', 'pipe', 'pipe'] });
+    let data = '';
+    child.stdout.on('data', (chunk) => (data += chunk));
+    child.on('error', reject);
+    child.on('close', (code) => (code === 0 ? resolve(data) : reject(Error('probe failed'))));
+  });
+  const observation = JSON.parse(bytes);
+  assert.equal(observation.host, 'unix:///var/run/docker.sock');
+  assert.equal(observation.config, '/nonexistent');
+  assert.equal(observation.context, null);
+  assert.equal(observation.path, null);
+  assert.equal(observation.args.at(-1), 'insignia-rewrite-m5-019-web');
+  assert.ok(
+    PRIVATE_DOCKER_COMMAND.startsWith(
+      '/usr/bin/env -i /usr/bin/docker --host unix:///var/run/docker.sock --config /nonexistent inspect ',
+    ),
+  );
 });

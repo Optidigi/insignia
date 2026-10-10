@@ -27,7 +27,7 @@ const SOURCES = ['private-operator.mjs', 'private-response.mjs', 'collector.mjs'
 const QUALIFICATION = 'STOP_PRE_INSTALL_DESTINATION_EFFECTS_UNQUALIFIED';
 const DOCKER_TEMPLATE =
   '[{{json .Image}}{{range .Config.Env}}{{if or (eq (index (split . "=") 0) "SHOPIFY_CLIENT_SECRET") (eq (index (split . "=") 0) "SHOPIFY_CLIENT_ID") (eq (index (split . "=") 0) "APP_URL")}},{{json .}}{{end}}{{end}}]';
-const REMOTE = `docker inspect --format '${DOCKER_TEMPLATE}' insignia-rewrite-m5-019-web`;
+export const PRIVATE_DOCKER_COMMAND = `/usr/bin/env -i /usr/bin/docker --host unix:///var/run/docker.sock --config /nonexistent inspect --format '${DOCKER_TEMPLATE}' insignia-rewrite-m5-019-web`;
 const sha = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const fail = (category) => {
   throw new Error(category);
@@ -175,7 +175,7 @@ async function pinnedProducer(timeout) {
       '-o',
       'RequestTTY=no',
       'serveradmin@65.109.22.104',
-      REMOTE,
+      PRIVATE_DOCKER_COMMAND,
     ],
     timeout,
     16384,

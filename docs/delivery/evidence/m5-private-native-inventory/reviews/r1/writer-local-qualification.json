@@ -1,10 +1,10 @@
 {
   "status": "WRITER_RELEASED_LOCAL_QUALIFIED_PENDING_PARENT_REVIEWS_CI",
-  "sourceManifestSha256": "6dbb9c4abb509436969ce1dd9737f0cedbf281c624b4e9d1be74a2a9a9135dcb",
+  "sourceManifestSha256": "dea5d64d982431128be42a76624d6567fcf50ac31648f9593da5505c137a8aa2",
   "allFinalSourceUnchanged": true,
   "finalInventoryExit": 0,
-  "integratedControls": 22,
-  "nodeTotal": 120,
+  "integratedControls": 21,
+  "nodeTotal": 119,
   "hostPythonTests": 24,
   "phasePythonTests": 18,
   "style": "PASS",
@@ -14,7 +14,7 @@
   "nativeOAuth": 0,
   "nativeAdmin": 0,
   "initialFailedAmbientDNS": "UNKNOWN; no claimed global-zero-network",
-  "actualDockerCLITemplateProof": "NOT_RUN; equivalent local Go-template and hostile-routing process controls PASS",
+  "actualDockerCLITemplateProof": "NOT_RUN; local equivalent Go-template proof PASS",
   "originalPrototypeR1R2": "unchanged",
   "logs": {
     "04-integrated-controls.log": "931048cd753d7f9617c33da8afa8de1370b6408d0a1ba204580ed70ab3877670",
@@ -26,7 +26,6 @@
     "33-expired-existing-phase-red.log": "319cf3bb77a3d805f09edfb3ccdda835783b0409e6f7ca385be333f55ecdb6b0",
     "11-existing-inventory.log": "d799511bb25621f2379d9d96fb0f2fc64d780a4acf6eb0969d660ab3956d8330",
     "09-expanded-controls.log": "fec43d7b0d87ec90d6ab3388b7006879c8f61c8e81a9ef3b54e59cb8d632d3b9",
-    "39-docker-routing-red.log": "6131bac9818f7be230ea9c3f3abd61a1588c2e58af52d9ead8b77c9638266477",
     "06-second-phase-accounting-green.log": "8b0134007e1f0e688ee00171109ce5eea0fc2347767d3a1a1e30b65a3e977247",
     "26-projection-identity-format.log": "3d32b2ee6090c72a3b2b80fef3936e3ebb367390854dd6d790552fda3e5a054b",
     "01-discovery-red.log": "639539d831856c78c5cd382863da7949b13e51bd7a8d029f70edb28222d83c54",
@@ -43,7 +42,6 @@
     "25-projection-green.log": "a2c64ef673486a5955bb2ef145e50a4c9604c3740d8efa64263d20890f4fbf22",
     "38-final-channel-style.log": "4cdc93360a17267f48acf8f95001fb23bc5cc7a6c7f75cb4b6ebb440d7262d5e",
     "28-final-projection-full-inventory.log": "632fa8d38d9400924e7b70e7ae08acbcbcf85645ef0e748f6ad6db733771901b",
-    "40-docker-routing-format.log": "76bc10d137b3ad400c8f2b09704a906789b891a846f906bf0950169e2c44749a",
     "31-fd-label-format.log": "58a4cbae39cb9d259635d5a6d73b0b931d2262c34a6781353d70e662f33fe1e7",
     "13-secrets.log": "bf4998df23ff2d722c08891ad3690b40375675294ca3b59f514b3cd0fd83c426",
     "12-final-integrated.log": "dbeb649da8f8b5d486f1b0dfdf16e06c21452be87ed40a31be36e2f6d16428a7",
@@ -53,16 +51,14 @@
     "16-final-style.log": "2ed6fdc95aee869162e2e1f981850e86b4e9dddc486e575ff9de7d15526399a7",
     "34-expired-phase-format.log": "55c4d4bf8712e85fe1e8d91f370707c81d2d4fe666f221414e44ccab357fe55e",
     "15-full-inventory.log": "c98650c510b5107904163ceffc955d46d64702f75354e119a29929c3bb58b06d",
-    "41-docker-routing-full-green.log": "4756f71b96fd99196adda98091733d7b39b75bcc67aeb68a2fcd839499d0fe51",
     "10-format.log": "cbc1ffd1fad18e9f6c75d5d595533892168684c1f7aa2f1493eeaaec30eec208",
-    "42-docker-routing-final-style.log": "40dde1de91cb693dd620e88105983d914cd5a9e48ffe722fefe3499fe3048ebf",
     "37-final-channel-assessment-full.log": "79edadedeadf4146ed84ff14e24a3b4e214ca0eb9f45a32885ce70c4ed8dffed",
     "20-final-controls.log": "53c5bf540ed6788fbd4122b8e6ce258aa59e5508391502779f090b1272f7847b",
     "05-second-phase-accounting-red.log": "397caae100863767a874299be8591f9e9a006f8cb3c6ee89453b697174c25100"
   },
-  "sourceReleasedAt": "2026-10-10T09:19:30.671788+00:00",
+  "sourceReleasedAt": "2026-10-10T09:08:48.890924+00:00",
   "productionBuildChanges": false,
   "commitPushPR": false,
-  "followup": "R1 SpecP1/securityP2 Docker-daemon routing fixed with absolute env-cleared fixed-socket/config invocation; exact RED source and equivalent local process proof retained",
-  "priorRelease": "round1-review-rejected-WRITER-RELEASE.json"
+  "followup": "truthful v2 channel; expired-existing-phase consumed accounting; explicit supported operation assessment without universal token lifecycle assertion",
+  "priorRelease": "prior-fd-label-WRITER-RELEASE.json"
 }
