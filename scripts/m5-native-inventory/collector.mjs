@@ -66,13 +66,19 @@ function validInput(a, token, directory, testEndpoint) {
   ];
   if (!a || Object.keys(a).some((field) => !fields.includes(field))) return false;
   if (
-    a.schema !== 'insignia-native-inventory-allocation-v1' ||
+    !['insignia-native-inventory-allocation-v1', 'insignia-native-inventory-allocation-v2'].includes(a.schema) ||
     !['OWNER_ALLOCATED', 'LOOPBACK_TEST'].includes(a.status) ||
     !nonempty(a.ownerApprovalReference) ||
     a.purpose !== 'M5-027 existing shop subscription read' ||
     a.endpoint !== ENDPOINT ||
-    !/^gid:\/\/shopify\/Shop\/[0-9]+$/.test(a.expectedShopId) ||
-    !/^gid:\/\/shopify\/AppInstallation\/[0-9]+$/.test(a.expectedInstallationId) ||
+    !(
+      (a.schema.endsWith('-v2') && a.expectedShopId === null) ||
+      /^gid:\/\/shopify\/Shop\/[0-9]+$/.test(a.expectedShopId)
+    ) ||
+    !(
+      (a.schema.endsWith('-v2') && a.expectedInstallationId === null) ||
+      /^gid:\/\/shopify\/AppInstallation\/[0-9]+$/.test(a.expectedInstallationId)
+    ) ||
     !sameSet(a.requiredScopes, []) ||
     !sameSet(a.optionalScopes, OPTIONAL) ||
     !sameSet(a.allowedOperations, ['M5027WebhookInventory', 'M5027InstallationBoundary']) ||
@@ -81,7 +87,10 @@ function validInput(a, token, directory, testEndpoint) {
     !Array.isArray(a.expectedGrants) ||
     !sameSet(a.expectedGrants, [...new Set(a.expectedGrants)]) ||
     !a.expectedGrants.every((grant) => OPTIONAL.includes(grant)) ||
-    a.privateCredentialChannel !== 'inherited-file-descriptor' ||
+    a.privateCredentialChannel !==
+      (a.schema === 'insignia-native-inventory-allocation-v2'
+        ? 'private-process-pipe-and-memory'
+        : 'inherited-file-descriptor') ||
     a.credentialCapability !== 'EXISTING_SUPPORTED_EXACT_APP_ADMIN_TOKEN' ||
     !nonempty(a.retentionOwner) ||
     !nonempty(directory) ||
@@ -312,10 +321,15 @@ async function send(endpoint, token, body, byteLimit, timeoutMs) {
     req.end(JSON.stringify(body));
   });
 }
-export async function collectInventory({ allocation, token, privateDirectory, testEndpoint }) {
+export async function collectInventory({ allocation, token, privateDirectory, testEndpoint, transport }) {
   const started = performance.now();
   try {
     allocation = structuredClone(allocation);
+    if (
+      allocation?.schema === 'insignia-native-inventory-allocation-v2' &&
+      (typeof transport !== 'function' || testEndpoint !== undefined)
+    )
+      return stopped('STOP_MISSING_PRIVATE_TRANSPORT');
     if (!validInput(allocation, token, privateDirectory, testEndpoint)) return stopped('STOP_INPUT_NOT_ALLOCATED');
   } catch {
     return stopped('STOP_INPUT_NOT_ALLOCATED');
@@ -369,7 +383,7 @@ export async function collectInventory({ allocation, token, privateDirectory, te
       state.attempts.push(attempt);
       await saveJournal(privateDirectory, state);
       if (remainingMs() <= 0) halt('STOP_RUN_DEADLINE');
-      const response = await send(
+      const response = await (allocation.schema === 'insignia-native-inventory-allocation-v2' ? transport : send)(
         testEndpoint ?? allocation.endpoint,
         token,
         { operationName, query, variables },
@@ -405,6 +419,19 @@ export async function collectInventory({ allocation, token, privateDirectory, te
       if (document.errors !== undefined && (!Array.isArray(document.errors) || document.errors.length > 0))
         halt('STOP_PROVIDER_ERROR');
       validateShape(document, operationName);
+      if (
+        allocation.schema === 'insignia-native-inventory-allocation-v2' &&
+        allocation.expectedShopId === null &&
+        allocation.expectedInstallationId === null
+      ) {
+        if (
+          !/^gid:\/\/shopify\/Shop\/[0-9]+$/.test(document?.data?.shop?.id) ||
+          !/^gid:\/\/shopify\/AppInstallation\/[0-9]+$/.test(document?.data?.currentAppInstallation?.id)
+        )
+          halt('STOP_IDENTITY_OR_GRANT_DRIFT');
+        allocation.expectedShopId = document.data.shop.id;
+        allocation.expectedInstallationId = document.data.currentAppInstallation.id;
+      }
       validateIdentity(document?.data, allocation);
       return document.data;
     };

@@ -1,0 +1,31 @@
+{
+  "schema": "insignia-normal-merge-receipt-v1",
+  "classification": "VERIFIED_NORMAL_MERGE_LOCAL_SLICE_NOT_MILESTONE_APPROVAL",
+  "repository": "Optidigi/insignia",
+  "pr": 64,
+  "url": "https://github.com/Optidigi/insignia/pull/64",
+  "base": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "head": "80ae79de375f87616cab81d89705c41d0e26d023",
+  "effectiveMergeBase": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+  "tree": "7bfed2f87950a206873fd6336c6105bbbebb4e38",
+  "merge": "d9de0932d1bd41cf0fab1368f88d3a434b17d105",
+  "orderedParents": [
+    "5ce5911d124bf2727e8e5d390f53086d6e578d78",
+    "80ae79de375f87616cab81d89705c41d0e26d023"
+  ],
+  "actualMergeTree": "7bfed2f87950a206873fd6336c6105bbbebb4e38",
+  "remoteMain": "d9de0932d1bd41cf0fab1368f88d3a434b17d105",
+  "mergedAt": "2026-10-09T23:22:31Z",
+  "verifiedAt": "2026-10-09T23:22:51.887271+00:00",
+  "acceptanceSha256": "4b9e9e7f21e983dcd248ea84ce53862325ac8fd27f0cef3965ce2f197c3682fa",
+  "freshReviews": "CLEAR_CLEAR",
+  "naturalExactHeadCi": {
+    "count": 11,
+    "attempt": 1,
+    "allSuccess": true,
+    "receiptSha256": "fe0c5d411cf160c758aaa9c4516d0c5983526d5069c53f4dd3249e40f5f85ff4"
+  },
+  "method": "normal merge; no squash/rebase/admin/protection bypass",
+  "M5_G7": "NOT_PASSED",
+  "productionDeployment": false
+}

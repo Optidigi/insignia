@@ -1,0 +1,31 @@
+# Exact-app token acquisition premises — 10 October 2026
+
+Public-primary research plus public repository source only. No Shopify authenticated access, SSH, secret/register reading, provider requests, tests or build. Read live AGENTS, autonomy authority, operating model and M5 completion charter; this memo allocates no permission and does not alter the frozen prototype.
+
+## Supported grant and native prerequisites
+
+Shopify documents client credentials for a Dev Dashboard app acting on stores in its own organization, installed on the target store, with scopes selected on the app version. Both app and store must appear under the same organization in Dev Dashboard; owning a store or installing the app does not itself establish this. Public distribution is not listed as a disqualifier for the app's own organization's store. That is documentary interpretation, not observed eligibility. Form-encoded POST goes to the exact shop's `/admin/oauth/access_token`, with `grant_type=client_credentials`, client ID and secret. No scope parameter is requested; returned scope is a grant readback. Missing scope does not authorize changing a version or installation. [Grant tutorial](https://shopify.dev/docs/apps/build/authentication-authorization/client-credentials-grant?lang=node)
+
+Smallest current owner-native facts: the exact Insignia app/client under organization `200969036`; `insignia-rewrite-dev.myshopify.com` listed as a Dev store under that same organization; the exact installed app, current Active version/config and grants on that store. Reuse the three bounded app/store/installed-app surfaces. Do not launch Search, bootstrap or acquire a token merely to discover whether the store belongs to the organization.
+
+## Issuance impact: qualified facts versus UNKNOWN
+
+Client-credentials tokens last approximately 24 hours; consume returned `expires_in`, do not refresh/reacquire in this operation. Online tokens are staff/session-bound; expiring offline tokens have a distinct refresh lifecycle. Shopify explicitly says token exchange and authorization-code acquisition retire other refresh tokens for the app/store. It does not explicitly apply that rule to client credentials. Therefore neither cross-grant invalidation nor guaranteed preservation can be asserted from this reference. [Access-token lifecycle](https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens)
+
+A useful first-party statement exists: Donal-Shopify, 23 December 2025, describes multiple client-credentials tokens and mixed session OAuth tokens sharing the same app/store rate bucket. This supports concurrent-use plausibility and rules out treating the new token as an isolated rate bucket. It is not an explicit issuance/retirement or selective-revocation guarantee. [Shopify employee response](https://community.shopify.dev/t/are-the-rate-limits-for-client-credentials-separate-for-each-token/27682)
+
+**UNKNOWN:** whether this issuance returns an existing token, replaces another client-credentials token, or invalidates existing online/offline credentials. No reviewed primary source resolves all three. The current SDK sends the ordinary token request and constructs a session; its source cannot prove Shopify's server-side retirement behavior. [Official client-credentials implementation](https://github.com/Shopify/shopify-app-js/blob/main/packages/apps/shopify-api/lib/auth/oauth/client-credentials.ts)
+
+Secret rotation is a separately documented operation; tokens remain pinned to their minting secret, and revoking it stops dependent tokens and changes webhook validation. No selective early-revocation operation for just this client-credentials token was established. Expiry and closing local streams are not revocation or cryptographic erasure. No rotation/uninstall cleanup is authorized. [Credential management](https://shopify.dev/docs/apps/build/authentication-authorization/manage-credentials)
+
+## Identity discovery and exact local evidence
+
+`currentAppInstallation` returns the currently authenticated app's installation and granted scopes. The existing first fixed inventory query already reads shop ID/domain, installation ID, app ID/apiKey and scopes; its final boundary query repeats them. [API 2026-07](https://shopify.dev/docs/api/admin-graphql/2026-07/queries/currentAppInstallation)
+
+If native management pages omit the AppInstallation GID, do not invent it or require an extra provider call. A locally reviewed read-only discovery mode could accept the first authenticated exact app/domain observation as the run's installation anchor, then require exact equality at every subsequent observation. That is inventory consistency, not production generation authority or tenant bootstrap. Current collector requires pre-known IDs; this mode is **NOT_IMPLEMENTED**, and silently filling its allocation from historical IDs would be incorrect.
+
+Historical public records: M5-019R `owner-origin-candidate-app-info.json` binds organization `200969036`, client `1443cf6d03d39edae7c101a943c5c684`; M5-019 distribution observation shows App Store draft; owner-native attestation identifies the designated installation. None establishes current same-organization store membership or credential usability. Source TOML is configuration, not current provider readback. Pinned official SDK15.0.0 `AuthScopes.SCOPE_DELIMITER` is comma; current official source agrees. [Scope source](https://github.com/Shopify/shopify-app-js/blob/main/packages/apps/shopify-api/lib/auth/scopes/index.ts)
+
+## Decision needed
+
+The named impact caveat remains unresolved by documentation: possible disruption of existing exact-store credentials/privacy consumers. The new resource approval must not silently waive it. Prefer a genuinely existing supported token supplied through the qualified private FD. Otherwise obtain current same-org premises and either explicit owner acceptance of this named uncertainty with existing-consumer/privacy impact bounds, or provider-backed clarification. A disposable store without the required existing consumers reduces disruption risk but is outside the currently approved exact-store acquisition and does not inventory the protected installation. Do not manufacture another token request, install mutation or broad resource phase to answer this narrow gap.

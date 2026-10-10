@@ -1,0 +1,15 @@
+{
+  "historicalPrototypes": {
+    "private-consumer-prototype-freeze.json": {
+      "sha256": "f6b727917f5f4d25bb78734268a0643079306abb0c46cfb71ca2eeca9e666a88",
+      "files": 41,
+      "unchanged": true
+    },
+    "private-consumer-prototype-r2-freeze.json": {
+      "sha256": "a334d28490a39ca0d12bd0952731a597e71f4f82f6f602816173c8e030e5d383",
+      "files": 31,
+      "unchanged": true
+    }
+  },
+  "qualification": "UNCHANGED_LOCAL_ONLY_NOT_INTEGRATED_NATIVE_QUALIFICATION"
+}

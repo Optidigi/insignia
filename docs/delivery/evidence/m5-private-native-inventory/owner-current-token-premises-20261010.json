@@ -1,0 +1,24 @@
+{
+  "classification": "OWNER_NATIVE_ATTESTATION_PARTIAL_CURRENT_PREMISES",
+  "ownerRawResponse": "same organisation, and insnignia installed to isignia-rewrite-dev",
+  "questionContext": {
+    "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+    "shopDomain": "insignia-rewrite-dev.myshopify.com",
+    "requestedActiveVersion": "1158986629121"
+  },
+  "confirmedByOwner": [
+    "same organization for question-specified exactapp/store",
+    "Insignia currently installed in question-specified designated development store"
+  ],
+  "notConfirmed": [
+    "current Active version1158986629121",
+    "no-token-invalidation/coexistence behavior",
+    "canonical version config/scopes/Function artifact equality",
+    "provider Shop/AppInstallation IDs"
+  ],
+  "provenance": "current native async user answer; no screenshot/PDF/API/body supplied",
+  "providerMachineEvidence": false,
+  "nativeActiveVersionFollowupPending": true,
+  "newScopeOrTestPermission": false,
+  "recordedAt": "2026-10-10T08:53:52.877482+00:00"
+}
