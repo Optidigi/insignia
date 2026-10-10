@@ -1,0 +1,103 @@
+{
+  "base": "659f118ddc9bdc8b5d33141f6395182ba6ba9bcb",
+  "checks": [
+    {
+      "command": "corepack pnpm install --offline --frozen-lockfile --ignore-scripts",
+      "exitCode": 0,
+      "downloaded": 0
+    },
+    {
+      "command": "corepack pnpm build",
+      "exitCode": 0
+    },
+    {
+      "command": "corepack pnpm check:style && corepack pnpm check:boundaries && corepack pnpm check:secrets && git diff --check",
+      "exitCode": 0,
+      "styleWarnings": 91,
+      "styleInfos": 132,
+      "existingWarningsNotCorrected": true,
+      "boundaryTests": 18
+    },
+    {
+      "command": "node --test scripts/m5-024/image-observations.test.mjs",
+      "exitCode": 0,
+      "tests": 3,
+      "pass": 3,
+      "skipped": 0
+    },
+    {
+      "command": "corepack pnpm --filter @insignia/worker test",
+      "exitCode": 0,
+      "tests": 31,
+      "pass": 13,
+      "skipped": 18,
+      "postgresControls": "NOT_RUN_WITHOUT_DATABASE_URL"
+    },
+    {
+      "command": "node --test scripts/m5-024/worker-guards.test.mjs",
+      "exitCode": 0,
+      "pass": 0,
+      "skipped": 1,
+      "guardControl": "NOT_RUN_WITHOUT_PORTABLE_PACKAGE"
+    }
+  ],
+  "imageNativeLocal": "NOT_RUN_DOCKER_ENOENT",
+  "naturalCIRequired": true,
+  "providerOperations": 0,
+  "productionOperations": 0,
+  "freshPG18": [
+    {
+      "name": "05-database",
+      "command": [
+        "corepack",
+        "pnpm",
+        "check:database"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 18.82,
+      "logSha256": "fe13279db543a367606afced94e24f5e7d2f12a4de82cda7aadbba3eadd06064"
+    },
+    {
+      "name": "06-worker",
+      "command": [
+        "corepack",
+        "pnpm",
+        "--filter",
+        "@insignia/worker",
+        "test"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 15.999,
+      "logSha256": "c8b8530a403d3f974a56e83a0f54d498409c6f724f2db62b41aefe261d919463"
+    },
+    {
+      "name": "07-queue-crash",
+      "command": [
+        "node",
+        "--test",
+        "--test-concurrency=1",
+        "scripts/m5-024/queue-privileges.test.mjs",
+        "scripts/m5-024/crash-recovery.test.mjs"
+      ],
+      "exitCode": 0,
+      "elapsedSeconds": 21.464,
+      "logSha256": "ebaa85e228637c3d854a7c9397aebee4a8d192130135a4b4f1f8807061c25a60"
+    }
+  ],
+  "freshPG18Counts": {
+    "database": 222,
+    "worker": 31,
+    "queueCrash": 2,
+    "skipped": 0
+  },
+  "freshPG18Cleanup": {
+    "serverStopExitCode": 0,
+    "ownedClusterOnly": true,
+    "privateLogsRetained": true
+  },
+  "retainedLocalHarnessFailure": {
+    "startAttempt": 1,
+    "reason": "Unix socket path exceeded107bytes; ownedserverconfirmedshutdown; TCP-onlyfixturecorrection succeeded",
+    "productionEffect": false
+  }
+}

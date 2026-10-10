@@ -94,6 +94,19 @@ jobs:
           corepack pnpm install --offline --frozen-lockfile --ignore-scripts --prod=false
           bash scripts/m5-024/build-worker.sh /tmp/insignia-m5-024-worker
           M5_WORKER_PACKAGE_ENTRY=/tmp/insignia-m5-024-worker/dist/main.js node --test scripts/m5-024/worker-guards.test.mjs scripts/m5-024/portable-process.test.mjs
+      - name: M5-024 actual disposable worker image and OS controls
+        env:
+          M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
+          M5_IMAGE_EVIDENCE_DIR: ${{ runner.temp }}/m5-024-image-evidence
+        run: node --test scripts/m5-024/image-observations.test.mjs scripts/m5-024/image-runtime.test.mjs
+      - name: Preserve M5-024 image qualification receipts and raw logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m5-024-image-controls-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m5-024-image-evidence
+          if-no-files-found: ignore
+          retention-days: 30
       - name: Generic webhook quarantine through real HTTP and worker
         env:
           M5_025_REQUIRE_SAFE_UNINSTALL: '1'

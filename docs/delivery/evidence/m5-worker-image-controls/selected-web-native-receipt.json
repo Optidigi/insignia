@@ -1,0 +1,21 @@
+{
+  "status": "SELECTED_WEB_MODULE_OBSERVATIONS_COMPLETE_OTHER_CONFIG_AND_LEGACY_UNQUALIFIED",
+  "at": "2026-10-10T13:59:14.568453+00:00",
+  "commandAttempts": 1,
+  "observation": {
+    "status": "SELECTED_WEB_MODULE_OBSERVATIONS_COMPLETE_OTHER_CONFIG_AND_LEGACY_UNQUALIFIED",
+    "queryCalls": 4,
+    "appIdentityMatches": true,
+    "exactVersionMatches": true,
+    "activeVersionBindingMatches": true,
+    "bracketObservationsEqual": true,
+    "rollbackInactive": true,
+    "supersededInactive": true,
+    "regularSubscriptions": [],
+    "complianceSubscriptions": [],
+    "continuousActiveStatusProven": false,
+    "source": "CUSTOM_PINNED_UNCHANGED_CLI_QUERY_DOCUMENTS",
+    "httpAttempts": "NOT_ASSERTED"
+  },
+  "closedAt": "2026-10-10T13:59:17.055997+00:00"
+}

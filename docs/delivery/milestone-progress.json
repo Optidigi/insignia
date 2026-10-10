@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "4edc399c3e483a882ad6d9aa03a9a07ac8ce2cdd",
-  "currentTree": "438703315f58af10f61b6807647e6c4bc203d569",
+  "currentIntegratedCommit": "659f118ddc9bdc8b5d33141f6395182ba6ba9bcb",
+  "currentTree": "291d19490ff7eeaf18b343971831f236163f6639",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -104,6 +104,10 @@
     {
       "pr": 67,
       "receipt": "evidence/m5-management-reads/pr67-merge-receipt.json"
+    },
+    {
+      "pr": 68,
+      "receipt": "evidence/m5-worker-image-controls/pr68-merge-receipt.json"
     }
   ],
   "openFindings": [
@@ -157,9 +161,9 @@
     "Other processor/queue/privacy ownership artifact locations still unidentified",
     "Any later provisioning/deployment/mutation requires exact separate owner resource envelope",
     "Known canonical-web policy/features absent; current provider subscription is active existing zero-dollar development contract. Owner feature/policy configuration or separately approved bounded development eligibility still required; provider prices do not supply policy",
-    "Two disposable admin handles identified; canonical domains and dependencies unverified, no mutation/test allocation."
+    "Owner selected stitchs-vat-verification-20261004 Admin handle; provider canonical domain/identity/suitability not verified. No installation-mutation allocation."
   ],
-  "nextSafeAction": "Locally qualify pending enrollment without native authority; resolve bounded native callback effects/resource and owner-controlled feature eligibility",
+  "nextSafeAction": "Qualify actual worker image/OS in natural CI; verify selected candidate provider identity; qualify genuine-uninstall/privacy effects and legitimate owner feature policy",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
@@ -170,10 +174,11 @@
     "nativeAuthority": "Standing equivalent scoped owner read grant; prior collections sealed"
   },
   "activeCandidate": {
-    "scope": "Standing read permission and fresh exact-app management evidence; no production source changes",
-    "base": "4edc399c3e483a882ad6d9aa03a9a07ac8ce2cdd",
-    "nativeResult": "SUPPORTED_VERSION_READS_CURRENT_SUBSCRIPTION_AND_MODULE_SCHEMA_DIAGNOSTIC_COMPLETE; DESTINATION_SAFETY_UNQUALIFIED",
-    "next": "Locally qualify pending enrollment without native authority; resolve bounded native callback effects/resource and owner-controlled feature eligibility"
+    "scope": "Actual worker image/OS qualification and selected native web evidence",
+    "base": "659f118ddc9bdc8b5d33141f6395182ba6ba9bcb",
+    "imageNative": "LOCAL_NOT_RUN_CI_PENDING",
+    "selectedWebNative": "COMPLETE_RETURNED_WEB_OBSERVATIONS_OTHER_CONFIG_LEGACY_UNQUALIFIED",
+    "milestonePass": false
   },
   "boundedInventoryTooling": {
     "pr": 60,
@@ -252,5 +257,14 @@
     "sealed": true,
     "inventoryQualified": false,
     "receipt": "evidence/m5-management-reads/module-schema-diagnostic-sealed-receipt.json"
+  },
+  "nativeSelectedWebObservation": {
+    "sdkReservations": 4,
+    "regularRows": 0,
+    "complianceRows": 0,
+    "closingBracket": "RETURNED_BINDINGS_EQUAL_NOT_CONTINUOUS_ACTIVE",
+    "otherConfigLegacyEffects": "UNQUALIFIED",
+    "sealed": true,
+    "receipt": "evidence/m5-worker-image-controls/selected-web-native-receipt.json"
   }
 }

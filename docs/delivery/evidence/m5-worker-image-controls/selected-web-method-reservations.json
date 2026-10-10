@@ -1,0 +1,26 @@
+[
+  {
+    "queryIndex": 1,
+    "operation": "ActiveAppReleaseFromApiKey",
+    "event": "RESERVED",
+    "at": "2026-10-10T13:59:15.126Z"
+  },
+  {
+    "queryIndex": 2,
+    "operation": "AppVersions",
+    "event": "RESERVED",
+    "at": "2026-10-10T13:59:15.805Z"
+  },
+  {
+    "queryIndex": 3,
+    "operation": "AppVersionById",
+    "event": "RESERVED",
+    "at": "2026-10-10T13:59:16.229Z"
+  },
+  {
+    "queryIndex": 4,
+    "operation": "AppVersions",
+    "event": "RESERVED",
+    "at": "2026-10-10T13:59:16.603Z"
+  }
+]
