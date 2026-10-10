@@ -1,0 +1,15 @@
+# Operational qualification addendum — 10 October 2026
+
+Advisory based only on the earlier memo and newly reported owner confirmations; no new network, SSH, provider, secret or repository access. Original memo remains unchanged.
+
+The owner has explicitly authorized one exact-store client-credentials acquisition plus at most three read-only Admin calls, and has now confirmed same-organization membership, the designated installed app and Active version1158986629121. Those confirmations resolve the identified eligibility premises as owner-native evidence, not an independent agent readback.
+
+**Recommendation:** ordinary supported issuance can proceed after integrated technical qualification and independent review. No examined evidence demonstrates that this specific issuance rotates the app secret, revokes another grant, deactivates an installation or changes privacy obligations. The official grant is designed for this same-organization use, while the first-party response explicitly contemplates multiple client-credentials tokens mixed with session OAuth. This supports ordinary operation; it does not prove universal token preservation.
+
+Retain **UNKNOWN** for exact token reuse/replacement and cross-grant lifecycle interactions. Do not write “existing tokens cannot be invalidated,” “zero disruption,” “selectively revoked,” or “owner waived privacy risk.” The owner approved the named operation; no additional blanket risk acceptance was supplied or is needed merely because documentation lacks a universal guarantee.
+
+The prototype's self-authored UNKNOWN→STOP predicate is an overly broad local gate when applied solely to missing documentary guarantees. Under milestone autonomy it can be explicitly revised and independently reviewed as an ordinary operational qualification decision, preserving its original text and explaining the new evidence and distinction. Do not silently claim that the old gate passed or reinterpret a locked accepted risk boundary. If the orchestrator identifies a separate owner/principal-imposed prohibition or demonstrated disruptive effect, that substantive condition still controls.
+
+Keep the exact operation unchanged: one reserved POST, no retry after ambiguity, fixed app/shop/credentials, no secret rotation/revocation, no token exchange/refresh, no installation/scopes/version change, no staff-auth substitution, no new token store, and bounded private handling. The shared app/store rate bucket is a known incidental resource effect; do not claim isolation. Stop on actual identity drift, rejected grant, ambiguous settlement, unauthorized credential exposure or independently observed credential disruption. Report those facts without automatically launching remediation.
+
+Existing unresolved uninstall/privacy qualification remains unresolved; successful token acquisition neither fulfills nor weakens it. This advisory removes a hypothetical-risk permission loop, not a real safety condition or the required source/transport/FD/accounting review.

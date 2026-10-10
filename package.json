@@ -24,7 +24,7 @@
     "check:rust": "bash scripts/m1-functions/check.sh",
     "check": "corepack pnpm check:style && corepack pnpm build && corepack pnpm test:unit && corepack pnpm test:m5-operator && corepack pnpm test:m5-inventory && corepack pnpm test:vectors && corepack pnpm check:boundaries && corepack pnpm check:secrets && python3 -B scripts/boundaries/check-cargo-workspace.py && corepack pnpm check:rust && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 python3 -B scripts/m4-002/replay-production-vectors.py && M1_FUNCTION_RUNNER=.m1-artifacts/tools/function-runner-9.2.2 node scripts/m4-003/replay-public-config.mjs && corepack pnpm test:browser && python3 -B spikes/m0-007/scripts/check-history.py && python3 -B spikes/m0-014/scripts/check-live-setup.py && python3 -B scripts/m1-functions/artifact-manifest.py",
     "test:m5-renderer-control": "node scripts/m5-002/missing-renderer-control.mjs",
-    "test:m5-inventory": "node --test scripts/m5-native-inventory/collector.test.mjs && python3 -B scripts/m5-host-inventory/operator_test.py && python3 -B scripts/m5-inventory-phase/phase_test.py"
+    "test:m5-inventory": "node --test scripts/m5-native-inventory/*.test.mjs && python3 -B scripts/m5-host-inventory/operator_test.py && python3 -B scripts/m5-inventory-phase/phase_test.py"
   },
   "devDependencies": {
     "@types/node": "24.10.0",

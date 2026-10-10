@@ -1,0 +1,37 @@
+{
+  "schema": "insignia-resource-allocation-v1",
+  "status": "OWNER_GRANTED_CONDITIONAL_ONE_TOKEN_PLUS_THREE_READS",
+  "ownerResponse": "sure, permission granted",
+  "source": "Current native user reply to immediately preceding request for one private token acquisition and up to3 read-only Shopify calls",
+  "resource": {
+    "appId": "429028933633",
+    "clientId": "1443cf6d03d39edae7c101a943c5c684",
+    "shopDomain": "insignia-rewrite-dev.myshopify.com",
+    "privateInput": "Existing canonical VPS container exact SHOPIFY_CLIENT_SECRET, transient pinned SSH private FD/memory only"
+  },
+  "ceilings": {
+    "tokenAcquisitionAttempts": 1,
+    "adminRequests": 3,
+    "retries": 0
+  },
+  "technicalPrerequisites": [
+    "frozen native private producer/transport/accounting implementation",
+    "actual independent CLEAR/CLEAR reviews and applicable exact-head CI",
+    "current exact app/store applicability and scope/identity checks",
+    "token coexistence/impact qualification; no implicit acceptance of unqualified revocation effects"
+  ],
+  "noSecretCapture": "No credential in chat/env/argv/disk; no raw OAuth body or new token store; bounded ephemeral FD/memory handling only",
+  "excluded": [
+    "app install/uninstall/reinstall",
+    "subscription changes",
+    "app version/release/rollback/scope changes",
+    "Search/bootstrap",
+    "merchant fixture",
+    "production SQL/provision/deploy",
+    "M6/M7/rollout"
+  ],
+  "historicalRuns": "sealed unchanged; new phase only",
+  "privateMetadataRetentionDays": 7,
+  "permanentVpsReads": "already granted; no renewal window",
+  "recordedAt": "2026-10-10T08:43:37.259429+00:00"
+}

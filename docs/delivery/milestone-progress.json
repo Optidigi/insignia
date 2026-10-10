@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
-  "currentTree": "a781aed9ee9379207ab2bb822b1b0287a57bfa9e",
+  "currentIntegratedCommit": "d9de0932d1bd41cf0fab1368f88d3a434b17d105",
+  "currentTree": "7bfed2f87950a206873fd6336c6105bbbebb4e38",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -88,6 +88,10 @@
     {
       "pr": 63,
       "receipt": "evidence/m5-uninstall-authority-quarantine/pr63-merge-receipt.json"
+    },
+    {
+      "pr": 64,
+      "receipt": "evidence/m5-private-native-inventory/pr64-merge-receipt.json"
     }
   ],
   "openFindings": [
@@ -116,57 +120,35 @@
       "evidence": "evidence/m5-uninstall-authority-quarantine/owner-permanent-vps-readonly.json",
       "ownerReply": "okay, you are permanently permitted to check, read, access vps",
       "interpretation": "Supersedes prior owner VPS read/time caps only; source-qualified bounded operations, immutable closed history and <=7day private retention continue. No production changes or independent Shopify access."
+    },
+    {
+      "scope": "ONE_EXACT_APP_TOKEN_THREE_READS",
+      "evidence": "evidence/m5-private-native-inventory/owner-token-inventory-allocation-20261010.json",
+      "ownerReply": "sure, permission granted",
+      "interpretation": "One transient acquisition plus three fixed Admin reads after source/review/CI and operational qualification; zero retries or unrelated mutations."
     }
   ],
   "ownerInputs": [
-    "Working private access route for existing exact-app Admin credential",
     "Other processor/queue/privacy ownership artifact locations still unidentified",
-    "Separate disposable development installation not identified or allocated",
     "Any later provisioning/deployment/mutation requires exact separate owner resource envelope",
-    "Canonical web policy/features absent; legitimate owner-backed configuration or separately approved bounded development eligibility required; no commercial terms invented"
+    "Canonical web policy/features absent; legitimate owner-backed configuration or separately approved bounded development eligibility required; no commercial terms invented",
+    "Two disposable admin handles identified; canonical domains and dependencies unverified, no mutation/test allocation."
   ],
-  "nextSafeAction": "Complete real fair-recovery and migration/role controls, full regressions, two fresh full-source CLEAR reviews and natural exact-head attempt1CI before normal integration; no VPS read-window renewal.",
+  "nextSafeAction": "Finish private native operator qualification, fresh independent reviews and natural exact-head CI; execute exactly one new allocated inventory phase, continue M5.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
-    "slice": "Generic uninstall authority quarantine",
-    "status": "R2_SOURCE_BUILD_QUALIFIED_FROZEN_NEW_REVIEWS_CI_PENDING",
-    "purpose": "Pending generic HMAC-body receipts cannot deactivate any installation from unsigned header chronology or historical derived binding",
-    "nativeAuthority": "NONE; source-only; no production changes"
+    "slice": "Private exact-app inventory integration",
+    "status": "SOURCE_QUALIFICATION_PENDING_REVIEWS_CI",
+    "nativeAuthority": "Owner allocated one token acquisition/three readonly Admin calls; no production writes"
   },
   "activeCandidate": {
-    "scope": "Generic uninstall authority quarantine; no independently qualified generation authority or production rollout",
-    "base": "5ce5911d124bf2727e8e5d390f53086d6e578d78",
-    "nativeResult": "Reviewed artifacts matched; commercial policy/features absent; process supervision incomplete; no provider reads or production changes",
-    "next": "Two NEW full-source CLEAR reviews and natural exact-head attempt1CI before delegated normal merge; final acceptance/merge receipts in PR64 discussion. M5 native authority/privacy/commercial/G7 remain blocked.",
-    "rejectedRound1": {
-      "head": "72a83a716cadb3fc351528f0468b3b29c422d02b",
-      "tree": "91d2d544670fa7724abd38368a9db12bbeee8848",
-      "reviews": "SPEC_CLEAR_SECURITY_CHANGES_REQUIRED",
-      "naturalExactHeadAttempt1Successes": 11,
-      "finding": "100 completed pending quarantines starve later unqueued receipts",
-      "evidence": "evidence/m5-uninstall-authority-quarantine/reviews/r1/runtime.json"
-    },
-    "correctionScope": "One durable transport-selection timestamp/migration/type/least-privilege column grant; no generation authority or production application",
-    "pr": 64,
-    "url": "https://github.com/Optidigi/insignia/pull/64",
-    "refEvidence": "Precommit content hashes in candidate manifest; later exact-head reviews/CI/normal merge recorded in PR discussion and durable local receipt, avoiding a self-referential commit hash.",
-    "localQualification": {
-      "root": "PASS216.052s",
-      "postgres": "222/222",
-      "worker": "31/31",
-      "recovery": "12/12",
-      "queueSigkill": "2/2",
-      "publicationStress": "100/100",
-      "renderer": "EXPECTED_NEGATIVE",
-      "portable": "2/2",
-      "currentEntryHttp": "3/3",
-      "ownedPort55458": "CLOSED",
-      "evidence": "evidence/m5-uninstall-authority-quarantine/recovery-round2/PUBLIC-RECEIPT.json",
-      "evidenceClarification": "evidence/m5-uninstall-authority-quarantine/recovery-round2/PUBLIC-INTERPRETATION.md"
-    }
+    "scope": "Private producer/HTTPS/accounting and inventory-only v2 discovery",
+    "base": "d9de0932d1bd41cf0fab1368f88d3a434b17d105",
+    "nativeResult": "NOT_RUN",
+    "next": "Finish private native operator qualification, fresh independent reviews and natural exact-head CI; execute exactly one new allocated inventory phase, continue M5."
   },
   "boundedInventoryTooling": {
     "pr": 60,
@@ -175,7 +157,7 @@
     "naturalExactHeadAttempt1Ci": 10,
     "nativeAccess": "THIRD_PARTIAL_STOP_PLUS_FOCUSED_READS_SEALED",
     "hostKeySetup": "EXISTING_OWNER_IDENTITY_AUTHENTICATED; NO NEW KEY REQUIRED",
-    "existingSupportedAdminCredential": "UNAVAILABLE",
+    "existingSupportedAdminCredential": "OWNER_ALLOCATED_ONE_TRANSIENT_ACQUISITION_LOCAL_GATE_PENDING",
     "milestoneAcceptance": false,
     "ownerVpsPermission": "PERMANENT_READ_ONLY"
   },

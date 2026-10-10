@@ -1,0 +1,38 @@
+{
+  "classification": "REJECTED_NO_NATIVE_EXECUTION",
+  "head": "087660e2c77a3443dad5e36622e1ccd17c62951e",
+  "tree": "cc1f48a6fc87c1e4d86e21f2e9db1959809187b8",
+  "base": "d9de0932d1bd41cf0fab1368f88d3a434b17d105",
+  "reviews": {
+    "spec": {
+      "session": "01a12514-6bd1-7993-afa5-38877d52eb82",
+      "actualModel": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "processExit": 0,
+      "turnCompleted": true,
+      "verdict": "CHANGES_REQUIRED",
+      "reportSha256": "f4b7358163d97eb6f4420a07cb693e3c93594e0063d07557810d8aa90a886586",
+      "eventsSha256": "cd3a346d396a4a0abcf348626ece69a30f58a264fd68196834872786ae482ad1"
+    },
+    "security": {
+      "session": "01a12514-6bcb-7773-ba17-7fb343c0ac36",
+      "actualModel": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": "read-only",
+      "approval": "never",
+      "processExit": 0,
+      "turnCompleted": true,
+      "verdict": "CHANGES_REQUIRED",
+      "reportSha256": "1ce82c3e4c97ab6a690b6ebf8f3a60b88a7c7d56b3b3e0242aedebb37122b344",
+      "eventsSha256": "20117b4800d6b2450a9b6287018e9cf31e58a8197d7f2f38851be481c759514c"
+    }
+  },
+  "finding": "Remote Docker routing/context could escape allocated canonical host daemon; fixed socket/config/environment required.",
+  "rootCheck": "PASS",
+  "nativeSSH": 0,
+  "nativeOAuth": 0,
+  "nativeAdmin": 0,
+  "recordedAt": "2026-10-10T09:17:00.597131+00:00"
+}

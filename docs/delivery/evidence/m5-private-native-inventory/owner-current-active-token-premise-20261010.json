@@ -1,0 +1,15 @@
+{
+  "classification": "OWNER_NATIVE_ATTESTATION_CURRENT_ACTIVE",
+  "ownerRawResponse": "Yes, 1158986629121 is Active",
+  "question": "Does Insignia version1158986629121 still show Active in Dev Dashboard?",
+  "versionId": "1158986629121",
+  "scope": "Current Active version identity only; no screenshot/PDF/provider-native artifact supplied",
+  "source": "current native async user reply",
+  "earlierSameOrganizationInstallationAttestation": "owner-current-token-premises-20261010.json",
+  "noInference": [
+    "not native API version/config/Function readback",
+    "not new scope/version/release authority",
+    "not token lifecycle/coexistence guarantee"
+  ],
+  "recordedAt": "2026-10-10T08:54:51.808282+00:00"
+}
