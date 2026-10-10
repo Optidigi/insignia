@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "a4a561144d26b6de8307630021306829d5aca5ec",
-  "currentTree": "b59ef952b8a1dcb8ae2f6bff8e20c6883209236c",
+  "currentIntegratedCommit": "3864185da1d508475bb948a5aa7191cbd2be4e7c",
+  "currentTree": "7d412a50d5a878d2d94035aa9f43bab47cce7ea4",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -96,11 +96,15 @@
     {
       "pr": 65,
       "receipt": "evidence/m5-inventory-effective-scopes/pr65-merge-receipt.json"
+    },
+    {
+      "pr": 66,
+      "receipt": "evidence/m5-native-collection/pr66-merge-receipt.json"
     }
   ],
   "openFindings": [
     "Independent genuine-uninstall/registration-gap/privacy authority BLOCKED; historical M5-025 RED preserved and new strict local safety GREEN",
-    "Current native destinations/effects/privacy unqualified",
+    "Shop-specific native inventory complete/empty and final boundary PASS; app-specific/compliance destinations and all downstream effects/privacy unqualified",
     "Worker/image/queue/runtime native prerequisites not qualified",
     "28 native G7 criteria blocked",
     "Real merchant configure/preview/save/publication/activation NOT_RUN"
@@ -130,6 +134,13 @@
       "evidence": "evidence/m5-private-native-inventory/owner-token-inventory-allocation-20261010.json",
       "ownerReply": "sure, permission granted",
       "interpretation": "One transient acquisition plus three fixed Admin reads after source/review/CI and operational qualification; zero retries or unrelated mutations."
+    },
+    {
+      "scope": "FRESH_ONE_EXACT_APP_TOKEN_THREE_FIXED_READS",
+      "evidence": "evidence/m5-native-collection/owner-token-inventory-effective-scopes-allocation-20261010.json",
+      "ownerReply": "you have full permission",
+      "status": "CONSUMED_RUN_SEALED",
+      "interpretation": "One fresh token/up to three fixed inventory reads; actual SSH1/OAuth1/Admin2, no retry/resume or unrelated mutation"
     }
   ],
   "ownerInputs": [
@@ -138,21 +149,21 @@
     "Canonical web policy/features absent; legitimate owner-backed configuration or separately approved bounded development eligibility required; no commercial terms invented",
     "Two disposable admin handles identified; canonical domains and dependencies unverified, no mutation/test allocation."
   ],
-  "nextSafeAction": "Qualify implied product-read scope correction with fresh independent reviews/CI; normally integrate, request one necessary fresh token/read allocation, continue M5.",
+  "nextSafeAction": "Integrate completed native evidence; obtain pending exact Active app-specific/compliance destination observation and qualify downstream uninstall/privacy prerequisites.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
-    "slice": "Inventory-v2 effective product-read scope correction",
-    "status": "LOCAL_QUALIFICATION_PENDING_FRESH_REVIEWS_CI",
-    "nativeAuthority": "Old token budget consumed; fresh source gate-v2 resource phase NOT_OWNER_AUTHORIZED"
+    "slice": "Completed native inventory evidence",
+    "status": "DOCUMENTATION_CANDIDATE_PENDING_FRESH_REVIEWS_CI",
+    "nativeAuthority": "Fresh allocation consumed; sealed exact-app collection complete, app-specific effects unqualified"
   },
   "activeCandidate": {
-    "scope": "Inventory-v2 implied read_products only; separately fixed future resource phase",
-    "base": "a4a561144d26b6de8307630021306829d5aca5ec",
-    "nativeResult": "HISTORICAL_SEALED_STOP_LITERAL_SCOPE_COMPARISON_DEFECT",
-    "next": "Qualify implied product-read scope correction with fresh independent reviews/CI; normally integrate, request one necessary fresh token/read allocation, continue M5."
+    "scope": "Documentation/evidence only; sealed native results and current M5 state",
+    "base": "3864185da1d508475bb948a5aa7191cbd2be4e7c",
+    "nativeResult": "COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED",
+    "next": "Integrate completed native evidence; obtain pending exact Active app-specific/compliance destination observation and qualify downstream uninstall/privacy prerequisites."
   },
   "boundedInventoryTooling": {
     "pr": 60,
@@ -161,11 +172,11 @@
     "naturalExactHeadAttempt1Ci": 10,
     "nativeAccess": "THIRD_PARTIAL_STOP_PLUS_FOCUSED_READS_SEALED",
     "hostKeySetup": "EXISTING_OWNER_IDENTITY_AUTHENTICATED; NO NEW KEY REQUIRED",
-    "existingSupportedAdminCredential": "ORIGINAL_ACQUISITION_CONSUMED_TOKEN_NOT_STORED_FRESH_ALLOCATION_PENDING",
+    "existingSupportedAdminCredential": "FRESH_ACQUISITION_CONSUMED_TOKEN_NOT_STORED_RUN_CLOSED",
     "milestoneAcceptance": false,
     "ownerVpsPermission": "PERMANENT_READ_ONLY"
   },
-  "integratedRefsObservedBeforeCandidateAt": "2026-10-09T23:04:41.923551+00:00",
+  "integratedRefsObservedBeforeCandidateAt": "2026-10-10T10:12:10Z",
   "nativePrivateInventory": {
     "pr": 65,
     "result": "STOP_IDENTITY_OR_GRANT_DRIFT",
@@ -178,6 +189,24 @@
     "sealed": true,
     "finalBoundary": "NOT_RUN",
     "completeInventoryQualified": false,
-    "receipt": "evidence/m5-inventory-effective-scopes/native-token-inventory-sealed-receipt-20261010.json"
+    "receipt": "evidence/m5-inventory-effective-scopes/native-token-inventory-sealed-receipt-20261010.json",
+    "historicalRunUnchanged": true
+  },
+  "nativeShopSpecificInventory": {
+    "prSource": 66,
+    "result": "COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED",
+    "attempts": {
+      "SSH": 1,
+      "OAuth": 1,
+      "Admin": 2
+    },
+    "pages": 1,
+    "records": 0,
+    "sealed": true,
+    "finalBoundary": "PASS",
+    "shopScopedConnectionComplete": true,
+    "appSpecificDestinations": "UNQUALIFIED_EXCLUDED_BY_API",
+    "allDownstreamPrivacyEffects": "UNQUALIFIED",
+    "receipt": "evidence/m5-native-collection/native-token-inventory-effective-scopes-sealed-receipt-20261010.json"
   }
 }
