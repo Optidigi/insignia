@@ -1,0 +1,30 @@
+{
+  "base": "b2f42b1895af37a421f2a8fc49d845412b120792",
+  "sourceScope": "EXPERIMENTAL_RECEIVER_SCRIPTS_WORKFLOW_DOCS_ONLY_PRODUCTION_PROVIDER_BUILD_INPUTS_UNCHANGED",
+  "build": "PASS_FROZEN_OFFLINE_DEPENDENCIES",
+  "realControls": {
+    "tests": 15,
+    "pass": 15,
+    "fail": 0,
+    "skips": 0
+  },
+  "style": "PASS_EXISTING_WARNINGS_AND_INFORMATIONAL_HEURISTICS_RETAINED",
+  "boundaries": "PASS_18_CONTROLS",
+  "secret": "PASS_AFTER_BUILD_PREREQUISITE",
+  "initialSecretFailure": "ENOENT_MISSING_STOREFRONT_BUILD_NOT_PASS_RETAINED",
+  "manifestSourceInputsArchiveJson": "PASS",
+  "logs": {
+    "parent-portable-final-test.log": "4635c98bb7ffa86b65ba90b643a61cb11a88d5ac722acb665a9517916d0bcbe8",
+    "parent-secrets.log": "5d30b8b5212705b349e1ee889ccf8eca2ac0fde8d678693c49a7f9c8cbd6286b",
+    "parent-boundaries.log": "b2f168369c0b754697d0b0dcb3a4880b02ef45d6dd29057d188c8c8287bda188",
+    "parent-install.log": "347d21c3b7d39480c73d361d02ec065cd20990445f57e159f626be3c981035a5",
+    "parent-final-test.log": "85b30dd1dcf5f679232968f2b96baab2c3a3b09691d04c95c041fd0c462c0c61",
+    "parent-style.log": "1e9f8ccbb937f1db39578e9e20c7f7101e40d8622ed364ac4f1a90ddbd1144c4",
+    "parent-doc-format.log": "63b7bd5d08ab539d009230cc1a77c26dc7cb13ae1b97e61e552118e87c300423",
+    "parent-build.log": "fc9156dc273bac6e640fb06c5fba32b8a27abdafb162355e7e72b392e80f9b17"
+  },
+  "failureReceiptSha256": "49160d28581e9ea13ff98e31cd2e2ab42287b97bf6165dd5767c743a8ad3bf04",
+  "productionOrProviderOperations": 0,
+  "nativeReceiverOrHostQualification": "NOT_RUN_UNQUALIFIED",
+  "reviewsCi": "PENDING_NEW_FROZEN_CANDIDATE"
+}

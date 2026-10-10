@@ -1,0 +1,55 @@
+{
+  "status": "PROPOSAL_ONLY_DEPLOYMENT_NOT_RUN",
+  "artifact": [
+    "scripts/m5-callback-qualification/service.mjs",
+    "scripts/m5-callback-qualification/receiver.mjs",
+    "scripts/m5-callback-qualification/operator.mjs",
+    "scripts/m5-callback-qualification/store.mjs",
+    "scripts/m5-callback-qualification/network-guard.mjs",
+    "packages/shopify/src/webhook.ts"
+  ],
+  "runtime": "Node 24.21.0 exact reviewed executable required",
+  "listenAddress": "127.0.0.1",
+  "signingMaterial": "Trusted local inherited FD3 JSON secret ring; maximum4096 bytes with4097-byte bounded allocation; EOF required; no env, command-line secret or new credential store",
+  "stdout": "Fixed READY with loopback port or REFUSED only; callback paths/body/HMAC absent",
+  "requiredSystemdSettings": {
+    "UMask": "0077",
+    "NoNewPrivileges": true,
+    "ProtectSystem": "strict",
+    "ProtectHome": true,
+    "PrivateTmp": true,
+    "PrivateDevices": true,
+    "ProtectKernelTunables": true,
+    "ProtectKernelModules": true,
+    "ProtectControlGroups": true,
+    "RestrictSUIDSGID": true,
+    "LockPersonality": true,
+    "CapabilityBoundingSet": [],
+    "RestrictAddressFamilies": ["AF_INET", "AF_UNIX"],
+    "IPAddressDeny": "any",
+    "IPAddressAllow": "127.0.0.1/32",
+    "LimitCORE": 0,
+    "LimitNOFILE": 128,
+    "TasksMax": 16,
+    "MemoryMax": "256M",
+    "CPUQuota": "25%",
+    "Restart": "no"
+  },
+  "mustAllocateAndQualify": [
+    "Dedicated nonprivileged UID and sole writable private0700 experiment directory",
+    "Read-only immutable artifact root and exact executable/source pins",
+    "Exact private origin, loopback port and inherited FD3 signing handoff",
+    "HTTPS certificate/TLS/Traefik route without redirects",
+    "No capability-bearing request target, query, header, body or error logging at any layer",
+    "OS egress/core-dump isolation and actual resource bounds",
+    "Durable filesystem crash/restart and private export/erasure ownership",
+    "Pre-install all-destination/effects/automatic-authentication and delayed-privacy gates",
+    "Separate exact owner allocation plus frozen independent CLEAR/CLEAR reviews and CI"
+  ],
+  "startupSupervision": {
+    "requiredReadyDeadlineSeconds": 10,
+    "onTimeout": "External supervisor must terminate/kill unready process",
+    "status": "HOST_SUPERVISOR_NOT_IMPLEMENTED_NOT_RUN",
+    "limit": "Synchronous FD3 read can block indefinitely without trusted EOF/supervision"
+  }
+}
