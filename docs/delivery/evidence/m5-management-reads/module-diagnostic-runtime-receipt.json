@@ -1,0 +1,36 @@
+{
+  "at": "2026-10-10T13:18:07.801430+00:00",
+  "reviews": [
+    {
+      "axis": "Spec/correctness",
+      "verdict": "CLEAR",
+      "sessionId": "01a125f0-fdb3-7811-b763-ba6b99401bdf",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "sandbox": "read-only",
+      "approvalPolicy": "never",
+      "exitCode": 0,
+      "turnCompleted": true,
+      "reportSha256": "415e9295e62824698a72ecd149b3edf4e58419b0d2d75c19454ba9e61e3e8a52",
+      "reportPath": "/home/serveradmin/insignia-milestone-autonomy-handoff/module-schema-diagnostic-reviews-20261010/spec-review.md"
+    },
+    {
+      "axis": "Standards/security",
+      "verdict": "CLEAR",
+      "sessionId": "01a125f0-fd97-7b91-a660-02323d1ab0e9",
+      "model": "gpt-6.1-sol",
+      "reasoningEffort": "high",
+      "sandbox": "read-only",
+      "approvalPolicy": "never",
+      "exitCode": 0,
+      "turnCompleted": true,
+      "reportSha256": "c463cdf4b9e103c5d7b23c91e19d85b4418dd55c725aade96af88ab202d6e466",
+      "reportPath": "/home/serveradmin/insignia-milestone-autonomy-handoff/module-schema-diagnostic-reviews-20261010/security-review.md"
+    }
+  ],
+  "frozenInputCountParentVerified": 239,
+  "freezeSha256": "08d0e47762df5ca5820b7e5a10e9603ce37abe4a94260545a01f61d1d2978690",
+  "parentControls": "Pure7 PASS; process3 PASS including11modes andtimeout",
+  "nativeTechnicalAccepted": true,
+  "acceptance": "Diagnostic only; no inventory or generation/privacy authority"
+}

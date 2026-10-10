@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "3864185da1d508475bb948a5aa7191cbd2be4e7c",
-  "currentTree": "7d412a50d5a878d2d94035aa9f43bab47cce7ea4",
+  "currentIntegratedCommit": "4edc399c3e483a882ad6d9aa03a9a07ac8ce2cdd",
+  "currentTree": "438703315f58af10f61b6807647e6c4bc203d569",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -100,6 +100,10 @@
     {
       "pr": 66,
       "receipt": "evidence/m5-native-collection/pr66-merge-receipt.json"
+    },
+    {
+      "pr": 67,
+      "receipt": "evidence/m5-management-reads/pr67-merge-receipt.json"
     }
   ],
   "openFindings": [
@@ -141,29 +145,35 @@
       "ownerReply": "you have full permission",
       "status": "CONSUMED_RUN_SEALED",
       "interpretation": "One fresh token/up to three fixed inventory reads; actual SSH1/OAuth1/Admin2, no retry/resume or unrelated mutation"
+    },
+    {
+      "scope": "STANDING_SCOPED_MANAGEMENT_READONLY",
+      "evidence": "authority/standing-scoped-management-readonly-2026-10-10.md",
+      "ownerReply": "yes, and future read-only checks like this are always permitted, as long as within the scope",
+      "interpretation": "Equivalent scoped reads through existing official CLI session; technically qualify each new source/run. No recurring owner read window. No mutation/resource scope expansion."
     }
   ],
   "ownerInputs": [
     "Other processor/queue/privacy ownership artifact locations still unidentified",
     "Any later provisioning/deployment/mutation requires exact separate owner resource envelope",
-    "Canonical web policy/features absent; legitimate owner-backed configuration or separately approved bounded development eligibility required; no commercial terms invented",
+    "Known canonical-web policy/features absent; current provider subscription is active existing zero-dollar development contract. Owner feature/policy configuration or separately approved bounded development eligibility still required; provider prices do not supply policy",
     "Two disposable admin handles identified; canonical domains and dependencies unverified, no mutation/test allocation."
   ],
-  "nextSafeAction": "Integrate completed native evidence; obtain pending exact Active app-specific/compliance destination observation and qualify downstream uninstall/privacy prerequisites.",
+  "nextSafeAction": "Locally qualify pending enrollment without native authority; resolve bounded native callback effects/resource and owner-controlled feature eligibility",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
-    "slice": "Completed native inventory evidence",
-    "status": "DOCUMENTATION_CANDIDATE_PENDING_FRESH_REVIEWS_CI",
-    "nativeAuthority": "Fresh allocation consumed; sealed exact-app collection complete, app-specific effects unqualified"
+    "slice": "Exact app management destination observation",
+    "status": "CURRENT_PROVIDER_FACTS_COLLECTED_INTEGRATED_EVIDENCE_REVIEW",
+    "nativeAuthority": "Standing equivalent scoped owner read grant; prior collections sealed"
   },
   "activeCandidate": {
-    "scope": "Documentation/evidence only; sealed native results and current M5 state",
-    "base": "3864185da1d508475bb948a5aa7191cbd2be4e7c",
-    "nativeResult": "COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED",
-    "next": "Integrate completed native evidence; obtain pending exact Active app-specific/compliance destination observation and qualify downstream uninstall/privacy prerequisites."
+    "scope": "Standing read permission and fresh exact-app management evidence; no production source changes",
+    "base": "4edc399c3e483a882ad6d9aa03a9a07ac8ce2cdd",
+    "nativeResult": "SUPPORTED_VERSION_READS_CURRENT_SUBSCRIPTION_AND_MODULE_SCHEMA_DIAGNOSTIC_COMPLETE; DESTINATION_SAFETY_UNQUALIFIED",
+    "next": "Locally qualify pending enrollment without native authority; resolve bounded native callback effects/resource and owner-controlled feature eligibility"
   },
   "boundedInventoryTooling": {
     "pr": 60,
@@ -176,7 +186,7 @@
     "milestoneAcceptance": false,
     "ownerVpsPermission": "PERMANENT_READ_ONLY"
   },
-  "integratedRefsObservedBeforeCandidateAt": "2026-10-10T10:12:10Z",
+  "integratedRefsObservedBeforeCandidateAt": "2026-10-10T11:35:34.947346Z",
   "nativePrivateInventory": {
     "pr": 65,
     "result": "STOP_IDENTITY_OR_GRANT_DRIFT",
@@ -190,7 +200,8 @@
     "finalBoundary": "NOT_RUN",
     "completeInventoryQualified": false,
     "receipt": "evidence/m5-inventory-effective-scopes/native-token-inventory-sealed-receipt-20261010.json",
-    "historicalRunUnchanged": true
+    "historicalRunUnchanged": true,
+    "supersedingSuccessfulCollection": "evidence/m5-native-collection/native-token-inventory-effective-scopes-sealed-receipt-20261010.json"
   },
   "nativeShopSpecificInventory": {
     "prSource": 66,
@@ -208,5 +219,38 @@
     "appSpecificDestinations": "UNQUALIFIED_EXCLUDED_BY_API",
     "allDownstreamPrivacyEffects": "UNQUALIFIED",
     "receipt": "evidence/m5-native-collection/native-token-inventory-effective-scopes-sealed-receipt-20261010.json"
+  },
+  "nativeManagementCustom": {
+    "schemaR2": "STOP_CLI_OR_LOCAL_UNCLASSIFIED",
+    "versionR6": "STOP_NONWEB_FIELDS_UNQUALIFIED",
+    "methodReservations": [
+      1,
+      3
+    ],
+    "sealed": true,
+    "retries": 0,
+    "receipt": "evidence/m5-management-reads/custom-management-sealed-receipt.json",
+    "legacyCoverage": "UNKNOWN"
+  },
+  "nativePartnerObservation": {
+    "currentSubscription": "ACTIVE_EXISTING_ZERO_DEVELOPMENT_CONTRACT",
+    "observedAt": "2026-10-10T13:03:09.508Z",
+    "history": "STOP_MALFORMED_TIME_CONNECTION_INCOMPLETE",
+    "requests": 2,
+    "sealed": true,
+    "entitlementPolicy": "OWNER_CONFIGURATION_MISSING",
+    "receipt": "evidence/m5-management-reads/partner-current-subscription-sealed-receipt.json"
+  },
+  "nativeModuleDiagnostic": {
+    "status": "FIRST_SCHEMA_MISMATCH_IDENTIFIED",
+    "category": "FUNCTION",
+    "context": "CONFIG",
+    "extraField": "module_metadata",
+    "type": "OBJECT",
+    "identityBracket": "PASS_RETURNED_BINDINGS_ONLY",
+    "sdkReservations": 4,
+    "sealed": true,
+    "inventoryQualified": false,
+    "receipt": "evidence/m5-management-reads/module-schema-diagnostic-sealed-receipt.json"
   }
 }

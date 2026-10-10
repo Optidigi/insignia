@@ -1,0 +1,23 @@
+{
+  "schema": "owner-scoped-readonly-authority-v1",
+  "source": {
+    "position": 9589,
+    "visibility": "local",
+    "sourceThreadId": "81292d0a-995f-4c06-8ce7-7d7cd419bc4a",
+    "itemId": "turn-item:message:e77ca30e-42e1-49b6-9971-58f39d44f1aa",
+    "runId": "run:thread:81292d0a-995f-4c06-8ce7-7d7cd419bc4a:ordinal:46",
+    "messageId": "e77ca30e-42e1-49b6-9971-58f39d44f1aa",
+    "createdBy": "user",
+    "creationSource": "web",
+    "type": "user_message",
+    "status": "completed",
+    "title": null,
+    "text": "yes, and future read-only checks like this are always permitted, as long as within the scope",
+    "textTruncated": false,
+    "nextTextOffset": null,
+    "updatedAt": "2026-10-10T10:45:22.922Z"
+  },
+  "scope": "Existing Insignia supported app-management read-only checks including existing CLI login refresh/cache effects. Future equivalent in-scope read-only checks permitted without repeated owner permission. No mutation authority inferred.",
+  "initialOperation": "Prepared list/pull/list max3 command attempts, no reruns; historical proposal unchanged",
+  "recordedAt": "2026-10-10T10:51:51.011728+00:00"
+}

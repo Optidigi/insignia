@@ -1,0 +1,114 @@
+{
+  "schema": "insignia-module-schema-diagnostic-selected-v1",
+  "status": "MODULE_SCHEMA_DIAGNOSTIC_COMPLETE_LEGACY_COVERAGE_UNKNOWN",
+  "startedAt": "2026-10-10T13:18:08.605488+00:00",
+  "closedAt": "2026-10-10T13:18:12.209146+00:00",
+  "observation": {
+    "status": "MODULE_SCHEMA_DIAGNOSTIC_COMPLETE_LEGACY_COVERAGE_UNKNOWN",
+    "queryCalls": 4,
+    "identityBindingsValidated": true,
+    "bracketReturnedBindingsEqual": true,
+    "diagnostic": {
+      "outcome": "FIRST_NONWEB_FIELDS_DISAGREEMENT",
+      "moduleCategory": "FUNCTION",
+      "context": "CONFIG",
+      "keys": [
+        {
+          "key": "api_type",
+          "expected": true,
+          "present": true,
+          "jsonType": "STRING"
+        },
+        {
+          "key": "api_version",
+          "expected": true,
+          "present": true,
+          "jsonType": "STRING"
+        },
+        {
+          "key": "app_key",
+          "expected": true,
+          "present": true,
+          "jsonType": "STRING"
+        },
+        {
+          "key": "description",
+          "expected": true,
+          "present": true,
+          "jsonType": "STRING"
+        },
+        {
+          "key": "enable_creation_ui",
+          "expected": true,
+          "present": true,
+          "jsonType": "BOOLEAN"
+        },
+        {
+          "key": "input_query",
+          "expected": true,
+          "present": false,
+          "jsonType": "ABSENT"
+        },
+        {
+          "key": "input_query_variables",
+          "expected": true,
+          "present": false,
+          "jsonType": "ABSENT"
+        },
+        {
+          "key": "localization",
+          "expected": true,
+          "present": true,
+          "jsonType": "OBJECT"
+        },
+        {
+          "key": "module_id",
+          "expected": true,
+          "present": true,
+          "jsonType": "STRING"
+        },
+        {
+          "key": "module_metadata",
+          "expected": false,
+          "present": true,
+          "jsonType": "OBJECT"
+        },
+        {
+          "key": "targets",
+          "expected": true,
+          "present": true,
+          "jsonType": "ARRAY"
+        },
+        {
+          "key": "title",
+          "expected": true,
+          "present": true,
+          "jsonType": "STRING"
+        },
+        {
+          "key": "ui",
+          "expected": true,
+          "present": false,
+          "jsonType": "ABSENT"
+        }
+      ]
+    },
+    "source": "CUSTOM_DIAGNOSTIC_PINNED_UNCHANGED_CLI_QUERY_DOCUMENTS",
+    "legacyComplianceCoverage": "UNKNOWN",
+    "destinationCoverageQualified": false,
+    "httpAttempts": "NOT_ASSERTED"
+  },
+  "methodReservations": 4,
+  "retry": false,
+  "sealed": true,
+  "sourceFreezeSha256": "08d0e47762df5ca5820b7e5a10e9603ce37abe4a94260545a01f61d1d2978690",
+  "selectedReceiptSha256": "1619dbca5ead052f0c587900cf1b9f7321e09b452d3bcc406714de990b73052f",
+  "allocationSha256": "6e80cc3070a0320aca9bbdfe2ae54374b59df63d1982fdc6a21d2febae2c1c18",
+  "privateRetentionMaxDays": 7,
+  "retentionOperatorOwned": true,
+  "reviewRuntimeSha256": "e02ed878aab70600a92c7dd29b617ae6bbd13e859af17604baf1cfa26db95978",
+  "productionSourceBuildProviderDocumentsChanged": false,
+  "m5": "IN_PROGRESS",
+  "g7": "NOT_PASSED",
+  "privateDeleteNoLaterThan": "2026-10-17T13:18:08.605488+00:00"
+}
