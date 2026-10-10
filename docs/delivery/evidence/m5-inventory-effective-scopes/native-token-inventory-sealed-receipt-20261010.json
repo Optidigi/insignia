@@ -1,0 +1,77 @@
+{
+  "classification": "SEALED_NATIVE_STOP_LITERAL_SCOPE_COMPARISON_DEFECT",
+  "historicalExecutionResult": {
+    "outcome": "STOP_IDENTITY_OR_GRANT_DRIFT",
+    "requests": 1,
+    "pages": 0,
+    "records": 0,
+    "qualification": "STOP_PRE_INSTALL_DESTINATION_EFFECTS_UNQUALIFIED",
+    "oauthAttempts": 1,
+    "requestAccounting": "SHARED_DURABLE_RESERVED_ATTEMPTS"
+  },
+  "attempts": [
+    {
+      "number": 1,
+      "kind": "SSH",
+      "operation": "EXACT_CONTAINER_SECRET_PROJECTION",
+      "status": "RECEIVED_EPHEMERAL"
+    },
+    {
+      "number": 2,
+      "kind": "OAUTH",
+      "operation": "EXISTING_APP_CLIENT_CREDENTIALS",
+      "status": "RECEIVED_EPHEMERAL"
+    },
+    {
+      "number": 3,
+      "kind": "ADMIN",
+      "operation": "M5027WebhookInventory",
+      "status": "RECEIVED"
+    }
+  ],
+  "rawFilesSha256": {
+    "admin/allocation.json": "43c003b1c111b399b2af592629874b8ab6b80cc86b5581a7db25ae17dce5e20a",
+    "admin/journal.json": "96035d2dbb865a086fa55489460662199585d626b365d54c928e70309cdf7b22",
+    "admin/response-1.body": "2c0d63fd0957dd6213f04ad13238460ef558f716f55500d952fdf84e319a3521",
+    "phase.json": "044fe2f3f29b14ef9f77dfc4e31a6e156c7c74f35536eba5e7626a594a310edb"
+  },
+  "identityMatches": {
+    "shopDomainExact": true,
+    "shopIDShape": true,
+    "installationIDShape": true,
+    "appClientExact": true,
+    "managementAppIDEqualsGraphQLAppID": true,
+    "appIDShape": true,
+    "webhookConnectionShape": true,
+    "nativeBodySha256": "2c0d63fd0957dd6213f04ad13238460ef558f716f55500d952fdf84e319a3521"
+  },
+  "oauthGrantContract": "Exact three declared optional scopes accepted by frozen operator before Admin read",
+  "providerObservedEffectiveGrants": [
+    "read_publications",
+    "read_product_listings",
+    "write_products",
+    "read_products"
+  ],
+  "supportedImplicationSource": "https://shopify.dev/docs/apps/build/authentication-authorization/manage-access-scopes",
+  "derivedClassification": "read_products is implied by write_products, not permission expansion; existing strict collector rejected representation",
+  "partialSubscriptionObservation": {
+    "nodesObserved": 0,
+    "hasNextPage": false,
+    "collectorAcceptedPages": 0,
+    "finalInstallationBoundary": "NOT_RUN",
+    "completeInventoryQualified": false,
+    "privateURIsPublished": false
+  },
+  "producer": "NATIVE_PINNED_LOCAL_DOCKER_EXACT_PROJECTION_VERIFIED_BEFORE_OAUTH",
+  "serverForcedCommand": "UNPROVEN_NOT_ISOLATION",
+  "providerWriteSettlement": "ONE_TOKEN_ISSUANCE_RECEIVED_VALIDATED; no unresolved write observed; no other mutation",
+  "credentialCleanup": "Private process ended, no token store/rawOAuth capture; memory cryptographic erasure and selective early provider revocation not asserted",
+  "tokenLifecycleGuarantee": "UNKNOWN_NOT_ASSERTED",
+  "retentionDeleteBy": "2026-10-16T09:29:00.315115+00:00",
+  "freshOwnerAllocationNeeded": "One additional token acquisition is outside the consumed one-attempt allocation; no retry/resume under current grant",
+  "sourceHead": "1faa6ab2023b2caaef1194f802a28fbb0b78bcd8",
+  "sourceTree": "b59ef952b8a1dcb8ae2f6bff8e20c6883209236c",
+  "integratedMain": "a4a561144d26b6de8307630021306829d5aca5ec",
+  "M5_G7": "NOT_PASSED",
+  "recordedAt": "2026-10-10T09:34:21.075202+00:00"
+}

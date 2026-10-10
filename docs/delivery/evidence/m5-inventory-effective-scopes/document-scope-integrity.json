@@ -1,0 +1,23 @@
+{
+  "result": "PASS",
+  "scopePaths": [
+    "docs/delivery/milestone-progress.json",
+    "docs/delivery/state.md",
+    "scripts/m5-native-inventory/PRIVATE-OPERATOR.md",
+    "scripts/m5-native-inventory/collector.mjs",
+    "scripts/m5-native-inventory/integration.test.mjs",
+    "scripts/m5-native-inventory/private-operator.mjs",
+    "scripts/m5-native-inventory/private-operator.test.mjs",
+    "docs/delivery/evidence/m5-inventory-effective-scopes/REPORT.md",
+    "docs/delivery/evidence/m5-inventory-effective-scopes/WRITER-RELEASE.json",
+    "docs/delivery/evidence/m5-inventory-effective-scopes/derived-partial-replay.json",
+    "docs/delivery/evidence/m5-inventory-effective-scopes/final-source-manifest.json",
+    "docs/delivery/evidence/m5-inventory-effective-scopes/native-token-inventory-sealed-receipt-20261010.json",
+    "docs/delivery/evidence/m5-inventory-effective-scopes/pr65-merge-receipt.json",
+    "docs/delivery/evidence/m5-inventory-effective-scopes/qualification-manifest.json",
+    "docs/delivery/history/state-before-effective-scopes-pr65.md"
+  ],
+  "productionSourceConfigFunctionInputsUnchanged": true,
+  "historicalStateByteExact": true,
+  "publicLocalJsonAndLinksValid": true
+}

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { mkdtemp, rm } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -166,4 +167,127 @@ test('historical inventory v1 refuses the v2 pipe/memory label before transport'
   });
   assert.equal(r.outcome, 'STOP_INPUT_NOT_ALLOCATED');
   assert.equal(r.requests, 0);
+});
+
+const declaredInventoryGrants = ['write_products', 'read_publications', 'read_product_listings'];
+const nativeEffectiveGrants = ['read_publications', 'read_product_listings', 'write_products', 'read_products'];
+async function effectiveGrantObservation(t, mutate, boundaryOnly = false, expectedGrants = declaredInventoryGrants) {
+  const p = await mkdtemp(join(tmpdir(), 'insignia-effective-grants-'));
+  t.after(() => rm(p, { recursive: true, force: true }));
+  let calls = 0;
+  const a = allocation(join(p, 'run'));
+  a.expectedGrants = expectedGrants;
+  const r = await collectInventory({
+    allocation: a,
+    token: 'synthetic-private-token',
+    privateDirectory: join(p, 'run'),
+    transport: async () => {
+      calls++;
+      const data = structuredClone(identity);
+      data.currentAppInstallation.accessScopes = nativeEffectiveGrants.map((handle) => ({ handle }));
+      if (!boundaryOnly || calls === 2) mutate(data);
+      if (calls === 1) data.webhookSubscriptions = { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } };
+      return {
+        status: 200,
+        headers: { 'content-type': 'application/json', 'x-shopify-api-version': '2026-07' },
+        body: Buffer.from(JSON.stringify({ data })),
+      };
+    },
+  });
+  return { result: r, calls };
+}
+test('implied inventory read grants do not hide extra, missing, duplicate or foreign-app authority', async (t) => {
+  const cases = [
+    ['unexpected extra', (d) => d.currentAppInstallation.accessScopes.push({ handle: 'read_orders' })],
+    [
+      'missing publication grant',
+      (d) =>
+        (d.currentAppInstallation.accessScopes = d.currentAppInstallation.accessScopes.filter(
+          (s) => s.handle !== 'read_publications',
+        )),
+    ],
+    [
+      'missing write grant',
+      (d) =>
+        (d.currentAppInstallation.accessScopes = d.currentAppInstallation.accessScopes.filter(
+          (s) => s.handle !== 'write_products',
+        )),
+    ],
+    ['duplicate implied read', (d) => d.currentAppInstallation.accessScopes.push({ handle: 'read_products' })],
+    ['duplicate declared grant', (d) => d.currentAppInstallation.accessScopes.push({ handle: 'read_publications' })],
+    ['foreign management app', (d) => (d.currentAppInstallation.app.id = 'gid://shopify/App/999')],
+    ['foreign client', (d) => (d.currentAppInstallation.app.apiKey = 'foreign-client')],
+  ];
+  for (const [name, mutate] of cases)
+    await t.test(name, async (st) => {
+      const { result, calls } = await effectiveGrantObservation(st, mutate);
+      assert.equal(result.outcome, 'STOP_IDENTITY_OR_GRANT_DRIFT');
+      assert.equal(result.requests, 1);
+      assert.equal(calls, 1);
+    });
+});
+test('read_products cannot stand in for write_products or become implied without expected write authority', async (t) => {
+  const { result, calls } = await effectiveGrantObservation(
+    t,
+    (d) =>
+      (d.currentAppInstallation.accessScopes = d.currentAppInstallation.accessScopes.filter(
+        (s) => s.handle !== 'write_products',
+      )),
+    false,
+    ['read_publications', 'read_product_listings'],
+  );
+  assert.equal(result.outcome, 'STOP_IDENTITY_OR_GRANT_DRIFT');
+  assert.equal(calls, 1);
+});
+test('v2 effective-grant equivalence still fences final identity and non-implied scope drift', async (t) => {
+  for (const [name, mutate] of [
+    [
+      'grant revoked',
+      (d) =>
+        (d.currentAppInstallation.accessScopes = d.currentAppInstallation.accessScopes.filter(
+          (s) => s.handle !== 'write_products',
+        )),
+    ],
+    ['extra granted', (d) => d.currentAppInstallation.accessScopes.push({ handle: 'read_orders' })],
+    ['duplicate implied', (d) => d.currentAppInstallation.accessScopes.push({ handle: 'read_products' })],
+    ['installation changed', (d) => (d.currentAppInstallation.id = 'gid://shopify/AppInstallation/999')],
+  ])
+    await t.test(name, async (st) => {
+      const { result, calls } = await effectiveGrantObservation(st, mutate, true);
+      assert.equal(result.outcome, 'STOP_IDENTITY_OR_GRANT_DRIFT');
+      assert.equal(result.requests, 2);
+      assert.equal(calls, 2);
+    });
+});
+test('historical inventory v1 still rejects four effective grants when exact expected grants are three', async (t) => {
+  const p = await mkdtemp(join(tmpdir(), 'insignia-effective-v1-'));
+  t.after(() => rm(p, { recursive: true, force: true }));
+  let calls = 0;
+  const server = createServer((req, res) => {
+    calls++;
+    res.setHeader('x-shopify-api-version', '2026-07');
+    res.setHeader('content-type', 'application/json');
+    const data = structuredClone(identity);
+    data.currentAppInstallation.accessScopes = nativeEffectiveGrants.map((handle) => ({ handle }));
+    data.webhookSubscriptions = { nodes: [], pageInfo: { hasNextPage: false, endCursor: null } };
+    res.end(JSON.stringify({ data }));
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  t.after(() => new Promise((resolve) => server.close(resolve)));
+  const a = allocation(join(p, 'run'));
+  a.schema = 'insignia-native-inventory-allocation-v1';
+  a.status = 'LOOPBACK_TEST';
+  a.privateCredentialChannel = 'inherited-file-descriptor';
+  a.expectedGrants = declaredInventoryGrants;
+  a.expectedShopId = identity.shop.id;
+  a.expectedInstallationId = identity.currentAppInstallation.id;
+  const r = await collectInventory({
+    allocation: a,
+    token: 'synthetic-private-token',
+    privateDirectory: join(p, 'run'),
+    testEndpoint: `http://127.0.0.1:${server.address().port}/admin/api/2026-07/graphql.json`,
+  });
+  assert.equal(r.outcome, 'STOP_IDENTITY_OR_GRANT_DRIFT');
+  assert.equal(r.requests, 1);
+  assert.equal(calls, 1);
 });

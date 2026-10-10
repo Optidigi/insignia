@@ -1,0 +1,29 @@
+{
+  "schema": "insignia-offline-source-freeze-v1",
+  "base": "a4a561144d26b6de8307630021306829d5aca5ec",
+  "ownedChangedPaths": [
+    "scripts/m5-native-inventory/collector.mjs",
+    "scripts/m5-native-inventory/integration.test.mjs",
+    "scripts/m5-native-inventory/private-operator.mjs",
+    "scripts/m5-native-inventory/private-operator.test.mjs",
+    "scripts/m5-native-inventory/PRIVATE-OPERATOR.md"
+  ],
+  "sourceSha256": {
+    "scripts/m5-native-inventory/PRIVATE-OPERATOR.md": "2abaf222ed5683b461a0325cbb0e570ff74d2137ee3f435e86cb2325adf485b9",
+    "scripts/m5-native-inventory/cli.mjs": "bea8503b2b6000c7c51b823ec837fe36433ccba1e44a51a5e0d9d2c46aa05562",
+    "scripts/m5-native-inventory/collector.mjs": "c7a928b5bd9e509495932df89bae02332747c6ff77cc0a5e18c4cd735805ac1c",
+    "scripts/m5-native-inventory/collector.test.mjs": "f719fc402938cdfb81a5c48da4418f9ac94ae9ee29d5425b99b98c8e98fe8601",
+    "scripts/m5-native-inventory/integration.test.mjs": "571ce482b43912a63890973087e2e1dd4057aa45bf54f2730e906c8a0b384015",
+    "scripts/m5-native-inventory/private-cli.mjs": "1b30bcdcb231a975281406b79cb7aaef93493db8ca97067812a76648d9dcc0fc",
+    "scripts/m5-native-inventory/private-operator.mjs": "300d3a1bb506d93e1271bbb4f40991df5aa033dfe920589d8b97e34d91e6e252",
+    "scripts/m5-native-inventory/private-operator.test.mjs": "a8a5089d45e5a522bdeb8f142071f658269e3f58c750d7366263c9c56457b3d0",
+    "scripts/m5-native-inventory/private-response.mjs": "e243ac4e14e6c6ad383fde4c0f706972d1d5b343afd42e951b7feb940a030a59"
+  },
+  "nativeOperations": {
+    "ssh": 0,
+    "oauth": 0,
+    "admin": 0
+  },
+  "newOwnerGrantCreated": false,
+  "newNativePhaseCreated": false
+}

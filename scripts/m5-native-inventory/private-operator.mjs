@@ -17,8 +17,8 @@ const ORIGIN = `https://${DOMAIN}`;
 const ADMIN = '/admin/api/2026-07/graphql.json';
 const OAUTH = '/admin/oauth/access_token';
 const HOME = '/home/serveradmin/insignia-milestone-autonomy-handoff';
-const GRANT = join(HOME, 'owner-token-inventory-allocation-20261010.json');
-const NATIVE_PHASE = join(HOME, 'native-token-inventory-20261010');
+const GRANT = join(HOME, 'owner-token-inventory-effective-scopes-allocation-20261010.json');
+const NATIVE_PHASE = join(HOME, 'native-token-inventory-effective-scopes-20261010');
 const KEY = '/home/serveradmin/.ssh/id_t3_prod';
 const KNOWN = join(HOME, 'native-readonly-access-20261009/known_hosts');
 const FINGERPRINT = 'vttVPAISQypNdyfjFElTJ6ef8Q5S2YlC+XoUn599uq4';
@@ -235,11 +235,23 @@ function httpsBytes({ endpoint, body, headers, limit, timeout, ca }) {
 function same(a, b) {
   return Array.isArray(a) && new Set(a).size === a.length && a.length === b.length && a.every((x) => b.includes(x));
 }
+export function freshInventoryAllocationMatches(grant) {
+  return (
+    grant?.schema === 'insignia-resource-allocation-v1' &&
+    grant.status === 'OWNER_GRANTED_FRESH_ONE_TOKEN_PLUS_THREE_READS' &&
+    grant.resource?.appId === '429028933633' &&
+    grant.resource?.clientId === CLIENT &&
+    grant.resource?.shopDomain === DOMAIN &&
+    grant.ceilings?.tokenAcquisitionAttempts === 1 &&
+    grant.ceilings?.adminRequests === 3 &&
+    grant.ceilings?.retries === 0
+  );
+}
 async function gateInput(gatePath, testFixture) {
   await privateParent(dirname(gatePath));
   const gate = JSON.parse(await privateFile(gatePath));
   if (
-    gate.schema !== 'insignia-private-inventory-gate-v1' ||
+    gate.schema !== 'insignia-private-inventory-gate-v2' ||
     gate.tokenOperationalQualification !== 'SUPPORTED_EXACT_STORE_ISSUANCE_OWNER_ALLOCATED' ||
     gate.tokenLifecycleGuarantee !== 'UNKNOWN_NOT_ASSERTED' ||
     !same(gate.expectedGrants, ['write_products', 'read_publications', 'read_product_listings']) ||
@@ -290,15 +302,7 @@ async function gateInput(gatePath, testFixture) {
   )
     fail('STOP_NATIVE_PREMISES_UNQUALIFIED');
   const grant = JSON.parse(await privateFile(GRANT));
-  if (
-    grant.status !== 'OWNER_GRANTED_CONDITIONAL_ONE_TOKEN_PLUS_THREE_READS' ||
-    grant.resource.clientId !== CLIENT ||
-    grant.resource.shopDomain !== DOMAIN ||
-    grant.ceilings.tokenAcquisitionAttempts !== 1 ||
-    grant.ceilings.adminRequests !== 3 ||
-    grant.ceilings.retries !== 0
-  )
-    fail('STOP_OWNER_ALLOCATION');
+  if (!freshInventoryAllocationMatches(grant)) fail('STOP_OWNER_ALLOCATION');
   for (const name of SOURCES)
     if (gate.sourceSha256?.[name] !== sha(await readFile(join(import.meta.dirname, name)))) fail('STOP_SOURCE_FREEZE');
   return { gate, path: NATIVE_PHASE, origin: ORIGIN, producer: pinnedProducer };
@@ -325,7 +329,7 @@ export async function runPrivateInventory({ gatePath, testFixture }) {
     state = {
       schema: 'insignia-private-inventory-phase-v1',
       pid: process.pid,
-      ownerGrant: '20261010_ONE_TOKEN_THREE_READS',
+      ownerGrant: 'EFFECTIVE_SCOPES_FRESH_20261010',
       startedAt: new Date().toISOString(),
       sealed: false,
       attempts: [],
@@ -453,7 +457,7 @@ export async function runPrivateInventory({ gatePath, testFixture }) {
     const allocation = {
       schema: 'insignia-native-inventory-allocation-v2',
       status: 'OWNER_ALLOCATED',
-      ownerApprovalReference: 'OWNER_GRANTED_20261010_ONE_TOKEN_THREE_READS',
+      ownerApprovalReference: 'OWNER_GRANTED_EFFECTIVE_SCOPES_FRESH_20261010_ONE_TOKEN_THREE_READS',
       purpose: 'M5-027 existing shop subscription read',
       endpoint: `${ORIGIN}${ADMIN}`,
       expectedShopId: null,

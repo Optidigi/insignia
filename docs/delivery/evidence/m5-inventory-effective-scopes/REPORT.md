@@ -1,0 +1,27 @@
+# Effective product-read scope correction
+
+The first authorized native inventory acquired one token and received one Admin response for the exact Insignia app and designated shop. The frozen collector returned `STOP_IDENTITY_OR_GRANT_DRIFT` because it compared three declared scopes literally with four provider-reported effective scopes. Shopify returned `read_products` with the authorized `write_products`; the app/client/domain and ID shapes matched. This is a collector representation defect, not evidence of identity drift or an owner scope expansion.
+
+[Shopify's scope documentation](https://shopify.dev/docs/apps/build/authentication-authorization/manage-access-scopes) states that product-write access includes product-read access and illustrates both handles in `currentAppInstallation.accessScopes`. The inventory-v2 correction permits only that implied product-read handle when product-write is both expected and observed. Missing required handles, duplicates, unknown extra handles, wrong identities and final-boundary drift remain failures. Inventory-v1 retains literal equality. The OAuth response still must have the exact three declared scopes; four OAuth scope handles remain rejected before any Admin request.
+
+## Historical native facts
+
+[Sealed native receipt](native-token-inventory-sealed-receipt-20261010.json) records SSH1/OAuth1/Admin1 and hashes of all four original private files. The response was received and safely retained but its page was never admitted by the original collector. Its empty subscription nodes and `hasNextPage=false` are a partial observation, not complete destination/privacy evidence: the final installation boundary was NOT_RUN. The original `STOP_IDENTITY_OR_GRANT_DRIFT`, pages0/records0 and raw run remain byte-exact. There was no unresolved provider write observed and no subscription, installation, app-version, scope, product or production mutation.
+
+Private raw evidence stays in the owner-approved restricted local directory through its recorded deadline, 2026-10-16T09:29:00.315115Z. Public evidence exposes only safe classifications, scope handles and hashes. Credential strings and raw OAuth bytes were never persisted. Process termination is not proof of cryptographic erasure, token revocation or universal preservation of other credentials.
+
+[PR65 merge receipt](pr65-merge-receipt.json) binds normal merge `a4a561144d26b6de8307630021306829d5aca5ec`, ordered parents and unchanged accepted tree. Its two actual independent CLEAR reviews and ten natural attempt1 successes qualified that source before the native attempt; they are historical evidence and cannot certify this correction.
+
+## New local source and next resource
+
+New failing-then-passing controls exercise the full local OAuth3 → Admin4 → final-boundary4 sequence and strict negative boundaries. They are local synthetic provider responses, not a second native inventory. Production application/worker/database, Shopify configuration, Function artifacts and historical v1/v2/v3 semantics are outside this correction.
+
+The old one-token allocation is consumed. Its two unused Admin slots cannot authorize a second token acquisition, and the ephemeral token was not stored. A separately granted fresh one-token/three-read phase is prepared in source with gate-v2, a distinct fixed owner-record path/status and a distinct fixed phase directory. Old gate-v1 or missing fresh allocation cannot spend the old grant. No new owner grant, native gate or future phase directory exists yet. Fresh independent reviews and exact-head CI must qualify the correction before any new resource request is executed.
+
+The purpose of the next bounded inventory is to establish the current subscription destinations and a stable exact installation boundary needed for uninstall/privacy qualification. A collection success still retains `STOP_PRE_INSTALL_DESTINATION_EFFECTS_UNQUALIFIED`. It does not establish registration-gap safety, independent uninstall-generation authority, complete privacy effects or M5/G7 acceptance. M5 remains IN_PROGRESS; native merchant/G7 qualification, commercial eligibility and any production resource changes remain separate requirements.
+
+## Local qualification and evidence limits
+
+Writer source freeze SHA256 `8ea2b29dc71e0fce8bc82b7100b79c3c218d4595343541cac99bace06832627c` binds all interacting inventory source. Current final Node140/140, host24/24 and phase18/18 controls passed without skips, with style/diff checks PASS. The [writer release](WRITER-RELEASE.json) and [raw log hashes](qualification-manifest.json) preserve initial scope/gate REDs, an unchanged legacy deadline control classification failure, its isolated baseline pass, and a later missing test import failure. The latter's executed source is UNKNOWN because source changed while running; the after-failure snapshot is not claimed as the executed source. No v1 deadline source/assertion was changed. Later full qualification followed actual fresh-gate source changes and the import correction.
+
+A [separate derived replay](derived-partial-replay.json) fed the exact sealed first Admin response through corrected v2 with all ambient HTTP/HTTPS/fetch denied and no native credential. It admitted one page, then explicitly stopped for the missing sealed final boundary. Local transport invocations2 are not native requests; external requests0. No final provider response was invented. The derived temporary files were removed, all four original raw hashes remain exact, and the historical native output is unchanged.
