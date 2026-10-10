@@ -1,0 +1,39 @@
+{
+  "head": "e35fac12ca8b9b9c9c582da14557d35c011fb2cc",
+  "tree": "51f84203e1b75966ecc12f2bbfc35413ef11f9a5",
+  "workflowRunId": 38058545149,
+  "attempt": 1,
+  "ciCheckoutSyntheticMerge": "b65ddb1ffff820366daa0ff80804fbf5d8ca3730",
+  "ciCheckoutTree": "51f84203e1b75966ecc12f2bbfc35413ef11f9a5",
+  "result": "FAIL_INTERNAL_NETWORK_DID_NOT_REALIZE_HOST_PORT_MAPPING",
+  "imageId": "sha256:5f6ee9459fbf518060782777bdc722c99110f04f2f0b664149d96da04c2781a9",
+  "imageDirectConfiguration": "PASS",
+  "workerRuntime": "NOT_STARTED",
+  "requestedBinding": {
+    "5432/tcp": [
+      {
+        "HostIp": "127.0.0.1",
+        "HostPort": ""
+      }
+    ]
+  },
+  "realizedBinding": {},
+  "ownedResourcesCleanup": [
+    {
+      "resource": "rm",
+      "status": "PASS"
+    },
+    {
+      "resource": "network",
+      "status": "PASS"
+    },
+    {
+      "resource": "image",
+      "status": "PASS"
+    }
+  ],
+  "originalReceiptSha256": "071c5a390478e337190bc43d6c872e43e4a796664f632dd146bb5d33f8d852ff",
+  "originalFailureLogSha256": "8b234510adfa17510425030bfdff8088205d41f6012470221491052a4974fe3d",
+  "furtherWorkerOSQualification": "NOT_RUN",
+  "sourceCorrection": "Direct owned internal IPv4 database provisioning; fresh source/test/reviews/natural CI required"
+}

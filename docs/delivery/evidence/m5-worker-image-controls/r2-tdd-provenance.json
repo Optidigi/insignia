@@ -1,0 +1,42 @@
+{
+  "author_base": "e35fac12ca8b9b9c9c582da14557d35c011fb2cc",
+  "native_docker": "NOT_RUN",
+  "final_local_tests": {
+    "pass": 10,
+    "fail": 0,
+    "skip": 0,
+    "log": "07-node-timeout-final-green.log"
+  },
+  "cycles": 5,
+  "limitations": [
+    "Direct host connection to owned internal DB is an inference pending natural CI.",
+    "No production or provider qualification."
+  ],
+  "source_sha256": {
+    "scripts/m5-024/IMAGE-CONTROLS.md": "9ff4582639bf04556036d4aa47a1bac336038adb523d9ca3cf3a887a5d71fa2d",
+    "scripts/m5-024/image-observations.mjs": "28f99f00e858ffd7965f572d5762489ec75b8a17232df1bc709e413992c4ac32",
+    "scripts/m5-024/image-observations.test.mjs": "1c2b811cfc5395672fa7e75f30d0054acecf3ddf98b232837e305d8b17e3a17c",
+    "scripts/m5-024/image-runtime.test.mjs": "71d35ebe8a0749f3d6d140237321e076ea43758d879ba9d385a6f7f43394320c"
+  },
+  "evidence_sha256": {
+    "01-endpoint-green.log": "63b59499bf952e26ee453a8d0d7160908c6c61933fe78a25a59d58ad4c7ad927",
+    "01-endpoint-red.log": "b74dc73fd950dc31353937e485c0fe92f1f4cc180bed84cfc3762c3c74bc08cd",
+    "02-endpoint-drift-green.log": "54456f24e93e96fbc8e881af8fbd014b8c5a83f4505a6bc42940b460d4eef72a",
+    "02-endpoint-drift-red.log": "f0007cb55c47dc3073a626a18967e3284ad527056380908c98abc9c4ba520c0e",
+    "03-inventory-syntax-green.log": "6fd9bec4e4bb685f7014d876672429340453a1adbc4deec6ae0a27e4ef28e2bf",
+    "03-inventory-syntax-red.log": "31189db891d7c3a3f0c627553a668d98fe5f6e7bac67311d1ef5d12b1663f049",
+    "04-cancellation-green.log": "5b9672f1f9acc54b7b48f53e72a66310de9e0198a4289ae5d4b4ede85133a27b",
+    "04-cancellation-red.log": "5e4c2329b377d43a21a9de050c4c21fde044eacdc12623ca0e9d7ad0f48d7d3b",
+    "05-log-finalization-green.log": "9e916ce78e9b2f93581d3ac5358a5f53ba012416807df957b75dd05aad3e67bc",
+    "05-log-finalization-red.log": "16dc7c497a6ab0508a35338294497eea1d52bee3ad17e16c01e426b8ccad3995",
+    "06-final-green.log": "faf72ba31a69f546ee9622019bb2bd70a1deab72f58b43d2f73d0f40e7202d18",
+    "07-node-timeout-final-green.log": "d45b2e3ddab1831b449e1601cc2fa66e184ae106c663290f3441684aa32ee0c7",
+    "08-local-image-not-run.log": "26840e9ac83ae3a24d0479f659611d8dc8417d317742c18c7a94750d640d9a3b",
+    "09-style-final.log": "517795fa93d6df0a1e8d53d738ae66a2e498cbae7b3890210e6090734509fb54",
+    "09-style.log": "58caa57f31100fbb48453577ea49873e58776f007c654273a52ab2546ce18b0e",
+    "10-boundaries.log": "1f90301aa1a5e4d5abd093298cc98223d3649f3fbe825a38812112dcac88ea5a",
+    "11-secrets.log": "5d30b8b5212705b349e1ee889ccf8eca2ac0fde8d678693c49a7f9c8cbd6286b",
+    "local-image-not-run/001.log": "89601dd0803ed814728c21fb78de92f7a0c8517070a343f6300628ea920293b6",
+    "local-image-not-run/receipt.json": "40fb2f3fd634773b86dade5154fc4a4eaebb3e1d910e71a2fd3c47668132df25"
+  }
+}

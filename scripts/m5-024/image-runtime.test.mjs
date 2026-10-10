@@ -1,16 +1,21 @@
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
-import { cp, mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
-import { createRequire } from 'node:module';
+import { cp, mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import { qualifyImageConfiguration, qualifyImageRuntime } from './image-observations.mjs';
+import {
+  assembleDatabaseFixtureProbe,
+  assembleImageInventoryProbe,
+  finalizeImageFixture,
+  qualifyFixtureDatabase,
+  qualifyImageConfiguration,
+  qualifyImageRuntime,
+  runImageCommand,
+} from './image-observations.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
-const entry = '/srv/insignia/worker/dist/main.js';
 const postgresImage =
   'public.ecr.aws/docker/library/postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336';
 const health = `/usr/local/bin/node -e "fetch('http://127.0.0.1:4301/ready').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"`;
@@ -44,7 +49,9 @@ console.log(JSON.stringify({
 
 test('actual built worker image qualifies OS isolation, frozen inventory, readiness, SIGTERM and restart on disposable PG18', {
   timeout: 420_000,
-}, async () => {
+}, async (t) => {
+  // Leave 90 seconds inside the Node test deadline for independent finalization.
+  const signal = AbortSignal.any([t.signal, AbortSignal.timeout(330_000)]);
   const evidence = process.env.M5_IMAGE_EVIDENCE_DIR
     ? resolve(process.env.M5_IMAGE_EVIDENCE_DIR)
     : await mkdtemp(join(tmpdir(), 'insignia-m5-image-evidence-'));
@@ -66,37 +73,23 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
   const imageTag = `${prefix}:qualification`;
   let commandNumber = 0;
   let context;
-  let pool;
   let dockerReady = false;
   const owned = { network: false, database: false, worker: false, image: false };
 
-  async function run(command, args, { input, env = process.env, timeout = 60_000 } = {}) {
+  async function run(
+    command,
+    args,
+    { input, env = process.env, timeout = 60_000, signal: commandSignal = signal } = {},
+  ) {
     const log = join(evidence, `${String(++commandNumber).padStart(3, '0')}.log`);
-    const result = await new Promise((resolveResult) => {
-      const child = spawn(command, args, { cwd: root, env, stdio: ['pipe', 'pipe', 'pipe'] });
-      let stdout = '';
-      let stderr = '';
-      child.stdout.on('data', (bytes) => {
-        stdout += bytes;
-      });
-      child.stderr.on('data', (bytes) => {
-        stderr += bytes;
-      });
-      const timer = setTimeout(() => child.kill('SIGKILL'), timeout);
-      child.once('error', (error) => {
-        stderr += error.message;
-      });
-      child.once('close', (code, signal) => {
-        clearTimeout(timer);
-        resolveResult({ code, signal, stdout, stderr });
-      });
-      child.stdin.on('error', () => {});
-      child.stdin.end(input);
-    });
+    const result = await runImageCommand(command, args, { input, cwd: root, env, timeout, signal: commandSignal });
     await writeFile(
       log,
-      `${JSON.stringify({ command, args, code: result.code, signal: result.signal })}\n${result.stdout}\n${result.stderr}`,
+      `${JSON.stringify({ command, args, code: result.code, signal: result.signal, aborted: result.aborted, timedOut: result.timedOut })}\n${result.stdout}\n${result.stderr}`,
+      { signal: AbortSignal.timeout(5000) },
     );
+    commandSignal.throwIfAborted();
+    assert.equal(result.timedOut, false, `command deadline exceeded; raw log ${log}`);
     assert.equal(result.code, 0, `${command} failed; raw log ${log}: ${result.stderr.slice(-2000)}`);
     return result.stdout.trim();
   }
@@ -107,7 +100,7 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
       const value = await inspect(name);
       if (value.State.Health?.Status === 'healthy') return value;
       assert.equal(value.State.Running, true, `${name} stopped before readiness`);
-      await delay(500);
+      await delay(500, undefined, { signal });
     }
     throw new Error(`${name} did not become healthy within 45 seconds`);
   }
@@ -116,6 +109,7 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
     dockerReady = true;
     receipt.status = 'FAIL';
     assert.equal(process.version, 'v24.21.0');
+    assert.equal(process.platform, 'linux', 'native host-to-owned bridge routing qualification is Linux only');
     assert.ok(
       process.env.M5_WORKER_PACKAGE_ENTRY,
       'M5_WORKER_PACKAGE_ENTRY is required; no skipped image qualification',
@@ -148,10 +142,10 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
     receipt.controls.push('built-image-identity');
 
     owned.network = true;
-    await docker(['network', 'create', '--internal', networkName]);
-    const network = JSON.parse(await docker(['network', 'inspect', networkName]))[0];
+    const networkId = await docker(['network', 'create', '--internal', networkName]);
+    let network = JSON.parse(await docker(['network', 'inspect', networkName]))[0];
     owned.database = true;
-    await docker([
+    const databaseContainerId = await docker([
       'create',
       '--name',
       databaseName,
@@ -159,8 +153,6 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
       networkName,
       '--network-alias',
       'fixture-db',
-      '--publish',
-      '127.0.0.1::5432',
       '--env',
       'POSTGRES_USER=insignia_test',
       '--env',
@@ -179,10 +171,19 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
     ]);
     await docker(['start', databaseName]);
     const database = await healthy(databaseName);
-    const binding = database.NetworkSettings.Ports['5432/tcp'];
-    assert.equal(binding.length, 1);
-    assert.equal(binding[0].HostIp, '127.0.0.1');
-    const ownerUrl = `postgres://insignia_test:synthetic-owner@127.0.0.1:${binding[0].HostPort}/insignia_image_test?sslmode=disable`;
+    network = JSON.parse(await docker(['network', 'inspect', networkName]))[0];
+    const ownerUrl = qualifyFixtureDatabase({
+      container: database,
+      network,
+      expectedContainerId: databaseContainerId,
+      expectedName: databaseName,
+      expectedNetworkId: networkId,
+      expectedNetworkName: networkName,
+    });
+    receipt.databaseEndpoint = { containerId: databaseContainerId, networkId, ownerUrl };
+    await writeFile(join(evidence, 'database-endpoint-observations.json'), JSON.stringify({ database, network }), {
+      signal,
+    });
     await run(
       join(root, 'node_modules/.bin/dbmate'),
       ['--no-dump-schema', '--migrations-dir', join(root, 'packages/database/migrations'), 'up'],
@@ -190,56 +191,24 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
         env: { PATH: process.env.PATH, DATABASE_URL: ownerUrl },
       },
     );
-    const { installQueue } = await import('./install-queue.mjs');
-    receipt.queueInstall = await installQueue(ownerUrl);
-    const requireWorker = createRequire(new URL('../../apps/worker/package.json', import.meta.url));
-    const { Pool } = requireWorker('pg');
-    pool = new Pool({ connectionString: ownerUrl });
-    const serverVersion = (await pool.query('show server_version_num')).rows[0].server_version_num;
-    assert.equal(Math.floor(Number(serverVersion) / 10000), 18);
-    await pool.query(await readFile(new URL('./queue-roles.sql', import.meta.url), 'utf8'));
-    await pool.query(
-      "create role image_worker login password 'synthetic-worker' nosuperuser nocreatedb nocreaterole noreplication nobypassrls; grant insignia_queue_consume to image_worker",
+    const ownerEnvironment = {
+      PATH: process.env.PATH,
+      DATABASE_URL: ownerUrl,
+      INSIGNIA_QUEUE_OWNER_INSTALL: 'explicit-reviewed-owner-operation',
+    };
+    receipt.queueInstall = JSON.parse(
+      await run(process.execPath, [join(root, 'scripts/m5-024/install-queue.mjs')], {
+        env: ownerEnvironment,
+        timeout: 45_000,
+      }),
     );
-    const login = new Pool({
-      connectionString: ownerUrl.replace('insignia_test:synthetic-owner', 'image_worker:synthetic-worker'),
-    });
-    try {
-      const currentUser = (await login.query('select current_user')).rows[0].current_user;
-      assert.equal(currentUser, 'image_worker');
-      const roleFlags = (
-        await login.query(
-          'select rolsuper,rolcreatedb,rolcreaterole,rolreplication,rolbypassrls from pg_roles where rolname=current_user',
-        )
-      ).rows[0];
-      assert.deepEqual(roleFlags, {
-        rolsuper: false,
-        rolcreatedb: false,
-        rolcreaterole: false,
-        rolreplication: false,
-        rolbypassrls: false,
-      });
-      const memberships = (
-        await login.query(
-          'select r.rolname from pg_auth_members m join pg_roles r on r.oid=m.roleid where m.member=(select oid from pg_roles where rolname=current_user) order by r.rolname',
-        )
-      ).rows.map((row) => row.rolname);
-      assert.deepEqual(memberships, ['insignia_queue_consume']);
-      const denied = [];
-      for (const sql of [
-        'create table pgboss.escape(id int)',
-        'create schema escape',
-        'truncate pgboss.job',
-        'update pgboss.version set version=42',
-      ]) {
-        await assert.rejects(login.query(sql), { code: '42501' });
-        denied.push({ sql, sqlstate: '42501' });
-      }
-      assert.equal((await login.query('select version from pgboss.version')).rows[0].version, 43);
-      receipt.database = { serverVersion, currentUser, roleFlags, memberships, denied, schemaVersion: 43 };
-    } finally {
-      await login.end();
-    }
+    receipt.database = JSON.parse(
+      await run(process.execPath, ['--input-type=module'], {
+        input: assembleDatabaseFixtureProbe(),
+        env: ownerEnvironment,
+        timeout: 45_000,
+      }),
+    );
     receipt.controls.push('PG18-owner-install-schema43-restricted-consume-role');
     owned.worker = true;
     await docker([
@@ -289,7 +258,7 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
       );
       const inventory = JSON.parse(
         await docker(['exec', '-i', workerName, '/usr/local/bin/node', '--input-type=module'], {
-          input: `${inventorySource}\nconsole.log(JSON.stringify(collectWorkerInventory('${entry}'))));`,
+          input: assembleImageInventoryProbe(inventorySource),
         }),
       );
       qualifyImageRuntime({ imageId, container, network, process, inventory, expectedInventory });
@@ -323,58 +292,53 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
     receipt.failure = error.message;
     throw error;
   } finally {
-    // Preserve native receipts/logs before removing only resources owned by this run.
-    if (dockerReady) {
-      for (const [name, exists] of [
-        [workerName, owned.worker],
-        [databaseName, owned.database],
-      ]) {
-        if (exists) {
-          try {
-            await docker(['logs', name]);
-          } catch (error) {
-            receipt.logFailure = error.message;
-          }
-        }
-      }
-    }
-    try {
-      await pool?.end();
-    } catch (error) {
-      receipt.status = 'FAIL';
-      receipt.poolCleanupFailure = error.message;
-    }
-    receipt.cleanup = [];
-    for (const [exists, args] of [
-      [owned.worker, ['rm', '--force', '--volumes', workerName]],
-      [owned.database, ['rm', '--force', '--volumes', databaseName]],
-      [owned.network, ['network', 'rm', networkName]],
-      [owned.image, ['image', 'rm', imageTag]],
-    ]) {
-      if (exists) {
-        try {
-          await docker(args);
-          receipt.cleanup.push({ args, status: 'PASS' });
-        } catch (error) {
-          receipt.status = 'FAIL';
-          receipt.cleanup.push({ args, status: 'FAIL', error: error.message });
-        }
-      }
-    }
+    // Finalization has its own deadline; an aborted test must still preserve logs
+    // and attempt every owned removal. Failure in either branch is fatal.
+    const finalized = await finalizeImageFixture({
+      containerNames: dockerReady
+        ? [
+            [workerName, owned.worker],
+            [databaseName, owned.database],
+          ]
+            .filter(([, exists]) => exists)
+            .map(([name]) => name)
+        : [],
+      cleanupCommands: [
+        [owned.worker, ['rm', '--force', '--volumes', workerName]],
+        [owned.database, ['rm', '--force', '--volumes', databaseName]],
+        [owned.network, ['network', 'rm', networkName]],
+        [owned.image, ['image', 'rm', imageTag]],
+      ]
+        .filter(([exists]) => exists)
+        .map(([, args]) => args),
+      run: docker,
+    });
+    receipt.logs = finalized.logs;
+    receipt.cleanup = finalized.cleanup;
+    if (finalized.status !== 'PASS') receipt.status = 'FAIL';
     if (context) {
       try {
-        await rm(context, { recursive: true, force: true });
+        await run(
+          process.execPath,
+          [
+            '--input-type=module',
+            '-e',
+            "import { rm } from 'node:fs/promises'; await rm(process.argv[1], { recursive: true, force: true });",
+            context,
+          ],
+          { timeout: 10_000, signal: AbortSignal.timeout(15_000) },
+        );
       } catch (error) {
         receipt.status = 'FAIL';
         receipt.contextCleanupFailure = error.message;
       }
     }
-    await writeFile(join(evidence, 'receipt.json'), JSON.stringify(receipt, null, 2));
+    await writeFile(join(evidence, 'receipt.json'), JSON.stringify(receipt, null, 2), {
+      signal: AbortSignal.timeout(5000),
+    });
     assert.ok(
-      receipt.cleanup.every((value) => value.status === 'PASS') &&
-        !receipt.poolCleanupFailure &&
-        !receipt.contextCleanupFailure,
-      'owned fixture cleanup must pass',
+      finalized.status === 'PASS' && !receipt.contextCleanupFailure,
+      'fixture logs and owned cleanup must pass',
     );
   }
 });
