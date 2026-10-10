@@ -491,16 +491,29 @@ test('transport failures, redirects, API fallback, oversized bodies and absolute
 });
 
 test('run deadline and expired allocation stop in flight and preserve consumed reservations', async (t) => {
+  let elapsed = 0;
+  t.mock.method(performance, 'now', () => elapsed);
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let closeResponse;
+  const responseClosed = new Promise((resolve) => {
+    closeResponse = resolve;
+  });
   const h = await harness(t, async ({ res }) => {
-    await new Promise((resolve) => setTimeout(resolve, 70));
-    res.end(JSON.stringify(page()));
+    res.once('close', () => closeResponse(res.writableEnded));
+    // Expire only after the real HTTP request arrives; setup and dispatch take no deadline time.
+    elapsed = 26;
+    t.mock.timers.tick(25);
   });
   h.options.allocation.ceilings.durationMs = 25;
   const result = await collectInventory(h.options);
   assert.equal(result.outcome, 'STOP_RUN_DEADLINE');
   assert.equal(result.requests, 1);
   assert.equal(h.requests.length, 1);
-  assert.equal((await journal(h.directory)).sealed, true);
+  assert.equal(await responseClosed, false);
+  const account = await journal(h.directory);
+  assert.equal(account.sealed, true);
+  assert.equal(account.attempts.length, 1);
+  assert.equal(account.attempts[0].status, 'UNCERTAIN');
 });
 
 async function cli(h, extra = [], credential = secret, descriptor = undefined) {
