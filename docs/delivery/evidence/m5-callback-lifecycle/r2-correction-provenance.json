@@ -1,0 +1,61 @@
+{
+  "schema": "m5-callback-lifecycle-correction-v1",
+  "classification": "R2_LOCAL46PASS_FRESH_REVIEW_CI_PENDING",
+  "rejectedHead": "66e9227b9ee3f192462674db041c4fb4f44f0567",
+  "rejectedTree": "fc012f8ae103762704bb97e5d06ead83a3a3e094",
+  "rejectedCandidate": "r1-rejected-candidate.json",
+  "writerFreezeSha256": "15165542d76728e122ab1e965355d1cfb8aab41deb33e0327f2e88639e857d04",
+  "writerSourcePins": {
+    "supervisor.mjs": "9d97e4b148f5e6e4e64ab1932af2151be7e204421bd584cf4cd87383faca6e3b",
+    "cleanup.mjs": "e548ad888ebe88f0d5f8a14b6eedcd054b5ccf13179d6dd535c1f26c9be82b9b",
+    "supervisor.test.mjs": "f5ffc003129db47d45e167dc00f884410844996844f2e4482fe52655595e658f",
+    "cleanup.test.mjs": "a9c185f08a99978d060d85bf0b9caac6ed9b8d7f7afcb040ed97c2570c6452f1",
+    "operator.mjs": "7f346a74dca05cb41c50cc90815599cdd4699b8191a4ead4ee10b72e0945de77",
+    "store.mjs": "b1c185a465b5a57eded64de0d1491fcdfa0135514bd589db6cffa19400f1666c"
+  },
+  "preservedR1Source": "Exact rejected commit and private git-show snapshots; historical maps/logs/reviews are unchanged.",
+  "redGreen": {
+    "replacement": ["02-replacement-red.log", "04-replacement-green.log"],
+    "directorySuffix": ["05-suffix-red.log", "06-suffix-green.log"],
+    "metadataUncertainty": ["03-inspection-red.log", "08-uncertainty-green.log"],
+    "erasureGroupUncertainty": ["07-erasure-group-red.log", "08-uncertainty-green.log"]
+  },
+  "syntheticLogPins": {
+    "09-integrated-controls.log": "81af148059f5b4aafed341a445610f9eb41d8b4110b3efb63cfb87953cf6c9cb",
+    "01-harness-failure.log": "a4adfb0039beeaef4e3d0b4ba462b67863653138cd608551330d25ba6f067a10",
+    "05-suffix-red.log": "e5016d6e00a4f19ee2c77740239b87e4f68dae5071bed8848acc5b03dca0542a",
+    "07-erasure-group-red.log": "682d58ca71464615dd1ee758ad467748abf11dcba37987f23c7267f1ee196ec4",
+    "02-replacement-red.log": "ab022cc361207128350809ee565f47557ee1683a8b9ee47a640d43bba2354aa2",
+    "03-inspection-red.log": "44e720d8bc2acddbe1e33fa6a02b1df990d6b430e721c85d15540c1d183e8495",
+    "12-domain-check.log": "a8bc2854a194d3ddb24c0ed331e47ed8cbdaa98cfc2b0f24dc284810944fb1a3",
+    "06-suffix-green.log": "7d192d1862e80be0c9201719c00175e1d3a35691c905249e1fbcd6f3b6ca664b",
+    "04-replacement-green.log": "bddd24f8455f5455b06ba3ef9728e2f6dbad19c8a9f34c0099c6ae81d1d436e0",
+    "08-uncertainty-green.log": "c497b273f34b1840a39fbdb4939216dff7b72d591907ea91a29b77f61998fc4d",
+    "11-style-green.log": "4bb36d5cc9f1a122f1927bb00c9c4d49f70c4a1d6d44141465647de2509a2a3b",
+    "10-style.log": "ff9cb54cdb360c52bf132c85d8452e54061d441ee7115558cc09b541982f309e",
+    "14-boundary-setup-failure.log": "20f58a98b66bb83bb187225bfd4ab0071920f97fb1c076583aa53a71d4f7d9f0"
+  },
+  "retainedHarnessFailures": ["01-harness-failure.log"],
+  "retainedStyleFailure": "One test import-order error; retained.",
+  "broaderBoundaryFailure": {
+    "command": "node scripts/boundaries/check.mjs",
+    "log": "14-boundary-setup-failure.log",
+    "exit": 1,
+    "classification": "SETUP_NOT_QUALIFIED: fresh W8 built package root missing; no source fix or build performed."
+  },
+  "apiChanges": [
+    "eraseExpiredExperiment(directory, expectedIdentity) authenticates/compares immutable mapping, Date.now deadline, exact tree including only its own guard, dead-lock recovery and removal/fsync under one lifecycle guard. Manual erase/recover API semantics remain unchanged.",
+    "inspectOwnedExperiment and boundedInspection return an authenticated mapping identity to trusted local callers. CLI metadata identity travels solely FD3; stdout remains deadline-only MAPPING and never contains capability/key/identity hash.",
+    "runErasureChild(directory, deadlineMs, identity) requires original identity and delivers it solely private FD3. Identity is not argv/env/stdout/receipt data.",
+    "Inspection failure returns STOP_UNCONFIRMED when owned group absence is not confirmed; startup and standalone preserve that status/exit21; erasure maps it to UNCERTAIN/exit21.",
+    "Every erasure child completion confirms group cleanup before accepting a receipt. Timeout remains UNCERTAIN even after confirmed stop because operation completion is ambiguous."
+  ],
+  "limits": [
+    "Unkillable-case controls explicitly use process boundary doubles; no actual unkillable process was induced.",
+    "Persistent lifecycle guard after critical-section crash remains fail-closed and requires explicit owning-group diagnosis; no stale-guard removal or ambiguous PID killing added.",
+    "All runtime fixtures are local and synthetic. Native/TLS/provider/SSH/cgroup/timer/genuine uninstall/privacy/external-copy qualifications remain with parent and remain unqualified by this correction.",
+    "Local pnpm setup reused 464 cached packages, downloaded0; no tracked dependency/lock changes."
+  ],
+  "privateProofDirectory": "Owner-private callback-lifecycle-r2-correction-20261010; retrieval through local orchestrator",
+  "milestoneAcceptance": false
+}

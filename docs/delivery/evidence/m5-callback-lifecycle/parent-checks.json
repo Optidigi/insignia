@@ -1,0 +1,14 @@
+{
+  "classification": "PARENT_LOCAL39PASS_SOURCE_REUSED_NATIVE_NOT_RUN",
+  "base": "b2a874089482ec6f98938385da65453bd3b85d11",
+  "tests": 39,
+  "passed": 39,
+  "skipped": 0,
+  "logSha256": "19ab719c9daecf53ce4152aec052d71634889ff775c7a65d0f294fa1ce3b9164",
+  "writerFreezeSha256": "62257174b7264a786f22fcd310530bc5e12459ba47518ef1c39931fef706882d",
+  "writerOwnedPinsVerifiedBeforeParentDocsIntegration": true,
+  "fourRuntimeMjsUnchanged": true,
+  "researchNoteSha256": "64c3b609d86d369ac7044177890014c5280c6da3c10e6307577761f0200c794e",
+  "productionNativeOperations": 0,
+  "freshReviewsAndCi": "PENDING"
+}

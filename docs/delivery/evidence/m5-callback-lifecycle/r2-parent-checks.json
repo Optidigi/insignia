@@ -1,0 +1,74 @@
+{
+  "classification": "PARENT_LOCAL46PASS_SCOPED_STYLE_BOUNDARY_INTEGRITY_PASS_FRESH_REVIEWS_CI_PENDING",
+  "tests": 46,
+  "pass": 46,
+  "fail": 0,
+  "skipped": 0,
+  "commands": [
+    {
+      "command": [
+        "/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node",
+        "--test",
+        "scripts/m5-callback-qualification/receiver.test.mjs",
+        "scripts/m5-callback-qualification/supervisor.test.mjs",
+        "scripts/m5-callback-qualification/cleanup.test.mjs"
+      ],
+      "exitCode": 0,
+      "sourcePins": {
+        "scripts/m5-callback-qualification/supervisor.mjs": "9d97e4b148f5e6e4e64ab1932af2151be7e204421bd584cf4cd87383faca6e3b",
+        "scripts/m5-callback-qualification/supervisor.test.mjs": "f5ffc003129db47d45e167dc00f884410844996844f2e4482fe52655595e658f",
+        "scripts/m5-callback-qualification/cleanup.mjs": "e548ad888ebe88f0d5f8a14b6eedcd054b5ccf13179d6dd535c1f26c9be82b9b",
+        "scripts/m5-callback-qualification/cleanup.test.mjs": "a9c185f08a99978d060d85bf0b9caac6ed9b8d7f7afcb040ed97c2570c6452f1",
+        "scripts/m5-callback-qualification/operator.mjs": "7f346a74dca05cb41c50cc90815599cdd4699b8191a4ead4ee10b72e0945de77",
+        "scripts/m5-callback-qualification/store.mjs": "b1c185a465b5a57eded64de0d1491fcdfa0135514bd589db6cffa19400f1666c",
+        "scripts/m5-callback-qualification/service.mjs": "aff865e9b1109ad6b9f39a6f091cbc18e5bd112da3fb5d58c86e9028da1cbd09",
+        "scripts/m5-callback-qualification/receiver.mjs": "ab778ca27df4de11c428498ed2c129032c80d59c590b0f41e33f5f5fafadc8c9",
+        "scripts/m5-callback-qualification/receiver.test.mjs": "e041f942fd7a397faa9248397fdcfe4254dc40261951fe179be28cc5e38405e1",
+        "scripts/m5-callback-qualification/network-guard.mjs": "f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a",
+        "packages/shopify/src/webhook.ts": "c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f"
+      },
+      "logSha256": "2044a1e12b54ea5cb56c45b02571840f50a3335a21b4021f5ce5aab88282c346"
+    },
+    {
+      "argv": [
+        "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/depcruise",
+        "--config",
+        ".dependency-cruiser.cjs",
+        "scripts/m5-callback-qualification/supervisor.mjs",
+        "scripts/m5-callback-qualification/cleanup.mjs",
+        "scripts/m5-callback-qualification/operator.mjs",
+        "scripts/m5-callback-qualification/store.mjs",
+        "scripts/m5-callback-qualification/supervisor.test.mjs",
+        "scripts/m5-callback-qualification/cleanup.test.mjs"
+      ],
+      "exitCode": 0,
+      "logSha256": "f3815a1ddb77596e8e5dbfe8c0bcd027c4fa8c339eab2a6bc2735df1932e7973",
+      "scope": "Six corrected experimental runtime/test paths; not a new production root build"
+    },
+    {
+      "argv": [
+        "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/biome",
+        "check",
+        "scripts/m5-callback-qualification",
+        "docs/delivery/evidence/m5-callback-lifecycle",
+        "docs/delivery/milestone-progress.json"
+      ],
+      "exitCode": 0,
+      "infos": 49,
+      "logSha256": "a2f3b5a7b611e2c9537b34d3c5243965aaf2c237e2227f49657cf27e74d335ab"
+    }
+  ],
+  "productionSourceBuildReuse": "Unchanged apps/packages/crates/extensions/provider and package/lock inputs; accepted prior build checks reused with byte-equality verification. No new production build claimed.",
+  "historicalChecks": "checks.json and parent-checks.json retain original R1 checks; current correction checks are separate.",
+  "rootBoundarySetup": "Writer broader boundary invocation did not qualify because built package root absent. Retained in correction provenance; applicable scoped dependency analysis passed.",
+  "freshReviews": "PENDING",
+  "naturalExactHeadCi": "PENDING",
+  "nativeCallbackDeployment": "NOT_RUN",
+  "hostMetadataRead": "host-metadata-read-receipt.json",
+  "milestoneAcceptance": false,
+  "finalIntegrity": {
+    "exitCode": 0,
+    "logSha256": "5f8342b372b0c84f3e29eb42319638cd922548634856f36d6b743c1f9d9f11c0",
+    "scope": "Exact source/log/manifest pins; historical R1 docs/maps/source evidence; unchanged architecture/resources/acceptance/native/production/build inputs; scoped secret/links/JSON; CI registration"
+  }
+}

@@ -47,7 +47,7 @@ export async function withLifecycle(directory, task) {
   } catch {
     refuse();
   }
-  const guard = { target };
+  const guard = { target, path: guardPath };
   const identity = await file.stat();
   heldGuards.add(guard);
   try {
