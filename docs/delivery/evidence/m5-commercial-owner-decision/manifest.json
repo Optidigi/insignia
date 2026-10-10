@@ -1,0 +1,30 @@
+{
+  "base": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4",
+  "baseTree": "ea91f47cc01480b8a10962a0778fce64b1f1003d",
+  "ownedInputs": {
+    "docs/architecture/decision-ledger.md": "52fd7e0f1d61c4bbf6ed4d0434cc44083715e58127c8cf0a0e8f98b5b724de88",
+    "docs/architecture/implementation-plan.md": "490d7de1ff5eb338c17fea8441e8724e2b1f9345263a110eb661fba005ea976f",
+    "docs/delivery/authority/commercial-single-plan-2026-10-10.md": "72f9bb4840502e2973f7a22538f02e664ce4969eb7598a380fb2fdb0b9dab4b0",
+    "docs/delivery/evidence/m5-commercial-owner-decision/REPORT.md": "f82ce7e7ab0827a20cb99eec04f03e0653c4d8a6523ed9acea878079694e494c",
+    "docs/delivery/evidence/m5-commercial-owner-decision/checks.json": "95d9463a7dd592dfe6eba83a9805d96c867b12926a444c395f174dcfc47cbe34",
+    "docs/delivery/evidence/m5-commercial-owner-decision/owner-terms.json": "6422ff127526a8492047e5f67c3ec798dabddb985e0711349fa38cbc7f763c36",
+    "docs/delivery/evidence/m5-commercial-owner-decision/pr73-final-ci.json": "8dc1b341a5a801eb5dd0425cadfcc23a253f1b564e9df2894904ee1887764ff0",
+    "docs/delivery/evidence/m5-commercial-owner-decision/pr73-local-acceptance.json": "ee0a735812c5a0e0acf78c4c24249d982407ae1e5523b364045447bc19a07556",
+    "docs/delivery/evidence/m5-commercial-owner-decision/pr73-merge-receipt.json": "ac2f5ef102e81f14dc0baaba12225936d3df5d9b6f8e73992ba490eb40566fee",
+    "docs/delivery/evidence/m5-commercial-owner-decision/prior-decision-inputs.json": "615d08e7f136efa9699f031504801cb9105470847d257830102ca84820cadde7",
+    "docs/delivery/evidence/m5-commercial-owner-decision/source-test-proof.json": "c370eebc7314b2862df6b3680417f5f1fe8d8eb712d797ba0cf986a1e272c26e",
+    "docs/delivery/history/state-before-commercial-owner-decision.md": "d74e244a3a514c8f526da0b920e5787a56ba2514f756079716fe2416ccc90df9",
+    "docs/delivery/milestone-progress.json": "cb9e2fcca98e1d504111ca879ba9113a1047e88ca18a9e361b83a27e2fff8c0f",
+    "docs/delivery/state.md": "f5471f854419dc2d865435a44aba1e1f5e651b5207f8850d98afa0c455608e53",
+    "packages/application/src/entitlement/provider-policy.ts": "fcc17a6bb04be02b7c0035bf80d4ba2d048f170e87e8076c457a5d0353b29701",
+    "packages/application/test/provider-policy.test.ts": "69945c1eea5c345d6df4bb48381a5dd7a7477b53537b3c447bf635dc2f0d744a"
+  },
+  "interactingInputs": {
+    "apps/web/src/server/admin/production.ts": "63b2125855f1db446ba53ac68f7598793fb08719feaef90e87a93992b1161a63",
+    "packages/application/src/shopify/provider-scope.ts": "fb0f14c550126cdc83b7b5e1a6d394d3500d46e3ca9bb6e872a14e1880d14f49",
+    "AGENTS.md": "1d5fa596975ef19e33a7e1bc3db9ca5b944872e2ddbfe8a393d7c68810b60eba",
+    "docs/delivery/operating-model.md": "a5dc9c2a8ffb792077a1ee3c8c25f3e8fe6ba7837776a9d92cb5c64e13aa06d9"
+  },
+  "selfPin": "Excluded; private final freeze pins manifest",
+  "milestoneAcceptance": false
+}

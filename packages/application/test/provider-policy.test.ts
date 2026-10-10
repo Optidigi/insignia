@@ -1,5 +1,9 @@
 import { describe, expect, test } from 'vitest';
-import { bindProviderSubscription, projectEntitlement } from '../src/entitlement/provider-policy.js';
+import {
+  bindProviderSubscription,
+  type EntitlementPolicyConfig,
+  projectEntitlement,
+} from '../src/entitlement/provider-policy.js';
 
 const observedAt = '2026-09-29T12:00:00.000Z';
 const flat = (handle: string, active = true) => ({
@@ -206,4 +210,165 @@ describe('provider entitlement policy', () => {
       });
     }
   });
+});
+
+test('shop-restricted policy denies another verified installation using identical provider handles', async () => {
+  const scopedConfig = {
+    ...config,
+    plans: config.plans.map((plan) => ({ ...plan, shopId: 'gid://shopify/Shop/456' })),
+  };
+  const otherContext = {
+    ...context(at),
+    shopId: 'gid://shopify/Shop/999',
+    tenantShopId: 'tenant-shop-2',
+    installationGeneration: '8',
+  };
+  const {
+    tenantShopId: _tenant,
+    installationGeneration: _generation,
+    ...raw
+  } = snapshot({ shopId: otherContext.shopId });
+  const bound = await bindProviderSubscription(raw, otherContext, {
+    getActiveProviderScope: async () => ({
+      shopId: 'tenant-shop-2',
+      shopDomain: 'other-fixture.myshopify.com',
+      shopifyShopId: '999',
+      installationGeneration: '8',
+    }),
+  });
+  expect(projectEntitlement(bound, scopedConfig, otherContext)).toMatchObject({
+    active: true,
+    freshness: 'fresh',
+    recognizedPolicyId: null,
+    features: [],
+    includedUsage: null,
+    observedUsageQuantity: null,
+    billableUsageAllowed: false,
+    qualifyingUsageDisposition: 'DENY',
+  });
+});
+
+test('explicit malformed provider shop restrictions reject configuration rather than becoming unscoped', () => {
+  for (const shopId of [
+    undefined,
+    null,
+    456,
+    true,
+    {},
+    [],
+    '',
+    '456',
+    'fixture.myshopify.com',
+    'gid://shopify/App/456',
+    'gid://shopify/Shop/0',
+    'gid://shopify/Shop/0456',
+    'gid://shopify/Shop/-456',
+    'gid://shopify/shop/456',
+    'gid://shopify/Shop/456 ',
+    'gid://shopify/Shop/456?extra',
+    'gid://shopify/Shop/456\n',
+    'gid://shopify/Shop/456\r',
+    'gid://shopify/Shop/456\r\n',
+  ]) {
+    const malformed = {
+      ...config,
+      plans: config.plans.map((plan) => ({ ...plan, shopId })),
+    } as unknown as EntitlementPolicyConfig;
+    expect(() => projectEntitlement(snapshot(), malformed, context(at))).toThrow(
+      'Invalid entitlement policy configuration',
+    );
+  }
+});
+
+test('exact verified provider shop retains scoped paid and trial grants while other policies remain unscoped', async () => {
+  const scopedConfig = {
+    ...config,
+    plans: config.plans.map((plan, index) => (index === 0 ? { ...plan, shopId: 'gid://shopify/Shop/456' } : plan)),
+  };
+  const tenants = {
+    getActiveProviderScope: async () => ({
+      shopId: 'tenant-shop-1',
+      shopDomain: 'fixture.myshopify.com',
+      shopifyShopId: '456',
+      installationGeneration: '7',
+    }),
+  };
+  for (const trial of [false, true]) {
+    const source = snapshot(trial ? { trialEndsAt: '2026-10-04T00:00:00.000Z', currentBillingCycle: null } : {});
+    const { tenantShopId: _tenant, installationGeneration: _generation, ...raw } = source;
+    const bound = await bindProviderSubscription(raw, context(at), tenants);
+    expect(projectEntitlement(bound, scopedConfig, context(at))).toMatchObject({
+      freshness: 'fresh',
+      recognizedPolicyId: 'alpha',
+      features: ['quote', 'advanced-art'],
+      includedUsage: 10,
+      trial,
+      billableUsageAllowed: !trial,
+      qualifyingUsageDisposition: trial ? 'WAIVE_TRIAL' : 'REQUIRES_EVENT_TIME',
+    });
+  }
+  const other = {
+    ...context(at),
+    shopId: 'gid://shopify/Shop/999',
+    tenantShopId: 'tenant-shop-2',
+    installationGeneration: '8',
+  };
+  expect(
+    projectEntitlement(
+      snapshot({
+        shopId: other.shopId,
+        tenantShopId: other.tenantShopId,
+        installationGeneration: other.installationGeneration,
+        items: [flat('plan.beta'), meter()],
+      }),
+      scopedConfig,
+      other,
+    ),
+  ).toMatchObject({
+    freshness: 'fresh',
+    recognizedPolicyId: 'beta',
+    features: ['quote', 'advanced-art', 'priority'],
+    includedUsage: 30,
+  });
+});
+
+test('shop restriction preserves provider binding, tenant generation, freshness and normal subscription admission', async () => {
+  const scopedConfig = {
+    ...config,
+    plans: config.plans.map((plan) => ({ ...plan, shopId: 'gid://shopify/Shop/456' })),
+  };
+  for (const overrides of [
+    { appId: 'gid://shopify/App/999' },
+    { shopId: 'gid://shopify/Shop/999' },
+    { tenantShopId: 'other-tenant' },
+    { installationGeneration: '8' },
+    { observedAt: '2026-09-29T11:59:00Z' },
+    { observedAt: '2026-09-29T12:01:00Z' },
+    { items: [flat('plan.alpha')] },
+    { items: [flat('plan.alpha'), meter('meter.unknown')] },
+    { billingPeriod: 'ANNUAL' },
+    { trialEndsAt: '2026-09-29T12:00:00Z', currentBillingCycle: null },
+    { currentBillingCycle: { startTime: '2026-09-30T00:00:00Z', endTime: '2026-10-01T00:00:00Z' } },
+  ]) {
+    expect(projectEntitlement(snapshot(overrides), scopedConfig, context(at))).toMatchObject({
+      recognizedPolicyId: null,
+      features: [],
+      billableUsageAllowed: false,
+      qualifyingUsageDisposition: 'DENY',
+    });
+  }
+  const { tenantShopId: _tenant, installationGeneration: _generation, ...raw } = snapshot();
+  for (const change of [{ shopifyShopId: '999' }, { installationGeneration: '8' }, { shopId: 'other-tenant' }]) {
+    await expect(
+      bindProviderSubscription(raw, context(at), {
+        getActiveProviderScope: async () => ({
+          shopId: 'tenant-shop-1',
+          shopDomain: 'fixture.myshopify.com',
+          shopifyShopId: '456',
+          installationGeneration: '7',
+          ...change,
+        }),
+      }),
+    ).rejects.toThrow(/identity/);
+  }
 });

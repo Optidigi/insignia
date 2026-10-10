@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "2f7aa2bfb304a80ac08a2965ed20c63e4c85fe8e",
-  "currentTree": "249989e574c266fcb3154602a1a0579d8d45a27b",
+  "currentIntegratedCommit": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4",
+  "currentTree": "ea91f47cc01480b8a10962a0778fce64b1f1003d",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -124,6 +124,10 @@
     {
       "pr": 72,
       "receipt": "evidence/m5-callback-startup-identity/pr72-merge-receipt.json"
+    },
+    {
+      "pr": 73,
+      "receipt": "evidence/m5-commercial-owner-decision/pr73-merge-receipt.json"
     }
   ],
   "openFindings": [
@@ -181,27 +185,26 @@
     }
   ],
   "ownerInputs": [
-    "Other processor/queue/privacy ownership artifact locations still unidentified",
+    "Other processor/queue/privacy ownership locations still unidentified",
     "Any later provisioning/deployment/mutation requires exact separate owner resource envelope",
-    "Owner reports no commercial configuration and selects one all-feature paid plan;49.99 monthly/order fee under research, currency/fee/allowance/trial and provider policy still undefined; no dev bypass",
-    "Owner conditionally allocates stitchs-vat-verification-20261004; canonical provider identity/apps/data/downstream privacy safety gate unqualified; allocation does not start test"
+    "Owner-approved one paid all-released-feature plan: USD49.99/30days,100 included qualifying paid orders,USD0.10 additional,14day live trial subscription+usage waived. Exact provider configuration and a genuine development feature mapping remain due; no bypass",
+    "Owner conditionally allocates stitchs-vat-verification-20261004; native identity/apps/data/destination/privacy gate unqualified; no test started"
   ],
-  "nextSafeAction": "Review/CI/merge startup identity correction, finish exact host package, research one-plan pricing; native safety and resource conditions remain.",
+  "nextSafeAction": "Qualify/integrate owner decision and optional exact-shop policy restriction; finish concrete host package and qualified distinct read-only host prerequisites. Do not configure entitlement or mutate resources without allocation.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
-    "slice": "Concrete private host packaging and owner-requested competitor pricing research",
-    "status": "Private draft lacks launcher/cleanup wrappers; research ongoing",
-    "nativeAuthority": "No host writes or Shopify mutations"
+    "slice": "Fixed private host launcher/TLS/cleanup process controls and bounded missing-host-facts collector",
+    "status": "Local qualification running; native prerequisites unqualified",
+    "nativeAuthority": "Permanent scoped read-only only; no host writes or Shopify mutations"
   },
   "activeCandidate": {
-    "scope": "Local startup mapping identity binding;74 real receiver/lifecycle/TLS controls",
-    "base": "2f7aa2bfb304a80ac08a2965ed20c63e4c85fe8e",
-    "tree": "249989e574c266fcb3154602a1a0579d8d45a27b",
+    "scope": "Owner single-plan decision and optional exact provider Shop policy restriction",
+    "base": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4",
     "reviews": "PENDING",
-    "nativeAuthority": "UNALLOCATED / NOT_RUN"
+    "nativeAuthority": "NO_MUTATIONS / NOT_RUN"
   },
   "boundedInventoryTooling": {
     "pr": 60,
@@ -323,5 +326,12 @@
     "hostWrites": 0,
     "routingFile": "UNKNOWN",
     "completePrivacyAuthority": false
+  },
+  "commercialDecision": {
+    "authority": "authority/commercial-single-plan-2026-10-10.md",
+    "ownerAttestation": "evidence/m5-commercial-owner-decision/owner-terms.json",
+    "runtimeConfiguration": "NOT_CONFIGURED",
+    "developmentMappingApproved": false,
+    "providerBillingMutations": 0
   }
 }

@@ -1,0 +1,81 @@
+{
+  "applicationRegression": {
+    "result": "PASS",
+    "tests": 206,
+    "suites": 16,
+    "skipped": 0,
+    "command": "corepack pnpm --filter @insignia/application test",
+    "logSha256": "563880cfb513ad60358e141704cc0b3ffb9cde98d097e3081d4aafa1ffa33906",
+    "provenance": "Fresh writer execution; parent personally read final and RED logs and verified exact source/test pins"
+  },
+  "formatPreparation": {
+    "argv": [
+      "corepack",
+      "pnpm",
+      "exec",
+      "biome",
+      "check",
+      "--write",
+      "docs/delivery/evidence/m5-commercial-owner-decision/pr73-local-acceptance.json",
+      "docs/delivery/evidence/m5-commercial-owner-decision/source-test-proof.json",
+      "docs/delivery/evidence/m5-commercial-owner-decision/owner-terms.json",
+      "docs/delivery/evidence/m5-commercial-owner-decision/prior-decision-inputs.json",
+      "docs/delivery/evidence/m5-commercial-owner-decision/pr73-final-ci.json",
+      "docs/delivery/evidence/m5-commercial-owner-decision/pr73-merge-receipt.json",
+      "docs/delivery/milestone-progress.json"
+    ],
+    "exitCode": 0,
+    "logSha256": "6859698029cb69b72f533ad087e4326a1cc6405ac01f6cc6f8a7a6e898b3315f"
+  },
+  "style": {
+    "argv": [
+      "corepack",
+      "pnpm",
+      "exec",
+      "biome",
+      "check",
+      "packages/application/src/entitlement/provider-policy.ts",
+      "packages/application/test/provider-policy.test.ts",
+      "docs/delivery/evidence/m5-commercial-owner-decision/pr73-local-acceptance.json",
+      "docs/delivery/evidence/m5-commercial-owner-decision/source-test-proof.json",
+      "docs/delivery/evidence/m5-commercial-owner-decision/owner-terms.json",
+      "docs/delivery/evidence/m5-commercial-owner-decision/prior-decision-inputs.json",
+      "docs/delivery/evidence/m5-commercial-owner-decision/pr73-final-ci.json",
+      "docs/delivery/evidence/m5-commercial-owner-decision/pr73-merge-receipt.json",
+      "docs/delivery/milestone-progress.json"
+    ],
+    "exitCode": 0,
+    "logSha256": "eeb8eaf85ffbbd64c0c656979f2bb3830f52fc587c5434f5372d2e9d6cfb0369"
+  },
+  "boundaries": {
+    "argv": ["corepack", "pnpm", "check:boundaries"],
+    "exitCode": 0,
+    "logSha256": "bc8f0050e19120c83cb2b470b4f848ce1325f21579c590fc60b82b2f20904565"
+  },
+  "secretAndFixtureProvenance": {
+    "argv": ["/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node", "scripts/boundaries/check-secrets.mjs"],
+    "exitCode": 0,
+    "logSha256": "743f98b568d1828232f861a3366e9907efd0bbd36b20bc458df8cf8012e21b55"
+  },
+  "whitespace": {
+    "argv": ["git", "diff", "--check"],
+    "exitCode": 0,
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "rootBuild": {
+    "command": "corepack pnpm build",
+    "exitCode": 0,
+    "logSha256": "770d3543b23cc12ae4678084763bb138a13c9ee86a8494b99ec20b1e293ba90a",
+    "provenance": "Parent current full web/storefront/worker and package build; not deployed"
+  },
+  "integrity": {
+    "result": "PASS",
+    "sourceRestriction": "Two exact frozen application paths only",
+    "historicalPlanLedgerState": "BYTE_EXACT_PINNED_HISTORY",
+    "providerConfigAndWorkflowInputs": "UNCHANGED",
+    "noRuntimeOrProviderWrites": true,
+    "localLinks": "PASS",
+    "scopedSecretMarkers": "PASS",
+    "buildArtifacts": "Current local build only; no release or deployment"
+  }
+}

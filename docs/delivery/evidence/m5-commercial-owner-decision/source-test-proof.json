@@ -1,0 +1,173 @@
+{
+  "head": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4",
+  "tree": "ea91f47cc01480b8a10962a0778fce64b1f1003d",
+  "sourceHashes": {
+    "packages/application/src/entitlement/provider-policy.ts": "fcc17a6bb04be02b7c0035bf80d4ba2d048f170e87e8076c457a5d0353b29701",
+    "packages/application/test/provider-policy.test.ts": "69945c1eea5c345d6df4bb48381a5dd7a7477b53537b3c447bf635dc2f0d744a"
+  },
+  "commands": [
+    {
+      "artifact": "01-offline-task-local-deps.log",
+      "command": "corepack pnpm install --offline --frozen-lockfile",
+      "exitCode": 0,
+      "result": "PASS_LOCAL_SETUP_REUSED464_DOWNLOADED0",
+      "sha256": "9779a14eb7b50994d34b89d115b9aefdbce501f594738f687187eb26bd6195ab"
+    },
+    {
+      "artifact": "02-shop-scope-red.log",
+      "command": "corepack pnpm --filter @insignia/application exec vitest run test/provider-policy.test.ts -t 'shop-restricted policy denies'",
+      "exitCode": 1,
+      "result": "MEANINGFUL_RED_1FAIL_8FILTERED_SKIPS_NOT_ZERO_SKIP_QUALIFICATION",
+      "sha256": "aea262b96d63628f48aaac3d8676ebe0176b117bd34d96df6ff072516ed9b62f"
+    },
+    {
+      "artifact": "03-shop-scope-red-full-focused.log",
+      "command": "corepack pnpm --filter @insignia/application exec vitest run test/provider-policy.test.ts",
+      "exitCode": 1,
+      "result": "MEANINGFUL_RED_8PASS_1FAIL_0SKIP",
+      "sha256": "46d6cfd2fbc00edd3f0df54fd616eb0fd22627b346be5f0e4fcfa59ca94cb96f"
+    },
+    {
+      "artifact": "04-shop-scope-green.log",
+      "command": "corepack pnpm --filter @insignia/application exec vitest run test/provider-policy.test.ts",
+      "exitCode": 0,
+      "result": "GREEN_9PASS_0SKIP",
+      "sha256": "84ddd256f9f783228186620de20cdd9813ac173ea294e30497581d02edd2c94f"
+    },
+    {
+      "artifact": "05-malformed-scope-red.log",
+      "command": "corepack pnpm --filter @insignia/application exec vitest run test/provider-policy.test.ts",
+      "exitCode": 1,
+      "result": "MEANINGFUL_RED_9PASS_1FAIL_0SKIP_UNDEFINED_PRESENT_NOT_REJECTED",
+      "sha256": "093287f66ba322caea67e40438e236e25bd8777805031f63dac96ddbe8b39c56"
+    },
+    {
+      "artifact": "06-malformed-scope-green.log",
+      "command": "corepack pnpm --filter @insignia/application exec vitest run test/provider-policy.test.ts",
+      "exitCode": 0,
+      "result": "GREEN_10PASS_0SKIP",
+      "sha256": "4b682b465d5bd72f06e9c94578c99efc8e59b53768665295d5fe95e6e81bcb14"
+    },
+    {
+      "artifact": "07-format.log",
+      "command": "corepack pnpm exec biome check --write packages/application/src/entitlement/provider-policy.ts packages/application/test/provider-policy.test.ts",
+      "exitCode": 0,
+      "result": "FORMAT_PASS_2_WARNINGS_RETAINED_SUBSEQUENTLY_REMOVED_NON_NULL_ASSERTIONS",
+      "sha256": "7b971ddab4500a2446e1f3aeb662670f4217742c05e1302d43fa4ab97f538ba9"
+    },
+    {
+      "artifact": "08-full-application-regression.log",
+      "command": "corepack pnpm --filter @insignia/application test",
+      "exitCode": 1,
+      "result": "SETUP_NOT_QUALIFIED_MISSING_LOCAL_BUILT_PACKAGE_EXPORTS_125PASS_3FAILED_SUITES",
+      "sha256": "a780c72b33e613f1c4e7905835c7349e07538d86c2639d5a7fbd1bac52ac2fb5"
+    },
+    {
+      "artifact": "09-final-format.log",
+      "command": "corepack pnpm exec biome check --write packages/application/src/entitlement/provider-policy.ts packages/application/test/provider-policy.test.ts",
+      "exitCode": 0,
+      "result": "PASS_NO_DIAGNOSTICS",
+      "sha256": "42816f51fd2ef6bd0bb4ecde99ad3287b153965e834958e74541ec06bad2d7d7"
+    },
+    {
+      "artifact": "10-contracts-dependency-build.log",
+      "command": "corepack pnpm --filter @insignia/contracts build",
+      "exitCode": 0,
+      "result": "PASS_LOCAL_TYPESCRIPT_DEPENDENCY_BUILD",
+      "sha256": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b"
+    },
+    {
+      "artifact": "11-domain-dependency-build.log",
+      "command": "corepack pnpm --filter @insignia/domain build",
+      "exitCode": 0,
+      "result": "PASS_LOCAL_TYPESCRIPT_DEPENDENCY_BUILD",
+      "sha256": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b"
+    },
+    {
+      "artifact": "12-application-type-build.log",
+      "command": "corepack pnpm --filter @insignia/application build",
+      "exitCode": 0,
+      "result": "PASS_CURRENT_APPLICATION_STRICT_TYPESCRIPT_AND_PUBLIC_EXPORT_BUILD",
+      "sha256": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b"
+    },
+    {
+      "artifact": "13-final-style.log",
+      "command": "corepack pnpm exec biome check packages/application/src/entitlement/provider-policy.ts packages/application/test/provider-policy.test.ts",
+      "exitCode": 0,
+      "result": "PASS_NO_DIAGNOSTICS",
+      "sha256": "314970aeb227788368203172a97ee50112e0aa0b198d526afc142b6cce507f93"
+    },
+    {
+      "artifact": "14-scoped-boundary.log",
+      "command": "corepack pnpm exec depcruise --config .dependency-cruiser.cjs packages/application/src/entitlement/provider-policy.ts packages/application/test/provider-policy.test.ts",
+      "exitCode": 0,
+      "result": "PASS_2MODULES_1DEPENDENCY",
+      "sha256": "c8d312d97ea2a3c46502854f285ab06b460071be08300a341bf67fc8b6871291"
+    },
+    {
+      "artifact": "15-full-application-green.log",
+      "command": "corepack pnpm --filter @insignia/application test",
+      "exitCode": 1,
+      "result": "SETUP_NOT_QUALIFIED_MISSING_UNCHANGED_SHOPIFY_EXPORT_148PASS_1FAILED_SUITE",
+      "sha256": "d2a03053cadf6e1b98d40abc46bafadc73cd2ab8107d061ee3f2935d16547a55"
+    },
+    {
+      "artifact": "16-shopify-test-import-dependency-build.log",
+      "command": "corepack pnpm --filter @insignia/shopify build",
+      "exitCode": 0,
+      "result": "PASS_LOCAL_TYPESCRIPT_TEST_IMPORT_DEPENDENCY_BUILD",
+      "sha256": "29c5ee0f6b0b20dbb259b99d01276198c3d28190090706394608d4deda6d2c0b"
+    },
+    {
+      "artifact": "17-canonical-newline-validation-green.log",
+      "command": "corepack pnpm --filter @insignia/application exec vitest run test/provider-policy.test.ts",
+      "exitCode": 0,
+      "result": "PASS_12_FOCUSED_CONTROLS_0SKIP_NEWLINE_REJECTED_BY_EXISTING_STRICT_REGEX_NO_FIX_NEEDED",
+      "sha256": "11f4f88c98dac3ec95f34ba46d1b4675b9e28a3f483510b746c01218e9c55488"
+    },
+    {
+      "artifact": "18-full-final-application.log",
+      "command": "corepack pnpm --filter @insignia/application test",
+      "exitCode": 0,
+      "result": "PASS_206CONTROLS_16SUITES_0SKIP_1.63SECONDS",
+      "sha256": "563880cfb513ad60358e141704cc0b3ffb9cde98d097e3081d4aafa1ffa33906"
+    },
+    {
+      "artifact": "19-final-style.log",
+      "command": "corepack pnpm exec biome check packages/application/src/entitlement/provider-policy.ts packages/application/test/provider-policy.test.ts",
+      "exitCode": 0,
+      "result": "PASS_NO_DIAGNOSTICS",
+      "sha256": "d53ddc0c5e991e7f36c1040ef2fe05575996fa4d537380aae8468ae1c8210dab"
+    },
+    {
+      "artifact": "20-final-scoped-boundary.log",
+      "command": "corepack pnpm exec depcruise --config .dependency-cruiser.cjs packages/application/src/entitlement/provider-policy.ts packages/application/test/provider-policy.test.ts",
+      "exitCode": 0,
+      "result": "PASS_2MODULES_1DEPENDENCY",
+      "sha256": "c8d312d97ea2a3c46502854f285ab06b460071be08300a341bf67fc8b6871291"
+    },
+    {
+      "artifact": "21-integrity-receipt.json",
+      "command": "python3 /home/serveradmin/insignia-milestone-autonomy-handoff/m5-entitlement-shop-scope-correction-20261010/verify-integrity.py /home/serveradmin/insignia-m5-commercial-decision-worktree",
+      "exitCode": 0,
+      "result": "PASS_ACTUAL_SOURCE_PINS_UNCHANGED_INPUTS_OWNED_SCOPE_WHITESPACE_SECRET_MARKERS",
+      "sha256": "37f2bcd44ad42996168628fe1f57ed553ebe97a3b75d5830d9842e46cf11a40c"
+    }
+  ],
+  "toolVersions": {
+    "node": "v24.21.0",
+    "pnpm": "12.6.0",
+    "typescript": "Version 5.9.3",
+    "biome": "Version: 2.5.14",
+    "depcruise": "18.4.0",
+    "vitest": "vitest/5.0.2 linux-x64 node-v24.21.0"
+  },
+  "redControlSources": {
+    "shop-scope-red.test.ts": "b182b44e292a520a698a590dc6de25c4f74bab510cb4c822e00a54fdd291dec4",
+    "malformed-scope-red.test.ts": "66fe8f992c38e19e72288d058d850a8b578e965b8dcda596dbfeb8134cc4954d"
+  },
+  "limits": "Restriction mechanism only; no owner-approved development mapping/provider configuration or native evidence; see handoff.txt.",
+  "privateProofLocation": "insignia-milestone-autonomy-handoff/m5-entitlement-shop-scope-correction-20261010",
+  "rawProofHandling": "Local non-native source/test process logs; private700 directory/files600; no native tokens or provider responses",
+  "writerFreezeSha256": "634c2d5c33eae675adc2ebf8dbf04139aab177ac09321d672715d431d41d032f"
+}

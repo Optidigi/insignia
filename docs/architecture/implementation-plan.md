@@ -1,10 +1,10 @@
 # Insignia — greenfield architecture and implementation plan
 
-**Record version:** 1.5 — 9 October 2026 (delivery governance only; technical contracts retained)
+**Record version:** 1.6 — 10 October 2026 (owner single-plan commercial amendment; other technical contracts retained)
 
 **Status:** Product/architecture decision audit closed; Option A required-product trust boundary approved. No complete development gate accepted.
 
-**Authority:** The user's pasted baseline, subsequent answers, final inactive-subscription/downgrade approval, [Option A approval](OPTION-A-APPROVED.md), and [whole-quote v2 adoption](WHOLE-QUOTE-V2-ADOPTED.md). No missing `plan.md` dependency remains.
+**Authority:** The user's pasted baseline, subsequent answers, final inactive-subscription/downgrade approval, [Option A approval](OPTION-A-APPROVED.md), [whole-quote v2 adoption](WHOLE-QUOTE-V2-ADOPTED.md), and the [single-plan owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md). No missing `plan.md` dependency remains.
 
 **Delivery:** Consult the maintained [delivery state](../delivery/state.md) for current authorization, evidence and gate status. The v1.3 record remains available at fixed PR #25 merge `4209bb16a09cff95d5cbbc1bbcb082e8c1fa8899` with plan SHA-256 `b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d` and ledger SHA-256 `d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9`. The original v1.1 record remains at fixed PR #10 merge `0f2c80a316228bd69fdd2ff272e967ff14647b2b`; approved v1.2 remains at fixed PR #17 merge `662a78cd27507d8a2f1eaa976f1c644c93edd1be`.
 
@@ -473,9 +473,9 @@ Record orders at creation, bind approved customizations, and maintain first-full
 
 ### 6.6 Commercial plan contract
 
-Three plans differ by feature entitlements, included usage, subscription amount and per-order overage. Exact handles/names, values and feature matrix remain release configuration, not guessed prices in code. Keep a versioned catalog mapping Shopify plan handles to a typed set of supported features. Feature checks run server-side on publication, new quotes, acceptance and renewals; UI hiding is not enforcement.
+One paid plan includes all released in-scope features at USD $49.99 per 30-day cycle, with 100 qualifying paid customized orders included and USD $0.10 per additional qualifying order. The [owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md) supersedes the earlier three-plan direction; exact provider/display handles and native pricing configuration remain unqualified, not guessed in code. Keep a versioned catalog mapping Shopify plan handles to a typed set of supported features. Feature checks run server-side on publication, new quotes, acceptance and renewals; UI hiding is not enforcement.
 
-Use **monthly Shopify App Pricing hybrid plans**. Current combined usage pricing is monthly, not yearly. Use Partner API `activeSubscription` plus historical events for lifecycle reconciliation, not an old `APP_SUBSCRIPTIONS_UPDATE`-only design. Redirect parameters trigger verification; they do not grant entitlement on their own. [S5, S6]
+Use a **monthly Shopify App Pricing hybrid plan**. Current combined usage pricing is monthly, not yearly. Use Partner API `activeSubscription` plus historical events for lifecycle reconciliation, not an old `APP_SUBSCRIPTIONS_UPDATE`-only design. Redirect parameters trigger verification; they do not grant entitlement on their own. [S5, S6]
 
 Use one `customized_order_paid` usage meter. Send a value of one for each qualifying non-trial paid order, including those within the included allowance; configure the allowance as a zero-cost initial **graduated** billing band and the remainder at the plan's overage rate. This billing meter is separate from the **all-units garment customization tiers**. Do not subtract allowances locally and have Shopify subtract them again. [S7]
 
@@ -483,7 +483,7 @@ Qualifying means a distinct non-test order with at least one verified Insignia c
 
 ### 6.7 Trial, inactive plan and downgrade
 
-Trial is 14 days of the chosen plan from activation. Both subscription and order usage are free. Record trial-qualified orders in the local ledger with `WAIVED_TRIAL`; never emit them later to a paid meter. Provider contract/trial timestamps are authoritative. Do not invent local trial resets on plan change or reinstall.
+Trial is 14 days of the single paid plan from authoritative activation. Both subscription and order usage are free. Record trial-qualified orders in the local ledger with `WAIVED_TRIAL`; never emit them later to a paid meter. Provider contract/trial timestamps are authoritative. Do not invent local trial resets on plan change or reinstall.
 
 Without an active trial or paid entitlement: no new quotes, acceptances or renewals. Existing valid authorizations remain usable until normal expiry, assuming Functions still exist and validate. Historical orders, merchant artwork attachment and downloads remain available within retention. Such already-promised purchases that have no billable active contract are recorded as unbillable rather than retroactively charged on reactivation.
 
@@ -778,9 +778,9 @@ All gates began **NOT RUN**. The maintained [delivery evidence register](../deli
 | **G5: allocation and exact scalar boundary** | `gates/rounding`: €91 example, many variants, setup zero/one minor unit, different base prices, native partial refunds, pathological decimal values and SDK serialization. Price buckets retain identities/prices, sums exact; no float rounding/tolerance acceptance. | Reopen exact scalar adapter or allocation/materialization shape. User-visible total may not drift by a cent as a “tolerance.” |
 | **G6: economic fail-closed plus repair** | `gates/enforcement`: conflicting transform apps, missing/discarded/altered operations, malformed/mixed/partial tokens, required-policy tampering, runtime failure, stale projections and direct/accelerated checkout. Prove no underpriced customized checkout within the approved Option A trust boundary, including detectable incomplete policy and a safe publication/activation path. Prove removing/replacing invalid lines remains possible without a cart deadlock. The accepted unexpected joint-loss/coherent-rollback residual is an incident, not a passed stronger guarantee. | Reopen enforcement/repair boundary. This is an architecture-stopping failure, not an edge case to hide in UI. |
 | **G7: embedded Astro admin** | `gates/embedded-admin`: cold launch, deep link, reload, cookie-blocked/mobile, expired identity tokens, staff authorization, mutation CSRF controls, private SSR/fragments, Polaris/Preact events/hydration, native refresh concurrency and production SDK bundling. | Adjust the narrow auth/navigation integration; reconsider Astro only on demonstrated fundamental incompatibility. No private-data bootstrap bypass. |
-| **G8: hybrid billing lifecycle** | `gates/hybrid-billing`: three test plans, allowance boundary, selected-plan 14-day free trial, first-paid event time, duplicate deliveries, refunds not reversing, plan changes/downgrade, cancellation, delayed/closed-period events, permanent billing idempotency and 202 processing failures. Verify actual meter/contract/Dev Dashboard outcomes, not just HTTP status. | Reopen billing adapter/meter representation/reconciliation mechanics. The subscription-plus-order business model stays locked unless platform evidence makes it impossible and the user approves a change. |
+| **G8: hybrid billing lifecycle** | `gates/hybrid-billing`: the owner-approved single paid plan, 100-order allowance boundary,14-day free trial, first-paid event time, duplicate deliveries, refunds not reversing, plan changes/downgrade, cancellation, delayed/closed-period events, permanent billing idempotency and 202 processing failures. Verify actual meter/contract/Dev Dashboard outcomes, not just HTTP status. | Reopen billing adapter/meter representation/reconciliation mechanics. The subscription-plus-order business model stays locked unless platform evidence makes it impossible and the user approves a change. |
 
-G8 is added because the approved hybrid/feature-tiered business model depends on provider billing lifecycle behavior beyond a flat subscription. It is not an excuse to reopen plan economics in every coding task.
+G8 is added because the approved subscription-plus-order business model depends on provider billing lifecycle behavior beyond a flat subscription. It is not an excuse to reopen plan economics in every coding task.
 
 ### 14.2.1 Gate evidence timing, approved v1.3 sequencing retained in v1.4
 
@@ -797,7 +797,7 @@ The criteria in the table above are unchanged. A principal-accepted **feasibilit
 | G5 | Exact allocation/scalar agreement plus measured full-target output for the chosen candidate before M1 capacity reliance. | M2/M4 integrate exact money and SDK scalar serialization; M7/M8 close the €91 example, many variants, zero/one-minor setup, differing base prices, pathological decimals and native partial refunds before purchase acceptance; M10 repeats. |
 | G6 | Public-app wrong-economics rejection and a reviewed implementable Option A activation/consistency contract before publication depends on it. M1 foundation work must not rely on an unproved activator; completing the production publisher is not a prerequisite for generic foundation work. | M3 durable journal/installation fencing and M4/M5 readiness/activation; M7 proves independent fail-closed handling for conflicting apps, missing/altered operations, partial/mixed tokens, policy tampering, runtime failure, stale projections and direct/accelerated checkout, with invalid-line repair, before required-product publication is enabled or accepted. The approved unexpected joint-loss residual remains an incident to contain. |
 | G7 | Accepted real embedded identity/navigation/save feasibility supports an M1 foundation decision. | M5 closes cold/deep/reload, blocked-cookie/mobile/expired-token, staff authorization, CSRF/private-fragment, Polaris/Preact, native refresh concurrency, production bundle, grant-cache and ambiguous-save recovery before dependent admin functionality is accepted; M10 repeats supported browser coverage. |
-| G8 | Accepted real provider access/current effective-zero metering is route evidence only; trial/allowance/plan/cancellation provider contracts must be established before M4 entitlement rules are accepted. | M3 implements durable records, M8 supplies verified first-paid facts, M9 closes three-plan allowance/trial, duplicate/refund, plan transition/downgrade/cancellation, delayed/closed-period, permanent-key and 202-to-processing delivery/reconciliation against actual meter/contract/Dashboard evidence before billing acceptance; M10/M11 verify release-specific commercial terms. |
+| G8 | Accepted real provider access/current effective-zero metering is route evidence only; trial/allowance/plan/cancellation provider contracts must be established before M4 entitlement rules are accepted. | M3 implements durable records, M8 supplies verified first-paid facts, M9 closes the single-plan allowance/trial, duplicate/refund, plan transition/downgrade/cancellation, delayed/closed-period, permanent-key and 202-to-processing delivery/reconciliation against actual meter/contract/Dashboard evidence before billing acceptance; M10/M11 verify release-specific commercial terms. |
 
 Published Function resource ceilings at research time include a 256 kB binary and, for carts up to 200 lines, 11 million instructions, 128 kB input and 20 kB output. Measure against the current pinned platform and include input-query cost as well. A large garment quantity is not the same thing as a large signed-line count. [S4]
 
@@ -905,10 +905,10 @@ Only the small scaffolding necessary for a spike precedes platform risk proof. T
 
 ### M9 — Usage billing and subscription lifecycle
 
-**Goal:** Charge one eligible order once, with correct plan features/allowances/trial policy.  
+**Goal:** Charge one eligible order once, with correct plan features/allowances/trial policy.
 **Prerequisites:** M4 entitlement work, M8 paid facts and principal-accepted G8 provider feasibility/contracts. Real commercial plan configuration remains due before paid release; full integrated G8 cannot be an entry requirement for the milestone that implements it.
 **Created:** Usage ledger/outbox sender, subscription/usage reconciliation, billing/admin disclosure.  
-**Work:** Three provider plans, included graduated meter band, trial waiver, occurred-at qualification, non-reversing refunds, cancellation/downgrade restrictions, 202 transport-vs-billing distinction and permanent idempotency.  
+**Work:** One owner-approved provider paid plan, 100 included orders in a zero-cost graduated meter band then USD $0.10/order, trial waiver, occurred-at qualification, non-reversing refunds, cancellation/downgrade restrictions, 202 transport-vs-billing distinction and permanent idempotency.
 **Tests:** Duplicate paid events/replayed quotes, 500-item single usage, allowance boundary, trial-end delayed webhook, plan switch, cancellation/old authorization, billing validation failure and closed period.  
 **Acceptance:** Actual provider evidence matches expected charges and entitlements; no trial back-billing or duplicate usage; processing uncertainty is visible, not hidden as success. All remaining original G8 lifecycle criteria pass at M9 exit, with release-specific terms reverified before paid rollout.
 **Commitment afterward:** Meter handle, qualification rules and actual merchant contract. Rates/feature changes need versioned disclosures and provider contract handling.
@@ -999,7 +999,7 @@ This section mirrors `decision-ledger.md`; update both in the same reviewed chan
 
 **Artwork/orders:** Byte-exact private SVG/PNG/JPEG originals, verified before use, safe PNG/WebP previews, no arbitrary inline SVG. Merchant-controlled logo-later; merchant-only post-order attachment. Append-only replacements; PENDING_ARTWORK → READY → ARTWORK_LOCKED. Immutable order-time purchase facts. Shopify owns payment/fulfillment/refunds/returns/restock; no garment/customization refund split.
 
-**Billing/entitlements:** Three feature-differentiated plans, subscription + per-order usage and different included allowances. One qualifying paid order, not quantity/groups; refunds do not reverse usage. Fourteen-day live chosen-plan trial from activation, subscription and usage waived, no retrospective trial billing and no separate demo system. No active entitlement means no new issuance/renewal; valid old offers honored until expiry. Historical order/artwork access remains within retention. Downgrade-incompatible configs stop new quoting until adjusted/republished or entitlement restored. Required purchases do not silently become plain purchases.
+**Billing/entitlements:** One paid plan with all released in-scope features, USD $49.99 per 30-day cycle, 100 qualifying paid customized orders included and USD $0.10 per additional qualifying order; adopted by the [10 October owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md). One qualifying paid order, not quantity/groups; refunds do not reverse usage. Fourteen-day live chosen-plan trial from activation, subscription and usage waived, no retrospective trial billing and no separate demo system. No active entitlement means no new issuance/renewal; valid old offers honored until expiry. Historical order/artwork access remains within retention. Downgrade-incompatible configs stop new quoting until adjusted/republished or entitlement restored. Required purchases do not silently become plain purchases.
 
 **Retention:** Buyer artwork/identifying customization payloads at most six months from collection; abandoned uploads shorter; reuse does not reset expiry; merchant warning/export opportunity. Permitted minimal pseudonymized financial/audit facts may persist separately. Privacy/uninstall erasure includes derivatives/payloads and does not rewrite purchase economics.
 
@@ -1017,7 +1017,7 @@ Whole-quote v2 is the single production implementation protocol. Its domain `Ins
 
 ### DEFERRED
 
-Actual production/VPS topology, deployment procedure, Barman/R2 restore mechanics, host-specific alert thresholds and other host operations until M11. Exact FX provider/cadence remains an implementation-time selection under the defined reproducibility/freshness contract. Plan names/prices/allowance values and feature-to-plan matrix remain commercial configuration required before the corresponding paid release, not guessed by coding agents. Migration/import is **excluded from this implementation**, not a hidden later milestone.
+Actual production/VPS topology, deployment procedure, Barman/R2 restore mechanics, host-specific alert thresholds and other host operations until M11. Exact FX provider/cadence remains an implementation-time selection under the defined reproducibility/freshness contract. One-plan economics and all-released-feature coverage are owner-approved; exact provider/display handles, versioned feature identifiers and actual pricing configuration/native qualification remain due before the corresponding paid release. Do not guess provider state or treat owner terms as configured billing. Migration/import is **excluded from this implementation**, not a hidden later milestone.
 
 ---
 
@@ -1058,3 +1058,7 @@ Primary sources document the external behavior noted in the plan. Linked referen
 | S29 | Cloudflare R2 presigned URL semantics. `https://developers.cloudflare.com/r2/api/s3/presigned-urls/` |
 | S30 | Sharp constructor/decode limits/options. `https://sharp.pixelplumbing.com/api-constructor/` |
 | S31 | Shopify access scopes: least privilege, approval requirements and the default 60-day order access window. `https://shopify.dev/docs/api/usage/access-scopes` |
+
+### Owner single-plan commercial amendment — 10 October 2026
+
+The [owner decision](../delivery/authority/commercial-single-plan-2026-10-10.md) binds one all-released-feature paid plan, USD $49.99 per 30-day cycle, 100 included qualifying paid orders, USD $0.10 additional order fee and 14-day live trial with both fees waived. This prospectively changes current commercial configuration targets, not historical JSONB/receipts or old feature/downgrade/recovery semantics. G8 retains allowance/trial/first-paid/idempotency/cancellation/late-delivery/reconciliation requirements and historical plan-change compatibility controls; it no longer requires three new paid offers. Native pricing/development entitlement configuration and resource permissions are not fabricated. No M9/G8 execution, milestone completion or rollout is granted.

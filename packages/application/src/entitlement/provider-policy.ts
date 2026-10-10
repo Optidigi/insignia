@@ -52,6 +52,8 @@ export type PlanFeaturePolicy = {
   planHandle: string;
   usageHandle: string;
   policyId: string;
+  /** Optional exact authoritative provider Shop GID; restricts this policy's recognition. */
+  shopId?: string;
   features: readonly string[];
   includedUsage: number;
 };
@@ -94,6 +96,8 @@ function validConfig(config: EntitlementPolicyConfig): boolean {
       !plan.planHandle ||
       !plan.usageHandle ||
       !plan.policyId ||
+      ('shopId' in plan &&
+        (typeof plan.shopId !== 'string' || !/^gid:\/\/shopify\/Shop\/[1-9][0-9]*$/.test(plan.shopId))) ||
       plan.planHandle === plan.usageHandle ||
       !Number.isSafeInteger(plan.includedUsage) ||
       plan.includedUsage < 0 ||
@@ -171,7 +175,7 @@ export function projectEntitlement(
   );
   if (matched.length !== 1) return base;
   const plan = matched[0];
-  if (!plan) return base;
+  if (!plan || (plan.shopId !== undefined && plan.shopId !== snapshot.shopId)) return base;
   if (
     snapshot.billingPeriod !== 'EVERY_30_DAYS' ||
     snapshot.items.length !== 2 ||
