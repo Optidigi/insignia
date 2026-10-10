@@ -1,0 +1,26 @@
+{
+  "base": "b2f42b1895af37a421f2a8fc49d845412b120792",
+  "sourceScope": "EXPERIMENTAL_ONLY_PRODUCTION_PROVIDER_BUILD_INPUTS_UNCHANGED",
+  "realControls": {
+    "tests": 24,
+    "pass": 24,
+    "fail": 0,
+    "skips": 0
+  },
+  "build": "REUSED_R1_FROZEN_BUILD_INPUTS_BYTE_IDENTICAL",
+  "style": "PASS_INFORMATIONAL_HEURISTICS_ONLY",
+  "boundaries": "REUSED_R2_WRITER_PASS_UNCHANGED_SOURCE",
+  "secrets": "PARENT_PASS",
+  "originalAndR1Evidence": "BYTE_EXACT_PRESERVED",
+  "keyWipe": "INSPECTED_SOURCE_FLOW_NOT_HEAP_INSTRUMENTATION",
+  "reviewsCi": "PENDING_NEW_FROZEN_CANDIDATE",
+  "logs": {
+    "parent-secrets.log": "5d30b8b5212705b349e1ee889ccf8eca2ac0fde8d678693c49a7f9c8cbd6286b",
+    "parent-final-controls.log": "1883e6ddf5037e970166784d435c936dbaf709a60cc2c9afaa3bf5f94c2553cc",
+    "parent-style-preparation.log": "62ba6021d4b2021f8d416b602c9e3b7213022acf8e6642e0df86d1ae63be7a48"
+  },
+  "writerFreezeSha256": "15e2d0e1092bba967c08c82d8a20696fdc820b552e8c3155992b618520d9bd24",
+  "r1ReviewReceiptSha256": "9618d364d9de75ac1b218b9477282047557acd79f07e3441d7337bd4247d7311",
+  "r1ExactHeadCiReceiptSha256": "42e7d3a82403631b6fe46c1cdbcde6eada8a2d1361302bd0a35f3baca8d01ee0",
+  "productionOrProviderOperations": 0
+}

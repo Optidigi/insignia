@@ -2,28 +2,33 @@
   "schema": "m5-private-callback-offline-candidate-v1",
   "base": "b2f42b1895af37a421f2a8fc49d845412b120792",
   "baseTree": "ab4b8164834845935f008d035060f73fbfa03cc4",
-  "status": "LOCAL15PASS_REVIEW_NATURAL_CI_PENDING_NATIVE_NOT_RUN",
+  "status": "LOCAL24PASS_R1_REJECTED_R2_FRESH_REVIEW_CI_PENDING_NATIVE_NOT_RUN",
   "ownedContents": {
-    "scripts/m5-callback-qualification/README.md": "af4aaa77a8018d8a38f315fce34812b816489c03c575be86b9347107851aed91",
+    "scripts/m5-callback-qualification/receiver.test.mjs": "e041f942fd7a397faa9248397fdcfe4254dc40261951fe179be28cc5e38405e1",
+    "scripts/m5-callback-qualification/service.mjs": "aff865e9b1109ad6b9f39a6f091cbc18e5bd112da3fb5d58c86e9028da1cbd09",
+    "scripts/m5-callback-qualification/README.md": "49242ce61e5fee008b0f0d4a3d84457475419e82fb045931e8317eea3ebc5587",
+    "scripts/m5-callback-qualification/receiver.mjs": "ab778ca27df4de11c428498ed2c129032c80d59c590b0f41e33f5f5fafadc8c9",
+    "scripts/m5-callback-qualification/store.mjs": "ddaae94180244445c0385399255562bd09a6ed0064276aa3185d337d7413ae7a",
     "scripts/m5-callback-qualification/SERVICE-PROPOSAL.json": "a484be4fca0b897c8e8760aa5a932160d2f4e75c9bd5c22c5d74aada66ad729b",
     "scripts/m5-callback-qualification/network-guard.mjs": "f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a",
-    "scripts/m5-callback-qualification/operator.mjs": "37b3d476d022771f3778745b50c63c1c0413ddf88bcc2ea98a96932e32189924",
-    "scripts/m5-callback-qualification/receiver.mjs": "afa12ac05e36a390c6ba40a100371e0f097ee8ca12aa7059234a7482f9482177",
-    "scripts/m5-callback-qualification/receiver.test.mjs": "055f0195c3a2773121530674a63e098676180ee4ee93fec54027ad0239e3c3d5",
-    "scripts/m5-callback-qualification/service.mjs": "aff865e9b1109ad6b9f39a6f091cbc18e5bd112da3fb5d58c86e9028da1cbd09",
-    "scripts/m5-callback-qualification/store.mjs": "e2666fec661d1b9e437a8983e8c886caba0bb94c49ce9731cef1f86d7290a697",
-    "docs/delivery/evidence/m5-callback-receiver/REPORT.md": "1978ea20b40eedcd72a0c281edc823b795f81ab1c54f954852cffc66841ba7a9",
+    "scripts/m5-callback-qualification/operator.mjs": "8120a40c38325f9e8464a99093ec3a60e2f346efe14bc23651b47a9326fba3a8",
+    "docs/delivery/evidence/m5-callback-receiver/parent-checks.json": "0222f34ccdb056f23418c58d0a4f3911817bf711ceab100465aa34c34fb9e65d",
+    "docs/delivery/evidence/m5-callback-receiver/r2-correction-provenance.json": "9c1be16ca6d7045a1c7c04a842df466cc9ef0be919c6821083b46698d7385a8a",
     "docs/delivery/evidence/m5-callback-receiver/pr69-integration-receipt.json": "f05fb4a6c12d3ed950c1f46562102cdb01a1735a0acb44aae6d3621a7cafbdfa",
-    "docs/delivery/evidence/m5-callback-receiver/provenance.json": "363823fe1f5142462d38ca45b5b8def58f9ef4ffc9ca247d62e45d897a0a4bd2",
-    ".github/workflows/m3-runtime.yml": "ee60ecb90b0dbcbf0902e26ec7b6eb46af199a1b023375c26f53acb810bd9fa5",
-    "docs/delivery/state.md": "7050eae29f53a22e8dccaee59e6213ff8c7ba638ef372ab83bdb6055276902e0",
-    "docs/delivery/milestone-progress.json": "665b0f707efac8f0505edf995c8fd81eff12299878a12978892f452eb129be7b",
-    "docs/delivery/history/state-before-callback-receiver.md": "fa0c48ead9354e5c761bb5374ae7ac432d37548a19909652334bc72e138a6f57",
+    "docs/delivery/evidence/m5-callback-receiver/REPORT.md": "f8b43516e8d253135f02964ffee33769b290dbc5e18518d69e3a1db79ff7fdd1",
     "docs/delivery/evidence/m5-callback-receiver/selected-store-address-spec-review.md": "76ae142112b66f0ad810bc66bf07aa1ae04ccc8ddde6d7876c8536c4a0d49847",
     "docs/delivery/evidence/m5-callback-receiver/selected-store-address-reviews.json": "0cfb4b97918b1f0458724dc3ff23020ea66b0b6397df23e667d418a7a68930aa",
+    "docs/delivery/evidence/m5-callback-receiver/provenance.json": "363823fe1f5142462d38ca45b5b8def58f9ef4ffc9ca247d62e45d897a0a4bd2",
+    "docs/delivery/evidence/m5-callback-receiver/r1-rejected-candidate.json": "5ea8ca640216132fd7067953a30115ed5d252a055349b112f688d9f06bb0b759",
+    "docs/delivery/evidence/m5-callback-receiver/r1-security-review.md": "4cce99b76d92d31a9aebca8f8217cbd89c0aaf1be9e2f5da8749996c9cb6a8fc",
     "docs/delivery/evidence/m5-callback-receiver/selected-store-address-security-review.md": "cc1d72521266cafd7bb8ae4bab18b3a8b3d8aec139c5261a19a98b9e4b657459",
+    "docs/delivery/evidence/m5-callback-receiver/r1-spec-review.md": "480bb229d0f60d7da15b825a6cadbcb38cc840539b7ec44879614da9636332a2",
     "docs/delivery/evidence/m5-callback-receiver/selected-store-address-receipt.json": "5da733a98b87688ad002c869c239a6a73547fba95ec43759cbcb9db1c56cc268",
-    "docs/delivery/evidence/m5-callback-receiver/parent-checks.json": "0222f34ccdb056f23418c58d0a4f3911817bf711ceab100465aa34c34fb9e65d"
+    "docs/delivery/evidence/m5-callback-receiver/r2-parent-checks.json": "44f588324be5d2e9185b2a750ff14911f2f7f09b0856218c1f804778a45109dc",
+    ".github/workflows/m3-runtime.yml": "ee60ecb90b0dbcbf0902e26ec7b6eb46af199a1b023375c26f53acb810bd9fa5",
+    "docs/delivery/state.md": "8f895795e8fb015d90476b06052bb1b198a9d17df6992d09eed44a312f0eb87d",
+    "docs/delivery/milestone-progress.json": "310b2d6fc7de5a7eede443d2a267cc0a451ea42ec2e8595652a09b06ce78dcba",
+    "docs/delivery/history/state-before-callback-receiver.md": "fa0c48ead9354e5c761bb5374ae7ac432d37548a19909652334bc72e138a6f57"
   },
   "manifestSelfPin": "Excluded to avoid circularity; parent final private integration freeze pins this manifest",
   "interactingInputs": {
@@ -54,7 +59,16 @@
     "biomeExecutableSha256": "4968177f1e6eedb4c64b0e48107e0e9e626ecb45bdb974889a71527944ae3445",
     "donorDependencies": "READ_ONLY_NOT_MUTATED"
   },
-  "commands": [
+  "preservedControlFailures": [
+    "23-secret-link-integrity.log (empty stdout) plus23-secret-link-integrity-stderr.log: relocated historical state link scope false-positive",
+    "24-integrity-build-path-failed.log: validation control used absentapps/worker/Dockerfile; corrected to actualscripts/m5-024/Dockerfile beforePASS"
+  ],
+  "scopeLimits": "Scoped graph and secret/link/integrity controls only; existing full production boundary/secrets/build CI remains mandatory. No native or deployment run, no callback freshness/generation/production authority or complete privacy claim.",
+  "parentAdditionalEvidence": "Separate native selected-address observation sealed after fresh CLEAR/CLEAR, canonical identity/suitability unqualified. R1 source remained unchanged from portability freeze then; R2 source corrections and current24PASS evidence are separately pinned.",
+  "currentCorrection": "r2-correction-provenance.json",
+  "historicalR1": "r1-rejected-candidate.json",
+  "historicalOriginalManifest": "Exact original candidate Git efe045fb3184a84c57b976bea08c545a85237f28 and private parent integration freeze00a0586794a037c982cf6d8d160e90789798a544e009a5971772b4744c536138 preserve R1 pins; current ownedContents qualify R2.",
+  "historicalR1Commands": [
     {
       "command": "/usr/bin/env -i PATH=/usr/bin:/bin LANG=C.UTF-8 /usr/bin/bwrap --unshare-user --ro-bind / / --tmpfs /home/serveradmin/insignia-milestone-autonomy-handoff --tmpfs /tmp --proc /proc --dev /dev /home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node --test --test-name-pattern='real HTTP ACK has' scripts/m5-callback-qualification/receiver.test.mjs",
       "source": "original986e387freeze",
@@ -93,7 +107,7 @@
       "result": "SCOPED_SECRET_LINK_INPUT_WORKFLOW_INTEGRITY_PASS"
     }
   ],
-  "currentLogHashes": {
+  "historicalR1LogHashes": {
     "16-portability-red.log": "56ea65f2767f0ed662a25987d6a1c4a14c340696da2b2f149f920f7103b98188",
     "17-integration-format.log": "5c68c4c70a85e41330552f7d08559101d11fa02cb5651c70905880ade10afb2f",
     "18-portability-green.log": "08b4d3840907d005837cedcf513477f83d3ebd9a1e75d8ae51ba704dadbab811",
@@ -106,11 +120,5 @@
     "24-integrity-build-path-failed.log": "3515f9f29fa6d7c1b621e20d0ac229d375bdab31f07afd9d73eac955259bb683",
     "25-secret-link-integrity-green.log": "f975bc7bcf30cd03d1400687980f819f2bf25dd01d6fd3cd16e36791509223e2"
   },
-  "integrityScriptSha256": "76e1ff05fb98a8a2ecaca3821f5028b310d9eb25826bdc55e59937a6263e5bf3",
-  "preservedControlFailures": [
-    "23-secret-link-integrity.log (empty stdout) plus23-secret-link-integrity-stderr.log: relocated historical state link scope false-positive",
-    "24-integrity-build-path-failed.log: validation control used absentapps/worker/Dockerfile; corrected to actualscripts/m5-024/Dockerfile beforePASS"
-  ],
-  "scopeLimits": "Scoped graph and secret/link/integrity controls only; existing full production boundary/secrets/build CI remains mandatory. No native or deployment run, no callback freshness/generation/production authority or complete privacy claim.",
-  "parentAdditionalEvidence": "Separate native selected-address observation sealed after fresh independent CLEAR/CLEAR; no canonical address/identity/suitability qualified. Source files unchanged from portability freeze."
+  "historicalR1IntegrityScriptSha256": "76e1ff05fb98a8a2ecaca3821f5028b310d9eb25826bdc55e59937a6263e5bf3"
 }

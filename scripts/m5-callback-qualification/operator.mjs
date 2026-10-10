@@ -15,6 +15,7 @@ import {
   syncDirectory,
   unseal,
   validate,
+  withLifecycle,
 } from './store.mjs';
 export async function createExperiment({
   directory,
@@ -26,29 +27,34 @@ export async function createExperiment({
   bodyDeadlineMs = 1000,
   now = Date.now(),
 }) {
-  if (acceptUntil <= now || acceptUntil > now + 6 * 3600000 || eraseBy > now + 7 * 86400000) refuse();
-  const m = validate({
-    version: 1,
-    binding: { ...binding },
-    capability: crypto.randomBytes(32).toString('base64url'),
-    acceptUntil,
-    eraseBy,
-    maxArrivals,
-    maxBytes,
-    bodyDeadlineMs,
+  return withLifecycle(directory, async () => {
+    if (acceptUntil <= now || acceptUntil > now + 6 * 3600000 || eraseBy > now + 7 * 86400000) refuse();
+    const m = validate({
+      version: 1,
+      binding: { ...binding },
+      capability: crypto.randomBytes(32).toString('base64url'),
+      acceptUntil,
+      eraseBy,
+      maxArrivals,
+      maxBytes,
+      bodyDeadlineMs,
+    });
+    await privateDirectory(path.dirname(directory));
+    await fs.mkdir(directory, { mode: 0o700 });
+    await syncDirectory(path.dirname(directory));
+    for (const child of ['reservations', 'spool', 'commits'])
+      await fs.mkdir(path.join(directory, child), { mode: 0o700 });
+    await syncDirectory(directory);
+    const key = crypto.randomBytes(32);
+    try {
+      await durable(path.join(directory, 'key.bin'), key);
+      await durable(path.join(directory, 'mapping.json'), JSON.stringify(m));
+      await durable(path.join(directory, 'mapping.seal'), seal(key, aad(m), Buffer.alloc(0)));
+      return { status: 'EXPERIMENT_CREATED' };
+    } finally {
+      key.fill(0);
+    }
   });
-  await privateDirectory(path.dirname(directory));
-  await fs.mkdir(directory, { mode: 0o700 });
-  await syncDirectory(path.dirname(directory));
-  for (const child of ['reservations', 'spool', 'commits'])
-    await fs.mkdir(path.join(directory, child), { mode: 0o700 });
-  await syncDirectory(directory);
-  const key = crypto.randomBytes(32);
-  await durable(path.join(directory, 'key.bin'), key);
-  await durable(path.join(directory, 'mapping.json'), JSON.stringify(m));
-  await durable(path.join(directory, 'mapping.seal'), seal(key, aad(m), Buffer.alloc(0)));
-  key.fill(0);
-  return { status: 'EXPERIMENT_CREATED' };
 }
 export async function privateEnrollment(directory, { now = Date.now() } = {}) {
   const { m, key } = await load(directory);
@@ -105,29 +111,33 @@ export async function exportReceipt(directory, id, destination, options) {
   return { status: 'PRIVATE_EXPORT_CREATED_EXTERNAL_COPY_REQUIRES_ERASURE' };
 }
 export async function recoverDeadReceiver(directory) {
-  await privateDirectory(directory);
-  const lock = JSON.parse((await readPrivate(path.join(directory, 'receiver.lock'))).toString());
-  if (!Number.isSafeInteger(lock.pid) || lock.pid < 1) refuse();
-  try {
-    process.kill(lock.pid, 0);
-    refuse();
-  } catch (e) {
-    if (e.code !== 'ESRCH') refuse();
-  }
-  await fs.unlink(path.join(directory, 'receiver.lock'));
-  await syncDirectory(directory);
-  return { status: 'DEAD_RECEIVER_LOCK_REMOVED' };
+  return withLifecycle(directory, async () => {
+    await privateDirectory(directory);
+    const lock = JSON.parse((await readPrivate(path.join(directory, 'receiver.lock'))).toString());
+    if (!Number.isSafeInteger(lock.pid) || lock.pid < 1) refuse();
+    try {
+      process.kill(lock.pid, 0);
+      refuse();
+    } catch (e) {
+      if (e.code !== 'ESRCH') refuse();
+    }
+    await fs.unlink(path.join(directory, 'receiver.lock'));
+    await syncDirectory(directory);
+    return { status: 'DEAD_RECEIVER_LOCK_REMOVED' };
+  });
 }
 export async function eraseExperiment(directory) {
-  const { key } = await load(directory);
-  key.fill(0);
-  try {
-    await fs.lstat(path.join(directory, 'receiver.lock'));
-    refuse();
-  } catch (e) {
-    if (e.code !== 'ENOENT') throw e;
-  }
-  await fs.rm(directory, { recursive: true });
-  await syncDirectory(path.dirname(directory));
-  return { status: 'LOCAL_FILES_REMOVED_EXTERNAL_COPIES_UNQUALIFIED' };
+  return withLifecycle(directory, async () => {
+    const { key } = await load(directory);
+    key.fill(0);
+    try {
+      await fs.lstat(path.join(directory, 'receiver.lock'));
+      refuse();
+    } catch (e) {
+      if (e.code !== 'ENOENT') throw e;
+    }
+    await fs.rm(directory, { recursive: true });
+    await syncDirectory(path.dirname(directory));
+    return { status: 'LOCAL_FILES_REMOVED_EXTERNAL_COPIES_UNQUALIFIED' };
+  });
 }

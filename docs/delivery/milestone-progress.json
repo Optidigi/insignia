@@ -120,7 +120,7 @@
     "Worker/image/queue/runtime native prerequisites not qualified",
     "28 native G7 criteria blocked",
     "Real merchant configure/preview/save/publication/activation NOT_RUN",
-    "Experimental receiver local15PASS only; actual TLS/host/OS/signing-FD supervisor/erasure/export/key-backup and native callback feasibility unqualified"
+    "Experimental receiver local24PASS only; actual TLS/host/OS/signing-FD supervisor/erasure/export/key-backup and native callback feasibility unqualified"
   ],
   "resourceGrants": [
     {
@@ -181,9 +181,9 @@
   "activeCandidate": {
     "scope": "Experimental private callback receiver and natural M3 local HTTP/operator/restart controls",
     "base": "b2f42b1895af37a421f2a8fc49d845412b120792",
-    "receiverLocal": "15_REAL_CONTROLS_PASS",
+    "receiverLocal": "24_REAL_HTTP_PROCESS_LIFECYCLE_CONTROLS_PASS",
     "receiverNative": "NOT_RUN",
-    "reviewAndCi": "PENDING",
+    "reviewAndCi": "R1_REJECTED_SECURITY_R2_FRESH_REVIEW_CI_PENDING",
     "milestonePass": false
   },
   "boundedInventoryTooling": {

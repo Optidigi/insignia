@@ -2,10 +2,18 @@ import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import http from 'node:http';
+import net from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test, { after } from 'node:test';
-import { createExperiment, privateEnrollment, privateReceipt, status } from './operator.mjs';
+import {
+  createExperiment,
+  eraseExperiment,
+  privateEnrollment,
+  privateReceipt,
+  recoverDeadReceiver,
+  status,
+} from './operator.mjs';
 import { openReceiver } from './receiver.mjs';
 
 const privateParents = [];
@@ -247,6 +255,196 @@ async function startChild(directory) {
   child.stdio[3].end(JSON.stringify([secret]));
   return { child, port: await ready, streams: () => out + err };
 }
+function deferred() {
+  let resolve;
+  const promise = new Promise((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
+test('overlapping dead-lock recovery cannot unlink a restarted live receiver', async (t) => {
+  const s = await setup();
+  const old = await startChild(s.directory);
+  const dead = once(old.child, 'exit');
+  old.child.kill('SIGKILL');
+  await dead;
+  const firstAtUnlink = deferred(),
+    secondAtUnlink = deferred();
+  const resumeFirst = deferred(),
+    resumeSecond = deferred();
+  const unlink = fs.unlink.bind(fs);
+  let calls = 0;
+  t.mock.method(fs, 'unlink', async (p) => {
+    if (p === s.directory + '/receiver.lock') {
+      if (++calls === 1) {
+        firstAtUnlink.resolve();
+        await resumeFirst.promise;
+      } else if (calls === 2) {
+        secondAtUnlink.resolve();
+        await resumeSecond.promise;
+      }
+    }
+    return unlink(p);
+  });
+  const first = recoverDeadReceiver(s.directory);
+  await firstAtUnlink.promise;
+  const second = recoverDeadReceiver(s.directory).then(
+    () => 'REMOVED',
+    () => 'REFUSED',
+  );
+  await Promise.race([secondAtUnlink.promise, second]);
+  resumeFirst.resolve();
+  await first;
+  const live = await startChild(s.directory);
+  try {
+    resumeSecond.resolve();
+    assert.equal(await second, 'REFUSED');
+    assert.equal((await send(live.port, s.enrollment.callbackPath)).code, 200);
+    await assert.rejects(() => eraseExperiment(s.directory));
+  } finally {
+    // Restore the replacement lock on vulnerable R1 so its signal cleanup can complete.
+    try {
+      await fs.stat(s.directory + '/receiver.lock');
+    } catch {
+      await fs.writeFile(s.directory + '/receiver.lock', JSON.stringify({ pid: live.child.pid }), { mode: 0o600 });
+    }
+    const stopped = once(live.child, 'exit');
+    live.child.kill('SIGTERM');
+    await stopped;
+  }
+});
+test('erasure excludes startup until the experiment has been removed', async (t) => {
+  const s = await setup();
+  const atRemoval = deferred(),
+    resume = deferred();
+  const rm = fs.rm.bind(fs);
+  t.mock.method(fs, 'rm', async (p, options) => {
+    if (p === s.directory) {
+      atRemoval.resolve();
+      await resume.promise;
+    }
+    return rm(p, options);
+  });
+  const erase = eraseExperiment(s.directory);
+  await atRemoval.promise;
+  let live;
+  try {
+    const outcome = await startChild(s.directory).then(
+      (value) => {
+        live = value;
+        return 'LIVE';
+      },
+      () => 'REFUSED',
+    );
+    assert.equal(outcome, 'REFUSED');
+  } finally {
+    if (live) {
+      const stopped = once(live.child, 'exit');
+      live.child.kill('SIGTERM');
+      await stopped;
+    }
+    resume.resolve();
+    await erase;
+  }
+  await assert.rejects(() => privateEnrollment(s.directory));
+  await assert.rejects(() => openReceiver({ directory: s.directory, clientSecrets: [secret] }));
+});
+test('erasure excludes same-name creation until removal completes, then permits a new experiment', async (t) => {
+  const s = await setup();
+  const removed = deferred(),
+    resume = deferred();
+  const rm = fs.rm.bind(fs);
+  t.mock.method(fs, 'rm', async (p, options) => {
+    const value = await rm(p, options);
+    if (p === s.directory) {
+      removed.resolve();
+      await resume.promise;
+    }
+    return value;
+  });
+  const erase = eraseExperiment(s.directory);
+  await removed.promise;
+  const options = { directory: s.directory, binding, acceptUntil: Date.now() + 60000, eraseBy: Date.now() + 120000 };
+  try {
+    const outcome = await createExperiment(options).then(
+      () => 'CREATED',
+      () => 'REFUSED',
+    );
+    assert.equal(outcome, 'REFUSED');
+  } finally {
+    resume.resolve();
+    await erase;
+  }
+  await assert.rejects(() => privateEnrollment(s.directory));
+  await createExperiment(options);
+  const r = await openReceiver({ directory: s.directory, clientSecrets: [secret] });
+  await r.close();
+});
+test('failed listening releases receiver ownership and permits a later startup', async () => {
+  const s = await setup();
+  const occupied = http.createServer();
+  await new Promise((resolve) => occupied.listen(0, '127.0.0.1', resolve));
+  try {
+    await assert.rejects(
+      () => openReceiver({ directory: s.directory, clientSecrets: [secret], port: occupied.address().port }),
+      { code: 'EADDRINUSE' },
+    );
+    const r = await openReceiver({ directory: s.directory, clientSecrets: [secret] });
+    try {
+      assert.equal((await send(r.port, s.enrollment.callbackPath)).code, 200);
+    } finally {
+      await r.close();
+    }
+  } finally {
+    await new Promise((resolve) => occupied.close(resolve));
+  }
+});
+test('receiver release refuses a replacement lock and preserves its ownership', async () => {
+  const s = await setup();
+  const r = await openReceiver({ directory: s.directory, clientSecrets: [secret] });
+  await fs.rename(s.directory + '/receiver.lock', s.directory + '/original.lock');
+  const replacement = JSON.stringify({ pid: process.pid, owner: 'SYNTHETIC_REPLACEMENT' });
+  await fs.writeFile(s.directory + '/receiver.lock', replacement, { mode: 0o600 });
+  await assert.rejects(() => r.close(), /EXPERIMENT_REFUSED/);
+  assert.equal((await fs.readFile(s.directory + '/receiver.lock')).toString(), replacement);
+  await assert.rejects(() => eraseExperiment(s.directory), /EXPERIMENT_REFUSED/);
+  await assert.rejects(() => send(r.port, s.enrollment.callbackPath));
+});
+test('critical-section crash leaves a fail-closed lifecycle guard without blocking another experiment', async () => {
+  const s = await setup();
+  const code = `const {withLifecycle}=await import(${JSON.stringify(new URL('./store.mjs', import.meta.url).href)});await withLifecycle(process.argv[1],async()=>{setInterval(()=>{},1000);console.log('GUARD_HELD');await new Promise(()=>{});});`;
+  const child = spawn(process.execPath, ['--input-type=module', '-e', code, s.directory], {
+    env: { PATH: '/usr/bin:/bin' },
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+  let out = '';
+  const held = new Promise((resolve, reject) => {
+    child.stdout.on('data', (c) => {
+      out += c;
+      if (out.includes('GUARD_HELD\n')) resolve();
+    });
+    child.on('error', reject);
+    child.on('exit', () => reject(Error('GUARD_NOT_HELD')));
+  });
+  await held;
+  const dead = once(child, 'exit');
+  child.kill('SIGKILL');
+  await dead;
+  await assert.rejects(() => openReceiver({ directory: s.directory, clientSecrets: [secret] }), /EXPERIMENT_REFUSED/);
+  await assert.rejects(() => recoverDeadReceiver(s.directory), /EXPERIMENT_REFUSED/);
+  await assert.rejects(() => eraseExperiment(s.directory), /EXPERIMENT_REFUSED/);
+  assert.deepEqual(await status(s.directory), { status: 'OPEN', reserved: 0, committed: 0, uncertain: 0 });
+  const sibling = s.parent + '/other-experiment';
+  await createExperiment({
+    directory: sibling,
+    binding,
+    acceptUntil: Date.now() + 60000,
+    eraseBy: Date.now() + 120000,
+  });
+  const r = await openReceiver({ directory: sibling, clientSecrets: [secret] });
+  await r.close();
+  await eraseExperiment(sibling);
+});
 test('fresh-process crash/restart preserves immutable evidence, duplicate arrivals and private stdout', async () => {
   const s = await setup();
   let processState = await startChild(s.directory);
@@ -366,6 +564,84 @@ test('fixed observation deadline closes listening and releases the private recei
     await assert.rejects(() => fs.stat(s.directory + '/receiver.lock'));
   } finally {
     await r.close();
+  }
+});
+test('unfinished HTTP headers cannot hold the receiver lock past the observation deadline', async () => {
+  const s = await setup({ acceptUntil: Date.now() + 150, eraseBy: Date.now() + 3000 });
+  const r = await openReceiver({ directory: s.directory, clientSecrets: [secret] });
+  const socket = net.connect(r.port, '127.0.0.1');
+  socket.on('error', () => {});
+  await once(socket, 'connect');
+  socket.write('POST / HTTP/1.1\r\nHost: synthetic\r\nX-Unfinished: ');
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 300));
+    await assert.rejects(() => fs.stat(s.directory + '/receiver.lock'), { code: 'ENOENT' });
+    assert.equal(socket.destroyed, true);
+    await r.close();
+  } finally {
+    socket.destroy();
+    await r.close();
+  }
+});
+test('expiry during startup waits for lifecycle ownership to be released before shutdown', async (t) => {
+  const s = await setup({ acceptUntil: Date.now() + 150, eraseBy: Date.now() + 3000 });
+  const atGuardRelease = deferred(),
+    resume = deferred();
+  const unlink = fs.unlink.bind(fs);
+  let paused = false;
+  t.mock.method(fs, 'unlink', async (p) => {
+    if (!paused && path.dirname(p) === s.parent && path.basename(p).startsWith('.callback-lifecycle-')) {
+      paused = true;
+      atGuardRelease.resolve();
+      await resume.promise;
+    }
+    return unlink(p);
+  });
+  const opening = openReceiver({ directory: s.directory, clientSecrets: [secret] });
+  await atGuardRelease.promise;
+  await new Promise((resolve) => setTimeout(resolve, 230));
+  resume.resolve();
+  const r = await opening;
+  try {
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    await assert.rejects(() => fs.stat(s.directory + '/receiver.lock'), { code: 'ENOENT' });
+  } finally {
+    await r.close().catch(() => {});
+  }
+});
+test('closing aborts an admitted unfinished body and permits restart without waiting for its body deadline', async () => {
+  const s = await setup({ bodyDeadlineMs: 5000 });
+  const r = await openReceiver({ directory: s.directory, clientSecrets: [secret] });
+  const q = http.request({
+    host: '127.0.0.1',
+    port: r.port,
+    path: s.enrollment.callbackPath,
+    method: 'POST',
+    headers: headers(),
+  });
+  q.on('error', () => {});
+  q.flushHeaders();
+  q.write(body.subarray(0, 2));
+  for (let i = 0; i < 100 && (await status(s.directory)).reserved === 0; i++)
+    await new Promise((resolve) => setTimeout(resolve, 5));
+  assert.equal((await status(s.directory)).reserved, 1);
+  const closing = r.close();
+  try {
+    assert.equal(
+      await Promise.race([closing.then(() => true), new Promise((resolve) => setTimeout(() => resolve(false), 250))]),
+      true,
+    );
+  } finally {
+    q.destroy();
+    await closing;
+  }
+  const restarted = await openReceiver({ directory: s.directory, clientSecrets: [secret] });
+  try {
+    assert.deepEqual(await status(s.directory), { status: 'OPEN', reserved: 1, committed: 0, uncertain: 1 });
+    assert.equal((await send(restarted.port, s.enrollment.callbackPath)).code, 200);
+    assert.equal((await privateReceipt(s.directory, 2)).receipt, 2);
+  } finally {
+    await restarted.close();
   }
 });
 test('unrelated and compliance topics receive private negative evidence with original label, never success ACK', async () => {

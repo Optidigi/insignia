@@ -22,7 +22,49 @@ export async function syncDirectory(p) {
 }
 export async function privateDirectory(p) {
   const s = await fs.lstat(p);
-  if (!s.isDirectory() || s.isSymbolicLink() || (s.mode & 0o777) !== 0o700) refuse();
+  if (!s.isDirectory() || s.isSymbolicLink() || (s.mode & 0o777) !== 0o700 || s.uid !== process.getuid()) refuse();
+}
+const heldGuards = new WeakSet();
+const sameFile = (a, b) => a.dev === b.dev && a.ino === b.ino;
+// Kept outside the erasable experiment. A crash in a critical section leaves an
+// explicit fail-closed guard; no PID inference or automatic stale-guard removal.
+export async function withLifecycle(directory, task) {
+  const target = path.resolve(directory),
+    parent = path.dirname(target);
+  await privateDirectory(parent);
+  if ((await fs.realpath(parent)) !== parent) refuse();
+  const guardPath = path.join(
+    parent,
+    '.callback-lifecycle-' + crypto.createHash('sha256').update(path.basename(target)).digest('hex') + '.lock',
+  );
+  let file;
+  try {
+    file = await fs.open(
+      guardPath,
+      constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW,
+      0o600,
+    );
+  } catch {
+    refuse();
+  }
+  const guard = { target };
+  const identity = await file.stat();
+  heldGuards.add(guard);
+  try {
+    await file.writeFile(JSON.stringify({ version: 1, pid: process.pid }));
+    await file.sync();
+    await syncDirectory(parent);
+    return await task(guard);
+  } finally {
+    heldGuards.delete(guard);
+    await file.close();
+    if (!sameFile(identity, await fs.lstat(guardPath))) refuse();
+    await fs.unlink(guardPath);
+    await syncDirectory(parent);
+  }
+}
+function requireGuard(directory, guard) {
+  if (!heldGuards.has(guard) || guard.target !== path.resolve(directory)) refuse();
 }
 export const spoolReadBound = (m) => 4 * Math.ceil(m.maxBytes / 3) + 128 * 1024 + 28;
 export async function readPrivate(p, { maxBytes = 64 * 1024 } = {}) {
@@ -128,9 +170,14 @@ export async function load(directory) {
   for (const child of ['reservations', 'spool', 'commits']) await privateDirectory(path.join(directory, child));
   const m = validate(JSON.parse((await readPrivate(path.join(directory, 'mapping.json'))).toString()));
   const key = await readPrivate(path.join(directory, 'key.bin'), { maxBytes: 32 });
-  if (key.length !== 32) refuse();
-  unseal(key, aad(m), await readPrivate(path.join(directory, 'mapping.seal'), { maxBytes: 28 }));
-  return { m, key };
+  try {
+    if (key.length !== 32) refuse();
+    unseal(key, aad(m), await readPrivate(path.join(directory, 'mapping.seal'), { maxBytes: 28 }));
+    return { m, key };
+  } catch (error) {
+    key.fill(0);
+    throw error;
+  }
 }
 export const name = (id) => {
   if (!Number.isSafeInteger(id) || id < 1 || id > 45) refuse();
@@ -143,10 +190,27 @@ export async function inventory(directory) {
   if (ids.some((v, i) => v !== i + 1)) refuse();
   return ids;
 }
-export async function acquire(directory) {
-  await durable(path.join(directory, 'receiver.lock'), JSON.stringify({ pid: process.pid }));
+export async function acquire(directory, guard) {
+  requireGuard(directory, guard);
+  await privateDirectory(directory);
+  const identity = await fs.lstat(directory);
+  const value = JSON.stringify({ pid: process.pid, owner: crypto.randomBytes(32).toString('hex') });
+  await durable(path.join(directory, 'receiver.lock'), value);
+  return { identity, lock: await fs.lstat(path.join(directory, 'receiver.lock')), value };
 }
-export async function release(directory) {
-  await fs.unlink(path.join(directory, 'receiver.lock'));
-  await syncDirectory(directory);
+export async function release(directory, ownership, guard) {
+  const remove = async (held) => {
+    requireGuard(directory, held);
+    await privateDirectory(directory);
+    if (
+      !ownership ||
+      !sameFile(ownership.identity, await fs.lstat(directory)) ||
+      !sameFile(ownership.lock, await fs.lstat(path.join(directory, 'receiver.lock'))) ||
+      (await readPrivate(path.join(directory, 'receiver.lock'))).toString() !== ownership.value
+    )
+      refuse();
+    await fs.unlink(path.join(directory, 'receiver.lock'));
+    await syncDirectory(directory);
+  };
+  return guard ? remove(guard) : withLifecycle(directory, remove);
 }
