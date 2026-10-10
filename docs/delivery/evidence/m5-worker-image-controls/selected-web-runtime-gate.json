@@ -1,0 +1,42 @@
+{
+  "freezeSha256": "302c84f2c971ab9d7d46ff135199cbb6e1578412d9179655447c99b2a743604c",
+  "reviews": [
+    {
+      "axis": "spec",
+      "session": "01a12612-4db7-79b0-a6e5-16cc564cad4f",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": {
+        "type": "read-only"
+      },
+      "approval": "never",
+      "processExitCode": 0,
+      "turnCompleted": true,
+      "reportSha256": "36d26d54407aba93c7e7d6e5fad3166a90bfdaf5e7e5344169f1c66ed9a28df4",
+      "verdict": "CLEAR"
+    },
+    {
+      "axis": "security",
+      "session": "01a12612-4db6-7d52-8933-940adbf3a9b9",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "sandbox": {
+        "type": "read-only"
+      },
+      "approval": "never",
+      "processExitCode": 0,
+      "turnCompleted": true,
+      "reportSha256": "f5dc341f8f93ae34ed8f88497249112da3d3c40a3569bddbb407e3e6d498d421",
+      "verdict": "CLEAR"
+    }
+  ],
+  "frozenFilesVerified": 1350,
+  "contextPinsVerified": 12,
+  "at": "2026-10-10T13:59:10.274137+00:00",
+  "nativeRunAbsent": true,
+  "parentControlsReceiptSha256": "b211840dd1c659e35b1a074fd35a15e79bd7b6c3faa8f921c890756008396be6",
+  "authority": "/home/serveradmin/insignia-milestone-autonomy-handoff/owner-standing-scoped-management-readonly-20261010.json",
+  "privateDeleteNoLaterThan": "2026-10-17T13:59:10.274137+00:00",
+  "retentionOwner": "local-orchestrator",
+  "permission": "EXISTING_STANDING_SCOPED_READS_ONLY"
+}

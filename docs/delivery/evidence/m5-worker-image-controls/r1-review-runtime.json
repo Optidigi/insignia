@@ -1,0 +1,36 @@
+{
+  "base": "659f118ddc9bdc8b5d33141f6395182ba6ba9bcb",
+  "head": "e35fac12ca8b9b9c9c582da14557d35c011fb2cc",
+  "tree": "51f84203e1b75966ecc12f2bbfc35413ef11f9a5",
+  "reviews": [
+    {
+      "axis": "spec",
+      "session": "01a12625-f350-72c3-84f7-206fd06923b3",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "approvalPolicy": "never",
+      "sandbox": {
+        "type": "read-only"
+      },
+      "turnCompleted": true,
+      "processExitCode": 0,
+      "reportSha256": "79fd2f49742a0e8301324ffca9f38baf3337a17e22b5a80727f7405234702aa1",
+      "verdict": "CHANGES_REQUESTED"
+    },
+    {
+      "axis": "security",
+      "session": "01a12625-f356-7b13-9ca3-09798877a31a",
+      "model": "gpt-6.1-sol",
+      "effort": "high",
+      "approvalPolicy": "never",
+      "sandbox": {
+        "type": "read-only"
+      },
+      "turnCompleted": true,
+      "processExitCode": 0,
+      "reportSha256": "16dcacdf96bbc1996c5b6970c0d10ecc026e021d03c79cd0b61bc9761d3b0583",
+      "verdict": "CHANGES_REQUESTED"
+    }
+  ],
+  "disposition": "REJECTED_SOURCE_CORRECTION_REQUIRED_NO_MERGE"
+}

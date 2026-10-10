@@ -1,0 +1,20 @@
+{
+  "at": "2026-10-10T14:00:07.743009+00:00",
+  "status": "SELECTED_WEB_MODULE_OBSERVATIONS_COMPLETE_OTHER_CONFIG_AND_LEGACY_UNQUALIFIED",
+  "commandAttempts": 1,
+  "sdkMethodReservations": 4,
+  "httpAttempts": "NOT_ASSERTED",
+  "rawStreamsPersisted": false,
+  "receiptSha256": "93a09754015afce77122143df705e75da54417d4ba7984dcf1d6bd4de23fa177",
+  "allocationSha256": "fc80f992de33f755ae869bac77dac015b9d9931069067cae71a6e80d9d5c0a93",
+  "eventsSha256": "c3f076a71e5a827aaa1824df99dd6725e6ee48c9caf140b1a22396d5458f9287",
+  "privateDeleteNoLaterThan": "2026-10-17T13:59:14.564451+00:00",
+  "retentionOwner": "local-orchestrator",
+  "noRetry": true,
+  "phaseClosed": true,
+  "selectedRegularRows": 0,
+  "selectedComplianceRows": 0,
+  "completeAllDestinations": "UNQUALIFIED",
+  "otherConfig": "UNQUALIFIED",
+  "uninstallPrivacyEffects": "UNQUALIFIED"
+}
