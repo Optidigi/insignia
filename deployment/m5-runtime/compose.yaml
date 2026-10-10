@@ -1,0 +1,14 @@
+# Overlay only: render with deployment/m5-019r/compose.yaml first.
+# Existing canonical router, database service and database volume stay in that base.
+name: insignia-rewrite-m5-019
+services:
+  web:
+    image: ${INSIGNIA_WEB_IMAGE:?Set reviewed exported sha256 image ID or registry digest}
+    pull_policy: never
+    init: true
+    user: node
+    command: [/usr/local/bin/node, /srv/insignia/web/dist/server/entry.mjs]
+    stop_grace_period: 40s
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]

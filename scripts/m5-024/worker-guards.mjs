@@ -16,6 +16,37 @@ const ENV_KEYS = [
 const hash = (bytes) => createHash('sha256').update(bytes).digest('hex');
 const webOverrides = /^(?:PG|NODE_(?!ENV$)|SSL_|OPENSSL_|LD_|DYLD_)/;
 
+function workerNetworksMatch(rendered, worker) {
+  const attached = worker.networks;
+  const names = Array.isArray(attached) ? attached : Object.keys(attached ?? {});
+  if (!Array.isArray(attached) && Object.values(attached ?? {}).some((value) => value !== null)) return false;
+  const legacy = JSON.stringify(names) === JSON.stringify(['private']);
+  const outbound = names.length === 2 && names.includes('private') && names.includes('egress');
+  if (!legacy && !outbound) return false;
+  // Preserve the original reviewed private-only array profile used by legacy controls.
+  if (legacy && Array.isArray(attached) && rendered.networks === undefined) return true;
+  const definitions = rendered.networks;
+  if (!definitions || Object.keys(definitions).length !== names.length) return false;
+  const privateNetwork = definitions.private;
+  if (
+    !privateNetwork ||
+    Object.keys(privateNetwork).length !== 2 ||
+    privateNetwork.external !== true ||
+    privateNetwork.name !== 'insignia-rewrite-m5-019_private'
+  )
+    return false;
+  if (legacy) return true;
+  const egress = definitions.egress;
+  return (
+    rendered.name === 'insignia-uninstall-m5-024' &&
+    egress &&
+    Object.keys(egress).length === 3 &&
+    egress.name === 'insignia-uninstall-m5-024_egress' &&
+    egress.driver === 'bridge' &&
+    egress.internal === false
+  );
+}
+
 function matchesDatabaseUrl(value, endpoint) {
   const url = new URL(value);
   return (
@@ -81,10 +112,14 @@ export function qualifyWorkerCandidate({
       JSON.stringify(worker.command) !== JSON.stringify(['/usr/local/bin/node', '/srv/insignia/worker/dist/main.js']) ||
       JSON.stringify(worker.cap_drop) !== JSON.stringify(['ALL']) ||
       JSON.stringify(worker.security_opt) !== JSON.stringify(['no-new-privileges:true']) ||
-      JSON.stringify(worker.networks) !== JSON.stringify(['private'])
+      !workerNetworksMatch(rendered, worker)
     )
       return false;
-    if (!/^.+@sha256:[a-f0-9]{64}$/.test(image) || image !== expectedImage) return false;
+    // Registry manifests and loaded local image config IDs are distinct immutable
+    // identities. An export receipt's imageId must match exactly, never a tag.
+    const registryDigest = /^.+@sha256:[a-f0-9]{64}$/.test(image);
+    const localImageId = /^sha256:[a-f0-9]{64}$/.test(image);
+    if ((!registryDigest && !localImageId) || image !== expectedImage) return false;
     if (
       !endpoint ||
       JSON.stringify(endpoint) !== JSON.stringify(expectedEndpoint) ||
