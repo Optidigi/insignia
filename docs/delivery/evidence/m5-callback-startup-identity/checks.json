@@ -1,0 +1,96 @@
+{
+  "formatPreparation": {
+    "argv": [
+      "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/biome",
+      "check",
+      "--write",
+      "docs/delivery/evidence/m5-callback-startup-identity/pr72-merge-receipt.json",
+      "docs/delivery/evidence/m5-callback-startup-identity/pr72-final-ci.json",
+      "docs/delivery/evidence/m5-callback-startup-identity/owner-commercial-and-test-store-decision.json",
+      "docs/delivery/evidence/m5-callback-startup-identity/pr72-local-acceptance.json",
+      "docs/delivery/evidence/m5-callback-startup-identity/provenance.json",
+      "docs/delivery/milestone-progress.json"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-callback-startup-identity-worktree",
+    "exitCode": 0,
+    "logSha256": "d5be66d6fdc138c50a9b831ee955ae2b45cd4c8ba385c964129428003f2b30d4"
+  },
+  "scopedStyle": {
+    "argv": [
+      "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/biome",
+      "check",
+      "scripts/m5-callback-qualification",
+      "docs/delivery/evidence/m5-callback-startup-identity/pr72-merge-receipt.json",
+      "docs/delivery/evidence/m5-callback-startup-identity/pr72-final-ci.json",
+      "docs/delivery/evidence/m5-callback-startup-identity/owner-commercial-and-test-store-decision.json",
+      "docs/delivery/evidence/m5-callback-startup-identity/pr72-local-acceptance.json",
+      "docs/delivery/evidence/m5-callback-startup-identity/provenance.json",
+      "docs/delivery/milestone-progress.json"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-callback-startup-identity-worktree",
+    "exitCode": 0,
+    "logSha256": "215ce66ea34f9e147636bec20e8fa72ca070a3f0029baadcba15f93d4f9e3198"
+  },
+  "scopedBoundary": {
+    "argv": [
+      "/home/serveradmin/insignia-m5-worker-image-control-worktree/node_modules/.bin/depcruise",
+      "--config",
+      ".dependency-cruiser.cjs",
+      "scripts/m5-callback-qualification/receiver.mjs",
+      "scripts/m5-callback-qualification/service.mjs",
+      "scripts/m5-callback-qualification/supervisor.mjs"
+    ],
+    "cwd": "/home/serveradmin/insignia-m5-callback-startup-identity-worktree",
+    "exitCode": 0,
+    "logSha256": "01e85468e37f06ad4cfed49fa826eac16ee697f67bf03361a9a98c2ccc8714ea"
+  },
+  "trackedWhitespace": {
+    "argv": ["git", "diff", "--check"],
+    "cwd": "/home/serveradmin/insignia-m5-callback-startup-identity-worktree",
+    "exitCode": 0,
+    "logSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "combinedControls": {
+    "result": "PASS",
+    "pass": 74,
+    "fail": 0,
+    "skipped": 0,
+    "durationMs": 31063.704403,
+    "execution": "Fresh writer runtime proof; parent verified exact five source/test pins plus log and command; docs-only integration does not repeat suite",
+    "argv": [
+      "node",
+      "--test",
+      "scripts/m5-callback-qualification/receiver.test.mjs",
+      "scripts/m5-callback-qualification/supervisor.test.mjs",
+      "scripts/m5-callback-qualification/cleanup.test.mjs",
+      "scripts/m5-callback-qualification/tls-edge.test.mjs"
+    ],
+    "logSha256": "7b29c8f3fd46850c8e28de36b1237a8388a4197374a55ddf3223bb72295b55b9",
+    "originalScenarioSeparateGreenSha256": "7528ab1f9bd670713a205c9f664f4ba975499660921390fb281c4193dfa65c27"
+  },
+  "unchangedProductionBuildSecretScan": {
+    "argv": ["/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node", "scripts/boundaries/check-secrets.mjs"],
+    "cwd": "/home/serveradmin/insignia-m5-private-callback-receiver-worktree",
+    "exitCode": 0,
+    "logSha256": "743f98b568d1828232f861a3366e9907efd0bbd36b20bc458df8cf8012e21b55"
+  },
+  "integrity": {
+    "result": "PASS",
+    "fiveTestedSourcePins": "EXACT",
+    "sixthContract": "Only parent serialized documented test command after writer freeze",
+    "archive": "BYTE_EXACT",
+    "operatorStoreEraserTlsHmacHistoricalInputs": "UNCHANGED",
+    "productionProviderBuildWorkflowInputs": "UNCHANGED",
+    "scopedSecretScan": "PASS",
+    "localLinks": "PASS",
+    "nativeCalls": 0,
+    "newProductionBuild": false
+  },
+  "pricingResearch": {
+    "result": "PASS_DOCUMENT_LINK_SCOPE_SECRET_AND_ARITHMETIC",
+    "date": "2026-10-10",
+    "execution": "Primary public source research; no native provider operation; root personally read complete note and spot-checked current Customily/Teeinblue/Inkybay listings",
+    "authorReleasedSha256": "02f816f88b7da7d9ea80a8de10eb816b6db92de6ae46f47e79f7045f19f43c9c",
+    "commercialApproval": false
+  }
+}

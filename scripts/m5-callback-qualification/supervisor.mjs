@@ -8,8 +8,8 @@ import { fileURLToPath } from 'node:url';
 const self = fileURLToPath(import.meta.url);
 const fixedService = fileURLToPath(new URL('./service.mjs', import.meta.url));
 const pins = new Map([
-  ['service.mjs', 'aff865e9b1109ad6b9f39a6f091cbc18e5bd112da3fb5d58c86e9028da1cbd09'],
-  ['receiver.mjs', 'ab778ca27df4de11c428498ed2c129032c80d59c590b0f41e33f5f5fafadc8c9'],
+  ['service.mjs', '3bb15248eb1a100e12795b3bcf3c17f727bc41bc54f42942b071aa081d910c21'],
+  ['receiver.mjs', '4d7d38619271d5250437eb707cdac863c0f4455b9b70a85fb758db5a972185e4'],
   ['operator.mjs', '7f346a74dca05cb41c50cc90815599cdd4699b8191a4ead4ee10b72e0945de77'],
   ['store.mjs', 'b1c185a465b5a57eded64de0d1491fcdfa0135514bd589db6cffa19400f1666c'],
   ['network-guard.mjs', 'f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a'],
@@ -81,15 +81,17 @@ export function observeReadyProtocol(stdout, stderr, { port = 0, deadlineMs = 10
   };
 }
 
-function ownedChild(script, args, signingFd, privatePipe = false) {
+function ownedChild(script, args, signingFd, privatePipe = false, boundService = false) {
   const child = spawn(process.execPath, [script, ...args], {
     detached: true,
     env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
-    stdio: privatePipe
-      ? ['ignore', 'pipe', 'pipe', 'pipe']
-      : signingFd === undefined
-        ? ['ignore', 'pipe', 'pipe']
-        : ['ignore', 'pipe', 'pipe', signingFd],
+    stdio: boundService
+      ? ['ignore', 'pipe', 'pipe', signingFd, 'pipe']
+      : privatePipe
+        ? ['ignore', 'pipe', 'pipe', 'pipe']
+        : signingFd === undefined
+          ? ['ignore', 'pipe', 'pipe']
+          : ['ignore', 'pipe', 'pipe', signingFd],
   });
   let exited = false,
     result;
@@ -250,10 +252,13 @@ export async function startSupervisor(options) {
     if (
       interrupted ||
       !options ||
-      Object.keys(options).some((k) => !['directory', 'signingFd', 'port', 'deadlineMs'].includes(k))
+      Object.keys(options).some(
+        (k) => !['directory', 'signingFd', 'port', 'deadlineMs', 'expectedIdentity'].includes(k),
+      )
     )
       return refused();
-    const { directory, signingFd, port = 0, deadlineMs = 10000 } = options;
+    const { directory, signingFd, port = 0, deadlineMs = 10000, expectedIdentity } = options;
+    const callerBound = Object.hasOwn(options, 'expectedIdentity');
     if (
       !Number.isSafeInteger(signingFd) ||
       signingFd < 3 ||
@@ -265,13 +270,23 @@ export async function startSupervisor(options) {
       deadlineMs > 10000
     )
       return refused();
+    if (callerBound && (typeof expectedIdentity !== 'string' || !/^[a-f0-9]{64}$/.test(expectedIdentity)))
+      return refused();
     fstatSync(signingFd); // Descriptor metadata only; signing bytes pass directly to the fixed child FD3.
     const mapping = await boundedInspection(directory, deadlineMs);
     if (mapping.status === 'STOP_UNCONFIRMED') return mapping;
-    if (interrupted || mapping.status !== 'MAPPING' || Date.now() >= mapping.acceptUntil) return refused();
+    if (
+      interrupted ||
+      mapping.status !== 'MAPPING' ||
+      Date.now() >= mapping.acceptUntil ||
+      (callerBound && expectedIdentity !== mapping.identity)
+    )
+      return refused();
     const remaining = deadlineMs - (performance.now() - started);
     if (remaining <= 0) return refused();
-    const owned = ownedChild(fixedService, [directory, String(port)], signingFd);
+    const owned = ownedChild(fixedService, ['--bound', directory, String(port)], signingFd, false, true);
+    owned.child.stdio[4].on('error', () => {});
+    owned.child.stdio[4].end(mapping.identity + '\n');
     const protocol = observeReadyProtocol(owned.child.stdout, owned.child.stderr, { port, deadlineMs: remaining });
     const ready = await Promise.race([protocol.ready, owned.exit.then(refused)]);
     if (ready.status !== 'READY' || Date.now() >= mapping.acceptUntil) {

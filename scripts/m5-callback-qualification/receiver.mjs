@@ -1,8 +1,17 @@
+import crypto from 'node:crypto';
 import http from 'node:http';
 import path from 'node:path';
 import { verifyShopifyWebhook } from '../../packages/shopify/src/webhook.ts';
 import { aad, acquire, durable, inventory, load, name, refuse, release, seal, withLifecycle } from './store.mjs';
-export async function openReceiver({ directory, clientSecrets, now = Date.now, port = 0 }) {
+export async function openReceiver(options) {
+  return Object.hasOwn(options, 'expectedIdentity') ? openBoundReceiver(options) : startReceiver(options);
+}
+export async function openBoundReceiver(options) {
+  const expectedIdentity = options?.expectedIdentity;
+  if (typeof expectedIdentity !== 'string' || !/^[a-f0-9]{64}$/.test(expectedIdentity)) refuse();
+  return startReceiver(options, expectedIdentity);
+}
+async function startReceiver({ directory, clientSecrets, now = Date.now, port = 0 }, expectedIdentity) {
   let startupClose, armTimer;
   try {
     const receiver = await withLifecycle(directory, async (guard) => {
@@ -11,6 +20,11 @@ export async function openReceiver({ directory, clientSecrets, now = Date.now, p
         const loaded = await load(directory);
         key = loaded.key;
         const m = loaded.m;
+        if (
+          expectedIdentity !== undefined &&
+          crypto.createHash('sha256').update(aad(m)).digest('hex') !== expectedIdentity
+        )
+          refuse();
         if (
           now() >= m.acceptUntil ||
           !Array.isArray(clientSecrets) ||

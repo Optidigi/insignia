@@ -1,11 +1,12 @@
 import assert from 'node:assert/strict';
+import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import http from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
-import { createExperiment } from './operator.mjs';
-import { startSupervisor } from './supervisor.mjs';
+import { createExperiment, eraseExperiment, privateEnrollment, privateReceipt } from './operator.mjs';
+import { inspectOwnedExperiment, startSupervisor } from './supervisor.mjs';
 
 const binding = {
   experiment: 'supervisor-fixture',
@@ -329,4 +330,299 @@ import { runErasureChild } from './supervisor.mjs';
 test('an erasure child receipt cannot hide unconfirmed process-group cleanup', async (t) => {
   unconfirmedInspection(t, '--erase', 'NOT_DUE', 0);
   assert.deepEqual(await runErasureChild('/synthetic-owned/fixture', 100, 'a'.repeat(64)), { status: 'UNCERTAIN' });
+});
+
+const startupBinding = {
+  experiment: 'one',
+  era: 'E1',
+  appId: 'gid://shopify/App/1',
+  providerShopId: 'gid://shopify/Shop/2',
+  providerShopDomain: 'synthetic.myshopify.com',
+  appInstallationId: 'gid://shopify/AppInstallation/3',
+  capabilityLabel: 'C1',
+};
+const startupSleep = (ms) => new Promise((r) => setTimeout(r, ms));
+async function ownedServingChild() {
+  const end = performance.now() + 5000;
+  while (performance.now() < end) {
+    const ids = (await fs.readFile(`/proc/${process.pid}/task/${process.pid}/children`, 'utf8'))
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
+    for (const id of ids) {
+      try {
+        const argv = (await fs.readFile(`/proc/${id}/cmdline`, 'utf8')).split('\0');
+        if (argv[1]?.endsWith('/service.mjs')) return Number(id);
+      } catch {}
+    }
+    await startupSleep(10);
+  }
+  throw Error('OWNED_SERVICE_NOT_OBSERVED');
+}
+function startupPost(port, target, raw) {
+  return new Promise((resolve, reject) => {
+    const req = http.request(
+      {
+        host: '127.0.0.1',
+        port,
+        path: target,
+        method: 'POST',
+        headers: {
+          'x-shopify-hmac-sha256': crypto.createHmac('sha256', 'synthetic-signing').update(raw).digest('base64'),
+          'x-shopify-topic': 'app/uninstalled',
+          'x-shopify-shop-domain': 'synthetic.myshopify.com',
+          'x-shopify-api-version': '2026-07',
+          'x-shopify-webhook-id': 'synthetic-delivery',
+          'x-shopify-triggered-at': '2026-10-10T12:00:00Z',
+        },
+      },
+      (res) => {
+        res.resume();
+        res.once('end', () => resolve(res.statusCode));
+      },
+    );
+    req.once('error', reject);
+    req.end(raw);
+  });
+}
+test('root frozen identity must survive a same-name replacement after metadata inspection before acquisition', async () => {
+  const root = await fs.mkdtemp(path.join(tmpdir(), 'm5-startup-binding-'));
+  const parent = path.join(root, 'data');
+  await fs.mkdir(parent, { mode: 0o700 });
+  const directory = path.join(parent, 'one'),
+    fifo = path.join(root, 'signing.fifo');
+  let anchor, reader, writer, running, pending;
+  try {
+    const now = Date.now();
+    await createExperiment({
+      directory,
+      binding: startupBinding,
+      acceptUntil: now + 60000,
+      eraseBy: now + 120000,
+    });
+    const intended = await inspectOwnedExperiment(directory);
+    assert.equal(spawnSync('/usr/bin/mkfifo', ['-m', '600', fifo]).status, 0);
+    anchor = await fs.open(fifo, constants.O_RDWR | constants.O_NONBLOCK);
+    reader = await fs.open(fifo, constants.O_RDONLY);
+    writer = await fs.open(fifo, constants.O_WRONLY);
+    await anchor.close();
+    anchor = undefined;
+    pending = startSupervisor({
+      directory,
+      signingFd: reader.fd,
+      deadlineMs: 10000,
+    });
+    const child = await ownedServingChild();
+    const childArgv = await fs.readFile(`/proc/${child}/cmdline`, 'utf8');
+    const childEnv = await fs.readFile(`/proc/${child}/environ`, 'utf8');
+    assert.equal((childArgv + childEnv).includes(intended.identity), false);
+    assert.equal((childArgv + childEnv).includes('synthetic-signing'), false);
+    // This exact service is already spawned after successful metadata inspection,
+    // while its inherited read-only FIFO has no bytes/EOF and no receiver lock yet.
+    await assert.rejects(fs.stat(path.join(directory, 'receiver.lock')), {
+      code: 'ENOENT',
+    });
+    await eraseExperiment(directory);
+    const again = Date.now();
+    await createExperiment({
+      directory,
+      binding: { ...startupBinding, era: 'E2', capabilityLabel: 'C2' },
+      acceptUntil: again + 60000,
+      eraseBy: again + 120000,
+    });
+    const replacement = await inspectOwnedExperiment(directory);
+    assert.notEqual(replacement.identity, intended.identity);
+    await writer.writeFile(JSON.stringify(['synthetic-signing']));
+    await writer.close();
+    writer = undefined;
+    running = await pending;
+    let code = null,
+      label = null;
+    if (running.status === 'READY') {
+      const enrolled = await privateEnrollment(directory);
+      code = await startupPost(
+        running.port,
+        enrolled.callbackPath,
+        Buffer.from(
+          JSON.stringify({
+            id: 2,
+            myshopify_domain: 'synthetic.myshopify.com',
+          }),
+        ),
+      );
+      label = (await privateReceipt(directory, 1)).capabilityLabel;
+    }
+    console.log(
+      JSON.stringify({
+        status: running.status,
+        ownedServiceObserved: true,
+        receiverLockAbsentBeforeReplacement: true,
+        intendedIdentityChanged: true,
+        ack: code,
+        observedCapabilityLabel: label,
+        fixture: 'SYNTHETIC_LOCAL_ONLY',
+        providerRequests: 0,
+      }),
+    );
+    assert.equal(running.status, 'REFUSED');
+    assert.equal((await inspectOwnedExperiment(directory)).identity, replacement.identity);
+    await assert.rejects(fs.stat(path.join(directory, 'receiver.lock')), { code: 'ENOENT' });
+    await assert.rejects(privateReceipt(directory, 1));
+    assert.equal(JSON.stringify(running).includes(intended.identity), false);
+  } finally {
+    await writer?.close();
+    await anchor?.close();
+    running ??= pending ? await pending : undefined;
+    if (running?.stop) assert.equal((await running.stop()).status, 'STOPPED');
+    await reader?.close();
+    await fs.rm(root, { recursive: true, force: true });
+  }
+});
+
+test('trusted caller identity is required to match inspection and invalid explicit binding never downgrades', async () => {
+  const s = await setup();
+  let running;
+  try {
+    const mapping = await inspectOwnedExperiment(s.directory);
+    for (const expectedIdentity of [undefined, '', 'A'.repeat(64), '0'.repeat(64)]) {
+      assert.deepEqual(await startSupervisor({ directory: s.directory, signingFd: s.fd.fd, expectedIdentity }), {
+        status: 'REFUSED',
+      });
+      await assert.rejects(fs.stat(path.join(s.directory, 'receiver.lock')), { code: 'ENOENT' });
+    }
+    running = await startSupervisor({ directory: s.directory, signingFd: s.fd.fd, expectedIdentity: mapping.identity });
+    assert.equal(running.status, 'READY');
+    assert.equal(await request(running.port), 404);
+    assert.equal(JSON.stringify(running).includes(mapping.identity), false);
+    assert.equal((await running.stop()).status, 'STOPPED');
+  } finally {
+    await running?.stop?.();
+    await s.fd.close();
+    await fs.rm(s.parent, { recursive: true, force: true });
+  }
+});
+
+test('fixed bound service refuses missing, malformed, oversized and mismatched private FD4 identity', async () => {
+  const service = new URL('./service.mjs', import.meta.url).pathname;
+  for (const identity of [
+    undefined,
+    '',
+    'a'.repeat(64),
+    'A'.repeat(64) + '\n',
+    'a'.repeat(65) + '\n',
+    '0'.repeat(64) + '\n',
+  ]) {
+    const s = await setup();
+    let child;
+    try {
+      child = spawn(process.execPath, [service, '--bound', s.directory, '0'], {
+        env: { PATH: '/usr/bin:/bin' },
+        stdio:
+          identity === undefined ? ['ignore', 'pipe', 'pipe', s.fd.fd] : ['ignore', 'pipe', 'pipe', s.fd.fd, 'pipe'],
+      });
+      let out = '',
+        err = '';
+      child.stdout.on('data', (c) => (out += c));
+      child.stderr.on('data', (c) => (err += c));
+      if (identity !== undefined) {
+        child.stdio[4].on('error', () => {});
+        child.stdio[4].end(identity);
+      }
+      const [code] = await once(child, 'exit');
+      assert.equal(code, 20);
+      assert.equal(out, '{"status":"REFUSED"}\n');
+      assert.equal(err, '');
+      await assert.rejects(fs.stat(path.join(s.directory, 'receiver.lock')), { code: 'ENOENT' });
+    } finally {
+      if (child?.exitCode === null) child.kill('SIGKILL');
+      await s.fd.close();
+      await fs.rm(s.parent, { recursive: true, force: true });
+    }
+  }
+});
+
+test('correct service identity uses only inherited FD4 while READY, argv, env and receipt remain sanitized', async () => {
+  const s = await setup();
+  let child;
+  try {
+    const mapping = await inspectOwnedExperiment(s.directory);
+    child = spawn(process.execPath, [new URL('./service.mjs', import.meta.url).pathname, '--bound', s.directory, '0'], {
+      env: { PATH: '/usr/bin:/bin' },
+      stdio: ['ignore', 'pipe', 'pipe', s.fd.fd, 'pipe'],
+    });
+    let out = '',
+      err = '';
+    child.stderr.on('data', (c) => (err += c));
+    const ready = new Promise((resolve) =>
+      child.stdout.on('data', (c) => {
+        out += c;
+        if (out.includes('\n')) resolve(JSON.parse(out.trim()));
+      }),
+    );
+    child.stdio[4].on('error', () => {});
+    child.stdio[4].end(mapping.identity + '\n');
+    const announced = await ready;
+    assert.deepEqual(Object.keys(announced).sort(), ['port', 'status']);
+    assert.equal(announced.status, 'READY');
+    const argv = await fs.readFile(`/proc/${child.pid}/cmdline`, 'utf8');
+    const env = await fs.readFile(`/proc/${child.pid}/environ`, 'utf8');
+    assert.equal((argv + env + out + err).includes(mapping.identity), false);
+    assert.equal((argv + env + out + err).includes('SYNTHETIC_SIGNING_SENTINEL'), false);
+    const enrolled = await privateEnrollment(s.directory);
+    const raw = Buffer.from('{"id":123,"myshopify_domain":"fixture.myshopify.com"}');
+    const code = await new Promise((resolve, reject) => {
+      const q = http.request(
+        {
+          host: '127.0.0.1',
+          port: announced.port,
+          path: enrolled.callbackPath,
+          method: 'POST',
+          headers: {
+            'x-shopify-hmac-sha256': crypto
+              .createHmac('sha256', 'SYNTHETIC_SIGNING_SENTINEL')
+              .update(raw)
+              .digest('base64'),
+            'x-shopify-topic': 'app/uninstalled',
+            'x-shopify-shop-domain': 'fixture.myshopify.com',
+            'x-shopify-api-version': '2026-07',
+            'x-shopify-webhook-id': 'synthetic',
+            'x-shopify-triggered-at': '2026-10-10T12:00:00Z',
+          },
+        },
+        (r) => {
+          r.resume();
+          r.once('end', () => resolve(r.statusCode));
+        },
+      );
+      q.once('error', reject);
+      q.end(raw);
+    });
+    assert.equal(code, 200);
+    assert.equal(JSON.stringify(await privateReceipt(s.directory, 1)).includes(mapping.identity), false);
+    const exit = once(child, 'exit');
+    child.kill('SIGTERM');
+    assert.equal((await exit)[0], 0);
+    assert.equal(err, '');
+    assert.equal(out.includes(mapping.identity), false);
+  } finally {
+    if (child?.exitCode === null) child.kill('SIGKILL');
+    await s.fd.close();
+    await fs.rm(s.parent, { recursive: true, force: true });
+  }
+});
+
+test('explicit trusted identity is captured before asynchronous inspection and cannot be removed from caller options', async () => {
+  const s = await setup();
+  let running;
+  try {
+    const options = { directory: s.directory, signingFd: s.fd.fd, expectedIdentity: '0'.repeat(64) };
+    const pending = startSupervisor(options);
+    delete options.expectedIdentity;
+    running = await pending;
+    assert.deepEqual(running, { status: 'REFUSED' });
+  } finally {
+    await running?.stop?.();
+    await s.fd.close();
+    await fs.rm(s.parent, { recursive: true, force: true });
+  }
 });
