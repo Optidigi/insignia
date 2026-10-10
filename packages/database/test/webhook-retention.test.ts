@@ -54,6 +54,43 @@ async function expire(pool: Pool, id: string) {
   await new Promise((resolve) => setTimeout(resolve, 40));
 }
 
+// DDL test hooks require their own relation: CREATE/DROP TRIGGER locks must not
+// block other files' intentional installation/receipt transaction races.
+async function isolatedHandoffFixture() {
+  const admin = new Pool({ connectionString });
+  const name = `m5handoff_${randomUUID().replaceAll('-', '')}`;
+  const url = new URL(connectionString);
+  url.pathname = `/${name}`;
+  const root = fileURLToPath(new URL('../../../', import.meta.url));
+  let created = false;
+  let isolated: Awaited<ReturnType<typeof fixture>> | undefined;
+  const close = async () => {
+    try {
+      await isolated?.close();
+    } finally {
+      try {
+        if (created) await admin.query(`DROP DATABASE ${name}`);
+      } finally {
+        await admin.end();
+      }
+    }
+  };
+  try {
+    await admin.query(`CREATE DATABASE ${name}`);
+    created = true;
+    await promisify(execFile)(
+      `${root}node_modules/.bin/dbmate`,
+      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
+      { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30_000 },
+    );
+    isolated = await fixture(url.href);
+    return { ...isolated, close };
+  } catch (error) {
+    await close();
+    throw error;
+  }
+}
+
 test('expired signed uninstall cannot resolve or deactivate the current installation', async () => {
   const f = await fixture();
   try {
@@ -198,7 +235,7 @@ test('database wall clock is rechecked after an uninstall waits for the shop loc
 });
 
 test('durable handoff excludes expired callbacks and records expiration crossing queue acknowledgement', async () => {
-  const f = await fixture();
+  const f = await isolatedHandoffFixture();
   const hook = `handoff_expiry_${randomUUID().replaceAll('-', '')}`;
   try {
     // Expire this fixture at the persisted ACK boundary, not before transport
