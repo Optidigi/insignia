@@ -17,6 +17,8 @@ on:
       - 'scripts/m5-inventory-phase/**'
       - 'scripts/m5-024/**'
       - 'scripts/m5-runtime/**'
+      - 'deployment/m5-runtime/**'
+      - 'deployment/m5-019r/**'
       - 'scripts/m5-callback-qualification/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -39,6 +41,8 @@ on:
       - 'scripts/m5-inventory-phase/**'
       - 'scripts/m5-024/**'
       - 'scripts/m5-runtime/**'
+      - 'deployment/m5-runtime/**'
+      - 'deployment/m5-019r/**'
       - 'scripts/m5-callback-qualification/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -108,6 +112,8 @@ jobs:
           M5_IMAGE_EVIDENCE_DIR: ${{ runner.temp }}/m5-024-image-evidence
           M5_IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/m5-024-worker-image
         run: node --test scripts/m5-024/image-artifact.test.mjs scripts/m5-024/image-observations.test.mjs scripts/m5-024/image-runtime.test.mjs
+      - name: Ordinary canonical web and worker Compose rendering controls
+        run: node --test scripts/m5-runtime/web-compose.test.mjs
       - name: Preserve M5-024 image qualification receipts and raw logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

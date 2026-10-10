@@ -1,0 +1,11 @@
+# Overlay on scripts/m5-024/worker-compose.yaml; same separate worker project.
+# Outbound bridge only; no host ports, proxy network, mounts or provider changes.
+name: insignia-uninstall-m5-024
+services:
+  worker:
+    networks: [private, egress]
+networks:
+  egress:
+    name: insignia-uninstall-m5-024_egress
+    driver: bridge
+    internal: false

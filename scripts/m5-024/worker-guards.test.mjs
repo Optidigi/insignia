@@ -63,6 +63,102 @@ test('candidate guards reject source, Compose, image, endpoint and private parit
     expectedImage: `synthetic@sha256:${'a'.repeat(64)}`,
   };
   assert.equal(qualifyWorkerCandidate(candidate), true);
+  // docker image save/load preserves this content-addressed ID without a RepoDigest.
+  const localImage = `sha256:${'b'.repeat(64)}`;
+  const localRendered = {
+    ...rendered,
+    services: { worker: { ...rendered.services.worker, image: localImage } },
+  };
+  const localCandidate = {
+    ...candidate,
+    rendered: localRendered,
+    expectedRendered: localRendered,
+    image: localImage,
+    expectedImage: localImage,
+  };
+  assert.equal(qualifyWorkerCandidate(localCandidate), true);
+  const outboundRendered = {
+    ...localRendered,
+    name: 'insignia-uninstall-m5-024',
+    services: { worker: { ...localRendered.services.worker, networks: { private: null, egress: null } } },
+    networks: {
+      private: { external: true, name: 'insignia-rewrite-m5-019_private' },
+      egress: { name: 'insignia-uninstall-m5-024_egress', driver: 'bridge', internal: false },
+    },
+  };
+  const outboundCandidate = { ...localCandidate, rendered: outboundRendered, expectedRendered: outboundRendered };
+  assert.equal(qualifyWorkerCandidate(outboundCandidate), true);
+  const serializedRendered = {
+    ...outboundRendered,
+    services: { worker: { ...outboundRendered.services.worker, entrypoint: null } },
+    networks: {
+      private: { ...outboundRendered.networks.private, ipam: {} },
+      egress: { name: 'insignia-uninstall-m5-024_egress', driver: 'bridge', ipam: {} },
+    },
+  };
+  assert.equal(
+    qualifyWorkerCandidate({
+      ...outboundCandidate,
+      rendered: serializedRendered,
+      expectedRendered: serializedRendered,
+    }),
+    true,
+  );
+  for (const networks of [
+    undefined,
+    { ...outboundRendered.networks, egress: { ...outboundRendered.networks.egress, internal: true } },
+    { ...outboundRendered.networks, egress: { ...outboundRendered.networks.egress, internal: null } },
+    { ...outboundRendered.networks, egress: { ...outboundRendered.networks.egress, ipam: { driver: 'unreviewed' } } },
+    { ...outboundRendered.networks, private: { ...outboundRendered.networks.private, ipam: { config: [{}] } } },
+    { ...outboundRendered.networks, egress: { ...outboundRendered.networks.egress, external: true } },
+    { ...outboundRendered.networks, egress: { ...outboundRendered.networks.egress, name: 'unowned' } },
+    { ...outboundRendered.networks, private: { external: true, name: 'wrong_database_network' } },
+    { ...outboundRendered.networks, proxy: { external: true } },
+  ]) {
+    const drift = { ...outboundRendered, networks };
+    assert.equal(qualifyWorkerCandidate({ ...outboundCandidate, rendered: drift, expectedRendered: drift }), false);
+  }
+  assert.equal(qualifyWorkerCandidate({ ...outboundCandidate, expectedRendered: localRendered }), false);
+  for (const entrypoint of [[], ['/bin/sh'], 'node']) {
+    const drift = {
+      ...serializedRendered,
+      services: { worker: { ...serializedRendered.services.worker, entrypoint } },
+    };
+    assert.equal(qualifyWorkerCandidate({ ...outboundCandidate, rendered: drift, expectedRendered: drift }), false);
+  }
+  const extraAttachment = {
+    ...outboundRendered,
+    services: {
+      worker: { ...outboundRendered.services.worker, networks: { private: null, egress: { aliases: ['unreviewed'] } } },
+    },
+  };
+  assert.equal(
+    qualifyWorkerCandidate({ ...outboundCandidate, rendered: extraAttachment, expectedRendered: extraAttachment }),
+    false,
+  );
+  assert.equal(qualifyWorkerCandidate({ ...localCandidate, expectedImage: candidate.image }), false);
+  for (const image of ['sha256:short', `sha256:${'B'.repeat(64)}`, `sha256:${'b'.repeat(63)}`, 'worker:latest']) {
+    const unqualifiedRendered = {
+      services: { worker: { ...localRendered.services.worker, image } },
+    };
+    assert.equal(
+      qualifyWorkerCandidate({
+        ...localCandidate,
+        rendered: unqualifiedRendered,
+        expectedRendered: unqualifiedRendered,
+        image,
+        expectedImage: image,
+      }),
+      false,
+    );
+  }
+  assert.equal(
+    qualifyWorkerCandidate({
+      ...localCandidate,
+      environment: { ...environment, NODE_OPTIONS: '--import=evil' },
+    }),
+    false,
+  );
   const tlsCandidate = {
     ...candidate,
     endpoint: { ...endpoint, sslmode: 'verify-full' },
