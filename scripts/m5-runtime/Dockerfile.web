@@ -1,0 +1,9 @@
+# Portable current web build; disposable image qualification runs in CI.
+FROM node:24.21.0-bookworm-slim@sha256:51b1100cc2a83d370c6a60952e3f2989c8a43159d0e38586e090f3b3326efefd
+WORKDIR /srv/insignia/web
+COPY --chown=node:node web-package/ ./
+USER node
+ENV NODE_ENV=production HOST=0.0.0.0 PORT=3000
+EXPOSE 3000
+ENTRYPOINT []
+CMD ["/usr/local/bin/node", "/srv/insignia/web/dist/server/entry.mjs"]

@@ -16,6 +16,7 @@ on:
       - 'scripts/m5-host-inventory/**'
       - 'scripts/m5-inventory-phase/**'
       - 'scripts/m5-024/**'
+      - 'scripts/m5-runtime/**'
       - 'scripts/m5-callback-qualification/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -37,6 +38,7 @@ on:
       - 'scripts/m5-host-inventory/**'
       - 'scripts/m5-inventory-phase/**'
       - 'scripts/m5-024/**'
+      - 'scripts/m5-runtime/**'
       - 'scripts/m5-callback-qualification/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
@@ -104,7 +106,8 @@ jobs:
         env:
           M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
           M5_IMAGE_EVIDENCE_DIR: ${{ runner.temp }}/m5-024-image-evidence
-        run: node --test scripts/m5-024/image-observations.test.mjs scripts/m5-024/image-runtime.test.mjs
+          M5_IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/m5-024-worker-image
+        run: node --test scripts/m5-024/image-artifact.test.mjs scripts/m5-024/image-observations.test.mjs scripts/m5-024/image-runtime.test.mjs
       - name: Preserve M5-024 image qualification receipts and raw logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -113,6 +116,42 @@ jobs:
           path: ${{ runner.temp }}/m5-024-image-evidence
           if-no-files-found: ignore
           retention-days: 30
+      - name: Preserve qualified ordinary worker deployment image
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m5-024-worker-image-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/m5-024-worker-image
+          if-no-files-found: error
+          retention-days: 3
+      - name: Portable current web deployment package
+        run: |
+          pnpm exec biome check scripts/m5-runtime
+          node --test scripts/m5-runtime/portable-web.test.mjs
+          bash scripts/m5-runtime/build-web.sh /tmp/insignia-m5-web
+      - name: Actual current web image startup restart and export
+        env:
+          M5_WEB_PACKAGE: /tmp/insignia-m5-web
+          M5_WEB_IMAGE_EVIDENCE_DIR: ${{ runner.temp }}/m5-web-image-evidence
+        run: node --test scripts/m5-runtime/web-image.test.mjs
+      - name: Preserve web image qualification receipts and logs
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m5-web-image-evidence-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/m5-web-image-evidence/*.log
+            ${{ runner.temp }}/m5-web-image-evidence/receipt.json
+          if-no-files-found: ignore
+          retention-days: 30
+      - name: Preserve qualified ordinary web deployment image
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m5-web-image-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/m5-web-image-evidence/web-image.tar
+            ${{ runner.temp }}/m5-web-image-evidence/receipt.json
+          if-no-files-found: error
+          retention-days: 3
       - name: Generic webhook quarantine through real HTTP and worker
         env:
           M5_025_REQUIRE_SAFE_UNINSTALL: '1'

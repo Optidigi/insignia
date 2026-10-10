@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
+import { exportWorkerImage } from './image-artifact.mjs';
 import {
   assembleDatabaseFixtureProbe,
   assembleImageInventoryProbe,
@@ -65,7 +66,7 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
     limitations: [
       'Disposable CI only; production topology, deployment, backup/rollback, native providers, uninstall authority and privacy effects are NOT_RUN.',
       'Network control observes one internal IPv4 network, no default route and failed TCP to documentation-only 192.0.2.1:443; it does not attest host-gateway services, DNS filtering or arbitrary host topology.',
-      'Local image ID is recorded; no registry image is pushed and no registry digest or exported image-tar hash is claimed.',
+      'Local image ID is recorded; no registry image is pushed and no registry digest is claimed. An exported image-tar hash is recorded only when CI artifact export is configured and succeeds.',
     ],
   };
   const prefix = `insignia-m5-image-${randomUUID().replaceAll('-', '')}`;
@@ -289,6 +290,17 @@ test('actual built worker image qualifies OS isolation, frozen inventory, readin
     await docker(['start', workerName]);
     const restarted = await qualifyRunning('restart');
     assert.notEqual(restarted.State.StartedAt, startup.State.StartedAt, 'restart must launch a new process');
+    if (process.env.M5_IMAGE_ARTIFACT_DIR) {
+      assert.equal(process.env.CI, 'true', 'worker image artifact export is CI only');
+      receipt.artifact = await exportWorkerImage({
+        directory: resolve(process.env.M5_IMAGE_ARTIFACT_DIR),
+        sourceHead: receipt.sourceHead,
+        sourceTree: receipt.sourceTree,
+        imageId,
+        run: docker,
+        signal,
+      });
+    }
     receipt.status = 'PASS';
   } catch (error) {
     receipt.failure = error.message;

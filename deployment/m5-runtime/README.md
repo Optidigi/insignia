@@ -1,0 +1,9 @@
+# Ordinary M5 runtime handoff
+
+The JSON files implement the [owner's exact-Shop recognition](../../docs/delivery/authority/m5-development-contract-recognition-2026-10-10.md) of the existing real development contract. They are non-secret server-owned configuration, not provider resources or a fabricated subscription. Set their compact JSON bytes through `INSIGNIA_M5_ENTITLEMENT_POLICY_JSON` and `INSIGNIA_M5_FEATURES_JSON` only in the separately allocated canonical runtime deployment. They are not deployed by this PR.
+
+Current web/worker artifacts must be built from the accepted exact head and qualified by CI before host mutation is requested. Retain source head/tree, immutable image ID, image-tar SHA256/size, migration hashes and the final natural CI run/attempt. A portable package or healthy `/live` alone does not prove authenticated readiness or native merchant acceptance.
+
+Fresh read-only findings require migrations16–18, reviewed pg-boss43 provisioning/queue roles, trusted-release operator/runtime separation and ordinary worker configuration before owner Search. Qualify private webhook/wrapping keys, Partner reads, same-database binding and signing/public-config prerequisites; never publish secret values. Reuse existing canonical host/database/router, reviewed queue installer/grants and ordinary worker Compose guards. Preserve prior image/config and durable evidence for rollback; no destructive down migration.
+
+The concrete production allocation must name artifacts, affected services/roles/schema, private configuration delivery, backup/restart/rollback and cleanup bounds. This handoff grants no host write, SQL provisioning, Shopify version/scope/subscription operation, Search/bootstrap or merchant fixture. Uninstall/privacy authority remains a separate required safety premise.

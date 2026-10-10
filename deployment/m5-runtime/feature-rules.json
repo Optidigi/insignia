@@ -1,0 +1,7 @@
+{
+  "base": "m5.configure",
+  "required": "m5.required",
+  "logoLater": "m5.logo-later",
+  "options": "m5.production-options",
+  "pricing": "m5.pricing"
+}
