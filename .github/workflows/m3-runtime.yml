@@ -81,7 +81,7 @@ jobs:
       - name: Experimental private callback HTTP/operator/restart/supervisor/erasure controls
         run: |
           corepack pnpm exec biome check scripts/m5-callback-qualification
-          node --test scripts/m5-callback-qualification/receiver.test.mjs scripts/m5-callback-qualification/supervisor.test.mjs scripts/m5-callback-qualification/cleanup.test.mjs
+          node --test --test-concurrency=1 scripts/m5-callback-qualification/receiver.test.mjs scripts/m5-callback-qualification/supervisor.test.mjs scripts/m5-callback-qualification/cleanup.test.mjs scripts/m5-callback-qualification/tls-edge.test.mjs
       - name: Bounded read-only inventory controls (local processes only)
         run: corepack pnpm test:m5-inventory
       - run: corepack pnpm check:secrets

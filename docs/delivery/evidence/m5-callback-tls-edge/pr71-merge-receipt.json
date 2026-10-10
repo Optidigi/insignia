@@ -1,0 +1,12 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/71",
+  "merge": "b0949587efbcf9cdd6b2cef0b7700d6f85c32dd3",
+  "orderedParents": ["b2a874089482ec6f98938385da65453bd3b85d11", "5852de57e62deb234deb084d972de4520a298409"],
+  "tree": "b87cbbc6607ba5324a2e30a0dc0b69014c13b70e",
+  "remoteMain": "b0949587efbcf9cdd6b2cef0b7700d6f85c32dd3",
+  "mergedAt": "2026-10-10T17:01:24Z",
+  "verifiedAt": "2026-10-10T17:01:41.415821+00:00",
+  "method": "NORMAL_MERGE",
+  "authority": "OWNER_DELEGATED_WITHIN_M5",
+  "principalMilestoneApproval": false
+}

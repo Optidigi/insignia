@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "b2a874089482ec6f98938385da65453bd3b85d11",
-  "currentTree": "88b0c4ef4b40fe03202b503eb93e80f5cb9bd065",
+  "currentIntegratedCommit": "b0949587efbcf9cdd6b2cef0b7700d6f85c32dd3",
+  "currentTree": "b87cbbc6607ba5324a2e30a0dc0b69014c13b70e",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -116,6 +116,10 @@
     {
       "pr": 70,
       "receipt": "evidence/m5-callback-lifecycle/pr70-integration-receipt.json"
+    },
+    {
+      "pr": 71,
+      "receipt": "evidence/m5-callback-tls-edge/pr71-merge-receipt.json"
     }
   ],
   "openFindings": [
@@ -124,7 +128,7 @@
     "Worker/image/queue/runtime native prerequisites not qualified",
     "28 native G7 criteria blocked",
     "Real merchant configure/preview/save/publication/activation NOT_RUN",
-    "Experimental receiver24 and lifecycle22 local controls PASS only; actual native callback/TLS/host/cgroup/persistent timer/signing-FD provider/resource/export/key-backup privacy unqualified"
+    "Experimental receiver24/lifecycle22/TLS21 controls local PASS only; native callback/TLS/host/cgroup/persistent timer/FD provider/resource/export/key-backup privacy unqualified"
   ],
   "resourceGrants": [
     {
@@ -172,23 +176,22 @@
     "Known canonical-web policy/features absent; current provider subscription is active existing zero-dollar development contract. Owner feature/policy configuration or separately approved bounded development eligibility still required; provider prices do not supply policy",
     "Owner selected stitchs-vat-verification-20261004 Admin handle; provider canonical domain/identity/suitability not verified. No installation-mutation allocation."
   ],
-  "nextSafeAction": "Fresh independent reviews and natural exact-head CI for local lifecycle candidate; obtain exact callback host/resource/effect/privacy allocation before any native deployment. Genuine uninstall/privacy and merchant G7 remain blocked.",
+  "nextSafeAction": "Review and qualify TLS edge, then prepare the concrete necessary host delta and consolidated owner resource/eligibility decision; no native operation from local tests.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
-    "slice": "Minimal dedicated callback TLS edge",
-    "status": "LOCAL_SYNTHETIC_HTTPS_TDD_NO_DEPLOYMENT",
-    "nativeAuthority": "Hostname, certificate, route, host mutations and provider experiment unallocated"
+    "slice": "Concrete callback host packaging",
+    "status": "NOT_IMPLEMENTED",
+    "nativeAuthority": "Host writes, route/certificate allocation and provider experiment absent"
   },
   "activeCandidate": {
-    "scope": "Experimental callback startup supervisor, generation-bound deadline eraser and explicit owned-process uncertainty; mandatory46controls",
-    "base": "b2a874089482ec6f98938385da65453bd3b85d11",
-    "localControls": "46_LOCAL_HTTP_OPERATOR_PROCESS_CONTROLS_PASS_WITH_EXPLICIT_UNCONFIRMED_PROCESS_BOUNDARY_DOUBLES",
-    "native": "NOT_RUN",
-    "reviewAndCi": "R1_REJECTED_DESPITE_TEN_CI_SUCCESS_R2_FRESH_REVIEW_CI_PENDING",
-    "milestonePass": false
+    "scope": "Local dedicated TLS callback edge;21 synthetic HTTPS/CLI controls;67 combined controls",
+    "base": "b0949587efbcf9cdd6b2cef0b7700d6f85c32dd3",
+    "tree": "b87cbbc6607ba5324a2e30a0dc0b69014c13b70e",
+    "reviews": "PENDING",
+    "nativeAuthority": "UNALLOCATED / NOT_RUN"
   },
   "boundedInventoryTooling": {
     "pr": 60,
