@@ -82,6 +82,7 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
     await docker([
       'run',
       '--detach',
+      '--init',
       '--name',
       container,
       '--network',
@@ -101,6 +102,7 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
     ]);
     const running = await healthy();
     assert.equal(running.HostConfig.ReadonlyRootfs, true);
+    assert.equal(running.HostConfig.Init, true, 'Container init must forward termination to Node');
     assert.deepEqual(running.HostConfig.CapDrop, ['ALL']);
     assert.equal(running.Config.User, 'node');
     const address = ownedWebAddress(running.NetworkSettings, network);
