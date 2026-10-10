@@ -274,3 +274,59 @@ test('blocked private mapping metadata is bounded before service startup; execut
     await fs.rm(s.parent, { recursive: true, force: true });
   }
 });
+
+import childProcess from 'node:child_process';
+import { EventEmitter } from 'node:events';
+import { syncBuiltinESMExports } from 'node:module';
+import { PassThrough } from 'node:stream';
+
+function unconfirmedInspection(t, command = '--inspect', output = 'REFUSED', exitCode = 20) {
+  const originalSpawn = childProcess.spawn,
+    originalKill = process.kill;
+  const syntheticPid = 2147480000;
+  t.mock.method(childProcess, 'spawn', (executable, args, options) => {
+    if (args[1] !== command) return originalSpawn(executable, args, options);
+    const child = Object.assign(new EventEmitter(), {
+      pid: syntheticPid,
+      stdout: new PassThrough(),
+      stderr: new PassThrough(),
+    });
+    child.stdio = [null, child.stdout, child.stderr, new PassThrough()];
+    queueMicrotask(() => {
+      child.stdout.end(JSON.stringify({ status: output }) + '\n');
+      child.stderr.end();
+      child.emit('close', exitCode, null);
+    });
+    return child;
+  });
+  t.mock.method(process, 'kill', (pid, signal) => {
+    if (pid !== -syntheticPid) return originalKill(pid, signal);
+    if (signal === 0) return true;
+    throw Object.assign(Error('SYNTHETIC_SIGNAL_DENIED'), { code: 'EPERM' });
+  });
+  syncBuiltinESMExports();
+  t.after(() => {
+    t.mock.restoreAll();
+    syncBuiltinESMExports();
+  });
+}
+
+test('failed inspection propagates unconfirmed process-group cleanup through supervisor startup', async (t) => {
+  const s = await setup();
+  unconfirmedInspection(t);
+  try {
+    assert.deepEqual(await startSupervisor({ directory: s.directory, signingFd: s.fd.fd }), {
+      status: 'STOP_UNCONFIRMED',
+    });
+  } finally {
+    await s.fd.close();
+    await fs.rm(s.parent, { recursive: true, force: true });
+  }
+});
+
+import { runErasureChild } from './supervisor.mjs';
+
+test('an erasure child receipt cannot hide unconfirmed process-group cleanup', async (t) => {
+  unconfirmedInspection(t, '--erase', 'NOT_DUE', 0);
+  assert.deepEqual(await runErasureChild('/synthetic-owned/fixture', 100, 'a'.repeat(64)), { status: 'UNCERTAIN' });
+});

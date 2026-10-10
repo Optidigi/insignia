@@ -221,3 +221,125 @@ test('crash inside a real lifecycle critical section leaves a stale guard that c
     await fs.rm(s.root, { recursive: true, force: true });
   }
 });
+
+import childProcess from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
+import { eraseExperiment } from './operator.mjs';
+
+test('deadline worker refuses a same-name replacement created before its lifecycle guard is acquired', async (t) => {
+  const s = await setup(1400);
+  const originalSpawn = childProcess.spawn;
+  const cleanup = new URL('./cleanup.mjs', import.meta.url).pathname;
+  let resume, reached;
+  const atGuard = new Promise((resolve) => {
+    reached = resolve;
+  });
+  const wrapper = `const fs=(await import('node:fs/promises')).default;const path=await import('node:path');const original=fs.open.bind(fs);let paused=false;const script=process.argv[1],directory=process.argv[2];fs.open=async(file,...args)=>{if(!paused&&path.dirname(file)===path.dirname(directory)&&path.basename(file).startsWith('.callback-lifecycle-')){paused=true;process.send({status:'BEFORE_GUARD'});await new Promise(resolve=>process.once('message',()=>{process.disconnect();resolve();}));}return original(file,...args);};process.argv=[process.execPath,script,'--erase',directory];await import((await import('node:url')).pathToFileURL(script).href);`;
+  t.mock.method(childProcess, 'spawn', (executable, args, options) => {
+    if (args[0] !== cleanup || args[1] !== '--erase') return originalSpawn(executable, args, options);
+    const child = originalSpawn(executable, ['--input-type=module', '-e', wrapper, cleanup, args[2]], {
+      ...options,
+      stdio: [...options.stdio, 'ipc'],
+    });
+    resume = () => child.send({ status: 'RESUME' });
+    child.once('message', (value) => {
+      if (value.status === 'BEFORE_GUARD') reached();
+    });
+    return child;
+  });
+  syncBuiltinESMExports();
+  t.after(() => {
+    t.mock.restoreAll();
+    syncBuiltinESMExports();
+  });
+  let erasing;
+  try {
+    await new Promise((resolve) => setTimeout(resolve, Math.max(1, s.eraseBy - Date.now() + 20)));
+    erasing = eraseAtDeadline({ parent: s.parent, experiment: binding.experiment });
+    await atGuard;
+    await eraseExperiment(s.directory);
+    await createExperiment({
+      directory: s.directory,
+      binding,
+      acceptUntil: Date.now() + 60000,
+      eraseBy: Date.now() + 120000,
+    });
+    const replacement = await privateEnrollment(s.directory);
+    resume();
+    resume = undefined;
+    assert.deepEqual(await erasing, { status: 'BLOCKED' });
+    assert.deepEqual(await privateEnrollment(s.directory), replacement);
+  } finally {
+    resume?.();
+    await erasing;
+    await fs.rm(s.root, { recursive: true, force: true });
+  }
+});
+
+import { EventEmitter } from 'node:events';
+import { PassThrough } from 'node:stream';
+
+function unconfirmedInspection(t) {
+  const originalSpawn = childProcess.spawn,
+    originalKill = process.kill;
+  const syntheticPid = 2147480000;
+  t.mock.method(childProcess, 'spawn', (executable, args, options) => {
+    if (args[1] !== '--inspect') return originalSpawn(executable, args, options);
+    const child = Object.assign(new EventEmitter(), {
+      pid: syntheticPid,
+      stdout: new PassThrough(),
+      stderr: new PassThrough(),
+    });
+    child.stdio = [null, child.stdout, child.stderr, new PassThrough()];
+    queueMicrotask(() => {
+      child.stdout.end('{"status":"REFUSED"}\n');
+      child.stderr.end();
+      child.emit('close', 20, null);
+    });
+    return child;
+  });
+  t.mock.method(process, 'kill', (pid, signal) => {
+    if (pid !== -syntheticPid) return originalKill(pid, signal);
+    if (signal === 0) return true;
+    throw Object.assign(Error('SYNTHETIC_SIGNAL_DENIED'), { code: 'EPERM' });
+  });
+  syncBuiltinESMExports();
+  t.after(() => {
+    t.mock.restoreAll();
+    syncBuiltinESMExports();
+  });
+}
+
+test('failed inspection preserves unconfirmed process-group cleanup as uncertain erasure', async (t) => {
+  const s = await setup();
+  unconfirmedInspection(t);
+  try {
+    assert.deepEqual(await eraseAtDeadline({ parent: s.parent, experiment: binding.experiment }), {
+      status: 'UNCERTAIN',
+    });
+    assert.ok((await fs.stat(s.directory)).isDirectory());
+  } finally {
+    await fs.rm(s.root, { recursive: true, force: true });
+  }
+});
+
+for (const [directoryName, suffix] of [
+  ['spool', 'json'],
+  ['commits', 'bin'],
+  ['reservations', 'bin'],
+]) {
+  test(`deadline cleanup preserves unexpected ${directoryName}/000001.${suffix}`, async () => {
+    const s = await setup();
+    const unexpected = path.join(s.directory, directoryName, '000001.' + suffix);
+    await fs.writeFile(unexpected, 'SYNTHETIC_UNKNOWN_ENTRY', { mode: 0o600 });
+    try {
+      await new Promise((resolve) => setTimeout(resolve, Math.max(1, s.eraseBy - Date.now() + 20)));
+      assert.deepEqual(await eraseAtDeadline({ parent: s.parent, experiment: binding.experiment }), {
+        status: 'BLOCKED',
+      });
+      assert.equal(await fs.readFile(unexpected, 'utf8'), 'SYNTHETIC_UNKNOWN_ENTRY');
+    } finally {
+      await fs.rm(s.root, { recursive: true, force: true });
+    }
+  });
+}

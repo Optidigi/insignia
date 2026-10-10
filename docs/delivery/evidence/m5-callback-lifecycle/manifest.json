@@ -1,26 +1,34 @@
 {
   "schema": "m5-callback-lifecycle-local-candidate-v1",
-  "status": "ACCEPTED_RECEIVER_BASE_LOCAL39PASS_PENDING_REVIEW_CI_NATIVE_NOT_RUN",
+  "status": "R2_LOCAL46PASS_PENDING_FRESH_REVIEW_CI_NATIVE_CALLBACK_NOT_RUN",
   "base": "b2a874089482ec6f98938385da65453bd3b85d11",
   "baseTree": "88b0c4ef4b40fe03202b503eb93e80f5cb9bd065",
   "ownedContents": {
     ".github/workflows/m3-runtime.yml": "28661a0af2e4696f0cbfe036f6e2c970a7fe0e482c9a41d0b4a85fe4740bfd71",
-    "docs/delivery/evidence/m5-callback-lifecycle/REPORT.md": "01811ac02da533d408bc512108e70223d6335080c5105c87a873a2d8ea571013",
+    "docs/delivery/evidence/m5-callback-lifecycle/REPORT.md": "f56f2803c7fb3158e06150f67644f2d605fd7c3e4eca6fc91b139f28f15e9847",
     "docs/delivery/evidence/m5-callback-lifecycle/checks.json": "2eaeeadfa7ae7890229892fb6ef523c8cea90212de219a441b4c1c7cab99cfef",
+    "docs/delivery/evidence/m5-callback-lifecycle/host-metadata-read-receipt.json": "146ed989f70215d11a960c66aad83c0fa66e0f8d4a90d2a2fc1bf7b061cd2bda",
+    "docs/delivery/evidence/m5-callback-lifecycle/parent-checks.json": "d96444134e201b064f3d573065fd784000d4a644855de2a1a72f03055dbd8e82",
     "docs/delivery/evidence/m5-callback-lifecycle/pr70-integration-receipt.json": "ad6e9a0534902a7e4a723a7775bf6acb9538240b52f4252c439d96555b3444fb",
     "docs/delivery/evidence/m5-callback-lifecycle/provenance.json": "b14b656dae9d2dc39e90d3d76d9b98eb5a78a33e09760add9a86c7fbfbcacf98",
+    "docs/delivery/evidence/m5-callback-lifecycle/r1-rejected-candidate.json": "9ea14a721e393e3690922aa23a5587108ef1fb54548ffc8b01890494c1be021e",
+    "docs/delivery/evidence/m5-callback-lifecycle/r1-review-security.md": "87acae0b468675bf52f6c4a3ac5fe77154c15ed8ed9e285b5138b95c71031dd4",
+    "docs/delivery/evidence/m5-callback-lifecycle/r1-review-spec.md": "d9f423faac90398dba8140d77951f734c82b369ffc7a12915b4a628bfe4efcc6",
+    "docs/delivery/evidence/m5-callback-lifecycle/r2-correction-provenance.json": "a540e3c0d5a947bf11b12158de51af70e0c40c630b5c9e71023aa310c3165b35",
+    "docs/delivery/evidence/m5-callback-lifecycle/r2-parent-checks.json": "b3002eece2e9566be41d392f3e1cd06ea7bfabb7f8e3cecd9d68051f8e6bcd49",
     "docs/delivery/history/state-before-callback-lifecycle.md": "8f895795e8fb015d90476b06052bb1b198a9d17df6992d09eed44a312f0eb87d",
-    "docs/delivery/milestone-progress.json": "6b8941e84ff7e16ff47f3866a20f3f78719ead1b51ebec6330361c625616aecb",
-    "docs/delivery/state.md": "5687b54de385c83169108c41d9a7e4bc19e9aa5a49e09da6465f928fbfd39263",
-    "scripts/m5-callback-qualification/LIFECYCLE-CONTROLS.md": "226d80b4254ec128f8f425fb256571fbc8956ed9bdcd295cc44a7a6a6d8acbed",
+    "docs/delivery/milestone-progress.json": "994b5120a3a1327e9edcb2298e2fdd6060c019abaf30055df8493b0a5779489b",
+    "docs/delivery/notes/m5-callback-edge-v3-6-20261010.md": "64c3b609d86d369ac7044177890014c5280c6da3c10e6307577761f0200c794e",
+    "docs/delivery/state.md": "daaead8e9d4f949693e56e69fddc4daf7f3bc701429287a9f0d3a4f0e98450a0",
+    "scripts/m5-callback-qualification/LIFECYCLE-CONTROLS.md": "cae5bf34f80dbdb1f425c66296e4ee909731f2748c198a24de6dd097600921b8",
     "scripts/m5-callback-qualification/README.md": "e0e7ac9764040e9624aeadb132617b2231a4200e00bfd31957474b1b18044bc0",
     "scripts/m5-callback-qualification/SERVICE-PROPOSAL.json": "15b4410a48b698d9f186be1054d46eebc6d6bc77a7febe395d4a37d7002d4b8a",
-    "scripts/m5-callback-qualification/cleanup.mjs": "9ba14ae5a9daba8ea884983b14e59c8b6e2ee1c0b22b035d66cdaea234b89424",
-    "scripts/m5-callback-qualification/cleanup.test.mjs": "bf8232f66248c90adc88b6063fab1f3455b98430581c927ce4d0c27651cc7557",
-    "scripts/m5-callback-qualification/supervisor.mjs": "fc943b655f0444f8fea70c2466bcfb3ac4dc8c81273689648596421f1b946ed7",
-    "scripts/m5-callback-qualification/supervisor.test.mjs": "ee65eae374f825eff798502b2b27893dc5048b5f215318d9cd936a15717a00b7",
-    "docs/delivery/evidence/m5-callback-lifecycle/parent-checks.json": "d96444134e201b064f3d573065fd784000d4a644855de2a1a72f03055dbd8e82",
-    "docs/delivery/notes/m5-callback-edge-v3-6-20261010.md": "64c3b609d86d369ac7044177890014c5280c6da3c10e6307577761f0200c794e"
+    "scripts/m5-callback-qualification/cleanup.mjs": "e548ad888ebe88f0d5f8a14b6eedcd054b5ccf13179d6dd535c1f26c9be82b9b",
+    "scripts/m5-callback-qualification/cleanup.test.mjs": "a9c185f08a99978d060d85bf0b9caac6ed9b8d7f7afcb040ed97c2570c6452f1",
+    "scripts/m5-callback-qualification/operator.mjs": "7f346a74dca05cb41c50cc90815599cdd4699b8191a4ead4ee10b72e0945de77",
+    "scripts/m5-callback-qualification/store.mjs": "b1c185a465b5a57eded64de0d1491fcdfa0135514bd589db6cffa19400f1666c",
+    "scripts/m5-callback-qualification/supervisor.mjs": "9d97e4b148f5e6e4e64ab1932af2151be7e204421bd584cf4cd87383faca6e3b",
+    "scripts/m5-callback-qualification/supervisor.test.mjs": "f5ffc003129db47d45e167dc00f884410844996844f2e4482fe52655595e658f"
   },
   "interactingInputs": {
     "AGENTS.md": "1d5fa596975ef19e33a7e1bc3db9ca5b944872e2ddbfe8a393d7c68810b60eba",
@@ -40,8 +48,6 @@
     ".agents/skills/code-review/SKILL.md": "47f4e52c21694def9c7c11cbfbf891ca35eac7a93e395797515be3c8a409ae50",
     "scripts/m5-callback-qualification/service.mjs": "aff865e9b1109ad6b9f39a6f091cbc18e5bd112da3fb5d58c86e9028da1cbd09",
     "scripts/m5-callback-qualification/receiver.mjs": "ab778ca27df4de11c428498ed2c129032c80d59c590b0f41e33f5f5fafadc8c9",
-    "scripts/m5-callback-qualification/operator.mjs": "8120a40c38325f9e8464a99093ec3a60e2f346efe14bc23651b47a9326fba3a8",
-    "scripts/m5-callback-qualification/store.mjs": "ddaae94180244445c0385399255562bd09a6ed0064276aa3185d337d7413ae7a",
     "scripts/m5-callback-qualification/network-guard.mjs": "f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a",
     "scripts/m5-callback-qualification/receiver.test.mjs": "e041f942fd7a397faa9248397fdcfe4254dc40261951fe179be28cc5e38405e1",
     "packages/shopify/src/webhook.ts": "c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f",
@@ -62,8 +68,10 @@
   },
   "privateProof": {
     "provisionalFreezeSha256": "eb1fcddfe9c877741ba1e03540b6e4f0c95f48d5227f66412da10cb5b8ca659a",
-    "commandsAndAllFinalLogReceipts": "Final private integration freeze; hashes of public source/log proofs only, no capability/key/raw capture hashes"
+    "commandsAndAllFinalLogReceipts": "Final private integration freeze; hashes of public source/log proofs only, no capability/key/raw capture hashes",
+    "r2WriterFreezeSha256": "15165542d76728e122ab1e965355d1cfb8aab41deb33e0327f2e88639e857d04"
   },
   "selfPin": "Excluded; parent/private final freeze pins this manifest without circularity",
-  "milestoneAcceptance": false
+  "milestoneAcceptance": false,
+  "historicalManifest": "Exact R1 manifest retained at rejected commit66e9227b9ee3f192462674db041c4fb4f44f0567; R2 current source pins are separate."
 }

@@ -124,7 +124,7 @@
     "Worker/image/queue/runtime native prerequisites not qualified",
     "28 native G7 criteria blocked",
     "Real merchant configure/preview/save/publication/activation NOT_RUN",
-    "Experimental receiver24 and lifecycle15 local controls PASS only; actual native callback/TLS/host/cgroup/persistent timer/signing-FD provider/resource/export/key-backup privacy unqualified"
+    "Experimental receiver24 and lifecycle22 local controls PASS only; actual native callback/TLS/host/cgroup/persistent timer/signing-FD provider/resource/export/key-backup privacy unqualified"
   ],
   "resourceGrants": [
     {
@@ -178,16 +178,16 @@
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
-    "slice": "Exact app management destination observation",
-    "status": "INTEGRATED_SELECTED_WEB_OBSERVATIONS_OTHER_CONFIG_LEGACY_EFFECTS_UNQUALIFIED",
-    "nativeAuthority": "Standing equivalent scoped owner read grant; prior collections sealed"
+    "slice": "Minimal dedicated callback TLS edge",
+    "status": "LOCAL_SYNTHETIC_HTTPS_TDD_NO_DEPLOYMENT",
+    "nativeAuthority": "Hostname, certificate, route, host mutations and provider experiment unallocated"
   },
   "activeCandidate": {
-    "scope": "Experimental callback startup supervisor and one-experiment deadline eraser, mandatory natural39control CI",
+    "scope": "Experimental callback startup supervisor, generation-bound deadline eraser and explicit owned-process uncertainty; mandatory46controls",
     "base": "b2a874089482ec6f98938385da65453bd3b85d11",
-    "localControls": "39_REAL_HTTP_OPERATOR_PROCESS_LIFECYCLE_CONTROLS_PASS",
+    "localControls": "46_LOCAL_HTTP_OPERATOR_PROCESS_CONTROLS_PASS_WITH_EXPLICIT_UNCONFIRMED_PROCESS_BOUNDARY_DOUBLES",
     "native": "NOT_RUN",
-    "reviewAndCi": "FRESH_LIFECYCLE_CANDIDATE_PENDING",
+    "reviewAndCi": "R1_REJECTED_DESPITE_TEN_CI_SUCCESS_R2_FRESH_REVIEW_CI_PENDING",
     "milestonePass": false
   },
   "boundedInventoryTooling": {
@@ -302,5 +302,13 @@
     "r1": "REJECTED_SECURITY_HISTORY_PRESERVED",
     "nativeCallback": "NOT_RUN",
     "receipt": "evidence/m5-callback-lifecycle/pr70-integration-receipt.json"
+  },
+  "nativeCallbackHostMetadata": {
+    "receipt": "evidence/m5-callback-lifecycle/host-metadata-read-receipt.json",
+    "ssh": 1,
+    "metadataSubprocesses": 5,
+    "hostWrites": 0,
+    "routingFile": "UNKNOWN",
+    "completePrivacyAuthority": false
   }
 }

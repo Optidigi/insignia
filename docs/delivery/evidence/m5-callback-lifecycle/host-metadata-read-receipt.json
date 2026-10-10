@@ -1,0 +1,191 @@
+{
+  "schema": "m5-bounded-host-read-receipt-v1",
+  "classification": "READ_CLOSED_METADATA_UNQUALIFIED",
+  "sshInvocations": 1,
+  "attemptedSubprocesses": 5,
+  "reservedObservations": 8,
+  "hostWrites": 0,
+  "providerRequests": 0,
+  "subprocessSettlement": "JOINED",
+  "globalAbsenceProven": false,
+  "retryAuthorized": false,
+  "sourceSha256": "b0d483fc9264c4dbfcde318d5eccb00c15bb140f8e75dfb1900a57281d336abb",
+  "runnerSha256": "d5e85692acab73687bc08113cf646d2bc5c20fb8991a23c0c4877d6bc8221315",
+  "helperSha256": "9d352d201dfa1b795bd7e3efd7c09d1c9b9aa340d38fadad0d2d14a47826203d",
+  "phaseSha256": "f9a1a3ff73e3ab1d06b3a2a92fc22d7e7d7675014b5c26fd8a4ad1004f4bdf87",
+  "selectorSha256": "53ec9308fc64811af459d992f98fd80e0c0b71be0c198c830bf3d8da37da28d0",
+  "observations": [
+    {
+      "classification": "OBSERVED_METADATA_ONLY",
+      "id": "edge",
+      "metadata": {
+        "accessLogFlagPresent": true,
+        "fileDirectoryFlagPresent": true,
+        "fileWatchFlagPresent": true,
+        "id": "469dd744a48f195207ade272e51109e316901645ef7f8525476d3b5d34abc875",
+        "image": "sha256:f5dba1e65167778cd5f8d1b463fc5d200f49d40c6458fc9f4b391a68ebfb9534",
+        "logDriver": "json-file",
+        "proxyAttached": true,
+        "running": true,
+        "tracingFlagPresent": false,
+        "watchedMount": true
+      }
+    },
+    {
+      "classification": "OBSERVED_METADATA_ONLY",
+      "id": "bridge",
+      "metadata": {
+        "gateway": "172.18.0.1",
+        "name": "proxy",
+        "traefikAddress": "172.18.0.11/16"
+      }
+    },
+    {
+      "classification": "UNKNOWN",
+      "id": "watched-file",
+      "metadata": null
+    },
+    {
+      "classification": "OBSERVED_METADATA_ONLY",
+      "id": "systemd",
+      "metadata": {
+        "proxydExecutable": true,
+        "proxydSha256": "531108f46976f24046072d1b68dd7db0e601911ef2919d6d072a457bf816c9de",
+        "version": 255
+      }
+    },
+    {
+      "classification": "OBSERVED_METADATA_ONLY",
+      "id": "ports",
+      "metadata": {
+        "listeners": [
+          {
+            "binding": "WILDCARD",
+            "port": 443
+          },
+          {
+            "binding": "WILDCARD",
+            "port": 443
+          }
+        ]
+      }
+    },
+    {
+      "classification": "OBSERVED_METADATA_ONLY",
+      "id": "storage",
+      "metadata": {
+        "filesystem": {
+          "durability": "UNQUALIFIED",
+          "readOnly": false,
+          "type": "ext4"
+        },
+        "parents": [
+          {
+            "directory": true,
+            "exists": true,
+            "mode": "PUBLIC_READ",
+            "regular": false,
+            "rootOwned": true
+          },
+          {
+            "directory": null,
+            "exists": false,
+            "mode": "UNKNOWN",
+            "regular": null,
+            "rootOwned": null
+          },
+          {
+            "directory": true,
+            "exists": true,
+            "mode": "PUBLIC_READ",
+            "regular": false,
+            "rootOwned": false
+          },
+          {
+            "directory": null,
+            "exists": false,
+            "mode": "UNKNOWN",
+            "regular": null,
+            "rootOwned": null
+          }
+        ]
+      }
+    },
+    {
+      "classification": "OBSERVED_METADATA_ONLY",
+      "id": "core-log",
+      "metadata": {
+        "coreBackend": "OTHER_PIPE",
+        "journalRetention": "UNKNOWN_NOT_INSPECTED"
+      }
+    },
+    {
+      "classification": "OBSERVED_METADATA_ONLY",
+      "id": "collisions",
+      "metadata": {
+        "uidCollision": "UNKNOWN_NOT_INSPECTED",
+        "unitFilesExist": [false, false, false, false, false, false]
+      }
+    }
+  ],
+  "independentReviews": {
+    "spec": {
+      "verdict": "CLEAR",
+      "session": "01a126a6-a73e-7963-8ba2-835464b04491",
+      "completedTurn": true,
+      "processExitCode": 0,
+      "runtime": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "78a7c92cc3ddb0a323dbc4ac0bc843a8b84d4f888c5c3b4d8bad5b9055caca48"
+    },
+    "security": {
+      "verdict": "CLEAR",
+      "session": "01a126a6-a74a-7123-896d-3dece579c4e4",
+      "completedTurn": true,
+      "processExitCode": 0,
+      "runtime": [
+        {
+          "model": "gpt-6.1-sol",
+          "effort": "high",
+          "approval_policy": "never",
+          "sandbox_policy": {
+            "type": "read-only"
+          }
+        }
+      ],
+      "reportSha256": "0d2c4f0f8cf989ca3fa867ded393af356a7c034213da9027a0f27477bc25baf7"
+    }
+  },
+  "parentControls": {
+    "pass": 18,
+    "fail": 0,
+    "skipped": 0,
+    "exitCode": 0,
+    "logSha256": "6be8965c98934f365988fbc3053c064cac9acd6e820f38be219ac3a5b1ad894f"
+  },
+  "capturePins": {
+    "gate.json": "90f61b92597bd78f24da8bc06477cb53f54da240a4a78623c5da59e8a8a283cd",
+    "reservation.json": "a98b99873430e1d182742468d0d759ee73a25d955d15bbf228b181613d00eac7",
+    "result.json": "79029af4f02536e6ea8a854a95b1bb96d22c5f9c867bcbe112e1a14c77a2a2aa",
+    "closed.json": "2b8177a2f96e345f6df7cb3d90d2cd8b8ae8cd2573163a270ead76a214e401b3"
+  },
+  "retention": {
+    "deleteByEpochMs": 1792168816196,
+    "operator": "serveradmin-local-orchestrator",
+    "automatedErasureImplemented": false
+  },
+  "limitations": [
+    "Watched routing file UNKNOWN; flag absence/presence does not establish effective defaults.",
+    "Fixed selectors prove no global absence.",
+    "No deployment, URI confidentiality, TLS, OS isolation, cgroup, durable erasure or native uninstall/privacy qualification.",
+    "Permanent VPS read permission does not allocate host mutations or Shopify resources."
+  ]
+}

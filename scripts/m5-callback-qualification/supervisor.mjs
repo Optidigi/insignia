@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import crypto from 'node:crypto';
-import { constants, fstatSync } from 'node:fs';
+import { constants, fstatSync, writeSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -10,8 +10,8 @@ const fixedService = fileURLToPath(new URL('./service.mjs', import.meta.url));
 const pins = new Map([
   ['service.mjs', 'aff865e9b1109ad6b9f39a6f091cbc18e5bd112da3fb5d58c86e9028da1cbd09'],
   ['receiver.mjs', 'ab778ca27df4de11c428498ed2c129032c80d59c590b0f41e33f5f5fafadc8c9'],
-  ['operator.mjs', '8120a40c38325f9e8464a99093ec3a60e2f346efe14bc23651b47a9326fba3a8'],
-  ['store.mjs', 'ddaae94180244445c0385399255562bd09a6ed0064276aa3185d337d7413ae7a'],
+  ['operator.mjs', '7f346a74dca05cb41c50cc90815599cdd4699b8191a4ead4ee10b72e0945de77'],
+  ['store.mjs', 'b1c185a465b5a57eded64de0d1491fcdfa0135514bd589db6cffa19400f1666c'],
   ['network-guard.mjs', 'f8b411bca1d1f6c50c401ae5bed08328058826ebaf1eda0be5e7f2a635af958a'],
   ['../../packages/shopify/src/webhook.ts', 'c44d188a2c6db0a023f5ed42f989c1757faf8c1b7cb45aa8c46a3ab5410a8f3f'],
 ]);
@@ -81,11 +81,15 @@ export function observeReadyProtocol(stdout, stderr, { port = 0, deadlineMs = 10
   };
 }
 
-function ownedChild(script, args, signingFd) {
+function ownedChild(script, args, signingFd, privatePipe = false) {
   const child = spawn(process.execPath, [script, ...args], {
     detached: true,
     env: { PATH: '/usr/bin:/bin', LANG: 'C.UTF-8' },
-    stdio: signingFd === undefined ? ['ignore', 'pipe', 'pipe'] : ['ignore', 'pipe', 'pipe', signingFd],
+    stdio: privatePipe
+      ? ['ignore', 'pipe', 'pipe', 'pipe']
+      : signingFd === undefined
+        ? ['ignore', 'pipe', 'pipe']
+        : ['ignore', 'pipe', 'pipe', signingFd],
   });
   let exited = false,
     result;
@@ -177,19 +181,31 @@ export async function inspectOwnedExperiment(directory) {
     '7fde7b8afa198da66257f42ee2001d874c7355631e6d1579a5fb5ef1f246df4c',
     256 * 1024 * 1024,
   );
-  const { load, privateDirectory } = await import('./store.mjs');
+  const { aad, load, privateDirectory } = await import('./store.mjs');
   await privateDirectory(path.dirname(directory));
   const { m, key } = await load(directory);
   key.fill(0);
   if (path.basename(directory) !== m.binding.experiment) throw Error('REFUSED');
-  return { acceptUntil: m.acceptUntil, eraseBy: m.eraseBy };
+  return {
+    acceptUntil: m.acceptUntil,
+    eraseBy: m.eraseBy,
+    identity: crypto.createHash('sha256').update(aad(m)).digest('hex'),
+  };
 }
 
 // Metadata work runs in an owned child, so a blocked private filesystem cannot stall the parent event loop.
 export async function boundedInspection(directory, deadlineMs = 10000) {
-  const owned = ownedChild(self, ['--inspect', directory]);
+  const owned = ownedChild(self, ['--inspect', directory], undefined, true);
   let text = '',
+    identityText = '',
     invalid = false;
+  owned.child.stdio[3].on('data', (c) => {
+    if (identityText.length + c.length > 65) invalid = true;
+    else identityText += c;
+  });
+  owned.child.stdio[3].on('error', () => {
+    invalid = true;
+  });
   owned.child.stdout.on('data', (c) => {
     if (text.length + c.length > 128) invalid = true;
     else text += c;
@@ -205,20 +221,27 @@ export async function boundedInspection(directory, deadlineMs = 10000) {
     }),
   ]);
   clearTimeout(timer);
+  const stopped = await owned.stop();
+  if (stopped.status !== 'STOPPED') return { status: 'STOP_UNCONFIRMED' };
   if (!finished || invalid || finished.code !== 0) {
-    await owned.stop();
     return refused();
   }
   const match = /^\{"status":"MAPPING","acceptUntil":([1-9][0-9]{0,15}),"eraseBy":([1-9][0-9]{0,15})\}\n$/.exec(text);
   text = '';
   if (
     !match ||
+    !/^[a-f0-9]{64}\n$/.test(identityText) ||
     !Number.isSafeInteger(Number(match[1])) ||
     !Number.isSafeInteger(Number(match[2])) ||
     Number(match[2]) <= Number(match[1])
   )
     return refused();
-  return { status: 'MAPPING', acceptUntil: Number(match[1]), eraseBy: Number(match[2]) };
+  return {
+    status: 'MAPPING',
+    acceptUntil: Number(match[1]),
+    eraseBy: Number(match[2]),
+    identity: identityText.slice(0, 64),
+  };
 }
 
 export async function startSupervisor(options) {
@@ -244,6 +267,7 @@ export async function startSupervisor(options) {
       return refused();
     fstatSync(signingFd); // Descriptor metadata only; signing bytes pass directly to the fixed child FD3.
     const mapping = await boundedInspection(directory, deadlineMs);
+    if (mapping.status === 'STOP_UNCONFIRMED') return mapping;
     if (interrupted || mapping.status !== 'MAPPING' || Date.now() >= mapping.acceptUntil) return refused();
     const remaining = deadlineMs - (performance.now() - started);
     if (remaining <= 0) return refused();
@@ -297,10 +321,18 @@ export async function interruptOwnedControls() {
 }
 
 // Fixed eraser only; no executable/module or fake runtime clock parameter.
-export async function runErasureChild(directory, deadlineMs = 10000) {
+export async function runErasureChild(directory, deadlineMs = 10000, identity) {
   if (interrupted || !Number.isSafeInteger(deadlineMs) || deadlineMs < 1 || deadlineMs > 10000)
     return { status: 'BLOCKED' };
-  const owned = ownedChild(fileURLToPath(new URL('./cleanup.mjs', import.meta.url)), ['--erase', directory]);
+  if (typeof identity !== 'string' || !/^[a-f0-9]{64}$/.test(identity)) return { status: 'BLOCKED' };
+  const owned = ownedChild(
+    fileURLToPath(new URL('./cleanup.mjs', import.meta.url)),
+    ['--erase', directory],
+    undefined,
+    true,
+  );
+  owned.child.stdio[3].on('error', () => {});
+  owned.child.stdio[3].end(identity + '\n');
   let text = '',
     bytes = 0,
     invalid = false,
@@ -320,8 +352,9 @@ export async function runErasureChild(directory, deadlineMs = 10000) {
     }),
   ]);
   clearTimeout(timer);
+  const stopped = await owned.stop();
+  if (stopped.status !== 'STOPPED') return { status: 'UNCERTAIN' };
   if (!finished) {
-    await owned.stop();
     return { status: 'UNCERTAIN' };
   }
   const match = /^\{"status":"(NOT_DUE|BLOCKED|UNCERTAIN|LOCAL_FILES_REMOVED_EXTERNAL_COPIES_UNQUALIFIED)"\}\n$/.exec(
@@ -342,7 +375,8 @@ if (process.argv[1] === self) {
   if (process.argv[2] === '--inspect') {
     try {
       const m = await inspectOwnedExperiment(process.argv[3]);
-      emit(`${JSON.stringify({ status: 'MAPPING', ...m })}\n`);
+      writeSync(3, m.identity + '\n');
+      emit(`${JSON.stringify({ status: 'MAPPING', acceptUntil: m.acceptUntil, eraseBy: m.eraseBy })}\n`);
     } catch {
       emit('{"status":"REFUSED"}\n');
       process.exitCode = 20;
@@ -362,14 +396,16 @@ if (process.argv[1] === self) {
     });
     cliRunning = running;
     if (running.status !== 'READY') {
-      emit('{"status":"REFUSED"}\n');
-      process.exitCode = 20;
+      const uncertain = running.status === 'STOP_UNCONFIRMED';
+      emit(JSON.stringify({ status: uncertain ? 'STOP_UNCONFIRMED' : 'REFUSED' }) + '\n');
+      process.exitCode = uncertain ? 21 : 20;
     } else {
       emit(`${JSON.stringify({ status: 'READY', port: running.port })}\n`);
       const stopped = await running.done;
       if (!['STOPPED', 'EXPIRED'].includes(stopped.status)) {
-        emit('{"status":"REFUSED"}\n');
-        process.exitCode = 20;
+        const uncertain = stopped.status === 'STOP_UNCONFIRMED';
+        emit(JSON.stringify({ status: uncertain ? 'STOP_UNCONFIRMED' : 'REFUSED' }) + '\n');
+        process.exitCode = uncertain ? 21 : 20;
       }
     }
   }

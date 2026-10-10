@@ -1,4 +1,4 @@
-import fs from 'node:fs/promises';
+import { readSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -12,65 +12,27 @@ import {
 const self = fileURLToPath(import.meta.url);
 const blocked = () => ({ status: 'BLOCKED' });
 
-async function exactLocalTree(directory) {
-  const parent = path.dirname(directory);
-  if ((await fs.readdir(parent)).some((name) => name !== path.basename(directory))) throw Error('BLOCKED');
-  const roots = ['mapping.json', 'mapping.seal', 'key.bin', 'receiver.lock', 'reservations', 'spool', 'commits'];
-  if ((await fs.readdir(directory)).some((name) => !roots.includes(name))) throw Error('BLOCKED');
-  for (const entry of await fs.readdir(directory)) {
-    const file = path.join(directory, entry),
-      stat = await fs.lstat(file);
-    if (stat.isSymbolicLink()) throw Error('BLOCKED');
-    if (['reservations', 'spool', 'commits'].includes(entry)) {
-      if (!stat.isDirectory() || (stat.mode & 0o777) !== 0o700) throw Error('BLOCKED');
-      const files = await fs.readdir(file);
-      if (files.length > 45) throw Error('BLOCKED');
-      for (const name of files) {
-        if (!/^0000(?:0[1-9]|[1-3][0-9]|4[0-5])\.(?:json|bin)$/.test(name)) throw Error('BLOCKED');
-        const info = await fs.lstat(path.join(file, name));
-        if (
-          !info.isFile() ||
-          info.isSymbolicLink() ||
-          info.nlink !== 1 ||
-          (info.mode & 0o777) !== 0o600 ||
-          info.size > 4 * Math.ceil((8 * 1024 * 1024) / 3) + 128 * 1024 + 28
-        )
-          throw Error('BLOCKED');
-      }
-    } else if (!stat.isFile() || stat.nlink !== 1 || (stat.mode & 0o777) !== 0o600 || stat.size > 65536)
-      throw Error('BLOCKED');
-  }
-}
-
-// Runs only in the fixed owned worker; the runtime clock cannot be overridden through argv/env.
+// Runs only in the fixed owned worker. Expected identity arrives over a private
+// inherited pipe; neither that descriptor nor a runtime clock is an argv option.
 async function eraseWorker(directory) {
   let mutationStarted = false;
   try {
-    const mapping = await inspectOwnedExperiment(directory);
-    if (Date.now() < mapping.eraseBy) return { status: 'NOT_DUE' };
-    await exactLocalTree(directory);
-    const { recoverDeadReceiver, eraseExperiment } = await import('./operator.mjs');
+    const raw = Buffer.alloc(66);
+    let size = 0;
+    while (size < raw.length) {
+      const count = readSync(3, raw, size, raw.length - size, null);
+      if (count === 0) break;
+      size += count;
+    }
+    const value = raw.subarray(0, size).toString();
+    raw.fill(0);
+    if (!/^[a-f0-9]{64}\n$/.test(value)) return blocked();
+    await inspectOwnedExperiment(directory);
+    const { eraseExpiredExperiment } = await import('./operator.mjs');
     const { Refusal } = await import('./store.mjs');
-    let lockExists = false;
-    try {
-      await fs.lstat(path.join(directory, 'receiver.lock'));
-      lockExists = true;
-    } catch (error) {
-      if (error.code !== 'ENOENT') throw error;
-    }
-    if (lockExists) {
-      // Accepted recovery requires the recorded PID to be absent under its shared lifecycle guard.
-      mutationStarted = true;
-      try {
-        await recoverDeadReceiver(directory);
-      } catch (error) {
-        return error instanceof Refusal ? blocked() : { status: 'UNCERTAIN' };
-      }
-    }
-    // Accepted erase owns its lifecycle guard and refuses startup/active/reused/ambiguous ownership.
     mutationStarted = true;
     try {
-      return await eraseExperiment(directory);
+      return await eraseExpiredExperiment(directory, value.slice(0, 64));
     } catch (error) {
       if (error instanceof Refusal) return blocked();
       throw error;
@@ -107,18 +69,20 @@ export async function eraseAtDeadline(options) {
       return blocked();
     const directory = path.join(parent, experiment);
     const mapping = await boundedInspection(directory, deadlineMs);
+    if (mapping.status === 'STOP_UNCONFIRMED') return { status: 'UNCERTAIN' };
     if (mapping.status !== 'MAPPING') return blocked();
     const observedNow = now();
     if (!Number.isSafeInteger(observedNow)) return blocked();
     if (observedNow < mapping.eraseBy) return { status: 'NOT_DUE' };
     if (supervisor !== undefined) {
       const stopped = await stopSupervisedExperiment(supervisor, directory);
+      if (stopped.status === 'STOP_UNCONFIRMED') return { status: 'UNCERTAIN' };
       if (stopped.status !== 'STOPPED') return blocked();
     }
     const remaining = Math.floor(deadlineMs - (performance.now() - started));
     if (remaining < 1) return { status: 'UNCERTAIN' };
     // The worker independently checks actual Date.now against original authenticated eraseBy.
-    return await runErasureChild(directory, remaining);
+    return await runErasureChild(directory, remaining, mapping.identity);
   } catch {
     return blocked();
   }
