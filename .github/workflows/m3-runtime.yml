@@ -125,7 +125,7 @@ jobs:
           retention-days: 3
       - name: Portable current web deployment package
         run: |
-          pnpm exec biome check scripts/m5-runtime
+          corepack pnpm exec biome check scripts/m5-runtime
           node --test scripts/m5-runtime/portable-web.test.mjs
           bash scripts/m5-runtime/build-web.sh /tmp/insignia-m5-web
       - name: Actual current web image startup restart and export
