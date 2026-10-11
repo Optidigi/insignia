@@ -73,6 +73,8 @@ The owner also grants [standing equivalent scoped Insignia management reads](aut
 
 This policy does not allocate unknown infrastructure or authorize all production/Shopify activity. For missing authority, request one specific owner allocation: resource identity, access, operation/effect bounds, secrets channel, cost, cleanup, delayed obligations and stop conditions. Do not open another plan-only PR merely to ask that question. Start the permitted work immediately when allocation is granted and recorded. Any scope expansion needs renewed owner permission, not a new routine principal review.
 
+The later [M5 runtime resource allocation](authority/m5-runtime-resource-execution-2026-10-10.md) separately authorizes necessary bounded rewrite execution and access widening after technical qualification. It excludes changes to Stitchs/Superfunny and legacy production. Use that grant for its named M5 effects; do not mislabel the earlier standing reads as write authority or treat permission as native acceptance.
+
 Retain secure secrets handling, raw evidence, uncertainty accounting, no ambiguous external mutation retry, and pause-on-unsafe-state. Preserve closed historical runs. A reviewed fix may create a new locally authorized technical run under valid owner resources; it may not relabel or resume a sealed failed attempt by patching in place.
 
 Native evidence cannot be invented when a permitted experiment is unavailable. Gate conditions remain safety conditions, not just approval paperwork.
