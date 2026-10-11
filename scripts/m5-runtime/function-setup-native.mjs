@@ -3,7 +3,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { closeSync, constants, fstatSync, lstatSync, openSync, readdirSync, readFileSync } from 'node:fs';
+import { closeSync, constants, fstatSync, lstatSync, openSync, readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -32,6 +32,13 @@ function operatorIdentity() {
   const git = (args) =>
     execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
   git(['diff', '--exit-code', '--quiet', 'HEAD']);
+  return {
+    operatorCommit: git(['rev-parse', 'HEAD']),
+    operatorTree: git(['rev-parse', 'HEAD^{tree}']),
+    operatorBuildSha256: functionSetupBuildHash(),
+  };
+}
+export function functionSetupBuildHash() {
   const paths = [
     'pnpm-lock.yaml',
     ...['native', 'network', 'journal'].map((name) => `scripts/m5-runtime/function-setup-${name}.mjs`),
@@ -47,19 +54,38 @@ function operatorIdentity() {
       else if (/\.(js|mjs|json)$/.test(name)) paths.push(path);
     }
   }
-  for (const name of ['shopify', 'database', 'application', 'contracts', 'cart-authorization'])
+  for (const name of [
+    'shopify',
+    'database',
+    'application',
+    'contracts',
+    'cart-authorization',
+    'domain',
+    'visualizer',
+  ]) {
+    const manifestPath = `packages/${name}/package.json`;
+    paths.push(manifestPath);
+    const manifest = JSON.parse(readFileSync(join(ROOT, manifestPath), 'utf8'));
+    const require = createRequire(join(ROOT, manifestPath));
+    for (const [subpath, entry] of Object.entries(manifest.exports)) {
+      const specifier = manifest.name + (subpath === '.' ? '' : subpath.slice(1));
+      assert.ok(entry.default.startsWith('./dist/'));
+      assert.equal(
+        realpathSync(require.resolve(specifier)),
+        join(ROOT, `packages/${name}`, entry.default),
+        'function_setup_module_resolution_mismatch',
+      );
+    }
     compiled(`packages/${name}/dist`);
+  }
   const hash = createHash('sha256').update(process.version);
   for (const path of paths.sort()) {
     const bytes = readFileSync(join(ROOT, path));
     hash.update(path).update('\0').update(String(bytes.length)).update('\0').update(bytes);
   }
-  return {
-    operatorCommit: git(['rev-parse', 'HEAD']),
-    operatorTree: git(['rev-parse', 'HEAD^{tree}']),
-    operatorBuildSha256: hash.digest('hex'),
-  };
+  return hash.digest('hex');
 }
+
 function verifiedOperator() {
   const fd = openSync(GATE, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
   try {

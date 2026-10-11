@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { readFileSync, writeFileSync } from 'node:fs';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
+  functionSetupBuildHash,
   parseFunctionSetupPacket,
   qualifyFunctionSetupBaseline,
   qualifyFunctionSetupExecutable,
@@ -46,4 +48,26 @@ test('private packet rejects duplicate fields and remote database destinations',
       JSON.stringify({ ...packet, databaseUrl: packet.databaseUrl.replace('127.0.0.1', 'example.com') }),
     ),
   );
+});
+
+test('compiled transitive domain and visualizer changes refuse frozen executable admission', () => {
+  const gate = {
+    operatorCommit: 'a'.repeat(40),
+    operatorTree: 'b'.repeat(40),
+    operatorBuildSha256: functionSetupBuildHash(),
+  };
+  for (const name of ['domain', 'visualizer']) {
+    const path = new URL(`../../packages/${name}/dist/index.js`, import.meta.url);
+    const original = readFileSync(path);
+    try {
+      writeFileSync(path, Buffer.concat([original, Buffer.from('\n// changed compiled dependency\n')]));
+      assert.throws(
+        () => qualifyFunctionSetupExecutable(gate, { ...gate, operatorBuildSha256: functionSetupBuildHash() }),
+        /function_setup_executable_mismatch/,
+      );
+    } finally {
+      writeFileSync(path, original);
+    }
+  }
+  assert.equal(functionSetupBuildHash(), gate.operatorBuildSha256);
 });
