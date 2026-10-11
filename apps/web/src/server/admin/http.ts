@@ -2,7 +2,11 @@ import { CommandDigestConflictError } from '@insignia/application';
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor, AdminServices, CommandOutcome } from './contracts.js';
 
-export type AdminRoute = { kind: 'list' } | { kind: 'config'; productId: string } | { kind: 'readiness' };
+export type AdminRoute =
+  | { kind: 'list' }
+  | { kind: 'config'; productId: string }
+  | { kind: 'readiness' }
+  | { kind: 'signing' };
 const PRODUCT_ID = /^gid:\/\/shopify\/Product\/[1-9][0-9]*$/;
 const CONFIG_ID = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/;
 const VERSION = /^(0|[1-9][0-9]{0,18})$/;
@@ -125,6 +129,18 @@ export async function handleAdminRequest(
   if (!actor.canRead) return adminJson(403, { error: 'Read permission required' });
 
   try {
+    if (route.kind === 'signing') {
+      if (!services.signingOwner) return adminJson(503, { error: 'Signing setup unavailable' });
+      if (!actor.canEdit) return adminJson(403, { error: 'Edit permission required' });
+      if (request.method === 'GET') return adminJson(200, await services.signingOwner.status(actor));
+      if (request.method !== 'POST') return adminJson(405, { error: 'Method not allowed' });
+      if (!mutationOrigin(request, services.appOrigin)) return adminJson(403, { error: 'Origin denied' });
+      const body = await bodyObject(request);
+      if (!body || Object.keys(body).length !== 1 || body.action !== 'setup')
+        return adminJson(422, { error: 'Invalid command' });
+      const result = await services.signingOwner.start(actor, bearer.slice(7));
+      return adminJson(result.state === 'PENDING' ? 202 : 200, result);
+    }
     if (request.method === 'GET') {
       if (route.kind === 'readiness')
         return services.inspectReadiness

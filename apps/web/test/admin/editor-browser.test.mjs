@@ -2013,3 +2013,191 @@ test('operator and restoration conflicts cannot initiate another publication fro
     await server.exited;
   }
 });
+
+test('readiness permissions require an explicit gesture and refresh server identity after one exact read-scope grant', {
+  timeout: 60000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.scopeQueries = 0;
+      window.scopeRequests = [];
+      window.syntheticTokenCount = 0;
+      window.shopify = {
+        idToken: async () => 'synthetic-ready-' + ++window.syntheticTokenCount,
+        scopes: {
+          query: async () => {
+            window.scopeQueries++;
+            return {
+              granted: ['write_products'],
+              required: [],
+              optional: ['read_cart_transforms', 'read_validations'],
+            };
+          },
+          request: async (scopes) => {
+            window.scopeRequests.push(scopes);
+            return {
+              result: 'granted-all',
+              detail: { granted: ['write_products', ...scopes], required: [], optional: scopes },
+            };
+          },
+        },
+      };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    await page.route('**/api/admin/products?*', (route) => route.fulfill({ json: { products: [], nextCursor: null } }));
+    const readinessTokens = [];
+    await page.route('**/api/admin/products/readiness', (route) => {
+      readinessTokens.push(route.request().headers().authorization);
+      assert.equal(route.request().method(), 'GET');
+      assert.equal(route.request().headers().cookie, undefined);
+      return route.fulfill({ json: { version: 'm5-admin-technical-readiness-v1' } });
+    });
+    await page.goto(server.base + '/admin/products');
+    await page.getByText('No products found.').waitFor();
+    assert.equal(await page.evaluate(() => window.scopeQueries), 0);
+    assert.deepEqual(await page.evaluate(() => window.scopeRequests), []);
+    assert.deepEqual(readinessTokens, []);
+    await page.getByRole('button', { name: 'Check readiness', exact: true }).click();
+    await page.getByRole('button', { name: 'Allow readiness checks', exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => window.scopeQueries), 1);
+    assert.deepEqual(await page.evaluate(() => window.scopeRequests), []);
+    const previousTokenCount = await page.evaluate(() => window.syntheticTokenCount);
+    await page.getByRole('button', { name: 'Allow readiness checks', exact: true }).click();
+    await page
+      .getByText('Readiness checked. Publication still requires current eligibility.', { exact: true })
+      .waitFor();
+    assert.deepEqual(await page.evaluate(() => window.scopeRequests), [['read_cart_transforms', 'read_validations']]);
+    assert.deepEqual(readinessTokens, ['Bearer synthetic-ready-' + (previousTokenCount + 1)]);
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('readiness permission decline, failure and existing grants never broaden or retry the permission request', {
+  timeout: 60000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    for (const scenario of [
+      {
+        granted: ['read_validations'],
+        result: 'declined-all',
+        requests: [['read_cart_transforms']],
+        status: 'Permissions were declined. Readiness remains unverified.',
+        reads: 0,
+      },
+      {
+        granted: [],
+        result: 'throw',
+        requests: [['read_cart_transforms', 'read_validations']],
+        status: 'Permission or readiness check did not complete. Check readiness again.',
+        reads: 0,
+      },
+      {
+        granted: ['read_cart_transforms', 'read_validations'],
+        requests: [],
+        status: 'Readiness checked. Publication still requires current eligibility.',
+        reads: 1,
+      },
+      {
+        granted: [],
+        result: 'granted-all',
+        serverStatus: 403,
+        requests: [['read_cart_transforms', 'read_validations']],
+        status: 'Permission or readiness check did not complete. Check readiness again.',
+        reads: 1,
+      },
+      {
+        granted: [],
+        result: 'granted-all',
+        serverStatus: 401,
+        requests: [['read_cart_transforms', 'read_validations']],
+        status: 'Permission or readiness check did not complete. Check readiness again.',
+        reads: 2,
+      },
+      {
+        granted: [],
+        optional: ['read_cart_transforms'],
+        requests: [],
+        status: 'Readiness could not be checked. Try checking again.',
+        reads: 0,
+      },
+    ]) {
+      const page = await browser.newPage();
+      await page.addInitScript((scenario) => {
+        window.scopeRequests = [];
+        window.syntheticTokenCount = 0;
+        window.shopify = {
+          idToken: async () => 'synthetic-ready-' + ++window.syntheticTokenCount,
+          scopes: {
+            query: async () => ({
+              granted: scenario.granted,
+              required: [],
+              optional: scenario.optional ?? ['read_cart_transforms', 'read_validations'],
+            }),
+            request: async (scopes) => {
+              window.scopeRequests.push(scopes);
+              if (scenario.result === 'throw') throw new Error('Synthetic provider failure');
+              return { result: scenario.result, detail: { granted: scopes, required: [], optional: scopes } };
+            },
+          },
+        };
+      }, scenario);
+      await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+      await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+      await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+        route.fulfill({ body: '', contentType: 'text/javascript' }),
+      );
+      await page.route('**/api/admin/products?*', (route) =>
+        route.fulfill({ json: { products: [], nextCursor: null } }),
+      );
+      const readinessTokens = [];
+      await page.route('**/api/admin/products/readiness', (route) => {
+        readinessTokens.push(route.request().headers().authorization);
+        return route.fulfill({
+          status: scenario.serverStatus ?? 200,
+          json: scenario.serverStatus
+            ? { error: 'Synthetic current authorization refused' }
+            : { version: 'm5-admin-technical-readiness-v1' },
+        });
+      });
+      await page.goto(server.base + '/admin/products');
+      await page.getByText('No products found.').waitFor();
+      await page.getByRole('button', { name: 'Check readiness', exact: true }).click();
+      if (scenario.requests.length) {
+        await page.getByRole('button', { name: 'Allow readiness checks', exact: true }).click();
+      }
+      await page.getByText(scenario.status, { exact: true }).waitFor();
+      assert.deepEqual(await page.evaluate(() => window.scopeRequests), scenario.requests);
+      assert.equal(readinessTokens.length, scenario.reads);
+      assert.equal(new Set(readinessTokens).size, scenario.reads, 'Every server attempt gets a fresh ID token');
+      if (scenario.requests.length) {
+        assert.equal(await page.getByRole('button', { name: 'Allow readiness checks', exact: true }).count(), 0);
+        await page.getByRole('button', { name: 'Check readiness', exact: true }).click();
+        await page
+          .getByText('Permissions are still missing. Reload before another permission request.', { exact: true })
+          .waitFor();
+        assert.deepEqual(await page.evaluate(() => window.scopeRequests), scenario.requests);
+      }
+      await page.close();
+    }
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});

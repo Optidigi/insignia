@@ -373,33 +373,26 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
           .orderBy('inbox.purge_after', 'asc')
           .orderBy('inbox.id', 'asc')
           .limit(limit);
-        // Header labels are diagnostics only, never erasure authority. No
-        // body-bound obligation capture/discard qualification exists yet, even
-        // for processed uninstall-labelled receipts. Preserve every raw body.
-        const blocked = await expiredQuery
-          .where((eb) => eb.or([eb('delivery.topic', 'is', null), eb('delivery.topic', '!=', 'app/uninstalled')]))
-          .execute();
-        const uninstall = await expiredQuery
-          .where('delivery.topic', '=', 'app/uninstalled')
-          .forUpdate('inbox')
-          .skipLocked()
-          .execute();
-        // Deadline exclusion already forbids execution. Cleaning only the exact
-        // associated ID-only job loses no raw obligation facts; it neither erases
-        // the inbox nor declares the unresolved work fulfilled.
-        if (uninstall.length) {
-          await tx
-            .updateTable('shopify_webhook_deliveries')
-            .set({ queue_cleanup_pending: true })
-            .where(
-              'inbox_id',
-              'in',
-              uninstall.map((row) => row.id),
-            )
-            .execute();
+        // Expiration authorizes only exact-row byte erasure. Body-bound minimal
+        // facts remain purpose-unqualified; delivery metadata never widens scope.
+        const rows = await expiredQuery.forUpdate('inbox').skipLocked().execute();
+        const erasedIds: string[] = [];
+        for (const row of rows) {
+          const erased = await sql<{
+            erased: boolean;
+          }>`SELECT public.expire_shopify_webhook_bytes(${row.id}) AS erased`.execute(tx);
+          if (erased.rows[0]?.erased === true) erasedIds.push(row.id);
         }
+        await sql`SELECT public.expire_shopify_webhook_facts(${limit})`.execute(tx);
+        const pending = await sql<{
+          id: string;
+          state: string;
+          topic: string | null;
+        }>`SELECT * FROM public.pending_shopify_webhook_obligations(${limit})`.execute(tx);
+        const uninstall = pending.rows.filter((row) => row.topic === 'app/uninstalled');
+        const blocked = pending.rows.filter((row) => row.topic !== 'app/uninstalled');
         return {
-          erasedIds: [],
+          erasedIds,
           unresolvedExpiredIds: uninstall.filter((row) => row.state !== 'processed').map((row) => row.id),
           blockedUninstallIds: uninstall.map((row) => row.id),
           blockedPrivacyIds: blocked

@@ -4,9 +4,14 @@ import { chmod, mkdtemp, readdir, readFile, readlink, rm } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { packageSchemaProvision } from './schema-provision-package.mjs';
+import { pathToFileURL } from 'node:url';
+import { frozenSchema18Fixture } from './frozen-schema18-fixture.mjs';
 
 test('owner operator package freezes accepted SQL/installer and compiled queue contract with image-only dependencies', async () => {
+  const frozen = await frozenSchema18Fixture();
+  const { packageSchemaProvision } = await import(
+    pathToFileURL(join(frozen.directory, 'scripts/m5-runtime/schema-provision-package.mjs')).href
+  );
   const parent = await mkdtemp(join(tmpdir(), 'insignia-schema-package-'));
   const directory = join(parent, 'operator');
   try {
@@ -43,5 +48,6 @@ test('owner operator package freezes accepted SQL/installer and compiled queue c
     };
     await unseal(parent);
     await rm(parent, { recursive: true, force: true });
+    await rm(frozen.directory, { recursive: true, force: true });
   }
 });

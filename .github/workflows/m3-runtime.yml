@@ -82,8 +82,10 @@ jobs:
           node-version: '24.21.0'
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm build
+      - name: M5 runtime owner-operator and immutable image controls style
+        run: corepack pnpm exec biome check scripts/m5-runtime
       - name: Frozen schema-owner operator and effective PostgreSQL18 roles (isolated database)
-        run: M5_SCHEMA_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 scripts/m5-runtime/schema-provision.test.mjs scripts/m5-runtime/schema-provision-package.test.mjs scripts/m5-runtime/release-append.test.mjs
+        run: M5_SCHEMA_TEST_URL="$DATABASE_URL" M5_DB_ROTATION_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 scripts/m5-runtime/db-password-rotation.test.mjs scripts/m5-runtime/db-password-rotation-package.test.mjs scripts/m5-runtime/schema-provision.test.mjs scripts/m5-runtime/schema-provision-package.test.mjs scripts/m5-runtime/schema-forward19-package.test.mjs scripts/m5-runtime/release-append.test.mjs scripts/m5-runtime/signing-provision.test.mjs scripts/m5-runtime/signing-provision-core.test.mjs
       - run: corepack pnpm check:style
       - run: corepack pnpm check:boundaries
       - name: Experimental private callback HTTP/operator/restart/supervisor/erasure controls
@@ -118,9 +120,9 @@ jobs:
         env:
           M5_IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/m5-024-worker-image
           M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
-        run: node --test scripts/m5-runtime/schema-provision-package.image.test.mjs
+        run: node --test scripts/m5-runtime/image-identity.test.mjs scripts/m5-runtime/schema-provision-package.image.test.mjs
       - name: Ordinary canonical web and worker Compose rendering controls
-        run: node --test scripts/m5-runtime/web-compose.test.mjs
+        run: node --test scripts/m5-runtime/web-compose.test.mjs scripts/m5-runtime/signing-owner-compose.test.mjs
       - name: Preserve M5-024 image qualification receipts and raw logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2

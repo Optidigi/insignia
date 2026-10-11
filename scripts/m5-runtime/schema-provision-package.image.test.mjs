@@ -1,13 +1,16 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
-import { createHash, randomUUID } from 'node:crypto';
-import { createReadStream } from 'node:fs';
-import { chmod, mkdtemp, readdir, readFile, rm, stat } from 'node:fs/promises';
+import { randomUUID } from 'node:crypto';
+import { chmod, mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
+import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
-import { packageSchemaProvision } from './schema-provision-package.mjs';
+import { packageDatabasePasswordRotation } from './db-password-rotation-package.mjs';
+import { frozenSchema18Fixture } from './frozen-schema18-fixture.mjs';
+import { qualifyImageArchive, verifyNativeImageIdentity } from './image-identity.mjs';
+import { packageForwardSchema19 } from './schema-forward19-package.mjs';
 
 const exec = promisify(execFile);
 
@@ -20,35 +23,43 @@ test('frozen owner package resolves accepted installer from qualified worker ima
   assert.match(receipt.imageId, /^sha256:[a-f0-9]{64}$/);
   assert.equal(receipt.file, 'worker-image.tar');
   const archive = join(artifact, receipt.file);
-  assert.equal((await stat(archive)).size, receipt.sizeBytes);
-  const hash = createHash('sha256');
-  for await (const bytes of createReadStream(archive)) hash.update(bytes);
-  assert.equal(hash.digest('hex'), receipt.sha256);
+  const qualified = await qualifyImageArchive({ archive, receipt });
+  const frozen = await frozenSchema18Fixture();
+  const { packageSchemaProvision } = await import(
+    pathToFileURL(join(frozen.directory, 'scripts/m5-runtime/schema-provision-package.mjs')).href
+  );
   const parent = await mkdtemp(join(tmpdir(), 'insignia-schema-image-'));
   const directory = join(parent, 'operator');
+  const forwardDirectory = join(parent, 'forward19');
+  const rotationDirectory = join(parent, 'rotation');
   const container = `insignia-schema-owner-${randomUUID()}`;
   let dispatchReserved = false;
   let imageAbsentBeforeLoad = false;
   let loadReserved = false;
   let primaryFailure;
   const cleanupFailures = [];
+  let nativeId;
   const inspectImage = async () => {
-    try {
-      const { stdout } = await exec('docker', ['image', 'inspect', '--format', '{{.Id}}', receipt.imageId], {
-        timeout: 5000,
-        maxBuffer: 1024 * 1024,
-      });
-      assert.equal(stdout.trim(), receipt.imageId, 'actual native image identity must equal qualified export');
-      return true;
-    } catch (error) {
-      // Only the native exact-ID absence response permits importing an owned image.
-      // Daemon/access/timeout errors never establish absence.
-      if (error.code === 1 && error.stderr?.includes(`No such image: ${receipt.imageId}`)) return false;
-      throw error;
+    let found;
+    for (const id of new Set([qualified.configId, qualified.manifestId])) {
+      try {
+        const { stdout } = await exec('docker', ['image', 'inspect', id], { timeout: 5000, maxBuffer: 1024 * 1024 });
+        const images = JSON.parse(stdout);
+        assert.equal(images.length, 1);
+        const verified = verifyNativeImageIdentity({ qualified, image: images[0] });
+        if (found) assert.equal(verified.nativeId, found);
+        found = verified.nativeId;
+      } catch (error) {
+        if (!(error.code === 1 && error.stderr?.includes(`No such image: ${id}`))) throw error;
+      }
     }
+    if (found) nativeId = found;
+    return Boolean(found);
   };
   try {
     await packageSchemaProvision({ directory, workerPackageEntry: process.env.M5_WORKER_PACKAGE_ENTRY });
+    await packageForwardSchema19({ directory: forwardDirectory });
+    await packageDatabasePasswordRotation(rotationDirectory);
     imageAbsentBeforeLoad = !(await inspectImage());
     if (imageAbsentBeforeLoad) {
       loadReserved = true;
@@ -56,7 +67,7 @@ test('frozen owner package resolves accepted installer from qualified worker ima
     }
     assert.equal(await inspectImage(), true, 'qualified native image must exist before dispatch');
     const command =
-      "const [operator,queue]=await Promise.all([import('/operator/scripts/m5-runtime/schema-provision.mjs'),import('/operator/scripts/m5-024/install-queue.mjs')]); console.log(JSON.stringify({reserve:typeof operator.reserveSchemaProvision,execute:typeof operator.executeSchemaProvision,installQueue:typeof queue.installQueue}));";
+      "const [operator,queue]=await Promise.all([import('/operator/scripts/m5-runtime/schema-provision.mjs'),import('/operator/scripts/m5-024/install-queue.mjs')]); const forward=await import('/forward19/scripts/m5-runtime/schema-forward19.mjs'); const rotation=await import('/rotation/scripts/m5-runtime/db-password-rotation.mjs'); console.log(JSON.stringify({rotationReserve:typeof rotation.reserveDatabasePasswordRotation,rotationExecute:typeof rotation.executeDatabasePasswordRotation,reserve:typeof operator.reserveSchemaProvision,execute:typeof operator.executeSchemaProvision,installQueue:typeof queue.installQueue,forwardReserve:typeof forward.reserveForwardSchema19,forwardExecute:typeof forward.executeForwardSchema19}));";
     dispatchReserved = true;
     const { stdout } = await exec(
       'docker',
@@ -75,7 +86,11 @@ test('frozen owner package resolves accepted installer from qualified worker ima
         'no-new-privileges',
         '--mount',
         `type=bind,src=${directory},dst=/operator,readonly`,
-        receipt.imageId,
+        '--mount',
+        `type=bind,src=${forwardDirectory},dst=/forward19,readonly`,
+        '--mount',
+        `type=bind,src=${rotationDirectory},dst=/rotation,readonly`,
+        nativeId,
         '/usr/local/bin/node',
         '--input-type=module',
         '-e',
@@ -83,7 +98,15 @@ test('frozen owner package resolves accepted installer from qualified worker ima
       ],
       { timeout: 15000, maxBuffer: 1024 * 1024 },
     );
-    assert.deepEqual(JSON.parse(stdout), { reserve: 'function', execute: 'function', installQueue: 'function' });
+    assert.deepEqual(JSON.parse(stdout), {
+      reserve: 'function',
+      execute: 'function',
+      installQueue: 'function',
+      forwardReserve: 'function',
+      forwardExecute: 'function',
+      rotationReserve: 'function',
+      rotationExecute: 'function',
+    });
   } catch (error) {
     primaryFailure = error;
   } finally {
@@ -100,7 +123,7 @@ test('frozen owner package resolves accepted installer from qualified worker ima
       // image. Check it again; never remove an image that existed before this run.
       try {
         if (await inspectImage())
-          await exec('docker', ['image', 'rm', receipt.imageId], { timeout: 10000, maxBuffer: 1024 * 1024 });
+          await exec('docker', ['image', 'rm', nativeId], { timeout: 10000, maxBuffer: 1024 * 1024 });
       } catch (error) {
         cleanupFailures.push(error);
       }
@@ -113,6 +136,7 @@ test('frozen owner package resolves accepted installer from qualified worker ima
     try {
       await unseal(parent);
       await rm(parent, { recursive: true, force: true });
+      await rm(frozen.directory, { recursive: true, force: true });
     } catch (error) {
       cleanupFailures.push(error);
     }
