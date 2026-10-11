@@ -70,7 +70,7 @@ function invalidDraft(error: unknown): Outcome {
         : [{ path: 'configuration', message: 'Configuration choices, references or labels are invalid.' }],
   };
 }
-function validatedDraft(value: unknown, actor: Actor, productId: string): MerchantDraft {
+function validatedDraft(value: unknown, actor: Actor, productId: string): MerchantDraft & { geometry: GeometryV1 } {
   const parsed = MerchantDraftSchema.safeParse(value);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
@@ -529,7 +529,7 @@ export function createMerchantConfigService(input: {
           before.draftVersion !== data.draftVersion
         )
           return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
-        let snapshot: MerchantDraft;
+        let snapshot: ReturnType<typeof validatedDraft>;
         try {
           snapshot = validatedDraft(before.draftValue, actor, productId);
         } catch (error) {

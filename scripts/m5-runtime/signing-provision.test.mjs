@@ -10,10 +10,7 @@ import { provisionSigningKey, reserveSigningProvisionRun } from '../../apps/web/
 import { fixture } from '../../apps/web/test/admin/support/signing-owner-fixture.mjs';
 
 const require = createRequire(new URL('../../apps/web/package.json', import.meta.url));
-const app = await import(pathToFileURL(require.resolve('@insignia/application')));
-const { PublicationAdminError } = await import(
-  pathToFileURL(require.resolve('@insignia/shopify'))
-);
+const { PublicationAdminError } = await import(pathToFileURL(require.resolve('@insignia/shopify')));
 const clockStart = Date.parse('2026-10-11T12:00:00.000Z');
 test('private reservation is durable and exclusive; repeating the run cannot authorize another attempt', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'insignia-signing-control-'));
