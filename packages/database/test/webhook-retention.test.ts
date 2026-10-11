@@ -1,10 +1,12 @@
 import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
+import { rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { Pool } from 'pg';
 import { expect, test } from 'vitest';
 import { createDurableCore } from '../src/index.js';
+import { migrationsThrough } from './fixtures/migrations-through.js';
 
 const connectionString = process.env.DATABASE_URL;
 
@@ -584,12 +586,13 @@ test('retention migration preserves legacy ambiguity, new defaults and populated
   url.pathname = '/' + name;
   const root = fileURLToPath(new URL('../../../', import.meta.url));
   const execute = promisify(execFile);
+  const rehearsal = await migrationsThrough(`${root}packages/database/migrations`, '20261011000100', 19);
   const migrate = (direction: string) =>
-    execute(
-      root + 'node_modules/.bin/dbmate',
-      ['--no-dump-schema', '--migrations-dir', root + 'packages/database/migrations', direction],
-      { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30_000 },
-    );
+    execute(root + 'node_modules/.bin/dbmate', ['--no-dump-schema', '--migrations-dir', rehearsal, direction], {
+      cwd: root,
+      env: { ...process.env, DATABASE_URL: url.href },
+      timeout: 30_000,
+    });
   let pool: Pool | undefined;
   let fresh: Awaited<ReturnType<typeof fixture>> | undefined;
   try {
@@ -649,6 +652,7 @@ test('retention migration preserves legacy ambiguity, new defaults and populated
     await pool?.end();
     await admin.query('DROP DATABASE IF EXISTS ' + name);
     await admin.end();
+    await rm(rehearsal, { recursive: true, force: true });
   }
 }, 60_000);
 
@@ -659,10 +663,11 @@ test('recovery selection migration44 preserves progress and grants only its tran
   const url = new URL(connectionString);
   url.pathname = `/${name}`;
   const root = fileURLToPath(new URL('../../../', import.meta.url));
+  const rehearsal = await migrationsThrough(`${root}packages/database/migrations`, '20261011000100', 19);
   const migrate = (direction: string) =>
     promisify(execFile)(
       `${root}node_modules/.bin/dbmate`,
-      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, direction],
+      ['--no-dump-schema', '--migrations-dir', rehearsal, direction],
       { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30_000 },
     );
   let pool: Pool | undefined;
@@ -719,5 +724,6 @@ test('recovery selection migration44 preserves progress and grants only its tran
     await pool?.end();
     await admin.query(`DROP DATABASE IF EXISTS ${name}`);
     await admin.end();
+    await rm(rehearsal, { recursive: true, force: true });
   }
 }, 60_000);
