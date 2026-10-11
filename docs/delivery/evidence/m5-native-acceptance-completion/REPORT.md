@@ -22,7 +22,7 @@ Private source freezes, controls, stopped-phase evidence and exact captures are 
 
 ## Browser test consolidation
 
-A single test-owned fixture now owns the repeated built-server/browser lifecycle at25 existing sites. Every test still gets a fresh server and browser; cleanup is registered with the native Node test context. Specific failure-release callbacks and stress diagnostics remain in the tests. All25 test templates,213 non-hash assertion expressions and94 route expressions compare unchanged. The pinned Polaris snapshot hash is checked by the fixture for every case. Both before/after runs pass29 controls without skips; duration is essentially unchanged, so no speedup is claimed. This removes220 nonblank test lines (203 net physical lines), with no production source/build/provider-input change. It is partial budget progress, not M5 acceptance.
+A single test-owned fixture now owns the repeated built-server/browser lifecycle at25 existing sites. Every test still gets a fresh server and browser; cleanup is registered with the native Node test context. Specific failure-release callbacks and stress diagnostics remain in the tests. All25 test templates,213 non-hash assertion expressions and94 route expressions compare unchanged. The pinned Polaris snapshot hash is checked by the fixture for every case. Both before/after runs pass29 controls without skips; duration is essentially unchanged, so no speedup is claimed. This removes220 nonblank test lines (201 net physical lines), with no production source/build/provider-input change. It is partial budget progress, not M5 acceptance.
 
 ## Current Active module read and scope correction
 
