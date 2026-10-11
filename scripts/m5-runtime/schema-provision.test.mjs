@@ -16,7 +16,7 @@ const { Pool } = createRequire(new URL('../../apps/worker/package.json', import.
 test('frozen schema operator provisions exact migrations and restricted roles once, rejecting changed input', {
   skip: !process.env.M5_SCHEMA_TEST_URL,
   timeout: 45000,
-}, async () => {
+}, async (t) => {
   const compatibility = await frozenSchema18Fixture();
   const compatibility19 = await frozenSchema19Fixture();
   const { executeSchemaProvision, reserveSchemaProvision } = await import(
@@ -246,6 +246,53 @@ test('frozen schema operator provisions exact migrations and restricted roles on
         'select inbox.id,inbox.payload_sha256,facts.purpose,facts.captured_fields from inbox_messages inbox join webhook_obligation_facts facts on facts.inbox_id=inbox.id order by inbox.id',
       )
     ).rows;
+    const retentionSignature = 'public.expire_shopify_webhook_facts(integer)';
+    for (const [name, change, restore] of [
+      [
+        'missing effective worker execution',
+        `revoke execute on function ${retentionSignature} from insignia_queue_consume`,
+        `grant execute on function ${retentionSignature} to insignia_queue_consume`,
+      ],
+      [
+        'runtime execution exposed',
+        `grant execute on function ${retentionSignature} to insignia_runtime`,
+        `revoke execute on function ${retentionSignature} from insignia_runtime`,
+      ],
+      [
+        'PUBLIC execution exposed',
+        `grant execute on function ${retentionSignature} to public`,
+        `revoke execute on function ${retentionSignature} from public`,
+      ],
+      [
+        'unsafe security-definer search path',
+        `alter function ${retentionSignature} set search_path=public`,
+        `alter function ${retentionSignature} set search_path=pg_catalog, public`,
+      ],
+    ]) {
+      await t.test(`forward20 refuses ${name} before reserving a mutation`, async () => {
+        const rejectedRetention = join(directory, `retention-${randomUUID()}`);
+        await pool.query(change);
+        try {
+          await assert.rejects(
+            reserveForwardSchema20({
+              directory: rejectedRetention,
+              ownerConnectionString,
+              expectedDatabase,
+              expectedOwner,
+            }),
+            /function_privileges_unqualified/,
+          );
+          await assert.rejects(readFile(join(rejectedRetention, 'plan.json')), { code: 'ENOENT' });
+          assert.equal((await pool.query('select count(*)::int as n from schema_migrations')).rows[0].n, 19);
+          assert.equal(
+            (await pool.query("select to_regclass('owner_lifecycle_decisions') as table")).rows[0].table,
+            null,
+          );
+        } finally {
+          await pool.query(restore);
+        }
+      });
+    }
     const dir20 = join(directory, 'forward20');
     await reserveForwardSchema20({ directory: dir20, ownerConnectionString, expectedDatabase, expectedOwner });
     const plan20Path = join(dir20, 'plan.json');
@@ -257,9 +304,26 @@ test('frozen schema operator provisions exact migrations and restricted roles on
     await writeFile(plan20Path, plan20);
     const credentials20Path = join(dir20, 'credentials.json');
     const credentials20 = await readFile(credentials20Path, 'utf8');
-    await writeFile(credentials20Path, credentials20 + ' ');
+    await writeFile(credentials20Path, `${credentials20} `);
     await assert.rejects(executeForwardSchema20(dir20), /frozen_credentials_changed/);
     await writeFile(credentials20Path, credentials20);
+    const retentionDrift20 = join(directory, 'retention-drift20');
+    await reserveForwardSchema20({
+      directory: retentionDrift20,
+      ownerConnectionString,
+      expectedDatabase,
+      expectedOwner,
+    });
+    await pool.query(`grant execute on function ${retentionSignature} to public`);
+    try {
+      await assert.rejects(executeForwardSchema20(retentionDrift20), /forward20_stopped_reconciliation_required/);
+      assert.equal((await pool.query('select count(*)::int as n from schema_migrations')).rows[0].n, 19);
+      assert.equal((await pool.query("select to_regclass('owner_lifecycle_decisions') as table")).rows[0].table, null);
+      assert.equal(JSON.parse(await readFile(join(retentionDrift20, 'stopped.json'), 'utf8')).retry, false);
+    } finally {
+      await pool.query(`revoke execute on function ${retentionSignature} from public`);
+    }
+    await assert.rejects(executeForwardSchema20(retentionDrift20), /already_reserved/);
     const rejected20 = join(directory, 'rejected20');
     await reserveForwardSchema20({ directory: rejected20, ownerConnectionString, expectedDatabase, expectedOwner });
     await pool.query('alter role insignia_worker connection limit 5');

@@ -176,13 +176,27 @@ async function state(client, identity, names, final = false) {
   ).rows;
   const functions = (
     await client.query(
-      "select p.oid::regprocedure::text as signature,p.proowner::regrole::text as owner,p.prosecdef,p.proconfig,p.proacl::text as acl,md5(pg_get_functiondef(p.oid)) as definition from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('expire_shopify_webhook_bytes','expire_shopify_webhook_facts','pending_shopify_webhook_obligations') order by p.proname",
+      `select p.oid::regprocedure::text as signature,p.proowner::regrole::text as owner,p.prosecdef,p.proconfig,p.proacl::text as acl,md5(pg_get_functiondef(p.oid)) as definition,
+        has_function_privilege('insignia_worker',p.oid,'EXECUTE') as worker,
+        has_function_privilege('insignia_runtime',p.oid,'EXECUTE') as runtime,
+        exists(select 1 from aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) a where a.grantee=0 and a.privilege_type='EXECUTE') as public_execute
+        from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.proname in ('expire_shopify_webhook_bytes','expire_shopify_webhook_facts','pending_shopify_webhook_obligations') order by p.proname`,
     )
   ).rows;
   assert.equal(functions.length, 3, 'retention_functions_missing');
   assert.ok(
     functions.every((fn) => fn.prosecdef && fn.owner === identity.expectedOwner),
     'retention_authority_unqualified',
+  );
+  assert.ok(
+    functions.every(
+      (fn) =>
+        JSON.stringify(fn.proconfig) === JSON.stringify(['search_path=pg_catalog, public']) &&
+        fn.worker &&
+        !fn.runtime &&
+        !fn.public_execute,
+    ),
+    'function_privileges_unqualified',
   );
   const present = (await client.query("select to_regclass('public.owner_lifecycle_decisions') is not null as present"))
     .rows[0].present;
