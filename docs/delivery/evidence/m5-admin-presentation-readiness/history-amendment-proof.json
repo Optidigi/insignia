@@ -1,0 +1,95 @@
+{
+  "version": "m5-pragmatic-history-amendment-v1",
+  "priorCandidate": "c0e3cc970bf97ee231198418aaf6ffa45cd2caa0",
+  "observedCiFailureRunIds": [
+    38144665123,
+    38144665145
+  ],
+  "observedFailure": "current approved architecture mismatch: docs/architecture/implementation-plan.md",
+  "correction": "Preserve exact pre-amendment record at b45d99a and all old hashes; explicitly pin owner-authorized current documents and authority. Never learn expected hashes from current files at verification time.",
+  "green": {
+    "archivedArchitectureRef": "0f2c80a316228bd69fdd2ff272e967ff14647b2b",
+    "archivedArchitectureVerified": true,
+    "archivedV1_2Ref": "662a78cd27507d8a2f1eaa976f1c644c93edd1be",
+    "archivedV1_2Sha256": {
+      "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+      "docs/architecture/decision-ledger.md": "97ebb79ddc53000c53c46218ba8c83a5ba2279720ed07ff50809706b4f1a800a",
+      "docs/architecture/implementation-plan.md": "8bb45ac9e2834bf047824a2e3dda4da7f76692bae685f6657da7b3ab03d0b145"
+    },
+    "archivedV1_3Ref": "4209bb16a09cff95d5cbbc1bbcb082e8c1fa8899",
+    "archivedV1_3Sha256": {
+      "docs/architecture/decision-ledger.md": "d4297182b12978822dae124a040a0d47aafcdb7749f7ad8602f0626e964937e9",
+      "docs/architecture/implementation-plan.md": "b730c0dc274af8180a9aae3290189a8fd61b6b92e06681d345fe5d9aab22c06d"
+    },
+    "commercialOwnerAttestation": "docs/delivery/evidence/m5-commercial-owner-decision/owner-terms.json",
+    "commercialOwnerAttestationSha256": "6422ff127526a8492047e5f67c3ec798dabddb985e0711349fa38cbc7f763c36",
+    "commercialOwnerAuthority": "docs/delivery/authority/commercial-single-plan-2026-10-10.md",
+    "commercialOwnerAuthoritySha256": "72f9bb4840502e2973f7a22538f02e664ce4969eb7598a380fb2fdb0b9dab4b0",
+    "currentArchitectureSha256": {
+      "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+      "docs/architecture/decision-ledger.md": "9c322ad61f75a1fb9e852d383049445bba6a01641706f5c6307f275d1188461c",
+      "docs/architecture/implementation-plan.md": "114b27925753aa3321a5d8b9329abf2bca3d3e666a5a3f680413b6d57e1f56cd"
+    },
+    "currentArchitectureVersion": "1.6 + owner pragmatic delivery amendment",
+    "historicalMerge": "eaa386c90786e560d49f8311878c95d26cc3c7b8",
+    "manifestSha256": "c2d017f70c4e781d174695c27b9a8c3295666c105af598d8caed6ce9a18160e8",
+    "oldSourceCount": 41,
+    "ownerAuthority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
+    "ownerAuthoritySha256": "710cda826d77a712a89c791cc5d71144c215b2c7eebe6ce9f689638ba405a327",
+    "pragmaticOwnerAuthority": "docs/delivery/authority/pragmatic-delivery-2026-10-11.md",
+    "pragmaticOwnerAuthoritySha256": "8698d41d0327a7f9a9577dc97fe4d9ab01029093659390ebab803e4cb74b4529",
+    "preAutonomyRef": "7bfba46e79ff2f9208d13f5712918f357b5836b4",
+    "preAutonomySha256": {
+      "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+      "docs/architecture/decision-ledger.md": "ed8390b3337ce179c5afc810f08cd012ed8ab55ba3ae4a8a67e08fd144ec8f96",
+      "docs/architecture/implementation-plan.md": "c4425cf88b3ef4131f114d54ba367d8a285b340a2e3c1a2182b9172d313d0822"
+    },
+    "preCommercialRef": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4",
+    "preCommercialSha256": {
+      "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+      "docs/architecture/decision-ledger.md": "c453be74606f1b122c27b8b43169f61c6ca6f9f04e9858f112070bd3a33dc4c2",
+      "docs/architecture/implementation-plan.md": "3abb753e608907122f81f37143d131ce61244b74a7c4a3396cc1cc6c44bbf38f"
+    },
+    "preM5_017Ref": "4bba14fb4415815557ffa5f1e600427a62128489",
+    "preM5_017Sha256": {
+      "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+      "docs/architecture/decision-ledger.md": "3d1e8fe50c948822ba3403facfc142402d4fc6631d8d667a2e3341ff6cdbd802",
+      "docs/architecture/implementation-plan.md": "cd59fd361d69adc3f307ee9b88ba1f5509ffeefb68aea90a15f9b88757b4e792"
+    },
+    "prePragmaticRef": "b45d99a739f2e98fb01685944a37bab5d07413ef",
+    "prePragmaticSha256": {
+      "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+      "docs/architecture/decision-ledger.md": "52fd7e0f1d61c4bbf6ed4d0434cc44083715e58127c8cf0a0e8f98b5b724de88",
+      "docs/architecture/implementation-plan.md": "490d7de1ff5eb338c17fea8441e8724e2b1f9345263a110eb661fba005ea976f"
+    },
+    "unchangedReceiptCount": 120
+  },
+  "unauthorizedMutationControls": [
+    {
+      "path": "docs/architecture/implementation-plan.md",
+      "result": "EXPECTED_NEGATIVE",
+      "expectedError": "current approved architecture mismatch: docs/architecture/implementation-plan.md",
+      "returnCode": 1
+    },
+    {
+      "path": "docs/architecture/decision-ledger.md",
+      "result": "EXPECTED_NEGATIVE",
+      "expectedError": "current approved architecture mismatch: docs/architecture/decision-ledger.md",
+      "returnCode": 1
+    },
+    {
+      "path": "docs/architecture/OPTION-A-APPROVED.md",
+      "result": "EXPECTED_NEGATIVE",
+      "expectedError": "current approved architecture mismatch: docs/architecture/OPTION-A-APPROVED.md",
+      "returnCode": 1
+    },
+    {
+      "path": "docs/delivery/authority/pragmatic-delivery-2026-10-11.md",
+      "result": "EXPECTED_NEGATIVE",
+      "expectedError": "pragmatic owner authority mismatch",
+      "returnCode": 1
+    }
+  ],
+  "nativeOperations": 0,
+  "runtimeInputsChanged": false
+}

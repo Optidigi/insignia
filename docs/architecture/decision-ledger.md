@@ -55,3 +55,7 @@ The owner explicitly delegated slice/PR review and normal merge authority inside
 ### Owner single-plan decision — 10 October 2026
 
 The newest [owner commercial decision](../delivery/authority/commercial-single-plan-2026-10-10.md) replaces three feature-differentiated paid plans with one all-released-feature plan at USD $49.99 per 30-day cycle plus USD $0.10 per qualifying paid order beyond100. The owner confirms the14-day live trial with both fees waived. Historical billing/provider/policy evidence and compatibility controls are not rewritten; no billing/resource operation, development entitlement mapping, G8 or milestone PASS is approved. Exact provider configuration and paid-release qualification remain outstanding.
+
+### Owner delivery-conventions amendment — 11 October 2026
+
+The [owner amendment](../delivery/authority/pragmatic-delivery-2026-10-11.md) prioritizes inline core execution, independent review and bounded supporting delegation, meaningful TDD and justified code/test presence. It sets a 50% maintained-executable test-footprint ceiling and makes measured complexity cleanup part of the next M5 completion run. Definitions and enforcement live in [operating-model §§4–5](../delivery/operating-model.md#4-independent-agents-skills-and-tooling). At actual M5 completion report all convention changes and stop for shape/principal review before M6. Product, protocol, generation, privacy and resource requirements remain binding.

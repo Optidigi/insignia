@@ -918,15 +918,19 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
   };
   return (
     <s-page heading={mode === 'picker' ? 'Choose a product' : 'Product configuration'}>
-      <nav aria-label="Admin navigation">
-        <a href="/admin/products">Products</a>
+      <nav class="admin-navigation" aria-label="Admin navigation">
+        <s-link href="/admin/products">Products</s-link>
       </nav>
-      {status && <p role="status">{status}</p>}
+      {status && (
+        <p class="admin-status" role="status">
+          {status}
+        </p>
+      )}
       {(mode === 'picker' ? list !== null : view !== null) && (
-        <>
+        <div class="admin-setup">
           <ReadinessPermissions
             inspect={() =>
-              authenticatedJson('/api/admin/products/readiness', {}, true).catch((error) => {
+              authenticatedJson('/api/admin/readiness', {}, true).catch((error) => {
                 authorizationDenied(error);
                 throw error;
               })
@@ -939,39 +943,73 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
             }}
             onComplete={() => {
               const refreshed =
-                mode === 'config' ? refreshPublication() : authenticatedJson('/api/admin/products/readiness', {}, true);
+                mode === 'config' ? refreshPublication() : authenticatedJson('/api/admin/readiness', {}, true);
               void refreshed.catch((error) => {
                 if (!authorizationDenied(error))
                   setStatus(error instanceof Error ? error.message : 'Readiness unavailable');
               });
             }}
           />
-        </>
+        </div>
       )}
       {mode === 'picker' && (
         <s-section heading="Shopify products">
-          <label>
-            Search products{' '}
-            <input type="search" value={query} onInput={(event) => setQuery(event.currentTarget.value)} />
-          </label>
-          <s-button onClick={() => void load(null, query)}>Search</s-button>
-          {list?.products.map((product) => (
-            <article key={product.id}>
-              {product.imageUrl && <img src={product.imageUrl} width="72" height="72" alt="" />}
-              <h2>{product.title}</h2>
-              <p>
-                {product.status} · {product.id}
-              </p>
-              <p>
-                {product.variants
-                  .slice(0, 5)
-                  .map((variant) => variant.title)
-                  .join(', ')}
-              </p>
-              {numberOf(product.id) && <a href={`/admin/products/${numberOf(product.id)}/config`}>Configure product</a>}
-            </article>
-          ))}
-          {list && list.products.length === 0 && <p>No products found.</p>}
+          <p class="admin-description">Choose a product to configure its customization options and preview.</p>
+          <div class="product-search">
+            <s-search-field
+              label="Search products"
+              placeholder="Search your catalog"
+              value={query}
+              onInput={(event) => setQuery(event.currentTarget.value)}
+            />
+            <s-button variant="primary" onClick={() => void load(null, query)}>
+              Search
+            </s-button>
+          </div>
+          {list && (
+            <p class="product-result-count" role="status">
+              {list.products.length} products on this page
+            </p>
+          )}
+          <div class="product-results">
+            {list?.products.map((product) => (
+              <article class="product-card" key={product.id}>
+                <div class="product-image">
+                  {product.imageUrl ? (
+                    <img src={product.imageUrl} width="72" height="72" alt="" />
+                  ) : (
+                    <span>No image</span>
+                  )}
+                </div>
+                <div class="product-details">
+                  <h2>{product.title}</h2>
+                  <s-badge tone={product.status === 'ACTIVE' ? 'success' : 'neutral'}>
+                    {product.status === 'ACTIVE'
+                      ? 'Active'
+                      : product.status === 'ARCHIVED'
+                        ? 'Archived'
+                        : product.status === 'DRAFT'
+                          ? 'Draft'
+                          : product.status}
+                  </s-badge>
+                  {product.variants.length > 0 && (
+                    <p class="product-variants">
+                      {product.variants
+                        .slice(0, 5)
+                        .map((variant) => variant.title)
+                        .join(', ')}
+                    </p>
+                  )}
+                </div>
+                {numberOf(product.id) && (
+                  <div class="product-action">
+                    <s-link href={`/admin/products/${numberOf(product.id)}/config`}>Configure product</s-link>
+                  </div>
+                )}
+              </article>
+            ))}
+          </div>
+          {list && list.products.length === 0 && <p class="product-empty">No products found.</p>}
           {list?.nextCursor && <s-button onClick={() => void load(list.nextCursor, query)}>Next page</s-button>}
         </s-section>
       )}
@@ -979,7 +1017,14 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         <>
           <s-section heading={view.product.title}>
             <p>
-              {view.product.status} · {view.product.id}
+              Product status:{' '}
+              {view.product.status === 'ACTIVE'
+                ? 'Active'
+                : view.product.status === 'ARCHIVED'
+                  ? 'Archived'
+                  : view.product.status === 'DRAFT'
+                    ? 'Draft'
+                    : view.product.status}
             </p>
             {view.product.imageUrl && <img src={view.product.imageUrl} width="160" alt="Product preview" />}
             {!view.config && (

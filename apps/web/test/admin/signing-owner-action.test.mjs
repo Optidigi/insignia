@@ -183,8 +183,9 @@ test('an ambiguous public-config write remains uncertain without another mutatio
   }
 });
 
-test('HTTP refuses foreign origin, missing authentication and browser plan inputs before reserving', async () => {
+test('HTTP refuses foreign origin, missing authentication and browser plan inputs before reserving', async (t) => {
   const f = await bound();
+  t.mock.timers.enable({ apis: ['Date'], now: f.ports.now() });
   try {
     const origin = 'https://insignia-app.optidigi.nl';
     const services = { appOrigin: origin, authenticate: async () => f.actor, signingOwner: f.action };

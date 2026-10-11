@@ -28,6 +28,7 @@ export default function SigningSetup({
   const [status, setStatus] = useState<SigningOwnerView | null>(null);
   const [busy, setBusy] = useState(false);
   const [uncertain, setUncertain] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
   const attempted = useRef(false);
   const refreshes = useRef(0);
   const mounted = useRef(true);
@@ -55,19 +56,22 @@ export default function SigningSetup({
       const value = await signingOwnerRequest('GET', token);
       if (!mounted.current) return;
       setStatus(value);
+      setUnavailable(false);
       setUncertain(attempted.current && value.state === 'READY');
       if (value.state === 'PROVISIONED') onComplete?.();
     } catch (error) {
       denied(error);
       if (mounted.current) {
         setStatus(null);
-        setUncertain(true);
+        setUncertain(attempted.current);
+        setUnavailable(!attempted.current);
       }
     }
   }
   async function setup() {
     if (attempted.current || busy || !status?.actionAvailable) return;
     attempted.current = true;
+    setUnavailable(false);
     setBusy(true);
     try {
       const value = await signingOwnerRequest('POST', token);
@@ -88,7 +92,13 @@ export default function SigningSetup({
   return (
     <s-section heading="Signing setup">
       <p role="status">
-        {uncertain ? text.UNCERTAIN : status ? text[status.state] : 'Check signing setup to view its status.'}
+        {uncertain
+          ? text.UNCERTAIN
+          : unavailable
+            ? 'Signing setup status is unavailable. This check did not start setup.'
+            : status
+              ? text[status.state]
+              : 'Check signing setup to view its status.'}
       </p>
       {status?.actionAvailable && !attempted.current && (
         <s-button

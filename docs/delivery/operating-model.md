@@ -1,6 +1,6 @@
 # Insignia — milestone-autonomous delivery operating model
 
-Version 2.0 — 9 October 2026. Authority: [owner decision](authority/milestone-autonomy-2026-10-09.md). Replaces per-slice/per-PR external principal review for current and future work. Product and security contracts are unchanged.
+Version 2.1 — 11 October 2026. Authority: [milestone autonomy](authority/milestone-autonomy-2026-10-09.md) and [owner delivery-conventions amendment](authority/pragmatic-delivery-2026-10-11.md). Replaces per-slice/per-PR external principal review for current and future work. Product and security contracts are unchanged.
 
 ## 1. Ownership and review boundaries
 
@@ -35,7 +35,7 @@ There is no automatic principal handoff at the end of this loop. End-to-end mile
 
 ## 4. Independent agents, skills and tooling
 
-Use a single accountable orchestrator with fresh scoped writer, researcher, test and reviewer contexts as useful. Parallelize genuinely independent work when path/resource ownership and integration contracts are explicit. The orchestrator selects the number of workers within actual compute/tool budgets; a fixed two-writer cap is not an external approval gate. Serialize shared contract/lockfile/migration changes and shared external mutations. Worktrees are not credential isolation.
+The accountable orchestrator performs core analysis, implementation, tests and integration inline. Delegate primarily independent reviews; delegate a supporting task only when its bounded scope saves meaningful effort. Default to no writer swarm and no recursive delegation. Each task names exact refs, relevant decisions, owned paths, deliverable and unresolved questions; root reads and reconciles the result. Two fresh independent review contexts remain required, with either concurrent or sequential execution. Serialize shared contracts, migrations, lockfiles and external mutations. Worktrees are not credential isolation.
 
 Use the repository's inspected, pinned Matt Pocock skills: `writing-for-agents`, `tdd`, `diagnosing-bugs`, `code-review`, `handoff`, and `research` when its source has been inspected and made available. Read their support files. Use other relevant available skills and tools when they add value; do not indiscriminately install everything or introduce competing orchestration policy. Preserve provenance and licenses. A user-invoked skill such as handoff may need an explicit invocation or direct file read; do not assume automatic discovery.
 
@@ -46,6 +46,14 @@ Project-scoped nonprivileged tool/skill setup within the available environment i
 ## 5. Testing and evidence proportional to risk
 
 Keep all existing acceptance/security invariants. Use actual package scripts, not invented commands. Changed behavior needs relevant type/lint/boundary tests, local behavior and integration tests, database races, browser controls, protocol/Wasm checks and provider evidence where required. Run comprehensive integrated regression at milestone exit and whenever cross-cutting changes warrant it.
+
+Use TDD: define the existing authorized public seam and an independently expected result, observe the failing behavior, make the smallest implementation, then qualify it. The owner delegates selection of those seams inside M5; routine test selection needs no additional permission. Tests prove user behavior, durable invariants or actual external contracts. Prefer one real integration-boundary control to several mocks repeating the same assumption. Improve test scaffolding only where it removes demonstrated duplication; preserve independently valuable race, failure and compatibility controls.
+
+Every maintained module, abstraction and test must justify its presence by a current use case or required invariant. Prefer explicit typed application services and ports, runtime validation at untrusted boundaries and existing exact-money/protocol/Rust contracts. Address the maintained signing implementation's typechecking gap in its completion slice. Keep speculative infrastructure, broad refactors and new hardening outside the critical path unless a reproduced defect or acceptance criterion requires them.
+
+The owner's test-footprint ceiling is **50% of maintained executable code**, measured as `test LOC / (implementation LOC + test LOC)`. Count nonblank physical lines of application/library/Function source and genuinely supported operational source. Count test code, mocks, fixture builders and dedicated test harnesses as tests wherever located; split inline Rust tests from implementation. Exclude generated/vendor code, prose, fixture data and closed historical records from this executable ratio, reporting those separately. A historical harness still used by routine qualification remains counted. Freeze and review the path classification before reduction, publish product-runtime, operational, test and fixture/history totals separately, and keep a comparable before/after inventory. Moving files, relabeling harnesses or padding implementation does not satisfy the ceiling.
+
+Bring M5 within the ceiling and remove demonstrated execution duplication before declaring it ready. Remove redundant assertions/scaffolding and retire superseded routine experiments only when their acceptance value is covered or no longer applies; retain original evidence. Preserve required failure coverage and protocol/generation/privacy contracts. If the ceiling cannot be met without losing a required invariant, report that precise conflict rather than silently weakening the invariant or waiving the ceiling. Measure test duration and remaining hotspots before further optimization. Subsequent milestones retain this budget and proportionality rule.
 
 Apply provenance-based reuse to unchanged source/build/environment inputs. A documentation-only update need not rerun the entire historical test suite; it still needs document/link/scope/secret checks, independent completed-change review and naturally applicable CI. Do not copy stale runtime results onto changed inputs.
 
@@ -86,6 +94,8 @@ A milestone is internally complete only when its original acceptance criteria an
 Before handoff, run two fresh independent milestone-level full-source reviews plus a cumulative architecture/plan-drift audit. Check interfaces, dependency boundaries, locked decisions, backwards compatibility, migrations, resources, privacy, visual expectations and real user behavior. Compare the accepted entry tree to the integrated candidate, not only the last PR.
 
 Provide the milestone review packet: exact entry/main/head/tree; cumulative PR/merge list; acceptance and G1–G8 matrix limited to this milestone's assigned rows; meaningful decisions and deviations; demo/real flow evidence; local and native test provenance; runtime/build/artifact identity; secrets/resource cleanup; limitations; next milestone readiness. Use `MILESTONE_READY_FOR_PRINCIPAL_REVIEW`, then stop before the next milestone.
+
+The next M5 execution run targets the complete [finish plan](evidence/m5-admin-presentation-readiness/M5-FINISH-PLAN.md), including test/complexity cleanup. At actual completion, stop and report the final shape and every changed convention, with measured before/after test footprint and preserved coverage. A real external blocker remains an explicitly reported blocker, not a completion claim or a reason to add unrelated slices.
 
 Principal outcomes: APPROVED, CHANGES_REQUESTED or BLOCKED_EVIDENCE, bound to the candidate. Approval enables the next planned milestone when its entry/resource prerequisites hold. Corrections stay in the same milestone under the local delivery loop; return for principal review when the corrected milestone is ready. Approval is not merchant rollout or a new provider resource grant.
 
