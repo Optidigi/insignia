@@ -1,0 +1,120 @@
+{
+  "capturedAt": "2026-10-11T15:00:35.835822+00:00",
+  "base": "0bd6ab30bdd60dbd0d3feb85b058509d7a984970",
+  "head": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+  "tree": "29bf25300a120265bc5caf77de443a83d203c955",
+  "localVerdict": "LOCAL_SLICE_ACCEPTED",
+  "milestoneVerdict": "M5_NOT_COMPLETE",
+  "reviews": [
+    {
+      "task": "/root/internal_readiness_spec_final",
+      "axis": "Spec/correctness",
+      "verdict": "CLEAR"
+    },
+    {
+      "task": "/root/internal_readiness_security_final",
+      "axis": "Standards/security",
+      "verdict": "CLEAR"
+    }
+  ],
+  "reviewConfiguration": {
+    "requestedModel": "gpt-6.1-sol",
+    "requestedEffort": "medium",
+    "backendIdentityIndependentlyExposed": false,
+    "readOnly": "instruction-enforced"
+  },
+  "ci": [
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011351,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M0-009 embedded Astro local proof",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011298,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M0-010 local hybrid billing proof",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011233,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M0-011 local provider adapter boundary",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011232,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M0-008 local publication and architecture checks",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011361,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M0-012 real contract local prototype",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011383,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M3-001 PostgreSQL durable core",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011332,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M0-007 policy and Function boundary checks",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011285,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M0-014 local public-app candidate",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011387,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M0-013 off-store protocol capacity",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011246,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M1-001 foundation and boundaries",
+      "status": "completed"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38149011234,
+      "headSha": "05d6914a05c9f81fb077260d22e4a4e8ca6431b1",
+      "name": "M3-002 local runtime and ingress",
+      "status": "completed"
+    }
+  ],
+  "testShare": 0.5374383538713124,
+  "ceilingPassed": false,
+  "excessTestLines": 5815,
+  "nativeReadiness": "NOT_RUN_ON_THIS_BUILD"
+}

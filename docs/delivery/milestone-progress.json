@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "0bd6ab30bdd60dbd0d3feb85b058509d7a984970",
-  "currentTree": "cc9785ebc24c33f79377e3ae8b3999981015b349",
+  "currentIntegratedCommit": "011626ce36a9e5ee9db83cfc54d222d3f7a69ed5",
+  "currentTree": "29bf25300a120265bc5caf77de443a83d203c955",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -43,9 +43,9 @@
       "id": "RUNTIME_READINESS",
       "requirement": "Actual worker/queue/schema roles/immutable image/process isolation/secrets/routes/rollback",
       "plan": "implementation-plan \u00a710.3/11, M5-023/024",
-      "evidence": "evidence/m5-runtime-session-diagnosis/native-checkpoint.json; evidence/m5-admin-presentation-readiness/native-receipt-index.json",
+      "evidence": "evidence/m5-native-acceptance-completion/REPORT.md",
       "result": "NATIVE_RUNTIME_SCHEMA20_QUEUE43_DEPLOYED_AUTHENTICATED_PUBLICATION_PREMISES_PENDING",
-      "dependency": "Latest reviewed web deployment; actual Function/signing/commercial readiness"
+      "dependency": "Actual authenticated Function/signing/commercial readiness; canonical web image is deployed"
     },
     {
       "id": "M5_ACTIVATION",
@@ -132,13 +132,17 @@
     {
       "pr": 82,
       "receipt": "evidence/m5-internal-readiness/pr82-merge-receipt.json"
+    },
+    {
+      "pr": 83,
+      "receipt": "evidence/m5-native-acceptance-completion/pr83-merge-receipt.json"
     }
   ],
   "openFindings": [
     "Real configure/preview/save/publish/v3 committed effective revision NOT_RUN",
     "Remaining native G7 and independent uninstall/privacy fulfillment unfinished",
     "Function read grants/current ownership, strict30-second trusted release, signing/public-config and commercial readiness unqualified for publication",
-    "Maintained test share53.74%;50% ceiling not yet met"
+    "Maintained test share53.61%;50% ceiling not yet met"
   ],
   "resourceGrants": [
     {
@@ -191,7 +195,7 @@
     "No missing commercial decision: exact designated development contract mapping approved; native eligibility still requires provider facts",
     "Separate uninstall resource stitchs-vat-verification-20261004.myshopify.com allocated; safety/effect gates remain"
   ],
-  "nextSafeAction": "Qualify typed internal readiness and reviewed cleanup; integrate/deploy canonical web; complete actual prefixture readiness, one merchant flow and allocated-store lifecycle/privacy; close test budget and cumulative review",
+  "nextSafeAction": "Obtain new-build owner Search/readiness observations; qualify actual technical premises before any fixture. Continue justified test consolidation and allocated uninstall/privacy qualification.",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
@@ -200,9 +204,9 @@
     "status": "Inline root implementation; independent reviewers only; experimental callback expansion retired"
   },
   "activeCandidate": {
-    "scope": "Internal typed signing preparation without merchant setup; qualification duplication/archival retirement",
-    "base": "0bd6ab30bdd60dbd0d3feb85b058509d7a984970",
-    "reviews": "PENDING",
+    "scope": "Native M5 acceptance and measured test consolidation",
+    "base": "011626ce36a9e5ee9db83cfc54d222d3f7a69ed5",
+    "reviews": "NOT_YET_FROZEN",
     "deployed": false,
     "milestoneAcceptance": false
   },
@@ -344,5 +348,26 @@
     "experimentalHostExpansion": "PAUSED",
     "existingSecurityContracts": "UNCHANGED"
   },
-  "priorProgressSnapshot": "history/milestone-progress-before-internal-readiness.json"
+  "priorProgressSnapshot": "history/milestone-progress-before-internal-readiness.json",
+  "nativeWebRuntime": {
+    "implementationPr": 83,
+    "sourceTree": "29bf25300a120265bc5caf77de443a83d203c955",
+    "sourceReviews": "CLEAR_CLEAR",
+    "naturalExactHeadAttempt1Ci": 11,
+    "imageConfig": "sha256:e83c857cdd433b6276e52ffe0eb7efbb271256273a279dbb35d2cf3b06d9c430",
+    "receipt": "evidence/m5-native-acceptance-completion/web-handover-receipt.json",
+    "publicHttpAssets": "PASS",
+    "authenticatedNewBuildAcceptance": "OWNER_OBSERVATION_PENDING",
+    "signingInitialization": "NOT_RUN",
+    "databaseWorkerLegacy": "UNCHANGED"
+  },
+  "currentActiveModuleObservation": {
+    "receipt": "evidence/m5-native-acceptance-completion/active-version-module-read.json",
+    "activeVersion": "1162611916801",
+    "regularSubscriptionModules": 0,
+    "complianceSubscriptionModules": 0,
+    "fullReturnedConfigurationEquality": true,
+    "noOmittedLegacyDestinationDemonstrated": true,
+    "privacyFulfillment": "NOT_QUALIFIED"
+  }
 }
