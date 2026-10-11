@@ -7,10 +7,12 @@ import { join } from 'node:path';
 import { test } from 'node:test';
 import { pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
+import { packageOwnerLifecycle } from '../m5-owner-lifecycle/package.mjs';
 import { packageDatabasePasswordRotation } from './db-password-rotation-package.mjs';
 import { frozenSchema18Fixture } from './frozen-schema18-fixture.mjs';
+import { frozenSchema19Fixture } from './frozen-schema19-fixture.mjs';
 import { qualifyImageArchive, verifyNativeImageIdentity } from './image-identity.mjs';
-import { packageForwardSchema19 } from './schema-forward19-package.mjs';
+import { packageForwardSchema20 } from './schema-forward20-package.mjs';
 
 const exec = promisify(execFile);
 
@@ -28,10 +30,16 @@ test('frozen owner package resolves accepted installer from qualified worker ima
   const { packageSchemaProvision } = await import(
     pathToFileURL(join(frozen.directory, 'scripts/m5-runtime/schema-provision-package.mjs')).href
   );
+  const frozen19 = await frozenSchema19Fixture();
+  const { packageForwardSchema19 } = await import(
+    pathToFileURL(join(frozen19.directory, 'scripts/m5-runtime/schema-forward19-package.mjs')).href
+  );
   const parent = await mkdtemp(join(tmpdir(), 'insignia-schema-image-'));
   const directory = join(parent, 'operator');
   const forwardDirectory = join(parent, 'forward19');
   const rotationDirectory = join(parent, 'rotation');
+  const forward20Directory = join(parent, 'forward20');
+  const lifecycleDirectory = join(parent, 'owner-lifecycle');
   const container = `insignia-schema-owner-${randomUUID()}`;
   let dispatchReserved = false;
   let imageAbsentBeforeLoad = false;
@@ -60,6 +68,8 @@ test('frozen owner package resolves accepted installer from qualified worker ima
     await packageSchemaProvision({ directory, workerPackageEntry: process.env.M5_WORKER_PACKAGE_ENTRY });
     await packageForwardSchema19({ directory: forwardDirectory });
     await packageDatabasePasswordRotation(rotationDirectory);
+    await packageForwardSchema20({ directory: forward20Directory });
+    await packageOwnerLifecycle(lifecycleDirectory);
     imageAbsentBeforeLoad = !(await inspectImage());
     if (imageAbsentBeforeLoad) {
       loadReserved = true;
@@ -67,7 +77,7 @@ test('frozen owner package resolves accepted installer from qualified worker ima
     }
     assert.equal(await inspectImage(), true, 'qualified native image must exist before dispatch');
     const command =
-      "const [operator,queue]=await Promise.all([import('/operator/scripts/m5-runtime/schema-provision.mjs'),import('/operator/scripts/m5-024/install-queue.mjs')]); const forward=await import('/forward19/scripts/m5-runtime/schema-forward19.mjs'); const rotation=await import('/rotation/scripts/m5-runtime/db-password-rotation.mjs'); console.log(JSON.stringify({rotationReserve:typeof rotation.reserveDatabasePasswordRotation,rotationExecute:typeof rotation.executeDatabasePasswordRotation,reserve:typeof operator.reserveSchemaProvision,execute:typeof operator.executeSchemaProvision,installQueue:typeof queue.installQueue,forwardReserve:typeof forward.reserveForwardSchema19,forwardExecute:typeof forward.executeForwardSchema19}));";
+      "const [operator,queue]=await Promise.all([import('/operator/scripts/m5-runtime/schema-provision.mjs'),import('/operator/scripts/m5-024/install-queue.mjs')]); const forward=await import('/forward19/scripts/m5-runtime/schema-forward19.mjs'); const rotation=await import('/rotation/scripts/m5-runtime/db-password-rotation.mjs'); const forward20=await import('/forward20/scripts/m5-runtime/schema-forward20.mjs'); const lifecycle=await import('/owner-lifecycle/scripts/m5-owner-lifecycle/private-operator.mjs'); console.log(JSON.stringify({forward20Reserve:typeof forward20.reserveForwardSchema20,forward20Execute:typeof forward20.executeForwardSchema20,lifecycleReserve:typeof lifecycle.reserveOwnerLifecycle,lifecycleExecute:typeof lifecycle.executeOwnerLifecycle,lifecycleRead:typeof lifecycle.readOwnerLifecycleSettlement,rotationReserve:typeof rotation.reserveDatabasePasswordRotation,rotationExecute:typeof rotation.executeDatabasePasswordRotation,reserve:typeof operator.reserveSchemaProvision,execute:typeof operator.executeSchemaProvision,installQueue:typeof queue.installQueue,forwardReserve:typeof forward.reserveForwardSchema19,forwardExecute:typeof forward.executeForwardSchema19}));";
     dispatchReserved = true;
     const { stdout } = await exec(
       'docker',
@@ -90,6 +100,10 @@ test('frozen owner package resolves accepted installer from qualified worker ima
         `type=bind,src=${forwardDirectory},dst=/forward19,readonly`,
         '--mount',
         `type=bind,src=${rotationDirectory},dst=/rotation,readonly`,
+        '--mount',
+        `type=bind,src=${forward20Directory},dst=/forward20,readonly`,
+        '--mount',
+        `type=bind,src=${lifecycleDirectory},dst=/owner-lifecycle,readonly`,
         nativeId,
         '/usr/local/bin/node',
         '--input-type=module',
@@ -99,6 +113,11 @@ test('frozen owner package resolves accepted installer from qualified worker ima
       { timeout: 15000, maxBuffer: 1024 * 1024 },
     );
     assert.deepEqual(JSON.parse(stdout), {
+      forward20Reserve: 'function',
+      forward20Execute: 'function',
+      lifecycleReserve: 'function',
+      lifecycleExecute: 'function',
+      lifecycleRead: 'function',
       reserve: 'function',
       execute: 'function',
       installQueue: 'function',
@@ -137,6 +156,7 @@ test('frozen owner package resolves accepted installer from qualified worker ima
       await unseal(parent);
       await rm(parent, { recursive: true, force: true });
       await rm(frozen.directory, { recursive: true, force: true });
+      await rm(frozen19.directory, { recursive: true, force: true });
     } catch (error) {
       cleanupFailures.push(error);
     }
