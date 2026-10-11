@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, readlinkSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
@@ -70,4 +72,31 @@ test('compiled transitive domain and visualizer changes refuse frozen executable
     }
   }
   assert.equal(functionSetupBuildHash(), gate.operatorBuildSha256);
+});
+
+test('consumer workspace redirection refuses executable admission before credentials', () => {
+  const link = fileURLToPath(new URL('../../apps/web/node_modules/@insignia/database', import.meta.url));
+  const original = readlinkSync(link),
+    foreign = mkdtempSync(join(tmpdir(), 'insignia-foreign-module-'));
+  writeFileSync(join(foreign, 'package.json'), JSON.stringify({ name: '@insignia/database', exports: './index.js' }));
+  writeFileSync(join(foreign, 'index.js'), 'export const unreviewed = true;');
+  try {
+    unlinkSync(link);
+    symlinkSync(foreign, link);
+    const child = spawnSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        "import { functionSetupBuildHash } from './scripts/m5-runtime/function-setup-native.mjs'; functionSetupBuildHash();",
+      ],
+      { encoding: 'utf8', timeout: 5000 },
+    );
+    assert.notEqual(child.status, 0);
+    assert.match(child.stderr, /function_setup_module_resolution_mismatch/);
+  } finally {
+    unlinkSync(link);
+    symlinkSync(original, link);
+    rmSync(foreign, { recursive: true });
+  }
 });

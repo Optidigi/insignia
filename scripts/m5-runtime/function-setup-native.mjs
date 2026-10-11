@@ -65,18 +65,35 @@ export function functionSetupBuildHash() {
   ]) {
     const manifestPath = `packages/${name}/package.json`;
     paths.push(manifestPath);
-    const manifest = JSON.parse(readFileSync(join(ROOT, manifestPath), 'utf8'));
-    const require = createRequire(join(ROOT, manifestPath));
-    for (const [subpath, entry] of Object.entries(manifest.exports)) {
-      const specifier = manifest.name + (subpath === '.' ? '' : subpath.slice(1));
-      assert.ok(entry.default.startsWith('./dist/'));
-      assert.equal(
-        realpathSync(require.resolve(specifier)),
-        join(ROOT, `packages/${name}`, entry.default),
-        'function_setup_module_resolution_mismatch',
-      );
-    }
     compiled(`packages/${name}/dist`);
+  }
+  const contexts = [
+    ['apps/web/package.json', ['@insignia/database', '@insignia/shopify']],
+    ...['shopify', 'database', 'application', 'contracts', 'cart-authorization', 'domain', 'visualizer'].map((name) => {
+      const path = `packages/${name}/package.json`;
+      const manifest = JSON.parse(readFileSync(join(ROOT, path), 'utf8'));
+      return [
+        path,
+        Object.keys(manifest.dependencies ?? {}).filter((dependency) => dependency.startsWith('@insignia/')),
+      ];
+    }),
+  ];
+  paths.push('apps/web/package.json');
+  for (const [consumer, dependencies] of contexts) {
+    const require = createRequire(join(ROOT, consumer));
+    for (const dependency of dependencies) {
+      const directory = `packages/${dependency.slice('@insignia/'.length)}`;
+      const manifest = JSON.parse(readFileSync(join(ROOT, directory, 'package.json'), 'utf8'));
+      for (const [subpath, entry] of Object.entries(manifest.exports)) {
+        assert.ok(entry.default.startsWith('./dist/'));
+        const specifier = dependency + (subpath === '.' ? '' : subpath.slice(1));
+        assert.equal(
+          realpathSync(require.resolve(specifier)),
+          join(ROOT, directory, entry.default),
+          'function_setup_module_resolution_mismatch',
+        );
+      }
+    }
   }
   const hash = createHash('sha256').update(process.version);
   for (const path of paths.sort()) {
