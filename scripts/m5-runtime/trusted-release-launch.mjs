@@ -305,6 +305,7 @@ const SOURCE_PATHS = [
   ].map((name) => `scripts/m5-runtime/trusted-release-${name}.mjs`),
   'scripts/m5-runtime/release-append.mjs',
   'deployment/m5-runtime/native-function-module-baseline.json',
+  'deployment/m5-runtime/native-function-module-binding.json',
   'apps/web/package.json',
   'pnpm-lock.yaml',
 ];

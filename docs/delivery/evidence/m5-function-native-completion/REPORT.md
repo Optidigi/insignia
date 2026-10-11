@@ -23,3 +23,13 @@ Complete fresh local regression, independent completed-change reviews and natura
 Automation's own Default and Incognito tabs currently reach Shopify login. This does not prove the owner's previously authenticated tab/session is absent or expired; no human tab was closed or signed out. Do not bypass verification or replace staff authority with app credentials. Continue safe independent work while owner-native interaction is unavailable.
 
 After exact Function settlement, continue current trusted release, internal signing/public-config/commercial eligibility, one real merchant configure/preview/save/conflict/publish/v3 activation/readback, native G7, separate allocated-store uninstall/privacy and cleanup. The measured test ceiling remains open. Do not stop at this PR or begin M6/M7.
+
+## Review corrections and qualification
+
+Fresh R1 Spec and Standards/security reviews of `ffb5d49` were both CHANGES_REQUESTED. Spec reproduced a same-count unexpected inactive version escaping the management-reader predicate. Standards/security found that the real OAuth reader still required the old five declared scopes. Neither finding is dismissed or relabeled.
+
+Focused RED controls reproduced both failures. The corrected reader requires all seven distinct native version IDs and their exact Active/inactive statuses before accepting the opening observation. Its imported binding bytes are included in the frozen owner-source hash. The OAuth reader now requires the seven declared scopes; the existing TLS transport control accepts that exact set and rejects missing or unexpected grants without retry. Implied effective `read_products` remains separate from the declared OAuth set.
+
+Full root regression passed in181seconds and full isolated PostgreSQL18 regression in34seconds. The concurrently corrected operator controls exposed the new RED case during the first integrated run; that run is retained as failed, not an all-green gate. After correction, a fresh isolated PostgreSQL18 instance ran the109 operator controls serially:109PASS,0SKIP, then stopped. Root/build/database inputs were unchanged by those final operator corrections, so their earlier passing results are reused with that explicit scope. Changed operator style, secret and diff-integrity checks pass. Fresh completed-change reviews and natural CI must qualify the corrected head before release.
+
+The owner's incognito desktop tab is listed as Home · Dev Dashboard. Server automation cannot attach to that tab (`Preview tab tab_3 was not found for snapshot`), while the separate automation session is at login. This is a tool/session distinction, not evidence that the owner's login failed. The human tab remains open and untouched. Native acceptance is still pending.

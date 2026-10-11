@@ -5,6 +5,7 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import binding from '../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
 
 const BASE = '/home/serveradmin/insignia-milestone-autonomy-handoff/app-management-readonly-preparation-20261010';
 const APP = '1443cf6d03d39edae7c101a943c5c684';
@@ -23,8 +24,14 @@ function selectedVersions(value, remote) {
     versionTag,
     status,
   }));
-  assert.equal(totalResults, 7);
-  assert.equal(versions.length, 7);
+  assert.equal(totalResults, binding.expectedVersionIds.length);
+  assert.equal(versions.length, binding.expectedVersionIds.length);
+  assert.deepEqual(
+    new Set(versions.map((v) => v.versionId)),
+    new Set(binding.expectedVersionIds.map((id) => `gid://shopify/Version/${id}`)),
+  );
+  for (const version of versions)
+    assert.equal(version.status, version.versionId === `gid://shopify/Version/${VERSION}` ? 'active' : 'inactive');
   assert.deepEqual(
     versions.filter((v) => v.status === 'active'),
     [{ versionId: `gid://shopify/Version/${VERSION}`, versionTag: TAG, status: 'active' }],

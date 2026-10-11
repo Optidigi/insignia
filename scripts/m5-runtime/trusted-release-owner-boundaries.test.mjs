@@ -96,55 +96,63 @@ test('missing durable acknowledgement stops the SDK before its first read', asyn
 });
 
 test('fixed Admin TLS capability cannot dispatch a foreign document or retry client credentials', async () => {
-  const requests = [],
-    query = 'query SyntheticOriginalFunctionDocument { shop { id } }';
-  const provider = createOwnerHttps({
-    deadline: 300000,
-    now: () => 0,
-    functionQuery: query,
-    request(endpoint, options, callback) {
-      const request = new EventEmitter();
-      request.destroy = () => {};
-      request.end = (bytes) => {
-        const body = bytes.toString();
-        requests.push({ endpoint, options, body });
-        queueMicrotask(() => {
-          const response = new EventEmitter();
-          response.statusCode = 200;
-          response.headers = { 'content-type': 'application/json' };
-          response.complete = true;
-          response.destroy = () => {};
-          callback(response);
-          response.emit(
-            'data',
-            Buffer.from(
-              JSON.stringify({
-                access_token: 'SYNTHETIC_OWNER_TOKEN',
-                scope: 'write_products,read_publications,read_product_listings,read_cart_transforms,read_validations',
-                expires_in: 3600,
-              }),
-            ),
-          );
-          response.emit('end');
-        });
-      };
-      return request;
-    },
-  });
-  assert.equal(await provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'), 'SYNTHETIC_OWNER_TOKEN');
-  await assert.rejects(provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'));
-  await assert.rejects(
-    provider.functions('SYNTHETIC_OWNER_TOKEN', {
-      operation: 'function_ownership',
-      query: 'mutation Foreign { shop { id } }',
-      variables: {},
-    }),
-  );
-  assert.equal(requests.length, 1);
-  assert.equal(requests[0].endpoint, 'https://insignia-rewrite-dev.myshopify.com/admin/oauth/access_token');
-  assert.equal(requests[0].options.rejectUnauthorized, true);
-  assert.equal(requests[0].options.minVersion, 'TLSv1.2');
-  assert.ok(INSTALLATION_BOUNDARY.includes('currentAppInstallation { id app { id apiKey } accessScopes { handle } }'));
+  const exactScopes =
+    'write_products,read_publications,read_product_listings,read_cart_transforms,read_validations,write_cart_transforms,write_validations';
+  for (const scope of [exactScopes, exactScopes.replace(',write_validations', ''), `${exactScopes},write_orders`]) {
+    const requests = [],
+      query = 'query SyntheticOriginalFunctionDocument { shop { id } }';
+    const provider = createOwnerHttps({
+      deadline: 300000,
+      now: () => 0,
+      functionQuery: query,
+      request(endpoint, options, callback) {
+        const request = new EventEmitter();
+        request.destroy = () => {};
+        request.end = (bytes) => {
+          const body = bytes.toString();
+          requests.push({ endpoint, options, body });
+          queueMicrotask(() => {
+            const response = new EventEmitter();
+            response.statusCode = 200;
+            response.headers = { 'content-type': 'application/json' };
+            response.complete = true;
+            response.destroy = () => {};
+            callback(response);
+            response.emit(
+              'data',
+              Buffer.from(
+                JSON.stringify({
+                  access_token: 'SYNTHETIC_OWNER_TOKEN',
+                  scope,
+                  expires_in: 3600,
+                }),
+              ),
+            );
+            response.emit('end');
+          });
+        };
+        return request;
+      },
+    });
+    if (scope === exactScopes)
+      assert.equal(await provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'), 'SYNTHETIC_OWNER_TOKEN');
+    else await assert.rejects(provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'));
+    await assert.rejects(provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'));
+    await assert.rejects(
+      provider.functions('SYNTHETIC_OWNER_TOKEN', {
+        operation: 'function_ownership',
+        query: 'mutation Foreign { shop { id } }',
+        variables: {},
+      }),
+    );
+    assert.equal(requests.length, 1);
+    assert.equal(requests[0].endpoint, 'https://insignia-rewrite-dev.myshopify.com/admin/oauth/access_token');
+    assert.equal(requests[0].options.rejectUnauthorized, true);
+    assert.equal(requests[0].options.minVersion, 'TLSv1.2');
+    assert.ok(
+      INSTALLATION_BOUNDARY.includes('currentAppInstallation { id app { id apiKey } accessScopes { handle } }'),
+    );
+  }
 });
 
 test('closed child protocol never acknowledges a refused reservation or exports inherited Node preloads', async () => {
@@ -307,5 +315,27 @@ test('management child timeout, oversized output and hostile protocol stop witho
       management.shutdown();
     }
     assert.equal(killed, true);
+  }
+});
+
+test('same-count inactive replacement or duplicate cannot supply Function setup version authority', async () => {
+  for (const replacement of ['gid://shopify/Version/999999999', 'gid://shopify/Version/1158986629121']) {
+    const f = sdkFixture(),
+      original = f.client.appVersions;
+    f.client.appVersions = async (...args) => {
+      const result = structuredClone(await original(...args));
+      result.app.appVersions.nodes[1].versionId = replacement;
+      return result;
+    };
+    await assert.rejects(
+      runManagementReads({
+        client: f.client,
+        reserve: async () => ({ durable: true }),
+        send: async (kind, value) => f.sent.push({ kind, value }),
+        waitClose: async () => {},
+      }),
+    );
+    assert.deepEqual(f.sent, []);
+    assert.deepEqual(f.calls, ['root', 'versions']);
   }
 });
