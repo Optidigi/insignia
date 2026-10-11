@@ -2,6 +2,8 @@
 
 M5 is IN_PROGRESS / G7 NOT_PASSED. Within-milestone implementation, independent reviews, exact-head CI and normal merges remain delegated. No M6/M7 or merchant rollout; legacy/Stitchs/Superfunny production changes are excluded.
 
+Current owner conventions: primarily inline core execution, independent reviews and bounded supporting delegation; TDD, justified complexity and a measured 50% test-footprint ceiling under [operating-model §§4–5](operating-model.md#4-independent-agents-skills-and-tooling). The next execution run follows the [M5 finish plan](evidence/m5-admin-presentation-readiness/M5-FINISH-PLAN.md), including testing/complexity cleanup. Stop and report all updated conventions and measured acceptance at actual M5 completion; a blocker is not PASS.
+
 PR81 normally merged as `b45d99a739f2e98fb01685944a37bab5d07413ef`, head `003aab72debb25da9d54fc33f82aea37004a7cab`, tree `37ef5f320b0a30ef995b05785162140f02fc7baf`, CLEAR/CLEAR and11 exact-head attempt1 CI successes. The reviewed CI web image was handed over once through a fresh qualified run after a predeployment digest stop. Database and ordinary worker remained unchanged. The old exposed app secret is revoked/absent; current consumers use only the replacement. Active1162611916801 remains settled; no new release is required.
 
 Owner Search now succeeds. Independent safe server/database reads prove current authenticated provider identity and exact active durable generation1, created then reused, for insignia-rewrite-dev. The earlier failed Search remains preserved and its original cause is unknown. This does not qualify publication.

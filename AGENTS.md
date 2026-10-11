@@ -10,6 +10,8 @@ The owner delegates execution, slice/PR review and normal merges **inside each m
 
 Own its worklist, implementation, research, tests, tools, subagents, local acceptance, integration and continuation. Use narrow end-to-end slices and maintain the whole milestone acceptance map. Obtain independent fresh read-only Spec/correctness and Standards/security review, resolve findings, qualify exact-head CI, merge normally under delegated authority and continue. Do not invent a principal verdict or waive repository-enforced approvals.
 
+Implement primarily inline. Delegate independent reviews and bounded supporting tasks with explicit context/path ownership. Follow the current delegation, TDD, complexity and test-footprint rules in `docs/delivery/operating-model.md` §§4–5; use the M5 finish plan linked from delivery state for the next execution run.
+
 Use pinned Matt Pocock `writing-for-agents` for agent documents, `tdd` for behavior, `diagnosing-bugs` for defects, `code-review` for independent reviews, `handoff` for context transfer and inspected `research` for platform uncertainty. Use other relevant actual tools/skills/subagents as needed, with provenance, least privilege and real runtime checks. The operating model is the single orchestration policy.
 
 ## Preserve contracts
