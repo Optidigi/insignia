@@ -92,6 +92,24 @@ async function snapshot(pool, db, decision) {
   ).rows;
   return { identity, migrations, shops, installations };
 }
+async function originalBodyEvidence(decision, files) {
+  const bindings = (decision.privacy?.receipts ?? []).filter((r) => r.originalBodyShopBinding);
+  assert.deepEqual(
+    Object.keys(files).sort(),
+    bindings.map((r) => r.id).sort(),
+    'original_body_evidence_files_required',
+  );
+  for (const receipt of bindings) {
+    const binding = receipt.originalBodyShopBinding;
+    assert.ok(
+      binding.providerShopId === decision.providerShopId &&
+        binding.bodySha256 === receipt.bodySha256 &&
+        /^[a-f0-9]{64}$/.test(binding.evidenceSha256),
+      'original_body_shop_binding_required',
+    );
+    assert.equal(hash(await privateRead(files[receipt.id])), binding.evidenceSha256, 'original_body_evidence_changed');
+  }
+}
 export async function reserveOwnerLifecycle({
   directory,
   ownerConnectionString,
@@ -100,6 +118,7 @@ export async function reserveOwnerLifecycle({
   nativeEvidenceFile,
   ownerRequestFile,
   preInstallationInventoryFile,
+  originalBodyEvidenceFiles = {},
 }) {
   assert.match(expectedDatabase, /^[a-z][a-z0-9_]{0,62}$/);
   const url = new URL(ownerConnectionString);
@@ -123,13 +142,18 @@ export async function reserveOwnerLifecycle({
     decision.native.preInstallationInventorySha256,
     'pre_installation_gate_changed',
   );
+  await originalBodyEvidence(decision, originalBodyEvidenceFiles);
   await mkdir(directory, { recursive: true, mode: 0o700 });
   await directoryGuard(directory);
   assert.equal((await readdir(directory)).length, 0, 'empty_private_directory_required');
   const pool = poolFor(ownerConnectionString);
   try {
     const frozen = await snapshot(pool, expectedDatabase, decision);
-    await durable(join(directory, 'private-input.json'), { ownerConnectionString, decision });
+    await durable(join(directory, 'private-input.json'), {
+      ownerConnectionString,
+      decision,
+      originalBodyEvidenceFiles,
+    });
     await durable(join(directory, 'plan.json'), {
       version,
       expectedDatabase,
@@ -153,6 +177,7 @@ export async function executeOwnerLifecycle(directory) {
   const raw = await privateRead(join(directory, 'private-input.json'));
   assert.equal(hash(raw), plan.inputSha256, 'frozen_input_changed');
   const input = JSON.parse(raw);
+  await originalBodyEvidence(input.decision, input.originalBodyEvidenceFiles ?? {});
   await durable(join(directory, 'attempt.json'), {
     status: 'RESERVED',
     planSha256: hash(await privateRead(join(directory, 'plan.json'))),

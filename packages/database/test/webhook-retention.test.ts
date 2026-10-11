@@ -724,5 +724,6 @@ test('recovery selection migration44 preserves progress and grants only its tran
     await pool?.end();
     await admin.query(`DROP DATABASE IF EXISTS ${name}`);
     await admin.end();
+    await rm(rehearsal, { recursive: true, force: true });
   }
 }, 60_000);

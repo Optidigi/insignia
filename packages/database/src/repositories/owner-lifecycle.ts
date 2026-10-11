@@ -38,7 +38,12 @@ export type OwnerLifecycleDecision = {
       privateCopies: 'ERASED';
       backups: 'RESTORE_EXCLUSION_QUALIFIED';
     };
-    receipts: { id: string; bodySha256: string; collectedAt: string }[];
+    receipts: {
+      id: string;
+      bodySha256: string;
+      collectedAt: string;
+      originalBodyShopBinding?: { providerShopId: string; bodySha256: string; evidenceSha256: string };
+    }[];
   };
 };
 export type OwnerLifecycleResult = {
@@ -134,6 +139,33 @@ export async function applyOwnerLifecycleDecision(
       observed <= auth.now && auth.now.getTime() - observed.getTime() <= 300000,
       'fresh_native_inventory_required',
     );
+    if (decision.operation === 'OWNER_RECEIPT_ERASURE') {
+      const privacy = decision.privacy;
+      assert.ok(privacy, 'explicit_privacy_scope_required');
+      assert.ok(
+        privacy.receipts.length >= 1 &&
+          privacy.receipts.length <= 100 &&
+          new Set(privacy.receipts.map((r) => r.id)).size === privacy.receipts.length,
+        'bounded_unique_receipts_required',
+      );
+      assert.ok(
+        privacy.receipts.every((r) => uuid(r.id) && hex(r.bodySha256)),
+        'exact_receipt_identity_required',
+      );
+      // The worker locks inbox before shop. Lock the complete bounded receipt set
+      // in deterministic order before any provider/shop/installation row lock.
+      await tx
+        .selectFrom('inbox_messages')
+        .select('id')
+        .where(
+          'id',
+          'in',
+          privacy.receipts.map((r) => r.id),
+        )
+        .orderBy('id')
+        .forUpdate()
+        .execute();
+    }
     // Same provider/domain locks as reviewed first-session bootstrap; no new identity system.
     for (const key of [
       `insignia:managed-install:domain:${SHOP}`,
@@ -225,30 +257,39 @@ export async function applyOwnerLifecycleDecision(
         { database: 'QUALIFIED', queue: 'QUALIFIED', privateCopies: 'ERASED', backups: 'RESTORE_EXCLUSION_QUALIFIED' },
         'all_sink_and_restore_exclusions_required',
       );
-      const cutoff = instant(privacy.cutoff);
-      assert.ok(cutoff <= observed, 'collection_cutoff_after_inventory');
+      instant(privacy.cutoff);
+      const boundary: { valid: boolean } | undefined = (
+        await sql<{
+          valid: boolean;
+        }>`select ${privacy.cutoff}::timestamptz<=${decision.native.observedAt}::timestamptz as valid`.execute(tx)
+      ).rows[0];
+      assert.equal(boundary?.valid, true, 'collection_cutoff_after_inventory');
       assert.ok(
         privacy.receipts.length >= 1 &&
           privacy.receipts.length <= 100 &&
           new Set(privacy.receipts.map((r) => r.id)).size === privacy.receipts.length,
         'bounded_unique_receipts_required',
       );
-      const newer =
-        decision.shopId === null
-          ? undefined
-          : await tx
-              .selectFrom('installation_generations')
-              .select('activated_at')
-              .where('shop_id', '=', decision.shopId)
-              .where('generation', '>', requiredText(decision.installationGeneration))
-              .orderBy('generation')
-              .executeTakeFirst();
-      if (newer) assert.ok(cutoff < newer.activated_at, 'old_scope_reaches_newer_generation');
+      if (decision.shopId !== null) {
+        const boundary: { valid: boolean } | undefined = (
+          await sql<{
+            valid: boolean;
+          }>`select not exists(select 1 from installation_generations where shop_id=${decision.shopId} and generation>${requiredText(decision.installationGeneration)}::bigint and activated_at<=${privacy.cutoff}::timestamptz) as valid`.execute(
+            tx,
+          )
+        ).rows[0];
+        assert.equal(boundary?.valid, true, 'old_scope_reaches_newer_generation');
+      }
 
       for (const target of [...privacy.receipts].sort((a, b) => a.id.localeCompare(b.id))) {
         assert.ok(uuid(target.id) && hex(target.bodySha256));
-        const collected = instant(target.collectedAt);
-        assert.ok(collected <= cutoff, 'receipt_after_cutoff');
+        instant(target.collectedAt);
+        const bounded: { valid: boolean } | undefined = (
+          await sql<{
+            valid: boolean;
+          }>`select ${target.collectedAt}::timestamptz<=${privacy.cutoff}::timestamptz as valid`.execute(tx)
+        ).rows[0];
+        assert.equal(bounded?.valid, true, 'receipt_after_cutoff');
         const receipt = await tx
           .selectFrom('inbox_messages')
           .selectAll()
@@ -289,7 +330,24 @@ export async function applyOwnerLifecycleDecision(
             tx,
           )
         ).rows[0]?.shop;
-        assert.equal(bodyShop, decision.providerShopId, 'body_shop_binding_required');
+        const original = target.originalBodyShopBinding;
+        if (original)
+          assert.ok(
+            receipt.erasure_state === 'erased' &&
+              bodyShop === null &&
+              original.providerShopId === decision.providerShopId &&
+              original.bodySha256 === target.bodySha256 &&
+              hex(original.evidenceSha256),
+            'original_body_shop_binding_required',
+          );
+        // Missing historical shape is filled only by a separate explicit owner
+        // attestation to this original body/hash, privately frozen by dispatch.
+        // Neither a generic id nor routing/topic/header supplies Shop authority.
+        assert.equal(
+          bodyShop ?? (receipt.erasure_state === 'erased' ? original?.providerShopId : null),
+          decision.providerShopId,
+          'body_shop_binding_required',
+        );
         await tx
           .updateTable('inbox_messages')
           .set({ payload: Buffer.alloc(0), erasure_state: 'erased', lease_owner: null, lease_until: null })
