@@ -535,6 +535,8 @@ export function createMerchantConfigService(input: {
         } catch (error) {
           return invalidDraft(error);
         }
+        if (snapshot.geometry.views.length === 0 || snapshot.placements.length === 0 || snapshot.methods.length === 0)
+          return { kind: 'invalid', message: 'At least one view, placement and method is required' };
         const shopCurrency = await input.catalog.shopCurrency(actor);
         if (snapshot.shopCurrency !== shopCurrency)
           return { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' };

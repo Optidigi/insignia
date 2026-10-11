@@ -149,6 +149,18 @@ async function run(mode) {
     }
     const created = await service.create(actor, productId, 'create-' + mode);
     assert.equal(created.kind, 'created');
+    if (mode === 'invalid-default') {
+      const rejected = await service.publish(actor, productId, {
+        configId: created.configId,
+        draftVersion: '1',
+        idempotencyKey: 'publish-invalid-default',
+      });
+      assert.equal(rejected.kind, 'invalid');
+      assert.equal(preparations, 0, 'An incomplete default draft cannot consume internal preparation');
+      assert.equal(await core.configs.getCurrentPublication(shopId, created.configId), null);
+      assert.equal(remoteWrites, 0);
+      return;
+    }
     const saved = await service.save(actor, productId, {
       configId: created.configId,
       draftVersion: '1',
@@ -239,4 +251,8 @@ test('publication waits for internal signing preparation before durable intent o
   timeout: 30000,
 }, async () => {
   await run('setup-waiting');
+});
+
+test('incomplete default draft never initiates internal signing preparation', { skip: !database }, async () => {
+  await run('invalid-default');
 });

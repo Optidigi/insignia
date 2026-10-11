@@ -4,14 +4,14 @@
   "measurement": "nonblank physical lines; same baseline classifications except explicit retirements/new/deleted source",
   "totals": {
     "configuration code": 132,
-    "implementation": 27483,
-    "test": 41726,
+    "implementation": 27485,
+    "test": 41741,
     "operational": 8438,
     "historical code": 53191
   },
-  "ratio": 0.5373807101369016,
-  "manifestSha256": "b4e7d89dc92e72e25ff9bf7ad11fec1f979fa6407c377c04701c2a47fba3b94a",
+  "ratio": 0.5374562216728471,
+  "manifestSha256": "8d1a32bd972ab4e2c003510382b9c5b7459462a76cfac82c4b02f9dcc19da306",
   "privateManifest": "/home/serveradmin/insignia-milestone-autonomy-handoff/m5-internal-readiness-local/executable-after.json",
-  "remainingTestLinesOverCeiling": 5805,
+  "remainingTestLinesOverCeiling": 5818,
   "milestoneCeilingPassed": false
 }
