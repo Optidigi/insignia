@@ -68,6 +68,7 @@ async function run(mode) {
   let readPublic = 0;
   let remoteWrites = 0;
   let eligible = true;
+  let preparations = 0;
   const remote = {
     async read(target) {
       if (target.field === 'public_config') readPublic++;
@@ -102,6 +103,13 @@ async function run(mode) {
     },
     async eligibility() {
       return { allowed: eligible, reason: eligible ? null : 'Synthetic feature revoked' };
+    },
+    async preparePublication() {
+      preparations++;
+      return {
+        ready: mode !== 'setup-waiting',
+        reason: mode === 'setup-waiting' ? 'Publication preparation unavailable' : null,
+      };
     },
     publication() {
       return publication;
@@ -148,12 +156,22 @@ async function run(mode) {
       idempotencyKey: 'save-' + mode,
     });
     assert.equal(saved.kind, 'saved');
+    await service.read(actor, productId);
+    assert.equal(preparations, 0, 'Create, save and status reads never prepare signing');
     const published = await service.publish(actor, productId, {
       configId: created.configId,
       draftVersion: saved.draftVersion,
       idempotencyKey: 'publish-' + mode,
     });
+    if (mode === 'setup-waiting') {
+      assert.equal(published.kind, 'forbidden');
+      assert.equal(preparations, 1);
+      assert.equal(await core.configs.getCurrentPublication(shopId, created.configId), null);
+      assert.equal(remoteWrites, 0);
+      return;
+    }
     assert.equal(published.kind, 'accepted');
+    assert.equal(preparations, 1);
     assert.ok(await core.configs.getRevisionGeometry(shopId, published.revisionId));
     if (mode !== 'pending') {
       const identity = { shopId, configId: created.configId, operationId: published.revisionId };
@@ -204,6 +222,7 @@ async function run(mode) {
     });
     assert.equal(replay.kind, mode === 'pending' ? 'forbidden' : 'accepted');
     assert.equal(remoteWrites, beforeReplayWrites, 'Revoked entitlement replay must not write remotely');
+    assert.equal(preparations, 1, 'Immutable-request replay does not repeat preparation');
   } finally {
     await core.close();
   }
@@ -213,4 +232,11 @@ test('actual M4 prepare/advance over immutable M5 revision reports ready, confli
   timeout: 30000,
 }, async () => {
   for (const mode of ['ready', 'conflict', 'hold', 'pending']) await run(mode);
+});
+
+test('publication waits for internal signing preparation before durable intent or provider writes', {
+  skip: !database,
+  timeout: 30000,
+}, async () => {
+  await run('setup-waiting');
 });

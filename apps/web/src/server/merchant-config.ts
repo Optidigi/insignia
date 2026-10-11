@@ -237,6 +237,9 @@ export function createMerchantConfigService(input: {
     shopCurrency(actor: Actor): Promise<string>;
   };
   eligibility(actor: Actor, draft: MerchantDraft): Promise<{ allowed: boolean; reason: string | null }>;
+  /** Internal preparation on an eligible new publish command only. Reads, saves
+   * and durable-request replay must never initialize technical resources. */
+  preparePublication?(actor: Actor): Promise<{ ready: boolean; reason: string | null }>;
   publication(actor: Actor): Publication;
   activation?(actor: Actor): { advance(identity: ActivationIdentity): Promise<ActivationResult> };
 }) {
@@ -540,6 +543,11 @@ export function createMerchantConfigService(input: {
           .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
         if (!eligibility.allowed)
           return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
+        if (input.preparePublication) {
+          const preparation = await input.preparePublication(actor);
+          if (!preparation.ready)
+            return { kind: 'forbidden', message: preparation.reason ?? 'Publication preparation unavailable' };
+        }
         const result = await executeCommand(commandTransactions(actor), core.commands, identity, async (tx) => {
           const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
           if (

@@ -28,7 +28,7 @@ import { createMerchantConfigService } from '../merchant-config.js';
 import { type AdminInstallation, AdminInstallationReconciliationError, createAdminAuthenticator } from './auth.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
 import { createBoundProductionActivationReadiness } from './release-evidence.js';
-import { createSigningOwnerAction, type SigningOwnerConfiguration } from './signing-owner-action.mjs';
+import { createSigningOwnerAction, type SigningOwnerConfiguration } from './signing-owner-action.js';
 
 function project(value: ShopifyCatalogProduct): CatalogProduct {
   return {
@@ -86,6 +86,7 @@ export function createProductionAdminServices(
   const shopify = createAdminOnlineIdentity({ apiKey, apiSecret, hostName: new URL(appOrigin).host });
   const core = createDurableCore(databasePool ?? new Pool({ connectionString: databaseUrl }));
   const grants = new WeakMap<AdminActor, OnlineStaffGrant>();
+  const requestTokens = new WeakMap<AdminActor, string>();
   const merchantTimezones = new WeakMap<AdminActor, string>();
   const authenticationLogger = createObservability().logger;
   const activations = new WeakMap<AdminActor, ReturnType<typeof core.productionActivations.create>>();
@@ -269,13 +270,30 @@ export function createProductionAdminServices(
     },
     publication: (actor) => activation(actor).publications,
     activation,
+    async preparePublication(actor) {
+      // Existing ready installations still use the ordinary M4 admission gates.
+      // A private startup allocation allows initial setup; no browser plan or
+      // status GET can select or dispatch it. Tokens live only with this actor.
+      if (!signingOwner) return { ready: true, reason: null };
+      await active(actor);
+      grant(actor);
+      const token = requestTokens.get(actor);
+      if (!token) throw new Error('Publication authorization unavailable');
+      const result = await signingOwner.prepare(actor, token);
+      await active(actor);
+      return {
+        ready: result.state === 'PROVISIONED',
+        reason: result.state === 'PROVISIONED' ? null : 'Publication preparation is unavailable. Contact support.',
+      };
+    },
   });
+  if (signingOwnerConfiguration && !appId) throw new Error('Signing configuration unavailable');
   const signingOwner = signingOwnerConfiguration
     ? createSigningOwnerAction(signingOwnerConfiguration, {
         app: signingApplication,
         core,
         identity: shopify,
-        runtimeIdentity: { appClientId: apiKey, appId, appOrigin },
+        runtimeIdentity: { appClientId: apiKey, appId: appId!, appOrigin },
         now: () => new Date(),
         bindProvider(
           online: OnlineStaffGrant,
@@ -319,6 +337,11 @@ export function createProductionAdminServices(
     ...(signingOwner
       ? {
           signingOwner: {
+            async prepare(actor: AdminActor, token: string) {
+              await active(actor);
+              grant(actor);
+              return signingOwner.prepare(actor, token);
+            },
             async start(actor: AdminActor, token: string) {
               await active(actor);
               grant(actor);
@@ -423,6 +446,7 @@ export function createProductionAdminServices(
       const actor = await authenticator(request);
       if (actor && online) {
         grants.set(actor, online);
+        requestTokens.set(actor, request.headers.get('Authorization')!.slice(7));
         if (merchantTimezone) merchantTimezones.set(actor, merchantTimezone);
       }
       return actor;

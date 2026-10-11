@@ -92,10 +92,6 @@ jobs:
         run: M5_SCHEMA_TEST_URL="$DATABASE_URL" M5_DB_ROTATION_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 scripts/m5-runtime/db-password-rotation.test.mjs scripts/m5-runtime/db-password-rotation-package.test.mjs scripts/m5-runtime/schema-provision.test.mjs scripts/m5-runtime/schema-provision-package.test.mjs scripts/m5-runtime/schema-forward19-package.test.mjs scripts/m5-runtime/schema-forward20-package.test.mjs scripts/m5-runtime/release-append.test.mjs scripts/m5-runtime/signing-provision.test.mjs scripts/m5-runtime/signing-provision-core.test.mjs
       - run: corepack pnpm check:style
       - run: corepack pnpm check:boundaries
-      - name: Experimental private callback HTTP/operator/restart/supervisor/erasure controls
-        run: |
-          corepack pnpm exec biome check scripts/m5-callback-qualification
-          node --test --test-concurrency=1 scripts/m5-callback-qualification/receiver.test.mjs scripts/m5-callback-qualification/supervisor.test.mjs scripts/m5-callback-qualification/cleanup.test.mjs scripts/m5-callback-qualification/tls-edge.test.mjs
       - name: Bounded read-only inventory controls (local processes only)
         run: corepack pnpm test:m5-inventory
       - run: corepack pnpm check:secrets

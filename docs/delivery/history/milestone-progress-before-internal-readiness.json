@@ -1,0 +1,343 @@
+{
+  "schema": "insignia-milestone-progress-v1",
+  "milestone": "M5",
+  "status": "IN_PROGRESS",
+  "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
+  "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
+  "currentIntegratedCommit": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4",
+  "currentTree": "ea91f47cc01480b8a10962a0778fce64b1f1003d",
+  "acceptanceRows": [
+    {
+      "id": "M5_CONFIG_PREVIEW",
+      "requirement": "Geometry/UI-canvas, method/placement/prices/defaults/copy, immutable historical config/prices",
+      "plan": "implementation-plan \u00a73.1\u20133.2, \u00a77.2, \u00a79, \u00a715 M5",
+      "evidence": "PR27 and M5-018 accepted local evidence",
+      "result": "LOCAL_ACCEPTED_NATIVE_NOT_RUN",
+      "dependency": "Native merchant configure/preview/save and immutable history control"
+    },
+    {
+      "id": "G7_AUTH",
+      "requirement": "Cold/deep/reload/mobile/cookie/expired/staff/shop-install/private-fragment/CSRF",
+      "plan": "implementation-plan \u00a77.1, \u00a714.2 G7, \u00a714.2.1 G7",
+      "evidence": "M5-018 controls, M5-023-G7-MATRIX.md",
+      "result": "NATIVE_BLOCKED",
+      "dependency": "Safe install/uninstall and current deploy/auth/grants"
+    },
+    {
+      "id": "G7_EDITOR",
+      "requirement": "Polaris/Preact hydration/events, UI\u2194canvas, native refresh, two-tab CAS, ambiguous-save recovery, grant cache and truthful activation UI",
+      "plan": "implementation-plan \u00a714.2/14.2.1 G7 and \u00a715 M5",
+      "evidence": "M5-018 controls, exhaustive M5-023-G7-MATRIX.md",
+      "result": "NATIVE_BLOCKED",
+      "dependency": "Owner normal browser plus durable facts"
+    },
+    {
+      "id": "LIFECYCLE_PRIVACY",
+      "requirement": "Generation-safe uninstall, registration gaps, all destinations/transitive effects and privacy obligations",
+      "plan": "implementation-plan \u00a76.1/6.5/10.4/11; M5-025\u2013027",
+      "evidence": "M5-025 historical RED; new unconditional local HTTP/PG/worker quarantine GREEN plus M5-026/027 bounded platform analysis",
+      "result": "LOCAL_DEFENSIVE_QUARANTINE_PASS_NATIVE_AUTHORITY_PRIVACY_BLOCKED",
+      "dependency": "Native read-only inventory before any install experiment; independent authority and privacy correction"
+    },
+    {
+      "id": "RUNTIME_READINESS",
+      "requirement": "Actual worker/queue/schema roles/immutable image/process isolation/secrets/routes/rollback",
+      "plan": "implementation-plan \u00a710.3/11, M5-023/024",
+      "evidence": "M5-024 portable controls and stopped M5-023 host evidence; PR69 disposable CI image/OS startup/SIGTERM/restart/cleanup PASS, production/native topology NOT_RUN",
+      "result": "PARTIAL_NATIVE_NOT_RUN",
+      "dependency": "Named topology and owner-authorized host operations"
+    },
+    {
+      "id": "M5_ACTIVATION",
+      "requirement": "Trusted release exact 30s, expected Functions/ownership, signing/day/commercial eligibility, durable immutable request/outbox/FIRST_PUBLICATION v3",
+      "plan": "implementation-plan \u00a73.1/6.2/10.3, \u00a714.2.1 G6, \u00a715 M5",
+      "evidence": "M5-017/018 accepted v3/PG controls; historical release attestation",
+      "result": "NATIVE_NOT_RUN",
+      "dependency": "Current trusted premises, legitimate eligibility and one permitted fixture"
+    },
+    {
+      "id": "M5_EXIT",
+      "requirement": "Real merchant publication, exact effective revision/replay/reopen, cleanup and complete assigned G7; cumulative reviews/drift",
+      "plan": "implementation-plan \u00a715 M5; operating-model \u00a78",
+      "evidence": "No completed milestone record",
+      "result": "NOT_COMPLETE",
+      "dependency": "All prerequisite rows qualified, fresh cumulative reviews and principal milestone acceptance"
+    }
+  ],
+  "mergedPrs": [
+    {
+      "pr": 58,
+      "receipt": "evidence/milestone-autonomy/pr58-merge-receipt.json"
+    },
+    {
+      "pr": 59,
+      "receipt": "evidence/m5-native-inventory/pr59-merge-receipt.json"
+    },
+    {
+      "pr": 60,
+      "receipt": "evidence/m5-transient-webhook-retention/integration/pr60-merge-receipt.json"
+    },
+    {
+      "pr": 61,
+      "receipt": "evidence/m5-inventory-phase/existing-owner-access/integration/pr61-merge-receipt.json"
+    },
+    {
+      "pr": 62,
+      "receipt": "evidence/m5-inventory-artifact-size/pr62-merge-receipt.json"
+    },
+    {
+      "pr": 63,
+      "receipt": "evidence/m5-uninstall-authority-quarantine/pr63-merge-receipt.json"
+    },
+    {
+      "pr": 64,
+      "receipt": "evidence/m5-private-native-inventory/pr64-merge-receipt.json"
+    },
+    {
+      "pr": 65,
+      "receipt": "evidence/m5-inventory-effective-scopes/pr65-merge-receipt.json"
+    },
+    {
+      "pr": 66,
+      "receipt": "evidence/m5-native-collection/pr66-merge-receipt.json"
+    },
+    {
+      "pr": 67,
+      "receipt": "evidence/m5-management-reads/pr67-merge-receipt.json"
+    },
+    {
+      "pr": 68,
+      "receipt": "evidence/m5-worker-image-controls/pr68-merge-receipt.json"
+    },
+    {
+      "pr": 69,
+      "receipt": "evidence/m5-callback-receiver/pr69-integration-receipt.json"
+    },
+    {
+      "pr": 70,
+      "receipt": "evidence/m5-callback-lifecycle/pr70-integration-receipt.json"
+    },
+    {
+      "pr": 71,
+      "receipt": "evidence/m5-callback-tls-edge/pr71-merge-receipt.json"
+    },
+    {
+      "pr": 72,
+      "receipt": "evidence/m5-callback-startup-identity/pr72-merge-receipt.json"
+    },
+    {
+      "pr": 73,
+      "receipt": "evidence/m5-commercial-owner-decision/pr73-merge-receipt.json"
+    }
+  ],
+  "openFindings": [
+    "Independent genuine-uninstall/registration-gap/privacy authority BLOCKED; historical M5-025 RED preserved and new strict local safety GREEN",
+    "Shop-specific native inventory complete/empty and final boundary PASS; app-specific/compliance destinations and all downstream effects/privacy unqualified",
+    "Worker/image/queue/runtime native prerequisites not qualified",
+    "28 native G7 criteria blocked",
+    "Real merchant configure/preview/save/publication/activation NOT_RUN",
+    "74 local controls PASS only; native callback/host/cgroup/timer/FD/DNS/TLS/copy/privacy unqualified"
+  ],
+  "resourceGrants": [
+    {
+      "scope": "BOUNDED_READ_ONLY",
+      "evidence": "evidence/m5-native-inventory/owner-readonly-allocation.json",
+      "ownerReply": "you have full acess yes",
+      "localTechnicalGate": "Historical bounded allocation/run is sealed; permanent VPS allocation now supersedes its read/time caps prospectively. Closed history and separate Shopify resource conditions remain."
+    },
+    {
+      "scope": "FRESH_BOUNDED_READ_ONLY",
+      "evidence": "evidence/m5-inventory-artifact-size/owner-readonly-renewal.json",
+      "ownerReply": "Sure, whatever you need to get M5 done/finished.",
+      "conservativeMetadataSlotsCharged": 20,
+      "interpretation": "Original grant plus fresh ten-observation phase; no production/Shopify mutation or credential-acquisition inference"
+    },
+    {
+      "scope": "PERMANENT_READ_ONLY_VPS",
+      "evidence": "evidence/m5-uninstall-authority-quarantine/owner-permanent-vps-readonly.json",
+      "ownerReply": "okay, you are permanently permitted to check, read, access vps",
+      "interpretation": "Supersedes prior owner VPS read/time caps only; source-qualified bounded operations, immutable closed history and <=7day private retention continue. No production changes or independent Shopify access."
+    },
+    {
+      "scope": "ONE_EXACT_APP_TOKEN_THREE_READS",
+      "evidence": "evidence/m5-private-native-inventory/owner-token-inventory-allocation-20261010.json",
+      "ownerReply": "sure, permission granted",
+      "interpretation": "One transient acquisition plus three fixed Admin reads after source/review/CI and operational qualification; zero retries or unrelated mutations."
+    },
+    {
+      "scope": "FRESH_ONE_EXACT_APP_TOKEN_THREE_FIXED_READS",
+      "evidence": "evidence/m5-native-collection/owner-token-inventory-effective-scopes-allocation-20261010.json",
+      "ownerReply": "you have full permission",
+      "status": "CONSUMED_RUN_SEALED",
+      "interpretation": "One fresh token/up to three fixed inventory reads; actual SSH1/OAuth1/Admin2, no retry/resume or unrelated mutation"
+    },
+    {
+      "scope": "STANDING_SCOPED_MANAGEMENT_READONLY",
+      "evidence": "authority/standing-scoped-management-readonly-2026-10-10.md",
+      "ownerReply": "yes, and future read-only checks like this are always permitted, as long as within the scope",
+      "interpretation": "Equivalent scoped reads through existing official CLI session; technically qualify each new source/run. No recurring owner read window. No mutation/resource scope expansion."
+    },
+    {
+      "scope": "CONDITIONAL_SEPARATE_TEST_STORE_ALLOCATION",
+      "evidence": "evidence/m5-callback-startup-identity/owner-commercial-and-test-store-decision.json",
+      "ownerReply": "Yes, allocate that separate test store",
+      "interpretation": "Later isolated Insignia test after native identity/data/destination/privacy safety gate; no immediate mutation or protected installation authority"
+    }
+  ],
+  "ownerInputs": [
+    "Other processor/queue/privacy ownership locations still unidentified",
+    "Any later provisioning/deployment/mutation requires exact separate owner resource envelope",
+    "Owner-approved one paid all-released-feature plan: USD49.99/30days,100 included qualifying paid orders,USD0.10 additional,14day live trial subscription+usage waived. Exact provider configuration and a genuine development feature mapping remain due; no bypass",
+    "Owner conditionally allocates stitchs-vat-verification-20261004; native identity/apps/data/destination/privacy gate unqualified; no test started"
+  ],
+  "nextSafeAction": "Finish commercial/history correction and exact-head reviews/CI; consolidate smallest essential uninstall/privacy options and concrete commercial configuration resources; prioritize real merchant flow.",
+  "nextPrincipalCheckpoint": "M5 complete",
+  "principalAcceptance": null,
+  "nextMilestoneStarted": false,
+  "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
+  "parallelLocalWork": {
+    "slice": "Fixed private host launcher/TLS/cleanup process controls and bounded missing-host-facts collector",
+    "status": "Offline host artifacts frozen; no further experimental expansion or native execution",
+    "nativeAuthority": "Permanent scoped read-only only; no host writes or Shopify mutations"
+  },
+  "activeCandidate": {
+    "scope": "Owner single-plan decision and optional exact provider Shop policy restriction",
+    "base": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4",
+    "reviews": "PENDING",
+    "nativeAuthority": "NO_MUTATIONS / NOT_RUN"
+  },
+  "boundedInventoryTooling": {
+    "pr": 60,
+    "status": "LOCAL_ACCEPTED_NORMALLY_MERGED",
+    "reviews": "ACTUAL_CLEAR_CLEAR_GPT_6_1_SOL_HIGH",
+    "naturalExactHeadAttempt1Ci": 10,
+    "nativeAccess": "THIRD_PARTIAL_STOP_PLUS_FOCUSED_READS_SEALED",
+    "hostKeySetup": "EXISTING_OWNER_IDENTITY_AUTHENTICATED; NO NEW KEY REQUIRED",
+    "existingSupportedAdminCredential": "FRESH_ACQUISITION_CONSUMED_TOKEN_NOT_STORED_RUN_CLOSED",
+    "milestoneAcceptance": false,
+    "ownerVpsPermission": "PERMANENT_READ_ONLY"
+  },
+  "nativePrivateInventory": {
+    "pr": 65,
+    "result": "STOP_IDENTITY_OR_GRANT_DRIFT",
+    "derivedCause": "Literal equality rejected product-read access implied by expected/observed write_products",
+    "attempts": {
+      "SSH": 1,
+      "OAuth": 1,
+      "Admin": 1
+    },
+    "sealed": true,
+    "finalBoundary": "NOT_RUN",
+    "completeInventoryQualified": false,
+    "receipt": "evidence/m5-inventory-effective-scopes/native-token-inventory-sealed-receipt-20261010.json",
+    "historicalRunUnchanged": true,
+    "supersedingSuccessfulCollection": "evidence/m5-native-collection/native-token-inventory-effective-scopes-sealed-receipt-20261010.json"
+  },
+  "nativeShopSpecificInventory": {
+    "prSource": 66,
+    "result": "COLLECTION_COMPLETE_NATIVE_SAFETY_UNQUALIFIED",
+    "attempts": {
+      "SSH": 1,
+      "OAuth": 1,
+      "Admin": 2
+    },
+    "pages": 1,
+    "records": 0,
+    "sealed": true,
+    "finalBoundary": "PASS",
+    "shopScopedConnectionComplete": true,
+    "appSpecificDestinations": "UNQUALIFIED_EXCLUDED_BY_API",
+    "allDownstreamPrivacyEffects": "UNQUALIFIED",
+    "receipt": "evidence/m5-native-collection/native-token-inventory-effective-scopes-sealed-receipt-20261010.json"
+  },
+  "nativeManagementCustom": {
+    "schemaR2": "STOP_CLI_OR_LOCAL_UNCLASSIFIED",
+    "versionR6": "STOP_NONWEB_FIELDS_UNQUALIFIED",
+    "methodReservations": [1, 3],
+    "sealed": true,
+    "retries": 0,
+    "receipt": "evidence/m5-management-reads/custom-management-sealed-receipt.json",
+    "legacyCoverage": "UNKNOWN"
+  },
+  "nativePartnerObservation": {
+    "currentSubscription": "ACTIVE_EXISTING_ZERO_DEVELOPMENT_CONTRACT",
+    "observedAt": "2026-10-10T13:03:09.508Z",
+    "history": "STOP_MALFORMED_TIME_CONNECTION_INCOMPLETE",
+    "requests": 2,
+    "sealed": true,
+    "entitlementPolicy": "OWNER_CONFIGURATION_MISSING",
+    "receipt": "evidence/m5-management-reads/partner-current-subscription-sealed-receipt.json"
+  },
+  "nativeModuleDiagnostic": {
+    "status": "FIRST_SCHEMA_MISMATCH_IDENTIFIED",
+    "category": "FUNCTION",
+    "context": "CONFIG",
+    "extraField": "module_metadata",
+    "type": "OBJECT",
+    "identityBracket": "PASS_RETURNED_BINDINGS_ONLY",
+    "sdkReservations": 4,
+    "sealed": true,
+    "inventoryQualified": false,
+    "receipt": "evidence/m5-management-reads/module-schema-diagnostic-sealed-receipt.json"
+  },
+  "nativeSelectedWebObservation": {
+    "sdkReservations": 4,
+    "regularRows": 0,
+    "complianceRows": 0,
+    "closingBracket": "RETURNED_BINDINGS_EQUAL_NOT_CONTINUOUS_ACTIVE",
+    "otherConfigLegacyEffects": "UNQUALIFIED",
+    "sealed": true,
+    "receipt": "evidence/m5-worker-image-controls/selected-web-native-receipt.json"
+  },
+  "workerImageQualification": {
+    "pr": 69,
+    "result": "PASS_ACTUAL_DISPOSABLE_IMAGE_OS_STARTUP_SIGTERM_RESTART_CLEANUP",
+    "runId": 38061195893,
+    "attempt": 1,
+    "productionDeployment": "NOT_RUN",
+    "receipt": "evidence/m5-callback-receiver/pr69-integration-receipt.json"
+  },
+  "priorIntegratedRefObservationAt": "2026-10-10T11:35:34.947346Z",
+  "nativeSelectedStoreAddress": {
+    "result": "STOP_CANDIDATE_NOT_UNIQUE_CANONICAL_ADDRESS_UNQUALIFIED",
+    "sdkReservations": 3,
+    "closingBracket": "NOT_RUN",
+    "httpAndRefreshRequests": "NOT_ASSERTED",
+    "sealed": true,
+    "retries": 0,
+    "installationMutations": 0,
+    "identitySuitability": "UNQUALIFIED",
+    "receipt": "evidence/m5-callback-receiver/selected-store-address-receipt.json",
+    "previousStrictIdentity": "SEALED_STOP_ORG_INVALID_UNCHANGED"
+  },
+  "callbackReceiverQualification": {
+    "pr": 70,
+    "reviews": "FRESH_R2_CLEAR_CLEAR",
+    "naturalExactHeadAttempt1Ci": 10,
+    "localControls": 24,
+    "r1": "REJECTED_SECURITY_HISTORY_PRESERVED",
+    "nativeCallback": "NOT_RUN",
+    "receipt": "evidence/m5-callback-lifecycle/pr70-integration-receipt.json"
+  },
+  "nativeCallbackHostMetadata": {
+    "receipt": "evidence/m5-callback-lifecycle/host-metadata-read-receipt.json",
+    "ssh": 1,
+    "metadataSubprocesses": 5,
+    "hostWrites": 0,
+    "routingFile": "UNKNOWN",
+    "completePrivacyAuthority": false
+  },
+  "commercialDecision": {
+    "authority": "authority/commercial-single-plan-2026-10-10.md",
+    "ownerAttestation": "evidence/m5-commercial-owner-decision/owner-terms.json",
+    "runtimeConfiguration": "NOT_CONFIGURED",
+    "developmentMappingApproved": false,
+    "providerBillingMutations": 0
+  },
+  "scopeDiscipline": {
+    "evidence": "evidence/m5-commercial-owner-decision/owner-v1-prioritization.json",
+    "firstVersion": "Solid normal lifecycle/admin flow",
+    "experimentalHostExpansion": "PAUSED",
+    "existingSecurityContracts": "UNCHANGED"
+  }
+}

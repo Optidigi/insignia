@@ -13,7 +13,6 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { CatalogProduct, ConfigView, PublicationState } from '../shared/admin-view.js';
 import ReadinessPermissions from './ReadinessPermissions';
-import SigningSetup from './SigningSetup';
 
 type Props = { mode: 'picker' | 'config'; productId?: string };
 // Preserve typed spelling until blur; only validated numeric values become geometry.
@@ -935,20 +934,6 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                 throw error;
               })
             }
-          />
-          <SigningSetup
-            onAuthorizationDenied={() => {
-              clearPrivate();
-              setStatus('Current authorization required');
-            }}
-            onComplete={() => {
-              const refreshed =
-                mode === 'config' ? refreshPublication() : authenticatedJson('/api/admin/readiness', {}, true);
-              void refreshed.catch((error) => {
-                if (!authorizationDenied(error))
-                  setStatus(error instanceof Error ? error.message : 'Readiness unavailable');
-              });
-            }}
           />
         </div>
       )}

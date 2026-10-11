@@ -1,0 +1,14 @@
+# Routine qualification disposition
+
+This is a dependency-based retirement proposal, not permission to skip a required current invariant. Before/after manifests use the same category rules. Historical source, raw evidence and native STOPPED results stay unchanged. Explicit archival test execution remains available when investigating that exact historical record; it does not resume a closed provider run.
+
+| Retired routine scope | Reason and retained coverage |
+| --- | --- |
+| M5-004/005/009–013/015/015R/016 experiment operators | Exact fixed runs are permanently closed and have no production imports. Production Shopify adapters, application and SQL regressions cover current provider documents, write ambiguity, v1/v2/v3 and recovery. The archived operator command remains named `test:m5-operators:historical`. |
+| M5-017 live operator/harness | Its live run is sealed. Keep `replay.mjs` and `replay.test.mjs` in routine qualification: corrected current production restore consumes sealed responses in memory with zero network/compensation. Current application/adapter/SQL timing, scheduled/false controls, compensation and crash/replay remain. |
+| Experimental callback host/control pack | Never used natively; expansion was paused by the owner. It does not implement accepted production generation authority. Current generic webhook quarantine, real HTTP/PG/worker, explicit owner lifecycle, generation fencing, retention/erasure and portable queue/image controls remain. No callback success is substituted for genuine privacy fulfillment. |
+| M0-007–014 broad current-code/delivery path triggers | These workflows rebuild archived proofs. They retain their own historical source/dependency/workflow triggers, including M0-005/006 transitive source where already declared. Current root history/setup integrity checks remain; current Rust/clippy/Wasm/shared-vector and admin/activation/database/runtime jobs cover current contracts. Final-head jobs run naturally for changes to these workflow files. |
+| Merchant technical signing widget and request controls | Widget/helper deleted because this is internal engineering setup. Preserve actual action, private file/plan, authenticated HTTP origin/input/authentication, exclusive reservation, crash/restart, uncertain settlement and production admission controls. Built merchant browser proves no technical setup/request remains. |
+| Duplicate signing fixture builder | Reuse the same existing synthetic boundary fixture; retain every distinct expected failure and CLI/control result. No required assertion is deleted. |
+
+Native read-only inventory tooling remains supported and counted conservatively as a dedicated harness. Current owner lifecycle/privacy controls remain maintained. Merely reducing defaults does not make an actively needed harness historical; the private manifest exposes each proposed retirement to independent review. The remaining53.74% share is an explicit unfinished budget item.

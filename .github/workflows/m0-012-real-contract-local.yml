@@ -6,7 +6,6 @@ on:
       - "spikes/m0-012/**"
       - "docs/delivery/evidence/m0-012-real-contract.md"
       - "docs/delivery/review-packet-M0-012.md"
-      - "docs/delivery/state.md"
       - ".github/workflows/m0-012-real-contract-local.yml"
       - ".gitignore"
   push:

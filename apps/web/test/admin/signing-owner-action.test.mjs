@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
-import { createSigningOwnerAction } from '../../src/server/admin/signing-owner-action.mjs';
+import { createSigningOwnerAction } from '../../src/server/admin/signing-owner-action.ts';
 import { acceptedRuntimeIdentity, fixture } from './support/signing-owner-fixture.mjs';
 
 async function bound() {
@@ -56,6 +56,20 @@ test('fixed owner action completes original crypto/lifecycle/readback gates exac
     const priorRequests = f.requests.length;
     assert.equal((await f.action.start(f.actor, 'synthetic-token')).state, 'PROVISIONED');
     assert.equal(f.requests.length, priorRequests);
+    assert.equal((await f.action.status(f.actor)).quoteIssuanceAuthorized, false);
+  } finally {
+    await f.close();
+  }
+});
+
+test('internal publication preparation settles signing once and reuses the durable result', async () => {
+  const f = await bound();
+  try {
+    assert.equal((await f.action.prepare(f.actor, 'synthetic-token')).state, 'PROVISIONED');
+    assert.equal(f.rows.length, 1);
+    const attempts = f.requests.length;
+    assert.equal((await f.action.prepare(f.actor, 'different-synthetic-token')).state, 'PROVISIONED');
+    assert.equal(f.requests.length, attempts);
     assert.equal((await f.action.status(f.actor)).quoteIssuanceAuthorized, false);
   } finally {
     await f.close();
@@ -170,12 +184,11 @@ test('an ambiguous public-config write remains uncertain without another mutatio
       }
       return original(request);
     };
-    await f.action.start(f.actor, 'synthetic-token');
-    const status = await settled(f);
+    const status = await f.action.prepare(f.actor, 'synthetic-token');
     assert.equal(status.state, 'UNCERTAIN');
     assert.equal(writes, 1);
     assert.equal(f.rows[0].state, 'pending');
-    assert.equal((await f.action.start(f.actor, 'new-synthetic-token')).state, 'UNCERTAIN');
+    assert.equal((await f.action.prepare(f.actor, 'new-synthetic-token')).state, 'UNCERTAIN');
     assert.equal(writes, 1);
     assert.ok(!JSON.stringify(status).includes('SYNTHETIC_PROVIDER_SECRET'));
   } finally {

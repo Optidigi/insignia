@@ -5,7 +5,7 @@
 import type { ExpectedFunctionBuild } from '@insignia/application';
 import type { FunctionOwnership } from '@insignia/shopify';
 import type { CatalogProduct, CommandOutcome, ConfigView } from '../../shared/admin-view.js';
-import type { SigningOwnerAction } from './signing-owner-action.mjs';
+import type { SigningOwnerAction } from './signing-owner-action.js';
 
 export type { CatalogProduct, CommandOutcome, ConfigView, PublicationState } from '../../shared/admin-view.js';
 export interface AdminActor {
