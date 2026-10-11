@@ -239,18 +239,27 @@ test('current authorization generation or provider installation mismatch cannot 
 test('restart after a reserved incomplete run is uncertain and cannot start another operator', async () => {
   const f = await bound();
   let release;
+  let entered;
+  const verification = new Promise((resolve) => {
+    release = resolve;
+  });
+  const verificationEntered = new Promise((resolve) => {
+    entered = resolve;
+  });
   try {
-    f.identity.verify = () =>
-      new Promise((resolve) => {
-        release = resolve;
-      });
+    f.identity.verify = async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      entered();
+      return verification;
+    };
     await f.action.start(f.actor, 'synthetic-token');
+    await verificationEntered;
     const restarted = createSigningOwnerAction(f.config, f.ports);
     assert.equal((await restarted.status(f.actor)).state, 'UNCERTAIN');
     assert.equal((await restarted.start(f.actor, 'new-synthetic-token')).state, 'UNCERTAIN');
     assert.equal(f.rows.length, 0);
   } finally {
-    release?.({ shop: 'wrong.myshopify.com' });
+    release({ shop: 'wrong.myshopify.com' });
     await settled(f);
     await f.close();
   }

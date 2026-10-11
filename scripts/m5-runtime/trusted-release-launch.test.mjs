@@ -1,0 +1,286 @@
+import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { mkdir, mkdtemp, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import test from 'node:test';
+import { inspectPriorCollectorSettlement, runBoundedCollectorProcess } from './trusted-release-launch.mjs';
+
+const recordId = '00000000-0000-4000-8000-000000000001';
+const closed = (ambiguousWrite = false) => ({
+  version: 'm5-owner-trusted-release-collector-v1',
+  classification: ambiguousWrite ? 'TRUSTED_RELEASE_COLLECT_STOPPED' : 'TRUSTED_RELEASE_COLLECT_APPEND_ACK',
+  appendAttempted: true,
+  appendAcknowledged: !ambiguousWrite,
+  ambiguousWrite,
+  retryAuthorized: false,
+  signingAttempted: false,
+  staffAuthorityGranted: false,
+  sdkInternalHttpAttempts: 'NOT_ASSERTED',
+  deployedWasmServerDigest: 'UNAVAILABLE_NOT_ASSERTED',
+});
+const operations = [
+  'READ_DURABLE_TENANT_OPEN',
+  'AUTHENTICATE_EXISTING_MANAGEMENT_SESSION',
+  'ActiveAppReleaseFromApiKey',
+  'AppVersions',
+  'AppVersionByTag',
+  'CLIENT_CREDENTIALS_ONCE',
+  'READ_NATIVE_INSTALLATION_OPEN',
+  'READ_ORIGINAL_FUNCTION_OWNERSHIP',
+  'READ_NATIVE_INSTALLATION_CLOSE',
+  'AppVersions',
+  'READ_DURABLE_TENANT_CLOSE',
+  'APPEND_TRUSTED_RELEASE_ONCE',
+];
+async function writeCollectorRecords(phase, id, sequence) {
+  await mkdir(phase, { mode: 0o700 });
+  const write = (name, value) => writeFile(join(phase, name), JSON.stringify(value), { mode: 0o600 });
+  await write('invocation.json', {
+    version: 'm5-owner-collector-invocation-v1',
+    recordId: id,
+    sdkReadMethods: 4,
+    ownerOAuthPosts: 1,
+    ownerAdminSelectedReads: 3,
+    appendCalls: 1,
+    maximumDurationMs: 300000,
+    sdkInternalHttpAttempts: 'NOT_ASSERTED',
+    retryAuthorized: false,
+  });
+  await write('observations.json', {
+    recordId: id,
+    inputDigest: '0'.repeat(64),
+    activeObservation: {},
+    moduleObservation: {},
+    readiness: {},
+  });
+  for (let index = 0; index < sequence.length; index++) {
+    const record = {
+      version: 'm5-owner-collector-reservation-v1',
+      ordinal: index + 1,
+      operation: sequence[index],
+      reservedAt: '2026-10-11T00:00:00.000Z',
+    };
+    if (index === 11) Object.assign(record, { recordId: id, inputDigest: '0'.repeat(64) });
+    await write(`reservation-${String(index + 1).padStart(2, '0')}.json`, record);
+  }
+}
+async function prior(parent, receipt) {
+  const phase = join(parent, `m5-trusted-release-collector-native-run-20261011-${recordId}`);
+  await writeCollectorRecords(phase, recordId, operations);
+  if (receipt) await writeFile(join(phase, 'receipt.json'), JSON.stringify(receipt), { mode: 0o600 });
+  return phase;
+}
+test('an earlier complete append reservation without settlement blocks every fresh owner intent', async () => {
+  const parent = await mkdtemp(join(tmpdir(), 'insignia-owner-launch-'));
+  try {
+    await prior(parent);
+    await assert.rejects(inspectPriorCollectorSettlement(parent), /prior_settlement_unknown/);
+  } finally {
+    await rm(parent, { recursive: true, force: true });
+  }
+});
+test('only exact known settled receipts permit a distinct fresh intent; ambiguous, foreign and symlink receipts stop', async () => {
+  for (const value of [closed(), closed(true), { ...closed(), token: 'synthetic-forbidden' }, null]) {
+    const parent = await mkdtemp(join(tmpdir(), 'insignia-owner-launch-'));
+    try {
+      const phase = await prior(parent, value);
+      if (value === null) await symlink('/etc/passwd', join(phase, 'receipt.json'));
+      if (value?.classification === 'TRUSTED_RELEASE_COLLECT_APPEND_ACK' && !value.token)
+        assert.equal((await inspectPriorCollectorSettlement(parent))[0].settled, true);
+      else await assert.rejects(inspectPriorCollectorSettlement(parent), /prior_settlement_unknown/);
+    } finally {
+      await rm(parent, { recursive: true, force: true });
+    }
+  }
+});
+test('unrelated private captures are not read or treated as append authority', async () => {
+  const parent = await mkdtemp(join(tmpdir(), 'insignia-owner-launch-'));
+  try {
+    await symlink('/not-readable', join(parent, 'unrelated-private-capture'));
+    assert.deepEqual(await inspectPriorCollectorSettlement(parent), []);
+  } finally {
+    await rm(parent, { recursive: true, force: true });
+  }
+});
+async function processControl(source, limits = {}) {
+  const parent = await mkdtemp(join(tmpdir(), 'insignia-owner-launch-'));
+  const script = join(parent, 'synthetic.mjs');
+  await writeFile(script, source, { mode: 0o600 });
+  const packet = Buffer.from(
+    JSON.stringify({
+      databaseUrl: 'synthetic-private-url',
+      clientSecret: 'synthetic-client-secret',
+      appendPassword: 'synthetic-private-password',
+      recordId,
+    }),
+  );
+  let observed;
+  const result = await runBoundedCollectorProcess({
+    packet,
+    phaseRoot: parent,
+    recordId,
+    ...limits,
+    spawnChild(input) {
+      observed = input;
+      return spawn(process.execPath, [script], {
+        cwd: parent,
+        env: { ...input.env, SYNTHETIC_PARENT: parent },
+        detached: true,
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+    },
+  });
+  return { parent, packet, result, observed };
+}
+const reserveSource = `import {mkdir,writeFile} from 'node:fs/promises'; import {join} from 'node:path';
+const phase=join(process.env.SYNTHETIC_PARENT,'m5-trusted-release-collector-native-run-20261011-${recordId}');
+await (${writeCollectorRecords.toString()})(phase,${JSON.stringify(recordId)},${JSON.stringify(operations)});`;
+test('real child receives private packet only on stdin, emits only matching closed durable receipt and zeroes packet', async () => {
+  const c = await processControl(
+    reserveSource +
+      `let input=''; for await(const b of process.stdin)input+=b; const p=JSON.parse(input); if(!p.clientSecret||process.env.NODE_OPTIONS||process.argv.length!==2)process.exit(2); const receipt=${JSON.stringify(closed())}; await writeFile(join(phase,'receipt.json'),JSON.stringify(receipt),{mode:0o600}); console.log(JSON.stringify(receipt));`,
+  );
+  try {
+    assert.equal(c.result.classification, 'TRUSTED_RELEASE_COLLECT_APPEND_ACK');
+    assert.equal(
+      c.packet.every((byte) => byte === 0),
+      true,
+    );
+    assert.deepEqual(Object.keys(c.observed.env).sort(), ['HOME', 'LANG', 'PATH', 'TERM']);
+    assert.ok(c.observed.script.endsWith('/trusted-release-collector-native.mjs'));
+    assert.ok(!JSON.stringify(c.result).includes('synthetic-private'));
+  } finally {
+    await rm(c.parent, { recursive: true, force: true });
+  }
+});
+test('raw private stdout or mismatched durable receipt never escapes safe result', async () => {
+  for (const output of ['synthetic-client-secret', { ...closed(), token: 'synthetic-client-secret' }]) {
+    const c = await processControl(
+      reserveSource +
+        `for await(const b of process.stdin){}; console.log(${JSON.stringify(typeof output === 'string' ? output : JSON.stringify(output))});`,
+    );
+    try {
+      assert.equal(c.result.ambiguousWrite, true);
+      assert.ok(!JSON.stringify(c.result).includes('synthetic-client-secret'));
+    } finally {
+      await rm(c.parent, { recursive: true, force: true });
+    }
+  }
+});
+test('combined stdout/stderr excess and timeout stop the real process group and retain append uncertainty', async () => {
+  for (const [body, limits] of [
+    [`process.stderr.write('x'.repeat(4096));setInterval(()=>{},1000);`, { maximumBytes: 1024, timeoutMs: 2000 }],
+    [`setInterval(()=>{},1000);`, { timeoutMs: 500 }],
+  ]) {
+    const c = await processControl(`${reserveSource}for await(const b of process.stdin){};${body}`, limits);
+    try {
+      assert.equal(c.result.ambiguousWrite, true);
+      assert.equal(c.result.retryAuthorized, false);
+      assert.ok(['OWNER_PROCESS_OUTPUT_LIMIT', 'OWNER_PROCESS_TIMEOUT'].includes(c.result.classification));
+    } finally {
+      await rm(c.parent, { recursive: true, force: true });
+    }
+  }
+});
+test('normal leader exit still kills a surviving descendant in its process group', async () => {
+  const c = await processControl(
+    reserveSource +
+      `import {spawn} from 'node:child_process';const descendant=spawn(process.execPath,['-e','setInterval(()=>{},1000)'],{stdio:'ignore'});await writeFile(join(process.env.SYNTHETIC_PARENT,'descendant.pid'),String(descendant.pid));for await(const b of process.stdin){};const receipt=${JSON.stringify(closed())};await writeFile(join(phase,'receipt.json'),JSON.stringify(receipt),{mode:0o600}); console.log(JSON.stringify(receipt));process.exit(0);`,
+  );
+  try {
+    assert.equal(c.result.classification, 'TRUSTED_RELEASE_COLLECT_APPEND_ACK');
+    const pid = Number(await readFile(join(c.parent, 'descendant.pid'), 'utf8'));
+    let state;
+    for (let attempt = 0; attempt < 50; attempt++) {
+      try {
+        state = (await readFile(`/proc/${pid}/stat`, 'utf8')).split(' ')[2];
+      } catch {
+        state = undefined;
+      }
+      if (state === undefined || state === 'Z') break;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+    assert.ok(state === undefined || state === 'Z', 'surviving executable descendant must be stopped');
+  } finally {
+    await rm(c.parent, { recursive: true, force: true });
+  }
+});
+
+test('a FIFO masquerading as a prior receipt fails locally rather than hanging preflight', async () => {
+  const parent = await mkdtemp(join(tmpdir(), 'insignia-owner-launch-'));
+  try {
+    const phase = await prior(parent);
+    const { spawnSync } = await import('node:child_process');
+    assert.equal(spawnSync('/usr/bin/mkfifo', [join(phase, 'receipt.json')]).status, 0);
+    const result = spawnSync(
+      process.execPath,
+      [
+        '--input-type=module',
+        '-e',
+        `import assert from 'node:assert/strict';import{inspectPriorCollectorSettlement}from ${JSON.stringify(new URL('./trusted-release-launch.mjs', import.meta.url).href)};await assert.rejects(inspectPriorCollectorSettlement(${JSON.stringify(parent)}),/prior_settlement_unknown/);`,
+      ],
+      { timeout: 1000, encoding: 'utf8' },
+    );
+    assert.equal(result.status, 0, 'preflight must reject before a FIFO read can block');
+  } finally {
+    await rm(parent, { recursive: true, force: true });
+  }
+});
+
+test('settled pre-append freshness failure permits fresh intent but changed ordinal/UUID/digest and duplicate fields stop', async () => {
+  const parent = await mkdtemp(join(tmpdir(), 'insignia-owner-launch-'));
+  try {
+    const receipt = {
+      ...closed(),
+      classification: 'TRUSTED_RELEASE_COLLECT_STOPPED',
+      appendAttempted: false,
+      appendAcknowledged: false,
+    };
+    const phase = await prior(parent, receipt);
+    assert.equal((await inspectPriorCollectorSettlement(parent))[0].settled, true);
+    const path = join(phase, 'reservation-12.json');
+    const original = await readFile(path, 'utf8');
+    const record = JSON.parse(original);
+    for (const changed of [
+      { ...record, ordinal: 11 },
+      { ...record, recordId: '00000000-0000-4000-8000-000000000002' },
+      { ...record, inputDigest: '1'.repeat(64) },
+    ]) {
+      await writeFile(path, JSON.stringify(changed));
+      await assert.rejects(inspectPriorCollectorSettlement(parent), /prior_settlement_unknown/);
+    }
+    await writeFile(path, `${original.slice(0, -1)},"ordinal":12}`);
+    await assert.rejects(inspectPriorCollectorSettlement(parent), /prior_settlement_unknown/);
+  } finally {
+    await rm(parent, { recursive: true, force: true });
+  }
+});
+test('private stdin is bounded for a stalled pipe and oversized packet', async () => {
+  const { PassThrough } = await import('node:stream');
+  const { readPrivatePacket } = await import('./trusted-release-launch.mjs');
+  const stalled = new PassThrough();
+  await assert.rejects(readPrivatePacket(stalled, 50), /private_packet_timeout/);
+  const oversized = new PassThrough();
+  oversized.end(Buffer.alloc(16385));
+  await assert.rejects(readPrivatePacket(oversized), /private_packet_limit/);
+});
+
+test('actual SDK auth/session modules are code inputs while private credential filenames remain excluded', async () => {
+  const { qualifyCodeInputPath } = await import('./trusted-release-launch.mjs');
+  const root = new URL('../../', import.meta.url).pathname.replace(/\/$/, '');
+  for (const relative of [
+    'node_modules/.pnpm/@shopify+shopify-api@15.0.0/node_modules/@shopify/shopify-api/dist/cjs/lib/session/session.js',
+    'node_modules/.pnpm/@shopify+shopify-api@15.0.0/node_modules/@shopify/shopify-api/dist/esm/lib/session/session.mjs',
+  ])
+    assert.doesNotThrow(() => qualifyCodeInputPath(`${root}/${relative}`));
+  for (const relative of [
+    '.env',
+    'private/.env.production',
+    'private/auth.json',
+    'private/session.json',
+    'private/context.json',
+  ])
+    assert.throws(() => qualifyCodeInputPath(`${root}/${relative}`));
+  assert.throws(() => qualifyCodeInputPath('/tmp/foreign/auth.js'), /input_path_unqualified/);
+});
