@@ -1,0 +1,18 @@
+# Explicit owner action allocation only; add after the ordinary canonical overlays.
+# Plan contains nonsecret exact target/validity metadata. Existing wrapping-key
+# custody remains in runtime.env. No command, NODE_* override or code mount.
+services:
+  web:
+    volumes:
+      - type: bind
+        source: ${INSIGNIA_SIGNING_OWNER_PLAN:?Set the qualified private owner plan file}
+        target: /run/insignia/signing-owner-plan.json
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ${INSIGNIA_SIGNING_OWNER_RUN_ROOT:?Set the qualified new private owner run root}
+        target: /var/lib/insignia/signing-owner
+        read_only: false
+        bind:
+          create_host_path: false

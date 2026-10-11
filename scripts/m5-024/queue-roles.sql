@@ -60,4 +60,11 @@ GRANT UPDATE(shop_id, installation_generation, state, attempts, last_error_class
 REVOKE UPDATE(payload, erasure_state, lease_owner, lease_until) ON public.inbox_messages FROM insignia_queue_consume;
 GRANT UPDATE(queue_handoff_state, queue_cleanup_pending, queue_recovery_selected_at) ON public.shopify_webhook_deliveries TO insignia_queue_consume;
 GRANT UPDATE(effective_revision_id, effective_operation_id, updated_at) ON public.product_configs TO insignia_queue_consume;
+-- A later qualified retention migration supplies only fixed-expiry executors.
+-- No direct payload UPDATE or unexpired/Shop-wide erasure authority is granted.
+DO $$ BEGIN
+ IF to_regprocedure('public.expire_shopify_webhook_bytes(uuid)') IS NOT NULL THEN
+  GRANT EXECUTE ON FUNCTION public.expire_shopify_webhook_bytes(uuid), public.expire_shopify_webhook_facts(integer), public.pending_shopify_webhook_obligations(integer) TO insignia_queue_consume;
+ END IF;
+END $$;
 COMMIT;

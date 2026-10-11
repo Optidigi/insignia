@@ -12,6 +12,8 @@ import {
 } from '@insignia/visualizer/geometry';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import type { CatalogProduct, ConfigView, PublicationState } from '../shared/admin-view.js';
+import ReadinessPermissions from './ReadinessPermissions';
+import SigningSetup from './SigningSetup';
 
 type Props = { mode: 'picker' | 'config'; productId?: string };
 // Preserve typed spelling until blur; only validated numeric values become geometry.
@@ -108,10 +110,11 @@ async function browserDeadline<T>(task: (signal: AbortSignal) => Promise<T>): Pr
     if (timer) clearTimeout(timer);
   }
 }
-function sessionToken(): Promise<string> {
+function sessionToken(forceFresh = false): Promise<string> {
   const bridge = (window as unknown as { shopify?: { idToken?: () => Promise<string> } }).shopify;
   const tokenGetter = bridge?.idToken?.bind(bridge);
   if (!tokenGetter) return Promise.reject(new Error('Open this page from Shopify Admin to verify your session.'));
+  if (forceFresh) return browserDeadline(() => tokenGetter());
   if (!tokenRequest)
     tokenRequest = browserDeadline(() => tokenGetter()).finally(() => {
       tokenRequest = null;
@@ -138,14 +141,14 @@ async function jsonResponse<T>(response: Response): Promise<T> {
     });
   return body;
 }
-async function authenticatedJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+async function authenticatedJson<T>(path: string, init: RequestInit = {}, forceFresh = false): Promise<T> {
   return browserDeadline(async (signal) => {
     const send = async () =>
       fetch(path, {
         ...init,
         headers: {
           ...Object.fromEntries(new Headers(init.headers).entries()),
-          Authorization: 'Bearer ' + (await sessionToken()),
+          Authorization: 'Bearer ' + (await sessionToken(forceFresh)),
         },
         cache: 'no-store',
         credentials: 'omit',
@@ -919,6 +922,32 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         <a href="/admin/products">Products</a>
       </nav>
       {status && <p role="status">{status}</p>}
+      {(mode === 'picker' ? list !== null : view !== null) && (
+        <>
+          <ReadinessPermissions
+            inspect={() =>
+              authenticatedJson('/api/admin/products/readiness', {}, true).catch((error) => {
+                authorizationDenied(error);
+                throw error;
+              })
+            }
+          />
+          <SigningSetup
+            onAuthorizationDenied={() => {
+              clearPrivate();
+              setStatus('Current authorization required');
+            }}
+            onComplete={() => {
+              const refreshed =
+                mode === 'config' ? refreshPublication() : authenticatedJson('/api/admin/products/readiness', {}, true);
+              void refreshed.catch((error) => {
+                if (!authorizationDenied(error))
+                  setStatus(error instanceof Error ? error.message : 'Readiness unavailable');
+              });
+            }}
+          />
+        </>
+      )}
       {mode === 'picker' && (
         <s-section heading="Shopify products">
           <label>

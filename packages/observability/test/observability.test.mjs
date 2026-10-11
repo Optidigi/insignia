@@ -144,3 +144,31 @@ test('admin auth diagnostics emit only a bounded stage and independent correlati
     assert.doesNotMatch(output, /SECRET|staffId|error/);
   }
 });
+
+test('complete retention counts survive above the sample bound but unsafe or private values are omitted', () => {
+  let output = '';
+  const { logger } = createObservability({
+    stream: new Writable({
+      write(chunk, _encoding, callback) {
+        output += chunk;
+        callback();
+      },
+    }),
+  });
+  for (const count of [101, Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER + 1, -1, 1.5, Infinity, NaN, '101']) {
+    logger.error('queue_job_rejected', {
+      errorClass: 'PrivacyRetentionBlocked',
+      count,
+      rawBody: 'SECRET',
+      customerId: 'SECRET',
+    });
+  }
+  const records = output
+    .trim()
+    .split('\n')
+    .map((line) => JSON.parse(line));
+  assert.equal(records[0].count, 101);
+  assert.equal(records[1].count, Number.MAX_SAFE_INTEGER);
+  for (const record of records.slice(2)) assert.equal(Object.hasOwn(record, 'count'), false);
+  assert.doesNotMatch(output, /SECRET|rawBody|customerId/);
+});

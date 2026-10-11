@@ -152,7 +152,7 @@ test('erased uninstall evidence keeps a typed fail-closed managed-installation f
   }
 });
 
-test('bounded maintenance preserves unqualified uninstall bytes and overdue unresolved work', async () => {
+test('bounded maintenance captures minimal uninstall facts and keeps overdue work visible', async () => {
   const f = await fixture();
   try {
     const unrelatedId = randomUUID();
@@ -166,7 +166,7 @@ test('bounded maintenance preserves unqualified uninstall bytes and overdue unre
       f.receipt.id,
     ]);
     const erased = await f.core.webhooks.eraseExpiredPayloads(100);
-    expect(erased.erasedIds).toEqual([]);
+    expect(erased.erasedIds).toContain(f.receipt.id);
     expect(erased.blockedUninstallIds).toContain(f.receipt.id);
     expect(erased.unresolvedExpiredIds).toContain(f.receipt.id);
     const rows = await f.pool.query(
@@ -175,8 +175,8 @@ test('bounded maintenance preserves unqualified uninstall bytes and overdue unre
       [f.receipt.id],
     );
     expect(rows.rows[0]).toMatchObject({
-      bytes: f.input.rawBody.length,
-      erasure_state: 'retained',
+      bytes: 0,
+      erasure_state: 'erased',
       state: 'pending',
       last_error_class: null,
       purge_after: before.rows[0].purge_after,
@@ -338,7 +338,7 @@ test('real terminal queue failure is durable exhaustion without payload erasure 
 });
 
 test.each(['pending', 'processed'])(
-  'unsigned uninstall topic cannot authorize erasure of uncaptured mixed obligations in %s state',
+  'collection expiry captures mixed obligations without trusting unsigned uninstall topic in %s state',
   async (state) => {
     const f = await fixture();
     try {
@@ -363,7 +363,7 @@ test.each(['pending', 'processed'])(
         ])
       ).rows[0];
       const result = await f.core.webhooks.eraseExpiredPayloads(100);
-      expect(result.erasedIds).not.toContain(receipt.id);
+      expect(result.erasedIds).toContain(receipt.id);
       expect(result.blockedUninstallIds).toContain(receipt.id);
       expect(
         (
@@ -371,7 +371,16 @@ test.each(['pending', 'processed'])(
             receipt.id,
           ])
         ).rows[0],
-      ).toEqual(before);
+      ).toEqual({ ...before, payload: Buffer.alloc(0), erasure_state: 'erased' });
+      const captured = (
+        await f.pool.query('select captured_fields from webhook_obligation_facts where inbox_id=$1', [receipt.id])
+      ).rows[0].captured_fields;
+      expect(captured).toMatchObject({
+        customer: { id: '456' },
+        orders_to_redact: ['789'],
+        currency: 'EUR',
+        total_price: '12.34',
+      });
       expect(before.payload).toEqual(rawBody);
       expect(before.state).toBe(state);
     } finally {
@@ -381,7 +390,7 @@ test.each(['pending', 'processed'])(
 );
 
 test.each(['customers/data_request', 'customers/redact', 'shop/redact'])(
-  'unfulfilled expired %s receipt blocks purge instead of destroying its only subject identity',
+  'unfulfilled expired %s receipt captures minimal identity and remains unresolved',
   async (topic) => {
     const f = await fixture();
     try {
@@ -395,17 +404,21 @@ test.each(['customers/data_request', 'customers/redact', 'shop/redact'])(
       const before = (await f.pool.query('SELECT payload,purge_after FROM inbox_messages WHERE id=$1', [receipt.id]))
         .rows[0];
       const result = await f.core.webhooks.eraseExpiredPayloads(100);
-      expect(result.erasedIds).not.toContain(receipt.id);
+      expect(result.erasedIds).toContain(receipt.id);
       expect(result.blockedPrivacyIds).toContain(receipt.id);
       const { rows } = await f.pool.query(
         'SELECT state,erasure_state,octet_length(payload) AS bytes,purge_after<clock_timestamp() AS overdue FROM inbox_messages WHERE id=$1',
         [receipt.id],
       );
-      expect(rows[0]).toMatchObject({ state: 'pending', erasure_state: 'retained', overdue: true });
-      expect(rows[0].bytes).toBeGreaterThan(0);
+      expect(rows[0]).toMatchObject({ state: 'pending', erasure_state: 'erased', overdue: true });
+      expect(rows[0].bytes).toBe(0);
       expect(
         (await f.pool.query('SELECT payload,purge_after FROM inbox_messages WHERE id=$1', [receipt.id])).rows[0],
-      ).toEqual(before);
+      ).toEqual({ ...before, payload: Buffer.alloc(0) });
+      expect(
+        (await f.pool.query('select captured_fields from webhook_obligation_facts where inbox_id=$1', [receipt.id]))
+          .rows[0].captured_fields,
+      ).toMatchObject({ customer: { id: '456' }, orders_to_redact: ['789'] });
       expect(await f.core.webhooks.getById(receipt.id)).toMatchObject({ resolution: 'expired' });
     } finally {
       await f.close();
@@ -414,7 +427,7 @@ test.each(['customers/data_request', 'customers/redact', 'shop/redact'])(
 );
 
 test.each(['orders/paid', 'orders/create', 'refunds/create'])(
-  'expired unsupported %s and uninstall sole facts both survive',
+  'expired unsupported %s and uninstall minimal facts both survive',
   async (topic) => {
     const f = await fixture();
     try {
@@ -432,12 +445,16 @@ test.each(['orders/paid', 'orders/create', 'refunds/create'])(
         .rows[0];
       await expire(f.pool, f.receipt.id);
       const result = await f.core.webhooks.eraseExpiredPayloads(100);
-      expect(result.erasedIds).not.toContain(receipt.id);
+      expect(result.erasedIds).toContain(receipt.id);
       expect(result.blockedUnsupportedIds).toContain(receipt.id);
       expect(result.blockedUninstallIds).toContain(f.receipt.id);
       expect(
         (await f.pool.query('SELECT payload,purge_after FROM inbox_messages WHERE id=$1', [receipt.id])).rows[0],
-      ).toEqual(before);
+      ).toEqual({ ...before, payload: Buffer.alloc(0) });
+      expect(
+        (await f.pool.query('select captured_fields from webhook_obligation_facts where inbox_id=$1', [receipt.id]))
+          .rows[0].captured_fields,
+      ).toMatchObject({ id: '123', currency: 'EUR', total_price: '12.34', transaction_ids: ['456'] });
       expect(
         (
           await f.pool.query(
@@ -445,14 +462,14 @@ test.each(['orders/paid', 'orders/create', 'refunds/create'])(
             [receipt.id],
           )
         ).rows[0],
-      ).toEqual({ state: 'pending', erasure_state: 'retained', overdue: true });
+      ).toEqual({ state: 'pending', erasure_state: 'erased', overdue: true });
       expect(
         (
           await f.pool.query('SELECT octet_length(payload) AS bytes,erasure_state FROM inbox_messages WHERE id=$1', [
             f.receipt.id,
           ])
         ).rows[0],
-      ).toEqual({ bytes: f.input.rawBody.length, erasure_state: 'retained' });
+      ).toEqual({ bytes: 0, erasure_state: 'erased' });
     } finally {
       await f.close();
     }
@@ -477,9 +494,10 @@ test('unindexed overdue Shopify bytes remain an explicit unknown blocker', async
     expect(result.blockedUnsupportedIds).not.toContain(id);
     expect(result.blockedPrivacyIds).not.toContain(id);
     expect(result.blockedUninstallIds).toContain(f.receipt.id);
-    expect((await f.pool.query('SELECT payload,purge_after FROM inbox_messages WHERE id=$1', [id])).rows[0]).toEqual(
-      before,
-    );
+    expect((await f.pool.query('SELECT payload,purge_after FROM inbox_messages WHERE id=$1', [id])).rows[0]).toEqual({
+      ...before,
+      payload: Buffer.alloc(0),
+    });
     expect(
       (
         await f.pool.query(
@@ -487,13 +505,13 @@ test('unindexed overdue Shopify bytes remain an explicit unknown blocker', async
           [id],
         )
       ).rows[0],
-    ).toEqual({ state: 'pending', erasure_state: 'retained', overdue: true });
+    ).toEqual({ state: 'pending', erasure_state: 'erased', overdue: true });
   } finally {
     await f.close();
   }
 });
 
-test('unqualified uninstall observations are bounded without discarding facts or extending deadlines', async () => {
+test('unqualified uninstall facts remain bounded without extending collection deadlines', async () => {
   const f = await fixture();
   try {
     await expire(f.pool, f.receipt.id);
@@ -503,18 +521,20 @@ test('unqualified uninstall observations are bounded without discarding facts or
       ])
     ).rows[0];
     const result = await f.core.webhooks.eraseExpiredPayloads(1);
-    expect(result.erasedIds).toEqual([]);
-    expect(result.blockedUninstallIds).toHaveLength(1);
-    expect(
-      result.blockedPrivacyIds.length + result.blockedUnknownIds.length + result.blockedUnsupportedIds.length,
-    ).toBeLessThanOrEqual(1);
+    expect(result.erasedIds).toHaveLength(1);
+    expect(result.blockedUninstallIds.length).toBeLessThanOrEqual(1);
+    // Diagnostic samples are independently bounded per category, while counts
+    // include all immutable obligations rather than only the first sample.
+    expect(result.blockedPrivacyIds.length).toBeLessThanOrEqual(1);
+    expect(result.blockedUnknownIds.length).toBeLessThanOrEqual(1);
+    expect(result.blockedUnsupportedIds.length).toBeLessThanOrEqual(1);
     expect(
       (
         await f.pool.query('SELECT payload,purge_after,state,erasure_state FROM inbox_messages WHERE id=$1', [
           f.receipt.id,
         ])
       ).rows[0],
-    ).toEqual(before);
+    ).toEqual({ ...before, payload: Buffer.alloc(0), erasure_state: 'erased' });
   } finally {
     await f.close();
   }
@@ -575,6 +595,7 @@ test('retention migration preserves legacy ambiguity, new defaults and populated
   try {
     await admin.query('CREATE DATABASE ' + name);
     await migrate('up');
+    await migrate('rollback'); // Empty minimal-fact relation19 can roll back.
     await migrate('rollback'); // Unselected transport diagnostic44 can roll back.
     await migrate('rollback'); // Rehearse original43 legacy reservation contract.
     pool = new Pool({ connectionString: url.href });
@@ -615,6 +636,7 @@ test('retention migration preserves legacy ambiguity, new defaults and populated
         return 'missing';
       }),
     ).toBe('missing');
+    await migrate('rollback'); // No minimal facts captured.
     await migrate('rollback'); // No selection occurred:44 has no progress to erase.
     await expect(migrate('rollback')).rejects.toThrow('durable webhook queue evidence prevents rollback');
     expect((await pool.query("SELECT version FROM schema_migrations WHERE version='20261009000100'")).rowCount).toBe(1);
@@ -688,6 +710,7 @@ test('recovery selection migration44 preserves progress and grants only its tran
       (await pool.query('SELECT payload,purge_after,state,attempts FROM inbox_messages WHERE id=$1', [f.receipt.id]))
         .rows[0],
     ).toEqual(before);
+    await migrate('rollback'); // Empty minimal-fact relation19 leaves44 rehearsal exact.
     await expect(migrate('rollback')).rejects.toThrow('durable webhook recovery selection evidence prevents rollback');
     expect((await pool.query("SELECT version FROM schema_migrations WHERE version='20261009000200'")).rowCount).toBe(1);
     expect((await f.core.tenants.getCurrentAdminInstallation(f.shopId))?.active).toBe(true);

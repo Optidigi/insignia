@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import * as signingApplication from '@insignia/application';
 import {
   type ActivationReadinessPort,
   bindProviderSubscription,
@@ -27,6 +28,7 @@ import { createMerchantConfigService } from '../merchant-config.js';
 import { type AdminInstallation, AdminInstallationReconciliationError, createAdminAuthenticator } from './auth.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
 import { createBoundProductionActivationReadiness } from './release-evidence.js';
+import { createSigningOwnerAction, type SigningOwnerConfiguration } from './signing-owner-action.mjs';
 
 function project(value: ShopifyCatalogProduct): CatalogProduct {
   return {
@@ -73,6 +75,7 @@ export function createProductionAdminServices(
   entitlementClock: () => Date = () => new Date(),
   // Server-owned capability only; never constructed from HTTP or environment JSON.
   activationReadiness?: Omit<ActivationReadinessPort, 'observeProjection'>,
+  signingOwnerConfiguration?: SigningOwnerConfiguration,
 ): AdminServices {
   const databaseUrl = required(env, 'DATABASE_URL');
   const apiKey = required(env, 'SHOPIFY_CLIENT_ID');
@@ -267,8 +270,68 @@ export function createProductionAdminServices(
     publication: (actor) => activation(actor).publications,
     activation,
   });
+  const signingOwner = signingOwnerConfiguration
+    ? createSigningOwnerAction(signingOwnerConfiguration, {
+        app: signingApplication,
+        core,
+        identity: shopify,
+        runtimeIdentity: { appClientId: apiKey, appId, appOrigin },
+        now: () => new Date(),
+        bindProvider(
+          online: OnlineStaffGrant,
+          isCurrent: () => Promise<void>,
+          tenant: { shopId: string; installationGeneration: string; appId: string; shopifyShopId: string },
+        ) {
+          const transport = createPublicationAdminHttpTransport({
+            credentials: {
+              async acquire(input) {
+                if (input.shopId !== tenant.shopId || input.installationGeneration !== tenant.installationGeneration)
+                  return { kind: 'inactive' as const };
+                try {
+                  await isCurrent();
+                } catch {
+                  return { kind: 'inactive' as const };
+                }
+                return {
+                  kind: 'usable' as const,
+                  shopDomain: online.shop,
+                  accessToken: online.accessToken,
+                  accessExpiresAt: new Date(online.expiresAtMs),
+                };
+              },
+            },
+          });
+          const functions = createFunctionOwnershipReconciler({ transport });
+          return {
+            admin: createPublicationAdminAdapter({ transport }),
+            observeFunctions: (input: typeof tenant, expected: signingApplication.ExpectedFunctionBuild) =>
+              functions.read(input, {
+                appKey: apiKey,
+                transformInputQuerySha256: expected.transform.inputQuerySha256,
+                validationInputQuerySha256: expected.validation.inputQuerySha256,
+              }),
+          };
+        },
+      })
+    : undefined;
   return {
     appOrigin,
+    ...(signingOwner
+      ? {
+          signingOwner: {
+            async start(actor: AdminActor, token: string) {
+              await active(actor);
+              grant(actor);
+              return signingOwner.start(actor, token);
+            },
+            async status(actor: AdminActor) {
+              await active(actor);
+              grant(actor);
+              return signingOwner.status(actor);
+            },
+          },
+        }
+      : {}),
     async authenticate(request) {
       const correlationId = randomUUID();
       const diagnostic = (authStage: AdminAuthenticationStage) =>

@@ -90,8 +90,7 @@ function safeDetails(input: RuntimeLogDetails): RuntimeLogDetails {
     input.errorClass === 'UninstallRecoveryUnresolved'
   )
     result.errorClass = input.errorClass;
-  if (Number.isInteger(input.count) && (input.count ?? -1) >= 0 && (input.count ?? 101) <= 100)
-    result.count = input.count;
+  if (Number.isSafeInteger(input.count) && (input.count ?? -1) >= 0) result.count = input.count;
   if (Number.isInteger(input.attempt) && (input.attempt ?? -1) >= 0 && (input.attempt ?? 0) <= 1000)
     result.attempt = input.attempt;
   return result;

@@ -5,6 +5,7 @@
 import type { ExpectedFunctionBuild } from '@insignia/application';
 import type { FunctionOwnership } from '@insignia/shopify';
 import type { CatalogProduct, CommandOutcome, ConfigView } from '../../shared/admin-view.js';
+import type { SigningOwnerAction } from './signing-owner-action.mjs';
 
 export type { CatalogProduct, CommandOutcome, ConfigView, PublicationState } from '../../shared/admin-view.js';
 export interface AdminActor {
@@ -22,6 +23,8 @@ export interface AdminActor {
 
 export interface AdminServices {
   appOrigin: string;
+  /** Fixed private owner allocation; absence does not authorize key setup. */
+  signingOwner?: SigningOwnerAction;
   /** Must verify the Shopify session token, active installation and online staff
    * grant on every request, including reinstall/deactivation invalidation. */
   authenticate(request: Request): Promise<AdminActor | null>;

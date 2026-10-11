@@ -75,11 +75,11 @@ export async function recoverPendingUninstalls(core: DurableCore, queue: PgBossR
 export async function maintainWebhookRetention(core: DurableCore, queue: PgBossRuntime) {
   const result = await core.webhooks.eraseExpiredPayloads(100);
   for (const [category, count] of [
-    ['TransientPayloadExpiredUnresolved', result.unresolvedExpiredIds.length],
-    ['PrivacyRetentionBlocked', result.blockedPrivacyIds.length],
-    ['UninstallPayloadRetentionBlocked', result.blockedUninstallIds.length],
-    ['UnknownPayloadRetentionBlocked', result.blockedUnknownIds.length],
-    ['UnsupportedPayloadRetentionBlocked', result.blockedUnsupportedIds.length],
+    ['TransientPayloadExpiredUnresolved', result.unresolvedExpiredCount],
+    ['PrivacyRetentionBlocked', result.blockedPrivacyCount],
+    ['UninstallPayloadRetentionBlocked', result.blockedUninstallCount],
+    ['UnknownPayloadRetentionBlocked', result.blockedUnknownCount],
+    ['UnsupportedPayloadRetentionBlocked', result.blockedUnsupportedCount],
   ] as const) {
     if (count) {
       queue.observability.metrics.queue('failure');

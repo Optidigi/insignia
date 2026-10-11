@@ -1,6 +1,7 @@
 import type { AdminServices } from './contracts.js';
 import { createDiagnosticPreviewServices } from './preview.js';
 import { createProductionAdminServices } from './production.js';
+import { signingOwnerConfiguration } from './signing-owner-configuration.js';
 
 let services: AdminServices | undefined;
 
@@ -16,7 +17,13 @@ export function adminServices(): AdminServices | undefined {
     services =
       process.env.INSIGNIA_M5_002_DIAGNOSTIC === '1'
         ? createDiagnosticPreviewServices(process.env)
-        : createProductionAdminServices();
+        : createProductionAdminServices(
+            process.env,
+            undefined,
+            undefined,
+            undefined,
+            signingOwnerConfiguration(process.env),
+          );
   } catch {
     return undefined;
   }

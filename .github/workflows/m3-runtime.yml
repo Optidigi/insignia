@@ -60,18 +60,18 @@ jobs:
         # Docker Official Images ECR mirror; same digest as the last successful Docker Hub pull.
         image: public.ecr.aws/docker/library/postgres@sha256:74935e72241653ca55e0414067e6d8763aceb8a810eb51b452253ec3dcfc4336
         env:
-          POSTGRES_USER: insignia_test
+          POSTGRES_USER: synthetic_runtime_owner
           POSTGRES_PASSWORD: insignia_test
           POSTGRES_DB: insignia_test
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U insignia_test -d insignia_test"
+          --health-cmd "pg_isready -U synthetic_runtime_owner -d insignia_test"
           --health-interval 5s
           --health-timeout 5s
           --health-retries 10
     env:
-      DATABASE_URL: postgres://insignia_test:insignia_test@localhost:5432/insignia_test?sslmode=disable
+      DATABASE_URL: postgres://synthetic_runtime_owner:insignia_test@localhost:5432/insignia_test?sslmode=disable
       INSIGNIA_REQUIRE_POSTGRES_TEST: '1'
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
@@ -82,8 +82,10 @@ jobs:
           node-version: '24.21.0'
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm build
+      - name: M5 runtime owner-operator and immutable image controls style
+        run: corepack pnpm exec biome check scripts/m5-runtime
       - name: Frozen schema-owner operator and effective PostgreSQL18 roles (isolated database)
-        run: M5_SCHEMA_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 scripts/m5-runtime/schema-provision.test.mjs scripts/m5-runtime/schema-provision-package.test.mjs scripts/m5-runtime/release-append.test.mjs
+        run: M5_SCHEMA_TEST_URL="$DATABASE_URL" M5_DB_ROTATION_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 scripts/m5-runtime/db-password-rotation.test.mjs scripts/m5-runtime/db-password-rotation-package.test.mjs scripts/m5-runtime/schema-provision.test.mjs scripts/m5-runtime/schema-provision-package.test.mjs scripts/m5-runtime/schema-forward19-package.test.mjs scripts/m5-runtime/release-append.test.mjs scripts/m5-runtime/signing-provision.test.mjs scripts/m5-runtime/signing-provision-core.test.mjs
       - run: corepack pnpm check:style
       - run: corepack pnpm check:boundaries
       - name: Experimental private callback HTTP/operator/restart/supervisor/erasure controls
@@ -118,9 +120,9 @@ jobs:
         env:
           M5_IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/m5-024-worker-image
           M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
-        run: node --test scripts/m5-runtime/schema-provision-package.image.test.mjs
+        run: node --test scripts/m5-runtime/image-identity.test.mjs scripts/m5-runtime/schema-provision-package.image.test.mjs
       - name: Ordinary canonical web and worker Compose rendering controls
-        run: node --test scripts/m5-runtime/web-compose.test.mjs
+        run: node --test scripts/m5-runtime/web-compose.test.mjs scripts/m5-runtime/signing-owner-compose.test.mjs
       - name: Preserve M5-024 image qualification receipts and raw logs
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
@@ -176,7 +178,7 @@ jobs:
         run: node --test test/webhook-metadata-boundary.test.mjs
       - name: Uninstall authority quarantine and unresolved obligation controls
         env:
-          DATABASE_URL: postgres://insignia_test:insignia_test@localhost:5432/insignia_m5_025_http?sslmode=disable
+          DATABASE_URL: postgres://synthetic_runtime_owner:insignia_test@localhost:5432/insignia_m5_025_http?sslmode=disable
           M5_025_REQUIRE_SAFE_UNINSTALL: '1'
         # Dedicated disposable DB prevents unrelated recovery backlog competing
         # with this bounded process control. Safety assertions are unconditional;
@@ -195,7 +197,7 @@ jobs:
         # V2 data cannot be downgraded into v1. Rehearse schema rollback in a separate,
         # empty disposable database; qualification rows and historical JSONB stay intact.
         env:
-          DATABASE_URL: postgres://insignia_test:insignia_test@localhost:5432/insignia_migration_rehearsal?sslmode=disable
+          DATABASE_URL: postgres://synthetic_runtime_owner:insignia_test@localhost:5432/insignia_migration_rehearsal?sslmode=disable
         run: |
           corepack pnpm exec dbmate create
           corepack pnpm db:migrate

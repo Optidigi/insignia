@@ -9,6 +9,7 @@ import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { sha256CanonicalJson } from '../../packages/database/src/hash/canonical.ts';
+import { frozenSchema18Fixture } from './frozen-schema18-fixture.mjs';
 import { appendTrustedRelease, qualifyReleaseAppendInput } from './release-append.mjs';
 
 const baseline = JSON.parse(
@@ -306,7 +307,10 @@ test('isolated PG18: fresh append LOGIN commits, runtime reader qualifies, mutat
   const { createDurableCore, sha256CanonicalJson: actualHash } = await import(
     pathToFileURL(require.resolve('@insignia/database'))
   );
-  const { reserveSchemaProvision, executeSchemaProvision } = await import('./schema-provision.mjs');
+  const compatibility = await frozenSchema18Fixture();
+  const { reserveSchemaProvision, executeSchemaProvision } = await import(
+    pathToFileURL(join(compatibility.directory, 'scripts/m5-runtime/schema-provision.mjs')).href
+  );
   const address = new URL(process.env.M5_SCHEMA_TEST_URL);
   assert.ok(['localhost', '127.0.0.1', '[::1]'].includes(address.hostname), 'isolated loopback PG only');
   const expectedDatabase = `m5append_${randomUUID().replaceAll('-', '')}`;
@@ -357,7 +361,7 @@ test('isolated PG18: fresh append LOGIN commits, runtime reader qualifies, mutat
     );
     rolesAllocated = true;
     await owner.query('commit');
-    const migrations = join(root, 'packages/database/migrations');
+    const migrations = join(compatibility.directory, 'packages/database/migrations');
     for (const name of (await readdir(migrations))
       .filter((x) => x.endsWith('.sql'))
       .sort()
@@ -471,6 +475,7 @@ test('isolated PG18: fresh append LOGIN commits, runtime reader qualifies, mutat
       () => admin.end(),
       () => rm(directory, { recursive: true, force: true }),
       () => rm(staging, { recursive: true, force: true }),
+      () => rm(compatibility.directory, { recursive: true, force: true }),
     ]) {
       try {
         await close();

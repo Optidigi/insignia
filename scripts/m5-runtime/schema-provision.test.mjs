@@ -6,9 +6,9 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
-import { executeSchemaProvision, reserveSchemaProvision } from './schema-provision.mjs';
+import { frozenSchema18Fixture } from './frozen-schema18-fixture.mjs';
 
 const { Pool } = createRequire(new URL('../../apps/worker/package.json', import.meta.url))('pg');
 
@@ -16,6 +16,10 @@ test('frozen schema operator provisions exact migrations and restricted roles on
   skip: !process.env.M5_SCHEMA_TEST_URL,
   timeout: 45000,
 }, async () => {
+  const compatibility = await frozenSchema18Fixture();
+  const { executeSchemaProvision, reserveSchemaProvision } = await import(
+    pathToFileURL(join(compatibility.directory, 'scripts/m5-runtime/schema-provision.mjs')).href
+  );
   const admin = new Pool({ connectionString: process.env.M5_SCHEMA_TEST_URL });
   const expectedDatabase = `m5schema_${randomUUID().replaceAll('-', '')}`;
   const address = new URL(process.env.M5_SCHEMA_TEST_URL);
@@ -51,7 +55,7 @@ test('frozen schema operator provisions exact migrations and restricted roles on
     );
     rolesAllocated = true;
     const root = fileURLToPath(new URL('../../', import.meta.url));
-    const migrations = join(root, 'packages/database/migrations');
+    const migrations = join(compatibility.directory, 'packages/database/migrations');
     for (const name of (await readdir(migrations))
       .filter((x) => x.endsWith('.sql'))
       .sort()
@@ -169,6 +173,78 @@ test('frozen schema operator provisions exact migrations and restricted roles on
       }),
       /unexpected_migrations/,
     );
+    const { reserveForwardSchema19, executeForwardSchema19 } = await import('./schema-forward19.mjs');
+    const forwardDirectory = join(directory, 'forward19');
+    const forward = await reserveForwardSchema19({
+      directory: forwardDirectory,
+      ownerConnectionString,
+      expectedDatabase,
+      expectedOwner,
+    });
+    assert.equal(forward.fromMigrationCount, 18);
+    assert.equal(forward.toMigrationCount, 19);
+    const forwardPlan = await readFile(join(forwardDirectory, 'plan.json'), 'utf8');
+    const parsedForwardPlan = JSON.parse(forwardPlan);
+    await writeFile(
+      join(forwardDirectory, 'plan.json'),
+      JSON.stringify({
+        ...parsedForwardPlan,
+        sources: { ...parsedForwardPlan.sources, 'pnpm-lock.yaml': '0'.repeat(64) },
+      }),
+    );
+    await assert.rejects(executeForwardSchema19(forwardDirectory), /frozen_source_changed/);
+    await writeFile(join(forwardDirectory, 'plan.json'), forwardPlan);
+    const forwardCredentials = await readFile(join(forwardDirectory, 'credentials.json'), 'utf8');
+    await writeFile(join(forwardDirectory, 'credentials.json'), `${forwardCredentials} `);
+    await assert.rejects(executeForwardSchema19(forwardDirectory), /frozen_credentials_changed/);
+    await writeFile(join(forwardDirectory, 'credentials.json'), forwardCredentials);
+    const rejectedDirectory = join(directory, 'drift19');
+    await reserveForwardSchema19({
+      directory: rejectedDirectory,
+      ownerConnectionString,
+      expectedDatabase,
+      expectedOwner,
+    });
+    await pool.query('grant update(payload) on inbox_messages to insignia_queue_consume');
+    await assert.rejects(executeForwardSchema19(rejectedDirectory), /forward19_stopped_reconciliation_required/);
+    assert.equal((await pool.query('select count(*)::int as n from schema_migrations')).rows[0].n, 18);
+    assert.equal((await pool.query("select to_regclass('webhook_obligation_facts') as facts")).rows[0].facts, null);
+    assert.equal(JSON.parse(await readFile(join(rejectedDirectory, 'stopped.json'), 'utf8')).retry, false);
+    await pool.query('revoke update(payload) on inbox_messages from insignia_queue_consume');
+    await assert.rejects(executeForwardSchema19(rejectedDirectory), /already_reserved/);
+    const completed = await executeForwardSchema19(forwardDirectory);
+    assert.equal(completed.status, 'APPLIED');
+    assert.equal((await pool.query('select count(*)::int as n from schema_migrations')).rows[0].n, 19);
+    assert.deepEqual(
+      (await pool.query("select trusted_record from trusted_release_records where record_id='synthetic-record'"))
+        .rows[0].trusted_record,
+      record,
+    );
+    for (const sql of [
+      "update trusted_release_records set evidence_digest=repeat('c',64) where record_id='synthetic-record'",
+      "delete from trusted_release_records where record_id='synthetic-record'",
+      'truncate trusted_release_records',
+    ])
+      await assert.rejects(pool.query(sql), { code: '23514' });
+    const worker = new Pool({ connectionString: secrets.workerUrl });
+    try {
+      assert.equal((await worker.query('select expire_shopify_webhook_facts(1) as n')).rows[0].n, 0);
+      await assert.rejects(worker.query('insert into webhook_obligation_facts(inbox_id) values(gen_random_uuid())'), {
+        code: '42501',
+      });
+    } finally {
+      await worker.end();
+    }
+    await assert.rejects(executeForwardSchema19(forwardDirectory), /already_reserved/);
+    await assert.rejects(
+      reserveForwardSchema19({
+        directory: join(directory, 'repeat19'),
+        ownerConnectionString,
+        expectedDatabase,
+        expectedOwner,
+      }),
+      /unexpected_migrations/,
+    );
   } catch (error) {
     failure = error;
   } finally {
@@ -183,6 +259,7 @@ test('frozen schema operator provisions exact migrations and restricted roles on
       () => admin.end(),
       () => rm(directory, { recursive: true, force: true }),
       () => rm(staging, { recursive: true, force: true }),
+      () => rm(compatibility.directory, { recursive: true, force: true }),
     ]) {
       try {
         await close();
@@ -204,34 +281,58 @@ test('frozen schema operator provisions exact migrations and restricted roles on
 test('operator CLI never prints private endpoint or credentials on failure', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'insignia-private-schema-cli-'));
   try {
-    const child = spawn(
-      process.execPath,
-      [fileURLToPath(new URL('./schema-provision.mjs', import.meta.url)), 'reserve'],
-      { stdio: ['pipe', 'pipe', 'pipe'] },
-    );
-    let stdout = '',
-      stderr = '';
-    child.stdout.on('data', (x) => {
-      stdout += x;
-    });
-    child.stderr.on('data', (x) => {
-      stderr += x;
-    });
-    const closed = new Promise((resolve, reject) => {
-      child.once('close', resolve);
-      child.once('error', reject);
-    });
-    child.stdin.end(
-      JSON.stringify({
+    for (const operator of ['schema-provision.mjs', 'schema-forward19.mjs']) {
+      const child = spawn(process.execPath, [fileURLToPath(new URL(`./${operator}`, import.meta.url)), 'reserve'], {
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+      let stdout = '',
+        stderr = '';
+      child.stdout.on('data', (x) => {
+        stdout += x;
+      });
+      child.stderr.on('data', (x) => {
+        stderr += x;
+      });
+      const closed = new Promise((resolve, reject) => {
+        child.once('close', resolve);
+        child.once('error', reject);
+      });
+      child.stdin.end(
+        JSON.stringify({
+          directory,
+          ownerConnectionString: 'postgres://synthetic:sensitive_synthetic_password@127.0.0.1:1/unreachable',
+          expectedDatabase: 'unreachable',
+          expectedOwner: 'synthetic',
+        }),
+      );
+      assert.equal(await closed, 1);
+      assert.equal(stdout, '');
+      assert.equal(
+        stderr,
+        operator === 'schema-provision.mjs'
+          ? 'schema_operator_failed_private_receipts_required\n'
+          : 'forward19_operator_failed_private_receipts_required\n',
+      );
+    }
+  } finally {
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test('historical operator refuses current nineteen-migration source before database access', async () => {
+  const { reserveSchemaProvision } = await import('./schema-provision.mjs');
+  const directory = await mkdtemp(join(tmpdir(), 'insignia-schema19-negative-'));
+  try {
+    await assert.rejects(
+      reserveSchemaProvision({
         directory,
-        ownerConnectionString: 'postgres://synthetic:sensitive_synthetic_password@127.0.0.1:1/unreachable',
+        ownerConnectionString: 'postgres://synthetic@127.0.0.1:1/unreachable',
         expectedDatabase: 'unreachable',
         expectedOwner: 'synthetic',
       }),
+      /unexpected_source_migrations/,
     );
-    assert.equal(await closed, 1);
-    assert.equal(stdout, '');
-    assert.equal(stderr, 'schema_operator_failed_private_receipts_required\n');
+    assert.deepEqual(await readdir(directory), []);
   } finally {
     await rm(directory, { recursive: true, force: true });
   }
