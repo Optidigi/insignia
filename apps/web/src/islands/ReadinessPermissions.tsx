@@ -88,7 +88,8 @@ export default function ReadinessPermissions({ inspect }: { inspect: () => Promi
     }
   }
   return (
-    <section aria-label="Publication readiness">
+    <s-section heading="Publication readiness">
+      <p class="admin-description">Check the permissions and current setup needed for publication.</p>
       <s-button disabled={busy} onClick={() => void check()}>
         Check readiness
       </s-button>
@@ -98,6 +99,6 @@ export default function ReadinessPermissions({ inspect }: { inspect: () => Promi
         </s-button>
       )}
       {status && <p role="status">{status}</p>}
-    </section>
+    </s-section>
   );
 }

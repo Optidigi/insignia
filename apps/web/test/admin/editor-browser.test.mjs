@@ -14,6 +14,95 @@ const png =
   'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
 const id = 'gid://shopify/Product/111';
 const variant = 'gid://shopify/ProductVariant/11';
+
+test('a failed signing status read reports unavailable without implying a setup write', {
+  timeout: 20000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-signing-status' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+    await page.route('**/api/admin/products?*', (route) => route.fulfill({ json: { products: [], nextCursor: null } }));
+    const methods = [];
+    await page.route('**/api/admin/signing', (route) => {
+      methods.push(route.request().method());
+      return route.fulfill({ status: 503, json: { error: 'Signing setup unavailable' } });
+    });
+    await page.goto(server.base + '/admin/products');
+    await page.getByRole('button', { name: 'Check signing setup', exact: true }).click();
+    await page
+      .getByText('Signing setup status is unavailable. This check did not start setup.', { exact: true })
+      .waitFor({ timeout: 3000 });
+    assert.deepEqual(methods, ['GET']);
+    assert.equal(await page.getByText(/Signing setup result is uncertain/).count(), 0);
+    assert.equal(await page.getByRole('button', { name: 'Set up signing', exact: true }).count(), 0);
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('an unresolved signing setup write remains uncertain and is never retried', { timeout: 20000 }, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-signing-write' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+    await page.route('**/api/admin/products?*', (route) => route.fulfill({ json: { products: [], nextCursor: null } }));
+    const methods = [];
+    await page.route('**/api/admin/signing', (route) => {
+      methods.push(route.request().method());
+      if (methods.length === 1)
+        return route.fulfill({
+          json: {
+            version: 'm5-signing-owner-action-v1',
+            state: 'READY',
+            actionAvailable: true,
+            retryAuthorized: false,
+            quoteIssuanceAuthorized: false,
+          },
+        });
+      return route.fulfill({ status: 503, json: { error: 'Signing setup unavailable' } });
+    });
+    await page.goto(server.base + '/admin/products');
+    await page.getByRole('button', { name: 'Check signing setup', exact: true }).click();
+    await page.getByRole('button', { name: 'Set up signing', exact: true }).click();
+    await page
+      .getByText('Signing setup result is uncertain. Contact support before trying again.', { exact: true })
+      .waitFor();
+    assert.deepEqual(methods, ['GET', 'POST', 'GET']);
+    assert.equal(await page.getByRole('button', { name: 'Set up signing', exact: true }).count(), 0);
+    const recoveryResponse = page.waitForResponse((response) => response.url().endsWith('/api/admin/signing'));
+    await page.getByRole('button', { name: 'Check status', exact: true }).click();
+    await recoveryResponse;
+    assert.deepEqual(methods, ['GET', 'POST', 'GET', 'GET']);
+    assert.equal(await page.getByText(/This check did not start setup/).count(), 0);
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
 const rect = { centerX: 0.5, centerY: 0.5, width: 0.3, height: 0.3 };
 function solidPng(width, height, color) {
   const chunk = (name, data) => {
@@ -2021,6 +2110,11 @@ test('readiness permissions require an explicit gesture and refresh server ident
   const server = await startServer();
   let browser;
   try {
+    assert.equal(
+      (await fetch(server.base + '/api/admin/readiness')).status,
+      503,
+      'The real Astro readiness route exists and fails closed without runtime services',
+    );
     browser = await chromium.launch({ headless: true });
     const page = await browser.newPage();
     await page.addInitScript(() => {
@@ -2055,7 +2149,7 @@ test('readiness permissions require an explicit gesture and refresh server ident
     );
     await page.route('**/api/admin/products?*', (route) => route.fulfill({ json: { products: [], nextCursor: null } }));
     const readinessTokens = [];
-    await page.route('**/api/admin/products/readiness', (route) => {
+    await page.route('**/api/admin/readiness', (route) => {
       readinessTokens.push(route.request().headers().authorization);
       assert.equal(route.request().method(), 'GET');
       assert.equal(route.request().headers().cookie, undefined);
@@ -2074,7 +2168,7 @@ test('readiness permissions require an explicit gesture and refresh server ident
     await page.getByRole('button', { name: 'Allow readiness checks', exact: true }).click();
     await page
       .getByText('Readiness checked. Publication still requires current eligibility.', { exact: true })
-      .waitFor();
+      .waitFor({ timeout: 3000 });
     assert.deepEqual(await page.evaluate(() => window.scopeRequests), [['read_cart_transforms', 'read_validations']]);
     assert.deepEqual(readinessTokens, ['Bearer synthetic-ready-' + (previousTokenCount + 1)]);
   } finally {
@@ -2189,7 +2283,7 @@ test('readiness permission decline, failure and existing grants never broaden or
         }),
       );
       const readinessTokens = [];
-      await page.route('**/api/admin/products/readiness', (route) => {
+      await page.route('**/api/admin/readiness', (route) => {
         readinessTokens.push(route.request().headers().authorization);
         return route.fulfill({
           status: scenario.serverStatus ?? 200,
@@ -2234,6 +2328,150 @@ test('readiness permission decline, failure and existing grants never broaden or
       }
       await page.close();
     }
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('both admin pages admit the pinned Polaris CDN font without broadening other CSP sources', {
+  timeout: 20000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  assert.equal(createHash('sha256').update(source).digest('hex'), polarisSha);
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    for (const path of ['/admin/products', '/admin/products/111/config']) {
+      const page = await browser.newPage();
+      await page.addInitScript(() => {
+        window.shopify = { idToken: async () => 'synthetic-font-token' };
+      });
+      await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+      await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+        route.fulfill({ body: '', contentType: 'text/javascript' }),
+      );
+      let fontRequests = 0;
+      await page.route('https://cdn.shopify.com/static/fonts/**', (route) => {
+        fontRequests++;
+        return route.fulfill({ body: '', contentType: 'font/woff2' });
+      });
+      await page.route('**/api/admin/products?*', (route) =>
+        route.fulfill({ json: { products: [], nextCursor: null } }),
+      );
+      await page.route('**/api/admin/products/111/config', (route) => route.fulfill({ json: response(draft()) }));
+      const document = await page.goto(server.base + path);
+      const directives = Object.fromEntries(
+        document
+          .headers()
+          ['content-security-policy'].split(';')
+          .map((part) => part.trim().split(/\s+/))
+          .filter(([name]) => name)
+          .map(([name, ...values]) => [name, values]),
+      );
+      assert.deepEqual(directives['font-src'], ['https://cdn.shopify.com']);
+      assert.deepEqual(directives['connect-src'], ["'self'"]);
+      assert.deepEqual(directives['frame-ancestors'], ['https://admin.shopify.com', 'https://*.myshopify.com']);
+      assert.ok(!directives['script-src'].some((value) => value.includes('cloudflare')));
+      await page.getByRole('button', { name: 'Check signing setup', exact: true }).waitFor();
+      await page.evaluate(() => document.fonts.ready);
+      assert.ok(fontRequests > 0, 'Polaris font request reaches the CDN boundary instead of being blocked by CSP');
+      await page.close();
+    }
+  } finally {
+    await browser?.close();
+    server.child.kill('SIGTERM');
+    await server.exited;
+  }
+});
+
+test('product search has a usable responsive control, distinct catalog cards and status without technical IDs', {
+  timeout: 20000,
+}, async () => {
+  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
+  assert.equal(createHash('sha256').update(source).digest('hex'), polarisSha);
+  const server = await startServer();
+  let browser;
+  try {
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.addInitScript(() => {
+      window.shopify = { idToken: async () => 'synthetic-picker-token' };
+    });
+    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
+    await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
+    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
+      route.fulfill({ body: '', contentType: 'text/javascript' }),
+    );
+    const queries = [];
+    await page.route('**/api/admin/products?*', (route) => {
+      const request = route.request();
+      assert.equal(request.method(), 'GET');
+      assert.equal(request.headers().cookie, undefined);
+      assert.equal(request.headers().authorization, 'Bearer synthetic-picker-token');
+      const query = new URL(request.url()).searchParams.get('q');
+      queries.push(query);
+      return route.fulfill({
+        json: {
+          products:
+            query === 'absent'
+              ? []
+              : [
+                  {
+                    id,
+                    title: 'Historical archived shirt with a long catalog title',
+                    status: 'ARCHIVED',
+                    imageUrl: null,
+                    variants: [{ id: variant, title: 'Blue / Large' }],
+                  },
+                ],
+          nextCursor: null,
+        },
+      });
+    });
+    await page.goto(server.base + '/admin/products');
+    await page.getByRole('heading', { name: 'Historical archived shirt with a long catalog title' }).waitFor();
+    const search = page.getByRole('searchbox', { name: 'Search products', exact: true });
+    assert.ok(await search.isVisible());
+    await search.focus();
+    assert.ok(await search.evaluate((element) => element.matches(':focus')));
+    const card = page.getByRole('article');
+    assert.ok(
+      await card.evaluate((element) => parseFloat(getComputedStyle(element).borderTopWidth) > 0),
+      'Catalog entries need a visible card boundary',
+    );
+    await card.getByText('Archived', { exact: true }).waitFor();
+    assert.equal(await card.getByText('Blue / Large', { exact: true }).count(), 1);
+    assert.equal(await page.getByText(/gid:\/\/shopify\//).count(), 0);
+    assert.equal(
+      await card.getByRole('link', { name: 'Configure product', exact: true }).getAttribute('href'),
+      '/admin/products/111/config',
+    );
+    await search.fill('archived & blue');
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByRole('heading', { name: 'Historical archived shirt with a long catalog title' }).waitFor();
+    assert.deepEqual(queries, ['', 'archived & blue'], 'Typing does not introduce extra requests');
+    for (const width of [1280, 390, 320]) {
+      await page.setViewportSize({ width, height: 900 });
+      if (process.env.M5_CAPTURE_BROWSER === '1')
+        await page.screenshot({ path: `/tmp/m5-admin-picker-${width}.png`, fullPage: true });
+      assert.ok(
+        await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+        `Picker must fit a ${width}px viewport`,
+      );
+      const cardBox = await card.boundingBox();
+      assert.ok(cardBox && cardBox.x >= 0 && cardBox.x + cardBox.width <= width);
+      const configure = card.getByRole('link', { name: 'Configure product', exact: true });
+      await configure.scrollIntoViewIfNeeded();
+      assert.ok(await configure.isVisible());
+    }
+    await search.fill('absent');
+    await page.getByRole('button', { name: 'Search', exact: true }).click();
+    await page.getByText('No products found.', { exact: true }).waitFor();
+    assert.equal(await page.getByRole('article').count(), 0);
+    assert.deepEqual(queries, ['', 'archived & blue', 'absent']);
   } finally {
     await browser?.close();
     server.child.kill('SIGTERM');
