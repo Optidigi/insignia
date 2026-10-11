@@ -63,13 +63,18 @@ export type AdminInstallationRead = {
 };
 const shopDomain = /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/;
 const onlineExchangeSignal = new AsyncLocalStorage<AbortSignal>();
+const onlineExchangeTransport = new AsyncLocalStorage<typeof fetch>();
 /** Preserve the SDK's fetch implementation, adding the request's abort signal only inside token exchange. */
 export function deadlineAwareOnlineFetch(baseFetch: typeof fetch): typeof fetch {
-  return (url, options) => baseFetch(url, { ...options, signal: onlineExchangeSignal.getStore() ?? options?.signal });
+  return (url, options) =>
+    (onlineExchangeTransport.getStore() ?? baseFetch)(url, {
+      ...options,
+      signal: onlineExchangeSignal.getStore() ?? options?.signal,
+    });
 }
 const nodeSdkFetch = abstractFetch;
 setAbstractFetchFunc(deadlineAwareOnlineFetch(nodeSdkFetch));
-const installationQuery = `query M5001StaffInstallation {
+export const ADMIN_STAFF_INSTALLATION_QUERY = `query M5001StaffInstallation {
   shop { id myshopifyDomain ianaTimezone }
   currentAppInstallation { id accessScopes { handle } }
 }`;
@@ -165,17 +170,19 @@ export function createAdminOnlineIdentity(input: {
       try {
         session = await withAdminDeadline(
           async (signal) =>
-            onlineExchangeSignal.run(signal, async () =>
-              input.exchangeOnlineImpl
-                ? input.exchangeOnlineImpl(token, identity)
-                : (
-                    await api.auth.tokenExchange({
-                      shop: identity.shop,
-                      sessionToken: token,
-                      requestedTokenType: RequestedTokenType.OnlineAccessToken,
-                    })
-                  ).session,
-            ),
+            onlineExchangeSignal.run(signal, async () => {
+              const exchange = async () =>
+                input.exchangeOnlineImpl
+                  ? input.exchangeOnlineImpl(token, identity)
+                  : (
+                      await api.auth.tokenExchange({
+                        shop: identity.shop,
+                        sessionToken: token,
+                        requestedTokenType: RequestedTokenType.OnlineAccessToken,
+                      })
+                    ).session;
+              return input.fetchImpl ? onlineExchangeTransport.run(input.fetchImpl, exchange) : exchange();
+            }),
           'Online token exchange',
         );
       } catch (error) {
@@ -211,7 +218,7 @@ export function createAdminOnlineIdentity(input: {
           const response = await (input.fetchImpl ?? fetch)(`https://${grant.shop}/admin/api/2026-07/graphql.json`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'X-Shopify-Access-Token': grant.accessToken },
-            body: JSON.stringify({ query: installationQuery }),
+            body: JSON.stringify({ query: ADMIN_STAFF_INSTALLATION_QUERY }),
             signal,
           });
           if (!response.ok) throw new Error('Installation read denied');
