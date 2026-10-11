@@ -1,0 +1,61 @@
+{
+  "status": "BROWSER_OVERLAP_TIMING_CORRECTED",
+  "failedCandidate": "ac13cc69d28bb2c213de2a9a90898212a02fb66c",
+  "failedWorkflow": {
+    "id": 38154442155,
+    "attempt": 1,
+    "conclusion": "failure",
+    "failure": "concurrent editor refreshes expected1identity request, observed2"
+  },
+  "cause": "The250ms mock can settle before host-triggered refreshes; the original test did not guarantee overlap.",
+  "localNegativeProbe": {
+    "hostDelayMs": 350,
+    "exitCode": 1,
+    "observedIdentityRequests": 2,
+    "expectedIdentityRequests": 1
+  },
+  "correction": "Explicit first-token release after both visibility refreshes; zero HTTP reads asserted while identity is pending. Original one-token and three-read assertions remain.",
+  "focusedGreen": {
+    "pass": 1,
+    "fail": 0,
+    "skip": 0
+  },
+  "same350msHostDelayWithExplicitGate": {
+    "pass": 1,
+    "fail": 0,
+    "skip": 0
+  },
+  "fullBrowserGreen": {
+    "tests": 29,
+    "pass": 29,
+    "fail": 0,
+    "skip": 0,
+    "durationMs": 55921.585217
+  },
+  "productionSourceBuildProviderInputs": "UNCHANGED",
+  "sameHeadRerun": false,
+  "qualificationLogsPrivate": [
+    {
+      "path": "m5-internal-readiness-local/pr84-foundation-attempt1-failed.log",
+      "sha256": "a06ee40dc2fb187bf2054f0c58b36ab75d8bb3f10fca5b19af46b0b343ddef8b"
+    },
+    {
+      "path": "m5-internal-readiness-local/pr84-token-overlap-red.log",
+      "sha256": "745a89192a4c7d1a84527d9ca35fb400a12687b801eb6c81dad39c2f68f7bfcf"
+    },
+    {
+      "path": "m5-internal-readiness-local/pr84-token-overlap-green.log",
+      "sha256": "a2523af436dc6f110bd3438a5d38b71e0ab182fe4568bf5bf8074c9aa554d037"
+    },
+    {
+      "path": "m5-internal-readiness-local/pr84-token-overlap-delayed-green.log",
+      "sha256": "090e4b7058d871f4d713ee2f91f80813f2f65e13709e1142a280044add0cde7b"
+    },
+    {
+      "path": "m5-internal-readiness-local/pr84-token-overlap-full-browser-green.log",
+      "sha256": "04978651ffb0ab201bb69c85d385da031f2ee51f948ca4259cb11a7721950786"
+    }
+  ],
+  "testNonblankAdded": 6,
+  "netTestNonblankRemovedSinceBase": 214
+}
