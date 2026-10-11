@@ -2,29 +2,17 @@
   "classification": "LOCAL_SOURCE_REGRESSION_PASS_NOT_NATIVE_ACCEPTANCE",
   "steps": [
     {
-      "command": [
-        "corepack",
-        "pnpm",
-        "db:migrate"
-      ],
+      "command": ["corepack", "pnpm", "db:migrate"],
       "exitCode": 0,
       "seconds": 0.3
     },
     {
-      "command": [
-        "corepack",
-        "pnpm",
-        "check"
-      ],
+      "command": ["corepack", "pnpm", "check"],
       "exitCode": 0,
       "seconds": 182.4
     },
     {
-      "command": [
-        "corepack",
-        "pnpm",
-        "check:database"
-      ],
+      "command": ["corepack", "pnpm", "check:database"],
       "exitCode": 0,
       "seconds": 32.99
     },
@@ -41,20 +29,12 @@
       "seconds": 1.27
     },
     {
-      "command": [
-        "corepack",
-        "pnpm",
-        "test:m5-stress"
-      ],
+      "command": ["corepack", "pnpm", "test:m5-stress"],
       "exitCode": 0,
       "seconds": 94.09
     },
     {
-      "command": [
-        "corepack",
-        "pnpm",
-        "test:m5-renderer-control"
-      ],
+      "command": ["corepack", "pnpm", "test:m5-renderer-control"],
       "exitCode": 0,
       "seconds": 6.67
     }

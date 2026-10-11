@@ -89,10 +89,7 @@
     "backendIdentityIndependentlyExposed": false,
     "readOnly": "instruction-enforced"
   },
-  "operatorReviews": [
-    "Spec CLEAR",
-    "Standards/security CLEAR"
-  ],
+  "operatorReviews": ["Spec CLEAR", "Standards/security CLEAR"],
   "operatorFreezeSha256": "7517d8578559cae42a37b0321ab7a13428addc53d596610f3ff9c9be0820f068",
   "originalBoundaryControls": {
     "passed": 25,
