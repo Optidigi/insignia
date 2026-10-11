@@ -23,6 +23,8 @@ M4 supplies real pricing/authorization/entitlement ports, signer/key/Function re
 
 ## Narrow finish path
 
+This is the research snapshot's sequence. Execute the subsequently updated [canonical M5 finish plan](M5-FINISH-PLAN.md), which consolidates deployment and includes the owner's inline/TDD/test-footprint conventions.
+
 First reconcile the compact [acceptance index](../../milestone-progress.json) with current state and current receipts. Its integrated commit still names `b5594f4…`; runtime/owner-input entries predate the current deployment and later authority. Preserve historical receipts, update current facts and remaining dependencies, and distinguish owner permission from native qualification. This makes continuation start from the acceptance map rather than stale blockers.
 
 1. Integrate the already reviewed/CI-qualified PR82 candidate after ordinary exact-ref/check revalidation, then deploy its immutable build inside existing allocation; record source/build identity and owner confirmation of the corrected presentation/status routes. Any new code correction, including removal of signing setup, requires fresh completed-change reviews and new exact-head CI before integration/deployment. Complete when the final corrections are integrated and their native effect is observed.
