@@ -4,8 +4,6 @@ on:
   pull_request:
     paths:
       - "spikes/m0-014/**"
-      - "docs/architecture/**"
-      - "docs/delivery/**"
       - "spikes/m0-007/scripts/check-history.py"
       - "AGENTS.md"
       - ".github/workflows/m0-014-public-app-checkout.yml"

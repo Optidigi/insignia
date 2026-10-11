@@ -4,8 +4,8 @@
   "status": "IN_PROGRESS",
   "authority": "docs/delivery/authority/milestone-autonomy-2026-10-09.md",
   "entryCommit": "f8fff36fca749c6b2b6666550e48c7e347b6d65f",
-  "currentIntegratedCommit": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4",
-  "currentTree": "ea91f47cc01480b8a10962a0778fce64b1f1003d",
+  "currentIntegratedCommit": "0bd6ab30bdd60dbd0d3feb85b058509d7a984970",
+  "currentTree": "cc9785ebc24c33f79377e3ae8b3999981015b349",
   "acceptanceRows": [
     {
       "id": "M5_CONFIG_PREVIEW",
@@ -19,9 +19,9 @@
       "id": "G7_AUTH",
       "requirement": "Cold/deep/reload/mobile/cookie/expired/staff/shop-install/private-fragment/CSRF",
       "plan": "implementation-plan \u00a77.1, \u00a714.2 G7, \u00a714.2.1 G7",
-      "evidence": "M5-018 controls, M5-023-G7-MATRIX.md",
-      "result": "NATIVE_BLOCKED",
-      "dependency": "Safe install/uninstall and current deploy/auth/grants"
+      "evidence": "evidence/m5-admin-presentation-readiness/native-receipt-index.json",
+      "result": "OWNER_SEARCH_AUTH_BOOTSTRAP_CONFIRMED_REMAINING_NATIVE_G7_NOT_RUN",
+      "dependency": "New reviewed build native navigation/identity/permission matrix"
     },
     {
       "id": "G7_EDITOR",
@@ -43,9 +43,9 @@
       "id": "RUNTIME_READINESS",
       "requirement": "Actual worker/queue/schema roles/immutable image/process isolation/secrets/routes/rollback",
       "plan": "implementation-plan \u00a710.3/11, M5-023/024",
-      "evidence": "M5-024 portable controls and stopped M5-023 host evidence; PR69 disposable CI image/OS startup/SIGTERM/restart/cleanup PASS, production/native topology NOT_RUN",
-      "result": "PARTIAL_NATIVE_NOT_RUN",
-      "dependency": "Named topology and owner-authorized host operations"
+      "evidence": "evidence/m5-runtime-session-diagnosis/native-checkpoint.json; evidence/m5-admin-presentation-readiness/native-receipt-index.json",
+      "result": "NATIVE_RUNTIME_SCHEMA20_QUEUE43_DEPLOYED_AUTHENTICATED_PUBLICATION_PREMISES_PENDING",
+      "dependency": "Latest reviewed web deployment; actual Function/signing/commercial readiness"
     },
     {
       "id": "M5_ACTIVATION",
@@ -128,15 +128,17 @@
     {
       "pr": 73,
       "receipt": "evidence/m5-commercial-owner-decision/pr73-merge-receipt.json"
+    },
+    {
+      "pr": 82,
+      "receipt": "evidence/m5-internal-readiness/pr82-merge-receipt.json"
     }
   ],
   "openFindings": [
-    "Independent genuine-uninstall/registration-gap/privacy authority BLOCKED; historical M5-025 RED preserved and new strict local safety GREEN",
-    "Shop-specific native inventory complete/empty and final boundary PASS; app-specific/compliance destinations and all downstream effects/privacy unqualified",
-    "Worker/image/queue/runtime native prerequisites not qualified",
-    "28 native G7 criteria blocked",
-    "Real merchant configure/preview/save/publication/activation NOT_RUN",
-    "74 local controls PASS only; native callback/host/cgroup/timer/FD/DNS/TLS/copy/privacy unqualified"
+    "Real configure/preview/save/publish/v3 committed effective revision NOT_RUN",
+    "Remaining native G7 and independent uninstall/privacy fulfillment unfinished",
+    "Function read grants/current ownership, strict30-second trusted release, signing/public-config and commercial readiness unqualified for publication",
+    "Maintained test share53.74%;50% ceiling not yet met"
   ],
   "resourceGrants": [
     {
@@ -185,26 +187,24 @@
     }
   ],
   "ownerInputs": [
-    "Other processor/queue/privacy ownership locations still unidentified",
-    "Any later provisioning/deployment/mutation requires exact separate owner resource envelope",
-    "Owner-approved one paid all-released-feature plan: USD49.99/30days,100 included qualifying paid orders,USD0.10 additional,14day live trial subscription+usage waived. Exact provider configuration and a genuine development feature mapping remain due; no bypass",
-    "Owner conditionally allocates stitchs-vat-verification-20261004; native identity/apps/data/destination/privacy gate unqualified; no test started"
+    "Normal owner browser needed for native embedded acceptance; shared browser currently Shopify login",
+    "No missing commercial decision: exact designated development contract mapping approved; native eligibility still requires provider facts",
+    "Separate uninstall resource stitchs-vat-verification-20261004.myshopify.com allocated; safety/effect gates remain"
   ],
-  "nextSafeAction": "Finish commercial/history correction and exact-head reviews/CI; consolidate smallest essential uninstall/privacy options and concrete commercial configuration resources; prioritize real merchant flow.",
+  "nextSafeAction": "Qualify typed internal readiness and reviewed cleanup; integrate/deploy canonical web; complete actual prefixture readiness, one merchant flow and allocated-store lifecycle/privacy; close test budget and cumulative review",
   "nextPrincipalCheckpoint": "M5 complete",
   "principalAcceptance": null,
   "nextMilestoneStarted": false,
   "entryTree": "14723335ceaca79c520ead2fef84c3cb15879c1b",
   "parallelLocalWork": {
-    "slice": "Fixed private host launcher/TLS/cleanup process controls and bounded missing-host-facts collector",
-    "status": "Offline host artifacts frozen; no further experimental expansion or native execution",
-    "nativeAuthority": "Permanent scoped read-only only; no host writes or Shopify mutations"
+    "status": "Inline root implementation; independent reviewers only; experimental callback expansion retired"
   },
   "activeCandidate": {
-    "scope": "Owner single-plan decision and optional exact provider Shop policy restriction",
-    "base": "b5594f4b92216194a1c580dffa1e7f06f93a4ad4",
+    "scope": "Internal typed signing preparation without merchant setup; qualification duplication/archival retirement",
+    "base": "0bd6ab30bdd60dbd0d3feb85b058509d7a984970",
     "reviews": "PENDING",
-    "nativeAuthority": "NO_MUTATIONS / NOT_RUN"
+    "deployed": false,
+    "milestoneAcceptance": false
   },
   "boundedInventoryTooling": {
     "pr": 60,
@@ -253,7 +253,10 @@
   "nativeManagementCustom": {
     "schemaR2": "STOP_CLI_OR_LOCAL_UNCLASSIFIED",
     "versionR6": "STOP_NONWEB_FIELDS_UNQUALIFIED",
-    "methodReservations": [1, 3],
+    "methodReservations": [
+      1,
+      3
+    ],
     "sealed": true,
     "retries": 0,
     "receipt": "evidence/m5-management-reads/custom-management-sealed-receipt.json",
@@ -330,14 +333,16 @@
   "commercialDecision": {
     "authority": "authority/commercial-single-plan-2026-10-10.md",
     "ownerAttestation": "evidence/m5-commercial-owner-decision/owner-terms.json",
-    "runtimeConfiguration": "NOT_CONFIGURED",
-    "developmentMappingApproved": false,
-    "providerBillingMutations": 0
+    "runtimeConfiguration": "OWNER_APPROVED_EXACT_SHOP_POLICY; ACTUAL_AUTHENTICATED_PUBLICATION_ELIGIBILITY_NOT_YET_QUALIFIED",
+    "developmentMappingApproved": true,
+    "providerBillingMutations": 0,
+    "developmentAuthority": "authority/m5-development-contract-recognition-2026-10-10.md"
   },
   "scopeDiscipline": {
     "evidence": "evidence/m5-commercial-owner-decision/owner-v1-prioritization.json",
     "firstVersion": "Solid normal lifecycle/admin flow",
     "experimentalHostExpansion": "PAUSED",
     "existingSecurityContracts": "UNCHANGED"
-  }
+  },
+  "priorProgressSnapshot": "history/milestone-progress-before-internal-readiness.json"
 }

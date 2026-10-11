@@ -4,15 +4,12 @@ on:
   pull_request:
     paths:
       - "spikes/m0-013/**"
-      - "docs/architecture/**"
-      - "docs/delivery/**"
       - "AGENTS.md"
       - ".github/workflows/m0-013-protocol-capacity.yml"
   push:
     branches: [main]
     paths:
       - "spikes/m0-013/**"
-      - "docs/architecture/**"
       - ".github/workflows/m0-013-protocol-capacity.yml"
 
 permissions:

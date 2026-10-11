@@ -70,7 +70,7 @@ function invalidDraft(error: unknown): Outcome {
         : [{ path: 'configuration', message: 'Configuration choices, references or labels are invalid.' }],
   };
 }
-function validatedDraft(value: unknown, actor: Actor, productId: string): MerchantDraft {
+function validatedDraft(value: unknown, actor: Actor, productId: string): MerchantDraft & { geometry: GeometryV1 } {
   const parsed = MerchantDraftSchema.safeParse(value);
   if (!parsed.success) {
     const issue = parsed.error.issues[0];
@@ -237,6 +237,9 @@ export function createMerchantConfigService(input: {
     shopCurrency(actor: Actor): Promise<string>;
   };
   eligibility(actor: Actor, draft: MerchantDraft): Promise<{ allowed: boolean; reason: string | null }>;
+  /** Internal preparation on an eligible new publish command only. Reads, saves
+   * and durable-request replay must never initialize technical resources. */
+  preparePublication?(actor: Actor): Promise<{ ready: boolean; reason: string | null }>;
   publication(actor: Actor): Publication;
   activation?(actor: Actor): { advance(identity: ActivationIdentity): Promise<ActivationResult> };
 }) {
@@ -526,12 +529,14 @@ export function createMerchantConfigService(input: {
           before.draftVersion !== data.draftVersion
         )
           return { kind: 'conflict', message: 'Draft changed. Reload before publication.' };
-        let snapshot: MerchantDraft;
+        let snapshot: ReturnType<typeof validatedDraft>;
         try {
           snapshot = validatedDraft(before.draftValue, actor, productId);
         } catch (error) {
           return invalidDraft(error);
         }
+        if (snapshot.geometry.views.length === 0 || snapshot.placements.length === 0 || snapshot.methods.length === 0)
+          return { kind: 'invalid', message: 'At least one view, placement and method is required' };
         const shopCurrency = await input.catalog.shopCurrency(actor);
         if (snapshot.shopCurrency !== shopCurrency)
           return { kind: 'invalid', message: 'Shop currency changed. Reload and review the draft.' };
@@ -540,6 +545,11 @@ export function createMerchantConfigService(input: {
           .catch(() => ({ allowed: false, reason: 'Entitlement unavailable' }));
         if (!eligibility.allowed)
           return { kind: 'forbidden', message: eligibility.reason ?? 'Publication feature unavailable' };
+        if (input.preparePublication) {
+          const preparation = await input.preparePublication(actor);
+          if (!preparation.ready)
+            return { kind: 'forbidden', message: preparation.reason ?? 'Publication preparation unavailable' };
+        }
         const result = await executeCommand(commandTransactions(actor), core.commands, identity, async (tx) => {
           const config = await core.configs.getConfigForUpdate(tx, actor.tenantShopId, data.configId);
           if (

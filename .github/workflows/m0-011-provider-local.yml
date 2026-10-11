@@ -6,7 +6,6 @@ on:
       - "spikes/m0-011/**"
       - "docs/delivery/evidence/m0-011-provider-readiness.md"
       - "docs/delivery/review-packet-M0-011.md"
-      - "docs/delivery/state.md"
       - "docs/delivery/prompts/M0-011-live-billing-transport.md"
       - ".github/workflows/m0-011-provider-local.yml"
       - ".gitignore"

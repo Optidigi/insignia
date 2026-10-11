@@ -4,7 +4,6 @@ on:
   pull_request:
     paths:
       - "spikes/m0-010/**"
-      - "docs/delivery/state.md"
       - "docs/delivery/review-packet-M0-010.md"
       - ".github/workflows/m0-010-billing-local.yml"
   push:

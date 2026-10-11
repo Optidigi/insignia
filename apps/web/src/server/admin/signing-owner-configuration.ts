@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { closeSync, constants, fstatSync, openSync, readFileSync } from 'node:fs';
 import { loadCredentialKeys } from '../../../../worker/src/config.js';
-import type { SigningOwnerConfiguration } from './signing-owner-action.mjs';
+import type { SigningOwnerConfiguration } from './signing-owner-action.js';
 
 const PLAN_PATH = '/run/insignia/signing-owner-plan.json';
 const RUN_DIRECTORY = '/var/lib/insignia/signing-owner';

@@ -1,0 +1,113 @@
+{
+  "pr": 82,
+  "url": "https://github.com/Optidigi/insignia/pull/82",
+  "base": "b45d99a739f2e98fb01685944a37bab5d07413ef",
+  "effectiveMergeBase": "b45d99a739f2e98fb01685944a37bab5d07413ef",
+  "head": "68120cf6b508a31cb13efb753203b7999d8f8631",
+  "tree": "cc9785ebc24c33f79377e3ae8b3999981015b349",
+  "merge": "0bd6ab30bdd60dbd0d3feb85b058509d7a984970",
+  "orderedParents": [
+    "b45d99a739f2e98fb01685944a37bab5d07413ef",
+    "68120cf6b508a31cb13efb753203b7999d8f8631"
+  ],
+  "remoteMain": "0bd6ab30bdd60dbd0d3feb85b058509d7a984970",
+  "mergedAt": "2026-10-11T14:16:58Z",
+  "verifiedAt": "2026-10-11T14:17:00.828597+00:00",
+  "ci": [
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985354,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M0-011 local provider adapter boundary"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985325,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M0-012 real contract local prototype"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985326,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M0-008 local publication and architecture checks"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985321,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M0-009 embedded Astro local proof"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985317,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M0-010 local hybrid billing proof"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985360,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M0-007 policy and Function boundary checks"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985330,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M0-013 off-store protocol capacity"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985322,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M3-001 PostgreSQL durable core"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985353,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M0-014 local public-app candidate"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985361,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M3-002 local runtime and ingress"
+    },
+    {
+      "attempt": 1,
+      "conclusion": "success",
+      "databaseId": 38145985337,
+      "headSha": "68120cf6b508a31cb13efb753203b7999d8f8631",
+      "status": "completed",
+      "workflowName": "M1-001 foundation and boundaries"
+    }
+  ],
+  "reviews": {
+    "spec": "CLEAR",
+    "security": "CLEAR",
+    "manifest": "m5-pr82-final-reviews-r3/qualified-reviews.json"
+  },
+  "method": "normal merge without bypass",
+  "outcome": "LOCAL_SLICE_ACCEPTED_M5_G7_NOT_PASSED"
+}

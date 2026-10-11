@@ -15,9 +15,7 @@ const png =
 const id = 'gid://shopify/Product/111';
 const variant = 'gid://shopify/ProductVariant/11';
 
-test('a failed signing status read reports unavailable without implying a setup write', {
-  timeout: 20000,
-}, async () => {
+test('merchant product screens expose no technical signing setup or setup requests', { timeout: 20000 }, async () => {
   const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
   const server = await startServer();
   let browser;
@@ -33,70 +31,16 @@ test('a failed signing status read reports unavailable without implying a setup 
     );
     await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
     await page.route('**/api/admin/products?*', (route) => route.fulfill({ json: { products: [], nextCursor: null } }));
-    const methods = [];
+    const signingRequests = [];
     await page.route('**/api/admin/signing', (route) => {
-      methods.push(route.request().method());
-      return route.fulfill({ status: 503, json: { error: 'Signing setup unavailable' } });
+      signingRequests.push(route.request().method());
+      return route.fulfill({ status: 503 });
     });
     await page.goto(server.base + '/admin/products');
-    await page.getByRole('button', { name: 'Check signing setup', exact: true }).click();
-    await page
-      .getByText('Signing setup status is unavailable. This check did not start setup.', { exact: true })
-      .waitFor({ timeout: 3000 });
-    assert.deepEqual(methods, ['GET']);
-    assert.equal(await page.getByText(/Signing setup result is uncertain/).count(), 0);
+    await page.getByRole('button', { name: 'Check readiness', exact: true }).waitFor();
+    assert.equal(await page.getByRole('button', { name: 'Check signing setup', exact: true }).count(), 0);
     assert.equal(await page.getByRole('button', { name: 'Set up signing', exact: true }).count(), 0);
-  } finally {
-    await browser?.close();
-    server.child.kill('SIGTERM');
-    await server.exited;
-  }
-});
-
-test('an unresolved signing setup write remains uncertain and is never retried', { timeout: 20000 }, async () => {
-  const source = await readFile(new URL('../fixtures/polaris-1.1.snapshot', import.meta.url));
-  const server = await startServer();
-  let browser;
-  try {
-    browser = await chromium.launch({ headless: true });
-    const page = await browser.newPage();
-    await page.addInitScript(() => {
-      window.shopify = { idToken: async () => 'synthetic-signing-write' };
-    });
-    await page.route(polarisUrl, (route) => route.fulfill({ body: source, contentType: 'text/javascript' }));
-    await page.route('https://cdn.shopify.com/shopifycloud/app-bridge.js', (route) =>
-      route.fulfill({ body: '', contentType: 'text/javascript' }),
-    );
-    await page.route('https://cdn.shopify.com/static/fonts/**', (route) => route.fulfill({ body: '' }));
-    await page.route('**/api/admin/products?*', (route) => route.fulfill({ json: { products: [], nextCursor: null } }));
-    const methods = [];
-    await page.route('**/api/admin/signing', (route) => {
-      methods.push(route.request().method());
-      if (methods.length === 1)
-        return route.fulfill({
-          json: {
-            version: 'm5-signing-owner-action-v1',
-            state: 'READY',
-            actionAvailable: true,
-            retryAuthorized: false,
-            quoteIssuanceAuthorized: false,
-          },
-        });
-      return route.fulfill({ status: 503, json: { error: 'Signing setup unavailable' } });
-    });
-    await page.goto(server.base + '/admin/products');
-    await page.getByRole('button', { name: 'Check signing setup', exact: true }).click();
-    await page.getByRole('button', { name: 'Set up signing', exact: true }).click();
-    await page
-      .getByText('Signing setup result is uncertain. Contact support before trying again.', { exact: true })
-      .waitFor();
-    assert.deepEqual(methods, ['GET', 'POST', 'GET']);
-    assert.equal(await page.getByRole('button', { name: 'Set up signing', exact: true }).count(), 0);
-    const recoveryResponse = page.waitForResponse((response) => response.url().endsWith('/api/admin/signing'));
-    await page.getByRole('button', { name: 'Check status', exact: true }).click();
-    await recoveryResponse;
-    assert.deepEqual(methods, ['GET', 'POST', 'GET', 'GET']);
-    assert.equal(await page.getByText(/This check did not start setup/).count(), 0);
+    assert.deepEqual(signingRequests, []);
   } finally {
     await browser?.close();
     server.child.kill('SIGTERM');
@@ -2316,7 +2260,7 @@ test('readiness permission decline, failure and existing grants never broaden or
         await page.getByText(scenario.status, { exact: true }).waitFor();
       } else {
         assert.equal(await page.getByRole('heading', { name: 'Synthetic private catalog' }).count(), 1);
-        assert.equal(await page.getByRole('button', { name: 'Check signing setup', exact: true }).count(), 1);
+        assert.equal(await page.getByRole('button', { name: 'Check signing setup', exact: true }).count(), 0);
       }
       if (scenario.requests.length && !scenario.denied) {
         assert.equal(await page.getByRole('button', { name: 'Allow readiness checks', exact: true }).count(), 0);
@@ -2375,7 +2319,7 @@ test('both admin pages admit the pinned Polaris CDN font without broadening othe
       assert.deepEqual(directives['connect-src'], ["'self'"]);
       assert.deepEqual(directives['frame-ancestors'], ['https://admin.shopify.com', 'https://*.myshopify.com']);
       assert.ok(!directives['script-src'].some((value) => value.includes('cloudflare')));
-      await page.getByRole('button', { name: 'Check signing setup', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Check readiness', exact: true }).waitFor();
       await page.evaluate(() => document.fonts.ready);
       assert.ok(fontRequests > 0, 'Polaris font request reaches the CDN boundary instead of being blocked by CSP');
       await page.close();
