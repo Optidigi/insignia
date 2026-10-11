@@ -61,6 +61,19 @@ export const FUNCTION_OWNERSHIP_QUERY = `query InsigniaOwnedFunctions {
     pageInfo { hasNextPage }
   }
 }`;
+/** Fixed internal setup documents; no merchant-supplied handles or metafields. */
+export const FUNCTION_TRANSFORM_CREATE = `mutation InsigniaCreateOwnedTransform {
+  cartTransformCreate(functionHandle: "insignia-experimental-v2-transform", blockOnFailure: true) {
+    cartTransform { id functionId blockOnFailure }
+    userErrors { code }
+  }
+}`;
+export const FUNCTION_VALIDATION_CREATE = `mutation InsigniaCreateOwnedValidation {
+  validationCreate(validation: { functionHandle: "insignia-experimental-v2-validation", title: "Insignia", enable: true, blockOnFailure: true }) {
+    validation { id enabled blockOnFailure shopifyFunction { id handle appKey } }
+    userErrors { code }
+  }
+}`;
 const READ_SHOP = `query InsigniaReadPublicConfig {
   shop { id field: metafield(namespace: "$app", key: "insignia_public_config_v2") {
     owner { ... on Shop { id } } namespace key type value compareDigest
@@ -89,7 +102,13 @@ const SET = `mutation InsigniaSetMetafield($metafields: [MetafieldsSetInput!]!) 
 }`;
 
 export type PublicationAdminRequest = {
-  operation: 'read_shop' | 'read_product' | 'set' | 'function_ownership';
+  operation:
+    | 'read_shop'
+    | 'read_product'
+    | 'set'
+    | 'function_ownership'
+    | 'function_transform_create'
+    | 'function_validation_create';
   tenant: PublicationTenant;
   query: string;
   variables: Record<string, unknown>;
@@ -316,13 +335,25 @@ export function createPublicationAdminAdapter(config: { transport: PublicationAd
   };
 }
 
-const DOCUMENTS = new Set([READ_SHOP, READ_REGISTRATION, READ_POLICY, SET, FUNCTION_OWNERSHIP_QUERY]);
+const DOCUMENTS = new Set([
+  READ_SHOP,
+  READ_REGISTRATION,
+  READ_POLICY,
+  SET,
+  FUNCTION_OWNERSHIP_QUERY,
+  FUNCTION_TRANSFORM_CREATE,
+  FUNCTION_VALIDATION_CREATE,
+]);
 const MAX_RESPONSE_BYTES = 128 * 1024;
 function validWireVariables(request: PublicationAdminRequest): boolean {
   if (!request.tenant) return false;
   const variables = record(request.variables);
   if (!variables) return false;
-  if (request.operation === 'read_shop' || request.operation === 'function_ownership')
+  if (
+    ['read_shop', 'function_ownership', 'function_transform_create', 'function_validation_create'].includes(
+      request.operation,
+    )
+  )
     return Object.keys(variables).length === 0;
   if (request.operation === 'read_product')
     return Object.keys(variables).length === 1 && gid('Product', variables.productId);
@@ -383,10 +414,22 @@ export function createPublicationAdminHttpTransport(config: {
           request.query !== READ_POLICY) ||
         (request.operation === 'set' && request.query !== SET) ||
         (request.operation === 'function_ownership' && request.query !== FUNCTION_OWNERSHIP_QUERY) ||
-        !['read_shop', 'read_product', 'set', 'function_ownership'].includes(request.operation) ||
+        (request.operation === 'function_transform_create' && request.query !== FUNCTION_TRANSFORM_CREATE) ||
+        (request.operation === 'function_validation_create' && request.query !== FUNCTION_VALIDATION_CREATE) ||
+        ![
+          'read_shop',
+          'read_product',
+          'set',
+          'function_ownership',
+          'function_transform_create',
+          'function_validation_create',
+        ].includes(request.operation) ||
+        (['function_transform_create', 'function_validation_create'].includes(request.operation) &&
+          typeof beforeSend !== 'function') ||
         !validWireVariables(request)
       )
         fail('invalid_request');
+      const mutating = ['set', 'function_transform_create', 'function_validation_create'].includes(request.operation);
       const target = request.tenant;
       if (
         !target ||
@@ -402,7 +445,7 @@ export function createPublicationAdminHttpTransport(config: {
       let expired = false;
       let sent = false;
       const failureBeforeSend = () =>
-        request.operation === 'set' && !sent ? ('not_dispatched' as const) : ('network_or_timeout' as const);
+        mutating && !sent ? ('not_dispatched' as const) : ('network_or_timeout' as const);
       const deadline = new Promise<never>((_resolve, reject) => {
         timer = setTimeout(() => {
           expired = true;
@@ -427,7 +470,7 @@ export function createPublicationAdminHttpTransport(config: {
             if (credential.kind === 'missing') return fail('credential_missing');
             if (credential.kind === 'inactive') return fail('credential_inactive');
             if (credential.kind === 'reauth_required') return fail('reauth_required');
-            return fail(request.operation === 'set' ? 'not_dispatched' : 'provider_unavailable');
+            return fail(mutating ? 'not_dispatched' : 'provider_unavailable');
           }
           if (
             !/^[a-z0-9][a-z0-9-]{0,62}\.myshopify\.com$/.test(credential.shopDomain) ||
@@ -444,7 +487,7 @@ export function createPublicationAdminHttpTransport(config: {
           if (Buffer.byteLength(body, 'utf8') > 16 * 1024) fail('invalid_request');
           // All awaited preparation is complete. This callback never enters provider JSON.
           if (expired) return fail(failureBeforeSend());
-          if (request.operation === 'set' && beforeSend) {
+          if (mutating && beforeSend) {
             let approved = false;
             try {
               approved = beforeSend() === true;
