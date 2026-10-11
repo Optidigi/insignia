@@ -1,6 +1,6 @@
 # Insignia — milestone-autonomous delivery operating model
 
-Version 2.1 — 11 October 2026. Authority: [milestone autonomy](authority/milestone-autonomy-2026-10-09.md) and [owner delivery-conventions amendment](authority/pragmatic-delivery-2026-10-11.md). Replaces per-slice/per-PR external principal review for current and future work. Product and security contracts are unchanged.
+Version 2.2 — 11 October 2026. Authority: [milestone autonomy](authority/milestone-autonomy-2026-10-09.md) and [owner delivery-conventions amendment](authority/pragmatic-delivery-2026-10-11.md). Replaces per-slice/per-PR external principal review for current and future work. Product and security contracts are unchanged.
 
 ## 1. Ownership and review boundaries
 
@@ -39,7 +39,9 @@ The accountable orchestrator performs core analysis, implementation, tests and i
 
 Use the repository's inspected, pinned Matt Pocock skills: `writing-for-agents`, `tdd`, `diagnosing-bugs`, `code-review`, `handoff`, and `research` when its source has been inspected and made available. Read their support files. Use other relevant available skills and tools when they add value; do not indiscriminately install everything or introduce competing orchestration policy. Preserve provenance and licenses. A user-invoked skill such as handoff may need an explicit invocation or direct file read; do not assume automatic discovery.
 
-Verify actual local host capability, instruction loading, subagent execution and reviewer read-only enforcement. Prefer the existing verified high-reasoning reviewer setup; log actual model/effort, session, reviewed refs and sandbox. Comparable available tooling/model choices are implementation decisions and must be recorded truthfully. Never claim GPT-6.1-sol/high, independent review, network isolation or a successful test unless actually established. When native delegation cannot enforce the intended review boundary, use fresh restricted sessions. If no independent execution route exists, report the limitation; do not self-certify missing reviews.
+Use **GPT-6.1-sol/medium for the main orchestrator** and **GPT-6.1-sol/low for every subagent**, including independent reviewers and supporting research. This latest owner convention applies to current and future work and supersedes older high/medium reviewer requests. Configure the main thread and explicitly select low on every child launch; do not inherit the main agent's effort or silently reuse a child with a different setting. Reconfigure existing children before assigning new work, or launch fresh low-effort contexts. Keep prior execution records at their actual historical settings. A model or effort change requires a new owner instruction.
+
+Verify actual local host capability, instruction loading, subagent execution and reviewer read-only enforcement. Log actual model/effort, session, reviewed refs and sandbox; distinguish requested configuration from independently exposed execution identity. Never claim independent review, network isolation or a successful test unless actually established. When native delegation cannot enforce the intended review boundary, use fresh restricted sessions with the same owner-selected model/effort. If no independent execution route exists, report the limitation; do not self-certify missing reviews.
 
 Project-scoped nonprivileged tool/skill setup within the available environment is delegated. New paid services, elevated/global installation, external credentials and new infrastructure need owner authority. A missing optional plugin is not a project-wide blocker when an equivalent supported tool works.
 
