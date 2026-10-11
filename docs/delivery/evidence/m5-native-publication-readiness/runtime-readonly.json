@@ -1,0 +1,49 @@
+{
+  "capturedAt": "2026-10-11T18:08:17.021042+00:00",
+  "authStageCounts": {
+    "BEARER_MISSING": 1,
+    "ONLINE_EXCHANGE_SUCCEEDED": 5,
+    "INSTALLATION_PROVIDER_READ_SUCCEEDED": 5,
+    "INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED": 5,
+    "TENANT_RECONCILIATION_SUCCEEDED": 5,
+    "AUTHENTICATION_SUCCEEDED": 5
+  },
+  "database": {
+    "tenants": [
+      {
+        "shop_id": "db771bea-c585-4954-9f88-70771c9a0c89",
+        "shop_domain": "insignia-rewrite-dev.myshopify.com",
+        "shopify_shop_id": "105501393179",
+        "current_generation": "1",
+        "external_installation_id": "gid://shopify/AppInstallation/1054356963611",
+        "authorization_generation": "d79cc783-c5d4-4af9-881b-825129a74b1c",
+        "authorization_epoch": "0",
+        "active": true
+      }
+    ],
+    "credentialMetadata": [],
+    "signingKeys": [],
+    "readOnly": true
+  },
+  "providerRequests": 0,
+  "databaseWrites": 0,
+  "containers": {
+    "web": {
+      "id": "d8b35ef39603f129f0fe43bbc4e41e03a96cd042ee03b31cd391d6962796cf08",
+      "image": "sha256:c0eee3d0c2d52095861c44ea90e8849948abe56aa75ad0c6d1b18aa49be3bdf8",
+      "running": true
+    },
+    "worker": {
+      "id": "df35f508212cec3d0b4b4320ed0b5b1202244419681ab6f54d4905edcadd7a77",
+      "image": "sha256:aced4d509278137c8074848ad948ee67a97d88625955eabe064ade4fb669ddca",
+      "running": true
+    },
+    "database": {
+      "id": "a1a521b36a30dd97c6ece2e3cb79ba05edf963362bc3ce3941e5ffac53cee265",
+      "image": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+      "running": true
+    }
+  },
+  "rawMetadataSha256": "3259df67b653a4976a026bfa4416df9ce258eb417ceee2ff08b9f0650ca5760c",
+  "logScope": "Safe auth-stage counts from last500 web log lines; not full request or staff/session history"
+}

@@ -14,14 +14,23 @@ export type OwnedFunctionObjectIdentity = Readonly<{
   apiVersion: string;
   inputQuerySha256: string;
 }>;
+type NullableObjectIdentity = Readonly<
+  Omit<OwnedFunctionObjectIdentity, 'inputQuerySha256'> & { inputQuerySha256: string | null }
+>;
 export type OwnedFunctionObjectObservation = Readonly<{
   shopId: string;
   installationGeneration: string;
   appClientId: string;
   observedAt: string;
-  transform: OwnedFunctionObjectIdentity | null;
-  validation: OwnedFunctionObjectIdentity | null;
-}>;
+}> &
+  (
+    | Readonly<{ transform: OwnedFunctionObjectIdentity | null; validation: OwnedFunctionObjectIdentity | null }>
+    | Readonly<{
+        schemaVersion: 2;
+        transform: NullableObjectIdentity | null;
+        validation: NullableObjectIdentity | null;
+      }>
+  );
 export type FunctionOwnership = {
   transform: FunctionPresence;
   validation: FunctionPresence;
@@ -36,6 +45,8 @@ export type ExpectedFunctionOwnership = {
   appKey: string;
   transformInputQuerySha256: string;
   validationInputQuerySha256: string;
+  /** Native identity only; v2 release authority must be independently verified by the caller. */
+  observationVersion?: 2;
 };
 const record = (value: unknown): Record<string, unknown> | null =>
   value !== null && typeof value === 'object' && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
@@ -110,7 +121,7 @@ export function createFunctionOwnershipReconciler(config: {
       const validations = nodes(data.validations);
       if (!functions) return unknown;
       const owned = (handle: string) => functions.filter((item) => item.handle === handle);
-      const objectIdentity = (kind: 'transform' | 'validation'): OwnedFunctionObjectIdentity | null => {
+      const objectIdentity = (kind: 'transform' | 'validation'): NullableObjectIdentity | null => {
         const matches = owned(handles[kind]);
         const found = matches[0];
         if (
@@ -120,7 +131,7 @@ export function createFunctionOwnershipReconciler(config: {
           typeof found.id !== 'string' ||
           !found.id ||
           typeof found.apiVersion !== 'string' ||
-          typeof found.inputQuery !== 'string' ||
+          (typeof found.inputQuery !== 'string' && !(expected.observationVersion === 2 && found.inputQuery === null)) ||
           (found.apiType !== 'cart_transform' && found.apiType !== 'cart_checkout_validation')
         )
           return null;
@@ -129,17 +140,18 @@ export function createFunctionOwnershipReconciler(config: {
           handle: handles[kind],
           apiType: found.apiType,
           apiVersion: found.apiVersion,
-          inputQuerySha256: hash(found.inputQuery),
+          inputQuerySha256: typeof found.inputQuery === 'string' ? hash(found.inputQuery) : null,
         });
       };
       const observation = Object.freeze({
+        ...(expected.observationVersion === 2 ? { schemaVersion: 2 as const } : {}),
         shopId: tenant.shopId,
         installationGeneration: tenant.installationGeneration,
         appClientId: expected.appKey,
         observedAt: (config.clock ?? (() => new Date()))().toISOString(),
         transform: objectIdentity('transform'),
         validation: objectIdentity('validation'),
-      });
+      }) as OwnedFunctionObjectObservation;
       if (!transforms || !validations) return { ...unknown, observation };
       const status = (kind: 'transform' | 'validation'): FunctionPresence => {
         const matches = owned(handles[kind]);
@@ -150,18 +162,22 @@ export function createFunctionOwnershipReconciler(config: {
           found.appKey !== expected.appKey ||
           found.apiVersion !== '2026-07' ||
           typeof found.id !== 'string' ||
-          !found.id ||
-          typeof found.inputQuery !== 'string'
+          !found.id
         )
           return 'unknown';
         if (found.apiType !== (kind === 'transform' ? 'cart_transform' : 'cart_checkout_validation')) return 'drift';
-        const expectedHash =
-          kind === 'transform' ? expected.transformInputQuerySha256 : expected.validationInputQuerySha256;
-        if (hash(found.inputQuery) !== expectedHash) return 'drift';
         const deployments =
           kind === 'transform'
             ? transforms.filter((item) => item.functionId === found.id)
             : validations.filter((item) => record(item.shopifyFunction)?.id === found.id);
+        // Complete deployment absence is independently known even when the
+        // nullable legacy query cannot establish artifact identity. Never
+        // manufacture an observed query digest from the expected build.
+        if (typeof found.inputQuery !== 'string' && !(expected.observationVersion === 2 && found.inputQuery === null))
+          return deployments.length === 0 ? 'missing' : 'unknown';
+        const expectedHash =
+          kind === 'transform' ? expected.transformInputQuerySha256 : expected.validationInputQuerySha256;
+        if (typeof found.inputQuery === 'string' && hash(found.inputQuery) !== expectedHash) return 'drift';
         if (deployments.length > 1) return 'duplicate';
         const deployment = deployments[0];
         if (!deployment) return 'missing';

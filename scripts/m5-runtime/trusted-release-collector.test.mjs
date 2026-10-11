@@ -145,6 +145,25 @@ async function fixture() {
   };
 }
 
+test('v2 collector binds nullable native queries to independently read Active targets without altering observations', async () => {
+  const f = await fixture();
+  try {
+    f.functions.observation.schemaVersion = 2;
+    for (const kind of ['transform', 'validation']) {
+      const item = f.functions.observation[kind];
+      item.functionId = baseline.find((m) => m.handle === item.handle).registrationUuid;
+      item.inputQuerySha256 = null;
+    }
+    const before = JSON.stringify(f.functions);
+    const result = await collectFreshTrustedRelease(f.config, f.ports);
+    assert.equal(result.classification, 'TRUSTED_RELEASE_COLLECT_APPEND_ACK');
+    assert.equal(f.appends, 1);
+    assert.equal(JSON.stringify(f.functions), before);
+  } finally {
+    await f.close();
+  }
+});
+
 test('one original fresh observation set reaches unchanged append validation through durable reservations', async () => {
   const f = await fixture();
   try {

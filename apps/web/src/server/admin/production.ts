@@ -219,6 +219,7 @@ export function createProductionAdminServices(
               { ...scope, appId, shopifyShopId: actor.shopId },
               {
                 appKey: apiKey,
+                ...(expected.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
                 transformInputQuerySha256: expected.transform.inputQuerySha256,
                 validationInputQuerySha256: expected.validation.inputQuerySha256,
               },
@@ -325,6 +326,7 @@ export function createProductionAdminServices(
             observeFunctions: (input: typeof tenant, expected: signingApplication.ExpectedFunctionBuild) =>
               functions.read(input, {
                 appKey: apiKey,
+                ...(expected.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
                 transformInputQuerySha256: expected.transform.inputQuerySha256,
                 validationInputQuerySha256: expected.validation.inputQuerySha256,
               }),
@@ -476,10 +478,16 @@ export function createProductionAdminServices(
           },
         },
       });
+      const evidence = await core.trustedReleaseRecords.read({
+        scope,
+        expectedActiveAppVersionRef: '1162611916801',
+        now: new Date(),
+      });
       // Reviewed local query fingerprints only guide collection. These are not
       // an Active-version/Wasm attestation or a replacement release authority.
       const functions = await createFunctionOwnershipReconciler({ transport }).read(tenant, {
         appKey: apiKey,
+        ...(evidence?.expectedBuild.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
         transformInputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
         validationInputQuerySha256: 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5',
       });
@@ -493,11 +501,6 @@ export function createProductionAdminServices(
       if (!ianaTimezone) throw new Error('Trusted merchant calendar unavailable');
       const now = new Date();
       const merchantDay = localDay(now, ianaTimezone).ordinal;
-      const evidence = await core.trustedReleaseRecords.read({
-        scope,
-        expectedActiveAppVersionRef: '1162611916801',
-        now,
-      });
       await active(actor);
       return {
         version: 'm5-admin-technical-readiness-v1',

@@ -26,13 +26,22 @@ const desired = buildPublicConfig({
   keys: [{ id: 7, publicKey, state: 'active', firstDay: 100, lastDay: 104 }],
 });
 
-const productionComposition = () => {
+const productionComposition = (profile?: 2) => {
   const value = release();
   const queries = { transform: 'query Transform { shop { id } }', validation: 'query Validation { shop { id } }' };
   for (const surface of ['transform', 'validation'] as const) {
     const digest = createHash('sha256').update(queries[surface]).digest('hex');
     value.expectedBuild[surface].inputQuerySha256 = digest;
     value.attestation[surface].inputQuerySha256 = digest;
+  }
+  if (profile === 2) {
+    const targetModules = targetRelease().expectedBuild.targetModules;
+    Object.assign(value.expectedBuild, { schemaVersion: 2, targetModules });
+    Object.assign(value.attestation, {
+      schemaVersion: 2,
+      targetModules: structuredClone(targetModules),
+      targetObservedAt: value.attestation.observedAt,
+    });
   }
   const shopId = 'gid://shopify/Shop/101';
   const execute = vi.fn(async (request: PublicationAdminRequest) => {
@@ -69,7 +78,7 @@ const productionComposition = () => {
               apiType: value.expectedBuild[surface].apiType,
               apiVersion: '2026-07',
               appKey: 'client-a',
-              inputQuery: queries[surface],
+              inputQuery: profile === 2 ? null : queries[surface],
             })),
           },
           cartTransforms: {
@@ -156,13 +165,16 @@ describe('production composition artifact boundary', () => {
     ).rejects.toThrow('ports missing');
     expect(execute).not.toHaveBeenCalled();
   });
-  test('consumes separate scoped build/evidence ports and current read-only owned observations', async () => {
-    const { input, quote } = productionComposition();
-    await expect(createProductionQuoteReadiness(input).assertReady({ quote })).resolves.toBeUndefined();
-    const expectedScope = { shopId: 'shop-a', installationGeneration: '7', appClientId: 'client-a' };
-    expect(input.artifactPorts.expectedBuild.read).toHaveBeenCalledWith(expectedScope);
-    expect(input.artifactPorts.trustedEvidence.read).toHaveBeenCalledWith(expectedScope);
-  });
+  test.each([undefined, 2] as const)(
+    'profile %s consumes trusted ports and actual read-only observations',
+    async (profile) => {
+      const { input, quote } = productionComposition(profile);
+      await expect(createProductionQuoteReadiness(input).assertReady({ quote })).resolves.toBeUndefined();
+      const expectedScope = { shopId: 'shop-a', installationGeneration: '7', appClientId: 'client-a' };
+      expect(input.artifactPorts.expectedBuild.read).toHaveBeenCalledWith(expectedScope);
+      expect(input.artifactPorts.trustedEvidence.read).toHaveBeenCalledWith(expectedScope);
+    },
+  );
   test.each(['SOURCE_ONLY', 'DEV_PREVIEW_OBSERVED'])(
     'rejects %s injected evidence in production',
     async (evidenceKind) => {
@@ -283,7 +295,78 @@ const productionReady = () => {
   };
 };
 
+const targetRelease = () => {
+  const legacy = release();
+  const targetModules = {
+    transform: { moduleId: 'module-transform', target: 'cart.transform.run', export: 'cart_transform_run' },
+    validation: {
+      moduleId: 'module-validation',
+      target: 'cart.validations.generate.run',
+      export: 'cart_validations_generate_run',
+    },
+  };
+  const expectedBuild = { ...legacy.expectedBuild, schemaVersion: 2 as const, targetModules };
+  return {
+    ...legacy,
+    expectedBuild,
+    attestation: { ...legacy.attestation, ...structuredClone(expectedBuild), targetObservedAt: '2026-09-30T10:00:00Z' },
+    observation: {
+      ...legacy.observation,
+      schemaVersion: 2 as const,
+      transform: { ...legacy.observation.transform, inputQuerySha256: null },
+      validation: { ...legacy.observation.validation, inputQuerySha256: null },
+    },
+  };
+};
+
 describe('Function artifact readiness authority', () => {
+  test('fresh independent Active target configuration qualifies an explicit v2 nullable legacy observation', () => {
+    expect(() => assertProductionFunctionArtifactReady(targetRelease())).not.toThrow();
+    const legacy = release();
+    expect(() =>
+      assertProductionFunctionArtifactReady({ ...legacy, observation: targetRelease().observation }),
+    ).toThrow('Function artifact');
+  });
+
+  test('v2 target authority rejects missing, stale, contradictory and mixed-version evidence', () => {
+    for (const change of [
+      (v: ReturnType<typeof targetRelease>) => {
+        v.attestation.targetModules.transform.moduleId = 'other-module';
+      },
+      (v: ReturnType<typeof targetRelease>) => {
+        v.attestation.transform.inputQuerySha256 = 'f'.repeat(64);
+      },
+      (v: ReturnType<typeof targetRelease>) => {
+        v.attestation.targetObservedAt = '2026-09-30T09:59:30Z';
+      },
+      (v: ReturnType<typeof targetRelease>) => {
+        v.attestation.targetObservedAt = '2026-09-30T10:00:02Z';
+      },
+      (v: ReturnType<typeof targetRelease>) => {
+        v.observation.transform.functionId = 'other-function';
+      },
+      (v: ReturnType<typeof targetRelease>) => {
+        Object.assign(v.observation.validation, { inputQuerySha256: 'f'.repeat(64) });
+      },
+      (v: ReturnType<typeof targetRelease>) => {
+        Object.assign(v.attestation, { schemaVersion: 1 });
+      },
+      (v: ReturnType<typeof targetRelease>) => {
+        Reflect.deleteProperty(v.attestation, 'targetObservedAt');
+      },
+      (v: ReturnType<typeof targetRelease>) => {
+        Object.assign(v.attestation, {
+          evidenceKind: 'DEV_PREVIEW_OBSERVED',
+          appVersionRef: null,
+          devPreviewRef: 'preview-a',
+        });
+      },
+    ]) {
+      const value = targetRelease();
+      change(value);
+      expect(() => assertProductionFunctionArtifactReady(value)).toThrow('Function artifact');
+    }
+  });
   test('a caller-set runtime identity flag cannot replace trusted artifact evidence', () => {
     expect(() => assertQuoteIssuanceReady(ready())).toThrow('Function artifact');
   });

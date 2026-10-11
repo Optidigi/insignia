@@ -117,7 +117,16 @@ export function qualifyReleaseAppendInput(input, now) {
   assert.equal(typeof readiness.externalInstallationId, 'string');
   assert.ok(readiness.externalInstallationId.length > 0);
   const functions = readiness.functions.observation;
-  keys(functions, ['shopId', 'installationGeneration', 'appClientId', 'observedAt', 'transform', 'validation']);
+  const modern = functions?.schemaVersion === 2;
+  keys(functions, [
+    ...(modern ? ['schemaVersion'] : []),
+    'shopId',
+    'installationGeneration',
+    'appClientId',
+    'observedAt',
+    'transform',
+    'validation',
+  ]);
   assert.equal(functions.shopId, readiness.tenantShopId);
   assert.equal(functions.installationGeneration, readiness.installationGeneration);
   assert.equal(functions.appClientId, APP);
@@ -128,7 +137,8 @@ export function qualifyReleaseAppendInput(input, now) {
     appClientId: APP,
   };
   const expected = {
-    schemaVersion: 1,
+    schemaVersion: modern ? 2 : 1,
+    ...(modern ? { targetModules: {} } : {}),
     ...scope,
     appVersionRef: VERSION,
     devPreviewRef: null,
@@ -142,16 +152,39 @@ export function qualifyReleaseAppendInput(input, now) {
     assert.ok(f.functionId.length > 0 && f.functionId.length <= 256);
     // CLI registration IDs are not Admin Function identity authority.
     assert.ok(!['c56038d4-146a-405e-b47d-a055249eeeb3', '552059da-2dc1-47f8-8fc0-14a5ccb6f665'].includes(f.functionId));
-    for (const k of ['handle', 'apiType', 'apiVersion', 'inputQuerySha256']) assert.equal(f[k], artifacts[kind][k]);
+    for (const k of ['handle', 'apiType', 'apiVersion']) assert.equal(f[k], artifacts[kind][k]);
+    if (!modern || f.inputQuerySha256 !== null) assert.equal(f.inputQuerySha256, artifacts[kind].inputQuerySha256);
     expected[kind] = { ...artifacts[kind], functionId: f.functionId };
+    if (modern) {
+      // Complete module projection was independently authenticated and checked
+      // against the reviewed source/artifact baseline above. UUID alone is not a version proof.
+      const module = modules.modules.find((m) => m.handle === artifacts[kind].handle);
+      assert.equal(module.registrationUuid, f.functionId);
+      assert.equal(module.config.app_key, APP);
+      assert.equal(module.config.api_version, artifacts[kind].apiVersion);
+      assert.equal(module.config.api_type, artifacts[kind].apiType);
+      assert.equal(module.config.targets.length, 1);
+      const target = module.config.targets[0];
+      assert.equal(typeof target.input_query, 'string');
+      const observedQueryHash = createHash('sha256').update(target.input_query, 'utf8').digest('hex');
+      assert.equal(observedQueryHash, artifacts[kind].inputQuerySha256);
+      expected.targetModules[kind] = {
+        moduleId: module.config.module_id,
+        target: target.handle,
+        export: target.export,
+      };
+    }
   }
   assert.notEqual(functions.transform.functionId, functions.validation.functionId);
+  const moduleObservedMs = modern ? time(modules.observedAt, now) : null;
   const observations = {
     observedAt: active.observedAt,
     observedMs,
     functionObservedAt: functions.observedAt,
     functionObservedMs,
-    expiresAt: new Date(Math.min(observedMs, functionObservedMs) + 30_000).toISOString(),
+    expiresAt: new Date(
+      Math.min(observedMs, functionObservedMs, moduleObservedMs ?? observedMs) + 30_000,
+    ).toISOString(),
     activeObservationEvidenceSha256: hash(active),
     functionObservationEvidenceSha256: hash(functions),
     moduleObservationEvidenceSha256: hash(modules),
@@ -169,6 +202,7 @@ export function qualifyReleaseAppendInput(input, now) {
     attestation: {
       ...expected,
       evidenceKind: 'RELEASE_BOUND',
+      ...(modern ? { targetObservedAt: modules.observedAt } : {}),
       observedAt: active.observedAt,
       expiresAt: observations.expiresAt,
     },
