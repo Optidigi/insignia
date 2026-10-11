@@ -8,6 +8,11 @@ export {
 export { createDurableCore, type DurableCore, type DurableTransaction } from './durable-core.js';
 export { canonicalJson, revisionContentHash, sha256CanonicalJson } from './hash/canonical.js';
 export { CONFIG_DRAFT_STORAGE_VERSION, type ConfigRecord, type RevisionRecord } from './repositories/config.js';
+export {
+  applyOwnerLifecycleDecision,
+  type OwnerLifecycleDecision,
+  type OwnerLifecycleResult,
+} from './repositories/owner-lifecycle.js';
 export type {
   ClaimIdentity,
   CredentialAcquire,
@@ -31,5 +36,4 @@ export type {
   ManagedInstallationState,
   ShopRecord,
 } from './repositories/tenant.js';
-
 export { ManagedInstallationError } from './repositories/tenant.js';

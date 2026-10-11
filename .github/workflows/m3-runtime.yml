@@ -17,6 +17,7 @@ on:
       - 'scripts/m5-inventory-phase/**'
       - 'scripts/m5-024/**'
       - 'scripts/m5-runtime/**'
+      - 'scripts/m5-owner-lifecycle/**'
       - 'deployment/m5-runtime/**'
       - 'deployment/m5-019r/**'
       - 'scripts/m5-callback-qualification/**'
@@ -41,6 +42,7 @@ on:
       - 'scripts/m5-inventory-phase/**'
       - 'scripts/m5-024/**'
       - 'scripts/m5-runtime/**'
+      - 'scripts/m5-owner-lifecycle/**'
       - 'deployment/m5-runtime/**'
       - 'deployment/m5-019r/**'
       - 'scripts/m5-callback-qualification/**'
@@ -85,7 +87,7 @@ jobs:
       - name: M5 runtime owner-operator and immutable image controls style
         run: corepack pnpm exec biome check scripts/m5-runtime
       - name: Frozen schema-owner operator and effective PostgreSQL18 roles (isolated database)
-        run: M5_SCHEMA_TEST_URL="$DATABASE_URL" M5_DB_ROTATION_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 scripts/m5-runtime/db-password-rotation.test.mjs scripts/m5-runtime/db-password-rotation-package.test.mjs scripts/m5-runtime/schema-provision.test.mjs scripts/m5-runtime/schema-provision-package.test.mjs scripts/m5-runtime/schema-forward19-package.test.mjs scripts/m5-runtime/release-append.test.mjs scripts/m5-runtime/signing-provision.test.mjs scripts/m5-runtime/signing-provision-core.test.mjs
+        run: M5_SCHEMA_TEST_URL="$DATABASE_URL" M5_DB_ROTATION_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 scripts/m5-runtime/db-password-rotation.test.mjs scripts/m5-runtime/db-password-rotation-package.test.mjs scripts/m5-runtime/schema-provision.test.mjs scripts/m5-runtime/schema-provision-package.test.mjs scripts/m5-runtime/schema-forward19-package.test.mjs scripts/m5-runtime/schema-forward20-package.test.mjs scripts/m5-runtime/release-append.test.mjs scripts/m5-runtime/signing-provision.test.mjs scripts/m5-runtime/signing-provision-core.test.mjs
       - run: corepack pnpm check:style
       - run: corepack pnpm check:boundaries
       - name: Experimental private callback HTTP/operator/restart/supervisor/erasure controls
@@ -100,6 +102,11 @@ jobs:
       - run: corepack pnpm --filter @insignia/application test
       - run: corepack pnpm --filter @insignia/observability test
       - run: corepack pnpm --filter @insignia/worker test
+      - name: Explicit owner lifecycle PostgreSQL18 and fresh queue process controls
+        run: |
+          corepack pnpm exec biome check scripts/m5-owner-lifecycle
+          M5_OWNER_LIFECYCLE_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/owner-lifecycle.test.ts
+          M5_OWNER_LIFECYCLE_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 apps/worker/test/owner-lifecycle.test.mjs scripts/m5-owner-lifecycle/package.test.mjs
       - name: M5-024 restricted queue roles and real process crash recovery
         run: node --test --test-concurrency=1 scripts/m5-024/queue-privileges.test.mjs scripts/m5-024/crash-recovery.test.mjs
       - name: M5-024 offline portable worker and drift guards

@@ -1,10 +1,12 @@
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { rm } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { Pool } from 'pg';
 import { expect, test } from 'vitest';
 import { createDurableCore } from '../src/index.js';
+import { migrationsThrough } from './fixtures/migrations-through.js';
 
 test('expired signed bytes become minimal unqualified facts, never header-driven uninstall or privacy completion', async () => {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -226,10 +228,11 @@ test('populated minimal-obligation evidence blocks migration down and preserves 
   const url = new URL(connectionString);
   url.pathname = `/${name}`;
   const root = fileURLToPath(new URL('../../../', import.meta.url));
+  const rehearsal = await migrationsThrough(`${root}packages/database/migrations`, '20261011000100', 19);
   const migrate = (direction: string) =>
     promisify(execFile)(
       `${root}node_modules/.bin/dbmate`,
-      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, direction],
+      ['--no-dump-schema', '--migrations-dir', rehearsal, direction],
       { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30000 },
     );
   let core: ReturnType<typeof createDurableCore> | undefined;
@@ -270,6 +273,7 @@ test('populated minimal-obligation evidence blocks migration down and preserves 
     await pool?.end();
     if (created) await admin.query(`DROP DATABASE ${name}`);
     await admin.end();
+    await rm(rehearsal, { recursive: true, force: true });
   }
 }, 60000);
 

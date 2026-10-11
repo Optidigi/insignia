@@ -4,9 +4,14 @@ import { chmod, mkdtemp, readdir, readFile, readlink, rm } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { packageForwardSchema19 } from './schema-forward19-package.mjs';
+import { pathToFileURL } from 'node:url';
+import { frozenSchema19Fixture } from './frozen-schema19-fixture.mjs';
 
 test('forward19 owner package contains exact immutable inputs and no private runtime configuration', async () => {
+  const compatibility = await frozenSchema19Fixture();
+  const { packageForwardSchema19 } = await import(
+    pathToFileURL(join(compatibility.directory, 'scripts/m5-runtime/schema-forward19-package.mjs')).href
+  );
   const parent = await mkdtemp(join(tmpdir(), 'insignia-forward19-package-'));
   try {
     const manifest = await packageForwardSchema19({ directory: join(parent, 'operator') });
@@ -39,5 +44,6 @@ test('forward19 owner package contains exact immutable inputs and no private run
     };
     await unseal(parent);
     await rm(parent, { recursive: true, force: true });
+    await rm(compatibility.directory, { recursive: true, force: true });
   }
 });
