@@ -16,6 +16,8 @@ const GRANTS = [
   'read_product_listings',
   'read_cart_transforms',
   'read_validations',
+  'write_cart_transforms',
+  'write_validations',
 ];
 
 /** Fixed TLS endpoint/documents; request is the captured original node:https

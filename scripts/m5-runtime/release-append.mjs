@@ -9,10 +9,18 @@ import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const APP = '1443cf6d03d39edae7c101a943c5c684';
-const VERSION = '1162611916801';
-const TAG = 'm5-runtime-b673985e1e38';
-const MODULE_HASH = '3e2e3a127cdca7febc95995e40da57617b39c98130776740408b3fb32cacab64';
-const VERSION_IDS = [VERSION, '1158986629121', '1158837927937', '1153019904001', '1152880803841', '1146748534785'];
+const VERSION = '1163229200385';
+const TAG = 'm5-functions-9c2e56b42fbf';
+const MODULE_HASH = 'b04436bda3faad667ee70d00991572ae60949f5acd2cf0fef6b6075dac8f66d7';
+const VERSION_IDS = [
+  VERSION,
+  '1162611916801',
+  '1158986629121',
+  '1158837927937',
+  '1153019904001',
+  '1152880803841',
+  '1146748534785',
+];
 const artifacts = {
   transform: {
     handle: 'insignia-experimental-v2-transform',
@@ -82,7 +90,7 @@ export function qualifyReleaseAppendInput(input, now) {
   const active = input.activeObservation;
   keys(active, ['observedAt', 'versions']);
   const observedMs = time(active.observedAt, now);
-  assert.equal(active.versions.length, 6);
+  assert.equal(active.versions.length, 7);
   assert.deepEqual(
     new Set(active.versions.map((v) => v.versionId)),
     new Set(VERSION_IDS.map((v) => `gid://shopify/Version/${v}`)),

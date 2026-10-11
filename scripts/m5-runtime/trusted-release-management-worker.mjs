@@ -5,11 +5,12 @@ import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createInterface } from 'node:readline';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import binding from '../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
 
 const BASE = '/home/serveradmin/insignia-milestone-autonomy-handoff/app-management-readonly-preparation-20261010';
 const APP = '1443cf6d03d39edae7c101a943c5c684';
-const VERSION = '1162611916801';
-const TAG = 'm5-runtime-b673985e1e38';
+const VERSION = '1163229200385';
+const TAG = 'm5-functions-9c2e56b42fbf';
 const pins = [
   ['package/dist/chunk-MJ3WNVMQ.js', '29df2593b46ba4b7162ef703dfdbea2175e2e55d6824df2ade708eff35432fea'],
   ['package/dist/chunk-NYHGIWKZ.js', 'a89873a128c3044b0870f2a82788a7e4d8f8642e9bb4bfcb0c0f0d4abc380d7a'],
@@ -23,8 +24,14 @@ function selectedVersions(value, remote) {
     versionTag,
     status,
   }));
-  assert.equal(totalResults, 6);
-  assert.equal(versions.length, 6);
+  assert.equal(totalResults, binding.expectedVersionIds.length);
+  assert.equal(versions.length, binding.expectedVersionIds.length);
+  assert.deepEqual(
+    new Set(versions.map((v) => v.versionId)),
+    new Set(binding.expectedVersionIds.map((id) => `gid://shopify/Version/${id}`)),
+  );
+  for (const version of versions)
+    assert.equal(version.status, version.versionId === `gid://shopify/Version/${VERSION}` ? 'active' : 'inactive');
   assert.deepEqual(
     versions.filter((v) => v.status === 'active'),
     [{ versionId: `gid://shopify/Version/${VERSION}`, versionTag: TAG, status: 'active' }],

@@ -7,8 +7,8 @@ import { closeSync, constants, fstatSync, lstatSync, openSync, readdirSync, read
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import baseline from '../../deployment/m5-runtime/native-module-baseline.json' with { type: 'json' };
-import release from '../../deployment/m5-runtime/native-module-binding.json' with { type: 'json' };
+import baseline from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
+import release from '../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
 import { reserveFunctionSetupRun } from './function-setup-journal.mjs';
 import { installFunctionSetupNetwork } from './function-setup-network.mjs';
 import { createManagementProcess } from './trusted-release-management-process.mjs';
@@ -43,7 +43,7 @@ export function functionSetupBuildHash() {
     'pnpm-lock.yaml',
     ...['native', 'network', 'journal'].map((name) => `scripts/m5-runtime/function-setup-${name}.mjs`),
     ...['process', 'worker'].map((name) => `scripts/m5-runtime/trusted-release-management-${name}.mjs`),
-    ...['baseline', 'binding'].map((name) => `deployment/m5-runtime/native-module-${name}.json`),
+    ...['baseline', 'binding'].map((name) => `deployment/m5-runtime/native-function-module-${name}.json`),
   ];
   function compiled(directory) {
     for (const name of readdirSync(join(ROOT, directory)).sort()) {
@@ -113,8 +113,8 @@ function verifiedOperator() {
     closeSync(fd);
   }
 }
-export function qualifyFunctionSetupBaseline() {
-  const access = baseline.find((m) => m.handle === 'app_access')?.config;
+export function qualifyFunctionSetupBaseline(observedBaseline = baseline) {
+  const access = observedBaseline.find((m) => m.handle === 'app_access')?.config;
   assert.ok(
     writeScopes.every((scope) => access?.optional_scopes?.includes(scope)),
     'function_write_release_not_bound',

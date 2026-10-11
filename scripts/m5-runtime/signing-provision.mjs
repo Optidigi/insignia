@@ -99,7 +99,7 @@ export async function reserveSigningProvisionRun(directory, inputPlan) {
 const APP = '1443cf6d03d39edae7c101a943c5c684';
 const APP_ID = '429028933633';
 const SHOP = 'insignia-rewrite-dev.myshopify.com';
-const VERSION = '1162611916801';
+const VERSION = '1163229200385';
 function sameScope(actual, expected) {
   assert.ok(actual);
   for (const field of ['shopId', 'installationGeneration', 'authorizationGeneration', 'authorizationEpoch'])

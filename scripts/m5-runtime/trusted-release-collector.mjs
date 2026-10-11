@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { constants } from 'node:fs';
 import { lstat, mkdir, open, realpath } from 'node:fs/promises';
 import { basename, dirname, isAbsolute, join } from 'node:path';
-import baseline from '../../deployment/m5-runtime/native-module-baseline.json' with { type: 'json' };
+import baseline from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
 import { qualifyReleaseAppendInput } from './release-append.mjs';
 
 const APP = '1443cf6d03d39edae7c101a943c5c684';
@@ -16,6 +16,8 @@ const GRANTS = [
   'read_product_listings',
   'read_cart_transforms',
   'read_validations',
+  'write_cart_transforms',
+  'write_validations',
 ];
 const bindingFields = [
   'shop',
@@ -27,6 +29,7 @@ const bindingFields = [
   'authorizationEpoch',
 ];
 const VERSION_IDS = [
+  '1163229200385',
   '1162611916801',
   '1158986629121',
   '1158837927937',
@@ -66,24 +69,24 @@ function installation(value, expected) {
 }
 function managementOpening(value) {
   keys(value, ['versions', 'totalResults', 'moduleObservation']);
-  assert.equal(value.totalResults, 6);
-  assert.ok(Array.isArray(value.versions) && value.versions.length === 6);
+  assert.equal(value.totalResults, 7);
+  assert.ok(Array.isArray(value.versions) && value.versions.length === 7);
   assert.deepEqual(
     new Set(value.versions.map((v) => v.versionId)),
     new Set(VERSION_IDS.map((v) => `gid://shopify/Version/${v}`)),
   );
   for (const v of value.versions) {
     keys(v, ['versionId', 'versionTag', 'status']);
-    assert.equal(v.status, v.versionId === 'gid://shopify/Version/1162611916801' ? 'active' : 'inactive');
+    assert.equal(v.status, v.versionId === 'gid://shopify/Version/1163229200385' ? 'active' : 'inactive');
     assert.equal(typeof v.versionTag, 'string');
   }
-  assert.equal(value.versions.find((v) => v.status === 'active').versionTag, 'm5-runtime-b673985e1e38');
+  assert.equal(value.versions.find((v) => v.status === 'active').versionTag, 'm5-functions-9c2e56b42fbf');
   const modules = value.moduleObservation;
   keys(modules, ['appId', 'appClientId', 'versionId', 'versionTag', 'observedAt', 'modules']);
   assert.equal(modules.appId, '429028933633');
   assert.equal(modules.appClientId, APP);
-  assert.equal(modules.versionId, '1162611916801');
-  assert.equal(modules.versionTag, 'm5-runtime-b673985e1e38');
+  assert.equal(modules.versionId, '1163229200385');
+  assert.equal(modules.versionTag, 'm5-functions-9c2e56b42fbf');
   assert.ok(Array.isArray(modules.modules) && modules.modules.length === 6);
   assert.deepEqual(
     [...modules.modules].sort((a, b) => (a.handle < b.handle ? -1 : a.handle > b.handle ? 1 : 0)),
@@ -215,7 +218,7 @@ export async function collectFreshTrustedRelease(config, ports) {
     const closing = await ports.management.close(sdkReserve);
     keys(closing, ['versions', 'totalResults', 'observedAt']);
     assert.equal(sdkOrdinal, 4);
-    assert.equal(closing.totalResults, 6);
+    assert.equal(closing.totalResults, 7);
     assert.deepEqual(closing.versions, opening.versions);
     assert.deepEqual(binding(await operation('READ_DURABLE_TENANT_CLOSE', ports.readTenant)), before);
     const input = {

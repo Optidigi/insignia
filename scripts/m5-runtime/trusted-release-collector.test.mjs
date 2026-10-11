@@ -14,9 +14,10 @@ const { createFunctionOwnershipReconciler, FUNCTION_OWNERSHIP_QUERY } = await im
 );
 
 const baseline = JSON.parse(
-  await readFile(new URL('../../deployment/m5-runtime/native-module-baseline.json', import.meta.url)),
+  await readFile(new URL('../../deployment/m5-runtime/native-function-module-baseline.json', import.meta.url)),
 );
 const versions = [
+  '1163229200385',
   '1162611916801',
   '1158986629121',
   '1158837927937',
@@ -25,7 +26,7 @@ const versions = [
   '1146748534785',
 ].map((id, i) => ({
   versionId: `gid://shopify/Version/${id}`,
-  versionTag: i ? `synthetic-inactive-${i}` : 'm5-runtime-b673985e1e38',
+  versionTag: i ? `synthetic-inactive-${i}` : 'm5-functions-9c2e56b42fbf',
   status: i ? 'inactive' : 'active',
 }));
 async function fixture() {
@@ -82,12 +83,12 @@ async function fixture() {
         for (const op of ['ActiveAppReleaseFromApiKey', 'AppVersions', 'AppVersionByTag']) await reserve(op);
         return {
           versions,
-          totalResults: 6,
+          totalResults: 7,
           moduleObservation: {
             appId: '429028933633',
             appClientId: '1443cf6d03d39edae7c101a943c5c684',
-            versionId: '1162611916801',
-            versionTag: 'm5-runtime-b673985e1e38',
+            versionId: '1163229200385',
+            versionTag: 'm5-functions-9c2e56b42fbf',
             observedAt: new Date(time).toISOString(),
             modules: structuredClone(baseline),
           },
@@ -95,7 +96,7 @@ async function fixture() {
       },
       async close(reserve) {
         await reserve('AppVersions');
-        return { versions, totalResults: 6, observedAt: new Date(time).toISOString() };
+        return { versions, totalResults: 7, observedAt: new Date(time).toISOString() };
       },
     },
     acquireToken: async () => {
@@ -115,6 +116,8 @@ async function fixture() {
         'read_product_listings',
         'read_cart_transforms',
         'read_validations',
+        'write_cart_transforms',
+        'write_validations',
       ],
     }),
     readFunctions: async () => structuredClone(functions),
@@ -274,7 +277,7 @@ test('module drift, incomplete versions, installation/generation drift and stale
         f.ports.management.open = async (reserve) => {
           const open = structuredClone(await original(reserve));
           if (failure === 'module') open.moduleObservation.modules[0].config.optional_scopes.push('read_orders');
-          else open.totalResults = 7;
+          else open.totalResults = 8;
           return open;
         };
       }
