@@ -9,8 +9,8 @@ import test from 'node:test';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { sha256CanonicalJson } from '../../packages/database/src/hash/canonical.ts';
-import { appendTrustedRelease, qualifyReleaseAppendInput } from './release-append.mjs';
 import { frozenSchema18Fixture } from './frozen-schema18-fixture.mjs';
+import { appendTrustedRelease, qualifyReleaseAppendInput } from './release-append.mjs';
 
 const baseline = JSON.parse(
   await readFile(new URL('../../deployment/m5-runtime/native-module-baseline.json', import.meta.url)),

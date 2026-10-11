@@ -320,9 +320,25 @@ test('JSONB content conversion failures cannot retain expired authenticated byte
 });
 
 test('complete diagnostic category counts expose newer privacy obligations beyond 100 immutable erased historical facts after restart', async () => {
-  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-  let core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+  // Permanent provenance must not pollute unrelated test databases/samples.
+  const admin = new Pool({ connectionString: process.env.DATABASE_URL });
+  const name = `m5diagnostics_${randomUUID().replaceAll('-', '')}`;
+  const url = new URL(process.env.DATABASE_URL ?? '');
+  url.pathname = `/${name}`;
+  const root = fileURLToPath(new URL('../../../', import.meta.url));
+  let created = false;
+  let pool: Pool | undefined;
+  let core: ReturnType<typeof createDurableCore> | undefined;
   try {
+    await admin.query(`CREATE DATABASE ${name}`);
+    created = true;
+    await promisify(execFile)(
+      `${root}node_modules/.bin/dbmate`,
+      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
+      { env: { ...process.env, DATABASE_URL: url.href } },
+    );
+    pool = new Pool({ connectionString: url.href });
+    core = createDurableCore(new Pool({ connectionString: url.href }));
     const before = await core.webhooks.eraseExpiredPayloads(100);
     const ids: string[] = [];
     for (let index = 0; index < 105; index++) {
@@ -361,7 +377,7 @@ test('complete diagnostic category counts expose newer privacy obligations beyon
     await pool.query('update inbox_messages set purge_after=clock_timestamp() where id=$1', [privacy.id]);
     await core.webhooks.eraseExpiredPayloads(100);
     await core.close();
-    core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    core = createDurableCore(new Pool({ connectionString: url.href }));
     const result = await core.webhooks.eraseExpiredPayloads(100);
     expect(result.blockedPrivacyIds).toContain(privacy.id);
     expect(result.blockedPrivacyCount).toBe(before.blockedPrivacyCount + 1);
@@ -376,7 +392,9 @@ test('complete diagnostic category counts expose newer privacy obligations beyon
       ).rows[0].count,
     ).toBe(105);
   } finally {
-    await core.close();
-    await pool.end();
+    await core?.close();
+    await pool?.end();
+    if (created) await admin.query(`DROP DATABASE ${name}`);
+    await admin.end();
   }
 }, 60000);
