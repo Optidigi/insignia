@@ -8,7 +8,7 @@ const build = {
   schemaVersion: 1,
   ...scope,
   sourceCommit: 'a'.repeat(40),
-  appVersionRef: '1158986629121',
+  appVersionRef: '1162611916801',
   devPreviewRef: null,
   transform: {
     functionId: 'transform-id',
@@ -30,7 +30,7 @@ const build = {
 const record = {
   version: 'm5-trusted-release-v1',
   recordId: 'operator-record',
-  activeAppVersionRef: '1158986629121',
+  activeAppVersionRef: '1162611916801',
   attestation: {
     ...build,
     evidenceKind: 'RELEASE_BOUND',
@@ -47,7 +47,7 @@ test('production readiness composes trusted record, independent expected build, 
     records: {
       read: async (input) => {
         assert.deepEqual(input.scope, scope);
-        assert.equal(input.expectedActiveAppVersionRef, '1158986629121');
+        assert.equal(input.expectedActiveAppVersionRef, '1162611916801');
         assert.equal(input.now, at);
         return { record, expectedBuild: build };
       },

@@ -1,5 +1,9 @@
 # Ordinary M5 runtime handoff
 
+The [owner's later execution allocation](../../docs/delivery/authority/m5-runtime-resource-execution-2026-10-10.md) now authorizes the bounded rewrite effects below after technical qualification; the earlier NOT_REQUESTED text records the PR76 preparation stage, not a current need to repeat that permission request. No operation is claimed executed by this allocation record. Preserve all legacy production services.
+
+[shopify.app.m5-runtime.toml](shopify.app.m5-runtime.toml) is the exact two-optional-read-scope candidate. Package only the unchanged reviewed Function UIDs/Wasm/query bytes from the historical M5-019R binding manifest; no rebuild. Create one inactive candidate, observe its real ID, and update both production readiness expectations through source review/build/CI before deployment/release. Do not invent the ID or use unsigned environment/browser JSON as release authority. Keep the previous Active as rollback and record the app-wide impact of release. Native Function instance presence still needs qualification before any enablement mutation.
+
 The JSON files implement the [owner's exact-Shop recognition](../../docs/delivery/authority/m5-development-contract-recognition-2026-10-10.md) of the existing real development contract. They are non-secret server-owned configuration, not provider resources or a fabricated subscription. Set their compact JSON bytes through `INSIGNIA_M5_ENTITLEMENT_POLICY_JSON` and `INSIGNIA_M5_FEATURES_JSON` only in the separately allocated canonical runtime deployment. They are not deployed by this PR.
 
 Current web/worker artifacts must be built from the accepted exact head and qualified by CI before host mutation is requested. Retain source head/tree, immutable image ID, image-tar SHA256/size, migration hashes and the final natural CI run/attempt. A portable package or healthy `/live` alone does not prove authenticated readiness or native merchant acceptance.

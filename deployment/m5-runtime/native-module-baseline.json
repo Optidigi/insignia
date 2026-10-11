@@ -1,0 +1,184 @@
+[
+  {
+    "registrationId": "app_access",
+    "registrationUuid": "01a0e7ed-3119-7dce-81d4-7aabc1b62f9f",
+    "handle": "app_access",
+    "type": "app_access",
+    "config": {
+      "scopes": "",
+      "optional_scopes": [
+        "write_products",
+        "read_publications",
+        "read_product_listings",
+        "read_cart_transforms",
+        "read_validations"
+      ],
+      "use_legacy_install_flow": false,
+      "redirect_url_allowlist": []
+    },
+    "target": "",
+    "specification": {
+      "identifier": "app_access",
+      "externalIdentifier": "app_access",
+      "name": "App access",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "app_home",
+    "registrationUuid": "01a0e7ed-3119-7229-92f1-2eab7eb456c8",
+    "handle": "app_home",
+    "type": "app_home",
+    "config": {
+      "app_url": "https://insignia-app.optidigi.nl/admin/products",
+      "embedded": true
+    },
+    "target": "",
+    "specification": {
+      "identifier": "app_home",
+      "externalIdentifier": "app_home",
+      "name": "App Home",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "branding",
+    "registrationUuid": "01a0e7ed-3119-7f99-a441-ba954ed80654",
+    "handle": "branding",
+    "type": "branding",
+    "config": {
+      "name": "Insignia"
+    },
+    "target": "",
+    "specification": {
+      "identifier": "branding",
+      "externalIdentifier": "branding",
+      "name": "Branding",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "c56038d4-146a-405e-b47d-a055249eeeb3",
+    "registrationUuid": "01a1182f-15a0-78e4-8d71-fb20283ef34e",
+    "handle": "insignia-experimental-v2-transform",
+    "type": "function",
+    "config": {
+      "title": "Insignia experimental-v2 cart transform",
+      "module_id": "7eda302a-3e57-4bc6-b1d0-351935e7d757",
+      "description": "Local preproduction candidate only",
+      "app_key": "1443cf6d03d39edae7c101a943c5c684",
+      "api_version": "2026-07",
+      "enable_creation_ui": true,
+      "localization": {},
+      "targets": [
+        {
+          "handle": "cart.transform.run",
+          "export": "cart_transform_run",
+          "input_query": "query CartTransformRunInput {\n  cart {\n    quote: attribute(key: \"_insignia_quote_v2\") { value }\n    lines {\n      id\n      quantity\n      member: attribute(key: \"_insignia_member_v2\") { value }\n      cost { amountPerQuantity { currencyCode } }\n      sellingPlanAllocation { sellingPlan { id } }\n      merchandise {\n        __typename\n        ... on ProductVariant {\n          id\n          product {\n            id\n            registration: metafield(key: \"insignia_registration_v2\") { value }\n            policy: metafield(key: \"insignia_policy_v2\") { value }\n          }\n        }\n      }\n    }\n  }\n  localization { country { isoCode } market { id } }\n  shop {\n    localTime { date }\n    publicConfig: metafield(key: \"insignia_public_config_v2\") { value }\n  }\n}\n"
+        }
+      ],
+      "module_metadata": {
+        "standard_modules": [
+          "shopify_function_v2"
+        ],
+        "sdks": [],
+        "processed_by": [
+          "walrus#0.23.3"
+        ],
+        "languages": [],
+        "module_wasm_size_bytes": 181378,
+        "module_compiled_size_bytes": 566952
+      },
+      "api_type": "cart_transform"
+    },
+    "target": "cart.transform.run",
+    "specification": {
+      "identifier": "function",
+      "externalIdentifier": "function",
+      "name": "function",
+      "experience": "extension",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "552059da-2dc1-47f8-8fc0-14a5ccb6f665",
+    "registrationUuid": "01a1182f-15a0-74a3-a5ac-88800606d379",
+    "handle": "insignia-experimental-v2-validation",
+    "type": "function",
+    "config": {
+      "title": "Insignia experimental-v2 cart validation",
+      "module_id": "d22718a8-1d61-4421-b352-63366af929ce",
+      "description": "Local preproduction candidate only",
+      "app_key": "1443cf6d03d39edae7c101a943c5c684",
+      "api_version": "2026-07",
+      "enable_creation_ui": true,
+      "localization": {},
+      "targets": [
+        {
+          "handle": "cart.validations.generate.run",
+          "export": "cart_validations_generate_run",
+          "input_query": "query Input {\n  buyerJourney { step }\n  cart {\n    quote: attribute(key: \"_insignia_quote_v2\") { value }\n    lines {\n      id\n      quantity\n      member: attribute(key: \"_insignia_member_v2\") { value }\n      cost {\n        amountPerQuantity { currencyCode }\n        subtotalAmount { amount currencyCode }\n      }\n      sellingPlanAllocation { sellingPlan { id } }\n      merchandise {\n        __typename\n        ... on ProductVariant {\n          id\n          product {\n            id\n            registration: metafield(key: \"insignia_registration_v2\") { value }\n            policy: metafield(key: \"insignia_policy_v2\") { value }\n          }\n        }\n      }\n    }\n  }\n  localization { country { isoCode } market { id } }\n  shop {\n    localTime { date }\n    publicConfig: metafield(key: \"insignia_public_config_v2\") { value }\n  }\n}\n"
+        }
+      ],
+      "module_metadata": {
+        "standard_modules": [
+          "shopify_function_v2"
+        ],
+        "sdks": [],
+        "processed_by": [
+          "walrus#0.23.3"
+        ],
+        "languages": [],
+        "module_wasm_size_bytes": 182968,
+        "module_compiled_size_bytes": 571096
+      },
+      "api_type": "cart_checkout_validation"
+    },
+    "target": "cart.validations.generate.run",
+    "specification": {
+      "identifier": "function",
+      "externalIdentifier": "function",
+      "name": "function",
+      "experience": "extension",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  },
+  {
+    "registrationId": "webhooks",
+    "registrationUuid": "01a0e7ed-3119-7dc5-8c7a-868166591889",
+    "handle": "webhooks",
+    "type": "webhooks",
+    "config": {
+      "api_version": "2026-07"
+    },
+    "target": "",
+    "specification": {
+      "identifier": "webhooks",
+      "externalIdentifier": "webhooks",
+      "name": "Imperative Webhooks Api Version",
+      "experience": "configuration",
+      "managementExperience": "cli",
+      "options": {
+        "managementExperience": "cli"
+      }
+    }
+  }
+]

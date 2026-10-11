@@ -8,7 +8,14 @@ async function inspect(corrected) {
   const helper = new URL('./built-runtime.mjs', import.meta.url).href;
   const script = `${corrected ? `import {prepareBuiltPreviewRuntime} from ${JSON.stringify(helper)}; prepareBuiltPreviewRuntime(process.env);` : ''} await import(${JSON.stringify(entry)});`;
   const child = spawn(process.execPath, ['--input-type=module', '-e', script], {
-    env: { ...process.env, NODE_ENV: 'development', HOST: '127.0.0.1', PORT: '0', INSIGNIA_M5_002_DIAGNOSTIC: '0' },
+    env: {
+      ...process.env,
+      NODE_ENV: 'development',
+      HOST: '127.0.0.1',
+      PORT: '0',
+      INSIGNIA_M5_002_DIAGNOSTIC: '0',
+      SHOPIFY_CLIENT_ID: 'synthetic_built_runtime_key',
+    },
   });
   const exited = new Promise((resolve) => child.once('close', resolve));
   let output = '';
@@ -30,6 +37,7 @@ async function inspect(corrected) {
       const html = await response.text();
       const csp = response.headers.get('content-security-policy');
       assert.equal(response.status, 200);
+      assert.ok(html.includes('name="shopify-api-key" content="synthetic_built_runtime_key"'));
       assert.ok(!csp.split('style-src')[0].includes("'unsafe-inline'"));
       const hashes = [...html.matchAll(/<script([^>]*)>([\s\S]*?)<\/script>/g)]
         .filter((match) => match[2].trim())

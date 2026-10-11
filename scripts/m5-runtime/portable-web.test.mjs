@@ -85,7 +85,13 @@ test('current compiled web package survives relocation and serves HTTP on the co
     let logs = '';
     server = spawn(process.execPath, ['dist/server/entry.mjs'], {
       cwd: relocated,
-      env: { PATH: process.env.PATH, NODE_ENV: 'production', HOST: '127.0.0.2', PORT: String(port) },
+      env: {
+        PATH: process.env.PATH,
+        NODE_ENV: 'production',
+        HOST: '127.0.0.2',
+        PORT: String(port),
+        SHOPIFY_CLIENT_ID: '11111111111111111111111111111111',
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
     server.stdout.on('data', (data) => {
@@ -108,7 +114,41 @@ test('current compiled web package survives relocation and serves HTTP on the co
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: 'live' });
     assert.equal(response.headers.get('cache-control'), 'no-store');
+    for (const route of ['/admin/products', '/admin/products/111/config']) {
+      const page = await fetch(`http://127.0.0.2:${port}${route}?apiKey=22222222222222222222222222222222`);
+      assert.equal(page.status, 200);
+      assert.equal(page.headers.get('cache-control'), 'private, no-store');
+      assert.ok(page.headers.get('content-security-policy').includes('frame-ancestors https://admin.shopify.com'));
+      const html = await page.text();
+      assert.ok(html.includes('<meta name="shopify-api-key" content="11111111111111111111111111111111">'));
+      assert.ok(!html.includes('22222222222222222222222222222222'), 'Browser input must not supply the client key');
+    }
     await assert.rejects(fetch(`http://127.0.0.1:${port}/live`, { signal: AbortSignal.timeout(1000) }));
+    for (const key of [undefined, '<malformed>']) {
+      const stopped = new Promise((done) => server.once('exit', done));
+      server.kill('SIGTERM');
+      await stopped;
+      const env = { PATH: process.env.PATH, NODE_ENV: 'production', HOST: '127.0.0.2', PORT: String(port) };
+      if (key !== undefined) env.SHOPIFY_CLIENT_ID = key;
+      server = spawn(process.execPath, ['dist/server/entry.mjs'], { cwd: relocated, env, stdio: 'ignore' });
+      let ready = false;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        assert.equal(server.exitCode, null);
+        try {
+          ready = (await fetch(`http://127.0.0.2:${port}/live`, { signal: AbortSignal.timeout(1000) })).ok;
+          if (ready) break;
+        } catch {}
+        await delay(100);
+      }
+      assert.ok(ready, 'Invalid admin configuration must not hide process health');
+      for (const route of ['/admin/products', '/admin/products/111/config']) {
+        const page = await fetch(`http://127.0.0.2:${port}${route}?apiKey=22222222222222222222222222222222`);
+        assert.equal(page.status, 503);
+        assert.equal(page.headers.get('cache-control'), 'private, no-store');
+        assert.ok(page.headers.get('content-security-policy').includes('frame-ancestors https://admin.shopify.com'));
+        assert.equal(await page.text(), 'Admin configuration unavailable');
+      }
+    }
   } finally {
     if (server && server.exitCode === null) {
       const stopped = new Promise((done) => server.once('exit', done));

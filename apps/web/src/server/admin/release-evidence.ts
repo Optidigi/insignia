@@ -54,7 +54,7 @@ export function createTrustedMerchantCalendar(
 }
 
 /** This reviewed runtime targets the accepted existing Active version; environment/browser values are not authority. */
-const acceptedActiveAppVersionRef = '1158986629121';
+const acceptedActiveAppVersionRef = '1162611916801';
 export function createBoundProductionActivationReadiness(input: {
   scope: FunctionArtifactScope;
   ianaTimezone: string | null;

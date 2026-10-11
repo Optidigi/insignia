@@ -1,0 +1,15 @@
+# Owner allocation — M5 rewrite execution
+
+Source: direct owner instruction on 10 October 2026, following the concrete runtime/database, two Function-read scopes and designated-store acceptance proposal:
+
+> authorised, and if anything else is blocking right now, you're authorised to grant permissions/widen access to get it done. No changes to existing insignia (stitchs, superfunny) on prod tho
+
+This is new resource authority, not a retrospective claim that previous read-only allocations allowed writes. The local orchestrator may execute the necessary bounded M5 rewrite operations after technical qualification, including canonical web/worker deployment, migrations16–18, pg-boss43 and least-privilege roles, existing private configuration/signing lifecycle, exact-app optional Function reads, reviewed app-version creation/release and designated-development acceptance. Necessary access widening within this purpose is delegated; it does not waive technical safety or create provider facts.
+
+The affected rewrite identity remains Insignia/client1443cf6d03d39edae7c101a943c5c684/app429028933633, canonical insignia-app.optidigi.nl on VPS65.109.22.104. Protected insignia-rewrite-dev is not an uninstall-test resource. The separately allocated stitchs-vat-verification-20261004 development store requires its identity, existing apps/data and destination/privacy effects to qualify before a destructive experiment; no legacy app is to be changed.
+
+Preserve all Stitchs, Superfunny and other legacy production services, configuration, databases and resources. No merchant rollout, M6/M7, human-verification or protection bypass, invented commercial terms, fabricated native evidence, ambiguous mutation retry or unsafe generation authority is permitted. Existing historical versions/evidence retain their meaning; version1158837927937 remains NEVER_RELEASE.
+
+For the first readiness scope operation add only optional read_cart_transforms and read_validations, preserving required-empty and the existing three optional scopes. Preserve both reviewed Function UIDs/Wasm/query bytes, API2026-07, app identity/URL/flags/redirects. Create one inactive version without building or releasing; obtain its actual ID, bind that ID in independently reviewed runtime/trusted evidence, then release it once after the frozen gate. Retain previous Active1158986629121 as rollback. The Active release is app-wide; it is not described as installation-local. Request new grants only on the designated development installation. Do not blindly create Function instances: qualify actual presence and exact native effects first.
+
+Use private durable operation reservations and bounded captures, verified backups, prior-image/config rollback and exact readback. Never roll back append-only evidence by destructive down migration or automatic database restore. Owner authorization does not itself pass readiness, uninstall/privacy obligations or G7. Freeze/review/test each changed source/build/configuration boundary, then continue inside the allocation without another routine permission checkpoint.

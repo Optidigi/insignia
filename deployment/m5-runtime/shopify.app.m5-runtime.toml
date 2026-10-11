@@ -1,0 +1,24 @@
+# Owner-authorized scope candidate. Not an Active-version or deployment receipt.
+client_id = "1443cf6d03d39edae7c101a943c5c684"
+name = "Insignia"
+application_url = "https://insignia-app.optidigi.nl/admin/products"
+embedded = true
+web_directories = []
+extension_directories = ["extensions/insignia-cart-transform", "extensions/insignia-cart-validation"]
+
+[access_scopes]
+scopes = ""
+optional_scopes = [
+  "write_products",
+  "read_publications",
+  "read_product_listings",
+  "read_cart_transforms",
+  "read_validations"
+]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = []
+
+[webhooks]
+api_version = "2026-07"
