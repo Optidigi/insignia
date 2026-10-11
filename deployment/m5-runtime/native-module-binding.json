@@ -1,0 +1,11 @@
+{
+  "appId": "429028933633",
+  "appClientId": "1443cf6d03d39edae7c101a943c5c684",
+  "versionId": "1162611916801",
+  "versionTag": "m5-runtime-b673985e1e38",
+  "returnedModuleCount": 6,
+  "canonicalSortedModulesSha256": "3e2e3a127cdca7febc95995e40da57617b39c98130776740408b3fb32cacab64",
+  "canonicalization": "sort modules by handle; recursively sort object keys; compact JSON UTF8; arrays retain order",
+  "source": "original pinned CLI4.8.2 SDK appVersionByTag native readback correlated exact-app AppVersions; 2026-10-11",
+  "coverage": "returned version modules only; no external legacy compliance completeness claim"
+}

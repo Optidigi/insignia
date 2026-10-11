@@ -4,12 +4,14 @@ import '../../../../styles/admin-editor.css';
 
 const productId = Astro.params.productId ?? '';
 if (!/^[1-9][0-9]*$/.test(productId)) return Astro.redirect('/admin/products');
-const apiKey = import.meta.env.PUBLIC_SHOPIFY_API_KEY;
+const apiKey = process.env.SHOPIFY_CLIENT_ID;
 const csp =
   "default-src 'none'; script-src 'self' https://cdn.shopify.com 'sha256-QzWFZi+FLIx23tnm9SBU4aEgx4x8DsuASP07mfqol/c=' 'sha256-Ya0pUYrC7nM5Cn/056TyVuEiz6dFGrzmkWzgON0pF0U='; style-src 'self' 'unsafe-inline' https://cdn.shopify.com; img-src 'self' https: data:; connect-src 'self'; frame-ancestors https://admin.shopify.com https://*.myshopify.com; base-uri 'none'; form-action 'self'";
 Astro.response.headers.set('Cache-Control', 'private, no-store');
 Astro.response.headers.set('Content-Security-Policy', csp);
 Astro.response.headers.set('Referrer-Policy', 'no-referrer');
+if (!apiKey || !/^[A-Za-z0-9_-]{1,128}$/.test(apiKey))
+  return new Response('Admin configuration unavailable', { status: 503, headers: Astro.response.headers });
 ---
 <!doctype html>
 <html lang="en">
@@ -17,7 +19,7 @@ Astro.response.headers.set('Referrer-Policy', 'no-referrer');
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="referrer" content="no-referrer" />
-    {apiKey && <meta name="shopify-api-key" content={apiKey} />}
+    <meta name="shopify-api-key" content={apiKey} />
     <title>Product configuration · Insignia</title>
     <script is:inline src="https://cdn.shopify.com/shopifycloud/app-bridge.js"></script>
     <script is:inline src="https://cdn.shopify.com/shopifycloud/polaris-1.1.js"></script>

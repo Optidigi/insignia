@@ -405,7 +405,7 @@ export function createProductionAdminServices(
       const merchantDay = localDay(now, ianaTimezone).ordinal;
       const evidence = await core.trustedReleaseRecords.read({
         scope,
-        expectedActiveAppVersionRef: '1158986629121',
+        expectedActiveAppVersionRef: '1162611916801',
         now,
       });
       await active(actor);

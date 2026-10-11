@@ -1,0 +1,44 @@
+{
+  "status": "PASS",
+  "backupSha256": "9a5f9597f49d51a0f290367ba8e1dfbf8e84b9c1de2bc206ea4e1e26b2a39db1",
+  "operations": [
+    {
+      "operation": "01-initdb",
+      "exitCode": 0
+    },
+    {
+      "operation": "02-start",
+      "exitCode": 0
+    },
+    {
+      "operation": "03-create-role",
+      "exitCode": 0
+    },
+    {
+      "operation": "04-create-db",
+      "exitCode": 0
+    },
+    {
+      "operation": "05-restore",
+      "exitCode": 0
+    },
+    {
+      "operation": "06-verify",
+      "exitCode": 0
+    },
+    {
+      "operation": "07-stop",
+      "exitCode": 0
+    }
+  ],
+  "isolatedOnly": true,
+  "productionRestoreAttempts": 0,
+  "ownerAndAclRestore": true,
+  "privateRetentionDays": 7,
+  "failedLocalVerifiersPreserved": [
+    "isolated-restore socket-path limit",
+    "isolated-restore-r2 wrong verifier table name"
+  ],
+  "productionDML": false,
+  "legacyMutation": false
+}

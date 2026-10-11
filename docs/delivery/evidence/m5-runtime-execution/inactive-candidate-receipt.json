@@ -1,0 +1,31 @@
+{
+  "status": "NATIVE_INACTIVE_CANDIDATE_PRESERVATION_CONFIRMED",
+  "appId": "429028933633",
+  "candidateVersionId": "1162611916801",
+  "candidateTag": "m5-runtime-b673985e1e38",
+  "currentActive": "1158986629121",
+  "neverRelease": "1158837927937",
+  "versionCreationDispatches": 1,
+  "releaseAttempts": 0,
+  "cliAcknowledgement": "New version created.",
+  "nativeReturnedModuleCount": 6,
+  "nativeComparison": "all complete returned module values identical except app_access.config.optional_scopes",
+  "addedOptionalScopes": [
+    "read_cart_transforms",
+    "read_validations"
+  ],
+  "requiredScopesEmpty": true,
+  "uidAndFunctionModuleConfigurationsUnchanged": true,
+  "localWasmAndQueriesUnchanged": true,
+  "providerInternalHttpAttempts": "NOT_ASSERTED",
+  "originalSdkMethodCalls": {
+    "prestate": 4,
+    "candidateReadback": 4
+  },
+  "originalSdkSourceSha256": "29df2593b46ba4b7162ef703dfdbea2175e2e55d6824df2ade708eff35432fea",
+  "returnedModuleCoverageOnly": true,
+  "legacyComplianceCoverage": "UNKNOWN",
+  "nativeInstallationGrantNotClaimed": true,
+  "productionDeploymentNotYetExecuted": true,
+  "privateRawReceiptRetentionDays": 7
+}

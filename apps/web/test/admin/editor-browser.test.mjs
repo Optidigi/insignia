@@ -114,7 +114,7 @@ function response(config) {
 }
 async function startServer() {
   const child = spawn(process.execPath, [new URL('../../dist/server/entry.mjs', import.meta.url).pathname], {
-    env: { ...process.env, HOST: '127.0.0.1', PORT: '0' },
+    env: { ...process.env, HOST: '127.0.0.1', PORT: '0', SHOPIFY_CLIENT_ID: '11111111111111111111111111111111' },
   });
   const exited = new Promise((resolve) => child.once('close', resolve));
   let diagnostics = '';

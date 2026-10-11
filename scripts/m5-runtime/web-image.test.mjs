@@ -83,6 +83,8 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
       'run',
       '--detach',
       '--init',
+      '--env',
+      'SHOPIFY_CLIENT_ID=11111111111111111111111111111111',
       '--name',
       container,
       '--network',
@@ -109,6 +111,18 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
     const response = await fetch(address, { signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]) });
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: 'live' });
+    for (const route of ['/admin/products', '/admin/products/111/config']) {
+      const page = await fetch(new URL(route, address), {
+        signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]),
+      });
+      assert.equal(page.status, 200);
+      assert.equal(page.headers.get('cache-control'), 'private, no-store');
+      assert.ok(page.headers.get('content-security-policy').includes('frame-ancestors https://admin.shopify.com'));
+      assert.ok(
+        (await page.text()).includes('<meta name="shopify-api-key" content="11111111111111111111111111111111">'),
+      );
+    }
+
     await docker(['stop', '--time', '10', container]);
     const stopped = await inspect();
     assert.equal(stopped.State.Running, false);

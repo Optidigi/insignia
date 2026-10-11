@@ -82,6 +82,8 @@ jobs:
           node-version: '24.21.0'
       - run: corepack pnpm install --frozen-lockfile
       - run: corepack pnpm build
+      - name: Frozen schema-owner operator and effective PostgreSQL18 roles (isolated database)
+        run: M5_SCHEMA_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 scripts/m5-runtime/schema-provision.test.mjs scripts/m5-runtime/schema-provision-package.test.mjs scripts/m5-runtime/release-append.test.mjs
       - run: corepack pnpm check:style
       - run: corepack pnpm check:boundaries
       - name: Experimental private callback HTTP/operator/restart/supervisor/erasure controls
@@ -112,6 +114,11 @@ jobs:
           M5_IMAGE_EVIDENCE_DIR: ${{ runner.temp }}/m5-024-image-evidence
           M5_IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/m5-024-worker-image
         run: node --test scripts/m5-024/image-artifact.test.mjs scripts/m5-024/image-observations.test.mjs scripts/m5-024/image-runtime.test.mjs
+      - name: Frozen schema-owner code mount with qualified worker image (no network/startup)
+        env:
+          M5_IMAGE_ARTIFACT_DIR: ${{ runner.temp }}/m5-024-worker-image
+          M5_WORKER_PACKAGE_ENTRY: /tmp/insignia-m5-024-worker/dist/main.js
+        run: node --test scripts/m5-runtime/schema-provision-package.image.test.mjs
       - name: Ordinary canonical web and worker Compose rendering controls
         run: node --test scripts/m5-runtime/web-compose.test.mjs
       - name: Preserve M5-024 image qualification receipts and raw logs
