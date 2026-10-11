@@ -28,6 +28,8 @@ export interface AdminServices {
   /** Must verify the Shopify session token, active installation and online staff
    * grant on every request, including reinstall/deactivation invalidation. */
   authenticate(request: Request): Promise<AdminActor | null>;
+  /** HTTP-only rejected boundary observation; no request, claims or error crosses this port. */
+  recordAuthenticationRejection?(stage: 'BEARER_MISSING' | 'BEARER_MALFORMED' | 'AUTHENTICATED_ACTOR_REJECTED'): void;
   /** Read-only technical observations; presence alone is never activation admission. */
   inspectReadiness?(actor: AdminActor): Promise<{
     version: 'm5-admin-technical-readiness-v1';

@@ -6,6 +6,12 @@ import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtim
 import { withAdminDeadline } from './admin-deadline.js';
 
 export type AdminOnlineIdentityStage =
+  | 'SESSION_TOKEN_SIGNATURE_REJECTED'
+  | 'SESSION_TOKEN_AUDIENCE_REJECTED'
+  | 'SESSION_TOKEN_TIME_REJECTED'
+  | 'SESSION_TOKEN_FORMAT_REJECTED'
+  | 'SESSION_TOKEN_REJECTED'
+  | 'SESSION_IDENTITY_REJECTED'
   | 'ONLINE_EXCHANGE_REFRESH_REQUIRED'
   | 'ONLINE_EXCHANGE_FAILED'
   | 'ONLINE_GRANT_MISMATCH'
@@ -13,6 +19,12 @@ export type AdminOnlineIdentityStage =
   | 'INSTALLATION_PROVIDER_SHAPE_OR_IDENTITY_MISMATCH';
 
 const stageMessages: Record<AdminOnlineIdentityStage, string> = {
+  SESSION_TOKEN_SIGNATURE_REJECTED: 'Session signature rejected',
+  SESSION_TOKEN_AUDIENCE_REJECTED: 'Session audience rejected',
+  SESSION_TOKEN_TIME_REJECTED: 'Session time rejected',
+  SESSION_TOKEN_FORMAT_REJECTED: 'Session format rejected',
+  SESSION_TOKEN_REJECTED: 'Session token rejected',
+  SESSION_IDENTITY_REJECTED: 'Session identity rejected',
   ONLINE_EXCHANGE_REFRESH_REQUIRED: 'Identity refresh required',
   ONLINE_EXCHANGE_FAILED: 'Online token exchange failed',
   ONLINE_GRANT_MISMATCH: 'Online staff grant mismatch',
@@ -79,6 +91,20 @@ function refreshableExchangeError(error: unknown): boolean {
   );
 }
 
+/** SDK15/jose5 erase structured JWT causes. Compare only exact pinned messages locally;
+ * never emit the SDK message (which contains the token), or attach its cause. Unknown
+ * failures keep the aggregate stage. This classifies rejection and grants no authority. */
+function rejectedSessionStage(error: unknown, token: string): AdminOnlineIdentityStage {
+  if (!(error instanceof InvalidJwtError)) return 'SESSION_TOKEN_REJECTED';
+  if (error.message === 'Session token had invalid API key') return 'SESSION_TOKEN_AUDIENCE_REJECTED';
+  const wrapped = (message: string) => error.message === `Failed to parse session token '${token}': ${message}`;
+  if (wrapped('signature verification failed')) return 'SESSION_TOKEN_SIGNATURE_REJECTED';
+  if (wrapped('"exp" claim timestamp check failed') || wrapped('"nbf" claim timestamp check failed'))
+    return 'SESSION_TOKEN_TIME_REJECTED';
+  if (wrapped('Invalid Compact JWS')) return 'SESSION_TOKEN_FORMAT_REJECTED';
+  return 'SESSION_TOKEN_REJECTED';
+}
+
 type OnlineSession = {
   isOnline: boolean;
   shop: string;
@@ -109,15 +135,15 @@ export function createAdminOnlineIdentity(input: {
   });
   return {
     async verify(token: string): Promise<VerifiedStaffIdentity> {
-      if (!token || token.length > 8192) throw new Error('Invalid Shopify identity');
+      if (!token || token.length > 8192) throw new AdminOnlineIdentityError('SESSION_TOKEN_REJECTED');
       let payload: Awaited<ReturnType<typeof api.session.decodeSessionToken>>;
       try {
         payload = await api.session.decodeSessionToken(token);
-      } catch {
-        throw new Error('Invalid Shopify identity');
+      } catch (error) {
+        throw new AdminOnlineIdentityError(rejectedSessionStage(error, token));
       }
       if (typeof payload.dest !== 'string' || !payload.dest.startsWith('https://'))
-        throw new Error('Invalid Shopify identity');
+        throw new AdminOnlineIdentityError('SESSION_IDENTITY_REJECTED');
       const shop = payload.dest.slice(8);
       if (
         !shopDomain.test(shop) ||
@@ -130,7 +156,7 @@ export function createAdminOnlineIdentity(input: {
         !Number.isFinite(payload.exp) ||
         payload.exp * 1000 <= Date.now()
       )
-        throw new Error('Invalid Shopify identity');
+        throw new AdminOnlineIdentityError('SESSION_IDENTITY_REJECTED');
       return { shop, staffId: payload.sub, sessionId: payload.sid, expiresAtMs: payload.exp * 1000 };
     },
     async exchangeOnline(token: string, identity: VerifiedStaffIdentity): Promise<OnlineStaffGrant> {

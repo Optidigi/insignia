@@ -64,12 +64,22 @@ export function createAdminAuthenticator(
   diagnostic: (stage: AdminAuthenticationStage) => void = () => {},
 ) {
   return async (request: Request): Promise<AdminActor | null> => {
-    const match = /^Bearer ([^\s]{1,8192})$/.exec(request.headers.get('Authorization') ?? '');
-    if (!match) return null;
+    const authorization = request.headers.get('Authorization');
+    const match = /^Bearer ([^\s]{1,8192})$/.exec(authorization ?? '');
+    if (!match) {
+      diagnostic(authorization === null ? 'BEARER_MISSING' : 'BEARER_MALFORMED');
+      return null;
+    }
     let identity: VerifiedAdminIdentity;
     try {
       identity = await port.verifySessionToken(match[1]!);
-    } catch {
+    } catch (error) {
+      diagnostic(
+        error instanceof AdminOnlineIdentityError &&
+          (error.stage === 'SESSION_IDENTITY_REJECTED' || error.stage.startsWith('SESSION_TOKEN_'))
+          ? error.stage
+          : 'SESSION_TOKEN_REJECTED',
+      );
       return null;
     }
     const current = now();
@@ -79,8 +89,10 @@ export function createAdminAuthenticator(
       !identity.sessionId ||
       !Number.isFinite(identity.expiresAtMs) ||
       identity.expiresAtMs <= current
-    )
+    ) {
+      diagnostic('SESSION_IDENTITY_REJECTED');
       return null;
+    }
     let grant: OnlineAdminGrant;
     try {
       grant = await port.exchangeOnlineGrant(match[1]!, identity);

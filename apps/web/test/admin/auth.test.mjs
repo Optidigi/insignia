@@ -142,3 +142,56 @@ test('downstream failures preserve only their safe stage and refresh type after 
     assert.equal(events.at(-1), stage);
   }
 });
+
+test('early authentication rejection emits one bounded stage without downstream access', async () => {
+  for (const [authorization, verification, expected] of [
+    [null, async () => identity, 'BEARER_MISSING'],
+    ['Basic synthetic-private', async () => identity, 'BEARER_MALFORMED'],
+    ...[
+      'SESSION_TOKEN_SIGNATURE_REJECTED',
+      'SESSION_TOKEN_AUDIENCE_REJECTED',
+      'SESSION_TOKEN_TIME_REJECTED',
+      'SESSION_TOKEN_FORMAT_REJECTED',
+      'SESSION_TOKEN_REJECTED',
+    ].map((stage) => [
+      'Bearer synthetic',
+      async () => {
+        throw new AdminOnlineIdentityError(stage);
+      },
+      stage,
+    ]),
+    [
+      'Bearer synthetic',
+      async () => {
+        throw new Error('synthetic-private-SDK-token');
+      },
+      'SESSION_TOKEN_REJECTED',
+    ],
+    [
+      'Bearer synthetic',
+      async () => {
+        throw new AdminOnlineIdentityError('SESSION_IDENTITY_REJECTED');
+      },
+      'SESSION_IDENTITY_REJECTED',
+    ],
+    ['Bearer synthetic', async () => ({ ...identity, expiresAtMs: now - 1 }), 'SESSION_IDENTITY_REJECTED'],
+  ]) {
+    const events = [];
+    const auth = createAdminAuthenticator(
+      {
+        verifySessionToken: verification,
+        exchangeOnlineGrant: async () => {
+          assert.fail('rejected identity reached exchange');
+        },
+        readInstallation: async () => {
+          assert.fail('rejected identity reached installation');
+        },
+      },
+      () => now,
+      (stage) => events.push(stage),
+    );
+    const headers = authorization === null ? {} : { Authorization: authorization };
+    assert.equal(await auth(new Request('https://app.example.test/api/admin/products', { headers })), null);
+    assert.deepEqual(events, [expected]);
+  }
+});

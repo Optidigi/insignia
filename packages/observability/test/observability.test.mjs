@@ -121,6 +121,15 @@ test('admin auth diagnostics emit only a bounded stage and independent correlati
   assert.throws(() => logger.info('admin_authentication', { authStage: record.authStage, correlationId: 'SECRET' }));
   assert.doesNotMatch(output, /SECRET/);
   for (const stage of [
+    'BEARER_MISSING',
+    'BEARER_MALFORMED',
+    'SESSION_TOKEN_SIGNATURE_REJECTED',
+    'SESSION_TOKEN_AUDIENCE_REJECTED',
+    'SESSION_TOKEN_TIME_REJECTED',
+    'SESSION_TOKEN_FORMAT_REJECTED',
+    'SESSION_TOKEN_REJECTED',
+    'AUTHENTICATED_ACTOR_REJECTED',
+    'SESSION_IDENTITY_REJECTED',
     'INSTALLATION_BOOTSTRAP_CREATED_SUCCEEDED',
     'INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED',
     'INSTALLATION_BOOTSTRAP_REINSTALLED_SUCCEEDED',
@@ -135,6 +144,10 @@ test('admin auth diagnostics emit only a bounded stage and independent correlati
       correlationId: record.correlationId,
       accessToken: 'SECRET',
       staffId: 'SECRET',
+      sessionId: 'SECRET',
+      authorization: 'Bearer SECRET',
+      rawResponse: { token: 'SECRET' },
+      query: 'id_token=SECRET&shop=SECRET&host=SECRET',
       error: new Error('SECRET'),
     });
     const result = JSON.parse(output.trim());

@@ -7,9 +7,9 @@ import { createAdminOnlineIdentity, deadlineAwareOnlineFetch } from '../src/admi
 const key = 'synthetic-m5-client';
 const secret = 'synthetic-m5-secret-only';
 const shop = 'alpha.myshopify.com';
-function token(overrides: Record<string, unknown> = {}): string {
+function token(overrides: Record<string, unknown> = {}, signingSecret = secret, algorithm = 'HS256'): string {
   const now = Math.floor(Date.now() / 1000);
-  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
+  const header = Buffer.from(JSON.stringify({ alg: algorithm, typ: 'JWT' })).toString('base64url');
   const payload = Buffer.from(
     JSON.stringify({
       iss: `https://${shop}/admin`,
@@ -25,10 +25,56 @@ function token(overrides: Record<string, unknown> = {}): string {
     }),
   ).toString('base64url');
   const unsigned = `${header}.${payload}`;
-  return `${unsigned}.${createHmac('sha256', secret).update(unsigned).digest('base64url')}`;
+  return `${unsigned}.${createHmac('sha256', signingSecret).update(unsigned).digest('base64url')}`;
 }
 
 describe('production Shopify online staff adapter with synthetic transport', () => {
+  it('classifies actual SDK token rejection without exposing SDK token messages or causes', async () => {
+    const provider = createAdminOnlineIdentity({ apiKey: key, apiSecret: secret, hostName: 'example.test' });
+    for (const [signed, stage] of [
+      [token({}, 'synthetic-other-secret'), 'SESSION_TOKEN_SIGNATURE_REJECTED'],
+      [token({ aud: 'another-client' }), 'SESSION_TOKEN_AUDIENCE_REJECTED'],
+      [token({ exp: Math.floor(Date.now() / 1000) - 60 }), 'SESSION_TOKEN_TIME_REJECTED'],
+      [token({ nbf: Math.floor(Date.now() / 1000) + 60 }), 'SESSION_TOKEN_TIME_REJECTED'],
+      ['synthetic-private-malformed-token', 'SESSION_TOKEN_FORMAT_REJECTED'],
+      [token({}, secret, 'HS384'), 'SESSION_TOKEN_REJECTED'],
+      [token({ exp: 'invalid-number' }), 'SESSION_TOKEN_REJECTED'],
+    ]) {
+      const failure = await provider.verify(signed).catch((error: unknown) => error);
+      expect(failure).toMatchObject({ name: 'AdminOnlineIdentityError', stage });
+      expect(String(failure)).not.toContain(signed);
+      expect(failure).not.toHaveProperty('cause');
+    }
+  });
+
+  it('uses only the current verification secret; rotation mismatch is a hypothetical local control', async () => {
+    const signed = token();
+    const current = createAdminOnlineIdentity({ apiKey: key, apiSecret: secret, hostName: 'example.test' });
+    expect((await current.verify(signed)).shop).toBe(shop);
+    const rotated = createAdminOnlineIdentity({
+      apiKey: key,
+      apiSecret: 'synthetic-rotated-secret',
+      hostName: 'example.test',
+    });
+    await expect(rotated.verify(signed)).rejects.toMatchObject({ stage: 'SESSION_TOKEN_SIGNATURE_REJECTED' });
+  });
+
+  it('distinguishes application identity rejection after successful SDK signature verification', async () => {
+    const provider = createAdminOnlineIdentity({ apiKey: key, apiSecret: secret, hostName: 'example.test' });
+    for (const claims of [
+      { dest: 'https://outside.test' },
+      { iss: 'https://other.myshopify.com/admin' },
+      { sub: '0' },
+      { sid: 'short' },
+    ]) {
+      const signed = token(claims);
+      const failure = await provider.verify(signed).catch((error: unknown) => error);
+      expect(failure).toMatchObject({ name: 'AdminOnlineIdentityError', stage: 'SESSION_IDENTITY_REJECTED' });
+      expect(String(failure)).not.toContain(signed);
+      expect(failure).not.toHaveProperty('cause');
+    }
+  });
+
   it.each([
     [403, { error: 'synthetic-private-provider-body' }, 'INSTALLATION_PROVIDER_READ_FAILED'],
     [200, { errors: [{ message: 'synthetic-private-provider-body' }] }, 'INSTALLATION_PROVIDER_READ_FAILED'],

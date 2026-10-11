@@ -111,7 +111,12 @@ export async function handleAdminRequest(
   if (!services) return adminJson(503, { error: 'Admin service unavailable' });
   const url = new URL(request.url);
   const bearer = request.headers.get('Authorization') ?? '';
-  if (!/^Bearer [^\s]{1,8192}$/.test(bearer)) return adminJson(401, { error: 'Authentication required' });
+  if (!/^Bearer [^\s]{1,8192}$/.test(bearer)) {
+    services.recordAuthenticationRejection?.(
+      request.headers.has('Authorization') ? 'BEARER_MALFORMED' : 'BEARER_MISSING',
+    );
+    return adminJson(401, { error: 'Authentication required' });
+  }
   let actor: AdminActor | null;
   try {
     actor = await services.authenticate(request);
@@ -123,7 +128,10 @@ export async function handleAdminRequest(
     }
     return adminJson(503, { error: 'Authentication unavailable' });
   }
-  if (!validActor(actor, Date.now())) return adminJson(401, { error: 'Authentication required' });
+  if (!validActor(actor, Date.now())) {
+    if (actor !== null) services.recordAuthenticationRejection?.('AUTHENTICATED_ACTOR_REJECTED');
+    return adminJson(401, { error: 'Authentication required' });
+  }
   if (url.searchParams.has('shop') && url.searchParams.get('shop') !== actor.shop)
     return adminJson(403, { error: 'Shop mismatch' });
   if (!actor.canRead) return adminJson(403, { error: 'Read permission required' });
