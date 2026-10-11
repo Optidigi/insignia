@@ -2,6 +2,8 @@
 
 M5 is IN_PROGRESS / G7 NOT_PASSED. Within-milestone implementation, independent reviews, exact-head CI and normal merges remain delegated. No M6/M7 or merchant rollout; legacy/Stitchs/Superfunny production changes are excluded.
 
+PR85 is normally integrated at `c02b1bb4a9690fa17550e045b16ef09e5cd944e5`, preserving reviewed head `92ec9b998549ec50473fd95ac84d3692a9e4afd9` and tree `cddd2699ac8a9ad99e068f1c386a0ab9993c2584`, fresh sol-low CLEAR/CLEAR reviews and five natural attempt1 successes. [Ordered-parent/main/CI receipt](evidence/m5-native-publication-readiness/pr85-merge-receipt.json). The explicit target-authority profile and admitted internal create port are locally qualified; native Function setup and durable operator workflow remain NOT_RUN/unqualified. Production is unchanged. The corrected T3 project routing delivered the real exact-head CI notification.
+
 Current owner conventions: primarily inline core execution, independent reviews and bounded supporting delegation; TDD, justified complexity and a measured 50% test-footprint ceiling under [operating-model §§4–5](operating-model.md#4-independent-agents-skills-and-tooling). The next execution run follows the [M5 finish plan](evidence/m5-admin-presentation-readiness/M5-FINISH-PLAN.md), including testing/complexity cleanup. Stop and report all updated conventions and measured acceptance at actual M5 completion; a blocker is not PASS.
 
 Active1162611916801 remains settled and the old exposed secret is revoked/absent. Existing consumers use only the replacement. Earlier owner Search success and authoritative active generation1 bootstrap are preserved; the earlier failed Search cause remains unknown.
