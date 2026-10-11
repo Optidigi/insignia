@@ -1,6 +1,6 @@
 # Insignia — milestone-autonomous delivery operating model
 
-Version 2.2 — 11 October 2026. Authority: [milestone autonomy](authority/milestone-autonomy-2026-10-09.md) and [owner delivery-conventions amendment](authority/pragmatic-delivery-2026-10-11.md). Replaces per-slice/per-PR external principal review for current and future work. Product and security contracts are unchanged.
+Version 2.2 — 11 October 2026. Authority: [milestone autonomy](authority/milestone-autonomy-2026-10-09.md), [owner delivery-conventions amendment](authority/pragmatic-delivery-2026-10-11.md) and [owner model/effort amendment](authority/agent-model-effort-2026-10-11.md). Replaces per-slice/per-PR external principal review for current and future work. Product and security contracts are unchanged.
 
 ## 1. Ownership and review boundaries
 
