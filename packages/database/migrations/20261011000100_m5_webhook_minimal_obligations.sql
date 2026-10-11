@@ -60,7 +60,7 @@ BEGIN
     body:=convert_from(receipt.payload,'UTF8')::jsonb;
     IF jsonb_typeof(body)<>'object' THEN parsed:=false; END IF;
   EXCEPTION WHEN invalid_text_representation OR character_not_in_repertoire
-    OR numeric_value_out_of_range OR untranslatable_character THEN parsed:=false;
+    OR numeric_value_out_of_range OR untranslatable_character OR statement_too_complex THEN parsed:=false;
   END;
   IF parsed THEN
     -- Parse IDs in PostgreSQL JSONB, then store exact decimal strings for safe readers.

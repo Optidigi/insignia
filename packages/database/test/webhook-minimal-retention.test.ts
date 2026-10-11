@@ -277,11 +277,18 @@ test('JSONB content conversion failures cannot retain expired authenticated byte
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
   try {
+    const deeplyNested = `{"shop_id":123,"value":${'['.repeat(20000)}0${']'.repeat(20000)}}`;
+    // Valid ~40KiB JSON within ingress limits; PostgreSQL JSONB's recursive
+    // representation can exceed its stack limit without invalid JSON syntax.
+    expect(Buffer.byteLength(deeplyNested)).toBeLessThan(41000);
+    expect(JSON.parse(deeplyNested).shop_id).toBe(123);
+    await expect(pool.query('select $1::jsonb', [deeplyNested])).rejects.toMatchObject({ code: '54001' });
     const ids: string[] = [];
     for (const body of [
       '{"shop_id":123,"value":1e1000000}',
       '{"shop_id":123,"value":"\\u0000"}',
       '{"shop_id":123,"customer":{"id":456}}',
+      deeplyNested,
     ]) {
       const receipt = await core.webhooks.receive({
         shopDomain: `m${randomUUID().replaceAll('-', '')}.myshopify.com`,
@@ -313,6 +320,17 @@ test('JSONB content conversion failures cannot retain expired authenticated byte
     expect(rows.find((row) => row.id === ids[0]).captured_fields).toEqual({ unsupportedBody: true });
     expect(rows.find((row) => row.id === ids[1]).captured_fields).toEqual({ unsupportedBody: true });
     expect(rows.find((row) => row.id === ids[2]).captured_fields.customer.id).toBe('456');
+    expect(rows.find((row) => row.id === ids[3]).captured_fields).toEqual({ unsupportedBody: true });
+    const again = await core.webhooks.eraseExpiredPayloads(100);
+    for (const id of ids) expect(again.erasedIds).not.toContain(id);
+    expect(
+      (
+        await pool.query(
+          "select count(*)::int as count from webhook_obligation_facts where inbox_id=any($1) and purpose='UNQUALIFIED'",
+          [ids],
+        )
+      ).rows[0].count,
+    ).toBe(4);
   } finally {
     await core.close();
     await pool.end();

@@ -178,7 +178,7 @@ jobs:
         run: node --test test/webhook-metadata-boundary.test.mjs
       - name: Uninstall authority quarantine and unresolved obligation controls
         env:
-          DATABASE_URL: postgres://insignia_test:insignia_test@localhost:5432/insignia_m5_025_http?sslmode=disable
+          DATABASE_URL: postgres://synthetic_runtime_owner:insignia_test@localhost:5432/insignia_m5_025_http?sslmode=disable
           M5_025_REQUIRE_SAFE_UNINSTALL: '1'
         # Dedicated disposable DB prevents unrelated recovery backlog competing
         # with this bounded process control. Safety assertions are unconditional;
@@ -197,7 +197,7 @@ jobs:
         # V2 data cannot be downgraded into v1. Rehearse schema rollback in a separate,
         # empty disposable database; qualification rows and historical JSONB stay intact.
         env:
-          DATABASE_URL: postgres://insignia_test:insignia_test@localhost:5432/insignia_migration_rehearsal?sslmode=disable
+          DATABASE_URL: postgres://synthetic_runtime_owner:insignia_test@localhost:5432/insignia_migration_rehearsal?sslmode=disable
         run: |
           corepack pnpm exec dbmate create
           corepack pnpm db:migrate
