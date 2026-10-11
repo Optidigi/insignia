@@ -11,7 +11,10 @@ const binding = {
   installationGeneration: '3',
   externalInstallationId: 'gid://shopify/AppInstallation/101',
   appVersionRef: '101',
-  sourceCommit: 'a'.repeat(40),
+  functionArtifactSourceCommit: 'a'.repeat(40),
+  operatorCommit: 'b'.repeat(40),
+  operatorTree: 'c'.repeat(40),
+  operatorBuildSha256: 'd'.repeat(64),
 };
 test('admission and exact acknowledgement are private, durable and single-use', async () => {
   const parent = await mkdtemp(join(tmpdir(), 'insignia-function-'));
@@ -22,10 +25,16 @@ test('admission and exact acknowledgement are private, durable and single-use', 
     journal.dispatch('CREATE_TRANSFORM');
     journal.settle('CREATE_TRANSFORM', 'ACK', 'gid://shopify/CartTransform/101');
     assert.equal(
-      JSON.parse(await readFile(join(directory, 'CREATE_TRANSFORM-settled.json'))).id,
+      JSON.parse(await readFile(join(directory, 'CREATE_TRANSFORM-settled.json'))).evidence,
       'gid://shopify/CartTransform/101',
     );
     assert.throws(() => journal.reserve('CREATE_TRANSFORM'), /admission_denied/);
+    journal.reserve('READ_TRANSFORM');
+    journal.dispatch('READ_TRANSFORM');
+    journal.settle('READ_TRANSFORM', 'STOP', { transformId: 'gid://shopify/CartTransform/103', validationId: null });
+    const stopped = JSON.parse(await readFile(join(directory, 'READ_TRANSFORM-settled.json')));
+    assert.equal(stopped.outcome, 'STOP');
+    assert.equal(stopped.evidence.transformId, 'gid://shopify/CartTransform/103');
     journal.finish('FUNCTION_SETUP_STOPPED');
     assert.throws(() => journal.reserve('CREATE_VALIDATION'), /admission_denied/);
   } finally {

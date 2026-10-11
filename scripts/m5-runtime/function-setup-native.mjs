@@ -1,7 +1,11 @@
 /** Private one-shot operator. NOT_RUN. The source-bound release baseline must first
  * contain the qualified Function-write scopes. Never invoked from merchant screens. */
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
+import { closeSync, constants, fstatSync, lstatSync, openSync, readdirSync, readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
+import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import baseline from '../../deployment/m5-runtime/native-module-baseline.json' with { type: 'json' };
 import release from '../../deployment/m5-runtime/native-module-binding.json' with { type: 'json' };
@@ -11,7 +15,61 @@ import { createManagementProcess } from './trusted-release-management-process.mj
 
 const SHOP = 'insignia-rewrite-dev.myshopify.com';
 const RUN = '/home/serveradmin/insignia-milestone-autonomy-handoff/m5-function-setup-native-run-20261011';
+const GATE = '/home/serveradmin/insignia-milestone-autonomy-handoff/m5-function-setup-frozen-gate.json';
+const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const writeScopes = ['write_cart_transforms', 'write_validations'];
+export function qualifyFunctionSetupExecutable(gate, actual) {
+  for (const value of [gate, actual]) {
+    assert.deepEqual(Object.keys(value).sort(), ['operatorBuildSha256', 'operatorCommit', 'operatorTree']);
+    for (const key of ['operatorCommit', 'operatorTree']) assert.match(value[key], /^[a-f0-9]{40}$/);
+    assert.match(value.operatorBuildSha256, /^[a-f0-9]{64}$/);
+  }
+  assert.deepEqual(actual, gate, 'function_setup_executable_mismatch');
+  return Object.freeze({ ...actual });
+}
+function operatorIdentity() {
+  assert.equal(process.versions.node, '24.21.0');
+  const git = (args) =>
+    execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+  git(['diff', '--exit-code', '--quiet', 'HEAD']);
+  const paths = [
+    'pnpm-lock.yaml',
+    ...['native', 'network', 'journal'].map((name) => `scripts/m5-runtime/function-setup-${name}.mjs`),
+    ...['process', 'worker'].map((name) => `scripts/m5-runtime/trusted-release-management-${name}.mjs`),
+    ...['baseline', 'binding'].map((name) => `deployment/m5-runtime/native-module-${name}.json`),
+  ];
+  function compiled(directory) {
+    for (const name of readdirSync(join(ROOT, directory)).sort()) {
+      const path = join(directory, name),
+        stat = lstatSync(join(ROOT, path));
+      assert.ok(!stat.isSymbolicLink());
+      if (stat.isDirectory()) compiled(path);
+      else if (/\.(js|mjs|json)$/.test(name)) paths.push(path);
+    }
+  }
+  for (const name of ['shopify', 'database', 'application', 'contracts', 'cart-authorization'])
+    compiled(`packages/${name}/dist`);
+  const hash = createHash('sha256').update(process.version);
+  for (const path of paths.sort()) {
+    const bytes = readFileSync(join(ROOT, path));
+    hash.update(path).update('\0').update(String(bytes.length)).update('\0').update(bytes);
+  }
+  return {
+    operatorCommit: git(['rev-parse', 'HEAD']),
+    operatorTree: git(['rev-parse', 'HEAD^{tree}']),
+    operatorBuildSha256: hash.digest('hex'),
+  };
+}
+function verifiedOperator() {
+  const fd = openSync(GATE, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+  try {
+    const stat = fstatSync(fd);
+    assert.ok(stat.isFile() && stat.uid === process.getuid() && (stat.mode & 0o777) === 0o600 && stat.size <= 4096);
+    return qualifyFunctionSetupExecutable(JSON.parse(readFileSync(fd, 'utf8')), operatorIdentity());
+  } finally {
+    closeSync(fd);
+  }
+}
 export function qualifyFunctionSetupBaseline() {
   const access = baseline.find((m) => m.handle === 'app_access')?.config;
   assert.ok(
@@ -56,6 +114,7 @@ async function main() {
   try {
     // Fail before accepting credentials until the actual reviewed release tuple is bound.
     qualifyFunctionSetupBaseline();
+    const operator = verifiedOperator();
     let size = 0;
     for await (const chunk of process.stdin) {
       size += chunk.length;
@@ -93,7 +152,8 @@ async function main() {
       installationGeneration: managed.currentGeneration,
       externalInstallationId: managed.externalInstallationId,
       appVersionRef: release.versionId,
-      sourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
+      ...operator,
+      functionArtifactSourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
     });
     const deadline = Date.now() + 30000;
     const network = installFunctionSetupNetwork({
@@ -163,6 +223,7 @@ async function main() {
       appId: release.appId,
     };
     async function verifyAuthority() {
+      assert.deepEqual(verifiedOperator(), operator);
       network.assertNoEscape();
       assert.ok(Date.now() < expires);
       assert.deepEqual(await core.tenants.getManagedInstallationState(SHOP), managed);

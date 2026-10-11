@@ -45,13 +45,18 @@ export function reserveFunctionSetupRun(directory, binding) {
   assert.deepEqual(Object.keys(binding).sort(), [
     'appVersionRef',
     'externalInstallationId',
+    'functionArtifactSourceCommit',
     'installationGeneration',
+    'operatorBuildSha256',
+    'operatorCommit',
+    'operatorTree',
     'shopId',
-    'sourceCommit',
   ]);
   for (const value of Object.values(binding))
     assert.ok(typeof value === 'string' && /^[A-Za-z0-9:/._-]{1,256}$/.test(value));
-  assert.match(binding.sourceCommit, /^[a-f0-9]{40}$/);
+  for (const key of ['operatorCommit', 'operatorTree', 'functionArtifactSourceCommit'])
+    assert.match(binding[key], /^[a-f0-9]{40}$/);
+  assert.match(binding.operatorBuildSha256, /^[a-f0-9]{64}$/);
   assert.match(binding.appVersionRef, /^[1-9][0-9]*$/);
   assert.match(binding.installationGeneration, /^[1-9][0-9]*$/);
   assert.match(binding.externalInstallationId, /^gid:\/\/shopify\/AppInstallation\/[1-9][0-9]*$/);
@@ -94,11 +99,20 @@ export function reserveFunctionSetupRun(directory, binding) {
       dispatched.add(operation);
       durable(directory, `${operation}-dispatched.json`, { operation, bindingSha256, attempt: 1 });
     },
-    settle(operation, outcome, id = null) {
+    settle(operation, outcome, evidence = null) {
       assert.ok(!closed && dispatched.has(operation) && !settled.has(operation) && ['ACK', 'STOP'].includes(outcome));
-      assert.ok(id === null || /^gid:\/\/shopify\/(CartTransform|Validation)\/[1-9][0-9]*$/.test(id));
+      const gid = (value) =>
+        typeof value === 'string' && /^gid:\/\/shopify\/(CartTransform|Validation)\/[1-9][0-9]*$/.test(value);
+      if (evidence !== null && typeof evidence === 'object') {
+        assert.deepEqual(Object.keys(evidence).sort(), ['transformId', 'validationId']);
+        for (const [kind, value] of Object.entries(evidence))
+          assert.ok(
+            value === null ||
+              (gid(value) && value.includes(kind === 'transformId' ? '/CartTransform/' : '/Validation/')),
+          );
+      } else assert.ok(evidence === null || gid(evidence));
       settled.add(operation);
-      durable(directory, `${operation}-settled.json`, { operation, outcome, id, retryAuthorized: false });
+      durable(directory, `${operation}-settled.json`, { operation, outcome, evidence, retryAuthorized: false });
     },
     finish(classification) {
       assert.ok(!closed && ['FUNCTIONS_VERIFIED', 'FUNCTION_SETUP_STOPPED'].includes(classification));

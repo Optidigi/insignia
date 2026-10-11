@@ -17,11 +17,12 @@ const expected = {
   transformInputQuerySha256: createHash('sha256').update('query{}').digest('hex'),
   validationInputQuerySha256: createHash('sha256').update('query{}').digest('hex'),
 };
-test.each(['settled', 'ambiguous', 'drift', 'existing', 'partial', 'foreign', 'expired'] as const)(
+test.each(['settled', 'ambiguous', 'drift', 'identity', 'existing', 'partial', 'foreign', 'expired'] as const)(
   'operator %s settlement controls the next write',
   async (scenario) => {
     const attempts: string[] = [],
       reservations = new Set<string>();
+    const receipts: Array<{ operation: string; outcome: string; evidence: unknown }> = [];
     let transformed = ['existing', 'partial', 'foreign'].includes(scenario),
       validated = scenario === 'existing';
     const transform = { id: 'gid://shopify/CartTransform/101', functionId: 'transform-id', blockOnFailure: true };
@@ -60,6 +61,7 @@ test.each(['settled', 'ambiguous', 'drift', 'existing', 'partial', 'foreign', 'e
                     ? [
                         {
                           ...transform,
+                          id: scenario === 'identity' ? 'gid://shopify/CartTransform/103' : transform.id,
                           blockOnFailure: scenario !== 'drift',
                           functionId: scenario === 'foreign' ? 'foreign-id' : transform.functionId,
                         },
@@ -112,7 +114,9 @@ test.each(['settled', 'ambiguous', 'drift', 'existing', 'partial', 'foreign', 'e
             reservations.add(operation);
             return true;
           },
-          settle() {},
+          settle(operation, outcome, evidence) {
+            receipts.push({ operation, outcome, evidence });
+          },
           finish() {},
         },
       });
@@ -122,12 +126,24 @@ test.each(['settled', 'ambiguous', 'drift', 'existing', 'partial', 'foreign', 'e
       expect(attempts).toEqual(
         scenario === 'settled'
           ? ['function_transform_create', 'function_validation_create']
-          : ['ambiguous', 'drift'].includes(scenario)
+          : ['ambiguous', 'drift', 'identity'].includes(scenario)
             ? ['function_transform_create']
             : [],
       );
       expect(result.retryAuthorized).toBe(false);
       expect(JSON.stringify(result)).not.toContain('PRIVATE');
+      if (scenario === 'existing')
+        expect(receipts.find((r) => r.operation === 'READ_PRESTATE')).toEqual({
+          operation: 'READ_PRESTATE',
+          outcome: 'ACK',
+          evidence: { transformId: transform.id, validationId: validation.id },
+        });
+      if (scenario === 'identity')
+        expect(receipts.find((r) => r.operation === 'READ_TRANSFORM')).toEqual({
+          operation: 'READ_TRANSFORM',
+          outcome: 'STOP',
+          evidence: { transformId: 'gid://shopify/CartTransform/103', validationId: null },
+        });
     } finally {
       await new Promise<void>((resolve) => server.close(() => resolve()));
     }

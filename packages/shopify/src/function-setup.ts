@@ -3,10 +3,11 @@ import { createFunctionProvisioningPort } from './function-provision.js';
 import type { PublicationAdminTransport, PublicationTenant } from './publication-admin.js';
 
 type Operation = 'READ_PRESTATE' | 'CREATE_TRANSFORM' | 'READ_TRANSFORM' | 'CREATE_VALIDATION' | 'READ_FINAL';
+export type FunctionSetupReadback = { transformId: string | null; validationId: string | null };
 export type FunctionSetupJournal = {
   /** Synchronous fsync admission before transport dispatch; throws on repeat. */
   reserve(operation: Operation): boolean;
-  settle(operation: Operation, outcome: 'ACK' | 'STOP', id?: string | null): void;
+  settle(operation: Operation, outcome: 'ACK' | 'STOP', evidence?: string | FunctionSetupReadback | null): void;
   finish(classification: 'FUNCTIONS_VERIFIED' | 'FUNCTION_SETUP_STOPPED'): void;
 };
 const object = (value: unknown): Record<string, unknown> | null =>
@@ -57,7 +58,7 @@ export async function provisionOwnedFunctions(input: {
     requireFact(Number.isFinite(deadline) && deadline <= before + 30_000);
     live();
   }
-  async function snapshot(operation: Operation) {
+  async function snapshot(operation: Operation, created: Partial<Record<'transform' | 'validation', string>> = {}) {
     await authority();
     requireFact(input.journal.reserve(operation) === true);
     let body: unknown;
@@ -108,7 +109,21 @@ export async function provisionOwnedFunctions(input: {
           /^gid:\/\/shopify\/Validation\/[1-9][0-9]*$/.test(String(object(item)?.id)),
       ),
     );
-    input.journal.settle(operation, 'ACK');
+    const evidence: FunctionSetupReadback = {
+      transformId: transforms.length ? String(object(transforms[0])?.id) : null,
+      validationId: validations.length ? String(object(validations[0])?.id) : null,
+    };
+    const exact =
+      operation === 'READ_PRESTATE'
+        ? (owned.transform === 'present' && owned.validation === 'present') ||
+          (owned.transform === 'missing' && owned.validation === 'missing')
+        : owned.transform === 'present' &&
+          evidence.transformId === created.transform &&
+          (operation === 'READ_TRANSFORM'
+            ? owned.validation === 'missing'
+            : owned.validation === 'present' && evidence.validationId === created.validation);
+    input.journal.settle(operation, exact ? 'ACK' : 'STOP', evidence);
+    requireFact(exact);
     return {
       transform: owned.transform,
       validation: owned.validation,
@@ -126,7 +141,6 @@ export async function provisionOwnedFunctions(input: {
     if (before.transform === 'present' && before.validation === 'present') {
       classification = 'FUNCTIONS_VERIFIED';
     } else {
-      requireFact(before.transform === 'missing' && before.validation === 'missing');
       const ids: Partial<Record<'transform' | 'validation', string>> = {};
       for (const kind of ['transform', 'validation'] as const) {
         await authority();
@@ -140,13 +154,7 @@ export async function provisionOwnedFunctions(input: {
         flags[kind === 'transform' ? 'transformAcknowledged' : 'validationAcknowledged'] = true;
         ids[kind] = result.id;
         input.journal.settle(operation, 'ACK', result.id);
-        const observed = await snapshot(kind === 'transform' ? 'READ_TRANSFORM' : 'READ_FINAL');
-        requireFact(observed.transform === 'present' && observed.transformId === ids.transform);
-        requireFact(
-          kind === 'transform'
-            ? observed.validation === 'missing'
-            : observed.validation === 'present' && observed.validationId === ids.validation,
-        );
+        await snapshot(kind === 'transform' ? 'READ_TRANSFORM' : 'READ_FINAL', ids);
       }
       classification = 'FUNCTIONS_VERIFIED';
     }

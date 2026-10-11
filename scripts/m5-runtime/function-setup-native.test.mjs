@@ -2,7 +2,18 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { parseFunctionSetupPacket, qualifyFunctionSetupBaseline } from './function-setup-native.mjs';
+import {
+  parseFunctionSetupPacket,
+  qualifyFunctionSetupBaseline,
+  qualifyFunctionSetupExecutable,
+} from './function-setup-native.mjs';
+
+test('operator admission distinguishes and verifies the exact operator commit/tree/build', () => {
+  const actual = { operatorCommit: 'a'.repeat(40), operatorTree: 'b'.repeat(40), operatorBuildSha256: 'c'.repeat(64) };
+  assert.deepEqual(qualifyFunctionSetupExecutable(actual, actual), actual);
+  for (const key of Object.keys(actual))
+    assert.throws(() => qualifyFunctionSetupExecutable({ ...actual, [key]: 'd'.repeat(actual[key].length) }, actual));
+});
 
 test('current read-only Function baseline refuses credentials and native setup before release binding', () => {
   assert.throws(qualifyFunctionSetupBaseline, /function_write_release_not_bound/);
