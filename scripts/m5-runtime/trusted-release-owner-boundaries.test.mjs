@@ -8,9 +8,10 @@ import { runManagementReads } from './trusted-release-management-worker.mjs';
 import { createOwnerHttps, INSTALLATION_BOUNDARY } from './trusted-release-owner-https.mjs';
 
 const modules = JSON.parse(
-  await readFile(new URL('../../deployment/m5-runtime/native-module-baseline.json', import.meta.url)),
+  await readFile(new URL('../../deployment/m5-runtime/native-function-module-baseline.json', import.meta.url)),
 );
 const versions = [
+  '1163229200385',
   '1162611916801',
   '1158986629121',
   '1158837927937',
@@ -19,7 +20,7 @@ const versions = [
   '1146748534785',
 ].map((id, i) => ({
   versionId: `gid://shopify/Version/${id}`,
-  versionTag: i ? `synthetic-${i}` : 'm5-runtime-b673985e1e38',
+  versionTag: i ? `synthetic-${i}` : 'm5-functions-9c2e56b42fbf',
   status: i ? 'inactive' : 'active',
 }));
 function sdkFixture() {
@@ -42,13 +43,13 @@ function sdkFixture() {
     async appVersions(remote) {
       calls.push('versions');
       assert.equal(remote.organizationId, '123');
-      return { app: { id: remote.id, appVersions: { nodes: versions, pageInfo: { totalResults: 6 } } } };
+      return { app: { id: remote.id, appVersions: { nodes: versions, pageInfo: { totalResults: 7 } } } };
     },
     async appVersionByTag(_remote, tag) {
       calls.push('modules');
-      assert.equal(tag, 'm5-runtime-b673985e1e38');
+      assert.equal(tag, 'm5-functions-9c2e56b42fbf');
       return {
-        uuid: 'gid://shopify/Version/1162611916801',
+        uuid: 'gid://shopify/Version/1163229200385',
         versionTag: tag,
         location: 'SYNTHETIC_PRIVATE_LOCATION',
         appModuleVersions: modules.map(({ handle, ...m }) => ({ ...m, registrationTitle: handle })),
@@ -77,7 +78,7 @@ test('fixed SDK workflow keeps original four methods and omits root secrets and 
     !JSON.stringify(f.sent).includes('SYNTHETIC_PRIVATE_ROOT_SECRET') &&
       !JSON.stringify(f.sent).includes('SYNTHETIC_PRIVATE_LOCATION'),
   );
-  assert.equal(f.sent[0].value.totalResults, 6);
+  assert.equal(f.sent[0].value.totalResults, 7);
   assert.equal(f.sent[1].value.observedAt, '2026-10-11T12:00:00.000Z');
 });
 

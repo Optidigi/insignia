@@ -160,7 +160,7 @@ export function createSigningOwnerAction(
     version: 'm5-signing-owner-binding-v1',
     binding,
     plan,
-    activeAppVersionRef: '1162611916801',
+    activeAppVersionRef: '1163229200385',
   };
   let execution: Promise<void> | undefined;
   let running = false,
@@ -219,12 +219,12 @@ export function createSigningOwnerAction(
             installationGeneration: binding.installationGeneration,
             appClientId: runtimeIdentity.appClientId,
           },
-          expectedActiveAppVersionRef: '1162611916801',
+          expectedActiveAppVersionRef: '1163229200385',
           now: time,
         });
         const attestation = trusted?.record?.attestation;
         if (
-          trusted?.expectedBuild?.appVersionRef !== '1162611916801' ||
+          trusted?.expectedBuild?.appVersionRef !== '1163229200385' ||
           trusted.expectedBuild?.sourceCommit !== '9b94149272d1b62c34f44dda3bde209e80b4ae22' ||
           !(
             Date.parse(attestation?.observedAt ?? '') <= time.getTime() &&

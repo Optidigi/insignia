@@ -13,11 +13,19 @@ import { frozenSchema18Fixture } from './frozen-schema18-fixture.mjs';
 import { appendTrustedRelease, qualifyReleaseAppendInput } from './release-append.mjs';
 
 const baseline = JSON.parse(
-  await readFile(new URL('../../deployment/m5-runtime/native-module-baseline.json', import.meta.url)),
+  await readFile(new URL('../../deployment/m5-runtime/native-function-module-baseline.json', import.meta.url)),
 );
 const now = Date.parse('2026-10-11T12:00:00.000Z');
 const at = (age = 0) => new Date(now - age).toISOString();
-const ids = ['1162611916801', '1158986629121', '1158837927937', '1153019904001', '1152880803841', '1146748534785'];
+const ids = [
+  '1163229200385',
+  '1162611916801',
+  '1158986629121',
+  '1158837927937',
+  '1153019904001',
+  '1152880803841',
+  '1146748534785',
+];
 function fixture() {
   return {
     recordId: '00000000-0000-4000-8000-000000000001',
@@ -27,14 +35,14 @@ function fixture() {
       versions: ids.map((id, i) => ({
         versionId: `gid://shopify/Version/${id}`,
         status: i ? 'inactive' : 'active',
-        versionTag: i ? 'historical' : 'm5-runtime-b673985e1e38',
+        versionTag: i ? 'historical' : 'm5-functions-9c2e56b42fbf',
       })),
     },
     moduleObservation: {
       appId: '429028933633',
       appClientId: '1443cf6d03d39edae7c101a943c5c684',
-      versionId: '1162611916801',
-      versionTag: 'm5-runtime-b673985e1e38',
+      versionId: '1163229200385',
+      versionTag: 'm5-functions-9c2e56b42fbf',
       observedAt: at(86400000),
       modules: structuredClone(baseline),
     },

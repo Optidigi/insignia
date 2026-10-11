@@ -9,7 +9,7 @@ import type {
   OnlineStaffGrant,
   PublicationTenant,
 } from '@insignia/shopify';
-import binding from '../../../../../deployment/m5-runtime/native-module-binding.json' with { type: 'json' };
+import binding from '../../../../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
 export type SigningProvisionPlan = { keyId: number; firstDay: number; lastDay: number };
 export type SigningRuntimeIdentity = { appClientId: string; appId: string; appOrigin: string };
 type Operation =
@@ -177,7 +177,7 @@ export async function reserveSigningProvisionRun(
 const APP = binding.appClientId;
 const APP_ID = binding.appId;
 const SHOP = 'insignia-rewrite-dev.myshopify.com';
-const VERSION = '1162611916801';
+const VERSION = '1163229200385';
 function sameScope(actual: SigningApplication.KeyScope | null, expected: SigningApplication.KeyScope) {
   assert.ok(actual);
   for (const field of ['shopId', 'installationGeneration', 'authorizationGeneration', 'authorizationEpoch'] as const)

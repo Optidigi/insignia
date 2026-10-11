@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import candidateBaseline from '../../deployment/m5-runtime/native-function-module-baseline.json' with { type: 'json' };
+import previousBaseline from '../../deployment/m5-runtime/native-module-baseline.json' with { type: 'json' };
 import {
   functionSetupBuildHash,
   parseFunctionSetupPacket,
@@ -19,8 +21,9 @@ test('operator admission distinguishes and verifies the exact operator commit/tr
     assert.throws(() => qualifyFunctionSetupExecutable({ ...actual, [key]: 'd'.repeat(actual[key].length) }, actual));
 });
 
-test('current read-only Function baseline refuses credentials and native setup before release binding', () => {
-  assert.throws(qualifyFunctionSetupBaseline, /function_write_release_not_bound/);
+test('observed write-scope candidate qualifies while the historical read-only baseline stays denied', () => {
+  assert.doesNotThrow(() => qualifyFunctionSetupBaseline(candidateBaseline));
+  assert.throws(() => qualifyFunctionSetupBaseline(previousBaseline), /function_write_release_not_bound/);
   const process = spawnSync(
     globalThis.process.execPath,
     [fileURLToPath(new URL('./function-setup-native.mjs', import.meta.url))],

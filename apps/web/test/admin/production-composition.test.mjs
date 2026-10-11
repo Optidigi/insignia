@@ -120,7 +120,7 @@ for (const releaseMode of ['missing', 'trusted-function-mismatch'])
           shopId: tenantId,
           installationGeneration: '1',
           appClientId: client,
-          appVersionRef: '1162611916801',
+          appVersionRef: '1163229200385',
           devPreviewRef: null,
           sourceCommit: 'a'.repeat(40),
           transform: {

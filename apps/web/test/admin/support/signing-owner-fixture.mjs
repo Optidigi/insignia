@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import binding from '../../../../../deployment/m5-runtime/native-module-binding.json' with { type: 'json' };
+import binding from '../../../../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
 import { reserveSigningProvisionRun } from '../../../../../scripts/m5-runtime/signing-provision.mjs';
 
 export const acceptedRuntimeIdentity = {
@@ -98,7 +98,7 @@ export async function fixture({ initial = clockStart } = {}) {
     shopId: scope.shopId,
     installationGeneration: '1',
     appClientId: observed.appClientId,
-    appVersionRef: '1162611916801',
+    appVersionRef: '1163229200385',
     devPreviewRef: null,
     sourceCommit: '9b94149272d1b62c34f44dda3bde209e80b4ae22',
     transform: {

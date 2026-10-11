@@ -480,7 +480,7 @@ export function createProductionAdminServices(
       });
       const evidence = await core.trustedReleaseRecords.read({
         scope,
-        expectedActiveAppVersionRef: '1162611916801',
+        expectedActiveAppVersionRef: '1163229200385',
         now: new Date(),
       });
       // Reviewed local query fingerprints only guide collection. These are not
