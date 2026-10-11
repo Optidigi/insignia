@@ -1,0 +1,54 @@
+{
+  "classification": "LOCAL_SOURCE_REGRESSION_PASS_NOT_NATIVE_ACCEPTANCE",
+  "steps": [
+    {
+      "command": ["corepack", "pnpm", "db:migrate"],
+      "exitCode": 0,
+      "seconds": 0.3
+    },
+    {
+      "command": ["corepack", "pnpm", "check"],
+      "exitCode": 0,
+      "seconds": 182.4
+    },
+    {
+      "command": ["corepack", "pnpm", "check:database"],
+      "exitCode": 0,
+      "seconds": 32.99
+    },
+    {
+      "command": [
+        "node",
+        "--test",
+        "scripts/m5-runtime/release-append.test.mjs",
+        "scripts/m5-runtime/trusted-release-collector.test.mjs",
+        "scripts/m5-runtime/trusted-release-management-worker.test.mjs",
+        "scripts/m5-runtime/trusted-release-launch.test.mjs"
+      ],
+      "exitCode": 0,
+      "seconds": 1.27
+    },
+    {
+      "command": ["corepack", "pnpm", "test:m5-stress"],
+      "exitCode": 0,
+      "seconds": 94.09
+    },
+    {
+      "command": ["corepack", "pnpm", "test:m5-renderer-control"],
+      "exitCode": 0,
+      "seconds": 6.67
+    }
+  ],
+  "isolatedPostgreSQLMajor": 18,
+  "instanceStopped": true,
+  "productionTouched": false,
+  "limits": [
+    "PG owner-lifecycle resource-specific controls and append-LOGIN control were not activated by this broad runner; previous unchanged controls remain historical and applicable CI still required.",
+    "Artifact seam61/61 after adding one profile2 production-composition control passed separately.",
+    "Stress100/100, zero skips; renderer is an expected-negative control."
+  ],
+  "privateLogs": {
+    "regression-r1.log": "8e36806f6af4b6b66486434449bd263f45a2c4c0e85b8907290fd5acd5e3fa6f",
+    "regression-r2.log": "8baf983e7fed052f3efcc8ac3131a6280420f1c81b944661805d95e8801f34f0"
+  }
+}

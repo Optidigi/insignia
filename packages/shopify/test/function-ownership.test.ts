@@ -64,6 +64,29 @@ const fixture = () => ({
 });
 
 describe('read-only owned Function reconciliation', () => {
+  test('explicit v2 separates enabled instance identity from unavailable legacy query', async () => {
+    const body = fixture();
+    for (const item of body.data.shopifyFunctions.nodes) Object.assign(item, { inputQuery: null });
+    const read = createFunctionOwnershipReconciler({
+      transport: { execute: async () => ({ status: 200, body }) },
+    }).read;
+    const result = await read(tenant, { ...expected, observationVersion: 2 });
+    expect(result).toMatchObject({
+      transform: 'present',
+      validation: 'present',
+      runtimeIdentity: 'unverifiable',
+      readiness: 'unknown',
+      observation: { schemaVersion: 2, transform: { inputQuerySha256: null }, validation: { inputQuerySha256: null } },
+    });
+    expect(await read(tenant, expected)).toMatchObject({ transform: 'unknown', validation: 'unknown' });
+    const first = body.data.shopifyFunctions.nodes[0];
+    if (!first) throw new Error('fixture Function missing');
+    Object.assign(first, { inputQuery: {} });
+    expect(await read(tenant, { ...expected, observationVersion: 2 })).toMatchObject({
+      transform: 'unknown',
+      observation: { transform: null },
+    });
+  });
   test('proves both configured owned targets and observed input queries', async () => {
     const execute = vi.fn(async (_request: PublicationAdminRequest) => ({ status: 200, body: fixture() }));
     const result = await createFunctionOwnershipReconciler({ transport: { execute } }).read(tenant, expected);
@@ -138,22 +161,46 @@ describe('read-only owned Function reconciliation', () => {
       observation: { transform: { functionId: 'function-transform' } },
     });
   });
-  test('retaining objects does not relax enabled or block-on-failure deployment requirements', async () => {
-    const body = fixture();
-    Object.assign(body.data.cartTransforms.nodes[0], { blockOnFailure: false });
-    Object.assign(body.data.validations.nodes[0], { enabled: false });
-    const result = await createFunctionOwnershipReconciler({
-      transport: { execute: async () => ({ status: 200, body }) },
-    }).read(tenant, expected);
-    expect(result).toMatchObject({
-      transform: 'drift',
-      validation: 'drift',
-      observation: {
-        transform: { functionId: 'function-transform' },
-        validation: { functionId: 'function-validation' },
-      },
-    });
-  });
+  test.each([undefined, 2] as const)(
+    'profile %s retains enabled and block-on-failure deployment requirements',
+    async (observationVersion) => {
+      const body = fixture();
+      Object.assign(body.data.cartTransforms.nodes[0], { blockOnFailure: false });
+      Object.assign(body.data.validations.nodes[0], { enabled: false });
+      const result = await createFunctionOwnershipReconciler({
+        transport: { execute: async () => ({ status: 200, body }) },
+      }).read(tenant, { ...expected, ...(observationVersion === 2 ? { observationVersion } : {}) });
+      expect(result).toMatchObject({
+        transform: 'drift',
+        validation: 'drift',
+        observation: {
+          transform: { functionId: 'function-transform' },
+          validation: { functionId: 'function-validation' },
+        },
+      });
+    },
+  );
+  test.each(['missing', 'unknown'] as const)(
+    'a nullable legacy query reports %s without conferring artifact authority',
+    async (presence) => {
+      const body = fixture();
+      for (const item of body.data.shopifyFunctions.nodes) Object.assign(item, { inputQuery: null });
+      if (presence === 'missing') {
+        body.data.cartTransforms.nodes = [];
+        body.data.validations.nodes = [];
+      }
+      const result = await createFunctionOwnershipReconciler({
+        transport: { execute: async () => ({ status: 200, body }) },
+      }).read(tenant, expected);
+      expect(result).toMatchObject({
+        transform: presence,
+        validation: presence,
+        observation: { transform: null, validation: null },
+        runtimeIdentity: 'unverifiable',
+        readiness: 'unknown',
+      });
+    },
+  );
   test('separates missing, duplicated, drifted and unverifiable ownership', async () => {
     const body = fixture();
     body.data.cartTransforms.nodes = [];

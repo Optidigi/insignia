@@ -80,6 +80,44 @@ test('real approved module baseline qualifies; original evidence is unchanged an
   assert.equal(result.observations.expiresAt, at(-27000));
   assert.equal(result.record.attestation.expiresAt, result.observations.expiresAt);
 });
+test('explicit target profile binds native registration, actual query and fresh Active module authority', () => {
+  const input = fixture();
+  const functions = input.readiness.functions.observation;
+  functions.schemaVersion = 2;
+  input.moduleObservation.observedAt = at(4000);
+  for (const kind of ['transform', 'validation']) {
+    functions[kind].functionId = baseline.find((m) => m.handle === functions[kind].handle).registrationUuid;
+    functions[kind].inputQuerySha256 = null;
+  }
+  const before = JSON.stringify(functions);
+  const q = qualifyReleaseAppendInput(input, now);
+  assert.equal(q.expected.schemaVersion, 2);
+  assert.equal(q.record.attestation.targetObservedAt, at(4000));
+  assert.equal(
+    q.record.attestation.transform.inputQuerySha256,
+    '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
+  );
+  assert.equal(q.observations.expiresAt, at(-26000));
+  assert.equal(JSON.stringify(functions), before);
+  for (const mutate of [
+    (x) => {
+      x.readiness.functions.observation.transform.functionId = 'different';
+    },
+    (x) => {
+      x.readiness.functions.observation.validation.inputQuerySha256 = 'f'.repeat(64);
+    },
+    (x) => {
+      x.moduleObservation.observedAt = at(30001);
+    },
+    (x) => {
+      x.moduleObservation.modules[3].config.targets[0].input_query = 'changed';
+    },
+  ]) {
+    const changed = structuredClone(input);
+    mutate(changed);
+    assert.throws(() => qualifyReleaseAppendInput(changed, now));
+  }
+});
 const invalid = {
   'missing candidate': (x) => x.activeObservation.versions.shift(),
   'six rows with wrong version': (x) => (x.activeObservation.versions[0].versionId = 'gid://shopify/Version/999'),

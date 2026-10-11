@@ -17,6 +17,7 @@ async function appendFixture(
     scope: { shopId: string; installationGeneration: string; appClientId: string };
     version?: string;
     digest?: string;
+    profile?: 2;
   },
 ) {
   const shopId = replacement?.scope.shopId ?? randomUUID();
@@ -30,7 +31,19 @@ async function appendFixture(
     );
   const observedAt = new Date().toISOString();
   const build = {
-    schemaVersion: 1,
+    schemaVersion: replacement?.profile ?? 1,
+    ...(replacement?.profile === 2
+      ? {
+          targetModules: {
+            transform: { moduleId: 'module-transform', target: 'cart.transform.run', export: 'cart_transform_run' },
+            validation: {
+              moduleId: 'module-validation',
+              target: 'cart.validations.generate.run',
+              export: 'cart_validations_generate_run',
+            },
+          },
+        }
+      : {}),
     shopId,
     installationGeneration: '1',
     appClientId: replacement?.scope.appClientId ?? 'trusted-' + shopId,
@@ -61,6 +74,7 @@ async function appendFixture(
     attestation: {
       ...build,
       evidenceKind: 'RELEASE_BOUND',
+      ...(replacement?.profile === 2 ? { targetObservedAt: observedAt } : {}),
       observedAt,
       expiresAt: new Date(Date.parse(observedAt) + 30_000).toISOString(),
     },
@@ -172,6 +186,16 @@ test('trusted release source loads exact active scope only through a read-only r
     expect(await runtime.trustedReleaseRecords.read({ ...input, now: new Date() })).toMatchObject({
       record: restored.record,
     });
+    const modern = await appendFixture(pool, operatorCore, { scope: fixture.scope, profile: 2 });
+    expect(await runtime.trustedReleaseRecords.read({ ...input, now: new Date() })).toMatchObject({
+      record: modern.record,
+      expectedBuild: modern.build,
+    });
+    expect(
+      await pool.query('SELECT trusted_record FROM trusted_release_records WHERE record_id=$1', [
+        fixture.record.recordId,
+      ]),
+    ).toMatchObject({ rows: [{ trusted_record: fixture.record }] });
     // A latest independent app-level Active observation cannot be ignored by another shop.
     const other = await appendFixture(pool, operatorCore);
     await appendFixture(pool, operatorCore, {

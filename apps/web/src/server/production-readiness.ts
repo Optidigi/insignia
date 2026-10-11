@@ -58,7 +58,6 @@ export function createProductionQuoteReadiness(input: {
       const observed = await admin.read({ ...tenant, field: 'public_config' });
       if (!observed) throw new Error('Public Function config missing');
       const observedAt = now();
-      const owned = await functions.read(tenant, input.expectedFunctions);
       const artifactScope = {
         shopId: quote.shopId,
         installationGeneration: quote.installationGeneration,
@@ -68,6 +67,10 @@ export function createProductionQuoteReadiness(input: {
         input.artifactPorts.expectedBuild.read(artifactScope),
         input.artifactPorts.trustedEvidence.read(artifactScope),
       ]);
+      const owned = await functions.read(tenant, {
+        ...input.expectedFunctions,
+        ...(expectedBuild?.schemaVersion === 2 ? { observationVersion: 2 as const } : {}),
+      });
       const effective = await Promise.all(
         quote.effectiveRevisions.map((revision) =>
           input.core.acceptedQuotes.getEffective(quote.shopId, revision.productId),

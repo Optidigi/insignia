@@ -6,6 +6,7 @@ export * from './availability-hold-v3.js';
 export * from './catalog.js';
 export * from './contextual-pricing.js';
 export * from './function-ownership.js';
+export * from './function-provision.js';
 export * from './open-exchange-rates.js';
 export * from './publication-admin.js';
 export * from './refresh.js';

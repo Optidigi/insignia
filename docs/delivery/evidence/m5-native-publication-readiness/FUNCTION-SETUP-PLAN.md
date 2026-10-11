@@ -1,0 +1,21 @@
+# Bounded internal Function setup — not executed
+
+Purpose: establish the actual store-level transform and validation required by the accepted M5 signing/publication gate. Existing Function definitions are not enabled instances. Source query authority is qualified separately through the explicit Active-target profile. This plan uses the existing owner M5 runtime/access-widening allocation, not the earlier read-only grant. No merchant signing setup UI is restored.
+
+## Fixed resource and effect
+
+Exact Insignia app/client1443cf6d03d39edae7c101a943c5c684/app429028933633; protected designated development shop105501393179/current AppInstallation1054356963611. Protected means no uninstall, not permission to change legacy services. Existing source/query/Wasm bytes, both extension UIDs, canonical origin, API2026-07, required-empty, flags and redirects remain fixed. No M7 cart work or merchant rollout.
+
+Native reads show complete empty cart-transform and validation connections and the two exact owned Function definitions. Further fresh reads must prove unchanged installation/generation, ownership, complete connections, Active configuration and applicable shop/access conditions before setup. Never remove or replace a foreign instance. If exact owned instances already exist, verify and adopt rather than recreate. Any duplicate, drift, unknown connection or identity mismatch stops before a write.
+
+Required access widening is only optional `write_cart_transforms` and `write_validations`, preserving the existing five optional scopes. Existing read grants do not authorize writes. If a Shopify version is required, prepare one inactive version with the unchanged reviewed Function artifacts, verify exact configuration and current Active/rollback, bind its actual ID in reviewed trusted/runtime composition, then release once after the frozen gate. Request the additional grants only on the designated installation through normal Shopify consent. No invented staff authorization or checkout/store eligibility.
+
+After independent reviews and exact-source CI, a private one-shot operator may create at most one exact-owned cart transform (`functionHandle=insignia-experimental-v2-transform`, `blockOnFailure=true`, no metafields) and one validation (`functionHandle=insignia-experimental-v2-validation`, `enable=true`, `blockOnFailure=true`, fixed Insignia title, no metafields). Creation enables checkout processing. Ordinary/unregistered cart behavior must remain the already qualified Rust behavior; Functions, pricing and whole-quote contracts are not changed. Validation creation is conditional on exactly settled transform creation/readback. No mutation is retried.
+
+Every outward operation requires a durable private reservation before transport, fixed TLS/API/document/variables, bounded response and process deadline, captured native transport with global escape denied, and secret-free selected receipts. One exact complete readback after each acknowledged create must prove returned ID, Function association, enabled/failure-blocking state, unchanged install and no conflicting owned instance. Any timeout, provider error, acknowledgement/readback mismatch or stale authority stops; no next mutation. Do not blindly recover a lost acknowledgement by another create.
+
+Rollback is deployment/config-only for the web and previous app version. Any new exact owned Function instance additionally requires its own bounded delete/disable plan and exact ownership/settlement before cleanup; version rollback does not prove instance removal. No foreign instances or legacy apps may be affected. No automatic cleanup is allowed after ambiguous setup settlement. Preserve an explicit operator-held incident if necessary.
+
+## Remaining qualification
+
+The maintained adapter/workflow and actual private transport/producer are not yet frozen for creation. Exact shop/staff/API conditions, post-scope Active identity, rollback operations and reservation/ack/readback crash controls still require qualification. This document does not authorize executing incomplete code and is not a native readiness PASS. After Function setup, collect fresh strict30-second trusted release evidence and complete signing/public-config prerequisites before the single owned merchant fixture.

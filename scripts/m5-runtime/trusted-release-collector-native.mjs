@@ -139,6 +139,7 @@ async function main() {
             },
           }).read(tenant, {
             appKey: APP,
+            observationVersion: 2,
             transformInputQuerySha256: '8d93a08697dd56e4aa3f857c3509e4d828a5f4195cb2e8cd878749c3e5729053',
             validationInputQuerySha256: 'a0cd5d7262514c134efc8e9ce964b25b877ce56fc10d0cba6bdd1af82f2dc8c5',
           });
