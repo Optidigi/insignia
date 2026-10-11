@@ -924,7 +924,14 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       {status && <p role="status">{status}</p>}
       {(mode === 'picker' ? list !== null : view !== null) && (
         <>
-          <ReadinessPermissions inspect={() => authenticatedJson('/api/admin/products/readiness', {}, true)} />
+          <ReadinessPermissions
+            inspect={() =>
+              authenticatedJson('/api/admin/products/readiness', {}, true).catch((error) => {
+                authorizationDenied(error);
+                throw error;
+              })
+            }
+          />
           <SigningSetup
             onAuthorizationDenied={() => {
               clearPrivate();

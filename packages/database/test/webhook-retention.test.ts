@@ -523,9 +523,11 @@ test('unqualified uninstall facts remain bounded without extending collection de
     const result = await f.core.webhooks.eraseExpiredPayloads(1);
     expect(result.erasedIds).toHaveLength(1);
     expect(result.blockedUninstallIds.length).toBeLessThanOrEqual(1);
-    expect(
-      result.blockedPrivacyIds.length + result.blockedUnknownIds.length + result.blockedUnsupportedIds.length,
-    ).toBeLessThanOrEqual(1);
+    // Diagnostic samples are independently bounded per category, while counts
+    // include all immutable obligations rather than only the first sample.
+    expect(result.blockedPrivacyIds.length).toBeLessThanOrEqual(1);
+    expect(result.blockedUnknownIds.length).toBeLessThanOrEqual(1);
+    expect(result.blockedUnsupportedIds.length).toBeLessThanOrEqual(1);
     expect(
       (
         await f.pool.query('SELECT payload,purge_after,state,erasure_state FROM inbox_messages WHERE id=$1', [

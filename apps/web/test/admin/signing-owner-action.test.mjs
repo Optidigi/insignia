@@ -81,6 +81,33 @@ test('a foreign runtime app cannot use the private signing capability or reserve
   }
 });
 
+test('original dotted current and previous wrapping-key IDs remain usable through signing lifecycle', async () => {
+  const f = await bound();
+  try {
+    f.config.ring = {
+      currentKeyId: 'synthetic.wrap.current',
+      keys: { 'synthetic.wrap.current': Buffer.alloc(32, 7), 'synthetic.wrap.previous': Buffer.alloc(32, 8) },
+    };
+    f.action = createSigningOwnerAction(f.config, f.ports);
+    assert.equal((await f.action.start(f.actor, 'synthetic-token')).state, 'PENDING');
+    assert.equal((await settled(f)).state, 'PROVISIONED');
+    assert.equal(f.rows.length, 1);
+    assert.equal(f.rows[0].state, 'active');
+    assert.deepEqual(f.config.ring.keys['synthetic.wrap.current'], Buffer.alloc(32, 7));
+    assert.deepEqual(f.config.ring.keys['synthetic.wrap.previous'], Buffer.alloc(32, 8));
+    for (const id of ['.invalid', 'x'.repeat(65)]) {
+      assert.throws(() =>
+        createSigningOwnerAction(
+          { ...f.config, ring: { currentKeyId: id, keys: { [id]: Buffer.alloc(32, 1) } } },
+          f.ports,
+        ),
+      );
+    }
+  } finally {
+    await f.close();
+  }
+});
+
 test('drifted native Function observation stays stopped and a fresh browser click cannot restart it', async () => {
   const f = await bound();
   try {

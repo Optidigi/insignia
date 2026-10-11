@@ -15,6 +15,11 @@ export type WebhookPayloadErasure = {
   blockedUninstallIds: string[];
   blockedUnknownIds: string[];
   blockedUnsupportedIds: string[];
+  unresolvedExpiredCount: number;
+  blockedPrivacyCount: number;
+  blockedUninstallCount: number;
+  blockedUnknownCount: number;
+  blockedUnsupportedCount: number;
 };
 
 /** Raw body passed HMAC verification. Bounded routing headers are not covered
@@ -388,11 +393,22 @@ export function createShopifyWebhookRepository(database: Kysely<Database>) {
           id: string;
           state: string;
           topic: string | null;
+          category_count: string;
+          unresolved_count: string;
         }>`SELECT * FROM public.pending_shopify_webhook_obligations(${limit})`.execute(tx);
         const uninstall = pending.rows.filter((row) => row.topic === 'app/uninstalled');
         const blocked = pending.rows.filter((row) => row.topic !== 'app/uninstalled');
         return {
           erasedIds,
+          unresolvedExpiredCount: Number(uninstall[0]?.unresolved_count ?? 0),
+          blockedUninstallCount: Number(uninstall[0]?.category_count ?? 0),
+          blockedPrivacyCount: Number(
+            blocked.find((row) => row.topic !== null && PRIVACY_TOPICS.includes(row.topic))?.category_count ?? 0,
+          ),
+          blockedUnknownCount: Number(blocked.find((row) => row.topic === null)?.category_count ?? 0),
+          blockedUnsupportedCount: Number(
+            blocked.find((row) => row.topic !== null && !PRIVACY_TOPICS.includes(row.topic))?.category_count ?? 0,
+          ),
           unresolvedExpiredIds: uninstall.filter((row) => row.state !== 'processed').map((row) => row.id),
           blockedUninstallIds: uninstall.map((row) => row.id),
           blockedPrivacyIds: blocked

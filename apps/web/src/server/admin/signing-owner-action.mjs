@@ -115,7 +115,7 @@ export function createSigningOwnerAction(config, ports) {
   assert.deepEqual(Object.keys(config.ring).sort(), ['currentKeyId', 'keys']);
   assert.ok(Object.keys(config.ring.keys).length > 0 && Object.keys(config.ring.keys).length <= 8);
   for (const [id, key] of Object.entries(config.ring.keys)) {
-    assert.match(id, /^[A-Za-z0-9_-]{1,128}$/);
+    assert.match(id, /^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,63}$/);
     assert.ok(Buffer.isBuffer(key) && key.length === 32);
   }
   assert.ok(Object.hasOwn(config.ring.keys, config.ring.currentKeyId));

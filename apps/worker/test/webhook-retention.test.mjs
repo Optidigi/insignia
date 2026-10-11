@@ -493,6 +493,17 @@ test(
       const alert = records.find((record) => record.errorClass === 'UnsupportedPayloadRetentionBlocked');
       assert.ok(alert);
       assert.equal(alert.count, 99);
+      // A second bounded erasure pass records the remaining obligations. The
+      // diagnostic sample stays at 100, but the worker must alert all 101.
+      const later = await durableHandlers.maintainWebhookRetention(f.core, f.queue);
+      assert.equal(later.blockedUnsupportedIds.length, 100);
+      assert.equal(later.blockedUnsupportedCount, 101);
+      const laterAlerts = output
+        .trim()
+        .split('\n')
+        .map((line) => JSON.parse(line))
+        .filter((record) => record.errorClass === 'UnsupportedPayloadRetentionBlocked');
+      assert.equal(laterAlerts.at(-1).count, 101);
       assert.deepEqual(Object.keys(alert).sort(), ['count', 'errorClass', 'event', 'level', 'time']);
       assert.doesNotMatch(JSON.stringify(alert), /synthetic-orders|total_price|currency|inboxId|shopId/);
     } finally {

@@ -2117,17 +2117,27 @@ test('readiness permission decline, failure and existing grants never broaden or
         granted: [],
         result: 'granted-all',
         serverStatus: 403,
+        denied: true,
         requests: [['read_cart_transforms', 'read_validations']],
-        status: 'Permission or readiness check did not complete. Check readiness again.',
+        status: 'Synthetic current authorization refused',
         reads: 1,
       },
       {
         granted: [],
         result: 'granted-all',
         serverStatus: 401,
+        denied: true,
+        requests: [['read_cart_transforms', 'read_validations']],
+        status: 'Synthetic current authorization refused',
+        reads: 2,
+      },
+      {
+        granted: [],
+        result: 'granted-all',
+        serverStatus: 503,
         requests: [['read_cart_transforms', 'read_validations']],
         status: 'Permission or readiness check did not complete. Check readiness again.',
-        reads: 2,
+        reads: 1,
       },
       {
         granted: [],
@@ -2163,7 +2173,20 @@ test('readiness permission decline, failure and existing grants never broaden or
         route.fulfill({ body: '', contentType: 'text/javascript' }),
       );
       await page.route('**/api/admin/products?*', (route) =>
-        route.fulfill({ json: { products: [], nextCursor: null } }),
+        route.fulfill({
+          json: {
+            products: [
+              {
+                id: 'gid://shopify/Product/111',
+                title: 'Synthetic private catalog',
+                status: 'DRAFT',
+                imageUrl: null,
+                variants: [],
+              },
+            ],
+            nextCursor: null,
+          },
+        }),
       );
       const readinessTokens = [];
       await page.route('**/api/admin/products/readiness', (route) => {
@@ -2176,16 +2199,32 @@ test('readiness permission decline, failure and existing grants never broaden or
         });
       });
       await page.goto(server.base + '/admin/products');
-      await page.getByText('No products found.').waitFor();
+      await page.getByRole('heading', { name: 'Synthetic private catalog' }).waitFor();
+      assert.deepEqual(readinessTokens, [], 'No readiness request on page boot');
       await page.getByRole('button', { name: 'Check readiness', exact: true }).click();
       if (scenario.requests.length) {
         await page.getByRole('button', { name: 'Allow readiness checks', exact: true }).click();
       }
-      await page.getByText(scenario.status, { exact: true }).waitFor();
+      if (scenario.denied) {
+        await page
+          .getByText(/Synthetic current authorization refused|Permission or readiness check did not complete/)
+          .waitFor();
+      } else {
+        await page.getByText(scenario.status, { exact: true }).waitFor();
+      }
       assert.deepEqual(await page.evaluate(() => window.scopeRequests), scenario.requests);
       assert.equal(readinessTokens.length, scenario.reads);
       assert.equal(new Set(readinessTokens).size, scenario.reads, 'Every server attempt gets a fresh ID token');
-      if (scenario.requests.length) {
+      if (scenario.denied) {
+        assert.equal(await page.getByRole('heading', { name: 'Synthetic private catalog' }).count(), 0);
+        assert.equal(await page.getByRole('button', { name: 'Check readiness', exact: true }).count(), 0);
+        assert.equal(await page.getByRole('button', { name: 'Check signing setup', exact: true }).count(), 0);
+        await page.getByText(scenario.status, { exact: true }).waitFor();
+      } else {
+        assert.equal(await page.getByRole('heading', { name: 'Synthetic private catalog' }).count(), 1);
+        assert.equal(await page.getByRole('button', { name: 'Check signing setup', exact: true }).count(), 1);
+      }
+      if (scenario.requests.length && !scenario.denied) {
         assert.equal(await page.getByRole('button', { name: 'Allow readiness checks', exact: true }).count(), 0);
         await page.getByRole('button', { name: 'Check readiness', exact: true }).click();
         await page

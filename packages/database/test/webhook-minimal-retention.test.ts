@@ -272,3 +272,111 @@ test('populated minimal-obligation evidence blocks migration down and preserves 
     await admin.end();
   }
 }, 60000);
+
+test('JSONB content conversion failures cannot retain expired authenticated bytes or poison an ordinary batch', async () => {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+  try {
+    const ids: string[] = [];
+    for (const body of [
+      '{"shop_id":123,"value":1e1000000}',
+      '{"shop_id":123,"value":"\\u0000"}',
+      '{"shop_id":123,"customer":{"id":456}}',
+    ]) {
+      const receipt = await core.webhooks.receive({
+        shopDomain: `m${randomUUID().replaceAll('-', '')}.myshopify.com`,
+        topic: 'customers/redact',
+        deliveryId: randomUUID(),
+        apiVersion: '2026-07',
+        triggeredAt: new Date(),
+        eventId: null,
+        name: null,
+        rawBody: Buffer.from(body),
+      });
+      ids.push(receipt.id);
+    }
+    await pool.query('update inbox_messages set purge_after=clock_timestamp() where id=any($1)', [ids]);
+    const result = await core.webhooks.eraseExpiredPayloads(100);
+    expect(result.erasedIds).toEqual(expect.arrayContaining(ids));
+    const rows = (
+      await pool.query(
+        'select inbox.id,inbox.payload,inbox.erasure_state,inbox.state,facts.purpose,facts.captured_fields from inbox_messages inbox join webhook_obligation_facts facts on facts.inbox_id=inbox.id where inbox.id=any($1)',
+        [ids],
+      )
+    ).rows;
+    for (const row of rows) {
+      expect(row.payload.length).toBe(0);
+      expect(row.erasure_state).toBe('erased');
+      expect(row.state).toBe('pending');
+      expect(row.purpose).toBe('UNQUALIFIED');
+    }
+    expect(rows.find((row) => row.id === ids[0]).captured_fields).toEqual({ unsupportedBody: true });
+    expect(rows.find((row) => row.id === ids[1]).captured_fields).toEqual({ unsupportedBody: true });
+    expect(rows.find((row) => row.id === ids[2]).captured_fields.customer.id).toBe('456');
+  } finally {
+    await core.close();
+    await pool.end();
+  }
+});
+
+test('complete diagnostic category counts expose newer privacy obligations beyond 100 immutable erased historical facts after restart', async () => {
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  let core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+  try {
+    const before = await core.webhooks.eraseExpiredPayloads(100);
+    const ids: string[] = [];
+    for (let index = 0; index < 105; index++) {
+      const receipt = await core.webhooks.receive({
+        shopDomain: `m${randomUUID().replaceAll('-', '')}.myshopify.com`,
+        topic: 'orders/create',
+        deliveryId: randomUUID(),
+        apiVersion: '2026-07',
+        triggeredAt: new Date(),
+        eventId: null,
+        name: null,
+        rawBody: Buffer.from('{"shop_id":123}'),
+      });
+      ids.push(receipt.id);
+    }
+    await pool.query("update inbox_messages set purge_after=clock_timestamp(),state='processed' where id=any($1)", [
+      ids,
+    ]);
+    await core.webhooks.eraseExpiredPayloads(100);
+    await core.webhooks.eraseExpiredPayloads(100);
+    await pool.query('update webhook_obligation_facts set forget_after=clock_timestamp() where inbox_id=any($1)', [
+      ids,
+    ]);
+    await core.webhooks.eraseExpiredPayloads(100);
+    await core.webhooks.eraseExpiredPayloads(100);
+    const privacy = await core.webhooks.receive({
+      shopDomain: `m${randomUUID().replaceAll('-', '')}.myshopify.com`,
+      topic: 'shop/redact',
+      deliveryId: randomUUID(),
+      apiVersion: '2026-07',
+      triggeredAt: new Date(),
+      eventId: null,
+      name: null,
+      rawBody: Buffer.from('{"shop_id":123}'),
+    });
+    await pool.query('update inbox_messages set purge_after=clock_timestamp() where id=$1', [privacy.id]);
+    await core.webhooks.eraseExpiredPayloads(100);
+    await core.close();
+    core = createDurableCore(new Pool({ connectionString: process.env.DATABASE_URL }));
+    const result = await core.webhooks.eraseExpiredPayloads(100);
+    expect(result.blockedPrivacyIds).toContain(privacy.id);
+    expect(result.blockedPrivacyCount).toBe(before.blockedPrivacyCount + 1);
+    expect(result.blockedUnsupportedCount).toBe(before.blockedUnsupportedCount + 105);
+    expect(result.blockedUnsupportedIds.length).toBeLessThanOrEqual(100);
+    expect(
+      (
+        await pool.query(
+          'select count(*)::int as count from webhook_obligation_facts where inbox_id=any($1) and facts_erased_at is not null',
+          [ids],
+        )
+      ).rows[0].count,
+    ).toBe(105);
+  } finally {
+    await core.close();
+    await pool.end();
+  }
+}, 60000);
