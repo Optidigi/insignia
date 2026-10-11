@@ -3,14 +3,14 @@
   "base": "011626ce36a9e5ee9db83cfc54d222d3f7a69ed5",
   "productRuntimeNonblank": 27485,
   "operationalNonblank": 8438,
-  "testNonblank": 41518,
+  "testNonblank": 41524,
   "configurationNonblank": 132,
   "historicalExecutableNonblank": 53191,
-  "testShare": 0.5361242752547101,
+  "testShare": 0.5361602127906827,
   "ceiling": 0.5,
-  "removedTestNonblank": 220,
-  "remainingExcessTestNonblank": 5595,
+  "removedTestNonblank": 214,
+  "remainingExcessTestNonblank": 5601,
   "status": "BUDGET_NOT_MET",
-  "classificationManifestPrivate": "m5-internal-readiness-local/browser-consolidation-inventory.json",
-  "classificationManifestSha256": "69c95e3022a1a8221634c0d61d44d5a828e65de0d34f7795dc86a1227ff89742"
+  "classificationManifestPrivate": "m5-internal-readiness-local/browser-token-overlap-inventory.json",
+  "classificationManifestSha256": "88cb6d6a33b513d58ed5d2a30db448b6d7a1148e5989dbc5fadd55bef6e0e6d1"
 }

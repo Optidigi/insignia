@@ -1433,7 +1433,11 @@ test('concurrent editor refreshes share one App Bridge identity request', { time
     window.shopify = {
       idToken: () => {
         window.__tokenCalls++;
-        return new Promise((resolve) => setTimeout(() => resolve('synthetic-concurrent-token'), 250));
+        if (window.__tokenCalls === 1)
+          return new Promise((resolve) => {
+            window.__releaseInitialToken = () => resolve('synthetic-concurrent-token');
+          });
+        return Promise.resolve('synthetic-concurrent-token');
       },
     };
   });
@@ -1463,10 +1467,12 @@ test('concurrent editor refreshes share one App Bridge identity request', { time
     return route.fulfill({ json: value });
   });
   await page.goto(`${server.base}/admin/products/111/config`);
-  await page.waitForFunction(() => window.__tokenCalls === 1);
+  await page.waitForFunction(() => typeof window.__releaseInitialToken === 'function');
+  assert.equal(reads, 0, 'the initial identity remains pending until all refreshes have joined');
   await page.evaluate(() => {
     document.dispatchEvent(new Event('visibilitychange'));
     document.dispatchEvent(new Event('visibilitychange'));
+    window.__releaseInitialToken();
   });
   await page.getByText('Draft version 1').waitFor();
   assert.equal(await page.evaluate(() => window.__tokenCalls), 1);
