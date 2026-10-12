@@ -247,3 +247,46 @@ test('server composition binds trusted provider reads to one signed immutable qu
   assert.deepEqual(await acceptQuote(request, ports), result);
   assert.deepEqual([contextReads, catalogReads, subscriptionReads, artworkReads, signatures], [1, 1, 2, 2, 1]);
 });
+
+test('default artwork composition binds verified guest authority and denies unscoped or other-session UUID use', async () => {
+  const now = new Date('2026-10-12T12:00:00Z');
+  const row = {
+    assetId: 'asset',
+    state: 'USABLE',
+    manifest: {},
+    ownerHash: 'a'.repeat(64),
+    expiresAt: new Date(+now + 7 * 86400000),
+  };
+  const input = { core: { artwork: { readUsability: async () => [row] } }, clock: () => now };
+  const request = {
+    shopId: 'tenant',
+    installationGeneration: '1',
+    shopTimezone: 'UTC',
+    choices: [{ kind: 'revision', id: 'asset' }],
+  };
+  const authority = { shopId: 'tenant', installationGeneration: '1', kind: 'guest', ownerHash: 'a'.repeat(64) };
+  assert.equal((await createQuoteAuthorityPorts(input).artwork.readUsability(request))[0].status, 'unavailable');
+  assert.equal(
+    (
+      await createQuoteAuthorityPorts({
+        ...input,
+        artworkAuthority: { ...authority, ownerHash: 'b'.repeat(64) },
+      }).artwork.readUsability(request)
+    )[0].status,
+    'unavailable',
+  );
+  assert.equal(
+    (await createQuoteAuthorityPorts({ ...input, artworkAuthority: authority }).artwork.readUsability(request))[0]
+      .status,
+    'usable',
+  );
+  assert.equal(
+    (
+      await createQuoteAuthorityPorts({ ...input, artworkAuthority: authority }).artwork.readUsability({
+        ...request,
+        installationGeneration: '2',
+      })
+    )[0].status,
+    'unavailable',
+  );
+});

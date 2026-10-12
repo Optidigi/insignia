@@ -21,6 +21,9 @@ export default function ArtworkUpload({
 }: Props) {
   const [message, setMessage] = useState('SVG, PNG or JPEG, up to 5 MiB.');
   const [busy, setBusy] = useState(false);
+  const [pending, setPending] = useState<ArtworkSelection | null>(null);
+  const currentPending = useRef<ArtworkSelection | null>(null);
+  currentPending.current = pending;
   const [asset, setAsset] = useState<ArtworkPreview | null>(null);
   const [preview, setPreview] = useState<ArtworkPreview | null>(null);
   const [downloadLink, setDownloadLink] = useState<{ url: string; expiresAt: string } | null>(null);
@@ -46,27 +49,32 @@ export default function ArtworkUpload({
     active.current?.abort();
     currentAsset.current = null;
     setAsset(null);
+    currentPending.current = null;
+    setPending(null);
     setPreview(null);
     setDownloadLink(null);
     setBusy(false);
     callback.current(null);
   }, [api]);
   useEffect(() => {
-    if (!asset) return;
+    const retained = asset ?? pending;
+    if (!retained) return;
     const timer = setTimeout(
       () => {
         active.current?.abort();
         currentAsset.current = null;
+        currentPending.current = null;
+        setPending(null);
         setAsset(null);
         setPreview(null);
         setDownloadLink(null);
         callback.current(null);
         setMessage('Artwork expired. Upload it again.');
       },
-      Math.max(0, Date.parse(asset.assetExpiresAt) - Date.now()),
+      Math.max(0, Date.parse(retained.assetExpiresAt) - Date.now()),
     );
     return () => clearTimeout(timer);
-  }, [asset]);
+  }, [asset, pending]);
   useEffect(() => {
     if (!preview) return;
     const timer = setTimeout(
@@ -121,13 +129,24 @@ export default function ArtworkUpload({
     active.current = controller;
     setAsset(null);
     currentAsset.current = null;
+    currentPending.current = null;
+    setPending(null);
     setPreview(null);
     setDownloadLink(null);
     onPreview(null);
     setBusy(true);
     try {
-      const result = await createArtworkUpload({ api }).upload(file, setMessage, controller.signal);
+      const result = await createArtworkUpload({
+        api,
+        onPending: (admitted) => {
+          if (controller.signal.aborted || active.current !== controller) return;
+          currentPending.current = admitted;
+          setPending(admitted);
+        },
+      }).upload(file, setMessage, controller.signal);
       if (controller.signal.aborted) return;
+      currentPending.current = null;
+      setPending(null);
       setAsset(result);
       setPreview(result);
       onPreview(result);
@@ -137,8 +156,41 @@ export default function ArtworkUpload({
       setPreview(null);
       onPreview(null);
       const status = (error as { status?: number }).status;
+      if ([401, 403, 404, 410, 422].includes(status ?? 0)) {
+        currentPending.current = null;
+        setPending(null);
+      }
       if (status === 401 || status === 403) onAuthenticationDenied?.(error);
       setMessage(error instanceof Error ? error.message : 'Artwork unavailable');
+    } finally {
+      if (active.current === controller) setBusy(false);
+    }
+  }
+  async function resumeUploaded() {
+    const retained = currentPending.current;
+    if (!retained) return;
+    active.current?.abort();
+    const controller = new AbortController();
+    active.current = controller;
+    setBusy(true);
+    try {
+      const result = await createArtworkUpload({ api }).resume(retained, setMessage, controller.signal);
+      if (controller.signal.aborted || currentPending.current?.assetId !== retained.assetId) return;
+      currentPending.current = null;
+      setPending(null);
+      setAsset(result);
+      setPreview(result);
+      callback.current(result);
+      setMessage(`Artwork verified. Original retained until ${new Date(result.assetExpiresAt).toLocaleString()}.`);
+    } catch (error) {
+      if (controller.signal.aborted || currentPending.current?.assetId !== retained.assetId) return;
+      const status = (error as { status?: number }).status;
+      if ([401, 403, 404, 410, 422].includes(status ?? 0)) {
+        currentPending.current = null;
+        setPending(null);
+        if (status === 401 || status === 403) onAuthenticationDenied?.(error);
+      }
+      setMessage(error instanceof Error ? error.message : 'Uploaded artwork unavailable. Retry later.');
     } finally {
       if (active.current === controller) setBusy(false);
     }
@@ -195,6 +247,11 @@ export default function ArtworkUpload({
           alt="Verified artwork preview"
           style={{ maxWidth: '160px', maxHeight: '160px' }}
         />
+      )}
+      {pending && (
+        <button type="button" disabled={busy} onClick={() => void resumeUploaded()}>
+          Retry uploaded artwork
+        </button>
       )}
       {asset && !preview && (
         <button type="button" disabled={busy} onClick={() => void renewPreview()}>

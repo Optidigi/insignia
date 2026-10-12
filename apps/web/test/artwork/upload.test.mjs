@@ -128,3 +128,116 @@ test('renewal refuses erased artwork and preserves authorization failures', asyn
     (error) => error === denied,
   );
 });
+
+test('processing timeout retains the completed upload and resumes the same asset without another PUT', async () => {
+  let queued = true,
+    admissions = 0,
+    puts = 0,
+    pending;
+  const flow = createArtworkUpload({
+    api: async (path) => {
+      if (path === '/api/artwork') {
+        admissions++;
+        return {
+          assetId: 'retained',
+          expiresAt: '2099-01-08T00:00:00Z',
+          upload: { url: 'https://private.example/q', headers: {} },
+        };
+      }
+      if (path.endsWith('/status')) return { state: queued ? 'QUEUED' : 'USABLE', expiresAt: '2099-01-08T00:00:00Z' };
+      if (path.endsWith('/preview'))
+        return {
+          url: 'https://private.example/verified.png',
+          width: 10,
+          height: 10,
+          expiresAt: '2099-01-01T00:05:00Z',
+        };
+      return {};
+    },
+    put: async () => {
+      puts++;
+      return new Response(null, { status: 200 });
+    },
+    pause: async () => {},
+    onPending: (value) => {
+      pending = value;
+    },
+  });
+  await assert.rejects(
+    flow.upload(new File(['<svg/>'], 'logo.svg', { type: 'image/svg+xml' }), () => {}),
+    /still processing/,
+  );
+  assert.equal(pending?.assetId, 'retained');
+  queued = false;
+  const resumed = await flow.resume(pending, () => {});
+  assert.equal(resumed.assetId, 'retained');
+  assert.equal(admissions, 1);
+  assert.equal(puts, 1);
+});
+
+test('resuming an acknowledged PUT reconciles an unqueued completion and refuses terminal artwork', async () => {
+  const retained = { assetId: 'retained', assetExpiresAt: '2099-01-08T00:00:00Z' };
+  const calls = [];
+  let completed = false;
+  const flow = createArtworkUpload({
+    api: async (path) => {
+      calls.push(path);
+      if (path.endsWith('/complete')) {
+        completed = true;
+        return {};
+      }
+      if (path.endsWith('/status'))
+        return { state: completed ? 'USABLE' : 'UPLOADING', expiresAt: retained.assetExpiresAt };
+      return { url: 'https://private.example/verified.png', width: 10, height: 10, expiresAt: '2099-01-01T00:05:00Z' };
+    },
+    pause: async () => {},
+  });
+  assert.equal((await flow.resume(retained, () => {})).assetId, 'retained');
+  assert.deepEqual(calls, [
+    '/api/artwork/retained/status',
+    '/api/artwork/retained/complete',
+    '/api/artwork/retained/status',
+    '/api/artwork/retained/preview',
+  ]);
+  for (const [state, status] of [
+    ['REJECTED', 422],
+    ['DELETED', 410],
+    ['DELETING', 410],
+  ]) {
+    const terminal = createArtworkUpload({
+      api: async (path) => {
+        assert.ok(path.endsWith('/status'), 'terminal artwork must not complete or obtain a preview');
+        return { state, expiresAt: retained.assetExpiresAt };
+      },
+    });
+    await assert.rejects(
+      terminal.resume(retained, () => {}),
+      { status },
+    );
+  }
+});
+
+test('cancelling a pending resume prevents stale status from obtaining or exposing a preview', async () => {
+  const controller = new AbortController();
+  let release;
+  const delayed = new Promise((resolve) => {
+    release = resolve;
+  });
+  let previews = 0;
+  const flow = createArtworkUpload({
+    api: async (path) => {
+      if (path.endsWith('/status')) return delayed;
+      previews++;
+      return { url: 'https://private.example/stale.png', width: 10, height: 10, expiresAt: '2099-01-01T00:05:00Z' };
+    },
+  });
+  const resumed = flow.resume(
+    { assetId: 'old-file', assetExpiresAt: '2099-01-08T00:00:00Z' },
+    () => {},
+    controller.signal,
+  );
+  controller.abort();
+  release({ state: 'USABLE', expiresAt: '2099-01-08T00:00:00Z' });
+  await assert.rejects(resumed, { name: 'AbortError' });
+  assert.equal(previews, 0);
+});

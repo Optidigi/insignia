@@ -6,27 +6,7 @@ import { chromium } from 'playwright';
 test('preview lease expiry retains artwork, permits retry without reupload, and clears on permission loss', {
   timeout: 15000,
 }, async (t) => {
-  const { outputFiles } = await build({
-    stdin: {
-      contents: `import { render } from 'preact'; import ArtworkUpload from './src/islands/ArtworkUpload';
-        render(<ArtworkUpload api={window.artworkApi} onPreview={p => window.previews.push(p)} onAssetChange={a => window.assets.push(a)} />, document.body);`,
-      resolveDir: new URL('../../', import.meta.url).pathname,
-      loader: 'tsx',
-    },
-    bundle: true,
-    write: false,
-    format: 'iife',
-    jsx: 'automatic',
-    jsxImportSource: 'preact',
-  });
-  const browser = await chromium.launch({ headless: true });
-  t.after(() => browser.close());
-  const page = await browser.newPage();
-  await page.route('http://artwork.test/', (route) =>
-    route.fulfill({ body: '<html><body></body></html>', contentType: 'text/html' }),
-  );
-  await page.goto('http://artwork.test/');
-  await page.clock.install();
+  const { page, outputFiles } = await fixture(t);
   await page.evaluate(() => {
     window.previews = [];
     window.assets = [];
@@ -38,7 +18,11 @@ test('preview lease expiry retains artwork, permits retry without reupload, and 
       window.calls.push(path);
       if (window.denied) throw Object.assign(new Error('Permission removed'), { status: 403 });
       if (path === '/api/artwork')
-        return { assetId: 'stable-asset', upload: { url: 'https://private.example/q', headers: {} } };
+        return {
+          assetId: 'stable-asset',
+          expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+          upload: { url: 'https://private.example/q', headers: {} },
+        };
       if (path.endsWith('/status'))
         return {
           state: 'USABLE',
@@ -101,4 +85,84 @@ test('preview lease expiry retains artwork, permits retry without reupload, and 
   assert.equal(await page.getByRole('img').count(), 0);
   assert.equal(await page.getByRole('button', { name: 'Prepare original download' }).count(), 0);
   assert.equal(await page.evaluate(() => window.assets.at(-1)), null);
+});
+
+async function fixture(t) {
+  const { outputFiles } = await build({
+    stdin: {
+      contents: `import { render } from 'preact'; import ArtworkUpload from './src/islands/ArtworkUpload';
+        render(<ArtworkUpload api={window.artworkApi} onPreview={p => window.previews.push(p)} onAssetChange={a => window.assets.push(a)} />, document.body);`,
+      resolveDir: new URL('../../', import.meta.url).pathname,
+      loader: 'tsx',
+    },
+    bundle: true,
+    write: false,
+    format: 'iife',
+    jsx: 'automatic',
+    jsxImportSource: 'preact',
+  });
+  const browser = await chromium.launch({ headless: true });
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.route('http://artwork.test/', (route) =>
+    route.fulfill({ body: '<html><body></body></html>', contentType: 'text/html' }),
+  );
+  await page.goto('http://artwork.test/');
+  await page.clock.install();
+  return { page, outputFiles };
+}
+
+test('initial preview outage retains a pending upload and retries without exposing usable selection early', {
+  timeout: 15000,
+}, async (t) => {
+  const { page, outputFiles } = await fixture(t);
+  await page.evaluate(() => {
+    window.previews = [];
+    window.assets = [];
+    window.calls = [];
+    window.puts = 0;
+    window.failPreview = true;
+    window.fetch = async () => {
+      window.puts++;
+      return new Response(null, { status: 200 });
+    };
+    window.artworkApi = async (path) => {
+      window.calls.push(path);
+      if (path === '/api/artwork')
+        return {
+          assetId: 'retained',
+          expiresAt: new Date(Date.now() + 7 * 86400000).toISOString(),
+          upload: { url: 'https://private.example/q', headers: {} },
+        };
+      if (path.endsWith('/status'))
+        return { state: 'USABLE', expiresAt: new Date(Date.now() + 7 * 86400000).toISOString() };
+      if (path.endsWith('/preview')) {
+        if (window.failPreview) throw Object.assign(new Error('Initial preview unavailable'), { status: 503 });
+        return {
+          url: 'https://private.example/verified.png',
+          width: 10,
+          height: 10,
+          expiresAt: new Date(Date.now() + 60000).toISOString(),
+        };
+      }
+      return {};
+    };
+  });
+  await page.addScriptTag({ content: outputFiles[0].text });
+  await page
+    .locator('input[type=file]')
+    .setInputFiles({ name: 'logo.svg', mimeType: 'image/svg+xml', buffer: Buffer.from('<svg/>') });
+  await page.getByText('Initial preview unavailable').waitFor();
+  assert.equal(await page.getByRole('img').count(), 0);
+  assert.equal(await page.evaluate(() => window.assets.filter(Boolean).length), 0);
+  const retry = page.getByRole('button', { name: 'Retry uploaded artwork' });
+  assert.equal(await retry.count(), 1);
+  await page.evaluate(() => {
+    window.failPreview = false;
+  });
+  await retry.click();
+  await page.getByRole('img').waitFor();
+  assert.equal(await page.evaluate(() => window.calls.filter((path) => path === '/api/artwork').length), 1);
+  assert.equal(await page.evaluate(() => window.puts), 1);
+  assert.equal(await page.evaluate(() => window.assets.at(-1)?.assetId), 'retained');
 });

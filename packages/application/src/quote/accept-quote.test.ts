@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createArtworkUsabilityPort } from '../artwork/artwork.js';
 import { acceptQuote, localDay, normalizeMarketId, type QuoteAuthorityPorts } from './accept-quote.js';
 
 const hash = 'a'.repeat(64);
@@ -147,6 +148,43 @@ function fixture() {
 }
 
 describe('acceptQuote', () => {
+  it('validates actual artwork observations against a post-read clock without changing quote expiry', async () => {
+    const { ports } = fixture();
+    let tick = +now;
+    const clock = () => new Date(tick++);
+    ports.clock = clock;
+    ports.artwork = createArtworkUsabilityPort(
+      {
+        readUsability: async () => [
+          { assetId: 'art', state: 'USABLE', manifest: {}, expiresAt: new Date(+now + 7 * 86400000) },
+        ],
+      } as never,
+      clock,
+      { shopId: 'shop', installationGeneration: '1', kind: 'merchant' },
+    );
+    const accepted = await acceptQuote(request, ports);
+    expect(accepted.quote.artworkChecks[0]?.observedAt).not.toBe(accepted.quote.acceptedAt);
+    expect(accepted.quote.validThroughDay).toBe(20760);
+  });
+
+  it('post-read freshness still rejects future and stale artwork observations before signing', async () => {
+    for (const observedAt of [new Date(+now + 1).toISOString(), new Date(+now - 300001).toISOString()]) {
+      const { ports } = fixture();
+      vi.mocked(ports.artwork.readUsability).mockImplementation(async (input) =>
+        input.choices.map((choice) => ({
+          ...choice,
+          shopId: input.shopId,
+          installationGeneration: input.installationGeneration,
+          status: 'usable' as const,
+          lastFullyUsableLocalDay: 20760,
+          observedAt,
+        })),
+      );
+      await expect(acceptQuote(request, ports)).rejects.toThrow('artwork unavailable through complete quote window');
+      expect(ports.authorization.issue).not.toHaveBeenCalled();
+    }
+  });
+
   it('admits explicit logo-later only under the effective published placement policy', async () => {
     const deferred = {
       ...group,

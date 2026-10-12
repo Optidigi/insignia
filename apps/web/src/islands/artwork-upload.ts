@@ -10,6 +10,7 @@ export type JsonApi = <T>(path: string, init?: RequestInit) => Promise<T>;
 type Status = { state: string; expiresAt: string };
 export function createArtworkUpload(input: {
   api: JsonApi;
+  onPending?: (asset: ArtworkSelection) => void;
   put?: typeof fetch;
   pause?: (ms: number, signal?: AbortSignal) => Promise<void>;
 }) {
@@ -34,6 +35,7 @@ export function createArtworkUpload(input: {
       `/api/artwork/${assetId}/preview`,
       { signal },
     );
+    if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
     const url = new URL(preview.url);
     if (
       url.protocol !== 'https:' ||
@@ -55,12 +57,51 @@ export function createArtworkUpload(input: {
       assetExpiresAt,
     };
   }
+  async function awaitPending(
+    asset: ArtworkSelection,
+    onState: (state: string) => void,
+    signal?: AbortSignal,
+  ): Promise<ArtworkPreview> {
+    let completionAttempted = false;
+    for (let attempt = 0; attempt < 120; attempt++) {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      if (Date.parse(asset.assetExpiresAt) <= Date.now())
+        throw Object.assign(new Error('Artwork expired. Upload it again.'), { status: 410 });
+      const status = await input.api<Status>(`/api/artwork/${asset.assetId}/status`, { signal });
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      if (status.state === 'REJECTED')
+        throw Object.assign(new Error('Artwork was rejected by inspection. Choose a supported, static image.'), {
+          status: 422,
+        });
+      if (status.state === 'DELETED' || status.state === 'DELETING' || Date.parse(status.expiresAt) <= Date.now())
+        throw Object.assign(new Error('Artwork expired. Upload it again.'), { status: 410 });
+      if (!Number.isFinite(Date.parse(status.expiresAt))) throw new Error('Invalid artwork status');
+      if (status.state === 'USABLE') return readPreview(asset.assetId, status.expiresAt, signal);
+      if (!['UPLOADING', 'QUEUED', 'INSPECTING', 'PROMOTING'].includes(status.state))
+        throw new Error('Invalid artwork status');
+      if (status.state === 'UPLOADING' && !completionAttempted) {
+        completionAttempted = true;
+        await input.api(`/api/artwork/${asset.assetId}/complete`, { method: 'POST', signal });
+      }
+      onState('Processing artwork');
+      await pause(2000, signal);
+    }
+    throw new Error('Artwork is still processing. Try again later.');
+  }
   return {
+    async resume(
+      asset: ArtworkSelection,
+      onState: (state: string) => void,
+      signal?: AbortSignal,
+    ): Promise<ArtworkPreview> {
+      return awaitPending(asset, onState, signal);
+    },
     async renew(asset: ArtworkPreview, signal?: AbortSignal): Promise<ArtworkPreview> {
       if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (Date.parse(asset.assetExpiresAt) <= Date.now())
         throw Object.assign(new Error('Artwork expired. Upload it again.'), { status: 410 });
       const status = await input.api<Status>(`/api/artwork/${asset.assetId}/status`, { signal });
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
       if (
         status.state !== 'USABLE' ||
         !Number.isFinite(Date.parse(status.expiresAt)) ||
@@ -101,21 +142,10 @@ export function createArtworkUpload(input: {
         signal: uploadSignal,
       });
       if (!response.ok) throw new Error('Private upload failed. Choose the file again to start a new upload.');
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      input.onPending?.({ assetId: admitted.assetId, assetExpiresAt: admitted.expiresAt });
       await input.api(`/api/artwork/${admitted.assetId}/complete`, { method: 'POST', signal });
-      for (let attempt = 0; attempt < 120; attempt++) {
-        if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
-        const status = await input.api<Status>(`/api/artwork/${admitted.assetId}/status`, { signal });
-        if (status.state === 'USABLE') {
-          return readPreview(admitted.assetId, status.expiresAt, signal);
-        }
-        if (status.state === 'REJECTED')
-          throw new Error('Artwork was rejected by inspection. Choose a supported, static image.');
-        if (status.state === 'DELETED' || status.state === 'DELETING' || Date.parse(status.expiresAt) <= Date.now())
-          throw new Error('Artwork expired. Upload it again.');
-        onState('Processing artwork');
-        await pause(2000, signal);
-      }
-      throw new Error('Artwork is still processing. Try again later.');
+      return awaitPending({ assetId: admitted.assetId, assetExpiresAt: admitted.expiresAt }, onState, signal);
     },
   };
 }

@@ -4,11 +4,18 @@ import { chmod, mkdtemp, readdir, readFile, readlink, rm } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { test } from 'node:test';
-import { packageForwardSchema20 } from './schema-forward20-package.mjs';
+import { pathToFileURL } from 'node:url';
+import { frozenSchema20Fixture } from './frozen-schema20-fixture.mjs';
+import { packageForwardSchema20 as currentPackage } from './schema-forward20-package.mjs';
 
 test('forward20 owner package contains exact immutable inputs and no private runtime configuration', async () => {
+  const compatibility = await frozenSchema20Fixture();
+  const { packageForwardSchema20 } = await import(
+    pathToFileURL(join(compatibility.directory, 'scripts/m5-runtime/schema-forward20-package.mjs')).href
+  );
   const parent = await mkdtemp(join(tmpdir(), 'insignia-forward20-package-'));
   try {
+    await assert.rejects(currentPackage({ directory: join(parent, 'current') }), /unexpected_migration_inputs/);
     const manifest = await packageForwardSchema20({ directory: join(parent, 'operator') });
     assert.equal(manifest.version, 'm5-forward20-owner-package-v1');
     assert.equal(manifest.fromMigrationCount, 19);
@@ -39,5 +46,6 @@ test('forward20 owner package contains exact immutable inputs and no private run
     };
     await unseal(parent);
     await rm(parent, { recursive: true, force: true });
+    await rm(compatibility.directory, { recursive: true, force: true });
   }
 });

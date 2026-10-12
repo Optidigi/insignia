@@ -70,7 +70,7 @@ export interface ArtworkStore {
   selectQuarantineCleanup(limit: number, now: Date): Promise<ArtworkRecord[]>;
   markQuarantineCleanupAttempt(assetId: string, now: Date): Promise<boolean>;
   markQuarantineCleaned(assetId: string, now: Date): Promise<void>;
-  readUsability(shopId: string, generation: string, assetIds: readonly string[], now: Date): Promise<ArtworkRecord[]>;
+  readUsability(scope: ArtworkScope, assetIds: readonly string[], now: Date): Promise<ArtworkRecord[]>;
 }
 export interface ArtworkStorage {
   presignUpload(input: {
@@ -346,27 +346,43 @@ export function createArtworkService(input: {
       }
       return completed;
     },
-    quoteArtwork: createArtworkUsabilityPort(input.store, clock),
+    /** Caller binds current server-verified resource authority, never browser body fields. */
+    quoteArtworkFor: (scope: ArtworkScope) => createArtworkUsabilityPort(input.store, clock, scope),
   };
 }
 
 export function createArtworkUsabilityPort(
   store: Pick<ArtworkStore, 'readUsability'>,
   clock: () => Date = () => new Date(),
+  verifiedScope?: ArtworkScope,
 ): QuoteArtworkPort {
+  const scope = verifiedScope ? { ...verifiedScope } : undefined;
   return {
     async readUsability(request) {
       const now = clock();
-      const rows = await store.readUsability(
-        request.shopId,
-        request.installationGeneration,
-        request.choices.filter((x) => x.kind === 'revision').map((x) => x.id),
-        now,
-      );
+      const authorized =
+        scope !== undefined &&
+        scope.shopId === request.shopId &&
+        scope.installationGeneration === request.installationGeneration &&
+        (scope.kind === 'merchant' || (scope.kind === 'guest' && /^[a-f0-9]{64}$/.test(scope.ownerHash ?? '')));
+      const rows = authorized
+        ? await store.readUsability(
+            scope!,
+            request.choices.filter((x) => x.kind === 'revision').map((x) => x.id),
+            now,
+          )
+        : [];
       return request.choices.map((choice) => {
         const row = rows.find((x) => x.assetId === choice.id);
-        const deferred = choice.kind === 'deferred' && request.permittedDeferredIntentIds?.includes(choice.id) === true;
-        const accepted = deferred || (choice.kind === 'revision' && row !== undefined && usable(row, now));
+        const deferred =
+          authorized && choice.kind === 'deferred' && request.permittedDeferredIntentIds?.includes(choice.id) === true;
+        const accepted =
+          deferred ||
+          (authorized &&
+            choice.kind === 'revision' &&
+            row !== undefined &&
+            usable(row, now) &&
+            (scope!.kind === 'merchant' || row.ownerHash === scope!.ownerHash));
         return {
           ...choice,
           shopId: request.shopId,

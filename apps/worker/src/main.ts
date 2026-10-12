@@ -7,8 +7,9 @@ import { inspectArtwork } from './artwork/inspection.js';
 import { createArtworkRunner } from './artwork-runner.js';
 import { loadCredentialKeys } from './config.js';
 import { runLocalDiagnostic } from './diagnostic.js';
-import { createDurableWorkerHandlers, maintainWebhookRetention, recoverPendingUninstalls } from './handlers.js';
+import { createDurableWorkerHandlers } from './handlers.js';
 import { startWorkerProcess } from './process.js';
+import { createWorkerReconciliation } from './reconciliation.js';
 import { createPgBossRuntime } from './runtime.js';
 
 function required(name: string): string {
@@ -62,25 +63,12 @@ if (process.argv.includes('--diagnostic')) {
   });
   if (artworkRunner) await artworkRunner.start();
   console.log(JSON.stringify({ url: running.url, durableReady: running.durableReady }));
-  let reconciling = false;
-  const reconcile = async () => {
-    if (reconciling) return;
-    reconciling = true;
-    try {
-      await maintainWebhookRetention(core, queue);
-      await recoverPendingUninstalls(core, queue);
-      if (artwork) await artwork.cleanup(20);
-    } catch {
-      queue.observability.logger.error('queue_job_rejected');
-    } finally {
-      reconciling = false;
-    }
-  };
+  const reconciliation = createWorkerReconciliation({ core, queue, artwork });
   const recoveryTimer = setInterval(() => {
-    void reconcile();
+    void reconciliation.runOnce();
   }, 30_000);
   recoveryTimer.unref();
-  void reconcile();
+  void reconciliation.runOnce();
   let stopping = false;
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.on(signal, () => {
@@ -88,6 +76,7 @@ if (process.argv.includes('--diagnostic')) {
       stopping = true;
       clearInterval(recoveryTimer);
       void (async () => {
+        await reconciliation.stop();
         await artworkRunner?.stop();
         await running.stop();
         await core.close();

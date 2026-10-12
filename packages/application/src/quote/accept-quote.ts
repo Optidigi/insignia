@@ -359,7 +359,7 @@ async function usableArtwork(
   timezone: string,
   choices: readonly QuoteArtworkChoice[],
   throughDay: number,
-  now: Date,
+  clock: () => Date,
 ): Promise<AcceptedQuote['artworkChecks']> {
   const result = await port.readUsability({
     shopId: request.shopId,
@@ -368,6 +368,8 @@ async function usableArtwork(
     choices,
     permittedDeferredIntentIds: choices.filter((choice) => choice.kind === 'deferred').map((choice) => choice.id),
   });
+  const now = clock();
+  if (!Number.isFinite(now.getTime())) throw new Error('artwork observation clock unavailable');
   if (!Array.isArray(result) || result.length !== choices.length)
     throw new Error('complete artwork usability required');
   const checks: AcceptedQuote['artworkChecks'][number][] = [];
@@ -616,7 +618,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     shop.timezone,
     choices,
     day.ordinal + 2,
-    acceptedInstant,
+    ports.clock,
   );
   const quote: AcceptedQuote = {
     schemaVersion: 'm4-accepted-quote-v1',
@@ -669,7 +671,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
       effectiveRevisions: quote.effectiveRevisions,
     },
     async () => {
-      await usableArtwork(ports.artwork, request, shop.timezone, choices, quote.validThroughDay, ports.clock());
+      await usableArtwork(ports.artwork, request, shop.timezone, choices, quote.validThroughDay, ports.clock);
       const current = requireTenant(
         await ports.tenant.getActive(request.shopId, request.installationGeneration),
         request,

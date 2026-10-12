@@ -71,6 +71,7 @@ test('guest artwork selection event survives derivative renewal and carries no p
         return route.fulfill({
           json: {
             assetId: id,
+            expiresAt: assetExpiresAt,
             upload: { url: 'https://private.example/q', headers: { 'Content-Type': 'image/svg+xml' } },
           },
         });
@@ -105,6 +106,7 @@ test('guest artwork selection event survives derivative renewal and carries no p
       return route.fulfill({
         json: {
           assetId: id,
+          expiresAt: assetExpiresAt,
           upload: { url: 'https://private.example/q', headers: { 'Content-Type': 'image/svg+xml' } },
         },
       });

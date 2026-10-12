@@ -102,7 +102,9 @@ it.runIf(process.env.M6_RUNTIME_GRANTS === '1')(
         processingAt,
       );
       expect(await store.settle(assetId, claimId, processingAt)).toBe(true);
-      expect(await store.readUsability(shopId, '1', [assetId], now)).toHaveLength(1);
+      expect(
+        await store.readUsability({ shopId, installationGeneration: '1', kind: 'merchant' }, [assetId], now),
+      ).toHaveLength(1);
       expect((await store.selectQuarantineCleanup(100, input.uploadUntil)).map((row) => row.assetId)).toContain(
         assetId,
       );

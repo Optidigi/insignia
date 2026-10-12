@@ -130,26 +130,39 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
       ).rejects.toMatchObject({ code: 'CONFLICT' });
       expect(await store.settle(input.assetId, claimId, now)).toBe(false);
       expect(await store.settle(input.assetId, next, now)).toBe(true);
-      const usable = await store.readUsability(shopId, '1', [input.assetId], now);
+      const usable = await store.readUsability(
+        { shopId, installationGeneration: '1', kind: 'merchant' },
+        [input.assetId],
+        now,
+      );
       expect(usable[0]?.expiresAt).toEqual(input.expiresAt);
       expect(usable[0]?.collectedAt).toEqual(input.collectedAt);
+      const guest = { ...scope, kind: 'guest' as const, ownerHash: 'b'.repeat(64) };
+      expect(await store.get(guest, input.assetId)).toBeNull();
+      expect(await store.readUsability(guest, [input.assetId], now)).toEqual([]);
+      expect(await store.readUsability({ ...guest, ownerHash: input.ownerHash }, [input.assetId], now)).toHaveLength(1);
+
       expect(
         await store.readUsability(
-          shopId,
-          '1',
+          { shopId, installationGeneration: '1', kind: 'merchant' },
           Array.from({ length: 256 }, () => input.assetId),
           now,
         ),
       ).toHaveLength(1);
       await expect(
         store.readUsability(
-          shopId,
-          '1',
+          { shopId, installationGeneration: '1', kind: 'merchant' },
           Array.from({ length: 257 }, () => input.assetId),
           now,
         ),
       ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
-      expect(await store.readUsability(shopId, '1', [input.assetId], input.expiresAt)).toEqual([]);
+      expect(
+        await store.readUsability(
+          { shopId, installationGeneration: '1', kind: 'merchant' },
+          [input.assetId],
+          input.expiresAt,
+        ),
+      ).toEqual([]);
       expect(await store.markDeleting(input.assetId, now)).toBeNull();
       expect((await store.markDeleting(input.assetId, input.expiresAt))?.state).toBe('DELETING');
       await store.finishDeleting(input.assetId, input.expiresAt);
@@ -336,7 +349,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
       expect(selected.findIndex((row) => row.assetId === second.assetId)).toBeLessThan(
         selected.findIndex((row) => row.assetId === first.assetId),
       );
-      expect(await store.readUsability(shopId, '1', [first.assetId], deadline)).toHaveLength(1);
+      expect(
+        await store.readUsability({ shopId, installationGeneration: '1', kind: 'merchant' }, [first.assetId], deadline),
+      ).toHaveLength(1);
     } finally {
       await db.destroy();
     }
@@ -377,7 +392,13 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable artwork ownership and
       expect(await store.selectQuarantineCleanup(100, input.uploadUntil)).not.toContainEqual(
         expect.objectContaining({ assetId: input.assetId }),
       );
-      expect(await store.readUsability(shopId, '1', [input.assetId], input.uploadUntil)).toHaveLength(1);
+      expect(
+        await store.readUsability(
+          { shopId, installationGeneration: '1', kind: 'merchant' },
+          [input.assetId],
+          input.uploadUntil,
+        ),
+      ).toHaveLength(1);
       expect(await store.selectQuarantineCleanup(100, new Date(+input.uploadUntil + 60000))).toContainEqual(
         expect.objectContaining({ assetId: input.assetId, state: 'USABLE' }),
       );

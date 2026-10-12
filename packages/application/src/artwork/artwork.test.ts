@@ -1,8 +1,36 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { type ArtworkRecord, createArtworkService } from './artwork.js';
+import { type ArtworkRecord, createArtworkService, createArtworkUsabilityPort } from './artwork.js';
 
 describe('private artwork lifecycle at the application seam', () => {
+  it('quote usability requires bound verified ownership even when another guest knows the UUID', async () => {
+    const row = {
+      assetId: 'known-asset',
+      ownerHash: 'a'.repeat(64),
+      state: 'USABLE',
+      manifest: {},
+      expiresAt: new Date('2026-10-19T12:00:00Z'),
+    } as ArtworkRecord;
+    const store = { readUsability: async () => [row] };
+    const request = {
+      shopId: 'shop',
+      installationGeneration: '1',
+      shopTimezone: 'UTC',
+      choices: [{ kind: 'revision' as const, id: row.assetId }],
+    };
+    const clock = () => new Date('2026-10-12T12:00:00Z');
+    const scope = { shopId: 'shop', installationGeneration: '1', kind: 'guest' as const, ownerHash: 'b'.repeat(64) };
+    expect((await createArtworkUsabilityPort(store, clock, scope).readUsability(request))[0]?.status).toBe(
+      'unavailable',
+    );
+    expect((await createArtworkUsabilityPort(store, clock).readUsability(request))[0]?.status).toBe('unavailable');
+    expect(
+      (
+        await createArtworkUsabilityPort(store, clock, { ...scope, ownerHash: 'a'.repeat(64) }).readUsability(request)
+      )[0]?.status,
+    ).toBe('usable');
+  });
+
   it('promotes the inspected snapshot despite quarantine overwrite and preserves success when immediate cleanup is unavailable', async () => {
     const original = new Uint8Array([1, 2, 3]);
     const preview = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
@@ -163,15 +191,26 @@ describe('private artwork lifecycle at the application seam', () => {
       shopTimezone: 'UTC',
       choices: [{ kind: 'deferred' as const, id: 'explicit-logo-later' }],
     };
-    expect((await service.quoteArtwork.readUsability(request))[0]?.status).toBe('unavailable');
     expect(
-      (await service.quoteArtwork.readUsability({ ...request, permittedDeferredIntentIds: ['other-intent'] }))[0]
-        ?.status,
+      (
+        await service
+          .quoteArtworkFor({ shopId: 'shop', installationGeneration: '1', kind: 'merchant' })
+          .readUsability(request)
+      )[0]?.status,
     ).toBe('unavailable');
-    const [accepted] = await service.quoteArtwork.readUsability({
-      ...request,
-      permittedDeferredIntentIds: ['explicit-logo-later'],
-    });
+    expect(
+      (
+        await service
+          .quoteArtworkFor({ shopId: 'shop', installationGeneration: '1', kind: 'merchant' })
+          .readUsability({ ...request, permittedDeferredIntentIds: ['other-intent'] })
+      )[0]?.status,
+    ).toBe('unavailable');
+    const [accepted] = await service
+      .quoteArtworkFor({ shopId: 'shop', installationGeneration: '1', kind: 'merchant' })
+      .readUsability({
+        ...request,
+        permittedDeferredIntentIds: ['explicit-logo-later'],
+      });
     expect(accepted?.status).toBe('usable');
     expect(accepted?.lastFullyUsableLocalDay).toBe(20740);
   });
@@ -188,12 +227,14 @@ describe('private artwork lifecycle at the application seam', () => {
         throw new Error('must not inspect');
       },
     });
-    const [result] = await service.quoteArtwork.readUsability({
-      shopId: 'shop',
-      installationGeneration: '1',
-      shopTimezone: 'UTC',
-      choices: [{ kind: 'revision', id: 'asset' }],
-    });
+    const [result] = await service
+      .quoteArtworkFor({ shopId: 'shop', installationGeneration: '1', kind: 'merchant' })
+      .readUsability({
+        shopId: 'shop',
+        installationGeneration: '1',
+        shopTimezone: 'UTC',
+        choices: [{ kind: 'revision', id: 'asset' }],
+      });
     expect(result?.lastFullyUsableLocalDay).toBe(20744);
   });
   it('does not issue an upload before a bounded owned session is durably admitted', async () => {

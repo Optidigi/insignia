@@ -386,12 +386,12 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
         undefined,
       );
     },
-    async readUsability(shopId, generation, ids, now) {
+    async readUsability(scope, ids, now) {
       if (ids.length === 0) return [];
       if (ids.length > 256) fail('INVALID_INPUT');
       const r = await pool.query<Row>(
-        `SELECT a.* FROM artwork_assets a WHERE shop_id=$1 AND installation_generation=$2 AND asset_id=ANY($3::uuid[]) AND state='USABLE' AND manifest IS NOT NULL AND expires_at>$4 AND ${active}`,
-        [shopId, generation, ids, now],
+        `SELECT a.* FROM artwork_assets a WHERE shop_id=$1 AND installation_generation=$2 AND asset_id=ANY($3::uuid[]) AND state='USABLE' AND manifest IS NOT NULL AND expires_at>$4 AND ($5='merchant' OR ($5='guest' AND owner_hash=$6)) AND ${active}`,
+        [scope.shopId, scope.installationGeneration, ids, now, scope.kind, scope.ownerHash ?? null],
       );
       return r.rows.map(map);
     },

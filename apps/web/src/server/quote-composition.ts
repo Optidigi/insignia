@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import {
   type AcceptedQuote,
+  type ArtworkScope,
   bindProviderSubscription,
   type CustomizationFxProvider,
   createArtworkUsabilityPort,
@@ -61,6 +62,8 @@ export function createQuoteAuthorityPorts(input: {
   credentials: AdminCredentialSource;
   catalogTransport: AdminGraphqlReadTransport;
   artwork?: QuoteArtworkPort;
+  /** Current verified resource authority; bind per request, never from quote JSON or a shared cache. */
+  artworkAuthority?: ArtworkScope;
   fx?: CustomizationFxProvider;
   signing: { keyId: number; signer: AuthorizationSigner };
   readiness: { assertReady(input: { quote: AcceptedQuote }): Promise<void> };
@@ -151,7 +154,7 @@ export function createQuoteAuthorityPorts(input: {
       },
     },
     currency: { exponent: (code) => currencyExponent(code) ?? null },
-    artwork: input.artwork ?? createArtworkUsabilityPort(input.core.artwork, clock),
+    artwork: input.artwork ?? createArtworkUsabilityPort(input.core.artwork, clock, input.artworkAuthority),
     fx: input.fx ?? {
       resolve: async () => {
         throw new Error('approved FX source is not configured');
