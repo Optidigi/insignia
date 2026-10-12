@@ -1,0 +1,16 @@
+{
+  "version": "m5-normal-merge-receipt-v1",
+  "pr": "https://github.com/Optidigi/insignia/pull/92",
+  "base": "dcfdc438fb7f94513d17da43bca16165d56e68f4",
+  "head": "75692b0414c6fce8a01b9ba911cccb8ede01f08e",
+  "effectiveMergeBase": "dcfdc438fb7f94513d17da43bca16165d56e68f4",
+  "merge": "8ad6a5e42f2a59b600cb9e0ec824a0a79132ae60",
+  "orderedParents": [
+    "dcfdc438fb7f94513d17da43bca16165d56e68f4",
+    "75692b0414c6fce8a01b9ba911cccb8ede01f08e"
+  ],
+  "tree": "f16503db85fea9b4d14c7353d8dfe398ecc4ce22",
+  "remoteMain": "8ad6a5e42f2a59b600cb9e0ec824a0a79132ae60",
+  "verifiedAt": "2026-10-12T13:09:57.597621+00:00",
+  "principalVerdict": "NOT_MILESTONE_ACCEPTANCE"
+}

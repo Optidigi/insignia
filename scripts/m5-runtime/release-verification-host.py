@@ -19,15 +19,15 @@ import urllib.parse
 
 REPOSITORY = Path(__file__).resolve().parents[2]
 PARENT = Path('/home/serveradmin/insignia-milestone-autonomy-handoff')
-DIRECTORY = PARENT / 'm5-release-verification'
-REMOTE_DIRECTORY = '/home/serveradmin/insignia-m5-runtime-resource-run-20261011-fb240660/publication-verification-bridge'
+DIRECTORY = PARENT / 'm5-release-verification-r2'
+REMOTE_DIRECTORY = '/home/serveradmin/insignia-m5-verify-20261012-r2'
 NODE = '/home/serveradmin/.local/opt/node-v24.21.0-linux-x64/bin/node'
 SSH = ['ssh', '-F', '/dev/null', '-T', '-i', '/home/serveradmin/.ssh/id_t3_prod',
        '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes', '-o', 'ForwardAgent=no',
        '-o', 'StrictHostKeyChecking=yes', '-o', 'ConnectTimeout=10',
        '-o', 'UserKnownHostsFile=' + str(PARENT / 'm5-normal-runtime-readonly-20261010/known_hosts.public')]
 TARGET = 'serveradmin@65.109.22.104'
-UNIT = 'insignia-m5-release-verifier.service'
+UNIT = 'insignia-m5-release-verifier-r2.service'
 SERVICE = REPOSITORY / 'deployment/m5-runtime/release-verifier.service'
 
 REMOTE = r'''
@@ -43,7 +43,7 @@ require(db['State']['Health']['Status'] == 'healthy' and db['Image'] == G['datab
 p=pathlib.Path('/home/serveradmin/insignia-m5-runtime-resource-run-20261011-fb240660/schema-plan/credentials.json')
 s=p.lstat();require(stat.S_ISREG(s.st_mode) and s.st_uid==os.getuid() and s.st_mode&0o777==0o600 and s.st_size<=16384)
 credentials=json.loads(p.read_text())
-bridge=pathlib.Path('/home/serveradmin/insignia-m5-runtime-resource-run-20261011-fb240660/publication-verification-bridge')
+bridge=pathlib.Path('/home/serveradmin/insignia-m5-verify-20261012-r2')
 require(not bridge.exists());bridge.mkdir(mode=0o700)
 require(bridge.lstat().st_uid == os.getuid() and (not (bridge / 'collector.sock').exists()))
 print(json.dumps({'clientSecret':env['SHOPIFY_CLIENT_SECRET'],'databaseUrl':env['DATABASE_URL'],
@@ -99,6 +99,8 @@ def qualify_gate(gate):
 def start(gate):
     qualify_gate(gate)
     require_service()
+    for path in [DIRECTORY/'collector.sock', Path(REMOTE_DIRECTORY)/'collector.sock']:
+        require(0 < len(os.fsencode(path)) <= 107, 'socket_path_unqualified')
     require(not DIRECTORY.exists())
     DIRECTORY.mkdir(mode=0o700)
     intent = DIRECTORY/'binding-intent.json'

@@ -17,6 +17,16 @@ operator = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(operator)
 
 class BindingControls(unittest.TestCase):
+    def test_oversized_socket_path_stops_before_directory_or_external_attempt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            target = Path(directory)/'not-created'
+            with patch.object(operator,'DIRECTORY',target), patch.object(operator,'REMOTE_DIRECTORY','/'+'x'*110), \
+                 patch.object(operator,'qualify_gate'), patch.object(operator,'require_service'), \
+                 patch.object(operator.subprocess,'Popen',side_effect=RuntimeError('unexpected_external_attempt')) as spawn:
+                gate = {'head':'a'*40,'tree':'b'*40,'webContainer':'synthetic-web','webImage':'synthetic-image','databaseContainer':'synthetic-db','databaseImage':'synthetic-db-image'}
+                with self.assertRaisesRegex(RuntimeError,'socket_path_unqualified'):operator.start(gate)
+                spawn.assert_not_called(); self.assertFalse(target.exists())
+
     @unittest.skipUnless(os.environ.get('INSIGNIA_REQUIRE_USER_SERVICE_TEST') == '1', 'requires local qualified user-service manager')
     def test_abrupt_supervisor_death_closes_transport_and_detached_descendants(self):
         import configparser
