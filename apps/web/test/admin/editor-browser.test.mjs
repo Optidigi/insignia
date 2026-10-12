@@ -1778,10 +1778,12 @@ test('authorization denial fences a save already in flight from repopulating pri
     releaseRead();
     await page.getByText('Authentication required', { exact: true }).waitFor({ timeout: 2000 });
     assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
+    const saveResponse = page.waitForResponse((response) => response.request().method() === 'PUT');
     releaseSave();
-    await page.waitForFunction(() => !document.querySelector('s-button'));
+    await saveResponse;
     await page.waitForTimeout(250);
     assert.ok(completed);
+    assert.equal(await page.getByRole('button', { name: 'Retry session', exact: true }).count(), 1);
     assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
     assert.equal(await page.locator('s-section[heading="Synthetic shirt"]').count(), 0);
     assert.equal(await page.getByText(/Draft saved/).count(), 0);
