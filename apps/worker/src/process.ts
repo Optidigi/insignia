@@ -2,12 +2,18 @@ import { createWorkerHealthServer } from './health.js';
 import type { PgBossRuntime, WorkerHandlers } from './runtime.js';
 
 /** Injectable composition: the server integrator supplies the scoped durable handlers. */
-export async function startWorkerProcess(input: { queue: PgBossRuntime; handlers: WorkerHandlers; port: number }) {
+export async function startWorkerProcess(input: {
+  queue: PgBossRuntime;
+  handlers: WorkerHandlers;
+  port: number;
+  artworkReadiness?: () => { ready: boolean };
+}) {
   let stopping = false;
   const server = createWorkerHealthServer({
     observability: input.queue.observability,
     isDurableReady: () => !stopping && input.queue.durableReady,
     probeDurableReady: () => (stopping ? Promise.resolve(false) : input.queue.checkDurableReady()),
+    artworkReadiness: input.artworkReadiness,
   });
   try {
     await input.queue.start();

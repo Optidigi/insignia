@@ -1,3 +1,4 @@
+export * from './artwork/artwork.js';
 export * from './delivery/inbox.js';
 export * from './delivery/outbox.js';
 export * from './entitlement/provider-policy.js';

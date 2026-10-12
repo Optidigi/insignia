@@ -208,7 +208,7 @@ importers:
     dependencies:
       '@astrojs/node':
         specifier: 11.1.6
-        version: 11.1.6(astro@7.3.5(@types/node@24.10.0)(yaml@2.9.1))(supports-color@7.2.0)
+        version: 11.1.6(astro@7.3.5(@types/node@24.10.0)(aws4fetch@1.0.20)(yaml@2.9.1))(supports-color@7.2.0)
       '@astrojs/preact':
         specifier: 6.0.5
         version: 6.0.5(@babel/core@7.29.7(supports-color@7.2.0))(@types/node@24.10.0)(esbuild@0.28.2)(preact@10.29.8)(supports-color@7.2.0)(yaml@2.9.1)
@@ -233,6 +233,9 @@ importers:
       '@insignia/shopify':
         specifier: workspace:*
         version: link:../../packages/shopify
+      '@insignia/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       '@insignia/visualizer':
         specifier: workspace:*
         version: link:../../packages/visualizer
@@ -241,7 +244,7 @@ importers:
         version: link:../worker
       astro:
         specifier: 7.3.5
-        version: 7.3.5(@types/node@24.10.0)(yaml@2.9.1)
+        version: 7.3.5(@types/node@24.10.0)(aws4fetch@1.0.20)(yaml@2.9.1)
       pg:
         specifier: 8.23.0
         version: 8.23.0
@@ -285,12 +288,18 @@ importers:
       '@insignia/shopify':
         specifier: workspace:*
         version: link:../../packages/shopify
+      '@insignia/storage':
+        specifier: workspace:*
+        version: link:../../packages/storage
       pg:
         specifier: 8.23.0
         version: 8.23.0
       pg-boss:
         specifier: 12.35.0
         version: 12.35.0
+      saxes:
+        specifier: 6.0.0
+        version: 6.0.0
       sharp:
         specifier: 0.35.4
         version: 0.35.4(@types/node@24.10.0)
@@ -422,6 +431,22 @@ importers:
       '@shopify/shopify-api':
         specifier: 15.0.0
         version: 15.0.0
+    devDependencies:
+      '@types/node':
+        specifier: 24.10.0
+        version: 24.10.0
+      typescript:
+        specifier: 5.9.3
+        version: 5.9.3
+      vitest:
+        specifier: 5.0.2
+        version: 5.0.2(@opentelemetry/api@1.9.1)(@types/node@24.10.0)(vite@8.3.1(@types/node@24.10.0)(esbuild@0.28.2)(yaml@2.9.1))
+
+  packages/storage:
+    dependencies:
+      aws4fetch:
+        specifier: 1.0.20
+        version: 1.0.20
     devDependencies:
       '@types/node':
         specifier: 24.10.0
@@ -1733,6 +1758,9 @@ packages:
     resolution: {integrity: sha512-kNOjDqAh7px0XWNI+4QbzoiR/nTkHAWNud2uvnJquD1/x5a7EQZMJT0AczqK0Qn67oY/TTQ1LbUKajZpp3I9tQ==}
     engines: {node: '>=8.0.0'}
 
+  aws4fetch@1.0.20:
+    resolution: {integrity: sha512-/djoAN709iY65ETD6LKCtyyEI04XIBP5xVvfmNxsEP0uJB5tyaGBztSryRr4HqMStr9R06PisQE7m9zDTXKu6g==}
+
   axobject-query@4.1.0:
     resolution: {integrity: sha512-qIj0G9wZbMGNLjLmg1PT6v2mE9AH2zlnADJD/2tC6E00hgmhUOfEB6greHPAfLRSufHqROIUTkw6E+M3lH0PTQ==}
     engines: {node: '>= 0.4'}
@@ -2659,6 +2687,10 @@ packages:
     resolution: {integrity: sha512-42tBVwLWnaQvW5zc4HbZrTuWccECCZfBi92FDuwtqxasH+JbPB3/FOKb1m222K42R4WxuxzzMsTswfzgtSu64Q==}
     engines: {node: '>=11.0.0'}
 
+  saxes@6.0.0:
+    resolution: {integrity: sha512-xAg7SOnEhrm5zI3puOOKyy1OMcMlIJZYNJY7xLBwSze0UjhPLnWfj2GF2EpT0jmzaJKIWKHLsaSSajf35bcYnA==}
+    engines: {node: '>=v12.22.7'}
+
   semver@6.3.1:
     resolution: {integrity: sha512-BR7VvDCVHO+q2xBEWskxS6DJE1qRnb7DxzUrogb71CWoSficBxYsiAGd+Kl0mmq/MprG9yArRkyrQxTO6XjMzA==}
     hasBin: true
@@ -3169,6 +3201,9 @@ packages:
     resolution: {integrity: sha512-YVGIj2kamLSTxw6NsZjoBxfSwsn0ycdesmc4p+Q21c5zPuZ1pl+NfxVdxPtdHvmNVOQ6XSYG4AUtyt/Fi7D16Q==}
     engines: {node: '>=10'}
 
+  xmlchars@2.2.0:
+    resolution: {integrity: sha512-JZnDKK8B0RCDw84FNdDAIpZK+JuJw+s7Lz8nksI7SIuU3UXJJslUthsi+uWBUYOwPFwW7W7PRLRfUKpxjtjFCw==}
+
   xtend@4.0.2:
     resolution: {integrity: sha512-LKYU1iAXJXUgAXn9URjiu+MWhyUXHsvfp7mcuYm9dSUKK0/CjtrUwFAxD82/mCWbtLsGjFIad0wIsod4zrTAEQ==}
     engines: {node: '>=0.4'}
@@ -3337,10 +3372,10 @@ snapshots:
       github-slugger: 2.0.0
       satteri: 0.10.5
 
-  '@astrojs/node@11.1.6(astro@7.3.5(@types/node@24.10.0)(yaml@2.9.1))(supports-color@7.2.0)':
+  '@astrojs/node@11.1.6(astro@7.3.5(@types/node@24.10.0)(aws4fetch@1.0.20)(yaml@2.9.1))(supports-color@7.2.0)':
     dependencies:
       '@astrojs/internal-helpers': 0.11.0
-      astro: 7.3.5(@types/node@24.10.0)(yaml@2.9.1)
+      astro: 7.3.5(@types/node@24.10.0)(aws4fetch@1.0.20)(yaml@2.9.1)
       send: 1.2.1(supports-color@7.2.0)
       server-destroy: 1.0.1
     transitivePeerDependencies:
@@ -4310,7 +4345,7 @@ snapshots:
 
   assertion-error@2.0.1: {}
 
-  astro@7.3.5(@types/node@24.10.0)(yaml@2.9.1):
+  astro@7.3.5(@types/node@24.10.0)(aws4fetch@1.0.20)(yaml@2.9.1):
     dependencies:
       '@astrojs/compiler-rs': 0.5.1
       '@astrojs/internal-helpers': 0.11.0
@@ -4358,7 +4393,7 @@ snapshots:
       tinyglobby: 0.2.17
       ultrahtml: 1.7.0
       unifont: 0.7.5
-      unstorage: 1.17.5
+      unstorage: 1.17.5(aws4fetch@1.0.20)
       verkit: 0.4.1
       vite: 8.3.1(@types/node@24.10.0)(esbuild@0.28.2)(yaml@2.9.1)
       vitefu: 1.1.3(vite@8.3.1(@types/node@24.10.0)(esbuild@0.28.2)(yaml@2.9.1))
@@ -4400,6 +4435,8 @@ snapshots:
       - yaml
 
   atomic-sleep@1.0.0: {}
+
+  aws4fetch@1.0.20: {}
 
   axobject-query@4.1.0: {}
 
@@ -5272,6 +5309,10 @@ snapshots:
 
   sax@1.6.1: {}
 
+  saxes@6.0.0:
+    dependencies:
+      xmlchars: 2.2.0
+
   semver@6.3.1: {}
 
   semver@7.8.5: {}
@@ -5513,7 +5554,7 @@ snapshots:
       unist-util-is: 6.0.1
       unist-util-visit-parents: 6.0.2
 
-  unstorage@1.17.5:
+  unstorage@1.17.5(aws4fetch@1.0.20):
     dependencies:
       anymatch: 3.1.3
       chokidar: 5.0.0
@@ -5523,6 +5564,8 @@ snapshots:
       node-fetch-native: 1.6.7
       ofetch: 1.5.1
       ufo: 1.6.4
+    optionalDependencies:
+      aws4fetch: 1.0.20
 
   update-browserslist-db@1.3.3(browserslist@4.29.2):
     dependencies:
@@ -5708,6 +5751,8 @@ snapshots:
       ansi-styles: 4.3.0
       string-width: 4.2.3
       strip-ansi: 6.0.1
+
+  xmlchars@2.2.0: {}
 
   xtend@4.0.2: {}
 

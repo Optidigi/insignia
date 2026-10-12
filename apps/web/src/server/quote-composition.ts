@@ -3,6 +3,7 @@ import {
   type AcceptedQuote,
   bindProviderSubscription,
   type CustomizationFxProvider,
+  createArtworkUsabilityPort,
   type EntitlementPolicyConfig,
   projectEntitlement,
   type QuoteArtworkPort,
@@ -150,11 +151,7 @@ export function createQuoteAuthorityPorts(input: {
       },
     },
     currency: { exponent: (code) => currencyExponent(code) ?? null },
-    artwork: input.artwork ?? {
-      readUsability: async () => {
-        throw new Error('trusted artwork usability authority is not configured');
-      },
-    },
+    artwork: input.artwork ?? createArtworkUsabilityPort(input.core.artwork, clock),
     fx: input.fx ?? {
       resolve: async () => {
         throw new Error('approved FX source is not configured');
