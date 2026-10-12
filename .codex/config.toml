@@ -1,4 +1,4 @@
-# Milestone-autonomy project-local requests; actual runtime evidence remains separate.
+# Working project defaults; the orchestrator may select model/effort under existing account limits.
 model = "gpt-6.1-sol"
 model_reasoning_effort = "medium"
 

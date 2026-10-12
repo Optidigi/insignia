@@ -108,9 +108,20 @@ for path, expected in pre_pragmatic_architecture.items():
     archived = subprocess.check_output(["git", "show", f"{PRE_PRAGMATIC_BASE}:{path}"], cwd=REPO)
     assert digest(archived) == expected, f"pre-pragmatic architecture mismatch: {path}"
 
-current_architecture = {
+pre_simple_delivery_architecture = {
     "docs/architecture/implementation-plan.md": "114b27925753aa3321a5d8b9329abf2bca3d3e666a5a3f680413b6d57e1f56cd",
     "docs/architecture/decision-ledger.md": "9c322ad61f75a1fb9e852d383049445bba6a01641706f5c6307f275d1188461c",
+    "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+}
+# Preserve the exact previously approved record at the PR96 checkpoint.
+PRE_SIMPLE_DELIVERY_BASE = "8775caa3ba878109807e0ca3a7cf175d7246a102"
+for path, expected in pre_simple_delivery_architecture.items():
+    archived = subprocess.check_output(["git", "show", f"{PRE_SIMPLE_DELIVERY_BASE}:{path}"], cwd=REPO)
+    assert digest(archived) == expected, f"pre-simple-delivery architecture mismatch: {path}"
+
+current_architecture = {
+    "docs/architecture/implementation-plan.md": "43782125b80a5d0307b4ad00f5c7908829de6ce7eebaf94bdd9a9f82b133aed7",
+    "docs/architecture/decision-ledger.md": "95d19f784aba249a82040e08349196b453c38eacf1682bffc9ca5a9ab3cc95ba",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
 }
 OWNER_AUTHORITY = "docs/delivery/authority/milestone-autonomy-2026-10-09.md"
@@ -128,6 +139,13 @@ assert digest((REPO / COMMERCIAL_OWNER_ATTESTATION).read_bytes()) == COMMERCIAL_
 PRAGMATIC_OWNER_AUTHORITY = "docs/delivery/authority/pragmatic-delivery-2026-10-11.md"
 PRAGMATIC_OWNER_AUTHORITY_SHA256 = "8698d41d0327a7f9a9577dc97fe4d9ab01029093659390ebab803e4cb74b4529"
 assert digest((REPO / PRAGMATIC_OWNER_AUTHORITY).read_bytes()) == PRAGMATIC_OWNER_AUTHORITY_SHA256, "pragmatic owner authority mismatch"
+
+SIMPLE_DELIVERY_OWNER_AUTHORITY = "docs/delivery/authority/simple-delivery-2026-10-12.md"
+SIMPLE_DELIVERY_OWNER_AUTHORITY_SHA256 = "1f451c6da2fb1a1cf6feb43d8bee839c893a326c5b30fe4265e4cd85c65e053d"
+SIMPLE_DELIVERY_PACKAGE_PLAN = "docs/delivery/history/simple-delivery-2026-10-12/REVISED-PLAN.md"
+SIMPLE_DELIVERY_PACKAGE_PLAN_SHA256 = "6277c4b7b3bcf29d63082caf0e70629611a1d2f77d51dfeece3b1c765c4906ed"
+assert digest((REPO / SIMPLE_DELIVERY_OWNER_AUTHORITY).read_bytes()) == SIMPLE_DELIVERY_OWNER_AUTHORITY_SHA256, "simple-delivery owner authority mismatch"
+assert digest((REPO / SIMPLE_DELIVERY_PACKAGE_PLAN).read_bytes()) == SIMPLE_DELIVERY_PACKAGE_PLAN_SHA256, "supplied owner package plan mismatch"
 
 for path, expected in current_architecture.items():
     assert digest((REPO / path).read_bytes()) == expected, f"current approved architecture mismatch: {path}"
@@ -158,6 +176,11 @@ print(json.dumps({
     "prePragmaticSha256": pre_pragmatic_architecture,
     "pragmaticOwnerAuthority": PRAGMATIC_OWNER_AUTHORITY,
     "pragmaticOwnerAuthoritySha256": PRAGMATIC_OWNER_AUTHORITY_SHA256,
-    "currentArchitectureVersion": "1.6 + owner pragmatic delivery amendment",
+    "preSimpleDeliveryRef": PRE_SIMPLE_DELIVERY_BASE,
+    "preSimpleDeliverySha256": pre_simple_delivery_architecture,
+    "simpleDeliveryOwnerAuthority": SIMPLE_DELIVERY_OWNER_AUTHORITY,
+    "simpleDeliveryOwnerAuthoritySha256": SIMPLE_DELIVERY_OWNER_AUTHORITY_SHA256,
+    "simpleDeliveryPackagePlanSha256": SIMPLE_DELIVERY_PACKAGE_PLAN_SHA256,
+    "currentArchitectureVersion": "1.6 + owner simple-delivery amendment (12 October 2026)",
     "currentArchitectureSha256": current_architecture,
 }, sort_keys=True))

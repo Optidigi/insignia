@@ -1,0 +1,88 @@
+{
+  "reviewedImplementation": "1b8b04c8ba0694813f19571bafed6b9becfdb544",
+  "reviewedTree": "36ccc40342140afd9cd983ebab4d575d8b576c37",
+  "localArtifacts": "/home/serveradmin/insignia-simple-delivery-20261012",
+  "results": [
+    {
+      "artifact": "insignia-session-recovery-red.log",
+      "status": "EXPECTED_NEGATIVE",
+      "detail": "Missing Retry session fails built browser control",
+      "sha256": "b3c62ef1e4dd8cbdafac5b32303c26f58a195e685486f3d234f93e06d30aac0a"
+    },
+    {
+      "artifact": "insignia-session-recovery-green.log",
+      "status": "PASS",
+      "detail": "1/1 initial recovery control",
+      "sha256": "c7cc5d0ca212df57f909bcb884305604ab763ed808c6980eb24515b92b1a0e5e"
+    },
+    {
+      "artifact": "insignia-session-recovery-focused.log",
+      "status": "PASS",
+      "detail": "2/2 recovery and delayed-save private-state fence",
+      "sha256": "bd3fa80ab8df54425f4739e15346082e4126018e5f3736b4d1da9de94286078c"
+    },
+    {
+      "artifact": "insignia-simple-web-suite.log",
+      "status": "FAILED_SUPERSEDED",
+      "detail": "145PASS/1cancelled: old all-buttons-absent structural wait",
+      "sha256": "fa2c33bc3d553307d0a56501beb53fcc845a089b4e7fb2b00f99de80ee96cfd2"
+    },
+    {
+      "artifact": "insignia-simple-web-suite-r2.log",
+      "status": "PASS",
+      "detail": "146/146 zero skips/cancellations with real PostgreSQL18.6",
+      "sha256": "170eabb9e11c801ddff24f915655fe7e7ba37856428ebb10898cc3976cf2c8ae"
+    },
+    {
+      "artifact": "insignia-simple-shopify.log",
+      "status": "PASS",
+      "detail": "371/371 SDK/adapter controls",
+      "sha256": "73ccc98d74535a2dc63a24e6046466d169b862f938eb39774a6d062245fc08c3"
+    },
+    {
+      "artifact": "insignia-simple-application.log",
+      "status": "PASS",
+      "detail": "209/209 application controls",
+      "sha256": "d9a83e720db4980a8059d8f70b3ae28508028e4263c8b0d80d20a111fa606a3b"
+    },
+    {
+      "artifact": "insignia-simple-visualizer.log",
+      "status": "PASS",
+      "detail": "9/9 geometry/renderer controls",
+      "sha256": "32e02f7bbfb4459c120b36102d0bd5cb1bc1c016cd5029270f9ca6ffb42942c3"
+    },
+    {
+      "artifact": "insignia-simple-style.log",
+      "status": "PASS",
+      "detail": "Existing warnings/information retained",
+      "sha256": "e08352da16aaf72c41b587dcdf5d184faec2bdce32a18516dc877fc5282538bf"
+    },
+    {
+      "artifact": "insignia-simple-boundaries.log",
+      "status": "PASS",
+      "detail": "Dependency/domain/database boundaries",
+      "sha256": "42ae8c39fd1e6f451a92d94f72915e271008ce1116063047ed70b4ad1c4d252b"
+    },
+    {
+      "artifact": "insignia-simple-secrets.log",
+      "status": "PASS",
+      "detail": "Generated browser assets included",
+      "sha256": "7e42be86afb6c093c07caf2daa5a52f7b5e1806b7d4cf53310d686b16aecbacf"
+    },
+    {
+      "artifact": "insignia-simple-build-red.log",
+      "status": "PASS",
+      "detail": "Full workspace type/build",
+      "sha256": "ab6b89ea356c6d67836c529c3e90d452e0fade257f1b66d4cc31a5b6d561d23b"
+    },
+    {
+      "artifact": "insignia-simple-session-checks.log",
+      "status": "PASS",
+      "detail": "4/4 client/production HTTP safe diagnostics",
+      "sha256": "dea285423e82f61b3a48d2ca4c95b2648ecc453c0c4e04f9d8a7c9c68054e9cc"
+    }
+  ],
+  "providerMutations": 0,
+  "nativeAcceptance": "NOT_PASSED",
+  "nativeAuthenticationCause": "UNCONFIRMED"
+}

@@ -218,6 +218,7 @@ function PublicationStatus({ config }: { config: NonNullable<ConfigView['config'
 
 export default function MerchantConfigEditor({ mode, productId }: Props) {
   const [status, setStatus] = useState('Verifying Shopify Admin session…');
+  const [loading, setLoading] = useState(false);
   const [list, setList] = useState<List | null>(null);
   const [view, setView] = useState<ConfigView | null>(null);
   const [query, setQuery] = useState('');
@@ -271,6 +272,7 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     setPreviewStatus('');
     setImageSize(null);
     setBusy(false);
+    setLoading(false);
   }
   function authorizationDenied(error: unknown) {
     const status = (error as { status?: number })?.status;
@@ -307,8 +309,9 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
     }
   }
 
-  async function load(cursor: string | null = null, search = query) {
+  async function load(cursor: string | null = null, search = query, freshSession = false) {
     const seq = ++requestId.current;
+    setLoading(true);
     visualizerRef.current?.destroy();
     visualizerRef.current = null;
     setView(null);
@@ -321,14 +324,14 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       if (mode === 'picker') {
         const params = new URLSearchParams({ q: search });
         if (cursor) params.set('cursor', cursor);
-        const data = await authenticatedJson<List>(`/api/admin/products?${params}`);
+        const data = await authenticatedJson<List>(`/api/admin/products?${params}`, {}, freshSession);
         if (seq === requestId.current) {
           setList(data);
           setStatus('');
         }
       } else {
         if (!productId || !/^[1-9][0-9]*$/.test(productId)) throw new Error('Invalid product link');
-        const data = await authenticatedJson<ConfigView>(endpoint(productId));
+        const data = await authenticatedJson<ConfigView>(endpoint(productId), {}, freshSession);
         if (seq === requestId.current) {
           syncPublication(data);
           setView(data);
@@ -343,6 +346,8 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
       }
     } catch (error) {
       if (seq === requestId.current) setStatus(error instanceof Error ? error.message : 'Admin data unavailable');
+    } finally {
+      if (seq === requestId.current) setLoading(false);
     }
   }
   useEffect(() => {
@@ -859,6 +864,11 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
         <p class="admin-status" role="status">
           {status}
         </p>
+      )}
+      {mode === 'config' && view === null && (
+        <s-button disabled={loading} onClick={() => void load(null, '', true)}>
+          Retry session
+        </s-button>
       )}
       {(mode === 'picker' ? list !== null : view !== null) && (
         <div class="admin-setup">

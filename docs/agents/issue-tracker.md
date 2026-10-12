@@ -8,7 +8,7 @@ Upstream skills asking where specifications or domain docs live should use:
 
 - Business decisions: `docs/architecture/decision-ledger.md`.
 - Domain/interfaces and milestone dependencies: relevant sections of `docs/architecture/implementation-plan.md`.
-- Work specification: current locally authorized file in `docs/delivery/prompts/` and linked issue.
+- Work specification: current owner direction, implementation plan/M5 worklist and linked issue; old slice prompts are dated evidence.
 - Review/authority: `docs/delivery/operating-model.md` and root `AGENTS.md`.
 
 No parallel CONTEXT.md, separate task tracker, triage label scheme or automatic interview is required to reconstruct already settled facts. Add specialized ADRs only when a material decision actually arises. The owner decision and operating model authorize within-milestone implementation, review and normal merges. Skill defaults do not allocate resources or alter locked product decisions.
