@@ -1,0 +1,44 @@
+{
+  "classification": "OWNER_SAVE_DID_NOT_COMMIT",
+  "observedAt": "2026-10-12T15:28:37.758Z",
+  "productId": "gid://shopify/Product/10519322493211",
+  "configId": "4dbbe8f6-8162-4271-9819-fd485f7d65f6",
+  "draftVersion": "1",
+  "draftHash": "5a7dcd26c3b8394bbe8b5ed988e45bb63ca3eb2cb0ef9b82200ea8533cba4d4b",
+  "configuredMethods": 0,
+  "configuredPlacements": 0,
+  "effectiveRevisionId": null,
+  "commands": [
+    {
+      "namespace": "m5-create-config",
+      "status": "completed",
+      "count": "1",
+      "last_created": "2026-10-12T15:20:08.193Z",
+      "last_completed": "2026-10-12T15:20:08.195Z"
+    }
+  ],
+  "installation": [
+    {
+      "current_generation": "1",
+      "external_installation_id": "gid://shopify/AppInstallation/1054356963611",
+      "deactivated_at": null,
+      "authorization_epoch": "0"
+    }
+  ],
+  "authStageCounts": {
+    "ONLINE_EXCHANGE_SUCCEEDED": 30,
+    "INSTALLATION_PROVIDER_READ_SUCCEEDED": 30,
+    "INSTALLATION_BOOTSTRAP_REUSED_SUCCEEDED": 30,
+    "TENANT_RECONCILIATION_SUCCEEDED": 30,
+    "AUTHENTICATION_SUCCEEDED": 30,
+    "SESSION_IDENTITY_REJECTED": 3,
+    "AUTHENTICATED_ACTOR_REJECTED": 1
+  },
+  "nativeSaveFailureCause": "UNCONFIRMED_NOT_CORRELATED_TO_REQUEST_ROUTE",
+  "sourceSha256": {
+    "owner-save-durable-diagnosis.private.json": "a86c7836b1b05e52817e1e2516e9a3a6cd5bafa6a92ee7c8df9d5f4a329b18cb",
+    "owner-save-auth-stage-diagnosis.json": "3b2c7df10f1df7201282b7b02002722f698668da1b82f5756283da4e8f9f1f23",
+    "refresh-coalescing-original-red.log": "e376b5170c76320ac45f36c0df2a020c63351d610280278b7acdddc59710a00b"
+  },
+  "productionWrites": 0
+}
