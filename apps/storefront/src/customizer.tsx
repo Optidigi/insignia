@@ -354,11 +354,52 @@ export function BuyerCustomizer({
         : { groups: [] };
       if (!lane.current(request.id)) return;
       retained.current = restored.groups;
+      const requestBody = desired();
+      const requestedGroups = groupsOverride ?? requestBody.groups;
+      const currentConfigs = new Map<string, BuyerConfig>();
+      for (const group of requestedGroups) {
+        if (!currentConfigs.has(group.productId))
+          currentConfigs.set(group.productId, await api.config(request.signal, group.productId));
+      }
+      if (!lane.current(request.id)) return;
+      // Repricing is an explicit new review, unlike renewal of the historical offer.
+      // Preserve every choice and require compatibility with each product's current rules.
+      const groups = requestedGroups.map((group) => {
+        const config = currentConfigs.get(group.productId);
+        const incompatible =
+          !config?.ready ||
+          group.design.placements.some((choice) => {
+            const policy = config.placements.find((value) => value.id === choice.placementId);
+            return (
+              !policy ||
+              !policy.allowedMethodIds.includes(choice.methodId) ||
+              !config.methods.some((value) => value.id === choice.methodId) ||
+              !policy.allowedStepIds.includes(choice.stepId) ||
+              !config.steps.some((value) => value.id === choice.stepId) ||
+              (choice.artwork.kind === 'deferred' && !policy.logoLaterAllowed)
+            );
+          }) ||
+          group.design.options.length !== config.options.length ||
+          group.design.options.some(
+            (choice) =>
+              !config.options.some(
+                (option) => option.id === choice.optionId && option.values.some((value) => value.id === choice.valueId),
+              ),
+          ) ||
+          group.variants.some(
+            (choice) => !config.variants.some((value) => value.id === choice.variantId && value.available),
+          );
+        if (incompatible || !config)
+          throw new Error(
+            'Product configuration changed. Repair incompatible design choices before reviewing current prices.',
+          );
+        return { ...group, configRevisionId: config.revisionId, revisionContentHash: config.contentHash };
+      });
       const proposal = await api.private<QuoteProposal>(
         'quote-proposals',
         {
-          ...desired(),
-          ...(groupsOverride ? { groups: groupsOverride } : {}),
+          ...requestBody,
+          groups,
           observedFingerprint: await advisoryFingerprint(baseline.current.fingerprint),
         },
         request.signal,
@@ -445,14 +486,18 @@ export function BuyerCustomizer({
     const renewalKey = renewalKeys.current.get(quoteId) ?? crypto.randomUUID();
     renewalKeys.current.set(quoteId, renewalKey);
     try {
-      baseline.current = await cart.read();
-      await apply(
-        await api.private<AcceptedCart>(`quotes/${quoteId}/renew`, {
-          ...desired(),
-          groups: state.accepted?.desired ?? retained.current,
-          idempotencyKey: renewalKey,
-        }),
-      );
+      const observed = await cart.read();
+      if (!baseline.current || baseline.current.fingerprint !== observed.fingerprint)
+        throw new Error('Cart changed. Reopen customization and review the complete current cart before renewing.');
+      const accepted = await api.private<AcceptedCart>(`quotes/${quoteId}/renew`, {
+        ...desired(),
+        groups: state.accepted?.desired ?? retained.current,
+        idempotencyKey: renewalKey,
+      });
+      // An acknowledged issuance is complete even when subsequent cart repair fails.
+      // Only an uncertain API outcome retains its command key for exact retry.
+      renewalKeys.current.delete(quoteId);
+      await apply(accepted);
     } catch (error) {
       dispatch({ kind: 'error', message: error instanceof Error ? error.message : 'Renewal needs a new price review' });
     }
@@ -618,7 +663,7 @@ export function BuyerCustomizer({
                           Provide logo later
                         </button>
                       )}
-                      <p>You can upload after purchase for placements that allow logo later.</p>
+                      <p>For placements that allow logo later, the merchant can attach artwork after purchase.</p>
                     </>
                   )}
                   <label>
@@ -701,7 +746,7 @@ export function BuyerCustomizer({
                       Preview unavailable for this placement/view. Your size selections remain available.
                     </p>
                   )}
-                  {selected?.artwork.kind === 'deferred' && <p class="badge">LOGO — Upload after purchase</p>}
+                  {selected?.artwork.kind === 'deferred' && <p class="badge">LOGO — Merchant attaches later</p>}
                   {wizard === 2 && selected && (
                     <>
                       <label>
@@ -851,7 +896,7 @@ export function BuyerCustomizer({
                         {config.methods.find((m) => m.id === p.methodId)?.label} —{' '}
                         {config.steps.find((step) => step.id === p.stepId)?.label}
                         {p.artwork.kind === 'deferred' ? (
-                          <span class="badge"> Upload after purchase</span>
+                          <span class="badge"> Merchant attaches later</span>
                         ) : (
                           <span> Verified artwork</span>
                         )}

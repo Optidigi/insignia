@@ -111,6 +111,9 @@ jobs:
       - run: corepack pnpm --filter @insignia/application test
       - run: corepack pnpm --filter @insignia/observability test
       - run: corepack pnpm --filter @insignia/worker test
+      - name: M7 buyer HTTP ownership, admission and immutable issuance with PostgreSQL
+        working-directory: apps/web
+        run: node --test test/buyer-http.test.mjs test/buyer-flow.test.mjs test/buyer-production.test.mjs test/buyer-bootstrap.test.mjs
       - name: Historical schema20 owner lifecycle and fresh queue process controls
         # Each test allocates its own database from pinned PR97 schema20 inputs.
         # Current check:database above qualifies schema25; the historical erasure guard stays exact20.

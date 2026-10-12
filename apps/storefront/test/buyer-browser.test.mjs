@@ -406,3 +406,236 @@ test('one canvas view displays both selected logo-later placements simultaneousl
     await server.close();
   }
 });
+
+async function withRenewalBuyer(run, { multipleProducts = false } = {}) {
+  const server = await createServer({ server: { host: '127.0.0.1', port: 0, strictPort: true } });
+  let browser;
+  try {
+    await server.listen();
+    browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.goto(`http://127.0.0.1:${server.httpServer.address().port}`);
+    const group = {
+      productId: '111',
+      configRevisionId: 'historical',
+      revisionContentHash: 'c'.repeat(64),
+      design: {
+        placements: [
+          {
+            placementId: 'front',
+            methodId: 'print',
+            stepId: 'small',
+            artwork: { kind: 'deferred', intentId: 'intent' },
+          },
+        ],
+        options: [],
+      },
+      variants: [{ variantId: '222', quantity: 3 }],
+    };
+    let items = [
+      {
+        key: 'custom',
+        variant_id: 222,
+        quantity: 3,
+        properties: { _insignia_quote_v2: 'q', _insignia_member_v2: 'm' },
+      },
+    ];
+    const renewals = [];
+    const proposals = [];
+    let mutations = 0;
+    let renewalFailure = false;
+    const configurations = new Map([['111', structuredClone(config)]]);
+    const groups = [group];
+    if (multipleProducts) {
+      groups.push({ ...structuredClone(group), productId: '333', variants: [{ variantId: '444', quantity: 2 }] });
+      configurations.set('333', {
+        ...structuredClone(config),
+        productId: '333',
+        revisionId: 'r-other',
+        contentHash: 'd'.repeat(64),
+        variants: [{ id: '444', label: 'Other', available: true }],
+      });
+    }
+    await page.route('**/cart*.js', (route) => route.fulfill({ json: { items, currency: 'EUR' } }));
+    await page.route('**/cart/update.js', (route) => {
+      mutations++;
+      const body = route.request().postDataJSON();
+      items = items.filter((i) => body.updates[i.key] !== 0);
+      return route.fulfill({ json: { items, currency: 'EUR' } });
+    });
+    await page.route('**/cart/add.js', (route) => {
+      mutations++;
+      items = route
+        .request()
+        .postDataJSON()
+        .items.map((i, index) => ({
+          key: `renewed${mutations}-${index}`,
+          variant_id: i.id,
+          quantity: i.quantity,
+          properties: i.properties,
+        }));
+      return route.fulfill({ json: { items } });
+    });
+    await page.route('**/apps/insignia/v1/**', (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (path.endsWith('/config'))
+        return route.fulfill({
+          json: configurations.get(new URL(route.request().url()).searchParams.get('productId')),
+        });
+      if (path.endsWith('/sessions'))
+        return route.fulfill({
+          json: {
+            capability: 'abc.def',
+            sessionId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+            expiresAt: new Date(Date.now() + 3600000).toISOString(),
+          },
+        });
+      const body = route.request().postDataJSON();
+      if (path.endsWith('/cart-state'))
+        return route.fulfill({
+          json: { groups, quoteId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc', repairRequired: false },
+        });
+      if (path.endsWith('/renew')) {
+        renewals.push(body);
+        if (renewalFailure) return route.fulfill({ status: 503 });
+        return route.fulfill({
+          json: {
+            quoteId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+            setId: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+            validThroughDay: 22000,
+            applicationId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+            buckets: [
+              {
+                variantId: '222',
+                quantity: 3,
+                properties: { _insignia_quote_v2: 'q', _insignia_member_v2: `renewed-${renewals.length}` },
+              },
+            ],
+            desired: body.groups,
+          },
+        });
+      }
+      if (path.endsWith('/quote-proposals')) {
+        proposals.push(body);
+        return route.fulfill({
+          json: {
+            proposalId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+            hash: 'b'.repeat(64),
+            expiresAt: new Date(Date.now() + 60000).toISOString(),
+            currency: 'EUR',
+            exponent: 2,
+            customizedQuantity: 3,
+            totalMinor: '9100',
+            groups: [
+              {
+                productId: '111',
+                quantity: 3,
+                setupMinor: '100',
+                customizationUnitMinor: '1000',
+                baseTotalMinor: '6000',
+                totalMinor: '9100',
+              },
+            ],
+            changedGroups: [],
+          },
+        });
+      }
+      return route.fulfill({ json: { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', status: 'APPLIED' } });
+    });
+    await page.evaluate(() => {
+      const host = document.createElement('insignia-buyer');
+      host.setAttribute('product-id', '111');
+      host.setAttribute('country', 'NL');
+      document.body.append(host);
+    });
+    const host = page.locator('insignia-buyer');
+    await host.getByRole('button', { name: 'Customize this product' }).click();
+    await host.getByRole('button', { name: 'Renew accepted cart offer' }).waitFor();
+    await run({
+      page,
+      host,
+      renewals,
+      proposals,
+      group,
+      editCart: () => {
+        items[0].quantity = 5;
+      },
+      mutations: () => mutations,
+      failRenewal: (value) => {
+        renewalFailure = value;
+      },
+      configure: (value) => {
+        configurations.set(value.productId, value);
+      },
+    });
+  } finally {
+    await browser?.close();
+    await server.close();
+  }
+}
+
+test('renewal rejects an external quantity edit while mounted without issuing or overwriting cart', async () => {
+  await withRenewalBuyer(async ({ host, renewals, editCart, mutations }) => {
+    editCart();
+    await host.getByRole('button', { name: 'Renew accepted cart offer' }).click();
+    await host
+      .getByText('Cart changed. Reopen customization and review the complete current cart before renewing.')
+      .first()
+      .waitFor();
+    assert.equal(renewals.length, 0);
+    assert.equal(mutations(), 0);
+  });
+});
+
+test('acknowledged renewals rotate command keys while uncertain API retry preserves its key', async () => {
+  await withRenewalBuyer(async ({ host, renewals, failRenewal }) => {
+    const renew = host.getByRole('button', { name: 'Renew accepted cart offer' });
+    failRenewal(true);
+    await renew.click();
+    await host.getByText('Customization request unavailable').first().waitFor();
+    failRenewal(false);
+    await renew.click();
+    await host.getByText('Customized cart updated.').waitFor();
+    assert.equal(renewals[0].idempotencyKey, renewals[1].idempotencyKey);
+    await renew.click();
+    await host.getByText('Customized cart updated.').waitFor();
+    assert.equal(renewals.length, 3);
+    assert.notEqual(renewals[1].idempotencyKey, renewals[2].idempotencyKey);
+  });
+});
+
+test('explicit full-cart review rebases compatible historical designs to each product current revision', async () => {
+  await withRenewalBuyer(
+    async ({ host, proposals, group }) => {
+      await host.getByRole('combobox', { name: 'Edit retained design' }).selectOption('0');
+      await host.getByRole('button', { name: 'Review complete customized cart' }).click();
+      await host.getByText('EUR 91.00', { exact: true }).first().waitFor();
+      assert.deepEqual(
+        proposals[0].groups.map((value) => [value.productId, value.configRevisionId, value.revisionContentHash]),
+        [
+          ['111', 'r1', 'a'.repeat(64)],
+          ['333', 'r-other', 'd'.repeat(64)],
+        ],
+      );
+      assert.deepEqual(proposals[0].groups[0].design, group.design);
+      assert.equal(group.configRevisionId, 'historical');
+    },
+    { multipleProducts: true },
+  );
+});
+
+test('incompatible republish needs explicit design repair and cannot silently drop logo-later', async () => {
+  await withRenewalBuyer(async ({ host, proposals, configure, group }) => {
+    const cfg = structuredClone(config);
+    cfg.placements[0].logoLaterAllowed = false;
+    configure(cfg);
+    await host.getByRole('combobox', { name: 'Edit retained design' }).selectOption('0');
+    await host.getByRole('button', { name: 'Review complete customized cart' }).click();
+    await host
+      .getByText('Product configuration changed. Repair incompatible design choices before reviewing current prices.')
+      .first()
+      .waitFor();
+    assert.equal(proposals.length, 0);
+    assert.equal(group.design.placements[0].artwork.kind, 'deferred');
+  });
+});
