@@ -1,0 +1,19 @@
+# M5 fresh session retry
+
+Owner reported no visible Save result followed by Authentication required. Independent readback proves one configuration creation committed, but draft remains version1 with empty choices and no save command. No effective revision exists. Safe stage logs show successful authentication/installation reconciliations interspersed with SESSION_IDENTITY_REJECTED and AUTHENTICATED_ACTOR_REJECTED. They lack route correlation and exact identity predicate classification; they do not prove the sole native Save failure cause or an expired-token diagnosis.
+
+## Reproduced correction
+
+The existing client retries401 with send(), whose token lookup can join a request already in flight before rejection. A controlled race through the actual client functions reproduces two rejected requests. The maintained regression at the public authenticated HTTP client boundary first fails Authentication required; the correction succeeds while the concurrent ordinary request retains its own lookup.
+
+Move the unchanged transport from the large editor into shared/admin-request.ts so that this boundary is directly testable. The behavior delta is three lines: send accepts a fresh flag, token lookup uses it, and the single401 retry calls send(true). Request body, method and idempotency headers remain the same. Second401 stops;403/503 do not retry. Server signature/identity/expiry, staff grants, tenant/generation, privacy clearing, mutation origin and trusted30-second authority checks are unchanged.
+
+[Shopify’s ID-token guidance](https://shopify.dev/docs/apps/build/authentication-authorization/id-tokens) requires a fresh short-lived token per request; its [embedded authentication guide](https://shopify.dev/docs/apps/build/authentication-authorization/implement-token-exchange?lang=node) describes fresh-token recovery. The captured public App Bridge source hash25da58b49ad13dc7ed9b713119f713c33421e1a284d897a09a525892a334781a obtains tokens through its host API and skips automatic fetch retry when an explicit Authorization header is supplied. This is inspected current public-source behavior, not proof of the owner’s exact loaded CDN bytes or a new browser capability.
+
+## Actual qualification and remaining native proof
+
+Focused race RED→GREEN, package builds and Astro type/build pass. Full existing web suite146/146 passes with PostgreSQL18, including real production HTTP/composition, one401 retry/second401/403/503 controls, ordinary token coalescing, editing/preview/save/conflict/recovery, late activation, expired identity/privacy clearing and queue quarantine. Initial isolated web build lacked the worker artifact; building the unchanged worker then rerunning succeeds. Required style/boundary/secret checks, independent fresh reviews and natural exact-head CI precede deployment.
+
+This is a small client correction, not proof that M5’s native Save now works. The existing owned product10519322493211 and config4dbbe8f6-8162-4271-9819-fd485f7d65f6 must be reused. No new fixture/config, signing or publication attempt occurred here. After exact reviewed image/config qualification and one reserved web handover, native acceptance still needs owner browser or a successfully authenticated shared tab. Do not repeat an ambiguous command; the observed native draft has no save command record, and a later Save needs current authenticated admission.
+
+The updated shared browser opens a new Default tab but redirects to Shopify login with no cookie session; snapshot still reports hCaptcha EvalError. Owner attempted normal sign-in and reports Continue remains stuck. No cookie/token import capability is exposed, and none was used. Live server access is available. Private captures remain under insignia-pr90-continuation-20261012/merchant-acceptance with maximum seven-day retention from12October, preserving earlier applicable deadlines. M5/G7, lifecycle/privacy and the maintained executable test ceiling remain open.
