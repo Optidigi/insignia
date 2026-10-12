@@ -160,6 +160,7 @@ test('server composition binds trusted provider reads to one signed immutable qu
       },
     },
     artwork: {
+      replayBinding: () => 'f'.repeat(64),
       readUsability: async (input) => {
         artworkReads++;
         assert.equal(input.shopId, 'shop');
@@ -265,6 +266,10 @@ test('default artwork composition binds verified guest authority and denies unsc
     choices: [{ kind: 'revision', id: 'asset' }],
   };
   const authority = { shopId: 'tenant', installationGeneration: '1', kind: 'guest', ownerHash: 'a'.repeat(64) };
+  assert.throws(
+    () => createQuoteAuthorityPorts({ ...input, artwork: { readUsability: async () => [] } }),
+    /Quote resource replay authority required/,
+  );
   assert.equal((await createQuoteAuthorityPorts(input).artwork.readUsability(request))[0].status, 'unavailable');
   assert.equal(
     (

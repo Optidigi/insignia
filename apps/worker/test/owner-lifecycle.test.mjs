@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
+import { rm } from 'node:fs/promises';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -8,6 +9,7 @@ import { applyOwnerLifecycleDecision, createDurableCore } from '@insignia/databa
 import { Pool } from 'pg';
 import { PgBoss } from 'pg-boss';
 import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
+import { frozenSchema20Fixture } from '../../../scripts/m5-runtime/frozen-schema20-fixture.mjs';
 import { createPgBossRuntime, WEBHOOK_QUEUE } from '../dist/runtime.js';
 
 const adminUrl = process.env.M5_OWNER_LIFECYCLE_TEST_URL;
@@ -21,6 +23,7 @@ test('owner receipt erasure settles real pg-boss copy and a fresh worker process
   const url = new URL(adminUrl);
   url.username = 'insignia_rewrite';
   url.pathname = `/${database}`;
+  const compatibility = await frozenSchema20Fixture();
   const root = fileURLToPath(new URL('../../../', import.meta.url));
   let role = false,
     db = false,
@@ -36,11 +39,13 @@ test('owner receipt erasure settles real pg-boss copy and a fresh worker process
     db = true;
     await promisify(execFile)(
       `${root}node_modules/.bin/dbmate`,
-      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
+      ['--no-dump-schema', '--migrations-dir', `${compatibility.directory}/packages/database/migrations`, 'up'],
       { env: { ...process.env, DATABASE_URL: url.href } },
     );
     await installQueue(url.href);
     pool = new Pool({ connectionString: url.href });
+    assert.equal((await pool.query('SELECT count(*)::integer AS n FROM schema_migrations')).rows[0].n, 20);
+    assert.equal((await pool.query("SELECT to_regclass('public.artwork_assets') AS artwork")).rows[0].artwork, null);
     core = createDurableCore(new Pool({ connectionString: url.href }));
     const boss = new PgBoss({
       connectionString: url.href,
@@ -130,5 +135,6 @@ test('owner receipt erasure settles real pg-boss copy and a fresh worker process
     if (role) await c.query('drop role insignia_rewrite');
     c.release();
     await admin.end();
+    await rm(compatibility.directory, { recursive: true, force: true });
   }
 });

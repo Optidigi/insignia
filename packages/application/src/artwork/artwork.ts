@@ -358,6 +358,24 @@ export function createArtworkUsabilityPort(
 ): QuoteArtworkPort {
   const scope = verifiedScope ? { ...verifiedScope } : undefined;
   return {
+    replayBinding(request) {
+      if (
+        !scope ||
+        scope.shopId !== request.shopId ||
+        scope.installationGeneration !== request.installationGeneration ||
+        !(scope.kind === 'merchant' || (scope.kind === 'guest' && /^[a-f0-9]{64}$/.test(scope.ownerHash ?? '')))
+      )
+        throw new ArtworkError('UNAVAILABLE');
+      return hash(
+        JSON.stringify([
+          'm6-artwork-authority-v1',
+          scope.shopId,
+          scope.installationGeneration,
+          scope.kind,
+          scope.kind === 'guest' ? scope.ownerHash : 'authorized-merchant',
+        ]),
+      );
+    },
     async readUsability(request) {
       const now = clock();
       const authorized =

@@ -72,6 +72,8 @@ export function createQuoteAuthorityPorts(input: {
   fetchImpl?: typeof fetch;
 }): QuoteAuthorityPorts {
   const clock = input.clock ?? (() => new Date());
+  const artwork = input.artwork ?? createArtworkUsabilityPort(input.core.artwork, clock, input.artworkAuthority);
+  if (!artwork.replayBinding) throw new Error('Quote resource replay authority required');
   const ids = input.ids ?? { quoteId: randomUUID, setId: randomUUID };
   return {
     clock,
@@ -154,7 +156,7 @@ export function createQuoteAuthorityPorts(input: {
       },
     },
     currency: { exponent: (code) => currencyExponent(code) ?? null },
-    artwork: input.artwork ?? createArtworkUsabilityPort(input.core.artwork, clock, input.artworkAuthority),
+    artwork,
     fx: input.fx ?? {
       resolve: async () => {
         throw new Error('approved FX source is not configured');

@@ -45,6 +45,8 @@ export type QuoteArtworkStatus = QuoteArtworkChoice & {
   observedAt: string;
 };
 export interface QuoteArtworkPort {
+  /** Trusted port may bind idempotency to verified resource authority, independently of client JSON. */
+  replayBinding?(input: { shopId: string; installationGeneration: string }): string;
   readUsability(input: {
     shopId: string;
     installationGeneration: string;
@@ -465,9 +467,13 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
   const marketId = normalizeMarketId(request.marketId);
   if (request.groups.some((entry) => entry.sellingPlanId !== undefined && entry.sellingPlanId !== null))
     throw new Error('paid customization with selling plan');
-  const requestDigest = createHash('sha256')
-    .update(canonical({ ...request, marketId }))
-    .digest('hex');
+  const digest = createHash('sha256').update(canonical({ ...request, marketId }));
+  if (ports.artwork.replayBinding) {
+    const binding = ports.artwork.replayBinding(request);
+    if (!/^[a-f0-9]{64}$/.test(binding)) throw new Error('quote resource authority unavailable');
+    digest.update('\0m6-quote-resource-authority-v1\0').update(binding);
+  }
+  const requestDigest = digest.digest('hex');
   const tenant = requireTenant(await ports.tenant.getActive(request.shopId, request.installationGeneration), request);
   const completed = await ports.store.findCompleted({
     shopId: request.shopId,

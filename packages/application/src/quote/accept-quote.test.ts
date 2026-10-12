@@ -148,6 +148,47 @@ function fixture() {
 }
 
 describe('acceptQuote', () => {
+  it('cached authorization and transactional replay remain bound to verified artwork owner authority', async () => {
+    const { ports } = fixture();
+    const scope = { shopId: 'shop', installationGeneration: '1', kind: 'guest' as const, ownerHash: 'a'.repeat(64) };
+    const row = {
+      assetId: 'art',
+      ownerHash: scope.ownerHash,
+      state: 'USABLE',
+      manifest: {},
+      expiresAt: new Date(+now + 7 * 86400000),
+    };
+    const store = { readUsability: async () => [row] } as never;
+    ports.artwork = createArtworkUsabilityPort(store, () => now, scope);
+    let cached: Awaited<ReturnType<typeof acceptQuote>> | undefined,
+      digest = '';
+    vi.mocked(ports.store.accept).mockImplementation(async (input, commit) => {
+      if (cached) {
+        if (input.requestDigest !== digest) throw new Error('idempotency digest conflict');
+        return cached;
+      }
+      digest = input.requestDigest;
+      cached = await commit();
+      return cached;
+    });
+    vi.mocked(ports.store.findCompleted).mockImplementation(async (input) => {
+      if (!cached) return null;
+      if (input.requestDigest !== digest) throw new Error('idempotency digest conflict');
+      return cached;
+    });
+    const first = await acceptQuote(request, ports);
+    expect(await acceptQuote(request, ports)).toEqual(first);
+    ports.artwork = createArtworkUsabilityPort(store, () => now, { ...scope, ownerHash: 'b'.repeat(64) });
+    await expect(acceptQuote(request, ports)).rejects.toThrow('idempotency digest conflict');
+    ports.artwork = createArtworkUsabilityPort(store, () => now, { ...scope, kind: 'merchant' });
+    vi.mocked(ports.store.findCompleted).mockResolvedValueOnce(null);
+    await expect(acceptQuote(request, ports)).rejects.toThrow('idempotency digest conflict');
+    ports.artwork = createArtworkUsabilityPort(store, () => now);
+    const reads = vi.mocked(ports.store.findCompleted).mock.calls.length;
+    await expect(acceptQuote(request, ports)).rejects.toThrow();
+    expect(ports.store.findCompleted).toHaveBeenCalledTimes(reads);
+  });
+
   it('validates actual artwork observations against a post-read clock without changing quote expiry', async () => {
     const { ports } = fixture();
     let tick = +now;
