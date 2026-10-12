@@ -45,6 +45,7 @@ export interface VisualizerOptions {
   element: HTMLElement;
   onCommand(command: GeometryCommand): void;
   onStatus(status: RenderStatus): void;
+  imageFactory?(): HTMLImageElement;
 }
 
 function safeRasterUrl(url: string): boolean {
@@ -95,11 +96,21 @@ export function createVisualizerWithKonva(options: VisualizerOptions, konva: Kon
   const image = new konva.Image({ listening: false, visible: false });
   const artwork = new konva.Rect({ listening: false, visible: false });
   const artworkRaster = new konva.Image({ listening: false, visible: false });
+  const logoLater = new konva.Text({
+    text: 'LOGO',
+    fill: '#17212b',
+    fontStyle: 'bold',
+    align: 'center',
+    verticalAlign: 'middle',
+    listening: false,
+    visible: false,
+  });
   const message = new konva.Text({ text: '', fill: '#5b6470', fontSize: 14, listening: false });
   background.add(fallback);
   background.add(image);
   artworkLayer.add(artwork);
   artworkLayer.add(artworkRaster);
+  artworkLayer.add(logoLater);
   artworkLayer.add(message);
   const transformer = new konva.Transformer({
     rotateEnabled: false,
@@ -108,6 +119,15 @@ export function createVisualizerWithKonva(options: VisualizerOptions, konva: Kon
   });
   affordance.add(transformer);
   const placementNodes = new Map<string, Node>();
+  type ArtworkNodes = {
+    frame: Node;
+    raster: Node;
+    logo: Node;
+    request: number;
+    url?: string;
+    image?: HTMLImageElement;
+  };
+  const artworkNodes = new Map<string, ArtworkNodes>();
 
   function draw(): void {
     background.batchDraw();
@@ -123,6 +143,7 @@ export function createVisualizerWithKonva(options: VisualizerOptions, konva: Kon
       ...scene,
       contentRect,
       placements: scene.placements.map((item) => ({ ...item, bounds: mapRect(item.bounds, from, contentRect) })),
+      artworks: scene.artworks?.map((item) => ({ ...item, bounds: mapRect(item.bounds, from, contentRect) })),
       artwork: scene.artwork
         ? { ...scene.artwork, bounds: mapRect(scene.artwork.bounds, from, contentRect) }
         : undefined,
@@ -177,7 +198,7 @@ export function createVisualizerWithKonva(options: VisualizerOptions, konva: Kon
       options.onStatus('missing-image');
       return;
     }
-    const candidate = new globalThis.Image();
+    const candidate = options.imageFactory?.() ?? new globalThis.Image();
     browserImage = candidate;
     candidate.onload = () => {
       if (destroyed || request !== imageRequest) return;
@@ -209,7 +230,7 @@ export function createVisualizerWithKonva(options: VisualizerOptions, konva: Kon
     artworkRaster.visible(false);
     artworkRaster.image(undefined);
     if (!url || !safeRasterUrl(url)) return;
-    const candidate = new globalThis.Image();
+    const candidate = options.imageFactory?.() ?? new globalThis.Image();
     browserArtwork = candidate;
     candidate.onload = () => {
       if (destroyed || request !== artworkRequest) return;
@@ -226,6 +247,95 @@ export function createVisualizerWithKonva(options: VisualizerOptions, konva: Kon
     candidate.src = url;
   }
 
+  function releasePlacementArtwork(nodes: ArtworkNodes): void {
+    nodes.request += 1;
+    if (nodes.image) {
+      nodes.image.onload = null;
+      nodes.image.onerror = null;
+      nodes.image = undefined;
+    }
+    nodes.raster.image(undefined);
+    nodes.raster.visible(false);
+    nodes.frame.destroy();
+    nodes.raster.destroy();
+    nodes.logo.destroy();
+  }
+
+  function renderPlacementArtworks(items: NonNullable<RenderScene['artworks']>): void {
+    const present = new Set(items.map((item) => item.placementId));
+    for (const [id, nodes] of artworkNodes) {
+      if (!present.has(id)) {
+        releasePlacementArtwork(nodes);
+        artworkNodes.delete(id);
+      }
+    }
+    for (const item of items) {
+      let nodes = artworkNodes.get(item.placementId);
+      if (!nodes) {
+        nodes = {
+          frame: new konva.Rect({ name: `artwork-frame:${item.placementId}`, listening: false }),
+          raster: new konva.Image({ name: `artwork-image:${item.placementId}`, listening: false, visible: false }),
+          logo: new konva.Text({
+            name: `artwork-logo:${item.placementId}`,
+            text: 'LOGO',
+            fill: '#17212b',
+            fontStyle: 'bold',
+            align: 'center',
+            verticalAlign: 'middle',
+            listening: false,
+          }),
+          request: 0,
+        };
+        artworkNodes.set(item.placementId, nodes);
+        artworkLayer.add(nodes.frame);
+        artworkLayer.add(nodes.raster);
+        artworkLayer.add(nodes.logo);
+      }
+      nodes.frame.setAttrs({
+        ...item.bounds,
+        fill: item.kind === 'logo-later' ? '#d4d7dc' : '#a9b7ca',
+        stroke: '#52616f',
+        dash: item.kind === 'logo-later' ? [6, 4] : [],
+        visible: true,
+      });
+      nodes.raster.setAttrs({ ...item.bounds });
+      nodes.logo.setAttrs({
+        ...item.bounds,
+        fontSize: Math.max(8, Math.min(item.bounds.width / 4, item.bounds.height / 2)),
+        visible: item.kind === 'logo-later',
+      });
+      const url = item.kind === 'raster' ? item.url : undefined;
+      if (url === nodes.url) continue;
+      nodes.request += 1;
+      const request = nodes.request;
+      if (nodes.image) {
+        nodes.image.onload = null;
+        nodes.image.onerror = null;
+      }
+      nodes.image = undefined;
+      nodes.url = url;
+      nodes.raster.visible(false);
+      nodes.raster.image(undefined);
+      if (!url || !safeRasterUrl(url)) continue;
+      const target = nodes;
+      const candidate = options.imageFactory?.() ?? new globalThis.Image();
+      target.image = candidate;
+      candidate.onload = () => {
+        if (destroyed || request !== target.request || artworkNodes.get(item.placementId) !== target) return;
+        target.raster.image(candidate);
+        target.raster.visible(true);
+        draw();
+      };
+      candidate.onerror = () => {
+        if (destroyed || request !== target.request || artworkNodes.get(item.placementId) !== target) return;
+        target.raster.visible(false);
+        draw();
+        options.onStatus('image-error');
+      };
+      candidate.src = url;
+    }
+  }
+
   function render(scene: RenderScene): void {
     if (destroyed) return;
     current = scene;
@@ -233,18 +343,26 @@ export function createVisualizerWithKonva(options: VisualizerOptions, konva: Kon
     fallback.setAttrs({ x: 0, y: 0, width: viewport.width, height: viewport.height });
     if (content) image.setAttrs({ x: content.x, y: content.y, width: content.width, height: content.height });
     loadBackground(scene);
-    loadArtwork(scene);
+    const legacyArtwork = scene.artworks === undefined ? scene.artwork : undefined;
+    loadArtwork({ ...scene, artwork: legacyArtwork });
+    renderPlacementArtworks(scene.artworks ?? []);
     if (scene.status !== 'ready') options.onStatus(scene.status);
-    if (scene.artwork) {
+    if (legacyArtwork) {
       artwork.setAttrs({
-        ...scene.artwork.bounds,
-        fill: scene.artwork.kind === 'logo-later' ? '#d4d7dc' : '#a9b7ca',
+        ...legacyArtwork.bounds,
+        fill: legacyArtwork.kind === 'logo-later' ? '#d4d7dc' : '#a9b7ca',
         stroke: '#52616f',
-        dash: scene.artwork.kind === 'logo-later' ? [6, 4] : [],
+        dash: legacyArtwork.kind === 'logo-later' ? [6, 4] : [],
         visible: true,
       });
-      artworkRaster.setAttrs({ ...scene.artwork.bounds });
+      artworkRaster.setAttrs({ ...legacyArtwork.bounds });
+      logoLater.setAttrs({
+        ...legacyArtwork.bounds,
+        fontSize: Math.max(8, Math.min(legacyArtwork.bounds.width / 4, legacyArtwork.bounds.height / 2)),
+        visible: legacyArtwork.kind === 'logo-later',
+      });
     } else artwork.visible(false);
+    if (!legacyArtwork) logoLater.visible(false);
     message.setAttrs({
       text:
         scene.status === 'missing-geometry'
@@ -338,6 +456,8 @@ export function createVisualizerWithKonva(options: VisualizerOptions, konva: Kon
         browserArtwork.onload = null;
         browserArtwork.onerror = null;
       }
+      for (const nodes of artworkNodes.values()) releasePlacementArtwork(nodes);
+      artworkNodes.clear();
       observer?.disconnect();
       stage.destroy();
       placementNodes.clear();

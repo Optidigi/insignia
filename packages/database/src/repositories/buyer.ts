@@ -2,6 +2,7 @@ import type { AcceptedQuote, QuoteAuthorizationSet } from '@insignia/application
 import { type Kysely, sql, type Transaction } from 'kysely';
 import type { Database } from '../client/database.js';
 
+export type BuyerCommandIdentity = { kind: 'accept' | 'renew'; key: string; requestDigest: string };
 export type BuyerScope = { shopId: string; installationGeneration: string; ownerHash: string };
 export type BuyerSession = { sessionId: string; expiresAt: Date };
 export type BuyerProposal = {
@@ -45,6 +46,7 @@ export function createBuyerRepository(db: Kysely<Database>) {
     scope: BuyerScope,
     now: Date,
     run: (tx: Transaction<Database>, row: NonNullable<Awaited<ReturnType<typeof session>>>) => Promise<T>,
+    charge = true,
   ) {
     return db.transaction().execute(async (tx) => {
       // Installation lock prevents a concurrent uninstall crossing a successful command.
@@ -56,17 +58,57 @@ export function createBuyerRepository(db: Kysely<Database>) {
       if (!tenant.rows.length) fail('NOT_FOUND');
       const row = await session(tx, scope, now, true);
       if (!row) return fail('NOT_FOUND');
-      const reset = +now >= +row.write_window + 60000;
-      if (!reset && row.write_count >= 60) fail('RATE_LIMITED');
-      await sql`UPDATE buyer_sessions SET write_window=${reset ? now : row.write_window},write_count=${reset ? 1 : row.write_count + 1} WHERE session_id=${row.session_id}::uuid`.execute(
-        tx,
-      );
+      if (charge) await chargeWrite(tx, row, now);
       return run(tx, row);
     });
   }
+  async function chargeWrite(
+    tx: Transaction<Database>,
+    row: NonNullable<Awaited<ReturnType<typeof session>>>,
+    now: Date,
+  ) {
+    const reset = +now >= +row.write_window + 60000;
+    if (!reset && row.write_count >= 60) fail('RATE_LIMITED');
+    await sql`UPDATE buyer_sessions SET write_window=${reset ? now : row.write_window},write_count=${reset ? 1 : row.write_count + 1} WHERE session_id=${row.session_id}::uuid`.execute(
+      tx,
+    );
+  }
+  function validCommand(input: BuyerCommandIdentity) {
+    if (
+      !['accept', 'renew'].includes(input.kind) ||
+      typeof input.key !== 'string' ||
+      input.key.length < 1 ||
+      input.key.length > 128 ||
+      !/^[a-f0-9]{64}$/.test(input.requestDigest)
+    )
+      fail('INVALID');
+  }
+  async function command(tx: Transaction<Database>, sessionId: string, input: BuyerCommandIdentity) {
+    validCommand(input);
+    const row = (
+      await sql<{
+        application_id: string | null;
+        request_digest: string;
+      }>`SELECT application_id,request_digest FROM buyer_commands WHERE session_id=${sessionId}::uuid AND kind=${input.kind} AND idempotency_key=${input.key}`.execute(
+        tx,
+      )
+    ).rows[0];
+    if (row && row.request_digest !== input.requestDigest) fail('CONFLICT');
+    return row;
+  }
+  async function applicationCapacity(tx: Transaction<Database>, sessionId: string) {
+    const n = (
+      await sql<{
+        n: string;
+      }>`SELECT ((SELECT count(*) FROM cart_applications WHERE session_id=${sessionId}::uuid)+(SELECT count(*) FROM buyer_commands WHERE session_id=${sessionId}::uuid AND application_id IS NULL))::text n`.execute(
+        tx,
+      )
+    ).rows[0];
+    if (Number(n?.n) >= 64) fail('RATE_LIMITED');
+  }
   async function count(
     tx: Transaction<Database>,
-    table: 'design_drafts' | 'quote_proposals' | 'cart_applications',
+    table: 'design_drafts' | 'quote_proposals' | 'cart_applications' | 'buyer_commands',
     id: string,
     maximum: number,
   ) {
@@ -78,6 +120,102 @@ export function createBuyerRepository(db: Kysely<Database>) {
     if (Number(n?.n) >= maximum) fail('RATE_LIMITED');
   }
   return {
+    /** Commit admission before authoritative provider work, including failures in later commands. */
+    async admitRequest(scope: BuyerScope, now: Date) {
+      return write(scope, now, async () => undefined);
+    },
+    /** Pending reservations consume one of 64 session issuance slots; uncertainty never refunds a slot. */
+    async reserveCommand(
+      scope: BuyerScope,
+      input: BuyerCommandIdentity & { now: Date },
+    ): Promise<{ applicationId: string | null }> {
+      return write(
+        scope,
+        input.now,
+        async (tx, row) => {
+          const prior = await command(tx, row.session_id, input);
+          if (prior) {
+            // Only completed replay skips admission. Pending retries can repeat expensive provider work.
+            if (!prior.application_id) await chargeWrite(tx, row, input.now);
+            return { applicationId: prior.application_id };
+          }
+          await count(tx, 'buyer_commands', row.session_id, 64);
+          await applicationCapacity(tx, row.session_id);
+          await chargeWrite(tx, row, input.now);
+          await sql`INSERT INTO buyer_commands(shop_id,installation_generation,session_id,kind,idempotency_key,request_digest,created_at) VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${row.session_id}::uuid,${input.kind},${input.key},${input.requestDigest},${input.now})`.execute(
+            tx,
+          );
+          return { applicationId: null };
+        },
+        false,
+      );
+    },
+    async completeCommand(
+      scope: BuyerScope,
+      input: BuyerCommandIdentity & { applicationId: string; now: Date },
+    ): Promise<{ applicationId: string }> {
+      return write(
+        scope,
+        input.now,
+        async (tx, row) => {
+          const prior = await command(tx, row.session_id, input);
+          if (!prior) return fail('NOT_FOUND');
+          if (prior.application_id) return { applicationId: prior.application_id };
+          const app =
+            await sql`SELECT 1 FROM cart_applications WHERE application_id=${input.applicationId}::uuid AND session_id=${row.session_id}::uuid`.execute(
+              tx,
+            );
+          if (!app.rows.length) fail('NOT_FOUND');
+          await sql`UPDATE buyer_commands SET application_id=${input.applicationId}::uuid WHERE session_id=${row.session_id}::uuid AND kind=${input.kind} AND idempotency_key=${input.key}`.execute(
+            tx,
+          );
+          return { applicationId: input.applicationId };
+        },
+        false,
+      );
+    },
+    /** Atomically fill the reserved slot; concurrent completed retries return the original application. */
+    async finishApplication(
+      scope: BuyerScope,
+      input: BuyerCommandIdentity & {
+        id: string;
+        quoteId: string;
+        ownerBinding: string;
+        expectedFingerprint: string;
+        now: Date;
+      },
+    ): Promise<{ applicationId: string }> {
+      return write(
+        scope,
+        input.now,
+        async (tx, row) => {
+          const prior = await command(tx, row.session_id, input);
+          if (!prior) return fail('NOT_FOUND');
+          if (prior.application_id) {
+            const app =
+              await sql`SELECT 1 FROM cart_applications WHERE application_id=${prior.application_id}::uuid AND session_id=${row.session_id}::uuid AND quote_id=${input.quoteId}::uuid AND expected_fingerprint=${input.expectedFingerprint}`.execute(
+                tx,
+              );
+            if (!app.rows.length) fail('CONFLICT');
+            return { applicationId: prior.application_id };
+          }
+          const own =
+            await sql`SELECT 1 FROM buyer_quote_ownership WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND quote_id=${input.quoteId}::uuid AND owner_binding=${input.ownerBinding}`.execute(
+              tx,
+            );
+          if (!own.rows.length) fail('NOT_FOUND');
+          await count(tx, 'cart_applications', row.session_id, 64);
+          await sql`INSERT INTO cart_applications(application_id,shop_id,installation_generation,session_id,quote_id,expected_fingerprint,created_at,expires_at) VALUES(${input.id}::uuid,${scope.shopId},${scope.installationGeneration}::bigint,${row.session_id}::uuid,${input.quoteId}::uuid,${input.expectedFingerprint},${input.now},${row.expires_at})`.execute(
+            tx,
+          );
+          await sql`UPDATE buyer_commands SET application_id=${input.id}::uuid WHERE session_id=${row.session_id}::uuid AND kind=${input.kind} AND idempotency_key=${input.key}`.execute(
+            tx,
+          );
+          return { applicationId: input.id };
+        },
+        false,
+      );
+    },
     async issueSession(input: {
       scope: BuyerScope;
       sessionId: string;
@@ -253,26 +391,31 @@ export function createBuyerRepository(db: Kysely<Database>) {
       scope: BuyerScope,
       input: { quoteId: string; proposalId: string; ownerBinding: string; requestDigest: string; now: Date },
     ) {
-      return write(scope, input.now, async (tx, row) => {
-        const proposal =
-          await sql`SELECT 1 FROM quote_proposals WHERE proposal_id=${input.proposalId}::uuid AND session_id=${row.session_id}::uuid AND retain_private_until>${input.now}`.execute(
+      return write(
+        scope,
+        input.now,
+        async (tx, row) => {
+          const proposal =
+            await sql`SELECT 1 FROM quote_proposals WHERE proposal_id=${input.proposalId}::uuid AND session_id=${row.session_id}::uuid AND retain_private_until>${input.now}`.execute(
+              tx,
+            );
+          if (!proposal.rows.length) fail('NOT_FOUND');
+          const q =
+            await sql`SELECT quote_id FROM accepted_quotes WHERE quote_id=${input.quoteId}::uuid AND shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND request_digest=${input.requestDigest}`.execute(
+              tx,
+            );
+          if (!q.rows.length) fail('NOT_FOUND');
+          await sql`INSERT INTO buyer_quote_ownership VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${input.quoteId}::uuid,${input.proposalId}::uuid,${input.ownerBinding},${input.requestDigest},${input.now}) ON CONFLICT DO NOTHING`.execute(
             tx,
           );
-        if (!proposal.rows.length) fail('NOT_FOUND');
-        const q =
-          await sql`SELECT quote_id FROM accepted_quotes WHERE quote_id=${input.quoteId}::uuid AND shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND request_digest=${input.requestDigest}`.execute(
-            tx,
-          );
-        if (!q.rows.length) fail('NOT_FOUND');
-        await sql`INSERT INTO buyer_quote_ownership VALUES(${scope.shopId},${scope.installationGeneration}::bigint,${input.quoteId}::uuid,${input.proposalId}::uuid,${input.ownerBinding},${input.requestDigest},${input.now}) ON CONFLICT DO NOTHING`.execute(
-          tx,
-        );
-        const own =
-          await sql`SELECT 1 FROM buyer_quote_ownership WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND quote_id=${input.quoteId}::uuid AND owner_binding=${input.ownerBinding} AND request_digest=${input.requestDigest}`.execute(
-            tx,
-          );
-        if (!own.rows.length) fail('CONFLICT');
-      });
+          const own =
+            await sql`SELECT 1 FROM buyer_quote_ownership WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND quote_id=${input.quoteId}::uuid AND owner_binding=${input.ownerBinding} AND request_digest=${input.requestDigest}`.execute(
+              tx,
+            );
+          if (!own.rows.length) fail('CONFLICT');
+        },
+        false,
+      );
     },
     async getOwnedQuote(scope: BuyerScope, id: string, ownerBinding: string, now: Date) {
       if (!(await session(db, scope, now))) return null;
@@ -406,20 +549,25 @@ export function createBuyerRepository(db: Kysely<Database>) {
       scope: BuyerScope,
       input: { id: string; quoteId: string; ownerBinding: string; expectedFingerprint: string; now: Date },
     ) {
-      return write(scope, input.now, async (tx, row) => {
-        const own =
-          await sql`SELECT 1 FROM buyer_quote_ownership WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND quote_id=${input.quoteId}::uuid AND owner_binding=${input.ownerBinding}`.execute(
-            tx,
-          );
-        if (!own.rows.length) fail('NOT_FOUND');
-        await count(tx, 'cart_applications', row.session_id, 64);
-        const result =
-          await sql`INSERT INTO cart_applications(application_id,shop_id,installation_generation,session_id,quote_id,expected_fingerprint,created_at,expires_at) VALUES(${input.id}::uuid,${scope.shopId},${scope.installationGeneration}::bigint,${row.session_id}::uuid,${input.quoteId}::uuid,${input.expectedFingerprint},${input.now},${row.expires_at}) ON CONFLICT DO NOTHING RETURNING application_id`.execute(
-            tx,
-          );
-        if (!result.rows.length) fail('CONFLICT');
-        return { id: input.id, status: 'PENDING' as const };
-      });
+      return write(
+        scope,
+        input.now,
+        async (tx, row) => {
+          const own =
+            await sql`SELECT 1 FROM buyer_quote_ownership WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND quote_id=${input.quoteId}::uuid AND owner_binding=${input.ownerBinding}`.execute(
+              tx,
+            );
+          if (!own.rows.length) fail('NOT_FOUND');
+          await applicationCapacity(tx, row.session_id);
+          const result =
+            await sql`INSERT INTO cart_applications(application_id,shop_id,installation_generation,session_id,quote_id,expected_fingerprint,created_at,expires_at) VALUES(${input.id}::uuid,${scope.shopId},${scope.installationGeneration}::bigint,${row.session_id}::uuid,${input.quoteId}::uuid,${input.expectedFingerprint},${input.now},${row.expires_at}) ON CONFLICT DO NOTHING RETURNING application_id`.execute(
+              tx,
+            );
+          if (!result.rows.length) fail('CONFLICT');
+          return { id: input.id, status: 'PENDING' as const };
+        },
+        false,
+      );
     },
     /** Fingerprints compare server-normalized complete bucket vectors; UX reconciliation is never payment proof. */
     async confirmApplication(scope: BuyerScope, input: { id: string; observedFingerprint: string; now: Date }) {

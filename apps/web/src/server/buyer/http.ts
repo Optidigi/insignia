@@ -60,6 +60,11 @@ export async function handleBuyerRequest(
     if (!(await services.store.getSession(scope, services.clock()))) throw new HttpError(401, 'UNAUTHORIZED');
     const [collection, id, action] = route.split('/');
     if (id && !BuyerIdSchema.safeParse(id).success) throw new HttpError(400, 'INVALID_REQUEST');
+    const issuance =
+      request.method === 'POST' &&
+      id &&
+      ((collection === 'quote-proposals' && action === 'accept') || (collection === 'quotes' && action === 'renew'));
+    if (!issuance) await services.store.admitRequest(scope, services.clock());
     if (request.method === 'POST' && route === 'quote-proposals') {
       const parsed = BuyerProposalRequestSchema.safeParse(body);
       if (!parsed.success) throw new HttpError(400, 'INVALID_REQUEST');

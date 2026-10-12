@@ -1,0 +1,4 @@
+<insignia-cart-repair proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}" cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}"></insignia-cart-repair>
+{% schema %}
+{"name":"Insignia cart repair","target":"body","javascript":"insignia-storefront.js","settings":[{"type":"text","id":"proxy_prefix","label":"App proxy prefix","default":"insignia"}]}
+{% endschema %}

@@ -47,14 +47,13 @@ export function quoteMaterial(quote: AcceptedQuote) {
         ...group,
         variants: variants.map(({ contextId: _contextId, ...variant }) => variant),
       })),
+      // Fresh FX provenance/rate is separately qualified by preparation. Renewal compares
+      // resolved components and exact buckets above; the original evidence remains frozen.
       fx: fx
         ? {
             version: fx.version,
             fromCurrency: fx.fromCurrency,
             toCurrency: fx.toCurrency,
-            rateDecimal: fx.rateDecimal,
-            sourceId: fx.sourceId,
-            rateVersion: fx.rateVersion,
           }
         : null,
     },

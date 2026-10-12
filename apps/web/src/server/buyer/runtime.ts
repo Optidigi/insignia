@@ -1,3 +1,4 @@
+import { createBuyerBootstrap } from './bootstrap.ts';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from './production.ts';
 import type { BuyerServices } from './service.ts';
 
@@ -7,8 +8,16 @@ export function configureBuyerServices(value: BuyerServices) {
   if (configured) throw new Error('Buyer services already configured');
   configured = value;
 }
-export function buyerServices(): BuyerServices | undefined {
-  return configured;
+let pending: Promise<BuyerServices | undefined> | undefined;
+export async function buyerServices(): Promise<BuyerServices | undefined> {
+  if (configured) return configured;
+  pending ??= createBuyerBootstrap()
+    .then((value) => {
+      configured ??= value;
+      return configured;
+    })
+    .catch(() => undefined);
+  return pending;
 }
 /** Owner-configured application startup calls this with its existing qualified resource authorities. */
 export function configureProductionBuyerServices(input: ProductionBuyerInputs): void {

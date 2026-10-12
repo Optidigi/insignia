@@ -96,6 +96,28 @@ export function createBuyerServices(input: {
       group: { ...group, version: 'm2-customization-group-v1', shopId: scope.shopId },
     })),
   });
+  function checkedPorts(scope: BuyerScope, groups: BuyerDesiredGroup[]): QuoteAuthorityPorts {
+    const ports = input.ports({ ...scope, kind: 'guest' });
+    return {
+      ...ports,
+      readiness: {
+        async assertReady(target) {
+          for (const productId of new Set(groups.map((group) => group.productId))) {
+            const current = await input.catalog(scope, productId);
+            const available = new Map(current.variants.map((variant) => [variant.id, variant.available]));
+            if (
+              current.variants.length !== available.size ||
+              groups
+                .filter((group) => group.productId === productId)
+                .some((group) => group.variants.some((variant) => available.get(variant.variantId) !== true))
+            )
+              return review();
+          }
+          await ports.readiness.assertReady(target);
+        },
+      },
+    };
+  }
   async function privateUntil(scope: BuyerScope, groups: BuyerDesiredGroup[]) {
     const session = await store.getSession(scope, clock());
     if (!session) return notFound();
@@ -109,11 +131,16 @@ export function createBuyerServices(input: {
       }
     return new Date(until);
   }
-  async function accepted(scope: BuyerScope, result: AcceptedQuoteResult, request: QuoteRequest) {
-    const vector = buckets(result),
-      applicationId = randomUUID();
-    await store.createApplication(scope, {
-      id: applicationId,
+  async function accepted(
+    scope: BuyerScope,
+    result: AcceptedQuoteResult,
+    request: QuoteRequest,
+    command: { kind: 'accept' | 'renew'; key: string; requestDigest: string },
+  ) {
+    const vector = buckets(result);
+    const { applicationId } = await store.finishApplication(scope, {
+      ...command,
+      id: randomUUID(),
       quoteId: result.quote.quoteId,
       ownerBinding: binding(scope),
       expectedFingerprint: vectorHash(vector),
@@ -206,7 +233,7 @@ export function createBuyerServices(input: {
     },
     async propose(scope: BuyerScope, body: BuyerDesired) {
       const id = randomUUID(),
-        ports = input.ports({ ...scope, kind: 'guest' }),
+        ports = checkedPorts(scope, body.groups),
         request = requestFor(scope, body, id);
       const candidate = await prepareQuote(request, ports),
         hash = materialHash(candidate.quote);
@@ -264,7 +291,13 @@ export function createBuyerServices(input: {
       const proposal = await store.getProposal(scope, id, clock(), true);
       if (!proposal || proposal.materialHash !== body.hash) return review();
       const request = { ...(proposal.request as QuoteRequest), idempotencyKey: `m7:${id}:${body.idempotencyKey}` },
-        ports = input.ports({ ...scope, kind: 'guest' });
+        ports = checkedPorts(scope, desired(request));
+      const command = {
+        kind: 'accept' as const,
+        key: request.idempotencyKey,
+        requestDigest: sha256CanonicalJson({ proposalId: id, hash: body.hash, key: request.idempotencyKey }),
+      };
+      await store.reserveCommand(scope, { ...command, now: clock() });
       const guarded: QuoteAuthorityPorts = {
         ...ports,
         authorization: {
@@ -287,16 +320,22 @@ export function createBuyerServices(input: {
         requestDigest: quoteRequestDigest(request, ports),
         now: clock(),
       });
-      return accepted(scope, result, request);
+      return accepted(scope, result, request, command);
     },
     async renew(scope: BuyerScope, id: string, body: BuyerDesired & { idempotencyKey: string }) {
-      const ports = input.ports({ ...scope, kind: 'guest' }),
+      const ports = checkedPorts(scope, body.groups),
         request = requestFor(scope, body, body.idempotencyKey);
+      const command = {
+        kind: 'renew' as const,
+        key: body.idempotencyKey,
+        requestDigest: sha256CanonicalJson({ quoteId: id, request }),
+      };
+      await store.reserveCommand(scope, { ...command, now: clock() });
       const result = await renewQuote(
         { quoteId: id, desired: request },
         { ...ports, renewalStore: input.core.renewalQuotes },
       );
-      return accepted(scope, result, request);
+      return accepted(scope, result, request, command);
     },
     async confirm(scope: BuyerScope, id: string, body: { fingerprint: string; vector: Bucket[] }) {
       if (!(await store.getApplication(scope, id, clock()))) return notFound();

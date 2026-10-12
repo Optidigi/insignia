@@ -47,15 +47,19 @@ for (const path of [
     `browser artifact contains forbidden marker: ${path}`,
   );
 }
+let browserArtifacts = 0;
 function scanClient(relative) {
   const full = resolve(root, relative);
   if (statSync(full).isDirectory()) {
     for (const child of readdirSync(full)) scanClient(`${relative}/${child}`);
   } else if (relative.endsWith('.js')) {
     assert.ok(!forbidden.test(readFileSync(full, 'utf8')), `browser artifact contains forbidden marker: ${relative}`);
+    browserArtifacts++;
   }
 }
 scanClient('apps/web/dist/client');
+scanClient('apps/storefront/dist');
+scanClient('extensions/insignia-theme/assets');
 const vector = JSON.parse(readFileSync(resolve(root, 'crates/cart-authorization/fixtures/vectors.json'), 'utf8'));
 assert.match(vector.provenance, /Synthetic RFC 8032 test seed/);
 assert.equal(vector.seedHex, '9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60');
@@ -93,5 +97,5 @@ const fixtureGenerator = readFileSync(resolve(root, 'scripts/m1-functions/genera
 assert.match(fixtureGenerator, /SEED = bytes\(\[1\]\) \* 32/);
 assert.match(fixtureGenerator, /Never use this seed for runtime keys/);
 console.log(
-  `Secret/fixture provenance check passed: ${checked.length} production source files, ${fixtureFiles.length} separately scanned test/fixture files, 2 browser artifacts, 2 explicitly synthetic seeds.`,
+  `Secret/fixture provenance check passed: ${checked.length} production source files, ${fixtureFiles.length} separately scanned test/fixture files, ${browserArtifacts} browser artifacts, 2 explicitly synthetic seeds.`,
 );

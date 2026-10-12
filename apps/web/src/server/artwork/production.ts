@@ -32,7 +32,7 @@ export async function createProductionArtworkServices(
   });
   const proxyPrefix = env.ARTWORK_PROXY_PATH_PREFIX;
   const guest =
-    buyerServices()?.guest ??
+    (await buyerServices())?.guest ??
     (proxyPrefix
       ? createArtworkGuestAuthority({
           core,

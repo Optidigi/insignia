@@ -356,6 +356,30 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
     expect(
       await buyer.confirmApplication(scope, { id: applicationId, observedFingerprint: 'd'.repeat(64), now }),
     ).toEqual({ id: applicationId, status: 'APPLIED' });
+    const command = { kind: 'accept' as const, key: 'completed-accept', requestDigest: 'a'.repeat(64), now };
+    expect(await buyer.reserveCommand(scope, command)).toEqual({ applicationId: null });
+    // Proposal + two confirmations + reservation consumed four writes. Commit the remaining budget
+    // before finishing; no new quota check may reject after the authoritative quote already exists.
+    for (let i = 0; i < 56; i++) await buyer.admitRequest(scope, now);
+    await buyer.linkQuote(scope, { quoteId, proposalId, ownerBinding, requestDigest: input.requestDigest, now });
+    const finished = await Promise.all(
+      [randomUUID(), randomUUID()].map((id) =>
+        buyer.finishApplication(scope, { ...command, id, quoteId, ownerBinding, expectedFingerprint: 'd'.repeat(64) }),
+      ),
+    );
+    expect(finished[0]).toEqual(finished[1]);
+    expect(await buyer.reserveCommand(scope, command)).toEqual(finished[0]);
+    expect(await buyer.completeCommand(scope, { ...command, applicationId: randomUUID() })).toEqual(finished[0]);
+    expect(
+      (
+        await sql<{ n: string }>`SELECT count(*)::text n FROM cart_applications WHERE shop_id=${value.shopId}`.execute(
+          db,
+        )
+      ).rows[0]?.n,
+    ).toBe('2');
+    await expect(buyer.reserveCommand(scope, { ...command, key: 'new-accept' })).rejects.toMatchObject({
+      code: 'RATE_LIMITED',
+    });
     await sql`UPDATE signing_keys SET state='retiring',retired_at=${now} WHERE shop_id=${value.shopId} AND key_id=7`.execute(
       db,
     );
@@ -402,6 +426,62 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable buyer state', () => {
     expect(await repo.getSession(scope, deadline)).not.toBeNull();
     expect(
       (await sql<{ n: string }>`SELECT count(*)::text n FROM design_drafts WHERE design_id=${id}::uuid`.execute(db))
+        .rows[0]?.n,
+    ).toBe('0');
+  });
+  it('commits bounded pre-issuance reservations and throttles pending-command retries', async () => {
+    const { shopId } = await createTestShop(db),
+      now = new Date('2026-10-12T17:00:00Z');
+    const scope = { shopId, installationGeneration: '1', ownerHash: 'e'.repeat(64) },
+      repo = createBuyerRepository(db);
+    await repo.issueSession({ scope, sessionId: randomUUID(), now, expiresAt: new Date(+now + 604800000) });
+    for (let i = 0; i < 60; i++)
+      await repo.reserveCommand(scope, { kind: 'renew', key: `renew-${i}`, requestDigest: 'a'.repeat(64), now });
+    await expect(
+      createBuyerRepository(db).reserveCommand(scope, {
+        kind: 'renew',
+        key: 'overflow',
+        requestDigest: 'a'.repeat(64),
+        now,
+      }),
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    await expect(
+      repo.reserveCommand(scope, { kind: 'renew', key: 'renew-0', requestDigest: 'a'.repeat(64), now }),
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    await expect(
+      repo.reserveCommand(scope, { kind: 'renew', key: 'renew-0', requestDigest: 'b'.repeat(64), now }),
+    ).rejects.toMatchObject({ code: 'CONFLICT' });
+    const later = new Date(+now + 60000);
+    for (let i = 0; i < 60; i++)
+      expect(
+        await repo.reserveCommand(scope, { kind: 'renew', key: 'renew-0', requestDigest: 'a'.repeat(64), now: later }),
+      ).toEqual({ applicationId: null });
+    await expect(
+      repo.reserveCommand(scope, { kind: 'renew', key: 'renew-0', requestDigest: 'a'.repeat(64), now: later }),
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    expect(
+      (await sql<{ n: string }>`SELECT count(*)::text n FROM buyer_commands WHERE shop_id=${shopId}`.execute(db))
+        .rows[0]?.n,
+    ).toBe('60');
+    const next = new Date(+later + 60000);
+    for (let i = 60; i < 64; i++)
+      await repo.reserveCommand(scope, { kind: 'renew', key: `renew-${i}`, requestDigest: 'a'.repeat(64), now: next });
+    await expect(
+      repo.reserveCommand(scope, { kind: 'accept', key: 'overflow', requestDigest: 'a'.repeat(64), now: next }),
+    ).rejects.toMatchObject({ code: 'RATE_LIMITED' });
+    expect(
+      (await sql<{ n: string }>`SELECT count(*)::text n FROM buyer_commands WHERE shop_id=${shopId}`.execute(db))
+        .rows[0]?.n,
+    ).toBe('64');
+    await expect(
+      repo.reserveCommand(
+        { ...scope, ownerHash: 'f'.repeat(64) },
+        { kind: 'renew', key: 'renew-0', requestDigest: 'a'.repeat(64), now },
+      ),
+    ).rejects.toMatchObject({ code: 'NOT_FOUND' });
+    await repo.cleanupExpired(new Date(+now + 604800000));
+    expect(
+      (await sql<{ n: string }>`SELECT count(*)::text n FROM buyer_commands WHERE shop_id=${shopId}`.execute(db))
         .rows[0]?.n,
     ).toBe('0');
   });

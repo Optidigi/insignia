@@ -85,6 +85,7 @@ export interface RenderScene {
   image?: ImageRef & { url?: string };
   placements: { id: string; selected: boolean; bounds: PixelRect }[];
   artwork?: { kind: 'logo-later' | 'raster'; url?: string; bounds: PixelRect };
+  artworks?: readonly { placementId: string; kind: 'logo-later' | 'raster'; url?: string; bounds: PixelRect }[];
 }
 
 const validId = (value: unknown): value is string =>
