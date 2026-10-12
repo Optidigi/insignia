@@ -1,5 +1,6 @@
 import type {
   AcceptedQuoteResult,
+  ArtworkStore,
   CommandRepository,
   EffectiveQuoteRevision,
   InboxRepository,
@@ -17,6 +18,7 @@ import { createDatabase, type Database, type DatabaseExecutor } from './client/d
 import type { CredentialKeyRing } from './credentials/envelope.js';
 import { sha256CanonicalJson } from './hash/canonical.js';
 import { PgAcceptedQuoteRepository } from './repositories/accepted-quote.js';
+import { createArtworkRepository } from './repositories/artwork.js';
 import { PgCommandRepository } from './repositories/command/pg-command-repository.js';
 import {
   type ConfigRecord,
@@ -190,6 +192,7 @@ export interface DurableCore {
       },
     ): Promise<void>;
   };
+  readonly artwork: ArtworkStore;
   readonly tenants: {
     getManagedInstallationState(shopDomain: string): Promise<ManagedInstallationState | null>;
     ensureManagedInstallation(
@@ -403,6 +406,7 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
       : null;
   }
   return {
+    artwork: createArtworkRepository(pool),
     trustedReleaseRecords: createTrustedReleaseReader(database),
     signingKeys,
     productionPublications: {

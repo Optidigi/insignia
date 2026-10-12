@@ -29,7 +29,7 @@ export function adminJson(status: number, value: unknown): Response {
   });
 }
 
-function validActor(actor: AdminActor | null, now: number): actor is AdminActor {
+export function validActor(actor: AdminActor | null, now: number): actor is AdminActor {
   return (
     !!actor &&
     /^[a-z0-9][a-z0-9-]*\.myshopify\.com$/.test(actor.shop) &&
@@ -42,7 +42,7 @@ function validActor(actor: AdminActor | null, now: number): actor is AdminActor 
   );
 }
 
-function mutationOrigin(request: Request, appOrigin: string): boolean {
+export function mutationOrigin(request: Request, appOrigin: string): boolean {
   try {
     const configured = new URL(appOrigin);
     const requested = new URL(request.url);

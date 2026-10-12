@@ -11,6 +11,8 @@ on:
       - 'packages/visualizer/**'
       - 'packages/contracts/**'
       - 'packages/observability/**'
+      - 'packages/storage/**'
+      - 'scripts/m6-artwork/**'
       - 'scripts/m5-002/**'
       - 'scripts/m5-native-inventory/**'
       - 'scripts/m5-host-inventory/**'
@@ -36,6 +38,8 @@ on:
       - 'packages/visualizer/**'
       - 'packages/contracts/**'
       - 'packages/observability/**'
+      - 'packages/storage/**'
+      - 'scripts/m6-artwork/**'
       - 'scripts/m5-002/**'
       - 'scripts/m5-native-inventory/**'
       - 'scripts/m5-host-inventory/**'
@@ -100,11 +104,14 @@ jobs:
         run: corepack pnpm test:m5-inventory
       - run: corepack pnpm check:secrets
       - run: corepack pnpm check:database
+      - run: corepack pnpm --filter @insignia/storage test
       - run: corepack pnpm --filter @insignia/shopify test
       - run: corepack pnpm --filter @insignia/application test
       - run: corepack pnpm --filter @insignia/observability test
       - run: corepack pnpm --filter @insignia/worker test
-      - name: Explicit owner lifecycle PostgreSQL18 and fresh queue process controls
+      - name: Historical schema20 owner lifecycle and fresh queue process controls
+        # Each test allocates its own database from pinned PR97 schema20 inputs.
+        # Current check:database above remains schema21; the erasure guard stays exact20.
         run: |
           corepack pnpm exec biome check scripts/m5-owner-lifecycle
           M5_OWNER_LIFECYCLE_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/owner-lifecycle.test.ts

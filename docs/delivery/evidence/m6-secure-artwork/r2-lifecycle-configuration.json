@@ -1,0 +1,58 @@
+{
+  "at": "2026-10-12T19:48:41.289246+00:00",
+  "prior": {
+    "rules": [
+      {
+        "id": "Default Multipart Abort Rule",
+        "enabled": true,
+        "conditions": {},
+        "abortMultipartUploadsTransition": {
+          "condition": {
+            "type": "Age",
+            "maxAge": 604800
+          }
+        }
+      }
+    ]
+  },
+  "proposed": {
+    "rules": [
+      {
+        "id": "Default Multipart Abort Rule",
+        "enabled": true,
+        "conditions": {},
+        "abortMultipartUploadsTransition": {
+          "condition": {
+            "type": "Age",
+            "maxAge": 604800
+          }
+        }
+      },
+      {
+        "id": "insignia-m6-quarantine-expiration",
+        "enabled": true,
+        "conditions": {
+          "prefix": "insignia-rewrite/m6/quarantine/"
+        },
+        "deleteObjectsTransition": {
+          "condition": {
+            "type": "Age",
+            "maxAge": 86400
+          }
+        }
+      }
+    ]
+  },
+  "response": {
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"dispatched\": true,\n  \"put\": {\n    \"success\": true,\n    \"errors\": [],\n    \"messages\": [],\n    \"result\": {},\n    \"status\": 200\n  },\n  \"after\": {\n    \"success\": true,\n    \"errors\": [],\n    \"messages\": [],\n    \"result\": {\n      \"rules\": [\n        {\n          \"id\": \"Default Multipart Abort Rule\",\n          \"enabled\": true,\n          \"conditions\": {},\n          \"abortMultipartUploadsTransition\": {\n            \"condition\": {\n              \"type\": \"Age\",\n              \"maxAge\": 604800\n            }\n          }\n        },\n        {\n          \"id\": \"insignia-m6-quarantine-expiration\",\n          \"enabled\": true,\n          \"conditions\": {\n            \"prefix\": \"insignia-rewrite/m6/quarantine/\"\n          },\n          \"deleteObjectsTransition\": {\n            \"condition\": {\n              \"type\": \"Age\",\n              \"maxAge\": 86400\n            }\n          }\n        }\n      ]\n    },\n    \"status\": 200\n  }\n}"
+        }
+      ]
+    },
+    "jsonrpc": "2.0",
+    "id": 13
+  }
+}

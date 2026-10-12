@@ -45,11 +45,15 @@ export type QuoteArtworkStatus = QuoteArtworkChoice & {
   observedAt: string;
 };
 export interface QuoteArtworkPort {
+  /** Trusted port may bind idempotency to verified resource authority, independently of client JSON. */
+  replayBinding?(input: { shopId: string; installationGeneration: string }): string;
   readUsability(input: {
     shopId: string;
     installationGeneration: string;
     shopTimezone: string;
     choices: readonly QuoteArtworkChoice[];
+    /** Populated only after validating each placement against the effective published policy. */
+    permittedDeferredIntentIds?: readonly string[];
   }): Promise<readonly QuoteArtworkStatus[]>;
 }
 export type EffectiveQuoteRevision = { config: PublishedConfig; configId: string; operationId: string };
@@ -357,14 +361,17 @@ async function usableArtwork(
   timezone: string,
   choices: readonly QuoteArtworkChoice[],
   throughDay: number,
-  now: Date,
+  clock: () => Date,
 ): Promise<AcceptedQuote['artworkChecks']> {
   const result = await port.readUsability({
     shopId: request.shopId,
     installationGeneration: request.installationGeneration,
     shopTimezone: timezone,
     choices,
+    permittedDeferredIntentIds: choices.filter((choice) => choice.kind === 'deferred').map((choice) => choice.id),
   });
+  const now = clock();
+  if (!Number.isFinite(now.getTime())) throw new Error('artwork observation clock unavailable');
   if (!Array.isArray(result) || result.length !== choices.length)
     throw new Error('complete artwork usability required');
   const checks: AcceptedQuote['artworkChecks'][number][] = [];
@@ -460,9 +467,13 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
   const marketId = normalizeMarketId(request.marketId);
   if (request.groups.some((entry) => entry.sellingPlanId !== undefined && entry.sellingPlanId !== null))
     throw new Error('paid customization with selling plan');
-  const requestDigest = createHash('sha256')
-    .update(canonical({ ...request, marketId }))
-    .digest('hex');
+  const digest = createHash('sha256').update(canonical({ ...request, marketId }));
+  if (ports.artwork.replayBinding) {
+    const binding = ports.artwork.replayBinding(request);
+    if (!/^[a-f0-9]{64}$/.test(binding)) throw new Error('quote resource authority unavailable');
+    digest.update('\0m6-quote-resource-authority-v1\0').update(binding);
+  }
+  const requestDigest = digest.digest('hex');
   const tenant = requireTenant(await ports.tenant.getActive(request.shopId, request.installationGeneration), request);
   const completed = await ports.store.findCompleted({
     shopId: request.shopId,
@@ -613,7 +624,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     shop.timezone,
     choices,
     day.ordinal + 2,
-    acceptedInstant,
+    ports.clock,
   );
   const quote: AcceptedQuote = {
     schemaVersion: 'm4-accepted-quote-v1',
@@ -666,7 +677,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
       effectiveRevisions: quote.effectiveRevisions,
     },
     async () => {
-      await usableArtwork(ports.artwork, request, shop.timezone, choices, quote.validThroughDay, ports.clock());
+      await usableArtwork(ports.artwork, request, shop.timezone, choices, quote.validThroughDay, ports.clock);
       const current = requireTenant(
         await ports.tenant.getActive(request.shopId, request.installationGeneration),
         request,

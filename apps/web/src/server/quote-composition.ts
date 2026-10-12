@@ -1,8 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import {
   type AcceptedQuote,
+  type ArtworkScope,
   bindProviderSubscription,
   type CustomizationFxProvider,
+  createArtworkUsabilityPort,
   type EntitlementPolicyConfig,
   projectEntitlement,
   type QuoteArtworkPort,
@@ -60,6 +62,8 @@ export function createQuoteAuthorityPorts(input: {
   credentials: AdminCredentialSource;
   catalogTransport: AdminGraphqlReadTransport;
   artwork?: QuoteArtworkPort;
+  /** Current verified resource authority; bind per request, never from quote JSON or a shared cache. */
+  artworkAuthority?: ArtworkScope;
   fx?: CustomizationFxProvider;
   signing: { keyId: number; signer: AuthorizationSigner };
   readiness: { assertReady(input: { quote: AcceptedQuote }): Promise<void> };
@@ -68,6 +72,8 @@ export function createQuoteAuthorityPorts(input: {
   fetchImpl?: typeof fetch;
 }): QuoteAuthorityPorts {
   const clock = input.clock ?? (() => new Date());
+  const artwork = input.artwork ?? createArtworkUsabilityPort(input.core.artwork, clock, input.artworkAuthority);
+  if (!artwork.replayBinding) throw new Error('Quote resource replay authority required');
   const ids = input.ids ?? { quoteId: randomUUID, setId: randomUUID };
   return {
     clock,
@@ -150,11 +156,7 @@ export function createQuoteAuthorityPorts(input: {
       },
     },
     currency: { exponent: (code) => currencyExponent(code) ?? null },
-    artwork: input.artwork ?? {
-      readUsability: async () => {
-        throw new Error('trusted artwork usability authority is not configured');
-      },
-    },
+    artwork,
     fx: input.fx ?? {
       resolve: async () => {
         throw new Error('approved FX source is not configured');

@@ -1,0 +1,39 @@
+{
+  "schema": "insignia-m6-continuation-snapshot-v1",
+  "packaged_at_utc": "2026-10-12T18:43:27.400936+00:00",
+  "repository": "Optidigi/insignia",
+  "purpose": "Continue M6 under the existing M5 engineering acceptance and simple-delivery policy.",
+  "principal_status": {
+    "m5_engineering": "M5_ENGINEERING_SHAPE_ACCEPTED",
+    "m5_native": "NATIVE_ACCEPTANCE_DEFERRED",
+    "g7": "NOT_PASSED",
+    "m6": "M6_ENGINEERING_AUTHORIZED",
+    "m7": "NOT_AUTHORIZED",
+    "rollout": "NOT_AUTHORIZED"
+  },
+  "github_metadata_reconfirmed_during_packaging": {
+    "pr": 97,
+    "state": "closed",
+    "merged": true,
+    "base_sha": "8775caa3ba878109807e0ca3a7cf175d7246a102",
+    "head_sha": "4cf58392b353f540fe7d99aefc7565fb1a62f50e",
+    "merge_commit_sha": "36945927e3fedc72c44247ec8357eb669186c0c6",
+    "main_sha": "36945927e3fedc72c44247ec8357eb669186c0c6",
+    "merged_at_utc": "2026-10-12T17:52:16Z",
+    "pr_url": "https://github.com/Optidigi/insignia/pull/97",
+    "main_source_url": "https://api.github.com/repos/Optidigi/insignia/git/ref/heads/main"
+  },
+  "reviewed_tree_from_principal_decision": "5d4008f74173e0792c7925507aba593f91b851fd",
+  "principal_decision": {
+    "original_supplied_filename": "insignia-m5-engineering-review-m6-authorization-2026-10-12.md",
+    "package_filename": "PRINCIPAL-DECISION.md",
+    "sha256": "c6629c43d02050a6f379920a53631728eda7ac4d3c3bb647717fa791e77b71fe",
+    "preserved_byte_exact": true
+  },
+  "limits": [
+    "Normalized metadata, not an unmodified GitHub API response.",
+    "No new principal review, CI run, test execution or native deployment verification during packaging.",
+    "No repository, production, Shopify, credential or browser mutation performed during packaging.",
+    "Legitimate newer repository work takes precedence over this factual snapshot; preserve its actual authority and evidence."
+  ]
+}

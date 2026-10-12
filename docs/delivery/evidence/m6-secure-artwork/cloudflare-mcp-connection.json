@@ -1,0 +1,40 @@
+{
+  "at": "2026-10-12T19:19:16.899830+00:00",
+  "key": "m6-qualification/connection-942b3dee-9c1e-42a2-a374-1cb6c84a659f/probe.svg",
+  "response": {
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"stage\": \"stored\",\n  \"key\": \"m6-qualification/connection-942b3dee-9c1e-42a2-a374-1cb6c84a659f/probe.svg\",\n  \"bytes\": 108,\n  \"put\": {\n    \"success\": true,\n    \"errors\": [],\n    \"messages\": [],\n    \"result\": {\n      \"key\": \"m6-qualification/connection-942b3dee-9c1e-42a2-a374-1cb6c84a659f/probe.svg\",\n      \"size\": \"108\",\n      \"etag\": \"b7096aa013b5bb2d0b094fe5d2c7c09b\",\n      \"version\": \"7e5ece71f05a52d6f85a0a1f10dcc874\",\n      \"uploaded\": \"2026-10-12T19:19:16.213Z\",\n      \"storage_class\": \"Standard\"\n    },\n    \"status\": 200\n  },\n  \"listing\": {\n    \"success\": true,\n    \"errors\": [],\n    \"messages\": [],\n    \"result\": [\n      {\n        \"key\": \"m6-qualification/connection-942b3dee-9c1e-42a2-a374-1cb6c84a659f/probe.svg\",\n        \"etag\": \"b7096aa013b5bb2d0b094fe5d2c7c09b\",\n        \"last_modified\": \"2026-10-12T19:19:16.213Z\",\n        \"size\": 108,\n        \"http_metadata\": {\n          \"contentType\": \"image/svg+xml\"\n        },\n        \"custom_metadata\": {},\n        \"storage_class\": \"Standard\"\n      }\n    ],\n    \"status\": 200\n  }\n}"
+        }
+      ]
+    },
+    "jsonrpc": "2.0",
+    "id": 6
+  },
+  "cleanupResponse": {
+    "result": {
+      "content": [
+        {
+          "type": "text",
+          "text": "{\n  \"read\": {\n    \"success\": true,\n    \"status\": 200,\n    \"resultType\": \"string\",\n    \"byteIdentical\": true\n  },\n  \"remove\": {\n    \"success\": true,\n    \"errors\": [],\n    \"messages\": [],\n    \"result\": {\n      \"key\": \"m6-qualification/connection-942b3dee-9c1e-42a2-a374-1cb6c84a659f/probe.svg\"\n    },\n    \"status\": 200\n  },\n  \"after\": {\n    \"success\": true,\n    \"errors\": [],\n    \"messages\": [],\n    \"result\": [],\n    \"status\": 200\n  },\n  \"key\": \"m6-qualification/connection-942b3dee-9c1e-42a2-a374-1cb6c84a659f/probe.svg\",\n  \"cleanupConfirmed\": true\n}"
+        }
+      ]
+    },
+    "jsonrpc": "2.0",
+    "id": 7
+  },
+  "cleanupAt": "2026-10-12T19:19:34.151929+00:00",
+  "accountId": "97984dbfba2fd91f42a4c3fb90fcad09",
+  "bucket": "insignia-demo",
+  "mcpEndpoint": "https://mcp.cloudflare.com/mcp",
+  "oauthLogin": "VERIFIED",
+  "transport": "authenticated Streamable HTTP via local client; current native tool catalog not refreshed",
+  "publicAccess": {
+    "managedDomainEnabled": false,
+    "customDomains": []
+  },
+  "presignedS3Qualification": "NOT_RUN",
+  "credentialsEmitted": false
+}

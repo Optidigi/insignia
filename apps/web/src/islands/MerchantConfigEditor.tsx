@@ -13,6 +13,7 @@ import {
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { authenticatedJson } from '../shared/admin-request';
 import type { CatalogProduct, ConfigView, PublicationState } from '../shared/admin-view.js';
+import ArtworkUpload from './ArtworkUpload';
 import ReadinessPermissions from './ReadinessPermissions';
 
 type Props = { mode: 'picker' | 'config'; productId?: string };
@@ -1345,6 +1346,23 @@ export default function MerchantConfigEditor({ mode, productId }: Props) {
                     aria-label="Product placement preview"
                   ></div>
                   {previewStatus && <p role="status">Preview: {previewStatus}</p>}
+                  <ArtworkUpload
+                    disabled={busy}
+                    onAuthenticationDenied={authorizationDenied}
+                    onPreview={(preview) => {
+                      const current = editorRef.current;
+                      if (!current) return;
+                      const next: EditorState = {
+                        ...current,
+                        artwork: preview
+                          ? { kind: 'raster', url: preview.url, aspectRatio: preview.aspectRatio }
+                          : { kind: 'logo-later' },
+                      };
+                      editorRef.current = next;
+                      setEditor(next);
+                      updateRenderer(next);
+                    }}
+                  />
                   <h3>Production options</h3>
                   {draft.productionOptions.map((item) => (
                     <p key={item.id}>

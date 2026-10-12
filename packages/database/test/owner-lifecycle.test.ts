@@ -9,6 +9,7 @@ import { promisify } from 'node:util';
 import { Pool } from 'pg';
 import { expect, test } from 'vitest';
 import { OWNER_APP_CLIENT_ID } from '../../../scripts/m5-owner-lifecycle/private-operator.mjs';
+import { frozenSchema20Fixture } from '../../../scripts/m5-runtime/frozen-schema20-fixture.mjs';
 import { createDurableCore } from '../src/index.js';
 import { applyOwnerLifecycleDecision, type OwnerLifecycleDecision } from '../src/repositories/owner-lifecycle.js';
 
@@ -23,6 +24,7 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
     const url = new URL(process.env.M5_OWNER_LIFECYCLE_TEST_URL ?? '');
     url.username = ownerName;
     url.pathname = `/${db}`;
+    const compatibility = await frozenSchema20Fixture();
     const files = await mkdtemp(join(tmpdir(), 'm5-owner-private-'));
     let allocated = false;
     let created = false;
@@ -39,10 +41,12 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
       const root = fileURLToPath(new URL('../../../', import.meta.url));
       await promisify(execFile)(
         `${root}node_modules/.bin/dbmate`,
-        ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
+        ['--no-dump-schema', '--migrations-dir', `${compatibility.directory}/packages/database/migrations`, 'up'],
         { env: { ...process.env, DATABASE_URL: url.href } },
       );
       pool = new Pool({ connectionString: url.href });
+      expect((await pool.query('SELECT count(*)::integer AS n FROM schema_migrations')).rows[0].n).toBe(20);
+      expect((await pool.query("SELECT to_regclass('public.artwork_assets') AS artwork")).rows[0].artwork).toBeNull();
       core = createDurableCore(new Pool({ connectionString: url.href }), {
         credentialKeys: { currentKeyId: 'synthetic-k1', keys: { 'synthetic-k1': Buffer.alloc(32, 41) } },
       });
@@ -408,7 +412,12 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
       await expect(
         promisify(execFile)(
           `${root}node_modules/.bin/dbmate`,
-          ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'rollback'],
+          [
+            '--no-dump-schema',
+            '--migrations-dir',
+            `${compatibility.directory}/packages/database/migrations`,
+            'rollback',
+          ],
           { env: { ...process.env, DATABASE_URL: url.href } },
         ),
       ).rejects.toBeDefined();
@@ -420,6 +429,7 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
       if (allocated) await admin.query(`drop role ${ownerName}`);
       await admin.end();
       await rm(files, { recursive: true, force: true });
+      await rm(compatibility.directory, { recursive: true, force: true });
     }
   },
   30000,
@@ -433,6 +443,7 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
     const url = new URL(process.env.M5_OWNER_LIFECYCLE_TEST_URL ?? '');
     url.username = 'insignia_rewrite';
     url.pathname = `/${db}`;
+    const compatibility = await frozenSchema20Fixture();
     const proofDirectory = await mkdtemp(join(tmpdir(), 'm5-owner-precision-'));
     let roleCreated = false;
     let dbCreated = false;
@@ -448,10 +459,12 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
       const root = fileURLToPath(new URL('../../../', import.meta.url));
       await promisify(execFile)(
         `${root}node_modules/.bin/dbmate`,
-        ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
+        ['--no-dump-schema', '--migrations-dir', `${compatibility.directory}/packages/database/migrations`, 'up'],
         { env: { ...process.env, DATABASE_URL: url.href } },
       );
       pool = new Pool({ connectionString: url.href });
+      expect((await pool.query('SELECT count(*)::integer AS n FROM schema_migrations')).rows[0].n).toBe(20);
+      expect((await pool.query("SELECT to_regclass('public.artwork_assets') AS artwork")).rows[0].artwork).toBeNull();
       core = createDurableCore(new Pool({ connectionString: url.href }), {
         credentialKeys: { currentKeyId: 'synthetic-k1', keys: { 'synthetic-k1': Buffer.alloc(32, 41) } },
       });
@@ -806,6 +819,7 @@ test.skipIf(!process.env.M5_OWNER_LIFECYCLE_TEST_URL)(
       if (roleCreated) await admin.query('drop role insignia_rewrite');
       await admin.end();
       await rm(proofDirectory, { recursive: true, force: true });
+      await rm(compatibility.directory, { recursive: true, force: true });
     }
   },
   30000,

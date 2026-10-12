@@ -11,8 +11,8 @@ import { packageOwnerLifecycle } from '../m5-owner-lifecycle/package.mjs';
 import { packageDatabasePasswordRotation } from './db-password-rotation-package.mjs';
 import { frozenSchema18Fixture } from './frozen-schema18-fixture.mjs';
 import { frozenSchema19Fixture } from './frozen-schema19-fixture.mjs';
+import { frozenSchema20Fixture } from './frozen-schema20-fixture.mjs';
 import { qualifyImageArchive, verifyNativeImageIdentity } from './image-identity.mjs';
-import { packageForwardSchema20 } from './schema-forward20-package.mjs';
 
 const exec = promisify(execFile);
 
@@ -33,6 +33,10 @@ test('frozen owner package resolves accepted installer from qualified worker ima
   const frozen19 = await frozenSchema19Fixture();
   const { packageForwardSchema19 } = await import(
     pathToFileURL(join(frozen19.directory, 'scripts/m5-runtime/schema-forward19-package.mjs')).href
+  );
+  const frozen20 = await frozenSchema20Fixture();
+  const { packageForwardSchema20 } = await import(
+    pathToFileURL(join(frozen20.directory, 'scripts/m5-runtime/schema-forward20-package.mjs')).href
   );
   const parent = await mkdtemp(join(tmpdir(), 'insignia-schema-image-'));
   const directory = join(parent, 'operator');
@@ -157,6 +161,7 @@ test('frozen owner package resolves accepted installer from qualified worker ima
       await rm(parent, { recursive: true, force: true });
       await rm(frozen.directory, { recursive: true, force: true });
       await rm(frozen19.directory, { recursive: true, force: true });
+      await rm(frozen20.directory, { recursive: true, force: true });
     } catch (error) {
       cleanupFailures.push(error);
     }

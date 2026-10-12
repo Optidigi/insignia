@@ -5,6 +5,7 @@ on:
     paths:
       - 'packages/application/**'
       - 'packages/database/**'
+      - 'scripts/m6-artwork/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/m3-database.yml'
@@ -15,6 +16,7 @@ on:
     paths:
       - 'packages/application/**'
       - 'packages/database/**'
+      - 'scripts/m6-artwork/**'
       - 'package.json'
       - 'pnpm-lock.yaml'
       - '.github/workflows/m3-database.yml'

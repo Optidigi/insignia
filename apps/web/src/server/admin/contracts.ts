@@ -19,6 +19,9 @@ export interface AdminActor {
   expiresAtMs: number;
   canRead: boolean;
   canEdit: boolean;
+  /** Private artwork uses an explicit grant; product scopes alone never suffice. */
+  canReadArtwork?: boolean;
+  canUploadArtwork?: boolean;
 }
 
 export interface AdminServices {

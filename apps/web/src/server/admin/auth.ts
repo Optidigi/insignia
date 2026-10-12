@@ -9,6 +9,8 @@ export interface VerifiedAdminIdentity {
   expiresAtMs: number;
 }
 export interface OnlineAdminGrant {
+  /** True only from the verified online associated_user response. */
+  accountOwner?: boolean;
   shop: string;
   staffId: string;
   expiresAtMs: number;
@@ -163,6 +165,8 @@ export function createAdminAuthenticator(
       expiresAtMs: Math.min(identity.expiresAtMs, grant.expiresAtMs),
       canRead,
       canEdit,
+      canReadArtwork: grant.accountOwner === true && canRead,
+      canUploadArtwork: grant.accountOwner === true && canEdit,
     };
   };
 }

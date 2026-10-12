@@ -10,6 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 import { frozenSchema18Fixture } from './frozen-schema18-fixture.mjs';
 import { frozenSchema19Fixture } from './frozen-schema19-fixture.mjs';
+import { frozenSchema20Fixture } from './frozen-schema20-fixture.mjs';
 
 const { Pool } = createRequire(new URL('../../apps/worker/package.json', import.meta.url))('pg');
 
@@ -19,6 +20,7 @@ test('frozen schema operator provisions exact migrations and restricted roles on
 }, async (t) => {
   const compatibility = await frozenSchema18Fixture();
   const compatibility19 = await frozenSchema19Fixture();
+  const compatibility20 = await frozenSchema20Fixture();
   const { executeSchemaProvision, reserveSchemaProvision } = await import(
     pathToFileURL(join(compatibility.directory, 'scripts/m5-runtime/schema-provision.mjs')).href
   );
@@ -240,7 +242,9 @@ test('frozen schema operator provisions exact migrations and restricted roles on
       await worker.end();
     }
     await assert.rejects(executeForwardSchema19(forwardDirectory), /already_reserved/);
-    const { reserveForwardSchema20, executeForwardSchema20 } = await import('./schema-forward20.mjs');
+    const { reserveForwardSchema20, executeForwardSchema20 } = await import(
+      pathToFileURL(join(compatibility20.directory, 'scripts/m5-runtime/schema-forward20.mjs')).href
+    );
     const before20 = (
       await pool.query(
         'select inbox.id,inbox.payload_sha256,facts.purpose,facts.captured_fields from inbox_messages inbox join webhook_obligation_facts facts on facts.inbox_id=inbox.id order by inbox.id',
@@ -372,6 +376,7 @@ test('frozen schema operator provisions exact migrations and restricted roles on
       () => rm(staging, { recursive: true, force: true }),
       () => rm(compatibility.directory, { recursive: true, force: true }),
       () => rm(compatibility19.directory, { recursive: true, force: true }),
+      () => rm(compatibility20.directory, { recursive: true, force: true }),
     ]) {
       try {
         await close();

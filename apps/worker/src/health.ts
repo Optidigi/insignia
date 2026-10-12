@@ -6,9 +6,16 @@ export function createWorkerHealthServer(input: {
   observability: Observability;
   isDurableReady: () => boolean;
   probeDurableReady?: () => Promise<boolean>;
+  artworkReadiness?: () => { ready: boolean };
 }) {
   const server = createServer((request, response) => {
     response.setHeader('cache-control', 'no-store');
+    if (request.method === 'GET' && request.url === '/artwork-ready') {
+      const artwork = input.artworkReadiness?.() ?? { ready: false };
+      response.writeHead(artwork.ready ? 200 : 503, { 'content-type': 'application/json' });
+      response.end(JSON.stringify(artwork));
+      return;
+    }
     if (request.method === 'GET' && request.url === '/live') {
       response.writeHead(200, { 'content-type': 'application/json' });
       response.end(JSON.stringify({ status: 'live', durableReady: input.isDurableReady() }));

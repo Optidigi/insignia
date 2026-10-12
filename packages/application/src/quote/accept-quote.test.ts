@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createArtworkUsabilityPort } from '../artwork/artwork.js';
 import { acceptQuote, localDay, normalizeMarketId, type QuoteAuthorityPorts } from './accept-quote.js';
 
 const hash = 'a'.repeat(64);
@@ -147,6 +148,117 @@ function fixture() {
 }
 
 describe('acceptQuote', () => {
+  it('cached authorization and transactional replay remain bound to verified artwork owner authority', async () => {
+    const { ports } = fixture();
+    const scope = { shopId: 'shop', installationGeneration: '1', kind: 'guest' as const, ownerHash: 'a'.repeat(64) };
+    const row = {
+      assetId: 'art',
+      ownerHash: scope.ownerHash,
+      state: 'USABLE',
+      manifest: {},
+      expiresAt: new Date(+now + 7 * 86400000),
+    };
+    const store = { readUsability: async () => [row] } as never;
+    ports.artwork = createArtworkUsabilityPort(store, () => now, scope);
+    let cached: Awaited<ReturnType<typeof acceptQuote>> | undefined,
+      digest = '';
+    vi.mocked(ports.store.accept).mockImplementation(async (input, commit) => {
+      if (cached) {
+        if (input.requestDigest !== digest) throw new Error('idempotency digest conflict');
+        return cached;
+      }
+      digest = input.requestDigest;
+      cached = await commit();
+      return cached;
+    });
+    vi.mocked(ports.store.findCompleted).mockImplementation(async (input) => {
+      if (!cached) return null;
+      if (input.requestDigest !== digest) throw new Error('idempotency digest conflict');
+      return cached;
+    });
+    const first = await acceptQuote(request, ports);
+    expect(await acceptQuote(request, ports)).toEqual(first);
+    ports.artwork = createArtworkUsabilityPort(store, () => now, { ...scope, ownerHash: 'b'.repeat(64) });
+    await expect(acceptQuote(request, ports)).rejects.toThrow('idempotency digest conflict');
+    ports.artwork = createArtworkUsabilityPort(store, () => now, { ...scope, kind: 'merchant' });
+    vi.mocked(ports.store.findCompleted).mockResolvedValueOnce(null);
+    await expect(acceptQuote(request, ports)).rejects.toThrow('idempotency digest conflict');
+    ports.artwork = createArtworkUsabilityPort(store, () => now);
+    const reads = vi.mocked(ports.store.findCompleted).mock.calls.length;
+    await expect(acceptQuote(request, ports)).rejects.toThrow();
+    expect(ports.store.findCompleted).toHaveBeenCalledTimes(reads);
+  });
+
+  it('validates actual artwork observations against a post-read clock without changing quote expiry', async () => {
+    const { ports } = fixture();
+    let tick = +now;
+    const clock = () => new Date(tick++);
+    ports.clock = clock;
+    ports.artwork = createArtworkUsabilityPort(
+      {
+        readUsability: async () => [
+          { assetId: 'art', state: 'USABLE', manifest: {}, expiresAt: new Date(+now + 7 * 86400000) },
+        ],
+      } as never,
+      clock,
+      { shopId: 'shop', installationGeneration: '1', kind: 'merchant' },
+    );
+    const accepted = await acceptQuote(request, ports);
+    expect(accepted.quote.artworkChecks[0]?.observedAt).not.toBe(accepted.quote.acceptedAt);
+    expect(accepted.quote.validThroughDay).toBe(20760);
+  });
+
+  it('post-read freshness still rejects future and stale artwork observations before signing', async () => {
+    for (const observedAt of [new Date(+now + 1).toISOString(), new Date(+now - 300001).toISOString()]) {
+      const { ports } = fixture();
+      vi.mocked(ports.artwork.readUsability).mockImplementation(async (input) =>
+        input.choices.map((choice) => ({
+          ...choice,
+          shopId: input.shopId,
+          installationGeneration: input.installationGeneration,
+          status: 'usable' as const,
+          lastFullyUsableLocalDay: 20760,
+          observedAt,
+        })),
+      );
+      await expect(acceptQuote(request, ports)).rejects.toThrow('artwork unavailable through complete quote window');
+      expect(ports.authorization.issue).not.toHaveBeenCalled();
+    }
+  });
+
+  it('admits explicit logo-later only under the effective published placement policy', async () => {
+    const deferred = {
+      ...group,
+      design: {
+        ...group.design,
+        placements: group.design.placements.map((p) => ({
+          ...p,
+          artwork: { kind: 'deferred' as const, intentId: 'independent-design-nonce' },
+        })),
+      },
+    };
+    const { ports } = fixture();
+    await expect(acceptQuote({ ...request, groups: [{ group: deferred }] }, ports)).rejects.toThrow();
+    expect(ports.artwork.readUsability).not.toHaveBeenCalled();
+    vi.mocked(ports.publication.getEffective).mockResolvedValue({
+      config: { ...config, placements: config.placements.map((p) => ({ ...p, logoLaterAllowed: true })) },
+      configId: 'cfg',
+      operationId: 'op',
+    });
+    vi.mocked(ports.artwork.readUsability).mockImplementation(async (input) =>
+      input.choices.map((choice) => ({
+        ...choice,
+        shopId: input.shopId,
+        installationGeneration: input.installationGeneration,
+        status: input.permittedDeferredIntentIds?.includes(choice.id) ? 'usable' : 'unavailable',
+        lastFullyUsableLocalDay: 20760,
+        observedAt: now.toISOString(),
+      })),
+    );
+    const accepted = await acceptQuote({ ...request, groups: [{ group: deferred }] }, ports);
+    expect(accepted.quote.artworkChecks[0]?.kind).toBe('deferred');
+  });
+
   it('admits ISO country codes and rejects reserved two-letter claims before provider reads', async () => {
     for (const country of ['XX', 'ZZ', 'XK', 'us']) {
       const { ports } = fixture();

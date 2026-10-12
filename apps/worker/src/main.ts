@@ -1,10 +1,15 @@
+import { createArtworkService } from '@insignia/application';
 import { createDurableCore } from '@insignia/database';
 import { createShopifyOfflineRefreshTransport } from '@insignia/shopify';
+import { loadArtworkStorageProfile } from '@insignia/storage';
 import { Pool } from 'pg';
+import { inspectArtwork } from './artwork/inspection.js';
+import { createArtworkRunner } from './artwork-runner.js';
 import { loadCredentialKeys } from './config.js';
 import { runLocalDiagnostic } from './diagnostic.js';
-import { createDurableWorkerHandlers, maintainWebhookRetention, recoverPendingUninstalls } from './handlers.js';
+import { createDurableWorkerHandlers } from './handlers.js';
 import { startWorkerProcess } from './process.js';
+import { createWorkerReconciliation } from './reconciliation.js';
 import { createPgBossRuntime } from './runtime.js';
 
 function required(name: string): string {
@@ -23,36 +28,59 @@ if (process.argv.includes('--diagnostic')) {
   const portArgument = process.argv.find((value) => value.startsWith('--port='));
   const port = portArgument ? Number(portArgument.slice('--port='.length)) : 4301;
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('Invalid worker port');
-  const core = createDurableCore(new Pool({ connectionString }), { credentialKeys: keys });
+  const core = createDurableCore(
+    new Pool({ connectionString, connectionTimeoutMillis: 5000, query_timeout: 10000, statement_timeout: 10000 }),
+    { credentialKeys: keys },
+  );
   const queue = createPgBossRuntime({ connectionString, credentialKeysReady: true, webhookHandoff: core.webhooks });
   const transport = createShopifyOfflineRefreshTransport({ clientId, clientSecret });
-  const running = await startWorkerProcess({ queue, handlers: createDurableWorkerHandlers(core, transport), port });
+  const artwork =
+    process.env.INSIGNIA_ARTWORK_HOST_RUNNER === '1'
+      ? createArtworkService({
+          store: core.artwork,
+          inspect: inspectArtwork,
+          onCleanupError: () =>
+            queue.observability.logger.error('queue_job_rejected', { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' }),
+          storage: await loadArtworkStorageProfile(required('ARTWORK_STORAGE_PROFILE'), {
+            endpoint: required('ARTWORK_R2_ENDPOINT'),
+            bucket: required('ARTWORK_R2_BUCKET'),
+            prefix: required('ARTWORK_R2_PREFIX'),
+          }),
+        })
+      : undefined;
+  const artworkRunner = artwork
+    ? createArtworkRunner({
+        store: core.artwork,
+        service: artwork,
+        onError: (errorClass) => queue.observability.logger.error('queue_job_rejected', { errorClass }),
+      })
+    : undefined;
+  const running = await startWorkerProcess({
+    queue,
+    handlers: createDurableWorkerHandlers(core, transport),
+    port,
+    artworkReadiness: () => artworkRunner?.readiness() ?? { ready: false },
+  });
+  if (artworkRunner) await artworkRunner.start();
   console.log(JSON.stringify({ url: running.url, durableReady: running.durableReady }));
-  let reconciling = false;
-  const reconcile = async () => {
-    if (reconciling) return;
-    reconciling = true;
-    try {
-      await maintainWebhookRetention(core, queue);
-      await recoverPendingUninstalls(core, queue);
-    } catch {
-      queue.observability.logger.error('queue_job_rejected');
-    } finally {
-      reconciling = false;
-    }
-  };
+  const reconciliation = createWorkerReconciliation({ core, queue, artwork });
   const recoveryTimer = setInterval(() => {
-    void reconcile();
+    void reconciliation.runOnce();
   }, 30_000);
   recoveryTimer.unref();
-  void reconcile();
+  void reconciliation.runOnce();
   let stopping = false;
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {
     process.on(signal, () => {
       if (stopping) return;
       stopping = true;
       clearInterval(recoveryTimer);
-      void running.stop().finally(() => core.close());
+      void (async () => {
+        await reconciliation.stop();
+        await artworkRunner?.stop();
+        await running.stop();
+        await core.close();
+      })();
     });
   }
 }

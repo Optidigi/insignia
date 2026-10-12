@@ -3,10 +3,12 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "engines": { "node": "24.21.0" },
+  "engines": {
+    "node": "24.21.0"
+  },
   "scripts": {
     "build": "astro check && astro build",
-    "test": "node --test test/*.test.mjs test/admin/*.test.mjs",
+    "test": "node --test test/*.test.mjs test/admin/*.test.mjs test/artwork/*.test.mjs",
     "start": "node dist/server/entry.mjs"
   },
   "dependencies": {
@@ -23,7 +25,8 @@
     "@insignia/worker": "workspace:*",
     "astro": "7.3.5",
     "pg": "8.23.0",
-    "preact": "10.29.8"
+    "preact": "10.29.8",
+    "@insignia/storage": "workspace:*"
   },
   "devDependencies": {
     "@shopify/shopify-api": "15.0.0",
