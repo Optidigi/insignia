@@ -1,0 +1,8 @@
+{
+  "version": "m5-owner-trusted-release-launch-v1",
+  "classification": "TRUSTED_RELEASE_COLLECT_APPEND_ACK",
+  "ambiguousWrite": false,
+  "appendAttempted": true,
+  "appendAcknowledged": true,
+  "retryAuthorized": false
+}
