@@ -57,6 +57,9 @@ describe('production Shopify online staff adapter with synthetic transport', () 
       [token({ aud: 'another-client' }), 'SESSION_TOKEN_AUDIENCE_REJECTED'],
       [token({ exp: Math.floor(Date.now() / 1000) - 60 }), 'SESSION_TOKEN_TIME_REJECTED'],
       [token({ nbf: Math.floor(Date.now() / 1000) + 60 }), 'SESSION_TOKEN_TIME_REJECTED'],
+      // SDK clock tolerance must not disguise strict application expiry as an identity mismatch.
+      [token({ exp: Math.floor(Date.now() / 1000) - 1 }), 'SESSION_TOKEN_TIME_REJECTED'],
+      [token({ exp: Math.floor(Date.now() / 1000) }), 'SESSION_TOKEN_TIME_REJECTED'],
       ['synthetic-private-malformed-token', 'SESSION_TOKEN_FORMAT_REJECTED'],
       [token({}, secret, 'HS384'), 'SESSION_TOKEN_REJECTED'],
       [token({ exp: 'invalid-number' }), 'SESSION_TOKEN_REJECTED'],

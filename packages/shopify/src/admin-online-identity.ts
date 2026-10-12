@@ -162,6 +162,8 @@ export function createAdminOnlineIdentity(input: {
       } catch (error) {
         throw new AdminOnlineIdentityError(rejectedSessionStage(error, token));
       }
+      if (!Number.isFinite(payload.exp) || payload.exp * 1000 <= Date.now())
+        throw new AdminOnlineIdentityError('SESSION_TOKEN_TIME_REJECTED');
       if (typeof payload.dest !== 'string' || !payload.dest.startsWith('https://'))
         throw new AdminOnlineIdentityError('SESSION_IDENTITY_REJECTED');
       const shop = payload.dest.slice(8);
@@ -172,9 +174,7 @@ export function createAdminOnlineIdentity(input: {
         typeof payload.sub !== 'string' ||
         !/^[1-9][0-9]*$/.test(payload.sub) ||
         typeof payload.sid !== 'string' ||
-        payload.sid.length < 8 ||
-        !Number.isFinite(payload.exp) ||
-        payload.exp * 1000 <= Date.now()
+        payload.sid.length < 8
       )
         throw new AdminOnlineIdentityError('SESSION_IDENTITY_REJECTED');
       return { shop, staffId: payload.sub, sessionId: payload.sid, expiresAtMs: payload.exp * 1000 };
