@@ -2,7 +2,12 @@ import { createHmac } from 'node:crypto';
 import { InvalidJwtError } from '@shopify/shopify-api';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
 import { describe, expect, it } from 'vitest';
-import { createAdminOnlineIdentity, deadlineAwareOnlineFetch } from '../src/admin-online-identity.js';
+import {
+  canonicalAdminAccessScopes,
+  createAdminOnlineIdentity,
+  deadlineAwareOnlineFetch,
+  hasAdminAccessScope,
+} from '../src/admin-online-identity.js';
 
 const key = 'synthetic-m5-client';
 const secret = 'synthetic-m5-secret-only';
@@ -29,6 +34,22 @@ function token(overrides: Record<string, unknown> = {}, signingSecret = secret, 
 }
 
 describe('production Shopify online staff adapter with synthetic transport', () => {
+  it('matches canonical and redundant Shopify capabilities without granting writes from reads', () => {
+    const observed = [
+      'read_product_listings',
+      'read_publications',
+      'write_cart_transforms',
+      'write_products',
+      'write_validations',
+    ];
+    expect(
+      canonicalAdminAccessScopes([...observed, 'read_products', 'read_cart_transforms', 'read_validations']),
+    ).toEqual(observed);
+    expect(hasAdminAccessScope(['write_cart_transforms'], 'read_cart_transforms')).toBe(true);
+    expect(hasAdminAccessScope(['read_cart_transforms'], 'write_cart_transforms')).toBe(false);
+    expect(hasAdminAccessScope(['write_validations'], 'read_cart_transforms')).toBe(false);
+    expect(canonicalAdminAccessScopes([...observed, 'write_orders'])).not.toEqual(observed);
+  });
   it('classifies actual SDK token rejection without exposing SDK token messages or causes', async () => {
     const provider = createAdminOnlineIdentity({ apiKey: key, apiSecret: secret, hostName: 'example.test' });
     for (const [signed, stage] of [

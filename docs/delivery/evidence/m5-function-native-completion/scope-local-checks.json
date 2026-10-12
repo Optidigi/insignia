@@ -1,0 +1,34 @@
+{
+  "classification": "LOCAL_SCOPE_SEMANTICS_CORRECTION_QUALIFIED",
+  "productionChanged": false,
+  "root": {
+    "exitCode": 0,
+    "seconds": 180.31
+  },
+  "postgresql18": {
+    "exitCode": 0,
+    "seconds": 33.31
+  },
+  "combinedOperatorRun": {
+    "passed": 108,
+    "failed": 1,
+    "skipped": 0,
+    "cause": "cluster roles already allocated by database suite; fail-closed operator admission"
+  },
+  "freshIsolatedOperatorRun": {
+    "passed": 109,
+    "failed": 0,
+    "skipped": 0,
+    "seconds": 5.16
+  },
+  "instancesStopped": true,
+  "records": {
+    "scope-regression-r1.json": "f6ff9ff9b1d20a2128f453d50f36c8000e354c2c7c4f99a7956498f0df6119ac",
+    "scope-regression-r1.log": "5de1936c02d024bd96b8110452764305606b6a377750444a0173d1ef2782a85b",
+    "scope-operators-r2.json": "1d83376ec9c0ad3e6680fc59a2fb7db8fcfb493a76743385725fd4d12593ce6f",
+    "scope-operators-r2.log": "6965fa09caf53acbd5ca1cf85ee0131c8f534472a325e89e69c1e4dad541009a"
+  },
+  "privateEvidenceDirectory": "/home/serveradmin/insignia-milestone-autonomy-handoff/m5-function-native-completion-20261011/scope-correction",
+  "reviews": "PENDING",
+  "finalHeadCI": "PENDING"
+}

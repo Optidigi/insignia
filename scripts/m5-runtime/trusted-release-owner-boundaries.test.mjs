@@ -98,7 +98,15 @@ test('missing durable acknowledgement stops the SDK before its first read', asyn
 test('fixed Admin TLS capability cannot dispatch a foreign document or retry client credentials', async () => {
   const exactScopes =
     'write_products,read_publications,read_product_listings,read_cart_transforms,read_validations,write_cart_transforms,write_validations';
-  for (const scope of [exactScopes, exactScopes.replace(',write_validations', ''), `${exactScopes},write_orders`]) {
+  // Actual post-consent OAuth readback compresses the read scopes covered by writes.
+  const canonicalScopes =
+    'read_product_listings,read_publications,write_cart_transforms,write_products,write_validations';
+  for (const scope of [
+    canonicalScopes,
+    exactScopes,
+    exactScopes.replace(',write_validations', ''),
+    `${exactScopes},write_orders`,
+  ]) {
     const requests = [],
       query = 'query SyntheticOriginalFunctionDocument { shop { id } }';
     const provider = createOwnerHttps({
@@ -134,7 +142,7 @@ test('fixed Admin TLS capability cannot dispatch a foreign document or retry cli
         return request;
       },
     });
-    if (scope === exactScopes)
+    if (scope === exactScopes || scope === canonicalScopes)
       assert.equal(await provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'), 'SYNTHETIC_OWNER_TOKEN');
     else await assert.rejects(provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'));
     await assert.rejects(provider.acquireToken('SYNTHETIC_PRIVATE_CLIENT_SECRET'));

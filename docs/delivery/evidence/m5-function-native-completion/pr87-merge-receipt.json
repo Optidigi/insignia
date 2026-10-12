@@ -1,0 +1,35 @@
+{
+  "classification": "NORMAL_MERGE_VERIFIED",
+  "pr": "https://github.com/Optidigi/insignia/pull/87",
+  "base": "9c2e56b42fbf667e4392faafcb8b8741c80acf7a",
+  "head": "d956ca23a2e62ca4a099f56ad9e65f21d5b3f4e0",
+  "effectiveMergeBase": "9c2e56b42fbf667e4392faafcb8b8741c80acf7a",
+  "tree": "cd68c469005c81ede980b65c837846923cad8242",
+  "merge": "1bd59984ec6acf1f290bff7e54f51f3d1c8ed053",
+  "orderedParents": ["9c2e56b42fbf667e4392faafcb8b8741c80acf7a", "d956ca23a2e62ca4a099f56ad9e65f21d5b3f4e0"],
+  "remoteMain": "1bd59984ec6acf1f290bff7e54f51f3d1c8ed053",
+  "ci": [
+    {
+      "id": 38177775478,
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "id": 38177775490,
+      "attempt": 1,
+      "conclusion": "success"
+    },
+    {
+      "id": 38177775479,
+      "attempt": 1,
+      "conclusion": "success"
+    }
+  ],
+  "reviews": {
+    "spec": "CLEAR",
+    "security": "CLEAR",
+    "model": "gpt-6.1-sol",
+    "effort": "low"
+  },
+  "milestoneAccepted": false
+}
