@@ -139,6 +139,7 @@ export class PgSigningKeyRepository {
     wrappingKeyId: string;
     firstDay: number;
     lastDay: number;
+    beforeWrite?: () => boolean;
   }): Promise<void> {
     checkedId(input.keyId);
     if (
@@ -161,15 +162,17 @@ export class PgSigningKeyRepository {
           AND authorization_generation=${input.scope.authorizationGeneration}::uuid
           AND state <> 'destroyed'`.execute(tx);
       if (Number(capacity.rows[0]?.count) >= 4) throw new Error('Function public config signing key capacity reached');
+      if (input.beforeWrite && !input.beforeWrite()) throw new Error('Signing write authority expired');
       await sql`INSERT INTO signing_keys (shop_id, installation_generation, authorization_generation, key_id,
         public_key, public_key_fingerprint, private_envelope, wrapping_key_id, state, first_valid_day, last_valid_day)
         VALUES (${input.scope.shopId}, ${input.scope.installationGeneration}::bigint, ${input.scope.authorizationGeneration}::uuid,
           ${input.keyId}, ${Buffer.from(input.publicKey)}, ${input.publicKeyFingerprint}, ${JSON.stringify(input.privateEnvelope)}::jsonb,
           ${input.wrappingKeyId}, 'pending', ${input.firstDay}, ${input.lastDay})`.execute(tx);
+      if (input.beforeWrite && !input.beforeWrite()) throw new Error('Signing write authority expired');
     });
   }
 
-  async activate(scope: Scope, keyId: number): Promise<void> {
+  async activate(scope: Scope, keyId: number, beforeWrite?: () => boolean): Promise<void> {
     checkedId(keyId);
     await this.database.transaction().execute(async (tx) => {
       sameScope(await lockScope(tx, scope.shopId, scope.installationGeneration), scope);
@@ -190,13 +193,16 @@ export class PgSigningKeyRepository {
         !key.private_envelope
       )
         throw new Error('Pending signing key required');
+      if (beforeWrite && !beforeWrite()) throw new Error('Signing write authority expired');
       if (old.rows[0])
         await sql`UPDATE signing_keys SET state='retiring', retired_at=clock_timestamp() WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND key_id=${old.rows[0].key_id}`.execute(
           tx,
         );
+      if (beforeWrite && !beforeWrite()) throw new Error('Signing write authority expired');
       await sql`UPDATE signing_keys SET state='active', activated_at=clock_timestamp() WHERE shop_id=${scope.shopId} AND installation_generation=${scope.installationGeneration}::bigint AND key_id=${keyId}`.execute(
         tx,
       );
+      if (beforeWrite && !beforeWrite()) throw new Error('Signing write authority expired');
     });
   }
 

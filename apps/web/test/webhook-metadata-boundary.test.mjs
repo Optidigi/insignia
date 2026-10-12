@@ -1,42 +1,12 @@
 import assert from 'node:assert/strict';
-import { execFile, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { createHmac, randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
 import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
-
-async function isolatedDatabase() {
-  const admin = new Pool({ connectionString: process.env.DATABASE_URL });
-  const database = `m5024_http_${randomUUID().replaceAll('-', '')}`;
-  const url = new URL(process.env.DATABASE_URL);
-  url.pathname = `/${database}`;
-  const root = fileURLToPath(new URL('../../../', import.meta.url));
-  let created = false;
-  async function close() {
-    try {
-      if (created) await admin.query(`DROP DATABASE ${database}`);
-    } finally {
-      await admin.end();
-    }
-  }
-  try {
-    await admin.query(`CREATE DATABASE ${database}`);
-    created = true;
-    await promisify(execFile)(
-      `${root}node_modules/.bin/dbmate`,
-      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
-      { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30_000 },
-    );
-    return { connectionString: url.href, close };
-  } catch (error) {
-    await close();
-    throw error;
-  }
-}
+import { isolatedDatabase } from './support/isolated-database.mjs';
 
 // Generic HMAC admission is preserved; unsigned headers cannot authorize deactivation.
 test('captured signed body with new delivery ID and later unsigned trigger remains quarantined', {
@@ -82,8 +52,8 @@ test('captured signed body with new delivery ID and later unsigned trigger remai
   };
   let worker;
   let workerClosed;
-  async function waitFor(predicate) {
-    for (let i = 0; i < 100; i++) {
+  async function waitFor(predicate, maximumPolls = 100) {
+    for (let i = 0; i < maximumPolls; i++) {
       if (await predicate().catch(() => false)) return;
       await delay(100);
     }
@@ -158,6 +128,10 @@ test('captured signed body with new delivery ID and later unsigned trigger remai
       async () =>
         (await pool.query('select state from pgboss.job where id=$1', [receipt.inboxId])).rows[0]?.state ===
         'completed',
+      // Four queued receipts, batchSize1 and pinned pg-boss2s polling need
+      // scheduling/startup margin. This is a local observation bound, not a
+      // provider freshness, retry or retention contract.
+      200,
     );
     assert.equal((await core.tenants.getCurrentAdminInstallation(shopId)).active, true);
     assert.equal(

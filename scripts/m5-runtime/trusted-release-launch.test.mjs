@@ -127,7 +127,7 @@ async function processControl(source, limits = {}) {
         cwd: parent,
         env: { ...input.env, SYNTHETIC_PARENT: parent },
         detached: true,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: ['pipe', 'pipe', 'pipe', ...(limits.verificationRequest ? ['pipe'] : [])],
       });
     },
   });
@@ -283,4 +283,37 @@ test('actual SDK auth/session modules are code inputs while private credential f
   ])
     assert.throws(() => qualifyCodeInputPath(`${root}/${relative}`));
   assert.throws(() => qualifyCodeInputPath('/tmp/foreign/auth.js'), /input_path_unqualified/);
+});
+
+test('the fixed child receives only scoped metadata on its private descriptor separate from credentials', async () => {
+  const verificationRequest = {
+    requestId: recordId,
+    expectedActiveAppVersionRef: '1163229200385',
+    deadlineMs: Date.now() + 60_000,
+    binding: {
+      shopId: 'synthetic-tenant',
+      installationGeneration: '1',
+      appClientId: '1443cf6d03d39edae7c101a943c5c684',
+      authorizationGeneration: '22222222-2222-4222-8222-222222222222',
+      authorizationEpoch: 0,
+      externalInstallationId: 'gid://shopify/AppInstallation/321',
+    },
+  };
+  const c = await processControl(
+    reserveSource +
+      `import {readFileSync} from 'node:fs';import assert from 'node:assert/strict';
+     assert.equal(process.env.INSIGNIA_RELEASE_VERIFICATION_FD,'3');
+     const metadata=JSON.parse(readFileSync(3,'utf8'));assert.deepEqual(metadata,${JSON.stringify(verificationRequest)});
+     for await(const chunk of process.stdin){};
+     const receipt=${JSON.stringify(closed())};await writeFile(join(phase,'receipt.json'),JSON.stringify(receipt),{mode:0o600});console.log(JSON.stringify(receipt));`,
+    { verificationRequest },
+  );
+  try {
+    assert.equal(c.result.classification, 'TRUSTED_RELEASE_COLLECT_APPEND_ACK');
+    assert.equal(c.observed.env.INSIGNIA_RELEASE_VERIFICATION_FD, '3');
+    assert.ok(!JSON.stringify(verificationRequest).includes('synthetic-private'));
+    assert.ok(c.packet.every((byte) => byte === 0));
+  } finally {
+    await rm(c.parent, { recursive: true, force: true });
+  }
 });

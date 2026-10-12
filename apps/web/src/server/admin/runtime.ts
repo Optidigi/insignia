@@ -1,6 +1,7 @@
 import type { AdminServices } from './contracts.js';
 import { createDiagnosticPreviewServices } from './preview.js';
 import { createProductionAdminServices } from './production.js';
+import { createReleaseVerificationClient } from './release-verification.js';
 import { signingOwnerConfiguration } from './signing-owner-configuration.js';
 
 let services: AdminServices | undefined;
@@ -23,6 +24,7 @@ export function adminServices(): AdminServices | undefined {
             undefined,
             undefined,
             signingOwnerConfiguration(process.env),
+            createReleaseVerificationClient(),
           );
   } catch {
     return undefined;

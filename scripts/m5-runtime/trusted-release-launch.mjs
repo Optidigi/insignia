@@ -7,6 +7,11 @@ import { lstat, mkdir, open, readdir, realpath, rmdir } from 'node:fs/promises';
 import { basename, dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
+import { readPrivatePacket } from './trusted-release-input.mjs';
+
+export { readPrivatePacket } from './trusted-release-input.mjs';
+
+import { parseReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
 import { recordPhaseName } from './trusted-release-collector.mjs';
 import { ownerPhaseForRecord, parseOwnerPrivatePacket } from './trusted-release-collector-native.mjs';
 
@@ -176,6 +181,7 @@ export async function inspectPriorCollectorSettlement(parent) {
 /** Real process seam; the production caller supplies only its fixed child.
  * Test ports may spawn synthetic processes, never used by executable main. */
 export async function runBoundedCollectorProcess({
+  verificationRequest,
   packet,
   phaseRoot,
   recordId,
@@ -185,16 +191,23 @@ export async function runBoundedCollectorProcess({
 }) {
   assert.ok(timeoutMs > 0 && timeoutMs <= 300000 && maximumBytes > 0 && maximumBytes <= 1048576);
   recordPhaseName(recordId);
+  if (verificationRequest) verificationRequest = parseReleaseVerificationRequest(verificationRequest);
   const childPhase = join(phaseRoot, recordPhaseName(recordId));
   const env = {
     HOME: '/home/serveradmin',
     PATH: `${dirname(EXECUTABLE)}:/usr/bin:/bin`,
     LANG: 'C.UTF-8',
     TERM: 'dumb',
+    ...(verificationRequest ? { INSIGNIA_RELEASE_VERIFICATION_FD: '3' } : {}),
   };
   const child = spawnChild
     ? spawnChild({ executable: EXECUTABLE, script: SCRIPT, env })
-    : spawn(EXECUTABLE, [SCRIPT], { cwd: REPOSITORY, env, detached: true, stdio: ['pipe', 'pipe', 'pipe'] });
+    : spawn(EXECUTABLE, [SCRIPT], {
+        cwd: REPOSITORY,
+        env,
+        detached: true,
+        stdio: ['pipe', 'pipe', 'pipe', ...(verificationRequest ? ['pipe'] : [])],
+      });
   let total = 0,
     chunks = [],
     stopped = false,
@@ -235,6 +248,10 @@ export async function runBoundedCollectorProcess({
       });
       child.once('close', (exitCode) => resolveExit(exitCode));
     });
+    if (verificationRequest) {
+      child.stdio[3].on('error', () => stop('OWNER_PROCESS_UNQUALIFIED'));
+      child.stdio[3].end(JSON.stringify(verificationRequest));
+    }
     child.stdin.end(packet);
     code = await exited;
   } finally {
@@ -294,6 +311,10 @@ const ORIGINAL_SDK = `${ROOT}/app-management-readonly-preparation-20261010`;
 const SOURCE_PATHS = [
   'scripts/m5-runtime/trusted-release-launch.mjs',
   'scripts/m5-runtime/trusted-release-launch.test.mjs',
+  'scripts/m5-runtime/trusted-release-input.mjs',
+  'scripts/m5-runtime/release-verification-native.mjs',
+  'scripts/m5-runtime/release-verification-server.mjs',
+  'apps/web/src/server/admin/release-verification.ts',
   ...[
     'collector-native',
     'collector',
@@ -341,7 +362,7 @@ export function qualifyCodeInputPath(path) {
     path === EXECUTABLE || path.startsWith(`${REPOSITORY}/`) || path.startsWith(`${ORIGINAL_SDK}/`),
     'input_path_unqualified',
   );
-  assert.ok(path === EXECUTABLE || /\.(?:mjs|cjs|js|json|node|yaml)$/.test(path), 'code_input_required');
+  assert.ok(path === EXECUTABLE || /\.(?:mjs|cjs|js|ts|json|node|yaml)$/.test(path), 'code_input_required');
   assert.ok(
     !/^(?:\.env.*|auth\.json|session\.json|context\.json)$/.test(basename(path)),
     'private_auth_input_forbidden',
@@ -407,7 +428,11 @@ export async function qualifyLaunchInputs(qualification) {
   };
 }
 
-export async function launchQualifiedTrustedRelease(packetBytes) {
+export async function launchQualifiedTrustedRelease(packetBytes, verificationRequest) {
+  if (verificationRequest) {
+    verificationRequest = parseReleaseVerificationRequest(verificationRequest);
+    assert.ok(verificationRequest.deadlineMs > Date.now() && verificationRequest.deadlineMs <= Date.now() + 300000);
+  }
   assert.equal(process.execPath, EXECUTABLE, 'fixed_runtime_required');
   assert.equal(process.version, 'v24.21.0', 'fixed_runtime_required');
   await privateDirectory(ROOT);
@@ -437,12 +462,21 @@ export async function launchQualifiedTrustedRelease(packetBytes) {
       recordId,
       ...qualified,
       childPhase: basename(ownerPhaseForRecord(recordId)),
+      ...(verificationRequest ? { verificationRequest } : {}),
       maximumSeconds: 300,
       maximumOutputBytes: 1048576,
       at: new Date().toISOString(),
       retryAuthorized: false,
     });
-    const receipt = await runBoundedCollectorProcess({ packet: packetBytes, phaseRoot: ROOT, recordId });
+    const receipt = await runBoundedCollectorProcess({
+      packet: packetBytes,
+      phaseRoot: ROOT,
+      recordId,
+      verificationRequest,
+      timeoutMs: verificationRequest
+        ? Math.max(1, Math.min(300000, verificationRequest.deadlineMs - Date.now()))
+        : 300000,
+    });
     await durable(join(intent, 'receipt.json'), receipt);
     return receipt;
   } finally {
@@ -452,23 +486,7 @@ export async function launchQualifiedTrustedRelease(packetBytes) {
     await rmdir(lock);
   }
 }
-export async function readPrivatePacket(stream, timeoutMs = 10000) {
-  assert.ok(timeoutMs > 0 && timeoutMs <= 300000);
-  const chunks = [];
-  let size = 0;
-  const timer = setTimeout(() => stream.destroy(new Error('private_packet_timeout')), timeoutMs);
-  try {
-    for await (const chunk of stream) {
-      size += chunk.length;
-      assert.ok(size <= 16384, 'private_packet_limit');
-      chunks.push(Buffer.from(chunk));
-    }
-    return Buffer.concat(chunks);
-  } finally {
-    clearTimeout(timer);
-    for (const chunk of chunks) chunk.fill(0);
-  }
-}
+
 async function main() {
   const emit = process.stdout.write.bind(process.stdout);
   process.stdout.write = () => true;

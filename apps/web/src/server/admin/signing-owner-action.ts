@@ -163,6 +163,7 @@ export function createSigningOwnerAction(
     activeAppVersionRef: '1163229200385',
   };
   let execution: Promise<void> | undefined;
+  let preparation: Promise<SigningOwnerStatus> | undefined;
   let running = false,
     startedAt = 0;
   const now = ports.now ?? (() => new Date());
@@ -313,10 +314,25 @@ export function createSigningOwnerAction(
     return reply('PENDING');
   }
   async function prepare(actor: AdminActor, idToken: string): Promise<SigningOwnerStatus> {
-    const initial = await start(actor, idToken);
-    if (initial.state !== 'PENDING') return initial;
-    await execution;
-    return status(actor);
+    actorBound(actor);
+    await current();
+    if (!preparation) {
+      preparation = (async () => {
+        const initial = await start(actor, idToken);
+        if (initial.state !== 'PENDING') return initial;
+        await execution;
+        return status(actor);
+      })();
+    }
+    const pending = preparation;
+    try {
+      const result = await pending;
+      actorBound(actor);
+      await current();
+      return result;
+    } finally {
+      if (preparation === pending) preparation = undefined;
+    }
   }
   return Object.freeze({ start, status, prepare });
 }

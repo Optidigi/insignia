@@ -27,8 +27,14 @@ import { Pool } from 'pg';
 import { createMerchantConfigService } from '../merchant-config.js';
 import { type AdminInstallation, AdminInstallationReconciliationError, createAdminAuthenticator } from './auth.js';
 import type { AdminActor, AdminServices, CatalogProduct } from './contracts.js';
-import { createBoundProductionActivationReadiness } from './release-evidence.js';
+import {
+  createBoundProductionActivationReadiness,
+  createDemandDrivenReleaseReader,
+  type ReleaseVerificationCollector,
+} from './release-evidence.js';
 import { createSigningOwnerAction, type SigningOwnerConfiguration } from './signing-owner-action.js';
+
+type DurableCoreReleaseReader = ReturnType<typeof createDemandDrivenReleaseReader>;
 
 function project(value: ShopifyCatalogProduct): CatalogProduct {
   return {
@@ -76,6 +82,7 @@ export function createProductionAdminServices(
   // Server-owned capability only; never constructed from HTTP or environment JSON.
   activationReadiness?: Omit<ActivationReadinessPort, 'observeProjection'>,
   signingOwnerConfiguration?: SigningOwnerConfiguration,
+  releaseCollector?: ReleaseVerificationCollector,
 ): AdminServices {
   const databaseUrl = required(env, 'DATABASE_URL');
   const apiKey = required(env, 'SHOPIFY_CLIENT_ID');
@@ -90,6 +97,9 @@ export function createProductionAdminServices(
   const merchantTimezones = new WeakMap<AdminActor, string>();
   const authenticationLogger = createObservability().logger;
   const activations = new WeakMap<AdminActor, ReturnType<typeof core.productionActivations.create>>();
+  const verifications = new WeakMap<AdminActor, DurableCoreReleaseReader>();
+  const verified = new WeakMap<AdminActor, NonNullable<Awaited<ReturnType<DurableCoreReleaseReader['read']>>>>();
+  const collecting = new Map<string, Promise<Awaited<ReturnType<ReleaseVerificationCollector['collect']>>>>();
   const policy = featurePolicy(env);
   const partner =
     policy && appGid && env.INSIGNIA_PARTNER_ORGANIZATION_ID && env.INSIGNIA_PARTNER_ACCESS_TOKEN
@@ -115,6 +125,75 @@ export function createProductionAdminServices(
       throw new Error('Online staff grant unavailable');
     return online;
   }
+  async function verifyPublicationRelease(actor: AdminActor): Promise<boolean> {
+    if (!releaseCollector) return true; // Existing passive gates still deny absent authority.
+    await active(actor);
+    const online = grant(actor);
+    let reader = verifications.get(actor);
+    if (!reader) {
+      const scope = await core.tenants.getActiveAuthorizationScope({
+        shopId: actor.tenantShopId,
+        installationGeneration: actor.installationGeneration,
+      });
+      if (!scope) return false;
+      const deadlineMs = Math.min(actor.expiresAtMs, online.expiresAtMs - 30_000, Date.now() + 300_000);
+      reader = createDemandDrivenReleaseReader({
+        records: core.trustedReleaseRecords,
+        collector: releaseCollector,
+        binding: {
+          shopId: actor.tenantShopId,
+          installationGeneration: actor.installationGeneration,
+          appClientId: apiKey,
+          authorizationGeneration: scope.authorizationGeneration,
+          authorizationEpoch: scope.authorizationEpoch,
+          externalInstallationId: actor.installationId,
+        },
+        deadline: () => deadlineMs,
+        inFlight: collecting,
+        async isCurrent() {
+          await active(actor);
+          grant(actor);
+          const managed = await core.tenants.getManagedInstallationState(actor.shop);
+          if (
+            !managed?.active ||
+            managed.shopId !== actor.tenantShopId ||
+            managed.currentGeneration !== actor.installationGeneration ||
+            managed.externalInstallationId !== actor.installationId
+          )
+            throw new Error('Publication installation changed');
+          const current = await core.tenants.getActiveAuthorizationScope({
+            shopId: actor.tenantShopId,
+            installationGeneration: actor.installationGeneration,
+          });
+          if (
+            current?.authorizationGeneration !== scope.authorizationGeneration ||
+            current.authorizationEpoch !== scope.authorizationEpoch
+          )
+            throw new Error('Publication authorization changed');
+        },
+      });
+      verifications.set(actor, reader);
+    }
+    const evidence = await reader.read({
+      scope: { shopId: actor.tenantShopId, installationGeneration: actor.installationGeneration, appClientId: apiKey },
+      expectedActiveAppVersionRef: '1163229200385',
+      now: new Date(),
+    });
+    if (evidence) verified.set(actor, evidence);
+    else verified.delete(actor);
+    return evidence !== null;
+  }
+  function publicationAuthorityFresh(actor: AdminActor) {
+    if (!releaseCollector) return true;
+    const evidence = verified.get(actor);
+    const at = Date.now();
+    const observed = Date.parse(evidence?.record.attestation.observedAt ?? '');
+    const expires = Date.parse(evidence?.record.attestation.expiresAt ?? '');
+    return (
+      actor.expiresAtMs > at && Number.isFinite(observed) && observed <= at && at - observed <= 30_000 && at < expires
+    );
+  }
+
   const catalog = {
     async list(actor: AdminActor, input: { query: string; cursor: string | null; limit: number }) {
       await active(actor);
@@ -178,7 +257,13 @@ export function createProductionAdminServices(
       },
     };
     const transport = createPublicationAdminHttpTransport({ credentials });
-    const remote = createPublicationAdminAdapter({ transport });
+    const adapter = createPublicationAdminAdapter({ transport });
+    const remote = {
+      ...adapter,
+      set(target: Parameters<typeof adapter.set>[0], beforeSend?: () => boolean) {
+        return adapter.set(target, () => publicationAuthorityFresh(actor) && (beforeSend?.() ?? true));
+      },
+    };
     const functions = createFunctionOwnershipReconciler({ transport });
     const coordinator = core.productionActivations.create({
       appId,
@@ -186,6 +271,7 @@ export function createProductionAdminServices(
       remote,
       availability: createShopifyAvailabilityHoldV3Port({
         credentials,
+        beforeWrite: () => publicationAuthorityFresh(actor),
         isCurrent: async (scope) => {
           if (
             scope.shopId !== actor.tenantShopId ||
@@ -229,9 +315,43 @@ export function createProductionAdminServices(
           },
         }),
       maxObservationAgeMs: 30_000,
+      beforeWrite: () => publicationAuthorityFresh(actor),
     });
-    activations.set(actor, coordinator);
-    return coordinator;
+    async function settled(identity: Parameters<typeof coordinator.advance>[0]) {
+      await active(actor);
+      if (identity.shopId !== actor.tenantShopId) throw new Error('Publication scope mismatch');
+      const candidate = await coordinator.read(identity);
+      const publication = await core.configs.getCurrentPublication(identity.shopId, identity.configId);
+      const config = await core.configs.getConfig(identity.shopId, identity.configId);
+      return (
+        candidate?.state.kind === 'RESTORED' &&
+        candidate.evidence !== null &&
+        publication?.operationId === identity.operationId &&
+        publication.status === 'activated' &&
+        publication.phase === 'active' &&
+        config?.effectiveOperationId === identity.operationId
+      );
+    }
+    const coordinated = {
+      ...coordinator,
+      publications: {
+        ...coordinator.publications,
+        async advance(shopId: string, configId: string, operationId: string) {
+          if (!(await settled({ shopId, configId, operationId })) && !(await verifyPublicationRelease(actor)))
+            throw new Error('Publication verification unavailable');
+          return coordinator.publications.advance(shopId, configId, operationId);
+        },
+      },
+      async advance(identity: Parameters<typeof coordinator.advance>[0]) {
+        // Independent collection completes before PgActivationStore takes locks.
+        // The coordinator still consumes passive evidence and checks each write.
+        if (!(await settled(identity)) && !(await verifyPublicationRelease(actor)))
+          throw new Error('Publication verification unavailable');
+        return coordinator.advance(identity);
+      },
+    };
+    activations.set(actor, coordinated);
+    return coordinated;
   }
   const service = createMerchantConfigService({
     core,
@@ -275,6 +395,8 @@ export function createProductionAdminServices(
       // Existing ready installations still use the ordinary M4 admission gates.
       // A private startup allocation allows initial setup; no browser plan or
       // status GET can select or dispatch it. Tokens live only with this actor.
+      if (!(await verifyPublicationRelease(actor)))
+        return { ready: false, reason: 'Publication verification is unavailable. Contact support.' };
       if (!signingOwner) return { ready: true, reason: null };
       await active(actor);
       grant(actor);

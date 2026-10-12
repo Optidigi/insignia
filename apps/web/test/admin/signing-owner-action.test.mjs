@@ -356,3 +356,21 @@ test('an unbound installation never reserves or invokes signing', async () => {
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('concurrent authenticated publication preparation shares one settled signing attempt', async () => {
+  const f = await bound();
+  try {
+    const results = await Promise.all([
+      f.action.prepare(f.actor, 'synthetic-token'),
+      f.action.prepare(f.actor, 'synthetic-token'),
+    ]);
+    assert.deepEqual(
+      results.map((result) => result.state),
+      ['PROVISIONED', 'PROVISIONED'],
+    );
+    assert.equal(f.rows.length, 1);
+    assert.equal(f.requests.filter((operation) => operation === 'set').length, 1);
+  } finally {
+    await f.close();
+  }
+});

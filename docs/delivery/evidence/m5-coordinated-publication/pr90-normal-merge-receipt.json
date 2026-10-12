@@ -1,0 +1,20 @@
+{
+  "classification": "PR90_NORMAL_MERGE_VERIFIED",
+  "recordedAt": "2026-10-12T10:26:03.749028+00:00",
+  "repository": "Optidigi/insignia",
+  "pr": 90,
+  "mergeCommit": "a1738a6983f0639b5eb201163b0f678d7cee24ca",
+  "orderedParents": [
+    "0706dea3042a6f6e63fa24ea144bea1a730394d7",
+    "2628943f4c14a58f1c48e34c89f6ba85079e7527"
+  ],
+  "tree": "731203065b49b55078531ce2e19f5fc00e724a54",
+  "remoteMain": "a1738a6983f0639b5eb201163b0f678d7cee24ca",
+  "principalCheckpoint": "APPROVED",
+  "M5Completion": "CHANGES_REQUESTED_M5_G7_NOT_PASSED",
+  "attempt1Successes": [
+    38232443491,
+    38232443508,
+    38232443456
+  ]
+}

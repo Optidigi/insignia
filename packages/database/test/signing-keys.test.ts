@@ -117,4 +117,79 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('durable signing key lifecycle
       await db.destroy();
     }
   });
+  it('rechecks signing write authority after PostgreSQL installation lock waits', async () => {
+    const db = await openTestDatabase();
+    const shopId = randomUUID();
+    try {
+      await db.transaction().execute((tx) =>
+        createTenantRepository(tx).createShop(tx, {
+          shopId,
+          shopDomain: `${shopId}.myshopify.com`,
+          shopifyShopId: (BigInt(`0x${shopId.replaceAll('-', '').slice(0, 15)}`) + 1n).toString(),
+        }),
+      );
+      const store = new PgSigningKeyRepository(db);
+      const lifecycle = new SigningKeyLifecycle(store, {
+        currentKeyId: 'test-wrap',
+        keys: { 'test-wrap': randomBytes(32) },
+      });
+      const scope = await store.getActiveScope(shopId, '1');
+      if (!scope) throw new Error('Test installation missing');
+      for (const operation of ['create', 'activate']) {
+        let unlock!: () => void, locked!: (pid: number) => void;
+        const acquired = new Promise<number>((resolve) => {
+          locked = resolve;
+        });
+        const release = new Promise<void>((resolve) => {
+          unlock = resolve;
+        });
+        const blocker = db.transaction().execute(async (tx) => {
+          await sql`SELECT shop_id FROM shops WHERE shop_id=${shopId} FOR UPDATE`.execute(tx);
+          const pid = await sql<{ pid: number }>`SELECT pg_backend_pid() pid`.execute(tx);
+          const value = pid.rows[0]?.pid;
+          if (!value) throw new Error('PostgreSQL holder missing');
+          locked(value);
+          await release;
+        });
+        const holder = await acquired;
+        let allowed = true;
+        const guard = () => allowed;
+        const write =
+          operation === 'create'
+            ? lifecycle.createPending({ scope, keyId: 7, firstDay: 100, lastDay: 104, beforeWrite: guard })
+            : lifecycle.activate(scope, 7, guard);
+        const outcome = write.then(
+          () => 'written',
+          () => 'denied',
+        );
+        try {
+          let observed = false;
+          for (let attempt = 0; attempt < 100; attempt++) {
+            const wait = await sql<{
+              blocked: boolean;
+            }>`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE ${holder}=ANY(pg_blocking_pids(pid))) blocked`.execute(
+              db,
+            );
+            if (wait.rows[0]?.blocked) {
+              observed = true;
+              break;
+            }
+            await new Promise((resolve) => setTimeout(resolve, 5));
+          }
+          expect(observed).toBe(true);
+          allowed = false;
+        } finally {
+          unlock();
+          await blocker;
+        }
+        expect(await outcome).toBe('denied');
+        if (operation === 'create') {
+          expect(await store.list(scope)).toHaveLength(0);
+          await lifecycle.createPending({ scope, keyId: 7, firstDay: 100, lastDay: 104 });
+        } else expect((await store.list(scope))[0]?.state).toBe('pending');
+      }
+    } finally {
+      await db.destroy();
+    }
+  });
 });

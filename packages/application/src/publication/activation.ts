@@ -153,6 +153,8 @@ export type ActivationEvidenceV3 = Omit<
 export type ActivationEvidence = ActivationEvidenceV1 | ActivationEvidenceV2 | ActivationEvidenceV3;
 /** Server composition supplies trusted deployment provenance. Never construct from request bodies or unsigned env JSON. */
 export type ActivationReadinessPort = Readonly<{
+  /** Ephemeral caller authority; never persisted into historical evidence. */
+  beforeWrite?: () => boolean;
   expectedBuild: ExpectedFunctionBuildPort;
   trustedEvidence: TrustedFunctionArtifactEvidencePort;
   /** Ownership reconciliation must include active deployments, enabled validation and blockOnFailure flags. */
@@ -274,6 +276,9 @@ export function createPublicationActivation(input: {
     kind,
     evidenceDigest: candidate.state.evidenceDigest,
   });
+  function writeAuthorized() {
+    if (input.readiness.beforeWrite && !input.readiness.beforeWrite()) throw new Error('Activation authority expired');
+  }
   async function release(candidate: ActivationCandidate) {
     const scope: FunctionArtifactScope = {
       shopId: candidate.shopId,
@@ -306,6 +311,7 @@ export function createPublicationActivation(input: {
     remote: { projection: unknown; observedAt: string },
     hold: ProductAvailabilitySnapshot | null,
   ) {
+    writeAuthorized();
     const calendarStartedAt = now();
     if (!Number.isFinite(calendarStartedAt.getTime())) throw new Error('Invalid activation decision clock');
     let decisionAt = calendarStartedAt;
@@ -351,6 +357,7 @@ export function createPublicationActivation(input: {
     });
     fresh(remote.observedAt, decisionAt, input.maxObservationAgeMs);
     if (hold) fresh(hold.observedAt, decisionAt, input.maxObservationAgeMs);
+    writeAuthorized();
     return decisionAt;
   }
   async function held(session: ActivationSession): Promise<ProductAvailabilitySnapshot | null> {
@@ -418,6 +425,7 @@ export function createPublicationActivation(input: {
               } catch {
                 return result('ACTIVATED_RESTORATION_PENDING', c);
               }
+              writeAuthorized();
               // Commit a one-use claim before any restore can be dispatched.
               // No later invocation can reconstruct this local capability from
               // unchanged readback or a timeout: the earlier write may be in flight.
@@ -448,6 +456,7 @@ export function createPublicationActivation(input: {
           });
           if (admission === 'SAME_MODE') return null;
           if (c.state.kind === 'HOLD_INTENT') {
+            writeAuthorized();
             await session.save({ ...c.state, kind: 'ACQUISITION_PENDING' });
             dispatchAcquisition = true;
             return null;
@@ -468,6 +477,7 @@ export function createPublicationActivation(input: {
           )
             throw new Error('Hold scope mismatch');
           fresh(before.observedAt, now(), input.maxObservationAgeMs);
+          writeAuthorized();
           await session.save({
             ...c.state,
             kind: 'HOLD_INTENT',
@@ -608,6 +618,7 @@ export function createPublicationActivation(input: {
           if (admission !== 'SAME_MODE') {
             if (!c.state.hold) return result('WAITING_HOLD', c);
             if (dispatchAcquisition && c.state.kind === 'ACQUISITION_PENDING') {
+              writeAuthorized();
               const observed = await input.availability.acquire(c.availabilityScope, c.state.hold);
               if (
                 observed.kind === 'HELD' &&

@@ -27,6 +27,7 @@ export class PgActivationStore implements ActivationStore {
   constructor(
     private readonly database: Kysely<Database>,
     private readonly appClientId: string,
+    private readonly beforeWrite?: () => boolean,
   ) {
     if (!/^[A-Za-z0-9_-]{1,128}$/.test(appClientId)) throw new Error('Invalid trusted app client identity');
   }
@@ -237,6 +238,7 @@ export class PgActivationStore implements ActivationStore {
           save,
           commit: async (evidence: ActivationEvidence) => {
             guard();
+            if (this.beforeWrite && !this.beforeWrite()) throw new Error('Activation authority expired');
             const admission = classifyPublicationAdmission({
               prior: candidate.prior,
               proposed: { mode: candidate.mode, installationGeneration: candidate.scope.installationGeneration },
@@ -277,6 +279,7 @@ export class PgActivationStore implements ActivationStore {
             )
               throw new ActivationFenceError('Activation commit binding mismatch');
             const digest = activationDigest(evidence);
+            if (this.beforeWrite && !this.beforeWrite()) throw new Error('Activation authority expired');
             await sql`INSERT INTO m5_activation_evidence (shop_id, config_id, operation_id, revision_id,
             installation_generation, operation_sequence, authorization_generation, authorization_epoch, selected_key_id, evidence_digest, evidence)
             VALUES (${identity.shopId}, ${identity.configId}, ${identity.operationId}, ${evidence.revisionId},
@@ -288,6 +291,7 @@ export class PgActivationStore implements ActivationStore {
             WHERE shop_id=${identity.shopId} AND config_id=${identity.configId} AND operation_id=${identity.operationId}`.execute(
               tx,
             );
+            if (this.beforeWrite && !this.beforeWrite()) throw new Error('Activation authority expired');
             if (
               (await createPublicationRepository(tx).activate(
                 identity.shopId,
@@ -301,6 +305,7 @@ export class PgActivationStore implements ActivationStore {
               kind: evidence.hold ? 'RESTORATION_PENDING' : 'RESTORED',
               evidenceDigest: digest,
             });
+            if (this.beforeWrite && !this.beforeWrite()) throw new Error('Activation authority expired');
             return digest;
           },
         };

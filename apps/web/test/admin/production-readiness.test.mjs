@@ -95,3 +95,79 @@ test('missing release evidence never synthesizes a build, queries Functions or f
   });
   assert.throws(() => composed.currentDay(scope, at), /Trusted merchant calendar unavailable/);
 });
+
+test('delayed publication collects independently and consumes only its correlated fresh database record', async () => {
+  let stored = null;
+  let calls = 0;
+  const current = new Date('2026-10-08T12:10:00Z');
+  const freshRecord = {
+    ...record,
+    recordId: 'new-operator-record',
+    attestation: { ...record.attestation, observedAt: current.toISOString(), expiresAt: '2026-10-08T12:10:30Z' },
+  };
+  const records = readiness.createDemandDrivenReleaseReader({
+    records: { read: async () => stored },
+    now: () => current,
+    binding: {
+      ...scope,
+      authorizationGeneration: 'test-auth',
+      authorizationEpoch: 0,
+      externalInstallationId: 'installation-9',
+    },
+    isCurrent: async () => {},
+    deadline: () => current.getTime() + 60_000,
+    collector: {
+      async collect(request) {
+        calls++;
+        assert.equal(request.expectedActiveAppVersionRef, '1163229200385');
+        assert.equal(request.binding.authorizationGeneration, 'test-auth');
+        stored = { record: freshRecord, expectedBuild: build };
+        return { requestId: request.requestId, recordId: freshRecord.recordId, state: 'COMPLETE' };
+      },
+    },
+  });
+  const read = { scope, expectedActiveAppVersionRef: '1163229200385', now: current };
+  assert.deepEqual(await records.read(read), stored);
+  assert.equal(calls, 1);
+  assert.deepEqual(await records.read(read), stored);
+  assert.equal(calls, 1);
+});
+
+test('concurrent publication coalesces collection and refuses expired or unrelated completion', async () => {
+  const inFlight = new Map();
+  let release;
+  let calls = 0;
+  const current = new Date('2026-10-08T12:10:00Z');
+  const base = {
+    records: { read: async () => null },
+    now: () => current,
+    binding: {
+      ...scope,
+      authorizationGeneration: 'test-auth',
+      authorizationEpoch: 0,
+      externalInstallationId: 'installation-9',
+    },
+    isCurrent: async () => {},
+    deadline: () => current.getTime() + 60_000,
+    inFlight,
+    collector: {
+      collect: async (request) => {
+        calls++;
+        await new Promise((resolve) => {
+          release = resolve;
+        });
+        return { requestId: request.requestId, recordId: 'unrelated', state: 'COMPLETE' };
+      },
+    },
+  };
+  const read = { scope, expectedActiveAppVersionRef: '1163229200385', now: current };
+  const a = readiness.createDemandDrivenReleaseReader(base).read(read);
+  const b = readiness.createDemandDrivenReleaseReader(base).read(read);
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(calls, 1);
+  release();
+  assert.deepEqual(await Promise.all([a, b]), [null, null]);
+  const expired = readiness.createDemandDrivenReleaseReader({ ...base, deadline: () => current.getTime() });
+  await assert.rejects(expired.read(read), /identity expired/);
+  assert.equal(calls, 1);
+});

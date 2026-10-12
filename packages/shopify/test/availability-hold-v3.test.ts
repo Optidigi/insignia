@@ -148,6 +148,7 @@ test('acquire preserves the hidden anchor and accepts distinct ACK/readback upda
 });
 
 type Scenario = {
+  beforeWrite?: () => boolean;
   ackNonEffective?: 'acquire' | 'restore' | 'compensate';
   ackTiming?: { phase: 'acquire' | 'restore' | 'compensate'; publishDate: string; isPublished: boolean };
   missingAfterRestore?: boolean;
@@ -279,6 +280,7 @@ function lifecycle(options: Scenario = {}) {
     fetchImpl: fetchImpl as typeof fetch,
     now: () => clock,
     timeoutMs: 10000,
+    beforeWrite: options.beforeWrite,
   };
   const port = createShopifyAvailabilityHoldV3Port(config);
   return {
@@ -889,3 +891,13 @@ for (const phase of ['acquire', 'restore', 'compensate'] as const) {
     });
   }
 }
+
+test('expired request authority denies acquisition at the actual provider dispatch boundary', async () => {
+  let allowed = true;
+  const f = lifecycle({ beforeWrite: () => allowed });
+  const before = await f.port.snapshot(scope, productId);
+  const hold = { version: 'm5-availability-hold-v3' as const, operationId: 'guarded-acquire', before, held: null };
+  allowed = false;
+  await expect(f.port.acquire(scope, hold)).rejects.toMatchObject({ kind: 'not_dispatched' });
+  expect(f.writes).toEqual([]);
+});
