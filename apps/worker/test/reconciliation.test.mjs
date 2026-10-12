@@ -2,6 +2,22 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { createWorkerReconciliation } from '../dist/reconciliation.js';
 
+test('buyer payload expiry runs independently when artwork erasure fails', async () => {
+  const input = fixture();
+  let erased = 0;
+  input.core.buyers = {
+    async cleanupDue(limit) {
+      assert.equal(limit, 100);
+      erased++;
+    },
+  };
+  input.artwork.cleanup = async () => {
+    throw new Error('storage unavailable');
+  };
+  await createWorkerReconciliation(input).runOnce();
+  assert.equal(erased, 1);
+});
+
 function fixture() {
   const seen = [],
     errors = [];

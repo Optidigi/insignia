@@ -34,6 +34,7 @@ apps/*/.astro/
 apps/*/playwright-report/
 apps/*/test-results/
 extensions/insignia-theme/assets/insignia-storefront.js
+extensions/insignia-theme/assets/insignia-*.js
 crates/*/target/
 target/
 extensions/insignia-cart-*/target/

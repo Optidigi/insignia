@@ -60,6 +60,11 @@ class FakeNode {
   }
 }
 
+function required<T>(value: T | null | undefined): T {
+  if (value == null) throw new Error('Missing test fixture');
+  return value;
+}
+
 const konva = {
   Stage: FakeNode,
   Layer: FakeNode,
@@ -70,6 +75,205 @@ const konva = {
 };
 
 describe('imperative renderer boundary', () => {
+  it('renders two independently bounded LOGO placeholders and an empty array hides the legacy artwork', () => {
+    let stage: FakeNode | undefined;
+    const renderer = createVisualizerWithKonva(
+      { element: { clientWidth: 500, clientHeight: 300 } as HTMLElement, onCommand: () => {}, onStatus: () => {} },
+      {
+        ...konva,
+        Stage: class extends FakeNode {
+          constructor(attrs: Record<string, unknown>) {
+            super(attrs);
+            stage = this;
+          }
+        },
+      } as never,
+    );
+    const left = { x: 40, y: 50, width: 120, height: 80 };
+    const right = { x: 230, y: 70, width: 90, height: 60 };
+    renderer.update({
+      version: 1,
+      status: 'ready',
+      placements: [],
+      artwork: { kind: 'logo-later', bounds: left },
+      artworks: [
+        { placementId: 'chest', kind: 'logo-later', bounds: left },
+        { placementId: 'sleeve', kind: 'logo-later', bounds: right },
+      ],
+    });
+    const logos = required(required(stage).children[1]).children.filter(
+      (node) => node.attrs.text === 'LOGO' && node.attrs.visible,
+    );
+    expect(logos).toHaveLength(2);
+    expect(required(logos[0]).attrs).toMatchObject({
+      ...left,
+      visible: true,
+      fontStyle: 'bold',
+      align: 'center',
+      verticalAlign: 'middle',
+    });
+    expect(required(logos[1]).attrs).toMatchObject({
+      ...right,
+      visible: true,
+      fontStyle: 'bold',
+      align: 'center',
+      verticalAlign: 'middle',
+    });
+    renderer.update({
+      version: 2,
+      status: 'ready',
+      placements: [],
+      artwork: { kind: 'logo-later', bounds: left },
+      artworks: [],
+    });
+    expect(logos.every((node) => node.attrs.destroyed)).toBe(true);
+    expect(
+      required(required(stage).children[1]).children.filter(
+        (node) => node.attrs.text === 'LOGO' && node.attrs.visible && !node.attrs.destroyed,
+      ),
+    ).toHaveLength(0);
+    renderer.destroy();
+  });
+  it('loads mixed placement rasters independently, ignores stale completion and disposes removed nodes', () => {
+    let stage: FakeNode | undefined;
+    const images: HTMLImageElement[] = [];
+    const renderer = createVisualizerWithKonva(
+      {
+        element: { clientWidth: 500, clientHeight: 300 } as HTMLElement,
+        onCommand: () => {},
+        onStatus: () => {},
+        imageFactory: () => {
+          const candidate = { onload: null, onerror: null, src: '' } as unknown as HTMLImageElement;
+          images.push(candidate);
+          return candidate;
+        },
+      },
+      {
+        ...konva,
+        Stage: class extends FakeNode {
+          constructor(attrs: Record<string, unknown>) {
+            super(attrs);
+            stage = this;
+          }
+        },
+      } as never,
+    );
+    const bounds = { x: 40, y: 50, width: 120, height: 80 };
+    const logo = { placementId: 'logo', kind: 'logo-later' as const, bounds };
+    const left = { placementId: 'left', kind: 'raster' as const, bounds, url: 'https://assets.test/left-old.png' };
+    const right = {
+      placementId: 'right',
+      kind: 'raster' as const,
+      bounds: { ...bounds, x: 230 },
+      url: 'https://assets.test/right.png',
+    };
+    renderer.update({ version: 1, status: 'ready', placements: [], artworks: [logo, left, right] });
+    expect(images).toHaveLength(2);
+    const staleLoad = required(required(images[0]).onload);
+    const leftNode = required(
+      required(required(stage).children[1]).children.find((node) => node.attrs.name === 'artwork-image:left'),
+    );
+    const rightNode = required(
+      required(required(stage).children[1]).children.find((node) => node.attrs.name === 'artwork-image:right'),
+    );
+    renderer.update({
+      version: 2,
+      status: 'ready',
+      placements: [],
+      artworks: [logo, { ...left, url: 'https://assets.test/left-new.png' }, right],
+    });
+    expect(images).toHaveLength(3);
+    expect(required(images[0]).onload).toBeNull();
+    staleLoad.call(required(images[0]), new Event('load'));
+    expect(leftNode.attrs.visible).toBe(false);
+    required(required(images[1]).onload).call(required(images[1]), new Event('load'));
+    expect(rightNode.attrs).toMatchObject({ visible: true, image: images[1] });
+    const removedLoad = required(required(images[2]).onload);
+    required(required(images[2]).onload).call(required(images[2]), new Event('load'));
+    expect(leftNode.attrs).toMatchObject({ visible: true, image: images[2] });
+    renderer.update({ version: 3, status: 'ready', placements: [], artworks: [logo, right] });
+    expect(required(images[2]).onload).toBeNull();
+    expect(required(images[2]).onerror).toBeNull();
+    expect(
+      required(required(stage).children[1])
+        .children.filter((node) => String(node.attrs.name).endsWith(':left'))
+        .every((node) => node.attrs.destroyed),
+    ).toBe(true);
+    removedLoad.call(required(images[2]), new Event('load'));
+    expect(leftNode.attrs.visible).toBe(false);
+    expect(leftNode.attrs.image).toBeUndefined();
+    expect(rightNode.attrs).toMatchObject({ visible: true, image: images[1] });
+    renderer.destroy();
+    expect(required(images[1]).onload).toBeNull();
+    expect(required(images[1]).onerror).toBeNull();
+    expect(rightNode.attrs.destroyed).toBe(true);
+  });
+
+  it('resizes every placement from original bounds without mutating the scene', () => {
+    let stage: FakeNode | undefined;
+    const renderer = createVisualizerWithKonva(
+      { element: { clientWidth: 500, clientHeight: 300 } as HTMLElement, onCommand: () => {}, onStatus: () => {} },
+      {
+        ...konva,
+        Stage: class extends FakeNode {
+          constructor(attrs: Record<string, unknown>) {
+            super(attrs);
+            stage = this;
+          }
+        },
+      } as never,
+    );
+    const scene = {
+      version: 1,
+      status: 'ready' as const,
+      placements: [],
+      image: { revisionId: 'image', width: 100, height: 100 },
+      contentRect: { x: 100, y: 0, width: 300, height: 300 },
+      artworks: [
+        { placementId: 'left', kind: 'logo-later' as const, bounds: { x: 130, y: 30, width: 60, height: 60 } },
+        { placementId: 'right', kind: 'logo-later' as const, bounds: { x: 280, y: 180, width: 90, height: 60 } },
+      ],
+    };
+    const original = structuredClone(scene);
+    renderer.update(scene);
+    renderer.resize({ width: 200, height: 200, pixelRatio: 1 });
+    const logos = required(required(stage).children[1]).children.filter(
+      (node) => node.attrs.text === 'LOGO' && node.attrs.visible,
+    );
+    expect(required(logos[0]).attrs).toMatchObject({ x: 20, y: 20, width: 40, height: 40 });
+    expect(required(logos[1]).attrs).toMatchObject({ x: 120, y: 120, width: 60, height: 40 });
+    expect(scene).toEqual(original);
+    renderer.destroy();
+  });
+
+  it('shows bounded LOGO text for logo-later and removes it when the artwork choice changes', () => {
+    let stage: FakeNode | undefined;
+    const renderer = createVisualizerWithKonva(
+      { element: { clientWidth: 500, clientHeight: 300 } as HTMLElement, onCommand: () => {}, onStatus: () => {} },
+      {
+        ...konva,
+        Stage: class extends FakeNode {
+          constructor(attrs: Record<string, unknown>) {
+            super(attrs);
+            stage = this;
+          }
+        },
+      } as never,
+    );
+    const bounds = { x: 40, y: 50, width: 120, height: 80 };
+    renderer.update({ version: 1, status: 'ready', placements: [], artwork: { kind: 'logo-later', bounds } });
+    const logo = stage?.children[1]?.children.find((node) => node.attrs.text === 'LOGO');
+    expect(logo?.attrs).toMatchObject({
+      ...bounds,
+      visible: true,
+      align: 'center',
+      verticalAlign: 'middle',
+      fontStyle: 'bold',
+    });
+    renderer.update({ version: 2, status: 'ready', placements: [] });
+    expect(logo?.attrs.visible).toBe(false);
+    renderer.destroy();
+  });
   it('emits normalized edits and redraws from the owner scene after rerender', () => {
     const state: EditorState = {
       version: 7,

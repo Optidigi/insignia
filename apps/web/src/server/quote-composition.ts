@@ -171,7 +171,7 @@ export function createQuoteAuthorityPorts(input: {
         if (!Number.isSafeInteger(capacity.inputBytes) || capacity.inputBytes < 0 || capacity.inputBytes > 128_000)
           throw new Error('cart input availability estimate exceeds candidate reference');
       },
-      async issue({ quote }) {
+      async issue({ quote, window }) {
         const members = membersFor(quote);
         const setId = ids.setId();
         const header: Header = {
@@ -185,18 +185,23 @@ export function createQuoteAuthorityPorts(input: {
           exponent: quote.presentmentExponent,
           country: quote.country,
           marketId: quote.marketId,
-          validThroughDay: quote.validThroughDay,
+          validThroughDay: window?.validThroughDay ?? quote.validThroughDay,
           totalQuantity: quote.economics.customizedQuantity,
           totalMinor: quote.economics.totalMinor,
         };
-        const signed = await issueWholeQuote(header, members, quote.acceptedDay, input.signing.signer);
+        const signed = await issueWholeQuote(
+          header,
+          members,
+          window?.issuedDay ?? quote.acceptedDay,
+          input.signing.signer,
+        );
         return {
           setId,
           keyId: signed.keyId,
           publicKeyFingerprint: signed.publicKeyFingerprint,
           firstValidDay: signed.firstValidDay,
           lastValidDay: signed.lastValidDay,
-          validThroughDay: quote.validThroughDay,
+          validThroughDay: window?.validThroughDay ?? quote.validThroughDay,
           envelopeCarrier: signed.envelope,
           members: signed.members.map((carrier, lineIndex) => ({ lineIndex, carrier })),
         };

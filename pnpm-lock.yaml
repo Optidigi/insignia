@@ -187,6 +187,12 @@ importers:
 
   apps/storefront:
     dependencies:
+      '@insignia/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
+      '@insignia/visualizer':
+        specifier: workspace:*
+        version: link:../../packages/visualizer
       preact:
         specifier: 10.29.8
         version: 10.29.8(preact-render-to-string@6.7.0)

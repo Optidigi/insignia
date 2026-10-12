@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createArtworkUsabilityPort } from '../artwork/artwork.js';
-import { acceptQuote, localDay, normalizeMarketId, type QuoteAuthorityPorts } from './accept-quote.js';
+import { acceptQuote, localDay, normalizeMarketId, prepareQuote, type QuoteAuthorityPorts } from './accept-quote.js';
+
+import { materialHash } from './material.js';
 
 const hash = 'a'.repeat(64);
 const now = new Date('2026-11-01T05:30:00.000Z');
@@ -148,6 +150,62 @@ function fixture() {
 }
 
 describe('acceptQuote', () => {
+  it('material comparison ignores refreshed evidence but detects changed allocation at the same total', async () => {
+    const { ports } = fixture();
+    const original = (await prepareQuote(request, ports)).quote;
+    const refreshed = structuredClone(original);
+    refreshed.quoteId = '44444444-4444-4444-8444-444444444444';
+    refreshed.acceptedAt = '2026-11-02T05:30:00.000Z';
+    refreshed.acceptedDate = '2026-11-02';
+    refreshed.acceptedDay++;
+    refreshed.validThroughDay++;
+    refreshed.economics = {
+      ...refreshed.economics,
+      effectiveAt: refreshed.acceptedAt,
+      groups: refreshed.economics.groups.map((entry) => ({
+        ...entry,
+        variants: entry.variants.map((variant) => ({ ...variant, contextId: 'new-observation' })),
+      })),
+    };
+    refreshed.catalogSnapshots = refreshed.catalogSnapshots.map((entry) => ({
+      ...entry,
+      observedAt: refreshed.acceptedAt,
+      freshUntil: '2026-11-02T05:35:00.000Z',
+      correlation: { requestId: 'new' },
+    }));
+    refreshed.artworkChecks = refreshed.artworkChecks.map((entry) => ({ ...entry, observedAt: refreshed.acceptedAt }));
+    refreshed.effectiveRevisions = refreshed.effectiveRevisions.map((entry) => ({
+      ...entry,
+      operationId: 'new-operation',
+    }));
+    expect(materialHash(refreshed)).toBe(materialHash(original));
+    const changed = structuredClone(refreshed);
+    changed.economics = {
+      ...changed.economics,
+      lines: changed.economics.lines.map((line, index) => ({
+        ...line,
+        unitPriceMinor: index === 0 ? '999' : '1002',
+        lineTotalMinor: index === 0 ? '999' : '1002',
+      })),
+    };
+    expect(changed.economics.totalMinor).toBe(original.economics.totalMinor);
+    expect(materialHash(changed)).not.toBe(materialHash(original));
+    expect(materialHash({ ...refreshed, shopTimezone: 'Europe/Amsterdam' })).not.toBe(materialHash(original));
+  });
+
+  it('prepares authoritative pricing without issuing or persisting an accepted offer', async () => {
+    const { ports, saved } = fixture();
+    const candidate = await prepareQuote(request, ports);
+    expect(candidate.quote.economics.totalMinor).toBe('2001');
+    expect(candidate.requestDigest).toMatch(/^[a-f0-9]{64}$/);
+    expect(candidate.quote.artworkChecks).toHaveLength(1);
+    expect(ports.readiness.assertReady).toHaveBeenCalledWith({ quote: candidate.quote });
+    expect(ports.authorization.issue).not.toHaveBeenCalled();
+    expect(ports.store.accept).not.toHaveBeenCalled();
+    expect(ports.store.findCompleted).not.toHaveBeenCalled();
+    expect(saved).toEqual([]);
+  });
+
   it('cached authorization and transactional replay remain bound to verified artwork owner authority', async () => {
     const { ports } = fixture();
     const scope = { shopId: 'shop', installationGeneration: '1', kind: 'guest' as const, ownerHash: 'a'.repeat(64) };

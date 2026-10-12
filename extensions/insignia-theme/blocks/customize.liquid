@@ -1,0 +1,4 @@
+<insignia-buyer trigger-label="{{ block.settings.button_label | escape }}" product-id="{{ product.id }}" proxy-base="{{ routes.root_url }}apps/{{ block.settings.proxy_prefix | escape }}" cart-root="{{ routes.root_url }}" country="{{ localization.country.iso_code }}" market-id="{{ localization.market.id }}" {{ block.shopify_attributes }}></insignia-buyer>
+{% schema %}
+{"name":"Insignia customization","target":"section","javascript":"insignia-storefront.js","settings":[{"type":"text","id":"button_label","label":"Button label","default":"Customize this product"},{"type":"text","id":"proxy_prefix","label":"App proxy prefix","default":"insignia"}]}
+{% endschema %}

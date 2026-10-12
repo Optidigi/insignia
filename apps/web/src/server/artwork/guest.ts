@@ -18,9 +18,14 @@ export function createArtworkGuestAuthority(input: {
   verifyProxy(url: URL): Promise<{ shop: string } | null>;
   secret: string;
   clock?: () => number;
+  /** Explicit buyer-session budget; standalone M6 callers keep their four-hour window. */
+  sessionDurationMs?: number;
 }) {
   if (!input.secret) throw new Error('Guest capability configuration missing');
   const clock = input.clock ?? Date.now;
+  const sessionDurationMs = input.sessionDurationMs ?? 4 * 60 * 60 * 1000;
+  if (!Number.isSafeInteger(sessionDurationMs) || sessionDurationMs < 60_000 || sessionDurationMs > 7 * 86400_000)
+    throw new Error('Guest session duration invalid');
   const digest = (body: string) =>
     createHmac('sha256', input.secret).update('insignia-artwork-guest-v1\0').update(body).digest();
   async function resource(request: Request, expected?: Guest) {
@@ -47,11 +52,22 @@ export function createArtworkGuestAuthority(input: {
     return { shop, productId };
   }
   return {
+    async resolve(request: Request) {
+      if (request.method !== 'GET') return null;
+      const authorized = await resource(request);
+      return authorized
+        ? {
+            shopId: authorized.shop.shopId,
+            installationGeneration: authorized.shop.currentGeneration,
+            productId: authorized.productId,
+          }
+        : null;
+    },
     async issue(request: Request) {
       if (request.method !== 'GET') return null;
       const authorized = await resource(request);
       if (!authorized) return null;
-      const expiresAt = clock() + 4 * 60 * 60 * 1000;
+      const expiresAt = clock() + sessionDurationMs;
       const guest: Guest = {
         version: 'm6-guest-v1',
         shop: authorized.shop.shopDomain,
@@ -97,7 +113,7 @@ export function createArtworkGuestAuthority(input: {
         guest.version !== 'm6-guest-v1' ||
         !Number.isSafeInteger(guest.expiresAt) ||
         guest.expiresAt <= clock() ||
-        guest.expiresAt > clock() + 4 * 60 * 60 * 1000 ||
+        guest.expiresAt > clock() + sessionDurationMs ||
         typeof guest.nonce !== 'string' ||
         !/^[A-Za-z0-9_-]{43}$/.test(guest.nonce)
       )

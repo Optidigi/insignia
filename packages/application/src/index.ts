@@ -18,6 +18,8 @@ export * from './publication/availability-v2.js';
 export * from './publication/availability-v3.js';
 export * from './publication/projection.js';
 export * from './quote/accept-quote.js';
+export * from './quote/material.js';
+export * from './quote/renew-quote.js';
 export * from './shopify/admin-credential-bridge.js';
 export * from './shopify/ingress.js';
 export * from './shopify/offline-credentials.js';

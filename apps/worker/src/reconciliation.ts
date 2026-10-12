@@ -19,6 +19,10 @@ export function createWorkerReconciliation(input: {
         { errorClass: 'WEBHOOK_RETENTION_UNAVAILABLE', run: () => maintainWebhookRetention(input.core, input.queue) },
         { errorClass: 'UNINSTALL_RECOVERY_UNAVAILABLE', run: () => recoverPendingUninstalls(input.core, input.queue) },
         { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE', run: () => input.artwork?.cleanup(20) },
+        {
+          errorClass: 'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE',
+          run: () => input.core.buyers?.cleanupDue(100),
+        },
       ];
       for (const operation of operations) {
         if (stopped) break;

@@ -13,4 +13,5 @@ export * from './open-exchange-rates.js';
 export * from './publication-admin.js';
 export * from './refresh.js';
 export * from './shop-context.js';
+export * from './storefront/variant-availability.js';
 export * from './webhook.js';
