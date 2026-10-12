@@ -7,6 +7,7 @@ import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { runImageCommand } from '../m5-024/image-observations.mjs';
+import { qualifyOwnerInputImage } from './owner-session-input-image-control.mjs';
 import { ownedWebAddress } from './web-address.mjs';
 
 const root = resolve(import.meta.dirname, '../..');
@@ -92,6 +93,8 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
       '--read-only',
       '--cap-drop=ALL',
       '--security-opt=no-new-privileges',
+      '--mount',
+      `type=bind,src=${join(root, 'scripts/m5-runtime/owner-session-input.mjs')},dst=/srv/insignia/owner-session-input.mjs,readonly`,
       '--health-cmd',
       '/usr/local/bin/node -e "fetch(\'http://127.0.0.1:3000/live\').then(r=>process.exit(r.status===200?0:1)).catch(()=>process.exit(1))"',
       '--health-interval',
@@ -108,6 +111,7 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
     assert.deepEqual(running.HostConfig.CapDrop, ['ALL']);
     assert.equal(running.Config.User, 'node');
     const address = ownedWebAddress(running.NetworkSettings, network);
+    await qualifyOwnerInputImage(container, address);
     const response = await fetch(address, { signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]) });
     assert.equal(response.status, 200);
     assert.deepEqual(await response.json(), { status: 'live' });
@@ -141,6 +145,7 @@ test('actual disposable web image serves HTTP, stops, restarts and exports exact
       'owned-internal-ipv4-http-no-published-ports',
       'sigterm-stop',
       'restart-http',
+      'private-owner-input-real-image-sdk-pipe-and-http',
     ];
     await docker(['image', 'save', '--output', artifact, image.Id]);
     const hash = createHash('sha256');

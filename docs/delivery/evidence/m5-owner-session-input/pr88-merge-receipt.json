@@ -1,0 +1,12 @@
+{
+  "classification": "VERIFIED_NORMAL_MERGE",
+  "PR": "https://github.com/Optidigi/insignia/pull/88",
+  "merge": "11f3318133abf1fd1e1931d18238dd9896487581",
+  "orderedParents": ["1bd59984ec6acf1f290bff7e54f51f3d1c8ed053", "8f56c02fc4fa326d71e8be2d204896dbbbca1877"],
+  "tree": "31cce31219128c0c83e8209069485ebf6fc5d586",
+  "remoteMain": "11f3318133abf1fd1e1931d18238dd9896487581",
+  "effectiveMergeBase": "1bd59984ec6acf1f290bff7e54f51f3d1c8ed053",
+  "reviews": "CLEAR/CLEAR",
+  "ciRuns": [38188977090, 38188977098, 38188977109],
+  "ciAttempt": 1
+}

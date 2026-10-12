@@ -89,7 +89,7 @@ jobs:
       - name: Owner trusted-release collector local accounting and process controls
         run: node --test --test-concurrency=1 scripts/m5-runtime/trusted-release-collector.test.mjs scripts/m5-runtime/trusted-release-owner-boundaries.test.mjs scripts/m5-runtime/trusted-release-launch.test.mjs
       - name: Function setup durable admission and fresh-process crash control
-        run: node --test scripts/m5-runtime/function-setup-journal.test.mjs scripts/m5-runtime/function-setup-network.test.mjs scripts/m5-runtime/function-setup-native.test.mjs
+        run: node --test scripts/m5-runtime/function-setup-journal.test.mjs scripts/m5-runtime/function-setup-network.test.mjs scripts/m5-runtime/function-setup-native.test.mjs scripts/m5-runtime/owner-session-input.test.mjs
       - name: Frozen schema-owner operator and effective PostgreSQL18 roles (isolated database)
         run: M5_SCHEMA_TEST_URL="$DATABASE_URL" M5_DB_ROTATION_TEST_URL="$DATABASE_URL" node --test --test-concurrency=1 scripts/m5-runtime/db-password-rotation.test.mjs scripts/m5-runtime/db-password-rotation-package.test.mjs scripts/m5-runtime/schema-provision.test.mjs scripts/m5-runtime/schema-provision-package.test.mjs scripts/m5-runtime/schema-forward19-package.test.mjs scripts/m5-runtime/schema-forward20-package.test.mjs scripts/m5-runtime/release-append.test.mjs scripts/m5-runtime/signing-provision.test.mjs scripts/m5-runtime/signing-provision-core.test.mjs
       - run: corepack pnpm check:style
