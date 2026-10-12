@@ -7,6 +7,7 @@ export {
 } from './credentials/envelope.js';
 export { createDurableCore, type DurableCore, type DurableTransaction } from './durable-core.js';
 export { canonicalJson, revisionContentHash, sha256CanonicalJson } from './hash/canonical.js';
+export { type BuyerProposal, type BuyerRepository, type BuyerScope, BuyerStateError } from './repositories/buyer.js';
 export { CONFIG_DRAFT_STORAGE_VERSION, type ConfigRecord, type RevisionRecord } from './repositories/config.js';
 export {
   applyOwnerLifecycleDecision,

@@ -89,7 +89,7 @@ async function assertReplayKeyUsable(
     throw new Error('idempotency key belongs to revoked signing key');
 }
 
-function validateEconomicConservation(value: StoredResult): void {
+export function validateEconomicConservation(value: StoredResult): void {
   const { economics } = value.quote;
   if (
     !Number.isInteger(economics.customizedQuantity) ||
@@ -135,7 +135,7 @@ function uuidHex(value: string): string {
 }
 
 /** Compare every persisted v2 claim to the immutable economic row before INSERT. */
-function validateAuthorizationMetadata(value: StoredResult): void {
+export function validateAuthorizationMetadata(value: StoredResult): void {
   const { quote, authorization } = value;
   if (!Number.isSafeInteger(authorization.keyId) || authorization.keyId < 1 || authorization.keyId > 65535)
     throw new Error('authorization key ID is not numeric u16');
@@ -177,7 +177,7 @@ function validateAuthorizationMetadata(value: StoredResult): void {
   }
 }
 
-async function assertNewAuthorizationKey(transaction: Kysely<Database>, value: StoredResult): Promise<void> {
+export async function assertNewAuthorizationKey(transaction: Kysely<Database>, value: StoredResult): Promise<void> {
   const { quote, authorization } = value;
   const found = await sql<{
     public_key: Buffer;

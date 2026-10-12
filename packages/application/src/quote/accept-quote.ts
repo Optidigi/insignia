@@ -168,9 +168,16 @@ export interface QuoteAcceptanceStore {
 
 /** Inject the production whole-quote package here during integration. It receives the complete
  * M2 economics, performs candidate admission, and emits exact protocol carriers. */
+export type QuoteIssuanceWindow = {
+  issuedAt: string;
+  issuedDay: number;
+  validThroughDay: number;
+  shopTimezone: string;
+};
+
 export interface CartAuthorizationPort {
   admit(input: { economics: ProposalEconomics; capacity: QuoteRequest['capacity'] }): void;
-  issue(input: { quote: AcceptedQuote }): Promise<QuoteAuthorizationSet>;
+  issue(input: { quote: AcceptedQuote; window?: QuoteIssuanceWindow }): Promise<QuoteAuthorizationSet>;
 }
 
 export interface QuoteAuthorityPorts {
@@ -422,7 +429,10 @@ function validAuthorization(quote: AcceptedQuote, set: QuoteAuthorizationSet): v
     throw new Error('incomplete or invalid whole-quote authorization');
 }
 
-export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPorts): Promise<AcceptedQuoteResult> {
+function validatedRequest(
+  request: QuoteRequest,
+  ports: QuoteAuthorityPorts,
+): { marketId: string; requestDigest: string } {
   if (
     !request.shopId ||
     !/^[1-9][0-9]*$/.test(request.installationGeneration) ||
@@ -474,6 +484,27 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     digest.update('\0m6-quote-resource-authority-v1\0').update(binding);
   }
   const requestDigest = digest.digest('hex');
+  return { marketId, requestDigest };
+}
+
+/** Unsigned authoritative candidate. It is evidence for buyer review, never a reusable acceptance command. */
+export type PreparedQuote = { quote: AcceptedQuote; requestDigest: string };
+
+/** Trusted server commands use the same bounded, owner-bound digest for durable replay links. */
+export function quoteRequestDigest(request: QuoteRequest, ports: QuoteAuthorityPorts): string {
+  return validatedRequest(request, ports).requestDigest;
+}
+
+export async function prepareQuote(request: QuoteRequest, ports: QuoteAuthorityPorts): Promise<PreparedQuote> {
+  const { marketId, requestDigest } = validatedRequest(request, ports);
+  const tenant = requireTenant(await ports.tenant.getActive(request.shopId, request.installationGeneration), request);
+  const prepared = await prepareValidatedQuote(request, ports, tenant, marketId, requestDigest);
+  await ports.readiness.assertReady({ quote: prepared.quote });
+  return { quote: prepared.quote, requestDigest: prepared.requestDigest };
+}
+
+export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPorts): Promise<AcceptedQuoteResult> {
+  const { marketId, requestDigest } = validatedRequest(request, ports);
   const tenant = requireTenant(await ports.tenant.getActive(request.shopId, request.installationGeneration), request);
   const completed = await ports.store.findCompleted({
     shopId: request.shopId,
@@ -484,6 +515,17 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     requestDigest,
   });
   if (completed) return completed;
+  const prepared = await prepareValidatedQuote(request, ports, tenant, marketId, requestDigest);
+  return ports.store.accept(prepared.fence, prepared.commit);
+}
+
+async function prepareValidatedQuote(
+  request: QuoteRequest,
+  ports: QuoteAuthorityPorts,
+  tenant: ActiveQuoteTenant,
+  marketId: string,
+  requestDigest: string,
+) {
   const entitlement = await ports.entitlement.getFresh(tenant);
   requireEntitlement(entitlement);
   const shop = await ports.shop.getContext(tenant);
@@ -666,8 +708,10 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
     fxSnapshot,
     economics: acceptedEconomics(economics),
   };
-  return ports.store.accept(
-    {
+  return {
+    quote,
+    requestDigest,
+    fence: {
       shopId: request.shopId,
       installationGeneration: request.installationGeneration,
       authorizationGeneration: tenant.authorizationGeneration,
@@ -676,7 +720,7 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
       requestDigest,
       effectiveRevisions: quote.effectiveRevisions,
     },
-    async () => {
+    commit: async () => {
       await usableArtwork(ports.artwork, request, shop.timezone, choices, quote.validThroughDay, ports.clock);
       const current = requireTenant(
         await ports.tenant.getActive(request.shopId, request.installationGeneration),
@@ -735,5 +779,5 @@ export async function acceptQuote(request: QuoteRequest, ports: QuoteAuthorityPo
       validAuthorization(quote, authorization);
       return { quote, authorization };
     },
-  );
+  };
 }

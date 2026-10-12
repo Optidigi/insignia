@@ -13,6 +13,17 @@ import {
   type PublicationAdminTransport,
 } from '@insignia/shopify';
 
+/** Configuration readiness uses actual scope/day/publication facts without manufacturing a quote. */
+export type QuoteReadinessTarget = Pick<
+  AcceptedQuote,
+  | 'shopId'
+  | 'installationGeneration'
+  | 'authorizationGeneration'
+  | 'authorizationEpoch'
+  | 'acceptedDay'
+  | 'effectiveRevisions'
+>;
+
 /** No default deployment trust: Admin object observations alone cannot attest deployed Wasm identity. */
 export function createProductionQuoteReadiness(input: {
   core: DurableCore;
@@ -24,7 +35,7 @@ export function createProductionQuoteReadiness(input: {
   maxObservationAgeMs: number;
   clock?: () => Date;
   artifactPorts?: FunctionArtifactReadinessPorts;
-}): { assertReady(input: { quote: AcceptedQuote }): Promise<void> } {
+}): { assertReady(input: { quote: QuoteReadinessTarget }): Promise<void> } {
   const keys = new SigningKeyLifecycle(input.core.signingKeys, input.ring);
   const admin = createPublicationAdminAdapter({ transport: input.transport });
   const now = input.clock ?? (() => new Date());

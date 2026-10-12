@@ -2,6 +2,7 @@ import { createArtworkService } from '@insignia/application';
 import { createAppProxyVerifier } from '@insignia/shopify';
 import { loadArtworkStorageProfile } from '@insignia/storage';
 import { adminServices } from '../admin/runtime.js';
+import { buyerServices } from '../buyer/runtime.ts';
 import { webRuntime } from '../runtime.js';
 import { createArtworkGuestAuthority } from './guest.js';
 import type { ArtworkHttpServices } from './http.js';
@@ -30,18 +31,20 @@ export async function createProductionArtworkServices(
     },
   });
   const proxyPrefix = env.ARTWORK_PROXY_PATH_PREFIX;
-  const guest = proxyPrefix
-    ? createArtworkGuestAuthority({
-        core,
-        secret: required('SHOPIFY_CLIENT_SECRET'),
-        verifyProxy: createAppProxyVerifier({
-          apiKey: required('SHOPIFY_CLIENT_ID'),
-          apiSecret: required('SHOPIFY_CLIENT_SECRET'),
-          hostName: new URL(appOrigin).host,
-          pathPrefix: proxyPrefix,
-        }),
-      })
-    : undefined;
+  const guest =
+    buyerServices()?.guest ??
+    (proxyPrefix
+      ? createArtworkGuestAuthority({
+          core,
+          secret: required('SHOPIFY_CLIENT_SECRET'),
+          verifyProxy: createAppProxyVerifier({
+            apiKey: required('SHOPIFY_CLIENT_ID'),
+            apiSecret: required('SHOPIFY_CLIENT_SECRET'),
+            hostName: new URL(appOrigin).host,
+            pathPrefix: proxyPrefix,
+          }),
+        })
+      : undefined);
   return {
     appOrigin,
     artwork,

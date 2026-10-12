@@ -6,6 +6,7 @@ import type {
   InboxRepository,
   OutboxRepository,
   QuoteAcceptanceStore,
+  QuoteRenewalStore,
   SigningKeyStore,
   TransactionRunner,
 } from '@insignia/application';
@@ -19,6 +20,7 @@ import type { CredentialKeyRing } from './credentials/envelope.js';
 import { sha256CanonicalJson } from './hash/canonical.js';
 import { PgAcceptedQuoteRepository } from './repositories/accepted-quote.js';
 import { createArtworkRepository } from './repositories/artwork.js';
+import { type BuyerRepository, createBuyerRepository } from './repositories/buyer.js';
 import { PgCommandRepository } from './repositories/command/pg-command-repository.js';
 import {
   type ConfigRecord,
@@ -30,6 +32,7 @@ import { PgInboxRepository } from './repositories/delivery/pg-inbox-repository.j
 import { PgOutboxRepository } from './repositories/delivery/pg-outbox-repository.js';
 import { createProductionActivation, type ProductionActivationOptions } from './repositories/production-activation.js';
 import { PgProductionPublication, type ProductionPublicationRemote } from './repositories/production-publication.js';
+import { PgQuoteRenewalRepository } from './repositories/quote-renewal.js';
 import {
   type ClaimIdentity,
   type CredentialAcquire,
@@ -71,6 +74,8 @@ export type ConfigInput = {
 };
 
 export interface DurableCore {
+  readonly buyers: BuyerRepository;
+  readonly renewalQuotes: QuoteRenewalStore;
   readonly trustedReleaseRecords: ReturnType<typeof createTrustedReleaseReader>;
   readonly signingKeys: SigningKeyStore;
   readonly productionPublications: {
@@ -407,6 +412,8 @@ export function createDurableCore(pool: Pool, options: { credentialKeys?: Creden
   }
   return {
     artwork: createArtworkRepository(pool),
+    buyers: createBuyerRepository(database),
+    renewalQuotes: new PgQuoteRenewalRepository(database),
     trustedReleaseRecords: createTrustedReleaseReader(database),
     signingKeys,
     productionPublications: {
