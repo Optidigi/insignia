@@ -11,3 +11,16 @@ Entry31b92db714fc1bb90f4f2b417361c58c0deb2cf4/tree9fe4bfc8abfccab0890fe6227e94bc
 - Meaningful local SDK/HTTP/PG/browser/protocol qualification, fresh independent correctness/security impact review, final-head CI and verified normal integration. Cumulative architecture/evidence packet then principal review before M8.
 
 Native qualification separately deferred: current published fixture readiness, G1–G6 real-store/discounts/Markets/accelerated supported-path criteria; S3/browser/proxy/CORS and qualified host deployment; M5 auth/G7/privacy/verifier and actual retention/cleanup. Missing permissions requested concretely when needed, never inferred. Native claims cannot come from doubles or CI.
+
+## Engineering evidence map
+
+| Outcome | Local evidence | Native boundary |
+| --- | --- | --- |
+| Owned customization/artwork and complete review | Buyer HTTP/factory tests, M6 resource checks, mounted wizard and actual HTTP/PG demo | Private S3/App Proxy/CORS and authenticated store flow NOT_RUN |
+| Immutable price/authorization and replay | Buyer-flow eight PG cases, buyer repository six cases, existing pricing/protocol tests | Real discounts/Markets/G1–G6 acceptance unpassed |
+| Real-variant cart application and ordinary-line preservation | Ajax actual HTTP disconnect/readback tests, mounted full-subset and EUR91 demo | Real theme/cart/inventory and checkout unqualified |
+| Renewal and repair | Application renewal, PG immutable issuance, mounted UI correction regressions | Live expiry/day/context and accelerated paths unqualified |
+| Retention/admission/worker cleanup | DB-clock bounded restricted EXECUTE test, committed command budgets and concurrency tests | Native schema/grants/deadline-exact erasure NOT_RUN |
+| Architecture and integration | Completed-source independent axes plus correction impact, required final-head CI | Principal engineering/native decisions separate |
+
+Working behavior and detailed limitations: [engineering packet](M7-ENGINEERING-REVIEW.md). Actual check results/failures: [verification ledger](verification.md). This map does not pass G1–G7 or authorize exposure/rollout.
