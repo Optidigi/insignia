@@ -219,7 +219,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
           scope: 'read_products,write_products',
           expires_in: 3600,
           associated_user_scope: 'read_products,write_products',
-          associated_user: { id: 23 },
+          associated_user: { id: 23, account_owner: true },
         });
       }),
     );
@@ -228,7 +228,7 @@ describe('production Shopify online staff adapter with synthetic transport', () 
       const provider = createAdminOnlineIdentity({ apiKey: key, apiSecret: secret, hostName: 'example.test' });
       const identity = await provider.verify(signed);
       const grant = await provider.exchangeOnline(signed, identity);
-      expect(grant).toMatchObject({ shop, staffId: '23', accessToken: 'synthetic-real-sdk-grant' });
+      expect(grant).toMatchObject({ shop, staffId: '23', accountOwner: true, accessToken: 'synthetic-real-sdk-grant' });
       expect(grant.expiresAtMs).toBeGreaterThan(Date.now() + 30_000);
       expect(calls).toBe(1);
     } finally {

@@ -61,10 +61,11 @@ export class InsigniaArtworkUpload extends HTMLElement {
       <GuestArtworkUpload
         proxyBase={proxyBase}
         productId={productId}
-        onPreview={(preview) => {
+        onPreview={() => {}}
+        onAssetChange={(asset) => {
           this.dispatchEvent(
             new CustomEvent('insignia-artwork-change', {
-              detail: preview ? { assetId: preview.assetId, expiresAt: preview.assetExpiresAt } : null,
+              detail: asset ? { assetId: asset.assetId, expiresAt: asset.assetExpiresAt } : null,
               bubbles: false,
               composed: false,
             }),

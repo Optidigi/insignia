@@ -54,6 +54,7 @@ export type VerifiedStaffIdentity = {
   expiresAtMs: number;
 };
 export type OnlineStaffGrant = {
+  accountOwner?: boolean;
   shop: string;
   staffId: string;
   accessToken: string;
@@ -131,7 +132,10 @@ type OnlineSession = {
   accessToken?: string;
   expires?: Date;
   scope?: string;
-  onlineAccessInfo?: { associated_user?: { id: number | string }; associated_user_scope?: string };
+  onlineAccessInfo?: {
+    associated_user?: { id: number | string; account_owner?: boolean };
+    associated_user_scope?: string;
+  };
 };
 export function createAdminOnlineIdentity(input: {
   apiKey: string;
@@ -219,6 +223,7 @@ export function createAdminOnlineIdentity(input: {
       return {
         shop: identity.shop,
         staffId: identity.staffId,
+        accountOwner: associated.account_owner === true,
         accessToken: session.accessToken,
         expiresAtMs: session.expires.getTime(),
         appScopes: scopes(session.scope),

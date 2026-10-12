@@ -147,6 +147,39 @@ function fixture() {
 }
 
 describe('acceptQuote', () => {
+  it('admits explicit logo-later only under the effective published placement policy', async () => {
+    const deferred = {
+      ...group,
+      design: {
+        ...group.design,
+        placements: group.design.placements.map((p) => ({
+          ...p,
+          artwork: { kind: 'deferred' as const, intentId: 'independent-design-nonce' },
+        })),
+      },
+    };
+    const { ports } = fixture();
+    await expect(acceptQuote({ ...request, groups: [{ group: deferred }] }, ports)).rejects.toThrow();
+    expect(ports.artwork.readUsability).not.toHaveBeenCalled();
+    vi.mocked(ports.publication.getEffective).mockResolvedValue({
+      config: { ...config, placements: config.placements.map((p) => ({ ...p, logoLaterAllowed: true })) },
+      configId: 'cfg',
+      operationId: 'op',
+    });
+    vi.mocked(ports.artwork.readUsability).mockImplementation(async (input) =>
+      input.choices.map((choice) => ({
+        ...choice,
+        shopId: input.shopId,
+        installationGeneration: input.installationGeneration,
+        status: input.permittedDeferredIntentIds?.includes(choice.id) ? 'usable' : 'unavailable',
+        lastFullyUsableLocalDay: 20760,
+        observedAt: now.toISOString(),
+      })),
+    );
+    const accepted = await acceptQuote({ ...request, groups: [{ group: deferred }] }, ports);
+    expect(accepted.quote.artworkChecks[0]?.kind).toBe('deferred');
+  });
+
   it('admits ISO country codes and rejects reserved two-letter claims before provider reads', async () => {
     for (const country of ['XX', 'ZZ', 'XK', 'us']) {
       const { ports } = fixture();

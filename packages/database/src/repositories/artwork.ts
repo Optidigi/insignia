@@ -27,6 +27,9 @@ type Row = {
   manifest: ArtworkManifest | null;
   rejection: string | null;
   updated_at: Date;
+  retry_at: Date | null;
+  cleanup_attempt_at: Date | null;
+  quarantine_cleanup_attempt_at: Date | null;
 };
 const active = `EXISTS (SELECT 1 FROM shops s JOIN installation_generations i ON i.shop_id=s.shop_id AND i.generation=s.current_generation WHERE s.shop_id=a.shop_id AND s.current_generation=a.installation_generation AND i.deactivated_at IS NULL)`;
 const expired = `(a.expires_at <= $1 OR (a.state='UPLOADING' AND a.collected_at <= $1::timestamptz - interval '24 hours') OR a.state IN ('REJECTED','DELETING') OR NOT (${active}))`;
@@ -154,13 +157,14 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
         if (!(await lockTenant(c, input.shopId, input.installationGeneration))) fail('NOT_FOUND');
         const totals =
           (
-            await c.query<{ unfinished: string; daily: string; retained: string }>(
-              `SELECT count(*) FILTER(WHERE state IN ('UPLOADING','QUEUED','INSPECTING','PROMOTING') AND expires_at>$2 AND collected_at>$2::timestamptz-interval '24 hours') AS unfinished,coalesce(sum(declared_bytes) FILTER(WHERE collected_at>$2::timestamptz-interval '24 hours'),0) AS daily,coalesce(sum(declared_bytes) FILTER(WHERE state!='DELETED'),0) AS retained FROM artwork_assets WHERE shop_id=$1`,
+            await c.query<{ unfinished: string; daily: string; retained: string; admissions: string }>(
+              `SELECT count(*) FILTER(WHERE state IN ('UPLOADING','QUEUED','INSPECTING','PROMOTING') AND expires_at>$2 AND collected_at>$2::timestamptz-interval '24 hours') AS unfinished,count(*) FILTER(WHERE collected_at>$2::timestamptz-interval '24 hours') AS admissions,coalesce(sum(declared_bytes) FILTER(WHERE collected_at>$2::timestamptz-interval '24 hours'),0) AS daily,coalesce(sum(declared_bytes) FILTER(WHERE state!='DELETED'),0) AS retained FROM artwork_assets WHERE shop_id=$1`,
               [input.shopId, input.collectedAt],
             )
           ).rows[0] ?? fail('CONFLICT');
         if (
           Number(totals.unfinished) >= 5 ||
+          Number(totals.admissions) >= ARTWORK_POLICY.maxDailyUploads ||
           Number(totals.daily) + input.declaredBytes > 100 * 1024 * 1024 ||
           Number(totals.retained) + input.declaredBytes > 500 * 1024 * 1024
         )
@@ -215,6 +219,7 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
             !live ||
             r.expires_at <= now ||
             !['QUEUED', 'INSPECTING', 'PROMOTING'].includes(r.state) ||
+            (r.retry_at && r.retry_at > now) ||
             (r.claim_until && r.claim_until > now)
           )
             return null;
@@ -273,7 +278,7 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
         undefined,
       );
     },
-    async release(id, claimId) {
+    async release(id, claimId, retryAt) {
       await locked(
         id,
         async (c, r) => {
@@ -281,8 +286,8 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
             await change(
               c,
               id,
-              "state=CASE WHEN manifest IS NULL THEN 'QUEUED' ELSE 'PROMOTING' END,claim_id=NULL,claim_until=NULL",
-              [],
+              "state=CASE WHEN manifest IS NULL THEN 'QUEUED' ELSE 'PROMOTING' END,claim_id=NULL,claim_until=NULL,retry_at=$2",
+              [retryAt ?? null],
             );
         },
         undefined,
@@ -290,14 +295,14 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
     },
     async selectPending(limit, now) {
       const r = await pool.query<{ asset_id: string }>(
-        `SELECT a.asset_id FROM artwork_assets a WHERE state IN ('QUEUED','INSPECTING','PROMOTING') AND expires_at>$1 AND (claim_until IS NULL OR claim_until<=$1) AND ${active} ORDER BY collected_at,asset_id LIMIT $2`,
+        `SELECT a.asset_id FROM artwork_assets a WHERE state IN ('QUEUED','INSPECTING','PROMOTING') AND expires_at>$1 AND (retry_at IS NULL OR retry_at<=$1) AND (claim_until IS NULL OR claim_until<=$1) AND ${active} ORDER BY coalesce(retry_at,collected_at),collected_at,asset_id LIMIT $2`,
         [now, Math.max(1, Math.min(100, Math.trunc(limit)))],
       );
       return r.rows.map((r) => r.asset_id);
     },
     async selectExpired(limit, now) {
       const r = await pool.query<Row>(
-        `SELECT a.* FROM artwork_assets a WHERE ((state!='DELETED' AND ${expired}) OR (state='DELETED' AND expires_at + ($3 + 30000) * interval '1 millisecond' >= $1 AND updated_at <= $1::timestamptz - interval '60 seconds')) AND (claim_until IS NULL OR claim_until<=$1) ORDER BY updated_at,collected_at,asset_id LIMIT $2`,
+        `SELECT a.* FROM artwork_assets a WHERE ((state!='DELETED' AND ${expired}) OR (state='DELETED' AND expires_at + ($3 + 30000) * interval '1 millisecond' >= $1 AND updated_at <= $1::timestamptz - interval '60 seconds')) AND (claim_until IS NULL OR claim_until<=$1) AND (cleanup_attempt_at IS NULL OR cleanup_attempt_at<=$1::timestamptz-interval '60 seconds') ORDER BY cleanup_attempt_at NULLS FIRST,collected_at,asset_id LIMIT $2`,
         [now, Math.max(1, Math.min(100, Math.trunc(limit))), ARTWORK_POLICY.leaseMs],
       );
       return r.rows.map(map);
@@ -307,9 +312,10 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
         id,
         async (c, r, live) => {
           if (r.claim_until && r.claim_until > now) return null;
+          if (r.cleanup_attempt_at && +r.cleanup_attempt_at > +now - 60000) return null;
           if (r.state === 'DELETED') {
             if (+now > +r.expires_at + ARTWORK_POLICY.leaseMs + 30000 || +r.updated_at > +now - 60000) return null;
-            await c.query('UPDATE artwork_assets SET updated_at=$2 WHERE asset_id=$1', [id, now]);
+            await c.query('UPDATE artwork_assets SET updated_at=$2,cleanup_attempt_at=$2 WHERE asset_id=$1', [id, now]);
             return map(r);
           }
           if (
@@ -319,7 +325,9 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
             !(r.state === 'UPLOADING' && +r.collected_at <= +now - ARTWORK_POLICY.incompleteMs)
           )
             return null;
-          return map(await change(c, id, "state='DELETING',claim_id=NULL,claim_until=NULL", []));
+          return map(
+            await change(c, id, "state='DELETING',claim_id=NULL,claim_until=NULL,cleanup_attempt_at=$2", [now]),
+          );
         },
         null,
       );
@@ -339,27 +347,48 @@ export function createArtworkRepository(pool: Pool): ArtworkStore {
     },
     async selectQuarantineCleanup(limit, now) {
       const rows = await pool.query<Row>(
-        `SELECT a.* FROM artwork_assets a WHERE state='USABLE' AND (quarantine_cleaned_at IS NULL OR quarantine_cleaned_at<=$1::timestamptz-interval '60 seconds') AND upload_until<=$1 AND expires_at>$1 AND ${active} ORDER BY upload_until,asset_id LIMIT $2`,
+        `SELECT a.* FROM artwork_assets a WHERE state='USABLE' AND (quarantine_cleanup_attempt_at IS NULL OR quarantine_cleanup_attempt_at<=$1::timestamptz-interval '60 seconds') AND upload_until<=$1 AND expires_at>$1 AND ${active} ORDER BY quarantine_cleanup_attempt_at NULLS FIRST,upload_until,asset_id LIMIT $2`,
         [now, Math.max(1, Math.min(100, Math.trunc(limit)))],
       );
       return rows.rows.map(map);
+    },
+    async markQuarantineCleanupAttempt(id, now) {
+      return locked(
+        id,
+        async (c, r, live) => {
+          if (
+            !live ||
+            r.state !== 'USABLE' ||
+            r.upload_until > now ||
+            r.expires_at <= now ||
+            (r.quarantine_cleanup_attempt_at && +r.quarantine_cleanup_attempt_at > +now - 60000)
+          )
+            return false;
+          await c.query('UPDATE artwork_assets SET quarantine_cleanup_attempt_at=$2,updated_at=$2 WHERE asset_id=$1', [
+            id,
+            now,
+          ]);
+          return true;
+        },
+        false,
+      );
     },
     async markQuarantineCleaned(id, now) {
       await locked(
         id,
         async (c, r, live) => {
           if (live && r.state === 'USABLE' && r.upload_until <= now)
-            await c.query('UPDATE artwork_assets SET quarantine_cleaned_at=$2,updated_at=$2 WHERE asset_id=$1', [
-              id,
-              now,
-            ]);
+            await c.query(
+              'UPDATE artwork_assets SET quarantine_cleaned_at=$2,quarantine_cleanup_attempt_at=$2,updated_at=$2 WHERE asset_id=$1',
+              [id, now],
+            );
         },
         undefined,
       );
     },
     async readUsability(shopId, generation, ids, now) {
       if (ids.length === 0) return [];
-      if (ids.length > 100) fail('INVALID_INPUT');
+      if (ids.length > 256) fail('INVALID_INPUT');
       const r = await pool.query<Row>(
         `SELECT a.* FROM artwork_assets a WHERE shop_id=$1 AND installation_generation=$2 AND asset_id=ANY($3::uuid[]) AND state='USABLE' AND manifest IS NOT NULL AND expires_at>$4 AND ${active}`,
         [shopId, generation, ids, now],

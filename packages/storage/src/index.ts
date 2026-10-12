@@ -166,10 +166,31 @@ export function createR2ArtworkStorage(config: {
   }
   return {
     read,
-    async presignUpload({ key, contentType, expiresAt }: { key: string; contentType: string; expiresAt: Date }) {
-      if (!key.startsWith('quarantine/')) invalid();
+    async presignUpload({
+      key,
+      contentType,
+      byteLength,
+      expiresAt,
+    }: {
+      key: string;
+      contentType: string;
+      byteLength: number;
+      expiresAt: Date;
+    }) {
+      if (
+        !key.startsWith('quarantine/') ||
+        !Number.isSafeInteger(byteLength) ||
+        byteLength < 1 ||
+        byteLength > 5 * 1024 * 1024
+      )
+        invalid();
       const headers = { 'content-type': mime(contentType) };
-      return { url: await presign(key, expiresAt, 'PUT', headers), headers };
+      // Sign the exact declaration, so a different ingress length invalidates SigV4.
+      // Browsers forbid setting Content-Length manually; File/Blob bodies supply it.
+      // Return only headers the browser is allowed to set. Native R2/browser
+      // enforcement remains a required qualification, independent of local signing.
+      const signedHeaders = { ...headers, 'content-length': String(byteLength) };
+      return { url: await presign(key, expiresAt, 'PUT', signedHeaders), headers };
     },
     async putImmutable({ key, bytes, contentType }: { key: string; bytes: Uint8Array; contentType: string }) {
       if (

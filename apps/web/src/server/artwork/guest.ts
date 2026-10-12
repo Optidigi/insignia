@@ -1,6 +1,7 @@
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { ArtworkScope } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
+import { artworkJsonBody } from './body.ts';
 
 type Guest = {
   version: 'm6-guest-v1';
@@ -26,9 +27,10 @@ export function createArtworkGuestAuthority(input: {
     const url = new URL(request.url);
     const proxy = await input.verifyProxy(url);
     if (!proxy || (expected && expected.shop !== proxy.shop)) return null;
-    // Browser mutations must originate at the authenticated storefront; headerless server proxy requests still need the capability.
-    const origin = request.headers.get('Origin');
-    if (origin && origin !== `https://${proxy.shop}`) return null;
+    // Routing authority is the signed proxy shop, never the unsigned Origin header.
+    // Storefront custom domains are supported. Guest mutation authority is a private
+    // body capability (no ambient cookies); JSON responses expose no cross-origin grant.
+    // A caller with that bearer capability has the same authority when Origin is absent.
     const shop = await input.core.tenants.getShopByDomain(proxy.shop);
     if (!shop || (expected && (shop.shopId !== expected.shopId || shop.currentGeneration !== expected.generation)))
       return null;
@@ -68,26 +70,7 @@ export function createArtworkGuestAuthority(input: {
         request.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() !== 'application/json'
       )
         return null;
-      const reader = request.clone().body?.getReader();
-      if (!reader) return null;
-      let bytes = 0;
-      const chunks: Uint8Array[] = [];
-      while (true) {
-        const chunk = await reader.read();
-        if (chunk.done) break;
-        bytes += chunk.value.byteLength;
-        if (bytes > 2048) {
-          await reader.cancel();
-          return null;
-        }
-        chunks.push(chunk.value);
-      }
-      let envelope: { capability?: unknown };
-      try {
-        envelope = JSON.parse(Buffer.concat(chunks).toString('utf8'));
-      } catch {
-        return null;
-      }
+      const envelope = await artworkJsonBody(request);
       if (
         !envelope ||
         typeof envelope !== 'object' ||

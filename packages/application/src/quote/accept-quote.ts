@@ -50,6 +50,8 @@ export interface QuoteArtworkPort {
     installationGeneration: string;
     shopTimezone: string;
     choices: readonly QuoteArtworkChoice[];
+    /** Populated only after validating each placement against the effective published policy. */
+    permittedDeferredIntentIds?: readonly string[];
   }): Promise<readonly QuoteArtworkStatus[]>;
 }
 export type EffectiveQuoteRevision = { config: PublishedConfig; configId: string; operationId: string };
@@ -364,6 +366,7 @@ async function usableArtwork(
     installationGeneration: request.installationGeneration,
     shopTimezone: timezone,
     choices,
+    permittedDeferredIntentIds: choices.filter((choice) => choice.kind === 'deferred').map((choice) => choice.id),
   });
   if (!Array.isArray(result) || result.length !== choices.length)
     throw new Error('complete artwork usability required');

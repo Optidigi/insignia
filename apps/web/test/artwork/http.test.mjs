@@ -13,6 +13,8 @@ const actor = {
   expiresAtMs: Date.now() + 60000,
   canRead: true,
   canEdit: true,
+  canReadArtwork: true,
+  canUploadArtwork: true,
 };
 const calls = [];
 const services = {
@@ -66,7 +68,7 @@ test('anonymous, read-only, expired and cross-site clients never allocate; inspe
     (
       await handleArtworkRequest(
         request(body),
-        { ...services, authenticate: async () => ({ ...actor, canEdit: false }) },
+        { ...services, authenticate: async () => ({ ...actor, canEdit: false, canUploadArtwork: false }) },
         route,
       )
     ).status,
@@ -149,4 +151,30 @@ test('processing and expired assets produce no preview URL, and resource lookup 
     (await handleArtworkRequest(req, reading, { kind: 'status', audience: 'merchant', assetId })).status,
     410,
   );
+});
+
+test('product-only staff cannot obtain private originals or previews', async () => {
+  const assetId = 'ae771020-1f54-47ab-a8af-48b1eb7de3d2';
+  let reads = 0;
+  const restricted = {
+    ...services,
+    authenticate: async () => ({ ...actor, canReadArtwork: undefined, canUploadArtwork: undefined }),
+    artwork: {
+      download: async () => {
+        reads++;
+        return { url: 'private' };
+      },
+      preview: async () => {
+        reads++;
+        return {};
+      },
+    },
+  };
+  for (const kind of ['download', 'preview']) {
+    const req = new Request(`https://app.example.test/api/artwork/${assetId}/${kind}`, {
+      headers: { Authorization: 'Bearer synthetic' },
+    });
+    assert.equal((await handleArtworkRequest(req, restricted, { kind, assetId, audience: 'merchant' })).status, 403);
+  }
+  assert.equal(reads, 0);
 });

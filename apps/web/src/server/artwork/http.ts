@@ -2,6 +2,7 @@ import { ARTWORK_POLICY, ArtworkError, type ArtworkScope, type createArtworkServ
 import { AdminOnlineIdentityError } from '@insignia/shopify';
 import type { AdminActor } from '../admin/contracts.js';
 import { adminJson, mutationOrigin, validActor } from '../admin/http.ts';
+import { artworkEmptyBody, artworkJsonBody } from './body.ts';
 
 export type ArtworkRoute = { audience: 'merchant' | 'guest' } & (
   | { kind: 'begin' }
@@ -19,41 +20,19 @@ export interface ArtworkHttpServices {
 }
 const ASSET = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i;
 async function declaration(request: Request, guest: boolean) {
-  if (
-    !(request.headers.get('Content-Type')?.split(';')[0]?.trim().toLowerCase() === 'application/json') ||
-    !request.body
-  )
-    return null;
-  const reader = request.body.getReader();
-  let length = 0;
-  const chunks: Uint8Array[] = [];
-  while (true) {
-    const part = await reader.read();
-    if (part.done) break;
-    length += part.value.byteLength;
-    if (length > 2048) {
-      await reader.cancel();
-      return null;
-    }
-    chunks.push(part.value);
-  }
-  try {
-    const body = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks)));
-    return body &&
-      typeof body === 'object' &&
-      !Array.isArray(body) &&
-      Object.keys(body).length === (guest ? 3 : 2) &&
-      (!guest || typeof body.capability === 'string') &&
-      typeof body.contentType === 'string' &&
-      Number.isSafeInteger(body.byteLength) &&
-      body.byteLength > 0 &&
-      body.byteLength <= ARTWORK_POLICY.maxBytes
-      ? { contentType: body.contentType, byteLength: body.byteLength }
-      : null;
-  } catch {
-    return null;
-  }
+  const body = await artworkJsonBody(request);
+  return body &&
+    Object.keys(body).length === (guest ? 3 : 2) &&
+    (!guest || typeof body.capability === 'string') &&
+    typeof body.contentType === 'string' &&
+    typeof body.byteLength === 'number' &&
+    Number.isSafeInteger(body.byteLength) &&
+    body.byteLength > 0 &&
+    body.byteLength <= ARTWORK_POLICY.maxBytes
+    ? { contentType: body.contentType, byteLength: body.byteLength }
+    : null;
 }
+
 export async function handleArtworkRequest(
   request: Request,
   services: ArtworkHttpServices | undefined,
@@ -70,7 +49,8 @@ export async function handleArtworkRequest(
         return adminJson(401, { error: 'Authentication required' });
       const actor = await services.authenticate(request);
       if (!validActor(actor, Date.now())) return adminJson(401, { error: 'Authentication required' });
-      if (!actor.canRead || (write && !actor.canEdit)) return adminJson(403, { error: 'Permission required' });
+      if (actor.canReadArtwork !== true || (write && actor.canUploadArtwork !== true))
+        return adminJson(403, { error: 'Artwork permission required' });
       const url = new URL(request.url);
       if (url.searchParams.has('shop') && url.searchParams.get('shop') !== actor.shop)
         return adminJson(403, { error: 'Shop mismatch' });
@@ -102,12 +82,8 @@ export async function handleArtworkRequest(
     if (!ASSET.test(route.assetId)) return adminJson(404, { error: 'Artwork not found' });
     if (route.kind === 'complete') {
       // Completion has no client-provided state, tenant, object key or inspection authority.
-      if (request.body && route.audience === 'merchant') {
-        const reader = request.body.getReader();
-        const first = await reader.read();
-        await reader.cancel();
-        if (!first.done) return adminJson(422, { error: 'Completion body must be empty' });
-      }
+      if (route.audience === 'merchant' && !(await artworkEmptyBody(request)))
+        return adminJson(422, { error: 'Completion body must be empty' });
       return adminJson(202, await services.artwork.complete(scope, route.assetId));
     }
     return adminJson(200, await services.artwork[route.kind](scope, route.assetId));

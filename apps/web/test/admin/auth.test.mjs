@@ -195,3 +195,16 @@ test('early authentication rejection emits one bounded stage without downstream 
     assert.deepEqual(events, [expected]);
   }
 });
+
+test('private artwork permissions require the verified online account owner, independently of product scopes', async () => {
+  assert.equal((await setup().auth(request)).canReadArtwork, false);
+  assert.equal((await setup().auth(request)).canUploadArtwork, false);
+  const owner = await setup({ exchangeOnlineGrant: async () => ({ ...grant, accountOwner: true }) }).auth(request);
+  assert.equal(owner.canReadArtwork, true);
+  assert.equal(owner.canUploadArtwork, true);
+  const reader = await setup({
+    exchangeOnlineGrant: async () => ({ ...grant, accountOwner: true, userScopes: ['read_products'] }),
+  }).auth(request);
+  assert.equal(reader.canReadArtwork, true);
+  assert.equal(reader.canUploadArtwork, false);
+});

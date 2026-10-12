@@ -16,17 +16,19 @@ describe('private artwork storage', () => {
     const grant = await storage.presignUpload({
       key: 'quarantine/shop/session',
       contentType: 'image/png',
+      byteLength: 3,
       expiresAt: new Date(now.getTime() + 300_000),
     });
     const url = new URL(grant.url);
     expect(url.pathname).toBe('/private-artwork/m6/quarantine/shop/session');
     expect(url.searchParams.get('X-Amz-Expires')).toBe('300');
-    expect(url.searchParams.get('X-Amz-SignedHeaders')).toContain('content-type');
+    expect(url.searchParams.get('X-Amz-SignedHeaders')).toBe('content-length;content-type;host');
     expect(grant.headers).toEqual({ 'content-type': 'image/png' });
     await expect(
       storage.presignUpload({
         key: 'originals/shop/revision',
         contentType: 'image/png',
+        byteLength: 3,
         expiresAt: new Date(now.getTime() + 300_000),
       }),
     ).rejects.toThrow();
@@ -45,12 +47,22 @@ it('rejects expiry, key escape, unsafe inline originals and remote endpoints', a
     'https://evil/a',
   ]) {
     await expect(
-      storage.presignUpload({ key, contentType: 'image/png', expiresAt: new Date(now.getTime() + 60_000) }),
+      storage.presignUpload({
+        key,
+        contentType: 'image/png',
+        byteLength: 3,
+        expiresAt: new Date(now.getTime() + 60_000),
+      }),
     ).rejects.toThrow();
   }
   for (const ms of [0, -1000, 301_000])
     await expect(
-      storage.presignUpload({ key: 'quarantine/a', contentType: 'image/png', expiresAt: new Date(now.getTime() + ms) }),
+      storage.presignUpload({
+        key: 'quarantine/a',
+        contentType: 'image/png',
+        byteLength: 3,
+        expiresAt: new Date(now.getTime() + ms),
+      }),
     ).rejects.toThrow();
   await expect(
     storage.presignRead({ key: 'originals/a', expiresAt: new Date(now.getTime() + 60_000) }),
@@ -130,3 +142,17 @@ it('keeps unresolved writes unresolved if readback is unavailable', async () => 
     storage.putImmutable({ key: 'originals/a', bytes: new Uint8Array([1]), contentType: 'image/png' }),
   ).rejects.toMatchObject({ code: 'UNAVAILABLE' });
 });
+
+it.each([0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, 5 * 1024 * 1024 + 1])(
+  'does not issue an upload grant for invalid byte length %s',
+  async (byteLength) => {
+    await expect(
+      createR2ArtworkStorage(config).presignUpload({
+        key: 'quarantine/shop/session',
+        contentType: 'image/png',
+        byteLength,
+        expiresAt: new Date(now.getTime() + 60_000),
+      }),
+    ).rejects.toMatchObject({ code: 'INVALID_INPUT' });
+  },
+);

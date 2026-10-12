@@ -11,6 +11,8 @@ on:
       - 'packages/visualizer/**'
       - 'packages/contracts/**'
       - 'packages/observability/**'
+      - 'packages/storage/**'
+      - 'scripts/m6-artwork/**'
       - 'scripts/m5-002/**'
       - 'scripts/m5-native-inventory/**'
       - 'scripts/m5-host-inventory/**'
@@ -36,6 +38,8 @@ on:
       - 'packages/visualizer/**'
       - 'packages/contracts/**'
       - 'packages/observability/**'
+      - 'packages/storage/**'
+      - 'scripts/m6-artwork/**'
       - 'scripts/m5-002/**'
       - 'scripts/m5-native-inventory/**'
       - 'scripts/m5-host-inventory/**'
@@ -100,6 +104,7 @@ jobs:
         run: corepack pnpm test:m5-inventory
       - run: corepack pnpm check:secrets
       - run: corepack pnpm check:database
+      - run: corepack pnpm --filter @insignia/storage test
       - run: corepack pnpm --filter @insignia/shopify test
       - run: corepack pnpm --filter @insignia/application test
       - run: corepack pnpm --filter @insignia/observability test

@@ -5,6 +5,7 @@ export type ArtworkPreview = {
   expiresAt: string;
   assetExpiresAt: string;
 };
+export type ArtworkSelection = Pick<ArtworkPreview, 'assetId' | 'assetExpiresAt'>;
 export type JsonApi = <T>(path: string, init?: RequestInit) => Promise<T>;
 type Status = { state: string; expiresAt: string };
 export function createArtworkUpload(input: {
@@ -28,7 +29,46 @@ export function createArtworkUpload(input: {
         signal?.addEventListener('abort', abort, { once: true });
         if (signal?.aborted) abort();
       }));
+  async function readPreview(assetId: string, assetExpiresAt: string, signal?: AbortSignal): Promise<ArtworkPreview> {
+    const preview = await input.api<{ url: string; width: number; height: number; expiresAt: string }>(
+      `/api/artwork/${assetId}/preview`,
+      { signal },
+    );
+    const url = new URL(preview.url);
+    if (
+      url.protocol !== 'https:' ||
+      !Number.isFinite(preview.width) ||
+      !Number.isFinite(preview.height) ||
+      preview.width <= 0 ||
+      preview.height <= 0 ||
+      !Number.isFinite(Date.parse(preview.expiresAt)) ||
+      Date.parse(preview.expiresAt) <= Date.now() ||
+      !Number.isFinite(Date.parse(assetExpiresAt)) ||
+      Date.parse(assetExpiresAt) <= Date.now()
+    )
+      throw new Error('Invalid artwork preview');
+    return {
+      assetId,
+      url: url.href,
+      aspectRatio: preview.width / preview.height,
+      expiresAt: preview.expiresAt,
+      assetExpiresAt,
+    };
+  }
   return {
+    async renew(asset: ArtworkPreview, signal?: AbortSignal): Promise<ArtworkPreview> {
+      if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
+      if (Date.parse(asset.assetExpiresAt) <= Date.now())
+        throw Object.assign(new Error('Artwork expired. Upload it again.'), { status: 410 });
+      const status = await input.api<Status>(`/api/artwork/${asset.assetId}/status`, { signal });
+      if (
+        status.state !== 'USABLE' ||
+        !Number.isFinite(Date.parse(status.expiresAt)) ||
+        Date.parse(status.expiresAt) <= Date.now()
+      )
+        throw Object.assign(new Error('Artwork is no longer usable. Upload it again.'), { status: 410 });
+      return readPreview(asset.assetId, status.expiresAt, signal);
+    },
     async upload(file: File, onState: (state: string) => void, signal?: AbortSignal): Promise<ArtworkPreview> {
       if (
         !['image/svg+xml', 'image/png', 'image/jpeg'].includes(file.type) ||
@@ -66,28 +106,7 @@ export function createArtworkUpload(input: {
         if (signal?.aborted) throw new DOMException('Aborted', 'AbortError');
         const status = await input.api<Status>(`/api/artwork/${admitted.assetId}/status`, { signal });
         if (status.state === 'USABLE') {
-          const preview = await input.api<{ url: string; width: number; height: number; expiresAt: string }>(
-            `/api/artwork/${admitted.assetId}/preview`,
-            { signal },
-          );
-          const url = new URL(preview.url);
-          if (
-            url.protocol !== 'https:' ||
-            !Number.isFinite(preview.width) ||
-            !Number.isFinite(preview.height) ||
-            preview.width <= 0 ||
-            preview.height <= 0 ||
-            !Number.isFinite(Date.parse(preview.expiresAt)) ||
-            Date.parse(preview.expiresAt) <= Date.now()
-          )
-            throw new Error('Invalid artwork preview');
-          return {
-            assetId: admitted.assetId,
-            url: preview.url,
-            aspectRatio: preview.width / preview.height,
-            expiresAt: preview.expiresAt,
-            assetExpiresAt: status.expiresAt,
-          };
+          return readPreview(admitted.assetId, status.expiresAt, signal);
         }
         if (status.state === 'REJECTED')
           throw new Error('Artwork was rejected by inspection. Choose a supported, static image.');

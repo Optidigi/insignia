@@ -70,3 +70,61 @@ test('oversize, inspection rejection and cancelled uploads never expose a previe
   );
   assert.equal(calls, prior);
 });
+
+test('expired derivative is renewed for the same retained artwork without uploading again', async () => {
+  const calls = [];
+  const flow = createArtworkUpload({
+    api: async (path) => {
+      calls.push(path);
+      if (path.endsWith('/status')) return { state: 'USABLE', expiresAt: '2099-01-08T00:00:00Z' };
+      return {
+        url: 'https://private.example/previews/renewed.png',
+        width: 30,
+        height: 10,
+        expiresAt: '2099-01-01T00:05:00Z',
+      };
+    },
+    put: async () => {
+      throw new Error('renewal must never upload');
+    },
+  });
+  const renewed = await flow.renew({
+    assetId: 'same-asset',
+    url: 'https://private.example/expired.png',
+    aspectRatio: 3,
+    expiresAt: '2020-01-01T00:00:00Z',
+    assetExpiresAt: '2099-01-08T00:00:00Z',
+  });
+  assert.equal(renewed.assetId, 'same-asset');
+  assert.equal(renewed.assetExpiresAt, '2099-01-08T00:00:00Z');
+  assert.equal(renewed.url, 'https://private.example/previews/renewed.png');
+  assert.deepEqual(calls, ['/api/artwork/same-asset/status', '/api/artwork/same-asset/preview']);
+});
+
+test('renewal refuses erased artwork and preserves authorization failures', async () => {
+  const asset = {
+    assetId: 'retained',
+    url: 'https://private.example/old.png',
+    aspectRatio: 1,
+    expiresAt: '2020-01-01T00:00:00Z',
+    assetExpiresAt: '2099-01-08T00:00:00Z',
+  };
+  let previews = 0;
+  const gone = createArtworkUpload({
+    api: async (path) => {
+      if (path.endsWith('/preview')) previews++;
+      return { state: 'DELETED', expiresAt: '2099-01-08T00:00:00Z' };
+    },
+  });
+  await assert.rejects(gone.renew(asset), { status: 410 });
+  assert.equal(previews, 0);
+  const denied = Object.assign(new Error('Permission removed'), { status: 403 });
+  await assert.rejects(
+    createArtworkUpload({
+      api: async () => {
+        throw denied;
+      },
+    }).renew(asset),
+    (error) => error === denied,
+  );
+});

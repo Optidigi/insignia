@@ -1,5 +1,5 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
-import { createServer } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
 import { afterEach, expect, it } from 'vitest';
 import { createR2ArtworkStorage } from '../src/index.js';
 
@@ -142,6 +142,7 @@ it('verifies MIME-bound direct upload, reusable quarantine and exact-byte write-
   const grant = await storage.presignUpload({
     key: 'quarantine/shop/session',
     contentType: 'image/png',
+    byteLength: 3,
     expiresAt: new Date(clock().getTime() + 60_000),
   });
   expect(
@@ -152,9 +153,9 @@ it('verifies MIME-bound direct upload, reusable quarantine and exact-byte write-
     (await fetch(grant.url, { method: 'PUT', headers: grant.headers, body: new Uint8Array([1, 2, 3]) })).status,
   ).toBe(200);
   const inspected = await storage.read({ key: 'quarantine/shop/session', maxBytes: 20 });
-  expect((await fetch(grant.url, { method: 'PUT', headers: grant.headers, body: new Uint8Array([9]) })).status).toBe(
-    200,
-  );
+  expect(
+    (await fetch(grant.url, { method: 'PUT', headers: grant.headers, body: new Uint8Array([9, 8, 7]) })).status,
+  ).toBe(200);
   await storage.putImmutable({ key: 'originals/shop/revision', bytes: inspected, contentType: 'image/png' });
   await storage.putImmutable({ key: 'originals/shop/revision', bytes: inspected, contentType: 'image/png' });
   await expect(
@@ -185,6 +186,7 @@ it('denies altered key and TTL in an actual presigned HTTP request', async () =>
   const grant = await storage.presignUpload({
     key: 'quarantine/shop/session',
     contentType: 'image/png',
+    byteLength: 3,
     expiresAt: new Date(clock().getTime() + 60_000),
   });
   const url = new URL(grant.url);
@@ -200,10 +202,52 @@ it('rejects an unchanged signed URL after its actual expiry at HTTP ingress', as
   const grant = await storage.presignUpload({
     key: 'quarantine/shop/session',
     contentType: 'image/png',
+    byteLength: 3,
     expiresAt: new Date(clock().getTime() + 60_000),
   });
   advance(60_000);
   expect((await fetch(grant.url, { method: 'PUT', headers: grant.headers, body: new Uint8Array([1]) })).status).toBe(
     403,
   );
+});
+
+it('rejects bodies shorter or larger than the signed declaration at HTTP ingress', async () => {
+  const { storage, denied } = await boundary();
+  const grant = await storage.presignUpload({
+    key: 'quarantine/shop/bounded',
+    contentType: 'image/png',
+    byteLength: 3,
+    expiresAt: new Date(clock().getTime() + 60_000),
+  });
+  // The transport supplies Content-Length, as it does for known-length File/Blob uploads.
+  for (const bytes of [new Uint8Array([1]), new Uint8Array([1, 2, 3, 4])])
+    expect((await fetch(grant.url, { method: 'PUT', headers: grant.headers, body: bytes })).status).toBe(403);
+  expect(denied()).toBe(2);
+  await expect(storage.read({ key: 'quarantine/shop/bounded', maxBytes: 5 })).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+  });
+  expect(
+    (await fetch(grant.url, { method: 'PUT', headers: grant.headers, body: new Blob([new Uint8Array([1, 2, 3])]) }))
+      .status,
+  ).toBe(200);
+});
+
+it('rejects chunked upload without the signed Content-Length', async () => {
+  const { storage } = await boundary();
+  const grant = await storage.presignUpload({
+    key: 'quarantine/shop/chunked',
+    contentType: 'image/png',
+    byteLength: 3,
+    expiresAt: new Date(clock().getTime() + 60_000),
+  });
+  const status = await new Promise<number | undefined>((resolve, reject) => {
+    const request = httpRequest(grant.url, { method: 'PUT', headers: grant.headers }, (response) => {
+      response.resume();
+      response.on('end', () => resolve(response.statusCode));
+    });
+    request.on('error', reject);
+    request.write(new Uint8Array([1, 2, 3]));
+    request.end();
+  });
+  expect(status).toBe(403);
 });

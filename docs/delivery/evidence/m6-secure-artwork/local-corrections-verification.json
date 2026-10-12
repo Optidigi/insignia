@@ -1,0 +1,77 @@
+{
+  "scope": "local M6 corrected candidate verification; external native acceptance is separate",
+  "nativeS3": "NOT_RUN",
+  "nativeAppProxy": "NOT_RUN",
+  "liveDeployment": "NOT_RUN",
+  "checks": [
+    {
+      "name": "style",
+      "result": "PASS",
+      "path": "/tmp/insignia-m6-r2-style.log",
+      "sha256": "847f6ee4d709761acde6fd308b8d0eaf971fb1dc958843537a9bfc95b80ebafd",
+      "bytes": 15653
+    },
+    {
+      "name": "build",
+      "result": "PASS",
+      "path": "/tmp/insignia-m6-r2-build.log",
+      "sha256": "d1c85d292356b64cfad281c95944e8aef160aba3c19b313dbbe4d0ca2d29112a",
+      "bytes": 2813
+    },
+    {
+      "name": "unit",
+      "result": "PASS",
+      "path": "/tmp/insignia-m6-r2-unit.log",
+      "sha256": "1054022876718fecbbe12f53bd783bdbd0a2d1ee7e81546eb6856346902781e8",
+      "bytes": 11252
+    },
+    {
+      "name": "browser",
+      "result": "PASS",
+      "path": "/tmp/insignia-m6-r2-browser.log",
+      "sha256": "2ea42cf5e598d16edb68a2f18deed0db5603ad066798fab9565b184c8d23485b",
+      "bytes": 15046
+    },
+    {
+      "name": "database-fresh",
+      "result": "PASS",
+      "path": "/tmp/insignia-m6-r2-database-fresh.log",
+      "sha256": "8fb048fba8e079f47857e08fd0c10cc62d7782a38076dc80000097d6b513cb8e",
+      "bytes": 486
+    },
+    {
+      "name": "real-pipeline-and-grants",
+      "result": "PASS",
+      "path": "/tmp/insignia-m6-r2-real-pipeline-and-grants.log",
+      "sha256": "894b2195a72a81a52e060984e83164364328e0375c555662d7b92764b7b6f137",
+      "bytes": 232
+    },
+    {
+      "name": "boundaries",
+      "result": "PASS",
+      "path": "/tmp/insignia-m6-r2-boundaries.log",
+      "sha256": "5455fa7807105fe44ed1488b512ab0f832bd3a230e6fc64d9c3b86f39a320843",
+      "bytes": 1928
+    },
+    {
+      "name": "secrets",
+      "result": "PASS",
+      "path": "/tmp/insignia-m6-r2-secrets.log",
+      "sha256": "afdaf31f32f538d3771bea585fb2b3c95d84b3ac7e721e5b81120f732f7c6667",
+      "bytes": 207
+    },
+    {
+      "name": "history",
+      "result": "PASS",
+      "path": "/tmp/insignia-m6-r2-history.log",
+      "sha256": "154c8cbc53e0eeca9d1b3c245efe14f4488a31140ef39a9858dc1b840b96c3b0",
+      "bytes": 4630
+    }
+  ],
+  "databaseFirstRun": {
+    "result": "FAIL",
+    "cause": "reused synthetic DB had old owned artwork backlog outside global sweep100; fresh migrated DB passed241/4skip",
+    "path": "/tmp/insignia-m6-r2-database.log",
+    "sha256": "02bcad545edf20df1d4d5b5aaa42933e95de2879c164ec6666afc6875e58dc26"
+  }
+}

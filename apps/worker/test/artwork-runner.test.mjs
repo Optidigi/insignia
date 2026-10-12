@@ -279,3 +279,31 @@ test('a known processing outage requires requalification before readiness can re
   assert.equal(runner.ready, false);
   await runner.stop();
 });
+
+test('one asset failure leaves other tenants processing while the outage is reported', async () => {
+  const seen = [],
+    errors = [];
+  const runner = createArtworkRunner({
+    inspect,
+    timing: { pollMs: 30000 },
+    onError: (code) => errors.push(code),
+    store: {
+      async selectPending() {
+        return ['missing', 'other-tenant'];
+      },
+    },
+    service: {
+      async process(id) {
+        seen.push(id);
+        if (id === 'missing') throw new Error('UNAVAILABLE');
+        return 'usable';
+      },
+    },
+  });
+  await runner.start();
+  assert.equal(await runner.runOnce(), 1);
+  assert.deepEqual(seen, ['missing', 'other-tenant']);
+  assert.equal(runner.ready, false);
+  assert.deepEqual(errors, ['ARTWORK_RUNNER_UNAVAILABLE']);
+  await runner.stop();
+});

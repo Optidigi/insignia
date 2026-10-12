@@ -38,6 +38,8 @@ if (process.argv.includes('--diagnostic')) {
       ? createArtworkService({
           store: core.artwork,
           inspect: inspectArtwork,
+          onCleanupError: () =>
+            queue.observability.logger.error('queue_job_rejected', { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' }),
           storage: await loadArtworkStorageProfile(required('ARTWORK_STORAGE_PROFILE'), {
             endpoint: required('ARTWORK_R2_ENDPOINT'),
             bucket: required('ARTWORK_R2_BUCKET'),

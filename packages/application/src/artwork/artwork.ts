@@ -3,6 +3,7 @@ import { localDay, type QuoteArtworkPort } from '../quote/accept-quote.js';
 
 export const ARTWORK_POLICY = {
   maxBytes: 5 * 1024 * 1024,
+  maxDailyUploads: 100,
   uploadMs: 300_000,
   incompleteMs: 86_400_000,
   retainedMs: 7 * 86_400_000,
@@ -61,12 +62,13 @@ export interface ArtworkStore {
   prepare(assetId: string, claimId: string, manifest: ArtworkManifest, now: Date): Promise<ArtworkRecord>;
   settle(assetId: string, claimId: string, now: Date): Promise<boolean>;
   reject(assetId: string, claimId: string, reason: string, now: Date): Promise<void>;
-  release(assetId: string, claimId: string): Promise<void>;
+  release(assetId: string, claimId: string, retryAt?: Date): Promise<void>;
   selectPending(limit: number, now: Date): Promise<string[]>;
   selectExpired(limit: number, now: Date): Promise<ArtworkRecord[]>;
   markDeleting(assetId: string, now: Date): Promise<ArtworkRecord | null>;
   finishDeleting(assetId: string, now: Date): Promise<void>;
   selectQuarantineCleanup(limit: number, now: Date): Promise<ArtworkRecord[]>;
+  markQuarantineCleanupAttempt(assetId: string, now: Date): Promise<boolean>;
   markQuarantineCleaned(assetId: string, now: Date): Promise<void>;
   readUsability(shopId: string, generation: string, assetIds: readonly string[], now: Date): Promise<ArtworkRecord[]>;
 }
@@ -74,6 +76,7 @@ export interface ArtworkStorage {
   presignUpload(input: {
     key: string;
     contentType: string;
+    byteLength: number;
     expiresAt: Date;
   }): Promise<{ url: string; headers: Record<string, string> }>;
   read(input: { key: string; maxBytes: number; signal?: AbortSignal }): Promise<Uint8Array>;
@@ -120,8 +123,14 @@ export function createArtworkService(input: {
   storage: ArtworkStorage;
   inspect: (bytes: Uint8Array, options?: { signal?: AbortSignal }) => Promise<ArtworkInspection>;
   clock?: () => Date;
+  onCleanupError?: (code: 'ARTWORK_CLEANUP_UNAVAILABLE') => void;
 }) {
   const clock = input.clock ?? (() => new Date());
+  const cleanupFailed = () => {
+    try {
+      input.onCleanupError?.('ARTWORK_CLEANUP_UNAVAILABLE');
+    } catch {}
+  };
   async function readOwned(scope: ArtworkScope, id: string) {
     const row = await input.store.get(scope, id);
     if (!row) throw new ArtworkError('NOT_FOUND');
@@ -171,6 +180,7 @@ export function createArtworkService(input: {
       const upload = await input.storage.presignUpload({
         key: admitted.quarantineKey,
         contentType: admitted.declaredMime,
+        byteLength: admitted.declaredBytes,
         expiresAt: admitted.uploadUntil,
       });
       return { ...view(admitted), upload, uploadUntil: admitted.uploadUntil.toISOString() };
@@ -281,34 +291,58 @@ export function createArtworkService(input: {
         await input.storage.remove({ key: prepared.quarantineKey }).catch(() => {});
         return 'usable' as const;
       } catch (error) {
-        const terminal =
-          (error instanceof ArtworkError && error.code !== 'UNAVAILABLE') ||
-          (!!error &&
-            typeof error === 'object' &&
-            'code' in error &&
-            ['REJECTED', 'TOO_LARGE', 'INVALID_INPUT', 'CONFLICT'].includes(String(error.code)));
+        const absent = missing(error);
+        const now = clock();
+        const terminal = absent
+          ? now >= row.uploadUntil
+          : (error instanceof ArtworkError && error.code !== 'UNAVAILABLE') ||
+            (!!error &&
+              typeof error === 'object' &&
+              'code' in error &&
+              ['REJECTED', 'TOO_LARGE', 'INVALID_INPUT', 'CONFLICT'].includes(String(error.code)));
         if (terminal) {
-          await input.store.reject(assetId, claimId, 'INSPECTION_REJECTED', clock());
+          await input.store.reject(assetId, claimId, absent ? 'UPLOAD_MISSING' : 'INSPECTION_REJECTED', now);
           await input.storage.remove({ key: row.quarantineKey }).catch(() => {});
           return 'rejected' as const;
         }
-        await input.store.release(assetId, claimId);
+        // A missing PUT may still arrive during its grant; do not hot-loop it or
+        // retain it as queued for seven days. Infrastructure failures keep their
+        // retryable classification and durable schedule without changing expiry.
+        await input.store.release(
+          assetId,
+          claimId,
+          new Date(absent ? Math.min(+now + 30000, +row.uploadUntil) : +now + 30000),
+        );
+        if (absent) return 'retry_scheduled' as const;
         throw new ArtworkError('UNAVAILABLE');
       }
     },
     async cleanup(limit = 100) {
       for (const row of await input.store.selectQuarantineCleanup(Math.min(Math.max(limit, 1), 100), clock())) {
-        await input.storage.remove({ key: row.quarantineKey });
-        await input.store.markQuarantineCleaned(row.assetId, clock());
+        try {
+          if (!(await input.store.markQuarantineCleanupAttempt(row.assetId, clock()))) continue;
+          await input.storage.remove({ key: row.quarantineKey });
+          await input.store.markQuarantineCleaned(row.assetId, clock());
+        } catch {
+          // The attempt is durable, the failed obligation remains eligible after
+          // its cooldown, and unrelated retention deletions still progress.
+          cleanupFailed();
+        }
       }
       const rows = await input.store.selectExpired(Math.min(Math.max(limit, 1), 100), clock());
       let completed = 0;
       for (const selected of rows) {
-        const row = await input.store.markDeleting(selected.assetId, clock());
-        if (!row) continue;
-        for (const key of [row.quarantineKey, row.originalKey, row.previewKey]) await input.storage.remove({ key });
-        await input.store.finishDeleting(row.assetId, clock());
-        completed++;
+        try {
+          const row = await input.store.markDeleting(selected.assetId, clock());
+          if (!row) continue;
+          for (const key of [row.quarantineKey, row.originalKey, row.previewKey]) await input.storage.remove({ key });
+          await input.store.finishDeleting(row.assetId, clock());
+          completed++;
+        } catch {
+          // Never acknowledge partial deletion; leave DELETING durable and move
+          // to the next independent asset instead of blocking the entire sweep.
+          cleanupFailed();
+        }
       }
       return completed;
     },
@@ -331,13 +365,18 @@ export function createArtworkUsabilityPort(
       );
       return request.choices.map((choice) => {
         const row = rows.find((x) => x.assetId === choice.id);
-        const accepted = choice.kind === 'revision' && row !== undefined && usable(row, now);
+        const deferred = choice.kind === 'deferred' && request.permittedDeferredIntentIds?.includes(choice.id) === true;
+        const accepted = deferred || (choice.kind === 'revision' && row !== undefined && usable(row, now));
         return {
           ...choice,
           shopId: request.shopId,
           installationGeneration: request.installationGeneration,
           status: accepted ? 'usable' : 'unavailable',
-          lastFullyUsableLocalDay: accepted ? localDay(row!.expiresAt, request.shopTimezone).ordinal - 1 : -1,
+          lastFullyUsableLocalDay: deferred
+            ? localDay(now, request.shopTimezone).ordinal + 2
+            : accepted
+              ? localDay(row!.expiresAt, request.shopTimezone).ordinal - 1
+              : -1,
           observedAt: now.toISOString(),
         };
       });

@@ -106,15 +106,27 @@ export function createArtworkRunner(input: {
         lastHeartbeat = clock().getTime();
         lastError = null;
         processing = true;
-        let completed = 0;
+        let completed = 0,
+          assetFailed = false;
         for (const id of pending.slice(0, 5)) {
           if (signal.aborted) throw new Error('Artwork runner aborted');
-          await input.service.process(id, signal);
+          try {
+            await input.service.process(id, signal);
+            completed++;
+          } catch {
+            if (signal.aborted) throw new Error('Artwork runner aborted');
+            // The service persisted this asset's retry. Continue unrelated rows;
+            // do not turn an individual missing object into a global queue fence.
+            assetFailed = true;
+          }
           if (signal.aborted) throw new Error('Artwork runner aborted');
-          completed++;
         }
         lastHeartbeat = clock().getTime();
-        backoff = pollMs;
+        if (assetFailed) {
+          qualified = false;
+          report('ARTWORK_RUNNER_UNAVAILABLE');
+          backoff = Math.min(backoffMaxMs, Math.max(pollMs, backoff * 2));
+        } else backoff = pollMs;
         return completed;
       } catch {
         qualified = false;
