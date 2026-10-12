@@ -52,8 +52,8 @@ test('captured signed body with new delivery ID and later unsigned trigger remai
   };
   let worker;
   let workerClosed;
-  async function waitFor(predicate) {
-    for (let i = 0; i < 100; i++) {
+  async function waitFor(predicate, maximumPolls = 100) {
+    for (let i = 0; i < maximumPolls; i++) {
       if (await predicate().catch(() => false)) return;
       await delay(100);
     }
@@ -128,6 +128,10 @@ test('captured signed body with new delivery ID and later unsigned trigger remai
       async () =>
         (await pool.query('select state from pgboss.job where id=$1', [receipt.inboxId])).rows[0]?.state ===
         'completed',
+      // Four queued receipts, batchSize1 and pinned pg-boss2s polling need
+      // scheduling/startup margin. This is a local observation bound, not a
+      // provider freshness, retry or retention contract.
+      200,
     );
     assert.equal((await core.tenants.getCurrentAdminInstallation(shopId)).active, true);
     assert.equal(

@@ -271,6 +271,7 @@ export function createProductionAdminServices(
       remote,
       availability: createShopifyAvailabilityHoldV3Port({
         credentials,
+        beforeWrite: () => publicationAuthorityFresh(actor),
         isCurrent: async (scope) => {
           if (
             scope.shopId !== actor.tenantShopId ||
@@ -314,6 +315,7 @@ export function createProductionAdminServices(
           },
         }),
       maxObservationAgeMs: 30_000,
+      beforeWrite: () => publicationAuthorityFresh(actor),
     });
     async function settled(identity: Parameters<typeof coordinator.advance>[0]) {
       await active(actor);

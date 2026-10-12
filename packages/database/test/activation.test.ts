@@ -70,6 +70,8 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     httpPublication = false,
   ) {
     let providerClock = new Date(now);
+    let requestDeadline = Infinity;
+    const beforeWrite = () => providerClock.getTime() < requestDeadline;
     let providerDelay: { point: 'fetch' | 'body' | 'credential'; ms: number } | null = null;
     const providerWrites: string[] = [];
     const providerMutations: { status: string; at: number }[] = [];
@@ -417,6 +419,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       providerStatus
         ? createShopifyAvailabilityHoldV3Port({
             now: () => new Date(providerClock),
+            beforeWrite,
             isCurrent: async () => true,
             credentials: {
               acquire: async () => {
@@ -515,6 +518,7 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
       readiness,
       now: () => (providerStatus ? new Date(providerClock) : now),
       maxObservationAgeMs: 1000,
+      beforeWrite,
     };
     const identity = { shopId, configId, operationId };
     const restart = () => core.productionActivations.create({ ...options, recoveryAuthority });
@@ -529,6 +533,9 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     };
     return {
       identity,
+      expireRequest: () => {
+        requestDeadline = providerClock.getTime();
+      },
       httpMutations,
       expireRestoreCredential: (ms: number) => {
         // Caller observes held status once; restore rereads it before status mutation preparation.
@@ -703,6 +710,79 @@ describe.runIf(Boolean(process.env.DATABASE_URL))('PG18 scoped production activa
     expect(f.acquisitions).toBe(0);
     expect(f.restores).toBe(0);
   });
+  it('request expiry during PostgreSQL acquisition lock wait preserves hold intent without a provider mutation', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    expect((await f.restart().advance(f.identity)).kind).toBe('WAITING_HOLD');
+    let locked!: (pid: number) => void, release!: () => void;
+    const acquired = new Promise<number>((resolve) => {
+      locked = resolve;
+    });
+    const hold = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const blocker = database.transaction().execute(async (tx) => {
+      await sql`SELECT shop_id FROM shops WHERE shop_id=${f.identity.shopId} FOR UPDATE`.execute(tx);
+      const pid = (await sql<{ pid: number }>`SELECT pg_backend_pid() pid`.execute(tx)).rows[0]?.pid;
+      if (!pid) throw new Error('PostgreSQL holder missing');
+      locked(pid);
+      await hold;
+    });
+    const holder = await acquired;
+    const advancement = f
+      .restart()
+      .advance(f.identity)
+      .then(
+        () => 'advanced',
+        () => 'denied',
+      );
+    try {
+      let blocked = false;
+      for (let attempt = 0; attempt < 100; attempt++) {
+        const row = await sql<{
+          blocked: boolean;
+        }>`SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE ${holder}=ANY(pg_blocking_pids(pid))) blocked`.execute(
+          database,
+        );
+        if (row.rows[0]?.blocked) {
+          blocked = true;
+          break;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+      expect(blocked).toBe(true);
+      f.expireRequest();
+    } finally {
+      release();
+      await blocker;
+    }
+    expect(await advancement).toBe('denied');
+    expect(f.providerWrites).toEqual([]);
+    expect((await f.restart().read(f.identity))?.state.kind).toBe('HOLD_INTENT');
+  });
+
+  it('expiry after effective-evidence SQL rolls back every effective pointer and preserves the held receipt', async () => {
+    const f = await fixture('required', 'ACTIVE');
+    await f.prepareHold();
+    await f.publish();
+    let expired = false;
+    afterSql = (text) => {
+      if (text.includes('INSERT INTO m5_activation_evidence')) {
+        expired = true;
+        f.expireRequest();
+      }
+    };
+    try {
+      await expect(f.restart().advance(f.identity)).rejects.toThrow('Activation authority expired');
+    } finally {
+      afterSql = undefined;
+    }
+    expect(expired).toBe(true);
+    expect((await core.configs.getConfig(f.identity.shopId, f.identity.configId))?.effectiveRevisionId).toBeNull();
+    expect((await f.restart().read(f.identity))?.evidence).toBeNull();
+    expect((await f.restart().read(f.identity))?.state.kind).toBe('HELD');
+    expect(f.providerWrites).toEqual(['DRAFT']);
+  });
+
   it('v2 JSONB remains unchanged through operator hold and exact historical trusted recovery', async () => {
     const f = await fixture();
     const legacyScope = {

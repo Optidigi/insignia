@@ -156,7 +156,7 @@ function productProjection(raw: unknown, productId: string) {
   };
 }
 export function createShopifyAvailabilityHoldV3Port(
-  config: Parameters<typeof createShopifyAvailabilityHoldPort>[0],
+  config: Parameters<typeof createShopifyAvailabilityHoldPort>[0] & { beforeWrite?: () => boolean },
 ): ProductAvailabilityHoldV3Port {
   const legacy = createShopifyAvailabilityHoldV2Port(config);
   const now = config.now ?? (() => new Date());
@@ -532,7 +532,7 @@ export function createShopifyAvailabilityHoldV3Port(
     let ack: AvailabilityMutationAcknowledgementV3;
     acquisitionAttempts.add(key);
     try {
-      ack = await mutate(scope, hold, budget, 'unavailable');
+      ack = await mutate(scope, hold, budget, 'unavailable', config.beforeWrite);
     } catch (error) {
       if (error instanceof ShopifyAvailabilityHoldError && error.kind === 'not_dispatched') throw error;
       // An ACK that cannot be qualified cannot be attributed by a later status read.

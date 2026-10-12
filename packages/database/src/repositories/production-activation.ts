@@ -31,12 +31,13 @@ export type ProductionActivationOptions = {
   readiness: Omit<ActivationReadinessPort, 'observeProjection'>;
   now?: () => Date;
   maxObservationAgeMs: number;
+  beforeWrite?: () => boolean;
   recoveryAuthority?: TrustedAvailabilityRecoveryAuthorityPort;
 };
 /** Scoped server-only factory. Raw executor, store sessions and commit never escape. */
 export function createProductionActivation(database: Kysely<Database>, options: ProductionActivationOptions) {
   if (!/^[1-9][0-9]*$/.test(options.appId)) throw new Error('Invalid trusted app identity');
-  const store = new PgActivationStore(database, options.appClientId);
+  const store = new PgActivationStore(database, options.appClientId, options.beforeWrite);
   const now = options.now ?? (() => new Date());
   const coordinator = createPublicationActivation({
     store,
@@ -45,6 +46,7 @@ export function createProductionActivation(database: Kysely<Database>, options: 
     maxObservationAgeMs: options.maxObservationAgeMs,
     readiness: {
       ...options.readiness,
+      ...(options.beforeWrite ? { beforeWrite: options.beforeWrite } : {}),
       observeProjection: async (candidate) => {
         const projection = publicationProjection(candidate.desiredProjection);
         const tenant = {
