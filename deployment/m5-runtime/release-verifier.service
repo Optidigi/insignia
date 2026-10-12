@@ -1,0 +1,10 @@
+[Unit]
+Description=Insignia private release verification bridge
+
+[Service]
+Type=exec
+ExecStart=/usr/bin/python3 -B /home/serveradmin/insignia-m5-admin-presentation-readiness-worktree/scripts/m5-runtime/release-verification-host.py /home/serveradmin/insignia-milestone-autonomy-handoff/m5-private-collector-binding-qualified.json
+WorkingDirectory=/home/serveradmin/insignia-m5-admin-presentation-readiness-worktree
+KillMode=control-group
+Restart=no
+TimeoutStopSec=15
