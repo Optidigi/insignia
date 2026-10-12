@@ -31,8 +31,9 @@ export interface SigningKeyStore {
     wrappingKeyId: string;
     firstDay: number;
     lastDay: number;
+    beforeWrite?: () => boolean;
   }): Promise<void>;
-  activate(scope: KeyScope, keyId: number): Promise<void>;
+  activate(scope: KeyScope, keyId: number, beforeWrite?: () => boolean): Promise<void>;
   revoke(scope: KeyScope, keyId: number, commandKey: string, reason: string): Promise<void>;
   destroy(scope: KeyScope, keyId: number): Promise<void>;
   destroyInactiveInstallationKeys(shopId: string, installationGeneration: string): Promise<number>;
@@ -62,6 +63,7 @@ export class SigningKeyLifecycle {
     keyId: number;
     firstDay: number;
     lastDay: number;
+    beforeWrite?: () => boolean;
     seed?: Uint8Array;
   }): Promise<{ publicKeyFingerprint: string }> {
     requireScope(await this.store.getActiveScope(input.scope.shopId, input.scope.installationGeneration), input.scope);
@@ -79,6 +81,7 @@ export class SigningKeyLifecycle {
         wrappingKeyId: envelope.kid,
         firstDay: input.firstDay,
         lastDay: input.lastDay,
+        ...(input.beforeWrite ? { beforeWrite: input.beforeWrite } : {}),
       });
       return { publicKeyFingerprint: publicKeyFingerprintValue };
     } finally {
@@ -86,8 +89,9 @@ export class SigningKeyLifecycle {
     }
   }
 
-  async activate(scope: KeyScope, keyId: number): Promise<void> {
-    await this.store.activate(scope, keyId);
+  async activate(scope: KeyScope, keyId: number, beforeWrite?: () => boolean): Promise<void> {
+    if (beforeWrite) await this.store.activate(scope, keyId, beforeWrite);
+    else await this.store.activate(scope, keyId);
   }
   async revoke(scope: KeyScope, keyId: number, commandKey: string, reason: string): Promise<void> {
     await this.store.revoke(scope, keyId, commandKey, reason);

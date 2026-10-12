@@ -400,3 +400,65 @@ test('private verification receiver independently fences generation and admits o
     await new Promise((resolve) => server.close(resolve));
   }
 });
+
+test('collector transport awaits preparation beyond observation TTL within the authenticated deadline', async (t) => {
+  const { createReleaseVerificationClient } = await import('../../apps/web/src/server/admin/release-verification.ts');
+  const { createReleaseVerificationServer } = await import('./release-verification-server.mjs');
+  const { mkdtemp, rm } = await import('node:fs/promises');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const directory = await mkdtemp(join(tmpdir(), 'm5-verification-wait-'));
+  const socket = join(directory, 'collector.sock');
+  const binding = {
+    shopId: 'synthetic-tenant',
+    installationGeneration: '1',
+    appClientId: '1443cf6d03d39edae7c101a943c5c684',
+    authorizationGeneration: '22222222-2222-4222-8222-222222222222',
+    authorizationEpoch: 0,
+    externalInstallationId: 'gid://shopify/AppInstallation/321',
+  };
+  let started, finish;
+  const admitted = new Promise((resolve) => {
+    started = resolve;
+  });
+  const preparation = new Promise((resolve) => {
+    finish = resolve;
+  });
+  t.mock.timers.enable({ apis: ['setTimeout', 'Date'], now: new Date('2026-10-12T12:00:00Z') });
+  const server = createReleaseVerificationServer({
+    readBinding: async () => binding,
+    async collect(input) {
+      started();
+      await preparation;
+      return {
+        classification: 'TRUSTED_RELEASE_COLLECT_APPEND_ACK',
+        appendAttempted: true,
+        appendAcknowledged: true,
+        ambiguousWrite: false,
+        retryAuthorized: false,
+        recordId: input.requestId,
+      };
+    },
+  });
+  await new Promise((resolve) => server.listen(socket, resolve));
+  try {
+    const result = createReleaseVerificationClient(socket).collect({
+      requestId: '11111111-1111-4111-8111-111111111111',
+      binding,
+      expectedActiveAppVersionRef: '1163229200385',
+      deadlineMs: Date.now() + 90_000,
+    });
+    const settled = result.then(
+      (value) => value,
+      () => ({ state: 'TRANSPORT_FAILED' }),
+    );
+    await admitted;
+    t.mock.timers.tick(31_000); // Fresh provider observations are collected after preparation, not restamped.
+    finish();
+    assert.equal((await settled).state, 'COMPLETE');
+  } finally {
+    t.mock.timers.reset();
+    await new Promise((resolve) => server.close(resolve));
+    await rm(directory, { recursive: true, force: true });
+  }
+});

@@ -338,6 +338,16 @@ export async function provisionSigningKey(
       ready = { artifactScope, trusted, observed };
       assertCachedReadiness();
     }
+    const beforeWrite = () => {
+      try {
+        live();
+        dayCoverage();
+        assertCachedReadiness();
+        return true;
+      } catch {
+        return false;
+      }
+    };
     await readiness('READ_FUNCTIONS_BEFORE');
     await operation('CREATE_PENDING', async () => {
       await currentScope();
@@ -345,7 +355,7 @@ export async function provisionSigningKey(
       assertCachedReadiness();
       flags.pendingCreateAttempted = true;
       uncertain = 'CREATE_PENDING';
-      await lifecycle.createPending({ scope, ...plan });
+      await lifecycle.createPending({ scope, ...plan, beforeWrite });
       flags.pendingCreateAcknowledged = true;
       uncertain = null;
     });
@@ -401,7 +411,7 @@ export async function provisionSigningKey(
       assertCachedReadiness();
       flags.activationAttempted = true;
       uncertain = 'ACTIVATE_KEY';
-      await lifecycle.activate(scope, plan.keyId);
+      await lifecycle.activate(scope, plan.keyId, beforeWrite);
       flags.activationAcknowledged = true;
       uncertain = null;
     });

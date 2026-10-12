@@ -98,6 +98,7 @@ export function createProductionAdminServices(
   const authenticationLogger = createObservability().logger;
   const activations = new WeakMap<AdminActor, ReturnType<typeof core.productionActivations.create>>();
   const verifications = new WeakMap<AdminActor, DurableCoreReleaseReader>();
+  const verified = new WeakMap<AdminActor, NonNullable<Awaited<ReturnType<DurableCoreReleaseReader['read']>>>>();
   const collecting = new Map<string, Promise<Awaited<ReturnType<ReleaseVerificationCollector['collect']>>>>();
   const policy = featurePolicy(env);
   const partner =
@@ -173,18 +174,26 @@ export function createProductionAdminServices(
       });
       verifications.set(actor, reader);
     }
+    const evidence = await reader.read({
+      scope: { shopId: actor.tenantShopId, installationGeneration: actor.installationGeneration, appClientId: apiKey },
+      expectedActiveAppVersionRef: '1163229200385',
+      now: new Date(),
+    });
+    if (evidence) verified.set(actor, evidence);
+    else verified.delete(actor);
+    return evidence !== null;
+  }
+  function publicationAuthorityFresh(actor: AdminActor) {
+    if (!releaseCollector) return true;
+    const evidence = verified.get(actor);
+    const at = Date.now();
+    const observed = Date.parse(evidence?.record.attestation.observedAt ?? '');
+    const expires = Date.parse(evidence?.record.attestation.expiresAt ?? '');
     return (
-      (await reader.read({
-        scope: {
-          shopId: actor.tenantShopId,
-          installationGeneration: actor.installationGeneration,
-          appClientId: apiKey,
-        },
-        expectedActiveAppVersionRef: '1163229200385',
-        now: new Date(),
-      })) !== null
+      actor.expiresAtMs > at && Number.isFinite(observed) && observed <= at && at - observed <= 30_000 && at < expires
     );
   }
+
   const catalog = {
     async list(actor: AdminActor, input: { query: string; cursor: string | null; limit: number }) {
       await active(actor);
@@ -248,7 +257,13 @@ export function createProductionAdminServices(
       },
     };
     const transport = createPublicationAdminHttpTransport({ credentials });
-    const remote = createPublicationAdminAdapter({ transport });
+    const adapter = createPublicationAdminAdapter({ transport });
+    const remote = {
+      ...adapter,
+      set(target: Parameters<typeof adapter.set>[0], beforeSend?: () => boolean) {
+        return adapter.set(target, () => publicationAuthorityFresh(actor) && (beforeSend?.() ?? true));
+      },
+    };
     const functions = createFunctionOwnershipReconciler({ transport });
     const coordinator = core.productionActivations.create({
       appId,
@@ -300,12 +315,36 @@ export function createProductionAdminServices(
         }),
       maxObservationAgeMs: 30_000,
     });
+    async function settled(identity: Parameters<typeof coordinator.advance>[0]) {
+      await active(actor);
+      if (identity.shopId !== actor.tenantShopId) throw new Error('Publication scope mismatch');
+      const candidate = await coordinator.read(identity);
+      const publication = await core.configs.getCurrentPublication(identity.shopId, identity.configId);
+      const config = await core.configs.getConfig(identity.shopId, identity.configId);
+      return (
+        candidate?.state.kind === 'RESTORED' &&
+        candidate.evidence !== null &&
+        publication?.operationId === identity.operationId &&
+        publication.status === 'activated' &&
+        publication.phase === 'active' &&
+        config?.effectiveOperationId === identity.operationId
+      );
+    }
     const coordinated = {
       ...coordinator,
+      publications: {
+        ...coordinator.publications,
+        async advance(shopId: string, configId: string, operationId: string) {
+          if (!(await settled({ shopId, configId, operationId })) && !(await verifyPublicationRelease(actor)))
+            throw new Error('Publication verification unavailable');
+          return coordinator.publications.advance(shopId, configId, operationId);
+        },
+      },
       async advance(identity: Parameters<typeof coordinator.advance>[0]) {
         // Independent collection completes before PgActivationStore takes locks.
         // The coordinator still consumes passive evidence and checks each write.
-        if (!(await verifyPublicationRelease(actor))) throw new Error('Publication verification unavailable');
+        if (!(await settled(identity)) && !(await verifyPublicationRelease(actor)))
+          throw new Error('Publication verification unavailable');
         return coordinator.advance(identity);
       },
     };

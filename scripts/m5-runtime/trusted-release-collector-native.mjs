@@ -2,13 +2,16 @@
  * Root qualifies localhost-only forwarding, producer, exact source/deps/runtime
  * and the outer 300s/1MiB process-group boundary before any future invocation. */
 import assert from 'node:assert/strict';
+import { createReadStream } from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
 import { createRequire, syncBuiltinESMExports } from 'node:module';
 import { join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { parseReleaseVerificationRequest } from '../../apps/web/src/server/admin/release-verification.ts';
 import { appendTrustedRelease } from './release-append.mjs';
 import { collectFreshTrustedRelease, recordPhaseName } from './trusted-release-collector.mjs';
+import { readPrivatePacket } from './trusted-release-input.mjs';
 import { createManagementProcess } from './trusted-release-management-process.mjs';
 import { createOwnerHttps } from './trusted-release-owner-https.mjs';
 
@@ -71,7 +74,18 @@ async function main() {
       bytes.fill(0);
       for (const chunk of chunks) chunk.fill(0);
     }
-    const deadline = Date.now() + 300000;
+    const verificationRequest =
+      process.env.INSIGNIA_RELEASE_VERIFICATION_FD === '3'
+        ? parseReleaseVerificationRequest(
+            JSON.parse((await readPrivatePacket(createReadStream('', { fd: 3, autoClose: true }))).toString('utf8')),
+          )
+        : undefined;
+    const deadline = Math.min(Date.now() + 300000, verificationRequest?.deadlineMs ?? Infinity);
+    const currentTime = () => {
+      const time = Date.now();
+      assert.ok(time < deadline);
+      return time;
+    };
     const require = createRequire(new URL('../../apps/web/package.json', import.meta.url));
     const { Pool } = require('pg');
     const { createDurableCore, sha256CanonicalJson } = await import(
@@ -101,7 +115,7 @@ async function main() {
         operator: { user: 'insignia_release_append', password: packet.appendPassword },
       },
       {
-        now: Date.now,
+        now: currentTime,
         management,
         async readTenant() {
           const managed = await core.tenants.getManagedInstallationState(SHOP);
@@ -111,6 +125,18 @@ async function main() {
             installationGeneration: managed.currentGeneration,
           });
           assert.ok(scope && scope.shopDomain === SHOP && scope.shopifyShopId === managed.shopifyShopId);
+          if (verificationRequest)
+            assert.deepEqual(
+              {
+                shopId: managed.shopId,
+                installationGeneration: managed.currentGeneration,
+                appClientId: APP,
+                authorizationGeneration: scope.authorizationGeneration,
+                authorizationEpoch: scope.authorizationEpoch,
+                externalInstallationId: managed.externalInstallationId,
+              },
+              verificationRequest.binding,
+            );
           return {
             shop: SHOP,
             tenantShopId: managed.shopId,
@@ -150,7 +176,7 @@ async function main() {
             createDurableCore,
             sha256CanonicalJson,
             databaseUrl: packet.databaseUrl,
-            now: Date.now,
+            now: currentTime,
           }),
       },
     );

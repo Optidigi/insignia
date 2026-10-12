@@ -7,7 +7,8 @@ import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { createReleaseVerificationServer } from './release-verification-server.mjs';
 import { parseOwnerPrivatePacket } from './trusted-release-collector-native.mjs';
-import { launchQualifiedTrustedRelease, readPrivatePacket } from './trusted-release-launch.mjs';
+import { readPrivatePacket } from './trusted-release-input.mjs';
+import { launchQualifiedTrustedRelease } from './trusted-release-launch.mjs';
 
 const DIRECTORY = '/home/serveradmin/insignia-milestone-autonomy-handoff/m5-release-verification';
 const SOCKET = `${DIRECTORY}/collector.sock`;
@@ -68,12 +69,12 @@ async function main() {
         });
         return evidence?.record.recordId ?? null;
       },
-      async collect() {
+      async collect(request) {
         // Fresh intent ID is independent of all prior sealed runs. The existing
         // launcher requalifies source and prior settlement before reserving IO.
         const recordId = randomUUID();
         const bytes = Buffer.from(JSON.stringify({ ...packet, recordId }));
-        const result = await launchQualifiedTrustedRelease(bytes);
+        const result = await launchQualifiedTrustedRelease(bytes, request);
         return { ...result, recordId };
       },
     });

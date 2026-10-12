@@ -9,7 +9,10 @@ import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtim
 import { build } from 'esbuild';
 import { Pool } from 'pg';
 import binding from '../../../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
+import { qualifyReleaseAppendInput } from '../../../../scripts/m5-runtime/release-append.mjs';
 import { createReleaseVerificationServer } from '../../../../scripts/m5-runtime/release-verification-server.mjs';
+import { collectFreshTrustedRelease } from '../../../../scripts/m5-runtime/trusted-release-collector.mjs';
+import { fixture as collectorFixture } from '../../../../scripts/m5-runtime/trusted-release-collector-fixture.mjs';
 import { handleAdminRequest } from '../../src/server/admin/http.ts';
 import { createReleaseVerificationClient } from '../../src/server/admin/release-verification.ts';
 import { isolatedDatabase } from '../support/isolated-database.mjs';
@@ -79,13 +82,15 @@ for (const releaseMode of [
   'trusted-function-mismatch',
   'demand-function-mismatch',
   'demand-signing',
+  'demand-success',
+  'demand-lost-ack',
   'demand-expired',
   'demand-failure',
   'demand-unrelated-completion',
 ])
   test(`production composition uses signed staff SDK, current policy and trusted readiness: ${releaseMode}`, {
     skip: !database,
-    timeout: 30000,
+    timeout: 70000,
   }, async (t) => {
     const output = new URL('../../.astro/m5-production-composition.mjs', import.meta.url);
     await mkdir(new URL('../../.astro/', import.meta.url), { recursive: true });
@@ -107,7 +112,9 @@ for (const releaseMode of [
     const tenantId = randomUUID();
     const shopNumber = String(BigInt(`0x${randomUUID().replaceAll('-', '').slice(0, 12)}`) + 1n);
     const shopId = `gid://shopify/Shop/${shopNumber}`;
-    const signing = releaseMode === 'demand-signing';
+    const lostAcknowledgement = releaseMode === 'demand-lost-ack';
+    const successful = releaseMode === 'demand-success' || lostAcknowledgement;
+    const signing = releaseMode === 'demand-signing' || successful;
     const origin = signing ? 'https://insignia-app.optidigi.nl' : 'https://synthetic.example';
     const shop = signing ? 'insignia-rewrite-dev.myshopify.com' : `m${randomUUID().replaceAll('-', '')}.myshopify.com`;
     let providerMode = 'current';
@@ -202,12 +209,12 @@ for (const releaseMode of [
               expected.appVersionRef,
               expected,
               record,
-              observedAt,
+              record.attestation.observedAt,
               proof,
               sha256CanonicalJson({
                 trustedRecord: record,
                 expectedBuild: expected,
-                activeVersionObservedAt: observedAt,
+                activeVersionObservedAt: record.attestation.observedAt,
                 activeVersionEvidenceSha256: proof,
               }),
             ],
@@ -252,6 +259,70 @@ for (const releaseMode of [
                 "SELECT count(*)::integer n FROM pg_stat_activity WHERE datname=current_database() AND state='idle in transaction'",
               );
               assert.equal(open.rows[0].n, 0);
+              if (successful) {
+                const f = await collectorFixture({
+                  root: socketDirectory,
+                  time: Date.now(),
+                  recordId: randomUUID(),
+                  binding: {
+                    tenantShopId: tenantId,
+                    installationGeneration: '1',
+                    shopId,
+                    externalInstallationId: requestBinding.externalInstallationId,
+                    authorizationGeneration: requestBinding.authorizationGeneration,
+                    authorizationEpoch: 0,
+                  },
+                  functionIds: { transform: 'expected-transform', validation: 'expected-validation' },
+                });
+                f.ports.readTenant = async () => {
+                  const managed = await core.tenants.getManagedInstallationState(shop);
+                  const current = await core.tenants.getActiveAuthorizationScope({
+                    shopId: managed.shopId,
+                    installationGeneration: managed.currentGeneration,
+                  });
+                  return {
+                    shop,
+                    tenantShopId: managed.shopId,
+                    installationGeneration: managed.currentGeneration,
+                    shopId: `gid://shopify/Shop/${managed.shopifyShopId}`,
+                    externalInstallationId: managed.externalInstallationId,
+                    authorizationGeneration: current.authorizationGeneration,
+                    authorizationEpoch: current.authorizationEpoch,
+                  };
+                };
+                f.ports.append = async (input) => {
+                  const q = qualifyReleaseAppendInput(input, Date.now());
+                  await writerPool.query(
+                    'INSERT INTO trusted_release_records(record_id,shop_id,installation_generation,app_client_id,active_app_version_ref,expected_build,trusted_record,active_version_observed_at,active_version_evidence_sha256,evidence_digest) VALUES($1,$2,1,$3,$4,$5,$6,$7,$8,$9)',
+                    [
+                      input.recordId,
+                      tenantId,
+                      client,
+                      q.record.activeAppVersionRef,
+                      q.expected,
+                      q.record,
+                      q.observations.observedAt,
+                      q.observations.proof,
+                      q.digest,
+                    ],
+                  );
+                  const read = await createDurableCore(runtimePool).trustedReleaseRecords.read({
+                    scope: q.scope,
+                    expectedActiveAppVersionRef: q.record.activeAppVersionRef,
+                    now: new Date(),
+                  });
+                  assert.equal(read.record.recordId, input.recordId);
+                  return {
+                    classification: 'TRUSTED_RELEASE_APPEND_ACK_RUNTIME_QUALIFIED',
+                    recordId: input.recordId,
+                    writeAttempted: true,
+                    writeAcknowledged: true,
+                  };
+                };
+                const result = await collectFreshTrustedRelease(f.config, f.ports);
+                if (lostAcknowledgement && collected === 1) throw new Error('Synthetic collector completion lost');
+                return { ...result, recordId: f.config.recordId };
+              }
               await appendRecord(writerPool);
               return {
                 classification: 'TRUSTED_RELEASE_COLLECT_APPEND_ACK',
@@ -298,6 +369,7 @@ for (const releaseMode of [
         });
       });
       let publicConfig = null;
+      const productFields = new Map();
       globalThis.fetch = async (url, init) => {
         const address = String(url);
         const { query, variables } = JSON.parse(String(init.body));
@@ -349,15 +421,17 @@ for (const releaseMode of [
         if (/^mutation\b/.test(query)) {
           adminMutations++;
           if (signing && query.includes('InsigniaSet')) {
-            publicConfig = variables.metafields[0].value;
+            const input = variables.metafields[0];
             const field = {
-              owner: { id: shopId },
+              owner: { id: input.ownerId },
               namespace: `app--${binding.appId}`,
-              key: 'insignia_public_config_v2',
-              type: 'json',
-              value: publicConfig,
+              key: input.key,
+              type: input.type,
+              value: input.value,
               compareDigest: '1'.repeat(64),
             };
+            if (input.ownerId === shopId) publicConfig = input.value;
+            else productFields.set(input.key, field);
             return Response.json({ data: { metafieldsSet: { userErrors: [], metafields: [field] } } });
           }
           throw new Error('Synthetic test forbids remote mutation');
@@ -408,7 +482,7 @@ for (const releaseMode of [
           });
         if (query.includes('InsigniaOwnedFunctions')) {
           functionReads++;
-          if (signing && functionReads <= 2) {
+          if (signing && (successful || functionReads <= 2)) {
             const functions = [
               {
                 id: 'expected-transform',
@@ -480,7 +554,39 @@ for (const releaseMode of [
           });
         }
         if (query.includes('InsigniaReadRegistration') || query.includes('InsigniaReadPolicy'))
-          return Response.json({ data: { node: { __typename: 'Product', id: productId, field: null } } });
+          return Response.json({
+            data: {
+              node: {
+                __typename: 'Product',
+                id: productId,
+                field:
+                  productFields.get(
+                    query.includes('InsigniaReadRegistration') ? 'insignia_registration_v2' : 'insignia_policy_v2',
+                  ) ?? null,
+              },
+            },
+          });
+        if (query.includes('InsigniaAvailabilityV3Product'))
+          return Response.json({
+            data: {
+              shop: { id: shopId },
+              currentAppInstallation: {
+                app: { apiKey: client },
+                accessScopes: ['read_products', 'write_products', 'read_publications', 'read_product_listings'].map(
+                  (handle) => ({ handle }),
+                ),
+              },
+              node: {
+                __typename: 'Product',
+                id: productId,
+                status: 'DRAFT',
+                updatedAt: '2026-10-01T00:00:00Z',
+                publishedAt: null,
+                onlineStoreUrl: null,
+                resourcePublications: { nodes: [], pageInfo: { hasNextPage: false, hasPreviousPage: false } },
+              },
+            },
+          });
         throw new Error('Unexpected synthetic Admin document');
       };
       const policy = {
@@ -503,24 +609,26 @@ for (const releaseMode of [
         options: 'options',
         pricing: 'pricing',
       };
-      const services = createProductionAdminServices(
-        {
-          DATABASE_URL: fixtureDatabase,
-          SHOPIFY_CLIENT_ID: client,
-          SHOPIFY_CLIENT_SECRET: secret,
-          APP_URL: origin,
-          INSIGNIA_SHOPIFY_APP_ID: binding.appId,
-          INSIGNIA_PARTNER_ORGANIZATION_ID: '12345',
-          INSIGNIA_PARTNER_ACCESS_TOKEN: 'synthetic-partner-grant',
-          INSIGNIA_M5_ENTITLEMENT_POLICY_JSON: JSON.stringify(policy),
-          INSIGNIA_M5_FEATURES_JSON: JSON.stringify(features),
-        },
-        runtimePool ?? pool,
-        () => new Date(entitlementNow),
-        undefined,
-        signingConfiguration,
-        verificationClient,
-      );
+      const compose = () =>
+        createProductionAdminServices(
+          {
+            DATABASE_URL: fixtureDatabase,
+            SHOPIFY_CLIENT_ID: client,
+            SHOPIFY_CLIENT_SECRET: secret,
+            APP_URL: origin,
+            INSIGNIA_SHOPIFY_APP_ID: binding.appId,
+            INSIGNIA_PARTNER_ORGANIZATION_ID: '12345',
+            INSIGNIA_PARTNER_ACCESS_TOKEN: 'synthetic-partner-grant',
+            INSIGNIA_M5_ENTITLEMENT_POLICY_JSON: JSON.stringify(policy),
+            INSIGNIA_M5_FEATURES_JSON: JSON.stringify(features),
+          },
+          runtimePool ?? pool,
+          () => new Date(entitlementNow),
+          undefined,
+          signingConfiguration,
+          verificationClient,
+        );
+      let services = compose();
       const actor = await services.authenticate(
         new Request(origin + '/api/admin/products', {
           headers: { Authorization: `Bearer ${staffToken(shop)}` },
@@ -561,20 +669,38 @@ for (const releaseMode of [
       }
       entitlementNow = '2026-09-30T23:59:59.999Z';
       providerMode = 'current';
-      const publishResponse = await handleAdminRequest(
-        new Request(origin + '/api/admin/products/555/config', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${staffToken(shop)}`,
-            Origin: origin,
-            'Content-Type': 'application/json',
-            'Idempotency-Key': 'composition-publish',
-          },
-          body: JSON.stringify({ action: 'publish', configId: created.configId, draftVersion: saved.draftVersion }),
-        }),
-        services,
-        { kind: 'config', productId },
-      );
+      const publishRequest = () =>
+        handleAdminRequest(
+          new Request(origin + '/api/admin/products/555/config', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${staffToken(shop)}`,
+              Origin: origin,
+              'Content-Type': 'application/json',
+              'Idempotency-Key': 'composition-publish',
+            },
+            body: JSON.stringify({ action: 'publish', configId: created.configId, draftVersion: saved.draftVersion }),
+          }),
+          services,
+          { kind: 'config', productId },
+        );
+      const responses =
+        releaseMode === 'demand-success'
+          ? await Promise.all([publishRequest(), publishRequest()])
+          : [await publishRequest()];
+      let publishResponse = responses[0];
+      if (lostAcknowledgement) {
+        assert.equal(publishResponse.status, 403);
+        assert.equal(adminMutations, 0);
+        assert.equal(
+          (await pool.query('SELECT count(*)::integer n FROM signing_keys WHERE shop_id=$1', [tenantId])).rows[0].n,
+          0,
+        );
+        assert.equal(await core.configs.getCurrentPublication(tenantId, created.configId), null);
+        services = compose(); // New runtime context reads the settled immutable collector record; no redispatch.
+        publishResponse = await publishRequest();
+        assert.equal(collected, 1);
+      }
       if (['demand-expired', 'demand-failure', 'demand-unrelated-completion'].includes(releaseMode)) {
         assert.equal(publishResponse.status, 403);
         const config = await core.configs.getConfig(tenantId, created.configId);
@@ -586,6 +712,93 @@ for (const releaseMode of [
       }
       assert.equal(publishResponse.status, 202);
       const published = await publishResponse.json();
+      if (successful) {
+        assert.equal(published.state, 'ACTIVE');
+        if (!lostAcknowledgement) {
+          assert.equal(responses[1].status, 202);
+          assert.equal((await responses[1].json()).revisionId, published.revisionId);
+        }
+        const effective = await core.configs.getConfig(tenantId, created.configId);
+        assert.equal(effective.effectiveRevisionId, published.revisionId);
+        const current = await core.configs.getCurrentPublication(tenantId, created.configId);
+        assert.equal(current.status, 'activated');
+        assert.equal(current.activationKind, 'RESTORED');
+        const evidence = (
+          await pool.query('SELECT evidence FROM m5_activation_evidence WHERE shop_id=$1 AND operation_id=$2', [
+            tenantId,
+            current.operationId,
+          ])
+        ).rows[0].evidence;
+        assert.equal(evidence.version, 'm5-activation-evidence-v3');
+        assert.equal(evidence.admissionClass, 'FIRST_PUBLICATION');
+        assert.equal(collected, 1);
+        assert.equal(
+          (await pool.query('SELECT count(*)::integer n FROM signing_keys WHERE shop_id=$1', [tenantId])).rows[0].n,
+          1,
+        );
+        assert.equal(adminMutations, 4);
+        if (lostAcknowledgement) return;
+        // Idempotent settled replay must not depend on a collector after evidence expires.
+        await new Promise((resolve) => setTimeout(resolve, 31_000));
+        await new Promise((resolve) => verificationServer.close(resolve));
+        const replay = await handleAdminRequest(
+          new Request(origin + '/api/admin/products/555/config', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${staffToken(shop)}`,
+              Origin: origin,
+              'Content-Type': 'application/json',
+              'Idempotency-Key': 'composition-publish',
+            },
+            body: JSON.stringify({ action: 'publish', configId: created.configId, draftVersion: saved.draftVersion }),
+          }),
+          services,
+          { kind: 'config', productId },
+        );
+        assert.equal(replay.status, 202, JSON.stringify(await replay.clone().json()));
+        assert.equal((await replay.json()).state, 'ACTIVE');
+        assert.equal(collected, 1);
+        assert.equal(adminMutations, 4);
+        // The next immutable revision needs fresh authority even though the key is already provisioned.
+        await new Promise((resolve) => verificationServer.listen(join(socketDirectory, 'collector.sock'), resolve));
+        const nextDraft = await services.configs.save(actor, productId, {
+          configId: created.configId,
+          draftVersion: saved.draftVersion,
+          draft: validDraft(),
+          idempotencyKey: 'composition-save-next',
+        });
+        assert.equal(nextDraft.kind, 'saved');
+        const next = await handleAdminRequest(
+          new Request(origin + '/api/admin/products/555/config', {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${staffToken(shop)}`,
+              Origin: origin,
+              'Content-Type': 'application/json',
+              'Idempotency-Key': 'composition-publish-next',
+            },
+            body: JSON.stringify({
+              action: 'publish',
+              configId: created.configId,
+              draftVersion: nextDraft.draftVersion,
+            }),
+          }),
+          services,
+          { kind: 'config', productId },
+        );
+        assert.equal(next.status, 202);
+        const activated = await next.json();
+        assert.equal(activated.state, 'ACTIVE');
+        assert.notEqual(activated.revisionId, published.revisionId);
+        assert.equal(collected, 2);
+        assert.equal(
+          (await pool.query('SELECT count(*)::integer n FROM signing_keys WHERE shop_id=$1', [tenantId])).rows[0].n,
+          1,
+        );
+        t.mock.timers.reset();
+        return;
+      }
+
       assert.equal(published.kind, 'accepted');
       assert.equal(published.state, 'ACTIVATION_WAITING_RELEASE');
       assert.equal(
@@ -613,6 +826,7 @@ for (const releaseMode of [
         'only authenticated trusted evidence permits current Function observation',
       );
     } finally {
+      t.mock.timers.reset();
       globalThis.fetch = oldFetch;
       setAbstractFetchFunc(oldSdkFetch);
       await runtimePool?.end();

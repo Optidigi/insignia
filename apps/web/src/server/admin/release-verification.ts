@@ -41,7 +41,7 @@ export function createReleaseVerificationClient(
   return {
     async collect(value) {
       const input = parseReleaseVerificationRequest(value);
-      const remaining = Math.min(30_000, input.deadlineMs - Date.now());
+      const remaining = Math.min(300_000, input.deadlineMs - Date.now());
       if (remaining <= 0) throw new Error('Publication verification expired');
       return new Promise((resolve, reject) => {
         const fail = () => reject(new Error('Publication verification unavailable'));
