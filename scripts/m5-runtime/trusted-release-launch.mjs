@@ -452,8 +452,16 @@ export async function launchQualifiedTrustedRelease(packetBytes, verificationReq
     } catch (error) {
       if (error.code !== 'ENOENT') throw error;
     }
+    const currentHead = (
+      await promisify(execFile)('/usr/bin/git', ['rev-parse', 'HEAD'], {
+        cwd: REPOSITORY,
+        env: { PATH: '/usr/bin:/bin' },
+        timeout: 5000,
+      })
+    ).stdout.trim();
+    assert.match(currentHead, /^[0-9a-f]{40}$/);
     const qualified = await qualifyLaunchInputs(
-      await privateJson(join(ROOT, 'm5-trusted-release-launch-qualified-inputs.json'), 1048576),
+      await privateJson(join(ROOT, `m5-trusted-release-launch-qualified-inputs-${currentHead}.json`), 1048576),
     );
     intent = join(ROOT, `m5-trusted-release-launch-intent-${recordId}`);
     await mkdir(intent, { mode: 0o700 });
