@@ -294,6 +294,9 @@ const ORIGINAL_SDK = `${ROOT}/app-management-readonly-preparation-20261010`;
 const SOURCE_PATHS = [
   'scripts/m5-runtime/trusted-release-launch.mjs',
   'scripts/m5-runtime/trusted-release-launch.test.mjs',
+  'scripts/m5-runtime/release-verification-native.mjs',
+  'scripts/m5-runtime/release-verification-server.mjs',
+  'apps/web/src/server/admin/release-verification.ts',
   ...[
     'collector-native',
     'collector',
@@ -341,7 +344,7 @@ export function qualifyCodeInputPath(path) {
     path === EXECUTABLE || path.startsWith(`${REPOSITORY}/`) || path.startsWith(`${ORIGINAL_SDK}/`),
     'input_path_unqualified',
   );
-  assert.ok(path === EXECUTABLE || /\.(?:mjs|cjs|js|json|node|yaml)$/.test(path), 'code_input_required');
+  assert.ok(path === EXECUTABLE || /\.(?:mjs|cjs|js|ts|json|node|yaml)$/.test(path), 'code_input_required');
   assert.ok(
     !/^(?:\.env.*|auth\.json|session\.json|context\.json)$/.test(basename(path)),
     'private_auth_input_forbidden',

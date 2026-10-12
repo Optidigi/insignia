@@ -1,42 +1,12 @@
 import assert from 'node:assert/strict';
-import { execFile, spawn } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import { createHmac, randomUUID } from 'node:crypto';
 import { test } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
-import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
 import { createDurableCore } from '@insignia/database';
 import { Pool } from 'pg';
 import { installQueue } from '../../../scripts/m5-024/install-queue.mjs';
-
-async function isolatedDatabase() {
-  const admin = new Pool({ connectionString: process.env.DATABASE_URL });
-  const database = `m5024_http_${randomUUID().replaceAll('-', '')}`;
-  const url = new URL(process.env.DATABASE_URL);
-  url.pathname = `/${database}`;
-  const root = fileURLToPath(new URL('../../../', import.meta.url));
-  let created = false;
-  async function close() {
-    try {
-      if (created) await admin.query(`DROP DATABASE ${database}`);
-    } finally {
-      await admin.end();
-    }
-  }
-  try {
-    await admin.query(`CREATE DATABASE ${database}`);
-    created = true;
-    await promisify(execFile)(
-      `${root}node_modules/.bin/dbmate`,
-      ['--no-dump-schema', '--migrations-dir', `${root}packages/database/migrations`, 'up'],
-      { cwd: root, env: { ...process.env, DATABASE_URL: url.href }, timeout: 30_000 },
-    );
-    return { connectionString: url.href, close };
-  } catch (error) {
-    await close();
-    throw error;
-  }
-}
+import { isolatedDatabase } from './support/isolated-database.mjs';
 
 test('built HTTP ingress authenticates raw bytes and durably deduplicates through PostgreSQL and queue', {
   skip: !process.env.DATABASE_URL && process.env.INSIGNIA_REQUIRE_POSTGRES_TEST !== '1',

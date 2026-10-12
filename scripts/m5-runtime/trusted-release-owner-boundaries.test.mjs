@@ -347,3 +347,56 @@ test('same-count inactive replacement or duplicate cannot supply Function setup 
     assert.deepEqual(f.calls, ['root', 'versions']);
   }
 });
+
+test('private verification receiver independently fences generation and admits only closed metadata', async () => {
+  const { createReleaseVerificationServer } = await import('./release-verification-server.mjs');
+  const binding = {
+    shopId: 'synthetic-tenant',
+    installationGeneration: '1',
+    appClientId: '1443cf6d03d39edae7c101a943c5c684',
+    authorizationGeneration: '22222222-2222-4222-8222-222222222222',
+    authorizationEpoch: 0,
+    externalInstallationId: 'gid://shopify/AppInstallation/321',
+  };
+  let calls = 0;
+  const request = {
+    requestId: '11111111-1111-4111-8111-111111111111',
+    binding,
+    expectedActiveAppVersionRef: '1163229200385',
+    deadlineMs: Date.now() + 60_000,
+  };
+  const server = createReleaseVerificationServer({
+    readBinding: async () => binding,
+    collect: async (input) => {
+      calls++;
+      return {
+        classification: 'TRUSTED_RELEASE_COLLECT_APPEND_ACK',
+        appendAttempted: true,
+        appendAcknowledged: true,
+        ambiguousWrite: false,
+        retryAuthorized: false,
+        recordId: input.requestId,
+      };
+    },
+  });
+  await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
+  try {
+    for (const [value, status] of [
+      [{ ...request, binding: { ...binding, authorizationEpoch: 1 } }, 503],
+      [{ ...request, token: 'SYNTHETIC_FORBIDDEN' }, 503],
+      [request, 200],
+    ]) {
+      const response = await fetch(`http://127.0.0.1:${server.address().port}/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(value),
+      });
+      assert.equal(response.status, status);
+      const reply = await response.json();
+      assert.equal(reply.state, status === 200 ? 'COMPLETE' : 'UNCERTAIN');
+    }
+    assert.equal(calls, 1);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
+});

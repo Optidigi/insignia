@@ -12,6 +12,7 @@ test('owner overlay adds only fixed plan/journal mounts to the immutable ordinar
       ['base.yaml', '../../deployment/m5-019r/compose.yaml'],
       ['ordinary.yaml', '../../deployment/m5-runtime/compose.yaml'],
       ['owner.yaml', '../../deployment/m5-runtime/signing-owner-compose.yaml'],
+      ['collector.yaml', '../../deployment/m5-runtime/release-verification-compose.yaml'],
     ])
       await writeFile(join(directory, name), await readFile(new URL(relative, import.meta.url)));
     await writeFile(join(directory, 'runtime.env'), '');
@@ -39,12 +40,27 @@ test('owner overlay adds only fixed plan/journal mounts to the immutable ordinar
               INSIGNIA_WEB_IMAGE: `sha256:${'a'.repeat(64)}`,
               INSIGNIA_SIGNING_OWNER_PLAN: join(directory, 'plan.json'),
               INSIGNIA_SIGNING_OWNER_RUN_ROOT: join(directory, 'private-journal'),
+              INSIGNIA_RELEASE_VERIFICATION_SOCKET_DIRECTORY: join(directory, 'private-collector-bridge'),
             },
           },
         ),
       );
     const ordinary = render(['base.yaml', 'ordinary.yaml']),
       owner = render(['base.yaml', 'ordinary.yaml', 'owner.yaml']);
+    const coordinated = render(['base.yaml', 'ordinary.yaml', 'owner.yaml', 'collector.yaml']);
+    assert.deepEqual(coordinated.services.database, ordinary.services.database);
+    assert.deepEqual(coordinated.networks, ordinary.networks);
+    const { volumes: coordinatedVolumes, ...coordinatedWeb } = coordinated.services.web;
+    const { volumes: ownerVolumes, ...ownerWeb } = owner.services.web;
+    assert.deepEqual(coordinatedWeb, ownerWeb);
+    assert.deepEqual(coordinatedVolumes.slice(0, ownerVolumes.length), ownerVolumes);
+    assert.deepEqual(coordinatedVolumes.at(-1), {
+      type: 'bind',
+      source: join(directory, 'private-collector-bridge'),
+      target: '/run/insignia/release-verification',
+      read_only: true,
+      bind: {},
+    });
     assert.deepEqual(owner.services.database, ordinary.services.database);
     assert.deepEqual(owner.networks, ordinary.networks);
     const { volumes, ...web } = owner.services.web;

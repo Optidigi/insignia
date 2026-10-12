@@ -1,0 +1,33 @@
+# M5 coordinated publication — active implementation
+
+Authority: PR90 external continuation decision. Entry main a1738a6983f0639b5eb201163b0f678d7cee24ca; tree731203065b49b55078531ce2e19f5fc00e724a54. [Normal merge receipt](pr90-normal-merge-receipt.json). No new provider mutation has occurred in this continuation.
+
+Confirmed defect: normal Publish checks draft/currency/eligibility before signing preparation, but preparation and activation consume an independently collected record without invoking that collector. Owner polling cannot satisfy coordination.
+
+Authorized TDD seams: production admin HTTP/PG composition, independently privileged collector admission/completion, runtime SELECT-only evidence consumption and existing signing/publication journals. First narrow slice: demand-driven record consumption with correlated completion, unchanged expiry and scoped concurrent collection. Existing provider adapters are the mock boundary; database roles and HTTP composition must execute for final qualification. Unit controls alone do not qualify production composition.
+
+Worklist: preserve authority/merge and reconcile current native journals; implement typed collector invocation and current scope/deadline fences; integrate preparation plus later activation; qualify production HTTP/PG and actual privilege separation; independent completed-change reviews and exact-head CI; freeze/deploy necessary web/collector binding under existing grants; native merchant/G7 and lifecycle/privacy; test-footprint reductions with invariant map; cumulative milestone acceptance.
+
+Privileged collector retains management session and append credentials. Web retains SELECT-only release access and current staff session in request memory. A completion notification is a correlation value, never release authority. No database transaction spans collection. Existing keys, exclusive journals, sealed attempts and historical raw evidence remain immutable.
+
+Qualification: NOT_RUN. Reviews: NOT_RUN. Deployment: NOT_RUN. M5/G7 NOT_PASSED.
+
+## Current local findings
+
+The first demand-driven reader control failed before implementation because the capability did not exist, then passed. HTTP/PG composition uses the real signed staff SDK, a private Unix HTTP socket, a separate INSERT-only trusted-release writer and runtime SELECT-only reader. The normal Publish path creates and activates one encrypted signing key and makes exactly one public-config CAS; independently mismatched later Function evidence denies activation. This is synthetic local provider-boundary evidence, not native acceptance.
+
+Concurrent signing preparation reproduced PROVISIONED/UNCERTAIN for two authorized callers. The existing action now shares its in-process preparation promise, rechecks each waiter's binding, and retains the original exclusive filesystem reservation through crashes. The focused control then passed with one key and one public-config write. Restart/partial-result/ambiguous-write controls remain required and retained.
+
+Three byte-identical isolated PostgreSQL helpers were consolidated into one test-classified helper. The publication composition now uses that helper too, fixing a repeat-run collision on the fixed synthetic signing target. No race/privacy/generation assertion was removed. This small reduction does not meet the milestone50% ceiling by itself.
+
+## Production composition and rollback boundary
+
+The web build uses a fixed private Unix socket at `/run/insignia/release-verification/collector.sock`. The independently privileged receiver runs in the existing operator workspace, retaining the original official SDK session and append custody. A narrowly scoped SSH stream-local forward connects only that socket to a new private rewrite-owned VPS directory; the reviewed overlay mounts that directory read-only. No management credentials, append password, collector executable, public endpoint, staff token job or general remote command crosses into web.
+
+The receiver independently reads the current durable install/auth binding before collection and after completion. Its native entry invokes the original qualified collector launcher, whose exclusive intent, frozen source inventory and prior-settlement inspection fence restarts/unknown appends. It reuses a still-qualifying immutable record only through the existing SELECT-only reader. Completion IDs are checked against the runtime's independent record read. The old collector/input/signing journals are never reset.
+
+Demand collection happens after eligibility and before signing, and again outside `PgActivationStore` transactions before actual activation advancement. Passive existing release/Function/CAS/day checks still run at each sensitive boundary. An expired request or unavailable collector denies progress. Completion of signing is not permanently fresh release authority. GET/status/editor mount dispatch no new collector or signing operations; original authenticated bootstrap behavior remains.
+
+Deployment is NOT_RUN. Before any deployment: freeze exact web image/source and receiver/SDK/dependency inventory; obtain two independent CLEAR reviews and exact-head CI; revalidate current web/worker/database, private owner plan/journal and prior collector settlement; qualify the new700-owned directories,600-owned sockets, exact SSH host/forward endpoints, runtime UID and read-only mount; bind the actual resolved Compose/config hash without exposing env values. Use only the canonical rewrite service. Preserve the previous image/overlay as rollback and remove only this new socket mount/owned receiver/forward when stopping. Database evidence and settled Functions are never rolled back.
+
+The operator receiver is required for verification when evidence expires. Unavailable/revoked official management session or lost forwarding causes fail-closed publication, not elevated web privilege or a stale evidence workaround. Ordinary deployed long-term collector hosting remains an operational availability consideration; native qualification must disclose it accurately.
