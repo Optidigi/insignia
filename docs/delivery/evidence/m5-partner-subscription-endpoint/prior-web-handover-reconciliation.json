@@ -1,0 +1,56 @@
+{
+  "containerId": "902aa9f2160a413134eb991d72a0ac7106a73da7d3d1babad6776ed2a9b08254",
+  "image": "sha256:21f2a20e372b23e5a334cd2a1fea26ed4e9f17e3c625f5c04f40bae8a6673977",
+  "health": "healthy",
+  "environmentSemanticallyExact": true,
+  "changedEnvironmentKeyNames": [],
+  "runtimeImageConfigFieldsMatch": {
+    "User": true,
+    "Cmd": true,
+    "Entrypoint": true,
+    "WorkingDir": true,
+    "ExposedPorts": true
+  },
+  "readOnlyRoot": true,
+  "privileged": false,
+  "capDrop": ["ALL"],
+  "securityOpt": ["no-new-privileges:true"],
+  "init": true,
+  "portBindings": {},
+  "mounts": [
+    {
+      "source": "/home/serveradmin/insignia-m5-verify-20261012-r2",
+      "target": "/run/insignia/release-verification",
+      "rw": false
+    },
+    {
+      "source": "/home/serveradmin/insignia-m5-runtime-resource-run-20261011-fb240660/pr83-05d6914-r3/owner-plan.json",
+      "target": "/run/insignia/signing-owner-plan.json",
+      "rw": false
+    },
+    {
+      "source": "/home/serveradmin/insignia-m5-runtime-resource-run-20261011-fb240660/pr83-05d6914-r3/owner-run",
+      "target": "/var/lib/insignia/signing-owner",
+      "rw": true
+    }
+  ],
+  "networkNames": ["insignia-rewrite-m5-019_private", "proxy"],
+  "databaseContainerId": "a1a521b36a30dd97c6ece2e3cb79ba05edf963362bc3ce3941e5ffac53cee265",
+  "databaseImage": "sha256:9551dd5bf356409a21b31248f49b33bba9bb1877365f3a7e933aecd9af3cf52d",
+  "databaseHealth": "healthy",
+  "workerContainerId": "df35f508212cec3d0b4b4320ed0b5b1202244419681ab6f54d4905edcadd7a77",
+  "workerImage": "sha256:aced4d509278137c8074848ad948ee67a97d88625955eabe064ade4fb669ddca",
+  "workerHealth": "healthy",
+  "signingOwnerRunFiles": [],
+  "webUpCommandReceipt": {
+    "classification": "WEB_UP_COMMAND_ACK",
+    "exitCode": 0,
+    "retryAuthorized": false
+  },
+  "classification": "WEB_HANDOVER_SETTLED_BY_DERIVED_READ_ONLY_RECONCILIATION",
+  "originalPostcheck": "STOPPED_RUNTIME_CONFIG_DRIFT_ORDERED_ENV_ARRAY",
+  "originalCommand": "ACK_EXIT_0_ONCE",
+  "commandRepeated": false,
+  "originalFailurePreserved": true,
+  "sourceReceiptSha256": "7f3b1a198ad73ec84c91837752e0105921be82d7e2450d936f98a8a1b12999b1"
+}

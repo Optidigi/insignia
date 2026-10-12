@@ -1,0 +1,12 @@
+{
+  "classification": "COMPOSE_ONE_KEY_DELTA_QUALIFIED",
+  "originalEndpointControl": "EXPECTED_NEGATIVE_200969036",
+  "correctedEndpointControl": "PASS_4697030",
+  "changedPaths": ["services.web.environment.INSIGNIA_PARTNER_ORGANIZATION_ID"],
+  "otherResolvedFieldsExact": true,
+  "composeSha256": "7af95166a730b87e172d4fc9aefea8725d3c6c7327d59149267b452114ddb7d4",
+  "overlaySha256": "953a2baf0b52515e3b77d93bb39d2003ccc2d457b03c39176c4cf638914f317a",
+  "syntheticConfiguration": true,
+  "nativeProviderReadProof": "native-diagnosis.json",
+  "sourceRuntimeChanged": false
+}
