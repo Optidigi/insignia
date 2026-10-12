@@ -10,7 +10,7 @@ import { parseOwnerPrivatePacket } from './trusted-release-collector-native.mjs'
 import { readPrivatePacket } from './trusted-release-input.mjs';
 import { launchQualifiedTrustedRelease } from './trusted-release-launch.mjs';
 
-const DIRECTORY = '/home/serveradmin/insignia-milestone-autonomy-handoff/m5-release-verification';
+const DIRECTORY = '/home/serveradmin/insignia-milestone-autonomy-handoff/m5-release-verification-r2';
 const SOCKET = `${DIRECTORY}/collector.sock`;
 async function main() {
   // Original SDK and append authority stay solely with this process and its
