@@ -1,4 +1,9 @@
 import assert from 'node:assert/strict';
+import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+
+const require = createRequire(new URL('../../apps/web/package.json', import.meta.url));
+const { canonicalAdminAccessScopes } = await import(pathToFileURL(require.resolve('@insignia/shopify')));
 
 const ORIGIN = 'https://insignia-rewrite-dev.myshopify.com';
 const ADMIN = `${ORIGIN}/admin/api/2026-07/graphql.json`;
@@ -8,8 +13,8 @@ export const INSTALLATION_BOUNDARY = `query M5027InstallationBoundary {
   shop { id myshopifyDomain }
   currentAppInstallation { id app { id apiKey } accessScopes { handle } }
 }`;
-// Exact declared/OAuth set from the approved native app_access baseline.
-// Original effective Admin scopes separately include implied read_products.
+// Compare capabilities: OAuth omits redundant reads after their write scope is granted.
+// The installation connection separately returns the complete effective scope set.
 const GRANTS = [
   'write_products',
   'read_publications',
@@ -124,11 +129,8 @@ export function createOwnerHttps({ request, functionQuery, now = Date.now, deadl
       );
       assert.equal(typeof value.scope, 'string');
       assert.deepEqual(
-        value.scope
-          .split(',')
-          .map((v) => v.trim())
-          .sort(),
-        [...GRANTS].sort(),
+        canonicalAdminAccessScopes(value.scope.split(',').map((v) => v.trim())),
+        canonicalAdminAccessScopes(GRANTS),
       );
       const token = value.access_token;
       value.access_token = undefined;

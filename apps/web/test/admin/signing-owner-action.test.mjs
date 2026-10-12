@@ -76,6 +76,22 @@ test('internal publication preparation settles signing once and reuses the durab
   }
 });
 
+test('internal signing accepts Function write grants that imply the required reads', async () => {
+  const f = await bound();
+  const exchange = f.ports.identity.exchangeOnline;
+  f.ports.identity.exchangeOnline = async (...args) => ({
+    ...(await exchange(...args)),
+    appScopes: ['write_products', 'write_cart_transforms', 'write_validations'],
+  });
+  try {
+    assert.equal((await f.action.prepare(f.actor, 'synthetic-token')).state, 'PROVISIONED');
+    assert.equal(f.rows.length, 1);
+    assert.equal(f.rows[0].state, 'active');
+  } finally {
+    await f.close();
+  }
+});
+
 test('a foreign runtime app cannot use the private signing capability or reserve its attempt', async () => {
   const f = await bound();
   try {

@@ -1,7 +1,14 @@
 /** Shopify SDK boundary for an embedded staff session. Tokens stay server side. */
 import '@shopify/shopify-api/adapters/node';
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { ApiVersion, HttpResponseError, InvalidJwtError, RequestedTokenType, shopifyApi } from '@shopify/shopify-api';
+import {
+  ApiVersion,
+  AuthScopes,
+  HttpResponseError,
+  InvalidJwtError,
+  RequestedTokenType,
+  shopifyApi,
+} from '@shopify/shopify-api';
 import { abstractFetch, setAbstractFetchFunc } from '@shopify/shopify-api/runtime';
 import { withAdminDeadline } from './admin-deadline.js';
 
@@ -83,6 +90,14 @@ function scopes(value: string | undefined): string[] {
     .split(',')
     .map((part) => part.trim())
     .filter(Boolean);
+}
+/** Shopify's SDK canonicalizes redundant read scopes without adding write authority. */
+export function canonicalAdminAccessScopes(values: readonly string[]): string[] {
+  return new AuthScopes([...values]).toArray().sort();
+}
+
+export function hasAdminAccessScope(values: readonly string[], required: string): boolean {
+  return new AuthScopes([...values]).has(required);
 }
 function refreshableExchangeError(error: unknown): boolean {
   if (error instanceof InvalidJwtError) return true;

@@ -9,6 +9,7 @@ import type {
   OnlineStaffGrant,
   PublicationTenant,
 } from '@insignia/shopify';
+import { hasAdminAccessScope } from '@insignia/shopify';
 import binding from '../../../../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
 export type SigningProvisionPlan = { keyId: number; firstDay: number; lastDay: number };
 export type SigningRuntimeIdentity = { appClientId: string; appId: string; appOrigin: string };
@@ -234,7 +235,8 @@ export async function provisionSigningKey(
     assert.equal(grant.shop, SHOP);
     assert.equal(grant.staffId, identity.staffId);
     assert.ok(grant.appScopes.includes('write_products') && grant.userScopes.includes('write_products'));
-    for (const scope of ['read_cart_transforms', 'read_validations']) assert.ok(grant.appScopes.includes(scope));
+    for (const scope of ['read_cart_transforms', 'read_validations'])
+      assert.ok(hasAdminAccessScope(grant.appScopes, scope));
     const deadline = Math.min(start + 30000, identity.expiresAtMs, grant.expiresAtMs - 30000);
     function live() {
       const now = ports.now().getTime();
