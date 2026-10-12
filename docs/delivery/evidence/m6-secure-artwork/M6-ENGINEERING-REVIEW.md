@@ -1,0 +1,33 @@
+# M6 engineering review packet
+
+M6 implementation and cumulative independent local review are complete. PR98 integration still requires passing final-head CI and a verified normal merge. This packet does not grant native acceptance, principal milestone acceptance, M7 or rollout.
+
+The working flow admits current authenticated merchant or signed-proxy guest-owned SVG/PNG/JPEG into private quarantine; signs exact declared length; inspects an exact bounded snapshot under actual OS isolation; promotes those bytes into a separate immutable original and safe PNG derivative; exposes finite authorized derivative/attachment URLs. The editor and standalone artwork element render verified rasters. Processing timeout, completion/preview outage and URL expiry recover on the same asset; pending artwork is never selected as usable. SQL leases, current tenant/generation/owner fences, immutable manifests/deadlines, fair retries and independent cleanup preserve the lifecycle. New artwork retention is seven days from collection, with five-minute upload grants and shorter incomplete-upload cleanup; reuse does not extend collection deadlines.
+
+Quote integration rejects unverified, expired and other-session artwork. Explicit logo-later is validated under each effective published placement policy. Resource authority binds initial and transactional cached retrieval. Authorized replay preserves historical economics, signatures, timestamps and expiry. No buyer quote/cart endpoint or M7 feature is added.
+
+## Cumulative architecture and review
+
+Main entry36945927e3fedc72c44247ec8357eb669186c0c6/tree5d4008f74173e0792c7925507aba593f91b851fd (PR97 already merged). Final product-source review061fb82f50ea293adc16a85e76f585e99de21920/treeadf6e481a0aad6541d08ca69c637a27d0f469b18. The final PR head additionally contains historical image-test fixture correction and this evidence. Full final base/head/merge-parent/tree receipts must be taken from the actual PR98 normal merge, not inferred from this candidate.
+
+[Spec](review-r4-spec.md) and [Standards/security](review-r4-security.md) independently closed all material findings; inherited cumulative verdict: exact-byte promotion, private originals/separate rasters, immutable history, frozen quote economics/protocol and domain/Shopify SDK/renderer/database boundaries remain coherent. All earlier findings, responses and failures remain in review-r1/r2/r3 records. No architectural/product lock changed. Read-only review instructions were followed behaviorally, without tool-level network/credential isolation.
+
+The final image-test-only correction received separate independent read-only impact review from /root/m6_upload_length: no material findings. It uses the exact frozen PR97 schema20 packager, preserving production guards, archive/native image identity, no-network/read-only/cap-drop mounts and owned cleanup. Local package/style checks pass. Exact Docker execution remains a required CI observation, not a local PASS. An inherited setup-before-try failure can leave harmless source-fixture directories; no provider effects or live credentials are involved.
+
+## Verification
+
+Complete local build/style; application221PASS; web/controller/browser/auth/quote and maintenance/runner regressions; storage19PASS; actual OS-inspector controls; fresh current PostgreSQL241PASS/4SKIP; explicit actual PG+isolated inspection and restricted runtime-role controls2PASS; boundaries/secrets/sealed-history PASS. Historical schema owner controls85PASS and schema20 lifecycle DB/queue/fresh-process/package4PASS on separate synthetic SCRAM PG18. Historical controls do not qualify current artwork erasure. Exact-head CI and real image import controls are qualified by [PR98](https://github.com/Optidigi/insignia/pull/98) before integration. See local-corrections-verification.json, local-round2-corrections.json, local-round3-corrections.json for actual logs/digests, inherited scopes and preserved failures.
+
+## Native acceptance and limitations
+
+- Existing private insignia-demo, Optidigi account97984dbfba2fd91f42a4c3fb90fcad09. Official MCP OAuth and exact108-byte synthetic PUT/byte-identical GET/DELETE/empty-prefix cleanup PASS. Private domain configuration verified, limited CORS and owned quarantine lifecycle configured with acknowledged readback. No legacy credentials or new bucket used.
+- Native S3 presigning, browser length/CORS enforcement, expiry/late-write behavior and actual App Proxy forwarding: NOT_RUN. Missing bucket-only finite S3 access-key file at /home/serveradmin/.config/insignia/m6-r2.json, mode600. MCP object access cannot substitute. Custom-domain CORS needs precise native qualification; application signed routing no longer rejects custom storefront origins.
+- Content-Length binds each request, not aggregate requests/transfer through reusable URLs. Exact collection-deadline erasure is not proved: already-in-flight late PUT and provider lifecycle timing remain eventual-cleanup limitations. Live buyer uploads/rollout remain unavailable until native resource/security qualification. No native M6 migration/deployment/app-version/scope change occurred.
+- Isolated inspection qualified on this host; ordinary Docker worker is not qualified for it. Production admission fails closed without an explicitly qualified host runner. Private merchant artwork is account-owner-only; broader staff delegation is unavailable.
+- M5 native authentication cause remains UNCONFIRMED; G7 is NOT_PASSED. Genuine uninstall/full privacy fulfillment remains an implementation/provider obligation, not a browser-only deferral. Temporary verifier/service/socket/frozen-source custody, trusted release freshness and real retention deadlines remain live. Protected insignia-rewrite-dev stays installed; product10519322493211/config4dbbe8f6-8162-4271-9819-fd485f7d65f6 remain preserved.
+
+## Cleanup and principal boundary
+
+The native connection probe was deleted and exact prefix verified empty. No subsequent native artwork was uploaded. Owned historical schema/lifecycle PG clusters were stopped after tests; reviewers rolled back exact synthetic fixtures. The M6 synthetic PG58197 remains local qualification infrastructure pending final integration/review cleanup; unrelated PG57961 was untouched. Bucket policies remain configured, private and scoped; no protected app/resource uninstall occurred. Carry actual fixture/resource journals and deadlines forward, without restamping.
+
+At verified PR98 integration, return actual integrated commit/tree and final check receipts with this working-flow/evidence/limitations packet for principal M6 engineering review. M7 requires that principal decision; full native acceptance and rollout remain distinct and unauthorized.
