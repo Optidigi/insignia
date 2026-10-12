@@ -1,0 +1,46 @@
+{
+  "package": "insignia-simple-delivery-2026-10-12",
+  "format": 1,
+  "files": [
+    {
+      "path": "00-START-HERE.md",
+      "bytes": 2115,
+      "sha256": "7aa93318b041aea2b0b9a978aa76653a88bdcf1e312cb356460c430344c4df7c"
+    },
+    {
+      "path": "ADOPT-IN-REPOSITORY.md",
+      "bytes": 4464,
+      "sha256": "0a92727a9f2ea0e28a43d570918321bd774b3f820dc6e1ee6c7d6c3d5a6b7c2c"
+    },
+    {
+      "path": "AGENT-LAUNCH-PROMPT.md",
+      "bytes": 4474,
+      "sha256": "ea5efb047a2bffc653f1247dc389241de2c2278e1a1a3d0b3fb9c15611c2529a"
+    },
+    {
+      "path": "AGENTS.md",
+      "bytes": 2200,
+      "sha256": "b1755cec66330604e19949203569edb434f45374cecfcf34eb92bd17dce80c31"
+    },
+    {
+      "path": "CHECKPOINT-AND-SOURCES.md",
+      "bytes": 4097,
+      "sha256": "1d45368931ee17e98374b054f86a3e527bc47b3b610d73d291022ac494dc48a8"
+    },
+    {
+      "path": "M5-CONTINUATION.md",
+      "bytes": 4298,
+      "sha256": "f3549e0eb4d943b4103d3031447d0deaaaabc1d3adac7f31a83911567e774a2d"
+    },
+    {
+      "path": "REVISED-PLAN.md",
+      "bytes": 18446,
+      "sha256": "6277c4b7b3bcf29d63082caf0e70629611a1d2f77d51dfeece3b1c765c4906ed"
+    },
+    {
+      "path": "SNAPSHOT.json",
+      "bytes": 1083,
+      "sha256": "02cf56e957c198fa6cc056ad63291418d166ae48b832ce99170f2db8ab610fc6"
+    }
+  ]
+}

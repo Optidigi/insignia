@@ -1,0 +1,22 @@
+{
+  "snapshot_type": "read_only_github_checkpoint_plus_owner_report",
+  "date": "2026-10-12",
+  "repository": "Optidigi/insignia",
+  "pr": 96,
+  "state": "merged",
+  "base": "357cd40a317a4402c6a2f6afe9199c18c47b91ab",
+  "head": "ba132e9c23356c2c8eb509b9160488fc2404d87c",
+  "merge_commit": "8775caa3ba878109807e0ca3a7cf175d7246a102",
+  "main_observed": "8775caa3ba878109807e0ca3a7cf175d7246a102",
+  "deployment_and_watch_status": "owner-relayed agent output: deployed; watching off; not independently host-verified here",
+  "auth_cause": "unconfirmed",
+  "milestone": "M5 unfinished; native G7 not passed",
+  "repository_modified_by_this_package": false,
+  "live_plan_copy_included": false,
+  "plan_handling": "Preserve and reconcile the complete current local Git plan; new package is the simplified shape/delivery contract, not a replacement detailed technical spec.",
+  "candidate_tree_verified": "024df50d37330c9d32aeb09101ead9fa6e60cbea",
+  "merge_ordered_parents_verified": [
+    "357cd40a317a4402c6a2f6afe9199c18c47b91ab",
+    "ba132e9c23356c2c8eb509b9160488fc2404d87c"
+  ]
+}

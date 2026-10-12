@@ -1,6 +1,6 @@
 # M<NUMBER> — milestone handoff for principal review
 
-Status: MILESTONE_READY_FOR_PRINCIPAL_REVIEW only when all required acceptance rows qualify.
+Status: ENGINEERING_READY / NATIVE_ACCEPTANCE_DEFERRED when implemented and locally qualified behavior is ready with named native checks outstanding. State unresolved code defects and dependency impact explicitly. Full native acceptance and rollout require their applicable evidence.
 
 ## Exact binding
 
@@ -20,7 +20,7 @@ Include only G1–G8 rows assigned to this milestone, with later owners explicit
 
 ## Independent reviews and checks
 
-Final milestone Spec/correctness and Standards/security sessions/model/effort/sandbox, complete-scope reports/hashes, all actionable findings and disposition. Full relevant integrated regression, negative controls, exact-head CI, failures/attempts, applicable-not-triggered workflows and artifact integrity. Do not substitute only last-PR reviews for cumulative acceptance.
+Cumulative engineering/architecture review, independent correctness/security coverage proportionate to risk, findings and disposition, actual executed review scope/identity/isolation. Relevant integrated regression, final-candidate CI, retained failures and justified reruns. Preserve meaningful source/build provenance; distinguish deferred native checks from local passes.
 
 ## Operations and cleanup
 

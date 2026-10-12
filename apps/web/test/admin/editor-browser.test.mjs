@@ -1640,6 +1640,15 @@ test('mounted admin refreshes late activation and readiness without overwriting 
   expired = true;
   await page.getByText('Authentication required', { exact: true }).waitFor({ timeout: 8000 });
   assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
+  // Explicit recovery reauthorizes through GET only; denied private edits stay cleared.
+  await page.getByRole('button', { name: 'Retry session', exact: true }).click({ timeout: 1500 });
+  await page.getByText('Authentication required', { exact: true }).waitFor();
+  assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
+  expired = false;
+  await page.getByRole('button', { name: 'Retry session', exact: true }).click();
+  await page.getByText('Draft version 1 · clean', { exact: false }).waitFor();
+  assert.equal(await page.getByLabel('Shop amount (USD)').count(), 0);
+  await page.getByText('Effective revision: requested-revision', { exact: true }).waitFor();
   assert.equal(writes, 0);
 });
 

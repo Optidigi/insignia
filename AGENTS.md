@@ -1,29 +1,11 @@
-# Insignia — agent entry point
+# Insignia — agent entry
 
-## Start every session
+Read the complete [implementation plan](docs/architecture/implementation-plan.md), [decision ledger](docs/architecture/decision-ledger.md), [operating model](docs/delivery/operating-model.md) and [current state](docs/delivery/state.md). Read affected technical sections before changing behavior. Refresh live refs and preserve newer work and existing fixtures.
 
-Read `docs/delivery/authority/milestone-autonomy-2026-10-09.md`, `docs/architecture/decision-ledger.md`, `docs/delivery/operating-model.md` and `docs/delivery/state.md`. Read relevant sections of the complete `docs/architecture/implementation-plan.md` and active milestone charter before changing behavior. Fetch current PR/main; resume legitimate newer work rather than a stale handoff SHA.
+The owner delegates implementation decisions, investigation, test seams, tools/subagents, proportionate local review and normal PR merges inside the active milestone. The [12 October owner decision](docs/delivery/authority/simple-delivery-2026-10-12.md) replaces conflicting historical delivery instructions. The plan defines outcomes and contracts; the agent chooses implementation and workflow.
 
-The owner delegates execution, slice/PR review and normal merges **inside each milestone** to the local orchestrator, effective immediately for unfinished M5. The principal reviews completed milestones, not each slice. Old per-PR stop/merge-prohibition instructions are historical where they conflict with this decision; product, security and resource conditions remain binding.
+Build useful behavior with meaningful TDD and relevant regression. Use inspected Matt Pocock skills where helpful; delegated seam selection is already authorized. Research independently and verify load-bearing claims against current source and observations. Preserve actual resource permissions, pure-domain boundaries, exact economics/protocols, historical records and tenant/generation/authentication safety.
 
-## Execute the milestone
+Use authorized autonomous browser access when available. Otherwise record specific DEFERRED_OWNER_BROWSER checks and continue independent implementation. Known code defects stay explicit. Reviewable freshness/composition improvements require deliberate tested and independently reviewed changes; deployment permission and real timestamps remain binding.
 
-Own its worklist, implementation, research, tests, tools, subagents, local acceptance, integration and continuation. Use narrow end-to-end slices and maintain the whole milestone acceptance map. Obtain independent fresh read-only Spec/correctness and Standards/security review, resolve findings, qualify exact-head CI, merge normally under delegated authority and continue. Do not invent a principal verdict or waive repository-enforced approvals.
-
-Implement primarily inline. Before configuring a main session or launching/reusing a subagent, apply the owner-locked role/model/effort policy in `docs/delivery/operating-model.md` §4. Delegate independent reviews and bounded supporting tasks with explicit context/path ownership. Follow its §§4–5 delegation, TDD, complexity and test-footprint rules; use the M5 finish plan linked from delivery state for the next execution run.
-
-Use pinned Matt Pocock `writing-for-agents` for agent documents, `tdd` for behavior, `diagnosing-bugs` for defects, `code-review` for independent reviews, `handoff` for context transfer and inspected `research` for platform uncertainty. Use other relevant actual tools/skills/subagents as needed, with provenance, least privilege and real runtime checks. The operating model is the single orchestration policy.
-
-## Preserve contracts
-
-The decision ledger controls product/architecture locks. Keep the domain independent of Shopify, frameworks, rendering and persistence; Shopify SDK stays in its adapter and Konva stays a renderer. Preserve exact money, whole-quote v2, tenant/generation fences, immutable historical records, availability v1/v2/v3 meaning and retention. Legacy is only the storefront visual reference; no legacy migration/import work.
-
-Documentation, mock success or CI alone is not native-store evidence. Preserve RED security controls until an implemented correction actually qualifies; passing characterization is not a fix. Do not mark M5 done with G7 or required publication/installation safety still blocked. Do not start M6 before principal acceptance of M5.
-
-## Resources and exceptions
-
-Use owner-allocated resources within their recorded limits after local technical qualification. Missing credential/resource/cost/production/destructive-operation permission requires a concrete owner request, not another principal-review slice. No secret leakage, invented commercial configuration, human-verification bypass, unauthorized Shopify version/scopes, merchant rollout or ambiguous mutation retry. A material locked-decision conflict or incident is a real exception; continue independent safe work.
-
-## Finish
-
-Keep the active delivery state short and the local full plan current. At milestone completion, freeze the integrated commit/tree, run cumulative drift/integration/security review, assemble acceptance/demo/test/native/cleanup evidence, and stop for principal review. Merged slices do not themselves grant milestone acceptance. Runtime interruptions require a resumable handoff, not a fictitious completion claim.
+At milestone engineering readiness, provide cumulative delivered behavior, integrated refs, relevant evidence, architecture changes, unresolved defects and deferred native checks. Principal milestone review authorizes subsequent development; full native acceptance and rollout remain separate decisions.
