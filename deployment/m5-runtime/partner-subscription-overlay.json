@@ -1,0 +1,9 @@
+{
+  "services": {
+    "web": {
+      "environment": {
+        "INSIGNIA_PARTNER_ORGANIZATION_ID": "4697030"
+      }
+    }
+  }
+}
