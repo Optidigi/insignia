@@ -1,5 +1,7 @@
 # Function-write candidate and M5 continuation
 
+This is the pre-release source-binding snapshot. For the settled 12 October release, deployment and current next actions, read [CONTINUATION.md](CONTINUATION.md); historical observations below retain their original time/scope.
+
 M5 remains IN_PROGRESS / G7 NOT_PASSED. [PR86 normal integration](../m5-function-setup-runtime/pr86-merge-receipt.json) retained its reviewed tree, fresh independent sol-low CLEAR/CLEAR reviews and all three naturally applicable exact-head attempt1 successful workflows. This is internal integration, not milestone acceptance.
 
 ## Actual native operation
