@@ -1,0 +1,53 @@
+✖ actual queue-member login reconciles signed initial and renewed offers, paid/refund history, replay and tenant fences (218.425679ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 668.533267
+
+✖ failing tests:
+
+test at apps/worker/test/purchase-runtime-role.test.mjs:13:1
+✖ actual queue-member login reconciles signed initial and renewed offers, paid/refund history, replay and tenant fences (218.425679ms)
+  error: permission denied for table inbox_messages
+      at /home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/pg@8.23.0/node_modules/pg/lib/client.js:694:17
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async PostgresConnection.executeQuery (file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/dialect/postgres/postgres-driver.js:113:28)
+      at async file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:39:24
+      at async #run (file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/single-connection-provider.js:24:16)
+      at async DefaultQueryExecutor.executeQuery (file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:38:28)
+      at async file:///home/serveradmin/insignia-m8-context-runtime-worktree/packages/database/dist/repositories/purchase.js:381:33
+      at async file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+      at async DefaultConnectionProvider.provideConnection (file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/default-connection-provider.js:10:20)
+      at async Object.processInbox (file:///home/serveradmin/insignia-m8-context-runtime-worktree/apps/worker/dist/purchase-runner.js:5:22)
+      at PostgresConnection.executeQuery (file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/dialect/postgres/postgres-driver.js:126:41)
+      at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+      at async file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:39:24
+      at async #run (file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/single-connection-provider.js:24:16)
+      at async DefaultQueryExecutor.executeQuery (file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/query-executor/query-executor-base.js:38:28)
+      at async file:///home/serveradmin/insignia-m8-context-runtime-worktree/packages/database/dist/repositories/purchase.js:381:33
+      at async file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/kysely.js:680:32
+      at async DefaultConnectionProvider.provideConnection (file:///home/serveradmin/insignia-m8-context-runtime-worktree/node_modules/.pnpm/kysely@0.29.6/node_modules/kysely/dist/driver/default-connection-provider.js:10:20)
+      at async Object.processInbox (file:///home/serveradmin/insignia-m8-context-runtime-worktree/apps/worker/dist/purchase-runner.js:5:22)
+      at async TestContext.<anonymous> (file:///home/serveradmin/insignia-m8-context-runtime-worktree/apps/worker/test/purchase-runtime-role.test.mjs:208:5) {
+    length: 102,
+    severity: 'ERROR',
+    code: '42501',
+    detail: undefined,
+    hint: undefined,
+    position: undefined,
+    internalPosition: undefined,
+    internalQuery: undefined,
+    where: undefined,
+    schema: undefined,
+    table: undefined,
+    column: undefined,
+    dataType: undefined,
+    constraint: undefined,
+    file: 'aclchk.c',
+    line: '2793',
+    routine: 'aclcheck_error'
+  }

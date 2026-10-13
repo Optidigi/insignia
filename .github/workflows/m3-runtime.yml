@@ -113,6 +113,20 @@ jobs:
       - run: corepack pnpm --filter @insignia/application test
       - run: corepack pnpm --filter @insignia/observability test
       - run: corepack pnpm --filter @insignia/worker test
+      - name: M8 actual queue-member purchase/history and first-paid qualification
+        run: |
+          node --test scripts/m8-purchase/qualify-runtime.test.mjs
+          node scripts/m8-purchase/qualify-runtime.mjs
+      - name: Preserve M8 actual runtime-role qualification
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: m8-runtime-role-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            docs/delivery/evidence/m8-context-runtime/runtime-role-ci.log
+            docs/delivery/evidence/m8-context-runtime/runtime-role-ci.json
+          if-no-files-found: ignore
+          retention-days: 7
       - name: M7 buyer HTTP ownership, admission and immutable issuance with PostgreSQL
         working-directory: apps/web
         run: node --test test/buyer-http.test.mjs test/buyer-flow.test.mjs test/buyer-production.test.mjs test/buyer-bootstrap.test.mjs
@@ -121,7 +135,7 @@ jobs:
         run: node --test test/purchase-flow.test.mjs
       - name: Historical schema20 owner lifecycle and fresh queue process controls
         # Each test allocates its own database from pinned PR97 schema20 inputs.
-        # Current check:database above qualifies schema30; the historical erasure guard stays exact20.
+        # Current check:database above qualifies schema31; the historical erasure guard stays exact20.
         run: |
           corepack pnpm exec biome check scripts/m5-owner-lifecycle
           M5_OWNER_LIFECYCLE_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/owner-lifecycle.test.ts

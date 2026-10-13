@@ -1,0 +1,73 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/100",
+  "base": "3ae4b8505d4c383fbb874694ef870454b6a074ef",
+  "head": "15c81d6763676ef661d2801e16309b6bcba58766",
+  "headTree": "9c064205219f0929d67224d90385c27ce025edec",
+  "effectiveMergeBase": "3ae4b8505d4c383fbb874694ef870454b6a074ef",
+  "status": "M8_ENGINEERING_READY_WITH_EXPLICIT_LIMITATIONS",
+  "localChecks": "PASS_WITH_EXPLICIT_SKIPS",
+  "reviewedSource": "237e1d0454b903a1702891ea19632c2cb351cfb4",
+  "observedAt": "2026-10-13T00:45:38.057437+00:00",
+  "cleanup": {
+    "ownedPostgres58197": "pg_ctl shutdown confirmed; ss no listener",
+    "syntheticData": "preserved main/http/review databases in owned cluster",
+    "nativeWrites": "NONE",
+    "protectedInstallationFixtureJournals": "unchanged; original deadlines preserved",
+    "unrelated57961": "untouched"
+  },
+  "principalVerdict": "PENDING_M8_MILESTONE_REVIEW",
+  "ci": "ALL_3_FINAL_HEAD_SUCCESS",
+  "mergedAt": "2026-10-13T00:44:41Z",
+  "integration": "63447c32a7a0edda358d50ebf3ae090f8fbf8312",
+  "integrationTree": "9c064205219f0929d67224d90385c27ce025edec",
+  "orderedMergeParents": [
+    "3ae4b8505d4c383fbb874694ef870454b6a074ef",
+    "15c81d6763676ef661d2801e16309b6bcba58766"
+  ],
+  "remoteMainObserved": "63447c32a7a0edda358d50ebf3ae090f8fbf8312",
+  "mergeTreeEqualsHeadTree": true,
+  "sourceReviewInheritedThroughEvidenceOnlyCommit": true,
+  "nativeAcceptance": "DEFERRED_G1_G7_UNPASSED",
+  "rollout": "UNAUTHORIZED",
+  "nextMilestone": "M9_UNAUTHORIZED",
+  "checks": [
+    {
+      "name": "foundation",
+      "runId": 38327987187,
+      "jobId": 115071004863,
+      "head": "15c81d6763676ef661d2801e16309b6bcba58766",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/38327987187/job/115071004863"
+    },
+    {
+      "name": "durable-core",
+      "runId": 38327987135,
+      "jobId": 115071004668,
+      "head": "15c81d6763676ef661d2801e16309b6bcba58766",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/38327987135/job/115071004668"
+    },
+    {
+      "name": "runtime",
+      "runId": 38327987136,
+      "jobId": 115071004666,
+      "head": "15c81d6763676ef661d2801e16309b6bcba58766",
+      "status": "completed",
+      "conclusion": "success",
+      "runAttempt": 1,
+      "url": "https://github.com/Optidigi/insignia/actions/runs/38327987136/job/115071004666"
+    }
+  ],
+  "limitations": [
+    "Production Order projection cannot independently verify checkout country/Market: CONTEXT_UNVERIFIED, no native complete binding",
+    "Existing queue role purchase/table/history privileges not qualified; migrations/grants/deployment NOT_RUN",
+    "Historical product image URLs not captured; no current-image substitution",
+    "M7 unresolved-cart recovery code gap",
+    "Native storefront/order/payment/refund/storage and M5 authentication/G7/lifecycle/privacy/verifier acceptance unpassed",
+    "Actual retention deadlines remain unchanged and native cleanup is not discharged"
+  ]
+}

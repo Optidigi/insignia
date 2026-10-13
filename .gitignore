@@ -50,3 +50,7 @@ scripts/m4-002/__pycache__/
 # Local bytecode for bounded inventory tooling; execution uses -B.
 scripts/m5-host-inventory/__pycache__/
 scripts/m5-inventory-phase/__pycache__/
+
+# M8 ephemeral CI qualification; versioned local receipts use runtime-role-local.*.
+docs/delivery/evidence/m8-context-runtime/runtime-role-ci.log
+docs/delivery/evidence/m8-context-runtime/runtime-role-ci.json

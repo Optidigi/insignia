@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { withAdminDeadline } from '../admin-deadline.js';
 import type { AdminCredentialSource } from '../contextual-pricing.js';
 
@@ -6,6 +7,8 @@ export type ShopifyOrderFacts = {
   shopId: string;
   installationGeneration: string;
   orderId: string;
+  /** Correlation only; never independent checkout localization authority. Raw token is not exported. */
+  checkoutTokenDigest: string | null;
   createdAt: string;
   updatedAt: string;
   observedAt: string;
@@ -66,7 +69,7 @@ export class ShopifyOrderReadError extends Error {
 }
 const MONEY = 'presentmentMoney { amount currencyCode }';
 const TX = `id kind status processedAt amountSet { ${MONEY} }`;
-const HEADER = `id createdAt updatedAt presentmentCurrencyCode displayFinancialStatus edited test cancelledAt originalTotalPriceSet { ${MONEY} } transactionsCount { count precision } transactions(first:250) { ${TX} } refunds { id updatedAt }`;
+const HEADER = `id checkoutToken createdAt updatedAt presentmentCurrencyCode displayFinancialStatus edited test cancelledAt originalTotalPriceSet { ${MONEY} } transactionsCount { count precision } transactions(first:250) { ${TX} } refunds { id updatedAt }`;
 const LINES = `lineItems(first:100, after:$after) { nodes { id product { id } variant { id } quantity currentQuantity originalUnitPriceSet { ${MONEY} } sellingPlan { sellingPlanId } customAttributes { key value } } pageInfo { hasNextPage endCursor } }`;
 const ORDER_QUERY = `query InsigniaPurchaseOrder($id:ID!,$after:String) { order(id:$id) { ${HEADER} ${LINES} } }`;
 const RECHECK_QUERY = `query InsigniaPurchaseOrderRecheck($id:ID!) { order(id:$id) { ${HEADER} } }`;
@@ -276,6 +279,10 @@ export async function readShopifyOrder(
         if (initialData.order === null) return fail('order_unavailable');
         const initial = record(initialData.order);
         if (initial.id !== target.orderId) return fail();
+        const checkoutToken = initial.checkoutToken === null ? null : text(initial.checkoutToken, 1024);
+        if (checkoutToken === '') return fail();
+        const checkoutTokenDigest =
+          checkoutToken === null ? null : createHash('sha256').update(checkoutToken).digest('hex');
         const edited = boolean(initial.edited);
         const currency = text(initial.presentmentCurrencyCode, 3);
         if (!/^[A-Z]{3}$/.test(currency) || dependencies.currency.exponent(currency) === null) return fail();
@@ -400,6 +407,7 @@ export async function readShopifyOrder(
         if (!Number.isFinite(+observedAt)) return fail('provider_unavailable');
         return {
           ...target,
+          checkoutTokenDigest,
           createdAt: date(initial.createdAt),
           updatedAt,
           observedAt: observedAt.toISOString(),

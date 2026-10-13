@@ -518,7 +518,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
             const quote = (
               await sql<{
                 quote_value: AcceptedQuote;
-              }>`SELECT q.quote_value FROM accepted_quotes q JOIN quote_authorization_sets a ON a.quote_id=q.quote_id AND a.shop_id=q.shop_id AND a.installation_generation=q.installation_generation WHERE q.shop_id=${order.shopId} AND q.installation_generation=${originalGeneration}::bigint AND q.quote_id=${binding.quoteId}::uuid AND a.set_id=${binding.authorizationSetId}::uuid`.execute(
+              }>`SELECT quote_value FROM public.read_purchase_offer_history(${order.shopId},${order.installationGeneration}::bigint,${binding.quoteId}::uuid,${binding.authorizationSetId}::uuid) WHERE original_generation=${originalGeneration}`.execute(
                 tx,
               )
             ).rows[0];
@@ -696,17 +696,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
           desired_request: QuoteRequest | null;
           created_at: Date | null;
           retain_private_until: Date | null;
-        }>`SELECT q.quote_value,a.*,q.installation_generation::text AS original_generation,i.activated_at,i.deactivated_at,k.public_key,k.revoked_at,r.issued_at,r.issued_day,r.shop_timezone,
-    p.payload,p.collected_at,p.expires_at,p.erased_at,legacy.desired_request,COALESCE(buyer.created_at,legacy.created_at) AS created_at,legacy.retain_private_until
-    FROM accepted_quotes q JOIN quote_authorization_sets a ON a.quote_id=q.quote_id AND a.shop_id=q.shop_id AND a.installation_generation=q.installation_generation
-    JOIN installation_generations i ON i.shop_id=q.shop_id AND i.generation=q.installation_generation
-    JOIN signing_keys k ON k.shop_id=a.shop_id AND k.installation_generation=a.installation_generation AND k.authorization_generation=a.authorization_generation AND k.key_id=a.key_id
-    LEFT JOIN quote_authorization_renewals r ON r.set_id=a.set_id
-    LEFT JOIN purchase_offer_payloads p ON p.shop_id=q.shop_id AND p.installation_generation=q.installation_generation AND p.quote_id=q.quote_id
-    LEFT JOIN buyer_quote_ownership o ON o.shop_id=q.shop_id AND o.installation_generation=q.installation_generation AND o.quote_id=q.quote_id
-    LEFT JOIN quote_proposals legacy ON legacy.shop_id=o.shop_id AND legacy.installation_generation=o.installation_generation AND legacy.proposal_id=o.proposal_id
-    LEFT JOIN buyer_sessions buyer ON buyer.session_id=legacy.session_id
-    WHERE q.shop_id=${input.shopId} AND q.quote_id=${input.quoteId}::uuid AND a.set_id=${input.authorizationSetId}::uuid`.execute(
+        }>`SELECT * FROM public.read_purchase_offer_history(${input.shopId},${input.installationGeneration}::bigint,${input.quoteId}::uuid,${input.authorizationSetId}::uuid)`.execute(
           db,
         )
       ).rows[0];
@@ -724,7 +714,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
               published_value: unknown;
               geometry_value: unknown;
               presentation_value: unknown;
-            }>`SELECT r.published_value,g.geometry_value,p.presentation_value FROM config_revisions r JOIN config_revision_geometry g USING(shop_id,config_id,revision_id) JOIN config_revision_presentation p USING(shop_id,config_id,revision_id) WHERE r.shop_id=${input.shopId} AND r.revision_id=${revision.revisionId} AND r.content_hash=${revision.contentHash}`.execute(
+            }>`SELECT * FROM public.read_purchase_revision_history(${input.shopId},${input.installationGeneration}::bigint,${input.quoteId}::uuid,${input.authorizationSetId}::uuid,${revision.revisionId},${revision.contentHash})`.execute(
               db,
             )
           ).rows[0];
