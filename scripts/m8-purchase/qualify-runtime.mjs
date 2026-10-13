@@ -27,6 +27,13 @@ export function qualificationTarget(value, suffix = randomUUID().replaceAll('-',
 }
 
 export async function qualifyRuntime(ownerValue) {
+  // Replace any prior invocation's evidence before parsing configuration or connecting.
+  await mkdir(evidence, { recursive: true });
+  await writeFile(
+    new URL('runtime-role-ci.json', evidence),
+    `${JSON.stringify({ database: null, migrations: [], status: 'FAIL', databaseRemoved: false }, null, 2)}\n`,
+  );
+  await writeFile(new URL('runtime-role-ci.log', evidence), 'M8 actual runtime qualification has not completed.\n');
   const { owner, target, database } = qualificationTarget(ownerValue);
   const ownerPool = new Pool({
     connectionString: owner.toString(),

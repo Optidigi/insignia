@@ -24,6 +24,7 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
   const keys = { currentKeyId: 'synthetic-runtime', keys: { 'synthetic-runtime': randomBytes(32) } };
   const seed = createDurableCore(new Pool({ connectionString: ownerUrl }), { credentialKeys: keys });
   const login = `m8_runtime_${randomUUID().replaceAll('-', '')}`;
+  const loginPassword = randomBytes(32).toString('hex');
   let runtime, restricted;
   try {
     assert.equal(
@@ -34,12 +35,13 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
     await owner.query(await readFile(new URL('../../../scripts/m5-024/queue-roles.sql', import.meta.url), 'utf8'));
     // Qualification uses a new real session login, inheriting the actual intended capability role.
     await owner.query(
-      `CREATE ROLE ${login} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT`,
+      // CREATE ROLE cannot bind parameters; generated hex contains no SQL quote characters.
+      `CREATE ROLE ${login} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT PASSWORD '${loginPassword}'`,
     );
     await owner.query(`GRANT insignia_queue_consume TO ${login}`);
     const url = new URL(ownerUrl);
     url.username = login;
-    url.password = '';
+    url.password = loginPassword;
     restricted = new Pool({ connectionString: url.toString() });
     runtime = createDurableCore(new Pool({ connectionString: url.toString() }), { credentialKeys: keys });
     const identity = (await restricted.query('SELECT session_user,current_user')).rows[0];
