@@ -2,6 +2,8 @@
 
 This is a dependency-specific proof plan, not deployment or native acceptance. Current contextVerifiedfalse/CONTEXT_UNVERIFIED remains exact. Local worker roles/helper/history and correlation-reader guards qualify independently; provider/context doubles do not supply native facts.
 
+Latest owner direction supersedes the inquiry route below: the owner will not send a Shopify inquiry and authorizes research of the checkout-enforcement/actual-order alternative. See [recommendation and bounded proof plan](purchase-proof-recommendation.md). That alternative requires explicit adjudication, qualified supported-origin routing and native controls; it does not infer historical localization or grant new store/deployment resources. No further support inquiry or log search is requested. Earlier probe/inquiry plans remain dated evidence.
+
 13 October follow-up supersedes the pending owner log probe below: the owner supplied ordinary successful Admin GraphQL reads, then reported no visible Function runs. Record OWNER_REPORTED_NO_VISIBLE_RUNS; do not infer that no Functions ever ran. This route yielded no required tuple/join and no further owner log search or new checkout is requested. [Server Pixel research](server-pixel-research.md) now establishes the exact public-contract gap; the next external input is the [prepared Shopify inquiry](provider-context-inquiry.md), currently unsent, rather than blind pixel registration. Original probe below remains the dated plan, not an observation claim.
 
 ## Existing-resource read probe

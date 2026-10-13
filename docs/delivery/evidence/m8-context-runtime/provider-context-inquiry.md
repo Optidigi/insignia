@@ -2,6 +2,8 @@
 
 Prepared 13 October 2026. **Draft only; not sent.** This requests technical documentation and app eligibility, not scopes, registration, deployment, billing or a store change. No customer data, checkout tokens or credentials are included.
 
+The owner subsequently declined this inquiry. Preserve the unsent draft as research history; it is not an active prerequisite or authorization to contact Shopify. Current direction: [checkout-enforcement purchase-proof research](purchase-proof-recommendation.md).
+
 ## Ready-to-send inquiry
 
 We are developing the existing public Insignia rewrite app on `insignia-rewrite-dev.myshopify.com`, with Admin and Function APIs pinned to `2026-07`. We need an independently Shopify-authenticated record of the original checkout-localization country ISO code and numeric Market ID at checkout completion, joined to the actual resulting order. This supports immutable customization purchase records; values copied from our quote, a browser assertion, shipping/billing address or the current Market configuration cannot establish the required historical fact.
