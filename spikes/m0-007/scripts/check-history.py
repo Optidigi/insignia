@@ -145,7 +145,7 @@ AUTONOMOUS_DELIVERY_OWNER_AUTHORITY_SHA256 = "cb90231944c8476d695dcf8e8e656a3c58
 assert digest((REPO / AUTONOMOUS_DELIVERY_OWNER_AUTHORITY).read_bytes()) == AUTONOMOUS_DELIVERY_OWNER_AUTHORITY_SHA256, "autonomous delivery owner authority mismatch"
 
 current_architecture = {
-    "docs/architecture/implementation-plan.md": "20abbb8b348bd27a6225bf6c0f4095b624e551b9ee923f04ab19e19082ea3608",
+    "docs/architecture/implementation-plan.md": "7eece50a8030a089e95e2a533a418e75c25d0024364e7a645268bb5c25bf27eb",
     "docs/architecture/decision-ledger.md": "536576973a57d721a8af6155b709b368421ba08c98dbae70f391f21ad49589cc",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
 }

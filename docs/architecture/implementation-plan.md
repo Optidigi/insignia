@@ -769,7 +769,7 @@ Health endpoints separate process liveness, DB readiness, worker freshness and i
 
 ### 14.2 Gate register
 
-All gates began **NOT RUN**. The maintained [delivery evidence register](../delivery/state.md) records later partial observations and dated historical verdicts; no complete gate has been accepted. G7 and G8 have partial observed sub-results but remain incomplete. Each gate needs a test directory, machine-readable result manifest, captured evidence and a principal-adjudicated conclusion. The plan's examples and source reads are not gate evidence.
+All gates began **NOT RUN**. The maintained [delivery evidence register](../delivery/state.md) records later partial observations and dated historical verdicts; no complete gate has been accepted. G7 and G8 have partial observed sub-results but remain incomplete. Each gate needs a test directory, machine-readable result manifest, captured evidence and an evidence-backed engineering conclusion with proportionate independent review. The plan's examples and source reads are not gate evidence.
 
 | Gate | Prototype and executable acceptance | Failure and reopened boundary |
 |---|---|---|
