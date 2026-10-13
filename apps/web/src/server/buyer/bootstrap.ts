@@ -10,12 +10,15 @@ import {
 import { Pool, type PoolConfig } from 'pg';
 import { loadCredentialKeys } from '../../../../worker/src/config.ts';
 import { credentialLifecycle } from '../../../../worker/src/handlers.ts';
+import { createDemandDrivenReleaseReader, type ReleaseVerificationCollector } from '../admin/release-evidence.ts';
+import { createReleaseVerificationClient } from '../admin/release-verification.ts';
 import { createProductionBuyerServices, type ProductionBuyerInputs } from './production.ts';
 import type { BuyerServices } from './service.ts';
 
 type BootstrapSeam = {
   createCore?(options: PoolConfig, config: { credentialKeys: CredentialKeyRing }): DurableCore;
   createServices?(input: ProductionBuyerInputs): BuyerServices;
+  releaseCollector?: ReleaseVerificationCollector;
   fetchImpl?: typeof fetch;
   clock?: () => Date;
 };
@@ -97,8 +100,8 @@ function expectedFunctions(text: string, appKey: string): ExpectedFunctionOwners
   return value as unknown as ExpectedFunctionOwnership;
 }
 
-/** Runtime bootstrap has one explicit enable gate. It never provisions resources, collects a release
- * or upgrades stored evidence. The caller owns one cached promise, including an unavailable result. */
+/** Runtime bootstrap has one explicit enable gate. It never provisions resources, manufactures a release
+ * or upgrades stored evidence. Release demand is server-bound and independently collected. The caller owns one cached promise, including an unavailable result. */
 export async function createBuyerBootstrap(
   env: NodeJS.ProcessEnv = process.env,
   seam: BootstrapSeam = {},
@@ -172,18 +175,61 @@ export async function createBuyerBootstrap(
       refresh,
       now: clock,
     });
-    const read = (scope: { shopId: string; installationGeneration: string; appClientId: string }) =>
-      scope.appClientId === clientId
-        ? ownedCore.trustedReleaseRecords.read({
-            scope: {
-              shopId: scope.shopId,
-              installationGeneration: scope.installationGeneration,
-              appClientId: clientId,
-            },
-            expectedActiveAppVersionRef: releaseProfile.activeVersionRef,
-            now: clock(),
-          })
-        : Promise.resolve(null);
+    const collector =
+      seam.releaseCollector ?? createReleaseVerificationClient(undefined, releaseProfile.activeVersionRef);
+    const collecting = new Map<string, Promise<{ requestId: string; recordId: string | null; state: string }>>();
+    const read = async (scope: { shopId: string; installationGeneration: string; appClientId: string }) => {
+      if (scope.appClientId !== clientId) return null;
+      const current = await ownedCore.tenants.getActiveAuthorizationScope(scope);
+      if (!current) return null;
+      const managed = await ownedCore.tenants.getManagedInstallationState(current.shopDomain);
+      if (
+        !managed?.active ||
+        managed.shopId !== scope.shopId ||
+        managed.currentGeneration !== scope.installationGeneration ||
+        !managed.externalInstallationId
+      )
+        return null;
+      const credential = await credentials.acquire(scope);
+      if (
+        credential.kind !== 'usable' ||
+        credential.shopDomain !== current.shopDomain ||
+        !Number.isFinite(+credential.accessExpiresAt) ||
+        +credential.accessExpiresAt <= +clock() + 30000
+      )
+        return null;
+      const deadlineMs = Math.min(+clock() + 300000, +credential.accessExpiresAt - 30000);
+      const reader = createDemandDrivenReleaseReader({
+        records: ownedCore.trustedReleaseRecords,
+        releaseProfile: releaseProfile.name,
+        collector,
+        inFlight: collecting,
+        binding: {
+          shopId: scope.shopId,
+          installationGeneration: scope.installationGeneration,
+          appClientId: clientId,
+          authorizationGeneration: current.authorizationGeneration,
+          authorizationEpoch: current.authorizationEpoch,
+          externalInstallationId: managed.externalInstallationId,
+        },
+        deadline: () => deadlineMs,
+        now: clock,
+        async isCurrent() {
+          const after = await ownedCore.tenants.getActiveAuthorizationScope(scope);
+          const installed = await ownedCore.tenants.getManagedInstallationState(current.shopDomain);
+          if (
+            !installed?.active ||
+            installed.shopId !== scope.shopId ||
+            installed.currentGeneration !== scope.installationGeneration ||
+            installed.externalInstallationId !== managed.externalInstallationId ||
+            after?.authorizationGeneration !== current.authorizationGeneration ||
+            after.authorizationEpoch !== current.authorizationEpoch
+          )
+            throw new Error('Buyer release authority changed');
+        },
+      });
+      return reader.read({ scope, expectedActiveAppVersionRef: releaseProfile.activeVersionRef, now: clock() });
+    };
     return (seam.createServices ?? createProductionBuyerServices)({
       core,
       env,

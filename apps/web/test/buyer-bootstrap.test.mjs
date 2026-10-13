@@ -44,6 +44,19 @@ function seam() {
   const core = {
     tenants: {
       getActiveProviderScope: async (scope) => ({ ...scope, shopDomain: 'owned.myshopify.com', shopifyShopId: '11' }),
+      getActiveAuthorizationScope: async (scope) => ({
+        ...scope,
+        shopDomain: 'owned.myshopify.com',
+        shopifyShopId: '11',
+        authorizationGeneration: '11111111-1111-4111-8111-111111111111',
+        authorizationEpoch: 0,
+      }),
+      getManagedInstallationState: async () => ({
+        active: true,
+        shopId: 'tenant',
+        currentGeneration: '1',
+        externalInstallationId: 'gid://shopify/AppInstallation/12',
+      }),
     },
     credentials: {
       acquire: async () => ({
@@ -68,6 +81,7 @@ function seam() {
   };
   const services = { guest: { syntheticBoundaryOnly: true } };
   const dependencies = {
+    releaseCollector: { collect: async ({ requestId }) => ({ requestId, state: 'STOPPED', recordId: null }) },
     createCore: (options) => {
       allocated++;
       assert.equal(options.max, 4);
@@ -137,7 +151,9 @@ test('enabled bootstrap binds existing credential lifecycle and immutable truste
   assert.equal(await composition.artifactPorts.trustedEvidence.read(scope), null);
   assert.equal(value.readers.length, 2);
   assert.equal(value.readers[0].expectedActiveAppVersionRef, '1163229200385');
-  assert.deepEqual(value.readers[0].scope, scope);
+  assert.equal(value.readers[0].scope.shopId, scope.shopId);
+  assert.equal(value.readers[0].scope.installationGeneration, scope.installationGeneration);
+  assert.equal(value.readers[0].scope.appClientId, scope.appClientId);
   assert.equal(await composition.artifactPorts.expectedBuild.read({ ...scope, appClientId: 'other' }), null);
   assert.equal(value.readers.length, 2);
 });
@@ -184,7 +200,7 @@ test('M8 buyer bootstrap reads the selected release without enabling buyer mode 
   const env = { ...environment(), INSIGNIA_RELEASE_PROFILE: 'm8-read-orders-617057f' };
   assert.equal(await createBuyerBootstrap(env, controls.dependencies), controls.services);
   const input = controls.getComposition();
-  const scope = { shopId: 'synthetic-shop', installationGeneration: '1', appClientId: 'synthetic-app' };
+  const scope = { shopId: 'tenant', installationGeneration: '1', appClientId: 'synthetic-app' };
   assert.equal(await input.artifactPorts.expectedBuild.read(scope), null);
   assert.equal(controls.readers.at(-1).expectedActiveAppVersionRef, '1165513097217');
   await input.core.close();
@@ -194,4 +210,105 @@ test('M8 buyer bootstrap reads the selected release without enabling buyer mode 
     undefined,
   );
   assert.equal(denied.stats().allocated, 0);
+});
+
+test('buyer release reads recover expired evidence through one independent collection and durable reread', async () => {
+  const value = seam();
+  const now = new Date('2026-10-13T22:00:05.000Z');
+  value.dependencies.clock = () => now;
+  const expectedBuild = { schemaVersion: 2, appVersionRef: '1165513097217' };
+  const attestation = { observedAt: '2026-10-13T22:00:00.000Z', expiresAt: '2026-10-13T22:00:30.000Z' };
+  const recordId = '22222222-2222-4222-8222-222222222222';
+  let appended = false,
+    collections = 0;
+  value.core.trustedReleaseRecords.read = async () =>
+    appended ? { expectedBuild, record: { recordId, attestation } } : null;
+  value.dependencies.releaseCollector = {
+    async collect(request) {
+      collections++;
+      assert.equal(request.expectedActiveAppVersionRef, '1165513097217');
+      assert.equal(request.binding.externalInstallationId, 'gid://shopify/AppInstallation/12');
+      assert.deepEqual(Object.keys(request).sort(), [
+        'binding',
+        'deadlineMs',
+        'expectedActiveAppVersionRef',
+        'requestId',
+      ]);
+      assert.ok(request.deadlineMs <= +now + 300000);
+      await new Promise((resolve) => setImmediate(resolve));
+      appended = true;
+      return { requestId: request.requestId, state: 'COMPLETE', recordId };
+    },
+  };
+  await createBuyerBootstrap(
+    { ...environment(), INSIGNIA_RELEASE_PROFILE: 'm8-read-orders-617057f' },
+    value.dependencies,
+  );
+  const ports = value.getComposition().artifactPorts;
+  const scope = { shopId: 'tenant', installationGeneration: '1', appClientId: 'synthetic-app' };
+  const result = await Promise.all([ports.expectedBuild.read(scope), ports.trustedEvidence.read(scope)]);
+  assert.deepEqual(result, [expectedBuild, attestation]);
+  assert.equal(collections, 1);
+  assert.equal(attestation.observedAt, '2026-10-13T22:00:00.000Z');
+});
+
+test('buyer collection deadline respects real credential expiry and does not collect an unusable grant', async () => {
+  const now = new Date('2026-10-13T22:00:00.000Z');
+  for (const remaining of [45000, 30000]) {
+    const value = seam();
+    value.dependencies.clock = () => now;
+    value.core.credentials.acquire = async () => ({
+      kind: 'usable',
+      accessToken: 'synthetic-offline-token',
+      accessExpiresAt: new Date(+now + remaining),
+    });
+    let calls = 0;
+    value.dependencies.releaseCollector = {
+      async collect(request) {
+        calls++;
+        assert.equal(request.deadlineMs, +now + 15000);
+        return { requestId: request.requestId, state: 'STOPPED', recordId: null };
+      },
+    };
+    await createBuyerBootstrap(environment(), value.dependencies);
+    const scope = { shopId: 'tenant', installationGeneration: '1', appClientId: 'synthetic-app' };
+    assert.equal(await value.getComposition().artifactPorts.expectedBuild.read(scope), null);
+    assert.equal(calls, remaining === 45000 ? 1 : 0);
+  }
+});
+
+test('buyer release collection cannot survive authorization or installation drift', async () => {
+  for (const drift of ['authorization', 'installation']) {
+    const value = seam();
+    let changed = false;
+    const original = value.core.tenants.getActiveAuthorizationScope;
+    value.core.tenants.getActiveAuthorizationScope = async (scope) => ({
+      ...(await original(scope)),
+      authorizationEpoch: changed && drift === 'authorization' ? 1 : 0,
+    });
+    value.core.tenants.getManagedInstallationState = async () => ({
+      active: true,
+      shopId: 'tenant',
+      currentGeneration: '1',
+      externalInstallationId:
+        changed && drift === 'installation' ? 'gid://shopify/AppInstallation/99' : 'gid://shopify/AppInstallation/12',
+    });
+    value.dependencies.releaseCollector = {
+      async collect(request) {
+        changed = true;
+        return { requestId: request.requestId, state: 'COMPLETE', recordId: '22222222-2222-4222-8222-222222222222' };
+      },
+    };
+    await createBuyerBootstrap(environment(), value.dependencies);
+    await assert.rejects(
+      value
+        .getComposition()
+        .artifactPorts.expectedBuild.read({
+          shopId: 'tenant',
+          installationGeneration: '1',
+          appClientId: 'synthetic-app',
+        }),
+      /Buyer release authority changed/,
+    );
+  }
 });
