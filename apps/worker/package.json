@@ -20,14 +20,15 @@
   },
   "dependencies": {
     "@insignia/application": "workspace:*",
+    "@insignia/cart-authorization": "workspace:*",
     "@insignia/database": "workspace:*",
     "@insignia/observability": "workspace:*",
     "@insignia/shopify": "workspace:*",
+    "@insignia/storage": "workspace:*",
     "pg": "8.23.0",
     "pg-boss": "12.35.0",
-    "sharp": "0.35.4",
     "saxes": "6.0.0",
-    "@insignia/storage": "workspace:*"
+    "sharp": "0.35.4"
   },
   "devDependencies": {
     "@types/node": "24.10.0",

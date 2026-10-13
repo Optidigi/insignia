@@ -20,10 +20,11 @@ export function credentialLifecycle(core: DurableCore): OfflineCredentialLifecyc
   };
 }
 
-/** Generic uninstall and other unqualified topics stay visible and deferred; credential refresh retains its existing contract. */
+/** Known order topics use the explicitly supplied independent reader; uninstall authority and credential refresh retain their existing contracts. */
 export function createDurableWorkerHandlers(
   core: DurableCore,
   transport: ShopifyOfflineRefreshTransport,
+  purchaseRunner?: { processInbox(inboxId: string): Promise<'deferred' | undefined> },
 ): WorkerHandlers {
   const credentials = credentialLifecycle(core);
   return {
@@ -33,6 +34,8 @@ export function createDurableWorkerHandlers(
       if (state.resolution === 'expired') return 'expired';
       if (state.resolution === 'exhausted') return 'exhausted';
       if (state.state === 'processed') return;
+      if (['orders/create', 'orders/paid', 'orders/updated', 'refunds/create'].includes(state.topic))
+        return purchaseRunner ? purchaseRunner.processInbox(inboxId) : 'deferred';
       if (state.topic !== 'app/uninstalled') return 'deferred';
       const result = await core.webhooks.processUninstall(inboxId);
       if (result === 'unresolved' || result === 'not_found') throw new Error('Uninstall delivery cannot yet resolve');

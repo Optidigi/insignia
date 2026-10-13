@@ -125,7 +125,7 @@ export async function fixture(t, options = {}) {
     `INSERT INTO signing_keys(shop_id,installation_generation,authorization_generation,key_id,public_key,public_key_fingerprint,private_envelope,wrapping_key_id,state,first_valid_day,last_valid_day) VALUES($1,1,$2,7,$3,$4,'{"v":1}','synthetic','active',20000,21000)`,
     [shopId, identity.authorizationGeneration, publicKey, fingerprint],
   );
-  let now = new Date('2026-10-12T12:00:00Z'),
+  let now = options.clock ? options.clock() : new Date('2026-10-12T12:00:00Z'),
     amount = options.demo91 ? '20.00' : '10.00',
     signings = 0,
     catalogUnavailable = false,

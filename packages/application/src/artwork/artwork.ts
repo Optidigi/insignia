@@ -41,6 +41,8 @@ export type ArtworkRecord = {
   shopId: string;
   installationGeneration: string;
   ownerHash: string;
+  /** Absent historical provenance is unknown, never inferred from ownerHash. */
+  ownerKind?: 'merchant' | 'guest' | 'legacy_unknown';
   declaredMime: ArtworkMime;
   declaredBytes: number;
   state: ArtworkState;
@@ -163,6 +165,7 @@ export function createArtworkService(input: {
         shopId: scope.shopId,
         installationGeneration: scope.installationGeneration,
         ownerHash,
+        ownerKind: scope.kind,
         declaredMime: declaration.contentType as ArtworkMime,
         declaredBytes: declaration.byteLength,
         state: 'UPLOADING',

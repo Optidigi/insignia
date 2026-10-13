@@ -1,0 +1,15 @@
+{
+  "milestone": "M8",
+  "base": "3ae4b8505d4c383fbb874694ef870454b6a074ef",
+  "baseTree": "931cd3fb3d7809feeb0d2043646c1fe7642124f2",
+  "completedReviewHead": "8acd574537f131af58d9eae86e1a5faec176cea0",
+  "completedReviewTree": "556c2b47073ca4c23831cfcd2341d013aaec07eb",
+  "correctionReviewHead": "237e1d0454b903a1702891ea19632c2cb351cfb4",
+  "correctionReviewTree": "80f144aeabf583e82607e8e8a072bbbd0fd55c55",
+  "localChecks": "PASS_WITH_EXPLICIT_SKIPS",
+  "independentReview": "CORRECTED_SOURCE_PASS",
+  "finalCI": "PENDING_EXACT_PR_HEAD",
+  "integration": "PENDING_NORMAL_MERGE",
+  "nativeAcceptance": "DEFERRED_G1_G7_UNPASSED",
+  "nextMilestone": "M9_UNAUTHORIZED"
+}

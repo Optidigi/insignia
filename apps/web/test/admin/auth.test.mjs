@@ -208,3 +208,30 @@ test('private artwork permissions require the verified online account owner, ind
   assert.equal(reader.canReadArtwork, true);
   assert.equal(reader.canUploadArtwork, false);
 });
+
+test('purchase access requires account owner and read_orders in online app, user and current installation grants', async () => {
+  const allowed = {
+    ...grant,
+    accountOwner: true,
+    appScopes: ['write_products', 'read_orders'],
+    userScopes: ['write_products', 'read_orders'],
+  };
+  const current = { ...installation, grantedScopes: ['write_products', 'read_orders'] };
+  const verified = await setup({
+    exchangeOnlineGrant: async () => allowed,
+    readInstallation: async () => current,
+  }).auth(request);
+  assert.equal(verified.canReadOrders, true);
+  for (const [online, installed] of [
+    [{ ...allowed, accountOwner: false }, current],
+    [{ ...allowed, appScopes: ['write_products'] }, current],
+    [{ ...allowed, userScopes: ['write_products'] }, current],
+    [allowed, { ...current, grantedScopes: ['write_products'] }],
+  ]) {
+    const actor = await setup({
+      exchangeOnlineGrant: async () => online,
+      readInstallation: async () => installed,
+    }).auth(request);
+    assert.equal(actor.canReadOrders, false);
+  }
+});

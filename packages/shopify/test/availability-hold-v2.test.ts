@@ -74,7 +74,9 @@ function fixture(steps: unknown[], options: { now?: () => Date; timeoutMs?: numb
     isCurrent: async () => true,
     fetchImpl: fetchImpl as typeof fetch,
     now: options.now ?? now,
-    timeoutMs: options.timeoutMs ?? 100,
+    // Success cases test settlement semantics, not a loaded host’s 100 ms scheduling budget.
+    // Explicit deadline tests below keep their 100 ms budgets.
+    timeoutMs: options.timeoutMs ?? 1000,
   });
   return {
     port,

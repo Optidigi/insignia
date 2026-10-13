@@ -8,6 +8,7 @@ export function createWorkerReconciliation(input: {
   core: DurableCore;
   queue: PgBossRuntime;
   artwork?: Pick<ReturnType<typeof createArtworkService>, 'cleanup'>;
+  purchases?: { recover(): Promise<unknown>; discoverChanges(): Promise<unknown> };
 }) {
   let active: Promise<void> | undefined;
   let stopped = false;
@@ -18,6 +19,9 @@ export function createWorkerReconciliation(input: {
       const operations = [
         { errorClass: 'WEBHOOK_RETENTION_UNAVAILABLE', run: () => maintainWebhookRetention(input.core, input.queue) },
         { errorClass: 'UNINSTALL_RECOVERY_UNAVAILABLE', run: () => recoverPendingUninstalls(input.core, input.queue) },
+        { errorClass: 'PURCHASE_RECOVERY_UNAVAILABLE', run: () => input.purchases?.recover() },
+        { errorClass: 'PURCHASE_DISCOVERY_UNAVAILABLE', run: () => input.purchases?.discoverChanges() },
+        { errorClass: 'PURCHASE_PAYLOAD_CLEANUP_UNAVAILABLE', run: () => input.core.purchases?.cleanupDue(100) },
         { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE', run: () => input.artwork?.cleanup(20) },
         {
           errorClass: 'BUYER_PAYLOAD_CLEANUP_UNAVAILABLE',

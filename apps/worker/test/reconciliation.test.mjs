@@ -176,3 +176,28 @@ test('concurrent ticks coalesce and shutdown drains the active operation before 
   await maintenance.runOnce();
   assert.deepEqual(input.seen, ['payload-erasure', 'queue-removal']);
 });
+
+test('purchase discovery and storage failures never suppress purchase private cleanup', async () => {
+  const input = fixture();
+  let cleaned = 0;
+  input.purchases = {
+    async recover() {
+      throw new Error('provider');
+    },
+    async discoverChanges() {
+      throw new Error('provider');
+    },
+  };
+  input.core.purchases = {
+    async cleanupDue(limit) {
+      assert.equal(limit, 100);
+      cleaned++;
+    },
+  };
+  input.artwork.cleanup = async () => {
+    throw new Error('private storage');
+  };
+  await createWorkerReconciliation(input).runOnce();
+  assert.equal(cleaned, 1);
+  assert.ok(input.errors.some((x) => x.metadata.errorClass === 'PURCHASE_DISCOVERY_UNAVAILABLE'));
+});
