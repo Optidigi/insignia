@@ -1,6 +1,6 @@
 import { parseBuyerResponse } from '@insignia/contracts';
 import { type GeometryV1, projectScene, validateGeometry } from '@insignia/visualizer/geometry';
-import type { CartBucket } from './cart';
+import { type CartBucket, type CartMutationIntent, parseCartMutationIntent } from './cart.ts';
 export type DesiredGroup = {
   productId: string;
   configRevisionId: string;
@@ -229,9 +229,17 @@ export function createBuyerApi({
 export function cartJournal(storage: Pick<Storage, 'getItem' | 'setItem'>, root: string) {
   if (!/^\/(?:[A-Za-z0-9_-]+\/)*$/.test(root)) throw new Error('Invalid cart root');
   const key = 'insignia-cart-unresolved-v2';
+  const intentKey = 'insignia-cart-intent-v1';
   return {
     readUnresolved: () => storage.getItem(key) === '1',
     writeUnresolved: (value: boolean) => storage.setItem(key, value ? '1' : '0'),
+    readIntent: () => {
+      const text = storage.getItem(intentKey);
+      if (text && text.length > 1024) throw new Error('Invalid cart recovery state');
+      return parseCartMutationIntent(text ? JSON.parse(text) : null);
+    },
+    writeIntent: (value: CartMutationIntent | null) =>
+      storage.setItem(intentKey, JSON.stringify(parseCartMutationIntent(value))),
   };
 }
 export function sizeControlKind(count: number): 'slider' | 'cards' | 'preview' {

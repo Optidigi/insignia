@@ -16,17 +16,21 @@ const desired = [
     properties: { _insignia_quote_v2: 'new', _insignia_member_v2: 'member-0' },
   },
 ];
-function provider(initial = [ordinary, old], hook) {
+function provider(initial = [ordinary, old], hook, initialAttributes = {}) {
   let items = structuredClone(initial);
+  const attributes = structuredClone(initialAttributes);
   const requests = [];
   const fetchImpl = async (url, init = {}) => {
     const body = init.body ? JSON.parse(init.body) : undefined;
     requests.push({ url, method: init.method ?? 'GET', body });
     if (hook) {
-      const result = await hook({ url, body, items, requests });
+      const result = await hook({ url, body, items, attributes, requests });
       if (result) return result;
     }
-    if (url.endsWith('cart/update.js')) items = items.filter((item) => body.updates[item.key] !== 0);
+    if (url.endsWith('cart/update.js')) {
+      if (body.updates) items = items.filter((item) => body.updates[item.key] !== 0);
+      if (body.attributes) Object.assign(attributes, body.attributes);
+    }
     if (url.endsWith('cart/add.js'))
       items.push(
         ...body.items.map((item, i) => ({
@@ -36,9 +40,15 @@ function provider(initial = [ordinary, old], hook) {
           properties: item.properties,
         })),
       );
-    return Response.json({ items, currency: 'EUR' });
+    return Response.json({ items, attributes, currency: 'EUR' });
   };
-  return { fetchImpl, requests };
+  return {
+    fetchImpl,
+    requests,
+    get items() {
+      return items;
+    },
+  };
 }
 test('replaces only v2 members by current key and applies exact real-variant vector on locale root', async () => {
   const remote = provider();
@@ -53,12 +63,17 @@ test('replaces only v2 members by current key and applies exact real-variant vec
   assert.deepEqual(
     remote.requests.filter((r) => r.method === 'POST'),
     [
-      { url: '/nl/cart/update.js', method: 'POST', body: { updates: { '42:old-member': 0 } } },
+      {
+        url: '/nl/cart/update.js',
+        method: 'POST',
+        body: { updates: { '42:old-member': 0 }, attributes: { _insignia_quote_v2: '' } },
+      },
       {
         url: '/nl/cart/add.js',
         method: 'POST',
         body: { items: [{ id: '42', quantity: 2, properties: desired[0].properties }] },
       },
+      { url: '/nl/cart/update.js', method: 'POST', body: { attributes: { _insignia_quote_v2: 'new' } } },
     ],
   );
 });
@@ -150,7 +165,7 @@ test('remote roots, unsafe variants, duplicate members and mixed quote sets fail
 
 test('already-applied vector succeeds without duplicate addition and empty vector removes customization only', async () => {
   const line = { ...old, quantity: 2, properties: desired[0].properties };
-  const remote = provider([ordinary, line]);
+  const remote = provider([ordinary, line], undefined, { _insignia_quote_v2: 'new' });
   const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
   const initial = await cart.read();
   assert.equal((await cart.apply(desired, { expectedFingerprint: initial.fingerprint })).status, 'applied');
@@ -355,6 +370,7 @@ test('actual browser origin lock excludes application from a second tab across l
   });
   let blocked = false;
   let items = [];
+  const attributes = {};
   let writes = 0;
   try {
     await server.listen();
@@ -368,13 +384,19 @@ test('actual browser origin lock excludes application from a second tab across l
         entered();
         await gate;
       }
-      await route.fulfill({ json: { items, currency: 'EUR' } });
+      await route.fulfill({ json: { items, attributes, currency: 'EUR' } });
     });
     await context.route('**/cart/add.js', async (route) => {
       const added = route.request().postDataJSON().items[0];
       writes++;
       items = [{ key: '42:browser', variant_id: added.id, quantity: added.quantity, properties: added.properties }];
       await route.fulfill({ json: { items } });
+    });
+    await context.route('**/cart/update.js', async (route) => {
+      const body = route.request().postDataJSON();
+      if (body.updates) items = items.filter((item) => body.updates[item.key] !== 0);
+      Object.assign(attributes, body.attributes ?? {});
+      await route.fulfill({ json: { items, attributes, currency: 'EUR' } });
     });
     const base = `http://127.0.0.1:${server.httpServer.address().port}`;
     await Promise.all([first.goto(base), second.goto(base)]);
@@ -450,4 +472,237 @@ test('the accepted vector is captured before asynchronous browser lock acquisiti
   const result = await applying;
   assert.equal(result.cart.customized[0].quantity, 2);
   assert.equal(result.cart.customized[0].properties._insignia_quote_v2, 'new');
+});
+
+test('accepted vector also installs the shared Function quote carrier while retaining line/order carriers', async () => {
+  const remote = provider([ordinary]);
+  const adapter = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+  const before = await adapter.read();
+  const result = await adapter.apply(desired, { expectedFingerprint: before.fingerprint });
+  assert.equal(result.status, 'applied');
+  assert.equal(result.cart.attributes._insignia_quote_v2, 'new');
+  assert.equal(result.cart.customized[0].properties._insignia_quote_v2, 'new');
+  assert.equal(result.cart.customized[0].properties._insignia_member_v2, 'member-0');
+});
+
+test('lost final attribute acknowledgement settles exact full goal after reload without another mutation', async () => {
+  let state = null,
+    flag = false;
+  const journal = {
+    readUnresolved: () => flag,
+    writeUnresolved: (v) => {
+      flag = v;
+    },
+    readIntent: () => state,
+    writeIntent: (v) => {
+      state = structuredClone(v);
+    },
+  };
+  let lose = true;
+  const remote = provider([ordinary], ({ url, body, attributes }) => {
+    if (lose && url.endsWith('cart/update.js') && body.attributes?._insignia_quote_v2 === 'new') {
+      Object.assign(attributes, body.attributes);
+      lose = false;
+      throw new Error('response lost after effect');
+    }
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const initial = await cart.read();
+  const result = await cart.apply(desired, { expectedFingerprint: initial.fingerprint });
+  assert.equal(result.status, 'applied');
+  const writes = remote.requests.filter((r) => r.method === 'POST').length;
+  const reloaded = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  assert.equal((await reloaded.apply(desired, { expectedFingerprint: result.cart.fingerprint })).status, 'applied');
+  assert.equal(remote.requests.filter((r) => r.method === 'POST').length, writes);
+  assert.equal(flag, false);
+});
+
+test('partial unknown delivery permits explicit observed removal, retains tombstone and rejects late effects or old replay', async () => {
+  let state = null,
+    flag = false,
+    late;
+  const journal = {
+    readUnresolved: () => flag,
+    writeUnresolved: (v) => {
+      flag = v;
+    },
+    readIntent: () => state,
+    writeIntent: (v) => {
+      state = structuredClone(v);
+    },
+  };
+  const remote = provider([ordinary], ({ url, body, items }) => {
+    if (url.endsWith('cart/add.js') && !late) {
+      late = () =>
+        remote.items.push({
+          key: '42:late',
+          variant_id: 42,
+          quantity: body.items[0].quantity,
+          properties: body.items[0].properties,
+        });
+      items.push({ key: '42:partial', variant_id: 42, quantity: 1, properties: body.items[0].properties });
+      throw new Error('unknown partial delivery');
+    }
+  });
+  const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await cart.read();
+  assert.equal((await cart.apply(desired, { expectedFingerprint: before.fingerprint })).reason, 'mutation_unresolved');
+  const observed = await cart.read();
+  const remove = await cart.apply([], { expectedFingerprint: observed.fingerprint, repair: true });
+  assert.equal(remove.status, 'applied');
+  assert.equal(remove.recovery, 'late_effects_possible');
+  assert.equal(remove.cart.customized.length, 0);
+  assert.equal(remove.cart.ordinary[0].quantity, 3);
+  assert.equal(state.phase, 'abandoned');
+  assert.equal(flag, true);
+  assert.ok(!JSON.stringify(state).includes('member-0'));
+  assert.ok(!JSON.stringify(state).includes('Gift'));
+  const count = remote.requests.filter((r) => r.method === 'POST').length;
+  const reloaded = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  assert.equal(
+    (await reloaded.apply(desired, { expectedFingerprint: remove.cart.fingerprint })).reason,
+    'mutation_unresolved',
+  );
+  assert.equal(remote.requests.filter((r) => r.method === 'POST').length, count);
+  // A late unknown add is visible and cannot be silently retried or hidden by a journal reset.
+  late();
+  const after = await reloaded.read();
+  assert.equal((await reloaded.reconcile()).status, 'review_required');
+  assert.equal(
+    (
+      await reloaded.apply([{ ...desired[0], properties: { ...desired[0].properties, _insignia_quote_v2: 'fresh' } }], {
+        expectedFingerprint: after.fingerprint,
+      })
+    ).reason,
+    'mutation_unresolved',
+  );
+  assert.equal(remote.requests.filter((r) => r.method === 'POST').length, count);
+});
+
+test('restart can read-reconcile a witnessed complete goal after both acknowledgement and first observation were lost', async () => {
+  let state = null,
+    flag = false,
+    failRead = false;
+  const journal = {
+    readUnresolved: () => flag,
+    writeUnresolved: (v) => {
+      flag = v;
+    },
+    readIntent: () => state,
+    writeIntent: (v) => {
+      state = structuredClone(v);
+    },
+  };
+  const remote = provider([ordinary], ({ url, body, attributes }) => {
+    if (url.endsWith('cart/update.js') && body.attributes?._insignia_quote_v2 === 'new') {
+      Object.assign(attributes, body.attributes);
+      failRead = true;
+      throw new Error('lost acknowledgement');
+    }
+    if (url.endsWith('cart.js') && failRead) {
+      failRead = false;
+      throw new Error('observation unavailable');
+    }
+  });
+  const first = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await first.read();
+  assert.equal((await first.apply(desired, { expectedFingerprint: before.fingerprint })).reason, 'mutation_unresolved');
+  const writes = remote.requests.filter((r) => r.method === 'POST').length;
+  const reload = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  assert.equal((await reload.reconcile()).status, 'applied');
+  assert.equal(flag, false);
+  assert.equal(state, null);
+  assert.equal(remote.requests.filter((r) => r.method === 'POST').length, writes);
+});
+
+test('unchanged before-state is not delivery proof; explicit removal permits fresh review while retaining old uncertainty', async () => {
+  let state = null,
+    flag = false,
+    failAdd = true;
+  const journal = {
+    readUnresolved: () => flag,
+    writeUnresolved: (v) => {
+      flag = v;
+    },
+    readIntent: () => state,
+    writeIntent: (v) => {
+      state = structuredClone(v);
+    },
+  };
+  const remote = provider([ordinary], ({ url }) => {
+    if (failAdd && url.endsWith('cart/add.js')) throw new Error('dispatch outcome unknown');
+  });
+  const first = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+  const before = await first.read();
+  assert.equal((await first.apply(desired, { expectedFingerprint: before.fingerprint })).reason, 'mutation_unresolved');
+  assert.equal((await first.reconcile()).reason, 'mutation_unresolved');
+  assert.equal(remote.requests.filter((r) => r.method === 'POST').length, 1);
+  const remove = await first.apply([], { expectedFingerprint: before.fingerprint, repair: true });
+  assert.equal(remove.status, 'applied');
+  assert.equal(remove.recovery, 'late_effects_possible');
+  failAdd = false;
+  const fresh = [{ ...desired[0], properties: { ...desired[0].properties, _insignia_quote_v2: 'fresh' } }];
+  const applied = await first.apply(fresh, { expectedFingerprint: remove.cart.fingerprint });
+  assert.equal(applied.status, 'applied');
+  assert.equal(applied.recovery, 'late_effects_possible');
+  assert.equal(state.phase, 'abandoned');
+  assert.equal(state.abandoned.length, 1);
+});
+
+test('foreign cart attributes or currency changing during application prevent final shared-carrier write', async () => {
+  for (const changed of ['attributes', 'currency', 'carrier']) {
+    const remote = provider(
+      [ordinary],
+      ({ url, attributes, items, requests }) => {
+        if (url.endsWith('cart.js') && requests.some((r) => r.url.endsWith('cart/add.js'))) {
+          if (changed === 'attributes') attributes.GiftMessage = 'foreign edit';
+          else if (changed === 'carrier') attributes._insignia_quote_v2 = 'foreign-carrier';
+          else return Response.json({ items, attributes, currency: 'USD' });
+        }
+      },
+      { GiftMessage: 'keep' },
+    );
+    const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl });
+    const before = await cart.read();
+    assert.equal((await cart.apply(desired, { expectedFingerprint: before.fingerprint })).reason, 'vector_mismatch');
+    assert.equal(
+      remote.requests.some((r) => r.body?.attributes?._insignia_quote_v2 === 'new'),
+      false,
+    );
+    assert.equal(remote.items[0].quantity, 3);
+  }
+});
+
+test('legacy boolean-only uncertainty survives observed removal and restart without permitting new dispatch', async () => {
+  for (const initial of [[ordinary], [ordinary, old]]) {
+    let unresolved = true;
+    let state = null;
+    const journal = {
+      readUnresolved: () => unresolved,
+      writeUnresolved: (value) => {
+        unresolved = value;
+      },
+      readIntent: () => state,
+      writeIntent: (value) => {
+        state = value;
+      },
+    };
+    const remote = provider(initial);
+    const cart = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+    const before = await cart.read();
+    const removal = await cart.apply([], { expectedFingerprint: before.fingerprint, repair: true });
+    assert.equal(removal.status, 'applied');
+    assert.equal(removal.recovery, 'late_effects_possible');
+    assert.equal(state.phase, 'abandoned');
+    assert.equal(unresolved, true);
+    const reloaded = createAjaxCartAdapter({ root: '/', fetchImpl: remote.fetchImpl, journal });
+    const removed = await reloaded.read();
+    const posts = remote.requests.filter((r) => r.method === 'POST').length;
+    assert.equal(
+      (await reloaded.apply(desired, { expectedFingerprint: removed.fingerprint })).reason,
+      'mutation_unresolved',
+    );
+    assert.equal(remote.requests.filter((r) => r.method === 'POST').length, posts);
+    assert.deepEqual(remote.items, [ordinary]);
+  }
 });

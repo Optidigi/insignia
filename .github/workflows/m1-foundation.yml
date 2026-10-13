@@ -77,6 +77,8 @@ jobs:
           corepack pnpm --filter @insignia/web exec playwright install --with-deps chromium
       - name: Build and check actual workspace
         run: corepack pnpm check
+      - name: Qualify Ajax carriers against actual production Functions
+        run: M1_FUNCTION_RUNNER="$PWD/.m1-artifacts/tools/function-runner-9.2.2" node --test apps/storefront/test/cart-function-contract.test.mjs
       - name: M5 publication geometry stress (100 cases, no retries)
         run: corepack pnpm test:m5-stress && corepack pnpm test:m5-renderer-control
       - name: Bind current source and build outputs

@@ -41,7 +41,14 @@ test('buyer reviews full retained cart, accepts exact price and keeps ordinary l
     let proposalBody;
     let acceptedBody;
     let sessionCalls = 0;
-    await page.route('**/cart*.js', (route) => route.fulfill({ json: { items, currency: 'EUR' } }));
+    const attributes = {};
+    await page.route('**/cart*.js', (route) => route.fulfill({ json: { items, attributes, currency: 'EUR' } }));
+    await page.route('**/cart/update.js', (route) => {
+      const body = route.request().postDataJSON();
+      if (body.updates) items = items.filter((item) => body.updates[item.key] !== 0);
+      Object.assign(attributes, body.attributes ?? {});
+      return route.fulfill({ json: { items, attributes, currency: 'EUR' } });
+    });
     await page.route('**/cart/add.js', (route) => {
       const body = route.request().postDataJSON();
       items = [
@@ -456,12 +463,14 @@ async function withRenewalBuyer(run, { multipleProducts = false } = {}) {
         variants: [{ id: '444', label: 'Other', available: true }],
       });
     }
-    await page.route('**/cart*.js', (route) => route.fulfill({ json: { items, currency: 'EUR' } }));
+    const attributes = {};
+    await page.route('**/cart*.js', (route) => route.fulfill({ json: { items, attributes, currency: 'EUR' } }));
     await page.route('**/cart/update.js', (route) => {
       mutations++;
       const body = route.request().postDataJSON();
-      items = items.filter((i) => body.updates[i.key] !== 0);
-      return route.fulfill({ json: { items, currency: 'EUR' } });
+      if (body.updates) items = items.filter((i) => body.updates[i.key] !== 0);
+      Object.assign(attributes, body.attributes ?? {});
+      return route.fulfill({ json: { items, attributes, currency: 'EUR' } });
     });
     await page.route('**/cart/add.js', (route) => {
       mutations++;

@@ -14,6 +14,7 @@ test('buyer purchases the EUR91 quote through actual HTTP, real signing and Post
   const f = await fixture(t, { demo91: true });
   let browser;
   let items = [{ key: 'ordinary', variant_id: 999, product_id: 888, quantity: 2, properties: { gift: true } }];
+  const attributes = {};
   let adds = 0;
   let confirmed = false;
   const boundary = (req, res, next) => {
@@ -37,7 +38,15 @@ test('buyer purchases the EUR91 quote through actual HTTP, real signing and Post
       }
       if (url.pathname === '/cart.js') {
         res.setHeader('Content-Type', 'application/json');
-        res.end(JSON.stringify({ items, currency: 'EUR' }));
+        res.end(JSON.stringify({ items, attributes, currency: 'EUR' }));
+        return;
+      }
+      if (url.pathname === '/cart/update.js') {
+        const body = await new Response(Readable.toWeb(req)).json();
+        if (body.updates) items = items.filter((item) => body.updates[item.key] !== 0);
+        Object.assign(attributes, body.attributes ?? {});
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ items, attributes, currency: 'EUR' }));
         return;
       }
       if (url.pathname === '/cart/add.js') {
