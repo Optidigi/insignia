@@ -2,8 +2,11 @@
 # Inspect the rendered configuration privately before any service recreation.
 services:
   database:
-    ports:
-      - "127.0.0.1:${INSIGNIA_INSPECTION_DB_PORT:?Set the qualified unused loopback port}:5432"
+    # The VPS internal bridge does not activate published host ports. Reserve
+    # the qualified database address on that same private network instead.
+    networks:
+      private:
+        ipv4_address: ${INSIGNIA_INSPECTION_DB_ADDRESS:?Set the qualified address in the existing private subnet}
   web:
     environment:
       ARTWORK_STORAGE_PROFILE: /run/insignia/artwork-storage.json
