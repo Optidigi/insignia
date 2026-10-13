@@ -140,6 +140,120 @@ function fixture() {
   return { order, offer, ports };
 }
 describe('verified purchase reconciliation', () => {
+  it('binds a qualified checkout offer to actual merchandise without inventing observed localization', async () => {
+    const { order, ports } = fixture();
+    order.country = null;
+    order.marketId = null;
+    order.contextVerified = false;
+    const origin = {
+      creatorAppId: 'gid://shopify/App/77',
+      sourceName: 'web',
+      checkoutTokenDigest: 'a'.repeat(64),
+    };
+    const providerOrder = { ...order, checkoutOrigin: origin };
+    const checkout = {
+      admit: vi.fn(async () => ({ creatorAppId: origin.creatorAppId, enforcementObservedAt: order.observedAt })),
+    };
+    const observation = await reconcilePurchase(
+      { shopId: order.shopId, installationGeneration: '1', orderId: order.orderId },
+      { ...ports, orders: { read: async () => providerOrder }, checkout },
+    );
+    expect(observation).toMatchObject({
+      exception: null,
+      firstPaidAt: '2026-10-20T10:00:00.000Z',
+      order: { country: null, marketId: null, contextVerified: false },
+      bindings: [
+        {
+          evidence: {
+            kind: 'signed_offer_order_match',
+            creatorAppId: origin.creatorAppId,
+            checkoutTokenDigest: origin.checkoutTokenDigest,
+            enforcementObservedAt: order.observedAt,
+            checkoutContext: null,
+          },
+        },
+      ],
+    });
+    providerOrder.orderId = 'gid://shopify/Order/10';
+    const second = await reconcilePurchase(
+      { shopId: order.shopId, installationGeneration: '1', orderId: providerOrder.orderId },
+      { ...ports, orders: { read: async () => providerOrder }, checkout },
+    );
+    expect(second).toMatchObject({
+      exception: null,
+      bindings: [{ authorizationSetId: '22222222-2222-4222-8222-222222222222' }],
+    });
+  });
+
+  it('refuses unknown origins, absent or stale enforcement and partial provider context', async () => {
+    for (const problem of [
+      'missing_origin',
+      'pos',
+      'missing_token',
+      'other_creator',
+      'refused',
+      'stale',
+      'partial_context',
+    ]) {
+      const { order, ports } = fixture();
+      const origin = { creatorAppId: 'gid://shopify/App/77', sourceName: 'web', checkoutTokenDigest: 'a'.repeat(64) };
+      const providerOrder = { ...order, country: null, marketId: null, contextVerified: false, checkoutOrigin: origin };
+      if (problem === 'missing_origin') providerOrder.checkoutOrigin = undefined as unknown as typeof origin;
+      if (problem === 'pos') origin.sourceName = 'pos';
+      if (problem === 'missing_token') origin.checkoutTokenDigest = '';
+      if (problem === 'other_creator') origin.creatorAppId = 'gid://shopify/App/88';
+      if (problem === 'partial_context') providerOrder.country = 'DE' as unknown as null;
+      const checkout = {
+        admit: async () =>
+          problem === 'refused'
+            ? null
+            : {
+                creatorAppId: 'gid://shopify/App/77',
+                enforcementObservedAt: problem === 'stale' ? '2026-12-31T23:59:00Z' : order.observedAt,
+              },
+      };
+      const observation = await reconcilePurchase(
+        { shopId: order.shopId, installationGeneration: '1', orderId: order.orderId },
+        { ...ports, orders: { read: async () => providerOrder }, checkout },
+      );
+      expect(observation, problem).toMatchObject({ bindings: [], exception: expect.any(String) });
+    }
+  });
+
+  it('checkout admission cannot replace signature, merchandise or observed-context verification', async () => {
+    for (const problem of ['quantity', 'price', 'signature', 'provider_context', 'currency']) {
+      const { order, ports } = fixture();
+      const providerOrder = {
+        ...order,
+        country: null as string | null,
+        marketId: null as string | null,
+        contextVerified: false,
+        checkoutOrigin: {
+          creatorAppId: 'gid://shopify/App/77',
+          sourceName: 'web',
+          checkoutTokenDigest: 'a'.repeat(64),
+        },
+      };
+      if (problem === 'quantity') providerOrder.lines[0]!.quantity = 2;
+      if (problem === 'price') providerOrder.lines[0]!.originalUnitPriceMinor = '3000';
+      if (problem === 'signature') providerOrder.lines[0]!.attributes[0]!.value = 'invalid';
+      if (problem === 'provider_context') {
+        providerOrder.contextVerified = true;
+        providerOrder.country = 'US';
+        providerOrder.marketId = '42';
+      }
+      if (problem === 'currency') providerOrder.currency = 'USD';
+      const checkout = {
+        admit: vi.fn(async () => ({ creatorAppId: 'gid://shopify/App/77', enforcementObservedAt: order.observedAt })),
+      };
+      const observation = await reconcilePurchase(
+        { shopId: order.shopId, installationGeneration: '1', orderId: order.orderId },
+        { ...ports, orders: { read: async () => providerOrder }, checkout },
+      );
+      expect(observation, problem).toMatchObject({ bindings: [], exception: expect.any(String) });
+      expect(checkout.admit).not.toHaveBeenCalled();
+    }
+  });
   it('binds the exact renewed set at order creation despite delayed delivery and records Shopify payment', async () => {
     const { ports, offer } = fixture();
     await reconcilePurchase({ shopId: 'shop', installationGeneration: '1', orderId: 'gid://shopify/Order/9' }, ports);

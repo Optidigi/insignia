@@ -1,0 +1,25 @@
+# Supported checkout purchase matching
+
+13 October 2026. Local implementation under the [owner-delegated decision](../../authority/m8-purchase-proof-ownership-2026-10-13.md). Entry main `9059c270923ecb5c10bf6bf64deb23e6da8b4849`, tree `4f1dc6e3432c542e1360a20cf7e16d0760c6b51f` (PR104 normal merge, ordered parents `1ec836c94c256c5eba4ac15ef9aa8e315cdd95f2`, `b32f09cc03a6dfa5cc54e4a9c116bef8a25775f6`; all three exact-head workflows passed on attempt1). This is local engineering evidence, not native acceptance.
+
+## Behavior and limits
+
+An authenticated Shopify order projection now carries nullable creating-app ID and source alongside the existing hashed checkout token. They are included in coherent final readback. Origin is routing evidence, not a validation-success receipt. No hardcoded Online Store app ID, browser-provided policy or additional access scope is introduced.
+
+Purchase reconciliation keeps independently verified country/Market comparison intact. Only wholly unavailable context may take the new path, after signature/history/complete-set/actual merchandise/economic verification. It requires web-origin correlation plus a trusted admission port that qualifies the exact creator ID and current enforcement. Unknown/unsupported origin, absent/refused/stale admission, observed context mismatch, malformed carriers or economic mismatch cannot produce a new binding. The port's timestamp is current enforcement observation, never checkout-time attestation.
+
+The worker uses the same optional admission port for inbox and discovery; merchant reconciliation uses it too. Production composition supplies no admission implementation and remains fail-closed. There is no environment switch to claim readiness. Native origin classification and reuse of the existing Function-ownership/trusted-release guard remain to qualify before production admission is composed. Do not reuse full issuance readiness for historical offers: current effective revisions/signing scope can legitimately differ after purchase.
+
+New application bindings store explicit `provider_context` or `signed_offer_order_match` evidence. New evidence-bearing economic snapshots use version `m8-purchase-economics-v2`, label their country/Market as authorized-quote context and retain null observed context in the alternative. Legacy evidence-absent records keep v1. Existing snapshots are not rewritten by replay or later admission refusal. No schema migration or new infrastructure is needed.
+
+Required-product checkout protection remains separate: unmarked lines are not made verified customizations by this path, and reconciliation cannot undo a required plain checkout during lost enforcement. The validator and its unsigned-required/context/economic checks are unchanged. The owner-delegated decision records the temporal-enforcement limitation; no risk-free or native deployment claim is made.
+
+## Executions
+
+- Meaningful application RED: qualified order with null actual context still produced CONTEXT_UNVERIFIED instead of the expected evidence-bearing binding. GREEN: new path binds the unchanged signed offer and permits the intended complete-offer reuse in a distinct order while actual context remains null/false.
+- Order adapter RED: authenticated creator metadata was absent from the projection. GREEN: metadata is projected without context promotion; nullable/malformed/drifting origin checks supplement the existing wire/deadline/coherence controls.
+- Application suite266 PASS; Shopify suite390 PASS before the final additional origin-shape control. Focused final controls and current regression results are reported in candidate review/CI rather than reusing these counts for changed inputs.
+- Built packages, worker, storefront and web PASS. Restricted-login actual durable runtime1 PASS/0 SKIP, all31 migrations, owned qualification database removed. The existing real-role test now covers unknown-context matching, evidence persistence, complete-offer reuse, later admission refusal without history rewriting, and a refused new order. Provider credentials/reads and admission remain explicit local doubles; SQL and privilege checks are real.
+- Preliminary owned database provisioning failed before qualification because dbmate attempted SSL against a loopback server without SSL. That attempt supplied no runtime proof. Its SQL_ASCII cluster was stopped; the corrected fresh UTF8 cluster uses explicit sslmode=disable. Existing clusters/databases were untouched. Local owner authentication is loopback trust; the member test provisions its own random password. Prior SCRAM evidence remains historical and is not relabeled as a new run.
+
+The qualification receipt is [supported-checkout-runtime.json](supported-checkout-runtime.json). Fresh correctness/security review, final-candidate regression and naturally applicable CI are required before acceptance/integration. Native origin, current enforcement admission, configure-to-paid journey, deployment/grants and full native acceptance remain NOT_RUN. No support contact, native write, scope change, paid resource, M9 or rollout occurred.

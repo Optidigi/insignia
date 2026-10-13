@@ -34,6 +34,8 @@ const tx = {
 const order = () => ({
   id: target.orderId,
   checkoutToken: null as string | null,
+  app: { id: 'gid://shopify/App/77' } as { id: string } | null,
+  sourceName: 'web' as string | null,
   createdAt: '2026-10-12T12:00:00Z',
   processedAt: '2026-10-12T12:00:00Z',
   updatedAt: '2026-10-13T10:00:00Z',
@@ -64,6 +66,47 @@ function fixture() {
   return dependencies;
 }
 describe('independent Shopify order reconciliation', () => {
+  it('reads creator provenance independently without promoting it to checkout context authority', async () => {
+    const d = fixture();
+    const result = await readShopifyOrder(target, d);
+    expect(result).toMatchObject({
+      checkoutOrigin: { creatorAppId: 'gid://shopify/App/77', sourceName: 'web', checkoutTokenDigest: null },
+      country: null,
+      marketId: null,
+      contextVerified: false,
+    });
+  });
+
+  it('preserves unknown creator metadata and rejects malformed or changing origin reads', async () => {
+    const d = fixture();
+    d.fetchImpl.mockImplementation(
+      async () => new Response(JSON.stringify({ data: { order: { ...order(), app: null, sourceName: null } } })),
+    );
+    expect((await readShopifyOrder(target, d)).checkoutOrigin).toEqual({
+      creatorAppId: null,
+      sourceName: null,
+      checkoutTokenDigest: null,
+    });
+    for (const app of [undefined, { id: 'gid://shopify/Order/77' }, { id: 'not-an-id' }]) {
+      d.fetchImpl.mockImplementation(
+        async () => new Response(JSON.stringify({ data: { order: { ...order(), app } } })),
+      );
+      await expect(readShopifyOrder(target, d)).rejects.toThrow('invalid_provider_shape');
+    }
+    let reads = 0;
+    d.fetchImpl.mockImplementation(
+      async () =>
+        new Response(
+          JSON.stringify({
+            data: {
+              order: { ...order(), app: { id: reads++ === 0 ? 'gid://shopify/App/77' : 'gid://shopify/App/88' } },
+            },
+          }),
+        ),
+    );
+    await expect(readShopifyOrder(target, d)).rejects.toThrow('order_changed');
+  });
+
   it('retains only authenticated order checkout correlation digest without granting context authority', async () => {
     const d = fixture();
     const token = 'synthetic-original-checkout-token';

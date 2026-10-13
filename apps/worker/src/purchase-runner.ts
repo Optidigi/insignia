@@ -1,10 +1,11 @@
-import { reconcilePurchase, type VerifiedOrder } from '@insignia/application';
+import { type PurchasePorts, reconcilePurchase, type VerifiedOrder } from '@insignia/application';
 import type { DurableCore } from '@insignia/database';
 import type { ShopifyOrderChangesPage, ShopifyOrderChangesTarget } from '@insignia/shopify';
 
 /** Reads Shopify independently. A signed webhook supplies only a scoped lookup hint. */
 export function createPurchaseRunner(input: {
   core: DurableCore;
+  checkout?: PurchasePorts['checkout'];
   orders: {
     read(target: { shopId: string; installationGeneration: string; orderId: string }): Promise<VerifiedOrder>;
     changes?(target: ShopifyOrderChangesTarget): Promise<ShopifyOrderChangesPage>;
@@ -16,6 +17,7 @@ export function createPurchaseRunner(input: {
     if (!hint) return 'deferred' as const;
     try {
       await reconcilePurchase(hint, {
+        checkout: input.checkout,
         orders: input.orders,
         offers: { get: (target) => input.core.purchases.getOffer(target) },
         store: {
@@ -53,6 +55,7 @@ export function createPurchaseRunner(input: {
             await reconcilePurchase(
               { ...claim, orderId: order.orderId },
               {
+                checkout: input.checkout,
                 orders: input.orders,
                 offers: { get: (target) => input.core.purchases.getOffer(target) },
                 store: { reconcile: (observation) => input.core.purchases.reconcile(observation) },

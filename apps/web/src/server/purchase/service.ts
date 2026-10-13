@@ -26,12 +26,14 @@ export function createPurchaseServices(input: {
   appOrigin: string;
   authenticate(request: Request): Promise<AdminActor | null>;
   orders: PurchasePorts['orders'];
+  checkout?: PurchasePorts['checkout'];
   storage?: Pick<ArtworkStorage, 'presignRead'>;
   clock?: () => Date;
 }) {
   const now = input.clock ?? (() => new Date());
   const store = input.core.purchases;
   const ports: PurchasePorts = {
+    checkout: input.checkout,
     orders: input.orders,
     offers: { get: (target) => store.getOffer(target) },
     store: { reconcile: (observation) => store.reconcile(observation) },

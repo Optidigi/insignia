@@ -193,8 +193,16 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
       ],
       refunds: [],
     };
+    let checkoutReady = true;
     const runner = createPurchaseRunner({
       core: runtime,
+      // Explicit local admission double: real broker/provider qualification is not asserted.
+      checkout: {
+        admit: async ({ order: observed }) =>
+          checkoutReady && observed.checkoutOrigin?.creatorAppId === 'gid://shopify/App/77'
+            ? { creatorAppId: 'gid://shopify/App/77', enforcementObservedAt: observed.observedAt }
+            : null,
+      },
       orders: {
         async read(target) {
           assert.equal(target.shopId, fixture.shopId);
@@ -202,7 +210,23 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
           assert.equal(acquired.kind, 'usable');
           assert.equal(acquired.shopDomain, `${fixture.shopId}.myshopify.com`);
           assert.equal((await runtime.credentials.metadata(target)).scopes, 'read_orders');
-          return { ...order, orderId: target.orderId };
+          const unknownContext = ['/904', '/905'].some((suffix) => target.orderId.endsWith(suffix));
+          return {
+            ...order,
+            orderId: target.orderId,
+            ...(unknownContext
+              ? {
+                  country: null,
+                  marketId: null,
+                  contextVerified: false,
+                  checkoutOrigin: {
+                    creatorAppId: 'gid://shopify/App/77',
+                    sourceName: 'web',
+                    checkoutTokenDigest: 'a'.repeat(64),
+                  },
+                }
+              : {}),
+          };
         },
       },
     });
@@ -293,6 +317,30 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
     const replay = (await runtime.purchases.list(scope)).find((p) => p.orderId.endsWith('/902'));
     assert.equal(replay.bindings.length, 1);
     assert.equal(replay.firstPaidAt, first.firstPaidAt);
+
+    await runner.processInbox(await deliver('904'));
+    const matched = (await runtime.purchases.list(scope)).find((p) => p.orderId.endsWith('/904'));
+    assert.equal(matched.bindings.length, 1);
+    assert.equal(matched.firstPaidAt, first.firstPaidAt);
+    assert.deepEqual(matched.bindings[0].economics.purchaseEvidence, {
+      kind: 'signed_offer_order_match',
+      creatorAppId: 'gid://shopify/App/77',
+      checkoutTokenDigest: 'a'.repeat(64),
+      enforcementObservedAt: order.observedAt,
+      checkoutContext: null,
+    });
+    assert.equal(matched.bindings[0].economics.version, 'm8-purchase-economics-v2');
+    assert.equal(matched.bindings[0].economics.contextSource, 'authorized_quote');
+    // Later enforcement refusal records an exception, never rewrites already bound evidence.
+    checkoutReady = false;
+    await runner.processInbox(await deliver('904'));
+    const retainedProof = await runtime.purchases.get(scope, matched.purchaseId);
+    assert.deepEqual(retainedProof.bindings[0].economics, matched.bindings[0].economics);
+    await runner.processInbox(await deliver('905'));
+    const denied = (await runtime.purchases.list(scope)).find((p) => p.orderId.endsWith('/905'));
+    assert.equal(denied.bindings.length, 0);
+    assert.equal(denied.observations.at(-1).exception, 'CHECKOUT_ENFORCEMENT_UNVERIFIED');
+    checkoutReady = true;
 
     // A renewed signature is verified against its own issuance day, preserving original quote/retention.
     const renewedSet = randomUUID(),
