@@ -1,0 +1,31 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/119",
+  "merge": "3d2a02e83ac63da647dc2e9eead0456d0bb5c423",
+  "tree": "25a393ac55fc7646e2696e6a7775411ee6e66b73",
+  "base": "3316ba11f7b02b67e0d6592e0e6d0e2967c1a818",
+  "head": "c7581b0baaa15b6e96b1ca4ae6e34ce219396bd1",
+  "effectiveMergeBase": "3316ba11f7b02b67e0d6592e0e6d0e2967c1a818",
+  "orderedParents": ["3316ba11f7b02b67e0d6592e0e6d0e2967c1a818", "c7581b0baaa15b6e96b1ca4ae6e34ce219396bd1"],
+  "workflows": [
+    {
+      "run": 38482440316,
+      "name": "foundation",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "run": 38482440351,
+      "name": "durable-core",
+      "attempt": 1,
+      "result": "SUCCESS"
+    },
+    {
+      "run": 38482440284,
+      "name": "runtime",
+      "attempt": 1,
+      "result": "SUCCESS"
+    }
+  ],
+  "closingReceipt": "https://github.com/Optidigi/insignia/pull/119#issuecomment-6157341038",
+  "limits": "Buyer demand correction integrated, not native deployed/enabled. Existing worker admission remains disabled."
+}

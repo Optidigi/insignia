@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { request as httpRequest } from 'node:http';
 import binding from '../../../../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
+import proxyCandidate from '../../../../../deployment/m8-journey/app-proxy-release-binding.json' with { type: 'json' };
 import candidate from '../../../../../deployment/m8-journey/release-binding.json' with { type: 'json' };
 import type { ReleaseVerificationCollector } from './release-evidence.js';
 
@@ -13,7 +14,10 @@ export function parseReleaseVerificationRequest(
   value: unknown,
   expectedVersion = binding.versionId,
 ): ReleaseVerificationRequest {
-  assert.ok([binding.versionId, candidate.versionId].includes(expectedVersion), 'reviewed_release_target_required');
+  assert.ok(
+    [binding.versionId, candidate.versionId, proxyCandidate.versionId].includes(expectedVersion),
+    'reviewed_release_target_required',
+  );
   assert.ok(value && typeof value === 'object' && !Array.isArray(value));
   const input = value as ReleaseVerificationRequest;
   assert.deepEqual(Object.keys(input).sort(), ['binding', 'deadlineMs', 'expectedActiveAppVersionRef', 'requestId']);

@@ -1,5 +1,5 @@
 {
-  "status": "OWNER_AUTHORIZED_PREPARED_NOT_APPLIED",
+  "status": "EXACT_INACTIVE_CANDIDATE_VERIFIED_NOT_RELEASED",
   "appId": "429028933633",
   "organizationId": "200969036",
   "appClientId": "1443cf6d03d39edae7c101a943c5c684",
@@ -65,7 +65,7 @@
     "liveSpecification": "app_proxy, CLI configuration experience, uidStrategy single, registrationLimit1, gated false",
     "pinnedCLI": "4.8.2 forward transform emits exactly url/subpath/prefix",
     "providerValidationSchema": null,
-    "serverCreationAcceptance": "UNPROVED; verify authorized inactive candidate before release",
+    "serverCreationAcceptance": "PASS exact inactive candidate readback; existing six modules preserved except authorized required scope, exact new singleton proxy",
     "scopePlacement": "Required scope follows official documented setup; optional retroactive proxy activation not established"
   },
   "bounds": "One inactive candidate, independently compare seven modules and unchanged Functions/settings/optional scopes, one app-wide release, human required-scope consent on existing designated installation. No reinstall, other scope, payment/charge, product or publication effect. Store-local Customize URL only if separately needed and authorized.",
@@ -73,12 +73,20 @@
     "https://shopify.dev/docs/apps/build/online-store/app-proxies",
     "https://shopify.dev/docs/apps/build/authentication-authorization/manage-access-scopes"
   ],
-  "noVersionOrScopeMutationYet": true,
+  "noVersionOrScopeMutationYet": false,
   "ownerGrant": {
     "date": "2026-10-13",
     "source": "Owner response in local delivery thread81292d0a-995f-4c06-8ce7-7d7cd419bc4a",
     "instruction": "Authorize this bounded App Proxy change",
     "effects": "requiredwrite_app_proxy, oneproxy route, oneinactiveverifiedversion preservingFunctions/settings/optionals, oneappwide release, consent onlyexistingrewrite-dev installation"
   },
-  "transitionDependency": "New inactive version changes closed inventory; new active version needs reviewed closed runtime/verifier profile. Keep buyer/admission disabled; qualify consumers/profile before release, then verify exact grants and signed forwarding after human consent."
+  "transitionDependency": "New inactive version changes closed inventory; new active version needs reviewed closed runtime/verifier profile. Keep buyer/admission disabled; qualify consumers/profile before release, then verify exact grants and signed forwarding after human consent.",
+  "inactiveReadback": {
+    "versionId": "1166090010625",
+    "tag": "m8-app-proxy-3d2a02e",
+    "status": "inactive",
+    "modulesSha256": "00c5fec0329556eb1809d6f84de3c6cfe31fbfd7f5b004b56aae54e60e7a9652",
+    "observedAt": "2026-10-13T23:47:34.896Z",
+    "receipt": "../../docs/delivery/evidence/m8-context-runtime/app-proxy-inactive-2026-10-13.json"
+  }
 }

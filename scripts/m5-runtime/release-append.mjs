@@ -102,12 +102,12 @@ export function qualifyReleaseAppendInput(input, now, profileName) {
   assert.equal(modules.versionId, VERSION);
   assert.equal(modules.versionTag, TAG);
   time(modules.observedAt, now, false);
-  assert.ok(Array.isArray(modules.modules) && modules.modules.length === 6);
+  assert.ok(Array.isArray(modules.modules) && modules.modules.length === profile.modules.length);
   const handles = modules.modules.map((m) => {
     assert.equal(typeof m.handle, 'string');
     return m.handle;
   });
-  assert.equal(new Set(handles).size, 6);
+  assert.equal(new Set(handles).size, profile.modules.length);
   const sorted = [...modules.modules].sort((a, b) => (a.handle < b.handle ? -1 : a.handle > b.handle ? 1 : 0));
   assert.equal(canonicalHash(sorted), MODULE_HASH);
   const readiness = input.readiness;
