@@ -28,6 +28,8 @@ Independent Spec/correctness CLEAR atf4d62bd; security CLEAR after52e corrected 
 
 CI/auth correction `73b9d00560d18eadda11a87280a604efa2010ad4` makes the ACL test a required durable workflow step, restricts exact synthetic local/CI targets and uses generated passwords/finite connection deadlines. Fresh SCRAM1/1 passed; three invalid targets refused before connection. Original blank-auth timeout preserved. Independent impact security CLEAR, inspect-only. Native root cherry-picks retain exact source changes; final GitHub candidate results remain pending.
 
+PR114 first candidate `faef03baada9ee806961f6bdf7902cc6f313a68b`: durable-core38463993049 passed, including actual web LOGIN qualification1/1 (not skipped). Foundation38463993038 failed the current owner-authority digest after the newly recorded Insignia-only clarification. Correct the current-document hash and independently retain the original authority/hash at fixed PR113 main; all preceding historical checks remain. Local history/live-setup checks pass; no unchanged-head behavioral rerun used to conceal the failure. New final-head CI remains required.
+
 Live VPS still runs older healthy web/worker images; database has20 migrations, no new artwork/buyer/purchase stores. `/admin/orders`404, buyer disabled, no app_proxy. Worker lacks current purchase/release/artwork composition. Owned product10519322493211/variant54211066986779 and configuration4dbbe8f6-8162-4271-9819-fd485f7d65f6 are preserved; no new product/publication/checkout mutation in these observations. New source, CI or representative access alone is not the full journey.
 
 ## Open work and owner dependencies
