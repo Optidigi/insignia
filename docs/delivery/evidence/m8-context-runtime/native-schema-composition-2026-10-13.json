@@ -1,0 +1,46 @@
+{
+  "source": "fde2d2bf4f9625a80c3aea1644ff2bb2e1c85806",
+  "tree": "ab419c076bc5a3bec85a6dddc8f1f4f75156a67a",
+  "host": "prod-server",
+  "database": "insignia_rewrite",
+  "postgres": "18.6",
+  "preMigrations": 20,
+  "postMigrations": 31,
+  "latestMigration": "20261013000600",
+  "schemaSqlSha256": "bbd7cd7603a551632c8dab9cee7c5fd39e95e8450dd91c439fc9020b622aad6a",
+  "commitAcknowledged": true,
+  "independentReadback": true,
+  "effect": "One atomic forward schema plus exact M6/M8/web grants, no retry",
+  "review": "Independent security review found missing schema binding; corrected explicit public search_path, then impact CLEAR",
+  "backup": {
+    "privateDirectory": "/home/serveradmin/insignia-m8-runtime-20261013-pr114",
+    "databaseDumpSha256": "bb99cb27ac42994ad789c65c9cc243353a40532831b751d477ca71481a011f39",
+    "rolesSha256": "055be14fb35c1a6d4dbe446247262c6d0d909922b9ffa820e9c6704d2f22ea30",
+    "indexVerified": true,
+    "restoreRehearsal": false
+  },
+  "nativeAcl": {
+    "webOriginalMetadataRead": true,
+    "webPaymentFactWrite": false,
+    "webTrustedReleaseRead": true,
+    "webTrustedReleaseWrite": false,
+    "webNextAttemptSchedule": true,
+    "webFullCursorWrite": false,
+    "workerOriginalRead": false,
+    "workerBuyerSessionRead": false,
+    "workerTrustedReleaseRead": false,
+    "workerPaymentFactAppend": true,
+    "inspectionCapabilityNoLoginNonprivileged": true
+  },
+  "newData": {
+    "artworkAssets": 0,
+    "purchases": 0
+  },
+  "limits": [
+    "No current web/worker replacement or inspector LOGIN/service yet",
+    "Worker trusted release SELECT gap reproduced; correction in progress",
+    "M7 cleanup grants not applied yet",
+    "No checkout, purchase admission or native journey pass",
+    "No other application changed"
+  ]
+}

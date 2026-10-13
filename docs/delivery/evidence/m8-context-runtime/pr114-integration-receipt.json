@@ -1,0 +1,53 @@
+{
+  "pr": "https://github.com/Optidigi/insignia/pull/114",
+  "closingReceipt": "https://github.com/Optidigi/insignia/pull/114#issuecomment-6154948501",
+  "merge": "fde2d2bf4f9625a80c3aea1644ff2bb2e1c85806",
+  "tree": "ab419c076bc5a3bec85a6dddc8f1f4f75156a67a",
+  "base": "a1e0cee2f4f93a207e08aeee5577e8328a49e0c2",
+  "head": "299f03fa5f7e2c28bded0396f51dc93f54edfde8",
+  "effectiveMergeBase": "a1e0cee2f4f93a207e08aeee5577e8328a49e0c2",
+  "orderedParentsVerified": true,
+  "treeMatchesHead": true,
+  "remoteMainVerified": true,
+  "workflows": [
+    {
+      "name": "local-proof",
+      "id": 38464835631,
+      "attempt": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "publication-local",
+      "id": 38464835615,
+      "attempt": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "local-candidate",
+      "id": 38464835696,
+      "attempt": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "foundation",
+      "id": 38464835670,
+      "attempt": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "durable-core",
+      "id": 38464835795,
+      "attempt": 1,
+      "result": "PASS"
+    },
+    {
+      "name": "runtime",
+      "id": 38464835744,
+      "attempt": 1,
+      "result": "PASS"
+    }
+  ],
+  "actualLoginCi": "1 passed/0 skipped",
+  "actualWasmCi": "Explicit production Function boundary passed",
+  "limit": "Integrated source, not native journey or production readiness"
+}
