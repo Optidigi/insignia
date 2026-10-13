@@ -25,7 +25,10 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
   const seed = createDurableCore(new Pool({ connectionString: ownerUrl }), { credentialKeys: keys });
   const login = `m8_runtime_${randomUUID().replaceAll('-', '')}`;
   const loginPassword = randomBytes(32).toString('hex');
-  let runtime, restricted;
+  const inspectorLogin = `m6_inspector_${randomUUID().replaceAll('-', '')}`;
+  const inspectorPassword = randomBytes(32).toString('hex');
+  let runtime, restricted, inspector, inspectionCore;
+  let inspectorCreated = false;
   try {
     assert.equal(
       Math.floor(Number((await owner.query('SHOW server_version_num')).rows[0].server_version_num) / 10000),
@@ -248,10 +251,69 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
     }
     const receipt = await deliver();
     // Missing M8 grants must fail at the real runtime seam (the baseline RED).
-    if (!process.env.M8_RUNTIME_EXPECT_RED)
-      await owner.query(
-        await readFile(new URL('../../../scripts/m8-purchase/runtime-grants.sql', import.meta.url), 'utf8'),
+    if (!process.env.M8_RUNTIME_EXPECT_RED) {
+      const grants = await Promise.all(
+        ['m6-artwork', 'm7-storefront', 'm8-purchase'].map((name) =>
+          readFile(new URL(`../../../scripts/${name}/runtime-grants.sql`, import.meta.url), 'utf8'),
+        ),
       );
+      // Actual sequential application must preserve both independently scoped capabilities.
+      // Reconcile legacy M6 table and column privileges explicitly, never hide them.
+      await owner.query('GRANT SELECT ON artwork_assets TO insignia_queue_consume');
+      await owner.query('GRANT SELECT(original_key), UPDATE(expires_at) ON artwork_assets TO insignia_queue_consume');
+      for (const script of grants) await owner.query(script);
+      for (const script of [grants[2], grants[0], grants[1], grants[2]]) await owner.query(script);
+      for (const table of ['signing_keys', 'buyer_sessions']) {
+        const grant = table === 'signing_keys' ? 'SELECT(private_envelope)' : 'SELECT';
+        await owner.query(`GRANT ${grant} ON ${table} TO insignia_artwork_inspect`);
+        await assert.rejects(owner.query(grants[0]), /unqualified_artwork_private_access/);
+        await owner.query('ROLLBACK');
+        await owner.query(`REVOKE ${grant} ON ${table} FROM insignia_artwork_inspect`);
+      }
+      await owner.query(grants[0]);
+      assert.equal(
+        (
+          await restricted.query(
+            "SELECT has_column_privilege(current_user,'artwork_assets','original_key','SELECT') AS original",
+          )
+        ).rows[0].original,
+        false,
+      );
+      await assert.rejects(restricted.query('SELECT original_key FROM artwork_assets LIMIT 1'), /permission denied/);
+      assert.equal(
+        (
+          await owner.query(
+            "SELECT pg_has_role('insignia_queue_consume','insignia_artwork_inspect','MEMBER') AS inspection",
+          )
+        ).rows[0].inspection,
+        false,
+      );
+      await owner.query(
+        `CREATE ROLE ${inspectorLogin} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS INHERIT PASSWORD '${inspectorPassword}'`,
+      );
+      inspectorCreated = true;
+      await owner.query(`GRANT insignia_artwork_inspect TO ${inspectorLogin}`);
+      const inspectorUrl = new URL(ownerUrl);
+      inspectorUrl.username = inspectorLogin;
+      inspectorUrl.password = inspectorPassword;
+      inspector = new Pool({ connectionString: inspectorUrl.toString() });
+      inspectionCore = createDurableCore(new Pool({ connectionString: inspectorUrl.toString() }));
+      assert.deepEqual((await inspector.query('SELECT session_user,current_user')).rows[0], {
+        session_user: inspectorLogin,
+        current_user: inspectorLogin,
+      });
+      await assert.rejects(inspector.query('SET ROLE insignia_queue_consume'), /permission denied/);
+      await inspector.query('SELECT original_key FROM artwork_assets LIMIT 1');
+      for (const sql of [
+        'SELECT private_envelope FROM signing_keys LIMIT 1',
+        'SELECT * FROM buyer_sessions LIMIT 1',
+        'SELECT * FROM shop_credentials LIMIT 1',
+        'DELETE FROM purchase_orders',
+        'DELETE FROM artwork_assets',
+      ])
+        await assert.rejects(inspector.query(sql), /permission denied/);
+      await qualifyInspectionLifecycle(seed, inspectionCore, inspector, other.shopId);
+    }
     const retained = await runtime.purchases.getOffer({
       shopId: other.shopId,
       installationGeneration: '1',
@@ -462,12 +524,80 @@ test('actual queue-member login reconciles signed initial and renewed offers, pa
       'NOT_FOUND',
     );
   } finally {
+    await inspectionCore?.close();
+    await inspector?.end();
     await runtime?.close();
     await restricted?.end();
     await seed.close();
     await db.destroy();
+    if (inspectorCreated) {
+      await owner.query(`DROP OWNED BY ${inspectorLogin}`);
+      await owner.query(`DROP ROLE IF EXISTS ${inspectorLogin}`);
+    }
     await owner.query(`DROP OWNED BY ${login}`);
     await owner.query(`DROP ROLE IF EXISTS ${login}`);
     await owner.end();
   }
 });
+
+async function qualifyInspectionLifecycle(owner, inspection, restricted, shopId) {
+  const assetId = randomUUID(),
+    now = new Date(),
+    claimId = randomUUID();
+  const record = {
+    assetId,
+    shopId,
+    installationGeneration: '1',
+    ownerHash: 'a'.repeat(64),
+    declaredMime: 'image/png',
+    declaredBytes: 10,
+    state: 'UPLOADING',
+    quarantineKey: `quarantine/${assetId}`,
+    originalKey: `originals/${assetId}`,
+    previewKey: `previews/${assetId}`,
+    collectedAt: now,
+    uploadUntil: new Date(+now + 60000),
+    expiresAt: new Date(+now + 604800000),
+    claimId: null,
+    manifest: null,
+    rejection: null,
+  };
+  const scope = { shopId, installationGeneration: '1', kind: 'merchant' };
+  await owner.artwork.create(record);
+  await owner.artwork.complete(scope, assetId, now);
+  assert.ok((await inspection.artwork.selectPending(100, now)).includes(assetId));
+  assert.equal((await inspection.artwork.claim(assetId, claimId, now, new Date(+now + 60000))).state, 'INSPECTING');
+  await inspection.artwork.prepare(
+    assetId,
+    claimId,
+    {
+      version: 'm6-inspection-v1',
+      mimeType: 'image/png',
+      byteLength: 10,
+      sha256: 'c'.repeat(64),
+      width: 2,
+      height: 2,
+      previewSha256: 'd'.repeat(64),
+      previewByteLength: 15,
+    },
+    now,
+  );
+  assert.equal(await inspection.artwork.settle(assetId, claimId, now), true);
+  assert.equal((await inspection.artwork.get(scope, assetId)).originalKey, record.originalKey);
+  assert.ok(
+    (await inspection.artwork.selectQuarantineCleanup(100, record.uploadUntil)).some((row) => row.assetId === assetId),
+  );
+  assert.equal(await inspection.artwork.markQuarantineCleanupAttempt(assetId, record.uploadUntil), true);
+  await inspection.artwork.markQuarantineCleaned(assetId, record.uploadUntil);
+  assert.ok((await inspection.artwork.selectExpired(100, record.expiresAt)).some((row) => row.assetId === assetId));
+  assert.equal((await inspection.artwork.markDeleting(assetId, record.expiresAt)).state, 'DELETING');
+  await inspection.artwork.finishDeleting(assetId, record.expiresAt);
+  assert.equal((await inspection.artwork.get(scope, assetId)).state, 'DELETED');
+  for (const sql of [
+    "UPDATE artwork_assets SET expires_at=expires_at+interval '1 day' WHERE asset_id=$1",
+    'UPDATE artwork_assets SET original_key=original_key WHERE asset_id=$1',
+    'UPDATE artwork_assets SET shop_id=shop_id WHERE asset_id=$1',
+  ])
+    await assert.rejects(restricted.query(sql, [assetId]), /permission denied/);
+  await assert.rejects(inspection.artwork.create({ ...record, assetId: randomUUID() }), /permission denied/);
+}

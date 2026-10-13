@@ -1,4 +1,4 @@
-import { createArtworkService, createM3AdminReadCredentialSource } from '@insignia/application';
+import { createM3AdminReadCredentialSource } from '@insignia/application';
 import { currencyExponent } from '@insignia/cart-authorization';
 import { createDurableCore } from '@insignia/database';
 import {
@@ -7,10 +7,7 @@ import {
   readShopifyOrderChanges,
   resolveRuntimeReleaseProfile,
 } from '@insignia/shopify';
-import { loadArtworkStorageProfile } from '@insignia/storage';
 import { Pool } from 'pg';
-import { inspectArtwork } from './artwork/inspection.js';
-import { createArtworkRunner } from './artwork-runner.js';
 import { loadCredentialKeys } from './config.js';
 import { runLocalDiagnostic } from './diagnostic.js';
 import { createDurableWorkerHandlers, credentialLifecycle } from './handlers.js';
@@ -29,6 +26,8 @@ function required(name: string): string {
 if (process.argv.includes('--diagnostic')) {
   console.log(JSON.stringify(await runLocalDiagnostic()));
 } else {
+  if (process.env.INSIGNIA_ARTWORK_HOST_RUNNER === '1')
+    throw new Error('Use the dedicated artwork inspection entrypoint');
   const connectionString = required('DATABASE_URL');
   const keys = loadCredentialKeys(process.env);
   const clientId = required('SHOPIFY_CLIENT_ID');
@@ -42,27 +41,6 @@ if (process.argv.includes('--diagnostic')) {
   );
   const queue = createPgBossRuntime({ connectionString, credentialKeysReady: true, webhookHandoff: core.webhooks });
   const transport = createShopifyOfflineRefreshTransport({ clientId, clientSecret });
-  const artwork =
-    process.env.INSIGNIA_ARTWORK_HOST_RUNNER === '1'
-      ? createArtworkService({
-          store: core.artwork,
-          inspect: inspectArtwork,
-          onCleanupError: () =>
-            queue.observability.logger.error('queue_job_rejected', { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' }),
-          storage: await loadArtworkStorageProfile(required('ARTWORK_STORAGE_PROFILE'), {
-            endpoint: required('ARTWORK_R2_ENDPOINT'),
-            bucket: required('ARTWORK_R2_BUCKET'),
-            prefix: required('ARTWORK_R2_PREFIX'),
-          }),
-        })
-      : undefined;
-  const artworkRunner = artwork
-    ? createArtworkRunner({
-        store: core.artwork,
-        service: artwork,
-        onError: (errorClass) => queue.observability.logger.error('queue_job_rejected', { errorClass }),
-      })
-    : undefined;
   const purchaseCredentials = createM3AdminReadCredentialSource({
     tenants: core.tenants,
     credentials: credentialLifecycle(core),
@@ -92,11 +70,9 @@ if (process.argv.includes('--diagnostic')) {
     queue,
     handlers: createDurableWorkerHandlers(core, transport, purchaseRunner),
     port,
-    artworkReadiness: () => artworkRunner?.readiness() ?? { ready: false },
   });
-  if (artworkRunner) await artworkRunner.start();
   console.log(JSON.stringify({ url: running.url, durableReady: running.durableReady }));
-  const reconciliation = createWorkerReconciliation({ core, queue, artwork, purchases: purchaseRunner });
+  const reconciliation = createWorkerReconciliation({ core, queue, purchases: purchaseRunner });
   const recoveryTimer = setInterval(() => {
     void reconciliation.runOnce();
   }, 30_000);
@@ -110,7 +86,6 @@ if (process.argv.includes('--diagnostic')) {
       clearInterval(recoveryTimer);
       void (async () => {
         await reconciliation.stop();
-        await artworkRunner?.stop();
         await running.stop();
         await core.close();
       })();

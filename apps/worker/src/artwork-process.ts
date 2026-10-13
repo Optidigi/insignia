@@ -1,0 +1,72 @@
+import type { Observability } from '@insignia/observability';
+import type { createArtworkRunner } from './artwork-runner.js';
+import { createWorkerHealthServer } from './health.js';
+
+/** Inspection owns durable artwork leases; it never subscribes to the order/webhook queue. */
+export async function startArtworkInspectionProcess(input: {
+  runner: ReturnType<typeof createArtworkRunner>;
+  socketPath: string;
+  observability: Observability;
+  cleanup(): Promise<unknown>;
+}) {
+  let stopping = false;
+  let maintenance: Promise<void> | undefined;
+  const server = createWorkerHealthServer({
+    observability: input.observability,
+    isDurableReady: () => false,
+    artworkReadiness: () => ({ ready: !stopping && input.runner.ready }),
+  });
+  const cleanup = (): Promise<void> => {
+    if (maintenance) return maintenance;
+    if (stopping) return Promise.resolve();
+    maintenance = input
+      .cleanup()
+      .then(() => {})
+      .catch(() => {
+        try {
+          input.observability.logger.error('queue_job_rejected', { errorClass: 'ARTWORK_CLEANUP_UNAVAILABLE' });
+        } catch {
+          /* Logging cannot stop retention retries. */
+        }
+      })
+      .finally(() => {
+        maintenance = undefined;
+      });
+    return maintenance;
+  };
+  let timer: NodeJS.Timeout | undefined;
+  try {
+    await server.listenArtworkSocket(input.socketPath);
+    await input.runner.start();
+    await input.runner.runOnce();
+    if (!input.runner.ready) throw new Error('Artwork inspection unavailable');
+    timer = setInterval(() => {
+      void cleanup();
+    }, 30000);
+    timer.unref();
+    void cleanup();
+    return {
+      async stop() {
+        if (stopping) return;
+        stopping = true;
+        clearInterval(timer);
+        try {
+          await server.close();
+        } finally {
+          try {
+            await input.runner.stop();
+          } finally {
+            await maintenance;
+          }
+        }
+      },
+    };
+  } catch (error) {
+    stopping = true;
+    clearInterval(timer);
+    await server.close();
+    await input.runner.stop();
+    await maintenance;
+    throw error;
+  }
+}

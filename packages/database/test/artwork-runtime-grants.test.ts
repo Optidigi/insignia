@@ -18,7 +18,7 @@ it.runIf(process.env.M6_RUNTIME_GRANTS === '1')(
     )
       throw new Error('Dedicated synthetic M6 PostgreSQL qualification required');
     const owner = new Pool({ connectionString: connection.href });
-    const runtime = new Pool({ connectionString: connection.href, options: '-c role=insignia_queue_consume' });
+    const runtime = new Pool({ connectionString: connection.href, options: '-c role=insignia_artwork_inspect' });
     const db = await openTestDatabase();
     let shopId: string | undefined;
     async function eraseShop(shopId: string) {
@@ -40,13 +40,16 @@ it.runIf(process.env.M6_RUNTIME_GRANTS === '1')(
     try {
       await owner.query(`DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='insignia_queue_consume') THEN
       CREATE ROLE insignia_queue_consume NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
+      END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname='insignia_artwork_inspect') THEN
+      CREATE ROLE insignia_artwork_inspect NOLOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS;
       END IF; END $$`);
-      await owner.query('REVOKE ALL ON public.artwork_assets FROM insignia_queue_consume');
+      await owner.query('REVOKE ALL ON public.artwork_assets FROM insignia_queue_consume, insignia_artwork_inspect');
       const store = createArtworkRepository(runtime);
       const now = new Date();
       await expect(store.selectPending(100, now)).rejects.toMatchObject({ code: '42501' });
       // Simulate an obsolete column grant: the installer must close it too.
-      await owner.query('GRANT UPDATE(expires_at) ON artwork_assets TO insignia_queue_consume');
+      await owner.query('GRANT SELECT(original_key), UPDATE(expires_at) ON artwork_assets TO insignia_queue_consume');
+      await owner.query('GRANT UPDATE(expires_at) ON artwork_assets TO insignia_artwork_inspect');
       await owner.query(
         await readFile(new URL('../../../scripts/m6-artwork/runtime-grants.sql', import.meta.url), 'utf8'),
       );
@@ -122,8 +125,18 @@ it.runIf(process.env.M6_RUNTIME_GRANTS === '1')(
       ])
         await expect(runtime.query(sql, [assetId])).rejects.toMatchObject({ code: '42501' });
       await expect(store.create({ ...input, assetId: randomUUID() })).rejects.toMatchObject({ code: '42501' });
+      expect(
+        (
+          await owner.query(
+            "SELECT has_column_privilege('insignia_queue_consume','artwork_assets','original_key','SELECT') AS original",
+          )
+        ).rows[0].original,
+      ).toBe(false);
       const identity = await runtime.query('SELECT current_user, session_user');
-      expect(identity.rows[0]).toEqual({ current_user: 'insignia_queue_consume', session_user: 'synthetic_m6_owner' });
+      expect(identity.rows[0]).toEqual({
+        current_user: 'insignia_artwork_inspect',
+        session_user: 'synthetic_m6_owner',
+      });
     } finally {
       if (shopId) await eraseShop(shopId);
       await runtime.end();

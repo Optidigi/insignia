@@ -6,6 +6,7 @@ import { buyerServices } from '../buyer/runtime.ts';
 import { webRuntime } from '../runtime.js';
 import { createArtworkGuestAuthority } from './guest.js';
 import type { ArtworkHttpServices } from './http.js';
+import { ensureArtworkInspectionReady } from './readiness.ts';
 
 /** Existing adapters and current authentication remain the production authorities. */
 export async function createProductionArtworkServices(
@@ -52,21 +53,10 @@ export async function createProductionArtworkServices(
     verifyGuest: guest?.verify,
     issueGuest: guest?.issue,
     async ensureInspectionReady() {
-      const target = new URL(required('ARTWORK_WORKER_READY_URL'));
-      if (
-        target.protocol !== 'http:' ||
-        !['127.0.0.1', '[::1]'].includes(target.hostname) ||
-        target.pathname !== '/artwork-ready' ||
-        target.username ||
-        target.password ||
-        target.search ||
-        target.hash
-      )
-        throw new Error('Artwork inspection configuration invalid');
-      const response = await fetch(target, { cache: 'no-store', redirect: 'error', signal: AbortSignal.timeout(3000) });
-      if (!response.ok) throw new Error('Artwork inspection unavailable');
-      const body = await response.text();
-      if (body.length > 4096 || JSON.parse(body)?.ready !== true) throw new Error('Artwork inspection unavailable');
+      await ensureArtworkInspectionReady({
+        socketPath: env.ARTWORK_WORKER_READY_SOCKET,
+        url: env.ARTWORK_WORKER_READY_URL,
+      });
     },
   };
 }
