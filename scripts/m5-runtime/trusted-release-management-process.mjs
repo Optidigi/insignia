@@ -1,10 +1,18 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { releaseProfile } from './release-profile.mjs';
 
 /** One fixed child, no credential stdin/argv. Official noPrompt SDK session and
  * cache maintenance remain in that original SDK process, not the web/runtime. */
-export function createManagementProcess({ deadline, now = Date.now, spawnChild = spawn, environment = process.env }) {
+export function createManagementProcess({
+  deadline,
+  now = Date.now,
+  spawnChild = spawn,
+  environment = process.env,
+  profileName,
+}) {
+  releaseProfile(profileName);
   let child,
     timer,
     bytes = 0,
@@ -45,7 +53,10 @@ export function createManagementProcess({ deadline, now = Date.now, spawnChild =
         if (environment[name] !== undefined) env[name] = environment[name];
       child = spawnChild(
         process.execPath,
-        [fileURLToPath(new URL('./trusted-release-management-worker.mjs', import.meta.url))],
+        [
+          fileURLToPath(new URL('./trusted-release-management-worker.mjs', import.meta.url)),
+          ...(profileName ? [profileName] : []),
+        ],
         { env, stdio: ['pipe', 'pipe', 'ignore'] },
       );
       timer = setTimeout(fail, deadline - now());

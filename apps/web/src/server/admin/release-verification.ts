@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { request as httpRequest } from 'node:http';
 import binding from '../../../../../deployment/m5-runtime/native-function-module-binding.json' with { type: 'json' };
+import candidate from '../../../../../deployment/m8-journey/release-binding.json' with { type: 'json' };
 import type { ReleaseVerificationCollector } from './release-evidence.js';
 
 export type ReleaseVerificationRequest = Parameters<ReleaseVerificationCollector['collect']>[0];
@@ -8,12 +9,16 @@ export const RELEASE_VERIFICATION_SOCKET = '/run/insignia/release-verification/c
 
 /** Closed metadata-only protocol. Staff credentials, provider observations,
  * executable paths and append credentials cannot be selected by this request. */
-export function parseReleaseVerificationRequest(value: unknown): ReleaseVerificationRequest {
+export function parseReleaseVerificationRequest(
+  value: unknown,
+  expectedVersion = binding.versionId,
+): ReleaseVerificationRequest {
+  assert.ok([binding.versionId, candidate.versionId].includes(expectedVersion), 'reviewed_release_target_required');
   assert.ok(value && typeof value === 'object' && !Array.isArray(value));
   const input = value as ReleaseVerificationRequest;
   assert.deepEqual(Object.keys(input).sort(), ['binding', 'deadlineMs', 'expectedActiveAppVersionRef', 'requestId']);
   assert.match(input.requestId, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
-  assert.equal(input.expectedActiveAppVersionRef, '1163229200385');
+  assert.equal(input.expectedActiveAppVersionRef, expectedVersion);
   assert.ok(Number.isSafeInteger(input.deadlineMs));
   assert.ok(input.binding && typeof input.binding === 'object');
   assert.deepEqual(Object.keys(input.binding).sort(), [
@@ -37,10 +42,11 @@ export function parseReleaseVerificationRequest(value: unknown): ReleaseVerifica
  * The independently privileged process owns custody and durable dispatch. */
 export function createReleaseVerificationClient(
   socketPath = RELEASE_VERIFICATION_SOCKET,
+  expectedVersion = binding.versionId,
 ): ReleaseVerificationCollector {
   return {
     async collect(value) {
-      const input = parseReleaseVerificationRequest(value);
+      const input = parseReleaseVerificationRequest(value, expectedVersion);
       const remaining = Math.min(300_000, input.deadlineMs - Date.now());
       if (remaining <= 0) throw new Error('Publication verification expired');
       return new Promise((resolve, reject) => {

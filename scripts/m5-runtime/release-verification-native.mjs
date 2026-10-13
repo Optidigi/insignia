@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { chmod, lstat } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { releaseProfile } from './release-profile.mjs';
 import { createReleaseVerificationServer } from './release-verification-server.mjs';
 import { parseOwnerPrivatePacket } from './trusted-release-collector-native.mjs';
 import { readPrivatePacket } from './trusted-release-input.mjs';
@@ -21,7 +22,9 @@ async function main() {
   for (const name of ['log', 'info', 'warn', 'error', 'debug', 'trace', 'dir']) console[name] = () => {};
   let privateInput, core, server;
   try {
-    assert.equal(process.argv.length, 2);
+    assert.ok(process.argv.length <= 3);
+    const profileName = process.argv[2];
+    const profile = releaseProfile(profileName);
     const info = await lstat(DIRECTORY);
     assert.ok(
       info.isDirectory() && !info.isSymbolicLink() && info.uid === process.getuid() && (info.mode & 0o777) === 0o700,
@@ -40,6 +43,7 @@ async function main() {
       }),
     );
     server = createReleaseVerificationServer({
+      profileName,
       async readBinding() {
         const managed = await core.tenants.getManagedInstallationState('insignia-rewrite-dev.myshopify.com');
         assert.ok(managed?.active);
@@ -64,7 +68,7 @@ async function main() {
       async readRecord(binding) {
         const evidence = await core.trustedReleaseRecords.read({
           scope: binding,
-          expectedActiveAppVersionRef: '1163229200385',
+          expectedActiveAppVersionRef: profile.versionId,
           now: new Date(),
         });
         return evidence?.record.recordId ?? null;
@@ -74,7 +78,7 @@ async function main() {
         // launcher requalifies source and prior settlement before reserving IO.
         const recordId = randomUUID();
         const bytes = Buffer.from(JSON.stringify({ ...packet, recordId }));
-        const result = await launchQualifiedTrustedRelease(bytes, request);
+        const result = await launchQualifiedTrustedRelease(bytes, request, profileName);
         return { ...result, recordId };
       },
     });
