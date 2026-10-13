@@ -469,6 +469,8 @@ Mandatory privacy topics are customers/data_request, customers/redact and shop/r
 
 Deduplicate delivery on `(installation_id, webhook_delivery_id)` and make business processing idempotent independently. Track event ID/topic/API version/received time. An out-of-order event triggers reconciliation from Shopify rather than rolling back newer facts. Reconciliation paginates all order lines and refunds; never assume the first GraphQL connection page is complete.
 
+The [13 October owner-delegated M8 decision](../delivery/authority/m8-purchase-proof-ownership-2026-10-13.md) permits a distinct signed-offer/original-order matching proof for a qualified Online Store one-time flow. Preserve signature, complete physical members, actual merchandise/economics and historical authorization checks. Admit wholly unavailable actual localization only through trusted creator-origin/current-enforcement qualification; record it as unknown, with quote country/Market identified as authorized context. Independent provider context, when supplied, must still match. Production admission remains disabled until native qualification; no current-health observation becomes historical execution proof. Required-product enforcement and its incident limitations remain separate obligations.
+
 Record orders at creation, bind approved customizations, and maintain first-full-payment facts. Refund processing appends Shopify economic facts; it neither recalculates historical customization pricing nor reverses app usage. Unsupported merchant order edits are recorded as discrepancies for review, not treated as newly authorized customization changes.
 
 ### 6.6 Commercial plan contract

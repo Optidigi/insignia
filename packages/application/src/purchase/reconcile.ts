@@ -6,7 +6,13 @@ import {
   wholeQuoteSignBytes,
 } from '@insignia/cart-authorization';
 import { localDay } from '../quote/accept-quote.js';
-import type { HistoricalPurchaseOffer, PurchaseBinding, PurchasePorts, VerifiedOrder } from './model.js';
+import type {
+  HistoricalPurchaseOffer,
+  PurchaseBinding,
+  PurchaseBindingEvidence,
+  PurchasePorts,
+  VerifiedOrder,
+} from './model.js';
 
 const envelopeKey = '_insignia_quote_v2';
 const memberKey = '_insignia_member_v2';
@@ -73,12 +79,13 @@ export function firstFullyPaid(order: VerifiedOrder): string | null {
   }
   return firstPaidAt;
 }
-function verifyOffer(
+async function verifyOffer(
   order: VerifiedOrder,
   offer: HistoricalPurchaseOffer,
   envelope: string,
   lines: readonly VerifiedOrder['lines'][number][],
-): PurchaseBinding {
+  checkout: PurchasePorts['checkout'],
+): Promise<PurchaseBinding> {
   const { quote, authorization, issuance } = offer;
   const { header, signature } = decodeEnvelope(envelope);
   const members = authorization.members.map((member) => decodeMemberCarrier(member.carrier));
@@ -122,13 +129,15 @@ function verifyOffer(
     validTime(order.createdAt) < validTime(issuance.issuedAt)
   )
     fail('AUTHORIZATION_HISTORY_MISMATCH');
-  if (!order.contextVerified || order.country === null || order.marketId === null) fail('CONTEXT_UNVERIFIED');
+  if (order.contextVerified && (order.country === null || order.marketId === null)) fail('CONTEXT_UNVERIFIED');
   if (
-    order.currency !== header.currency ||
-    order.country !== header.country ||
-    numericId(order.marketId, 'Market') !== header.marketId
+    order.contextVerified &&
+    (order.currency !== header.currency ||
+      order.country !== header.country ||
+      numericId(order.marketId, 'Market') !== header.marketId)
   )
     fail('ORDER_CONTEXT_MISMATCH');
+  if (order.currency !== header.currency) fail('ORDER_CONTEXT_MISMATCH');
   if (
     offer.publicKey.length !== 32 ||
     createHash('sha256').update(offer.publicKey).digest('hex') !== authorization.publicKeyFingerprint
@@ -176,6 +185,39 @@ function verifyOffer(
     })
     .sort((a, b) => a.lineIndex - b.lineIndex);
   if (mapped.some((line, index) => line.lineIndex !== index)) fail('INCOMPLETE_AUTHORIZATION_SET');
+  let evidence: PurchaseBindingEvidence;
+  if (order.contextVerified && order.country !== null && order.marketId !== null) {
+    evidence = { kind: 'provider_context', country: order.country, marketId: order.marketId };
+  } else {
+    // Only wholly unavailable historical context may use the separate matching proof.
+    // Partial/contradictory context is never silently replaced by the signed quote.
+    if (order.contextVerified || order.country !== null || order.marketId !== null || !checkout)
+      fail('CONTEXT_UNVERIFIED');
+    const origin = order.checkoutOrigin;
+    if (
+      !origin ||
+      !origin.creatorAppId ||
+      !/^gid:\/\/shopify\/App\/[1-9][0-9]{0,19}$/.test(origin.creatorAppId) ||
+      origin.sourceName !== 'web' ||
+      !origin.checkoutTokenDigest ||
+      !/^[a-f0-9]{64}$/.test(origin.checkoutTokenDigest)
+    )
+      fail('CHECKOUT_ORIGIN_UNVERIFIED');
+    const admission = await checkout.admit({ order });
+    if (
+      !admission ||
+      admission.creatorAppId !== origin.creatorAppId ||
+      validTime(admission.enforcementObservedAt) < validTime(order.observedAt)
+    )
+      fail('CHECKOUT_ENFORCEMENT_UNVERIFIED');
+    evidence = {
+      kind: 'signed_offer_order_match',
+      creatorAppId: origin.creatorAppId,
+      checkoutTokenDigest: origin.checkoutTokenDigest,
+      enforcementObservedAt: admission.enforcementObservedAt,
+      checkoutContext: null,
+    };
+  }
   const collectedAt = validTime(offer.payloadCollectedAt);
   const expiresAt = validTime(offer.payloadExpiresAt);
   if (collectedAt > validTime(order.createdAt) || expiresAt <= collectedAt)
@@ -192,6 +234,7 @@ function verifyOffer(
         : (offer.designPayload ?? null),
     payloadCollectedAt: offer.payloadCollectedAt,
     payloadExpiresAt: offer.payloadExpiresAt,
+    evidence,
   };
 }
 /** Webhook identity selects a read; its body and browser cart claims never create purchase authority. */
@@ -247,7 +290,7 @@ export async function reconcilePurchase(
         authorizationSetId: uuid(header.setHex),
       });
       if (!offer) fail('AUTHORIZATION_HISTORY_UNAVAILABLE');
-      bindings.push(verifyOffer(order, offer, envelope, lines));
+      bindings.push(await verifyOffer(order, offer, envelope, lines, ports.checkout));
     }
   } catch (error) {
     bindings.length = 0;

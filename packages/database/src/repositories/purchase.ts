@@ -102,7 +102,7 @@ function bounded(value: unknown, max = 1048576) {
   if (!text || Buffer.byteLength(text) > max) fail('INVALID');
   return text;
 }
-function economics(quote: AcceptedQuote) {
+function economics(quote: AcceptedQuote, evidence?: PurchaseObservation['bindings'][number]['evidence']) {
   const strip = (value: unknown): unknown =>
     Array.isArray(value)
       ? value.map(strip)
@@ -125,7 +125,8 @@ function economics(quote: AcceptedQuote) {
           )
         : value;
   return {
-    version: 'm8-purchase-economics-v1',
+    version: evidence ? 'm8-purchase-economics-v2' : 'm8-purchase-economics-v1',
+    ...(evidence ? { contextSource: 'authorized_quote', purchaseEvidence: evidence } : {}),
     quoteId: quote.quoteId,
     country: quote.country,
     marketId: quote.marketId,
@@ -559,7 +560,7 @@ export function createPurchaseRepository(db: Kysely<Database>) {
               new Date(binding.payloadExpiresAt) <= new Date(binding.payloadCollectedAt)
             )
               fail('INVALID');
-            await sql`INSERT INTO purchase_bindings VALUES(${order.shopId},${originalGeneration}::bigint,${purchaseId}::uuid,${binding.quoteId}::uuid,${binding.authorizationSetId}::uuid,${bounded(economics(binding.quote), 262144)}::jsonb)`.execute(
+            await sql`INSERT INTO purchase_bindings VALUES(${order.shopId},${originalGeneration}::bigint,${purchaseId}::uuid,${binding.quoteId}::uuid,${binding.authorizationSetId}::uuid,${bounded(economics(binding.quote, binding.evidence), 262144)}::jsonb)`.execute(
               tx,
             );
             for (const line of binding.lines)

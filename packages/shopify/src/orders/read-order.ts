@@ -9,6 +9,7 @@ export type ShopifyOrderFacts = {
   orderId: string;
   /** Correlation only; never independent checkout localization authority. Raw token is not exported. */
   checkoutTokenDigest: string | null;
+  checkoutOrigin: { creatorAppId: string | null; sourceName: string | null; checkoutTokenDigest: string | null };
   createdAt: string;
   updatedAt: string;
   observedAt: string;
@@ -69,7 +70,7 @@ export class ShopifyOrderReadError extends Error {
 }
 const MONEY = 'presentmentMoney { amount currencyCode }';
 const TX = `id kind status processedAt amountSet { ${MONEY} }`;
-const HEADER = `id checkoutToken createdAt updatedAt presentmentCurrencyCode displayFinancialStatus edited test cancelledAt originalTotalPriceSet { ${MONEY} } transactionsCount { count precision } transactions(first:250) { ${TX} } refunds { id updatedAt }`;
+const HEADER = `id app { id } sourceName checkoutToken createdAt updatedAt presentmentCurrencyCode displayFinancialStatus edited test cancelledAt originalTotalPriceSet { ${MONEY} } transactionsCount { count precision } transactions(first:250) { ${TX} } refunds { id updatedAt }`;
 const LINES = `lineItems(first:100, after:$after) { nodes { id product { id } variant { id } quantity currentQuantity originalUnitPriceSet { ${MONEY} } sellingPlan { sellingPlanId } customAttributes { key value } } pageInfo { hasNextPage endCursor } }`;
 const ORDER_QUERY = `query InsigniaPurchaseOrder($id:ID!,$after:String) { order(id:$id) { ${HEADER} ${LINES} } }`;
 const RECHECK_QUERY = `query InsigniaPurchaseOrderRecheck($id:ID!) { order(id:$id) { ${HEADER} } }`;
@@ -283,6 +284,11 @@ export async function readShopifyOrder(
         if (checkoutToken === '') return fail();
         const checkoutTokenDigest =
           checkoutToken === null ? null : createHash('sha256').update(checkoutToken).digest('hex');
+        const checkoutOrigin = {
+          creatorAppId: nullableGid(initial.app, 'App'),
+          sourceName: initial.sourceName === null ? null : text(initial.sourceName, 128),
+          checkoutTokenDigest,
+        };
         const edited = boolean(initial.edited);
         const currency = text(initial.presentmentCurrencyCode, 3);
         if (!/^[A-Z]{3}$/.test(currency) || dependencies.currency.exponent(currency) === null) return fail();
@@ -408,6 +414,7 @@ export async function readShopifyOrder(
         return {
           ...target,
           checkoutTokenDigest,
+          checkoutOrigin,
           createdAt: date(initial.createdAt),
           updatedAt,
           observedAt: observedAt.toISOString(),

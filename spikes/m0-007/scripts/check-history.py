@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Verify frozen receipts, architecture archives and the owner-amended delivery record.
 
-Each archived version is checked at its fixed merge. Current owner governance plus M5-017 hashes are
+Each archived version is checked at its fixed merge. Current owner amendments plus M5-017 hashes are
 explicit constants, never learned from the working files being checked.
 """
 
@@ -119,11 +119,26 @@ for path, expected in pre_simple_delivery_architecture.items():
     archived = subprocess.check_output(["git", "show", f"{PRE_SIMPLE_DELIVERY_BASE}:{path}"], cwd=REPO)
     assert digest(archived) == expected, f"pre-simple-delivery architecture mismatch: {path}"
 
-current_architecture = {
+pre_m8_purchase_proof_architecture = {
     "docs/architecture/implementation-plan.md": "43782125b80a5d0307b4ad00f5c7908829de6ce7eebaf94bdd9a9f82b133aed7",
     "docs/architecture/decision-ledger.md": "95d19f784aba249a82040e08349196b453c38eacf1682bffc9ca5a9ab3cc95ba",
     "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
 }
+# The owner-delegated M8 evidence decision retains the exact earlier architecture.
+PRE_M8_PURCHASE_PROOF_BASE = "9059c270923ecb5c10bf6bf64deb23e6da8b4849"
+for path, expected in pre_m8_purchase_proof_architecture.items():
+    archived = subprocess.check_output(["git", "show", f"{PRE_M8_PURCHASE_PROOF_BASE}:{path}"], cwd=REPO)
+    assert digest(archived) == expected, f"pre-M8-purchase-proof architecture mismatch: {path}"
+
+current_architecture = {
+    "docs/architecture/implementation-plan.md": "c0e4b8c41d4da5828eba152a8059f3a3e27722cb104c441daa3bdfe70cef22b6",
+    "docs/architecture/decision-ledger.md": "d3db631464f7166599872277c3f5f0d88859230040742ce59f6e50429f5df568",
+    "docs/architecture/OPTION-A-APPROVED.md": "321f86f5823a0b73b6a6483c172e5d56a0172de442f38dc79ae337de51adf209",
+}
+M8_PURCHASE_PROOF_OWNER_AUTHORITY = "docs/delivery/authority/m8-purchase-proof-ownership-2026-10-13.md"
+M8_PURCHASE_PROOF_OWNER_AUTHORITY_SHA256 = "b2b1a4f888473ae553d0d23dbf0a6affac9b83b43ad48d38325ceca58ed3fad9"
+assert digest((REPO / M8_PURCHASE_PROOF_OWNER_AUTHORITY).read_bytes()) == M8_PURCHASE_PROOF_OWNER_AUTHORITY_SHA256, "M8 purchase-proof owner authority mismatch"
+
 OWNER_AUTHORITY = "docs/delivery/authority/milestone-autonomy-2026-10-09.md"
 OWNER_AUTHORITY_SHA256 = "710cda826d77a712a89c791cc5d71144c215b2c7eebe6ce9f689638ba405a327"
 assert digest((REPO / OWNER_AUTHORITY).read_bytes()) == OWNER_AUTHORITY_SHA256, "owner authority mismatch"
@@ -181,6 +196,10 @@ print(json.dumps({
     "simpleDeliveryOwnerAuthority": SIMPLE_DELIVERY_OWNER_AUTHORITY,
     "simpleDeliveryOwnerAuthoritySha256": SIMPLE_DELIVERY_OWNER_AUTHORITY_SHA256,
     "simpleDeliveryPackagePlanSha256": SIMPLE_DELIVERY_PACKAGE_PLAN_SHA256,
-    "currentArchitectureVersion": "1.6 + owner simple-delivery amendment (12 October 2026)",
+    "preM8PurchaseProofRef": PRE_M8_PURCHASE_PROOF_BASE,
+    "preM8PurchaseProofSha256": pre_m8_purchase_proof_architecture,
+    "m8PurchaseProofOwnerAuthority": M8_PURCHASE_PROOF_OWNER_AUTHORITY,
+    "m8PurchaseProofOwnerAuthoritySha256": M8_PURCHASE_PROOF_OWNER_AUTHORITY_SHA256,
+    "currentArchitectureVersion": "1.6 + owner simple-delivery and delegated M8 purchase-proof amendments (13 October 2026)",
     "currentArchitectureSha256": current_architecture,
 }, sort_keys=True))

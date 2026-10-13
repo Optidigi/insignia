@@ -12,6 +12,12 @@ export type VerifiedOrder = {
   country: string | null;
   marketId: string | null;
   contextVerified: boolean;
+  /** Provider-owned origin and correlation, not a validation execution receipt. */
+  checkoutOrigin?: {
+    creatorAppId: string | null;
+    sourceName: string | null;
+    checkoutTokenDigest: string | null;
+  };
   totalPriceMinor: string;
   test: boolean;
   edited: boolean;
@@ -73,7 +79,28 @@ export type PurchaseBinding = {
   designPayload: unknown;
   payloadCollectedAt: string;
   payloadExpiresAt: string;
+  /** Absent only on legacy records; never reinterpret an old snapshot. */
+  evidence?: PurchaseBindingEvidence;
 };
+export type PurchaseBindingEvidence =
+  | { kind: 'provider_context'; country: string; marketId: string }
+  | {
+      kind: 'signed_offer_order_match';
+      creatorAppId: string;
+      checkoutTokenDigest: string;
+      enforcementObservedAt: string;
+      checkoutContext: null;
+    };
+/** Trusted composition qualifies the creator ID and current Function/artifact enforcement.
+ * No browser input, mode flag or source name alone may implement this port.
+ * Admission accepts the documented historical enforcement uncertainty, not an execution receipt.
+ */
+export interface SupportedCheckoutPurchasePort {
+  admit(input: { order: VerifiedOrder }): Promise<{
+    creatorAppId: string;
+    enforcementObservedAt: string;
+  } | null>;
+}
 export type PurchaseObservation = {
   order: VerifiedOrder;
   bindings: readonly PurchaseBinding[];
@@ -82,6 +109,8 @@ export type PurchaseObservation = {
   firstPaidAt: string | null;
 };
 export interface PurchasePorts {
+  /** Omitted until origin and native enforcement admission have been qualified. */
+  checkout?: SupportedCheckoutPurchasePort;
   orders: { read(input: { shopId: string; installationGeneration: string; orderId: string }): Promise<VerifiedOrder> };
   offers: {
     get(input: {
