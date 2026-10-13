@@ -179,6 +179,38 @@ export async function inspectPriorCollectorSettlement(parent) {
   return phases;
 }
 
+/** Stopped bridge transition only. Caller holds the existing exclusive launch
+ * fence; every prior collector and launcher must have an unambiguous receipt. */
+export async function inspectPriorBridgeHandoverSettlement(parent) {
+  try {
+    const phases = await inspectPriorCollectorSettlement(parent);
+    assert.ok(phases.every((phase) => phase.settled));
+    const prefix = 'm5-trusted-release-launch-intent-';
+    for (const name of await readdir(parent)) {
+      if (!name.startsWith(prefix)) continue;
+      const recordId = name.slice(prefix.length);
+      assert.match(recordId, UUID);
+      const path = join(parent, name);
+      await privateDirectory(path);
+      const intent = await privateJson(join(path, 'intent.json'), 1048576);
+      assert.equal(intent.version, 'm5-owner-trusted-release-launch-intent-v1');
+      assert.equal(intent.recordId, recordId);
+      assert.equal(intent.retryAuthorized, false);
+      assert.equal(intent.childPhase, recordPhaseName(recordId));
+      assert.ok(phases.some((phase) => phase.phase === intent.childPhase));
+      const receipt = qualifyCollectorReceipt(await privateJson(join(path, 'receipt.json')));
+      assert.ok(!receipt.ambiguousWrite);
+      assert.deepEqual(
+        receipt,
+        qualifyCollectorReceipt(await privateJson(join(parent, intent.childPhase, 'receipt.json'), 16384, true)),
+      );
+    }
+    return phases;
+  } catch {
+    throw new Error('prior_settlement_unknown');
+  }
+}
+
 /** Real process seam; the production caller supplies only its fixed child.
  * Test ports may spawn synthetic processes, never used by executable main. */
 export async function runBoundedCollectorProcess({
