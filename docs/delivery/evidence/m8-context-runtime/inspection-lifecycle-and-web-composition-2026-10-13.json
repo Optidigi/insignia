@@ -1,0 +1,50 @@
+{
+  "sourceMerge": "3316ba11f7b02b67e0d6592e0e6d0e2967c1a818",
+  "inspector": {
+    "prefixOnlyCorrectionApplied": true,
+    "sameAllocatedObjectDirectory": true,
+    "unitSha256": "0235a43cd19bdb17733c6bc50face543e564edb803d4dbfbab2ba04e82ca563f",
+    "privateReadinessHTTP": 200,
+    "ready": true,
+    "uid": 1000,
+    "socketMode": "0600",
+    "directoryMode": "0700",
+    "noShopifySigningOrPurchaseInputs": true,
+    "noNewPrivileges": true,
+    "gracefulStop": {
+      "exit": 0,
+      "socketAbsent": true,
+      "cgroupEmptyOrRemoved": true,
+      "directoryInodePreserved": true
+    },
+    "explicitRestartReadinessHTTP": 200,
+    "enabled": true,
+    "lingerIndependentlyVerified": "yes",
+    "realBuyerAssetProcessed": false
+  },
+  "web": {
+    "image": "sha256:355f91b5821a2347cc5dbe7455b5380e32783097ed166b2c66f1b3c287c92de7",
+    "qualifiedCIProvenance": "PR114 native-image-import receipt; apps/web,apps/worker,packages/*/src unchanged PR114\u2192PR118, only later worker tests changed",
+    "privateModelSha256": "ae33126e19e4f76a57d06b41e3343d7cee18311f87c239d432f88c03d446a470",
+    "independentImpactReview": "/root/handover_security CLEAR; supplied preservation/native evidence, no credential/tool isolation or native calls",
+    "effect": "one acknowledged web-only recreation, no dependencies/build/pull",
+    "healthy": true,
+    "existingEnvironmentRouterMountSecuritySettingsPreserved": true,
+    "reuseExistingNetworksOnly": true,
+    "newMounts": "storage0600 and readiness0700, read-only, create_host_path false",
+    "containerProfileAndPrivateReadinessProbe": "PASS UID1000/socketHTTP200",
+    "releaseProfile": "m8-read-orders-617057f",
+    "merchantPurchaseServicesEnabled": "authenticated views/downloads, authorized artwork commands and cursor scheduling; no order/payment fact writer",
+    "buyerEnabled": false,
+    "workerPurchaseAdmissionEnabled": false,
+    "unauthenticatedBoundaries": {
+      "adminOrdersShell": 200,
+      "purchaseAPI": 401,
+      "artworkAPI": 401,
+      "initialGuessedArtworkURL": 404
+    },
+    "otherContainersPreserved": true
+  },
+  "limits": "Production composition and empty-row startup probes; no authenticated merchant artwork/purchase demonstration or native checkout. Old worker image remains.",
+  "obligations": "Private journals/artifacts retained through20October; original failed start and probes retained; backup restore not rehearsed, storage key rotation/cleanup remain owed."
+}

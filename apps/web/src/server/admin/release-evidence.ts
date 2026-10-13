@@ -120,7 +120,7 @@ export interface ReleaseVerificationCollector {
   }>;
 }
 
-/** Mutation-only capability. Collector completion is correlated, then independently
+/** Server-bound collection capability. Completion is correlated, then independently
  * read through the existing SELECT-only source. No staff credential crosses it. */
 export function createDemandDrivenReleaseReader(input: {
   records: DurableCore['trustedReleaseRecords'];
