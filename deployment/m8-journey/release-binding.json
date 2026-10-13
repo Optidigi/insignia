@@ -15,5 +15,5 @@
   "nativeObservation": "ACTIVE_AND_INSTALLATION_READ_ORDERS_VERIFIED",
   "observedAt": "2026-10-13T16:35:22.398Z",
   "readOrdersGranted": true,
-  "note": "Descriptive native readback, not admission or trusted-release authority. Protected Order-object access remains denied pending development protected-data setting. Fresh independent release records and native purchase qualification remain required."
+  "note": "Descriptive native readback, not admission or trusted-release authority. Order-object metadata access verified after owner development protected-data save at 2026-10-13T17:06:06.834Z. Fresh independent release records, intended worker-role access and current native purchase qualification remain required."
 }
