@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { readdir, readFile } from 'node:fs/promises';
 import { Pool } from 'pg';
 import { expect, it } from 'vitest';
@@ -11,13 +11,27 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
   'qualifies real web LOGIN artwork/buyer/purchase access without release or worker authority',
   async () => {
     const address = new URL(process.env.WEB_RUNTIME_GRANTS_TEST_URL ?? '');
+    const allocatedLocal =
+      address.hostname === '127.0.0.1' &&
+      address.port === '58199' &&
+      address.username === 'synthetic_m8_owner' &&
+      address.pathname === '/postgres';
+    const durableCi =
+      ['localhost', '127.0.0.1'].includes(address.hostname) &&
+      address.port === '5432' &&
+      address.username === 'insignia_test' &&
+      address.pathname === '/insignia_test';
     if (
-      address.hostname !== '127.0.0.1' ||
-      address.port !== '58199' ||
-      address.username !== 'synthetic_m8_owner' ||
-      address.pathname !== '/postgres'
+      !['postgres:', 'postgresql:'].includes(address.protocol) ||
+      !(allocatedLocal || durableCi) ||
+      address.hash ||
+      address.searchParams.size > 1 ||
+      [...address.searchParams.keys()].some((key) => key !== 'sslmode') ||
+      (address.searchParams.has('sslmode') && address.searchParams.get('sslmode') !== 'disable')
     )
       throw new Error('Allocated synthetic PostgreSQL qualification required');
+    const webPassword = randomBytes(32).toString('hex'),
+      workerPassword = randomBytes(32).toString('hex');
     const suffix = randomUUID().replaceAll('-', '');
     const name = `synthetic_web_acl_${suffix}`,
       login = `synthetic_web_${suffix}`,
@@ -26,7 +40,7 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       extra = `synthetic_extra_${suffix}`,
       worker = `synthetic_purchase_${suffix}`,
       enqueue = `synthetic_enqueue_${suffix}`;
-    const admin = new Pool({ connectionString: address.href, max: 1 });
+    const admin = new Pool({ connectionString: address.href, max: 1, connectionTimeoutMillis: 5000 });
     const target = new URL(address);
     target.pathname = `/${name}`;
     let owner: Pool | undefined, web: Pool | undefined, purchaseWorker: Pool | undefined;
@@ -38,9 +52,9 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
       );
       await admin.query(`CREATE DATABASE ${name}`);
       created = true;
-      owner = new Pool({ connectionString: target.href });
+      owner = new Pool({ connectionString: target.href, connectionTimeoutMillis: 5000 });
       await owner.query(
-        `CREATE ROLE ${login} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE ${queue} NOLOGIN; CREATE ROLE ${extra} NOLOGIN; CREATE ROLE ${enqueue} NOLOGIN; GRANT ${enqueue} TO ${login}`,
+        `CREATE ROLE ${login} LOGIN PASSWORD '${webPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; CREATE ROLE ${queue} NOLOGIN; CREATE ROLE ${extra} NOLOGIN; CREATE ROLE ${enqueue} NOLOGIN; GRANT ${enqueue} TO ${login}`,
       );
       const migrations = new URL('../migrations/', import.meta.url);
       const names = (await readdir(migrations)).filter((n) => n.endsWith('.sql')).sort();
@@ -62,8 +76,8 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         await owner.query((await readFile(new URL(file, migrations), 'utf8')).split('-- migrate:down')[0]!);
       const webAddress = new URL(target);
       webAddress.username = login;
-      webAddress.password = '';
-      web = new Pool({ connectionString: webAddress.href });
+      webAddress.password = webPassword;
+      web = new Pool({ connectionString: webAddress.href, connectionTimeoutMillis: 5000 });
       const core = createDurableCore(web);
       ownerDb = createDatabase(owner);
       const fixture = await purchaseFixture(ownerDb);
@@ -375,12 +389,12 @@ it.runIf(Boolean(process.env.WEB_RUNTIME_GRANTS_TEST_URL))(
         await owner.query(other);
       }
       await owner.query(
-        `CREATE ROLE ${worker} LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; GRANT ${queue} TO ${worker}`,
+        `CREATE ROLE ${worker} LOGIN PASSWORD '${workerPassword}' NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS; GRANT ${queue} TO ${worker}`,
       );
       const workerAddress = new URL(target);
       workerAddress.username = worker;
-      workerAddress.password = '';
-      purchaseWorker = new Pool({ connectionString: workerAddress.href });
+      workerAddress.password = workerPassword;
+      purchaseWorker = new Pool({ connectionString: workerAddress.href, connectionTimeoutMillis: 5000 });
       for (const query of [
         'SELECT original_key FROM artwork_assets',
         'SELECT * FROM buyer_sessions',

@@ -62,6 +62,8 @@ jobs:
       - run: corepack pnpm check:boundaries
       - run: corepack pnpm check:secrets
       - run: corepack pnpm check:database
+      - name: Qualify restricted web journey grants with actual LOGINs
+        run: WEB_RUNTIME_GRANTS_TEST_URL="$DATABASE_URL" corepack pnpm --filter @insignia/database exec vitest run test/web-runtime-grants.test.ts
       - name: M5 100k actual read-seam query plans
         run: M5_QUERY_PLAN_OUTPUT=/tmp/m5-query-plan.json corepack pnpm test:m5-query-plan
       - name: Preserve actual M5 PostgreSQL plans and build hashes
