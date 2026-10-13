@@ -3,6 +3,8 @@ import importlib.util
 import os
 import json
 import subprocess
+import shutil
+import hashlib
 import socket
 import sys
 from pathlib import Path
@@ -18,6 +20,32 @@ operator = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(operator)
 
 class BindingControls(unittest.TestCase):
+    def test_exact_candidate_gate_accepts_passed_ci_after_documented_infrastructure_rerun(self):
+        with tempfile.TemporaryDirectory() as directory:
+            parent = Path(directory)
+            service = parent/'service'; service.write_text('synthetic qualified service')
+            head = 'a'*40; tree = 'b'*40
+            manifest = parent/('m5-trusted-release-launch-qualified-inputs-'+head+'.json')
+            manifest.write_text(json.dumps({'reviewedHead':head,'reviewedTree':tree})); manifest.chmod(0o600)
+            gate = {'version':'m5-private-collector-binding-v1','spec':'CLEAR','security':'CLEAR',
+                'exactHeadCiPassed':True,'exactHeadCiAttempt1':False,
+                'producerSha256':hashlib.sha256(SOURCE.read_bytes()).hexdigest(),
+                'userServiceCrashQualified':True,'serviceSha256':hashlib.sha256(service.read_bytes()).hexdigest(),
+                'head':head,'tree':tree,'inputManifestSha256':hashlib.sha256(manifest.read_bytes()).hexdigest()}
+            with patch.object(operator,'PARENT',parent), patch.object(operator,'SERVICE',service), \
+                 patch.object(operator.subprocess,'check_output',side_effect=[head+'\n',tree+'\n',b'']), \
+                 patch.object(operator.subprocess,'run') as launch_inputs:
+                operator.qualify_gate(gate)
+                launch_inputs.assert_called_once()
+            with patch.object(operator.subprocess,'check_output') as refs, patch.object(operator.subprocess,'run') as launch_inputs:
+                with self.assertRaises(RuntimeError): operator.qualify_gate({**gate,'exactHeadCiPassed':False})
+                refs.assert_not_called(); launch_inputs.assert_not_called()
+            with patch.object(operator,'PARENT',parent), patch.object(operator,'SERVICE',service), \
+                 patch.object(operator.subprocess,'check_output',return_value='c'*40+'\n'), \
+                 patch.object(operator.subprocess,'run') as launch_inputs:
+                with self.assertRaises(RuntimeError): operator.qualify_gate(gate)
+                launch_inputs.assert_not_called()
+
     def test_oversized_socket_path_stops_before_directory_or_external_attempt(self):
         with tempfile.TemporaryDirectory() as directory:
             target = Path(directory)/'not-created'
@@ -88,6 +116,8 @@ class BindingControls(unittest.TestCase):
 
     def run_private_startup(self, profile=None, reuse=False, fail_receiver=False):
         real_spawn = subprocess.Popen
+        test_node = shutil.which('node')
+        self.assertIsNotNone(test_node, 'local controls require the workflow-installed Node runtime')
         children = []
         transport_arguments = []
         with tempfile.TemporaryDirectory() as directory:
@@ -107,7 +137,9 @@ class BindingControls(unittest.TestCase):
                     'priorBindingIntentSha256':hashlib.sha256(prior).hexdigest(),
                     'priorMainPid':99999999,'priorInvocationId':'a'*32}
             def external(command, **kwargs):
-                if '--input-type=module' in command: return real_spawn(command, **kwargs)
+                if '--input-type=module' in command:
+                    self.assertEqual(command[0],test_node)
+                    return real_spawn(command, **kwargs)
                 if command[0] == 'ssh' and '-N' not in command:
                     private = {'clientSecret':'SYNTHETIC_SECRET','databaseUrl':'postgres://insignia_runtime:synthetic@private/db',
                         'appendPassword':'a'*64,'databaseIp':'127.0.0.1'}
@@ -125,7 +157,7 @@ class BindingControls(unittest.TestCase):
                 return child
             with patch.object(operator, 'DIRECTORY', target), patch.object(operator,'qualify_gate') as qualify, patch.object(operator,'require_service'), \
                  patch.object(operator.subprocess,'Popen',side_effect=external), patch.object(operator,'PARENT',Path(directory)), \
-                 patch.object(operator,'qualify_stopped_invocation'):
+                 patch.object(operator,'qualify_stopped_invocation'), patch.object(operator,'NODE',test_node):
                 if fail_receiver:
                     with self.assertRaises(RuntimeError): operator.start(gate)
                 else: operator.start(gate)

@@ -127,7 +127,7 @@ def qualify_stopped_invocation(reuse):
 
 def qualify_gate(gate):
     require(gate['version'] == 'm5-private-collector-binding-v1')
-    require(gate['spec'] == gate['security'] == 'CLEAR' and gate['exactHeadCiAttempt1'] is True)
+    require(gate['spec'] == gate['security'] == 'CLEAR' and gate['exactHeadCiPassed'] is True)
     require(gate['producerSha256'] == hashlib.sha256(Path(__file__).read_bytes()).hexdigest())
     require(gate['userServiceCrashQualified'] is True and gate['serviceSha256'] == hashlib.sha256(SERVICE.read_bytes()).hexdigest())
     for ref, expected in [('HEAD', gate['head']), ('HEAD^{tree}', gate['tree'])]:
