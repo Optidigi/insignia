@@ -71,7 +71,7 @@ export class ShopifyOrderReadError extends Error {
 const MONEY = 'presentmentMoney { amount currencyCode }';
 const TX = `id kind status processedAt amountSet { ${MONEY} }`;
 const HEADER = `id app { id } sourceName checkoutToken createdAt updatedAt presentmentCurrencyCode displayFinancialStatus edited test cancelledAt originalTotalPriceSet { ${MONEY} } transactionsCount { count precision } transactions(first:250) { ${TX} } refunds { id updatedAt }`;
-const LINES = `lineItems(first:100, after:$after) { nodes { id product { id } variant { id } quantity currentQuantity originalUnitPriceSet { ${MONEY} } sellingPlan { sellingPlanId } customAttributes { key value } } pageInfo { hasNextPage endCursor } }`;
+const LINES = `lineItems(first:100, after:$after) { nodes { id product { id } variant { id } quantity currentQuantity originalUnitPriceSet { ${MONEY} } sellingPlan { sellingPlanId } customAttributes { key value } lineItemGroup { id customAttributes { key value } } } pageInfo { hasNextPage endCursor } }`;
 const ORDER_QUERY = `query InsigniaPurchaseOrder($id:ID!,$after:String) { order(id:$id) { ${HEADER} ${LINES} } }`;
 const RECHECK_QUERY = `query InsigniaPurchaseOrderRecheck($id:ID!) { order(id:$id) { ${HEADER} } }`;
 const REFUND_LINES = `refundLineItems(first:100,after:$after) { nodes { id lineItem { id } quantity subtotalSet { ${MONEY} } } pageInfo { hasNextPage endCursor } }`;
@@ -306,7 +306,8 @@ export async function readShopifyOrder(
           return fail('incomplete_order');
         const lines: ShopifyOrderFacts['lines'] = [],
           lineIds = new Set<string>(),
-          cursors = new Set<string>();
+          cursors = new Set<string>(),
+          groups = new Map<string, string>();
         let current = initial;
         for (;;) {
           if (current.id !== target.orderId || date(current.updatedAt) !== updatedAt) return fail('order_changed');
@@ -321,6 +322,30 @@ export async function readShopifyOrder(
               return { key: attributeText(v.key, 256), value: attributeText(v.value, 4096) };
             });
             if (new Set(attributes.map((a) => a.key)).size !== attributes.length) return fail();
+            if (l.lineItemGroup !== null && l.lineItemGroup !== undefined) {
+              const group = record(l.lineItemGroup),
+                groupId = gid(group.id, 'LineItemGroup');
+              const parent = array(group.customAttributes, 100).map((a) => {
+                const v = record(a);
+                return { key: attributeText(v.key, 256), value: attributeText(v.value, 4096) };
+              });
+              if (new Set(parent.map((a) => a.key)).size !== parent.length) return fail();
+              const serialized = JSON.stringify([...parent].sort((a, b) => a.key.localeCompare(b.key)));
+              if (groups.has(groupId) && groups.get(groupId) !== serialized) return fail('order_changed');
+              groups.set(groupId, serialized);
+              const envelope = parent.find((a) => a.key === '_insignia_quote_v2');
+              const childEnvelope = attributes.find((a) => a.key === '_insignia_quote_v2');
+              const member = attributes.find((a) => a.key === '_insignia_member_v2');
+              if (envelope && (!member || !envelope.value)) return fail();
+              if (envelope && childEnvelope && envelope.value !== childEnvelope.value) return fail();
+              // Only associated provider-read parent quote is carried forward. Child
+              // member, original merchandise/economics and signature checks stay exact.
+              if (envelope && member && !childEnvelope) {
+                if (!envelope.value) return fail();
+                attributes.push(envelope);
+              }
+            }
+
             const sellingPlan = l.sellingPlan === null ? null : record(l.sellingPlan);
             if (integer(l.currentQuantity, 4294967295) > integer(l.quantity, 4294967295, 1)) return fail();
             lines.push({

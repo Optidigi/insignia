@@ -41,11 +41,17 @@ type Action =
   | { kind: 'phase'; phase: State['phase'] }
   | { kind: 'accepted'; accepted: AcceptedCart }
   | { kind: 'error'; message: string }
-  | { kind: 'cleared' };
+  | { kind: 'cleared'; warning?: string };
 export function buyerReducer(state: State, action: Action): State {
   switch (action.kind) {
     case 'cleared':
-      return { ...state, accepted: undefined, proposal: undefined, phase: 'applied', error: undefined };
+      return {
+        ...state,
+        accepted: undefined,
+        proposal: undefined,
+        phase: action.warning ? 'repair' : 'applied',
+        error: action.warning,
+      };
     case 'loaded':
       return {
         ...state,
@@ -434,13 +440,19 @@ export function BuyerCustomizer({
       })
       .catch(() => {});
     window.dispatchEvent(new CustomEvent('insignia-cart-updated'));
-    dispatch({ kind: 'phase', phase: 'applied' });
+    if (result.recovery)
+      dispatch({
+        kind: 'error',
+        message:
+          'The reviewed cart is applied, but an earlier update may still arrive. Check the cart before checkout.',
+      });
+    else dispatch({ kind: 'phase', phase: 'applied' });
   }
   async function removeCustomized() {
     dispatch({ kind: 'phase', phase: 'applying' });
     try {
       const observed = await cart.read();
-      const result = await cart.apply([], { expectedFingerprint: observed.fingerprint });
+      const result = await cart.apply([], { expectedFingerprint: observed.fingerprint, repair: true });
       if (result.status !== 'applied')
         throw new Error(
           result.reason === 'mutation_unresolved'
@@ -451,7 +463,15 @@ export function BuyerCustomizer({
       baseline.current = result.cart ?? undefined;
       restoredQuoteId.current = undefined;
       window.dispatchEvent(new CustomEvent('insignia-cart-updated'));
-      dispatch({ kind: 'cleared' });
+      dispatch({
+        kind: 'cleared',
+        ...(result.recovery
+          ? {
+              warning:
+                'Observed customized items were removed. An earlier update may still arrive; review your cart again before checking out.',
+            }
+          : {}),
+      });
     } catch (error) {
       dispatch({ kind: 'error', message: error instanceof Error ? error.message : 'Cart removal unavailable' });
     }

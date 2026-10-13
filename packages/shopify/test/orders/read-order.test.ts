@@ -1,6 +1,8 @@
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
+import { readFile } from 'node:fs/promises';
 import { createServer } from 'node:http';
+import { type HistoricalPurchaseOffer, type PurchaseObservation, reconcilePurchase } from '@insignia/application';
 import { describe, expect, it, vi } from 'vitest';
 import { readShopifyOrder } from '../../src/orders/read-order.js';
 
@@ -66,6 +68,172 @@ function fixture() {
   return dependencies;
 }
 describe('independent Shopify order reconciliation', () => {
+  it('reads the associated native bundle parent envelope alongside child member without asserting execution or context', async () => {
+    const d = fixture();
+    const child = {
+      ...line(),
+      customAttributes: [{ key: '_insignia_member_v2', value: 'signed-child-member' }],
+      lineItemGroup: {
+        id: 'gid://shopify/LineItemGroup/700',
+        customAttributes: [{ key: '_insignia_quote_v2', value: 'signed-parent-envelope' }],
+      },
+    };
+    d.fetchImpl.mockImplementation(
+      async () => new Response(JSON.stringify({ data: { order: { ...order(), lineItems: connection([child]) } } })),
+    );
+    const result = await readShopifyOrder(target, d);
+    expect(result.lines[0]?.attributes).toEqual([
+      { key: '_insignia_member_v2', value: 'signed-child-member' },
+      { key: '_insignia_quote_v2', value: 'signed-parent-envelope' },
+    ]);
+    expect(result.contextVerified).toBe(false);
+    expect(String(d.fetchImpl.mock.calls[0]?.[1]?.body)).toContain('lineItemGroup');
+  });
+
+  it('parent carrier conflicts, duplicates, malformed identity and missing child members refuse independently read orders', async () => {
+    const d = fixture();
+    const parent = {
+      id: 'gid://shopify/LineItemGroup/700',
+      customAttributes: [{ key: '_insignia_quote_v2', value: 'parent' }],
+    };
+    for (const changed of [
+      {
+        ...line(),
+        customAttributes: [
+          { key: '_insignia_member_v2', value: 'member' },
+          { key: '_insignia_quote_v2', value: 'other' },
+        ],
+        lineItemGroup: parent,
+      },
+      { ...line(), lineItemGroup: parent },
+      {
+        ...line(),
+        customAttributes: [{ key: '_insignia_member_v2', value: 'member' }],
+        lineItemGroup: { ...parent, id: 'gid://shopify/Order/700' },
+      },
+      {
+        ...line(),
+        customAttributes: [{ key: '_insignia_member_v2', value: 'member' }],
+        lineItemGroup: { ...parent, customAttributes: [...parent.customAttributes, ...parent.customAttributes] },
+      },
+    ]) {
+      d.fetchImpl.mockImplementation(
+        async () => new Response(JSON.stringify({ data: { order: { ...order(), lineItems: connection([changed]) } } })),
+      );
+      await expect(readShopifyOrder(target, d)).rejects.toThrow('invalid_provider_shape');
+    }
+  });
+
+  it('provider-read parent/child carriers reach unchanged whole-quote purchase verification with original economics and unknown context', async () => {
+    const vectors = JSON.parse(
+      await readFile(new URL('../../../cart-authorization/fixtures/whole-quote-v2.json', import.meta.url), 'utf8'),
+    );
+    const c = vectors.cases.find((value: { name: string }) => value.name === 'one_bucket');
+    const h = c.header,
+      date = '2026-12-13T12:00:00.000Z',
+      observed = '2026-12-13T14:00:00.000Z';
+    const uuid = (hex: string) => hex.replace(/^(........)(....)(....)(....)(............)$/, '$1-$2-$3-$4-$5');
+    const publicKey = Buffer.from(vectors.publicHex, 'hex');
+    const quote = {
+      quoteId: uuid(h.quoteHex),
+      shopId: target.shopId,
+      installationGeneration: '1',
+      authorizationGeneration: uuid(h.generationHex),
+      authorizationEpoch: h.epoch,
+      shopTimezone: 'UTC',
+      presentmentCurrency: 'EUR',
+      presentmentExponent: 2,
+      country: 'DE',
+      marketId: '42',
+      economics: {
+        customizedQuantity: 1,
+        totalMinor: '1999',
+        lines: [{ lineIndex: 0, productId: '42', variantId: '101', quantity: 1, unitPriceMinor: '1999' }],
+      },
+    };
+    const offer = {
+      quote,
+      authorization: {
+        setId: uuid(h.setHex),
+        keyId: h.keyId,
+        publicKeyFingerprint: createHash('sha256').update(publicKey).digest('hex'),
+        firstValidDay: 20800,
+        lastValidDay: 20802,
+        validThroughDay: 20802,
+        envelopeCarrier: c.envelope,
+        members: [{ carrier: c.memberCarriers[0], lineIndex: 0 }],
+      },
+      issuance: { issuedAt: '2026-12-13T11:00:00Z', issuedDay: 20800, validThroughDay: 20802, shopTimezone: 'UTC' },
+      publicKey,
+      keyRevokedAt: null,
+      installationWindow: { generation: '1', startedAt: '2026-12-01T00:00:00Z', deactivatedAt: null },
+      designPayload: { syntheticHistoricalArtwork: 'retained' },
+      payloadCollectedAt: '2026-12-13T11:00:00Z',
+      payloadExpiresAt: '2027-06-13T11:00:00Z',
+    } as unknown as HistoricalPurchaseOffer;
+    const provider = {
+      ...order(),
+      createdAt: date,
+      processedAt: date,
+      updatedAt: date,
+      checkoutToken: 'synthetic-native-checkout',
+      displayFinancialStatus: 'PAID',
+      originalTotalPriceSet: money('19.99'),
+      transactions: [{ ...tx, processedAt: date, amountSet: money('19.99') }],
+      lineItems: connection([
+        {
+          ...line(),
+          product: { id: 'gid://shopify/Product/42' },
+          variant: { id: 'gid://shopify/ProductVariant/101' },
+          quantity: 1,
+          currentQuantity: 1,
+          originalUnitPriceSet: money('19.99'),
+          customAttributes: [{ key: '_insignia_member_v2', value: c.memberCarriers[0] }],
+          lineItemGroup: {
+            id: 'gid://shopify/LineItemGroup/700',
+            customAttributes: [{ key: '_insignia_quote_v2', value: c.envelope }],
+          },
+        },
+      ]),
+    };
+    const d = fixture();
+    d.clock = () => new Date(observed);
+    d.credentials.acquire.mockImplementation(async () => ({
+      kind: 'usable',
+      shopDomain: 'owned.myshopify.com',
+      accessToken: 'synthetic-private-token',
+      accessExpiresAt: new Date(Date.parse(observed) + 60000),
+    }));
+    d.fetchImpl.mockImplementation(async () => new Response(JSON.stringify({ data: { order: provider } })));
+    const facts = await readShopifyOrder(target, d);
+    const commit = vi.fn(async (observation: PurchaseObservation) => observation);
+    const ports = {
+      orders: { read: async () => facts },
+      offers: { get: async () => offer },
+      store: { reconcile: commit },
+      checkout: { admit: async () => ({ creatorAppId: 'gid://shopify/App/77', enforcementObservedAt: observed }) },
+    };
+    const bound = (await reconcilePurchase(target, ports)) as PurchaseObservation;
+    expect(bound.exception).toBeNull();
+    expect(bound.bindings).toHaveLength(1);
+    expect(bound.firstPaidAt).toBe(date);
+    expect(bound.order.contextVerified).toBe(false);
+    expect(bound.order.country).toBeNull();
+    expect(bound.bindings[0]?.evidence).toMatchObject({ kind: 'signed_offer_order_match', checkoutContext: null });
+    for (const changed of [
+      { ...facts, lines: [{ ...facts.lines[0]!, quantity: 2 }] },
+      { ...facts, lines: [{ ...facts.lines[0]!, originalUnitPriceMinor: '2000' }] },
+      { ...facts, lines: [{ ...facts.lines[0]!, attributes: [{ key: '_insignia_quote_v2', value: c.envelope }] }] },
+    ]) {
+      const rejected = (await reconcilePurchase(target, {
+        ...ports,
+        orders: { read: async () => changed },
+      })) as PurchaseObservation;
+      expect(rejected.bindings).toHaveLength(0);
+      expect(rejected.exception).not.toBeNull();
+    }
+  });
+
   it('reads creator provenance independently without promoting it to checkout context authority', async () => {
     const d = fixture();
     const result = await readShopifyOrder(target, d);
